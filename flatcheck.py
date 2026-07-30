@@ -94,6 +94,15 @@ TREI MODURI
    datele brute sunt la ~40%. Pentru histograma pe date brute reale: Siril, nu ViewNX.)
    NEF -> rawpy da white/black exacte. FITS -> scala auto-detectata; --sat/--black daca
    greseste. Ca sa afli white-ul exact: un cadru supraexpus, maxul de acolo E saturatia.
+   Pentru SKY FLATS (blue hour): adauga --sky. Cerul se intuneca continuu si e plin de
+   stele slabe, deci un nivel modest (canal dominant 15-50%) e CORECT - nu-l urca, SNR-ul
+   vine din numarul de cadre. Fara --sky, un sky flat la 22% ar fi raportat gresit "jos".
+
+   CUM OBTII UN FITS BRUT IN SIRIL (pt --expo): NU deschide NEF-ul si "Save" - asta il
+   DEBAYERIZEAZA si normalizeaza, iar --expo il respinge (canale CFA identice, nivel ~0).
+   Foloseste tab-ul CONVERSION: adauga NEF-urile -> Convert. Fisierul rezultat pastreaza
+   mozaicul CFA brut, la scala ADU originala. (In Python cel mai simplu e sa dai NEF-ul
+   direct la --expo - rawpy citeste brutul, fara Siril.)
    Fondul nu trebuie sa aiba componenta radiala centrata pe cadru.
    Gradientul de poluare luminoasa e liniar/inclinat, nu radial -> scriptul le
    separa printr-un fit simultan (plan + termeni radiali). De asta testul
@@ -562,7 +571,7 @@ def load_raw_for_expo(path):
     return data, white, 0.0, None, f"auto-detectat din max={mx:.0f} (foloseste --sat/--black daca e gresit)"
 
 
-def mode_expo(path, sat_override=None, black_override=None):
+def mode_expo(path, sat_override=None, black_override=None, sky=False):
     data, white, black, exp, src = load_raw_for_expo(path)
     if sat_override is not None:
         white = sat_override
@@ -614,6 +623,29 @@ def mode_expo(path, sat_override=None, black_override=None):
     print(f"    canal cel mai luminos, CENTRU 20%      : {cen_pct:5.1f}%  <- ASTA decide expunerea")
     print(f"    clipping in centru (>=98% white)       : {cen_clip:.3f}%")
 
+    # SANITY: --expo are nevoie de un flat BRUT necalibrat (mozaic Bayer intact, scala
+    # ADU originala). Doua semne ca fisierul NU e brut:
+    #   1. nivel non-fizic (<1% sau negativ) -> flat-dark deja scazut / normalizat
+    #   2. cele 4 pozitii CFA quasi-identice -> debayerizat (mozaicul nu mai exista)
+    cfa_spread = meds.max() / max(meds.min(), 1e-9)
+    if cen_pct < 1.0 or (is_cfa == False and cfa_spread < 1.02) or cfa_spread < 1.02:
+        print()
+        print("    !! FISIERUL NU PARE UN FLAT BRUT !!")
+        if cen_pct < 1.0:
+            print(f"    Nivelul e ~{cen_pct:.1f}% (langa zero/negativ) -> flat-dark deja scazut,")
+            print("    sau imagine normalizata. --expo are nevoie de nivelul ADU original.")
+        if cfa_spread < 1.02:
+            print(f"    Cele 4 canale CFA sunt quasi-identice (spread {cfa_spread:.3f}) -> fisierul")
+            print("    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.")
+        print()
+        print("    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).")
+        print("    SOLUTII:")
+        print("      - ruleaza direct pe NEF (Python citeste brutul exact):")
+        print("          python3 flatcheck.py flat.NEF --expo")
+        print("      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),")
+        print("        care pastreaza mozaicul CFA nedebayerizat.")
+        return
+
     # verdict pe CENTRU. Tinta: centru la 50-65% (mai sus decat mediana globala, pt ca
     # centrul e varful distributiei; 50-65% centru ~ flat bine expus fara clipping).
     print()
@@ -630,8 +662,29 @@ def mode_expo(path, sat_override=None, black_override=None):
         except Exception:
             return ""
 
-    CEN_LO, CEN_HI = 50.0, 65.0   # tinta pt CENTRU (nu 50-60 ca la mediana globala)
-    if cen_clip > TH_EXPO_CLIP or cen_pct > 80:
+    CEN_LO, CEN_HI = 50.0, 65.0   # tinta pt CENTRU (panou, sursa stabila)
+    if sky:
+        # SKY FLAT: cerul se intuneca continuu si e plin de stele slabe. Nu impinge in
+        # sus - un nivel modest e corect, iar SNR-ul masterului vine din NUMARUL de
+        # cadre, nu din a urca un cadru la 55%. Tinta pt canalul dominant: 15-50%.
+        # Peste ~50% incepi sa risti stele vizibile si lucrezi contra ceasului.
+        SKY_LO, SKY_HI = 15.0, 50.0
+        print("    [mod --sky: praguri pt flats pe cer, nu pe panou]")
+        if cen_clip > TH_EXPO_CLIP or cen_pct > 60:
+            print(f"    VERDICT: PREA SUS" + (" (CLIPPING in centru!)" if cen_clip > TH_EXPO_CLIP else " (risc stele in cadru)"))
+            print(f"    Scade expunerea.{suggest_shutter(np.log2(30.0 / cen_pct) if cen_pct > 0 else -1)}")
+        elif cen_pct < SKY_LO:
+            stops = np.log2(30.0 / cen_pct)
+            print(f"    VERDICT: PREA JOS pentru sky flat")
+            print(f"    Creste cu ~{stops:.1f} stopuri (dar lucreaza repede, cerul se stinge).{suggest_shutter(stops)}")
+        elif cen_pct <= SKY_HI:
+            print(f"    VERDICT: OK pentru sky flat  (centru {SKY_LO:.0f}-{SKY_HI:.0f}%)")
+            print("    La sky flat, nivelul modest e corect. SNR-ul vine din numarul de cadre,")
+            print("    nu din a urca expunerea (ai risca stele in cadru). NU forta mai sus.")
+        else:
+            print(f"    VERDICT: cam sus, dar acceptabil")
+            print("    Sub 60% e ok; peste, risti stele. Nu urca mai mult.")
+    elif cen_clip > TH_EXPO_CLIP or cen_pct > 80:
         stops = np.log2(57.0 / cen_pct) if cen_pct > 0 else -1
         print(f"    VERDICT: PREA SUS" + (" (CLIPPING in centru!)" if cen_clip > TH_EXPO_CLIP else ""))
         print(f"    Scade expunerea cu ~{-stops:.1f} stopuri.{suggest_shutter(stops)}")
@@ -663,6 +716,8 @@ def main():
                    help="test end-to-end pe un light calibrat fara BGE")
     p.add_argument("--expo", action="store_true",
                    help="verifica expunerea unui flat BRUT (NEF sau flat necalibrat), nu master")
+    p.add_argument("--sky", action="store_true",
+                   help="cu --expo: praguri pt flats pe cer (blue hour), nu pe panou")
     p.add_argument("--sat", type=float, default=None,
                    help="nivel de saturatie (white), daca auto-detectia greseste")
     p.add_argument("--black", type=float, default=None, help="nivel black, pt --expo pe FITS")
@@ -670,7 +725,7 @@ def main():
     a = p.parse_args()
 
     if a.expo:
-        mode_expo(a.image, a.sat, a.black)
+        mode_expo(a.image, a.sat, a.black, a.sky)
     elif a.ratio:
         mode_ratio(a.image, a.ratio, a.out)
     elif a.light:

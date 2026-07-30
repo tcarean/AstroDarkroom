@@ -43,6 +43,14 @@
 //    cand datele brute sunt la ~40% - foloseste Siril pt histograma pe date brute.
 //    Scala (white) auto-detectata; daca greseste, --sat (si --black). white-ul exact:
 //    un cadru supraexpus, maxul de acolo E saturatia. (C# nu citeste NEF - flat Siril.)
+//    Pentru SKY FLATS (blue hour): adauga --sky. Cerul se intuneca continuu si e plin
+//    de stele slabe, deci un nivel modest (canal dominant 15-50%) e CORECT - nu-l urca,
+//    SNR-ul vine din numarul de cadre. Fara --sky, un sky flat la 22% ar fi raportat
+//    gresit ca "prea jos".
+//    CUM OBTII UN FITS BRUT IN SIRIL (pt --expo): NU deschide NEF-ul si "Save" - asta il
+//    DEBAYERIZEAZA si normalizeaza, iar --expo il respinge (canale CFA identice, nivel
+//    ~0). Foloseste tab-ul CONVERSION: adauga NEF-urile -> Convert. Fisierul rezultat
+//    pastreaza mozaicul CFA brut, la scala ADU originala.
 //
 // 1. STRUCTURA: e master flat-ul simetric radial? Ruleaza pe masterul final.
 // 2. ROTATIE 180: valideaza SETUP-ul. Tragi 15 flats, rotesti camera 180 grade in
@@ -104,6 +112,7 @@ namespace FlatCheck
                 Console.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180");
                 Console.WriteLine("  flatcheck <light.fit> --light           # test end-to-end");
                 Console.WriteLine("  flatcheck <flat_brut.fit> --expo        # verificare expunere");
+                Console.WriteLine("  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer");
                 Console.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
                 return 0;
             }
@@ -112,13 +121,14 @@ namespace FlatCheck
             string ratio = GetOpt(args, "--ratio");
             bool light = args.Contains("--light");
             bool expo = args.Contains("--expo");
+            bool sky = args.Contains("--sky");
             string outPng = GetOpt(args, "-o") ?? GetOpt(args, "--out") ?? "flatcheck.png";
             double? sat = GetOptD(args, "--sat");
             double? black = GetOptD(args, "--black");
 
             try
             {
-                if (expo) ModeExpo(image, sat, black);
+                if (expo) ModeExpo(image, sat, black, sky);
                 else if (ratio != null) ModeRatio(image, ratio, outPng);
                 else if (light) ModeLight(image, outPng);
                 else ModeStructure(image, outPng);
@@ -693,7 +703,7 @@ namespace FlatCheck
         // Stacking-ul normalizeaza si sterge nivelul, deci pe master n-ar avea sens.
         // C# nu citeste NEF - foloseste un flat convertit in Siril. Scala (white) e
         // auto-detectata; daca greseste, dai --sat (si --black).
-        static void ModeExpo(string path, double? satOverride, double? blackOverride)
+        static void ModeExpo(string path, double? satOverride, double? blackOverride, bool sky)
         {
             Img data = LoadFits(path); // NU Prepare - vrem CFA brut, la scala originala
             double mx = data.D.Max();
@@ -769,10 +779,66 @@ namespace FlatCheck
             Console.WriteLine($"    canal cel mai luminos, mediana GLOBALA : {globPct,5:F1}%  (trasa in jos de colturi)");
             Console.WriteLine($"    canal cel mai luminos, CENTRU 20%      : {cenMed,5:F1}%  <- ASTA decide expunerea");
             Console.WriteLine($"    clipping in centru (>=98% white)       : {cenClip:F3}%");
+
+            // SANITY: --expo are nevoie de flat BRUT necalibrat (mozaic Bayer intact,
+            // scala ADU originala). Doua semne ca fisierul NU e brut:
+            //   1. nivel non-fizic (<1%) -> flat-dark deja scazut / normalizat
+            //   2. cele 4 pozitii CFA quasi-identice -> debayerizat
+            double cfaSpread = mmax / Math.Max(mmin, 1e-9);
+            if (cenMed < 1.0 || cfaSpread < 1.02)
+            {
+                Console.WriteLine();
+                Console.WriteLine("    !! FISIERUL NU PARE UN FLAT BRUT !!");
+                if (cenMed < 1.0)
+                {
+                    Console.WriteLine($"    Nivelul e ~{cenMed:F1}% (langa zero/negativ) -> flat-dark deja scazut,");
+                    Console.WriteLine("    sau imagine normalizata. --expo are nevoie de nivelul ADU original.");
+                }
+                if (cfaSpread < 1.02)
+                {
+                    Console.WriteLine($"    Cele 4 canale CFA sunt quasi-identice (spread {cfaSpread:F3}) -> fisierul");
+                    Console.WriteLine("    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.");
+                }
+                Console.WriteLine();
+                Console.WriteLine("    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (debayerizeaza).");
+                Console.WriteLine("    SOLUTIE: produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),");
+                Console.WriteLine("    care pastreaza mozaicul CFA nedebayerizat. (Sau ruleaza pe NEF in Python.)");
+                return;
+            }
+
             Console.WriteLine();
 
-            const double cenLo = 50.0, cenHi = 65.0;   // tinta pt CENTRU
-            if (cenClip > Th.ExpoClip || cenMed > 80)
+            const double cenLo = 50.0, cenHi = 65.0;   // tinta pt CENTRU (panou)
+            if (sky)
+            {
+                // SKY FLAT: cerul se intuneca continuu si e plin de stele slabe. Nu
+                // impinge in sus - SNR-ul masterului vine din NUMARUL de cadre, nu din a
+                // urca un cadru la 55%. Tinta pt canalul dominant: 15-50%.
+                const double skyLo = 15.0, skyHi = 50.0;
+                Console.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
+                if (cenClip > Th.ExpoClip || cenMed > 60)
+                {
+                    Console.WriteLine("    VERDICT: PREA SUS" + (cenClip > Th.ExpoClip ? " (CLIPPING in centru!)" : " (risc stele in cadru)"));
+                    Console.WriteLine("    Scade expunerea.");
+                }
+                else if (cenMed < skyLo)
+                {
+                    Console.WriteLine("    VERDICT: PREA JOS pentru sky flat");
+                    Console.WriteLine($"    Creste cu ~{Math.Log2(30.0 / cenMed):F1} stopuri (dar repede, cerul se stinge).");
+                }
+                else if (cenMed <= skyHi)
+                {
+                    Console.WriteLine($"    VERDICT: OK pentru sky flat  (centru {skyLo:F0}-{skyHi:F0}%)");
+                    Console.WriteLine("    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,");
+                    Console.WriteLine("    nu din a urca expunerea (ai risca stele). NU forta mai sus.");
+                }
+                else
+                {
+                    Console.WriteLine("    VERDICT: cam sus, dar acceptabil");
+                    Console.WriteLine("    Sub 60% e ok; peste, risti stele. Nu urca mai mult.");
+                }
+            }
+            else if (cenClip > Th.ExpoClip || cenMed > 80)
             {
                 double stops = cenMed > 0 ? Math.Log2(57.0 / cenMed) : -1;
                 Console.WriteLine("    VERDICT: PREA SUS" + (cenClip > Th.ExpoClip ? " (CLIPPING in centru!)" : ""));

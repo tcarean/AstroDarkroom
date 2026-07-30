@@ -25,6 +25,9 @@ dotnet publish -c Release -r linux-x64 --self-contained  # Linux
 dotnet run -c Release -- process/pp_flat_stacked.fit                 # 1. structura
 dotnet run -c Release -- pp_flat_A.fit --ratio pp_flat_B.fit         # 2. rotatie 180
 dotnet run -c Release -- process/pp_light_00001.fit --light          # 3. end-to-end
+dotnet run -c Release -- flat_brut.fit --expo                         # 4. expunere
+dotnet run -c Release -- sky_flat.fit --expo --sky                   # 4b. expunere sky flat
+dotnet run -c Release -- flat_brut.fit --expo --sat 4095 --black 150  # expunere, scala manuala
 dotnet run -c Release -- flat.fit -o harta.png                       # PNG custom
 
 # sau direct pe binarul compilat:
@@ -39,6 +42,32 @@ dotnet run -c Release -- flat.fit -o harta.png                       # PNG custo
 
 Nu citește NEF direct — lasă Siril să producă FITS-ul, exact ca în pipeline-ul tău.
 FITS suportat: BITPIX 16 / 32 / -32 / -64, mono sau color (media pe canale).
+
+**Excepție — modul `--expo`:** ăsta vrea un flat BRUT NECALIBRAT (un cadru single
+convertit în Siril, NU masterul — stacking-ul normalizează și șterge nivelul). Verifică
+dacă expunerea e la 50-60% și spune în ce direcție s-o modifici. Scala de saturație e
+auto-detectată; dacă e greșită, dă `--sat` (și `--black`). Versiunea Python poate rula
+`--expo` direct pe NEF (via rawpy, cu white/black exacte); C#-ul cere FITS.
+
+### Cum obții un FITS BRUT în Siril (pentru `--expo`)
+
+**NU** deschide NEF-ul și "Save" — asta îl **debayerizează** și normalizează. `--expo`
+va respinge un astfel de fișier (canale CFA identice, nivel ~0) cu un mesaj explicit.
+
+Folosește tab-ul **Conversion**:
+1. Conversion → adaugi NEF-urile.
+2. Convert.
+
+Fișierul rezultat păstrează mozaicul CFA brut, la scala ADU originală (D3300: white
+4095, black 150 la 12-bit). Apoi:
+
+```bash
+flatcheck.exe flat_brut.fit --expo --sat 4095 --black 150
+flatcheck.exe sky_flat.fit  --expo --sky --sat 4095 --black 150   # pt sky flats
+```
+
+Pentru celelalte moduri (structură, ratio, light) folosești FITS-ul **calibrat**
+(`pp_flat_stacked.fit`) — acolo debayerizarea/normalizarea nu contează, sunt rapoarte.
 
 ## Diferențe față de versiunea Python
 
