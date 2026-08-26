@@ -1,6 +1,14 @@
-// Core.cs - ce a mai ramas din motor: encoderul PNG pentru harta reziduala.
-// Modurile s-au mutat in Analysis/ (calcul) si Report/ (text). Faza 7 muta si asta
-// intr-un PngWriter dedicat.
+// PngWriter.cs - encoder PNG propriu (fara dependinte) pentru harta reziduala.
+//
+// Harta e divergenta: albastru (sub) -> alb -> rosu (peste), cu albul FIXAT la 1.0 si
+// intervalul scalat pe percentilele 1/99 plus 10% padding. Fixarea la 1.0 e valida
+// pentru toti apelantii de azi - reziduul de structura e img/model ~ 1, raportul A/B e
+// normalizat la mediana 1, iar harta din --light e 1 + radial/a. Daca adaugi un apelant
+// ale carui date NU sunt centrate pe 1, harta va minti.
+//
+// Encoderul scrie semnatura + IHDR (8 biti, color type 2 = RGB) + un singur IDAT
+// (fiecare rand precedat de filter byte 0, deflatat prin ZLibStream) + IEND, cu CRC-32
+// calculat de mana.
 
 using System;
 using System.Collections.Generic;
@@ -10,32 +18,41 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    internal static class Core
+    internal static class PngWriter
     {
-        // ========================================================= PNG (heatmap reziduu)
-        // RdBu-like: albastru (jos) -> alb (1.0) -> rosu (sus). Scalat pe percentile 1..99.
-        internal static void SaveResidualPng(string path, Img resid, TextWriter outw)
+        /// <summary>Albul hartii. Vezi nota de sus inainte sa-l schimbi.</summary>
+        internal const double Mid = 1.0;
+
+        internal static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
+
+        /// <summary>Scaleaza reziduul si-l converteste in RGB. Intoarce si capetele, ca sa fie verificabile.</summary>
+        internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid)
         {
             var vals = resid.D.ToList();
             double lo = Stats.Percentile(vals, 1), hi = Stats.Percentile(vals, 99);
             double pad = Math.Max(hi - lo, 1e-4) * 0.1;
             lo -= pad; hi += pad;
-            double mid = 1.0;
+
             int h = resid.H, w = resid.W;
             var rgb = new byte[h * w * 3];
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
-                    double v = resid.At(y, x);
-                    (byte r, byte g, byte b) = Colormap(v, lo, mid, hi);
+                    var (r, g, b) = Colormap(resid.At(y, x), lo, Mid, hi);
                     int p = (y * w + x) * 3;
                     rgb[p] = r; rgb[p + 1] = g; rgb[p + 2] = b;
                 }
-            WritePng(path, rgb, w, h);
-            outw.WriteLine($"\n    -> harta salvata: {path}");
+            return (rgb, lo, hi);
         }
 
-        static (byte, byte, byte) Colormap(double v, double lo, double mid, double hi)
+        /// <summary>Scrie harta reziduala pe disc. Mesajul pentru utilizator e treaba apelantului.</summary>
+        internal static void WriteResidualMap(string path, Img resid)
+        {
+            var (rgb, _, _) = MapResidual(resid);
+            Write(path, rgb, resid.W, resid.H);
+        }
+
+        internal static (byte r, byte g, byte b) Colormap(double v, double lo, double mid, double hi)
         {
             double t;
             byte r, g, b;
@@ -54,19 +71,23 @@ namespace FlatCheck
             return (r, g, b);
         }
 
-        static void WritePng(string path, byte[] rgb, int w, int h)
+        internal static void Write(string path, byte[] rgb, int w, int h)
+            => File.WriteAllBytes(path, Encode(rgb, w, h));
+
+        /// <summary>Encodeaza in memorie - punctul de intrare real, ca sa fie testabil fara disc.</summary>
+        internal static byte[] Encode(byte[] rgb, int w, int h)
         {
-            using var fs = File.Create(path);
-            // semnatura
-            fs.Write(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, 0, 8);
-            // IHDR
+            using var outp = new MemoryStream();
+            outp.Write(Signature, 0, Signature.Length);
+
             var ihdr = new byte[13];
             WriteBE(ihdr, 0, w); WriteBE(ihdr, 4, h);
             ihdr[8] = 8;   // bit depth
             ihdr[9] = 2;   // color type RGB
-            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
-            WriteChunk(fs, "IHDR", ihdr);
-            // IDAT: fiecare rand precedat de filter byte 0, apoi zlib-compresat
+            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;   // deflate, filtrare adaptiva, neintretesut
+            WriteChunk(outp, "IHDR", ihdr);
+
+            // IDAT: fiecare rand precedat de filter byte 0 (None), apoi zlib
             using var raw = new MemoryStream();
             for (int y = 0; y < h; y++)
             {
@@ -77,11 +98,13 @@ namespace FlatCheck
             byte[] comp;
             using (var ms = new MemoryStream())
             {
-                using (var z = new ZLibStream(ms, CompressionLevel.Optimal, true)) z.Write(rawBytes, 0, rawBytes.Length);
+                using (var z = new ZLibStream(ms, CompressionLevel.Optimal, true))
+                    z.Write(rawBytes, 0, rawBytes.Length);
                 comp = ms.ToArray();
             }
-            WriteChunk(fs, "IDAT", comp);
-            WriteChunk(fs, "IEND", Array.Empty<byte>());
+            WriteChunk(outp, "IDAT", comp);
+            WriteChunk(outp, "IEND", Array.Empty<byte>());
+            return outp.ToArray();
         }
 
         static void WriteBE(byte[] b, int o, int v)
@@ -97,8 +120,11 @@ namespace FlatCheck
             var cb = new byte[4]; WriteBE(cb, 0, (int)crc); s.Write(cb, 0, 4);
         }
 
+        // NOTA (problema cunoscuta 11): tabel static initializat lenes. Benign
+        // single-threaded, dar ar fi o cursa daca s-ar paraleliza ceva.
         static uint[] _crcTable;
-        static uint Crc32(byte[] type, byte[] data)
+
+        internal static uint Crc32(byte[] type, byte[] data)
         {
             if (_crcTable == null)
             {

@@ -2,7 +2,8 @@
 // Ordinea de dispecerat: --expo -> --ratio -> --light -> structura (implicit).
 //
 // Fiecare mod e acelasi lant: incarca FITS -> analizor pur (Analysis/) -> raport
-// (Report/) -> harta PNG. Doar stratul asta atinge discul; analizoarele sunt Img -> record.
+// (Report/) -> harta PNG. Doar stratul asta atinge discul; analizoarele sunt Img -> record,
+// iar PngWriter nu tipareste nimic - mesajul "harta salvata" se scrie de aici.
 
 using System;
 using System.IO;
@@ -42,7 +43,7 @@ namespace FlatCheck
         {
             var r = StructureAnalyzer.Analyze(FitsReader.Load(o.Image));
             StructureReport.Write(r, o.Image, w);
-            Core.SaveResidualPng(o.OutPng, r.Residual, w);
+            SaveMap(o.OutPng, r.Residual, w);
             return r.Verdict;
         }
 
@@ -50,7 +51,7 @@ namespace FlatCheck
         {
             var r = RatioAnalyzer.Analyze(FitsReader.Load(o.Image), FitsReader.Load(o.Ratio));
             RatioReport.Write(r, o.Image, o.Ratio, w);
-            Core.SaveResidualPng(o.OutPng, r.Ratio, w);
+            SaveMap(o.OutPng, r.Ratio, w);
             return r.Verdict;
         }
 
@@ -58,7 +59,7 @@ namespace FlatCheck
         {
             var r = LightAnalyzer.Analyze(FitsReader.Load(o.Image));
             LightReport.Write(r, o.Image, w);
-            Core.SaveResidualPng(o.OutPng, r.RadialMap, w);
+            SaveMap(o.OutPng, r.RadialMap, w);
         }
 
         static void RunExpo(Options o, TextWriter w)
@@ -66,6 +67,12 @@ namespace FlatCheck
             // NU Prepare - modul asta vrea CFA brut, la scala ADU originala.
             var r = ExposureAnalyzer.Analyze(FitsReader.Load(o.Image), o.Sat, o.Black, o.Sky);
             ExposureReport.Write(r, o.Image, w);
+        }
+
+        static void SaveMap(string path, Img map, TextWriter w)
+        {
+            PngWriter.WriteResidualMap(path, map);
+            w.WriteLine($"\n    -> harta salvata: {path}");
         }
 
         static void WriteUsage(TextWriter w)

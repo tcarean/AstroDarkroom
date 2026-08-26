@@ -30,7 +30,10 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
     No I/O, no printing - this is where every number is decided.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. All the Romanian output lives here and nowhere else.
-  - `Core.cs` - what is left: the PNG encoder. Phase 7 moves it to `PngWriter`.
+  - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
+    `Encode(rgb, w, h)` is the real entry point; `Write`/`WriteResidualMap` are thin
+    file wrappers, which is what lets the encoder be tested without touching disk.
+    It prints nothing - the "harta salvata" line is written by `FlatCheckCli`.
 - `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
   `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
@@ -39,7 +42,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-Phases 0-6 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 7-8 are not.
+Phases 0-7 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; only phase 8 (the bug fixes) is left.
 
 ## Conventions
 
@@ -299,7 +302,15 @@ misleading.
 
 The encoder writes signature + IHDR (8-bit, colour type 2 = RGB) + a single IDAT
 (each row prefixed with filter byte 0, deflated via `ZLibStream`) + IEND, with a
-hand-rolled CRC-32. **Verified**: output decodes correctly in a standard decoder.
+hand-rolled CRC-32.
+
+**Verified three ways**: `PngWriterTests` decodes the output with an independent
+reader written in the test assembly (`PngDecoder` - deliberately not
+`System.Drawing`, which is Windows-only and obsolete on .NET 8), checks every chunk
+CRC, and pins CRC-32 against the standard `"123456789"` -> `0xCBF43926` vector and
+the well-known empty-IEND constant `0xAE426082`. The bytes were also confirmed to
+decode in a real platform decoder, and are byte-identical to what the tool produced
+before the refactor began.
 
 Unlike the Python version, there is no 4-panel figure - only the residual map.
 The console numbers are the same; the map exists so you can see the *shape* of a

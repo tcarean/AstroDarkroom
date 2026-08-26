@@ -1,6 +1,7 @@
 # Refactoring plan: making FlatCheck testable
 
-> **Status: phases 0-6 are done** (190 tests, all green). Phases 7-8 are not started.
+> **Status: phases 0-7 are done** (213 tests, all green). Only phase 8 - the bug
+> fixes, which change user-visible behaviour - is left.
 > What actually shipped, and where it deviated from the plan below, is recorded in
 > "Execution notes" at the end.
 
@@ -319,7 +320,7 @@ Report tests stay thin - one golden file per mode, plus a check that Romanian
 text and numeric formatting (`F2`, `+0.00;-0.00`) are preserved. The Phase 0
 golden tests migrate here.
 
-### Phase 7 - `PngWriter`
+### Phase 7 - `PngWriter` ✅ DONE
 
 Extract, and add a **decoder in the test assembly** - dependency-free and
 cross-platform (do *not* use `System.Drawing`; it is Windows-only and obsolete
@@ -532,3 +533,37 @@ and "measure the centre, not the global median".
 Two known bugs were carried across deliberately and are commented at their new
 locations: the `coef == null` dereference in `LightAnalyzer`, and the discarded
 verdict in `FlatCheckCli.RunStructure`/`RunRatio`. Both are Phase 8.
+
+
+## Execution notes (phase 7)
+
+`Core.cs` is gone. Its contents are now `PngWriter.cs`, with `Encode(rgb, w, h)` as
+the real entry point and `Write`/`WriteResidualMap` as thin file wrappers - the same
+shape as `FitsReader.Load(byte[])`, and for the same reason.
+
+One behavioural tidy-up, invisible in the output: `SaveResidualPng` used to print
+"harta salvata" itself, which meant the encoder owned a line of user-facing text.
+That line moved to `FlatCheckCli.SaveMap`, so `PngWriter` now prints nothing at all
+and the reports remain the only thing that writes Romanian.
+
+213 tests green. The PNG bytes are byte-identical to those the tool produced before
+phase 0, which is a stronger check than the golden files give for the console.
+
+**The decoder is written in the test assembly on purpose.** `PngDecoder` validates
+chunk CRCs, inflates the IDAT and un-filters the rows, and is strict: it accepts only
+8-bit truecolour, filter 0, non-interlaced - exactly what FlatCheck emits - so any
+drift shows up as a decode failure rather than being tolerated. It also computes
+CRC-32 the slow table-free way, so it cannot share a bug with the encoder's table.
+`System.Drawing` was avoided deliberately: Windows-only and obsolete on .NET 8, it
+would have made the suite non-portable.
+
+**Mutation-tested**, all six caught: colour type 2 -> 6 (9 tests), CRC final xor
+dropped (4), width/height swapped in IHDR (6), row filter 0 -> 1 (9), the colormap
+midpoint moved off 1.0 (1), and the percentile padding removed (2).
+
+## What is left
+
+Only Phase 8. Every fix in it changes behaviour a user or a script could notice, and
+three of them are pinned by tests that currently assert the *wrong* behaviour - so
+each needs a deliberate decision, not a tidy-up. The two that change the CLI contract
+(flag ordering, exit codes) should be confirmed before shipping.
