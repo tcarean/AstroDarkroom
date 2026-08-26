@@ -20,7 +20,7 @@ namespace FlatCheck
             w.WriteLine($"    componenta radiala      : {r.RadPct,6:+0.00;-0.00} %   [{r.Verdict}]  <- ASTA e flat-ul");
 
             w.WriteLine("\n  INTERPRETARE");
-            if (Math.Abs(r.RadPct) < LightAnalyzer.RadOk)
+            if (Math.Abs(r.RadPct) < Th.LightRadOk)
             {
                 w.WriteLine("    Fondul n-are componenta radiala. Flat-ul face treaba.");
                 w.WriteLine("    Asta e testul care conteaza - toate celelalte sunt proxy pentru el.");

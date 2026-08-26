@@ -1,9 +1,9 @@
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Phase 2: CLI parsing. These pin *current* behaviour, quirks included - the point is
-/// that the extraction of <see cref="Options"/> out of Main changed nothing. Tests that
-/// document a known bug say so, and name the phase that is meant to flip them.
+/// CLI parsing. Written in phase 2 to pin the behaviour through the extraction, then
+/// updated in phase 8, which made flags position-independent and added validation.
+/// Parse never throws: it returns an Options carrying Error.
 /// </summary>
 public class OptionsTests
 {
@@ -96,53 +96,107 @@ public class OptionsTests
         Assert.Equal(4095.5, o.Sat);
     }
 
-    [Fact]
-    public void NonNumericSat_IsIgnoredRatherThanFailing()
-    {
-        var o = Options.Parse(new[] { "raw.fit", "--expo", "--sat", "abc" });
+    // ------------------------------------------------------- flags are positional-free
 
-        Assert.Null(o.Sat);
+    /// <summary>
+    /// Phase 8. Before it, args[0] was unconditionally the image path, so
+    /// "flatcheck --expo f.fit" died with "Could not find file '--expo'".
+    /// </summary>
+    [Fact]
+    public void AFlagBeforeThePath_ParsesTheSameAsAFlagAfterIt()
+    {
+        var before = Options.Parse(new[] { "--expo", "raw.fit" });
+        var after = Options.Parse(new[] { "raw.fit", "--expo" });
+
+        Assert.Null(before.Error);
+        Assert.Equal("raw.fit", before.Image);
+        Assert.True(before.Expo);
+        Assert.Equal(after.Image, before.Image);
+        Assert.Equal(after.Expo, before.Expo);
     }
 
     [Fact]
-    public void FlagAtTheEndWithNoValue_YieldsNull()
+    public void ValueFlagsAlsoWorkBeforeThePath()
+    {
+        var o = Options.Parse(new[] { "--sat", "4095", "--ratio", "b.fit", "a.fit" });
+
+        Assert.Null(o.Error);
+        Assert.Equal("a.fit", o.Image);
+        Assert.Equal("b.fit", o.Ratio);
+        Assert.Equal(4095.0, o.Sat);
+    }
+
+    [Fact]
+    public void ANegativeNumberIsStillAcceptedAsAValue()
+    {
+        var o = Options.Parse(new[] { "raw.fit", "--expo", "--sat", "4095", "--black", "-50" });
+
+        Assert.Null(o.Error);
+        Assert.Equal(-50.0, o.Black);
+    }
+
+    // ------------------------------------------------------------------ validation
+
+    [Fact]
+    public void AMissingValue_IsAnError()
     {
         var o = Options.Parse(new[] { "a.fit", "--ratio" });
 
-        Assert.Null(o.Ratio);
+        Assert.Contains("lipseste valoarea", o.Error);
     }
 
     [Fact]
-    public void GetOpt_ReturnsNullForAnAbsentKey()
-    {
-        Assert.Null(Options.GetOpt(new[] { "a.fit" }, "--ratio"));
-    }
-
-    // ------------------------------------------------------------- known quirks
-
-    /// <summary>
-    /// Known issue 1: args[0] is unconditionally the image path, so a flag placed first
-    /// becomes the filename. Phase 8 fixes this; this test must then be inverted.
-    /// </summary>
-    [Fact]
-    public void KnownIssue_FlagBeforePath_IsSwallowedAsTheImagePath()
-    {
-        var o = Options.Parse(new[] { "--expo", "raw.fit" });
-
-        Assert.Equal("--expo", o.Image);
-        Assert.True(o.Expo);
-    }
-
-    /// <summary>
-    /// Known issue 1 (same root cause): a flag's "value" is never validated, so the next
-    /// flag is happily consumed as the value. Phase 8 should reject this.
-    /// </summary>
-    [Fact]
-    public void KnownIssue_FlagValue_IsNotValidated_SoAFlagCanBecomeAValue()
+    public void AFlagUsedAsAValue_IsAnError()
     {
         var o = Options.Parse(new[] { "a.fit", "-o", "--light" });
 
-        Assert.Equal("--light", o.OutPng);
-        Assert.True(o.Light);
+        Assert.Contains("asteapta o valoare", o.Error);
+    }
+
+    [Fact]
+    public void ANonNumericSat_IsAnError()
+    {
+        var o = Options.Parse(new[] { "raw.fit", "--expo", "--sat", "abc" });
+
+        Assert.Contains("--sat asteapta un numar", o.Error);
+    }
+
+    [Fact]
+    public void AnUnknownOption_IsAnError()
+    {
+        var o = Options.Parse(new[] { "a.fit", "--nope" });
+
+        Assert.Contains("optiune necunoscuta", o.Error);
+    }
+
+    [Fact]
+    public void NoInputFile_IsAnError()
+    {
+        var o = Options.Parse(new[] { "--light" });
+
+        Assert.Contains("lipseste fisierul", o.Error);
+    }
+
+    [Fact]
+    public void TwoInputFiles_AreAnError()
+    {
+        var o = Options.Parse(new[] { "a.fit", "b.fit" });
+
+        Assert.Contains("un singur fisier", o.Error);
+    }
+
+    /// <summary>--sat 0 used to make the range 0, so every percentage came out NaN.</summary>
+    [Fact]
+    public void ASaturationAtOrBelowBlack_IsAnError()
+    {
+        Assert.Contains("mai mare decat", Options.Parse(new[] { "raw.fit", "--sat", "0" }).Error);
+        Assert.Contains("mai mare decat",
+            Options.Parse(new[] { "raw.fit", "--sat", "100", "--black", "150" }).Error);
+    }
+
+    [Fact]
+    public void AValidCommandLineHasNoError()
+    {
+        Assert.Null(Options.Parse(new[] { "raw.fit", "--expo", "--sat", "4095", "--black", "150" }).Error);
     }
 }

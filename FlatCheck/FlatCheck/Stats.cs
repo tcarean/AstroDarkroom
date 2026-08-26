@@ -10,9 +10,32 @@ namespace FlatCheck
     {
         internal static double Percentile(List<double> data, double p)
         {
-            if (data.Count == 0) return 0;
             var s = data.ToArray();
             Array.Sort(s);
+            return OfSorted(s, p);
+        }
+
+        /// Supraincarcare pe array: evita copia in plus a unui .ToList() la apelant.
+        /// Pe un raster full-res de 24 MP asta inseamna ~190 MB mai putin per apel.
+        internal static double Percentile(double[] data, double p)
+        {
+            var s = (double[])data.Clone();
+            Array.Sort(s);
+            return OfSorted(s, p);
+        }
+
+        /// Pentru cine are nevoie de mai multe percentile din acelasi set: sorteaza o
+        /// singura data si cheama asta de mai multe ori.
+        internal static double[] Sorted(double[] data)
+        {
+            var s = (double[])data.Clone();
+            Array.Sort(s);
+            return s;
+        }
+
+        internal static double OfSorted(double[] s, double p)
+        {
+            if (s.Length == 0) return 0;      // numpy ar arunca; divergenta deliberata
             if (s.Length == 1) return s[0];
             double idx = p / 100.0 * (s.Length - 1);
             int lo = (int)Math.Floor(idx), hi = (int)Math.Ceiling(idx);
@@ -20,13 +43,6 @@ namespace FlatCheck
             return s[lo] * (1 - frac) + s[hi] * frac; // interpolare liniara, ca numpy
         }
 
-        // MOARTA: nimeni n-o cheama. LargeScalePtp are p5/p95 inline, cu praguri
-        // diferite de default-ul p2/p98 de aici. De sters in faza 8.
-        internal static double RobustPtp(IEnumerable<double> a, double lo = 2, double hi = 98)
-        {
-            var l = a.ToList();
-            return Percentile(l, hi) - Percentile(l, lo);
-        }
 
         internal static double Interp(double x, double[] xs, double[] ys)
         {

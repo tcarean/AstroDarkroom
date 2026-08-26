@@ -43,11 +43,6 @@ namespace FlatCheck
 
     internal static class ExposureAnalyzer
     {
-        internal const double CenLo = 50.0, CenHi = 65.0;   // tinta pt panou
-        internal const double SkyLo = 15.0, SkyHi = 50.0;   // tinta pt sky flat
-        internal const double SkyTooHigh = 60.0;
-        internal const double TooLowBand = 30.0, TooHighBand = 80.0;
-
         /// <summary>Scala se ghiceste din maxim; daca greseste, --sat / --black.</summary>
         internal static double AutoWhite(double max)
         {
@@ -106,7 +101,7 @@ namespace FlatCheck
                     for (int x = mx0; x < mx1; x++)
                         cenVals.Add(data.At(y, x));
                 cenMed = (Stats.Percentile(cenVals, 50) - black) / rng * 100;
-                globPct = (Stats.Percentile(data.D.ToList(), 50) - black) / rng * 100;
+                globPct = (Stats.Percentile(data.D, 50) - black) / rng * 100;
                 cenClip = cenVals.Count(v => v >= 0.98 * white) / (double)cenVals.Count * 100;
             }
 
@@ -142,16 +137,16 @@ namespace FlatCheck
             {
                 // Sky flats: un nivel modest e CORECT. Cerul se intuneca continuu si e plin
                 // de stele slabe, iar SNR-ul masterului vine din NUMARUL de cadre.
-                if (clipping || cen > SkyTooHigh) return ExposureVerdict.TooHigh;
-                if (cen < SkyLo) return ExposureVerdict.TooLow;
-                if (cen <= SkyHi) return ExposureVerdict.Ok;
+                if (clipping || cen > Th.ExpoSkyTooHigh) return ExposureVerdict.TooHigh;
+                if (cen < Th.ExpoSkyLo) return ExposureVerdict.TooLow;
+                if (cen <= Th.ExpoSkyHi) return ExposureVerdict.Ok;
                 return ExposureVerdict.AcceptableHigh;
             }
 
-            if (clipping || cen > TooHighBand) return ExposureVerdict.TooHigh;
-            if (cen < TooLowBand) return ExposureVerdict.TooLow;
-            if (cen < CenLo) return ExposureVerdict.AcceptableLow;
-            if (cen <= CenHi) return ExposureVerdict.Ok;
+            if (clipping || cen > Th.ExpoTooHigh) return ExposureVerdict.TooHigh;
+            if (cen < Th.ExpoTooLow) return ExposureVerdict.TooLow;
+            if (cen < Th.ExpoLo) return ExposureVerdict.AcceptableLow;
+            if (cen <= Th.ExpoHi) return ExposureVerdict.Ok;
             return ExposureVerdict.AcceptableHigh;
         }
     }

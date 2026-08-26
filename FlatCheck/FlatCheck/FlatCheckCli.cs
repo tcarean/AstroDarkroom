@@ -1,6 +1,14 @@
 // FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
 // Ordinea de dispecerat: --expo -> --ratio -> --light -> structura (implicit).
 //
+// CODURI DE IESIRE (din faza 8 - inainte era mereu 0, ceea ce facea imposibila
+// folosirea in scripturi):
+//     0  OK
+//     1  eroare (fisier lipsa, argument gresit, FITS invalid, fit esuat)
+//     2  SUSPECT
+//     3  PROBLEMA
+// Verdictele sunt monotone, deci "orice != 0" inseamna "nu e curat, uita-te".
+//
 // Fiecare mod e acelasi lant: incarca FITS -> analizor pur (Analysis/) -> raport
 // (Report/) -> harta PNG. Doar stratul asta atinge discul; analizoarele sunt Img -> record,
 // iar PngWriter nu tipareste nimic - mesajul "harta salvata" se scrie de aici.
@@ -20,13 +28,19 @@ namespace FlatCheck
                 WriteUsage(stdout);
                 return 0;
             }
+            if (o.Error != null)
+            {
+                stderr.WriteLine("EROARE: " + o.Error);
+                return 1;
+            }
 
+            int code;
             try
             {
-                if (o.Expo) RunExpo(o, stdout);
-                else if (o.Ratio != null) RunRatio(o, stdout);
-                else if (o.Light) RunLight(o, stdout);
-                else RunStructure(o, stdout);
+                if (o.Expo) code = ExitFor(RunExpo(o, stdout));
+                else if (o.Ratio != null) code = ExitFor(RunRatio(o, stdout));
+                else if (o.Light) code = ExitFor(RunLight(o, stdout));
+                else code = ExitFor(RunStructure(o, stdout));
             }
             catch (Exception e)
             {
@@ -34,11 +48,25 @@ namespace FlatCheck
                 return 1;
             }
             stdout.WriteLine();
-            return 0;
+            return code;
         }
 
-        // NOTA (problema cunoscuta 2): verdictul e calculat si tiparit, dar codul de
-        // iesire ramane 0 chiar si pentru PROBLEMA. Faza 8 il leaga.
+        internal static int ExitFor(string verdict) => verdict switch
+        {
+            "OK" => 0,
+            "SUSPECT" => 2,
+            _ => 3,
+        };
+
+        internal static int ExitFor(ExposureVerdict v) => v switch
+        {
+            ExposureVerdict.Ok => 0,
+            ExposureVerdict.NotRaw => 1,   // fisierul nu e ce cere modul: nu e un verdict
+            ExposureVerdict.AcceptableLow => 2,
+            ExposureVerdict.AcceptableHigh => 2,
+            _ => 3,
+        };
+
         static string RunStructure(Options o, TextWriter w)
         {
             var r = StructureAnalyzer.Analyze(FitsReader.Load(o.Image));
@@ -55,18 +83,20 @@ namespace FlatCheck
             return r.Verdict;
         }
 
-        static void RunLight(Options o, TextWriter w)
+        static string RunLight(Options o, TextWriter w)
         {
             var r = LightAnalyzer.Analyze(FitsReader.Load(o.Image));
             LightReport.Write(r, o.Image, w);
             SaveMap(o.OutPng, r.RadialMap, w);
+            return r.Verdict;
         }
 
-        static void RunExpo(Options o, TextWriter w)
+        static ExposureVerdict RunExpo(Options o, TextWriter w)
         {
             // NU Prepare - modul asta vrea CFA brut, la scala ADU originala.
             var r = ExposureAnalyzer.Analyze(FitsReader.Load(o.Image), o.Sat, o.Black, o.Sky);
             ExposureReport.Write(r, o.Image, w);
+            return r.Verdict;
         }
 
         static void SaveMap(string path, Img map, TextWriter w)

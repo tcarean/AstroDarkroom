@@ -28,7 +28,7 @@ namespace FlatCheck
                 throw new Exception("Cele doua imagini au dimensiuni diferite.");
 
             var ratio = Img.Divide(a, b);
-            double med = Stats.Percentile(ratio.D.ToList(), 50);
+            double med = Stats.Percentile(ratio.D, 50);
             for (int i = 0; i < ratio.D.Length; i++) ratio.D[i] /= med;
             int h = ratio.H, w = ratio.W;
 

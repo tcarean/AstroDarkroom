@@ -169,18 +169,42 @@ public class FitsReaderTests
     }
 
     /// <summary>
-    /// Known issue 4: a 1-D HDU computes npix = 0, so the reader never advances past the
-    /// header and ends up parsing the data region as a header. The message is therefore
-    /// "header incomplet" rather than "no 2-D image". Phase 8 should flip this to the
-    /// correct diagnostic.
+    /// Phase 8. npix is now the product of all NAXISn, so a 1-D HDU advances past its
+    /// data instead of leaving pos parked and re-parsing the data as a header. Before,
+    /// this failed with the misleading "header incomplet".
     /// </summary>
     [Fact]
-    public void KnownIssue_Naxis1_ReportsAMisleadingHeaderError()
+    public void Naxis1_ReportsThatThereIsNo2DImage()
     {
         var ex = Assert.Throws<Exception>(() => Load(FitsTestData.BuildFitsNaxis1(100)));
 
-        Assert.Contains("header incomplet", ex.Message);
-        Assert.DoesNotContain("2D", ex.Message);
+        Assert.Contains("niciun HDU cu imagine 2D", ex.Message);
+    }
+
+    /// <summary>Phase 8: the card loop stops at END instead of scanning the rest of the block.</summary>
+    [Fact]
+    public void CardsAfterEndAreIgnored()
+    {
+        // a bogus NAXIS1 planted after END would corrupt the geometry if it were read
+        byte[] good = FitsTestData.BuildFits(4, 4, (x, y) => 1234);
+        byte[] tampered = (byte[])good.Clone();
+        string junk = FitsTestData.Card("NAXIS1", "999");
+        int endCard = FindCard(tampered, "END");
+        System.Text.Encoding.ASCII.GetBytes(junk, 0, FitsTestData.CardSize,
+            tampered, (endCard + 1) * FitsTestData.CardSize);
+
+        var img = Load(tampered);
+
+        Assert.Equal(4, img.W);
+        Assert.Equal(1234, img.At(0, 0), 6);
+    }
+
+    static int FindCard(byte[] fits, string key)
+    {
+        for (int c = 0; c < 36; c++)
+            if (System.Text.Encoding.ASCII.GetString(fits, c * FitsTestData.CardSize, 8).Trim() == key)
+                return c;
+        throw new InvalidOperationException("card not found: " + key);
     }
 
     // ---------------------------------------------------------------- path overload

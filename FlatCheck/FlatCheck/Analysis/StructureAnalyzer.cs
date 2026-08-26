@@ -65,7 +65,7 @@ namespace FlatCheck
             {
                 Width = w,
                 Height = h,
-                RawMedian = Stats.Percentile(raw.D.ToList(), 50),
+                RawMedian = Stats.Percentile(raw.D, 50),
                 RawMax = raw.D.Max(),
                 FitCx = fx,
                 FitCy = fy,

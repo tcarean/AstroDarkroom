@@ -42,7 +42,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-Phases 0-7 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; only phase 8 (the bug fixes) is left.
+All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
 
 ## Conventions
 
@@ -283,13 +283,16 @@ surface. Matches Python.
 | illumination-centre offset | structure | 4.0% | 10.0% | `Th.CentroidOk/Bad` |
 | A/B structure | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | A/B corner spread | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
-| \|radial component\| | light | 2.0% | 5.0% | **inline literals** |
+| \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
-| centre level | expo | 50-65% | - | **inline locals** |
-| centre level (sky) | expo `--sky` | 15-50% | - | **inline locals** |
+| centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
+| centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
 
-`Th.ExpoLo` / `Th.ExpoHi` (50/60) are **dead** - nothing references them, and they
-contradict the values actually used (50/65). Don't trust them; fix or delete.
+Since phase 8 every threshold lives in `Th` - `--light` no longer has 2.0/5.0 inline
+and `--expo` no longer keeps its bands as locals. `Th.ExpoLo`/`Th.ExpoHi` used to be
+dead *and wrong* (50/60 while the code used 50/65); they now hold the real values.
+`Th.ExpoTarget` (57) and `Th.ExpoSkyTarget` (30) are the midpoints used for the
+suggested-stops arithmetic.
 
 ## PNG output
 
@@ -331,64 +334,53 @@ Intentional divergences:
 - No EXIF read, so no `suggest_shutter(...)` shutter-speed suggestions.
 - `Percentile` on an empty list returns 0 instead of raising.
 
+## Exit codes
+
+Since phase 8 the tool is usable from a script:
+
+| code | meaning |
+|---|---|
+| 0 | OK |
+| 1 | error - missing file, bad argument, invalid FITS, failed fit, or `--expo` on a file that isn't a raw flat |
+| 2 | SUSPECT (and `--expo`'s two "acceptable but..." bands) |
+| 3 | PROBLEMA |
+
+Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
+
 ## Known issues and gotchas
 
-Verified by running the current build unless marked otherwise. Issues 1 and 4 are
-**pinned by tests** that assert the current wrong behaviour - Phase 8 of the refactor
-has to flip those tests deliberately, so neither can be fixed by accident.
+Verified by running the current build unless marked otherwise. The CLI-contract and
+correctness bugs that used to live here were fixed in phase 8; what remains is
+behaviour that is either deliberate or not worth changing.
 
-1. **Argument order is positional-only.** `args[0]` is *always* taken as the image
-   path, so `flatcheck --expo file.fit` fails with
-   `EROARE: Could not find file '...\--expo'`. Only `flatcheck file.fit --expo`
-   works. `GetOpt` is a bare `Array.IndexOf`, with no validation that a flag's
-   value exists or isn't another flag.
-2. **Exit code is always 0 on success**, even for a `PROBLEMA` verdict.
-   `RunStructure` and `RunRatio` return their verdict string and
-   `FlatCheckCli.Run` *discards it*. Only an exception yields exit 1. This blocks
-   any scripted / CI use.
-3. **`LightAnalyzer` can throw `NullReferenceException`** (code reading, not
-   reproduced): if `Solve` returns `null` on the first sigma-clip iteration the
-   loop `break`s with `coef` still null, and the next line dereferences `coef[0]`.
-   Carried over deliberately in the phase-6 split, with a comment marking it.
-4. **FITS `NAXIS=1` gives a misleading error.** A 1-D HDU computes `npix = 0`, so
-   `dataBlocks = 0` and `pos` never advances past the header; the reader then
-   parses the data region as a header and eventually fails with
-   `FITS: header incomplet.` instead of `niciun HDU cu imagine 2D gasit`.
-   (Multi-HDU files with an empty `NAXIS=0` primary + IMAGE extension **do** work
-   correctly - verified.)
-5. **The header loop doesn't stop at `END`.** It sets `end = true` but keeps
-   scanning the remaining cards in that 2880-block, so anything after `END` is
-   still parsed into the dictionary.
-6. **Card parsing is naive.** It splits the value at the first `/`, which
-   corrupts any string value containing a slash (e.g. a path or date in a
-   `COMMENT`-adjacent card). Fine for the numeric keys actually used.
-7. **File extension is never validated** - `FitsReader.Load` is called on whatever path
+1. **Card parsing is naive.** It splits the value at the first `/`, which corrupts any
+   string value containing a slash (e.g. a path or date in a `COMMENT`-adjacent card).
+   Fine for the numeric keys actually used.
+2. **File extension is never validated** - `FitsReader.Load` is called on whatever path
    is given, and a non-FITS file surfaces as a parse error.
-8. **Dead code**: `Stats.RobustPtp` is never called (`LargeScalePtp` inlines the
-   same computation, but with p5/p95 rather than this function's p2/p98 default);
-   `Th.ExpoLo`/`Th.ExpoHi` are never read; `RadialModel`'s `centers`/`prof` return
-   values are discarded by `ModeStructure` (they fed the dropped Python profile
-   panel). All three are slated for deletion in Phase 8.
-9. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes
-   negative and indexing throws. Not reachable with real frames.
-10. **`--sat 0`** makes `rng = 0` and every percentage becomes ±∞/NaN; unvalidated.
-11. **`_crcTable` is lazily initialised static mutable state** - benign
-    single-threaded, but a data race if anything is ever parallelised.
-12. **The corner-spread metric has a non-zero floor.** The analysis centre is
-    `(w/2, h/2)`, but pixel indices run `0..w-1`, whose true middle is `(w-1)/2`.
-    That half-pixel offset puts the top-left corner fractionally farther from the
-    centre than the bottom-right, so even a *perfectly* radial field reports a
-    spread. It scales as ~1/n: measured 2.88% at 100 px, 1.44% at 200, 0.56% at
-    512, 0.28% at 1024 (cross-checked against a numpy reimplementation). At the
-    ~1500x1000 analysis raster the tool actually uses it is ~0.2%, far below the
-    1.5% OK threshold, so it is harmless in practice - but it is a systematic
-    floor, not noise, and it would swamp the threshold on a small enough frame.
-    Pinned by `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.
-13. **Memory is heavy.** `ModeStructure` computes the median of the *full-resolution*
-    raster just to print one line, and `Percentile` copies twice (`.ToList()` then
-    `.ToArray()`). Measured peak ~330 MB on a 3000×2000 frame (~55 bytes/pixel);
-    a 24 MP D3300 frame extrapolates to well over 1 GB. Runtime is fine
-    (1.3 s structure / 0.6 s expo / 0.5 s light on 3000×2000).
+3. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes negative
+   and indexing throws. Not reachable with real frames.
+4. **`_crcTable` is lazily initialised static mutable state** - benign single-threaded,
+   but a data race if anything is ever parallelised.
+5. **The corner-spread metric has a non-zero floor.** The analysis centre is
+   `(w/2, h/2)`, but pixel indices run `0..w-1`, whose true middle is `(w-1)/2`. That
+   half-pixel offset puts the top-left corner fractionally farther from the centre than
+   the bottom-right, so even a *perfectly* radial field reports a spread. It scales as
+   ~1/n: measured 2.88% at 100 px, 1.44% at 200, 0.56% at 512, 0.28% at 1024
+   (cross-checked against a numpy reimplementation). At the ~1500x1000 analysis raster
+   the tool actually uses it is ~0.2%, far below the 1.5% OK threshold, so it is
+   harmless in practice - but it is a systematic floor, not noise, and it would swamp
+   the threshold on a small enough frame. Pinned by
+   `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.
+   **Not a bug to fix**: changing the centre convention would break parity with
+   `flatcheck.py`.
+6. **`RadialModel`'s `centers`/`prof` return values are discarded** by
+   `StructureAnalyzer` - they fed the Python profile panel, which this port dropped.
+7. **Memory is still heavy**, though phase 8 halved the worst of it: `Percentile` now
+   has a `double[]` overload, so taking the full-resolution median no longer copies
+   twice. Measured peak was ~330 MB on a 3000x2000 frame before that change; a 24 MP
+   D3300 frame still runs into the high hundreds of MB. Runtime is fine
+   (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000).
 
 ## Build & test
 

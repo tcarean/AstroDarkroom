@@ -14,6 +14,8 @@ namespace FlatCheck.Tests;
 ///
 /// To re-approve after an intentional change:  FLATCHECK_UPDATE_GOLDEN=1 dotnet test
 /// Do that only when you meant to change the output, and read the resulting diff.
+///
+/// Exit codes (phase 8): 0 OK, 1 error, 2 SUSPECT, 3 PROBLEMA.
 /// </summary>
 public class GoldenOutputTests
 {
@@ -87,7 +89,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
 
-        Assert.Equal(0, exit);
+        Assert.Equal(3, exit);
         Assert.Contains("VERDICT: PROBLEMA", output);
         AssertGolden("structure_gradient", output);
     }
@@ -118,7 +120,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, a, "--ratio", b, "-o", ws.PathTo("out.png"));
 
-        Assert.Equal(0, exit);
+        Assert.Equal(3, exit);
         Assert.Contains("VERDICT: PROBLEMA", output);
         AssertGolden("ratio_gradient", output);
     }
@@ -146,7 +148,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "--light", "-o", ws.PathTo("out.png"));
 
-        Assert.Equal(0, exit);
+        Assert.Equal(3, exit);
         Assert.Contains("SUB-corectie", output);
         AssertGolden("light_undercorrected", output);
     }
@@ -176,7 +178,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "--expo", "--sky");
 
-        Assert.Equal(0, exit);
+        Assert.Equal(2, exit);   // "cam sus, dar acceptabil"
         Assert.Contains("mod --sky", output);
         AssertGolden("expo_cfa_sky", output);
     }
@@ -189,7 +191,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "--expo");
 
-        Assert.Equal(0, exit);
+        Assert.Equal(1, exit);   // the file is not what the mode needs
         Assert.Contains("NU PARE UN FLAT BRUT", output);
         Assert.DoesNotContain("VERDICT", output);
         AssertGolden("expo_rejects_debayered", output);
@@ -204,7 +206,7 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "--expo", "--sat", "4095", "--black", "150");
 
-        Assert.Equal(0, exit);
+        Assert.Equal(3, exit);   // PREA SUS
         Assert.Contains("--sat=4095", output);
         AssertGolden("expo_manual_scale", output);
     }
@@ -246,20 +248,44 @@ public class GoldenOutputTests
         Assert.Contains("EROARE:", output);
     }
 
-    /// <summary>
-    /// Known issue 1: flags are positional-only, so a flag placed before the path is
-    /// swallowed as the image path. Pinned here so Phase 8 has to update it deliberately.
-    /// </summary>
+    /// <summary>Phase 8: a flag before the path now behaves exactly like one after it.</summary>
     [Fact]
-    public void FlagBeforePath_IsCurrentlyTreatedAsTheImagePath()
+    public void FlagBeforePath_GivesTheSameResultAsFlagAfterPath()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = Flat(ws, "raw.fit", scene);
+
+        var before = RunCli(ws, "--expo", f);
+        var after = RunCli(ws, f, "--expo");
+
+        Assert.Equal(after.Exit, before.Exit);
+        Assert.Equal(after.Output, before.Output);
+        Assert.Equal(0, before.Exit);
+    }
+
+    [Fact]
+    public void ABadArgument_ExitsWith1AndExplainsItself()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "raw.fit", FitsTestData.Radial(Size, Size));
 
-        var (output, exit) = RunCli(ws, "--expo", f);
+        var (output, exit) = RunCli(ws, f, "--nope");
 
         Assert.Equal(1, exit);
-        Assert.Contains("--expo", output);
-        Assert.Contains("EROARE:", output);
+        Assert.Contains("optiune necunoscuta", output);
+    }
+
+    /// <summary>
+    /// Exit codes exist so the tool can be used from a script. Verdict severity is
+    /// monotonic, so "anything non-zero" means "not clean, go look".
+    /// </summary>
+    [Theory]
+    [InlineData("OK", 0)]
+    [InlineData("SUSPECT", 2)]
+    [InlineData("PROBLEMA", 3)]
+    public void ExitCodesFollowVerdictSeverity(string verdict, int expected)
+    {
+        Assert.Equal(expected, FlatCheckCli.ExitFor(verdict));
     }
 }

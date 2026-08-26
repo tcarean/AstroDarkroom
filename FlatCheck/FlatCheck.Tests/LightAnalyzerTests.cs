@@ -45,7 +45,7 @@ public class LightAnalyzerTests
 
         var r = LightAnalyzer.Analyze(img);
 
-        Assert.True(Math.Abs(r.RadPct) < LightAnalyzer.RadOk, "radPct was " + r.RadPct);
+        Assert.True(Math.Abs(r.RadPct) < Th.LightRadOk, "radPct was " + r.RadPct);
         Assert.Equal("OK", r.Verdict);
     }
 
@@ -67,7 +67,7 @@ public class LightAnalyzerTests
         var r = LightAnalyzer.Analyze(img);
 
         Assert.True(r.PlanePct > 5, "plane was " + r.PlanePct);
-        Assert.True(Math.Abs(r.RadPct) < LightAnalyzer.RadOk,
+        Assert.True(Math.Abs(r.RadPct) < Th.LightRadOk,
             "a pure plane leaked " + r.RadPct + "% into the radial term");
         Assert.Equal("OK", r.Verdict);
     }
@@ -127,6 +127,27 @@ public class LightAnalyzerTests
         Assert.Equal(1.0, r.RadialMap.D.Max(), 1);
     }
 
+    /// <summary>
+    /// The fit has 5 parameters, so it needs at least 5 usable tiles. A frame this small
+    /// yields fewer than that after Prepare and tiling, leaving the normal equations
+    /// singular and Solve returning null on the very first iteration.
+    ///
+    /// Before phase 8 that path dereferenced the null and threw NullReferenceException.
+    /// It now says what actually went wrong.
+    /// </summary>
+    [Theory]
+    [InlineData(8)]
+    [InlineData(16)]
+    public void ATooSmallFrame_FailsWithAnExplanationRatherThanANullReference(int n)
+    {
+        var img = TestImages.From(n, n, FitsTestData.Radial(n, n));
+
+        var ex = Assert.Throws<Exception>(() => LightAnalyzer.Analyze(img));
+
+        Assert.IsNotType<NullReferenceException>(ex);
+        Assert.Contains("Fitul fondului a esuat", ex.Message);
+    }
+
     [Fact]
     public void TheVerdictUsesTheAbsoluteRadialComponent()
     {
@@ -134,7 +155,7 @@ public class LightAnalyzerTests
         var under = LightAnalyzer.Analyze(TestImages.From(N, N, FitsTestData.Radial(N, N)));
         var over = LightAnalyzer.Analyze(TestImages.From(N, N, TestImages.InvertedRadial(N, N)));
 
-        Assert.Equal(Stats.Verdict(Math.Abs(under.RadPct), LightAnalyzer.RadOk, LightAnalyzer.RadBad), under.Verdict);
-        Assert.Equal(Stats.Verdict(Math.Abs(over.RadPct), LightAnalyzer.RadOk, LightAnalyzer.RadBad), over.Verdict);
+        Assert.Equal(Stats.Verdict(Math.Abs(under.RadPct), Th.LightRadOk, Th.LightRadBad), under.Verdict);
+        Assert.Equal(Stats.Verdict(Math.Abs(over.RadPct), Th.LightRadOk, Th.LightRadBad), over.Verdict);
     }
 }

@@ -31,7 +31,7 @@ namespace FlatCheck
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
                         string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
-                        if (key == "END") { end = true; }
+                        if (key == "END") { end = true; break; }   // nimic dupa END nu mai conteaza
                         if (card.Length > 10 && card[8] == '=')
                         {
                             string val = card.Substring(9);
@@ -56,7 +56,11 @@ namespace FlatCheck
                 double bzero = HDbl(hdr, "BZERO", 0.0);
                 double bscale = HDbl(hdr, "BSCALE", 1.0);
 
-                long npix = (long)n1 * n2 * Math.Max(1, n3);
+                // Produsul TUTUROR axelor. Inainte era n1*n2*max(1,n3), care pentru un HDU
+                // 1-D dadea 0 -> pos nu avansa, iar zona de date era parsata ca header,
+                // esuand cu "header incomplet" in loc de "niciun HDU cu imagine 2D".
+                long npix = 1;
+                for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
                 int bytesPer = Math.Abs(bitpix) / 8;
                 long dataBytes = npix * bytesPer;
                 long dataBlocks = (dataBytes + 2879) / 2880 * 2880;

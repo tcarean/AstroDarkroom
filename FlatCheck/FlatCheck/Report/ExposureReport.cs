@@ -79,10 +79,10 @@ namespace FlatCheck
                     break;
                 case ExposureVerdict.TooLow:
                     w.WriteLine("    VERDICT: PREA JOS pentru sky flat");
-                    w.WriteLine($"    Creste cu ~{Math.Log2(30.0 / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
+                    w.WriteLine($"    Creste cu ~{Math.Log2(Th.ExpoSkyTarget / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
                     break;
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {ExposureAnalyzer.SkyLo:F0}-{ExposureAnalyzer.SkyHi:F0}%)");
+                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {Th.ExpoSkyLo:F0}-{Th.ExpoSkyHi:F0}%)");
                     w.WriteLine("    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,");
                     w.WriteLine("    nu din a urca expunerea (ai risca stele). NU forta mai sus.");
                     break;
@@ -101,7 +101,7 @@ namespace FlatCheck
             {
                 case ExposureVerdict.TooHigh:
                     {
-                        double stops = cen > 0 ? Math.Log2(57.0 / cen) : -1;
+                        double stops = cen > 0 ? Math.Log2(Th.ExpoTarget / cen) : -1;
                         w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""));
                         w.WriteLine($"    Scade expunerea cu ~{-stops:F1} stopuri.");
                         if (clipping)
@@ -110,19 +110,19 @@ namespace FlatCheck
                     }
                 case ExposureVerdict.TooLow:
                     w.WriteLine("    VERDICT: PREA JOS");
-                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(57.0 / cen):F1} stopuri.");
+                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
                     w.WriteLine("    Sub ~30% in centru masterul iese zgomotos (zgomot fixed-pattern).");
                     break;
                 case ExposureVerdict.AcceptableLow:
                     w.WriteLine("    VERDICT: ACCEPTABIL, dar cam jos");
-                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(57.0 / cen):F1} stopuri.");
+                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
                     break;
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {ExposureAnalyzer.CenLo:F0}-{ExposureAnalyzer.CenHi:F0}%)");
+                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {Th.ExpoLo:F0}-{Th.ExpoHi:F0}%)");
                     break;
                 default:
                     w.WriteLine("    VERDICT: ACCEPTABIL, dar cam sus");
-                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(57.0 / cen):F1} stopuri.");
+                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
                     break;
             }
         }

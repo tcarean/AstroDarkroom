@@ -76,22 +76,6 @@ public class StatsTests
         Assert.Equal(new List<double> { 3, 1, 2 }, data);
     }
 
-    // ---------------------------------------------------------------- RobustPtp
-
-    /// <summary>
-    /// Dead code - nothing calls it, and its p2/p98 default disagrees with the p5/p95
-    /// that LargeScalePtp inlines. Pinned so that deleting it in Phase 8 is a conscious
-    /// act; this test should be deleted along with it.
-    /// </summary>
-    [Fact]
-    public void RobustPtp_DefaultsToP2ToP98_WhichIsNotWhatLargeScalePtpUses()
-    {
-        var data = Enumerable.Range(0, 101).Select(i => (double)i);
-
-        Assert.Equal(96, Stats.RobustPtp(data), 9);          // p98 - p2 = 98 - 2
-        Assert.Equal(90, Stats.RobustPtp(data, 5, 95), 9);   // what the real metric uses
-    }
-
     // ---------------------------------------------------------------- Interp
 
     [Fact]

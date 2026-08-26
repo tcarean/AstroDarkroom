@@ -1,17 +1,36 @@
-// Thresholds.cs - pragurile de verdict, in procente.
-// ATENTIE: nu toate pragurile sunt aici. --light foloseste 2.0/5.0 inline, iar --expo
-// benzile 30/50/65/80 (si 15/50/60 pt --sky) ca locale. Vezi CLAUDE.md.
+// Thresholds.cs - toate pragurile de verdict, in procente.
+//
+// Sunt reguli empirice, nu constante fizice: un punct de plecare, de calibrat pe un
+// setup despre care esti sigur. Din faza 8 sunt TOATE aici - inainte, --light avea
+// 2.0/5.0 inline si --expo benzile ca locale, ceea ce facea imposibil de vazut
+// intr-un singur loc dupa ce se ia o decizie.
 
 namespace FlatCheck
 {
-    // ---------------- praguri (procente) ----------------
     static class Th
     {
+        // --- structura ---
         public const double CornerOk = 1.5, CornerBad = 4.0;
-        public const double AzimOk = 1.5, AzimBad = 4.0;
+        public const double AzimOk = 1.5, AzimBad = 4.0;          // refolosite si pt reziduu
         public const double CentroidOk = 4.0, CentroidBad = 10.0;
+
+        // --- rotatie 180 ---
         public const double RatioOk = 1.0, RatioBad = 3.0;
-        public const double ExpoLo = 50.0, ExpoHi = 60.0;  // tinta canal cel mai luminos
-        public const double ExpoClip = 0.05;               // % pixeli saturati = clipping
+
+        // --- end-to-end ---
+        public const double LightRadOk = 2.0, LightRadBad = 5.0;
+
+        // --- expunere, pe fereastra centrala 20% a canalului celui mai luminos ---
+        public const double ExpoClip = 0.05;        // % pixeli saturati = clipping
+        public const double ExpoTooLow = 30.0;      // sub asta masterul iese zgomotos
+        public const double ExpoLo = 50.0;          // tinta pt panou
+        public const double ExpoHi = 65.0;
+        public const double ExpoTooHigh = 80.0;
+        public const double ExpoTarget = 57.0;      // mijlocul tintei, pt sugestia in stopuri
+
+        // --- expunere pe cer (blue hour) ---
+        public const double ExpoSkyLo = 15.0, ExpoSkyHi = 50.0;
+        public const double ExpoSkyTooHigh = 60.0;
+        public const double ExpoSkyTarget = 30.0;
     }
 }

@@ -31,9 +31,6 @@ namespace FlatCheck
 
     internal static class LightAnalyzer
     {
-        // Pragurile astea sunt inline si nu in Th - vezi CLAUDE.md, faza 8 le muta.
-        internal const double RadOk = 2.0, RadBad = 5.0;
-
         internal static LightResult Analyze(Img raw)
         {
             Img img = Img.Prepare(raw);
@@ -88,9 +85,12 @@ namespace FlatCheck
                 for (int i = 0; i < n; i++) keep[i] = res[i] < thr;
             }
 
-            // NOTA (problema cunoscuta 3): daca Solve intoarce null la prima iteratie,
-            // coef ramane null si linia urmatoare arunca NullReferenceException.
-            // Comportament pastrat intentionat; faza 8 il repara.
+            // Daca Solve a esuat chiar la prima iteratie, coef e inca null. Inainte de
+            // faza 8 linia urmatoare arunca NullReferenceException; acum spune de ce.
+            if (coef == null)
+                throw new Exception(
+                    "Fitul fondului a esuat (sistem singular) - prea putine tile-uri utilizabile.");
+
             double a0 = coef[0], b0 = coef[1], c0 = coef[2], d0 = coef[3], e0 = coef[4];
             double radAtCorner = d0 + e0;                       // R2 = 1 in colt
             double radPct = -radAtCorner / a0 * 100;            // + = fondul cade spre margini
@@ -110,7 +110,7 @@ namespace FlatCheck
                 TileRows = th,
                 TileCols = tw,
                 RadialMap = radMap,
-                Verdict = Stats.Verdict(Math.Abs(radPct), RadOk, RadBad),
+                Verdict = Stats.Verdict(Math.Abs(radPct), Th.LightRadOk, Th.LightRadBad),
             };
         }
     }

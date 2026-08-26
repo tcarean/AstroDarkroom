@@ -28,8 +28,9 @@ namespace FlatCheck
         /// <summary>Scaleaza reziduul si-l converteste in RGB. Intoarce si capetele, ca sa fie verificabile.</summary>
         internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid)
         {
-            var vals = resid.D.ToList();
-            double lo = Stats.Percentile(vals, 1), hi = Stats.Percentile(vals, 99);
+            // o singura sortare pentru ambele percentile
+            var sorted = Stats.Sorted(resid.D);
+            double lo = Stats.OfSorted(sorted, 1), hi = Stats.OfSorted(sorted, 99);
             double pad = Math.Max(hi - lo, 1e-4) * 0.1;
             lo -= pad; hi += pad;
 

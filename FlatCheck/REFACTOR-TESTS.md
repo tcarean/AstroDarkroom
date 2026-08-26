@@ -1,7 +1,6 @@
 # Refactoring plan: making FlatCheck testable
 
-> **Status: phases 0-7 are done** (213 tests, all green). Only phase 8 - the bug
-> fixes, which change user-visible behaviour - is left.
+> **Status: complete.** All eight phases are done; 225 tests, all green.
 > What actually shipped, and where it deviated from the plan below, is recorded in
 > "Execution notes" at the end.
 
@@ -335,7 +334,7 @@ in .NET 8). Parse the chunk stream, verify each CRC, inflate the IDAT with
 - `SaveResidualPng` scaling: the 1/99 percentile range plus 10% padding, with
   white pinned at 1.0.
 
-### Phase 8 - bug fixes, each pinned by a test
+### Phase 8 - bug fixes, each pinned by a test ✅ DONE
 
 Only now, and one commit per fix, re-approving the golden files each time:
 
@@ -567,3 +566,53 @@ Only Phase 8. Every fix in it changes behaviour a user or a script could notice,
 three of them are pinned by tests that currently assert the *wrong* behaviour - so
 each needs a deliberate decision, not a tidy-up. The two that change the CLI contract
 (flag ordering, exit codes) should be confirmed before shipping.
+
+
+## Execution notes (phase 8)
+
+All eight fixes landed, with the user's explicit go-ahead on the two that change the
+CLI contract. 225 tests green. **The golden files did not move** - every mode prints
+exactly what it printed before - so the only user-visible changes are the exit codes
+and the argument handling.
+
+| # | fix | how it is covered |
+|---|---|---|
+| 1 | flags accepted anywhere | `AFlagBeforeThePath_ParsesTheSameAsAFlagAfterIt`, plus a CLI-level test asserting both orders give identical output |
+| 2 | exit codes | `ExitCodesFollowVerdictSeverity` + every golden test now asserts its code |
+| 3 | `coef == null` guarded | `ATooSmallFrame_FailsWithAnExplanationRatherThanANullReference` |
+| 4 | `NAXIS=1` diagnostic | `Naxis1_ReportsThatThereIsNo2DImage` (flipped from the phase-3 test) |
+| 5 | stop at `END` | `CardsAfterEndAreIgnored` |
+| 6 | `--sat` validated | `ASaturationAtOrBelowBlack_IsAnError` |
+| 7 | thresholds consolidated | every threshold now referenced from `Th`; goldens unchanged |
+| 8 | `Percentile` double copy | `double[]` overload plus `Sorted`/`OfSorted` for callers wanting several percentiles from one sort |
+
+**Exit code mapping**, which the plan left unspecified beyond "2 for PROBLEMA":
+
+    0  OK          1  error          2  SUSPECT          3  PROBLEMA
+
+SUSPECT gets its own non-zero code so verdict severity stays monotonic and
+"anything non-zero" means "not clean". `--expo` maps its enum onto the same scale, with
+`NotRaw` as 1, since a file that is not a raw flat is a usage error rather than a
+verdict.
+
+**Mutation-tested.** Four of the five fixes were caught first time; the `coef == null`
+guard was **not** - it had no test, because when the bug was first documented I could
+not construct an input that reached it. The trigger turned out to be simple: the fit has
+five parameters, so any frame yielding fewer than five tiles after `Prepare` leaves the
+normal equations singular. An 8x8 or 16x16 frame does it. With the test added, removing
+the guard fails 2 tests.
+
+That is the third time mutation testing caught a gap that reading the tests did not.
+
+## Done
+
+The plan is complete. `flatcheck.py` remains the numeric oracle for formula changes,
+and `FLATCHECK_UPDATE_GOLDEN=1 dotnet test` re-approves console output when a change to
+it is intended.
+
+One debt from phase 0 is still open and worth stating plainly: the golden files were
+captured from the C# build itself, so they pin behaviour without independently
+confirming it. The primitives in `StatsTests` *are* numpy-verified, and the phase-5 and
+phase-6 metric and analyzer tests assert properties derived from first principles - but
+the mode-level console numbers have never been cross-checked against `flatcheck.py` on
+the same synthetic input. That would be the next genuinely useful thing to do.
