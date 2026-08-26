@@ -10,55 +10,8 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    // ---------------- praguri (procente) ----------------
-    static class Th
-    {
-        public const double CornerOk = 1.5, CornerBad = 4.0;
-        public const double AzimOk = 1.5, AzimBad = 4.0;
-        public const double CentroidOk = 4.0, CentroidBad = 10.0;
-        public const double RatioOk = 1.0, RatioBad = 3.0;
-        public const double ExpoLo = 50.0, ExpoHi = 60.0;  // tinta canal cel mai luminos
-        public const double ExpoClip = 0.05;               // % pixeli saturati = clipping
-    }
-
-    // ---------------- imagine 2D simpla ----------------
-    sealed class Img
-    {
-        public int H, W;
-        public double[] D; // row-major, lungime H*W
-        public Img(int h, int w) { H = h; W = w; D = new double[h * w]; }
-        public double At(int y, int x) => D[y * W + x];
-        public void Set(int y, int x, double v) => D[y * W + x] = v;
-    }
-
     internal static class Core
     {
-        // ========================================================= preprocesare
-        internal static Img BlockMean(Img a, int k)
-        {
-            if (k <= 1) return a;
-            int h = a.H / k, w = a.W / k;
-            var o = new Img(h, w);
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    double s = 0;
-                    for (int dy = 0; dy < k; dy++)
-                        for (int dx = 0; dx < k; dx++)
-                            s += a.At(y * k + dy, x * k + dx);
-                    o.Set(y, x, s / (k * k));
-                }
-            return o;
-        }
-
-        // block-mean 2x2 (omoara CFA Bayer) apoi downsample la ~1200px pe latura lunga
-        internal static Img Prepare(Img data, int targetLong = 1200)
-        {
-            Img img = BlockMean(data, 2);
-            int k = Math.Max(1, (int)(Math.Max(img.H, img.W) / (double)targetLong));
-            return BlockMean(img, k);
-        }
-
         // ========================================================= geometrie
         // Vertexul unui paraboloid fitat pe log(I) = centrul de iluminare.
         static (double cx, double cy) FitCenter(Img img)
@@ -81,7 +34,7 @@ namespace FlatCheck
                         for (int j = 0; j < 6; j++) AtA[i, j] += r[i] * r[j];
                     }
                 }
-            double[] coef = Solve(AtA, Atb, 6);
+            double[] coef = Stats.Solve(AtA, Atb, 6);
             if (coef == null) return (w / 2.0, h / 2.0);
             double b = coef[1], c = coef[2], d = coef[3], e = coef[4], f = coef[5];
             // M = [[2d, f],[f, 2e]]; sol = M^-1 * [-b,-c]
@@ -93,29 +46,6 @@ namespace FlatCheck
             double cy = sy * (h / 2.0) + h / 2.0;
             if (!(cx > 0 && cx < w && cy > 0 && cy < h)) return (w / 2.0, h / 2.0);
             return (cx, cy);
-        }
-
-        // Gauss cu pivotare partiala; intoarce null daca singular.
-        static double[] Solve(double[,] A, double[] b, int n)
-        {
-            var M = new double[n, n + 1];
-            for (int i = 0; i < n; i++) { for (int j = 0; j < n; j++) M[i, j] = A[i, j]; M[i, n] = b[i]; }
-            for (int col = 0; col < n; col++)
-            {
-                int piv = col; double best = Math.Abs(M[col, col]);
-                for (int r = col + 1; r < n; r++) if (Math.Abs(M[r, col]) > best) { best = Math.Abs(M[r, col]); piv = r; }
-                if (best < 1e-15) return null;
-                if (piv != col) for (int j = 0; j <= n; j++) { var t = M[col, j]; M[col, j] = M[piv, j]; M[piv, j] = t; }
-                for (int r = 0; r < n; r++)
-                {
-                    if (r == col) continue;
-                    double factor = M[r, col] / M[col, col];
-                    for (int j = col; j <= n; j++) M[r, j] -= factor * M[col, j];
-                }
-            }
-            var x = new double[n];
-            for (int i = 0; i < n; i++) x[i] = M[i, n] / M[i, i];
-            return x;
         }
 
         // Profil radial robust (percentila per inel) + model 2D reconstruit prin interpolare.
@@ -144,7 +74,7 @@ namespace FlatCheck
                 if (binVals[i].Count >= 8)
                 {
                     centers.Add((i + 0.5) / nbins * rmax);
-                    prof.Add(Percentile(binVals[i], pct));
+                    prof.Add(Stats.Percentile(binVals[i], pct));
                 }
             var ca = centers.ToArray();
             var pa = prof.ToArray();
@@ -153,20 +83,9 @@ namespace FlatCheck
                 for (int x = 0; x < w; x++)
                 {
                     double r = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-                    model.Set(y, x, Interp(r, ca, pa));
+                    model.Set(y, x, Stats.Interp(r, ca, pa));
                 }
             return (ca, pa, model);
-        }
-
-        static double Interp(double x, double[] xs, double[] ys)
-        {
-            if (xs.Length == 0) return 0;
-            if (x <= xs[0]) return ys[0];
-            if (x >= xs[xs.Length - 1]) return ys[ys.Length - 1];
-            int lo = 0, hi = xs.Length - 1;
-            while (hi - lo > 1) { int m = (lo + hi) / 2; if (xs[m] <= x) lo = m; else hi = m; }
-            double t = (x - xs[lo]) / (xs[hi] - xs[lo]);
-            return ys[lo] + t * (ys[hi] - ys[lo]);
         }
 
         // ========================================================= metrici
@@ -178,7 +97,7 @@ namespace FlatCheck
             {
                 var l = new List<double>();
                 for (int y = y0; y < y1; y++) for (int x = x0; x < x1; x++) l.Add(img.At(y, x));
-                return Percentile(l, 50);
+                return Stats.Percentile(l, 50);
             }
             var vals = new Dictionary<string, double>
             {
@@ -216,10 +135,10 @@ namespace FlatCheck
             for (int i = 0; i < nrings; i++)
             {
                 var meds = new List<double>();
-                for (int s = 0; s < nsect; s++) if (buckets[i, s].Count >= 8) meds.Add(Percentile(buckets[i, s], 50));
+                for (int s = 0; s < nsect; s++) if (buckets[i, s].Count >= 8) meds.Add(Stats.Percentile(buckets[i, s], 50));
                 if (meds.Count >= nsect - 1)
                 {
-                    double mn = meds.Min(), mx = meds.Max(), md = Percentile(meds, 50);
+                    double mn = meds.Min(), mx = meds.Max(), md = Stats.Percentile(meds, 50);
                     outl.Add(((edges[i] + edges[i + 1]) / 2 / rIns, (mx - mn) / md * 100));
                 }
             }
@@ -230,7 +149,7 @@ namespace FlatCheck
         static double LargeScalePtp(Img resid, double cx, double cy, double rIns, int ntiles = 40)
         {
             int k = Math.Max(2, (int)(resid.W / (double)ntiles));
-            Img t = BlockMean(resid, k);
+            Img t = Img.BlockMean(resid, k);
             var inside = new List<double>();
             for (int y = 0; y < t.H; y++)
                 for (int x = 0; x < t.W; x++)
@@ -239,41 +158,19 @@ namespace FlatCheck
                     if (tr < rIns) inside.Add(t.At(y, x));
                 }
             if (inside.Count < 10) return double.NaN;
-            return Percentile(inside, 95) - Percentile(inside, 5);
+            return Stats.Percentile(inside, 95) - Stats.Percentile(inside, 5);
         }
-
-        static double RobustPtp(IEnumerable<double> a, double lo = 2, double hi = 98)
-        {
-            var l = a.ToList();
-            return Percentile(l, hi) - Percentile(l, lo);
-        }
-
-        static double Percentile(List<double> data, double p)
-        {
-            if (data.Count == 0) return 0;
-            var s = data.ToArray();
-            Array.Sort(s);
-            if (s.Length == 1) return s[0];
-            double idx = p / 100.0 * (s.Length - 1);
-            int lo = (int)Math.Floor(idx), hi = (int)Math.Ceiling(idx);
-            double frac = idx - lo;
-            return s[lo] * (1 - frac) + s[hi] * frac; // interpolare liniara, ca numpy
-        }
-
-        static string Verdict(double val, double ok, double bad)
-            => val < ok ? "OK" : (val < bad ? "SUSPECT" : "PROBLEMA");
-        static int Rank(string s) => s == "OK" ? 0 : (s == "SUSPECT" ? 1 : 2);
 
         // ========================================================= moduri
         internal static string ModeStructure(string path, string plotPath, TextWriter outw)
         {
             Img raw = FitsReader.Load(path);
-            Img img = Prepare(raw);
+            Img img = Img.Prepare(raw);
             int h = img.H, w = img.W;
 
             outw.WriteLine($"\n=== STRUCTURA: {path} ===");
             outw.WriteLine($"    dimensiune analiza : {w} x {h} (dupa 2x2 + downsample)");
-            outw.WriteLine($"    median / max ADU   : {Percentile(raw.D.ToList(), 50):F0} / {raw.D.Max():F0}");
+            outw.WriteLine($"    median / max ADU   : {Stats.Percentile(raw.D.ToList(), 50):F0} / {raw.D.Max():F0}");
 
             double cx = w / 2.0, cy = h / 2.0;
             var (fx, fy) = FitCenter(img);
@@ -285,7 +182,7 @@ namespace FlatCheck
             double spread = (cor.Values.Max() - cor.Values.Min()) / cmean * 100;
 
             var (rc, prof, model) = RadialModel(img, cx, cy);
-            var resid = Divide(img, model);
+            var resid = Img.Divide(img, model);
             double rIns = Math.Min(Math.Min(cx, cy), Math.Min(w - cx, h - cy));
             double resPtp = LargeScalePtp(resid, cx, cy, rIns) * 100;
 
@@ -296,20 +193,20 @@ namespace FlatCheck
             outw.WriteLine($"    centru -> colt          : {vignStops:F2} stopuri (colt = {cmean / ctr * 100:F0}% din centru)");
 
             outw.WriteLine("\n  TESTE");
-            outw.WriteLine($"    imprastiere 4 colturi   : {spread,5:F2} %   [{Verdict(spread, Th.CornerOk, Th.CornerBad)}]");
+            outw.WriteLine($"    imprastiere 4 colturi   : {spread,5:F2} %   [{Stats.Verdict(spread, Th.CornerOk, Th.CornerBad)}]");
             foreach (var kv in cor)
                 outw.WriteLine($"        {kv.Key,-14}: {kv.Value / cmean * 100,6:F2} % din media colturilor");
-            outw.WriteLine($"    asimetrie azimutala max : {azMax,5:F2} %   [{Verdict(azMax, Th.AzimOk, Th.AzimBad)}]");
-            outw.WriteLine($"    reziduu dupa model rad. : {resPtp,5:F2} %   [{Verdict(resPtp, Th.AzimOk, Th.AzimBad)}]");
-            outw.WriteLine($"    offset centru iluminare : {off,5:F2} %   [{Verdict(off, Th.CentroidOk, Th.CentroidBad)}]");
+            outw.WriteLine($"    asimetrie azimutala max : {azMax,5:F2} %   [{Stats.Verdict(azMax, Th.AzimOk, Th.AzimBad)}]");
+            outw.WriteLine($"    reziduu dupa model rad. : {resPtp,5:F2} %   [{Stats.Verdict(resPtp, Th.AzimOk, Th.AzimBad)}]");
+            outw.WriteLine($"    offset centru iluminare : {off,5:F2} %   [{Stats.Verdict(off, Th.CentroidOk, Th.CentroidBad)}]");
             outw.WriteLine($"        varf iluminare = ({fx:F0}, {fy:F0})  vs  centru senzor = ({cx:F0}, {cy:F0})");
 
             string worst = new[] {
-                Verdict(spread, Th.CornerOk, Th.CornerBad),
-                Verdict(azMax, Th.AzimOk, Th.AzimBad),
-                Verdict(resPtp, Th.AzimOk, Th.AzimBad),
-                Verdict(off, Th.CentroidOk, Th.CentroidBad)
-            }.OrderByDescending(Rank).First();
+                Stats.Verdict(spread, Th.CornerOk, Th.CornerBad),
+                Stats.Verdict(azMax, Th.AzimOk, Th.AzimBad),
+                Stats.Verdict(resPtp, Th.AzimOk, Th.AzimBad),
+                Stats.Verdict(off, Th.CentroidOk, Th.CentroidBad)
+            }.OrderByDescending(Stats.Rank).First();
 
             outw.WriteLine($"\n  VERDICT: {worst}");
             if (worst != "OK")
@@ -323,11 +220,11 @@ namespace FlatCheck
 
         internal static string ModeRatio(string pathA, string pathB, string plotPath, TextWriter outw)
         {
-            Img a = Prepare(FitsReader.Load(pathA));
-            Img b = Prepare(FitsReader.Load(pathB));
+            Img a = Img.Prepare(FitsReader.Load(pathA));
+            Img b = Img.Prepare(FitsReader.Load(pathB));
             if (a.H != b.H || a.W != b.W) throw new Exception("Cele doua imagini au dimensiuni diferite.");
-            var ratio = Divide(a, b);
-            double med = Percentile(ratio.D.ToList(), 50);
+            var ratio = Img.Divide(a, b);
+            double med = Stats.Percentile(ratio.D.ToList(), 50);
             for (int i = 0; i < ratio.D.Length; i++) ratio.D[i] /= med;
             int h = ratio.H, w = ratio.W;
 
@@ -340,12 +237,12 @@ namespace FlatCheck
             double cmean = cor.Values.Average();
             double spread = (cor.Values.Max() - cor.Values.Min()) / cmean * 100;
 
-            outw.WriteLine($"\n    structura in raport A/B : {ptp,5:F2} %   [{Verdict(ptp, Th.RatioOk, Th.RatioBad)}]");
-            outw.WriteLine($"    imprastiere 4 colturi   : {spread,5:F2} %   [{Verdict(spread, Th.RatioOk, Th.RatioBad)}]");
+            outw.WriteLine($"\n    structura in raport A/B : {ptp,5:F2} %   [{Stats.Verdict(ptp, Th.RatioOk, Th.RatioBad)}]");
+            outw.WriteLine($"    imprastiere 4 colturi   : {spread,5:F2} %   [{Stats.Verdict(spread, Th.RatioOk, Th.RatioBad)}]");
             outw.WriteLine("    (eroarea reala in fiecare master e ~jumatate din cifrele astea)");
 
-            string worst = new[] { Verdict(ptp, Th.RatioOk, Th.RatioBad), Verdict(spread, Th.RatioOk, Th.RatioBad) }
-                .OrderByDescending(Rank).First();
+            string worst = new[] { Stats.Verdict(ptp, Th.RatioOk, Th.RatioBad), Stats.Verdict(spread, Th.RatioOk, Th.RatioBad) }
+                .OrderByDescending(Stats.Rank).First();
             outw.WriteLine($"\n  VERDICT: {worst}");
             outw.WriteLine(worst == "OK"
                 ? "    Setup-ul de flats e curat. Poti construi biblioteca pe el."
@@ -371,7 +268,7 @@ namespace FlatCheck
                         for (int dx = 0; dx < k; dx++)
                             vals.Add(img.At(ty * k + dy, tx * k + dx));
                     int idx = ty * ww + tx;
-                    bg[idx] = Percentile(vals, pct);
+                    bg[idx] = Stats.Percentile(vals, pct);
                     bx[idx] = (tx + 0.5) * k;
                     by[idx] = (ty + 0.5) * k;
                 }
@@ -381,7 +278,7 @@ namespace FlatCheck
         internal static void ModeLight(string path, string plotPath, TextWriter outw)
         {
             Img raw = FitsReader.Load(path);
-            Img img = Prepare(raw);
+            Img img = Img.Prepare(raw);
             int h = img.H, w = img.W;
             double cx = w / 2.0, cy = h / 2.0;
             double rCorner = Math.Sqrt(cx * cx + cy * cy);
@@ -412,7 +309,7 @@ namespace FlatCheck
                     double[] r = { 1, X[i], Y[i], R2[i], R2[i] * R2[i] };
                     for (int a = 0; a < 5; a++) { Atb[a] += r[a] * V[i]; for (int b = 0; b < 5; b++) AtA[a, b] += r[a] * r[b]; }
                 }
-                coef = Solve(AtA, Atb, 5);
+                coef = Stats.Solve(AtA, Atb, 5);
                 if (coef == null) break;
                 var res = new double[n];
                 var kept = new List<double>();
@@ -421,9 +318,9 @@ namespace FlatCheck
                     res[i] = V[i] - (coef[0] + coef[1] * X[i] + coef[2] * Y[i] + coef[3] * R2[i] + coef[4] * R2[i] * R2[i]);
                     if (keep[i]) kept.Add(res[i]);
                 }
-                double medr = Percentile(kept, 50);
+                double medr = Stats.Percentile(kept, 50);
                 var absdev = kept.Select(x => Math.Abs(x - medr)).ToList();
-                double s = 1.4826 * Percentile(absdev, 50);
+                double s = 1.4826 * Stats.Percentile(absdev, 50);
                 double thr = 2.5 * Math.Max(s, 1e-9);
                 for (int i = 0; i < n; i++) keep[i] = res[i] < thr;
             }
@@ -436,7 +333,7 @@ namespace FlatCheck
 
             outw.WriteLine($"\n    tile-uri folosite       : {keptCount} / {n} (restul = nebulozitate/stele, respinse)");
             outw.WriteLine($"    gradient de cer (plan)  : {planePct,5:F2} %  <- poluare luminoasa, IGNORA");
-            outw.WriteLine($"    componenta radiala      : {radPct,6:+0.00;-0.00} %   [{Verdict(Math.Abs(radPct), 2.0, 5.0)}]  <- ASTA e flat-ul");
+            outw.WriteLine($"    componenta radiala      : {radPct,6:+0.00;-0.00} %   [{Stats.Verdict(Math.Abs(radPct), 2.0, 5.0)}]  <- ASTA e flat-ul");
 
             outw.WriteLine("\n  INTERPRETARE");
             if (Math.Abs(radPct) < 2.0)
@@ -459,13 +356,6 @@ namespace FlatCheck
             var radMap = new Img(th, tw);
             for (int i = 0; i < n; i++) radMap.D[i] = 1.0 + (d0 * R2[i] + e0 * R2[i] * R2[i]) / a0;
             SaveResidualPng(plotPath, radMap, outw);
-        }
-
-        static Img Divide(Img a, Img b)
-        {
-            var o = new Img(a.H, a.W);
-            for (int i = 0; i < a.D.Length; i++) o.D[i] = a.D[i] / Math.Max(b.D[i], 1e-12);
-            return o;
         }
 
         // ========================================================= expunere
@@ -497,7 +387,7 @@ namespace FlatCheck
             for (int y = 0; y < data.H; y++)
                 for (int x = 0; x < data.W; x++)
                     ch[(y & 1) * 2 + (x & 1)].Add(data.At(y, x));
-            var meds = ch.Select(c => Percentile(c, 50)).ToArray();
+            var meds = ch.Select(c => Stats.Percentile(c, 50)).ToArray();
             double mmax = meds.Max(), mmin = meds.Min();
             bool isCfa = mmax / Math.Max(mmin, 1e-9) > 1.15;
             int bright = Array.IndexOf(meds, mmax);
@@ -516,7 +406,7 @@ namespace FlatCheck
             for (int y = cy0; y < cy1; y++)
                 for (int x = cx0; x < cx1; x++)
                     cenVals.Add(data.At(y * 2 + oy, x * 2 + ox));
-            double cenMed = (Percentile(cenVals, 50) - black) / rng * 100;    // decizie
+            double cenMed = (Stats.Percentile(cenVals, 50) - black) / rng * 100;    // decizie
             double globPct = (mmax - black) / rng * 100;                       // informativ
             double cenClip = cenVals.Count(v => v >= 0.98 * white) / (double)cenVals.Count * 100;
 
@@ -541,8 +431,8 @@ namespace FlatCheck
                 int my0 = (int)(data.H * 0.4), my1 = (int)(data.H * 0.6);
                 int mx0 = (int)(data.W * 0.4), mx1 = (int)(data.W * 0.6);
                 for (int y = my0; y < my1; y++) for (int x = mx0; x < mx1; x++) cenVals.Add(data.At(y, x));
-                cenMed = (Percentile(cenVals, 50) - black) / rng * 100;
-                globPct = (Percentile(data.D.ToList(), 50) - black) / rng * 100;
+                cenMed = (Stats.Percentile(cenVals, 50) - black) / rng * 100;
+                globPct = (Stats.Percentile(data.D.ToList(), 50) - black) / rng * 100;
                 cenClip = cenVals.Count(v => v >= 0.98 * white) / (double)cenVals.Count * 100;
             }
 
@@ -643,7 +533,7 @@ namespace FlatCheck
         internal static void SaveResidualPng(string path, Img resid, TextWriter outw)
         {
             var vals = resid.D.ToList();
-            double lo = Percentile(vals, 1), hi = Percentile(vals, 99);
+            double lo = Stats.Percentile(vals, 1), hi = Stats.Percentile(vals, 99);
             double pad = Math.Max(hi - lo, 1e-4) * 0.1;
             lo -= pad; hi += pad;
             double mid = 1.0;

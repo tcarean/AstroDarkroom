@@ -18,8 +18,14 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
     reader be tested without touching disk.
-  - `Core.cs` - the numeric engine: `Th`, `Img`, preprocessing, metrics, the four
-    modes, and the PNG encoder. Phases 4-7 of the refactor split this further.
+  - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
+  - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
+    `Divide`.
+  - `Stats.cs` - numeric primitives: `Percentile`, `RobustPtp`, `Interp`, `Solve`,
+    `Verdict`, `Rank`.
+  - `Core.cs` - what is left of the engine: metrics (`FitCenter`, `RadialModel`,
+    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`), the
+    four modes, and the PNG encoder. Phases 5-7 split this further.
 - `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
   `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
@@ -28,7 +34,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-Phases 0-3 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 4-8 are not.
+Phases 0-4 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 5-8 are not.
 
 ## Conventions
 
@@ -341,10 +347,11 @@ has to flip those tests deliberately, so neither can be fixed by accident.
    `COMMENT`-adjacent card). Fine for the numeric keys actually used.
 7. **File extension is never validated** - `FitsReader.Load` is called on whatever path
    is given, and a non-FITS file surfaces as a parse error.
-8. **Dead code**: `RobustPtp` is never called (`LargeScalePtp` inlines the same
-   p5/p95 computation); `Th.ExpoLo`/`Th.ExpoHi` are never read; `RadialModel`'s
-   `centers`/`prof` return values are discarded by `ModeStructure` (they fed the
-   dropped Python profile panel).
+8. **Dead code**: `Stats.RobustPtp` is never called (`LargeScalePtp` inlines the
+   same computation, but with p5/p95 rather than this function's p2/p98 default);
+   `Th.ExpoLo`/`Th.ExpoHi` are never read; `RadialModel`'s `centers`/`prof` return
+   values are discarded by `ModeStructure` (they fed the dropped Python profile
+   panel). All three are slated for deletion in Phase 8.
 9. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes
    negative and indexing throws. Not reachable with real frames.
 10. **`--sat 0`** makes `rng = 0` and every percentage becomes ±∞/NaN; unvalidated.
