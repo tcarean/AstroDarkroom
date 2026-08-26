@@ -23,9 +23,10 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
     `Divide`.
   - `Stats.cs` - numeric primitives: `Percentile`, `RobustPtp`, `Interp`, `Solve`,
     `Verdict`, `Rank`.
-  - `Core.cs` - what is left of the engine: metrics (`FitCenter`, `RadialModel`,
-    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`), the
-    four modes, and the PNG encoder. Phases 5-7 split this further.
+  - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
+    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`.
+  - `Core.cs` - what is left of the engine: the four modes and the PNG encoder.
+    Phases 6-7 split this further.
 - `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
   `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
@@ -34,7 +35,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-Phases 0-4 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 5-8 are not.
+Phases 0-5 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 6-8 are not.
 
 ## Conventions
 
@@ -357,7 +358,17 @@ has to flip those tests deliberately, so neither can be fixed by accident.
 10. **`--sat 0`** makes `rng = 0` and every percentage becomes ±∞/NaN; unvalidated.
 11. **`_crcTable` is lazily initialised static mutable state** - benign
     single-threaded, but a data race if anything is ever parallelised.
-12. **Memory is heavy.** `ModeStructure` computes the median of the *full-resolution*
+12. **The corner-spread metric has a non-zero floor.** The analysis centre is
+    `(w/2, h/2)`, but pixel indices run `0..w-1`, whose true middle is `(w-1)/2`.
+    That half-pixel offset puts the top-left corner fractionally farther from the
+    centre than the bottom-right, so even a *perfectly* radial field reports a
+    spread. It scales as ~1/n: measured 2.88% at 100 px, 1.44% at 200, 0.56% at
+    512, 0.28% at 1024 (cross-checked against a numpy reimplementation). At the
+    ~1500x1000 analysis raster the tool actually uses it is ~0.2%, far below the
+    1.5% OK threshold, so it is harmless in practice - but it is a systematic
+    floor, not noise, and it would swamp the threshold on a small enough frame.
+    Pinned by `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.
+13. **Memory is heavy.** `ModeStructure` computes the median of the *full-resolution*
     raster just to print one line, and `Percentile` copies twice (`.ToList()` then
     `.ToArray()`). Measured peak ~330 MB on a 3000×2000 frame (~55 bytes/pixel);
     a 24 MP D3300 frame extrapolates to well over 1 GB. Runtime is fine

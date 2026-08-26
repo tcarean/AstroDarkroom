@@ -1,6 +1,6 @@
 # Refactoring plan: making FlatCheck testable
 
-> **Status: phases 0-4 are done** (96 tests, all green). Phases 5-8 are not started.
+> **Status: phases 0-5 are done** (126 tests, all green). Phases 6-8 are not started.
 > What actually shipped, and where it deviated from the plan below, is recorded in
 > "Execution notes" at the end.
 
@@ -259,7 +259,7 @@ Covered in the phase-4 pass proper:
 - `Verdict`/`Rank`: boundary values (exactly `ok`, exactly `bad`) and **`NaN` →
   PROBLEMA**.
 
-### Phase 5 - `Metrics`
+### Phase 5 - `Metrics` ✅ DONE
 
 Pure moves; test against analytically-known scenes:
 
@@ -451,3 +451,36 @@ thin, but they are narrow behaviours with one correct answer each.
 dead and that its p2/p98 default disagrees with the p5/p95 `LargeScalePtp` inlines.
 `StatsTests` pins both, so Phase 8 deleting it is a deliberate act - delete the test
 alongside it.
+
+
+## Execution notes (phase 5)
+
+Metrics moved to `Metrics.cs`; `Core.cs` is down to 463 lines and now holds only
+the four modes and the PNG encoder. 126 tests green, golden files untouched, and
+the release binary prints identical numbers on the same fixtures.
+
+**Two of the tests I wrote first were wrong, and the code was right.** Both assumed
+a perfectly radial scene makes the four corner boxes exactly equal. It does not:
+the analysis centre is `(w/2, h/2)` while pixel indices run `0..w-1`, whose middle
+is `(w-1)/2`, so the top-left corner sits half a pixel farther out than the
+bottom-right. On a 200x200 frame that alone is a 1.44% corner spread - close enough
+to the 1.5% OK threshold to matter if you ever ran the tool on a small raster.
+
+Confirmed against a numpy reimplementation of `CornerStats` (which reproduced the
+C# values to the digit), and now pinned by
+`CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`, with the
+measured 1/n scaling. Also added to CLAUDE.md's known issues. It is a real property
+of the metric, not a bug to fix - changing the centre convention would break parity
+with flatcheck.py.
+
+**Mutation-tested**, and one test failed the check: `RadialModel`'s "drops sparse
+bins" assertion was `centers.Length < 80`, which holds whether the minimum is 8
+pixels or 1, so relaxing the rule went undetected. Replaced with exact kept-bin
+counts at four frame sizes (3/20/57/73 of 80), taken from the numpy model; the
+mutation now fails 4 tests. The other four mutations were caught first time:
+azimuthal ring start 0.15 -> 0.05 (2), `LargeScalePtp` never returning NaN (1),
+`TileBackground` p15 -> p50 (1), and dropping `FitCenter`'s outside-the-frame
+fallback (1).
+
+That is twice now that a first-pass test looked fine and was not. Mutation testing
+is not optional on this codebase.
