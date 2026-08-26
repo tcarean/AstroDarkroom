@@ -610,9 +610,37 @@ The plan is complete. `flatcheck.py` remains the numeric oracle for formula chan
 and `FLATCHECK_UPDATE_GOLDEN=1 dotnet test` re-approves console output when a change to
 it is intended.
 
-One debt from phase 0 is still open and worth stating plainly: the golden files were
-captured from the C# build itself, so they pin behaviour without independently
-confirming it. The primitives in `StatsTests` *are* numpy-verified, and the phase-5 and
-phase-6 metric and analyzer tests assert properties derived from first principles - but
-the mode-level console numbers have never been cross-checked against `flatcheck.py` on
-the same synthetic input. That would be the next genuinely useful thing to do.
+**The phase-0 debt is now closed.** See "Cross-check against flatcheck.py" below.
+
+
+## Cross-check against flatcheck.py
+
+The debt carried since phase 0 - golden files captured from the C# itself, pinning
+behaviour without confirming it - is settled. `crosscheck.py` in the project root runs
+both implementations over identical FITS and compares the full text plus every numeric
+token as a float.
+
+    FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
+    python crosscheck.py /tmp/xc
+
+The fixtures come from `CrossCheckFixtures.cs`, which reuses `FitsTestData`, so Python
+reads the exact bytes the golden tests use. 32 scenarios cover all four modes, both
+gradient directions, a diagonal gradient, uniform and pedestal frames, mild and heavy
+vignetting, nebulosity, non-square rasters (768x512 and 512x768), BITPIX 16/32/-32, and
+the exposure bands either side of every boundary.
+
+**Result: 31 of 32 agree numerically** - 16 byte-identical, 15 differing only in
+wording (the no-NEF rejection text, `--sat=4095` vs `4095.0`, and the capitalised
+CADE/CRESTE in the light interpretation).
+
+**The one numeric divergence is the C# being right.** On a perfectly constant frame
+`FitCenter` fits quadratic coefficients that are pure float noise (~1e-15), giving a
+determinant of 1.3e-29. C# guards with `|det| < 1e-15` and falls back to the sensor
+centre. Python has no guard - `np.linalg.solve` does not raise on a merely
+*numerically* singular matrix - so it returns garbage and reports a 6.35% centroid
+offset and a SUSPECT verdict on a uniform frame. A real flat always has vignetting, so
+this cannot happen in practice, but it is a latent false positive in the oracle. The
+guard is recorded in CLAUDE.md as an intentional divergence and the harness carries it
+in `KNOWN_NUMERIC_DIVERGENCE`, so a *new* numeric difference still fails the run.
+
+Worth re-running after any formula change - that is what the oracle is for.

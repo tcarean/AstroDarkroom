@@ -47,6 +47,17 @@ public class MetricsTests
         Assert.Equal(40, cy, 1);
     }
 
+    /// <summary>
+    /// The one place the C# deliberately diverges from flatcheck.py, found by the
+    /// cross-check. On a constant frame the fitted quadratic coefficients are pure
+    /// floating-point noise (~1e-15) and the vertex determinant is ~1e-29. The
+    /// |det| &lt; 1e-15 guard falls back to the sensor centre; Python has no guard, so
+    /// np.linalg.solve happily returns garbage and reports a ~6% centroid offset and a
+    /// SUSPECT verdict on a perfectly uniform frame.
+    ///
+    /// Do not "fix" this to match the oracle - the guard is what makes the degenerate
+    /// case behave. See CLAUDE.md, "Parity with Python".
+    /// </summary>
     [Fact]
     public void FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre()
     {

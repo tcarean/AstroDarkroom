@@ -321,18 +321,51 @@ problem (horizontal/vertical/diagonal gradient).
 
 ## Parity with Python
 
-The C# port was written to be numerically identical to `flatcheck.py`, and the
-README records that the algorithms were validated by re-implementing each formula
-in Python (percentile interpolation, the Gauss solver vs `numpy.linalg.solve`,
-normal equations vs `lstsq`, the PNG encoder). **Treat `flatcheck.py` as the
-numeric oracle when changing a formula.**
+The C# port was written to be numerically identical to `flatcheck.py`. **Treat
+`flatcheck.py` as the numeric oracle when changing a formula**, and re-run the
+cross-check afterwards:
+
+```bash
+FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
+```
+
+```bash
+python crosscheck.py /tmp/xc
+```
+
+`crosscheck.py` runs both implementations over identical FITS across 32 scenarios and
+compares twice: the full text, and every numeric token as a float. It exits non-zero on
+any unexplained numeric difference.
+
+**Current status: 31 of 32 scenarios agree numerically** - 16 byte-identical, 15
+differing only in wording. Coverage spans all four modes, both gradient directions,
+non-square frames, BITPIX 16/32/-32, and the exposure bands either side of each
+boundary.
 
 Intentional divergences:
 
 - No 4-panel matplotlib figure (residual PNG only).
-- No NEF reading (no `rawpy`); Siril produces the FITS.
+- No NEF reading (no `rawpy`); Siril produces the FITS. The `--expo` rejection message
+  differs accordingly - Python offers "run it on the NEF directly", which C# cannot.
 - No EXIF read, so no `suggest_shutter(...)` shutter-speed suggestions.
 - `Percentile` on an empty list returns 0 instead of raising.
+- `--sat` is echoed as `--sat=4095` rather than Python's `--sat=4095.0`.
+- The `--light` interpretation capitalises the diagnosis - "Fondul CADE/CRESTE spre
+  margini" against Python's lower case. The sign *is* the diagnosis, so the emphasis
+  is deliberate.
+
+**One numeric divergence, and the C# is the correct one.** On a *perfectly constant*
+frame `FitCenter`'s quadratic coefficients are pure floating-point noise (~1e-15) and
+the vertex determinant comes out at ~1.3e-29. C# guards with `|det| < 1e-15` and falls
+back to the sensor centre, reporting a 0.00% offset and OK. Python has no such guard:
+`np.linalg.solve` does not raise on a matrix that is only *numerically* singular, so it
+returns garbage, places the illumination peak at (136, 136) on a 256x256 raster, and
+reports a 6.35% offset with a SUSPECT verdict - a false positive on a uniform frame.
+
+This cannot occur on a real flat, which always has vignetting and therefore a
+determinant far from zero. Do not "fix" the C# to match; the guard is what makes the
+degenerate case behave. Pinned by
+`FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre`.
 
 ## Exit codes
 
