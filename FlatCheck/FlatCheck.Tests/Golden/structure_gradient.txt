@@ -1,0 +1,25 @@
+
+=== STRUCTURA: <TMP>/grad.fit ===
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    median / max ADU   : 25760 / 30119
+
+  VIGNETARE (informativ, nu e un test)
+    centru -> colt          : 0.76 stopuri (colt = 59% din centru)
+
+  TESTE
+    imprastiere 4 colturi   : 12.00 %   [PROBLEMA]
+        stanga-sus    :  94.01 % din media colturilor
+        dreapta-sus   : 105.71 % din media colturilor
+        stanga-jos    :  94.27 % din media colturilor
+        dreapta-jos   : 106.01 % din media colturilor
+    asimetrie azimutala max : 10.82 %   [PROBLEMA]
+    reziduu dupa model rad. :  9.42 %   [PROBLEMA]
+    offset centru iluminare :  7.55 %   [SUSPECT]
+        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
+
+  VERDICT: PROBLEMA
+    Abatere de la simetria radiala => sursa neuniforma, light leak,
+    camera inclinata, sau ambient. NU e vignetare. Vezi harta reziduala.
+
+    -> harta salvata: <TMP>/out.png
+

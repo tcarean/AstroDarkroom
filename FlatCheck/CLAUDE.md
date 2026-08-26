@@ -4,23 +4,31 @@ Quantitative diagnostic for astrophotography flat frames. Answers four questions
 is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly.
 
-Single-file C# console app (`FlatCheck.cs`), **zero NuGet dependencies**: it
-hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
+Small C# console app, **zero NuGet dependencies**: it hand-parses FITS and
+hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
 
 ## Structure
 
-- `FlatCheck.cs` - the entire application. One `static class Program` holding
-  every function, plus `Img` (2-D double raster) and `Th` (thresholds).
-- `FlatCheck.csproj` / `FlatCheck.sln` - `AssemblyName` is `flatcheck`, so the
-  binary is `flatcheck.exe`, not `FlatCheck.exe`.
+- `FlatCheck/` - the app. `AssemblyName` is `flatcheck`, so the binary is
+  `flatcheck.exe`, not `FlatCheck.exe`.
+  - `Program.cs` - the usage documentation, and a one-line `Main` shim.
+  - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch and exit code.
+    All output goes through the injected `TextWriter`, never `Console` directly.
+  - `Options.cs` - CLI parsing.
+  - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
+    entry point; `Load(string)` is a thin file wrapper, which is what lets the
+    reader be tested without touching disk.
+  - `Core.cs` - the numeric engine: `Th`, `Img`, preprocessing, metrics, the four
+    modes, and the PNG encoder. Phases 4-7 of the refactor split this further.
+- `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
+  `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
   ported from. Prior art only; **not maintained in parallel** - don't feel
   obliged to mirror C#-side changes into it. It is, however, the reference for
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-There is currently **no test project**. See [REFACTOR-TESTS.md](REFACTOR-TESTS.md)
-for the plan to add one.
+Phases 0-3 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 4-8 are not.
 
 ## Conventions
 
@@ -77,14 +85,14 @@ C# port cannot, by design.
 
 ## The four modes
 
-Dispatch order in `Main` is `--expo` → `--ratio` → `--light` → structure
+Dispatch order in `FlatCheckCli.Run` is `--expo` → `--ratio` → `--light` → structure
 (default). The modes are mutually exclusive; the first match wins.
 
 ### 1. Structure (default) - `flatcheck flat.fit`
 
 Is the master flat radially symmetric? Runs on the final master.
 
-1. `LoadFits` → `Prepare` (2×2 block-mean, then downsample toward ~1200 px).
+1. `FitsReader.Load` → `Prepare` (2×2 block-mean, then downsample toward ~1200 px).
 2. `FitCenter` → illumination peak; reported as offset from sensor centre, as a
    percentage of the half-diagonal.
 3. `CornerStats` → median of four 5% corner boxes and a central box. Reports
@@ -303,7 +311,9 @@ Intentional divergences:
 
 ## Known issues and gotchas
 
-Verified by running the current build unless marked otherwise.
+Verified by running the current build unless marked otherwise. Issues 1 and 4 are
+**pinned by tests** that assert the current wrong behaviour - Phase 8 of the refactor
+has to flip those tests deliberately, so neither can be fixed by accident.
 
 1. **Argument order is positional-only.** `args[0]` is *always* taken as the image
    path, so `flatcheck --expo file.fit` fails with
@@ -311,9 +321,9 @@ Verified by running the current build unless marked otherwise.
    works. `GetOpt` is a bare `Array.IndexOf`, with no validation that a flag's
    value exists or isn't another flag.
 2. **Exit code is always 0 on success**, even for a `PROBLEMA` verdict.
-   `ModeStructure` and `ModeRatio` return their verdict string and `Main`
-   *discards it*. Only an exception yields exit 1. This blocks any scripted /
-   CI use.
+   `ModeStructure` and `ModeRatio` return their verdict string and
+   `FlatCheckCli.Run` *discards it*. Only an exception yields exit 1. This blocks
+   any scripted / CI use.
 3. **`ModeLight` can throw `NullReferenceException`** (code reading, not
    reproduced): if `Solve` returns `null` on the first sigma-clip iteration the
    loop `break`s with `coef` still null, and the next line dereferences `coef[0]`.
@@ -329,7 +339,7 @@ Verified by running the current build unless marked otherwise.
 6. **Card parsing is naive.** It splits the value at the first `/`, which
    corrupts any string value containing a slash (e.g. a path or date in a
    `COMMENT`-adjacent card). Fine for the numeric keys actually used.
-7. **File extension is never validated** - `LoadFits` is called on whatever path
+7. **File extension is never validated** - `FitsReader.Load` is called on whatever path
    is given, and a non-FITS file surfaces as a parse error.
 8. **Dead code**: `RobustPtp` is never called (`LargeScalePtp` inlines the same
    p5/p95 computation); `Th.ExpoLo`/`Th.ExpoHi` are never read; `RadialModel`'s
@@ -346,11 +356,24 @@ Verified by running the current build unless marked otherwise.
     a 24 MP D3300 frame extrapolates to well over 1 GB. Runtime is fine
     (1.3 s structure / 0.6 s expo / 0.5 s light on 3000×2000).
 
-## Build & run
+## Build & test
 
 ```bash
 dotnet build FlatCheck.sln -c Release
 ```
+
+```bash
+dotnet test FlatCheck.sln
+```
+
+The golden-output tests snapshot every mode's console text. When you change output
+*on purpose*, re-approve them and read the resulting diff:
+
+```bash
+FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
+```
+
+## Run
 
 Self-contained binary:
 

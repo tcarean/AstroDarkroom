@@ -1,0 +1,23 @@
+
+=== STRUCTURA: <TMP>/clean.fit ===
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    median / max ADU   : 25702 / 30000
+
+  VIGNETARE (informativ, nu e un test)
+    centru -> colt          : 0.76 stopuri (colt = 59% din centru)
+
+  TESTE
+    imprastiere 4 colturi   :  0.57 %   [OK]
+        stanga-sus    :  99.72 % din media colturilor
+        dreapta-sus   : 100.00 % din media colturilor
+        stanga-jos    : 100.00 % din media colturilor
+        dreapta-jos   : 100.28 % din media colturilor
+    asimetrie azimutala max :  0.29 %   [OK]
+    reziduu dupa model rad. :  0.24 %   [OK]
+    offset centru iluminare :  0.19 %   [OK]
+        varf iluminare = (128, 128)  vs  centru senzor = (128, 128)
+
+  VERDICT: OK
+
+    -> harta salvata: <TMP>/out.png
+

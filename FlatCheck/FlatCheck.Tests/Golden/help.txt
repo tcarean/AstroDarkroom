@@ -1,0 +1,7 @@
+Utilizare:
+  flatcheck <flat.fit>                    # test structura
+  flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180
+  flatcheck <light.fit> --light           # test end-to-end
+  flatcheck <flat_brut.fit> --expo        # verificare expunere
+  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer
+  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
