@@ -25,8 +25,12 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
     `Verdict`, `Rank`.
   - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
     `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`.
-  - `Core.cs` - what is left of the engine: the four modes and the PNG encoder.
-    Phases 6-7 split this further.
+  - `Analysis/` - one analyzer per mode, each a pure `Img -> XxxResult` function:
+    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`.
+    No I/O, no printing - this is where every number is decided.
+  - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
+    function. All the Romanian output lives here and nowhere else.
+  - `Core.cs` - what is left: the PNG encoder. Phase 7 moves it to `PngWriter`.
 - `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
   `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
@@ -35,7 +39,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
 
-Phases 0-5 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 6-8 are not.
+Phases 0-6 of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done; phases 7-8 are not.
 
 ## Conventions
 
@@ -328,12 +332,13 @@ has to flip those tests deliberately, so neither can be fixed by accident.
    works. `GetOpt` is a bare `Array.IndexOf`, with no validation that a flag's
    value exists or isn't another flag.
 2. **Exit code is always 0 on success**, even for a `PROBLEMA` verdict.
-   `ModeStructure` and `ModeRatio` return their verdict string and
+   `RunStructure` and `RunRatio` return their verdict string and
    `FlatCheckCli.Run` *discards it*. Only an exception yields exit 1. This blocks
    any scripted / CI use.
-3. **`ModeLight` can throw `NullReferenceException`** (code reading, not
+3. **`LightAnalyzer` can throw `NullReferenceException`** (code reading, not
    reproduced): if `Solve` returns `null` on the first sigma-clip iteration the
    loop `break`s with `coef` still null, and the next line dereferences `coef[0]`.
+   Carried over deliberately in the phase-6 split, with a comment marking it.
 4. **FITS `NAXIS=1` gives a misleading error.** A 1-D HDU computes `npix = 0`, so
    `dataBlocks = 0` and `pos` never advances past the header; the reader then
    parses the data region as a header and eventually fails with

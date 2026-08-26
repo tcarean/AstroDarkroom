@@ -1,6 +1,6 @@
 # Refactoring plan: making FlatCheck testable
 
-> **Status: phases 0-5 are done** (126 tests, all green). Phases 6-8 are not started.
+> **Status: phases 0-6 are done** (190 tests, all green). Phases 7-8 are not started.
 > What actually shipped, and where it deviated from the plan below, is recorded in
 > "Execution notes" at the end.
 
@@ -281,7 +281,7 @@ Pure moves; test against analytically-known scenes:
 - `TileBackground`: the 15th percentile ignores injected bright "stars"; tile
   centres are at `(i + 0.5)·k`.
 
-### Phase 6 - analyzers and reports
+### Phase 6 - analyzers and reports ✅ DONE
 
 The real payoff. For each mode, split into `XxxAnalyzer.Analyze(...) -> XxxResult`
 and `XxxReport.Write(result, TextWriter)`.
@@ -484,3 +484,51 @@ fallback (1).
 
 That is twice now that a first-pass test looked fine and was not. Mutation testing
 is not optional on this codebase.
+
+
+## Execution notes (phase 6)
+
+Each mode is now `XxxAnalyzer.Analyze(Img) -> XxxResult` in `Analysis/` plus
+`XxxReport.Write(result, ..., TextWriter)` in `Report/`. `FlatCheckCli` is the only
+layer that touches the disk: load -> analyze -> report -> PNG. `Core.cs` is down to
+117 lines and holds nothing but the PNG encoder.
+
+190 tests green, golden files untouched, release binary prints identical numbers.
+
+**Design decisions worth knowing:**
+
+- Analyzers take an `Img`, not a path. Loading stays in the CLI, which is what makes
+  them testable without the filesystem.
+- The source path is a *report* parameter, not a result field - it is presentation,
+  not analysis.
+- Exposure verdicts became an enum (`ExposureVerdict`), so band tests assert on
+  `Ok`/`AcceptableLow`/... rather than matching Romanian strings. Panel and sky share
+  one enum; `IsSky` picks the wording. Sky has no `AcceptableLow` band.
+- `LightAnalyzer.RadOk`/`RadBad` (2.0/5.0) and the exposure bands are now named
+  constants rather than inline literals, but still live on their analyzer rather than
+  in `Th`. Phase 8 consolidates.
+
+**The exposure band tests are exact, not approximate.** `TestImages.FlatCfa` holds the
+brightest Bayer position at a constant level and the test passes `--sat`, so the
+reported percentage is exactly level/sat. That makes it possible to probe both sides
+of every boundary - 29/30, 49/50, 65/66, 80/81 for panel; 14/15, 50/51, 60/61 for sky
+- instead of asserting "about right".
+
+**Mutation-tested**, all six caught:
+
+| mutation | tests failed |
+|---|---|
+| `radPct` sign flipped | 4 |
+| plane terms dropped from the light fit | 10 |
+| sigma-clip made two-sided | 2 |
+| exposure decided on the global median, not the centre window | 5 |
+| sky and panel bands swapped | 19 |
+| structure verdict takes the best instead of the worst | 3 |
+
+The second and fourth are the ones that matter most: they are the two claims in
+CLAUDE.md that would still look plausible if broken - "works under a polluted sky"
+and "measure the centre, not the global median".
+
+Two known bugs were carried across deliberately and are commented at their new
+locations: the `coef == null` dereference in `LightAnalyzer`, and the discarded
+verdict in `FlatCheckCli.RunStructure`/`RunRatio`. Both are Phase 8.

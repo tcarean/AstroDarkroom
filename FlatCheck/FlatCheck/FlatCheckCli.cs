@@ -1,5 +1,8 @@
 // FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
 // Ordinea de dispecerat: --expo -> --ratio -> --light -> structura (implicit).
+//
+// Fiecare mod e acelasi lant: incarca FITS -> analizor pur (Analysis/) -> raport
+// (Report/) -> harta PNG. Doar stratul asta atinge discul; analizoarele sunt Img -> record.
 
 using System;
 using System.IO;
@@ -19,10 +22,10 @@ namespace FlatCheck
 
             try
             {
-                if (o.Expo) Core.ModeExpo(o.Image, o.Sat, o.Black, o.Sky, stdout);
-                else if (o.Ratio != null) Core.ModeRatio(o.Image, o.Ratio, o.OutPng, stdout);
-                else if (o.Light) Core.ModeLight(o.Image, o.OutPng, stdout);
-                else Core.ModeStructure(o.Image, o.OutPng, stdout);
+                if (o.Expo) RunExpo(o, stdout);
+                else if (o.Ratio != null) RunRatio(o, stdout);
+                else if (o.Light) RunLight(o, stdout);
+                else RunStructure(o, stdout);
             }
             catch (Exception e)
             {
@@ -31,6 +34,38 @@ namespace FlatCheck
             }
             stdout.WriteLine();
             return 0;
+        }
+
+        // NOTA (problema cunoscuta 2): verdictul e calculat si tiparit, dar codul de
+        // iesire ramane 0 chiar si pentru PROBLEMA. Faza 8 il leaga.
+        static string RunStructure(Options o, TextWriter w)
+        {
+            var r = StructureAnalyzer.Analyze(FitsReader.Load(o.Image));
+            StructureReport.Write(r, o.Image, w);
+            Core.SaveResidualPng(o.OutPng, r.Residual, w);
+            return r.Verdict;
+        }
+
+        static string RunRatio(Options o, TextWriter w)
+        {
+            var r = RatioAnalyzer.Analyze(FitsReader.Load(o.Image), FitsReader.Load(o.Ratio));
+            RatioReport.Write(r, o.Image, o.Ratio, w);
+            Core.SaveResidualPng(o.OutPng, r.Ratio, w);
+            return r.Verdict;
+        }
+
+        static void RunLight(Options o, TextWriter w)
+        {
+            var r = LightAnalyzer.Analyze(FitsReader.Load(o.Image));
+            LightReport.Write(r, o.Image, w);
+            Core.SaveResidualPng(o.OutPng, r.RadialMap, w);
+        }
+
+        static void RunExpo(Options o, TextWriter w)
+        {
+            // NU Prepare - modul asta vrea CFA brut, la scala ADU originala.
+            var r = ExposureAnalyzer.Analyze(FitsReader.Load(o.Image), o.Sat, o.Black, o.Sky);
+            ExposureReport.Write(r, o.Image, w);
         }
 
         static void WriteUsage(TextWriter w)

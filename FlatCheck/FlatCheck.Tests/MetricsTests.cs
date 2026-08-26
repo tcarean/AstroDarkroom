@@ -11,14 +11,8 @@ namespace FlatCheck.Tests;
 /// </summary>
 public class MetricsTests
 {
-    static Img Make(int w, int h, Func<int, int, double> f)
-    {
-        var img = new Img(h, w);
-        for (int y = 0; y < h; y++)
-            for (int x = 0; x < w; x++)
-                img.Set(y, x, f(x, y));
-        return img;
-    }
+    static Img Make(int w, int h, Func<int, int, double> f) => TestImages.From(w, h, f);
+
 
     /// <summary>A field that is exactly quadratic in log space, so FitCenter's paraboloid
     /// fit is exact and the vertex it recovers is the one we put in.</summary>
