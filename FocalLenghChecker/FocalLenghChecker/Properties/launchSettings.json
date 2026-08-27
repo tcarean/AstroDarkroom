@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "FocalLenghChecker": {
+      "commandName": "Project",
+      "commandLineArgs": "\"E:\\Colectie Poze\\2026\\Croatia\""
+    }
+  }
+}
