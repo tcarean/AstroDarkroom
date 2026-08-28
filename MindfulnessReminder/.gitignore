@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+
+# The repository root ignores *.app (a macOS bundle rule), which happens to match the
+# MindfulnessReminder.App project directory and hides the whole app from git.
+!src/MindfulnessReminder.App/
