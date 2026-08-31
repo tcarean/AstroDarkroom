@@ -47,6 +47,12 @@ public class CrossCheckFixtures
         // mild vs heavy vignetting, to move the stops figure
         Write(dir, "vign_mild.fit", FitsTestData.Radial(Size, Size, k: 0.15));
         Write(dir, "vign_heavy.fit", FitsTestData.Radial(Size, Size, k: 0.70));
+        // gradients sized to land in each band of the residual scale, so the
+        // cross-check exercises all four and not just the two the other scenes hit
+        Write(dir, "grad_bun.fit",                       // ~5% -> BUN
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.05));
+        Write(dir, "grad_refa.fit",                      // ~57% -> REFA
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.60));
         // a diagonal gradient - the golden one is horizontal only
         Write(dir, "diag.fit", (x, y) =>
             FitsTestData.Radial(Size, Size)(x, y)

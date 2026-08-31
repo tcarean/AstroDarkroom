@@ -1,0 +1,36 @@
+
+=== STRUCTURA: <TMP>/violent.fit ===
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    median / max ADU   : 26369 / 32573
+
+  VIGNETARE (informativ, nu e un test)
+    centru -> colt          : 0.76 stopuri (colt = 59% din centru)
+
+  TESTE
+    imprastiere 4 colturi   : 57.82 %   [REFA]
+        stanga-sus    :  71.13 % din media colturilor
+        dreapta-sus   : 128.58 % din media colturilor
+        stanga-jos    :  71.34 % din media colturilor
+        dreapta-jos   : 128.95 % din media colturilor
+    asimetrie azimutala max : 54.75 %   [REFA]
+    reziduu dupa model rad. : 47.66 %   [REFA]  <- CEL MAI IMPORTANT
+    offset centru iluminare : 33.48 %   [PROBLEMA]
+        varf iluminare = (189, 128)  vs  centru senzor = (128, 128)
+
+  SCARA celor trei teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial, adica exact eroarea de
+    flat. Imprastierea colturilor si asimetria azimutala sunt vederi
+    partiale ale aceleiasi abateri.
+
+  VERDICT: REFA
+    Abatere prea mare de la simetria radiala => sursa neuniforma, light
+    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.
+    Vezi harta reziduala pentru forma problemei.
+
+    -> harta salvata: <TMP>/out.png
+

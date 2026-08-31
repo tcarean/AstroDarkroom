@@ -149,6 +149,17 @@ NOTE TEHNICE
   centrului absoarbe exact gradientul liniar pe care il cauti.
 - Cifra de vignetare e informativa, nu un test. Pentru referinta, Samyang 135
   f/2 pe APS-C ar trebui sa dea ~0.5-0.9 stopuri centru->colt.
+SCARA celor trei teste de abatere (imprastiere colturi, asimetrie azimutala, reziduu
+dupa model radial). Toate trei masoara aceeasi abatere de la simetria radiala, din
+unghiuri diferite, deci impart o scara:
+    sub  2 %   calitate perfecta
+     2 - 10 %  utilizabil; background extraction scoate ce ramane
+    10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 % refa flat-urile
+Cel mai important e REZIDUUL DUPA MODEL RADIAL: masoara direct cat din cadru nu se
+explica printr-un model pur radial, adica exact eroarea de flat. Celelalte doua sunt
+vederi partiale ale aceleiasi abateri.
+
 - Pragurile de mai jos sunt reguli empirice, nu constante fizice. Sunt un
   punct de plecare. Ruleaza scriptul o data pe un setup despre care esti sigur
   si calibreaza-le pe cifrele tale.
@@ -160,8 +171,17 @@ import numpy as np
 
 # ---------------------------------------------------------------- praguri
 # (procente; ajusteaza dupa ce vezi cifre reale pe setup-ul tau)
-TH_CORNER_OK, TH_CORNER_BAD = 1.5, 4.0     # imprastiere intre cele 4 colturi
-TH_AZIM_OK, TH_AZIM_BAD = 1.5, 4.0         # asimetrie azimutala per inel
+# Scara de reziduu, folosita de toate trei metricile de abatere de la simetria radiala:
+# imprastierea colturilor, asimetria azimutala si reziduul dupa model. Toate trei
+# masoara aceeasi abatere din unghiuri diferite, deci impart scara:
+#     sub  2 %   calitate perfecta
+#      2 - 10 %  utilizabil; background extraction scoate ce ramane
+#     10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
+#     peste 20 % refa flat-urile
+TH_RESID_PERFECT, TH_RESID_USABLE, TH_RESID_CHECK = 2.0, 10.0, 20.0
+
+# Offsetul centrului de iluminare NU e o metrica de reziduu - masoara o pozitie, nu o
+# amplitudine - deci ramane pe scara OK/SUSPECT/PROBLEMA.
 TH_CENTROID_OK, TH_CENTROID_BAD = 4.0, 10.0  # offset centru, % din semidiagonala
 TH_RATIO_OK, TH_RATIO_BAD = 1.0, 3.0       # structura in A/B (testul 180)
 
@@ -315,6 +335,37 @@ def verdict(val, ok, bad):
     return "OK" if val < ok else ("SUSPECT" if val < bad else "PROBLEMA")
 
 
+# numele celor patru benzi de reziduu, in ordinea severitatii
+RESID_BANDS = ["PERFECT", "BUN", "ACCEPTABIL", "REFA"]
+
+
+def _band(rng, meaning):
+    """O linie din scara de reziduu, cu descrierile aliniate."""
+    print(f"    {rng:<13}{meaning}")
+
+
+def resid_verdict(val):
+    """Scara de reziduu din modul structura. Ca si verdict(), NaN cade in banda cea mai
+    proasta: toate comparatiile ies false, deci un input degenerat iese "REFA"."""
+    if val < TH_RESID_PERFECT:
+        return "PERFECT"
+    if val < TH_RESID_USABLE:
+        return "BUN"
+    if val < TH_RESID_CHECK:
+        return "ACCEPTABIL"
+    return "REFA"
+
+
+_SEVERITY = {"OK": 0, "PERFECT": 0, "BUN": 1,
+             "SUSPECT": 2, "ACCEPTABIL": 2, "PROBLEMA": 3, "REFA": 3}
+
+
+def severity(verdict_name):
+    """Severitate 0-3, unificata peste ambele scari, ca sa se poata lua "cel mai prost"
+    dintr-un amestec de verdicte. Orice necunoscut e tratat ca cel mai rau."""
+    return _SEVERITY.get(verdict_name, 3)
+
+
 # ---------------------------------------------------------------- moduri
 def mode_structure(path, plot_path):
     raw = load_image(path)
@@ -351,25 +402,50 @@ def mode_structure(path, plot_path):
     print(f"    centru -> colt          : {vign_stops:.2f} stopuri "
           f"(colt = {cvals.mean()/ctr*100:.0f}% din centru)")
 
+    # Toate trei masoara aceeasi abatere de la simetria radiala, deci impart scara de
+    # reziduu. Offsetul centrului masoara altceva - o pozitie - si ramane pe
+    # OK/SUSPECT/PROBLEMA.
+    v_corner = resid_verdict(spread)
+    v_azim = resid_verdict(az_max)
+    v_resid = resid_verdict(res_ptp)
+    v_centroid = verdict(off, TH_CENTROID_OK, TH_CENTROID_BAD)
+
     print(f"\n  TESTE")
-    print(f"    imprastiere 4 colturi   : {spread:5.2f} %   [{verdict(spread, TH_CORNER_OK, TH_CORNER_BAD)}]")
+    print(f"    imprastiere 4 colturi   : {spread:5.2f} %   [{v_corner}]")
     for k, v in cor.items():
         print(f"        {k:<14}: {v/cvals.mean()*100:6.2f} % din media colturilor")
-    print(f"    asimetrie azimutala max : {az_max:5.2f} %   [{verdict(az_max, TH_AZIM_OK, TH_AZIM_BAD)}]")
-    print(f"    reziduu dupa model rad. : {res_ptp:5.2f} %   [{verdict(res_ptp, TH_AZIM_OK, TH_AZIM_BAD)}]")
-    print(f"    offset centru iluminare : {off:5.2f} %   [{verdict(off, TH_CENTROID_OK, TH_CENTROID_BAD)}]")
+    print(f"    asimetrie azimutala max : {az_max:5.2f} %   [{v_azim}]")
+    print(f"    reziduu dupa model rad. : {res_ptp:5.2f} %   [{v_resid}]  <- CEL MAI IMPORTANT")
+    print(f"    offset centru iluminare : {off:5.2f} %   [{v_centroid}]")
     print(f"        varf iluminare = ({fx:.0f}, {fy:.0f})  vs  centru senzor = ({cx:.0f}, {cy:.0f})")
 
-    worst = max(
-        verdict(spread, TH_CORNER_OK, TH_CORNER_BAD),
-        verdict(az_max, TH_AZIM_OK, TH_AZIM_BAD),
-        verdict(res_ptp, TH_AZIM_OK, TH_AZIM_BAD),
-        verdict(off, TH_CENTROID_OK, TH_CENTROID_BAD),
-        key=lambda s: {"OK": 0, "SUSPECT": 1, "PROBLEMA": 2}[s])
+    # Scara comuna a celor trei teste de abatere. Nu se aplica offsetului centrului.
+    print(f"\n  SCARA celor trei teste de abatere de mai sus")
+    _band(f"sub {TH_RESID_PERFECT:.0f} %", "calitate perfecta")
+    _band(f"{TH_RESID_PERFECT:.0f} - {TH_RESID_USABLE:.0f} %", "utilizabil; background extraction scoate ce ramane")
+    _band(f"{TH_RESID_USABLE:.0f} - {TH_RESID_CHECK:.0f} %", "utilizabil, dar confirma cu --light inainte de un stretch dur")
+    _band(f"peste {TH_RESID_CHECK:.0f} %", "refa flat-urile")
+    print('    Cel mai important e "reziduu dupa model rad.": masoara direct cat din')
+    print("    cadru NU se explica printr-un model pur radial, adica exact eroarea de")
+    print("    flat. Imprastierea colturilor si asimetria azimutala sunt vederi")
+    print("    partiale ale aceleiasi abateri.")
+
+    # verdictul general e cel mai prost dintre cele patru, exprimat in vocabularul
+    # benzilor de reziduu
+    worst = RESID_BANDS[max(severity(v) for v in (v_corner, v_azim, v_resid, v_centroid))]
     print(f"\n  VERDICT: {worst}")
-    if worst != "OK":
-        print("    Abatere de la simetria radiala => sursa neuniforma, light leak,")
-        print("    camera inclinata, sau ambient. NU e vignetare. Vezi harta reziduala.")
+    if worst == "PERFECT":
+        print("    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.")
+    elif worst == "BUN":
+        print("    Utilizabil ca atare. Ce ramane sta in intervalul pe care background")
+        print("    extraction il scoate fara efort.")
+    elif worst == "ACCEPTABIL":
+        print("    Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de")
+        print("    un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.")
+    else:
+        print("    Abatere prea mare de la simetria radiala => sursa neuniforma, light")
+        print("    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.")
+        print("    Vezi harta reziduala pentru forma problemei.")
 
     make_plot(plot_path, img, resid, rc, prof, az, cx, cy, r_ins, path, "reziduu / model radial")
     return worst
@@ -517,8 +593,8 @@ def make_plot(out, img, resid, rc, prof, az, cx, cy, r_ins, title, resid_label):
 
     if az:
         ax[1, 1].plot([a for a, _ in az], [v for _, v in az], 'o-')
-    ax[1, 1].axhline(TH_AZIM_OK, color='g', ls='--', lw=0.8)
-    ax[1, 1].axhline(TH_AZIM_BAD, color='r', ls='--', lw=0.8)
+    ax[1, 1].axhline(TH_RESID_PERFECT, color='g', ls='--', lw=0.8)
+    ax[1, 1].axhline(TH_RESID_USABLE, color='r', ls='--', lw=0.8)
     ax[1, 1].set_title("asimetrie azimutala per inel")
     ax[1, 1].set_xlabel("raza / raza inscrisa")
     ax[1, 1].set_ylabel("ptp intre 12 sectoare [%]")

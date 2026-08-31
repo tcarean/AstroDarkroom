@@ -52,7 +52,7 @@ namespace FlatCheck
                 Ratio = ratio,
                 PtpVerdict = vPtp,
                 CornerVerdict = vCorner,
-                Verdict = new[] { vPtp, vCorner }.OrderByDescending(Stats.Rank).First(),
+                Verdict = new[] { vPtp, vCorner }.OrderByDescending(Stats.Severity).First(),
             };
         }
     }

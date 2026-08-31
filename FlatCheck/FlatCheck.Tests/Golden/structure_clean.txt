@@ -7,17 +7,28 @@
     centru -> colt          : 0.76 stopuri (colt = 59% din centru)
 
   TESTE
-    imprastiere 4 colturi   :  0.57 %   [OK]
+    imprastiere 4 colturi   :  0.57 %   [PERFECT]
         stanga-sus    :  99.72 % din media colturilor
         dreapta-sus   : 100.00 % din media colturilor
         stanga-jos    : 100.00 % din media colturilor
         dreapta-jos   : 100.28 % din media colturilor
-    asimetrie azimutala max :  0.29 %   [OK]
-    reziduu dupa model rad. :  0.24 %   [OK]
+    asimetrie azimutala max :  0.29 %   [PERFECT]
+    reziduu dupa model rad. :  0.24 %   [PERFECT]  <- CEL MAI IMPORTANT
     offset centru iluminare :  0.19 %   [OK]
         varf iluminare = (128, 128)  vs  centru senzor = (128, 128)
 
-  VERDICT: OK
+  SCARA celor trei teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial, adica exact eroarea de
+    flat. Imprastierea colturilor si asimetria azimutala sunt vederi
+    partiale ale aceleiasi abateri.
+
+  VERDICT: PERFECT
+    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.
 
     -> harta salvata: <TMP>/out.png
 

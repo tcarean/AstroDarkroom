@@ -80,6 +80,26 @@ namespace FlatCheck
 
         internal static string Verdict(double val, double ok, double bad)
             => val < ok ? "OK" : (val < bad ? "SUSPECT" : "PROBLEMA");
-        internal static int Rank(string s) => s == "OK" ? 0 : (s == "SUSPECT" ? 1 : 2);
+
+        /// Numele celor patru benzi de reziduu, in ordinea severitatii.
+        internal static readonly string[] ResidualBands = { "PERFECT", "BUN", "ACCEPTABIL", "REFA" };
+
+        /// Scara de reziduu din modul structura. Ca si Verdict, NaN cade in banda cea mai
+        /// proasta: toate comparatiile ies false, deci un input degenerat iese "REFA".
+        internal static string ResidualVerdict(double val)
+            => val < Th.ResidPerfect ? "PERFECT"
+             : val < Th.ResidUsable ? "BUN"
+             : val < Th.ResidCheck ? "ACCEPTABIL"
+             : "REFA";
+
+        /// Severitate 0-3, unificata peste ambele scari, ca sa se poata lua "cel mai
+        /// prost" dintr-un amestec de verdicte. Orice necunoscut e tratat ca cel mai rau.
+        internal static int Severity(string verdict) => verdict switch
+        {
+            "OK" or "PERFECT" => 0,
+            "BUN" => 1,
+            "SUSPECT" or "ACCEPTABIL" => 2,
+            _ => 3,
+        };
     }
 }

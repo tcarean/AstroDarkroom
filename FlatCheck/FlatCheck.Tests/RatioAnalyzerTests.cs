@@ -93,7 +93,7 @@ public class RatioAnalyzerTests
         var r = RatioAnalyzer.Analyze(Radial(), TestImages.From(N, N, grad));
 
         Assert.Equal(
-            Math.Max(Stats.Rank(r.PtpVerdict), Stats.Rank(r.CornerVerdict)),
-            Stats.Rank(r.Verdict));
+            Math.Max(Stats.Severity(r.PtpVerdict), Stats.Severity(r.CornerVerdict)),
+            Stats.Severity(r.Verdict));
     }
 }

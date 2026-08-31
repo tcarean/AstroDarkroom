@@ -37,6 +37,8 @@ SCENARIOS = [
     ("structure clean",        ["clean.fit"]),
     ("structure gradient",     ["grad.fit"]),
     ("structure diagonal",     ["diag.fit"]),
+    ("structure band BUN",     ["grad_bun.fit"]),
+    ("structure band REFA",    ["grad_refa.fit"]),
     ("structure uniform",      ["uniform.fit"]),
     ("structure mild vign",    ["vign_mild.fit"]),
     ("structure heavy vign",   ["vign_heavy.fit"]),

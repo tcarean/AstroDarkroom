@@ -53,8 +53,8 @@ namespace FlatCheck
 
         internal static int ExitFor(string verdict) => verdict switch
         {
-            "OK" => 0,
-            "SUSPECT" => 2,
+            "OK" or "PERFECT" or "BUN" => 0,   // BUN e utilizabil, deci trece
+            "SUSPECT" or "ACCEPTABIL" => 2,
             _ => 3,
         };
 

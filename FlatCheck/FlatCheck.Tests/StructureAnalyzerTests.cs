@@ -12,11 +12,11 @@ public class StructureAnalyzerTests
     {
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, FitsTestData.Radial(N, N)));
 
-        Assert.Equal("OK", r.CornerVerdict);
-        Assert.Equal("OK", r.AzimuthalVerdict);
-        Assert.Equal("OK", r.ResidualVerdict);
-        Assert.Equal("OK", r.CentroidVerdict);
-        Assert.Equal("OK", r.Verdict);
+        Assert.Equal("PERFECT", r.CornerVerdict);
+        Assert.Equal("PERFECT", r.AzimuthalVerdict);
+        Assert.Equal("PERFECT", r.ResidualVerdict);
+        Assert.Equal("OK", r.CentroidVerdict);   // the centroid keeps its own ladder
+        Assert.Equal("PERFECT", r.Verdict);
     }
 
     [Fact]
@@ -42,8 +42,8 @@ public class StructureAnalyzerTests
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
 
         Assert.InRange(r.CornerSpreadPct, 11.0, 12.5);
-        Assert.Equal("PROBLEMA", r.CornerVerdict);
-        Assert.Equal("PROBLEMA", r.Verdict);
+        Assert.Equal("ACCEPTABIL", r.CornerVerdict);   // the 10-20% band
+        Assert.Equal("ACCEPTABIL", r.Verdict);
     }
 
     [Fact]
@@ -53,8 +53,11 @@ public class StructureAnalyzerTests
 
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
 
-        Assert.True(r.AzimuthalMaxPct > Th.AzimBad, "azimuthal was " + r.AzimuthalMaxPct);
-        Assert.True(r.ResidualPtpPct > Th.AzimBad, "residual was " + r.ResidualPtpPct);
+        // both are well past the "perfect" band, which is what "they fire too" means
+        Assert.True(r.AzimuthalMaxPct > Th.ResidPerfect, "azimuthal was " + r.AzimuthalMaxPct);
+        Assert.True(r.ResidualPtpPct > Th.ResidPerfect, "residual was " + r.ResidualPtpPct);
+        Assert.NotEqual("PERFECT", r.AzimuthalVerdict);
+        Assert.NotEqual("PERFECT", r.ResidualVerdict);
     }
 
     /// <summary>The overall verdict is the worst of the four, not an average.</summary>
@@ -65,7 +68,7 @@ public class StructureAnalyzerTests
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
 
         var all = new[] { r.CornerVerdict, r.AzimuthalVerdict, r.ResidualVerdict, r.CentroidVerdict };
-        Assert.Equal(all.Max(Stats.Rank), Stats.Rank(r.Verdict));
+        Assert.Equal(all.Max(Stats.Severity), Stats.Severity(r.Verdict));
     }
 
     [Fact]

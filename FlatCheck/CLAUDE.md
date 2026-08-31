@@ -116,7 +116,10 @@ Is the master flat radially symmetric? Runs on the final master.
    `LargeScalePtp` of that residual (tile-averaged, inside the inscribed radius).
 5. `AzimuthalAsymmetry` → per-ring peak-to-peak across 12 sectors; the max is the
    metric.
-6. Verdict = the worst of the four tests. Writes the residual heat map PNG.
+6. Verdict = the worst of the four tests, on the shared residual scale (see
+   "The residual scale" below). Prints that scale, and marks
+   `reziduu dupa model rad.` as the metric that matters most. Writes the residual
+   heat map PNG.
 
 ### 2. 180° rotation - `flatcheck A.fit --ratio B.fit`
 
@@ -277,9 +280,9 @@ surface. Matches Python.
 
 | metric | mode | OK < | PROBLEMA ≥ | defined in |
 |---|---|---|---|---|
-| corner spread | structure | 1.5% | 4.0% | `Th.CornerOk/Bad` |
-| azimuthal asymmetry (max) | structure | 1.5% | 4.0% | `Th.AzimOk/Bad` |
-| residual after radial model | structure | 1.5% | 4.0% | `Th.AzimOk/Bad` (reused) |
+| corner spread | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
+| azimuthal asymmetry (max) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
+| residual after radial model | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | illumination-centre offset | structure | 4.0% | 10.0% | `Th.CentroidOk/Bad` |
 | A/B structure | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | A/B corner spread | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
@@ -287,6 +290,43 @@ surface. Matches Python.
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
 | centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
+
+### The residual scale
+
+The three structure deviation tests - corner spread, azimuthal asymmetry, and residual
+after the radial model - all measure *the same thing* from different angles: how much of
+the frame fails to be explained by a purely radial function. So they share one four-band
+scale rather than a pass/fail threshold:
+
+| band | verdict | meaning |
+|---|---|---|
+| < 2% | `PERFECT` | quality is perfect |
+| 2-10% | `BUN` | usable; background extraction removes what is left |
+| 10-20% | `ACCEPTABIL` | usable, but run `--light` to confirm before a hard stretch |
+| > 20% | `REFA` | reshoot the flats |
+
+Boundaries are strict `<`, so each one falls into the worse band. `NaN` degrades to
+`REFA`, same rule as `Verdict`.
+
+**`reziduu dupa model rad.` is the one that matters most**, and the console output says
+so inline. It measures the departure from the radial model directly - which *is* the
+flat error. The corner spread and the azimuthal asymmetry are partial views of the same
+deviation: the corners catch it only where the four boxes sit, the azimuthal test only
+inside the inscribed circle.
+
+The structure mode prints the scale itself, under the heading
+`SCARA celor trei teste de abatere de mai sus`, so the numbers can be read without
+consulting these docs.
+
+The illumination-centre offset is **not** on this scale - it measures a position, not an
+amplitude - and keeps `OK`/`SUSPECT`/`PROBLEMA`. `Stats.Severity` spans both ladders
+(`OK`/`PERFECT` = 0, `BUN` = 1, `SUSPECT`/`ACCEPTABIL` = 2, `PROBLEMA`/`REFA` = 3) so the
+overall verdict can still be "the worst of the four"; it is reported in the residual
+vocabulary.
+
+The `--ratio` mode keeps its own tighter 1%/3% thresholds. Its job is different: the A/B
+ratio should be *featureless*, and "background extraction removes it" does not apply to
+a setup-validation test.
 
 Since phase 8 every threshold lives in `Th` - `--light` no longer has 2.0/5.0 inline
 and `--expo` no longer keeps its bands as locals. `Th.ExpoLo`/`Th.ExpoHi` used to be
@@ -373,10 +413,10 @@ Since phase 8 the tool is usable from a script:
 
 | code | meaning |
 |---|---|
-| 0 | OK |
+| 0 | OK / PERFECT / BUN - usable as-is |
 | 1 | error - missing file, bad argument, invalid FITS, failed fit, or `--expo` on a file that isn't a raw flat |
-| 2 | SUSPECT (and `--expo`'s two "acceptable but..." bands) |
-| 3 | PROBLEMA |
+| 2 | SUSPECT / ACCEPTABIL (and `--expo`'s two "acceptable but..." bands) |
+| 3 | PROBLEMA / REFA |
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
 
@@ -401,7 +441,7 @@ behaviour that is either deliberate or not worth changing.
    the bottom-right, so even a *perfectly* radial field reports a spread. It scales as
    ~1/n: measured 2.88% at 100 px, 1.44% at 200, 0.56% at 512, 0.28% at 1024
    (cross-checked against a numpy reimplementation). At the ~1500x1000 analysis raster
-   the tool actually uses it is ~0.2%, far below the 1.5% OK threshold, so it is
+   the tool actually uses it is ~0.2%, far below the 2% PERFECT band, so it is
    harmless in practice - but it is a systematic floor, not noise, and it would swamp
    the threshold on a small enough frame. Pinned by
    `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.

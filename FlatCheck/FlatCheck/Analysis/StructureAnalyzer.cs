@@ -56,9 +56,12 @@ namespace FlatCheck
             var az = Metrics.AzimuthalAsymmetry(img, cx, cy);
             double azMax = az.Count > 0 ? az.Max(v => v.ptp) : double.NaN;
 
-            string vCorner = Stats.Verdict(spread, Th.CornerOk, Th.CornerBad);
-            string vAzim = Stats.Verdict(azMax, Th.AzimOk, Th.AzimBad);
-            string vResid = Stats.Verdict(resPtp, Th.AzimOk, Th.AzimBad);
+            // Toate trei masoara aceeasi abatere de la simetria radiala, deci impart
+            // scara de reziduu. Offsetul centrului masoara altceva - o pozitie - si
+            // ramane pe OK/SUSPECT/PROBLEMA.
+            string vCorner = Stats.ResidualVerdict(spread);
+            string vAzim = Stats.ResidualVerdict(azMax);
+            string vResid = Stats.ResidualVerdict(resPtp);
             string vCentroid = Stats.Verdict(off, Th.CentroidOk, Th.CentroidBad);
 
             return new StructureResult
@@ -84,8 +87,10 @@ namespace FlatCheck
                 AzimuthalVerdict = vAzim,
                 ResidualVerdict = vResid,
                 CentroidVerdict = vCentroid,
-                Verdict = new[] { vCorner, vAzim, vResid, vCentroid }
-                    .OrderByDescending(Stats.Rank).First(),
+                // verdictul general e cel mai prost dintre cele patru, exprimat in
+                // vocabularul benzilor de reziduu
+                Verdict = Stats.ResidualBands[
+                    new[] { vCorner, vAzim, vResid, vCentroid }.Max(Stats.Severity)],
             };
         }
     }

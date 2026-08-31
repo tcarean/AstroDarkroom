@@ -198,28 +198,75 @@ public class StatsTests
         Assert.Equal("PROBLEMA", Stats.Verdict(double.NaN, 1.5, 4.0));
     }
 
+    /// <summary>
+    /// Severity spans both ladders, so a structure verdict (PERFECT/BUN/ACCEPTABIL/REFA)
+    /// and a centroid verdict (OK/SUSPECT/PROBLEMA) can be compared to pick the worst.
+    /// </summary>
     [Theory]
     [InlineData("OK", 0)]
-    [InlineData("SUSPECT", 1)]
-    [InlineData("PROBLEMA", 2)]
-    public void Rank_OrdersTheVerdicts(string verdict, int expected)
+    [InlineData("PERFECT", 0)]
+    [InlineData("BUN", 1)]
+    [InlineData("SUSPECT", 2)]
+    [InlineData("ACCEPTABIL", 2)]
+    [InlineData("PROBLEMA", 3)]
+    [InlineData("REFA", 3)]
+    public void Severity_SpansBothLadders(string verdict, int expected)
     {
-        Assert.Equal(expected, Stats.Rank(verdict));
+        Assert.Equal(expected, Stats.Severity(verdict));
     }
 
     [Fact]
-    public void Rank_TreatsAnUnknownStringAsTheWorstCase()
+    public void Severity_TreatsAnUnknownStringAsTheWorstCase()
     {
-        Assert.Equal(2, Stats.Rank("something else"));
+        Assert.Equal(3, Stats.Severity("something else"));
     }
 
     [Fact]
-    public void Rank_LetsTheWorstVerdictWinAnOrdering()
+    public void Severity_LetsTheWorstVerdictWinAnOrdering()
     {
-        var verdicts = new[] { "OK", "PROBLEMA", "SUSPECT" };
+        var verdicts = new[] { "PERFECT", "REFA", "BUN" };
 
-        string worst = verdicts.OrderByDescending(Stats.Rank).First();
+        string worst = verdicts.OrderByDescending(Stats.Severity).First();
 
-        Assert.Equal("PROBLEMA", worst);
+        Assert.Equal("REFA", worst);
+    }
+
+    // ---------------------------------------------------------------- ResidualVerdict
+
+    /// <summary>
+    /// The scale shared by the three structure deviation tests:
+    ///   &lt; 2 %    perfect
+    ///   2 - 10 %  usable, background extraction removes what is left
+    ///   10 - 20 % usable, but confirm with --light before a hard stretch
+    ///   &gt; 20 %  reshoot
+    /// Boundaries are strict "&lt;", so each one falls into the worse band.
+    /// </summary>
+    [Theory]
+    [InlineData(0.0, "PERFECT")]
+    [InlineData(1.99, "PERFECT")]
+    [InlineData(2.0, "BUN")]          // boundary
+    [InlineData(9.99, "BUN")]
+    [InlineData(10.0, "ACCEPTABIL")]  // boundary
+    [InlineData(19.99, "ACCEPTABIL")]
+    [InlineData(20.0, "REFA")]        // boundary
+    [InlineData(500.0, "REFA")]
+    public void ResidualVerdict_Bands(double value, string expected)
+    {
+        Assert.Equal(expected, Stats.ResidualVerdict(value));
+    }
+
+    /// <summary>Same NaN rule as Verdict: every comparison is false, so it degrades.</summary>
+    [Fact]
+    public void ResidualVerdict_OnNaN_DegradesToReshoot()
+    {
+        Assert.Equal("REFA", Stats.ResidualVerdict(double.NaN));
+    }
+
+    [Fact]
+    public void ResidualBands_AreListedWorstLast()
+    {
+        Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" }, Stats.ResidualBands);
+        for (int i = 0; i < Stats.ResidualBands.Length; i++)
+            Assert.Equal(i, Stats.Severity(Stats.ResidualBands[i]));
     }
 }

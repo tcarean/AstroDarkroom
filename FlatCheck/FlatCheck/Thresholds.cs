@@ -10,8 +10,19 @@ namespace FlatCheck
     static class Th
     {
         // --- structura ---
-        public const double CornerOk = 1.5, CornerBad = 4.0;
-        public const double AzimOk = 1.5, AzimBad = 4.0;          // refolosite si pt reziduu
+        // Scara de reziduu, folosita de toate trei metricile de abatere de la simetria
+        // radiala: imprastierea colturilor, asimetria azimutala si reziduul dupa model.
+        // Toate trei masoara aceeasi abatere din unghiuri diferite, deci impart scara:
+        //     sub  2 %   calitate perfecta
+        //      2 - 10 %  utilizabil; background extraction scoate ce ramane
+        //     10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
+        //     peste 20 % refa flat-urile
+        public const double ResidPerfect = 2.0;
+        public const double ResidUsable = 10.0;
+        public const double ResidCheck = 20.0;
+
+        // Offsetul centrului de iluminare NU e o metrica de reziduu - masoara o pozitie,
+        // nu o amplitudine - deci ramane pe scara OK/SUSPECT/PROBLEMA.
         public const double CentroidOk = 4.0, CentroidBad = 10.0;
 
         // --- rotatie 180 ---

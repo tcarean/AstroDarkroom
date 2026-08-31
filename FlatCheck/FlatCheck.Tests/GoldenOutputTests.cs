@@ -76,12 +76,16 @@ public class GoldenOutputTests
         var (output, exit) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
 
         Assert.Equal(0, exit);
-        Assert.Contains("VERDICT: OK", output);
+        Assert.Contains("VERDICT: PERFECT", output);
         AssertGolden("structure_clean", output);
     }
 
+    /// <summary>
+    /// A 12% corner spread lands in the 10-20% band: usable, but confirm with --light
+    /// before a hard stretch. Under the old three-level ladder this was PROBLEMA.
+    /// </summary>
     [Fact]
-    public void Structure_OnLinearGradient_ReportsProblem()
+    public void Structure_OnLinearGradient_IsUsableButNeedsConfirming()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12);
@@ -89,9 +93,43 @@ public class GoldenOutputTests
 
         var (output, exit) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
 
-        Assert.Equal(3, exit);
-        Assert.Contains("VERDICT: PROBLEMA", output);
+        Assert.Equal(2, exit);
+        Assert.Contains("VERDICT: ACCEPTABIL", output);
+        Assert.Contains("confirma cu --light", output);
         AssertGolden("structure_gradient", output);
+    }
+
+    /// <summary>A frame far outside the scale must land in the reshoot band.</summary>
+    [Fact]
+    public void Structure_OnAViolentGradient_SaysReshoot()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.60);
+        string f = Flat(ws, "violent.fit", scene);
+
+        var (output, exit) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(3, exit);
+        Assert.Contains("VERDICT: REFA", output);
+        AssertGolden("structure_reshoot", output);
+    }
+
+    /// <summary>The scale itself is printed, so the numbers can be read without the docs.</summary>
+    [Fact]
+    public void Structure_PrintsTheScaleAndNamesTheMostImportantMetric()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+
+        var (output, _) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
+
+        Assert.Contains("SCARA celor trei teste de abatere de mai sus", output);
+        Assert.Contains("sub 2 %", output);
+        Assert.Contains("2 - 10 %", output);
+        Assert.Contains("10 - 20 %", output);
+        Assert.Contains("peste 20 %", output);
+        Assert.Contains("reziduu dupa model rad. :  0.24 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
+        Assert.Contains("Cel mai important e \"reziduu dupa model rad.\"", output);
     }
 
     // ---------------------------------------------------------------- ratio

@@ -7,19 +7,29 @@
     centru -> colt          : 0.76 stopuri (colt = 59% din centru)
 
   TESTE
-    imprastiere 4 colturi   : 12.00 %   [PROBLEMA]
+    imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]
         stanga-sus    :  94.01 % din media colturilor
         dreapta-sus   : 105.71 % din media colturilor
         stanga-jos    :  94.27 % din media colturilor
         dreapta-jos   : 106.01 % din media colturilor
-    asimetrie azimutala max : 10.82 %   [PROBLEMA]
-    reziduu dupa model rad. :  9.42 %   [PROBLEMA]
+    asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
+    reziduu dupa model rad. :  9.42 %   [BUN]  <- CEL MAI IMPORTANT
     offset centru iluminare :  7.55 %   [SUSPECT]
         varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
 
-  VERDICT: PROBLEMA
-    Abatere de la simetria radiala => sursa neuniforma, light leak,
-    camera inclinata, sau ambient. NU e vignetare. Vezi harta reziduala.
+  SCARA celor trei teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial, adica exact eroarea de
+    flat. Imprastierea colturilor si asimetria azimutala sunt vederi
+    partiale ale aceleiasi abateri.
+
+  VERDICT: ACCEPTABIL
+    Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de
+    un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.
 
     -> harta salvata: <TMP>/out.png
 
