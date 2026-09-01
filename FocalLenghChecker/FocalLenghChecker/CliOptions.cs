@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace FocalLenghChecker;
 
 /// <summary>The validated command line, once parsing has succeeded.</summary>
@@ -13,7 +30,11 @@ public sealed record CliParseResult(CliOptions? Options, string? Error, bool Hel
 
 public static class CommandLineParser
 {
-    public const string Usage = """
+    /// <summary>
+    /// The help text. It ends with the GPLv3 warranty disclaimer, which is why it is
+    /// composed rather than being one literal.
+    /// </summary>
+    public static readonly string Usage = """
         FocalLenghChecker - counts the focal lengths used across a folder of Nikon .NEF files.
 
         Usage:
@@ -25,7 +46,9 @@ public static class CommandLineParser
                             already being full-frame. Without it they are treated
                             as DX and multiplied by the 1.5 crop factor.
           --help, -h        Show this help.
-        """;
+
+
+        """ + LicenseInfo.WarrantyNotice;
 
     /// <summary>
     /// Parses the command line. The folder and the flag may appear in either order.

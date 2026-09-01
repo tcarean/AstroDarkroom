@@ -5,6 +5,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- The tool's version. Bumped MANUALLY, by hand, per feature or fix. It is the
+         single source of truth: VersionInfo.Value reads it back out of the assembly. -->
+    <Version>1.0.0</Version>
+
+    <!-- Copyright and licence. <Copyright> becomes AssemblyCopyrightAttribute, which is
+         where LicenseInfo.Copyright reads it from before printing it under the banner on
+         every run - so this is the only place to change it. The tool is GPLv3; the full
+         text is in LICENSE, next to the solution. -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 using System.IO;
 using System.Threading;
 using System.Windows;
@@ -75,7 +92,7 @@ public partial class App : WpfApplication
         if (new StartupRegistrar(registry, autoStart).EnsureRegisteredOnFirstRun())
         {
             _tray.ShowBalloon(
-                "Mindfulness Reminder",
+                VersionInfo.Name,
                 "Running in the tray. It now starts with Windows -- untick that in the tray menu to stop it.");
         }
     }
@@ -106,10 +123,12 @@ public partial class App : WpfApplication
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
-        // A tray app that dies silently just vanishes; say so before going.
+        // A tray app that dies silently just vanishes; say so before going. The banner goes
+        // along: a screenshot of this dialog is often all a bug report has, and it has to say
+        // which version broke.
         MessageBox.Show(
-            e.Exception.Message,
-            "Mindfulness Reminder stopped",
+            e.Exception.Message + "\n\n" + VersionInfo.Banner,
+            VersionInfo.Name + " stopped",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
 

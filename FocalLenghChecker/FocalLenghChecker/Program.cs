@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 namespace FocalLenghChecker;
 
 public static class ExitCodes
@@ -16,6 +33,14 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // The version, on the first line of any run - help and failures included - so
+        // that a report pasted somewhere else says on its own which version produced it.
+        // Under it, the copyright notice GPLv3 asks every copy to carry, which says whose
+        // tool that was. The warranty disclaimer is in --help.
+        Console.WriteLine(VersionInfo.Banner);
+        Console.WriteLine(LicenseInfo.Copyright);
+        Console.WriteLine();
+
         var parsed = CommandLineParser.Parse(args, Environment.CurrentDirectory);
 
         if (parsed.HelpRequested)

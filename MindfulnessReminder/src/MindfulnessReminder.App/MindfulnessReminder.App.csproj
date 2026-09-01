@@ -26,6 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- GPLv3 wants a copy of the licence to travel with every copy of the program, and
+         About tells the user it is "next to the executable" - so it has to actually be
+         there, in the build output and in whatever gets published from it. -->
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MindfulnessReminder.Core\MindfulnessReminder.Core.csproj" />
   </ItemGroup>
 

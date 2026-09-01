@@ -71,8 +71,8 @@ file ────> IFocalLengthReader ─────┘                        
                                                         ReportFormatter (pure)
 ```
 
-`Program.cs` does nothing but wire these together, map failures onto exit codes,
-and paint the stderr progress line. Put no logic there — it is the only file with
+`Program.cs` does nothing but print the banner, wire these together, map failures onto
+exit codes, and paint the stderr progress line. Put no logic there — it is the only file with
 no test coverage, by design.
 
 `FolderAnalyzer` is the seam: it takes `INefFileFinder` and `IFocalLengthReader`,
@@ -134,3 +134,58 @@ shipped configuration has to be a deliberate one.
 
 `MetadataExtractor` (2.9.3) is the only runtime package. It handles Nikon raw
 natively; there is no hand-rolled TIFF/IFD walker in the production code.
+
+## Versioning
+
+Every run prints `FocalLenghChecker <version>` as its **first line** - `--help` and
+failed runs included - so a pasted report always says which version produced it. Under
+it goes the copyright line; see "Licensing" below. There is no `--version` flag; it
+would be redundant, and a test keeps it that way.
+
+`<Version>` in `FocalLenghChecker.csproj` is the single source of truth.
+`Version.cs` does **not** hardcode it: `VersionInfo.Value` reads the assembly's
+`AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and trims any
+`+sourcerevision` suffix. Don't reintroduce a literal there.
+
+**The user bumps the version manually**, per feature or fix, choosing the increment
+themselves. **Never bump it on your own initiative** - not as part of a change, not
+"while you're in there". If a change seems to warrant a bump, say so and let them decide.
+
+**Bumping the version breaks nothing.** The banner is printed in `Program.Main`, which
+is the one file with no test coverage, so it never reaches `ReportFormatter` and
+`ReportGoldenTests` is untouched by a bump. What does fail, and should: removing
+`<Version>` from the csproj, or breaking the MSBuild plumbing - `VersionTests` covers
+both, plus the exact shape of the banner built from it.
+
+## Licensing
+
+The tool is **GPLv3-or-later**, the same as the sibling `FlatCheck`. The full text is
+in `LICENSE` next to the solution (the verbatim FSF `gpl-3.0.txt` - don't reword it,
+and don't reflow it).
+
+Four things follow, and all four are pinned by `LicenseTests`:
+
+- **Every source file starts with the notice**, above the file's own header comment:
+  the SPDX line, the copyright, and all three paragraphs of the standard GNU notice
+  (permission, no-warranty, where-to-get-a-copy). New files get it too - it is the
+  first thing to write, not an afterthought. `LicenseTests` walks both projects and
+  fails on any file missing it, which is the only thing keeping the convention alive
+  as files get added. The SPDX line is there so licence scanners can read the file
+  without parsing English.
+- **Every run prints the copyright on the second line**, right under the version
+  banner, at `--help` and on failed runs too. A report pasted somewhere else then says
+  on its own whose tool produced it, not just which version. It is printed in
+  `Program.Main`, so it never reaches `ReportFormatter` and the golden report is
+  unaffected.
+- **`--help` carries the warranty disclaimer** and points at `LICENSE` - GPLv3 §5(d),
+  which wants a program that displays legal notices to display that one too. It lives
+  there rather than under the copyright line on purpose: five lines on top of every
+  report, every run, would drown the numbers. That is why `CommandLineParser.Usage`
+  is a `static readonly` composition rather than a `const`.
+- **One source of truth for the copyright string**: `<Copyright>` in
+  `FocalLenghChecker.csproj`, read back through `AssemblyCopyrightAttribute` by
+  `LicenseInfo.Copyright`. The literal in `ReadCopyright` is only a fallback for a
+  build that lost the attribute, and a test binds the two together.
+
+The year and the author are the user's call. Don't roll the year forward on your own
+initiative.

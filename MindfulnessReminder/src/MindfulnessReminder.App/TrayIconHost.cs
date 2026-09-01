@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 using System.Drawing;
 using System.Windows.Forms;
 using MindfulnessReminder.Core;
@@ -6,7 +23,7 @@ using WpfApplication = System.Windows.Application;
 namespace MindfulnessReminder.App;
 
 /// <summary>
-/// The tray icon and its menu: a checkbox that mirrors the auto-start state, and Exit.
+/// The tray icon and its menu: a checkbox that mirrors the auto-start state, About, and Exit.
 ///
 /// The checked state is refreshed every time the menu opens rather than cached, because the
 /// user can change auto-start behind our back from Task Manager's Startup tab.
@@ -33,12 +50,19 @@ internal sealed class TrayIconHost : IDisposable
         };
         _autoStartItem.Click += OnAutoStartClick;
 
+        // The app's only window is the reminder, and putting a licence notice on that would
+        // defeat its purpose, so About is where the copyright and the warranty disclaimer are
+        // displayed. It sits with Exit rather than with the setting: neither is a setting.
+        var aboutItem = new ToolStripMenuItem("About");
+        aboutItem.Click += (_, _) => ShowAbout();
+
         var exitItem = new ToolStripMenuItem("Exit");
         exitItem.Click += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         var menu = new ContextMenuStrip();
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(new ToolStripSeparator());
+        menu.Items.Add(aboutItem);
         menu.Items.Add(exitItem);
         menu.Opening += (_, _) => RefreshAutoStartItem();
 
@@ -47,7 +71,9 @@ internal sealed class TrayIconHost : IDisposable
         _notifyIcon = new NotifyIcon
         {
             Icon = _icon,
-            Text = "Mindfulness Reminder",
+            // The tooltip carries the version too: hovering the icon is the cheapest way
+            // to find out which build is actually running, without opening anything.
+            Text = VersionInfo.Banner,
             ContextMenuStrip = menu,
             Visible = true,
         };
@@ -63,6 +89,15 @@ internal sealed class TrayIconHost : IDisposable
         _notifyIcon.BalloonTipText = text;
         _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
         _notifyIcon.ShowBalloonTip(5000);
+    }
+
+    private static void ShowAbout()
+    {
+        MessageBox.Show(
+            LicenseInfo.AboutText,
+            "About " + VersionInfo.Name,
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
     }
 
     private void OnAutoStartClick(object? sender, EventArgs e)
@@ -83,7 +118,7 @@ internal sealed class TrayIconHost : IDisposable
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
         {
             ShowBalloon(
-                "Mindfulness Reminder",
+                VersionInfo.Name,
                 "Windows refused the startup setting change. Group policy may be managing it.");
         }
 

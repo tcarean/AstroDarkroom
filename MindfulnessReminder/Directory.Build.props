@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- The app version. Bumped MANUALLY, by hand, per feature or fix. MSBuild turns it
+         into AssemblyInformationalVersion, which is where VersionInfo.Value reads it from
+         and what Windows shows as the .exe's file version - so this is the only place to
+         change it. See "Versioning" in README.md. -->
+    <Version>1.0.0</Version>
+
+    <!-- Copyright and licence, for every project in the solution at once. <Copyright>
+         ends up in AssemblyCopyrightAttribute, which is where LicenseInfo.Copyright
+         reads it from and what Windows shows under the .exe's Properties > Details -
+         so this is the only place to change it. The program is GPLv3; the full text
+         is in LICENSE, next to this file. -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>
