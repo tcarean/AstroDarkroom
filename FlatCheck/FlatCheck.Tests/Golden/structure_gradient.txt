@@ -5,8 +5,13 @@ Copyright (C) 2026 Tudor Carean
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
     median / max ADU   : 25760 / 30119
 
-  VIGNETARE (informativ, nu e un test)
-    centru -> colt          : 0.76 stopuri (colt = 59% din centru)
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
+    offset centru iluminare :  7.55 %
+        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
 
   TESTE
     imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]
@@ -16,18 +21,17 @@ Copyright (C) 2026 Tudor Carean
         dreapta-jos   : 106.01 % din media colturilor
     asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
     reziduu dupa model rad. :  9.42 %   [BUN]  <- CEL MAI IMPORTANT
-    offset centru iluminare :  7.55 %   [SUSPECT]
-        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
+    inclinare (gradient)    : 12.01 %   [ACCEPTABIL]
 
-  SCARA celor trei teste de abatere de mai sus
+  SCARA celor patru teste de abatere de mai sus
     sub 2 %      calitate perfecta
     2 - 10 %     utilizabil; background extraction scoate ce ramane
     10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
     peste 20 %   refa flat-urile
     Cel mai important e "reziduu dupa model rad.": masoara direct cat din
     cadru NU se explica printr-un model pur radial, adica exact eroarea de
-    flat. Imprastierea colturilor si asimetria azimutala sunt vederi
-    partiale ale aceleiasi abateri.
+    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt
+    vederi partiale ale aceleiasi abateri.
 
   VERDICT: ACCEPTABIL
     Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de

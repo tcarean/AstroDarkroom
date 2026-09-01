@@ -180,13 +180,34 @@ public class GoldenOutputTests
 
         var (output, _) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
 
-        Assert.Contains("SCARA celor trei teste de abatere de mai sus", output);
+        Assert.Contains("SCARA celor patru teste de abatere de mai sus", output);
         Assert.Contains("sub 2 %", output);
         Assert.Contains("2 - 10 %", output);
         Assert.Contains("10 - 20 %", output);
         Assert.Contains("peste 20 %", output);
         Assert.Contains("reziduu dupa model rad. :  0.24 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
         Assert.Contains("Cel mai important e \"reziduu dupa model rad.\"", output);
+    }
+
+    /// <summary>
+    /// The illumination-centre offset is reported but carries no verdict, and sits under
+    /// the informative heading rather than under TESTE. It stopped being a test in 1.2.0:
+    /// it is a gradient-over-curvature ratio, so it is not scale-invariant, and past the
+    /// point where the vertex leaves the frame it is not even monotonic. What measures
+    /// the same defect as an amplitude is "inclinare", which is a test.
+    /// </summary>
+    [Fact]
+    public void Structure_ReportsTheCentroidOffsetAsInformativeOnly()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+
+        var (output, _) = RunCli(ws, f, "-o", ws.PathTo("out.png"));
+
+        Assert.Contains("INFORMATIV (nu sunt teste)", output);
+        Assert.Contains("offset centru iluminare :  0.19 %", output);
+        Assert.DoesNotContain("offset centru iluminare :  0.19 %   [", output);
+        Assert.Contains("inclinare (gradient)    :", output);
     }
 
     // ---------------------------------------------------------------- ratio

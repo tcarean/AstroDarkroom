@@ -32,7 +32,9 @@ namespace FlatCheck
         internal double RawMedian, RawMax;           // pe rasterul original, informativ
         internal double FitCx, FitCy;                // varful de iluminare fitat
         internal double SensorCx, SensorCy;          // centrul senzorului (w/2, h/2)
-        internal double CentroidOffsetPct;           // % din semidiagonala
+        internal double CentroidOffsetPct;           // % din semidiagonala, INFORMATIV
+        internal bool CentroidValid;                 // false => varful fitat nu e utilizabil
+        internal double TiltPct;                     // amplitudinea termenului liniar, %
         internal Dictionary<string, double> Corners; // medianele celor 4 colturi
         internal double CornerMean, CentreMedian;
         internal double VignetteStops;               // informativ, NU e un test
@@ -40,7 +42,7 @@ namespace FlatCheck
         internal double AzimuthalMaxPct;
         internal double ResidualPtpPct;
         internal Img Residual;                       // img / model radial, pentru harta
-        internal string CornerVerdict, AzimuthalVerdict, ResidualVerdict, CentroidVerdict;
+        internal string CornerVerdict, AzimuthalVerdict, ResidualVerdict, TiltVerdict;
         internal string Verdict;                     // cel mai prost dintre cele patru
     }
 
@@ -53,10 +55,12 @@ namespace FlatCheck
 
             // ATENTIE: modelul radial si asimetria se calculeaza in jurul centrului
             // SENZORULUI, nu al varfului fitat. Centrarea pe varf ar absorbi exact
-            // gradientul liniar cautat, iar testul s-ar autoanula. FitCenter serveste
-            // doar la raportarea offsetului, ca metrica separata.
+            // gradientul liniar cautat, iar testul s-ar autoanula.
             double cx = w / 2.0, cy = h / 2.0;
-            var (fx, fy) = Metrics.FitCenter(img);
+            // Din acelasi fit ies doua lucruri: inclinarea, care e un test, si offsetul
+            // varfului, care e doar informativ - nu e scale-invariant, si peste un prag
+            // nici macar monoton. Vezi Metrics.FitCenter pentru de ce.
+            var (fx, fy, tilt, centroidValid) = Metrics.FitCenter(img);
             double off = Math.Sqrt((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy))
                        / Math.Sqrt(cx * cx + cy * cy) * 100;
 
@@ -73,13 +77,14 @@ namespace FlatCheck
             var az = Metrics.AzimuthalAsymmetry(img, cx, cy);
             double azMax = az.Count > 0 ? az.Max(v => v.ptp) : double.NaN;
 
-            // Toate trei masoara aceeasi abatere de la simetria radiala, deci impart
-            // scara de reziduu. Offsetul centrului masoara altceva - o pozitie - si
-            // ramane pe OK/SUSPECT/PROBLEMA.
+            // Toate patru masoara aceeasi abatere de la simetria radiala, din unghiuri
+            // diferite, si toate patru sunt amplitudini fractionare in procente - deci
+            // impart scara de reziduu. Offsetul centrului masoara altceva, o pozitie, si
+            // nu mai da verdict deloc: e raportat informativ.
             string vCorner = Stats.ResidualVerdict(spread);
             string vAzim = Stats.ResidualVerdict(azMax);
             string vResid = Stats.ResidualVerdict(resPtp);
-            string vCentroid = Stats.Verdict(off, Th.CentroidOk, Th.CentroidBad);
+            string vTilt = Stats.ResidualVerdict(tilt);
 
             return new StructureResult
             {
@@ -92,6 +97,8 @@ namespace FlatCheck
                 SensorCx = cx,
                 SensorCy = cy,
                 CentroidOffsetPct = off,
+                CentroidValid = centroidValid,
+                TiltPct = tilt,
                 Corners = cor,
                 CornerMean = cmean,
                 CentreMedian = ctr,
@@ -103,11 +110,11 @@ namespace FlatCheck
                 CornerVerdict = vCorner,
                 AzimuthalVerdict = vAzim,
                 ResidualVerdict = vResid,
-                CentroidVerdict = vCentroid,
+                TiltVerdict = vTilt,
                 // verdictul general e cel mai prost dintre cele patru, exprimat in
                 // vocabularul benzilor de reziduu
                 Verdict = Stats.ResidualBands[
-                    new[] { vCorner, vAzim, vResid, vCentroid }.Max(Stats.Severity)],
+                    new[] { vCorner, vAzim, vResid, vTilt }.Max(Stats.Severity)],
             };
         }
     }

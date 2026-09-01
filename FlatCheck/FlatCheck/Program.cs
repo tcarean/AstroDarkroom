@@ -85,16 +85,21 @@
 //
 // ISO-ul NU CONTEAZA: fiecare metrica e un raport, ISO e un scalar, se simplifica.
 //
-// SCARA celor trei teste de abatere (imprastiere colturi, asimetrie azimutala,
-// reziduu dupa model radial). Toate trei masoara aceeasi abatere de la simetria
-// radiala, din unghiuri diferite, deci impart o scara:
+// SCARA celor patru teste de abatere (imprastiere colturi, asimetrie azimutala,
+// reziduu dupa model radial, inclinare). Toate patru masoara aceeasi abatere de la
+// simetria radiala, din unghiuri diferite, si toate patru sunt amplitudini in procente,
+// deci impart o scara:
 //     sub  2 %   calitate perfecta
 //      2 - 10 %  utilizabil; background extraction scoate ce ramane
 //     10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
 //     peste 20 % refa flat-urile
 // Cel mai important e REZIDUUL DUPA MODEL RADIAL: masoara direct cat din cadru nu se
-// explica printr-un model pur radial, adica exact eroarea de flat. Celelalte doua sunt
+// explica printr-un model pur radial, adica exact eroarea de flat. Celelalte trei sunt
 // vederi partiale ale aceleiasi abateri.
+//
+// OFFSETUL CENTRULUI DE ILUMINARE e informativ, nu un test: e raportul dintre gradient
+// si curbura, deci nu e scale-invariant, iar cand varful iese din cadru cade la 0. Ce
+// masoara acelasi defect ca amplitudine e INCLINAREA.
 //
 // PRAGURILE de mai jos sunt reguli empirice, nu constante fizice. Un punct de plecare.
 // Ruleaza o data pe un setup despre care esti sigur si calibreaza-le pe cifrele tale.

@@ -105,9 +105,12 @@ KNOWN_NUMERIC_DIVERGENCE = {
     "structure uniform":
         "FitCenter pe un cadru perfect constant. Coeficientii patratici sunt zgomot de "
         "virgula mobila (~1e-15) si determinantul iese 1.3e-29. C# are garda "
-        "|det| < 1e-15 si cade pe centrul senzorului (0.00%, OK); Python n-are garda, "
-        "np.linalg.solve nu arunca, si raporteaza un varf fals la (136,136) -> 6.35%, "
-        "SUSPECT. C#-ul e corect; Python da un fals pozitiv pe un cadru uniform.",
+        "|det| < 1e-15, marcheaza varful ca inutilizabil si tipareste 'nedeterminat'; "
+        "Python n-are garda, np.linalg.solve nu arunca, si raporteaza un varf fals la "
+        "(136,136) -> 6.35%. C#-ul e corect. Din 1.2.0 diferenta e insa limitata la "
+        "linia INFORMATIVA: offsetul nu mai da verdict, deci cele doua implementari "
+        "ajung la acelasi verdict si falsul pozitiv al Python-ului nu mai schimba "
+        "rezultatul - inainte facea diferenta OK vs SUSPECT.",
 }
 
 # numere de sine statatoare - nu "3"-ul din "python3"

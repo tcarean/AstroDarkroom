@@ -96,8 +96,9 @@ azimuthal asymmetry are computed around the **sensor centre** (`w/2, h/2`), *not
 around the fitted illumination peak. Centring on the fitted peak would let the fit
 absorb exactly the linear gradient you are trying to detect (a gradient laid over
 quasi-quadratic vignetting merely shifts the vertex), and the test would silently
-cancel itself out. `FitCenter` is used *only* to report the offset as its own
-metric.
+cancel itself out. `FitCenter` never supplies the centre the other metrics use - it
+supplies the *tilt*, which is a test, and the vertex offset, which since 1.2.0 is only
+informative (see "The residual scale").
 
 ## Input contract
 
@@ -129,8 +130,11 @@ Dispatch order in `FlatCheckCli.Run` is `--expo` → `--ratio` → `--light` →
 Is the master flat radially symmetric? Runs on the final master.
 
 1. `FitsReader.Load` → `Prepare` (2×2 block-mean, then downsample toward ~1200 px).
-2. `FitCenter` → illumination peak; reported as offset from sensor centre, as a
-   percentage of the half-diagonal.
+2. `FitCenter` → one paraboloid fit on `log(I)`, two outputs. The **tilt** (the
+   peak-to-peak amplitude of the fitted linear term, `2·sinh(|b|+|c|)`) is a test, on
+   the shared residual scale. The **vertex offset** from the sensor centre, as a
+   percentage of the half-diagonal, is printed informatively and carries no verdict -
+   see "The residual scale" for why that changed in 1.2.0.
 3. `CornerStats` → median of four 5% corner boxes and a central box. Reports
    vignetting in stops (informative only, *not* a test) and the spread between
    the four corners (a test - the corners should all be equal on a radial field).
@@ -138,7 +142,8 @@ Is the master flat radially symmetric? Runs on the final master.
    `LargeScalePtp` of that residual (tile-averaged, inside the inscribed radius).
 5. `AzimuthalAsymmetry` → per-ring peak-to-peak across 12 sectors; the max is the
    metric.
-6. Verdict = the worst of the four tests, on the shared residual scale (see
+6. Verdict = the worst of the four tests - corner spread, azimuthal asymmetry,
+   residual, tilt - on the shared residual scale (see
    "The residual scale" below). Prints that scale, and marks
    `reziduu dupa model rad.` as the metric that matters most. Writes the residual
    heat map PNG.
@@ -377,8 +382,20 @@ singular (pivot < 1e-15). Used for both least-squares fits, which are set up as
 
 **`FitCenter(img)`** - fits a paraboloid to `log(I)` over
 `[1, xn, yn, xn², yn², xn·yn]` on a strided subsample (`step = max(1, min(h,w)/200)`),
-then solves for the vertex via `M = [[2d, f], [f, 2e]]`. Falls back to the geometric
-centre if the system is singular or the vertex lands outside the frame.
+and returns `(cx, cy, tiltPct, vertexValid)`.
+
+`tiltPct = 2·sinh(|b| + |c|)·100` is the peak-to-peak amplitude of the **linear** term
+over the frame: `|b| + |c|` is its value at the corner (where `xn = yn = 1`), and `sinh`
+converts exactly from log space to intensity instead of the linear approximation
+`2(|b| + |c|)`. It is a fraction, so it is scale-invariant like every other metric, and
+it recovers an injected gradient to within ~1%. The cross term `f` (astigmatism/saddle)
+is deliberately left out: it is not a tilt, and the residual test catches it anyway.
+
+The vertex comes from `M = [[2d, f], [f, 2e]]`. It falls back to the geometric centre -
+with `vertexValid = false`, so the report can say `nedeterminat` instead of printing a
+fake `0.00` - if the system is singular or the vertex lands outside the frame. If the
+normal equations themselves are singular the tilt is `NaN`, which degrades to `REFA`
+like every other NaN in the tool.
 
 **`RadialModel(img, cx, cy, nbins = 80, pct = 50)`** - bins pixels by radius into
 80 equal-width bins out to `rmax`, takes the median per bin (bins with < 8 pixels
@@ -411,7 +428,7 @@ Every threshold lives in `Th`. Full picture:
 | corner spread | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | azimuthal asymmetry (max) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | residual after radial model | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
-| illumination-centre offset | structure | 4.0% | 10.0% | `Th.CentroidOk/Bad` |
+| tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | A/B structure | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | A/B corner spread | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
@@ -426,10 +443,11 @@ Every threshold lives in `Th`. Full picture:
 
 ### The residual scale
 
-The three structure deviation tests - corner spread, azimuthal asymmetry, and residual
-after the radial model - all measure *the same thing* from different angles: how much of
-the frame fails to be explained by a purely radial function. So they share one four-band
-scale rather than a pass/fail threshold:
+The four structure deviation tests - corner spread, azimuthal asymmetry, residual after
+the radial model, and tilt - all measure *the same thing* from different angles: how much
+of the frame fails to be explained by a purely radial function. All four are fractional
+amplitudes in percent, so they share one four-band scale rather than a pass/fail
+threshold:
 
 | band | verdict | meaning |
 |---|---|---|
@@ -443,19 +461,39 @@ Boundaries are strict `<`, so each one falls into the worse band. `NaN` degrades
 
 **`reziduu dupa model rad.` is the one that matters most**, and the console output says
 so inline. It measures the departure from the radial model directly - which *is* the
-flat error. The corner spread and the azimuthal asymmetry are partial views of the same
-deviation: the corners catch it only where the four boxes sit, the azimuthal test only
-inside the inscribed circle.
+flat error. The other three are partial views of the same deviation: the corners catch it
+only where the four boxes sit, the azimuthal test only inside the inscribed circle, and
+the tilt only the part of it that is a plane.
 
 The structure mode prints the scale itself, under the heading
-`SCARA celor trei teste de abatere de mai sus`, so the numbers can be read without
+`SCARA celor patru teste de abatere de mai sus`, so the numbers can be read without
 consulting these docs.
 
-The illumination-centre offset is **not** on this scale - it measures a position, not an
-amplitude - and keeps `OK`/`SUSPECT`/`PROBLEMA`. `Stats.Severity` spans both ladders
-(`OK`/`PERFECT` = 0, `BUN` = 1, `SUSPECT`/`ACCEPTABIL` = 2, `PROBLEMA`/`REFA` = 3) so the
-overall verdict can still be "the worst of the four"; it is reported in the residual
-vocabulary.
+The illumination-centre offset is **not** on this scale, and since 1.2.0 it is not a test
+at all: it prints under `INFORMATIV (nu sunt teste)` with no verdict. It measures a
+position, which is the wrong shape for this tool. The vertex is `-b/(2d)`, a
+gradient-over-curvature ratio - not a fraction, and not scale-invariant. Measured, with
+the same 11% gradient held fixed: 2.38% at 2 stops of vignetting, 9.49% at 0.5, 31.16% at
+0.15, 57.40% at 0.08 - and then **0.00%** at 0.05, because the vertex leaves the frame and
+the out-of-frame guard returns the sensor centre. So the metric was not merely
+miscalibrated, it was **non-monotonic**: past that point the worse the defect, the cleaner
+the report, which is a silent false negative on exactly the flattest lenses. The fixtures
+never caught it because `FitsTestData.Radial` defaults to `k = 0.45`, i.e. 0.86 stops -
+5.7x deeper than a real Samyang 135 at f/2.8.
+
+`inclinare` is that same defect taken as an amplitude, which is what the scale wants, and
+it still catches genuine decentring: a radial field centred off the sensor centre produces
+a linear term of about `offset x curvature`, so the tilt weights the offset by what it
+actually costs photometrically. On the real Samyang master that prompted the change (0.15
+stops, an 11% twilight-sky gradient) the offset said 42.36% `PROBLEMA` and the mode said
+`REFA`; the tilt says 12.36% `ACCEPTABIL`, in line with the other three tests
+(12.62 / 7.05 / 6.05). Pinned by `FitCenter_TiltIsInvariantToTheVignettingDepth`,
+`FitCenter_WhenAFlatFieldMakesTheVertexEscape_TheTiltStillReadsTheGradient` and
+`OnAFlatLensWithAGradient_TheTiltCarriesTheVerdict`.
+
+`Stats.Severity` still spans both ladders (`OK`/`PERFECT` = 0, `BUN` = 1,
+`SUSPECT`/`ACCEPTABIL` = 2, `PROBLEMA`/`REFA` = 3): `--ratio` and `--light` keep the
+`OK`/`SUSPECT`/`PROBLEMA` vocabulary, and the exit code is derived across all modes.
 
 The `--ratio` mode keeps its own tighter 1%/3% thresholds. Its job is different: the A/B
 ratio should be *featureless*, and "background extraction removes it" does not apply to
@@ -531,11 +569,14 @@ Intentional divergences:
 
 **One numeric divergence, and the C# is the correct one.** On a *perfectly constant*
 frame `FitCenter`'s quadratic coefficients are pure floating-point noise (~1e-15) and
-the vertex determinant comes out at ~1.3e-29. C# guards with `|det| < 1e-15` and falls
-back to the sensor centre, reporting a 0.00% offset and OK. Python has no such guard:
-`np.linalg.solve` does not raise on a matrix that is only *numerically* singular, so it
-returns garbage, places the illumination peak at (136, 136) on a 256x256 raster, and
-reports a 6.35% offset with a SUSPECT verdict - a false positive on a uniform frame.
+the vertex determinant comes out at ~1.3e-29. C# guards with `|det| < 1e-15`, marks the
+vertex unusable and prints `nedeterminat`. Python has no such guard: `np.linalg.solve`
+does not raise on a matrix that is only *numerically* singular, so it returns garbage and
+places the illumination peak at (136, 136) on a 256x256 raster, reporting a 6.35% offset.
+
+Since 1.2.0 the difference is confined to the informative line: the offset no longer
+votes, so both implementations reach the same verdict and Python's false positive changes
+nothing. It used to be the difference between OK and SUSPECT.
 
 This cannot occur on a real flat, which always has vignetting and therefore a
 determinant far from zero. Do not "fix" the C# to match; the guard is what makes the

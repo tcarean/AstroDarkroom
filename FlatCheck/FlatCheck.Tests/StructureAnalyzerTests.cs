@@ -32,7 +32,7 @@ public class StructureAnalyzerTests
         Assert.Equal("PERFECT", r.CornerVerdict);
         Assert.Equal("PERFECT", r.AzimuthalVerdict);
         Assert.Equal("PERFECT", r.ResidualVerdict);
-        Assert.Equal("OK", r.CentroidVerdict);   // the centroid keeps its own ladder
+        Assert.Equal("PERFECT", r.TiltVerdict);
         Assert.Equal("PERFECT", r.Verdict);
     }
 
@@ -41,9 +41,32 @@ public class StructureAnalyzerTests
     {
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, FitsTestData.Radial(N, N)));
 
+        Assert.True(r.CentroidValid);
         Assert.True(r.CentroidOffsetPct < 1, "centroid offset was " + r.CentroidOffsetPct);
         Assert.Equal(256, r.SensorCx, 6);
         Assert.Equal(256, r.SensorCy, 6);
+    }
+
+    /// <summary>
+    /// The regression that motivated 1.2.0, at mode level. A lens with almost no
+    /// vignetting plus a real gradient used to come back with the centroid offset either
+    /// wildly inflated or - once the vertex left the frame - reported as 0.00% OK. The
+    /// tilt reads the gradient itself, so the mode fires on the defect, not on how much
+    /// vignetting happens to be there to divide by.
+    /// </summary>
+    [Fact]
+    public void OnAFlatLensWithAGradient_TheTiltCarriesTheVerdict()
+    {
+        var scene = FitsTestData.WithLinearGradient(
+            FitsTestData.Radial(N, N, 30000, 0.02), N, 0.30);
+
+        var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
+
+        Assert.False(r.CentroidValid);                 // the old metric has nothing to say
+        Assert.Equal(0.0, r.CentroidOffsetPct, 6);     // and would have read as "centred"
+        Assert.InRange(r.TiltPct, 29.0, 31.5);         // the injected 30%
+        Assert.Equal("REFA", r.TiltVerdict);
+        Assert.Equal("REFA", r.Verdict);
     }
 
     /// <summary>
@@ -84,7 +107,7 @@ public class StructureAnalyzerTests
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(N, N), N, 0.12);
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
 
-        var all = new[] { r.CornerVerdict, r.AzimuthalVerdict, r.ResidualVerdict, r.CentroidVerdict };
+        var all = new[] { r.CornerVerdict, r.AzimuthalVerdict, r.ResidualVerdict, r.TiltVerdict };
         Assert.Equal(all.Max(Stats.Severity), Stats.Severity(r.Verdict));
     }
 

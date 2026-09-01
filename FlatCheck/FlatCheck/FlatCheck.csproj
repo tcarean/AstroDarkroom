@@ -9,7 +9,7 @@
 
     <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
          Trebuie sa ramana identica cu __version__ din flatcheck.py. -->
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
 
     <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
          unde il citeste VersionInfo.Copyright si il tipareste sub banner - deci asta e

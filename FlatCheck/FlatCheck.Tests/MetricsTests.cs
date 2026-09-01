@@ -47,7 +47,7 @@ public class MetricsTests
     {
         var img = Make(128, 128, FitsTestData.Radial(128, 128));
 
-        var (cx, cy) = Metrics.FitCenter(img);
+        var (cx, cy, _, _) = Metrics.FitCenter(img);
 
         Assert.Equal(64, cx, 1);
         Assert.Equal(64, cy, 1);
@@ -58,7 +58,7 @@ public class MetricsTests
     {
         var img = LogParaboloid(128, 128, px: 80, py: 40);
 
-        var (cx, cy) = Metrics.FitCenter(img);
+        var (cx, cy, _, _) = Metrics.FitCenter(img);
 
         Assert.Equal(80, cx, 1);
         Assert.Equal(40, cy, 1);
@@ -81,7 +81,7 @@ public class MetricsTests
         // no curvature -> the vertex system is degenerate
         var img = Make(64, 32, (x, y) => 1000);
 
-        var (cx, cy) = Metrics.FitCenter(img);
+        var (cx, cy, _, _) = Metrics.FitCenter(img);
 
         Assert.Equal(32, cx, 6);
         Assert.Equal(16, cy, 6);
@@ -93,10 +93,107 @@ public class MetricsTests
         // peak far off to the right: the fit is fine, the answer is just not in frame
         var img = LogParaboloid(128, 128, px: 500, py: 64);
 
-        var (cx, cy) = Metrics.FitCenter(img);
+        var (cx, cy, _, _) = Metrics.FitCenter(img);
 
         Assert.Equal(64, cx, 6);
         Assert.Equal(64, cy, 6);
+    }
+
+    // ------------------------------------------------------------ FitCenter: inclinare
+    //
+    // The tilt is the reason the vertex offset stopped being a test in 1.2.0. The vertex
+    // is ~ -b/(2d), a gradient-over-curvature ratio, so it is not scale-invariant: the
+    // same defect reads wildly differently depending on how much vignetting the lens has,
+    // and past the point where the vertex leaves the frame it collapses to 0 = "clean".
+    // The tilt is the numerator alone - a fraction, like every other metric in the tool.
+
+    /// <summary>
+    /// The whole point of the change: the same injected gradient must read the same
+    /// whatever the vignetting depth. The old offset metric spanned 2.4% to 57% over
+    /// roughly this range before falling back to 0.
+    /// </summary>
+    [Theory]
+    [InlineData(0.05)]   // ~0.07 stops - a Samyang 135 at f/2.8 is about this flat
+    [InlineData(0.15)]
+    [InlineData(0.45)]   // the default fixture, ~0.86 stops
+    [InlineData(0.60)]
+    public void FitCenter_TiltIsInvariantToTheVignettingDepth(double k)
+    {
+        var scene = FitsTestData.WithLinearGradient(
+            FitsTestData.Radial(256, 256, 30000, k), 256, 0.12);
+
+        var (_, _, tilt, _) = Metrics.FitCenter(Make(256, 256, scene));
+
+        Assert.InRange(tilt, 11.5, 12.5);
+    }
+
+    /// <summary>
+    /// The tilt reads back the amplitude that was put in, within ~1%. It runs slightly
+    /// high (by 0.7% at 24%, by 2.2% at 2%) because the ramp is injected multiplicatively
+    /// on a field that is not exactly log-quadratic, so a sliver of it lands in the
+    /// higher-order terms; the band is relative so one tolerance covers the whole range.
+    /// </summary>
+    [Theory]
+    [InlineData(0.02, 2.0)]
+    [InlineData(0.06, 6.0)]
+    [InlineData(0.12, 12.0)]
+    [InlineData(0.24, 24.0)]
+    public void FitCenter_TiltRecoversTheInjectedGradientAmplitude(double g, double expected)
+    {
+        var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(256, 256), 256, g);
+
+        var (_, _, tilt, _) = Metrics.FitCenter(Make(256, 256, scene));
+
+        Assert.InRange(tilt, expected * 0.97, expected * 1.03);
+    }
+
+    /// <summary>
+    /// The bug this change exists to fix. On a nearly vignetting-free field a strong
+    /// gradient pushes the paraboloid vertex clean out of the frame, and the out-of-frame
+    /// guard then falls back to the sensor centre - so the *worse* the defect got, the
+    /// cleaner the old offset metric read. The tilt still measures it.
+    /// </summary>
+    [Fact]
+    public void FitCenter_WhenAFlatFieldMakesTheVertexEscape_TheTiltStillReadsTheGradient()
+    {
+        var scene = FitsTestData.WithLinearGradient(
+            FitsTestData.Radial(256, 256, 30000, 0.02), 256, 0.30);
+        var img = Make(256, 256, scene);
+
+        var (cx, cy, tilt, valid) = Metrics.FitCenter(img);
+
+        // the vertex is unusable, and says so instead of reporting a centred peak
+        Assert.False(valid);
+        Assert.Equal(128, cx, 6);
+        Assert.Equal(128, cy, 6);
+        // ...but the defect is still measured, and lands in the worst band
+        Assert.InRange(tilt, 29.0, 31.5);
+        Assert.Equal("REFA", Stats.ResidualVerdict(tilt));
+    }
+
+    /// <summary>A genuinely decentred radial field still fires: the tilt is not only a
+    /// gradient detector, it catches decentring too, weighted by the curvature - which is
+    /// exactly what it costs photometrically.</summary>
+    [Fact]
+    public void FitCenter_OnADecentredRadialField_ReportsATilt()
+    {
+        var img = LogParaboloid(256, 256, px: 160, py: 128, sigma: 200);
+
+        var (cx, _, tilt, valid) = Metrics.FitCenter(img);
+
+        Assert.True(valid);
+        Assert.Equal(160, cx, 1);
+        Assert.True(tilt > Th.ResidPerfect, "tilt was " + tilt);
+    }
+
+    [Fact]
+    public void FitCenter_OnAPerfectlyRadialField_ReportsNoTilt()
+    {
+        var img = Make(256, 256, FitsTestData.Radial(256, 256));
+
+        var (_, _, tilt, _) = Metrics.FitCenter(img);
+
+        Assert.True(tilt < Th.ResidPerfect, "tilt was " + tilt);
     }
 
     // ---------------------------------------------------------------- RadialModel

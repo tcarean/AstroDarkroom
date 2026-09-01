@@ -72,11 +72,12 @@ vârfului de iluminare fitat. Fitarea centrului ar absorbi exact gradientul lini
 flatcheck process/pp_flat_stacked.fit
 ```
 
-Rulează pe masterul final. Raportează vignetarea (informativ) și trei teste de abatere de
-la simetria radială: împrăștierea celor patru colțuri, asimetria azimutală pe 12 sectoare,
-și **reziduul după modelul radial** — cel care contează cel mai mult, fiindcă măsoară
-direct cât din cadru nu se explică printr-un model pur radial. Plus offsetul centrului de
-iluminare față de centrul senzorului. Salvează o hartă reziduală PNG.
+Rulează pe masterul final. Raportează informativ vignetarea și offsetul centrului de
+iluminare față de centrul senzorului, apoi patru teste de abatere de la simetria radială:
+împrăștierea celor patru colțuri, asimetria azimutală pe 12 sectoare, **reziduul după
+modelul radial** — cel care contează cel mai mult, fiindcă măsoară direct cât din cadru nu
+se explică printr-un model pur radial — și înclinarea, adică amplitudinea vârf-la-vârf a
+gradientului liniar peste cadru. Salvează o hartă reziduală PNG.
 
 ### 2. Rotație 180° — `--ratio`
 
@@ -246,10 +247,10 @@ cerul deloc.
 
 ## Scara de reziduu
 
-Cele trei teste de abatere din modul structură — împrăștierea colțurilor, asimetria
-azimutală, reziduul după modelul radial — măsoară *același lucru* din unghiuri diferite:
-cât din cadru nu se explică printr-o funcție pur radială. Deci împart o scară, nu un
-prag:
+Cele patru teste de abatere din modul structură — împrăștierea colțurilor, asimetria
+azimutală, reziduul după modelul radial și înclinarea — măsoară *același lucru* din
+unghiuri diferite: cât din cadru nu se explică printr-o funcție pur radială. Toate patru
+sunt amplitudini în procente, deci împart o scară, nu un prag:
 
 | bandă | verdict | ce înseamnă |
 |---|---|---|
@@ -259,11 +260,20 @@ prag:
 | > 20% | `REFA` | refă flat-urile |
 
 Cel mai important e **reziduul după modelul radial**: măsoară direct eroarea de flat.
-Celelalte două sunt vederi parțiale ale aceleiași abateri — colțurile o prind doar unde
-stau cele patru cutii, iar testul azimutal doar în interiorul cercului înscris.
+Celelalte trei sunt vederi parțiale ale aceleiași abateri — colțurile o prind doar unde
+stau cele patru cutii, testul azimutal doar în interiorul cercului înscris, iar înclinarea
+doar partea care e un plan.
 
-Offsetul centrului de iluminare **nu** e pe scara asta: măsoară o poziție, nu o amplitudine,
-deci rămâne pe `OK` / `SUSPECT` / `PROBLEMA`.
+Offsetul centrului de iluminare **nu** e pe scara asta și, din 1.2.0, nu mai e nici test:
+apare sub `INFORMATIV (nu sunt teste)`, fără verdict. Măsoară o poziție, iar poziția aia e
+raportul dintre gradient și curbură — deci nu e o fracție și nu e scale-invariantă. Cu
+același gradient de 11% ținut fix, offsetul raportat urcă de la 2.4% pe un obiectiv cu 2
+stopuri de vignetare la 57% pe unul cu 0.08 stopuri, iar sub asta vârful de iluminare iese
+din cadru și cifra cade brusc la 0.00%. Adică exact pe obiectivele cele mai plate, cu cât
+defectul era mai mare, cu atât raportul arăta mai curat.
+
+`Înclinarea` măsoară același defect ca amplitudine, ceea ce scara cere — și prinde în
+continuare o decentrare reală a axei optice, ponderată cu cât te costă ea de fapt.
 
 ---
 
@@ -277,7 +287,7 @@ setup despre care ești sigur. Toate stau în `FlatCheck/Thresholds.cs`.
 | împrăștiere colțuri | structură | *scara de reziduu* | |
 | asimetrie azimutală | structură | *scara de reziduu* | |
 | reziduu după model radial | structură | *scara de reziduu* | |
-| offset centru iluminare | structură | 4% | 10% |
+| înclinare (gradient) | structură | *scara de reziduu* | |
 | structură în A/B | `--ratio` | 1% | 3% |
 | împrăștiere colțuri în A/B | `--ratio` | 1% | 3% |
 | \|componentă radială\| | `--light` | 2% | 5% |

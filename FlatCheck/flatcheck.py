@@ -52,7 +52,7 @@ import numpy as np
 
 # Versiunea uneltei. Se incrementeaza MANUAL la fiecare feature/fix; nu o schimba de
 # capul tau. Trebuie sa ramana identica cu VersionInfo.Value din C# (FlatCheck/Version.cs).
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 # Notita de copyright, pe a doua linie a oricarei rulari - sub banner. GPLv3 cere ca
 # fiecare copie sa o poarte. Identica cu VersionInfo.Copyright din C#.
@@ -79,9 +79,12 @@ sau la <https://www.gnu.org/licenses/gpl-3.0.html>."""
 #     peste 20 % refa flat-urile
 TH_RESID_PERFECT, TH_RESID_USABLE, TH_RESID_CHECK = 2.0, 10.0, 20.0
 
-# Offsetul centrului de iluminare NU e o metrica de reziduu - masoara o pozitie, nu o
-# amplitudine - deci ramane pe scara OK/SUSPECT/PROBLEMA.
-TH_CENTROID_OK, TH_CENTROID_BAD = 4.0, 10.0  # offset centru, % din semidiagonala
+# Offsetul centrului de iluminare nu mai are praguri, fiindca nu mai e un test. Pana in
+# 1.2.0 avea 4%/10% pe scara OK/SUSPECT/PROBLEMA, si era gresit: offsetul e ~ -b/(2d),
+# adica raportul dintre gradient si curbura, deci nu e o fractie si nu e scale-invariant.
+# Pe un obiectiv cu vignetare mica exploda, iar cand varful ajungea sa iasa din cadru
+# cadea la 0.00% = "OK", adica devenea si nemonoton. Ce se masoara acum e TH_RESID_* pe
+# "inclinare": acelasi gradient, luat ca amplitudine. Vezi fit_center.
 TH_RATIO_OK, TH_RATIO_BAD = 1.0, 3.0       # structura in A/B (testul 180)
 
 # --- end-to-end ---
@@ -339,7 +342,23 @@ def prepare(data, target_long=1200):
 
 # ---------------------------------------------------------------- geometrie
 def fit_center(img):
-    """Vertexul unui paraboloid fitat pe log(I) = centrul de iluminare."""
+    """Paraboloid fitat pe log(I). Doua lucruri diferite, din acelasi fit:
+
+    - varful (vertexul) = centrul de iluminare. E o POZITIE, deci NU e scale-invariant:
+      vertexul e ~ -b/(2d), raportul dintre gradient si curbura. Pe un obiectiv aproape
+      fara vignetare (d mic) o rampa modesta il arunca oricat de departe, iar cand iese
+      din cadru garda de mai jos cade pe centrul senzorului - deci metrica e si
+      NEMONOTONA: peste un prag, cu cat defectul e mai mare, cu atat offsetul raportat e
+      mai mic. De asta offsetul e doar informativ si nu mai da verdict.
+    - inclinarea = amplitudinea varf-la-varf a termenului LINIAR peste cadru, adica
+      numaratorul de mai sus luat singur. E o fractie, deci scale-invarianta si direct
+      comparabila cu scara de reziduu. Un camp radial genuin decentrat produce si el un
+      termen liniar (~ offset x curbura), deci prinde si decentrarea reala, ponderata cu
+      cat costa ea fotometric.
+
+    Termenul incrucisat f (astigmatism) e lasat deliberat afara: nu e o inclinare, iar
+    reziduul dupa modelul radial il prinde oricum.
+    """
     h, w = img.shape
     y, x = np.mgrid[0:h, 0:w].astype(np.float64)
     xn, yn = (x - w / 2) / (w / 2), (y - h / 2) / (h / 2)
@@ -349,15 +368,18 @@ def fit_center(img):
     A = np.column_stack([np.ones_like(xs), xs, ys, xs**2, ys**2, xs * ys])
     coef, *_ = np.linalg.lstsq(A, vs, rcond=None)
     _, b, c, d, e, f = coef
+    # |b| + |c| e valoarea termenului liniar in colt (unde xn = yn = 1); sinh face
+    # conversia exacta din log in intensitate, nu aproximarea liniara 2*(|b| + |c|).
+    tilt = float(2 * np.sinh(abs(b) + abs(c)) * 100)
     M = np.array([[2 * d, f], [f, 2 * e]])
     try:
         sol = np.linalg.solve(M, np.array([-b, -c]))
     except np.linalg.LinAlgError:
-        return w / 2.0, h / 2.0
+        return w / 2.0, h / 2.0, tilt, False
     cx, cy = sol[0] * (w / 2) + w / 2, sol[1] * (h / 2) + h / 2
     if not (0 < cx < w and 0 < cy < h):   # fit degenerat -> fallback
-        return w / 2.0, h / 2.0
-    return cx, cy
+        return w / 2.0, h / 2.0, tilt, False
+    return cx, cy, tilt, True
 
 
 def radial_model(img, cx, cy, nbins=80, pct=50):
@@ -489,7 +511,9 @@ def mode_structure(path, plot_path):
     # fitul ar absorbi exact gradientul liniar pe care il cauti: un gradient
     # peste vignetare cvasi-patratica doar muta varful. Testul s-ar autoanula.
     cx, cy = w / 2.0, h / 2.0
-    fx, fy = fit_center(img)
+    # Din acelasi fit ies doua lucruri: inclinarea, care e un test, si offsetul varfului,
+    # care e doar informativ - nu e scale-invariant, si peste un prag nici macar monoton.
+    fx, fy, tilt, centroid_valid = fit_center(img)
     off = np.hypot(fx - cx, fy - cy) / np.hypot(cx, cy) * 100
 
     cor, ctr = corner_stats(img)
@@ -505,17 +529,27 @@ def mode_structure(path, plot_path):
     az = azimuthal_asymmetry(img, cx, cy)
     az_max = max(v for _, v in az) if az else float('nan')
 
-    print(f"\n  VIGNETARE (informativ, nu e un test)")
-    print(f"    centru -> colt          : {vign_stops:.2f} stopuri "
+    # Cele doua marimi care NU sunt teste: vignetarea, care e o proprietate a
+    # obiectivului, si offsetul centrului de iluminare, care a fost un test pana in 1.2.0.
+    print(f"\n  INFORMATIV (nu sunt teste)")
+    print(f"    vignetare centru->colt  : {vign_stops:.2f} stopuri "
           f"(colt = {cvals.mean()/ctr*100:.0f}% din centru)")
+    if centroid_valid:
+        print(f"    offset centru iluminare : {off:5.2f} %")
+        print(f"        varf iluminare = ({fx:.0f}, {fy:.0f})  vs  centru senzor = ({cx:.0f}, {cy:.0f})")
+    else:
+        print("    offset centru iluminare : nedeterminat (varf in afara cadrului sau fit degenerat)")
+    print("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un")
+    print("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,")
+    print('        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".')
 
-    # Toate trei masoara aceeasi abatere de la simetria radiala, deci impart scara de
-    # reziduu. Offsetul centrului masoara altceva - o pozitie - si ramane pe
-    # OK/SUSPECT/PROBLEMA.
+    # Toate patru masoara aceeasi abatere de la simetria radiala, din unghiuri diferite,
+    # si toate patru sunt amplitudini fractionare in procente, deci impart scara de
+    # reziduu. Offsetul centrului masoara altceva, o pozitie, si nu mai da verdict.
     v_corner = resid_verdict(spread)
     v_azim = resid_verdict(az_max)
     v_resid = resid_verdict(res_ptp)
-    v_centroid = verdict(off, TH_CENTROID_OK, TH_CENTROID_BAD)
+    v_tilt = resid_verdict(tilt)
 
     print(f"\n  TESTE")
     print(f"    imprastiere 4 colturi   : {spread:5.2f} %   [{v_corner}]")
@@ -523,23 +557,22 @@ def mode_structure(path, plot_path):
         print(f"        {k:<14}: {v/cvals.mean()*100:6.2f} % din media colturilor")
     print(f"    asimetrie azimutala max : {az_max:5.2f} %   [{v_azim}]")
     print(f"    reziduu dupa model rad. : {res_ptp:5.2f} %   [{v_resid}]  <- CEL MAI IMPORTANT")
-    print(f"    offset centru iluminare : {off:5.2f} %   [{v_centroid}]")
-    print(f"        varf iluminare = ({fx:.0f}, {fy:.0f})  vs  centru senzor = ({cx:.0f}, {cy:.0f})")
+    print(f"    inclinare (gradient)    : {tilt:5.2f} %   [{v_tilt}]")
 
-    # Scara comuna a celor trei teste de abatere. Nu se aplica offsetului centrului.
-    print(f"\n  SCARA celor trei teste de abatere de mai sus")
+    # Scara comuna a celor patru teste de abatere. Nu se aplica offsetului centrului.
+    print(f"\n  SCARA celor patru teste de abatere de mai sus")
     _band(f"sub {TH_RESID_PERFECT:.0f} %", "calitate perfecta")
     _band(f"{TH_RESID_PERFECT:.0f} - {TH_RESID_USABLE:.0f} %", "utilizabil; background extraction scoate ce ramane")
     _band(f"{TH_RESID_USABLE:.0f} - {TH_RESID_CHECK:.0f} %", "utilizabil, dar confirma cu --light inainte de un stretch dur")
     _band(f"peste {TH_RESID_CHECK:.0f} %", "refa flat-urile")
     print('    Cel mai important e "reziduu dupa model rad.": masoara direct cat din')
     print("    cadru NU se explica printr-un model pur radial, adica exact eroarea de")
-    print("    flat. Imprastierea colturilor si asimetria azimutala sunt vederi")
-    print("    partiale ale aceleiasi abateri.")
+    print("    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt")
+    print("    vederi partiale ale aceleiasi abateri.")
 
     # verdictul general e cel mai prost dintre cele patru, exprimat in vocabularul
     # benzilor de reziduu
-    worst = RESID_BANDS[max(severity(v) for v in (v_corner, v_azim, v_resid, v_centroid))]
+    worst = RESID_BANDS[max(severity(v) for v in (v_corner, v_azim, v_resid, v_tilt))]
     print(f"\n  VERDICT: {worst}")
     if worst == "PERFECT":
         print("    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.")

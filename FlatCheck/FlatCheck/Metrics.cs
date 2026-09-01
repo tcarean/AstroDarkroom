@@ -31,8 +31,32 @@ namespace FlatCheck
     internal static class Metrics
     {
         // ========================================================= geometrie
-        // Vertexul unui paraboloid fitat pe log(I) = centrul de iluminare.
-        internal static (double cx, double cy) FitCenter(Img img)
+        /// <summary>
+        /// Fitul unui paraboloid pe log(I). Din acelasi fit ies doua lucruri diferite:
+        ///
+        /// - <b>varful</b> (vertexul), adica centrul de iluminare. E o POZITIE, si de
+        ///   aceea NU e scale-invariant: vertexul e ~ -b/(2d), un raport intre gradient
+        ///   si curbura. Pe un obiectiv aproape fara vignetare (d mic) o rampa modesta
+        ///   il arunca oricat de departe; iar cand ajunge sa iasa din cadru, garda de
+        ///   mai jos cade pe centrul senzorului. Deci metrica e si NEMONOTONA: peste un
+        ///   prag, cu cat defectul e mai mare, cu atat offsetul raportat e mai mic, pana
+        ///   la 0. Masurat: cu acelasi gradient de 11%, offsetul creste de la 2.4% la
+        ///   2 stopuri de vignetare pana la 57% la 0.08 stopuri, apoi cade la 0 la 0.05.
+        ///   De asta offsetul e raportat doar informativ, si nu mai da verdict.
+        ///
+        /// - <b>inclinarea</b> (<paramref name="tiltPct"/>), adica amplitudinea
+        ///   varf-la-varf a termenului LINIAR peste cadru. E numaratorul de mai sus luat
+        ///   singur: o fractie, deci scale-invarianta ca restul metricilor si direct
+        ///   comparabila cu scara de reziduu. Un camp radial genuin decentrat produce si
+        ///   el un termen liniar (~ offset x curbura), deci inclinarea prinde si
+        ///   decentrarea reala - dar ponderata cu cat costa ea fotometric, ceea ce e
+        ///   exact ponderarea care lipsea offsetului.
+        ///
+        /// Termenul incrucisat f (astigmatism / sa) e lasat deliberat in afara
+        /// inclinarii: nu e o inclinare, iar reziduul dupa modelul radial il prinde
+        /// oricum. Amestecat in aceeasi cifra, ar face-o neinterpretabila.
+        /// </summary>
+        internal static (double cx, double cy, double tiltPct, bool vertexValid) FitCenter(Img img)
         {
             int h = img.H, w = img.W;
             // normal equations pentru A=[1,xn,yn,xn^2,yn^2,xn*yn], 6 necunoscute
@@ -53,17 +77,24 @@ namespace FlatCheck
                     }
                 }
             double[] coef = Stats.Solve(AtA, Atb, 6);
-            if (coef == null) return (w / 2.0, h / 2.0);
+            // Sistemul normal depinde doar de coordonate, nu de valori, deci e singular
+            // doar pe un raster degenerat. Atunci nici inclinarea nu se poate calcula:
+            // NaN, care cade in banda cea mai proasta, ca peste tot in tool.
+            if (coef == null) return (w / 2.0, h / 2.0, double.NaN, false);
             double b = coef[1], c = coef[2], d = coef[3], e = coef[4], f = coef[5];
+            // Amplitudinea varf-la-varf a termenului liniar peste cadru. |b| + |c| e
+            // valoarea lui in colt (unde xn = yn = 1), iar sinh face conversia exacta
+            // din log in intensitate, in loc de aproximarea liniara 2*(|b| + |c|).
+            double tilt = 2 * Math.Sinh(Math.Abs(b) + Math.Abs(c)) * 100;
             // M = [[2d, f],[f, 2e]]; sol = M^-1 * [-b,-c]
             double det = 2 * d * 2 * e - f * f;
-            if (Math.Abs(det) < 1e-15) return (w / 2.0, h / 2.0);
+            if (Math.Abs(det) < 1e-15) return (w / 2.0, h / 2.0, tilt, false);
             double sx = ((-b) * (2 * e) - f * (-c)) / det;
             double sy = ((2 * d) * (-c) - f * (-b)) / det;
             double cx = sx * (w / 2.0) + w / 2.0;
             double cy = sy * (h / 2.0) + h / 2.0;
-            if (!(cx > 0 && cx < w && cy > 0 && cy < h)) return (w / 2.0, h / 2.0);
-            return (cx, cy);
+            if (!(cx > 0 && cx < w && cy > 0 && cy < h)) return (w / 2.0, h / 2.0, tilt, false);
+            return (cx, cy, tilt, true);
         }
 
         // Profil radial robust (percentila per inel) + model 2D reconstruit prin interpolare.

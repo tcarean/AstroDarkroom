@@ -29,8 +29,7 @@ namespace FlatCheck
             w.WriteLine($"    dimensiune analiza : {r.Width} x {r.Height} (dupa 2x2 + downsample)");
             w.WriteLine($"    median / max ADU   : {r.RawMedian:F0} / {r.RawMax:F0}");
 
-            w.WriteLine("\n  VIGNETARE (informativ, nu e un test)");
-            w.WriteLine($"    centru -> colt          : {r.VignetteStops:F2} stopuri (colt = {r.CornerMean / r.CentreMedian * 100:F0}% din centru)");
+            WriteInformative(r, w);
 
             w.WriteLine("\n  TESTE");
             w.WriteLine($"    imprastiere 4 colturi   : {r.CornerSpreadPct,5:F2} %   [{r.CornerVerdict}]");
@@ -38,8 +37,7 @@ namespace FlatCheck
                 w.WriteLine($"        {kv.Key,-14}: {kv.Value / r.CornerMean * 100,6:F2} % din media colturilor");
             w.WriteLine($"    asimetrie azimutala max : {r.AzimuthalMaxPct,5:F2} %   [{r.AzimuthalVerdict}]");
             w.WriteLine($"    reziduu dupa model rad. : {r.ResidualPtpPct,5:F2} %   [{r.ResidualVerdict}]  <- CEL MAI IMPORTANT");
-            w.WriteLine($"    offset centru iluminare : {r.CentroidOffsetPct,5:F2} %   [{r.CentroidVerdict}]");
-            w.WriteLine($"        varf iluminare = ({r.FitCx:F0}, {r.FitCy:F0})  vs  centru senzor = ({r.SensorCx:F0}, {r.SensorCy:F0})");
+            w.WriteLine($"    inclinare (gradient)    : {r.TiltPct,5:F2} %   [{r.TiltVerdict}]");
 
             WriteScale(w);
 
@@ -48,20 +46,45 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Scara comuna a celor trei teste de abatere de la simetria radiala. Nu se
+        /// Cele doua marimi care NU sunt teste. Vignetarea e o proprietate a
+        /// obiectivului, nu o eroare. Offsetul centrului de iluminare a fost si el un
+        /// test pana in 1.2.0 si nu mai e: fiind ~ -b/(2d), adica raportul dintre
+        /// gradient si curbura, nu e scale-invariant - iar peste pragul la care varful
+        /// iese din cadru, nici macar monoton. Vezi Metrics.FitCenter.
+        /// </summary>
+        static void WriteInformative(StructureResult r, TextWriter w)
+        {
+            w.WriteLine("\n  INFORMATIV (nu sunt teste)");
+            w.WriteLine($"    vignetare centru->colt  : {r.VignetteStops:F2} stopuri (colt = {r.CornerMean / r.CentreMedian * 100:F0}% din centru)");
+            if (r.CentroidValid)
+            {
+                w.WriteLine($"    offset centru iluminare : {r.CentroidOffsetPct,5:F2} %");
+                w.WriteLine($"        varf iluminare = ({r.FitCx:F0}, {r.FitCy:F0})  vs  centru senzor = ({r.SensorCx:F0}, {r.SensorCy:F0})");
+            }
+            else
+            {
+                w.WriteLine("    offset centru iluminare : nedeterminat (varf in afara cadrului sau fit degenerat)");
+            }
+            w.WriteLine("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un");
+            w.WriteLine("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,");
+            w.WriteLine("        iar peste un prag cade inapoi spre 0. Amplitudinea o da \"inclinare\".");
+        }
+
+        /// <summary>
+        /// Scara comuna a celor patru teste de abatere de la simetria radiala. Nu se
         /// aplica offsetului centrului de iluminare, care masoara o pozitie.
         /// </summary>
         static void WriteScale(TextWriter w)
         {
-            w.WriteLine("\n  SCARA celor trei teste de abatere de mai sus");
+            w.WriteLine("\n  SCARA celor patru teste de abatere de mai sus");
             Band(w, $"sub {Th.ResidPerfect:F0} %", "calitate perfecta");
             Band(w, $"{Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %", "utilizabil; background extraction scoate ce ramane");
             Band(w, $"{Th.ResidUsable:F0} - {Th.ResidCheck:F0} %", "utilizabil, dar confirma cu --light inainte de un stretch dur");
             Band(w, $"peste {Th.ResidCheck:F0} %", "refa flat-urile");
             w.WriteLine("    Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din");
             w.WriteLine("    cadru NU se explica printr-un model pur radial, adica exact eroarea de");
-            w.WriteLine("    flat. Imprastierea colturilor si asimetria azimutala sunt vederi");
-            w.WriteLine("    partiale ale aceleiasi abateri.");
+            w.WriteLine("    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt");
+            w.WriteLine("    vederi partiale ale aceleiasi abateri.");
         }
 
         static void Band(TextWriter w, string range, string meaning)

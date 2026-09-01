@@ -27,9 +27,10 @@ namespace FlatCheck
     static class Th
     {
         // --- structura ---
-        // Scara de reziduu, folosita de toate trei metricile de abatere de la simetria
-        // radiala: imprastierea colturilor, asimetria azimutala si reziduul dupa model.
-        // Toate trei masoara aceeasi abatere din unghiuri diferite, deci impart scara:
+        // Scara de reziduu, folosita de toate patru metricile de abatere de la simetria
+        // radiala: imprastierea colturilor, asimetria azimutala, reziduul dupa model si
+        // inclinarea. Toate patru masoara aceeasi abatere din unghiuri diferite, si toate
+        // patru sunt amplitudini fractionare in procente, deci impart scara:
         //     sub  2 %   calitate perfecta
         //      2 - 10 %  utilizabil; background extraction scoate ce ramane
         //     10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
@@ -38,9 +39,14 @@ namespace FlatCheck
         public const double ResidUsable = 10.0;
         public const double ResidCheck = 20.0;
 
-        // Offsetul centrului de iluminare NU e o metrica de reziduu - masoara o pozitie,
-        // nu o amplitudine - deci ramane pe scara OK/SUSPECT/PROBLEMA.
-        public const double CentroidOk = 4.0, CentroidBad = 10.0;
+        // Offsetul centrului de iluminare nu mai are praguri, fiindca nu mai e un test.
+        // Pana in 1.2.0 avea 4%/10% pe scara OK/SUSPECT/PROBLEMA, si era gresit: offsetul
+        // e ~ -b/(2d), adica raportul dintre gradient si curbura, deci NU e o fractie si
+        // nu e scale-invariant. Pe un obiectiv cu vignetare mica exploda (masurat: 31% pe
+        // un Samyang 135 f/2.8 la 0.15 stopuri, unde eroarea reala era de 11%), iar cand
+        // varful ajungea sa iasa din cadru cadea la 0.00% = "OK" - adica devenea si
+        // nemonoton, dand un fals negativ exact pe obiectivele cele mai plate. Ce se
+        // masoara acum e Th.Resid* pe "inclinare": acelasi gradient, luat ca amplitudine.
 
         // --- rotatie 180 ---
         public const double RatioOk = 1.0, RatioBad = 3.0;
