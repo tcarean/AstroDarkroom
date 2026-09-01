@@ -22,18 +22,37 @@ using System.Text.RegularExpressions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Phase 0 safety net: whole-CLI characterization tests. These pin the exact console
-/// output of every mode so that the refactoring phases cannot silently change a number.
+/// Whole-CLI characterization tests: they pin the exact console text and exit code of
+/// every mode against a snapshot in Golden/.
 ///
-/// They are deliberately dumb - they assert nothing about *why* a number is right, only
-/// that it has not moved. Real assertions on the numbers arrive with the analyzer split
-/// in Phase 6. Until then, this is the thing standing between a refactor and a
-/// regression.
+/// These started life as the phase 0 safety net for the refactoring, but they are not
+/// scaffolding and should not be deleted now that it is over. Their job today is twofold,
+/// and neither half is covered by the unit tests:
+///
+///   - They pin the *output contract*. For this tool the console text isn't a side effect
+///     of the product, it IS the product - there is no API, no GUI, no result file, only
+///     30 lines of Romanian and an exit code. Wording, line order, column formatting and
+///     what goes to stderr are all user-visible behaviour, and nothing else checks them.
+///
+///   - They are the only end-to-end test of the numbers. The unit tests check Percentile,
+///     FitCenter and LargeScalePtp in isolation; only these check that the whole chain
+///     Load -> Prepare -> RadialModel -> residual -> verdict still produces 0.24 % on a
+///     clean radial field.
+///
+/// They remain deliberately dumb - they assert nothing about *why* a number is right,
+/// only that it has not moved. That is the point: the analyzer tests say what is correct,
+/// these say what changed.
 ///
 /// To re-approve after an intentional change:  FLATCHECK_UPDATE_GOLDEN=1 dotnet test
-/// Do that only when you meant to change the output, and read the resulting diff.
+/// Do that only when you meant to change the output, and then read the git diff on
+/// Golden/*.txt. Re-approving without reading it is the one way to make these worthless -
+/// all of their value is in that diff, which is where you find the numbers you did *not*
+/// mean to change.
 ///
-/// Exit codes (phase 8): 0 OK, 1 error, 2 SUSPECT, 3 PROBLEMA.
+/// Keep the set small enough to stay readable: add a golden file only for a genuinely
+/// distinct behaviour, and use Assert.Contains for "this one line must appear".
+///
+/// Exit codes: 0 OK, 1 error, 2 SUSPECT, 3 PROBLEMA.
 /// </summary>
 public class GoldenOutputTests
 {
