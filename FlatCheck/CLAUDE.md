@@ -376,14 +376,15 @@ FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
 python crosscheck.py /tmp/xc
 ```
 
-`crosscheck.py` runs both implementations over identical FITS across 32 scenarios and
-compares twice: the full text, and every numeric token as a float. It exits non-zero on
-any unexplained numeric difference.
+`crosscheck.py` runs both implementations over identical FITS across 34 scenarios and
+compares twice: the full text, and every numeric token as a float. It also checks once,
+up front, that both report the same version. It exits non-zero on any unexplained numeric
+difference or on a version desync.
 
-**Current status: 31 of 32 scenarios agree numerically** - 16 byte-identical, 15
-differing only in wording. Coverage spans all four modes, both gradient directions,
-non-square frames, BITPIX 16/32/-32, and the exposure bands either side of each
-boundary.
+**Current status: 33 of 34 scenarios agree numerically** - 20 byte-identical, 13
+differing only in wording. Coverage spans all four modes, all four bands of the residual
+scale, both gradient directions, non-square frames, BITPIX 16/32/-32, and the exposure
+bands either side of each boundary.
 
 Intentional divergences:
 
@@ -395,7 +396,8 @@ Intentional divergences:
 - `--sat` is echoed as `--sat=4095` rather than Python's `--sat=4095.0`.
 - The `--light` interpretation capitalises the diagnosis - "Fondul CADE/CRESTE spre
   margini" against Python's lower case. The sign *is* the diagnosis, so the emphasis
-  is deliberate.
+  is deliberate. This accounts for the remaining wording-only differences in the four
+  `--light` scenarios whose radial component is large enough to print a diagnosis.
 
 **One numeric divergence, and the C# is the correct one.** On a *perfectly constant*
 frame `FitCenter`'s quadratic coefficients are pure floating-point noise (~1e-15) and
