@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 
 === EXPUNERE: <TMP>/raw.fit ===
     saturatie (white) : 65535   black : 0   sursa: auto-detectat din max=34000 (foloseste --sat/--black daca e gresit)

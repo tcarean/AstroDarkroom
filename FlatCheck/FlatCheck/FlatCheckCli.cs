@@ -22,6 +22,10 @@ namespace FlatCheck
     {
         internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
         {
+            // Versiunea, pe prima linie a oricarei rulari - inclusiv --help si erorile -
+            // ca un raport copiat undeva sa spuna singur ce versiune l-a produs.
+            stdout.WriteLine(VersionInfo.Banner);
+
             Options o = Options.Parse(args);
             if (o.Help)
             {

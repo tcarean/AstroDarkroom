@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 Utilizare:
   flatcheck <flat.fit>                    # test structura
   flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180

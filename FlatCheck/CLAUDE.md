@@ -15,6 +15,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch and exit code.
     All output goes through the injected `TextWriter`, never `Console` directly.
   - `Options.cs` - CLI parsing.
+  - `Version.cs` - `VersionInfo.Value`/`Banner`, read from the assembly. See "Versioning".
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
     reader be tested without touching disk.
@@ -56,6 +57,8 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
   corrections - if a new metric isn't scale-invariant, that's a design smell.
 - **Thresholds are empirical rules of thumb, not physical constants.** They are a
   starting point to be calibrated against a known-good setup.
+- **Never bump the version and never commit** - both are the user's call. See
+  "Versioning" and "Committing" below.
 
 ## The core idea
 
@@ -454,6 +457,64 @@ behaviour that is either deliberate or not worth changing.
    twice. Measured peak was ~330 MB on a 3000x2000 frame before that change; a 24 MP
    D3300 frame still runs into the high hundreds of MB. Runtime is fine
    (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000).
+
+## Versioning
+
+Every run prints `flatcheck <version>` as its **first line** - every mode, `--help`, and
+failed runs too, so a pasted report always says which version produced it. There is no
+`--version` flag; it would be redundant.
+
+The version lives in **two** places:
+
+| where | what |
+|---|---|
+| `FlatCheck/FlatCheck.csproj` | `<Version>` - the single source of truth for C# |
+| `flatcheck.py` | `__version__` |
+
+`FlatCheck/Version.cs` does **not** hardcode it. `VersionInfo.Value` reads the assembly's
+`AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and trims any
+`+sourcerevision` suffix. So on the C# side there is exactly one place to edit. Don't
+reintroduce a literal there.
+
+**The user bumps the version manually**, per feature or fix, choosing the increment
+themselves. **Never bump it on your own initiative** - not as part of a change, not
+"while you're in there". If a change seems to warrant a bump, say so and let them decide.
+
+**Bumping the version breaks nothing.** That is deliberate, and worth preserving: the
+banner is scrubbed to `flatcheck <VERSIUNE>` before any comparison, in both places that
+compare whole output.
+
+- `GoldenOutputTests.RunCli` scrubs it, the same way it already scrubs absolute paths -
+  both change without the *behaviour* changing. So `Golden/*.txt` carry the placeholder
+  and survive a bump untouched.
+- `crosscheck.py` scrubs it in `norm()`, and checks version agreement once up front in
+  `check_versions()`. Without that, a desync would turn all 34 scenarios into diffs -
+  34 diffs to learn one thing.
+
+What *does* fail, and should:
+
+| situation | what fails |
+|---|---|
+| both places bumped | nothing |
+| only one place bumped | exactly one test, `PythonReportsTheSameVersionAsTheCSharp`; `crosscheck.py` prints one `[VERSIUNE]` line and exits 1 |
+| `<Version>` removed from csproj | the format and plumbing tests in `VersionTests` |
+| the banner stops being printed | the golden files, because they carry a placeholder line the output no longer produces |
+
+The scrubbing does not weaken coverage: `VersionTests` asserts the banner's exact content
+and its position on line 1, for every mode, for `--help`, and for failed runs.
+
+## Committing
+
+**Do not commit.** Make the changes, run the tests, and hand over a commit message for
+the user to use. They commit themselves.
+
+This also means: don't `git add`, don't stage, don't amend. Leave the working tree as it
+is so they can review the diff before deciding.
+
+A good commit message here follows the existing log: a short lowercase subject line, then
+a body that explains *why* rather than restating the diff - what the change is for, what
+was deliberately left alone and why, and anything a future reader would otherwise have to
+rediscover. No `Co-Authored-By` trailer.
 
 ## Build & test
 

@@ -86,18 +86,37 @@ KNOWN_NUMERIC_DIVERGENCE = {
 # numere de sine statatoare - nu "3"-ul din "python3"
 NUM = re.compile(r"(?<![A-Za-z0-9.])[-+]?\d+\.?\d*(?![A-Za-z0-9])")
 
+# Banner-ul de versiune, de pe prima linie a fiecarei rulari.
+BANNER = re.compile(r"^flatcheck (\d+\.\d+\.\d+)$")
+
 
 def norm(text):
+    """Normalizeaza iesirea pentru comparatie.
+
+    Banner-ul de versiune se inlocuieste cu un placeholder: altfel o desincronizare de
+    versiune ar transforma TOATE scenariile in diferente, adica 34 de diff-uri ca sa afli
+    un singur lucru. Versiunea se verifica o data, separat, in check_versions().
+    """
     out = []
     for line in text.replace("\r\n", "\n").split("\n"):
         if "harta salvata" in line:
             line = "    -> harta salvata: <PNG>"
-        out.append(line.rstrip())
+        line = BANNER.sub("flatcheck <VERSIUNE>", line.rstrip())
+        out.append(line)
     while out and not out[-1]:
         out.pop()
     while out and not out[0]:
         out.pop(0)
     return out
+
+
+def version_of(text):
+    """Versiunea raportata pe prima linie, sau None daca banner-ul lipseste."""
+    for line in text.replace("\r\n", "\n").split("\n"):
+        m = BANNER.match(line.strip())
+        if m:
+            return m.group(1)
+    return None
 
 
 def numbers(lines):
@@ -113,6 +132,26 @@ def numbers(lines):
     return vals
 
 
+def check_versions(run):
+    """Verifica o singura data ca ambele implementari raporteaza aceeasi versiune.
+
+    Se face separat de comparatia scenariilor tocmai ca o desincronizare sa dea o linie
+    clara, nu 34 de diff-uri identice.
+    """
+    py = version_of(run([sys.executable, PY, "--help"]))
+    cs = version_of(run([EXE, "--help"]))
+
+    if py is None or cs is None:
+        print(f"[VERSIUNE ] !! banner lipsa - python={py} c#={cs}")
+        return False
+    if py != cs:
+        print(f"[VERSIUNE ] !! DESINCRONIZATE - python={py} c#={cs}")
+        print("             Bumpeaza <Version> din csproj SI __version__ din flatcheck.py.")
+        return False
+    print(f"[VERSIUNE ] ambele raporteaza {py}")
+    return True
+
+
 def main(fixture_dir):
     if not os.path.isdir(fixture_dir):
         sys.exit(f"nu exista directorul cu fixturi: {fixture_dir}")
@@ -122,6 +161,8 @@ def main(fixture_dir):
     def run(cmd):
         p = subprocess.run(cmd, cwd=fixture_dir, capture_output=True, text=True)
         return (p.stdout or "") + (p.stderr or "")
+
+    version_ok = check_versions(run)
 
     identical, text_only, numeric, expected = 0, [], [], []
     for name, args in SCENARIOS:
@@ -154,7 +195,9 @@ def main(fixture_dir):
     print(f"doar text (numere ok) : {len(text_only)}")
     print(f"divergente cunoscute  : {len(expected)}")
     print(f"DIFERENTE NUMERICE    : {len(numeric)} {numeric}")
-    return 1 if numeric else 0
+    if not version_ok:
+        print("VERSIUNE              : DESINCRONIZATA")
+    return 1 if (numeric or not version_ok) else 0
 
 
 if __name__ == "__main__":

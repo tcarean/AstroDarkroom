@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace FlatCheck.Tests;
 
@@ -43,9 +44,18 @@ public class GoldenOutputTests
     }
 
     /// <summary>
-    /// Runs the CLI in-process. Absolute paths are scrubbed, because the input path is
-    /// echoed into almost every header line and would otherwise make the golden files
-    /// machine-specific.
+    /// Runs the CLI in-process.
+    ///
+    /// Two things are scrubbed before comparing, for the same reason: they change without
+    /// the *behaviour* changing, and would otherwise fail every golden file for nothing.
+    ///
+    ///   - absolute paths, echoed into almost every header line, which differ per machine
+    ///   - the version banner, which changes on every release
+    ///
+    /// Scrubbing the banner loses no coverage: VersionTests asserts its exact content and
+    /// its position on line 1, for every mode. And if it vanished entirely these tests
+    /// would still fail, because the golden files carry a placeholder line that the output
+    /// would no longer produce.
     /// </summary>
     static (string Output, int Exit) RunCli(TempWorkspace ws, params string[] args)
     {
@@ -59,8 +69,19 @@ public class GoldenOutputTests
 
         text = text.Replace(ws.Dir + Path.DirectorySeparatorChar, "<TMP>/")
                    .Replace(ws.Dir, "<TMP>");
+        text = ScrubVersion(text);
         return (text, exit);
     }
+
+    internal const string VersionPlaceholder = "flatcheck <VERSIUNE>";
+
+    // \r? pentru ca StringWriter scrie CRLF pe Windows, iar '$' in modul Multiline din
+    // .NET se potriveste doar inainte de '\n' - nu sare peste '\r'. Fara el, regexul nu
+    // prinde nimic si scrub-ul devine tacut un no-op.
+    static readonly Regex VersionBanner =
+        new(@"^flatcheck \d+\.\d+\.\d+\r?$", RegexOptions.Multiline | RegexOptions.Compiled);
+
+    static string ScrubVersion(string text) => VersionBanner.Replace(text, VersionPlaceholder);
 
     static string Flat(TempWorkspace ws, string name, Func<int, int, double> scene, int size = Size) =>
         ws.WriteFile(name, FitsTestData.BuildFits(size, size, scene));

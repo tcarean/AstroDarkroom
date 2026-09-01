@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 
 === STRUCTURA: <TMP>/grad.fit ===
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)

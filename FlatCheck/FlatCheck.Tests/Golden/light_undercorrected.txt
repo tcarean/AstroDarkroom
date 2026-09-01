@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 
 === TEST END-TO-END: <TMP>/light.fit ===
     Astept un stack CALIBRAT cu flat, dar FARA background extraction.

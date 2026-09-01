@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 
 === TEST ROTATIE 180: <TMP>/a.fit  /  <TMP>/b.fit ===
     Vignetarea si praful sunt fixe pe senzor -> se anuleaza in raport.

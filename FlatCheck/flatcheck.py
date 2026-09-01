@@ -169,6 +169,10 @@ import argparse
 import sys
 import numpy as np
 
+# Versiunea uneltei. Se incrementeaza MANUAL la fiecare feature/fix; nu o schimba de
+# capul tau. Trebuie sa ramana identica cu VersionInfo.Value din C# (FlatCheck/Version.cs).
+__version__ = "1.0.1"
+
 # ---------------------------------------------------------------- praguri
 # (procente; ajusteaza dupa ce vezi cifre reale pe setup-ul tau)
 # Scara de reziduu, folosita de toate trei metricile de abatere de la simetria radiala:
@@ -798,6 +802,12 @@ def main():
                    help="nivel de saturatie (white), daca auto-detectia greseste")
     p.add_argument("--black", type=float, default=None, help="nivel black, pt --expo pe FITS")
     p.add_argument("-o", "--out", default="flatcheck.png", help="fisier PNG de iesire")
+    # Versiunea, pe prima linie a oricarei rulari. Trebuie sa fie identica cu ce scrie
+    # C#-ul (VersionInfo.Banner) - crosscheck.py compara iesirile linie cu linie.
+    # Se tipareste INAINTE de parse_args ca sa apara si la --help, unde argparse iese
+    # singur, si la argumente gresite - exact ca in C#.
+    print(f"flatcheck {__version__}")
+
     a = p.parse_args()
 
     if a.expo:

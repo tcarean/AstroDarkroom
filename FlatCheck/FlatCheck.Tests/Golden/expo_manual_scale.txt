@@ -1,3 +1,4 @@
+flatcheck <VERSIUNE>
 
 === EXPUNERE: <TMP>/raw12bit.fit ===
     saturatie (white) : 4095   black : 150   sursa: --sat=4095
