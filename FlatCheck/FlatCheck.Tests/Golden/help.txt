@@ -1,4 +1,5 @@
 flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
 Utilizare:
   flatcheck <flat.fit>                    # test structura
   flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180
@@ -6,3 +7,9 @@ Utilizare:
   flatcheck <flat_brut.fit> --expo        # verificare expunere
   flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
+
+Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
+vandabilitate sau potrivire pentru un scop anume. E software liber:
+il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea
+ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,
+sau la <https://www.gnu.org/licenses/gpl-3.0.html>.

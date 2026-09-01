@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
@@ -44,6 +61,34 @@ public class VersionTests
         Assert.Equal(3, VersionInfo.Value.Split('.').Length);
     }
 
+    /// <summary>
+    /// Copyright-ul vine din &lt;Copyright&gt; din csproj, la fel cum versiunea vine din
+    /// &lt;Version&gt;. Daca cineva il scoate, ramane fallback-ul din cod - si aici se vede.
+    /// </summary>
+    [Fact]
+    public void TheCopyrightComesFromTheCsproj()
+    {
+        string csproj = File.ReadAllText(
+            Path.Combine(RepoDir(), "FlatCheck", "FlatCheck.csproj"));
+
+        var m = Regex.Match(csproj, @"<Copyright>([^<]+)</Copyright>");
+
+        Assert.True(m.Success, "csproj-ul nu are <Copyright>");
+        Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
+    }
+
+    /// <summary>Python-ul tipareste aceeasi notita - crosscheck.py compara linie cu linie.</summary>
+    [Fact]
+    public void PythonReportsTheSameCopyrightAsTheCSharp()
+    {
+        string py = File.ReadAllText(Path.Combine(RepoDir(), "flatcheck.py"));
+
+        var m = Regex.Match(py, @"^__copyright__\s*=\s*""([^""]+)""", RegexOptions.Multiline);
+
+        Assert.True(m.Success, "flatcheck.py nu are __copyright__");
+        Assert.Equal(VersionInfo.Copyright, m.Groups[1].Value);
+    }
+
     [Fact]
     public void PythonReportsTheSameVersionAsTheCSharp()
     {
@@ -63,12 +108,16 @@ public class VersionTests
         Assert.Equal($"flatcheck {VersionInfo.Value}", VersionInfo.Banner);
     }
 
-    static string FirstLine(params string[] args)
+    static string[] Lines(params string[] args)
     {
         var stdout = new StringWriter();
         FlatCheckCli.Run(args, stdout, new StringWriter());
-        return stdout.ToString().Replace("\r\n", "\n").Split('\n')[0];
+        return stdout.ToString().Replace("\r\n", "\n").Split('\n');
     }
+
+    static string FirstLine(params string[] args) => Lines(args)[0];
+
+    static string SecondLine(params string[] args) => Lines(args)[1];
 
     [Fact]
     public void EveryModePrintsTheBannerOnTheFirstLine()
@@ -82,6 +131,48 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--ratio", flat, "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--expo"));
+    }
+
+    /// <summary>
+    /// GPLv3 vrea ca notita de copyright sa se vada la fiecare rulare, deci sta pe linia
+    /// a doua peste tot unde sta si banner-ul pe prima - inclusiv la --help si la erori.
+    /// </summary>
+    [Fact]
+    public void EveryModePrintsTheCopyrightOnTheSecondLine()
+    {
+        using var ws = new TempWorkspace();
+        string flat = ws.WriteFile("f.fit",
+            FitsTestData.BuildFits(128, 128, FitsTestData.Radial(128, 128)));
+        string png = ws.PathTo("out.png");
+
+        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "-o", png));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--ratio", flat, "-o", png));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--light", "-o", png));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--expo"));
+        Assert.Equal(VersionInfo.Copyright, SecondLine("--help"));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(ws.PathTo("nu-exista.fit")));
+    }
+
+    [Fact]
+    public void TheCopyrightNamesTheAuthorAndTheYear()
+    {
+        Assert.Equal("Copyright (C) 2026 Tudor Carean", VersionInfo.Copyright);
+    }
+
+    /// <summary>
+    /// GPLv3 sectiunea 5(d): un program care afiseaza notite legale trebuie sa afiseze si
+    /// lipsa garantiei. Nu se poate pune sub banner - ar ingrosa fiecare raport - deci sta
+    /// in --help, si de acolo trimite la textul complet.
+    /// </summary>
+    [Fact]
+    public void HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
+    {
+        string help = string.Join("\n", Lines("--help"));
+
+        Assert.Contains("FARA NICIO GARANTIE", help);
+        Assert.Contains("GPLv3", help);
+        Assert.Contains("LICENSE", help);
+        Assert.Contains("gnu.org/licenses/gpl-3.0.html", help);
     }
 
     [Fact]

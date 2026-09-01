@@ -1,4 +1,5 @@
 flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
 
 === STRUCTURA: <TMP>/violent.fit ===
     dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)

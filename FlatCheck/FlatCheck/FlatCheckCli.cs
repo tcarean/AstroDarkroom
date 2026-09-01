@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
 // Ordinea de dispecerat: --expo -> --ratio -> --light -> structura (implicit).
 //
@@ -23,8 +40,10 @@ namespace FlatCheck
         internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
         {
             // Versiunea, pe prima linie a oricarei rulari - inclusiv --help si erorile -
-            // ca un raport copiat undeva sa spuna singur ce versiune l-a produs.
+            // ca un raport copiat undeva sa spuna singur ce versiune l-a produs. Sub ea,
+            // notita de copyright ceruta de GPLv3 (vezi LICENSE).
             stdout.WriteLine(VersionInfo.Banner);
+            stdout.WriteLine(VersionInfo.Copyright);
 
             Options o = Options.Parse(args);
             if (o.Help)
@@ -118,6 +137,16 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # verificare expunere");
             w.WriteLine("  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
+            w.WriteLine();
+
+            // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare
+            // poarta doar copyright-ul; disclaimerul intreg ar ingrosa fiecare raport
+            // degeaba, deci sta aici, unde omul vine oricum sa citeasca.
+            w.WriteLine("Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de");
+            w.WriteLine("vandabilitate sau potrivire pentru un scop anume. E software liber:");
+            w.WriteLine("il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea");
+            w.WriteLine("ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,");
+            w.WriteLine("sau la <https://www.gnu.org/licenses/gpl-3.0.html>.");
         }
     }
 }

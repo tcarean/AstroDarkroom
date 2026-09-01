@@ -10,6 +10,13 @@
     <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
          Trebuie sa ramana identica cu __version__ din flatcheck.py. -->
     <Version>1.0.1</Version>
+
+    <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
+         unde il citeste VersionInfo.Copyright si il tipareste sub banner - deci asta e
+         singurul loc de schimbat pe partea de C#. Programul e GPLv3; textul complet e
+         in LICENSE, la radacina repo-ului. -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Copyright (C) 2026 Tudor Carean
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 """
 flatcheck.py - diagnostic cantitativ pentru master flats
 =========================================================
@@ -172,6 +189,20 @@ import numpy as np
 # Versiunea uneltei. Se incrementeaza MANUAL la fiecare feature/fix; nu o schimba de
 # capul tau. Trebuie sa ramana identica cu VersionInfo.Value din C# (FlatCheck/Version.cs).
 __version__ = "1.0.1"
+
+# Notita de copyright, pe a doua linie a oricarei rulari - sub banner. GPLv3 cere ca
+# fiecare copie sa o poarte. Identica cu VersionInfo.Copyright din C#.
+__copyright__ = "Copyright (C) 2026 Tudor Carean"
+
+# Notita de garantie ceruta de GPLv3 sectiunea 5(d): un program care afiseaza notite
+# legale trebuie sa o afiseze si pe asta. Banner-ul de la fiecare rulare poarta doar
+# copyright-ul - disclaimerul intreg ar ingrosa fiecare raport degeaba, deci sta in
+# --help, unde omul vine oricum sa citeasca. Identic cu ce scrie C#-ul in WriteUsage.
+__warranty__ = """Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
+vandabilitate sau potrivire pentru un scop anume. E software liber:
+il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea
+ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,
+sau la <https://www.gnu.org/licenses/gpl-3.0.html>."""
 
 # ---------------------------------------------------------------- praguri
 # (procente; ajusteaza dupa ce vezi cifre reale pe setup-ul tau)
@@ -789,7 +820,10 @@ def mode_expo(path, sat_override=None, black_override=None, sky=False):
 
 # ---------------------------------------------------------------- main
 def main():
-    p = argparse.ArgumentParser(description="Validare de master flats.")
+    p = argparse.ArgumentParser(
+        description="Validare de master flats.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__warranty__)
     p.add_argument("image", help="master flat .fit (sau light calibrat cu --light)")
     p.add_argument("--ratio", metavar="B.fit", help="testul de rotatie 180: image / B")
     p.add_argument("--light", action="store_true",
@@ -802,11 +836,13 @@ def main():
                    help="nivel de saturatie (white), daca auto-detectia greseste")
     p.add_argument("--black", type=float, default=None, help="nivel black, pt --expo pe FITS")
     p.add_argument("-o", "--out", default="flatcheck.png", help="fisier PNG de iesire")
-    # Versiunea, pe prima linie a oricarei rulari. Trebuie sa fie identica cu ce scrie
-    # C#-ul (VersionInfo.Banner) - crosscheck.py compara iesirile linie cu linie.
+    # Versiunea si copyright-ul, pe primele doua linii ale oricarei rulari. Trebuie sa
+    # fie identice cu ce scrie C#-ul (VersionInfo.Banner / .Copyright) - crosscheck.py
+    # compara iesirile linie cu linie.
     # Se tipareste INAINTE de parse_args ca sa apara si la --help, unde argparse iese
     # singur, si la argumente gresite - exact ca in C#.
     print(f"flatcheck {__version__}")
+    print(__copyright__)
 
     a = p.parse_args()
 

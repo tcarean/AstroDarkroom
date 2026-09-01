@@ -94,3 +94,20 @@ dedesubt e verificată numeric.
 **Test de acceptanță** după primul build: rulează pe un flat despre care Python-ul
 (sau versiunea ta anterioară) a zis "OK" și pe unul "PROBLEMA". Cifrele trebuie să
 coincidă cu Python la ~0.01%. Dacă da, portul e corect.
+
+## Licență
+
+flatcheck — diagnostic cantitativ pentru flat frames de astrofoto.
+Copyright (C) 2026 Tudor Carean
+
+Acest program este software liber: îl poți redistribui și/sau modifica în termenii
+**GNU General Public License v3** publicată de Free Software Foundation, fie versiunea
+3 a licenței, fie (la alegerea ta) orice versiune ulterioară.
+
+Programul e distribuit în speranța că va fi util, dar **FĂRĂ NICIO GARANȚIE** — fără
+măcar garanția implicită de VANDABILITATE sau POTRIVIRE PENTRU UN SCOP ANUME. Vezi GNU
+General Public License pentru detalii.
+
+Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
+<https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare și la
+`flatcheck --help`; copyright-ul se tipărește la fiecare rulare, sub versiune.

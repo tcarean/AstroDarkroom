@@ -42,6 +42,7 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   obliged to mirror C#-side changes into it. It is, however, the reference for
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - user-facing docs, in Romanian.
+- `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
 
 All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
 
@@ -59,6 +60,8 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
   starting point to be calibrated against a known-good setup.
 - **Never bump the version and never commit** - both are the user's call. See
   "Versioning" and "Committing" below.
+- **Every source file starts with the GPL notice.** New files included. See
+  "Licensing" below.
 
 ## The core idea
 
@@ -504,6 +507,44 @@ What *does* fail, and should:
 
 The scrubbing does not weaken coverage: `VersionTests` asserts the banner's exact content
 and its position on line 1, for every mode, for `--help`, and for failed runs.
+
+## Licensing
+
+The tool is **GPLv3-or-later**. The full text is in `LICENSE` at the repo root (the
+verbatim FSF `gpl-3.0.txt` - don't reword it, and don't reflow it).
+
+Four things follow, and all four are pinned by tests:
+
+- **Every source file starts with the notice**, above the file's own header comment:
+  the SPDX line, the copyright, and all three paragraphs of the standard GNU notice
+  (permission, no-warranty, where-to-get-a-copy). `//` for C#, `#` for Python, below
+  the shebang. New files get it too - it is the first thing to write, not an
+  afterthought. `LicenseHeaderTests` walks both projects plus the two `.py` files and
+  fails on any file missing it, which is the only thing keeping the convention alive
+  as files get added. The SPDX line is there so licence scanners can read the file
+  without parsing English.
+- **Every run prints the copyright on line 2**, right under the version banner, in every
+  mode, at `--help`, and on failed runs. Same reason as the banner: a pasted report says
+  on its own whose tool produced it.
+- **`--help` carries the warranty disclaimer** and points at `LICENSE` - GPLv3 §5(d),
+  which wants a program that displays legal notices to display that one too. It lives
+  there rather than under the banner on purpose: five lines on top of every report,
+  every run, would drown the numbers. `WriteUsage` in C#, the argparse `epilog`
+  (`__warranty__`) in Python.
+- **One source of truth per language for the copyright string**: `<Copyright>` in
+  `FlatCheck/FlatCheck.csproj` (read back through `AssemblyCopyrightAttribute` by
+  `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback), and
+  `__copyright__` in `flatcheck.py`. `VersionTests` binds all three together.
+
+Unlike the version banner, the copyright line is **not** scrubbed anywhere: it is
+constant, so the golden files carry it verbatim and `crosscheck.py` compares it as
+ordinary text. That is deliberate - if the line ever stops being printed, the golden
+files fail. `--help` is not one of `crosscheck.py`'s 34 scenarios (argparse and
+`WriteUsage` produce entirely different text), so the two warranty notices are worded
+the same by choice, not by test.
+
+The year and the author are the user's call, exactly like the version. Don't roll the
+year forward on your own initiative.
 
 ## Committing
 

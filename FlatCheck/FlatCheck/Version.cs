@@ -1,6 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 // Version.cs - versiunea uneltei, citita din assembly.
 //
-// SURSA DE ADEVAR e <Version> din FlatCheck.csproj. Nu hardcoda nimic aici: MSBuild
+// SURSA DE ADEVAR e <Version> (si <Copyright>) din FlatCheck.csproj. Nu hardcoda nimic aici: MSBuild
 // transforma <Version> in AssemblyInformationalVersion, iar de acolo o citim. Asa exista
 // un singur loc de schimbat pe partea de C#.
 //
@@ -18,6 +35,22 @@ namespace FlatCheck
 
         /// <summary>Numele si versiunea, exact cum apar pe prima linie a fiecarei rulari.</summary>
         internal static string Banner => "flatcheck " + Value;
+
+        /// <summary>
+        /// Notita de copyright, pe a doua linie a fiecarei rulari - sub banner. Programul e
+        /// GPLv3 (vezi LICENSE), iar licenta cere ca fiecare copie sa poarte notita; un
+        /// raport copiat undeva spune atunci singur si a cui e unealta, nu doar ce versiune.
+        /// Ca si versiunea, vine din csproj (&lt;Copyright&gt;) - nu o hardcoda aici. Spre
+        /// deosebire de versiune, textul e constant intre rulari: nu se scruba nicaieri.
+        /// </summary>
+        internal static string Copyright { get; } = ReadCopyright();
+
+        static string ReadCopyright()
+        {
+            string c = typeof(VersionInfo).Assembly
+                .GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright;
+            return string.IsNullOrWhiteSpace(c) ? "Copyright (C) 2026 Tudor Carean" : c;
+        }
 
         static string Read()
         {
