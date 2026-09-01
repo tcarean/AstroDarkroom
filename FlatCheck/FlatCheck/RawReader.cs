@@ -44,30 +44,28 @@ using Sdcb.LibRaw.Natives;
 
 namespace FlatCheck
 {
-    /// <summary>Un cadru raw: pixelii bruti plus scala ADU citita din fisier.</summary>
-    internal sealed class RawFrame
+    internal sealed class RawReader : IFrameReader
     {
-        internal Img Data;
-        internal ExposureScale Scale;
-    }
+        // ATENTIE: niciun camp al clasei asteia nu are voie sa fie un tip din Sdcb.LibRaw.
+        // Campurile se rezolva la incarcarea tipului, iar tipul se incarca la fiecare
+        // rulare, si pe FITS - corpurile de metoda, in schimb, abia la JIT. Un camp de tip
+        // valoare din libraw ar face ca o rulare pe FITS sa crape cand DLL-urile lipsesc.
+        // Masurat, nu presupus; pinuit de RawReaderTests.
+        static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
 
-    internal static class RawReader
-    {
         // Aceleasi extensii ca in flatcheck.py. Doar NEF-ul e testat pe date reale;
         // restul merg pe cat de bine le stie libraw, care e si ce face rawpy.
         static readonly string[] Extensions =
         { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
 
-        internal static bool IsRawPath(string path)
+        public bool Handles(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
             string ext = Path.GetExtension(path).ToLowerInvariant();
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
-        internal static Img LoadImage(string path) => Load(path).Data;
-
-        internal static RawFrame Load(string path)
+        public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
                 throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
@@ -89,7 +87,7 @@ namespace FlatCheck
               + "pe FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
               + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
 
-        static RawFrame Decode(string path)
+        static LoadedFrame Decode(string path)
         {
             using RawContext ctx = RawContext.OpenFile(path);
             ctx.Unpack();
@@ -145,9 +143,12 @@ namespace FlatCheck
                     $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}). "
                   + "Foloseste --sat si --black daca stii valorile corecte.");
 
-            return new RawFrame
+            return new LoadedFrame
             {
-                Data = img,
+                Image = img,
+                // Header gol, nu absent: garda de aplicabilitate a lui --light il citeste
+                // ca "necunoscut" si ruleaza cu o nota, in loc sa refuze.
+                Header = NoHeader,
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
             };
         }

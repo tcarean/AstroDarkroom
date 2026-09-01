@@ -29,7 +29,7 @@ Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales
 | structură (implicit) | master flat **calibrat** — `process/pp_flat_stacked.fit` |
 | `--ratio` | două master flats calibrate, A și B |
 | `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
-| `--expo` | un **singur cadru brut, necalibrat**, cu mozaicul CFA intact |
+| `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
 
 Prefixul `pp_` din Siril înseamnă „calibrat". Un stack necalibrat mai are un piedestal
 de ~150-600 ADU care aplatizează profilul și subraportează vignetarea cu ~1% — iar
@@ -171,10 +171,10 @@ fitează modelul radial. Folosește `--pattern` dacă ai altă convenție de num
 ### 4. Expunere — `--expo`
 
 ```bash
-flatcheck flat_brut.fit --expo
-flatcheck DSC_0060.NEF --expo                           # direct pe raw, fără conversie
-flatcheck sky_flat.fit --expo --sky
-flatcheck flat_brut.fit --expo --sat 4095 --black 150   # D3300, 12 biți
+flatcheck DSC_0060.NEF --expo                           # calea recomandată
+flatcheck DSC_0060.NEF --expo --sky                     # flat pe cer
+flatcheck flat_brut.fit --expo                          # FITS brut din Siril
+flatcheck flat_brut.fit --expo --sat 4095 --black 150   # doar pe FITS, dacă scala e ghicită greșit
 ```
 
 Rulează pe un **singur flat brut**, nu pe master — stacking-ul normalizează și șterge
@@ -191,27 +191,33 @@ de vignetare e maxim.
 > trage vârfurile spre dreapta, de aceea pare „la limită" când datele brute sunt la ~40%.
 > Pentru histogramă pe date brute reale: Siril.
 
-Nivelul de saturație e auto-detectat din maximul cadrului; `--sat` și `--black` îl
-suprascriu. Ca să afli white-ul exact: trage un cadru deliberat supraexpus — maximul de
-acolo *e* saturația.
-
 **Pe un fișier raw nu se ghicește nimic**: aparatul scrie în fișier atât saturația cât și
 nivelul de negru, iar modul le folosește pe alea și scrie `sursa: libraw (exact)`. Pe un
-D3300 la 12 biți: white 4095, black 150 — exact ce ai fi pus de mână cu
-`--sat 4095 --black 150`, doar că fără să le știi dinainte. `--sat` și `--black` bat în
-continuare fișierul, dacă ai motiv.
+D3300 la 12 biți: white 4095, black 150.
+
+**Pe FITS**, unde scala nu mai există, nivelul de saturație e auto-detectat din maximul
+cadrului, iar `--sat` / `--black` sunt acolo pentru când ghicește greșit. Ca să afli
+white-ul exact: trage un cadru deliberat supraexpus — maximul de acolo *e* saturația.
+(Pe raw, nu-ți mai trebuie gestul ăsta.)
+
+`--sat` și `--black` bat fișierul, deci rămân portiță și pe raw. Un motiv real: libraw
+raportează `maximum = 4095` pentru D3300, dar senzorul nu mai e liniar peste ~3827.
+Diferența nu e cosmetică — pe același cadru, 50.3% față de 53.9%.
 
 **Verificare de sănătate:** modul respinge fișierul dacă nivelul central e sub 1.0
 (deja calibrat sau normalizat) sau dacă cele patru poziții CFA sunt aproape identice
 (fișierul e debayerizat). Prinde exact greșeala „am deschis NEF-ul în Siril și am dat
 Save".
 
-#### Cum obții un FITS brut în Siril
+#### Dacă chiar ai nevoie de un FITS brut
 
-Cel mai simplu e să nu-l obții deloc: dă-i direct NEF-ul. Dacă totuși vrei FITS, **NU**
-deschide NEF-ul și „Save" — asta îl debayerizează și normalizează. Folosește tab-ul
-**Conversion**: adaugi NEF-urile → Convert. Fișierul rezultat păstrează mozaicul CFA brut,
-la scala ADU originală.
+Nu mai e necesar pentru `--expo` — dă-i direct NEF-ul. Dar dacă îți trebuie FITS-ul din
+alt motiv: **NU** deschide NEF-ul și „Save", asta îl debayerizează și normalizează.
+Folosește tab-ul **Conversion**: adaugi NEF-urile → Convert. Fișierul rezultat păstrează
+mozaicul CFA brut, la scala ADU originală.
+
+Modul rămâne valabil pe FITS și pentru camerele astro mono, care scot FITS nativ și n-au
+fișier raw deloc.
 
 #### `--sky`, pentru flats pe cer
 

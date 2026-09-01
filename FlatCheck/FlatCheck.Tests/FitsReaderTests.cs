@@ -233,7 +233,7 @@ public class FitsReaderTests
         byte[] bytes = FitsTestData.BuildFits(16, 16, FitsTestData.Radial(16, 16));
         string path = ws.WriteFile("f.fit", bytes);
 
-        var fromPath = FitsReader.Load(path);
+        var fromPath = new FitsReader().Load(path).Image;
         var fromBytes = FitsReader.Load(bytes);
 
         Assert.Equal(fromBytes.W, fromPath.W);

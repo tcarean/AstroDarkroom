@@ -331,4 +331,59 @@ public class ExposureAnalyzerTests
         Assert.Equal(4095, r.White, 6);
         Assert.Contains("auto-detectat", r.ScaleSource);
     }
+
+    /// <summary>
+    /// The claim the whole raw feature rests on: reading a NEF changes only *where the
+    /// scale comes from*, never how anything is computed. Same pixels, same white, same
+    /// black - so every field of the result must match, whether the levels arrived from
+    /// libraw or were typed on the command line as --sat 4095 --black 150.
+    ///
+    /// If these two ever diverge, one of the formats has grown its own arithmetic and the
+    /// mode no longer means the same thing depending on what you feed it.
+    /// </summary>
+    [Fact]
+    public void ReadingTheScaleFromARawComputesExactlyWhatSatAndBlackDo()
+    {
+        var img = FitsTestData.WithBayerMosaic(FitsTestData.Radial(256, 256, center: 3600));
+
+        var fromRaw = ExposureAnalyzer.Analyze(TestImages.From(256, 256, img), null, null, false,
+                                               new ExposureScale(4095, 150, "libraw (exact)"));
+        var fromFlags = ExposureAnalyzer.Analyze(TestImages.From(256, 256, img), 4095, 150, false);
+
+        Assert.Equal(fromFlags.White, fromRaw.White, 12);
+        Assert.Equal(fromFlags.Black, fromRaw.Black, 12);
+        Assert.Equal(fromFlags.Range, fromRaw.Range, 12);
+        Assert.Equal(fromFlags.ChannelMedians, fromRaw.ChannelMedians);
+        Assert.Equal(fromFlags.CfaSpread, fromRaw.CfaSpread, 12);
+        Assert.Equal(fromFlags.IsCfa, fromRaw.IsCfa);
+        Assert.Equal(fromFlags.BrightestChannel, fromRaw.BrightestChannel);
+        Assert.Equal(fromFlags.CentreMedianPct, fromRaw.CentreMedianPct, 12);
+        Assert.Equal(fromFlags.GlobalMedianPct, fromRaw.GlobalMedianPct, 12);
+        Assert.Equal(fromFlags.CentreClipPct, fromRaw.CentreClipPct, 12);
+        Assert.Equal(fromFlags.LevelTooLow, fromRaw.LevelTooLow);
+        Assert.Equal(fromFlags.LooksDebayered, fromRaw.LooksDebayered);
+        Assert.Equal(fromFlags.IsRaw, fromRaw.IsRaw);
+        Assert.Equal(fromFlags.Verdict, fromRaw.Verdict);
+
+        // The one field that is *allowed* to differ, and must: the report has to say where
+        // the numbers came from, otherwise the user cannot tell an exact scale from a guess.
+        Assert.Equal("libraw (exact)", fromRaw.ScaleSource);
+        Assert.Equal("--sat=4095", fromFlags.ScaleSource);
+    }
+
+    /// <summary>
+    /// The same equivalence through the sky bands, since those are a separate branch of
+    /// Classify and could drift on their own.
+    /// </summary>
+    [Fact]
+    public void TheEquivalenceHoldsInSkyModeToo()
+    {
+        var img = TestImages.FlatCfa(N, N, 1200);
+
+        var fromRaw = ExposureAnalyzer.Analyze(img, null, null, true, new ExposureScale(4095, 150, "x"));
+        var fromFlags = ExposureAnalyzer.Analyze(img, 4095, 150, true);
+
+        Assert.Equal(fromFlags.CentreMedianPct, fromRaw.CentreMedianPct, 12);
+        Assert.Equal(fromFlags.Verdict, fromRaw.Verdict);
+    }
 }

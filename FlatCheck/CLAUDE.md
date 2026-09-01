@@ -12,7 +12,9 @@ camera raw files only. .NET 8. See "The one dependency" below before adding a se
 
 - `FlatCheck/` - the app. `AssemblyName` is `flatcheck`, so the binary is
   `flatcheck.exe`, not `FlatCheck.exe`.
-  - `Program.cs` - the usage documentation, and a one-line `Main` shim.
+  - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
+    rather than restating it. It used to carry a full copy of the user documentation;
+    it drifted, and the copy was the wrong one - see the convention below.
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch and exit code.
     All output goes through the injected `TextWriter`, never `Console` directly.
   - `Options.cs` - CLI parsing.
@@ -20,6 +22,17 @@ camera raw files only. .NET 8. See "The one dependency" below before adding a se
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
     reader be tested without touching disk.
+  - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
+    `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
+    `ImageLoader` knows no reader's API.
+  - `ImageLoader.cs` - the **only** place that decides which reader gets a file. Holds one
+    stateless instance per format and asks each `Handles`; what nobody claims falls back
+    to FITS, and that fallback is an explicit field rather than the last array element, so
+    a reorder cannot break it silently. `Load` returns a `LoadedFrame` (pixels, FITS
+    header, ADU scale); the missing fields are the right answer per format, not errors - a
+    raw has no FITS header, a FITS has no ADU scale. Nothing below it knows where the
+    pixels came from, and that is what keeps the two formats from growing separate
+    behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
     get the undebayered Bayer mosaic plus the exact white/black levels out of a camera
     raw. `IsRawPath` is the extension gate the CLI dispatches on.
@@ -105,10 +118,19 @@ Three properties keep the cost contained, and all three are worth preserving:
 
 - **It is reached from exactly one file.** `RawReader.cs` is the only thing that names a
   `Sdcb.LibRaw` type. Everything downstream still sees an `Img`.
-- **It is loaded lazily.** The JIT only pulls the assembly in when a raw path is actually
-  taken, so a missing native DLL cannot break the FITS modes. `RawReader.Load` catches
-  `DllNotFoundException` and friends and says what is missing, in Romanian, instead of
-  letting a `0x8007007E` reach the user.
+- **It is loaded lazily**, and that survives even deleting `Sdcb.LibRaw.dll` itself, not
+  just the native DLLs: a FITS run exits 0, a raw run exits 1 with a message naming what
+  is missing rather than letting a `0x8007007E` reach the user. `RawReader.Load` catches
+  `DllNotFoundException` and friends for that.
+
+  What makes it lazy is narrower than it looks, and was measured rather than assumed.
+  `RawReader`'s **type** is loaded on every run, FITS included, because `ImageLoader` asks
+  it `Handles`. Method bodies are only resolved at JIT time, so `Decode` costs nothing
+  until a raw is actually opened - but **fields are resolved when the type is loaded**. A
+  static field of a libraw *reference* type turns out to be harmless (the CLR defers), a
+  field of a libraw *value* type breaks every FITS run. So: no libraw-typed fields on
+  `RawReader`, of either kind. `HoldsNoLibrawTypedFields_SoTheAssemblyStaysLazilyLoaded`
+  pins it; nothing else would notice.
 - **Nothing is developed.** Only `raw_image` (cropped to the visible area, like rawpy's
   `raw_image_visible`), `color.maximum` and the black levels. No demosaic, no white
   balance, no gamma - all of which would make the measurement meaningless.
@@ -821,7 +843,7 @@ flatcheck process/pp_light_00001.fit --light           # 3. end-to-end
 flatcheck flat_brut.fit --expo                         # 4. exposure
 flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight off the raw
 flatcheck sky_flat.fit --expo --sky                    # 4b. sky flat
-flatcheck flat_brut.fit --expo --sat 4095 --black 150  # manual scale (D3300 12-bit)
+flatcheck flat_brut.fit --expo --sat 4095 --black 150  # override, mostly for FITS
 flatcheck flat.fit -o harta.png                        # custom PNG path
 ```
 

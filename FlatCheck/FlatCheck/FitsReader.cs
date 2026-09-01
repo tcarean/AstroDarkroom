@@ -25,14 +25,31 @@ using System.IO;
 
 namespace FlatCheck
 {
-    internal static class FitsReader
+    internal sealed class FitsReader : IFrameReader
     {
+        /// <summary>
+        /// Revendica doar extensiile FITS. Fisierele pe care nu le revendica NIMENI ajung
+        /// tot aici, dar decizia aia e a lui ImageLoader si e scrisa acolo - nu se ascunde
+        /// intr-un "Handles care intoarce mereu true".
+        /// </summary>
+        public bool Handles(string path)
+        {
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            return ext == ".fit" || ext == ".fits" || ext == ".fts";
+        }
+
+        public LoadedFrame Load(string path)
+        {
+            var (img, hdr) = LoadWithHeader(File.ReadAllBytes(path));
+            // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
+            // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
+            return new LoadedFrame { Image = img, Header = hdr, Scale = null };
+        }
+
         // ========================================================= I/O FITS
         // FITS: header din carduri de 80 octeti, in blocuri de 2880. Apoi datele binare,
         // big-endian. BITPIX: 16=short, 32=int, -32=float, -64=double. Valoarea fizica =
         // BZERO + BSCALE * valoare_stocata. Ia primul HDU cu date (NAXIS>=2).
-        internal static Img Load(string path) => Load(File.ReadAllBytes(path));
-
         internal static Img Load(byte[] raw) => LoadWithHeader(raw).Image;
 
         /// <summary>
@@ -45,9 +62,6 @@ namespace FlatCheck
         /// ceea ce ar strica o valoare string care contine slash. Cheile citite de aici
         /// sunt toate numerice, deci nu le atinge.
         /// </summary>
-        internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(string path)
-            => LoadWithHeader(File.ReadAllBytes(path));
-
         internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(byte[] raw)
         {
 

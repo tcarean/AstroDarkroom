@@ -5,9 +5,9 @@ Utilizare:
   flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180
   flatcheck <light.fit> --light           # test end-to-end, un cadru
   flatcheck <folder/> --light             # test end-to-end pe toata seria
-  flatcheck <flat_brut.fit> --expo        # verificare expunere
-  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer
-  flatcheck <flat_brut.NEF> --expo        # idem, direct pe raw de aparat
+  flatcheck <flat_brut.NEF> --expo        # verificare expunere
+  flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril
+  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
