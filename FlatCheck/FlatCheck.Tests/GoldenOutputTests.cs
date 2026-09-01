@@ -248,6 +248,108 @@ public class GoldenOutputTests
         AssertGolden("light_undercorrected", output);
     }
 
+    /// <summary>
+    /// Garda de aplicabilitate: pe un camp de ~70 de grade modul refuza sa raspunda, si
+    /// iese cu 1 - intrare nepotrivita, nu verdict. Exact cazul care a motivat-o: 20 mm
+    /// pe APS-C raporta increzator "SUSPECT, SUB-corectie" pe un flat fara cusur radial.
+    /// </summary>
+    [Fact]
+    public void Light_OnATooWideField_RefusesInsteadOfAnswering()
+    {
+        using var ws = new TempWorkspace();
+        string f = ws.WriteFile("light.fit", FitsTestData.BuildFits(
+            Size, Size, FitsTestData.Radial(Size, Size),
+            extraCards: FitsTestData.WcsCards(0.1)));   // 512x512, diag 724 px, 0.1 gr/px -> 72.4 gr
+
+        var (output, exit) = RunCli(ws, f, "--light", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(1, exit);
+        Assert.Contains("TESTUL NU SE APLICA", output);
+        Assert.DoesNotContain("componenta radiala", output);
+        AssertGolden("light_rejected_wide_field", output);
+    }
+
+    // ---------------------------------------------------------------- light pe serie
+
+    /// <summary>
+    /// Serie stransa: toate cadrele arata aceeasi sub-corectie, gradientul de cer nu
+    /// variaza, deci media E o masuratoare si primeste un verdict adevarat.
+    /// </summary>
+    [Fact]
+    public void LightSeries_OnAStableSeries_GivesARealVerdict()
+    {
+        using var ws = new TempWorkspace();
+        string dir = SeriesDir(ws, "stabil", Enumerable.Range(0, 6)
+            .Select(i => (Func<int, int, double>)FitsTestData.Radial(Size, Size, k: 0.44 + 0.002 * i))
+            .ToArray());
+
+        var (output, exit) = RunCli(ws, dir, "--light", "--fov", "10", "-o", ws.PathTo("out.png"));
+
+        Assert.Contains("VERDICT:", output);
+        Assert.DoesNotContain("NEDETERMINAT", output);
+        Assert.Equal(3, exit);                 // sub-corectie mare, dar MASURATA
+        AssertGolden("light_series_conclusive", output);
+    }
+
+    /// <summary>
+    /// Serie care baleiaza: componenta radiala se plimba mult si urmareste gradientul de
+    /// cer. Flat-ul e acelasi in toate cadrele prin constructie, deci ce se misca e cerul
+    /// - iar modul refuza sa dea un verdict, cu exit 2.
+    /// </summary>
+    [Fact]
+    public void LightSeries_OnASweepingSeries_RefusesToConclude()
+    {
+        using var ws = new TempWorkspace();
+        // k urca de la sub- la supra-corectie, iar planul de cer scade odata cu el: exact
+        // tiparul sesiunii reale, in care cele doua s-au dovedit corelate la -0.94
+        string dir = SeriesDir(ws, "baleiaj", Enumerable.Range(0, 6)
+            .Select(i => (Func<int, int, double>)FitsTestData.WithLinearGradient(
+                TestImages.InvertedRadial(Size, Size, k: -0.5 + 0.2 * i), Size, 0.6 - 0.1 * i))
+            .ToArray());
+
+        var (output, exit) = RunCli(ws, dir, "--light", "--fov", "10", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(2, exit);
+        Assert.Contains("VERDICT: NEDETERMINAT", output);
+        AssertGolden("light_series_undetermined", output);
+    }
+
+    [Fact]
+    public void LightSeries_OnAFolderWithNoMatches_IsAnError()
+    {
+        using var ws = new TempWorkspace();
+        string dir = Path.Combine(ws.Dir, "gol");
+        Directory.CreateDirectory(dir);
+
+        var (output, exit) = RunCli(ws, dir, "--light");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("--pattern", output);
+    }
+
+    /// <summary>Un folder nu are ce cauta la celelalte moduri; se spune, nu se incearca.</summary>
+    [Fact]
+    public void ADirectoryWithAnyOtherMode_IsAnError()
+    {
+        using var ws = new TempWorkspace();
+
+        var (output, exit) = RunCli(ws, ws.Dir, "--expo");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("doar cu --light", output);
+    }
+
+    /// <summary>Scrie cadrele unei serii intr-un subfolder, cu numele Siril.</summary>
+    static string SeriesDir(TempWorkspace ws, string name, params Func<int, int, double>[] scenes)
+    {
+        string dir = Path.Combine(ws.Dir, name);
+        Directory.CreateDirectory(dir);
+        for (int i = 0; i < scenes.Length; i++)
+            File.WriteAllBytes(Path.Combine(dir, $"pp_light_{i + 1:00000}.fit"),
+                FitsTestData.BuildFits(Size, Size, scenes[i]));
+        return dir;
+    }
+
     // ---------------------------------------------------------------- expo
 
     [Fact]

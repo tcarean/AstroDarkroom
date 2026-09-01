@@ -82,8 +82,57 @@ public class LightReportTests
         };
         var w = new StringWriter();
 
-        LightReport.Write(result, "f.fit", w);
+        LightReport.Write(result, Unknown, "f.fit", w);
 
         Assert.Contains("componenta radiala      :  -0.00 %   [OK]", w.ToString());
     }
+
+    /// <summary>
+    /// Cand campul nu s-a putut afla, raportul spune asta explicit in loc sa taca.
+    /// Tacerea ar lasa impresia ca s-a verificat si e in regula.
+    /// </summary>
+    [Fact]
+    public void AnUnknownFieldOfViewIsStatedInTheReport()
+    {
+        var w = new StringWriter();
+
+        LightReport.WriteSuitability(Unknown, w);
+
+        Assert.Contains("camp acoperit           : necunoscut", w.ToString());
+        Assert.Contains("nu pot verifica daca testul se aplica", w.ToString());
+    }
+
+    /// <summary>Pe camp la limita se ruleaza, dar cifra vine cu un avertisment.</summary>
+    [Fact]
+    public void AMarginalFieldOfViewWarnsButStillReports()
+    {
+        var s = new SuitabilityResult { Level = FovLevel.Marginal, FovDeg = 30.0, Source = "WCS" };
+        var w = new StringWriter();
+
+        LightReport.WriteSuitability(s, w);
+
+        Assert.Contains("camp diagonal           :  30.0 grade  (WCS)", w.ToString());
+        Assert.Contains("ATENTIE: camp la limita", w.ToString());
+    }
+
+    /// <summary>
+    /// Refuzul nu e un raport prescurtat: nu contine nicio cifra de componenta radiala,
+    /// tocmai fiindca acolo nu se poate masura una.
+    /// </summary>
+    [Fact]
+    public void TheRefusalExplainsTheDegeneracyAndPointsAtTheRatioTest()
+    {
+        var s = new SuitabilityResult { Level = FovLevel.TooWide, FovDeg = 70.4, Source = "WCS" };
+        var w = new StringWriter();
+
+        LightReport.WriteTooWide(s, "light.fit", w);
+        string text = w.ToString();
+
+        Assert.Contains("TESTUL NU SE APLICA", text);
+        Assert.Contains("degenerare geometrica", text);
+        Assert.Contains("--ratio", text);
+        Assert.DoesNotContain("componenta radiala", text);
+    }
+
+    static SuitabilityResult Unknown => new() { Level = FovLevel.Unknown };
 }

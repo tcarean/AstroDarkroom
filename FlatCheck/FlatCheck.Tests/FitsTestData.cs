@@ -33,6 +33,29 @@ internal static class FitsTestData
     internal static string Card(string key, string value) =>
         (key.PadRight(8) + "= " + value.PadLeft(20)).PadRight(CardSize);
 
+    /// <summary>
+    /// Cardurile de optica pe care le citeste garda din --light. Cu marimea pixelului se
+    /// poate calcula campul exact; fara ea ramane doar focala, si atunci garda cade pe
+    /// presupunerea conservatoare de full-frame - exact cazul unui DSLR trecut prin
+    /// Siril, care nu scrie XPIXSZ.
+    /// </summary>
+    internal static string[] OpticsCards(double focalMm, double? pixelUm = null, int binning = 1)
+    {
+        var cards = new List<string> { Card("FOCALLEN", focalMm.ToString("0.###")) };
+        if (pixelUm.HasValue)
+        {
+            cards.Add(Card("XPIXSZ", pixelUm.Value.ToString("0.###")));
+            cards.Add(Card("YPIXSZ", pixelUm.Value.ToString("0.###")));
+            cards.Add(Card("XBINNING", binning.ToString()));
+            cards.Add(Card("YBINNING", binning.ToString()));
+        }
+        return cards.ToArray();
+    }
+
+    /// <summary>Scara masurata de un plate solve, in grade/pixel.</summary>
+    internal static string[] WcsCards(double degPerPixel) =>
+        new[] { Card("CDELT1", degPerPixel.ToString("0.#########")) };
+
     static byte[] HeaderBlocks(IEnumerable<string> cards)
     {
         var list = cards.ToList();

@@ -107,7 +107,34 @@ public class CrossCheckFixtures
                     return bright;
                 }));
 
+        // --light: garda de aplicabilitate. Scara vine dintr-un plate solve, deci campul
+        // e exact si amandoua implementarile trebuie sa refuze la fel.
+        File.WriteAllBytes(Path.Combine(dir, "widefield.fit"),
+            FitsTestData.BuildFits(Size, Size, radial,
+                extraCards: FitsTestData.WcsCards(0.1)));       // diag 724 px -> 72.4 grade
+
+        // --light pe serie. Doua subfoldere, cate unul pentru fiecare ramura de verdict.
+        // Numele sunt cele Siril, ca sa treaca prin tiparul implicit.
+        SeriesDir(dir, "serie_stabil", Enumerable.Range(0, 6)
+            .Select(i => FitsTestData.Radial(Size, Size, k: 0.44 + 0.002 * i)).ToArray());
+
+        // k urca de la sub- la supra-corectie iar planul de cer scade odata cu el: exact
+        // tiparul sesiunii reale, in care cele doua s-au dovedit corelate la -0.94
+        SeriesDir(dir, "serie_baleiaj", Enumerable.Range(0, 6)
+            .Select(i => FitsTestData.WithLinearGradient(
+                TestImages.InvertedRadial(Size, Size, k: -0.5 + 0.2 * i), Size, 0.6 - 0.1 * i))
+            .ToArray());
+
         Assert.True(File.Exists(Path.Combine(dir, "clean.fit")));
+    }
+
+    static void SeriesDir(string root, string name, params Func<int, int, double>[] scenes)
+    {
+        string dir = Path.Combine(root, name);
+        Directory.CreateDirectory(dir);
+        for (int i = 0; i < scenes.Length; i++)
+            File.WriteAllBytes(Path.Combine(dir, $"pp_light_{i + 1:00000}.fit"),
+                FitsTestData.BuildFits(Size, Size, scenes[i]));
     }
 
     static void Write(string dir, string name, Func<int, int, double> scene)

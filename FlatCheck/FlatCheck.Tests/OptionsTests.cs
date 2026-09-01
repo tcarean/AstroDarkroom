@@ -216,4 +216,69 @@ public class OptionsTests
     {
         Assert.Null(Options.Parse(new[] { "raw.fit", "--expo", "--sat", "4095", "--black", "150" }).Error);
     }
+
+    // ---------------------------------------------------------------- --light pe serie
+
+    /// <summary>
+    /// Implicitul e conventia Siril pentru cadre CALIBRATE dar NEREGISTRATE. Nu se
+    /// schimba fara sa se citeasca comentariul de langa el in Options.cs: "r_pp_light_*"
+    /// e exclus intentionat.
+    /// </summary>
+    [Fact]
+    public void ThePatternDefaultsToTheSirilCalibratedNaming()
+    {
+        Assert.Equal("pp_light_*.fit", Options.Parse(new[] { "process" }).Pattern);
+    }
+
+    [Fact]
+    public void ThePatternCanBeOverridden()
+    {
+        var o = Options.Parse(new[] { "process", "--light", "--pattern", "sub_*.fits" });
+
+        Assert.Null(o.Error);
+        Assert.Equal("sub_*.fits", o.Pattern);
+    }
+
+    [Fact]
+    public void AnEmptyPatternIsAnError()
+    {
+        Assert.Contains("sirul gol", Options.Parse(new[] { "process", "--pattern", "" }).Error);
+    }
+
+    [Fact]
+    public void TheFieldOfViewIsUnsetUnlessGiven()
+    {
+        Assert.Null(Options.Parse(new[] { "light.fit", "--light" }).Fov);
+    }
+
+    [Fact]
+    public void TheFieldOfViewIsParsedAsDegrees()
+    {
+        var o = Options.Parse(new[] { "light.fit", "--light", "--fov", "11.7" });
+
+        Assert.Null(o.Error);
+        Assert.Equal(11.7, o.Fov);
+    }
+
+    [Theory]
+    [InlineData("abc", "asteapta un numar")]
+    [InlineData("0", "intre 0 si 180")]
+    [InlineData("-5", "intre 0 si 180")]
+    [InlineData("180", "intre 0 si 180")]
+    [InlineData("400", "intre 0 si 180")]
+    public void ANonsensicalFieldOfViewIsAnError(string value, string expected)
+    {
+        Assert.Contains(expected, Options.Parse(new[] { "light.fit", "--fov", value }).Error);
+    }
+
+    /// <summary>Un folder e o cale ca oricare alta la parsare; dispeceratul decide ce face cu ea.</summary>
+    [Fact]
+    public void ADirectoryIsAcceptedAsThePositional()
+    {
+        var o = Options.Parse(new[] { "process", "--light" });
+
+        Assert.Null(o.Error);
+        Assert.Equal("process", o.Image);
+        Assert.True(o.Light);
+    }
 }

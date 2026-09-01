@@ -31,6 +31,7 @@
 // iar PngWriter nu tipareste nimic - mesajul "harta salvata" se scrie de aici.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FlatCheck
@@ -57,6 +58,15 @@ namespace FlatCheck
                 return 1;
             }
 
+            // Un folder inseamna "ruleaza pe serie", si asta are sens doar la --light.
+            // Celelalte moduri lucreaza pe un master sau pe un cadru anume.
+            if (Directory.Exists(o.Image) && !o.Light)
+            {
+                stderr.WriteLine("EROARE: un folder se poate da doar cu --light, pentru rularea pe serie. "
+                               + "Celelalte moduri asteapta un fisier.");
+                return 1;
+            }
+
             int code;
             try
             {
@@ -74,10 +84,18 @@ namespace FlatCheck
             return code;
         }
 
+        /// <summary>
+        /// Nu e un verdict, e un refuz: intrarea nu e potrivita pentru testul cerut.
+        /// Iese cu 1, aceeasi categorie cu <see cref="ExposureVerdict.NotRaw"/>, si se
+        /// deosebeste astfel de NEDETERMINAT, care inseamna "a rulat, dar nu concluzioneaza".
+        /// </summary>
+        internal const string NotApplicable = "INAPLICABIL";
+
         internal static int ExitFor(string verdict) => verdict switch
         {
             "OK" or "PERFECT" or "BUN" => 0,   // BUN e utilizabil, deci trece
-            "SUSPECT" or "ACCEPTABIL" => 2,
+            NotApplicable => 1,                // intrare nepotrivita, nu verdict
+            "SUSPECT" or "ACCEPTABIL" or LightSeriesAnalyzer.Undetermined => 2,
             _ => 3,
         };
 
@@ -108,11 +126,106 @@ namespace FlatCheck
 
         static string RunLight(Options o, TextWriter w)
         {
-            var r = LightAnalyzer.Analyze(FitsReader.Load(o.Image));
-            LightReport.Write(r, o.Image, w);
+            if (Directory.Exists(o.Image)) return RunLightSeries(o, w);
+
+            var (img, hdr) = FitsReader.LoadWithHeader(o.Image);
+
+            // Garda inainte de orice calcul: pe un camp prea larg cifra n-ar insemna
+            // nimic, deci nu se produce deloc, in loc sa se produca si sa se explice.
+            var s = LightSuitability.Check(hdr, o.Fov);
+            if (!s.CanRun) { LightReport.WriteTooWide(s, o.Image, w); return NotApplicable; }
+
+            var r = LightAnalyzer.Analyze(img);
+            LightReport.Write(r, s, o.Image, w);
             SaveMap(o.OutPng, r.RadialMap, w);
             return r.Verdict;
         }
+
+        /// <summary>
+        /// --light pe toate cadrele dintr-un folder. Un cadru singur amesteca eroarea de
+        /// flat cu termenul radial al cerului din acel moment; media pe serie ii separa,
+        /// dar numai daca e concludenta - vezi LightSeriesAnalyzer.
+        ///
+        /// Cadrele se incarca pe rand si nu se pastreaza: un cadru de 24 MP ocupa sute de
+        /// MB, deci 32 de cadre tinute simultan ar fi de neexecutat.
+        /// </summary>
+        static string RunLightSeries(Options o, TextWriter w)
+        {
+            var files = FindSeries(o.Image, o.Pattern);
+            if (files.Count == 0)
+                throw new Exception(
+                    $"Niciun fisier care sa se potriveasca cu '{o.Pattern}' in {o.Image}. "
+                    + "Da alt tipar cu --pattern.");
+
+            // Aplicabilitatea se decide pe primul cadru: toate vin din aceeasi sesiune,
+            // deci au aceeasi focala si aceeasi scara.
+            var (firstImg, firstHdr) = FitsReader.LoadWithHeader(files[0]);
+            var s = LightSuitability.Check(firstHdr, o.Fov);
+            if (!s.CanRun) { LightReport.WriteTooWide(s, o.Image, w); return NotApplicable; }
+
+            LightSeriesReport.WriteHeader(o.Image, o.Pattern, files.Count, s, w);
+
+            var frames = new List<(string, LightResult)>();
+            for (int i = 0; i < files.Count; i++)
+            {
+                Img img = firstImg ?? FitsReader.Load(files[i]);
+                firstImg = null;                       // eliberat imediat, vezi mai sus
+                var r = LightAnalyzer.Analyze(img);
+                string name = Path.GetFileName(files[i]);
+                LightSeriesReport.WriteRow(name, r, w);
+                frames.Add((name, r));
+            }
+
+            var series = LightSeriesAnalyzer.Combine(frames);
+            LightSeriesReport.WriteSummary(series, w);
+            SaveMap(o.OutPng, series.RadialMap, w);
+            return series.Verdict;
+        }
+
+        /// <summary>
+        /// Fisierele din folder care se potrivesc cu tiparul, sortate.
+        ///
+        /// Enumerare completa + potrivire in proces, NU Directory.GetFiles(dir, pattern):
+        /// potrivirea Win32 mai prinde si extensii mai lungi din mostenirea 8.3, deci
+        /// "pp_light_*.fit" ar inghiti si ".fits". Aici tiparul inseamna acelasi lucru pe
+        /// orice sistem, si acelasi lucru ca in flatcheck.py.
+        ///
+        /// Sortarea e ordinala pe numele fisierului, identica cu sorted() din Python -
+        /// altfel tabelul ar iesi in ordini diferite intre implementari si crosscheck-ul
+        /// ar raporta diferente care nu exista.
+        /// </summary>
+        internal static List<string> FindSeries(string dir, string pattern)
+        {
+            var hits = new List<string>();
+            foreach (string p in Directory.EnumerateFiles(dir))
+                if (GlobMatch(Path.GetFileName(p), pattern)) hits.Add(p);
+            hits.Sort((a, b) => string.CompareOrdinal(Path.GetFileName(a), Path.GetFileName(b)));
+            return hits;
+        }
+
+        /// <summary>
+        /// Potrivire de tipar cu '*' si '?', fara distinctie de litere mari/mici.
+        /// Clasele de caractere ('[abc]') NU sunt suportate - sunt tratate literal, in
+        /// ambele implementari, ca sa nu apara o divergenta tacuta.
+        /// </summary>
+        internal static bool GlobMatch(string name, string pattern)
+        {
+            int n = 0, p = 0, starP = -1, starN = 0;
+            while (n < name.Length)
+            {
+                if (p < pattern.Length && (pattern[p] == '?' || Eq(pattern[p], name[n])))
+                { p++; n++; }
+                else if (p < pattern.Length && pattern[p] == '*')
+                { starP = p++; starN = n; }
+                else if (starP >= 0)
+                { p = starP + 1; n = ++starN; }
+                else return false;
+            }
+            while (p < pattern.Length && pattern[p] == '*') p++;
+            return p == pattern.Length;
+        }
+
+        static bool Eq(char a, char b) => char.ToLowerInvariant(a) == char.ToLowerInvariant(b);
 
         static ExposureVerdict RunExpo(Options o, TextWriter w)
         {
@@ -133,10 +246,16 @@ namespace FlatCheck
             w.WriteLine("Utilizare:");
             w.WriteLine("  flatcheck <flat.fit>                    # test structura");
             w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180");
-            w.WriteLine("  flatcheck <light.fit> --light           # test end-to-end");
+            w.WriteLine("  flatcheck <light.fit> --light           # test end-to-end, un cadru");
+            w.WriteLine("  flatcheck <folder/> --light             # test end-to-end pe toata seria");
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # verificare expunere");
             w.WriteLine("  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
+            w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
+            w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
+            w.WriteLine();
+            w.WriteLine("--light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,");
+            w.WriteLine("fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.");
             w.WriteLine();
 
             // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare

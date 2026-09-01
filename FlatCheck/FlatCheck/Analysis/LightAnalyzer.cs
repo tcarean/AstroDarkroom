@@ -26,6 +26,12 @@
 // reziduala, adica eroarea de flat. Fitul simultan e ce face testul sa mearga si pe cer
 // poluat: cele doua au forme diferite si se separa.
 //
+// DAR NUMAI PE CAMP INGUST. Separarea de mai sus tine cat timp cupola de poluare e
+// cvasi-liniara peste cadru. Pe camp larg ea se curbeaza in interiorul cadrului, iar
+// partea radial simetrica a curburii are exact forma vignetarii - si atunci nimic din
+// ce e scris aici nu le mai poate deosebi. Vezi LightSuitability, care opreste modul
+// inainte sa ajunga aici, si sectiunea "The validity limit" din CLAUDE.md.
+//
 // ATENTIE: NU inlocui cu percentile pe inele circulare - p20 pe un inel prinde partea
 // intunecata a gradientului de cer si o raporteaza ca falsa vignetare.
 

@@ -1,0 +1,39 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== TEST END-TO-END (SERIE): <TMP>/baleiaj ===
+    Astept cadre CALIBRATE cu flat, FARA background extraction si NEREGISTRATE.
+    cadre gasite            : 6  (tipar pp_light_*.fit)
+    camp diagonal           :  10.0 grade  (--fov)
+
+    cadru                              radial   gradient cer     tile-uri
+    pp_light_00001.fit               +58.65 %      34.98 %    1643/1764
+    pp_light_00002.fit               +34.26 %      31.88 %    1647/1764
+    pp_light_00003.fit               +11.03 %      27.56 %    1637/1764
+    pp_light_00004.fit                -9.00 %      21.82 %    1624/1764
+    pp_light_00005.fit               -27.72 %      15.33 %    1619/1764
+    pp_light_00006.fit               -47.87 %       8.07 %    1623/1764
+
+  SINTEZA PE SERIE
+    componenta radiala, medie :   +3.23 %
+    imprastiere (min .. max)  :  -47.87 .. +58.65 %
+    eroarea mediei            :   16.14 puncte   <- peste pragul de 2.00
+    corelatie cu grad. de cer :    0.98          <- peste pragul de 0.70
+
+    VERDICT: NEDETERMINAT
+    Media NU se poate citi ca eroare de flat:
+      - eroarea mediei (16.14) depaseste chiar pragul de OK (2.00),
+        deci seria nu rezolva flat-ul la precizia la care se pronunta
+        pragurile. Un verdict aici ar fi o parere, nu o masuratoare.
+      - componenta radiala urmareste gradientul de cer (r = 0.98
+        pe un interval de 27 puncte de gradient), semn ca ce se
+        masoara e cerul.
+
+    Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din
+    fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.
+    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care
+    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea
+    despre cand se poate folosi --light.
+
+    -> harta salvata: <TMP>/out.png
+

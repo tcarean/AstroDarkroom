@@ -40,22 +40,96 @@ namespace FlatCheck
         internal static string Signed(double v)
             => (double.IsNegative(v) ? "-" : "+") + Math.Abs(v).ToString("0.00");
 
-        internal static void Write(LightResult r, string path, TextWriter w)
+        /// <summary>
+        /// Linia de camp acoperit, plus avertismentul cand e la limita. Folosita si de
+        /// raportul pe serie - de aceea sta aici, nu inline in Write.
+        ///
+        /// Cand campul nu s-a putut afla se scrie o linie care spune exact asta. E
+        /// deliberat: necunoscut nu inseamna suspect, inseamna neverificat, iar tacerea
+        /// ar lasa impresia ca s-a verificat.
+        /// </summary>
+        internal static void WriteSuitability(SuitabilityResult s, TextWriter w)
+        {
+            if (!double.IsNaN(s.FovDeg))
+                w.WriteLine($"    camp diagonal           : {s.FovDeg,5:F1} grade  ({s.Source})");
+            else if (!double.IsNaN(s.FocalMm))
+                w.WriteLine($"    camp acoperit           : nedeterminat ({s.Source})");
+            else
+                w.WriteLine("    camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)");
+
+            if (s.Level == FovLevel.Marginal)
+            {
+                w.WriteLine($"\n    ATENTIE: camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0}");
+                w.WriteLine("    grade diagonala, iar cifra de mai jos poate contine si cer, nu doar flat.");
+                w.WriteLine("    Citeste-o ca pe un indiciu, nu ca pe o masuratoare.");
+            }
+            else if (s.Level == FovLevel.Unknown)
+            {
+                w.WriteLine("    (nu pot verifica daca testul se aplica; vezi --fov si README)");
+            }
+        }
+
+        /// <summary>
+        /// Ce se scrie in locul unui raport cand campul e prea larg. Modul nu da un
+        /// verdict aici - nu are ce masura - deci explica degenerarea si trimite la
+        /// testul care chiar raspunde pe asemenea date.
+        /// </summary>
+        internal static void WriteTooWide(SuitabilityResult s, string path, TextWriter w)
+        {
+            w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
+            WriteSuitability(s, w);
+
+            w.WriteLine("\n  TESTUL NU SE APLICA PE CADRELE ASTEA");
+            w.WriteLine($"    Peste {Th.LightFovMax:F0} de grade diagonala, cupola de poluare luminoasa se");
+            w.WriteLine("    CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi");
+            w.WriteLine("    are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra");
+            w.WriteLine("    ar iesi ar fi cerul, nu flat-ul.");
+            w.WriteLine("    Nu e o limitare a uneltei, e o degenerare geometrica.");
+            w.WriteLine("\n    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de");
+            w.WriteLine("    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.");
+            if (double.IsNaN(s.FovDeg) && !double.IsNaN(s.FocalMm))
+            {
+                w.WriteLine("\n    Decizia s-a luat doar pe focala, presupunand cel mai mare senzor");
+                w.WriteLine("    plauzibil. Daca al tau e mai mic, da campul real cu --fov <grade>.");
+            }
+        }
+
+        internal static void Write(LightResult r, SuitabilityResult s, string path, TextWriter w)
         {
             w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
             w.WriteLine("    Astept un stack CALIBRAT cu flat, dar FARA background extraction.");
+            WriteSuitability(s, w);
 
             w.WriteLine($"\n    tile-uri folosite       : {r.KeptTiles} / {r.TotalTiles} (restul = nebulozitate/stele, respinse)");
-            w.WriteLine($"    gradient de cer (plan)  : {r.PlanePct,5:F2} %  <- poluare luminoasa, IGNORA");
+            w.WriteLine($"    gradient de cer (plan)  : {r.PlanePct,5:F2} %  <- poluare luminoasa, IGNORA"
+                      + (r.PlanePct > Th.LightPlaneWarn ? "  (mare!)" : ""));
             w.WriteLine($"    componenta radiala      : {Signed(r.RadPct),6} %   [{r.Verdict}]  <- ASTA e flat-ul");
 
             w.WriteLine("\n  INTERPRETARE");
-            if (Math.Abs(r.RadPct) < Th.LightRadOk)
+            WriteDiagnosis(r.RadPct, w);
+
+            // Un cadru singur amesteca eroarea de flat cu termenul radial al cerului din
+            // acel moment, iar al doilea se schimba in timpul sesiunii. Pe o serie reala
+            // cifra a baleiat 55 de puncte in 81 de minute. Media pe serie separa mult
+            // mai bine, deci merita spus la fiecare rulare pe un cadru singur.
+            w.WriteLine("\n    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.");
+            w.WriteLine("    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:");
+            w.WriteLine("        flatcheck process/ --light");
+        }
+
+        /// <summary>
+        /// Diagnosticul din semnul componentei radiale. Sta separat fiindca il foloseste
+        /// si raportul pe serie: aceeasi cifra, aceeasi citire, deci acelasi text - daca
+        /// ar fi duplicat, cele doua ar diverge la prima reformulare.
+        /// </summary>
+        internal static void WriteDiagnosis(double radPct, TextWriter w)
+        {
+            if (Math.Abs(radPct) < Th.LightRadOk)
             {
                 w.WriteLine("    Fondul n-are componenta radiala. Flat-ul face treaba.");
                 w.WriteLine("    Asta e testul care conteaza - toate celelalte sunt proxy pentru el.");
             }
-            else if (r.RadPct > 0)
+            else if (radPct > 0)
             {
                 w.WriteLine("    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata");
                 w.WriteLine("    vignetarea: alta diafragma decat la lights, sau flat contaminat.");

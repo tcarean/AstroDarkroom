@@ -115,7 +115,10 @@ namespace FlatCheck
         {
             "OK" or "PERFECT" => 0,
             "BUN" => 1,
-            "SUSPECT" or "ACCEPTABIL" => 2,
+            // NEDETERMINAT nu e un verdict de calitate - inseamna "a rulat, dar nu poate
+            // concluziona". Sta la 2 fiindca regula codurilor de iesire e "orice != 0
+            // inseamna nu e curat, uita-te", iar "nu stiu" cere exact aceeasi reactie.
+            "SUSPECT" or "ACCEPTABIL" or LightSeriesAnalyzer.Undetermined => 2,
             _ => 3,
         };
     }

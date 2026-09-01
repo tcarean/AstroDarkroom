@@ -1,0 +1,16 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== TEST END-TO-END: <TMP>/light.fit ===
+    camp diagonal           :  72.4 grade  (WCS)
+
+  TESTUL NU SE APLICA PE CADRELE ASTEA
+    Peste 40 de grade diagonala, cupola de poluare luminoasa se
+    CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi
+    are exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra
+    ar iesi ar fi cerul, nu flat-ul.
+    Nu e o limitare a uneltei, e o degenerare geometrica.
+
+    Pentru un setup cu camp larg, testul care raspunde e rotatia la 180 de
+    grade (--ratio): valideaza flat-ul fara sa implice cerul deloc.
+

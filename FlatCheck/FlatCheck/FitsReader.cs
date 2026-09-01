@@ -33,7 +33,22 @@ namespace FlatCheck
         // BZERO + BSCALE * valoare_stocata. Ia primul HDU cu date (NAXIS>=2).
         internal static Img Load(string path) => Load(File.ReadAllBytes(path));
 
-        internal static Img Load(byte[] raw)
+        internal static Img Load(byte[] raw) => LoadWithHeader(raw).Image;
+
+        /// <summary>
+        /// Ca <see cref="Load(byte[])"/>, dar intoarce si cardurile HDU-ului din care a
+        /// venit imaginea. Headerul era pana acum parsat si aruncat; <c>--light</c> are
+        /// nevoie de el ca sa afle focala si scara, deci sa poata refuza un cadru cu camp
+        /// prea larg pentru test (vezi LightSuitability).
+        ///
+        /// Se pastreaza limitarea cunoscuta de parsare - valoarea se taie la primul '/',
+        /// ceea ce ar strica o valoare string care contine slash. Cheile citite de aici
+        /// sunt toate numerice, deci nu le atinge.
+        /// </summary>
+        internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(string path)
+            => LoadWithHeader(File.ReadAllBytes(path));
+
+        internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(byte[] raw)
         {
 
             int pos = 0;
@@ -106,7 +121,7 @@ namespace FlatCheck
                             img.D[i] = s / n3;
                         }
                     }
-                    return img;
+                    return (img, hdr);
                 }
                 // HDU fara imagine 2D utila: sar peste blocurile lui de date si continui
                 pos += (int)dataBlocks;
@@ -136,9 +151,9 @@ namespace FlatCheck
             }
         }
 
-        internal static int HInt(Dictionary<string, string> h, string k, int def)
+        internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
             => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
-        internal static double HDbl(Dictionary<string, string> h, string k, double def)
+        internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
     }
 }

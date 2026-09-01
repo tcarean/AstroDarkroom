@@ -42,6 +42,20 @@ namespace FlatCheck
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
+
+        // Tiparul de fisiere pentru --light pe un folder. Implicit e conventia Siril
+        // pentru cadre CALIBRATE dar NEREGISTRATE. "r_pp_light_*" nu se potriveste, si
+        // asta e intentionat: registrarea transforma geometric cadrul, deci muta eroarea
+        // de flat - care e fixa pe senzor - fata de centrul in jurul caruia se fiteaza
+        // modelul radial.
+        internal string Pattern = "pp_light_*.fit";
+
+        // Campul diagonal, in grade, declarat de om. Portita pentru cand headerul nu
+        // spune destul (DSLR fara XPIXSZ) sau cand presupunerea conservatoare de
+        // full-frame nedreptateste un senzor mic. Nu e un flag de fortare: da unealtei
+        // adevarul, nu ii cere sa-l ignore.
+        internal double? Fov;
+
         internal bool Help;
         internal string Error;
 
@@ -49,7 +63,7 @@ namespace FlatCheck
         { "--light", "--expo", "--sky", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
-        { "--ratio", "-o", "--out", "--sat", "--black" };
+        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov" };
 
         internal static Options Parse(string[] args)
         {
@@ -93,6 +107,14 @@ namespace FlatCheck
                         case "--black":
                             if (!TryNum(v, out var blk)) return o.Fail($"--black asteapta un numar, a primit '{v}'");
                             o.Black = blk; break;
+                        case "--pattern":
+                            if (v.Length == 0) return o.Fail("--pattern asteapta un tipar, a primit sirul gol");
+                            o.Pattern = v; break;
+                        case "--fov":
+                            if (!TryNum(v, out var fov)) return o.Fail($"--fov asteapta un numar, a primit '{v}'");
+                            if (fov <= 0 || fov >= 180)
+                                return o.Fail($"--fov asteapta grade intre 0 si 180, a primit {v}");
+                            o.Fov = fov; break;
                     }
                     continue;
                 }

@@ -76,6 +76,16 @@ SCENARIOS = [
     ("light uniform",          ["uniform.fit", "--light"]),
     ("light nebulosity",       ["nebula.fit", "--light"]),
     ("light wide",             ["wide.fit", "--light"]),
+    ("light too wide field",   ["widefield.fit", "--light"]),
+    ("light --fov override",   ["widefield.fit", "--light", "--fov", "10"]),
+
+    # --light pe serie: ambele implementari trebuie sa aleaga aceleasi fisiere, in
+    # aceeasi ordine, si sa cada pe aceeasi ramura de verdict. Enumerarea si sortarea
+    # sunt scrise sa fie identice tocmai pentru asta (vezi FindSeries / find_series).
+    ("light series stable",    ["serie_stabil", "--light", "--fov", "10"]),
+    ("light series sweeping",  ["serie_baleiaj", "--light", "--fov", "10"]),
+    ("light series pattern",   ["serie_stabil", "--light", "--fov", "10",
+                                "--pattern", "pp_light_0000?.fit"]),
 
     ("expo cfa",               ["raw_cfa.fit", "--expo"]),
     ("expo cfa --sky",         ["raw_cfa.fit", "--expo", "--sky"]),

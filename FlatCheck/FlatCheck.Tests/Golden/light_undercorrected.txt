@@ -3,6 +3,8 @@ Copyright (C) 2026 Tudor Carean
 
 === TEST END-TO-END: <TMP>/light.fit ===
     Astept un stack CALIBRAT cu flat, dar FARA background extraction.
+    camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)
+    (nu pot verifica daca testul se aplica; vezi --fov si README)
 
     tile-uri folosite       : 1701 / 1764 (restul = nebulozitate/stele, respinse)
     gradient de cer (plan)  :  0.18 %  <- poluare luminoasa, IGNORA
@@ -11,6 +13,10 @@ Copyright (C) 2026 Tudor Carean
   INTERPRETARE
     Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata
     vignetarea: alta diafragma decat la lights, sau flat contaminat.
+
+    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
+    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:
+        flatcheck process/ --light
 
     -> harta salvata: <TMP>/out.png
 

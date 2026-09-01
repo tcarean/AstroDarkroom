@@ -1,0 +1,31 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== TEST END-TO-END (SERIE): <TMP>/stabil ===
+    Astept cadre CALIBRATE cu flat, FARA background extraction si NEREGISTRATE.
+    cadre gasite            : 6  (tipar pp_light_*.fit)
+    camp diagonal           :  10.0 grade  (--fov)
+
+    cadru                              radial   gradient cer     tile-uri
+    pp_light_00001.fit               +44.73 %       0.18 %    1699/1764
+    pp_light_00002.fit               +44.93 %       0.18 %    1701/1764
+    pp_light_00003.fit               +45.13 %       0.18 %    1701/1764
+    pp_light_00004.fit               +45.34 %       0.18 %    1701/1764
+    pp_light_00005.fit               +45.54 %       0.18 %    1703/1764
+    pp_light_00006.fit               +45.74 %       0.18 %    1701/1764
+
+  SINTEZA PE SERIE
+    componenta radiala, medie :  +45.23 %
+    imprastiere (min .. max)  :  +44.73 .. +45.74 %
+    eroarea mediei            :    0.16 puncte
+    corelatie cu grad. de cer : nu se aplica (gradientul variaza doar 0.0 puncte)
+
+    VERDICT: PROBLEMA
+    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata
+    vignetarea: alta diafragma decat la lights, sau flat contaminat.
+
+    Media pe 6 cadre e estimarea erorii de flat: imprastierea e mica,
+    deci termenul radial al cerului e stabil peste serie si nu o contamineaza.
+
+    -> harta salvata: <TMP>/out.png
+

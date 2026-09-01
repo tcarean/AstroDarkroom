@@ -3,10 +3,16 @@ Copyright (C) 2026 Tudor Carean
 Utilizare:
   flatcheck <flat.fit>                    # test structura
   flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180
-  flatcheck <light.fit> --light           # test end-to-end
+  flatcheck <light.fit> --light           # test end-to-end, un cadru
+  flatcheck <folder/> --light             # test end-to-end pe toata seria
   flatcheck <flat_brut.fit> --expo        # verificare expunere
   flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
+            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
+            --fov <grade> (diagonala campului, daca headerul n-o da)
+
+--light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,
+fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
 
 Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
 vandabilitate sau potrivire pentru un scop anume. E software liber:

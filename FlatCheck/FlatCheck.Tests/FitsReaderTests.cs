@@ -260,6 +260,47 @@ public class FitsReaderTests
         throw new InvalidOperationException("card not found: " + key);
     }
 
+    // ---------------------------------------------------------------- headerul
+
+    /// <summary>
+    /// Headerul era pana acum parsat si aruncat. --light are nevoie de el ca sa afle
+    /// focala si scara, deci sa poata refuza un cadru pe care testul nu se aplica.
+    /// </summary>
+    [Fact]
+    public void LoadWithHeader_ReturnsTheCardsOfTheHduThatHeldTheImage()
+    {
+        byte[] fits = FitsTestData.BuildFits(
+            32, 32, FitsTestData.Constant(1000),
+            extraCards: FitsTestData.OpticsCards(135, pixelUm: 3.92));
+
+        var (img, hdr) = FitsReader.LoadWithHeader(fits);
+
+        Assert.Equal(32, img.W);
+        Assert.Equal(135, FitsReader.HDbl(hdr, "FOCALLEN", 0));
+        Assert.Equal(3.92, FitsReader.HDbl(hdr, "XPIXSZ", 0), 3);
+        Assert.Equal(32, FitsReader.HInt(hdr, "NAXIS1", 0));
+    }
+
+    /// <summary>Un header minimal nu e o eroare - doar nu are cheile optionale.</summary>
+    [Fact]
+    public void LoadWithHeader_OnAMinimalHeader_SimplyLacksTheOpticalKeys()
+    {
+        var (_, hdr) = FitsReader.LoadWithHeader(
+            FitsTestData.BuildFits(16, 16, FitsTestData.Constant(500)));
+
+        Assert.False(hdr.ContainsKey("FOCALLEN"));
+        Assert.Equal(0, FitsReader.HDbl(hdr, "FOCALLEN", 0));
+    }
+
+    /// <summary>Load ramane exact ce era: acelasi raster, headerul doar ignorat.</summary>
+    [Fact]
+    public void Load_StillReturnsTheSameRasterAsLoadWithHeader()
+    {
+        byte[] fits = FitsTestData.BuildFits(16, 16, FitsTestData.Radial(16, 16));
+
+        Assert.Equal(FitsReader.LoadWithHeader(fits).Image.D, FitsReader.Load(fits).D);
+    }
+
     static byte[] Sixteen(int count, short value)
     {
         var b = new byte[count * 2];

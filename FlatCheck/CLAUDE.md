@@ -28,9 +28,16 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
     `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`.
   - `Analysis/` - one analyzer per mode, each a pure `Img -> XxxResult` function:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`.
-    No I/O, no printing - this is where every number is decided.
+    No I/O, no printing - this is where every number is decided. Two of them are not
+    `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
+    (it decides whether `--light` applies at all, before any pixel is read), and
+    `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it combines
+    per-frame results; the file loading stays in `FlatCheckCli`, like every other mode).
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
-    function. All the Romanian output lives here and nowhere else.
+    function. All the Romanian output lives here and nowhere else. `LightSeriesReport`
+    is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
+    its table instead of sitting silent for two minutes; the formatting still lives
+    entirely in `Report/`.
   - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `Write`/`WriteResidualMap` are thin
     file wrappers, which is what lets the encoder be tested without touching disk.
@@ -38,10 +45,12 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
 - `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
   `Golden/` holds the characterization snapshots.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
-  ported from. Prior art only; **not maintained in parallel** - don't feel
-  obliged to mirror C#-side changes into it. It is, however, the reference for
+  ported from. Prior art only for *features*; **not maintained in parallel** - don't
+  feel obliged to mirror C#-side changes into it, except where parity is tested (see
+  "Parity with Python"), which now includes the `--light` guard and series mode. It is, however, the reference for
   *numeric* behaviour: see "Parity with Python" below.
-- `README.md` - user-facing docs, in Romanian.
+- `README.md` - **the** user-facing documentation, in Romanian, and the single source
+  for it. See the note in "Conventions".
 - `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
 
 All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
@@ -62,6 +71,13 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
   "Versioning" and "Committing" below.
 - **Every source file starts with the GPL notice.** New files included. See
   "Licensing" below.
+- **User-facing documentation lives in `README.md`, and only there.** Do not restate the
+  modes, the thresholds, the workflow traps or the `--light` validity limit in a
+  docstring or a file header. It was duplicated between `README.md` and `flatcheck.py`'s
+  docstring once, the two diverged, and the README was the wrong one - it still described
+  a single-file `FlatCheck.cs`, a `csharp/` directory, three modes, and a port that had
+  never been compiled. Code comments explain *why the code is the way it is*; the README
+  explains *how to use the tool*.
 
 ## The core idea
 
@@ -146,10 +162,16 @@ centred on the lens) survives the rotation and is reported clean. The counter-te
 is a *distance* test - one set at 30 cm, one at 60 cm, `--ratio` between them,
 since lens vignetting is distance-invariant and panel contamination is not.
 
-### 3. End-to-end - `flatcheck light.fit --light`
+### 3. End-to-end - `flatcheck light.fit --light`, or `flatcheck process/ --light`
 
 The only mode that closes the loop; 1 and 2 are proxies. Input is a light frame
-or stack **calibrated with the flat but with no background extraction**.
+or stack **calibrated with the flat but with no background extraction**, or a
+**directory**, which runs the whole series (see "Series mode" below).
+
+**But it does not apply to every dataset, and the mode now refuses rather than
+guessing.** Read "The validity limit" below before touching anything here - it is the
+single most important thing about this mode, and it was missing until a real session
+made the tool report a confident false positive.
 
 `TileBackground` takes the 15th percentile inside each tile (a low percentile is
 robust to stars and nebulosity, which only add signal), giving a local background
@@ -179,7 +201,107 @@ sign is the diagnosis:**
   almost always a missing/wrong flat-dark: you divided by a flat that still
   contains an offset.
 
-Thresholds here are hardcoded inline (2.0 / 5.0), not in `Th`.
+#### The validity limit
+
+The plane/radial split works **only while the light-pollution dome is quasi-linear
+across the frame**. Over a wide field the dome *curves inside the frame*, and the
+radially symmetric part of that curvature has exactly the shape of vignetting. Two
+things with the same shape cannot be separated by a fit, however well written. This is
+a geometric degeneracy, not an implementation limit - do not try to fix it with a
+better fit.
+
+It was measured, not assumed. On `Milkyway-Core/2026-08-12-Smida` (Tokina 20 mm f/2.8
+on a D3300, ~70° diagonal, Milky Way core low in the sky), a single frame reported
+`+3.13 % SUSPECT, under-correction`. Across all 32 calibrated subs of that session the
+same figure swept smoothly from `+3.13 %` through `-19.20 %` to `+35.73 %` in 81
+minutes, with only 1.36 points between consecutive frames. Correlation between the
+reported radial component and the sky gradient: **-0.94**, R² = 0.88. Eighty-eight
+percent of what the tool called "flat" was sky.
+
+`LightSuitability.Check` therefore gates the mode, deriving the diagonal field of view
+in layers, most trusted first:
+
+| source | when |
+|---|---|
+| `--fov <deg>` | stated by the user; beats everything |
+| WCS `CDELT1` / `CD1_1` | a plate solve is present; measured, not deduced |
+| `XPIXSZ` + `FOCALLEN` (+ binning) | astro cameras; the exact field |
+| `FOCALLEN` alone | DSLRs - Siril does **not** write `XPIXSZ` for them |
+| nothing | **runs anyway**, with a note |
+
+Levels: `< Th.LightFovOk` (20°) `Ok`, up to `Th.LightFovMax` (40°) `Marginal` (runs, with
+a warning), above that `TooWide` - **refused**, exit 1, no figure produced at all.
+
+Two decisions here are load-bearing and easy to break:
+
+- **Unknown is not a refusal.** If a missing header meant "too wide", every synthetic
+  fixture in the test suite - and every minimal FITS - would become unanalysable, and the
+  guard would do more harm than the problem it fixes. Pinned by
+  `AnEmptyHeaderRunsInsteadOfRefusing`.
+- **The focal-only fallback reports no field figure.** The field depends on the sensor,
+  which is unknown at that point, so printing a number would be inventing one. It grades
+  the focal length directly against thresholds computed for the largest plausible sensor
+  (full frame, 43.27 mm diagonal), which is conservative: on a smaller sensor a good frame
+  can come out `Marginal`. That is what `--fov` is for. Pinned by
+  `TheFocalOnlyFallbackIsGradedOnTheFocalLength`.
+
+`--fov` is not a force flag. It tells the tool the truth; it does not ask it to ignore
+the physics, and a wide field declared by hand is refused exactly like a deduced one.
+
+#### Series mode - `flatcheck process/ --light`
+
+A single frame's `radPct` is the sum of two things: the flat error, which is **the same
+in every frame by construction** (the same master flat was divided out of each), and a
+sky radial term, which changes through the session. So the series carries a discriminator
+the single frame does not.
+
+`FlatCheckCli.RunLightSeries` loads each matching file in turn - never more than one full
+frame in memory, since a 24 MP frame runs to hundreds of MB - runs the unchanged
+`LightAnalyzer.Analyze` on it, streams a table row, and hands the results to
+`LightSeriesAnalyzer.Combine`, which is pure.
+
+The verdict is given **only if all three conditions hold**:
+
+| condition | threshold |
+|---|---|
+| frame count | ≥ `Th.LightSeriesMinFrames` (5) |
+| standard error of the mean (`σ/√n`, ddof=1) | < `Th.LightSeriesSemMax` (2.0) |
+| \|Pearson(radPct, planePct)\| | < `Th.LightSeriesSkyCorr` (0.70) |
+
+Otherwise the verdict is **`NEDETERMINAT`** and the report says which condition failed
+and why. Three details that are not obvious:
+
+- The correlation test is **skipped** unless the sky gradient actually varies across the
+  series (`Th.LightSeriesSkySpanMin`, 10 points). On a clean session where it sits
+  constant, the correlation is noise and would reject good data.
+- The comparisons are written `!(x < threshold)`, not `(x >= threshold)`, so **NaN falls
+  on the bad side** - same convention as `Stats.Verdict`. A one-frame series has no
+  spread, `sem` is NaN, and it must not pass silently.
+- `planePct` being large is **informative only**, never a gate. The plane is an indirect
+  proxy - the real cause of non-separation is curvature - and a badly calibrated threshold
+  there would reject good data. The field-of-view guard covers the cause.
+
+**What was tried and rejected:** extrapolating to zero sky gradient. Regressing
+`radPct ~ planePct` over the real session gives an intercept of `+122 %` - an
+extrapolation far outside the data, whose gradient never goes near zero (it spans 49-88 %).
+The correlation is a good diagnostic and a useless estimator; do not turn it into one.
+
+**File selection.** `FindSeries` enumerates the directory and matches the pattern
+**in-process**, rather than `Directory.GetFiles(dir, pattern)`: Win32 matching still
+carries the 8.3 legacy where `*.fit` also catches `.fits`. Sorting is ordinal on the file
+name (`StringComparer.Ordinal` / Python `sorted()`) - if the two implementations listed
+frames in different orders, `crosscheck.py` would report differences that do not exist.
+The glob supports `*` and `?` only; character classes are literal in both, so `fnmatch`
+is deliberately not used on the Python side.
+
+The default pattern `pp_light_*.fit` excludes `r_pp_light_*` because the glob is anchored
+at the start, and that is correct rather than incidental: registered frames are
+geometrically transformed, so the sensor-fixed flat error is shifted relative to the
+centre the radial model is fitted around. Including them would corrupt the measurement
+silently.
+
+Thresholds are all in `Th` (`LightRadOk`/`LightRadBad`, the `LightFov*`/`LightFocal*`
+guard, and the `LightSeries*` family).
 
 ### 4. Exposure - `flatcheck flat_brut.fit --expo [--sky]`
 
@@ -207,7 +329,7 @@ debayered). This catches the common "opened the NEF in Siril and hit Save"
 mistake. When it fires, the mode prints an explanation and returns **without a
 verdict**.
 
-Verdict bands on the central window (all hardcoded local constants):
+Verdict bands on the central window (`Th.Expo*`):
 
 | condition | verdict |
 |---|---|
@@ -282,7 +404,7 @@ surface. Matches Python.
 
 ## Thresholds
 
-`Th` holds some but not all of them; the rest are inline. Full picture:
+Every threshold lives in `Th`. Full picture:
 
 | metric | mode | OK < | PROBLEMA ≥ | defined in |
 |---|---|---|---|---|
@@ -293,6 +415,11 @@ surface. Matches Python.
 | A/B structure | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | A/B corner spread | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
+| field of view (diagonal) | light | 20° | 40° = refused | `Th.LightFovOk/Max` |
+| focal length, no pixel size | light | 120 mm | below 60 mm = refused | `Th.LightFocalOk/Min` |
+| standard error of the mean | light, series | 2.0 pts | | `Th.LightSeriesSemMax` |
+| \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
+| frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
 | centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
@@ -308,7 +435,7 @@ scale rather than a pass/fail threshold:
 |---|---|---|
 | < 2% | `PERFECT` | quality is perfect |
 | 2-10% | `BUN` | usable; background extraction removes what is left |
-| 10-20% | `ACCEPTABIL` | usable, but run `--light` to confirm before a hard stretch |
+| 10-20% | `ACCEPTABIL` | usable, but run `--light` to confirm before a hard stretch - if your field is narrow enough for it, see "The validity limit" |
 | > 20% | `REFA` | reshoot the flats |
 
 Boundaries are strict `<`, so each one falls into the worse band. `NaN` degrades to
@@ -384,7 +511,7 @@ compares twice: the full text, and every numeric token as a float. It also check
 up front, that both report the same version. It exits non-zero on any unexplained numeric
 difference or on a version desync.
 
-**Current status: 33 of 34 scenarios agree numerically** - 20 byte-identical, 13
+**Current status: 38 of 39 scenarios agree numerically** - 22 byte-identical, 16
 differing only in wording. Coverage spans all four modes, all four bands of the residual
 scale, both gradient directions, non-square frames, BITPIX 16/32/-32, and the exposure
 bands either side of each boundary.
@@ -422,8 +549,8 @@ Since phase 8 the tool is usable from a script:
 | code | meaning |
 |---|---|
 | 0 | OK / PERFECT / BUN - usable as-is |
-| 1 | error - missing file, bad argument, invalid FITS, failed fit, or `--expo` on a file that isn't a raw flat |
-| 2 | SUSPECT / ACCEPTABIL (and `--expo`'s two "acceptable but..." bands) |
+| 1 | error - missing file, bad argument, invalid FITS, failed fit, `--expo` on a file that isn't a raw flat, or `--light` on a field too wide for the test |
+| 2 | SUSPECT / ACCEPTABIL / NEDETERMINAT (and `--expo`'s two "acceptable but..." bands) |
 | 3 | PROBLEMA / REFA |
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
