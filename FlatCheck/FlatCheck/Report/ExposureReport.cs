@@ -79,9 +79,12 @@ namespace FlatCheck
                 w.WriteLine("    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.");
             }
             w.WriteLine();
-            w.WriteLine("    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (debayerizeaza).");
-            w.WriteLine("    SOLUTIE: produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),");
-            w.WriteLine("    care pastreaza mozaicul CFA nedebayerizat. (Sau ruleaza pe NEF in Python.)");
+            w.WriteLine("    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).");
+            w.WriteLine("    SOLUTII:");
+            w.WriteLine("      - ruleaza direct pe NEF (flatcheck citeste brutul exact):");
+            w.WriteLine("          flatcheck flat.NEF --expo");
+            w.WriteLine("      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),");
+            w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
         }
 
         static void WriteSky(ExposureResult r, TextWriter w)

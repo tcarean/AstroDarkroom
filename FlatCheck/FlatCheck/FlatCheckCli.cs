@@ -110,7 +110,7 @@ namespace FlatCheck
 
         static string RunStructure(Options o, TextWriter w)
         {
-            var r = StructureAnalyzer.Analyze(FitsReader.Load(o.Image));
+            var r = StructureAnalyzer.Analyze(LoadImage(o.Image));
             StructureReport.Write(r, o.Image, w);
             SaveMap(o.OutPng, r.Residual, w);
             return r.Verdict;
@@ -118,7 +118,7 @@ namespace FlatCheck
 
         static string RunRatio(Options o, TextWriter w)
         {
-            var r = RatioAnalyzer.Analyze(FitsReader.Load(o.Image), FitsReader.Load(o.Ratio));
+            var r = RatioAnalyzer.Analyze(LoadImage(o.Image), LoadImage(o.Ratio));
             RatioReport.Write(r, o.Image, o.Ratio, w);
             SaveMap(o.OutPng, r.Ratio, w);
             return r.Verdict;
@@ -128,7 +128,7 @@ namespace FlatCheck
         {
             if (Directory.Exists(o.Image)) return RunLightSeries(o, w);
 
-            var (img, hdr) = FitsReader.LoadWithHeader(o.Image);
+            var (img, hdr) = LoadWithHeader(o.Image);
 
             // Garda inainte de orice calcul: pe un camp prea larg cifra n-ar insemna
             // nimic, deci nu se produce deloc, in loc sa se produca si sa se explice.
@@ -159,7 +159,7 @@ namespace FlatCheck
 
             // Aplicabilitatea se decide pe primul cadru: toate vin din aceeasi sesiune,
             // deci au aceeasi focala si aceeasi scara.
-            var (firstImg, firstHdr) = FitsReader.LoadWithHeader(files[0]);
+            var (firstImg, firstHdr) = LoadWithHeader(files[0]);
             var s = LightSuitability.Check(firstHdr, o.Fov);
             if (!s.CanRun) { LightReport.WriteTooWide(s, o.Image, w); return NotApplicable; }
 
@@ -168,7 +168,7 @@ namespace FlatCheck
             var frames = new List<(string, LightResult)>();
             for (int i = 0; i < files.Count; i++)
             {
-                Img img = firstImg ?? FitsReader.Load(files[i]);
+                Img img = firstImg ?? LoadImage(files[i]);
                 firstImg = null;                       // eliberat imediat, vezi mai sus
                 var r = LightAnalyzer.Analyze(img);
                 string name = Path.GetFileName(files[i]);
@@ -230,10 +230,42 @@ namespace FlatCheck
         static ExposureVerdict RunExpo(Options o, TextWriter w)
         {
             // NU Prepare - modul asta vrea CFA brut, la scala ADU originala.
-            var r = ExposureAnalyzer.Analyze(FitsReader.Load(o.Image), o.Sat, o.Black, o.Sky);
+            //
+            // Pe un raw de aparat scala nu se mai ghiceste: fisierul poarta white si black
+            // exacte, si alea intra in analizor. Pe FITS n-are de unde, deci ramane AutoWhite.
+            Img data;
+            ExposureScale scale = null;
+            if (RawReader.IsRawPath(o.Image))
+            {
+                RawFrame f = RawReader.Load(o.Image);
+                data = f.Data;
+                scale = f.Scale;
+            }
+            else data = FitsReader.Load(o.Image);
+
+            var r = ExposureAnalyzer.Analyze(data, o.Sat, o.Black, o.Sky, scale);
             ExposureReport.Write(r, o.Image, w);
             return r.Verdict;
         }
+
+        /// <summary>
+        /// Deschide fie un FITS, fie un raw de aparat, dupa extensie - la fel ca
+        /// load_image din flatcheck.py. Orice altceva merge la cititorul FITS, care
+        /// esueaza cu o eroare de parsare; extensia nu e validata (vezi CLAUDE.md).
+        /// </summary>
+        internal static Img LoadImage(string path)
+            => RawReader.IsRawPath(path) ? RawReader.LoadImage(path) : FitsReader.Load(path);
+
+        /// <summary>
+        /// Ca <see cref="LoadImage"/>, dar intoarce si headerul, de care are nevoie
+        /// --light ca sa afle campul. Un raw n-are header FITS, deci se intoarce gol -
+        /// ceea ce garda de aplicabilitate trateaza ca "necunoscut", adica ruleaza cu o
+        /// nota, nu refuza.
+        /// </summary>
+        internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(string path)
+            => RawReader.IsRawPath(path)
+                 ? (RawReader.LoadImage(path), new Dictionary<string, string>())
+                 : FitsReader.LoadWithHeader(path);
 
         static void SaveMap(string path, Img map, TextWriter w)
         {
@@ -250,9 +282,13 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <folder/> --light             # test end-to-end pe toata seria");
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # verificare expunere");
             w.WriteLine("  flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer");
+            w.WriteLine("  flatcheck <flat_brut.NEF> --expo        # idem, direct pe raw de aparat");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
+            w.WriteLine();
+            w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
+            w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");
             w.WriteLine();
             w.WriteLine("--light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,");
             w.WriteLine("fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.");

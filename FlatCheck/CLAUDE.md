@@ -4,8 +4,9 @@ Quantitative diagnostic for astrophotography flat frames. Answers four questions
 is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly.
 
-Small C# console app, **zero NuGet dependencies**: it hand-parses FITS and
-hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
+Small C# console app with **exactly one NuGet dependency**: it hand-parses FITS and
+hand-writes PNG (via `ZLibStream` from the BCL), and leans on libraw (`Sdcb.LibRaw`) for
+camera raw files only. .NET 8. See "The one dependency" below before adding a second.
 
 ## Structure
 
@@ -19,6 +20,9 @@ hand-writes PNG (via `ZLibStream` from the BCL). .NET 8.
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
     reader be tested without touching disk.
+  - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
+    get the undebayered Bayer mosaic plus the exact white/black levels out of a camera
+    raw. `IsRawPath` is the extension gate the CLI dispatches on.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`.
@@ -60,9 +64,10 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
 - **User-facing text (CLI messages, `--help`, code comments) is in Romanian** -
   keep new text consistent with this. Documentation *about* the code
   (this file, the refactoring plan) is in English.
-- **No external dependencies.** The FITS reader and PNG encoder are deliberately
-  hand-rolled. Don't add a NuGet package to replace them without a strong reason;
-  the point of this tool is that it is a single copyable binary.
+- **One external dependency, and it took a measured argument to earn it.** The FITS
+  reader and PNG encoder stay hand-rolled. Don't add a NuGet package to replace them,
+  and don't add a second one without the same standard of evidence; the point of this
+  tool is that it is a single copyable binary. See "The one dependency".
 - **Every metric is a ratio**, so ISO/gain cancels out. Don't add gain-dependent
   corrections - if a new metric isn't scale-invariant, that's a design smell.
 - **Thresholds are empirical rules of thumb, not physical constants.** They are a
@@ -78,6 +83,37 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
   a single-file `FlatCheck.cs`, a `csharp/` directory, three modes, and a port that had
   never been compiled. Code comments explain *why the code is the way it is*; the README
   explains *how to use the tool*.
+
+## The one dependency
+
+`Sdcb.LibRaw`, plus its `runtime.win64` / `runtime.linux64` native packages. It exists for
+one reason: `--expo` on a camera raw, which was the last feature gap against
+`flatcheck.py`.
+
+**The alternatives were measured, not assumed.** There is no pure-managed .NET decoder for
+a Nikon NEF - the pixels are Huffman-coded with a predictor and passed through a
+linearization curve out of the MakerNote. What NuGet actually offers: `FC.SDK.Raw` is pure
+managed but Canon-only; `NDCRaw` shells out to `dcraw.exe`; `HurlbertVisionLab.LibRawWrapper`
+is C++/CLI and Windows-only; Vintasoft / Accusoft / LEADTOOLS / Atalasoft are commercial
+*and* demosaic, which destroys the exact thing `--expo` measures; ImageSharp, SkiaSharp
+and Magick.NET have no raw mosaic access at all. `Sdcb.LibRaw` binds the same libraw that
+`rawpy` binds, so the numbers are bit-identical rather than close - verified on a real
+D3300 NEF: same pixel sum (35598956557), same mean to twelve decimals, same four CFA
+medians, same report text apart from the scale-source label.
+
+Three properties keep the cost contained, and all three are worth preserving:
+
+- **It is reached from exactly one file.** `RawReader.cs` is the only thing that names a
+  `Sdcb.LibRaw` type. Everything downstream still sees an `Img`.
+- **It is loaded lazily.** The JIT only pulls the assembly in when a raw path is actually
+  taken, so a missing native DLL cannot break the FITS modes. `RawReader.Load` catches
+  `DllNotFoundException` and friends and says what is missing, in Romanian, instead of
+  letting a `0x8007007E` reach the user.
+- **Nothing is developed.** Only `raw_image` (cropped to the visible area, like rawpy's
+  `raw_image_visible`), `color.maximum` and the black levels. No demosaic, no white
+  balance, no gamma - all of which would make the measurement meaningless.
+
+Don't add a second dependency at a lower standard of evidence than this one.
 
 ## The core idea
 
@@ -111,14 +147,17 @@ amplitude is wrong. Not detectable, only avoidable.
 
 Mode 4 (`--expo`) is the exception: it wants a **raw, uncalibrated, single**
 frame with the CFA mosaic intact and the original ADU scale, because stacking
-normalises away the absolute level. In Siril that means the **Conversion** tab
-(add NEFs → Convert), *not* Open + Save, which debayers and normalises. The mode
-detects and rejects both failure modes (see "Raw-file sanity gate").
+normalises away the absolute level. The simplest way to satisfy that is to hand it the
+NEF itself. Failing that, in Siril it means the **Conversion** tab (add NEFs → Convert),
+*not* Open + Save, which debayers and normalises. The mode detects and rejects both
+failure modes (see "Raw-file sanity gate").
 
-Accepted formats: FITS only (`.fit`/`.fits`/`.fts` - though the extension is
-never actually checked, see Known issues). BITPIX 8/16/32/-32/-64, mono or
-colour. The Python version could additionally read NEF directly via `rawpy`; the
-C# port cannot, by design.
+Accepted formats: FITS (`.fit`/`.fits`/`.fts` - though the extension is never
+actually checked, see Known issues), BITPIX 8/16/32/-32/-64, mono or colour; and
+camera raw (`.nef`/`.cr2`/`.cr3`/`.arw`/`.dng`/`.raf`), where the extension **is**
+what dispatches. All four modes accept both, exactly like `flatcheck.py`'s
+`load_image_with_header`. A raw carries no FITS header, so `--light` sees an empty
+dictionary and lands in the guard's `Unknown` layer - runs, with a note.
 
 ## The four modes
 
@@ -326,6 +365,20 @@ still printed, but labelled informative.
 `white` is auto-detected from the frame max (≤1.5 → 1.0; ≤4300 → 4095; ≤17203 →
 16383; else 65535) and can be overridden with `--sat` / `--black`. To find the
 true white level: shoot one deliberately overexposed frame; its max *is* saturation.
+
+**On a camera raw nothing is guessed.** The file carries both levels, and `RawReader`
+hands them to the analyzer as an `ExposureScale`, which is reported as
+`sursa: libraw (exact)`. Precedence is Python's, and the order matters: `--sat` beats the
+file *and* takes over the source line (the reported scale is no longer the file's), while
+`--black` is overridden separately - so a bare `--sat` leaves the file's black in place.
+No file scale means the `AutoWhite` ladder, unchanged. Pinned by
+`AScaleReadFromTheFileBeatsTheGuess` and the two override tests beside it.
+
+White comes from libraw's `color.maximum` and black from `color.black + color.cblack[i]`,
+median of the four - which is what `rawpy.black_level_per_channel` reports. The split
+between the two fields is libraw's business and it varies: on Nikon NEFs it moves the
+common part into `black` and leaves `cblack` at zero, so reading only one of them would
+silently give zero on some cameras. On a D3300 at 12 bits that comes out 4095 / 150.
 
 **Raw-file sanity gate.** Before issuing a verdict, the mode rejects the file if
 either `cenMed < 1.0` (level near zero → already calibrated or normalised) or the
@@ -557,10 +610,11 @@ bands either side of each boundary.
 Intentional divergences:
 
 - No 4-panel matplotlib figure (residual PNG only).
-- No NEF reading (no `rawpy`); Siril produces the FITS. The `--expo` rejection message
-  differs accordingly - Python offers "run it on the NEF directly", which C# cannot.
-- No EXIF read, so no `suggest_shutter(...)` shutter-speed suggestions.
+- No EXIF read beyond the pixels, so no `suggest_shutter(...)` shutter-speed
+  suggestions - libraw hands over `shutter`, but nothing consumes it yet.
 - `Percentile` on an empty list returns 0 instead of raising.
+- The scale-source line reads `libraw (exact)` where Python reads `rawpy (exact)`. Same
+  library; `rawpy` is its Python wrapper.
 - `--sat` is echoed as `--sat=4095` rather than Python's `--sat=4095.0`.
 - The `--light` interpretation capitalises the diagnosis - "Fondul CADE/CRESTE spre
   margini" against Python's lower case. The sign *is* the diagnosis, so the emphasis
@@ -605,8 +659,11 @@ behaviour that is either deliberate or not worth changing.
 1. **Card parsing is naive.** It splits the value at the first `/`, which corrupts any
    string value containing a slash (e.g. a path or date in a `COMMENT`-adjacent card).
    Fine for the numeric keys actually used.
-2. **File extension is never validated** - `FitsReader.Load` is called on whatever path
-   is given, and a non-FITS file surfaces as a parse error.
+2. **File extension is only half-validated.** The six raw extensions dispatch to
+   `RawReader`; *everything else* goes to `FitsReader.Load`, so a `.jpg` surfaces as a
+   FITS parse error rather than "unrecognised format". Python raises
+   `Format nerecunoscut` instead. Left as is deliberately: the error still points at the
+   right file, and tightening it would change behaviour no test asks for.
 3. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes negative
    and indexing throws. Not reachable with real frames.
 4. **`_crcTable` is lazily initialised static mutable state** - benign single-threaded,
@@ -749,14 +806,20 @@ FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
 Self-contained binary:
 
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained
+dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
+
+The last two flags are what keep the "single copyable binary" promise now that libraw is
+in: without them its four native DLLs sit next to the exe as separate files. With them
+the whole thing is one ~67 MB `flatcheck.exe` again. `linux-x64` works the same; other
+RIDs (arm64, macOS) have no libraw binary in these packages, so FITS-only there.
 
 ```bash
 flatcheck process/pp_flat_stacked.fit                  # 1. structure
 flatcheck pp_flat_A.fit --ratio pp_flat_B.fit          # 2. 180 rotation
 flatcheck process/pp_light_00001.fit --light           # 3. end-to-end
 flatcheck flat_brut.fit --expo                         # 4. exposure
+flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight off the raw
 flatcheck sky_flat.fit --expo --sky                    # 4b. sky flat
 flatcheck flat_brut.fit --expo --sat 4095 --black 150  # manual scale (D3300 12-bit)
 flatcheck flat.fit -o harta.png                        # custom PNG path

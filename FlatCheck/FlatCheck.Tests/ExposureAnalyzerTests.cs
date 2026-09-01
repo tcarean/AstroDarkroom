@@ -269,4 +269,66 @@ public class ExposureAnalyzerTests
     {
         Assert.Equal(expected, ExposureAnalyzer.AutoWhite(max), 6);
     }
+
+    // ------------------------------------------------ scale read from the file (raws)
+
+    /// <summary>
+    /// A camera raw carries the real white and black levels, so the guess is skipped
+    /// entirely. That is the whole point of reading NEFs directly: TestImages.FlatCfa
+    /// peaks at 2000, which AutoWhite would round up to 4095 - the file says 3827, and
+    /// 2000/3827 is a different number from 2000/4095.
+    /// </summary>
+    [Fact]
+    public void AScaleReadFromTheFileBeatsTheGuess()
+    {
+        var img = TestImages.FlatCfa(N, N, 2000);
+        var scale = new ExposureScale(3827, 150, "libraw (exact)");
+
+        var r = ExposureAnalyzer.Analyze(img, null, null, false, scale);
+
+        Assert.Equal(3827, r.White, 6);
+        Assert.Equal(150, r.Black, 6);
+        Assert.Equal("libraw (exact)", r.ScaleSource);
+        Assert.Equal((2000 - 150) / (3827 - 150.0) * 100, r.CentreMedianPct, 6);
+    }
+
+    /// <summary>
+    /// The precedence is the one flatcheck.py uses: --sat beats the file, and it also
+    /// takes over the source line, because the reported scale is no longer the file's.
+    /// The black level is overridden separately, so an unaccompanied --sat leaves the
+    /// file's black in place.
+    /// </summary>
+    [Fact]
+    public void SatOverridesTheFileScaleButLeavesItsBlackAlone()
+    {
+        var scale = new ExposureScale(3827, 150, "libraw (exact)");
+
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), 4095, null, false, scale);
+
+        Assert.Equal(4095, r.White, 6);
+        Assert.Equal(150, r.Black, 6);
+        Assert.Equal("--sat=4095", r.ScaleSource);
+    }
+
+    [Fact]
+    public void BlackOverridesTheFileScaleWithoutTouchingItsWhite()
+    {
+        var scale = new ExposureScale(3827, 150, "libraw (exact)");
+
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), null, 0, false, scale);
+
+        Assert.Equal(3827, r.White, 6);
+        Assert.Equal(0, r.Black, 6);
+        Assert.Equal("libraw (exact)", r.ScaleSource);
+    }
+
+    /// <summary>The FITS path is untouched: no file scale means the ladder still runs.</summary>
+    [Fact]
+    public void WithoutAFileScale_TheGuessStillRuns()
+    {
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), null, null, false, null);
+
+        Assert.Equal(4095, r.White, 6);
+        Assert.Contains("auto-detectat", r.ScaleSource);
+    }
 }

@@ -12,7 +12,10 @@ Copyright (C) 2026 Tudor Carean
     Cele 4 canale CFA sunt quasi-identice (spread 1.000) -> fisierul
     e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.
 
-    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (debayerizeaza).
-    SOLUTIE: produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),
-    care pastreaza mozaicul CFA nedebayerizat. (Sau ruleaza pe NEF in Python.)
+    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).
+    SOLUTII:
+      - ruleaza direct pe NEF (flatcheck citeste brutul exact):
+          flatcheck flat.NEF --expo
+      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),
+        care pastreaza mozaicul CFA nedebayerizat.
 

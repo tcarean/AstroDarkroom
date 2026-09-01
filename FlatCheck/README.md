@@ -4,9 +4,12 @@ Diagnostic cantitativ pentru flat frames de astrofoto. Răspunde la patru între
 e master flat-ul simetric radial, e *setup-ul* de flat curat, corectează flat-ul un
 light real, și e un flat brut expus corect.
 
-Consolă mică în C#, **fără nicio dependință NuGet**: reader FITS propriu și encoder PNG
-propriu (prin `ZLibStream` din BCL). .NET 8. Binarul se numește `flatcheck.exe` și se
-copiază oriunde.
+Consolă mică în C#, cu **o singură dependință**: reader FITS propriu și encoder PNG
+propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — libraw, prin
+`Sdcb.LibRaw`. Un NEF nu e doar un container: pixelii sunt comprimați Huffman cu predictor
+și trecuți printr-o curbă de linearizare din MakerNote, și nu există niciun decodor .NET
+pur managed pentru asta. .NET 8. Binarul se numește `flatcheck.exe` și, publicat ca
+`PublishSingleFile`, se copiază oriunde ca până acum.
 
 `flatcheck.py` este prototipul Python din care a fost portat. Nu se menține în paralel,
 dar rămâne **oracolul numeric**: `crosscheck.py` rulează amândouă implementările pe
@@ -34,8 +37,12 @@ de ~150-600 ADU care aplatizează profilul și subraportează vignetarea cu ~1% 
 amplitudinea e greșită. Nu e detectabil, doar evitabil.
 
 Formate acceptate: FITS (`.fit` / `.fits` / `.fts`), BITPIX 8/16/32/-32/-64, mono sau
-color. C#-ul **nu** citește NEF — lasă Siril să producă FITS-ul. Versiunea Python poate
-citi NEF direct, prin `rawpy`.
+color, **și raw de aparat** (`.nef` / `.cr2` / `.cr3` / `.arw` / `.dng` / `.raf`). Raw-ul
+se citește prin libraw — exact biblioteca din spatele lui `rawpy`, cel folosit de
+versiunea Python — deci cifrele ies identice, nu doar apropiate.
+
+Pe raw, `--expo` capătă ceva ce pe FITS nu poate avea: nivelul de saturație și cel de
+negru scrise de aparat în fișier, în loc să fie ghicite din maximul cadrului.
 
 ### ISO-ul nu contează
 
@@ -165,6 +172,7 @@ fitează modelul radial. Folosește `--pattern` dacă ai altă convenție de num
 
 ```bash
 flatcheck flat_brut.fit --expo
+flatcheck DSC_0060.NEF --expo                           # direct pe raw, fără conversie
 flatcheck sky_flat.fit --expo --sky
 flatcheck flat_brut.fit --expo --sat 4095 --black 150   # D3300, 12 biți
 ```
@@ -187,6 +195,12 @@ Nivelul de saturație e auto-detectat din maximul cadrului; `--sat` și `--black
 suprascriu. Ca să afli white-ul exact: trage un cadru deliberat supraexpus — maximul de
 acolo *e* saturația.
 
+**Pe un fișier raw nu se ghicește nimic**: aparatul scrie în fișier atât saturația cât și
+nivelul de negru, iar modul le folosește pe alea și scrie `sursa: libraw (exact)`. Pe un
+D3300 la 12 biți: white 4095, black 150 — exact ce ai fi pus de mână cu
+`--sat 4095 --black 150`, doar că fără să le știi dinainte. `--sat` și `--black` bat în
+continuare fișierul, dacă ai motiv.
+
 **Verificare de sănătate:** modul respinge fișierul dacă nivelul central e sub 1.0
 (deja calibrat sau normalizat) sau dacă cele patru poziții CFA sunt aproape identice
 (fișierul e debayerizat). Prinde exact greșeala „am deschis NEF-ul în Siril și am dat
@@ -194,7 +208,8 @@ Save".
 
 #### Cum obții un FITS brut în Siril
 
-**NU** deschide NEF-ul și „Save" — asta îl debayerizează și normalizează. Folosește tab-ul
+Cel mai simplu e să nu-l obții deloc: dă-i direct NEF-ul. Dacă totuși vrei FITS, **NU**
+deschide NEF-ul și „Save" — asta îl debayerizează și normalizează. Folosește tab-ul
 **Conversion**: adaugi NEF-urile → Convert. Fișierul rezultat păstrează mozaicul CFA brut,
 la scala ADU originală.
 
@@ -328,6 +343,7 @@ flatcheck <A.fit> --ratio <B.fit>        # rotație 180
 flatcheck <light.fit> --light            # end-to-end, un cadru
 flatcheck <folder/> --light              # end-to-end pe toată seria
 flatcheck <flat_brut.fit> --expo         # expunere
+flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png)
@@ -376,8 +392,20 @@ dotnet build FlatCheck.sln -c Release
 ```
 
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained
+dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
+
+Cele două flaguri de la urmă contează de când se citește raw: libraw vine ca DLL-uri
+native (`raw_r`, `jpeg8`, `lcms2`, `zlib1`, ~2.1 MB), iar fără `IncludeNativeLibrariesForSelfExtract`
+ele rămân fișiere separate lângă executabil. Cu ele, `flatcheck.exe` redevine ce a fost
+mereu: **un singur fișier de copiat**.
+
+Dacă totuși le pierzi — ai copiat doar `.exe`-ul dintr-un publish obișnuit — modurile pe
+FITS merg mai departe neschimbate, iar un fișier raw e refuzat cu un mesaj care spune ce
+lipsește. Nu există cale prin care lipsa lor să producă cifre greșite.
+
+Pentru Linux, `-r linux-x64` (pachetul runtime e deja referit). Alte platforme — arm64,
+macOS — n-au binare libraw în pachetele astea, deci acolo merge doar FITS-ul.
 
 ```bash
 dotnet test FlatCheck.sln
@@ -413,9 +441,10 @@ Dependințe pentru Python: `numpy`, `astropy`, `matplotlib`, opțional `rawpy` p
 Sunt intenționate, nu scăpări:
 
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
-- **Fără citire NEF** (fără `rawpy`); Siril produce FITS-ul. Mesajul de respingere de la
-  `--expo` diferă în consecință.
-- Fără citire EXIF, deci fără sugestii de timp de expunere.
+- Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
+  se iau doar pixelii și scala ADU, nu și timpul de expunere.)
+- Linia de sursă a scalei scrie `libraw (exact)` acolo unde Python scrie `rawpy (exact)`.
+  E aceeași bibliotecă; numele diferă fiindcă `rawpy` e ambalajul de Python al ei.
 - `Percentile` pe o listă goală întoarce 0 în loc să arunce.
 - Interpretarea din `--light` scrie diagnosticul cu majuscule („Fondul CADE/CREȘTE spre
   margini") față de minusculele din Python. Semnul *e* diagnosticul, deci accentul e

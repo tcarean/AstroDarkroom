@@ -9,7 +9,7 @@
 
     <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
          Trebuie sa ramana identica cu __version__ din flatcheck.py. -->
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
 
     <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
          unde il citeste VersionInfo.Copyright si il tipareste sub banner - deci asta e
@@ -18,6 +18,25 @@
     <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
+
+  <!-- Singura dependenta externa a uneltei, si numai pentru modul de expunere pe
+       fisiere raw de aparat. Restul (FITS, PNG) ramane scris de mana, ca pana acum.
+
+       De ce un pachet: nu exista NICIO librarie .NET pur managed care sa decodeze
+       mozaicul Bayer dintr-un NEF. Sdcb.LibRaw leaga chiar libraw-ul pe care il
+       foloseste si rawpy in flatcheck.py, deci cifrele ies bit-identice: aceeasi suma
+       pe toti pixelii, nu doar "aproape". Orice alternativa ori debayerizeaza (si atunci
+       modul n-are ce masura), ori e comerciala, ori porneste un dcraw.exe extern.
+
+       Pachetele runtime.* aduc DLL-uri native (raw_r, jpeg8, lcms2, zlib1, ~2.1 MB).
+       Ele NU intra in flatcheck.exe decat la publish cu
+       IncludeNativeLibrariesForSelfExtract (vezi README). Fara ele modurile pe FITS merg
+       neschimbate; doar caile raw refuza, cu mesaj explicit: vezi RawReader.Load. -->
+  <ItemGroup>
+    <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="FlatCheck.Tests" />

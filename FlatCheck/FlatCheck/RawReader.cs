@@ -1,0 +1,155 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// RawReader.cs - citirea fisierelor raw de aparat (.NEF si rudele lui), prin libraw.
+//
+// Singurul loc din unealta care atinge o librarie externa. FITS-ul si PNG-ul raman
+// scrise de mana; aici nu se putea, fiindca un NEF nu e doar un container: pixelii sunt
+// comprimati Huffman cu un predictor si trecuti printr-o curba de linearizare din
+// MakerNote. Nu exista niciun decodor .NET pur managed pentru asta.
+//
+// Ce se cere de la libraw e strict brutul, NU o imagine developata:
+//   - raw_image, decupat la zona vizibila  -> mozaicul CFA intact, exact ca
+//     raw_image_visible din rawpy (asta foloseste flatcheck.py)
+//   - color.maximum                        -> white
+//   - color.black + color.cblack[0..3]     -> black, pe canal
+// Nicio interpolare, niciun balans de alb, nicio gama: --expo masoara nivelul ADU
+// original, iar orice developare l-ar distruge.
+//
+// DLL-urile native vin din pachetele Sdcb.LibRaw.runtime.* si stau LANGA executabil.
+// Daca lipsesc (cineva a copiat doar flatcheck.exe), modurile pe FITS merg mai departe
+// neschimbate - tipul asta se incarca abia cand se cere un fisier raw - iar aici se
+// iese cu un mesaj care spune ce lipseste, nu cu un DllNotFoundException.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Runtime.InteropServices;
+using Sdcb.LibRaw;
+using Sdcb.LibRaw.Natives;
+
+namespace FlatCheck
+{
+    /// <summary>Un cadru raw: pixelii bruti plus scala ADU citita din fisier.</summary>
+    internal sealed class RawFrame
+    {
+        internal Img Data;
+        internal ExposureScale Scale;
+    }
+
+    internal static class RawReader
+    {
+        // Aceleasi extensii ca in flatcheck.py. Doar NEF-ul e testat pe date reale;
+        // restul merg pe cat de bine le stie libraw, care e si ce face rawpy.
+        static readonly string[] Extensions =
+        { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
+
+        internal static bool IsRawPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return false;
+            string ext = Path.GetExtension(path).ToLowerInvariant();
+            return Array.IndexOf(Extensions, ext) >= 0;
+        }
+
+        internal static Img LoadImage(string path) => Load(path).Data;
+
+        internal static RawFrame Load(string path)
+        {
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+
+            try
+            {
+                return Decode(path);
+            }
+            catch (DllNotFoundException e) { throw Missing(e); }
+            catch (FileNotFoundException e) when (e.FileName != path) { throw Missing(e); }
+            catch (BadImageFormatException e) { throw Missing(e); }
+            catch (TypeInitializationException e) { throw Missing(e); }
+        }
+
+        static Exception Missing(Exception inner)
+            => new InvalidOperationException(
+                "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
+              + "native (raw_r.dll si vecinii) trebuie sa stea langa flatcheck.exe. Modurile "
+              + "pe FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
+              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
+
+        static RawFrame Decode(string path)
+        {
+            using RawContext ctx = RawContext.OpenFile(path);
+            ctx.Unpack();
+
+            LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
+            LibRawImageSizes s = d.RawData.Sizes;
+            IntPtr src = d.RawData.RawImage;
+
+            // Foveon si unele formate nu produc un mozaic pe 16 biti, ci direct planuri
+            // de culoare. --expo n-are ce face cu ele, deci se refuza pe fata.
+            if (src == IntPtr.Zero)
+                throw new InvalidOperationException(
+                    $"{path}: libraw n-a produs un mozaic Bayer pe 16 biti pentru fisierul asta "
+                  + "(senzor non-Bayer sau format neacoperit).");
+
+            int h = s.Height, w = s.Width;
+            if (h <= 0 || w <= 0)
+                throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
+
+            // Zona VIZIBILA, ca raw_image_visible din rawpy: se sare peste marginile
+            // mascate (pixelii de calibrare de sub capacul senzorului), altfel medianele
+            // ar fi trase in jos de o banda neagra pe care aparatul n-o considera imagine.
+            int stride = s.RawPitch > 0 ? (int)(s.RawPitch / 2) : s.RawWidth;
+            var img = new Img(h, w);
+            var row = new short[w];
+            for (int y = 0; y < h; y++)
+            {
+                long offset = ((long)(y + s.TopMargin) * stride + s.LeftMargin) * sizeof(ushort);
+                Marshal.Copy(src + (nint)offset, row, 0, w);
+                int o = y * w;
+                // libraw da ushort, Marshal.Copy stie doar short - deci se citeste ca
+                // short si se reinterpreteaza. Fara cast, un pixel peste 32767 ar iesi negativ.
+                for (int x = 0; x < w; x++) img.D[o + x] = (ushort)row[x];
+            }
+
+            LibRawColorData c = d.RawData.Color;
+            double white = c.Maximum;
+
+            // Nivelul de negru poate fi dat global (color.black) sau pe canal
+            // (color.cblack), si libraw le imparte cum ii vine: pe NEF-urile Nikon muta
+            // partea comuna in black si lasa cblack pe zero. Suma e ce citeste si rawpy,
+            // iar flatcheck.py ia mediana celor patru canale - deci la fel si aici.
+            var blacks = new List<double>(4);
+            for (int i = 0; i < 4; i++)
+                blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
+            double black = Stats.Percentile(blacks, 50);
+
+            // Daca scala citita e degenerata, mai bine o eroare decat o scala inversata:
+            // rng negativ ar da procente absurde, iar garda de sanitate le-ar imbraca in
+            // "fisierul nu pare un flat brut", care ar trimite omul pe pista gresita.
+            if (!(white > black))
+                throw new InvalidOperationException(
+                    $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}). "
+                  + "Foloseste --sat si --black daca stii valorile corecte.");
+
+            return new RawFrame
+            {
+                Data = img,
+                Scale = new ExposureScale(white, black, "libraw (exact)"),
+            };
+        }
+    }
+}

@@ -7,9 +7,13 @@ Utilizare:
   flatcheck <folder/> --light             # test end-to-end pe toata seria
   flatcheck <flat_brut.fit> --expo        # verificare expunere
   flatcheck <sky_flat.fit> --expo --sky   # expunere pt flats pe cer
+  flatcheck <flat_brut.NEF> --expo        # idem, direct pe raw de aparat
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
+
+Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
+Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
 
 --light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,
 fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.

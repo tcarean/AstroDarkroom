@@ -39,6 +39,22 @@ namespace FlatCheck
         TooHigh,
     }
 
+    /// <summary>
+    /// Scala ADU citita DIN fisier, cand fisierul o stie: un raw de aparat poarta white
+    /// si black exacte in metadate. Pe FITS nu exista asa ceva - stacking-ul si
+    /// conversia le pierd - deci acolo scala ramane ghicita din maxim (vezi AutoWhite).
+    /// </summary>
+    internal sealed class ExposureScale
+    {
+        internal readonly double White, Black;
+        internal readonly string Source;
+
+        internal ExposureScale(double white, double black, string source)
+        {
+            White = white; Black = black; Source = source;
+        }
+    }
+
     internal sealed class ExposureResult
     {
         internal double White, Black, Range;
@@ -69,18 +85,24 @@ namespace FlatCheck
             return 65535.0;
         }
 
-        internal static ExposureResult Analyze(Img data, double? satOverride, double? blackOverride, bool sky)
+        /// <param name="fileScale">
+        /// Scala citita din fisier, sau null daca fisierul n-o poarta (FITS). Ordinea de
+        /// precedenta e cea din flatcheck.py: --sat bate fisierul, fisierul bate ghicitul.
+        /// </param>
+        internal static ExposureResult Analyze(Img data, double? satOverride, double? blackOverride,
+                                               bool sky, ExposureScale fileScale = null)
         {
             double mx = data.D.Max();
             double white;
             string src;
             if (satOverride.HasValue) { white = satOverride.Value; src = $"--sat={white}"; }
+            else if (fileScale != null) { white = fileScale.White; src = fileScale.Source; }
             else
             {
                 white = AutoWhite(mx);
                 src = $"auto-detectat din max={mx:F0} (foloseste --sat/--black daca e gresit)";
             }
-            double black = blackOverride ?? 0.0;
+            double black = blackOverride ?? fileScale?.Black ?? 0.0;
             double rng = white - black;
 
             // cele 4 pozitii Bayer. Canalul cel mai luminos clipeaza primul, deci e cel limitant.
