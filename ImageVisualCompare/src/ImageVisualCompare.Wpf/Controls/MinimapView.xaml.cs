@@ -39,9 +39,9 @@ public partial class MinimapView : UserControl
         _viewport = viewport;
         Thumbnail.Source = thumbnail;
 
-        double scale = Math.Min(MaxThumbnailWidth / contentWidth, MaxThumbnailHeight / contentHeight);
-        Width = contentWidth * scale;
-        Height = contentHeight * scale;
+        SizeD box = AspectFit.Fit(contentWidth, contentHeight, MaxThumbnailWidth, MaxThumbnailHeight);
+        Width = box.Width;
+        Height = box.Height;
 
         Visibility = Visibility.Visible;
         Refresh();
@@ -62,25 +62,15 @@ public partial class MinimapView : UserControl
             return;
         }
 
-        double scaleX = ActualWidth / viewport.ContentWidth;
-        double scaleY = ActualHeight / viewport.ContentHeight;
+        MinimapLayout layout = MinimapGeometry.Layout(viewport, ActualWidth, ActualHeight);
 
-        // The rectangle is clamped to the thumbnail because the viewport legitimately extends
-        // past the image whenever the image is smaller than the window.
-        double left = Math.Max(0, viewport.OffsetX * scaleX);
-        double top = Math.Max(0, viewport.OffsetY * scaleY);
-        double right = Math.Min(ActualWidth, (viewport.OffsetX + viewport.VisibleContentWidth) * scaleX);
-        double bottom = Math.Min(ActualHeight, (viewport.OffsetY + viewport.VisibleContentHeight) * scaleY);
-
-        Canvas.SetLeft(ViewportRect, left);
-        Canvas.SetTop(ViewportRect, top);
-        ViewportRect.Width = Math.Max(2, right - left);
-        ViewportRect.Height = Math.Max(2, bottom - top);
+        Canvas.SetLeft(ViewportRect, layout.ViewportRect.X);
+        Canvas.SetTop(ViewportRect, layout.ViewportRect.Y);
+        ViewportRect.Width = layout.ViewportRect.Width;
+        ViewportRect.Height = layout.ViewportRect.Height;
 
         // Nothing to point at when the whole image is already on screen.
-        ViewportRect.Visibility = viewport.CanScrollHorizontally || viewport.CanScrollVertically
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        ViewportRect.Visibility = layout.ShowViewportRect ? Visibility.Visible : Visibility.Collapsed;
     }
 
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
@@ -132,8 +122,8 @@ public partial class MinimapView : UserControl
             return;
         }
 
-        CentreRequested?.Invoke(this, new PointD(
-            position.X / ActualWidth * viewport.ContentWidth,
-            position.Y / ActualHeight * viewport.ContentHeight));
+        CentreRequested?.Invoke(
+            this,
+            MinimapGeometry.ContentPointAt(viewport, position.X, position.Y, ActualWidth, ActualHeight));
     }
 }

@@ -18,6 +18,12 @@ public sealed class DividerModel
     /// <summary>How far from the line a press still counts as grabbing it.</summary>
     public const double LineGrabTolerance = 8;
 
+    /// <summary>Inset of the BEFORE and AFTER badges from the line and from the top edge.</summary>
+    public const double BadgeMargin = 10;
+
+    private const double BeforeBadgeMinSpace = 70;
+    private const double AfterBadgeMinSpace = 140;
+
     private double _position = 0.5;
 
     /// <summary>Position as a fraction of the viewport width, 0 at the left edge and 1 at the right.</summary>
@@ -46,6 +52,32 @@ public sealed class DividerModel
         {
             Position = _position + screenDelta / viewportWidth;
         }
+    }
+
+    /// <summary>
+    /// Places the line, the clip region for image A, the handle and the two badges for a
+    /// viewport of this size.
+    ///
+    /// The badges disappear rather than being clipped in half when the line is dragged close
+    /// to an edge; the AFTER side needs more room than the BEFORE side because the zoom badge
+    /// occupies the top-right corner.
+    /// </summary>
+    public DividerLayout Layout(double viewportWidth, double viewportHeight)
+    {
+        double x = ScreenX(viewportWidth);
+
+        return new DividerLayout(
+            LineX: x,
+            ClipRect: new RectD(0, 0, x, viewportHeight),
+            Handle: new RectD(
+                x - (HandleWidth / 2),
+                (viewportHeight - HandleHeight) / 2,
+                HandleWidth,
+                HandleHeight),
+            BeforeBadgeOrigin: new PointD(BadgeMargin, BadgeMargin),
+            ShowBeforeBadge: x > BeforeBadgeMinSpace,
+            AfterBadgeOrigin: new PointD(x + BadgeMargin, BadgeMargin),
+            ShowAfterBadge: viewportWidth - x > AfterBadgeMinSpace);
     }
 
     /// <summary>

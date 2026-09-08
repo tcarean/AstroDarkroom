@@ -23,7 +23,20 @@ User documentation lives in `README.md`. Do not restate it here or in comments.
   - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on.
   - `ImagePairValidator.cs` — equal pixel dimensions or refusal, with both resolutions in
     the message.
-  - `PointD.cs` — a local point type so Core needs no `WindowsBase` reference.
+  - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
+    so Core needs no `WindowsBase` reference.
+  - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
+    the translation, scale and resampling mode the view puts on its transform. This is where
+    the physical-pixel to device-independent-pixel conversion lives.
+  - `DividerLayout.cs` — the record `DividerModel.Layout` returns: line position, the clip
+    region for image A, the handle rectangle, and both badge origins with their visibility.
+  - `MinimapGeometry.cs` — the viewport rectangle on the thumbnail, and the content point a
+    click maps to.
+  - `ScrollBarState.cs` — range, thumb proportion, value and visibility per axis.
+
+  The last four exist so that the controls do no arithmetic of their own. A control reads a
+  layout record and assigns properties; if a number looks wrong on screen, the test for it
+  is in Core.
 - `src/ImageVisualCompare.Wpf/` — `net9.0-windows`, the application.
   - `Imaging/IImageLoader.cs` — the decoder seam. Typed on `BitmapSource` deliberately: any
     replacement decoder still has to produce one for the `Image` control, so a generic
@@ -124,7 +137,7 @@ forces a finaliser pass and does *not* bother with large object heap compaction.
 
 ## Testing
 
-79 cases. `dotnet test ImageVisualCompare.sln`.
+126 cases. `dotnet test ImageVisualCompare.sln`.
 
 Covered: everything in Core, and the imaging layer. `WicImageLoaderTests` generates fixtures
 at run time in six pixel formats plus TIFF via `TempImages`, so the real codecs are exercised
@@ -132,15 +145,12 @@ without binary files in the repository. `ImagePairLoaderTests` covers valid, mis
 missing and corrupt inputs, progress reporting, and — with a recording fake — that a
 mismatched pair never reaches a decode.
 
-**Not covered at all: the whole WPF layer.** `CompareView`, `MinimapView`, `MainWindow`,
-`FileDialogService`, `MemoryHousekeeping`.
+What remains untested is now genuinely untestable without UI automation: event wiring, mouse
+capture, and property assignment. Every number those controls put on screen comes from Core
+and has a test. `MainWindow`, `FileDialogService` and `MemoryHousekeeping` have none.
 
-Be aware of what that has meant in practice: both real defects found in this project so far
-lived in the untested layer, and neither would have been caught by any reasonable unit test.
-One was WPF layout behaviour, the other was build configuration killing text rendering. Both
-were found by launching the app and looking at a screenshot. When changing the WPF layer,
-run it — a green test suite says nothing about that code.
-
-The planned next step is to move the pure calculations still buried in the controls — the
-minimap rectangle and the divider clip geometry — into Core, where they can be tested. That
-is intended as its own commit.
+Be aware of what that has meant in practice: both real defects found in this project lived in
+the untested layer, and neither would have been caught by any reasonable unit test. One was
+WPF layout behaviour, the other was build configuration killing text rendering. Both were
+found by launching the app and looking at a screenshot. When changing the WPF layer, run it —
+a green test suite says nothing about that code.

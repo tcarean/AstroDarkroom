@@ -104,6 +104,25 @@ public sealed class Viewport
         new((contentX - OffsetX) * _scale, (contentY - OffsetY) * _scale);
 
     /// <summary>
+    /// The image pixel under a screen position, or null when that position falls on the empty
+    /// margin around the image rather than on the image itself.
+    /// </summary>
+    public PointD? ContentPointInsideAt(double screenX, double screenY)
+    {
+        if (!HasContent)
+        {
+            return null;
+        }
+
+        PointD content = ScreenToContent(screenX, screenY);
+
+        bool inside = content.X >= 0 && content.Y >= 0
+                      && content.X < ContentWidth && content.Y < ContentHeight;
+
+        return inside ? content : null;
+    }
+
+    /// <summary>
     /// Zooms to <paramref name="scale"/> while holding the content point currently under the
     /// anchor fixed on screen. Anchoring at the mouse is what makes wheel zoom feel like the
     /// image is being pulled towards the cursor rather than towards its own centre.

@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -27,9 +28,6 @@ public partial class CompareView : UserControl
 
     /// <summary>Physical pixels scrolled per wheel notch.</summary>
     private const double WheelPanPixels = 140;
-
-    /// <summary>Above this zoom the interpolation is hiding what the user came to look at.</summary>
-    private const double NearestNeighbourThreshold = 4.0;
 
     private const int ThumbnailMaxWidth = 380;
     private const int ThumbnailMaxHeight = 300;
@@ -304,9 +302,9 @@ public partial class CompareView : UserControl
     /// </summary>
     private static BitmapSource CreateThumbnail(BitmapSource source, int maxWidth, int maxHeight)
     {
-        double scale = Math.Min(maxWidth / (double)source.PixelWidth, maxHeight / (double)source.PixelHeight);
-        int width = Math.Max(1, (int)Math.Round(source.PixelWidth * scale));
-        int height = Math.Max(1, (int)Math.Round(source.PixelHeight * scale));
+        SizeD box = AspectFit.Fit(source.PixelWidth, source.PixelHeight, maxWidth, maxHeight);
+        int width = Math.Max(1, (int)Math.Round(box.Width));
+        int height = Math.Max(1, (int)Math.Round(box.Height));
 
         var visual = new DrawingVisual();
         RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
@@ -362,15 +360,9 @@ public partial class CompareView : UserControl
         Sync();
     }
 
-    private void UpdateCursorContentPoint(Point position)
-    {
-        PointD content = Viewport.ScreenToContent(position.X * _deviceScale, position.Y * _deviceScale);
-
-        bool inside = content.X >= 0 && content.Y >= 0
-                      && content.X < Viewport.ContentWidth && content.Y < Viewport.ContentHeight;
-
-        SetCursorContentPoint(inside ? content : null);
-    }
+    private void UpdateCursorContentPoint(Point position) =>
+        SetCursorContentPoint(
+            Viewport.ContentPointInsideAt(position.X * _deviceScale, position.Y * _deviceScale));
 
     private void SetCursorContentPoint(PointD? point)
     {
@@ -407,14 +399,14 @@ public partial class CompareView : UserControl
 
     private void Sync()
     {
-        _translate.X = -Viewport.OffsetX;
-        _translate.Y = -Viewport.OffsetY;
+        RenderPlan plan = RenderPlanner.For(Viewport, _deviceScale);
 
-        double renderScale = Viewport.Scale / _deviceScale;
-        _scale.ScaleX = renderScale;
-        _scale.ScaleY = renderScale;
+        _translate.X = plan.TranslateX;
+        _translate.Y = plan.TranslateY;
+        _scale.ScaleX = plan.RenderScale;
+        _scale.ScaleY = plan.RenderScale;
 
-        BitmapScalingMode mode = Viewport.Scale >= NearestNeighbourThreshold
+        BitmapScalingMode mode = plan.ScalingMode == ImageScalingMode.Pixelated
             ? BitmapScalingMode.NearestNeighbor
             : BitmapScalingMode.HighQuality;
         RenderOptions.SetBitmapScalingMode(BeforeImage, mode);
@@ -431,21 +423,21 @@ public partial class CompareView : UserControl
         _updatingScrollBars = true;
         try
         {
-            HorizontalBar.Minimum = 0;
-            HorizontalBar.Maximum = Viewport.MaxOffsetX;
-            HorizontalBar.ViewportSize = Viewport.VisibleContentWidth;
-            HorizontalBar.Value = Math.Max(0, Viewport.OffsetX);
-            HorizontalBar.Visibility = Viewport.CanScrollHorizontally ? Visibility.Visible : Visibility.Collapsed;
-
-            VerticalBar.Minimum = 0;
-            VerticalBar.Maximum = Viewport.MaxOffsetY;
-            VerticalBar.ViewportSize = Viewport.VisibleContentHeight;
-            VerticalBar.Value = Math.Max(0, Viewport.OffsetY);
-            VerticalBar.Visibility = Viewport.CanScrollVertically ? Visibility.Visible : Visibility.Collapsed;
+            Apply(HorizontalBar, ScrollBarStates.Horizontal(Viewport));
+            Apply(VerticalBar, ScrollBarStates.Vertical(Viewport));
         }
         finally
         {
             _updatingScrollBars = false;
+        }
+
+        static void Apply(ScrollBar bar, ScrollBarState state)
+        {
+            bar.Minimum = 0;
+            bar.Maximum = state.Maximum;
+            bar.ViewportSize = state.ViewportSize;
+            bar.Value = state.Value;
+            bar.Visibility = state.IsVisible ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
@@ -459,25 +451,32 @@ public partial class CompareView : UserControl
         Overlay.Visibility = BeforeImage.Source is null ? Visibility.Collapsed : Visibility.Visible;
         ZoomBadgeText.Text = $"{Viewport.Scale * 100:F0}%";
 
+        DividerLayout layout = Divider.Layout(ActualWidth, ActualHeight);
+
         // The clip is applied to the layer, which fills the viewport, rather than to the image
         // itself: a clip on the image would be measured in image coordinates and would travel
         // with the pan instead of staying put on screen.
-        double x = Divider.ScreenX(ActualWidth);
-        BeforeLayer.Clip = new RectangleGeometry(new Rect(0, 0, x, ActualHeight));
+        BeforeLayer.Clip = new RectangleGeometry(ToRect(layout.ClipRect));
 
         DividerLine.Height = ActualHeight;
-        Canvas.SetLeft(DividerLine, x - DividerLine.Width / 2);
+        Canvas.SetLeft(DividerLine, layout.LineX - (DividerLine.Width / 2));
         Canvas.SetTop(DividerLine, 0);
 
-        Canvas.SetLeft(DividerHandle, x - DividerHandle.Width / 2);
-        Canvas.SetTop(DividerHandle, (ActualHeight - DividerHandle.Height) / 2);
+        DividerHandle.Width = layout.Handle.Width;
+        DividerHandle.Height = layout.Handle.Height;
+        Canvas.SetLeft(DividerHandle, layout.Handle.X);
+        Canvas.SetTop(DividerHandle, layout.Handle.Y);
 
-        Canvas.SetLeft(BeforeBadge, 10);
-        Canvas.SetTop(BeforeBadge, 10);
-        BeforeBadge.Visibility = x > 70 ? Visibility.Visible : Visibility.Collapsed;
+        Place(BeforeBadge, layout.BeforeBadgeOrigin, layout.ShowBeforeBadge);
+        Place(AfterBadge, layout.AfterBadgeOrigin, layout.ShowAfterBadge);
 
-        Canvas.SetLeft(AfterBadge, x + 10);
-        Canvas.SetTop(AfterBadge, 10);
-        AfterBadge.Visibility = ActualWidth - x > 140 ? Visibility.Visible : Visibility.Collapsed;
+        static void Place(UIElement element, PointD origin, bool visible)
+        {
+            Canvas.SetLeft(element, origin.X);
+            Canvas.SetTop(element, origin.Y);
+            element.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        }
     }
+
+    private static Rect ToRect(RectD rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
 }

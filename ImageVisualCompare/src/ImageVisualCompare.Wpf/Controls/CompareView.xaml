@@ -59,9 +59,9 @@
 
             <Rectangle x:Name="DividerLine" Width="2" Fill="{StaticResource AccentBrush}" />
 
+            <!-- Width and Height are set from DividerModel.Layout so the hit test and the
+                 drawing cannot disagree about how big the handle is. -->
             <Border x:Name="DividerHandle"
-                    Width="26"
-                    Height="56"
                     CornerRadius="13"
                     Background="{StaticResource ChromeBrush}"
                     BorderBrush="{StaticResource AccentBrush}"

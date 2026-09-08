@@ -234,6 +234,47 @@ public class ViewportTests
     }
 
     [Fact]
+    public void ContentPointInsideAt_ReturnsTheImagePixelUnderTheCursor()
+    {
+        var viewport = Create();
+        viewport.ZoomTo(1.0, 200, 200);
+        viewport.CentreOn(500, 500);
+
+        PointD? point = viewport.ContentPointInsideAt(200, 200);
+
+        Assert.NotNull(point);
+        Assert.Equal(500, point.Value.X, 6);
+        Assert.Equal(500, point.Value.Y, 6);
+    }
+
+    [Fact]
+    public void ContentPointInsideAt_ReturnsNullOnTheEmptyMarginAroundTheImage()
+    {
+        var viewport = Create(contentWidth: 100, contentHeight: 100);
+        viewport.ZoomTo(1.0, 200, 200);
+
+        // The image occupies 150..250 in a 400 wide viewport, so 10 is on the margin.
+        Assert.Null(viewport.ContentPointInsideAt(10, 10));
+        Assert.NotNull(viewport.ContentPointInsideAt(200, 200));
+    }
+
+    [Fact]
+    public void ContentPointInsideAt_ExcludesTheFarEdgeBecauseThereIsNoPixelThere()
+    {
+        var viewport = Create(contentWidth: 100, contentHeight: 100, viewportWidth: 100, viewportHeight: 100);
+        viewport.ZoomTo(1.0, 50, 50);
+
+        Assert.NotNull(viewport.ContentPointInsideAt(99.5, 99.5));
+        Assert.Null(viewport.ContentPointInsideAt(100, 100));
+    }
+
+    [Fact]
+    public void ContentPointInsideAt_WithoutContentIsNull()
+    {
+        Assert.Null(new Viewport().ContentPointInsideAt(10, 10));
+    }
+
+    [Fact]
     public void SetContentSize_RejectsNegativeDimensions()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new Viewport().SetContentSize(-1, 10));
