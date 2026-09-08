@@ -1,0 +1,102 @@
+<!--
+    SPDX-License-Identifier: GPL-3.0-or-later
+
+    Copyright (C) 2026 Tudor Carean
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<Window x:Class="MindfulnessReminder.App.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Mindfulness Reminder"
+        Width="480"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}"
+        FontFamily="Segoe UI"
+        FontSize="13">
+
+    <!--
+        The same theme as the Settings window, merged the same way: into this window rather
+        than into Application.Resources, so BreakWindow keeps its light card. See "The dark
+        theme" in CLAUDE.md.
+    -->
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!--
+        Modeless, like the Settings window and for the same reason: a modal ShowDialog
+        disables every other window in the process, so a reminder falling due while About sat
+        open would appear with a dead Close button.
+    -->
+    <Grid Margin="24,20,24,18">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Image Grid.Row="0"
+               Grid.Column="0"
+               x:Name="AppIcon"
+               Width="48"
+               Height="48"
+               VerticalAlignment="Top"
+               Margin="0,2,18,0"
+               RenderOptions.BitmapScalingMode="HighQuality" />
+
+        <!--
+            One block, filled from LicenseInfo.AboutText in the code behind. Laying the
+            banner, the copyright and the disclaimer out as three separate elements would
+            read a shade better and would leave AboutText displayed nowhere, which is the
+            property two tests describe as everything About shows, in order. The notice is
+            the point of this window; its typography is not.
+        -->
+        <TextBlock Grid.Row="0"
+                   Grid.Column="1"
+                   x:Name="AboutBody"
+                   TextWrapping="Wrap"
+                   LineHeight="19"
+                   LineStackingStrategy="BlockLineHeight" />
+
+        <!--
+            IsDefault AND IsCancel, unlike the reminder's Close button. That one swallows
+            Enter because it arrives unbidden in the middle of work; this window was opened
+            on purpose, so Enter closing it is what the user means.
+        -->
+        <Button Grid.Row="1"
+                Grid.Column="1"
+                x:Name="CloseButton"
+                Content="Close"
+                MinWidth="88"
+                Padding="10,5"
+                Margin="0,24,0,0"
+                HorizontalAlignment="Right"
+                Style="{StaticResource PrimaryButtonStyle}"
+                IsDefault="True"
+                IsCancel="True"
+                Click="OnCloseClick" />
+    </Grid>
+</Window>

@@ -49,15 +49,22 @@ a package.
   every file here is either a window or a Windows API behind a Core interface. Nothing here
   decides anything, which is why none of it is unit-tested.
   - `App.xaml.cs` — composition root. `ShutdownMode` is `OnExplicitShutdown`; there is no
-    main window. Also holds the single-instance mutex, the crash dialog, and `--preview` /
-    `--detect` — both of which run BEFORE the mutex is claimed, so they work alongside the
-    copy already in the tray.
+    main window. Also holds the single-instance mutex, the crash dialog, the lifetimes of the
+    Settings and About windows (both modeless and single-instance; `TrayIconHost` only raises
+    the request), and `--preview` / `--detect` — both of which run BEFORE the mutex is
+    claimed, so they work alongside the copy already in the tray.
   - `TrayIconHost.cs` — the icon and its four-item menu.
   - `BreakWindow.xaml(.cs)` — the reminder. `SettingsWindow.xaml(.cs)` — the settings.
+    `AboutWindow.xaml(.cs)` — the licence notice, a window rather than a `MessageBox` since
+    the dark theme; it displays `LicenseInfo.AboutText` and composes nothing itself.
   - `SystemEventsSessionMonitor.cs`, `DispatcherPeriodicTimer.cs`,
     `WpfReminderPresenter.cs`, `WindowsRegistryStore.cs`, `WindowsActivityMonitor.cs` —
     the adapters. The last one reads the `ConsentStore` capture-usage keys and calls
     `SHQueryUserNotificationState`, and interprets neither.
+  - `Theme/DarkTheme.xaml` — the dark palette and the control templates that go with it.
+    Merged into `SettingsWindow` **alone**. See "The dark theme".
+  - `ImmersiveDarkMode.cs` — the one P/Invoke that darkens a window's title bar.
+  - `DarkMenuRenderer.cs` — the same palette again, for the Windows Forms tray menu.
 - `tests/MindfulnessReminder.Tests/` — xUnit, `net8.0`. References **Core only**.
 - `README.md` — **the** user-facing documentation, and the single source for it.
 - `Directory.Build.props` — `<Version>` and `<Copyright>` for the whole solution.
@@ -203,6 +210,7 @@ second but changes once a minute, and every write is a `Shell_NotifyIcon` call.
 |---|---|---|---|
 | `BreakWindow` | modeless, `Topmost` | takes it | It has to be seen. Shown after a ~600 ms delay because a window created into a freshly unlocked desktop lands behind everything. |
 | `SettingsWindow` | **modeless**, not topmost | ordinary | A modal `ShowDialog` disables every other window in the process, so a reminder falling due while it sat open would appear with a dead Close button. Single-instance: reopening raises the existing one. |
+| `AboutWindow` | **modeless**, not topmost | ordinary | Same reasoning, and single-instance the same way. Its Close button *is* `IsDefault`, unlike the reminder's: this window was opened on purpose, so Enter closing it is what the user means. |
 
 `BreakWindow` is deliberately **not** `IsDefault` on its Close button, and it swallows Enter
 in `OnPreviewKeyDown`. Since the reminder became periodic it arrives mid-work and takes the
@@ -210,6 +218,75 @@ focus, so the next Enter already on its way would both dismiss an unread reminde
 to whatever was being typed. It must be *Preview*: plain `KeyDown` bubbles up from the focused
 button, which would already have handled the key. Esc and Space still close it — both far
 less likely mid-sentence than Enter, but if that ever changes, the same handler is the place.
+
+## The dark theme
+
+Added in 1.3.0. The Settings window, About and the tray menu are dark. **`BreakWindow` is
+deliberately not**, and keeping it that way is the constraint the rest of this section is
+arranged around.
+
+**The theme is merged per window, never into `Application.Resources`.** `DarkTheme.xaml`
+holds implicit styles — `TextBox`, `CheckBox`, `Button`, `TextBlock`, no `x:Key` — so an
+application-wide merge would repaint the reminder with them. Merging it into each window
+that wants it makes the exclusion structural instead of something to remember. `AboutWindow`
+was the second to take it, and taking it cost one `MergedDictionaries` block. A third dark
+window follows the same pattern; **do not promote the dictionary to the application** on the
+grounds that it is now in two places.
+
+**Three surfaces, three mechanisms, and nothing shared between them:**
+
+| surface | mechanism |
+|---|---|
+| the client area | `Theme/DarkTheme.xaml`, merged into `SettingsWindow` and `AboutWindow` |
+| the title bar | `ImmersiveDarkMode.Apply`, from each window's `OnSourceInitialized` |
+| the tray menu | `DarkMenuRenderer`, applied in `TrayIconHost`'s constructor |
+
+The menu is Windows Forms, so no WPF resource reaches it and the palette is repeated in
+`DarkMenuRenderer` as `Color` literals. That duplication is the price of the hybrid design.
+Do not "fix" it by moving the palette into Core: a palette is presentation, and Core holds
+rules.
+
+Rules that are easy to break:
+
+- **Every template carries its own disabled trigger.** The stock greying belongs to the
+  stock template, and replacing the template throws it away silently — no test fails. The
+  interval panel reading as unavailable while the periodic reminder is switched off is a
+  requirement, not decoration.
+- **`TextBlock`'s implicit style has no `Foreground` setter, only a trigger.** A setter would
+  beat the inherited value on the `TextBlock` a `ContentPresenter` generates for a `CheckBox`
+  caption, so a disabled checkbox would keep bright text beside a greyed box. The hints are
+  the exception, and they carry their colour and their trigger together in `HintTextStyle`,
+  because within one style a trigger outranks a setter.
+- **`Window.Background` and `Window.Foreground` use `DynamicResource`.** Attributes on the
+  `Window` tag are parsed before `Window.Resources` exists, so a `StaticResource` there has
+  nothing to find. Everything inside the tree uses `StaticResource` normally.
+- **Focus is a border colour, never a border thickness.** Growing a `TextBox` border by a
+  pixel nudges the text inside it every time the box is tabbed into.
+- **Two button styles rather than one.** A single template would need every hover, pressed
+  and focus trigger paired with a second condition asking whether this is the default button.
+- **`DwmSetWindowAttribute` failing is not an error.** The attribute is 20 from Windows 10
+  build 18985 and 19 on 17763..18984; `Apply` asks for 20, falls back to 19, and then gives
+  up. The worst outcome is a light caption, which is not worth a dialog.
+
+**About is a window, not a `MessageBox`.** A Win32 dialog cannot be themed, and a white About
+box opening out of a dark tray menu reads as a different program. It shows
+`LicenseInfo.AboutText` in **one** `TextBlock` rather than laying the banner, the copyright
+and the disclaimer out as three: that property is what two tests describe as everything About
+shows, in order, and splitting it would leave it displayed nowhere. The notice is the point
+of the window; its typography is not.
+
+Opening it also moved out of `TrayIconHost`, which now raises `AboutRequested` exactly as it
+raises `SettingsRequested`. Window lifetimes belong to `App`, and the tray host knows about
+neither window.
+
+The icon is decoded to its **largest** frame, not its first. An `.ico` holds several sizes and
+frame order is not a promise; the window draws at 48 px, and scaling a 16 px frame up is what
+makes an About icon look like a mistake. `TrayIconHost.LoadTrayIcon` does the same thing in
+the other direction, asking for `SystemInformation.SmallIconSize`.
+
+The remaining `MessageBox` dialogs — the crash report and the `--detect` timeline — stay
+light. Both are terminal, in the sense that the app is either dying or exiting straight
+after, so neither is worth a window.
 
 ## Settings storage
 

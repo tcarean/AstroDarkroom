@@ -54,6 +54,19 @@ public partial class SettingsWindow : Window
     /// <summary>Raised with the edited settings when Save succeeds. Never raised on Cancel.</summary>
     public event EventHandler<ReminderSettings>? Accepted;
 
+    /// <summary>
+    /// The title bar is the one part of this window WPF does not paint, so the dark theme
+    /// merged in the XAML stops at the client area and the caption has to be asked for
+    /// separately. This is the first moment there is an HWND to ask about, and it is still
+    /// before the first paint, so the caption is never seen light.
+    /// </summary>
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        ImmersiveDarkMode.Apply(this);
+    }
+
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
         var enabled = EnabledCheck.IsChecked == true;

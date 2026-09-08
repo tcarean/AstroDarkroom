@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Copyright (C) 2026 Tudor Carean
 //
@@ -67,6 +67,7 @@ public partial class App : WpfApplication
     private ReminderCoordinator? _coordinator;
     private ISettingsStore? _settingsStore;
     private SettingsWindow? _settingsWindow;
+    private AboutWindow? _aboutWindow;
 
     /// <summary>
     /// The tooltip text last written to the tray. The countdown ticks every second but only
@@ -119,6 +120,7 @@ public partial class App : WpfApplication
         _tray = new TrayIconHost(autoStart);
         _tray.ExitRequested += (_, _) => Shutdown();
         _tray.SettingsRequested += (_, _) => ShowSettings();
+        _tray.AboutRequested += (_, _) => ShowAbout();
 
         _coordinator = new ReminderCoordinator(
             new SystemEventsSessionMonitor(Dispatcher),
@@ -287,6 +289,34 @@ public partial class App : WpfApplication
         window.Closed += (_, _) => _settingsWindow = null;
 
         _settingsWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
+    /// <summary>
+    /// Opens About, or raises the one already open. It was a MessageBox until the dark theme
+    /// arrived: a Win32 dialog cannot be themed, and a white About box opening out of a dark
+    /// tray menu reads as a different program. Modeless for the same reason Settings is -- a
+    /// modal dialog would disable every other window, and a reminder falling due behind it
+    /// would appear with a dead Close button.
+    /// </summary>
+    private void ShowAbout()
+    {
+        if (_aboutWindow is { } existing)
+        {
+            if (existing.WindowState == WindowState.Minimized)
+            {
+                existing.WindowState = WindowState.Normal;
+            }
+
+            existing.Activate();
+            return;
+        }
+
+        var window = new AboutWindow();
+        window.Closed += (_, _) => _aboutWindow = null;
+
+        _aboutWindow = window;
         window.Show();
         window.Activate();
     }

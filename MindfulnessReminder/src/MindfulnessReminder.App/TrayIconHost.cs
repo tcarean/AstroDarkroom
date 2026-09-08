@@ -57,11 +57,14 @@ internal sealed class TrayIconHost : IDisposable
         var settingsItem = new ToolStripMenuItem("Settings...");
         settingsItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
 
-        // The app's only window is the reminder, and putting a licence notice on that would
-        // defeat its purpose, so About is where the copyright and the warranty disclaimer are
-        // displayed. It sits with Exit rather than with the settings: neither is a setting.
+        // The reminder is no place for a licence notice -- it would defeat the point of it --
+        // so About is where the copyright and the warranty disclaimer are displayed. It sits
+        // with Exit rather than with the settings: neither is a setting.
+        //
+        // Like Settings, it is raised as an event rather than opened here. Both are WPF
+        // windows whose lifetime App owns, and this class knows nothing about either.
         var aboutItem = new ToolStripMenuItem("About");
-        aboutItem.Click += (_, _) => ShowAbout();
+        aboutItem.Click += (_, _) => AboutRequested?.Invoke(this, EventArgs.Empty);
 
         var exitItem = new ToolStripMenuItem("Exit");
         exitItem.Click += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
@@ -73,6 +76,10 @@ internal sealed class TrayIconHost : IDisposable
         menu.Items.Add(aboutItem);
         menu.Items.Add(exitItem);
         menu.Opening += (_, _) => RefreshAutoStartItem();
+
+        // Painted to match the Settings window. The menu is Windows Forms, so the WPF theme
+        // does not reach it and the colours are repeated in the renderer; see DarkMenuRenderer.
+        DarkMenuRenderer.Apply(menu);
 
         _icon = LoadTrayIcon();
 
@@ -92,6 +99,8 @@ internal sealed class TrayIconHost : IDisposable
     public event EventHandler? ExitRequested;
 
     public event EventHandler? SettingsRequested;
+
+    public event EventHandler? AboutRequested;
 
     /// <summary>
     /// Replaces the hover text. Truncated rather than trusted: NotifyIcon.Text throws above
@@ -113,15 +122,6 @@ internal sealed class TrayIconHost : IDisposable
         _notifyIcon.BalloonTipText = text;
         _notifyIcon.BalloonTipIcon = ToolTipIcon.Info;
         _notifyIcon.ShowBalloonTip(5000);
-    }
-
-    private static void ShowAbout()
-    {
-        MessageBox.Show(
-            LicenseInfo.AboutText,
-            "About " + VersionInfo.Name,
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
     }
 
     private void OnAutoStartClick(object? sender, EventArgs e)

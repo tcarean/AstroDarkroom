@@ -25,9 +25,27 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         ShowInTaskbar="True"
-        Background="#FFFDFCFA"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        Foreground="{DynamicResource TextPrimaryBrush}"
         FontFamily="Segoe UI"
         FontSize="13">
+
+    <!--
+        DynamicResource on the two brushes above and StaticResource everywhere below. The
+        attributes on this tag are parsed before Window.Resources exists, so a StaticResource
+        there has nothing to find; inside the tree it resolves normally.
+
+        The theme is merged HERE rather than into Application.Resources. Its styles are
+        implicit, and an application-wide merge would repaint BreakWindow with them, which is
+        the one window that has to stay exactly as it is.
+    -->
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Theme/DarkTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
     <!--
         Nothing here is Topmost and nothing steals focus on a schedule: this is an ordinary
@@ -48,20 +66,20 @@
         <CheckBox Grid.Row="0"
                   x:Name="EnabledCheck"
                   Content="Remind me while I work"
-                  FontWeight="SemiBold"
-                  Foreground="#1D2B28" />
+                  FontWeight="SemiBold" />
 
         <!--
             Requirement: with the feature switched off the interval must read as unavailable.
             Binding the whole panel to the checkbox does that for the label, the box and the
-            hint at once, with no code behind it to keep in step.
+            hint at once, with no code behind it to keep in step. Every template in the theme
+            carries its own disabled trigger so this still shows through on a dark window.
         -->
         <StackPanel Grid.Row="1"
                     Margin="24,14,0,0"
                     IsEnabled="{Binding IsChecked, ElementName=EnabledCheck}">
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <TextBlock Text="Every" VerticalAlignment="Center" Foreground="#1D2B28" />
+                <TextBlock Text="Every" VerticalAlignment="Center" />
 
                 <TextBox x:Name="IntervalBox"
                          Width="56"
@@ -73,20 +91,20 @@
                          PreviewTextInput="OnIntervalPreviewTextInput"
                          TextChanged="OnIntervalTextChanged" />
 
-                <TextBlock Text="minutes" VerticalAlignment="Center" Foreground="#1D2B28" />
+                <TextBlock Text="minutes" VerticalAlignment="Center" />
             </StackPanel>
 
             <TextBlock x:Name="HintText"
                        Margin="0,8,0,0"
                        FontSize="11"
-                       Foreground="#6B7A76"
+                       Style="{StaticResource HintTextStyle}"
                        Text="Between 1 and 480 minutes. The countdown restarts when you save." />
         </StackPanel>
 
         <Border Grid.Row="2"
                 Height="1"
                 Margin="0,20,0,0"
-                Background="#E3E0DA" />
+                Background="{StaticResource SeparatorBrush}" />
 
         <!--
             The two pauses sit at the TOP level, not inside the panel above, because they are
@@ -97,7 +115,6 @@
             <CheckBox x:Name="PauseMicrophoneCheck"
                       Content="Pause while the microphone or camera is in use"
                       FontWeight="SemiBold"
-                      Foreground="#1D2B28"
                       Checked="OnPauseToggled"
                       Unchecked="OnPauseToggled" />
 
@@ -105,7 +122,6 @@
                       Margin="0,10,0,0"
                       Content="Pause during full screen and presentations"
                       FontWeight="SemiBold"
-                      Foreground="#1D2B28"
                       Checked="OnPauseToggled"
                       Unchecked="OnPauseToggled" />
 
@@ -117,7 +133,7 @@
             -->
             <StackPanel x:Name="RetryPanel" Margin="24,14,0,0">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Check again every" VerticalAlignment="Center" Foreground="#1D2B28" />
+                    <TextBlock Text="Check again every" VerticalAlignment="Center" />
 
                     <TextBox x:Name="RetryBox"
                              Width="56"
@@ -129,12 +145,12 @@
                              PreviewTextInput="OnIntervalPreviewTextInput"
                              TextChanged="OnIntervalTextChanged" />
 
-                    <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="#1D2B28" />
+                    <TextBlock Text="seconds" VerticalAlignment="Center" />
                 </StackPanel>
 
                 <TextBlock Margin="0,8,0,0"
                            FontSize="11"
-                           Foreground="#6B7A76"
+                           Style="{StaticResource HintTextStyle}"
                            Text="Between 5 and 300 seconds. The reminder waits, then looks again." />
             </StackPanel>
         </StackPanel>
@@ -143,7 +159,7 @@
                    x:Name="ErrorText"
                    Margin="0,14,0,0"
                    FontSize="11"
-                   Foreground="#B3261E"
+                   Foreground="{StaticResource ErrorBrush}"
                    TextWrapping="Wrap"
                    Visibility="Collapsed" />
 
@@ -156,6 +172,7 @@
                     Content="Save"
                     MinWidth="88"
                     Padding="10,5"
+                    Style="{StaticResource PrimaryButtonStyle}"
                     IsDefault="True"
                     Click="OnSaveClick" />
 
