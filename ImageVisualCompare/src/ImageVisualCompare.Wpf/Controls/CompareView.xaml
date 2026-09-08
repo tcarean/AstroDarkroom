@@ -26,6 +26,16 @@
         </Canvas>
 
         <Canvas x:Name="BeforeLayer">
+            <!-- Image A sits on top of image B, so without an opaque backdrop a file with an
+                 alpha channel would blend into B on the left while B blends into the canvas
+                 colour on the right. The two halves would then be composited over different
+                 backgrounds and the comparison would be showing an artefact of the display.
+                 This rectangle gives A the same backdrop B has. -->
+            <Rectangle x:Name="BeforeBackdrop"
+                       Canvas.Left="0"
+                       Canvas.Top="0"
+                       Fill="{StaticResource CanvasBrush}" />
+
             <Image x:Name="BeforeImage"
                    Canvas.Left="0"
                    Canvas.Top="0"

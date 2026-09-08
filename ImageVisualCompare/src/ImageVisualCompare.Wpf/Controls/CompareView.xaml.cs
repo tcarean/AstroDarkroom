@@ -56,6 +56,7 @@ public partial class CompareView : UserControl
         // update one and forget the other.
         BeforeImage.RenderTransform = _transform;
         AfterImage.RenderTransform = _transform;
+        BeforeBackdrop.RenderTransform = _transform;
 
         Canvas.SetRight(ZoomBadge, 10);
         Canvas.SetTop(ZoomBadge, 10);
@@ -107,6 +108,10 @@ public partial class CompareView : UserControl
             image.Height = pair.PixelHeight;
         }
 
+        BeforeBackdrop.Width = pair.PixelWidth;
+        BeforeBackdrop.Height = pair.PixelHeight;
+        BeforeBackdrop.Visibility = Visibility.Visible;
+
         Viewport.SetContentSize(pair.PixelWidth, pair.PixelHeight);
         UpdateViewportSize();
         Viewport.ZoomToFit();
@@ -125,6 +130,7 @@ public partial class CompareView : UserControl
     {
         BeforeImage.Source = null;
         AfterImage.Source = null;
+        BeforeBackdrop.Visibility = Visibility.Collapsed;
         Minimap.Hide();
         Viewport.SetContentSize(0, 0);
         Sync();
