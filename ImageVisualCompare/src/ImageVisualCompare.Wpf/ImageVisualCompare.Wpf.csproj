@@ -8,6 +8,22 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+
+    <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
+         MSBuild o duce in AssemblyInformationalVersion, de unde o citeste VersionInfo -
+         deci asta e singurul loc de schimbat. -->
+    <Version>1.0.0</Version>
+
+    <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
+         unde il citeste VersionInfo.Copyright si il afiseaza in bara de stare - deci si
+         asta e singurul loc de schimbat. Programul e GPLv3; textul complet e in LICENSE,
+         la radacina proiectului. -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ImageVisualCompare.Tests" />
+  </ItemGroup>
 
 </Project>

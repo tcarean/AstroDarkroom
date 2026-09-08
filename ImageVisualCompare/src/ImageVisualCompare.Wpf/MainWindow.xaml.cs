@@ -1,3 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -31,6 +48,12 @@ public partial class MainWindow : Window
         FitButton.Click += (_, _) => Compare.ZoomToFit();
         ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
         OpenButton.Click += async (_, _) => await OpenPairAsync();
+        AboutButton.Click += (_, _) => MessageBox.Show(
+            this, VersionInfo.About, "About " + VersionInfo.Banner,
+            MessageBoxButton.OK, MessageBoxImage.Information);
+
+        Title = VersionInfo.Banner;
+        StatusLegal.Text = $"{VersionInfo.Banner} · {VersionInfo.Copyright}";
 
         // Sampled on a timer rather than on every view change: the render thread does its work
         // after the UI thread has finished, so a reading taken during a zoom is always stale
@@ -124,7 +147,7 @@ public partial class MainWindow : Window
         Compare.SetPair(pair);
         Compare.Focus();
 
-        Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  Image Visual Compare";
+        Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  {VersionInfo.Banner}";
         ToolbarTitle.Text = $"{pair.Before.Info.FileName}   vs   {pair.After.Info.FileName}";
         StatusPair.Text =
             $"{pair.Before.Info.Dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}";

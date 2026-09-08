@@ -80,6 +80,9 @@ Dimensiunea perechii și formatul real al fiecărui fișier, coordonata pixelulu
 vedea o diferență: pe un fundal întunecat, o diferență de una-două unități din 255 e complet
 invizibilă cu ochiul, dar se citește imediat în cifre.
 
+În dreapta barei de stare stau permanent versiunea și copyright-ul. Butonul `About` din
+toolbar arată nota completă de licență.
+
 ## Memorie
 
 O pereche de 21 MP pe 16 biți ocupă ~170 MB după decodare (fiecare imagine devine Bgra32,
@@ -109,3 +112,22 @@ dotnet test ImageVisualCompare.sln
 - Fără toggle A/B pe tastă.
 - Fără drag&drop peste fereastră.
 - Nu reține poziția ferestrei sau ultimul folder între sesiuni.
+
+---
+
+## Licență
+
+Image Visual Compare — comparator vizual pentru două imagini de aceeași dimensiune.
+Copyright (C) 2026 Tudor Carean
+
+Acest program este software liber: îl poți redistribui și/sau modifica în termenii
+**GNU General Public License v3** publicată de Free Software Foundation, fie versiunea 3
+a licenței, fie (la alegerea ta) orice versiune ulterioară.
+
+Programul e distribuit în speranța că va fi util, dar **FĂRĂ NICIO GARANȚIE** — fără
+măcar garanția implicită de VANDABILITATE sau POTRIVIRE PENTRU UN SCOP ANUME. Vezi GNU
+General Public License pentru detalii.
+
+Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
+<https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare la butonul
+`About`; versiunea și copyright-ul stau permanent în bara de stare.

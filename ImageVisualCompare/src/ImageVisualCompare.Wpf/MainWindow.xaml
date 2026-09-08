@@ -39,7 +39,8 @@
                     <Button x:Name="ZoomInButton" Style="{StaticResource ToolButton}" Content="+" />
                     <Button x:Name="FitButton" Style="{StaticResource ToolButton}" Content="Fit" Margin="12,0,3,0" />
                     <Button x:Name="ActualSizeButton" Style="{StaticResource ToolButton}" Content="100%" />
-                    <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Content="Open…" Margin="12,0,0,0" />
+                    <Button x:Name="OpenButton" Style="{StaticResource ToolButton}" Content="Open…" Margin="12,0,3,0" />
+                    <Button x:Name="AboutButton" Style="{StaticResource ToolButton}" Content="About" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -51,15 +52,30 @@
                 BorderBrush="{StaticResource ChromeBorderBrush}"
                 BorderThickness="0,1,0,0"
                 Padding="12,6">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock x:Name="StatusPair" Style="{StaticResource StatusText}" />
-                <TextBlock x:Name="StatusCursor" Style="{StaticResource StatusValue}" MinWidth="96" />
-                <TextBlock x:Name="StatusBefore" Style="{StaticResource StatusValue}" MinWidth="128" />
-                <TextBlock x:Name="StatusAfter" Style="{StaticResource StatusValue}" MinWidth="128" />
-                <TextBlock x:Name="StatusMemory" Style="{StaticResource StatusText}" />
+            <DockPanel>
+                <!-- GPLv3 asks that every copy carry the notice, so it is on screen for the
+                     whole run. Docked right so it is never the thing that gets clipped when
+                     the window narrows. -->
+                <TextBlock x:Name="StatusLegal"
+                           DockPanel.Dock="Right"
+                           Style="{StaticResource StatusText}"
+                           Margin="16,0,0,0" />
+
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
+                    <TextBlock x:Name="StatusPair" Style="{StaticResource StatusText}" />
+                    <TextBlock x:Name="StatusCursor" Style="{StaticResource StatusValue}" MinWidth="96" />
+                    <TextBlock x:Name="StatusBefore" Style="{StaticResource StatusValue}" MinWidth="128" />
+                    <TextBlock x:Name="StatusAfter" Style="{StaticResource StatusValue}" MinWidth="128" />
+                    <TextBlock x:Name="StatusMemory" Style="{StaticResource StatusText}" />
+                </StackPanel>
+
+                <!-- Last child, so it takes whatever width is left over and trims with an
+                     ellipsis instead of being cut off mid-word. Of everything on this bar
+                     the hint is the one item that loses nothing by being shortened. -->
                 <TextBlock Style="{StaticResource StatusText}"
-                           Text="drag the line to move it · drag elsewhere to pan · Ctrl+wheel zoom · ←/→ nudge · Ctrl+O open" />
-            </StackPanel>
+                           TextTrimming="CharacterEllipsis"
+                           Text="drag the line to move it · Ctrl+wheel zoom · ←/→ nudge · Ctrl+O open" />
+            </DockPanel>
         </Border>
 
         <!-- Decoding a 100 MB 16-bit file takes a couple of seconds; without this the window
