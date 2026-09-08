@@ -1,16 +1,45 @@
 # Mindfulness Reminder
 
-A tray-resident reminder for Windows: every time you unlock the workstation it shows a small
-always-on-top window that says **Ground yourself**.
+A tray-resident reminder for Windows. It shows a small always-on-top window that says
+**Ground yourself** every time you unlock the workstation, and — since 1.1.0 — at a set
+interval while you work.
 
 ## Behaviour
 
-- Lives in the notification area. The tray menu has three items: a **Run at Windows
-  startup** checkbox, **About**, and **Exit**.
+- Lives in the notification area. The tray menu has four items: **Settings...**, a **Run at
+  Windows startup** checkbox, **About**, and **Exit**.
 - Registers itself for Windows startup on the very first run only, so unticking the checkbox
   sticks across restarts.
 - The reminder always appears on the primary monitor, on top of everything, with a
-  single **Close** button (Esc and Enter also close it).
+  single **Close** button. Esc closes it; **Enter deliberately does not** — see
+  [Periodic reminders](#periodic-reminders).
+- The tray tooltip counts down to the next reminder:
+  `Mindfulness Reminder 1.1.0 - next in 12 min`.
+
+## Periodic reminders
+
+On top of the unlock reminder, one appears every *N* minutes while you work. It is on by
+default, every 30 minutes, and both the switch and the interval live in **Settings...** in
+the tray menu — with the interval greyed out while the feature is off. Anything from 1 to
+480 minutes is accepted; saving restarts the countdown from zero.
+
+Four things about it are deliberate:
+
+- **One timer, ticking every second, driving a deadline.** It is not armed for the interval.
+  The countdown in the tooltip needs a regular tick anyway, and a one-shot timer would have
+  needed a second timer beside it just to redraw that.
+- **A deadline on the wall clock, not a count of elapsed ticks.** A `DispatcherTimer` does
+  not tick while the machine sleeps, so counting ticks would silently stretch a 30-minute
+  interval by however long the lid was shut. With a deadline, a reminder that came due
+  during sleep fires on the first tick after waking.
+- **Locking suspends it; unlocking grants the whole interval again.** With 10 minutes left,
+  a lock, three hours away and an unlock, the next reminder is 30 minutes after that unlock —
+  for any number of lock/unlock cycles, of any length. Without the suspend the deadline would
+  pass behind the lock screen and the window would be created where nobody can see it.
+- **Enter no longer closes the reminder.** It used to, back when the window only appeared on
+  a freshly unlocked desktop where nobody is typing. A window that takes the focus mid-work
+  would otherwise be dismissed by the next Enter already on its way — and swallow that
+  keypress out of whatever was being typed.
 
 ## Design decisions
 
@@ -20,11 +49,14 @@ always-on-top window that says **Ground yourself**.
 | Auto-start | `HKCU\...\CurrentVersion\Run` | No elevation, and the entry is one value that maps directly onto a checkbox |
 | Auto-start truth | also reads `Explorer\StartupApproved\Run` | Task Manager's Startup tab vetoes entries without deleting them; a checkbox reading only the Run key would report "on" for an entry Windows ignores |
 | Unlock detection | `SystemEvents.SessionSwitch` | A few lines behind `ISessionMonitor`; a `WTSRegisterSessionNotification` implementation can replace it without touching anything else |
+| Periodic schedule | one `DispatcherTimer` at 1 s + a deadline in `IntervalSchedule` | Survives sleep, feeds the tooltip off the same tick, and makes "reset on unlock" a single line |
+| Settings storage | strings under `HKCU\Software\MindfulnessReminder` | The key the auto-start marker already uses, and strings keep `IRegistryStore` at the four methods it had |
+| Settings window | modeless, hand-validated `TextBox` | A modal `ShowDialog` would disable every other window, so a reminder falling due would appear with a dead Close button; and WPF has no numeric spinner in the BCL, which is not worth a package |
 
 ## Layout
 
-    src/MindfulnessReminder.Core   net8.0, no UI dependencies -- auto-start rules, unlock policy, placement math
-    src/MindfulnessReminder.App    net8.0-windows, WinExe -- tray icon, reminder window, Windows adapters
+    src/MindfulnessReminder.Core   net8.0, no UI dependencies -- auto-start rules, unlock and interval policy, placement math
+    src/MindfulnessReminder.App    net8.0-windows, WinExe -- tray icon, reminder and settings windows, Windows adapters
     tests/MindfulnessReminder.Tests xunit
 
 ## Build and run
@@ -59,7 +91,7 @@ user can actually see it:
 
 | where | what it shows |
 |---|---|
-| tray tooltip | `Mindfulness Reminder 1.0.0` -- hovering the icon says which build is running |
+| tray tooltip | `Mindfulness Reminder 1.1.0 - next in 12 min` -- hovering the icon says which build is running, and when the next reminder is due |
 | **About** | the banner on the first line, the copyright on the second, the licence notice below |
 | crash dialog | the error, then the banner, so a screenshot of it says which version broke |
 

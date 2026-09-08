@@ -23,10 +23,14 @@ using WpfApplication = System.Windows.Application;
 namespace MindfulnessReminder.App;
 
 /// <summary>
-/// The tray icon and its menu: a checkbox that mirrors the auto-start state, About, and Exit.
+/// The tray icon and its menu: Settings, a checkbox that mirrors the auto-start state,
+/// About, and Exit.
 ///
 /// The checked state is refreshed every time the menu opens rather than cached, because the
 /// user can change auto-start behind our back from Task Manager's Startup tab.
+///
+/// The tooltip is not static any more -- it carries the countdown to the next reminder, so
+/// the coordinator drives it through <see cref="SetTooltip"/>.
 /// </summary>
 internal sealed class TrayIconHost : IDisposable
 {
@@ -50,9 +54,12 @@ internal sealed class TrayIconHost : IDisposable
         };
         _autoStartItem.Click += OnAutoStartClick;
 
+        var settingsItem = new ToolStripMenuItem("Settings...");
+        settingsItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
+
         // The app's only window is the reminder, and putting a licence notice on that would
         // defeat its purpose, so About is where the copyright and the warranty disclaimer are
-        // displayed. It sits with Exit rather than with the setting: neither is a setting.
+        // displayed. It sits with Exit rather than with the settings: neither is a setting.
         var aboutItem = new ToolStripMenuItem("About");
         aboutItem.Click += (_, _) => ShowAbout();
 
@@ -60,6 +67,7 @@ internal sealed class TrayIconHost : IDisposable
         exitItem.Click += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
         var menu = new ContextMenuStrip();
+        menu.Items.Add(settingsItem);
         menu.Items.Add(_autoStartItem);
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(aboutItem);
@@ -82,6 +90,22 @@ internal sealed class TrayIconHost : IDisposable
     }
 
     public event EventHandler? ExitRequested;
+
+    public event EventHandler? SettingsRequested;
+
+    /// <summary>
+    /// Replaces the hover text. Truncated rather than trusted: NotifyIcon.Text throws above
+    /// 63 characters, and a tray icon lost to an exception is a poor trade for a countdown.
+    /// <see cref="TrayTooltip"/> already keeps within the limit; this is the belt to its braces.
+    /// </summary>
+    public void SetTooltip(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        _notifyIcon.Text = text.Length <= TrayTooltip.MaxLength
+            ? text
+            : text[..TrayTooltip.MaxLength];
+    }
 
     public void ShowBalloon(string title, string text)
     {

@@ -47,6 +47,15 @@ public partial class App : WpfApplication
     private Mutex? _singleInstanceMutex;
     private TrayIconHost? _tray;
     private ReminderCoordinator? _coordinator;
+    private ISettingsStore? _settingsStore;
+    private SettingsWindow? _settingsWindow;
+
+    /// <summary>
+    /// The tooltip text last written to the tray. The countdown ticks every second but only
+    /// changes once a minute, and every write is a Shell_NotifyIcon call, so the string is
+    /// compared before it is set.
+    /// </summary>
+    private string? _tooltip;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -81,12 +90,18 @@ public partial class App : WpfApplication
         var registry = new WindowsRegistryStore();
         var autoStart = new RegistryAutoStartManager(registry, AutoStartValueName, ResolveExecutablePath());
 
+        _settingsStore = new RegistrySettingsStore(registry);
+
         _tray = new TrayIconHost(autoStart);
         _tray.ExitRequested += (_, _) => Shutdown();
+        _tray.SettingsRequested += (_, _) => ShowSettings();
 
         _coordinator = new ReminderCoordinator(
             new SystemEventsSessionMonitor(Dispatcher),
-            new WpfReminderPresenter(Dispatcher));
+            new WpfReminderPresenter(Dispatcher),
+            new DispatcherPeriodicTimer(Dispatcher, ReminderCoordinator.DefaultTickInterval),
+            _settingsStore.Load());
+        _coordinator.CountdownChanged += (_, _) => UpdateTooltip();
         _coordinator.Start();
 
         if (new StartupRegistrar(registry, autoStart).EnsureRegisteredOnFirstRun())
@@ -102,6 +117,62 @@ public partial class App : WpfApplication
         var window = new BreakWindow();
         window.Closed += (_, _) => Shutdown();
         window.Show();
+    }
+
+    /// <summary>
+    /// Opens Settings, or raises the one already open. Modeless and single-instance: two
+    /// copies of the window could be saved in either order, and the loser would silently win.
+    /// </summary>
+    private void ShowSettings()
+    {
+        if (_coordinator is not { } coordinator)
+        {
+            return;
+        }
+
+        if (_settingsWindow is { } existing)
+        {
+            if (existing.WindowState == WindowState.Minimized)
+            {
+                existing.WindowState = WindowState.Normal;
+            }
+
+            existing.Activate();
+            return;
+        }
+
+        var window = new SettingsWindow(coordinator.Settings);
+
+        window.Accepted += (_, settings) =>
+        {
+            // Saved first: if the write fails, the app has not started behaving in a way the
+            // next launch will contradict.
+            _settingsStore?.Save(settings);
+            coordinator.ApplySettings(settings);
+        };
+
+        window.Closed += (_, _) => _settingsWindow = null;
+
+        _settingsWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
+    /// <summary>
+    /// Pushes the countdown into the tray tooltip, and only when the visible text actually
+    /// changes -- which, with a per-minute countdown off a per-second tick, is 1 write in 60.
+    /// </summary>
+    private void UpdateTooltip()
+    {
+        var text = TrayTooltip.Format(VersionInfo.Banner, _coordinator?.Remaining);
+
+        if (text == _tooltip)
+        {
+            return;
+        }
+
+        _tooltip = text;
+        _tray?.SetTooltip(text);
     }
 
     /// <summary>

@@ -18,15 +18,22 @@
 namespace MindfulnessReminder.Core;
 
 /// <summary>
-/// Raises an event when the interactive session is unlocked. The production implementation
-/// sits on SystemEvents.SessionSwitch; keeping it behind this interface means the whole
-/// reminder policy is testable, and a WTSRegisterSessionNotification implementation could
-/// be swapped in without touching anything else.
+/// Raises events when the interactive session is locked and unlocked. The production
+/// implementation sits on SystemEvents.SessionSwitch; keeping it behind this interface means
+/// the whole reminder policy is testable, and a WTSRegisterSessionNotification
+/// implementation could be swapped in without touching anything else.
 /// </summary>
 public interface ISessionMonitor : IDisposable
 {
     /// <summary>Raised on the UI thread after the workstation is unlocked.</summary>
     event EventHandler? Unlocked;
+
+    /// <summary>
+    /// Raised on the UI thread after the workstation is locked. The periodic reminder needs
+    /// it: without a lock event its deadline would pass behind the lock screen and the
+    /// window would be created where nobody can see it. Nothing shows a reminder on lock.
+    /// </summary>
+    event EventHandler? Locked;
 
     void Start();
 }

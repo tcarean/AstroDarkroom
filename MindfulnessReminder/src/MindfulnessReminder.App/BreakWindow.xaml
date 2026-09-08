@@ -97,13 +97,18 @@
                        TextWrapping="Wrap"
                        TextAlignment="Center" />
 
+            <!--
+                Deliberately NOT IsDefault. The reminder now appears in the middle of work,
+                not only on a freshly unlocked desktop, and it takes the focus when it does,
+                so the very next Enter would have dismissed it and been swallowed on its way
+                out of whatever was being typed. See OnPreviewKeyDown in the code-behind.
+            -->
             <Button Grid.Row="2"
                     x:Name="CloseButton"
                     Content="Close"
                     Style="{StaticResource CloseButtonStyle}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Bottom"
-                    IsDefault="True"
                     IsCancel="True"
                     Click="OnCloseClick" />
         </Grid>

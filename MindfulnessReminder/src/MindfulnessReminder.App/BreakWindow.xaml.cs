@@ -83,6 +83,28 @@ public partial class BreakWindow : Window
 
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 
+    /// <summary>
+    /// Swallows Enter before anything can act on it.
+    ///
+    /// Since the reminder became periodic it arrives while the user is working, and it takes
+    /// the focus when it does. Enter is the keystroke most likely to be already on its way,
+    /// and closing on it would both dismiss a reminder nobody read and lose the keypress from
+    /// whatever was being typed. It has to be Preview: KeyDown bubbles up from the focused
+    /// Close button, which would already have handled the key by the time the window saw it.
+    ///
+    /// Esc and Space still close -- Esc deliberately, Space because a focused button responds
+    /// to it. Both are far less likely mid-sentence than Enter.
+    /// </summary>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+
+        if (e.Key is Key.Enter)
+        {
+            e.Handled = true;
+        }
+    }
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);

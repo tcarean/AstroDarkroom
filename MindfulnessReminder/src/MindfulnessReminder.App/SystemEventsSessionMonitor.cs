@@ -22,13 +22,13 @@ using MindfulnessReminder.Core;
 namespace MindfulnessReminder.App;
 
 /// <summary>
-/// Unlock detection through <see cref="SystemEvents.SessionSwitch"/>.
+/// Lock and unlock detection through <see cref="SystemEvents.SessionSwitch"/>.
 ///
 /// SystemEvents raises its callbacks on a private worker thread, not on ours, so every
 /// notification is marshalled onto the WPF dispatcher before it reaches the coordinator.
-/// Only <see cref="SessionSwitchReason.SessionUnlock"/> is forwarded: SessionLogon would
-/// pop the window during sign-in, and the remote/console connect reasons belong to RDP
-/// reconnects rather than to a real unlock.
+/// Only the two workstation reasons are forwarded: SessionLogon would pop the window during
+/// sign-in, and the remote/console connect reasons belong to RDP reconnects rather than to a
+/// real unlock.
 /// </summary>
 internal sealed class SystemEventsSessionMonitor : ISessionMonitor
 {
@@ -43,6 +43,8 @@ internal sealed class SystemEventsSessionMonitor : ISessionMonitor
     }
 
     public event EventHandler? Unlocked;
+
+    public event EventHandler? Locked;
 
     public void Start()
     {
@@ -59,12 +61,19 @@ internal sealed class SystemEventsSessionMonitor : ISessionMonitor
 
     private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)
     {
-        if (e.Reason != SessionSwitchReason.SessionUnlock)
+        switch (e.Reason)
         {
-            return;
-        }
+            case SessionSwitchReason.SessionUnlock:
+                _dispatcher.BeginInvoke(() => Unlocked?.Invoke(this, EventArgs.Empty));
+                break;
 
-        _dispatcher.BeginInvoke(() => Unlocked?.Invoke(this, EventArgs.Empty));
+            case SessionSwitchReason.SessionLock:
+                _dispatcher.BeginInvoke(() => Locked?.Invoke(this, EventArgs.Empty));
+                break;
+
+            default:
+                break;
+        }
     }
 
     public void Dispose()
