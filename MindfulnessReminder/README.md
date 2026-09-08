@@ -9,7 +9,7 @@ always-on-top window that says **Take a quick break**.
   startup** checkbox, **About**, and **Exit**.
 - Registers itself for Windows startup on the very first run only, so unticking the checkbox
   sticks across restarts.
-- The reminder appears on the monitor holding the mouse pointer, on top of everything, with a
+- The reminder always appears on the primary monitor, on top of everything, with a
   single **Close** button (Esc and Enter also close it).
 
 ## Design decisions

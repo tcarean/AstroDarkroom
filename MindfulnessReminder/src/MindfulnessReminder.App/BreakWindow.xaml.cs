@@ -37,7 +37,7 @@ public partial class BreakWindow : Window
     {
         base.OnSourceInitialized(e);
 
-        MoveToActiveScreen();
+        MoveToPrimaryScreen();
 
         // Windows only grants foreground activation to a process with recent input, and a
         // freshly unlocked desktop has none. Re-asserting Topmost after the handle exists is
@@ -48,10 +48,13 @@ public partial class BreakWindow : Window
     }
 
     /// <summary>
-    /// Puts the reminder on the monitor holding the mouse pointer -- the best available guess
-    /// at where the user is actually looking after unlocking.
+    /// Puts the reminder on the primary monitor, always the same one.
+    ///
+    /// Following the mouse pointer instead sounds friendlier but is not reproducible: the
+    /// pointer sits wherever it was left before the lock, or wherever the logon screen parked
+    /// it, so the reminder surfaced on a different monitor each time.
     /// </summary>
-    private void MoveToActiveScreen()
+    private void MoveToPrimaryScreen()
     {
         if (PresentationSource.FromVisual(this) is not { } source)
         {
@@ -60,7 +63,11 @@ public partial class BreakWindow : Window
 
         // Screen reports physical pixels; WPF positions in device-independent units.
         var toDip = source.CompositionTarget.TransformFromDevice;
-        var bounds = Screen.FromPoint(WinFormsControl.MousePosition).WorkingArea;
+
+        // PrimaryScreen is null only if the desktop has no monitor at all; the pointer's
+        // screen is then as good a guess as any and keeps the window on something visible.
+        var screen = Screen.PrimaryScreen ?? Screen.FromPoint(WinFormsControl.MousePosition);
+        var bounds = screen.WorkingArea;
 
         var origin = toDip.Transform(new Point(bounds.Left, bounds.Top));
         var size = toDip.Transform(new Point(bounds.Width, bounds.Height));
