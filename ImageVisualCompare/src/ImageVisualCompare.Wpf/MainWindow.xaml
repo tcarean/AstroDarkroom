@@ -74,7 +74,7 @@
                      the hint is the one item that loses nothing by being shortened. -->
                 <TextBlock Style="{StaticResource StatusText}"
                            TextTrimming="CharacterEllipsis"
-                           Text="drag the line to move it · Ctrl+wheel zoom · ←/→ nudge · Ctrl+O open" />
+                           Text="wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open" />
             </DockPanel>
         </Border>
 

@@ -48,9 +48,8 @@ căi nu există, pornește normal și întreabă prin dialoguri.
 | mută linia | trage de linie (oriunde pe ea) sau de mâner |
 | mută linia fin | `←` / `→` cu 1 px, `Shift+←` / `Shift+→` cu 10 px |
 | pan | trage cu mouse-ul oriunde în afara liniei |
-| scroll vertical | rotița |
+| zoom | rotița, ancorat în cursor (și `Ctrl` + rotița, la fel) |
 | scroll orizontal | `Shift` + rotița |
-| zoom | `Ctrl` + rotița, ancorat în cursor |
 | zoom pe trepte | `+` / `−`, sau butoanele din toolbar |
 | încadrează tot | `Ctrl+0`, sau butonul `Fit` |
 | mărime reală | `Ctrl+1`, sau butonul `100%` |

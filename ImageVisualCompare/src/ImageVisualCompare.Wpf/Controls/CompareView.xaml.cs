@@ -184,18 +184,18 @@ public partial class CompareView : UserControl
 
         Point position = ToDevice(e.GetPosition(this));
 
-        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-        {
-            double factor = e.Delta > 0 ? WheelZoomFactor : 1 / WheelZoomFactor;
-            Viewport.ZoomBy(factor, position.X, position.Y);
-        }
-        else if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        // The wheel zooms, anchored at the cursor. On a comparison view what you want from
+        // the wheel is almost always "look closer at what is under the pointer", and panning
+        // is already covered by dragging, the scroll bars and the minimap. Ctrl+wheel zooms
+        // too, so the habit from every other image viewer keeps working.
+        if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             Viewport.PanBy(Math.Sign(e.Delta) * WheelPanPixels, 0);
         }
         else
         {
-            Viewport.PanBy(0, Math.Sign(e.Delta) * WheelPanPixels);
+            double factor = e.Delta > 0 ? WheelZoomFactor : 1 / WheelZoomFactor;
+            Viewport.ZoomBy(factor, position.X, position.Y);
         }
 
         Sync();
