@@ -38,7 +38,7 @@ Cu două căi ca argumente, sare peste dialoguri:
 ImageVisualCompare.Wpf.exe "A.png" "B.png"
 ```
 
-Prima cale e imaginea din stânga (BEFORE), a doua cea din dreapta (AFTER). Dacă una dintre
+Prima cale e imaginea afișată în stânga liniei, a doua cea din dreapta. Dacă una dintre
 căi nu există, pornește normal și întreabă prin dialoguri.
 
 ## Controale

@@ -44,14 +44,6 @@
         </Canvas>
 
         <Canvas x:Name="Overlay" IsHitTestVisible="False">
-            <Border x:Name="BeforeBadge" Style="{StaticResource Badge}">
-                <TextBlock Text="BEFORE" Style="{StaticResource BadgeText}" />
-            </Border>
-
-            <Border x:Name="AfterBadge" Style="{StaticResource Badge}">
-                <TextBlock Text="AFTER" Style="{StaticResource BadgeText}" />
-            </Border>
-
             <Border x:Name="ZoomBadge" Style="{StaticResource Badge}">
                 <TextBlock x:Name="ZoomBadgeText" Style="{StaticResource BadgeText}"
                            Foreground="{StaticResource AccentBrush}" />

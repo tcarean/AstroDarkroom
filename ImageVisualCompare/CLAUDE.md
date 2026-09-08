@@ -29,7 +29,7 @@ User documentation lives in `README.md`. Do not restate it here or in comments.
     the translation, scale and resampling mode the view puts on its transform. This is where
     the physical-pixel to device-independent-pixel conversion lives.
   - `DividerLayout.cs` — the record `DividerModel.Layout` returns: line position, the clip
-    region for image A, the handle rectangle, and both badge origins with their visibility.
+    region for image A, and the handle rectangle.
   - `MinimapGeometry.cs` — the viewport rectangle on the thumbnail, and the content point a
     click maps to.
   - `ScrollBarState.cs` — range, thumb proportion, value and visibility per axis.

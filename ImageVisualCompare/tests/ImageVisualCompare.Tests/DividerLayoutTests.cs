@@ -48,37 +48,6 @@ public class DividerLayoutTests
         Assert.False(divider.HitTest(layout.Handle.Right + 1, layout.Handle.Bottom + 40, Width, Height));
     }
 
-    [Fact]
-    public void BothBadgesSitJustInsideTheirOwnSide()
-    {
-        DividerLayout layout = LayoutAt(0.5);
-
-        Assert.Equal(DividerModel.BadgeMargin, layout.BeforeBadgeOrigin.X, 6);
-        Assert.Equal(DividerModel.BadgeMargin, layout.BeforeBadgeOrigin.Y, 6);
-        Assert.Equal(400 + DividerModel.BadgeMargin, layout.AfterBadgeOrigin.X, 6);
-        Assert.Equal(DividerModel.BadgeMargin, layout.AfterBadgeOrigin.Y, 6);
-        Assert.True(layout.ShowBeforeBadge);
-        Assert.True(layout.ShowAfterBadge);
-    }
-
-    [Fact]
-    public void TheBeforeBadgeDisappearsRatherThanBeingSlicedInHalf()
-    {
-        DividerLayout layout = LayoutAt(0.02);
-
-        Assert.False(layout.ShowBeforeBadge);
-        Assert.True(layout.ShowAfterBadge);
-    }
-
-    [Fact]
-    public void TheAfterBadgeDisappearsWhenTheLineIsPushedRight()
-    {
-        DividerLayout layout = LayoutAt(0.99);
-
-        Assert.True(layout.ShowBeforeBadge);
-        Assert.False(layout.ShowAfterBadge);
-    }
-
     [Theory]
     [InlineData(0.0)]
     [InlineData(1.0)]

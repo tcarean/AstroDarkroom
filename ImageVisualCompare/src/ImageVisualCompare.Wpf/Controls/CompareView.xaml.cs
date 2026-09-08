@@ -466,16 +466,6 @@ public partial class CompareView : UserControl
         DividerHandle.Height = layout.Handle.Height;
         Canvas.SetLeft(DividerHandle, layout.Handle.X);
         Canvas.SetTop(DividerHandle, layout.Handle.Y);
-
-        Place(BeforeBadge, layout.BeforeBadgeOrigin, layout.ShowBeforeBadge);
-        Place(AfterBadge, layout.AfterBadgeOrigin, layout.ShowAfterBadge);
-
-        static void Place(UIElement element, PointD origin, bool visible)
-        {
-            Canvas.SetLeft(element, origin.X);
-            Canvas.SetTop(element, origin.Y);
-            element.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        }
     }
 
     private static Rect ToRect(RectD rect) => new(rect.X, rect.Y, rect.Width, rect.Height);

@@ -11,8 +11,4 @@ namespace ImageVisualCompare.Core;
 public readonly record struct DividerLayout(
     double LineX,
     RectD ClipRect,
-    RectD Handle,
-    PointD BeforeBadgeOrigin,
-    bool ShowBeforeBadge,
-    PointD AfterBadgeOrigin,
-    bool ShowAfterBadge);
+    RectD Handle);
