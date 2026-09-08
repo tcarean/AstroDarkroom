@@ -1,0 +1,16 @@
+<Project>
+
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- A 21 MP pair needs ~300 MB at peak; a 32-bit process cannot host that. -->
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Do not set InvariantGlobalization here. WPF's font cache builds a CultureInfo("en")
+         while working out typography availability, which throws in invariant mode and takes
+         the whole application down the moment certain text is laid out. -->
+  </PropertyGroup>
+
+</Project>

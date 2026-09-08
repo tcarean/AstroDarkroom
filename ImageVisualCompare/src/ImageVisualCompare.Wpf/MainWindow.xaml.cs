@@ -1,0 +1,175 @@
+using System.IO;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using ImageVisualCompare.Core;
+using ImageVisualCompare.Wpf.Imaging;
+using ImageVisualCompare.Wpf.Services;
+
+namespace ImageVisualCompare.Wpf;
+
+public partial class MainWindow : Window
+{
+    private readonly IFileDialogService _dialogs = new FileDialogService();
+    private readonly ImagePairLoader _loader = new(new WicImageLoader());
+    private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
+
+    private ImagePair? _pair;
+    private string? _lastDirectory;
+
+    public MainWindow()
+    {
+        InitializeComponent();
+
+        Compare.ViewChanged += (_, _) => UpdateZoomReadout();
+        Compare.CursorContentPointChanged += (_, point) => UpdatePixelReadout(point);
+
+        ZoomInButton.Click += (_, _) => Compare.ZoomIn();
+        ZoomOutButton.Click += (_, _) => Compare.ZoomOut();
+        FitButton.Click += (_, _) => Compare.ZoomToFit();
+        ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
+        OpenButton.Click += async (_, _) => await OpenPairAsync();
+
+        // Sampled on a timer rather than on every view change: the render thread does its work
+        // after the UI thread has finished, so a reading taken during a zoom is always stale
+        // and reports less than the process is really using.
+        _memoryTimer.Tick += (_, _) => StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();
+
+        Loaded += async (_, _) => await OpenPairAsync();
+        PreviewKeyDown += OnPreviewKeyDown;
+    }
+
+    private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+        {
+            e.Handled = true;
+            await OpenPairAsync();
+        }
+    }
+
+    private async Task OpenPairAsync()
+    {
+        // A pair given on the command line is used once, then the dialogs take over as normal.
+        ImagePairSelection? fromCommandLine = App.TakeStartupSelection();
+
+        while (true)
+        {
+            ImagePairSelection? selection = fromCommandLine ?? _dialogs.PickImagePair(_lastDirectory);
+            fromCommandLine = null;
+
+            if (selection is null)
+            {
+                // Cancelling the very first prompt means the user did not want to be here.
+                // Cancelling later just means they changed their mind about swapping pairs.
+                if (_pair is null)
+                {
+                    Close();
+                }
+
+                return;
+            }
+
+            _lastDirectory = Path.GetDirectoryName(selection.BeforePath);
+
+            ImagePairLoadResult result = await LoadWithOverlayAsync(selection);
+
+            if (result.IsSuccess)
+            {
+                ShowPair(result.Pair!);
+                return;
+            }
+
+            MessageBox.Show(this, result.Error, "Cannot compare these files",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private async Task<ImagePairLoadResult> LoadWithOverlayAsync(ImagePairSelection selection)
+    {
+        LoadingOverlay.Visibility = Visibility.Visible;
+        LoadingBar.Value = 0;
+        LoadingText.Text = "Opening…";
+
+        var progress = new Progress<ImageLoadProgress>(p =>
+        {
+            LoadingBar.Value = p.Fraction;
+            LoadingText.Text = p.FileName is null ? "Almost there…" : $"Decoding {p.FileName}…";
+        });
+
+        try
+        {
+            return await _loader.LoadAsync(selection.BeforePath, selection.AfterPath, progress);
+        }
+        finally
+        {
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private void ShowPair(ImagePair pair)
+    {
+        if (_pair is not null)
+        {
+            // Drop the outgoing pair before the incoming one settles, so two pairs are never
+            // resident at once.
+            _pair = null;
+            Compare.Clear();
+            MemoryHousekeeping.ReleaseImageBuffers();
+        }
+
+        _pair = pair;
+        Compare.SetPair(pair);
+        Compare.Focus();
+
+        Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  Image Visual Compare";
+        ToolbarTitle.Text = $"{pair.Before.Info.FileName}   vs   {pair.After.Info.FileName}";
+        StatusPair.Text =
+            $"{pair.Before.Info.Dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}";
+
+        UpdateZoomReadout();
+        StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();
+        _memoryTimer.Start();
+    }
+
+    private void UpdateZoomReadout() => ZoomLabel.Text = $"{Compare.Viewport.Scale * 100:F0}%";
+
+    /// <summary>
+    /// Shows the pixel under the cursor from both images at once. On a pair of finished astro
+    /// frames the interesting differences are often below what the eye picks out of a dark
+    /// field, and the numbers settle it.
+    /// </summary>
+    private void UpdatePixelReadout(PointD? point)
+    {
+        if (_pair is null || point is not { } content)
+        {
+            StatusCursor.Text = string.Empty;
+            StatusBefore.Text = string.Empty;
+            StatusAfter.Text = string.Empty;
+            return;
+        }
+
+        int x = (int)content.X;
+        int y = (int)content.Y;
+
+        StatusCursor.Text = $"{x}, {y}";
+        StatusBefore.Text = $"A {Describe(_pair.Before.Bitmap, x, y)}";
+        StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, x, y)}";
+    }
+
+    private static string Describe(BitmapSource bitmap, int x, int y)
+    {
+        if (x < 0 || y < 0 || x >= bitmap.PixelWidth || y >= bitmap.PixelHeight)
+        {
+            return "—";
+        }
+
+        // Everything is Bgra32 by the time it gets here, so one pixel is four bytes in BGRA
+        // order regardless of what the file on disk was.
+        byte[] pixel = new byte[4];
+        bitmap.CopyPixels(new Int32Rect(x, y, 1, 1), pixel, 4, 0);
+        return $"{pixel[2],3} {pixel[1],3} {pixel[0],3}";
+    }
+}

@@ -1,0 +1,68 @@
+namespace ImageVisualCompare.Core;
+
+/// <summary>
+/// The vertical split line between the two images.
+///
+/// Its position is stored as a fraction of the viewport width — screen space, not content
+/// space — so it stays where the user put it while they zoom and pan underneath. That is
+/// the behaviour of a before/after slider: the line belongs to the window, not to the image.
+/// </summary>
+public sealed class DividerModel
+{
+    /// <summary>Width of the centred drag handle, in device-independent pixels.</summary>
+    public const double HandleWidth = 26;
+
+    /// <summary>Height of the centred drag handle, in device-independent pixels.</summary>
+    public const double HandleHeight = 56;
+
+    /// <summary>How far from the line a press still counts as grabbing it.</summary>
+    public const double LineGrabTolerance = 8;
+
+    private double _position = 0.5;
+
+    /// <summary>Position as a fraction of the viewport width, 0 at the left edge and 1 at the right.</summary>
+    public double Position
+    {
+        get => _position;
+        set => _position = Math.Clamp(value, 0, 1);
+    }
+
+    public double ScreenX(double viewportWidth) => _position * viewportWidth;
+
+    public double HandleCentreY(double viewportHeight) => viewportHeight / 2;
+
+    public void Reset() => _position = 0.5;
+
+    /// <summary>Moves the line to a screen position, used while dragging.</summary>
+    public void MoveTo(double screenX, double viewportWidth)
+    {
+        Position = viewportWidth > 0 ? screenX / viewportWidth : 0.5;
+    }
+
+    /// <summary>Shifts the line by a screen-space amount, used by the arrow keys.</summary>
+    public void NudgeBy(double screenDelta, double viewportWidth)
+    {
+        if (viewportWidth > 0)
+        {
+            Position = _position + screenDelta / viewportWidth;
+        }
+    }
+
+    /// <summary>
+    /// True when a press at this point should start a divider drag rather than a pan.
+    /// The line can be grabbed anywhere along its length within <see cref="LineGrabTolerance"/>,
+    /// and the handle offers a wider target for anyone aiming at the visible grip.
+    /// </summary>
+    public bool HitTest(double screenX, double screenY, double viewportWidth, double viewportHeight)
+    {
+        double distanceFromLine = Math.Abs(screenX - ScreenX(viewportWidth));
+
+        if (distanceFromLine <= LineGrabTolerance)
+        {
+            return true;
+        }
+
+        return distanceFromLine <= HandleWidth / 2
+               && Math.Abs(screenY - HandleCentreY(viewportHeight)) <= HandleHeight / 2;
+    }
+}
