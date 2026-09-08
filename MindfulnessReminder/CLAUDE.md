@@ -1,7 +1,8 @@
 # Mindfulness Reminder
 
 A tray-resident break reminder for Windows. It shows an always-on-top "Ground yourself"
-window on every workstation unlock, and at a configurable interval while the user works.
+window on every workstation unlock, and at a configurable interval while the user works --
+unless the user is on a call or in a full-screen application, in which case it waits.
 
 .NET 8, **zero external dependencies** — WPF for the windows, Windows Forms purely for
 `NotifyIcon`, both from the WindowsDesktop shared framework. See "Conventions" before adding
@@ -18,15 +19,28 @@ a package.
     the `IntervalSchedule`.
   - `IntervalSchedule.cs` — the deadline arithmetic for the periodic reminder. No timer, no
     events, no UI. Read "The periodic reminder" below before touching it.
-  - `ReminderSettings.cs` — `record(bool PeriodicEnabled, int IntervalMinutes)`, the bounds,
-    and `Normalize()`. Everything that builds settings goes through `Normalize`.
+  - `ReminderSettings.cs` — `record(bool PeriodicEnabled, int IntervalMinutes)` plus three
+    init-only properties for the two pauses and their retry gap, the bounds, and
+    `Normalize()`. Everything that builds settings goes through `Normalize`. The pause
+    settings are init-only rather than more positional parameters so that
+    `new ReminderSettings(true, 30)` goes on meaning what it always meant.
   - `ISettingsStore.cs` / `RegistrySettingsStore.cs` — settings persistence over
     `IRegistryStore`, under the key the auto-start marker already uses.
   - `TrayTooltip.cs` — the hover text, as a pure function. It is a separate type because of
     the 63-character limit; see "The tray tooltip".
+  - `SuppressionPolicy.cs` — `ReminderSuppression` and the pure rule behind the two pause
+    settings: which switch governs which signal, and which wins when both apply.
+  - `ForegroundState.cs` — the enum, plus `UserNotificationState.FromShellState`, the
+    QUERY_USER_NOTIFICATION_STATE table. In Core, taking the raw integer, so the table is
+    testable and the adapter has nothing left to get wrong.
+  - `ActivitySnapshot.cs` — what the adapter gathers and the policy reads; the line between
+    a Windows question and a rule.
+  - `DetectionLog.cs` — the timeline `--detect <seconds>` renders. See "Pausing for what the
+    user is doing".
   - `IPeriodicTimer.cs`, `IClock.cs`, `ISessionMonitor.cs`, `IReminderPresenter.cs`,
-    `IRegistryStore.cs`, `IAutoStartManager.cs` — the seams. Each exists so a rule can be
-    tested off a real machine; none has a second implementation in production.
+    `IRegistryStore.cs`, `IAutoStartManager.cs`, `IActivityMonitor.cs` — the seams. Each
+    exists so a rule can be tested off a real machine; none has a second implementation in
+    production.
   - `RegistryAutoStartManager.cs` / `StartupRegistrar.cs` — auto-start over `HKCU\...\Run`,
     plus the once-only registration on first run.
   - `WindowPlacement.cs`, `Version.cs`, `LicenseInfo.cs`, `AutoStartStatus.cs`.
@@ -35,11 +49,15 @@ a package.
   every file here is either a window or a Windows API behind a Core interface. Nothing here
   decides anything, which is why none of it is unit-tested.
   - `App.xaml.cs` — composition root. `ShutdownMode` is `OnExplicitShutdown`; there is no
-    main window. Also holds the single-instance mutex, the crash dialog, and `--preview`.
+    main window. Also holds the single-instance mutex, the crash dialog, and `--preview` /
+    `--detect` — both of which run BEFORE the mutex is claimed, so they work alongside the
+    copy already in the tray.
   - `TrayIconHost.cs` — the icon and its four-item menu.
   - `BreakWindow.xaml(.cs)` — the reminder. `SettingsWindow.xaml(.cs)` — the settings.
   - `SystemEventsSessionMonitor.cs`, `DispatcherPeriodicTimer.cs`,
-    `WpfReminderPresenter.cs`, `WindowsRegistryStore.cs` — the adapters.
+    `WpfReminderPresenter.cs`, `WindowsRegistryStore.cs`, `WindowsActivityMonitor.cs` —
+    the adapters. The last one reads the `ConsentStore` capture-usage keys and calls
+    `SHQueryUserNotificationState`, and interprets neither.
 - `tests/MindfulnessReminder.Tests/` — xUnit, `net8.0`. References **Core only**.
 - `README.md` — **the** user-facing documentation, and the single source for it.
 - `Directory.Build.props` — `<Version>` and `<Copyright>` for the whole solution.
@@ -104,6 +122,62 @@ Settings are applied by `ApplySettings`, which **restarts the countdown from zer
 the elapsed time would mean changing 30 minutes to 10 with 25 gone either fires immediately
 or leaves the tooltip showing a number the new setting cannot explain.
 
+## Pausing for what the user is doing
+
+Added in 1.2.0. Two switches, both on by default, that hold a reminder back rather than put
+it over the top of something. They are **independent of each other and of the periodic
+reminder** -- the unlock reminder obeys them too, which is why they sit at the top level of
+the Settings window rather than inside the periodic panel.
+
+**Reading the device, not the window title, is the whole point.** Windows records per-app
+capture usage under `HKCU\...\CapabilityAccessManager\ConsentStore\{microphone,webcam}`,
+with `LastUsedTimeStop == 0` while the stream is open -- the same record its own tray privacy
+indicator reads. That covers Zoom, Teams (desktop and browser), a Slack huddle, Meet, Webex,
+Discord, and whatever ships next, and it is still right on mute. A table of window titles was
+considered and rejected: it needs an entry per application, breaks on each new release, and
+misses a Slack huddle outright, because a huddle lives inside the main Slack window and has
+no title of its own. **Do not reintroduce one.**
+
+Full screen is `SHQueryUserNotificationState`, one P/Invoke, mapped in Core by
+`UserNotificationState.FromShellState` so the table is testable. If it ever proves lossy on
+borderless-fullscreen windows, the fallback is `GetForegroundWindow` + `GetWindowRect` against
+the monitor bounds -- `--detect` is how to find out.
+
+Rules that are easy to break:
+
+- **`QUNS_NOT_PRESENT` must not suppress.** It is what Windows reports behind a lock screen
+  and can still be the answer for a moment after an unlock -- long enough to swallow the
+  unlock reminder. Nothing is lost by ignoring it: the schedule is suspended across a lock
+  anyway.
+- **A periodic reminder is POSTPONED; an unlock reminder is SKIPPED.** The unlock already
+  restarted the schedule, so a reminder is coming; a one-shot retry beside the periodic one
+  would be a second deadline to keep in step with the first.
+- **`IntervalSchedule` compares the backwards-clock guard against `_armedSpan`, not against
+  the interval.** A retry gap longer than the interval -- 300 s against a 1-minute interval --
+  would otherwise look like a clock jump, reset the schedule and throw the postponement away.
+  `A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump` pins it.
+- **The activity monitor is read when a reminder is due, once per retry, and otherwise once
+  every `DefaultActivityRefresh` (10 s) to keep the tooltip current.** Never on the
+  one-second tick: that would be 1800 registry walks per reminder. The idle refresh is not
+  decoration -- without it `Suppression` only becomes non-None at the moment a reminder is
+  held back, so hovering the tray during a call would count down to a reminder that is not
+  going to arrive, and the whole feature would be invisible until the interval happened to
+  elapse. That is exactly how it was first written, and it was wrong.
+- **No cap on how long a reminder is held back.** That is the requirement, and the tooltip
+  carries the reason so a quiet tray icon can be told from a broken one.
+
+`--detect` shows the raw readings and exits. It exists because neither signal can be
+exercised without a real call or a real game, and it is the only way to tell a signal that is
+not arriving from a setting that is switched off.
+
+**`--detect <seconds>` is the form that matters for full screen**, and the reason it exists is
+not convenience: a reading taken as the switch runs is useless there, because getting to a
+terminal to run it means leaving full screen and destroying the state being measured. With a
+duration it samples once a second and renders a timeline through `DetectionLog` -- which is in
+Core, and tested, because a report that quietly lost the one moment the reading changed would
+send someone hunting a bug that is not there. The message box is shown only after the run
+ends, so it cannot disturb what is being measured.
+
 ## The tray tooltip
 
 `NotifyIcon.Text` is capped at 63 characters and **throws** above it. That is the only
@@ -113,6 +187,12 @@ string the app can produce still fits, and
 
 Minutes are rounded **up**, never below 1, so a 30-minute countdown reads "30 min" the
 instant it restarts and never reads "0 min" through its last minute.
+
+While reminders are paused the tooltip shows the reason **instead of** the countdown. Two
+things make that the right way round. A held-back reminder is counting the retry gap, seconds
+rather than minutes, and rounding that up would leave the tooltip reading "1 min" for the
+whole of an hour-long call. And between reminders the countdown would be a promise the app
+cannot keep -- the number would run down and nothing would appear.
 
 `App.UpdateTooltip` compares the rendered string before writing it. The countdown ticks every
 second but changes once a minute, and every write is a `Shell_NotifyIcon` call.
@@ -134,14 +214,25 @@ less likely mid-sentence than Enter, but if that ever changes, the same handler 
 ## Settings storage
 
 `HKCU\Software\MindfulnessReminder`, the key `StartupRegistrar` already keeps
-`AutoStartInitialized` under. `PeriodicRemindersEnabled` is `"1"`/`"0"` and
-`PeriodicIntervalMinutes` is a decimal string — **strings, not DWORDs**, so `IRegistryStore`
-stays the four methods it had and `FakeRegistryStore` needed no change.
+`AutoStartInitialized` under. Five values:
+
+| value | contents |
+|---|---|
+| `PeriodicRemindersEnabled` | `"1"` / `"0"` |
+| `PeriodicIntervalMinutes` | decimal string |
+| `PauseWhileMicrophoneInUse` | `"1"` / `"0"` |
+| `PauseWhileFullScreen` | `"1"` / `"0"` |
+| `PauseRetrySeconds` | decimal string |
+
+All of them **strings, not DWORDs**, so `IRegistryStore` stays the four methods it had and
+`FakeRegistryStore` needed no change.
 
 Reading is deliberately forgiving. A missing value is a fresh machine, a corrupt one is a
 hand-edited registry, and neither is a reason to fail to start; both land on the defaults
-(**on**, 30 minutes). Out-of-range values are **clamped rather than rejected** — a hand-edited
-`0` would otherwise mean a reminder on every tick of the timer.
+(**on**, 30 minutes, both pauses **on**, 20 seconds) — and a value missing because it was
+written by an older build is exactly the first of those. Out-of-range values are **clamped
+rather than rejected** — a hand-edited `0` would otherwise mean a reminder on every tick of
+the timer.
 
 The dialog is the exception: it refuses to save an out-of-range number and says so, because
 there is a user standing there to tell. Clamping silently is for the registry, where there
@@ -164,7 +255,25 @@ src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe -
 ```
 
 `--preview` shows the window once and exits: no tray icon, no registry access, no session
-hook, no timer. There is no equivalent switch for the settings window.
+hook, no timer.
+
+```bash
+src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe --detect
+```
+
+`--detect` reports what the activity monitor can see -- which application holds the microphone
+or camera, the raw shell state and what it mapped to, and the verdict under the saved settings
+-- then exits.
+
+```bash
+src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe --detect 60
+```
+
+With a number of seconds it watches instead, one reading a second, and reports a timeline.
+`--detect 60` and `--detect=60` both work; a duration over ten minutes is clamped, and an
+unparseable one falls back to the single reading rather than refusing to run. Neither switch
+claims the single-instance mutex, so both run alongside the copy already in the tray. There is
+no equivalent switch for the settings window.
 
 ## Versioning
 

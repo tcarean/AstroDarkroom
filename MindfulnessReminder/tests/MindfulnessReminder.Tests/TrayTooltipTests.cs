@@ -55,18 +55,59 @@ public class TrayTooltipTests
 
     /// <summary>
     /// The reason this is a testable function at all: NotifyIcon.Text throws above 63
-    /// characters, so the longest string the app can produce has to be shown to fit.
+    /// characters, so the longest string the app can produce has to be shown to fit. Every
+    /// shape it can take goes through here, not just the countdown -- a reason added one day
+    /// that is a few characters too long would take the tray icon down with it.
     /// </summary>
     [Fact]
     public void The_longest_tooltip_the_app_can_produce_fits_the_tray_limit()
     {
-        var longest = TrayTooltip.Format(
-            VersionInfo.Banner,
-            TimeSpan.FromMinutes(ReminderSettings.MaxIntervalMinutes));
+        var candidates = new List<string>
+        {
+            TrayTooltip.Format(VersionInfo.Banner, null),
+            TrayTooltip.Format(VersionInfo.Banner, TimeSpan.FromMinutes(ReminderSettings.MaxIntervalMinutes)),
+        };
+
+        foreach (var suppression in Enum.GetValues<ReminderSuppression>())
+        {
+            candidates.Add(TrayTooltip.Format(
+                VersionInfo.Banner,
+                TimeSpan.FromMinutes(ReminderSettings.MaxIntervalMinutes),
+                suppression));
+        }
+
+        var longest = candidates.MaxBy(c => c.Length)!;
 
         Assert.True(
             longest.Length <= TrayTooltip.MaxLength,
             $"tooltip is {longest.Length} characters: {longest}");
+    }
+
+    /// <summary>
+    /// The reason replaces the countdown. What is being counted while a reminder is held back
+    /// is the retry gap -- seconds -- and rounding that up to minutes would leave the tooltip
+    /// reading "1 min" for the whole of an hour-long call.
+    /// </summary>
+    [Theory]
+    [InlineData(ReminderSuppression.MicrophoneInUse, "mic")]
+    [InlineData(ReminderSuppression.FullScreen, "full screen")]
+    public void A_held_back_reminder_says_why_instead_of_counting_down(
+        ReminderSuppression suppression,
+        string expected)
+    {
+        var text = TrayTooltip.Format("x", TimeSpan.FromSeconds(20), suppression);
+
+        Assert.Contains("paused", text);
+        Assert.Contains(expected, text);
+        Assert.DoesNotContain("next in", text);
+    }
+
+    [Fact]
+    public void Nothing_held_back_leaves_the_countdown_exactly_as_it_was()
+    {
+        Assert.Equal(
+            TrayTooltip.Format("x", TimeSpan.FromMinutes(12)),
+            TrayTooltip.Format("x", TimeSpan.FromMinutes(12), ReminderSuppression.None));
     }
 
     [Fact]

@@ -258,4 +258,111 @@ public class IntervalScheduleTests
 
         Assert.Equal(TimeSpan.Zero, schedule.Remaining(T0 + TimeSpan.FromHours(4)));
     }
+
+    // ------------------------------------------------------------------------- postponing
+
+    [Fact]
+    public void Postpone_moves_the_deadline_to_the_gap_it_is_given()
+    {
+        var schedule = new IntervalSchedule(ReminderSettings.Default);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+
+        Assert.Equal(TimeSpan.FromSeconds(20), schedule.Remaining(now));
+    }
+
+    [Fact]
+    public void A_postponed_deadline_comes_due_when_the_gap_has_passed()
+    {
+        var schedule = new IntervalSchedule(ReminderSettings.Default);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+
+        Assert.False(schedule.TryConsumeDue(now + TimeSpan.FromSeconds(19)));
+        Assert.True(schedule.TryConsumeDue(now + TimeSpan.FromSeconds(20)));
+    }
+
+    /// <summary>
+    /// THE regression. The backwards-clock guard asks whether a deadline is further out than
+    /// this class could have set it; comparing that against the interval rather than against
+    /// the span actually armed made every retry gap longer than the interval look like a
+    /// clock jump, which reset the schedule and threw the postponement away.
+    /// </summary>
+    [Fact]
+    public void A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump()
+    {
+        var settings = new ReminderSettings(true, 1);
+        var schedule = new IntervalSchedule(settings);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromMinutes(5));
+
+        Assert.False(schedule.TryConsumeDue(now + TimeSpan.FromMinutes(1)));
+        Assert.Equal(TimeSpan.FromMinutes(4), schedule.Remaining(now + TimeSpan.FromMinutes(1)));
+    }
+
+    /// <summary>The guard still has to work while a postponement is standing.</summary>
+    [Fact]
+    public void A_clock_jumped_backwards_during_a_postponement_still_restarts_the_countdown()
+    {
+        var schedule = new IntervalSchedule(ReminderSettings.Default);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+
+        var jumped = now - TimeSpan.FromHours(2);
+
+        Assert.False(schedule.TryConsumeDue(jumped));
+        Assert.Equal(TimeSpan.FromMinutes(30), schedule.Remaining(jumped));
+    }
+
+    /// <summary>
+    /// Nothing to postpone means nothing invented. A postponement that quietly created a
+    /// deadline would be a countdown running with the feature switched off.
+    /// </summary>
+    [Fact]
+    public void Postpone_does_nothing_while_the_feature_is_off()
+    {
+        var schedule = new IntervalSchedule(new ReminderSettings(false, 30));
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+
+        Assert.False(schedule.IsCountingDown);
+        Assert.Null(schedule.Remaining(now));
+    }
+
+    [Fact]
+    public void Postpone_does_nothing_while_the_workstation_is_locked()
+    {
+        var schedule = new IntervalSchedule(ReminderSettings.Default);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Suspend();
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+
+        Assert.False(schedule.IsCountingDown);
+    }
+
+    /// <summary>A postponement lasts until the next thing that sets a deadline, and no longer.</summary>
+    [Fact]
+    public void A_restart_puts_the_whole_interval_back_over_a_postponement()
+    {
+        var schedule = new IntervalSchedule(ReminderSettings.Default);
+        var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
+
+        schedule.Restart(now);
+        schedule.Postpone(now, TimeSpan.FromSeconds(20));
+        schedule.Restart(now);
+
+        Assert.Equal(TimeSpan.FromMinutes(30), schedule.Remaining(now));
+    }
 }

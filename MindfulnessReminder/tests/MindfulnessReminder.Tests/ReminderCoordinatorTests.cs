@@ -24,6 +24,7 @@ public class ReminderCoordinatorTests
     private readonly FakeSessionMonitor _monitor = new();
     private readonly FakePresenter _presenter = new();
     private readonly FakeTimer _timer = new();
+    private readonly FakeActivityMonitor _activity = new();
     private readonly MutableClock _clock = new(new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero));
 
     private ReminderCoordinator CreateCoordinator(
@@ -34,8 +35,10 @@ public class ReminderCoordinatorTests
             _presenter,
             _timer,
             settings ?? ReminderSettings.Default,
+            _activity,
             _clock,
-            debounce ?? ReminderCoordinator.DefaultDebounce);
+            debounce ?? ReminderCoordinator.DefaultDebounce,
+            ReminderCoordinator.DefaultActivityRefresh);
 
     [Fact]
     public void Start_starts_the_monitor()
@@ -415,6 +418,387 @@ public class ReminderCoordinatorTests
         Assert.Equal(1, _presenter.ShowCount);
     }
 
+    // ------------------------------------------------------- pausing for what the user is doing
+
+    [Fact]
+    public void A_due_reminder_is_held_back_while_the_microphone_is_live()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+    }
+
+    /// <summary>The retry gap, not another whole interval: the point is to come back soon.</summary>
+    [Fact]
+    public void A_held_back_reminder_is_looked_at_again_after_the_retry_gap()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(TimeSpan.FromSeconds(20), coordinator.Remaining);
+    }
+
+    [Fact]
+    public void A_reminder_stays_held_back_for_as_long_as_the_call_lasts()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        // An hour of retries, twenty seconds apart, and not one window.
+        for (var i = 0; i < 180; i++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(20));
+            _timer.RaiseTick();
+        }
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(180, _activity.ReadCount - 1);
+    }
+
+    [Fact]
+    public void The_reminder_appears_on_the_first_retry_after_the_call_ends()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+        Assert.Equal(0, _presenter.ShowCount);
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+
+        _clock.Advance(TimeSpan.FromSeconds(20));
+        _timer.RaiseTick();
+
+        Assert.Equal(1, _presenter.ShowCount);
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+    }
+
+    /// <summary>
+    /// A whole interval, not the retry gap. Once the reminder has been shown the schedule is
+    /// back to normal, and a countdown left on 20 seconds would fire again immediately.
+    /// </summary>
+    [Fact]
+    public void The_full_interval_returns_once_a_held_back_reminder_has_been_shown()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _clock.Advance(TimeSpan.FromSeconds(20));
+        _timer.RaiseTick();
+
+        Assert.Equal(TimeSpan.FromMinutes(30), coordinator.Remaining);
+    }
+
+    [Fact]
+    public void A_due_reminder_is_held_back_by_a_full_screen_application()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { Foreground = ForegroundState.FullScreen };
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(ReminderSuppression.FullScreen, coordinator.Suppression);
+    }
+
+    /// <summary>
+    /// The regression behind the guard in IntervalSchedule. A retry gap longer than the
+    /// interval used to look like a clock jumped backwards, which reset the schedule and lost
+    /// the postponement -- so the reminder appeared in the middle of the call after all.
+    /// </summary>
+    [Fact]
+    public void A_retry_gap_longer_than_the_interval_is_not_mistaken_for_a_clock_jump()
+    {
+        var settings = new ReminderSettings(true, ReminderSettings.MinIntervalMinutes)
+        {
+            RetrySeconds = ReminderSettings.MaxRetrySeconds,
+        };
+
+        using var coordinator = CreateCoordinator(settings: settings);
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(1));
+        _timer.RaiseTick();
+
+        Assert.Equal(TimeSpan.FromSeconds(300), coordinator.Remaining);
+
+        // Well inside the retry gap: the postponement has to still be standing.
+        _clock.Advance(TimeSpan.FromSeconds(90));
+        _timer.RaiseTick();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(TimeSpan.FromSeconds(210), coordinator.Remaining);
+    }
+
+    [Fact]
+    public void The_unlock_reminder_is_skipped_while_the_microphone_is_live()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+    }
+
+    /// <summary>
+    /// Skipped, not postponed: the unlock restarted the schedule on its way past, so a
+    /// reminder is already coming, and a one-shot retry beside it would be a second deadline.
+    /// </summary>
+    [Fact]
+    public void A_skipped_unlock_reminder_still_leaves_a_full_interval_running()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromMinutes(25));
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(TimeSpan.FromMinutes(30), coordinator.Remaining);
+    }
+
+    /// <summary>
+    /// UserAway is what Windows reports behind a lock screen, and it can still be the answer
+    /// in the instant after an unlock. If it suppressed, the unlock reminder -- the oldest
+    /// behaviour this app has -- would go missing on exactly the event it exists for.
+    /// </summary>
+    [Fact]
+    public void An_unlock_still_shows_its_reminder_when_windows_says_the_user_is_away()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { Foreground = ForegroundState.UserAway };
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(1, _presenter.ShowCount);
+    }
+
+    /// <summary>
+    /// An unlock grants a whole fresh interval, so whatever was being waited on is gone --
+    /// including down the early-return path taken when a reminder is already on screen, where
+    /// a stale reason would sit in the tooltip beside a countdown that is actually running.
+    /// </summary>
+    [Fact]
+    public void An_unlock_forgets_that_a_reminder_was_being_held_back()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+
+        _presenter.SimulateShown();
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+        Assert.Equal(TimeSpan.FromMinutes(30), coordinator.Remaining);
+    }
+
+    [Fact]
+    public void A_lock_forgets_that_a_reminder_was_being_held_back()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        _monitor.RaiseLocked();
+
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+        Assert.Null(coordinator.Remaining);
+    }
+
+    [Fact]
+    public void Applying_settings_forgets_that_a_reminder_was_being_held_back()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        coordinator.ApplySettings(new ReminderSettings(true, 10));
+
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+        Assert.Equal(TimeSpan.FromMinutes(10), coordinator.Remaining);
+    }
+
+    [Fact]
+    public void With_both_pauses_switched_off_nothing_is_ever_held_back()
+    {
+        var settings = ReminderSettings.Default with
+        {
+            PauseWhileMicrophoneInUse = false,
+            PauseWhileFullScreen = false,
+        };
+
+        using var coordinator = CreateCoordinator(settings: settings);
+        coordinator.Start();
+
+        _activity.Snapshot = new ActivitySnapshot(true, true, ForegroundState.FullScreen);
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(1, _presenter.ShowCount);
+    }
+
+    /// <summary>
+    /// With both switches off the monitor is not asked at all -- an answer nobody would look
+    /// at is not worth a walk through the registry.
+    /// </summary>
+    [Fact]
+    public void With_both_pauses_switched_off_the_monitor_is_never_read()
+    {
+        var settings = ReminderSettings.Default with
+        {
+            PauseWhileMicrophoneInUse = false,
+            PauseWhileFullScreen = false,
+        };
+
+        using var coordinator = CreateCoordinator(settings: settings);
+        coordinator.Start();
+
+        for (var i = 0; i < 120; i++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(30));
+            _timer.RaiseTick();
+        }
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _activity.ReadCount);
+    }
+
+    /// <summary>
+    /// Ticks where nothing is due still refresh the reading, so the tooltip can say "paused"
+    /// during a call rather than only in the minute after a reminder was held back -- but at
+    /// the refresh interval, not at the tick interval. At one tick a second, reading on each
+    /// would be 1800 registry walks per reminder.
+    /// </summary>
+    [Fact]
+    public void Idle_ticks_refresh_the_reading_at_the_refresh_interval_not_on_every_tick()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        for (var i = 0; i < 100; i++)
+        {
+            _clock.Advance(TimeSpan.FromSeconds(1));
+            _timer.RaiseTick();
+        }
+
+        // 100 seconds at one read per ten, give or take the first tick.
+        Assert.InRange(_activity.ReadCount, 10, 11);
+    }
+
+    /// <summary>
+    /// The reason this refresh exists. Joining a call does not make a reminder due, so
+    /// without it the tray icon would go on counting down to a reminder that is not going to
+    /// arrive, and the feature would be invisible until the interval happened to elapse.
+    /// </summary>
+    [Fact]
+    public void Joining_a_call_shows_up_in_the_tooltip_without_waiting_for_a_reminder()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(ReminderCoordinator.DefaultActivityRefresh);
+        _timer.RaiseTick();
+
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+        Assert.Equal(0, _presenter.ShowCount);
+    }
+
+    [Fact]
+    public void Leaving_a_call_clears_the_tooltip_without_waiting_for_a_reminder()
+    {
+        using var coordinator = CreateCoordinator();
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+        _clock.Advance(ReminderCoordinator.DefaultActivityRefresh);
+        _timer.RaiseTick();
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+
+        _activity.Snapshot = ActivitySnapshot.Idle;
+        _clock.Advance(ReminderCoordinator.DefaultActivityRefresh);
+        _timer.RaiseTick();
+
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+    }
+
+    /// <summary>Switching a pause on has to show in the tooltip at once, not a refresh later.</summary>
+    [Fact]
+    public void Applying_settings_takes_a_fresh_reading_on_the_next_tick()
+    {
+        var off = ReminderSettings.Default with
+        {
+            PauseWhileMicrophoneInUse = false,
+            PauseWhileFullScreen = false,
+        };
+
+        using var coordinator = CreateCoordinator(settings: off);
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        _timer.RaiseTick();
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+
+        coordinator.ApplySettings(ReminderSettings.Default);
+
+        _clock.Advance(TimeSpan.FromSeconds(1));
+        _timer.RaiseTick();
+
+        Assert.Equal(ReminderSuppression.MicrophoneInUse, coordinator.Suppression);
+    }
+
     private sealed class FakeSessionMonitor : ISessionMonitor
     {
         public bool Started { get; private set; }
@@ -474,6 +858,20 @@ public class ReminderCoordinatorTests
         {
             IsRunning = false;
             Disposed = true;
+        }
+    }
+
+    /// <summary>Sees whatever the test says, and counts how often it was asked.</summary>
+    private sealed class FakeActivityMonitor : IActivityMonitor
+    {
+        public ActivitySnapshot Snapshot { get; set; } = ActivitySnapshot.Idle;
+
+        public int ReadCount { get; private set; }
+
+        public ActivitySnapshot Read()
+        {
+            ReadCount++;
+            return Snapshot;
         }
     }
 

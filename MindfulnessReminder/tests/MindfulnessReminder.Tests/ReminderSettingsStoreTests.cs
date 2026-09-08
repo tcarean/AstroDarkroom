@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using MindfulnessReminder.Core;
 
 namespace MindfulnessReminder.Tests;
@@ -142,5 +143,122 @@ public class ReminderSettingsStoreTests
     public void The_dialog_range_check_matches_the_clamp(int minutes, bool inRange)
     {
         Assert.Equal(inRange, ReminderSettings.IsIntervalInRange(minutes));
+    }
+
+    // ------------------------------------------------------------------- the two pauses
+
+    [Fact]
+    public void Both_pauses_and_the_retry_gap_survive_a_round_trip()
+    {
+        var store = new RegistrySettingsStore(_registry);
+
+        var saved = new ReminderSettings(true, 45)
+        {
+            PauseWhileMicrophoneInUse = false,
+            PauseWhileFullScreen = true,
+            RetrySeconds = 90,
+        };
+
+        store.Save(saved);
+
+        Assert.Equal(saved, store.Load());
+    }
+
+    /// <summary>An upgrade from a version that never wrote them: both on, 20 seconds.</summary>
+    [Fact]
+    public void A_registry_without_the_pause_values_lands_on_the_defaults()
+    {
+        var store = new RegistrySettingsStore(_registry);
+        store.Save(new ReminderSettings(true, 30));
+
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PauseMicrophoneValueName);
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PauseFullScreenValueName);
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.RetryValueName);
+
+        var loaded = store.Load();
+
+        Assert.True(loaded.PauseWhileMicrophoneInUse);
+        Assert.True(loaded.PauseWhileFullScreen);
+        Assert.Equal(ReminderSettings.DefaultRetrySeconds, loaded.RetrySeconds);
+    }
+
+    [Theory]
+    [InlineData("yes")]
+    [InlineData("")]
+    [InlineData("2")]
+    public void A_hand_edited_pause_flag_falls_back_to_the_default(string written)
+    {
+        _registry.SetString(
+            RegistrySettingsStore.KeyPath,
+            RegistrySettingsStore.PauseMicrophoneValueName,
+            written);
+
+        Assert.True(new RegistrySettingsStore(_registry).Load().PauseWhileMicrophoneInUse);
+    }
+
+    [Theory]
+    [InlineData("nonsense")]
+    [InlineData("")]
+    public void A_corrupt_retry_gap_falls_back_to_the_default(string written)
+    {
+        _registry.SetString(
+            RegistrySettingsStore.KeyPath,
+            RegistrySettingsStore.RetryValueName,
+            written);
+
+        Assert.Equal(
+            ReminderSettings.DefaultRetrySeconds,
+            new RegistrySettingsStore(_registry).Load().RetrySeconds);
+    }
+
+    /// <summary>
+    /// Clamped, not rejected -- the same rule the interval follows. A hand-edited 0 would
+    /// otherwise read the registry on every tick of the timer.
+    /// </summary>
+    [Theory]
+    [InlineData("0", ReminderSettings.MinRetrySeconds)]
+    [InlineData("1", ReminderSettings.MinRetrySeconds)]
+    [InlineData("-40", ReminderSettings.MinRetrySeconds)]
+    [InlineData("99999", ReminderSettings.MaxRetrySeconds)]
+    public void An_out_of_range_retry_gap_is_clamped(string written, int expected)
+    {
+        _registry.SetString(
+            RegistrySettingsStore.KeyPath,
+            RegistrySettingsStore.RetryValueName,
+            written);
+
+        Assert.Equal(expected, new RegistrySettingsStore(_registry).Load().RetrySeconds);
+    }
+
+    [Fact]
+    public void Saving_clamps_the_retry_gap_before_it_reaches_the_registry()
+    {
+        var store = new RegistrySettingsStore(_registry);
+
+        store.Save(new ReminderSettings(true, 30) { RetrySeconds = 9999 });
+
+        Assert.Equal(
+            ReminderSettings.MaxRetrySeconds.ToString(CultureInfo.InvariantCulture),
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.RetryValueName));
+    }
+
+    /// <summary>Strings, not DWORDs, so IRegistryStore stays the four methods it had.</summary>
+    [Fact]
+    public void The_pause_flags_are_written_as_the_same_one_and_zero_strings_as_the_others()
+    {
+        var store = new RegistrySettingsStore(_registry);
+
+        store.Save(new ReminderSettings(true, 30)
+        {
+            PauseWhileMicrophoneInUse = true,
+            PauseWhileFullScreen = false,
+        });
+
+        Assert.Equal(
+            "1",
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PauseMicrophoneValueName));
+        Assert.Equal(
+            "0",
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PauseFullScreenValueName));
     }
 }

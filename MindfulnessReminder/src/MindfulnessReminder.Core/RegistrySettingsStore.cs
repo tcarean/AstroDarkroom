@@ -38,6 +38,12 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
     public const string IntervalValueName = "PeriodicIntervalMinutes";
 
+    public const string PauseMicrophoneValueName = "PauseWhileMicrophoneInUse";
+
+    public const string PauseFullScreenValueName = "PauseWhileFullScreen";
+
+    public const string RetryValueName = "PauseRetrySeconds";
+
     private readonly IRegistryStore _registry;
 
     public RegistrySettingsStore(IRegistryStore registry)
@@ -48,27 +54,21 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
     public ReminderSettings Load()
     {
-        var enabled = _registry.GetString(KeyPath, EnabledValueName) switch
-        {
-            "0" => false,
-            "1" => true,
+        var defaults = ReminderSettings.Default;
 
-            // Absent on a first run, and the feature ships switched on. Anything else was
-            // written by someone other than Save, and the default is the safer reading.
-            _ => ReminderSettings.Default.PeriodicEnabled,
-        };
-
-        var minutes = int.TryParse(
-            _registry.GetString(KeyPath, IntervalValueName),
-            NumberStyles.Integer,
-            CultureInfo.InvariantCulture,
-            out var parsed)
-            ? parsed
-            : ReminderSettings.DefaultIntervalMinutes;
+        var enabled = ReadFlag(EnabledValueName, defaults.PeriodicEnabled);
+        var minutes = ReadNumber(IntervalValueName, ReminderSettings.DefaultIntervalMinutes);
 
         // Normalize rather than reject: an out-of-range value still says what was wanted, and
         // clamping is what stops a hand-edited 0 from becoming a reminder on every tick.
-        return new ReminderSettings(enabled, minutes).Normalize();
+        return new ReminderSettings(enabled, minutes)
+        {
+            PauseWhileMicrophoneInUse =
+                ReadFlag(PauseMicrophoneValueName, defaults.PauseWhileMicrophoneInUse),
+            PauseWhileFullScreen =
+                ReadFlag(PauseFullScreenValueName, defaults.PauseWhileFullScreen),
+            RetrySeconds = ReadNumber(RetryValueName, ReminderSettings.DefaultRetrySeconds),
+        }.Normalize();
     }
 
     public void Save(ReminderSettings settings)
@@ -77,10 +77,37 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
         var normalized = settings.Normalize();
 
-        _registry.SetString(KeyPath, EnabledValueName, normalized.PeriodicEnabled ? "1" : "0");
-        _registry.SetString(
-            KeyPath,
-            IntervalValueName,
-            normalized.IntervalMinutes.ToString(CultureInfo.InvariantCulture));
+        WriteFlag(EnabledValueName, normalized.PeriodicEnabled);
+        WriteNumber(IntervalValueName, normalized.IntervalMinutes);
+        WriteFlag(PauseMicrophoneValueName, normalized.PauseWhileMicrophoneInUse);
+        WriteFlag(PauseFullScreenValueName, normalized.PauseWhileFullScreen);
+        WriteNumber(RetryValueName, normalized.RetrySeconds);
     }
+
+    /// <summary>
+    /// Absent on a first run, so the default stands. Anything other than the two strings
+    /// Save writes came from somewhere else, and the default is the safer reading of it.
+    /// </summary>
+    private bool ReadFlag(string valueName, bool fallback)
+        => _registry.GetString(KeyPath, valueName) switch
+        {
+            "0" => false,
+            "1" => true,
+            _ => fallback,
+        };
+
+    private int ReadNumber(string valueName, int fallback)
+        => int.TryParse(
+            _registry.GetString(KeyPath, valueName),
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out var parsed)
+            ? parsed
+            : fallback;
+
+    private void WriteFlag(string valueName, bool value)
+        => _registry.SetString(KeyPath, valueName, value ? "1" : "0");
+
+    private void WriteNumber(string valueName, int value)
+        => _registry.SetString(KeyPath, valueName, value.ToString(CultureInfo.InvariantCulture));
 }

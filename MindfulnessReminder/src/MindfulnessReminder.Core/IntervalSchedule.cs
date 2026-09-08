@@ -38,6 +38,15 @@ public sealed class IntervalSchedule
     private DateTimeOffset? _dueAt;
     private bool _suspended;
 
+    /// <summary>
+    /// The span the current deadline was set with -- a whole interval normally, or the retry
+    /// gap after a <see cref="Postpone"/>. It exists for the backwards-clock guard in
+    /// <see cref="TryConsumeDue"/>, which asks "could this class have set a deadline this far
+    /// out?"; comparing against the interval instead would make any retry longer than the
+    /// interval look like a clock jump and silently reset the whole schedule.
+    /// </summary>
+    private TimeSpan _armedSpan;
+
     public IntervalSchedule(ReminderSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -58,7 +67,31 @@ public sealed class IntervalSchedule
     /// startup, on every unlock, after each reminder, and when settings are applied.
     /// </summary>
     public void Restart(DateTimeOffset now)
-        => _dueAt = _settings.PeriodicEnabled && !_suspended ? now + _settings.Interval : null;
+    {
+        _dueAt = _settings.PeriodicEnabled && !_suspended ? now + _settings.Interval : null;
+        _armedSpan = _settings.Interval;
+    }
+
+    /// <summary>
+    /// Pushes the deadline out by <paramref name="by"/> instead of letting it fire, for a
+    /// reminder that came due at a moment the user cannot be interrupted. The next tick past
+    /// the new deadline asks again, and again after that, for as long as it takes.
+    ///
+    /// A no-op when nothing is being counted. Callers reach this through
+    /// <see cref="TryConsumeDue"/> having just said yes, which cannot happen without a
+    /// deadline -- but a postponement that quietly invented one would be a countdown running
+    /// with the feature switched off.
+    /// </summary>
+    public void Postpone(DateTimeOffset now, TimeSpan by)
+    {
+        if (_dueAt is null)
+        {
+            return;
+        }
+
+        _dueAt = now + by;
+        _armedSpan = by;
+    }
 
     /// <summary>
     /// Stops counting for the duration of a lock. Without this the deadline would pass
@@ -104,10 +137,10 @@ public sealed class IntervalSchedule
         }
 
         // The clock can move backwards under us: an NTP correction, or someone setting it by
-        // hand. A deadline further away than a whole interval cannot have been set by this
-        // class, so it is a jump rather than a wait, and the countdown starts over instead
-        // of the reminder being postponed by however far the clock went back.
-        if (due - now > _settings.Interval)
+        // hand. A deadline further away than the span it was armed with cannot have been set
+        // by this class, so it is a jump rather than a wait, and the countdown starts over
+        // instead of the reminder being postponed by however far the clock went back.
+        if (due - now > _armedSpan)
         {
             Restart(now);
             return false;

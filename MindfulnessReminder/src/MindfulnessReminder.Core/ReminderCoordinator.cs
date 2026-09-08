@@ -32,6 +32,14 @@ namespace MindfulnessReminder.Core;
 /// <see cref="IntervalSchedule"/> holding the deadline. That arrangement is what lets the
 /// tooltip count down off the same tick, and what makes the reset-on-unlock requirement one
 /// line instead of a timer torn down and rebuilt.
+///
+/// Both sources are also gated on what the user is in the middle of, through
+/// <see cref="IActivityMonitor"/> and <see cref="SuppressionPolicy"/>. The two react
+/// differently, and deliberately: a periodic reminder is POSTPONED, because there is a
+/// deadline to push and a countdown to keep honest, while an unlock reminder is simply
+/// SKIPPED -- the unlock also restarted the schedule, so a reminder is coming anyway, and a
+/// one-shot retry beside the periodic one would be a second deadline to keep in step with
+/// the first.
 /// </summary>
 public sealed class ReminderCoordinator : IDisposable
 {
@@ -43,14 +51,28 @@ public sealed class ReminderCoordinator : IDisposable
     /// </summary>
     public static readonly TimeSpan DefaultTickInterval = TimeSpan.FromSeconds(1);
 
+    /// <summary>
+    /// How often the activity monitor is re-read purely to keep the tooltip honest, when no
+    /// reminder is due.
+    ///
+    /// It is not the tick interval, and that is the whole point. A read walks a few hundred
+    /// registry keys -- about five milliseconds -- which is nothing every ten seconds and
+    /// wasteful every one. Ten seconds is also faster than anyone can hover the tray icon
+    /// after joining a call, which is the moment this exists for.
+    /// </summary>
+    public static readonly TimeSpan DefaultActivityRefresh = TimeSpan.FromSeconds(10);
+
     private readonly ISessionMonitor _monitor;
     private readonly IReminderPresenter _presenter;
     private readonly IPeriodicTimer _timer;
+    private readonly IActivityMonitor _activity;
     private readonly IntervalSchedule _schedule;
     private readonly IClock _clock;
     private readonly TimeSpan _debounce;
+    private readonly TimeSpan _activityRefresh;
 
     private DateTimeOffset? _lastShownAt;
+    private DateTimeOffset? _lastActivityReadAt;
     private bool _started;
     private bool _disposed;
 
@@ -59,8 +81,10 @@ public sealed class ReminderCoordinator : IDisposable
         IReminderPresenter presenter,
         IPeriodicTimer timer,
         ReminderSettings settings,
+        IActivityMonitor? activity = null,
         IClock? clock = null,
-        TimeSpan? debounce = null)
+        TimeSpan? debounce = null,
+        TimeSpan? activityRefresh = null)
     {
         ArgumentNullException.ThrowIfNull(monitor);
         ArgumentNullException.ThrowIfNull(presenter);
@@ -70,8 +94,10 @@ public sealed class ReminderCoordinator : IDisposable
         _monitor = monitor;
         _presenter = presenter;
         _timer = timer;
+        _activity = activity ?? IdleActivityMonitor.Instance;
         _clock = clock ?? SystemClock.Instance;
         _debounce = debounce ?? DefaultDebounce;
+        _activityRefresh = activityRefresh ?? DefaultActivityRefresh;
         _schedule = new IntervalSchedule(settings);
     }
 
@@ -90,6 +116,18 @@ public sealed class ReminderCoordinator : IDisposable
     /// feature is off, or the workstation is locked.
     /// </summary>
     public TimeSpan? Remaining => _schedule.Remaining(_clock.UtcNow);
+
+    /// <summary>
+    /// Why reminders are paused right now, or None. It is what the last reading of the
+    /// activity monitor said, which is NOT the same as "a reminder was held back a moment
+    /// ago": it is kept current between reminders too, every
+    /// <see cref="DefaultActivityRefresh"/>, so that hovering the tray icon during a call
+    /// says so instead of counting down to a reminder that is not going to arrive.
+    ///
+    /// That refresh is the difference between a feature the user can see working and one
+    /// they have to wait half an hour to catch in the act.
+    /// </summary>
+    public ReminderSuppression Suppression { get; private set; }
 
     public void Start()
     {
@@ -127,6 +165,14 @@ public sealed class ReminderCoordinator : IDisposable
         ArgumentNullException.ThrowIfNull(settings);
 
         _schedule.Apply(settings, _clock.UtcNow);
+
+        // A reminder held back under the old settings is let go of along with them: the new
+        // interval starts from zero, so the postponement it was waiting on no longer exists.
+        // The read stamp goes with it, so that switching a pause ON is reflected in the
+        // tooltip on the next tick rather than up to a refresh interval later.
+        Suppression = ReminderSuppression.None;
+        _lastActivityReadAt = null;
+
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -144,6 +190,13 @@ public sealed class ReminderCoordinator : IDisposable
         // about the schedule, and letting either of them skip this would leave a deadline
         // set before a lock that may have lasted hours.
         _schedule.Resume(_clock.UtcNow);
+
+        // Cleared here rather than further down, because every path out of this method has
+        // just been given a whole fresh interval: whatever was being waited on is gone, and
+        // the branches below return early often enough that clearing it in each would be a
+        // rule kept in four places. It is set again a few lines down if the user is busy.
+        Suppression = ReminderSuppression.None;
+
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
 
@@ -159,6 +212,17 @@ public sealed class ReminderCoordinator : IDisposable
             return;
         }
 
+        // Asked last, after the two cheap checks, because this is the one that reads the
+        // registry. You can lock the workstation with a call still running -- the meeting
+        // carries on without you -- and without this the reminder would land on top of it the
+        // moment you came back, which is the exact thing the setting exists to prevent.
+        if (Evaluate() is not ReminderSuppression.None)
+        {
+            // The reason changed, so the tooltip has something new to say.
+            CountdownChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         _lastShownAt = now;
         _presenter.Show();
     }
@@ -166,6 +230,12 @@ public sealed class ReminderCoordinator : IDisposable
     internal void HandleLock()
     {
         _schedule.Suspend();
+
+        // Nothing is read behind a lock -- the timer is stopped -- so the stamp is cleared to
+        // make the first tick after the unlock take a fresh reading rather than trust one
+        // from before the lock.
+        Suppression = ReminderSuppression.None;
+        _lastActivityReadAt = null;
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -176,6 +246,20 @@ public sealed class ReminderCoordinator : IDisposable
 
         if (_schedule.TryConsumeDue(now))
         {
+            // The activity monitor is asked HERE and nowhere else on the tick path: once per
+            // elapsed interval, and once per retry while a reminder is held back. Asking on
+            // every tick would read the registry once a second to answer a question that only
+            // matters in the instant a window would otherwise open.
+            if (Evaluate() is not ReminderSuppression.None)
+            {
+                // TryConsumeDue re-armed a whole interval as it said yes; this overwrites it
+                // with the much shorter retry gap, so the next look comes in seconds rather
+                // than in half an hour.
+                _schedule.Postpone(now, Settings.RetryInterval);
+                CountdownChanged?.Invoke(this, EventArgs.Empty);
+                return;
+            }
+
             // The deadline is spent whether or not a window actually appears. A reminder
             // already on screen means the moment has been served; re-arming anyway is what
             // keeps a due deadline from firing again on the very next tick.
@@ -190,8 +274,53 @@ public sealed class ReminderCoordinator : IDisposable
                 _presenter.Show();
             }
         }
+        else
+        {
+            RefreshSuppression(now);
+        }
 
         CountdownChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Reads the activity monitor and records why a reminder may not appear, so the tooltip
+    /// can say so. Nothing is read when both switches are off: an answer nobody would look at
+    /// is not worth a walk through the registry.
+    /// </summary>
+    private ReminderSuppression Evaluate()
+    {
+        if (!Settings.PausesForAnything)
+        {
+            return Suppression = ReminderSuppression.None;
+        }
+
+        _lastActivityReadAt = _clock.UtcNow;
+        return Suppression = SuppressionPolicy.Evaluate(Settings, _activity.Read());
+    }
+
+    /// <summary>
+    /// Keeps <see cref="Suppression"/> current on ticks where nothing is due, so that the
+    /// tooltip tells the truth while a call is in progress rather than only in the minute
+    /// after a reminder was held back.
+    ///
+    /// Rate-limited to <see cref="DefaultActivityRefresh"/> rather than run on every tick.
+    /// The read is cheap but not free, and a tray application that walks the registry once a
+    /// second forever has stopped being unobtrusive.
+    /// </summary>
+    private void RefreshSuppression(DateTimeOffset now)
+    {
+        if (!Settings.PausesForAnything)
+        {
+            Suppression = ReminderSuppression.None;
+            return;
+        }
+
+        if (_lastActivityReadAt is { } last && now - last < _activityRefresh)
+        {
+            return;
+        }
+
+        Evaluate();
     }
 
     /// <summary>

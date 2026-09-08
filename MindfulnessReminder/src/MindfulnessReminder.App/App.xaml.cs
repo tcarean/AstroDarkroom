@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Windows;
@@ -44,6 +46,22 @@ public partial class App : WpfApplication
     /// </summary>
     private const string PreviewSwitch = "--preview";
 
+    /// <summary>
+    /// Reports what the activity monitor can see and quits. The two pause settings cannot be
+    /// exercised without a real call or a real game, so this is the only way to tell a signal
+    /// that is not arriving from a setting that is switched off.
+    ///
+    /// It takes an optional number of seconds to watch for. That is not a convenience: a
+    /// single reading taken as the switch runs is no use for the full-screen check, because
+    /// getting to a terminal to run it means leaving full screen and destroying the state
+    /// being measured. With a duration you start it, go and do the thing, and read the
+    /// timeline when you come back.
+    /// </summary>
+    private const string DetectSwitch = "--detect";
+
+    /// <summary>Ten minutes. Long enough for any test, short enough that a typo ends.</summary>
+    private static readonly TimeSpan MaxDetectDuration = TimeSpan.FromMinutes(10);
+
     private Mutex? _singleInstanceMutex;
     private TrayIconHost? _tray;
     private ReminderCoordinator? _coordinator;
@@ -64,6 +82,12 @@ public partial class App : WpfApplication
         if (e.Args.Contains(PreviewSwitch, StringComparer.OrdinalIgnoreCase))
         {
             ShowPreview();
+            return;
+        }
+
+        if (DetectDuration(e.Args) is { } duration)
+        {
+            ShowDetection(duration);
             return;
         }
 
@@ -100,7 +124,8 @@ public partial class App : WpfApplication
             new SystemEventsSessionMonitor(Dispatcher),
             new WpfReminderPresenter(Dispatcher),
             new DispatcherPeriodicTimer(Dispatcher, ReminderCoordinator.DefaultTickInterval),
-            _settingsStore.Load());
+            _settingsStore.Load(),
+            new WindowsActivityMonitor());
         _coordinator.CountdownChanged += (_, _) => UpdateTooltip();
         _coordinator.Start();
 
@@ -117,6 +142,114 @@ public partial class App : WpfApplication
         var window = new BreakWindow();
         window.Closed += (_, _) => Shutdown();
         window.Show();
+    }
+
+    /// <summary>
+    /// How long <c>--detect</c> should watch for, or null when the switch was not given.
+    /// Zero means the one-shot reading; "--detect 30" and "--detect=30" both mean thirty
+    /// seconds. Anything unparseable is a zero rather than a complaint: a diagnostic that
+    /// refuses to run because its argument was mistyped is no help to anybody.
+    /// </summary>
+    private static TimeSpan? DetectDuration(string[] args)
+    {
+        for (var i = 0; i < args.Length; i++)
+        {
+            var argument = args[i];
+
+            if (argument.StartsWith(DetectSwitch + "=", StringComparison.OrdinalIgnoreCase))
+            {
+                return Seconds(argument[(DetectSwitch.Length + 1)..]);
+            }
+
+            if (!argument.Equals(DetectSwitch, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return i + 1 < args.Length ? Seconds(args[i + 1]) : TimeSpan.Zero;
+        }
+
+        return null;
+
+        static TimeSpan Seconds(string text)
+        {
+            if (!int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+                || value <= 0)
+            {
+                return TimeSpan.Zero;
+            }
+
+            var wanted = TimeSpan.FromSeconds(value);
+            return wanted > MaxDetectDuration ? MaxDetectDuration : wanted;
+        }
+    }
+
+    /// <summary>
+    /// The diagnostic behind <see cref="DetectSwitch"/>. A WinExe has no console to print on,
+    /// so it goes in a message box -- the same reasoning that puts the version in the crash
+    /// dialog. The raw shell state is shown alongside the reading taken from it, because the
+    /// number is what tells a state Windows has stopped reporting from one this build does
+    /// not know about.
+    ///
+    /// Neither this nor --preview touches the single-instance mutex, which is claimed further
+    /// down OnStartup. That is deliberate here: the point is to watch what the copy already
+    /// sitting in the tray would be seeing, so it has to run alongside it.
+    /// </summary>
+    private void ShowDetection(TimeSpan duration)
+    {
+        var monitor = new WindowsActivityMonitor();
+        var settings = new RegistrySettingsStore(new WindowsRegistryStore()).Load();
+
+        if (duration <= TimeSpan.Zero)
+        {
+            Report(
+                monitor.Describe()
+                + "\nWith the current settings: "
+                + SuppressionPolicy.Evaluate(settings, monitor.Read()));
+
+            return;
+        }
+
+        // One reading a second, the same cadence the app itself ticks at. The message box
+        // waits until the run is over, so it cannot disturb what is being measured -- which
+        // is the whole reason the duration exists.
+        var samples = new List<DetectionSample>();
+        var started = DateTimeOffset.UtcNow;
+        var timer = new DispatcherPeriodicTimer(Dispatcher, ReminderCoordinator.DefaultTickInterval);
+
+        timer.Tick += (_, _) =>
+        {
+            var elapsed = DateTimeOffset.UtcNow - started;
+            var snapshot = monitor.Read();
+
+            samples.Add(new DetectionSample(
+                elapsed,
+                snapshot,
+                SuppressionPolicy.Evaluate(settings, snapshot)));
+
+            if (elapsed < duration)
+            {
+                return;
+            }
+
+            timer.Dispose();
+            Report(
+                "Watched for " + duration.TotalSeconds + " seconds.\n\n"
+                + DetectionLog.Render(samples));
+        };
+
+        timer.Start();
+    }
+
+    private void Report(string body)
+    {
+        MessageBox.Show(
+            body + "\n\n" + VersionInfo.Banner,
+            VersionInfo.Name + " detection",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+
+        Shutdown();
     }
 
     /// <summary>
@@ -164,7 +297,10 @@ public partial class App : WpfApplication
     /// </summary>
     private void UpdateTooltip()
     {
-        var text = TrayTooltip.Format(VersionInfo.Banner, _coordinator?.Remaining);
+        var text = TrayTooltip.Format(
+            VersionInfo.Banner,
+            _coordinator?.Remaining,
+            _coordinator?.Suppression ?? ReminderSuppression.None);
 
         if (text == _tooltip)
         {

@@ -20,8 +20,8 @@ using System.Globalization;
 namespace MindfulnessReminder.Core;
 
 /// <summary>
-/// The text under the mouse when the tray icon is hovered: the banner, then how long until
-/// the next reminder.
+/// The text under the mouse when the tray icon is hovered: the banner, then either how long
+/// until the next reminder or why one is being held back.
 ///
 /// It is a pure function rather than a line inside the tray host because of the length
 /// limit. NotifyIcon.Text is capped at 63 characters and THROWS above it, so the one thing
@@ -36,14 +36,28 @@ public static class TrayTooltip
     /// <paramref name="remaining"/> is null when nothing is being counted -- the feature is
     /// off, or the workstation is locked -- and the tooltip is then just the banner, the
     /// same as it read before this feature existed.
+    ///
+    /// A <paramref name="suppression"/> other than None replaces the countdown rather than
+    /// joining it. What is being counted at that point is the retry gap, seconds rather than
+    /// minutes, and a countdown stuck at "1 min" through an hour-long call is the one thing
+    /// that would make a working feature look broken. The reason is also the only way to
+    /// tell a held-back reminder from a stopped one without opening anything.
     /// </summary>
-    public static string Format(string banner, TimeSpan? remaining)
+    public static string Format(
+        string banner,
+        TimeSpan? remaining,
+        ReminderSuppression suppression = ReminderSuppression.None)
     {
         ArgumentNullException.ThrowIfNull(banner);
 
-        var text = remaining is { } left
-            ? banner + " - next in " + MinutesLeft(left) + " min"
-            : banner;
+        var text = suppression switch
+        {
+            ReminderSuppression.MicrophoneInUse => banner + " - paused while your mic is on",
+            ReminderSuppression.FullScreen => banner + " - paused for full screen",
+            _ => remaining is { } left
+                ? banner + " - next in " + MinutesLeft(left) + " min"
+                : banner,
+        };
 
         // Defensive: every string this method can build fits, and a test says so. Truncating
         // rather than throwing means a longer banner one day degrades the tooltip instead of

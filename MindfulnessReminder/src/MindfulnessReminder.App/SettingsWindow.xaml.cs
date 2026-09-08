@@ -19,6 +19,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using MindfulnessReminder.Core;
+using TextBox = System.Windows.Controls.TextBox;
 using TextCompositionEventArgs = System.Windows.Input.TextCompositionEventArgs;
 
 namespace MindfulnessReminder.App;
@@ -42,6 +43,12 @@ public partial class SettingsWindow : Window
 
         EnabledCheck.IsChecked = current.PeriodicEnabled;
         IntervalBox.Text = current.IntervalMinutes.ToString(CultureInfo.InvariantCulture);
+
+        PauseMicrophoneCheck.IsChecked = current.PauseWhileMicrophoneInUse;
+        PauseFullScreenCheck.IsChecked = current.PauseWhileFullScreen;
+        RetryBox.Text = current.RetrySeconds.ToString(CultureInfo.InvariantCulture);
+
+        SyncRetryAvailability();
     }
 
     /// <summary>Raised with the edited settings when Save succeeds. Never raised on Cancel.</summary>
@@ -50,6 +57,8 @@ public partial class SettingsWindow : Window
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
         var enabled = EnabledCheck.IsChecked == true;
+        var pauseForMicrophone = PauseMicrophoneCheck.IsChecked == true;
+        var pauseForFullScreen = PauseFullScreenCheck.IsChecked == true;
 
         if (!TryReadInterval(out var minutes))
         {
@@ -58,26 +67,63 @@ public partial class SettingsWindow : Window
             // the user is least interested in the interval.
             if (enabled)
             {
-                ShowError(
+                Refuse(
                     "Enter a whole number of minutes between "
                     + ReminderSettings.MinIntervalMinutes
                     + " and "
                     + ReminderSettings.MaxIntervalMinutes
-                    + ".");
+                    + ".",
+                    IntervalBox);
 
-                IntervalBox.Focus();
-                IntervalBox.SelectAll();
                 return;
             }
 
             minutes = ReminderSettings.DefaultIntervalMinutes;
         }
 
-        Accepted?.Invoke(this, new ReminderSettings(enabled, minutes).Normalize());
+        if (!TryReadRetry(out var seconds))
+        {
+            // Same rule as the interval, for the same reason: the number only has to be
+            // usable if something is going to use it.
+            if (pauseForMicrophone || pauseForFullScreen)
+            {
+                Refuse(
+                    "Enter a whole number of seconds between "
+                    + ReminderSettings.MinRetrySeconds
+                    + " and "
+                    + ReminderSettings.MaxRetrySeconds
+                    + ".",
+                    RetryBox);
+
+                return;
+            }
+
+            seconds = ReminderSettings.DefaultRetrySeconds;
+        }
+
+        var settings = new ReminderSettings(enabled, minutes)
+        {
+            PauseWhileMicrophoneInUse = pauseForMicrophone,
+            PauseWhileFullScreen = pauseForFullScreen,
+            RetrySeconds = seconds,
+        };
+
+        Accepted?.Invoke(this, settings.Normalize());
         Close();
     }
 
     private void OnCancelClick(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>
+    /// The retry gap is shared by the two pauses, so it stays available while either is on.
+    /// An OR of two checkboxes is not something a plain binding can express, and a
+    /// MultiBinding would mean a converter class for one line of logic.
+    /// </summary>
+    private void OnPauseToggled(object sender, RoutedEventArgs e) => SyncRetryAvailability();
+
+    private void SyncRetryAvailability()
+        => RetryPanel.IsEnabled =
+            PauseMicrophoneCheck.IsChecked == true || PauseFullScreenCheck.IsChecked == true;
 
     private bool TryReadInterval(out int minutes)
         => int.TryParse(
@@ -87,6 +133,22 @@ public partial class SettingsWindow : Window
                out minutes)
            && ReminderSettings.IsIntervalInRange(minutes);
 
+    private bool TryReadRetry(out int seconds)
+        => int.TryParse(
+               RetryBox.Text.Trim(),
+               NumberStyles.Integer,
+               CultureInfo.InvariantCulture,
+               out seconds)
+           && ReminderSettings.IsRetryInRange(seconds);
+
+    /// <summary>Says what is wrong and puts the cursor where it can be fixed.</summary>
+    private void Refuse(string message, TextBox box)
+    {
+        ShowError(message);
+        box.Focus();
+        box.SelectAll();
+    }
+
     /// <summary>
     /// Keeps non-digits out of the box. This is a convenience, not the validation: a paste
     /// goes around it, which is why Save parses the text again rather than trusting this.
@@ -94,6 +156,7 @@ public partial class SettingsWindow : Window
     private void OnIntervalPreviewTextInput(object sender, TextCompositionEventArgs e)
         => e.Handled = !e.Text.All(char.IsAsciiDigit);
 
+    /// <summary>Shared by both boxes: any edit clears the complaint about either.</summary>
     private void OnIntervalTextChanged(object sender, TextChangedEventArgs e) => ClearError();
 
     private void ShowError(string message)

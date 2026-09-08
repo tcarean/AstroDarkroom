@@ -41,6 +41,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <CheckBox Grid.Row="0"
@@ -81,15 +83,71 @@
                        Text="Between 1 and 480 minutes. The countdown restarts when you save." />
         </StackPanel>
 
-        <TextBlock Grid.Row="2"
+        <Border Grid.Row="2"
+                Height="1"
+                Margin="0,20,0,0"
+                Background="#E3E0DA" />
+
+        <!--
+            The two pauses sit at the TOP level, not inside the panel above, because they are
+            not part of the periodic reminder: they hold back the reminder shown on unlock as
+            well, which happens whether or not the periodic one is switched on.
+        -->
+        <StackPanel Grid.Row="3" Margin="0,18,0,0">
+            <CheckBox x:Name="PauseMicrophoneCheck"
+                      Content="Pause while the microphone or camera is in use"
+                      FontWeight="SemiBold"
+                      Foreground="#1D2B28"
+                      Checked="OnPauseToggled"
+                      Unchecked="OnPauseToggled" />
+
+            <CheckBox x:Name="PauseFullScreenCheck"
+                      Margin="0,10,0,0"
+                      Content="Pause during full screen and presentations"
+                      FontWeight="SemiBold"
+                      Foreground="#1D2B28"
+                      Checked="OnPauseToggled"
+                      Unchecked="OnPauseToggled" />
+
+            <!--
+                The retry gap belongs to both checkboxes, so it is available while EITHER is
+                ticked. That is an OR of two bindings, which XAML cannot express without a
+                converter class; OnPauseToggled sets IsEnabled instead, in one line, and the
+                dialog already keeps its validation in code behind.
+            -->
+            <StackPanel x:Name="RetryPanel" Margin="24,14,0,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Check again every" VerticalAlignment="Center" Foreground="#1D2B28" />
+
+                    <TextBox x:Name="RetryBox"
+                             Width="56"
+                             Margin="8,0,8,0"
+                             MaxLength="3"
+                             TextAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             Padding="2"
+                             PreviewTextInput="OnIntervalPreviewTextInput"
+                             TextChanged="OnIntervalTextChanged" />
+
+                    <TextBlock Text="seconds" VerticalAlignment="Center" Foreground="#1D2B28" />
+                </StackPanel>
+
+                <TextBlock Margin="0,8,0,0"
+                           FontSize="11"
+                           Foreground="#6B7A76"
+                           Text="Between 5 and 300 seconds. The reminder waits, then looks again." />
+            </StackPanel>
+        </StackPanel>
+
+        <TextBlock Grid.Row="4"
                    x:Name="ErrorText"
-                   Margin="24,10,0,0"
+                   Margin="0,14,0,0"
                    FontSize="11"
                    Foreground="#B3261E"
                    TextWrapping="Wrap"
                    Visibility="Collapsed" />
 
-        <StackPanel Grid.Row="3"
+        <StackPanel Grid.Row="5"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,22,0,0">
