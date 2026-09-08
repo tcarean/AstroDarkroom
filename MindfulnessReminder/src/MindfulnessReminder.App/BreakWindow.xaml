@@ -89,7 +89,7 @@
 
             <TextBlock Grid.Row="1"
                        Margin="0,22,0,0"
-                       Text="Take a quick break"
+                       Text="Ground yourself"
                        HorizontalAlignment="Center"
                        FontFamily="Segoe UI Light, Segoe UI"
                        FontSize="30"

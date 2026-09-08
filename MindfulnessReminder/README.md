@@ -1,7 +1,7 @@
 # Mindfulness Reminder
 
 A tray-resident reminder for Windows: every time you unlock the workstation it shows a small
-always-on-top window that says **Take a quick break**.
+always-on-top window that says **Ground yourself**.
 
 ## Behaviour
 
