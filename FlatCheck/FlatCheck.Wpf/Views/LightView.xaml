@@ -134,6 +134,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="CADRE" />
@@ -168,6 +169,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  Stretch="Uniform" MaxHeight="220"
                  RenderOptions.BitmapScalingMode="HighQuality" />
         </Border>
+
+        <!-- Legenda, dar fara comutator de scara: harta de aici e termenul radial fitat,
+             iar pragurile lui sunt Th.LightRad*, nu scara de reziduu. -->
+        <TextBlock Grid.Row="3" Style="{StaticResource Muted}" Margin="2,8,0,0"
+                   Text="{Binding MapLegend}"
+                   Visibility="{Binding HasNumbers, Converter={StaticResource BoolToVis}}" />
       </Grid>
     </Grid>
 

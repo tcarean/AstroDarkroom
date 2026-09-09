@@ -15,14 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RunReport.cs - cele doua bucati de text care incadreaza raportul oricarui mod:
-// antetul (versiune + copyright) si linia care anunta harta salvata.
+// RunReport.cs - textul care incadreaza raportul oricarui mod: antetul (versiune +
+// copyright), linia care anunta harta salvata, si formularile care insotesc harta.
 //
 // Stau aici, nu in FlatCheckCli, fiindca nu mai sunt ale consolei. Cerinta pentru
 // aplicatia WPF e ca fisierul "Rezultat testare.txt" sa contina EXACT ce ar fi scris
 // consola - antet inclus, ca un raport copiat undeva sa spuna singur ce versiune si a
 // cui unealta l-a produs. Doua implementari ale acelorasi doua linii ar fi divergat la
 // prima reformulare, si divergenta s-ar fi vazut abia intr-un raport lipit pe un forum.
+//
+// Eticheta de scara si legenda hartii n-au apelant in consola azi - le foloseste numai
+// fereastra. Stau totusi aici, fiindca regula e ca nicio propozitie pentru utilizator
+// nu se scrie intr-un ViewModel: daca maine consola primeste un --scala, ia acelasi
+// text, nu unul rescris. Ambele sunt functii pure, nu scriu in TextWriter, exact ca
+// StructureReport.Advice - o valoare pe care consola o formateaza in coloane si
+// fereastra o pune intr-o eticheta.
 
 using System.IO;
 
@@ -50,5 +57,24 @@ namespace FlatCheck
         /// </summary>
         internal static void WriteMapSaved(string path, TextWriter w)
             => w.WriteLine($"\n    -> harta salvata: {path}");
+
+        /// <summary>
+        /// Eticheta unei scari de harta: "auto", sau plafonul cand scara e fixa.
+        /// <paramref name="capPct"/> null inseamna scara automata.
+        /// </summary>
+        internal static string MapScaleLabel(double? capPct)
+            => capPct is null ? "auto" : $"+/-{capPct.Value.ToString("0.#")} %";
+
+        /// <summary>
+        /// Legenda de sub harta: ce inseamna capetele culorilor, in procente fata de
+        /// model. Se da intervalul CHIAR AFISAT, fiindca pe scara automata capetele
+        /// difera de la o imagine la alta - si tocmai asta era de nespus pe ecran.
+        /// </summary>
+        internal static string MapLegend(PngWriter.MapRange r)
+        {
+            string lo = ((r.Lo - PngWriter.Mid) * 100).ToString("+0.0;-0.0");
+            string hi = ((r.Hi - PngWriter.Mid) * 100).ToString("+0.0;-0.0");
+            return $"albastru = {lo} %   alb = 0 (exact pe model)   rosu = {hi} %";
+        }
     }
 }

@@ -259,5 +259,74 @@ public class RatioTabTests
         Assert.Null(vm.FileA);
         Assert.Null(vm.FileB);
         Assert.False(vm.ShowWorldMap);
+        Assert.Null(vm.Map);
+        Assert.Empty(vm.MapLegend);
+    }
+
+    // -------------------------------------------------------- scara hartii
+
+    static async Task<RatioTabViewModel> Computed(SessionFixture f)
+    {
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        await vm.RecomputeAsync();
+        return vm;
+    }
+
+    static MapScaleOption Cap(RatioTabViewModel vm, double? capPct)
+        => vm.MapScale.Options.Single(o => o.Label == RunReport.MapScaleLabel(capPct));
+
+    /// <summary>
+    /// Modul are doua harti, si scara se aplica celei afisate - oricare din cele doua e.
+    /// </summary>
+    [Fact]
+    public async Task TheScaleAppliesToBothMaps()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        var vm = await Computed(f);
+
+        byte[] sensorAtTen = vm.Map;
+        vm.ShowWorldMap = true;
+        byte[] worldAtTen = vm.Map;
+
+        Assert.NotEqual(sensorAtTen, worldAtTen);
+
+        Cap(vm, Th.ResidPerfect).IsSelected = true;
+        byte[] worldAtTwo = vm.Map;
+        vm.ShowWorldMap = false;
+        byte[] sensorAtTwo = vm.Map;
+
+        Assert.NotEqual(worldAtTen, worldAtTwo);
+        Assert.NotEqual(sensorAtTen, sensorAtTwo);
+    }
+
+    /// <summary>
+    /// Pe scara automata cele doua componente au intervale diferite, deci legenda trebuie
+    /// sa urmeze harta afisata - altfel ar descrie alta imagine decat cea de pe ecran.
+    /// </summary>
+    [Fact]
+    public async Task TheLegendFollowsTheDisplayedMap()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        var vm = await Computed(f);
+        Cap(vm, null).IsSelected = true;
+
+        string sensor = vm.MapLegend;
+        vm.ShowWorldMap = true;
+
+        Assert.NotEmpty(sensor);
+        Assert.NotEqual(sensor, vm.MapLegend);
+    }
+
+    /// <summary>Acelasi ghid ca la structura, si tot pliat implicit.</summary>
+    [Fact]
+    public void TheGuideIsThereBeforeAnythingIsChosen()
+    {
+        var vm = new RatioTabViewModel();
+
+        Assert.NotEmpty(vm.MapGuide.Intro);
+        Assert.NotEmpty(vm.MapGuide.Shapes);
+        Assert.False(vm.MapGuide.IsExpanded);
     }
 }

@@ -96,15 +96,21 @@ public class StructureTabTests
     }
 
     /// <summary>
-    /// Ce se vede pe ecran si ce se salveaza pe disc sunt aceiasi octeti. Altfel harta
-    /// din fereastra ar putea arata altceva decat fisierul trimis mai departe.
+    /// Pe chipul "auto", ce se vede pe ecran si ce se salveaza pe disc sunt aceiasi octeti.
+    ///
+    /// Testul cerea asta NECONDITIONAT pana la comutatorul de scara, si atunci era corect:
+    /// fereastra afisa mereu encodarea automata. Acum implicitul e +/-10 %, deci pe ecran
+    /// e alta encodare a ACELUIASI reziduu - o alegere de privit, nu o a doua masuratoare.
+    /// Fisierul ramane pe auto (vezi TheSavedMapStaysOnTheAutoScale), deci garantia se
+    /// pastreaza exact acolo unde mai are sens: cand omul cere chiar scara fisierului.
     /// </summary>
     [Fact]
-    public async Task TheDisplayedMapIsTheSameFileThatWasSaved()
+    public async Task OnTheAutoScaleTheDisplayedMapIsTheSameFileThatWasSaved()
     {
         using var f = new SessionFixture().WithFlatMaster();
 
         var vm = await Run(f);
+        Cap(vm, null).IsSelected = true;
 
         Assert.Equal(File.ReadAllBytes(f.Session.ResidualPngPath), vm.Map);
     }
@@ -235,6 +241,164 @@ public class StructureTabTests
         Assert.Empty(vm.Verdict);
         Assert.Empty(vm.Report);
         Assert.Null(vm.Map);
+        Assert.Empty(vm.MapLegend);
         Assert.Empty(vm.SavedTo);
+    }
+
+    // -------------------------------------------------------- scara hartii
+
+    static MapScaleOption Cap(StructureTabViewModel vm, double? capPct)
+        => vm.MapScale.Options.Single(o => o.Label == RunReport.MapScaleLabel(capPct));
+
+    /// <summary>
+    /// Implicit e banda in care se asteapta sa traiasca un flat normal, nu "auto": doua
+    /// sesiuni trebuie sa se poata compara dintr-o privire, fara sa apesi nimic.
+    /// </summary>
+    [Fact]
+    public async Task TheDefaultScaleIsTheUsableBand()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+
+        var vm = await Run(f);
+
+        Assert.Equal(RunReport.MapScaleLabel(Th.ResidUsable), vm.MapScale.Selected.Label);
+        Assert.Contains($"{Th.ResidUsable:F1} %", vm.MapLegend);
+    }
+
+    /// <summary>
+    /// Fisierul de pe disc NU urmeaza chipul bifat. Consola scrie encodarea automata, si
+    /// cele doua aplicatii trebuie sa scrie acelasi fisier pentru acelasi master -
+    /// chipurile sunt un ajutor de privit, nu o setare de iesire.
+    /// </summary>
+    [Fact]
+    public async Task TheSavedMapStaysOnTheAutoScale()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var session = f.Session;
+
+        var vm = await Run(f);
+        Cap(vm, Th.ResidPerfect).IsSelected = true;      // si dupa ce s-a schimbat scara
+
+        var expected = PngWriter.EncodeResidualMap(
+            StructureAnalyzer.Analyze(ImageLoader.LoadImage(session.FlatMasterPath)).Residual);
+
+        Assert.Equal(expected, File.ReadAllBytes(session.ResidualPngPath));
+    }
+
+    [Fact]
+    public async Task ChoosingAScaleChangesTheMapAndTheLegend()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+
+        Cap(vm, null).IsSelected = true;
+        byte[] auto = vm.Map;
+        string autoLegend = vm.MapLegend;
+
+        Cap(vm, Th.ResidPerfect).IsSelected = true;
+
+        Assert.NotEqual(auto, vm.Map);
+        Assert.NotEqual(autoLegend, vm.MapLegend);
+        Assert.Contains($"-{Th.ResidPerfect:F1} %", vm.MapLegend);
+    }
+
+    /// <summary>
+    /// Pe "auto" legenda spune capetele CHIAR calculate - tocmai ele nu se puteau vedea
+    /// pe ecran inainte, iar ele fac ca rosu plin sa insemne altceva de la o imagine la alta.
+    /// </summary>
+    [Fact]
+    public async Task TheLegendOnAutoShowsTheRealRange()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+        var residual = StructureAnalyzer.Analyze(
+            ImageLoader.LoadImage(f.Session.FlatMasterPath)).Residual;
+
+        Cap(vm, null).IsSelected = true;
+
+        Assert.Equal(RunReport.MapLegend(PngWriter.AutoRange(residual)), vm.MapLegend);
+    }
+
+    /// <summary>
+    /// Alegerea de scara e o preferinta de privit, nu un rezultat: trece peste schimbarea
+    /// folderului. Harta si rasterul, nu.
+    /// </summary>
+    [Fact]
+    public async Task TheSelectionSurvivesResetButTheMapDoesNot()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+        Cap(vm, Th.ResidCheck).IsSelected = true;
+
+        vm.Reset();
+
+        Assert.Equal(RunReport.MapScaleLabel(Th.ResidCheck), vm.MapScale.Selected.Label);
+        Assert.Null(vm.Map);
+        Assert.Empty(vm.MapLegend);
+    }
+
+    /// <summary>Encodarea e determinista, si a doua bifare o ia din cache.</summary>
+    [Fact]
+    public async Task ReselectingAScaleReturnsTheSameBytes()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+
+        byte[] first = vm.Map;
+        Cap(vm, Th.ResidPerfect).IsSelected = true;
+        Cap(vm, Th.ResidUsable).IsSelected = true;
+
+        Assert.Equal(first, vm.Map);
+    }
+
+    /// <summary>Un singur chip bifat, si asta se vede in ViewModel, nu doar in grupul de butoane.</summary>
+    [Fact]
+    public async Task ExactlyOneScaleIsSelectedAtATime()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+
+        Cap(vm, null).IsSelected = true;
+
+        Assert.Single(vm.MapScale.Options.Where(o => o.IsSelected));
+        Assert.Equal("auto", vm.MapScale.Selected.Label);
+    }
+
+    // -------------------------------------------------------- ghidul hartii
+
+    /// <summary>
+    /// Ghidul e documentatie, nu rezultat: exista si inainte de orice rulare, si nu se
+    /// schimba dupa. Daca ar depinde de un rezultat, ar fi un diagnostic - si tocmai asta
+    /// nu e, fiindca unealta nu clasifica forma hartii.
+    /// </summary>
+    [Fact]
+    public async Task TheGuideIsAvailableBeforeAndAfterARun()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = new StructureTabViewModel();
+
+        Assert.NotEmpty(vm.MapGuide.Intro);
+        Assert.NotEmpty(vm.MapGuide.Shapes);
+
+        string intro = vm.MapGuide.Intro;
+        await vm.RunAsync(f.Session, CancellationToken.None);
+
+        Assert.Equal(intro, vm.MapGuide.Intro);
+        Assert.NotEmpty(vm.MapGuide.Shapes);
+    }
+
+    /// <summary>Pliat implicit, si starea trece peste schimbarea folderului ca si scara.</summary>
+    [Fact]
+    public async Task TheGuideStartsCollapsedAndKeepsItsStateAcrossReset()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = await Run(f);
+
+        Assert.False(vm.MapGuide.IsExpanded);
+
+        vm.MapGuide.IsExpanded = true;
+        vm.Reset();
+
+        Assert.True(vm.MapGuide.IsExpanded);
     }
 }

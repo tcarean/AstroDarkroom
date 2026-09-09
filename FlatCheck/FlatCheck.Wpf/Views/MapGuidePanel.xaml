@@ -1,0 +1,76 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- MapGuidePanel - ghidul de citire al hartii: cum se citeste si ce inseamna formele.
+
+     Un singur control pentru doua taburi (Structura si Ratio), fiindca amandoua arata
+     acelasi reziduu pe aceeasi scara, deci acelasi ghid. Se leaga la MapGuide.* din
+     ViewModel-ul tabului, exact ca ReportPanel la Report.
+
+     Pliat implicit: sase randuri de text sub fiecare harta ar ineca tocmai cifrele.
+     Starea sta in ViewModel (MapGuide.IsExpanded), nu intr-un ElementName local, ca s-o
+     poata deschide un test - o legare gresita intr-un panou pliat compileaza si cade
+     abia la afisare.
+
+     Inaltime marginita cu ScrollViewer: harta sta pe un rand elastic, deci un ghid
+     desfasurat fara plafon ar strange-o pana devine inutila. -->
+
+<UserControl x:Class="FlatCheck.Wpf.MapGuidePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <StackPanel>
+
+    <ToggleButton HorizontalAlignment="Left" Cursor="Hand"
+                  Background="Transparent" BorderThickness="0"
+                  IsChecked="{Binding MapGuide.IsExpanded, Mode=TwoWay}">
+      <ToggleButton.Template>
+        <ControlTemplate TargetType="ToggleButton">
+          <StackPanel Orientation="Horizontal" Background="Transparent">
+            <TextBlock x:Name="chev" Text="&#x25B8;" Foreground="{StaticResource MutedBr}"
+                       VerticalAlignment="Center" Margin="0,0,7,0" />
+            <TextBlock Text="Cum citesc harta"
+                       Foreground="{StaticResource MutedBr}" FontSize="12" />
+          </StackPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="chev" Property="Text" Value="&#x25BE;" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="chev" Property="Foreground" Value="{StaticResource AccentBr}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </ToggleButton.Template>
+    </ToggleButton>
+
+    <Border Style="{StaticResource Card}" Margin="0,8,0,0" Padding="14"
+            Visibility="{Binding MapGuide.IsExpanded, Converter={StaticResource BoolToVis}}">
+      <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap"
+                     Text="{Binding MapGuide.Intro}" />
+          <ItemsControl Margin="0,12,0,0" ItemsSource="{Binding MapGuide.Shapes}"
+                        ItemTemplate="{StaticResource GuideRowTemplate}" />
+        </StackPanel>
+      </ScrollViewer>
+    </Border>
+
+  </StackPanel>
+</UserControl>

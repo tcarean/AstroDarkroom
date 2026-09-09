@@ -17,11 +17,27 @@
 
 // PngWriter.cs - encoder PNG propriu (fara dependinte) pentru harta reziduala.
 //
-// Harta e divergenta: albastru (sub) -> alb -> rosu (peste), cu albul FIXAT la 1.0 si
-// intervalul scalat pe percentilele 1/99 plus 10% padding. Fixarea la 1.0 e valida
-// pentru toti apelantii de azi - reziduul de structura e img/model ~ 1, raportul A/B e
-// normalizat la mediana 1, iar harta din --light e 1 + radial/a. Daca adaugi un apelant
-// ale carui date NU sunt centrate pe 1, harta va minti.
+// Harta e divergenta: albastru (sub) -> alb -> rosu (peste), cu albul FIXAT la 1.0.
+// Fixarea la 1.0 e valida pentru toti apelantii de azi - reziduul de structura e
+// img/model ~ 1, raportul A/B e normalizat la mediana 1, iar harta din --light e
+// 1 + radial/a. Daca adaugi un apelant ale carui date NU sunt centrate pe 1, harta
+// va minti.
+//
+// CAPETELE intervalului vin din afara, ca MapRange, si sunt de doua feluri:
+//
+//   - AutoRange - percentilele 1/99 plus 10% padding. Purtarea din totdeauna, si
+//     singura pe care o folosesc consola si fisierul salvat de fereastra.
+//   - FixedRange - simetric, +/- un plafon procentual in jurul lui 1.0.
+//
+// De ce a aparut a doua: scara automata intinde culoarea pe intervalul propriu al
+// fiecarei imagini, deci rosu plin nu inseamna nimic anume - masurat pe doua mastere
+// ale aceluiasi obiectiv, rosu plin era +3% pe unul si +10% pe altul, iar nimic de pe
+// ecran nu spunea asta. Doua hartii pe scara automata se pot compara doar prin forma.
+//
+// Plafoanele oferite (FixedCapsPct) NU sunt numere noi: sunt granitele scarii de
+// reziduu, Th.Resid*. Asta e ce le face sa insemne ceva - o harta la +/-10% se satureaza
+// exact acolo unde verdictul iese din banda BUN. Nu le duplica; daca scara se
+// recalibreaza, se recalibreaza si ele.
 //
 // Encoderul scrie semnatura + IHDR (8 biti, color type 2 = RGB) + un singur IDAT
 // (fiecare rand precedat de filter byte 0, deflatat prin ZLibStream) + IEND, cu CRC-32
@@ -42,14 +58,46 @@ namespace FlatCheck
 
         internal static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
-        /// <summary>Scaleaza reziduul si-l converteste in RGB. Intoarce si capetele, ca sa fie verificabile.</summary>
-        internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid)
+        /// <summary>Capetele hartii, in unitatile rasterului (deci in jurul lui <see cref="Mid"/> = 1.0).</summary>
+        internal readonly record struct MapRange(double Lo, double Hi);
+
+        /// <summary>
+        /// Plafoanele oferite ca scara fixa: granitele scarii de reziduu, in procente.
+        /// Vezi nota de sus - nu sunt praguri noi, sunt Th.Resid* refolosite.
+        /// </summary>
+        internal static readonly double[] FixedCapsPct = { Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck };
+
+        /// <summary>
+        /// Plafonul implicit al ferestrei: banda in care se asteapta sa traiasca un flat
+        /// normal, deci doua sesiuni se compara dintr-o privire fara sa apesi nimic.
+        /// </summary>
+        internal const double DefaultCapPct = Th.ResidUsable;
+
+        /// <summary>
+        /// Scara automata: percentilele 1/99 plus 10% padding. Purtarea din totdeauna -
+        /// consola si fisierul salvat folosesc numai asta.
+        /// </summary>
+        internal static MapRange AutoRange(Img resid)
         {
             // o singura sortare pentru ambele percentile
             var sorted = Stats.Sorted(resid.D);
             double lo = Stats.OfSorted(sorted, 1), hi = Stats.OfSorted(sorted, 99);
             double pad = Math.Max(hi - lo, 1e-4) * 0.1;
-            lo -= pad; hi += pad;
+            return new MapRange(lo - pad, hi + pad);
+        }
+
+        /// <summary>Scara fixa, simetrica: +/- <paramref name="capPct"/> procente in jurul lui 1.0.</summary>
+        internal static MapRange FixedRange(double capPct)
+            => new MapRange(Mid - capPct / 100.0, Mid + capPct / 100.0);
+
+        /// <summary>Scaleaza reziduul si-l converteste in RGB. Intoarce si capetele, ca sa fie verificabile.</summary>
+        internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid)
+            => MapResidual(resid, AutoRange(resid));
+
+        /// <inheritdoc cref="MapResidual(Img)"/>
+        internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid, MapRange range)
+        {
+            double lo = range.Lo, hi = range.Hi;
 
             int h = resid.H, w = resid.W;
             var rgb = new byte[h * w * 3];
@@ -64,15 +112,22 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Harta reziduala gata encodata PNG, in memorie.
+        /// Harta reziduala gata encodata PNG, in memorie, pe scara automata.
         ///
         /// Asta e forma pe care o vor amandoua aplicatiile: consola o scrie pe disc,
         /// fereastra o da direct unui BitmapImage. Un fisier temporar doar ca fereastra
         /// sa poata arata o imagine ar fi fost gunoi pe disc si o cale de esec in plus.
         /// </summary>
         internal static byte[] EncodeResidualMap(Img resid)
+            => EncodeResidualMap(resid, AutoRange(resid));
+
+        /// <summary>
+        /// Aceeasi harta, pe capete date de apelant. Fereastra o refoloseste ca sa arate
+        /// acelasi reziduu pe scara fixa, fara sa reia analiza.
+        /// </summary>
+        internal static byte[] EncodeResidualMap(Img resid, MapRange range)
         {
-            var (rgb, _, _) = MapResidual(resid);
+            var (rgb, _, _) = MapResidual(resid, range);
             return Encode(rgb, resid.W, resid.H);
         }
 

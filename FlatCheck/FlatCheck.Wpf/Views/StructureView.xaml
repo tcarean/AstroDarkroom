@@ -106,19 +106,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Grid Grid.Column="1" Margin="10,18,20,18">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
           <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA REZIDUALA" />
 
-        <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
+        <!-- Scara culorilor. GroupName trebuie sa difere de cel din tabul Ratio: WPF
+             grupeaza RadioButton dupa nume in toata fereastra, deci un nume comun ar
+             face chipurile de aici sa debifeze chipurile de acolo. -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+          <TextBlock Style="{StaticResource Faint}" Text="scara:" Margin="0,0,10,0"
+                     VerticalAlignment="Center" />
+          <ItemsControl ItemsSource="{Binding MapScale.Options}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <RadioButton GroupName="StructureMapScale" Margin="0,0,14,0"
+                             Content="{Binding Label}"
+                             IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
           <Image Source="{Binding Map, Converter={StaticResource PngToImage}}"
                  Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
         </Border>
 
-        <TextBlock Grid.Row="2" Style="{StaticResource Faint}" Margin="2,10,0,0"
-                   Text="Albastru = sub model, alb = exact pe model, rosu = peste. Forma conteaza mai mult decat intensitatea: un gradient inseamna sursa neuniforma sau ambient, o pata intr-un colt inseamna light leak." />
+        <TextBlock Grid.Row="3" Style="{StaticResource Muted}" Margin="2,8,0,0"
+                   Text="{Binding MapLegend}" />
+
+        <local:MapGuidePanel Grid.Row="4" Margin="0,8,0,0" />
       </Grid>
     </Grid>
 

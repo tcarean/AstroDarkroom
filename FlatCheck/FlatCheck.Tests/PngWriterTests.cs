@@ -297,4 +297,80 @@ public class PngWriterTests
         Assert.Equal(24, d.Height);
         Assert.All(d.Chunks, c => Assert.True(c.CrcValid));
     }
+
+    // ------------------------------------------------------------------- scale
+
+    static Img Residual(int w = 32, int h = 24)
+        => TestImages.From(w, h, FitsTestData.Radial(w, h, center: 1.0, k: 0.2));
+
+    /// <summary>
+    /// The reason the console output and the saved flatcheck.png did not move when the
+    /// window gained a fixed scale: the parameterless entry point still encodes exactly
+    /// what it encoded before, byte for byte.
+    /// </summary>
+    [Fact]
+    public void EncodeResidualMapWithTheAutoRangeIsByteIdenticalToTheOldEntryPoint()
+    {
+        var img = Residual();
+
+        Assert.Equal(
+            PngWriter.EncodeResidualMap(img),
+            PngWriter.EncodeResidualMap(img, PngWriter.AutoRange(img)));
+    }
+
+    [Fact]
+    public void TheAutoRangeIsP1P99PlusTenPercentPadding()
+    {
+        var img = Residual();
+        double lo = Stats.Percentile(img.D, 1), hi = Stats.Percentile(img.D, 99);
+        double pad = Math.Max(hi - lo, 1e-4) * 0.1;
+
+        var r = PngWriter.AutoRange(img);
+
+        Assert.Equal(lo - pad, r.Lo, 12);
+        Assert.Equal(hi + pad, r.Hi, 12);
+    }
+
+    [Fact]
+    public void AFixedRangeIsSymmetricAroundOne()
+    {
+        var r = PngWriter.FixedRange(10);
+
+        Assert.Equal(0.9, r.Lo, 12);
+        Assert.Equal(1.1, r.Hi, 12);
+    }
+
+    /// <summary>
+    /// What the fixed scale is FOR: past the cap the colour stops changing, so full red
+    /// means "outside this band" instead of "the reddest pixel in this particular image".
+    /// </summary>
+    [Fact]
+    public void AFixedRangeSaturatesBeyondItsCap()
+    {
+        var img = new Img(1, 4);
+        img.Set(0, 0, 0.75);   // below -20%
+        img.Set(0, 1, 1.00);   // exactly on the model
+        img.Set(0, 2, 1.25);   // above +20%
+        img.Set(0, 3, 1.05);   // inside the band
+
+        var (rgb, _, _) = PngWriter.MapResidual(img, PngWriter.FixedRange(20));
+
+        Assert.Equal(new byte[] { 0, 0, 255 }, rgb[0..3]);        // pure blue
+        Assert.Equal(new byte[] { 255, 255, 255 }, rgb[3..6]);    // white
+        Assert.Equal(new byte[] { 255, 0, 0 }, rgb[6..9]);        // pure red
+        Assert.Equal((byte)255, rgb[9]);                          // pink, not saturated
+        Assert.InRange(rgb[10], 1, 254);
+    }
+
+    /// <summary>
+    /// The caps are not numbers of their own - they are the residual scale's own band
+    /// boundaries. This is the test that fails if someone recalibrates the scale and
+    /// forgets the map, which is exactly how the two would drift apart.
+    /// </summary>
+    [Fact]
+    public void TheFixedCapsAreTheResidualScaleBoundaries()
+    {
+        Assert.Equal(new[] { Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck }, PngWriter.FixedCapsPct);
+        Assert.Equal(Th.ResidUsable, PngWriter.DefaultCapPct);
+    }
 }

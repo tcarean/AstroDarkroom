@@ -236,5 +236,36 @@ public class LightTabTests
         Assert.Empty(vm.Frames);
         Assert.Empty(vm.Verdict);
         Assert.Null(vm.Map);
+        Assert.Empty(vm.MapLegend);
+    }
+
+    // ------------------------------------------------------------------ legenda
+
+    /// <summary>
+    /// Legenda spune capetele scarii automate, care aici sunt de obicei foarte asimetrice -
+    /// harta e 1 + radial/a, deci se duce mult intr-o parte. Fara legenda, culoarea nu
+    /// spune nimic.
+    /// </summary>
+    [Fact]
+    public async Task AConclusiveRunHasALegend()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithLightSeries(6);
+
+        var vm = await Run(f);
+
+        Assert.Contains("albastru", vm.MapLegend);
+        Assert.Contains("rosu", vm.MapLegend);
+    }
+
+    /// <summary>La refuz nu exista harta, deci nici legenda nu are ce sa descrie.</summary>
+    [Fact]
+    public async Task ARefusedRunHasNoLegend()
+    {
+        using var f = new SessionFixture().WithFlatMaster()
+                                          .WithLightSeries(6, SessionFixture.WideFieldCards);
+
+        var vm = await Run(f);
+
+        Assert.Empty(vm.MapLegend);
     }
 }

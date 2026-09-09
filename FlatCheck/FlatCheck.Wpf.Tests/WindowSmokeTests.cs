@@ -156,6 +156,14 @@ public class WindowSmokeTests
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
 
+            // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
+            // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
+            // ce exista suita asta sa prinda.
+            vm.Structure.MapGuide.IsExpanded = true;
+            vm.Ratio.MapGuide.IsExpanded = true;
+            Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura-ghid");
+            Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-ghid");
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 

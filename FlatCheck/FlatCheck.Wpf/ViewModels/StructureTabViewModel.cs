@@ -26,6 +26,17 @@
 // sesiunii, ca fisier text, IDENTIC cu ce ar fi scris consola - antet de versiune,
 // copyright, raport, linia hartii. De aia StructureRun primeste un StringWriter si nu
 // isi compune nimeni textul de mana.
+//
+// HARTA SE REENCODEAZA LA SCHIMBAREA SCARII, deci tabul tine rasterul rezidual, nu doar
+// octetii PNG primiti de la rulare. Rasterul e la rezolutia de analiza (~1500x1000
+// double, vreo 12 MB), si e deja in StructureResult - deci nu se incarca si nu se
+// recalculeaza nimic pentru o schimbare de scara. Alternativa - patru PNG-uri encodate
+// din nucleu la fiecare rulare - ar fi fost ~7 MB si trei encodari pe care poate nu le
+// priveste nimeni.
+//
+// FISIERUL SALVAT RAMANE PE SCARA AUTOMATA, oricare chip e bifat. Consola scrie auto, si
+// cele doua aplicatii trebuie sa scrie acelasi fisier pentru acelasi master; chipurile
+// sunt un ajutor de privit, nu o setare de iesire.
 
 using System;
 using System.Collections.Generic;
@@ -48,6 +59,18 @@ namespace FlatCheck.Wpf
         string _savedTo = "";
         string _saveError = "";
         byte[] _map;
+        string _mapLegend = "";
+
+        /// <summary>Rasterul din care se deseneaza harta, tinut ca s-o poata reencoda pe alta scara.</summary>
+        Img _residual;
+
+        /// <summary>Encodarile deja facute, ca sa nu se reencodeze la fiecare click inainte si inapoi.</summary>
+        readonly Dictionary<MapScaleOption, byte[]> _mapCache = new();
+
+        public StructureTabViewModel()
+        {
+            MapScale.Changed += RefreshMap;
+        }
 
         /// <summary>Fisierul analizat, ca sa se vada pe ce s-a lucrat.</summary>
         public string Source { get => _source; private set => Set(ref _source, value); }
@@ -63,6 +86,15 @@ namespace FlatCheck.Wpf
 
         /// <summary>Harta reziduala ca octeti PNG - se afiseaza fara sa atinga discul.</summary>
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
+
+        /// <summary>Comutatorul de scara al hartii. Nu atinge nicio cifra, doar culorile.</summary>
+        public MapScaleViewModel MapScale { get; } = new();
+
+        /// <summary>Ce inseamna capetele culorilor pe scara chiar afisata.</summary>
+        public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
+
+        /// <summary>Ghidul de citire al hartii. Documentatie, nu diagnostic - vezi MapGuideViewModel.</summary>
+        public MapGuideViewModel MapGuide { get; } = new();
 
         /// <summary>Unde s-a salvat raportul, sau gol daca inca nu s-a salvat.</summary>
         public string SavedTo { get => _savedTo; private set => Set(ref _savedTo, value); }
@@ -100,11 +132,45 @@ namespace FlatCheck.Wpf
                 Source = path;
                 Report = text.ToString();
                 Populate(outcome.Result);
-                Map = outcome.Png;
+
+                // Rasterul, apoi harta pe scara aleasa. Octetii primiti de la rulare sunt
+                // cei pe scara automata: se pun direct in cache, ca sa nu se reencodeze
+                // aceeasi imagine cand chipul e chiar "auto".
+                _residual = outcome.Result.Residual;
+                _mapCache.Clear();
+                _mapCache[MapScale.Options[0]] = outcome.Png;
+                RefreshMap();
+
                 HasResult = true;
 
+                // Pe disc merge mereu encodarea automata, oricare chip e bifat. Vezi nota
+                // de sus: consola scrie asta, si fisierul trebuie sa fie acelasi.
                 Save(session, outcome.Png);
             });
+
+        /// <summary>
+        /// Reface harta pentru scara curenta.
+        ///
+        /// Se encodeaza pe firul de interfata, si asta a fost masurat, nu presupus: pe
+        /// masterele reale de 24 MP (raster de analiza 1504x1004) un plafon costa 90-255 ms,
+        /// o singura data, fiindca pe urma vine din cache. Mutarea pe Task.Run ar fi cerut
+        /// un contor de generatii ca sa nu ajunga un rezultat vechi peste unul nou - mai
+        /// multa complexitate decat intarzierea pe care o scoate.
+        /// </summary>
+        void RefreshMap()
+        {
+            if (_residual == null) return;
+
+            var range = MapScale.RangeFor(_residual);
+            if (!_mapCache.TryGetValue(MapScale.Selected, out var png))
+            {
+                png = PngWriter.EncodeResidualMap(_residual, range);
+                _mapCache[MapScale.Selected] = png;
+            }
+
+            Map = png;
+            MapLegend = RunReport.MapLegend(range);
+        }
 
         void Populate(StructureResult r)
         {
@@ -210,6 +276,11 @@ namespace FlatCheck.Wpf
             SavedTo = "";
             SaveError = "";
             Map = null;
+            MapLegend = "";
+            // Rasterul si encodarile pleaca; alegerea de scara NU - e o preferinta de
+            // privit, nu un rezultat, deci trebuie sa treaca peste schimbarea folderului.
+            _residual = null;
+            _mapCache.Clear();
             Tests.Clear();
             Informative.Clear();
             Scale.Clear();

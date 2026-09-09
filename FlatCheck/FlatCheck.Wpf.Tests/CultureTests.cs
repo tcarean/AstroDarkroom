@@ -136,6 +136,28 @@ public class CultureTests
         Assert.All(vm.Tests, t => Assert.DoesNotContain(",", t.Value));
         Assert.Contains(".", vm.Tests[2].Value);
     }
+
+    /// <summary>
+    /// Si legenda hartii. Are propriul format ("+0.0;-0.0"), deci nu e acoperita de
+    /// niciun test de mai sus: pe un Windows romanesc ar fi scris "-10,0 %" langa un
+    /// raport care scrie "10.96 %".
+    /// </summary>
+    [Fact]
+    public async Task TheMapLegendUsesTheSameSeparatorAsTheReport()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+
+        StructureTabViewModel vm;
+        using (new RomanianCulture())
+        {
+            App.ForceInvariantNumbers();
+            vm = new StructureTabViewModel();
+            await vm.RunAsync(f.Session, CancellationToken.None);
+        }
+
+        Assert.DoesNotContain(",", vm.MapLegend);
+        Assert.Contains("-10.0 %", vm.MapLegend);
+    }
 }
 
 /// <summary>

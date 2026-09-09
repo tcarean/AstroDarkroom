@@ -451,6 +451,42 @@ Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar hărți
 Cifrele din consolă sunt aceleași; harta există ca să vezi *forma* unei probleme —
 gradient orizontal, vertical, diagonal.
 
+### Scara culorilor
+
+Scara automată întinde culoarea pe intervalul **propriu al fiecărei imagini**, deci roșu
+plin nu înseamnă nimic anume: măsurat pe două mastere ale aceluiași obiectiv, roșu plin era
+`+3 %` pe unul și `+10 %` pe altul. Două hărți pe scara automată se pot compara **doar prin
+formă**, nu prin intensitate.
+
+De aceea **în fereastră** harta se poate pune pe o scară fixă, dintr-un rând de butoane:
+`±2 %`, `±10 %`, `±20 %` — chiar granițele scării de reziduu, deci saturația înseamnă „iese
+din bandă" — plus `auto`, utilă ca să vezi *forma* pe un master aproape perfect, unde `±2`
+e deja prea grosier. Implicit e **`±10 %`**, banda în care se așteaptă să trăiască un flat
+normal, ca două sesiuni să se compare dintr-o privire fără să apeși nimic.
+
+Sub fiecare hartă stă o **legendă** cu capetele reale ale scării afișate, de exemplu
+`albastru = -10.0 %   alb = 0 (exact pe model)   rosu = +10.0 %`. Pe `auto` arată cele două
+capete calculate, care sunt de obicei asimetrice — exact ce nu se putea vedea înainte.
+
+**Fișierele scrise pe disc sunt mereu pe scara automată**, oricare buton e apăsat: atât
+`-o` din consolă, cât și `flatcheck.png` salvat de fereastră. Cele două aplicații scriu
+astfel același fișier pentru același master, iar butoanele rămân un ajutor de privit.
+
+### Ce înseamnă formele
+
+Harta e imaginea împărțită la modelul radial, deci tot ce era simetric radial a fost scos:
+**ce a rămas nu poate fi vignetare**. Citește întâi cifrele, care spun *cât*, și abia apoi
+forma, care spune *de ce*. Aceeași listă e și în fereastră, sub hartă, la „Cum citesc harta".
+
+| formă | ce a însemnat |
+|---|---|
+| pete fără direcție | Abateri mici, fără o axă preferată. Semnătura difuzorului plus zgomotul cerului. Background extraction le scoate fără efort. |
+| dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. `--ratio` spune dacă e fix în lume sau fix pe aparat. |
+| cercuri sau arce concentrice, descentrate | Modelul radial absoarbe orice inel centrat pe senzor, deci un inel care rămâne e centrat **în altă parte**: căderea de lumină e descentrată. Ceva rotund din fața obiectivului — elastic, parasolar, filtru, marginea difuzorului — e în afara axei. Apare de obicei împreună cu un dipol. |
+| pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. Nu se rotește cu cerul, deci `--ratio` o pune pe aparat. |
+| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Testul prin rotație e **orb** la ea prin construcție; contra-testul e distanța — un set la 30 cm, unul la 60. |
+| granulație fină peste tot | Zgomot, nu structură: prea puține cadre sau expunere prea joasă. Nu e nimic de reparat la sursă, doar de stivuit mai mult. |
+
 ---
 
 ## Aplicația cu ferestre
@@ -496,7 +532,11 @@ plus harta reziduală. Salvează în folderul ales:
 
 - **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
   raportul, linia hărții;
-- `flatcheck.png` — aceeași hartă care se vede pe ecran, aceiași octeți.
+- `flatcheck.png` — harta pe scara automată, aceiași octeți pe care i-ar scrie consola.
+
+Harta de pe ecran are butoanele de scară și legenda descrise la [Scara
+culorilor](#scara-culorilor), plus ghidul de forme sub ea. Fișierul rămâne pe `auto`
+indiferent ce buton e apăsat, deci se potrivește cu chipul `auto`, nu neapărat cu ce vezi.
 
 **Ratio** nu caută nimic în folder și nu presupune nimic: îți cere **două fișiere alese
 explicit**, prin două butoane. Motivul e că modul are nevoie de două *mastere*, câte unul
@@ -520,7 +560,8 @@ din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-
 verifica singur: că cele două chiar pot fi din două orientări diferite. Apoi componenta
 fixă în lume, informativă, cu bara ei de eroare. Apoi verdictul și cele patru teste, pe
 masterul combinat. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
-potrivește cu verdictul) sau raportul `A/B`.
+potrivește cu verdictul) sau raportul `A/B`. Scara și legenda se aplică celei afișate,
+oricare dintre cele două e.
 
 **End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
 32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate

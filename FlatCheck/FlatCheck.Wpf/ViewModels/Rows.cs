@@ -52,6 +52,13 @@ namespace FlatCheck.Wpf
         public bool IsCurrent { get; init; }
     }
 
+    /// <summary>O forma din ghidul hartii: numele ei si ce a insemnat pe mastere reale.</summary>
+    public sealed class GuideRow
+    {
+        public string Shape { get; init; }
+        public string Meaning { get; init; }
+    }
+
     /// <summary>Un cadru din tabelul seriei end-to-end.</summary>
     public sealed class SeriesRow
     {

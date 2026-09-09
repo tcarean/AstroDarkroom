@@ -82,7 +82,10 @@ not a copy.
     own header and then wants that exact body - minus the ADU line, which means nothing on
     a raster normalised to a median of 1. `RunReport` holds the two lines
     that frame every mode - the version banner and the "harta salvata" line - because
-    both applications write them and two copies would have diverged.
+    both applications write them and two copies would have diverged. It also holds
+    `MapScaleLabel` and `MapLegend`, the two bits of wording that go with the map; they
+    have no console caller today, and live here anyway so a future `--scala` reuses them
+    instead of rewriting them.
     Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
     `StructureReport.Advice()`, `LightReport.Diagnosis()`, and from `RatioReport` the five
     that the Ratio tab shows verbatim - `Provenance`, `WorldValue`, `Precondition`,
@@ -120,18 +123,26 @@ not a copy.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See "The two applications".
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master, which are raw flats, what counts as a flat master by name) and
-    `SessionMessages` (the explanations shown when the input is not usable, plus the
-    Ratio tab's in-UI documentation). The only part of the app with real rules, and the
-    part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
+    `SessionMessages` (the explanations shown when the input is not usable, the
+    Ratio tab's in-UI documentation, and the residual map's shape guide). The only part
+    of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
-    `MainViewModel` for the folder. They are `public` because WPF binding reads public
-    properties by reflection - and that has a useful consequence: a public view-model
-    **cannot** expose an internal core type, so the compiler itself stops a
-    `StructureResult` from leaking into XAML.
+    `MainViewModel` for the folder, and two small companions of the residual map shared by
+    the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
+    choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
+    shape guide's text and its collapsed state). They are `public` because WPF binding
+    reads public properties by reflection - and that has a useful consequence: a public
+    view-model **cannot** expose an internal core type, so the compiler itself stops a
+    `StructureResult` from leaking into XAML. `MapScaleOption.CapPct` is `internal` for
+    exactly that reason, while `Label` and `IsSelected` are what XAML binds.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
-    inherited `TabViewModel`, so the same three controls serve all four tabs.
+    inherited `TabViewModel`, so the same three controls serve all four tabs;
+    `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
+    The scale chips' `GroupName` **must differ per tab** (`StructureMapScale` /
+    `RatioMapScale`): WPF groups radio buttons by name across the whole window, so a
+    shared name makes one tab's chips uncheck the other's.
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
     its own list of verdict names) and the value converters.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
@@ -236,7 +247,7 @@ map. What differs is only what each does with the three outputs.
 |---|---|---|
 | input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders |
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
-| map | written to `-o <path>` (`--ratio` writes a second, `-lume`) | shown from memory (`--ratio` offers both behind a toggle), saved as `flatcheck.png` |
+| map | written to `-o <path>` (`--ratio` writes a second, `-lume`), always on the automatic scale | shown from memory (`--ratio` offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | result | exit code | coloured verdict |
 | options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky` | `--sky` only (a checkbox) |
 
@@ -250,6 +261,32 @@ It adds a workflow: one folder instead of four invocations, `process/pp_flat_sta
 by convention instead of by typing, structure and end-to-end started on open. It does not
 add an analysis, a threshold or a wording. If a change here needs a new number, that number
 belongs in `Analysis/`, and the console gets it too.
+
+It also adds three things around the residual map, none of which is a number: a **scale
+switch** (auto / ±2 / ±10 / ±20 %, default ±10, caps from `Th.Resid*` - see "PNG output"),
+a **legend** stating the real ends of the displayed scale, and a collapsed **shape guide**
+saying what each shape on the map has meant on real masters. The guide is documentation,
+not a classifier - the tool still does not decide what a shape is, and must not start:
+a blotch can be a light leak or a cloud, and the pixels do not tell them apart. Its text
+is in `Session/SessionMessages.cs` and mirrors the README's table **by hand**; no test
+binds the two. Structure and Ratio get all three; **End-to-end gets the legend only**,
+because its map is the fitted radial term, graded against `Th.LightRad*` rather than the
+residual scale, so those caps would mean nothing on it.
+
+The scale switch is why `StructureTabViewModel` and `RatioTabViewModel` keep the residual
+**raster** rather than only the PNG bytes: the raster is already in the result, whereas
+pre-encoding four PNGs per run in the core would be ~7 MB and three encodings nobody may
+look at. `RunOutcome` was deliberately not touched. Re-encoding happens on the UI thread,
+which was measured rather than assumed: on the real 24 MP masters (1504x1004 analysis
+raster) a cap costs 90-255 ms, once, and is then cached per option. Moving it to `Task.Run`
+would need a generation counter so a stale result cannot land after a fresh one - more
+complexity than the delay it removes.
+
+Every **file** stays on the automatic scale whatever chip is selected, so both applications
+keep writing the same bytes for the same master; the chips are a viewing aid. That changed
+one existing test, on purpose - see
+`OnTheAutoScaleTheDisplayedMapIsTheSameFileThatWasSaved`, which used to assert that
+unconditionally.
 
 **The Ratio tab is the one exception to "one folder in".** It proposes nothing and starts
 empty, because the two masters it needs are two *shoots*, hence two session folders - the
@@ -833,11 +870,31 @@ suggested-stops arithmetic.
 ## PNG output
 
 `PngWriter.EncodeResidualMap` produces a diverging blue → white → red heat map, with white
-pinned at **1.0** and the range scaled to the 1st/99th percentile plus 10%
-padding. Pinning at 1.0 is valid for every caller: the structure residual is
+pinned at **1.0**. Pinning at 1.0 is valid for every caller: the structure residual is
 `img/model ≈ 1`, both attribution maps are centred on 1 (the residual of the combined
 master, and `A/B` normalised to median 1), and the `--light` map is `1 + radial/a`. If you
 add a caller whose data isn't centred on 1, the map will be misleading.
+
+The **ends** come in as a `MapRange`, of two kinds. `AutoRange` is the 1st/99th percentile
+plus 10% padding - the behaviour since 1.0, and the only one the console and every file on
+disk use. `FixedRange(cap)` is symmetric, `1 ± cap/100`, and exists because the automatic
+scale stretches colour over each image's own interval: measured on two masters of the same
+lens, full red was `+3 %` on one and `+10 %` on the other, and nothing on screen said so.
+Two auto-scaled maps can only be compared by shape.
+
+**The fixed caps are not new numbers.** `PngWriter.FixedCapsPct` is
+`{ Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck }` and `DefaultCapPct` is `Th.ResidUsable`,
+so a map at ±10% saturates exactly where the verdict leaves `BUN`. Don't duplicate the
+values; `TheFixedCapsAreTheResidualScaleBoundaries` is what stops the two from drifting.
+
+**The console was deliberately left alone**, and so was every file written to disk. A
+legend line in the console would move every golden file *and* break `crosscheck.py`'s text
+parity with `flatcheck.py` unless mirrored there - for a line a console user cannot act on.
+The pieces are shaped so a `--scala` flag would need no new number: the caps are in the
+core and the wording is in `RunReport` (`MapScaleLabel`, `MapLegend`), which is also why
+those two functions have no console caller today.
+`EncodeResidualMapWithTheAutoRangeIsByteIdenticalToTheOldEntryPoint` pins that the
+parameterless overload still encodes what it always did.
 
 `--ratio` is the only mode that writes **two** maps. The primary one, at the `-o` path, is
 the residual of the camera-fixed master, because that is the one the verdict describes;

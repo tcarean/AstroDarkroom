@@ -56,6 +56,7 @@ namespace FlatCheck.Wpf
         string _reasons = "";
         bool _refused;
         byte[] _map;
+        string _mapLegend = "";
 
         /// <summary>
         /// Firul pe care se scrie in Frames, captat O SINGURA DATA la pornirea rularii.
@@ -98,6 +99,13 @@ namespace FlatCheck.Wpf
         public bool HasNumbers => !_refused;
 
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
+
+        /// <summary>
+        /// Ce inseamna capetele culorilor. Doar legenda, fara comutator de scara: harta
+        /// de aici e termenul radial fitat, iar pragurile lui sunt Th.LightRad*, nu scara
+        /// de reziduu - deci plafoanele de +/-2/10/20 % n-ar insemna nimic pe ea.
+        /// </summary>
+        public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
 
         public ObservableCollection<SeriesRow> Frames { get; } = new();
 
@@ -226,6 +234,7 @@ namespace FlatCheck.Wpf
                   + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.";
                 MeanRadial = Spread = Sem = Correlation = "";
                 Map = null;
+                MapLegend = "";
                 return;
             }
 
@@ -243,6 +252,8 @@ namespace FlatCheck.Wpf
             Diagnosis = r.Conclusive ? LightReport.Diagnosis(r.MeanRad) : "";
             Reasons = r.Conclusive ? "" : DescribeReasons(r);
             Map = outcome.Png;
+            // Aceleasi capete cu care a fost encodata harta primita, deci scara automata.
+            MapLegend = RunReport.MapLegend(PngWriter.AutoRange(r.RadialMap));
         }
 
         /// <summary>
@@ -311,6 +322,7 @@ namespace FlatCheck.Wpf
             Reasons = "";
             Refused = false;
             Map = null;
+            MapLegend = "";
             OnUi(Frames.Clear);
             _ui = null;
         }

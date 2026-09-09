@@ -22,6 +22,11 @@
 // data si bine, nu improvizate in trei locuri din interfata. Ca sunt aici si nu in
 // XAML le face si verificabile - un test poate cere ca mesajul sa numeasca scriptul
 // Siril, ceea ce e chiar cerinta, nu o preferinta de formulare.
+//
+// Tine si ghidul hartii - vezi nota de la MapGuideIntro. Nu e un mesaj de eroare, dar
+// e acelasi fel de text: documentatie aratata in fereastra, scrisa o data si bine.
+
+using System.Collections.Generic;
 
 namespace FlatCheck.Wpf
 {
@@ -147,5 +152,66 @@ namespace FlatCheck.Wpf
             + "Cel mai simplu e sa lasi in flats/ chiar fisierele de la aparat "
             + "(.nef, .cr2, .cr3, .arw, .dng, .raf). Pe ele white si black se citesc exact "
             + "din fisier, nu se mai ghicesc din maxim.";
+
+        // ------------------------------------------------------- ghidul hartii
+        //
+        // DE CE E DOCUMENTATIE SI NU DIAGNOSTIC. Unealta nu clasifica forma hartii si nu
+        // trebuie s-o faca: o pata poate fi light leak sau un nor, iar din pixeli nu se
+        // poate deosebi. Ce se poate face e sa i se spuna omului ce a insemnat fiecare
+        // forma pe mastere reale, si care e testul care desparte cazurile. Deci: rows de
+        // text, fara verdict, fara prag, fara nicio cifra calculata aici.
+        //
+        // Textul e in oglinda cu tabelul din README, sectiunea "Iesire PNG". NU exista
+        // test care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+
+        /// <summary>Introducerea ghidului: cum se citeste harta, inainte de lista de forme.</summary>
+        internal static string MapGuideIntro() =>
+            "Harta e imaginea impartita la modelul radial: alb inseamna exact cat prezice "
+            + "un model pur radial in jurul centrului senzorului, rosu mai luminos decat "
+            + "modelul, albastru mai intunecat. Tot ce era simetric radial a fost scos, "
+            + "deci ce a ramas NU poate fi vignetare.\n\n"
+            + "Citeste intai cifrele, care spun CAT, si abia apoi forma, care spune DE CE. "
+            + "Intensitatea culorii depinde de scara aleasa mai sus: pe \"auto\" culorile "
+            + "umplu mereu tot intervalul, chiar si cand cifrele sunt minuscule - uita-te "
+            + "la legenda.";
+
+        /// <summary>
+        /// Formele intalnite pe harta si ce au insemnat, in ordinea in care merita
+        /// cautate: de la cea mai des intalnita si mai inofensiva, spre cele care cer un
+        /// contra-test anume.
+        /// </summary>
+        internal static IReadOnlyList<(string Shape, string Meaning)> MapGuideShapes() => new[]
+        {
+            ("pete fara directie",
+             "Abateri mici, fara o axa preferata. Semnatura difuzorului plus zgomotul "
+             + "cerului. Background extraction le scoate fara efort; cifrele decid daca "
+             + "sunt de ignorat."),
+
+            ("dipol (o parte albastra, cealalta rosie)",
+             "Un gradient, deci o directie. Se potriveste cu \"inclinare\". Sursa "
+             + "neuniforma, lumina ambientala, sau un obstacol intins asimetric peste "
+             + "obiectiv. Tabul Ratio spune daca e fix in lume (cerul) sau fix pe aparat "
+             + "(difuzorul, parasolarul)."),
+
+            ("cercuri sau arce concentrice, descentrate",
+             "Modelul radial absoarbe orice inel centrat pe senzor, deci un inel care "
+             + "ramane e obligatoriu centrat in alta parte: caderea de lumina e "
+             + "descentrata. Ceva rotund din fata obiectivului - elastic, parasolar, "
+             + "filtru, marginea difuzorului - e in afara axei. Apare de obicei "
+             + "impreuna cu un dipol."),
+
+            ("pata locala intr-un colt sau la o margine",
+             "Light leak: vizor, montura, latura difuzorului. Nu se roteste cu cerul, "
+             + "deci tabul Ratio o pune pe aparat."),
+
+            ("pata rotunda in centru",
+             "Iluminare contaminata simetric fata de axa: un panou prea aproape, "
+             + "backlight-ul unui monitor. Testul prin rotatie e orb la ea prin "
+             + "constructie; contra-testul e distanta - un set la 30 cm, unul la 60."),
+
+            ("granulatie fina peste tot",
+             "Zgomot, nu structura: prea putine cadre sau expunere prea joasa. Cifrele "
+             + "raman mici; nu e nimic de reparat la sursa, doar de stivuit mai mult."),
+        };
     }
 }

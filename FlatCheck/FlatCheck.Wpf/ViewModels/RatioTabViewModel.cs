@@ -29,6 +29,7 @@
 // alege omul doua fisiere, nu exista nimic de calculat. Pana atunci arata documentatia -
 // vezi SessionMessages.RatioNeedsTwoMasters.
 
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -57,9 +58,23 @@ namespace FlatCheck.Wpf
         string _tiltVerdict = "";
         string _verdict = "";
         string _advice = "";
-        byte[] _map;
-        byte[] _worldMap;
+        string _mapLegend = "";
         bool _showWorldMap;
+
+        /// <summary>
+        /// Cele doua rastere, nu octetii: harta se reencodeaza la schimbarea scarii, si
+        /// amandoua vin deja in rezultat. Vezi nota din StructureTabViewModel.
+        /// </summary>
+        Img _sensorResidual;
+        Img _worldRaster;
+
+        /// <summary>Encodarile deja facute, pe (harta, plafon).</summary>
+        readonly Dictionary<(bool World, MapScaleOption Scale), byte[]> _mapCache = new();
+
+        public RatioTabViewModel()
+        {
+            MapScale.Changed += RefreshMap;
+        }
 
         public string FileA { get => _fileA; private set => Set(ref _fileA, value); }
         public string FileB { get => _fileB; private set => Set(ref _fileB, value); }
@@ -92,12 +107,52 @@ namespace FlatCheck.Wpf
         /// se potriveste cu verdictul, si raportul A/B, care arata forma gradientului
         /// extern. <see cref="Map"/> e cea afisata.
         /// </summary>
-        public byte[] Map => _showWorldMap ? _worldMap : _map;
+        public byte[] Map { get => _map; private set => Set(ref _map, value); }
+
+        byte[] _map;
 
         public bool ShowWorldMap
         {
             get => _showWorldMap;
-            set { if (Set(ref _showWorldMap, value)) Raise(nameof(Map)); }
+            set { if (Set(ref _showWorldMap, value)) RefreshMap(); }
+        }
+
+        /// <summary>Comutatorul de scara. Se aplica hartii afisate, oricare din cele doua e.</summary>
+        public MapScaleViewModel MapScale { get; } = new();
+
+        /// <summary>
+        /// Legenda urmeaza harta AFISATA: pe scara automata cele doua componente au
+        /// intervale diferite, si tocmai capetele reale sunt ce trebuie spus.
+        /// </summary>
+        public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
+
+        /// <summary>Acelasi ghid ca la tabul de structura: acelasi reziduu, aceeasi scara.</summary>
+        public MapGuideViewModel MapGuide { get; } = new();
+
+        /// <summary>
+        /// Reface harta pentru (componenta afisata, scara curenta). Vezi nota din
+        /// StructureTabViewModel despre de ce se tine rasterul si nu octetii.
+        /// </summary>
+        void RefreshMap()
+        {
+            var raster = _showWorldMap ? _worldRaster : _sensorResidual;
+            if (raster == null)
+            {
+                Map = null;
+                MapLegend = "";
+                return;
+            }
+
+            var range = MapScale.RangeFor(raster);
+            var key = (_showWorldMap, MapScale.Selected);
+            if (!_mapCache.TryGetValue(key, out var png))
+            {
+                png = PngWriter.EncodeResidualMap(raster, range);
+                _mapCache[key] = png;
+            }
+
+            Map = png;
+            MapLegend = RunReport.MapLegend(range);
         }
 
         // ------------------------------------------------------------ textele fixe
@@ -178,9 +233,16 @@ namespace FlatCheck.Wpf
 
                 Report = text.ToString();
                 Populate(outcome.Result);
-                _map = outcome.Png;
-                _worldMap = outcome.SecondaryPng;
-                Raise(nameof(Map));
+
+                // Rasterele, plus octetii pe scara automata direct in cache - sunt exact
+                // ce ar reencoda RefreshMap pentru chipul "auto".
+                _sensorResidual = outcome.Result.Sensor.Residual;
+                _worldRaster = outcome.Result.World;
+                _mapCache.Clear();
+                _mapCache[(false, MapScale.Options[0])] = outcome.Png;
+                _mapCache[(true, MapScale.Options[0])] = outcome.SecondaryPng;
+                RefreshMap();
+
                 HasResult = true;
             });
         }
@@ -220,10 +282,12 @@ namespace FlatCheck.Wpf
             CornerVerdict = AzimuthalVerdict = ResidualVerdict = TiltVerdict = "";
             Verdict = "";
             Advice = "";
-            _map = null;
-            _worldMap = null;
+            // Rasterele si encodarile pleaca; alegerea de scara ramane, ca la Structura.
+            _sensorResidual = null;
+            _worldRaster = null;
+            _mapCache.Clear();
             ShowWorldMap = false;
-            Raise(nameof(Map));
+            RefreshMap();
         }
     }
 }
