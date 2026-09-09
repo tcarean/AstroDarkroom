@@ -1,0 +1,169 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- ExposureView - tabul 4.
+
+     Lista de flat-uri brute la stanga, rezultatul la dreapta. Comutatorul "Sky" e sus,
+     langa lista, fiindca schimba pragurile pentru orice fisier ales, nu doar pentru cel
+     curent - iar la comutare se recalculeaza pe loc. -->
+
+<UserControl x:Class="FlatCheck.Wpf.ExposureView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FlatCheck.Wpf">
+
+  <UserControl.Resources>
+    <local:FileNameConverter x:Key="FileName" />
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="290" MinWidth="220" />
+      <ColumnDefinition Width="*" MinWidth="380" />
+    </Grid.ColumnDefinitions>
+
+    <!-- ============================================================ lista -->
+    <Border Grid.Column="0" Background="{StaticResource PanelBg}"
+            BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="16,16,16,16">
+
+        <StackPanel DockPanel.Dock="Top">
+          <!-- Continut ca TextBlock, nu ca sir: eticheta e prea lunga pentru coloana
+               si trebuie sa se poata rupe pe doua randuri. -->
+          <CheckBox IsChecked="{Binding Sky, Mode=TwoWay}">
+            <TextBlock Text="Sky flat - praguri pentru cer, nu pentru panou"
+                       TextWrapping="Wrap" />
+          </CheckBox>
+          <TextBlock Style="{StaticResource Faint}" Margin="26,6,0,0"
+                     Text="La sky flat nivelul modest e CORECT: cerul se stinge continuu si e plin de stele slabe, deci SNR-ul masterului vine din numarul de cadre. Fara comutatorul asta, un sky flat la 22 % ar fi raportat gresit ca subexpus." />
+
+          <TextBlock Style="{StaticResource Heading}" Margin="0,20,0,8" Text="FLAT-URI BRUTE" />
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding Selected, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding Converter={StaticResource FileName}}"
+                         TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- ============================================================ rezultatul -->
+    <Grid Grid.Column="1">
+      <local:MessagePanel Margin="20" />
+
+      <!-- starea de dinainte de prima alegere: lista are fisiere, dar niciunul apasat -->
+      <TextBlock MaxWidth="420" Margin="24"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"
+                 Text="Alege un flat brut din lista ca sa-i masor expunerea.">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+              <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                  <Condition Binding="{Binding HasResult}" Value="False" />
+                  <Condition Binding="{Binding HasError}" Value="False" />
+                  <Condition Binding="{Binding IsBusy}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Visibility" Value="Visible" />
+              </MultiDataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18"
+                    Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+        <StackPanel MaxWidth="720" HorizontalAlignment="Left">
+
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="VERDICT" Style="{StaticResource Heading}" Margin="0,0,12,0"
+                           VerticalAlignment="Center" />
+                <Border Background="{Binding Verdict, Converter={StaticResource VerdictToBrush}}"
+                        CornerRadius="4" Padding="12,4">
+                  <TextBlock Text="{Binding Verdict}" Foreground="#16161A"
+                             FontSize="16" FontWeight="Bold" />
+                </Border>
+              </StackPanel>
+              <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
+            </StackPanel>
+          </Border>
+
+          <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="NIVELURI" />
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="110" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock Text="CENTRU 20 %, canalul cel mai luminos" FontWeight="SemiBold" />
+                  <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0"
+                             Text="asta decide expunerea: un flat are prin definitie o distributie larga - asta E vignetarea - iar mediana globala e trasa in jos de colturi si te-ar pacali sa supraexpui pana clipeaza centrul" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" Style="{StaticResource Number}" FontWeight="SemiBold"
+                           FontSize="15" Text="{Binding Centre}" VerticalAlignment="Top" />
+              </Grid>
+
+              <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="110" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Style="{StaticResource Muted}" Text="mediana globala (informativ)" />
+                <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                           Foreground="{StaticResource MutedBr}" Text="{Binding Global}" />
+              </Grid>
+
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" MinWidth="110" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Style="{StaticResource Muted}" Text="clipping in centru (&#x2265; 98 % din white)" />
+                <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                           Foreground="{StaticResource MutedBr}" Text="{Binding Clipping}" />
+              </Grid>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="SCALA SI CANALELE" />
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource Muted}" Text="{Binding Scale}" />
+              <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0"
+                         FontFamily="{StaticResource MonoFont}" Text="{Binding Channels}" />
+              <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
+                         Text="Nu stiu care pozitie CFA e R, G sau B - si nici nu conteaza: canalul cel mai luminos clipeaza primul, deci el e cel limitant." />
+            </StackPanel>
+          </Border>
+
+          <local:ReportPanel Margin="0,16,0,0" />
+
+        </StackPanel>
+      </ScrollViewer>
+
+      <local:BusyOverlay />
+    </Grid>
+  </Grid>
+</UserControl>

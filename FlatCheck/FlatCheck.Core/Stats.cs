@@ -101,6 +101,17 @@ namespace FlatCheck
         /// Numele celor patru benzi de reziduu, in ordinea severitatii.
         internal static readonly string[] ResidualBands = { "PERFECT", "BUN", "ACCEPTABIL", "REFA" };
 
+        /// <summary>
+        /// Nu e un verdict, e un refuz: intrarea nu e potrivita pentru testul cerut
+        /// (--light pe un camp prea larg). Se deosebeste de NEDETERMINAT, care inseamna
+        /// "a rulat, dar nu concluzioneaza".
+        ///
+        /// Sta aici, langa celelalte nume de verdict, fiindca il folosesc amandoua
+        /// aplicatiile: consola il mapeaza pe codul de iesire 1, fereastra il coloreaza
+        /// neutru. Doua copii ale sirului ar fi mers pana la prima reformulare.
+        /// </summary>
+        internal const string NotApplicable = "INAPLICABIL";
+
         /// Scara de reziduu din modul structura. Ca si Verdict, NaN cade in banda cea mai
         /// proasta: toate comparatiile ies false, deci un input degenerat iese "REFA".
         internal static string ResidualVerdict(double val)

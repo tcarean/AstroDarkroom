@@ -58,12 +58,22 @@ namespace FlatCheck
         static readonly string[] Extensions =
         { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
 
-        public bool Handles(string path)
+        /// <summary>
+        /// Extensiile recunoscute ca raw de aparat, expuse fiindca nu numai cititorul are
+        /// nevoie de ele: aplicatia WPF filtreaza dupa ele lista din flats/, iar o a doua
+        /// copie a listei ar insemna ca urmatorul aparat adaugat aici nu apare acolo.
+        /// </summary>
+        internal static IReadOnlyList<string> RawExtensions => Extensions;
+
+        /// <summary>Poarta de dispecerat: se decide DOAR pe extensie, ca in flatcheck.py.</summary>
+        internal static bool IsRawPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
             string ext = Path.GetExtension(path).ToLowerInvariant();
             return Array.IndexOf(Extensions, ext) >= 0;
         }
+
+        public bool Handles(string path) => IsRawPath(path);
 
         public LoadedFrame Load(string path)
         {

@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Aplicatia cu ferestre. Acelasi nucleu ca flatcheck.exe, prin FlatCheck.Core - nu
+       reimplementeaza nicio cifra si niciun rand de raport; vezi Runs/RunOutcome.cs din
+       Core pentru cum se imparte munca.
+
+       net8.0-windows + UseWPF face proiectul asta Windows-only, si asta face ca
+       "dotnet build FlatCheck.sln" sa nu mai mearga pe Linux. Consola ramane portabila
+       daca se construieste direct proiectul ei (dotnet build FlatCheck/FlatCheck.csproj).
+
+       Versiunea si copyright-ul vin din Directory.Build.props, ca la celelalte proiecte,
+       ca banner-ul scris in "Rezultat testare.txt" sa fie garantat acelasi cu al consolei. -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>FlatCheck.Wpf</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+
+    <!-- NU pune InvariantGlobalization aici, oricat de tentant ar fi prin simetrie cu
+         proiectul consola. WPF cere date de cultura ca sa poata lega ceva de o
+         proprietate: cu ele scoase, fereastra crapa la INCARCAREA XAML-ului, cu
+         "Cannot find non-neutral culture related to 'en-us'" - deci nu la o rulare
+         anume, ci la pornire, mereu.
+
+         Invarianta de care avem nevoie e alta si se obtine altfel: App.ForceInvariantNumbers
+         fixeaza cultura firelor, ca "0.24" sa nu devina "0,24" pe un Windows romanesc.
+         Vezi comentariul de acolo pentru de ce conteaza. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FlatCheck.Wpf.Tests" />
+  </ItemGroup>
+
+</Project>

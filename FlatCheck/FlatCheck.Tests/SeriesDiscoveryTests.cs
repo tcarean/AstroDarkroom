@@ -51,7 +51,7 @@ public class SeriesDiscoveryTests
     [InlineData("", "?", false)]
     public void TheGlobMatcherHandlesStarAndQuestionMark(string name, string pattern, bool expected)
     {
-        Assert.Equal(expected, FlatCheckCli.GlobMatch(name, pattern));
+        Assert.Equal(expected, SeriesFinder.GlobMatch(name, pattern));
     }
 
     /// <summary>
@@ -63,8 +63,8 @@ public class SeriesDiscoveryTests
     [Fact]
     public void CharacterClassesAreLiteralNotWildcards()
     {
-        Assert.True(FlatCheckCli.GlobMatch("[ab].fit", "[ab].fit"));
-        Assert.False(FlatCheckCli.GlobMatch("a.fit", "[ab].fit"));
+        Assert.True(SeriesFinder.GlobMatch("[ab].fit", "[ab].fit"));
+        Assert.False(SeriesFinder.GlobMatch("a.fit", "[ab].fit"));
     }
 
     /// <summary>Backtracking-ul: mai multe stele si o coada care trebuie sa se potriveasca.</summary>
@@ -75,7 +75,7 @@ public class SeriesDiscoveryTests
     [InlineData("aaab.fit", "*a.fit", false)]
     public void TheMatcherBacktracksCorrectly(string name, string pattern, bool expected)
     {
-        Assert.Equal(expected, FlatCheckCli.GlobMatch(name, pattern));
+        Assert.Equal(expected, SeriesFinder.GlobMatch(name, pattern));
     }
 
     // ------------------------------------------------------------ enumerarea
@@ -87,7 +87,7 @@ public class SeriesDiscoveryTests
         ws.WriteFile("pp_light_00001.fit", new byte[] { 1 });
         ws.WriteFile("pp_light_00002.fits", new byte[] { 1 });
 
-        var found = FlatCheckCli.FindSeries(ws.Dir, "pp_light_*.fit");
+        var found = SeriesFinder.Find(ws.Dir, "pp_light_*.fit");
 
         Assert.Single(found);
         Assert.EndsWith("pp_light_00001.fit", found[0]);
@@ -102,7 +102,7 @@ public class SeriesDiscoveryTests
                    "light_00001.fit", "bias_00001.fit", "pp_light_.seq" })
             ws.WriteFile(n, new byte[] { 1 });
 
-        var found = FlatCheckCli.FindSeries(ws.Dir, "pp_light_*.fit");
+        var found = SeriesFinder.Find(ws.Dir, "pp_light_*.fit");
 
         Assert.Equal(2, found.Count);
         Assert.All(found, p => Assert.StartsWith("pp_light_", Path.GetFileName(p)));
@@ -120,7 +120,7 @@ public class SeriesDiscoveryTests
         foreach (string n in new[] { "pp_light_00010.fit", "pp_light_00002.fit", "pp_light_00001.fit" })
             ws.WriteFile(n, new byte[] { 1 });
 
-        var names = FlatCheckCli.FindSeries(ws.Dir, "pp_light_*.fit")
+        var names = SeriesFinder.Find(ws.Dir, "pp_light_*.fit")
             .Select(Path.GetFileName).ToArray();
 
         Assert.Equal(new[] { "pp_light_00001.fit", "pp_light_00002.fit", "pp_light_00010.fit" }, names);
@@ -132,7 +132,7 @@ public class SeriesDiscoveryTests
         using var ws = new TempWorkspace();
         ws.WriteFile("bias_00001.fit", new byte[] { 1 });
 
-        Assert.Empty(FlatCheckCli.FindSeries(ws.Dir, "pp_light_*.fit"));
+        Assert.Empty(SeriesFinder.Find(ws.Dir, "pp_light_*.fit"));
     }
 
     /// <summary>Subfolderele nu se coboara: process/cache/ nu contine cadre de analizat.</summary>
@@ -143,6 +143,6 @@ public class SeriesDiscoveryTests
         Directory.CreateDirectory(Path.Combine(ws.Dir, "cache"));
         File.WriteAllBytes(Path.Combine(ws.Dir, "cache", "pp_light_00001.fit"), new byte[] { 1 });
 
-        Assert.Empty(FlatCheckCli.FindSeries(ws.Dir, "pp_light_*.fit"));
+        Assert.Empty(SeriesFinder.Find(ws.Dir, "pp_light_*.fit"));
     }
 }

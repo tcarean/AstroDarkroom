@@ -43,12 +43,10 @@ namespace FlatCheck
         internal double? Sat;
         internal double? Black;
 
-        // Tiparul de fisiere pentru --light pe un folder. Implicit e conventia Siril
-        // pentru cadre CALIBRATE dar NEREGISTRATE. "r_pp_light_*" nu se potriveste, si
-        // asta e intentionat: registrarea transforma geometric cadrul, deci muta eroarea
-        // de flat - care e fixa pe senzor - fata de centrul in jurul caruia se fiteaza
-        // modelul radial.
-        internal string Pattern = "pp_light_*.fit";
+        // Tiparul de fisiere pentru --light pe un folder. Implicitul si motivul lui stau
+        // in SeriesFinder, langa potrivirea propriu-zisa - aceeasi conventie o foloseste
+        // si aplicatia WPF, care n-are linie de comanda de unde sa-l primeasca.
+        internal string Pattern = SeriesFinder.DefaultPattern;
 
         // Campul diagonal, in grade, declarat de om. Portita pentru cand headerul nu
         // spune destul (DSLR fara XPIXSZ) sau cand presupunerea conservatoare de

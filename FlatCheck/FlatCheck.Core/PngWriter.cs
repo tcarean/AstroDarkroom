@@ -63,12 +63,22 @@ namespace FlatCheck
             return (rgb, lo, hi);
         }
 
-        /// <summary>Scrie harta reziduala pe disc. Mesajul pentru utilizator e treaba apelantului.</summary>
-        internal static void WriteResidualMap(string path, Img resid)
+        /// <summary>
+        /// Harta reziduala gata encodata PNG, in memorie.
+        ///
+        /// Asta e forma pe care o vor amandoua aplicatiile: consola o scrie pe disc,
+        /// fereastra o da direct unui BitmapImage. Un fisier temporar doar ca fereastra
+        /// sa poata arata o imagine ar fi fost gunoi pe disc si o cale de esec in plus.
+        /// </summary>
+        internal static byte[] EncodeResidualMap(Img resid)
         {
             var (rgb, _, _) = MapResidual(resid);
-            Write(path, rgb, resid.W, resid.H);
+            return Encode(rgb, resid.W, resid.H);
         }
+
+        /// <summary>Scrie harta reziduala pe disc. Mesajul pentru utilizator e treaba apelantului.</summary>
+        internal static void WriteResidualMap(string path, Img resid)
+            => File.WriteAllBytes(path, EncodeResidualMap(resid));
 
         internal static (byte r, byte g, byte b) Colormap(double v, double lo, double mid, double hi)
         {

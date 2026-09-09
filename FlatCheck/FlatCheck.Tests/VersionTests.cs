@@ -22,7 +22,7 @@ namespace FlatCheck.Tests;
 
 /// <summary>
 /// Versiunea se incrementeaza manual. Pe partea de C# sursa de adevar e <c>&lt;Version&gt;</c>
-/// din csproj - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza - dar
+/// din Directory.Build.props - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza - dar
 /// flatcheck.py isi tine propria copie, si aia poate ramane in urma. Testele astea le
 /// leaga, si verifica si ca banner-ul chiar apare pe prima linie a fiecarei rulari.
 /// </summary>
@@ -31,6 +31,9 @@ public class VersionTests
     static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
+    static string BuildProps()
+        => File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
+
     [Fact]
     public void VersionIsAThreePartNumber()
     {
@@ -38,19 +41,39 @@ public class VersionTests
     }
 
     /// <summary>
-    /// Verifica plumbing-ul csproj -> assembly -> VersionInfo. Daca cineva scoate
-    /// &lt;Version&gt; sau MSBuild inceteaza sa mai propage InformationalVersion, aici se vede.
+    /// Sursa de adevar, de cand solutia are trei assembly-uri, e Directory.Build.props -
+    /// nu csproj-ul vreunui proiect anume. Verifica plumbing-ul props -> assembly ->
+    /// VersionInfo: daca cineva scoate &lt;Version&gt; de acolo, sau il muta inapoi intr-un
+    /// csproj (unde ar tine doar pentru un proiect), aici se vede.
     /// </summary>
     [Fact]
-    public void TheVersionComesFromTheCsproj()
+    public void TheVersionComesFromDirectoryBuildProps()
     {
-        string csproj = File.ReadAllText(
-            Path.Combine(RepoDir(), "FlatCheck", "FlatCheck.csproj"));
+        var m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
-        var m = Regex.Match(csproj, @"<Version>([^<]+)</Version>");
-
-        Assert.True(m.Success, "csproj-ul nu are <Version>");
+        Assert.True(m.Success, "Directory.Build.props nu are <Version>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Value);
+    }
+
+    /// <summary>
+    /// Toate cele trei assembly-uri poarta aceeasi versiune. VersionInfo o citeste din
+    /// Core, deci un &lt;Version&gt; ramas intr-un csproj ar trece neobservat de testul de
+    /// mai sus si ar da un exe cu alta versiune in proprietatile fisierului decat cea
+    /// tiparita de el insusi.
+    /// </summary>
+    [Theory]
+    [InlineData("FlatCheck")]
+    [InlineData("FlatCheck.Core")]
+    [InlineData("FlatCheck.Wpf")]
+    public void NoProjectOverridesTheSharedVersionOrCopyright(string project)
+    {
+        string path = Path.Combine(RepoDir(), project, project + ".csproj");
+        if (!File.Exists(path)) return;   // proiectul WPF apare abia in faza 2
+
+        string csproj = File.ReadAllText(path);
+
+        Assert.DoesNotContain("<Version>", csproj);
+        Assert.DoesNotContain("<Copyright>", csproj);
     }
 
     /// <summary>Nu trebuie sa ramana "1.0.1.0" sau "1.0.1+abc123" din assembly.</summary>
@@ -66,14 +89,11 @@ public class VersionTests
     /// &lt;Version&gt;. Daca cineva il scoate, ramane fallback-ul din cod - si aici se vede.
     /// </summary>
     [Fact]
-    public void TheCopyrightComesFromTheCsproj()
+    public void TheCopyrightComesFromDirectoryBuildProps()
     {
-        string csproj = File.ReadAllText(
-            Path.Combine(RepoDir(), "FlatCheck", "FlatCheck.csproj"));
+        var m = Regex.Match(BuildProps(), @"<Copyright>([^<]+)</Copyright>");
 
-        var m = Regex.Match(csproj, @"<Copyright>([^<]+)</Copyright>");
-
-        Assert.True(m.Success, "csproj-ul nu are <Copyright>");
+        Assert.True(m.Success, "Directory.Build.props nu are <Copyright>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
     }
 

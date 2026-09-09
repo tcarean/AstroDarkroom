@@ -124,21 +124,26 @@ namespace FlatCheck
         /// </summary>
         internal static void WriteDiagnosis(double radPct, TextWriter w)
         {
+            foreach (string line in Diagnosis(radPct).Split('\n')) w.WriteLine("    " + line);
+        }
+
+        /// <summary>
+        /// Acelasi diagnostic, ca sir. Il cere aplicatia WPF, care il pune sub cifra in
+        /// loc sa-l scrie intr-o consola; scris a doua oara acolo, semnul - care E
+        /// diagnosticul - ar fi putut ajunge explicat invers.
+        /// </summary>
+        internal static string Diagnosis(double radPct)
+        {
             if (Math.Abs(radPct) < Th.LightRadOk)
-            {
-                w.WriteLine("    Fondul n-are componenta radiala. Flat-ul face treaba.");
-                w.WriteLine("    Asta e testul care conteaza - toate celelalte sunt proxy pentru el.");
-            }
-            else if (radPct > 0)
-            {
-                w.WriteLine("    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata");
-                w.WriteLine("    vignetarea: alta diafragma decat la lights, sau flat contaminat.");
-            }
-            else
-            {
-                w.WriteLine("    Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil");
-                w.WriteLine("    flat-darks lipsa/gresite: imparti la un flat care contine offset.");
-            }
+                return "Fondul n-are componenta radiala. Flat-ul face treaba.\n"
+                     + "Asta e testul care conteaza - toate celelalte sunt proxy pentru el.";
+
+            if (radPct > 0)
+                return "Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata\n"
+                     + "vignetarea: alta diafragma decat la lights, sau flat contaminat.";
+
+            return "Fondul CRESTE spre margini => SUPRA-corectie. Cel mai probabil\n"
+                 + "flat-darks lipsa/gresite: imparti la un flat care contine offset.";
         }
     }
 }

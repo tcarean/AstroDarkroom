@@ -4,21 +4,24 @@ Quantitative diagnostic for astrophotography flat frames. Answers four questions
 is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly.
 
-Small C# console app with **exactly one NuGet dependency**: it hand-parses FITS and
-hand-writes PNG (via `ZLibStream` from the BCL), and leans on libraw (`Sdcb.LibRaw`) for
-camera raw files only. .NET 8. See "The one dependency" below before adding a second.
+Two applications - a console tool and a WPF window - over one core library, with
+**exactly one NuGet dependency**: the core hand-parses FITS and hand-writes PNG (via
+`ZLibStream` from the BCL), and leans on libraw (`Sdcb.LibRaw`) for camera raw files only.
+.NET 8. See "The one dependency" below before adding a second, and "The two applications"
+for what each one owns.
 
 ## Structure
 
-- `FlatCheck/` - the app. `AssemblyName` is `flatcheck`, so the binary is
-  `flatcheck.exe`, not `FlatCheck.exe`.
-  - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
-    rather than restating it. It used to carry a full copy of the user documentation;
-    it drifted, and the copy was the wrong one - see the convention below.
-  - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch and exit code.
-    All output goes through the injected `TextWriter`, never `Console` directly.
-  - `Options.cs` - CLI parsing.
-  - `Version.cs` - `VersionInfo.Value`/`Banner`, read from the assembly. See "Versioning".
+Four projects. The split happened in 2.0.0, when a second application appeared over the
+same numbers - see "The two applications" below for why it was a library extraction and
+not a copy.
+
+- `Directory.Build.props` - `<Version>` and `<Copyright>`, shared by every project. The
+  **single** place to edit either on the C# side. See "Versioning".
+- `FlatCheck.Core/` - everything that computes and everything that formats. Knows nothing
+  about consoles or windows, and has no entry point, so it *cannot* reach `Console` even
+  by accident. Before the split, "Analysis/ and Report/ are pure" was a convention held by
+  goodwill; now it is a compile boundary.
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
     reader be tested without touching disk.
@@ -35,32 +38,82 @@ camera raw files only. .NET 8. See "The one dependency" below before adding a se
     behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
     get the undebayered Bayer mosaic plus the exact white/black levels out of a camera
-    raw. `IsRawPath` is the extension gate the CLI dispatches on.
+    raw. `IsRawPath` is the extension gate; `RawExtensions` exposes the same list to the
+    WPF app's `flats/` filter, so a camera the reader learns is a camera the list offers.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`.
   - `Stats.cs` - numeric primitives: `Percentile`, `RobustPtp`, `Interp`, `Solve`,
-    `Verdict`, `Rank`.
+    `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
+    `NotApplicable`).
   - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
     `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`.
+  - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
+    "Versioning".
   - `Analysis/` - one analyzer per mode, each a pure `Img -> XxxResult` function:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`.
     No I/O, no printing - this is where every number is decided. Two of them are not
     `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
     (it decides whether `--light` applies at all, before any pixel is read), and
     `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it combines
-    per-frame results; the file loading stays in `FlatCheckCli`, like every other mode).
+    per-frame results; the file loading stays in `Runs/`, like every other mode).
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. All the Romanian output lives here and nowhere else. `LightSeriesReport`
     is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
-    its table instead of sitting silent for two minutes; the formatting still lives
-    entirely in `Report/`.
+    its table instead of sitting silent for two minutes. `RunReport` holds the two lines
+    that frame every mode - the version banner and the "harta salvata" line - because
+    both applications write them and two copies would have diverged.
+    Three pieces are exposed as values rather than only written: `StructureReport.Scale()`,
+    `StructureReport.Advice()` and `LightReport.Diagnosis()`. The console formats them into
+    columns, the WPF app puts them in a table and under a coloured chip; the wording has
+    one definition either way.
+  - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
+    `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, plus
+    `SeriesFinder` (which files a series run covers). This is the layer both applications
+    call, and the reason neither of them re-derives a number. Two shape decisions are
+    load-bearing and explained at length in `Runs/RunOutcome.cs`: the report is **written
+    into a `TextWriter` the caller supplies** (so the console keeps streaming a 32-frame
+    table, and anyone who wants the string passes a `StringWriter`), and the residual map
+    comes back as **PNG bytes** rather than being written to disk (the window wants to
+    show it, not save it).
   - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
-    `Encode(rgb, w, h)` is the real entry point; `Write`/`WriteResidualMap` are thin
-    file wrappers, which is what lets the encoder be tested without touching disk.
-    It prints nothing - the "harta salvata" line is written by `FlatCheckCli`.
-- `FlatCheck.Tests/` - xUnit tests, reaching the app via `InternalsVisibleTo`.
-  `Golden/` holds the characterization snapshots.
+    `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
+    applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
+    nothing - the "harta salvata" line comes from `RunReport`.
+- `FlatCheck/` - the console app. `AssemblyName` is `flatcheck`, so the binary is
+  `flatcheck.exe`, not `FlatCheck.exe`. Three files, and that is the point: what is left
+  here is what belongs to a command line and to nothing else.
+  - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
+    rather than restating it. It used to carry a full copy of the user documentation;
+    it drifted, and the copy was the wrong one - see the convention below.
+  - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map to
+    disk, and the exit code. All output goes through the injected `TextWriter`, never
+    `Console` directly.
+  - `Options.cs` - CLI parsing.
+- `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See "The two applications".
+  - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
+    master, which are ratio candidates, which are raw flats) and `SessionMessages` (the
+    explanations shown when the input is not usable). The only part of the app with real
+    rules, and the part with the most tests.
+  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
+    `MainViewModel` for the folder. They are `public` because WPF binding reads public
+    properties by reflection - and that has a useful consequence: a public view-model
+    **cannot** expose an internal core type, so the compiler itself stops a
+    `StructureResult` from leaking into XAML.
+  - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
+    inherited `TabViewModel`, so the same three controls serve all four tabs.
+  - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
+    its own list of verdict names) and the value converters.
+  - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
+    templates. The converters live there rather than in `App.xaml` because a
+    `StaticResource` inside a dictionary resolves in *that* dictionary.
+  - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
+- `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
+  `InternalsVisibleTo`. `Golden/` holds the characterization snapshots.
+- `FlatCheck.Wpf.Tests/` - xUnit tests for the window app, `net8.0-windows`. Separate
+  project rather than a folder, so `FlatCheck.Tests` - which carries the parity story -
+  stays portable. Borrows `FitsTestData` and `TempWorkspace` from it by `<Compile Link>`
+  rather than copying them.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
   ported from. Prior art only for *features*; **not maintained in parallel** - don't
   feel obliged to mirror C#-side changes into it, except where parity is tested (see
@@ -74,9 +127,13 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
 
 ## Conventions
 
-- **User-facing text (CLI messages, `--help`, code comments) is in Romanian** -
-  keep new text consistent with this. Documentation *about* the code
+- **User-facing text (CLI messages, `--help`, window labels, code comments) is in
+  Romanian** - keep new text consistent with this. Documentation *about* the code
   (this file, the refactoring plan) is in English.
+- **Nothing is computed outside `FlatCheck.Core`.** If a change needs a new number, a new
+  threshold or a new sentence of diagnosis, it belongs in `Analysis/`, `Thresholds.cs` or
+  `Report/` - never in a view-model. Both applications then get it, and get the same one.
+  A view-model formats; it does not decide.
 - **One external dependency, and it took a measured argument to earn it.** The FITS
   reader and PNG encoder stay hand-rolled. Don't add a NuGet package to replace them,
   and don't add a second one without the same standard of evidence; the point of this
@@ -137,6 +194,61 @@ Three properties keep the cost contained, and all three are worth preserving:
 
 Don't add a second dependency at a lower standard of evidence than this one.
 
+## The two applications
+
+Since 2.0.0 there are two front ends over one core: `flatcheck.exe` (console) and
+`FlatCheck.Wpf.exe` (window). **Neither reimplements a number.** Both call `Runs/`, which
+loads the file, calls the analyzer, writes the report into a `TextWriter` and encodes the
+map. What differs is only what each does with the three outputs.
+
+| | console | window |
+|---|---|---|
+| input | one file (or a folder, with `--light`) | one Siril session folder |
+| report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
+| map | written to `-o <path>` | shown from memory, saved as `flatcheck.png` |
+| result | exit code | coloured verdict |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky` | `--sky` only (a checkbox) |
+
+The console keeps the options because it is the scriptable one, and because `--fov` and
+`--sat` exist for telling the tool something the header does not say. Adding them to the
+window would be four more controls in service of the rarer case.
+
+### What the window adds, and what it does not
+
+It adds a workflow: one folder instead of four invocations, `process/pp_flat_stacked.fit`
+by convention instead of by typing, structure and end-to-end started on open. It does not
+add an analysis, a threshold or a wording. If a change here needs a new number, that number
+belongs in `Analysis/`, and the console gets it too.
+
+**Structure and the light series run one after the other, not in parallel.** A 24 MP frame
+runs into the high hundreds of MB in analysis (known issue 7) and the series holds a loaded
+frame besides; two chains at once could pass a gigabyte on an ordinary machine. The time
+saved would not be worth it.
+
+### Three things about the WPF project that were learned the hard way
+
+- **No `<InvariantGlobalization>`**, however tempting the symmetry with the console. WPF
+  needs culture data to bind anything at all: without it the window throws
+  `Cannot find non-neutral culture related to 'en-us'` while *loading* XAML - not on some
+  path, on every start. The invariance that is actually needed is narrower and is done in
+  code: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture`, so a Romanian
+  Windows does not turn `0.24` into `0,24` in a file whose whole point is being identical
+  to the console's output. `CultureTests` pins both halves.
+- **The dispatcher is captured once per run, not asked per frame.** `LightSeriesRun`'s
+  callback arrives on a pool thread and has to marshal onto the UI thread to touch an
+  `ObservableCollection`. Reading `Application.Current` each time means the answer can
+  change mid-series, half the rows land on one thread and half on another, and rows are
+  lost silently - six frames analysed, five rows in the table. Measured, in a test run
+  where the WPF `Application` appeared partway through.
+- **`WindowSmokeTests` exists because the unit tests cannot see XAML.** A wrong resource
+  key, a missing converter, a binding to a property that isn't there - all compile, and
+  some fail at load. The suite renders every tab with real results into a
+  `RenderTargetBitmap` and asserts that no binding error was traced. The
+  `InvariantGlobalization` crash above passed 100 unit tests and never started; it would
+  fail here. `FLATCHECK_DUMP_SCREENS=<dir>` also saves the renders as PNGs - useful for
+  looking at the window without running it, and not a golden comparison: how a window
+  looks is a job for eyes.
+
 ## The core idea
 
 For a photographic lens with no optical train (the author's setup is a Samyang
@@ -184,7 +296,11 @@ dictionary and lands in the guard's `Unknown` layer - runs, with a note.
 ## The four modes
 
 Dispatch order in `FlatCheckCli.Run` is `--expo` → `--ratio` → `--light` → structure
-(default). The modes are mutually exclusive; the first match wins.
+(default). The modes are mutually exclusive; the first match wins. The WPF app has no
+dispatch: each tab is one mode.
+
+Each mode's chain lives in `Runs/`, in the core, and both applications call it - see
+"The two applications".
 
 ### 1. Structure (default) - `flatcheck flat.fit`
 
@@ -321,10 +437,18 @@ in every frame by construction** (the same master flat was divided out of each),
 sky radial term, which changes through the session. So the series carries a discriminator
 the single frame does not.
 
-`FlatCheckCli.RunLightSeries` loads each matching file in turn - never more than one full
+`LightSeriesRun.Execute` loads each matching file in turn - never more than one full
 frame in memory, since a 24 MP frame runs to hundreds of MB - runs the unchanged
 `LightAnalyzer.Analyze` on it, streams a table row, and hands the results to
 `LightSeriesAnalyzer.Combine`, which is pure.
+
+Of the five runs it is the only one that had anything worth duplicating - a loop, with
+state, progress and a memory trick that is not visible from the signature. It therefore
+has two outputs rather than one: rows go into the caller's `TextWriter` as frames finish
+(so the console does not sit silent for two minutes), and the same frame goes out through
+an optional `onFrame` callback (so the window fills its table live). Cancellation is
+checked *between* frames; a frame already started runs to the end, which at ~0.5 s each
+is a fine response time.
 
 The verdict is given **only if all three conditions hold**:
 
@@ -352,13 +476,14 @@ and why. Three details that are not obvious:
 extrapolation far outside the data, whose gradient never goes near zero (it spans 49-88 %).
 The correlation is a good diagnostic and a useless estimator; do not turn it into one.
 
-**File selection.** `FindSeries` enumerates the directory and matches the pattern
+**File selection.** `SeriesFinder.Find` enumerates the directory and matches the pattern
 **in-process**, rather than `Directory.GetFiles(dir, pattern)`: Win32 matching still
 carries the 8.3 legacy where `*.fit` also catches `.fits`. Sorting is ordinal on the file
 name (`StringComparer.Ordinal` / Python `sorted()`) - if the two implementations listed
 frames in different orders, `crosscheck.py` would report differences that do not exist.
 The glob supports `*` and `?` only; character classes are literal in both, so `fnmatch`
-is deliberately not used on the Python side.
+is deliberately not used on the Python side. The WPF app reuses the same matcher for its
+`process/` listings, so `pp_flat*.fit` there means exactly what `--pattern` means here.
 
 The default pattern `pp_light_*.fit` excludes `r_pp_light_*` because the glob is anchored
 at the start, and that is correct rather than incidental: registered frames are
@@ -582,7 +707,7 @@ suggested-stops arithmetic.
 
 ## PNG output
 
-`SaveResidualPng` writes a diverging blue → white → red heat map, with white
+`PngWriter.EncodeResidualMap` produces a diverging blue → white → red heat map, with white
 pinned at **1.0** and the range scaled to the 1st/99th percentile plus 10%
 padding. Pinning at 1.0 is valid for every caller: the structure residual is
 `img/model ≈ 1`, the ratio is normalised to median 1, and the `--light` map is
@@ -716,17 +841,28 @@ Every run prints `flatcheck <version>` as its **first line** - every mode, `--he
 failed runs too, so a pasted report always says which version produced it. There is no
 `--version` flag; it would be redundant.
 
+Both applications print it from `RunReport.WriteBanner`, so the WPF app's saved
+`Rezultat testare.txt` opens on the same two lines as a console run, and a bump moves both
+at once.
+
 The version lives in **two** places:
 
 | where | what |
 |---|---|
-| `FlatCheck/FlatCheck.csproj` | `<Version>` - the single source of truth for C# |
+| `Directory.Build.props` | `<Version>` - the single source of truth for C# |
 | `flatcheck.py` | `__version__` |
 
-`FlatCheck/Version.cs` does **not** hardcode it. `VersionInfo.Value` reads the assembly's
-`AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and trims any
-`+sourcerevision` suffix. So on the C# side there is exactly one place to edit. Don't
-reintroduce a literal there.
+`Directory.Build.props`, not a csproj, and that changed in 2.0.0 for a concrete reason:
+there are now three assemblies. `VersionInfo` reads the one it lives in - Core - but the
+console exe and the WPF exe carry their own, which is what Windows shows in file
+properties. Two places to edit means, sooner or later, two different values. So the
+property sits above all of them and every project inherits it.
+**Don't move `<Version>` or `<Copyright>` back into a csproj**; `VersionTests` checks that
+no project overrides either.
+
+`FlatCheck.Core/Version.cs` does **not** hardcode it. `VersionInfo.Value` reads the
+assembly's `AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and
+trims any `+sourcerevision` suffix. Don't reintroduce a literal there.
 
 **The user bumps the version manually**, per feature or fix, choosing the increment
 themselves. **Never bump it on your own initiative** - not as part of a change, not
@@ -749,7 +885,7 @@ What *does* fail, and should:
 |---|---|
 | both places bumped | nothing |
 | only one place bumped | exactly one test, `PythonReportsTheSameVersionAsTheCSharp`; `crosscheck.py` prints one `[VERSIUNE]` line and exits 1 |
-| `<Version>` removed from csproj | the format and plumbing tests in `VersionTests` |
+| `<Version>` removed from `Directory.Build.props`, or re-added to a csproj | the plumbing tests in `VersionTests` |
 | the banner stops being printed | the golden files, because they carry a placeholder line the output no longer produces |
 
 The scrubbing does not weaken coverage: `VersionTests` asserts the banner's exact content
@@ -764,12 +900,15 @@ Four things follow, and all four are pinned by tests:
 
 - **Every source file starts with the notice**, above the file's own header comment:
   the SPDX line, the copyright, and all three paragraphs of the standard GNU notice
-  (permission, no-warranty, where-to-get-a-copy). `//` for C#, `#` for Python, below
-  the shebang. New files get it too - it is the first thing to write, not an
-  afterthought. `LicenseHeaderTests` walks both projects plus the two `.py` files and
-  fails on any file missing it, which is the only thing keeping the convention alive
-  as files get added. The SPDX line is there so licence scanners can read the file
-  without parsing English.
+  (permission, no-warranty, where-to-get-a-copy). `//` for C#, `#` for Python (below the
+  shebang), and for XAML a single `<!-- ... -->` block wrapping the unprefixed text -
+  `--` cannot repeat inside an XML comment. XAML counts as source: it is written by hand
+  and it describes the interface. New files get the notice too - it is the first thing to
+  write, not an afterthought. `LicenseHeaderTests` walks all four projects plus the two
+  `.py` files and fails on any file missing it, which is the only thing keeping the
+  convention alive as files get added; its `Projects` list is explicit rather than
+  discovered, so adding a project is a decision. The SPDX line is there so licence
+  scanners can read the file without parsing English.
 - **Every run prints the copyright on line 2**, right under the version banner, in every
   mode, at `--help`, and on failed runs. Same reason as the banner: a pasted report says
   on its own whose tool produced it.
@@ -779,7 +918,7 @@ Four things follow, and all four are pinned by tests:
   every run, would drown the numbers. `WriteUsage` in C#, the argparse `epilog`
   (`__warranty__`) in Python.
 - **One source of truth per language for the copyright string**: `<Copyright>` in
-  `FlatCheck/FlatCheck.csproj` (read back through `AssemblyCopyrightAttribute` by
+  `Directory.Build.props` (read back through `AssemblyCopyrightAttribute` by
   `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback), and
   `__copyright__` in `flatcheck.py`. `VersionTests` binds all three together.
 
@@ -812,9 +951,21 @@ rediscover. No `Co-Authored-By` trailer.
 dotnet build FlatCheck.sln -c Release
 ```
 
+**The solution no longer builds on Linux**, because `FlatCheck.Wpf` targets
+`net8.0-windows`. That is a deliberate cost, not an oversight: the console stays portable
+if you build its project directly, and there is no CI workflow in the repo, so nothing
+else notices.
+
+```bash
+dotnet build FlatCheck/FlatCheck.csproj -c Release
+```
+
 ```bash
 dotnet test FlatCheck.sln
 ```
+
+Two test projects run: `FlatCheck.Tests` (core + console, portable) and
+`FlatCheck.Wpf.Tests` (window, Windows-only).
 
 The golden-output tests snapshot every mode's console text. When you change output
 *on purpose*, re-approve them and read the resulting diff:
@@ -823,18 +974,38 @@ The golden-output tests snapshot every mode's console text. When you change outp
 FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
 ```
 
+To look at the window without running it - handy when the Windows session is locked and a
+screen capture would catch the lock screen:
+
+```bash
+FLATCHECK_DUMP_SCREENS=/tmp/ecrane dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests
+```
+
 ## Run
 
 Self-contained binary:
 
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish FlatCheck/FlatCheck.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 The last two flags are what keep the "single copyable binary" promise now that libraw is
 in: without them its four native DLLs sit next to the exe as separate files. With them
 the whole thing is one ~67 MB `flatcheck.exe` again. `linux-x64` works the same; other
 RIDs (arm64, macOS) have no libraw binary in these packages, so FITS-only there.
+
+Note the explicit project path: `dotnet publish` on the solution would now also try the
+WPF project, which cannot be single-filed the same way.
+
+The window app publishes without `PublishSingleFile`:
+
+```bash
+dotnet publish FlatCheck.Wpf/FlatCheck.Wpf.csproj -c Release -r win-x64 --self-contained
+```
+
+```bash
+FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"   # optional: the session folder
+```
 
 ```bash
 flatcheck process/pp_flat_stacked.fit                  # 1. structure

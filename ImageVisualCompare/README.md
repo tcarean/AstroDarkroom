@@ -55,6 +55,8 @@ ImageVisualCompare.Wpf.exe "A.png" "B.png"
 Prima cale e imaginea afișată în stânga liniei, a doua cea din dreapta. Dacă una dintre
 căi nu există, pornește normal și întreabă prin dialoguri.
 
+Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la început pe tot ecranul.
+
 ## Controale
 
 | acțiune | cum |

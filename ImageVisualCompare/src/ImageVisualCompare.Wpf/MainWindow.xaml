@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:ImageVisualCompare.Wpf.Controls"
         Title="Image Visual Compare"
+        WindowState="Maximized"
         Height="820"
         Width="1320"
         WindowStartupLocation="CenterScreen"

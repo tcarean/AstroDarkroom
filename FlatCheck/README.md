@@ -11,6 +11,11 @@ propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — lib
 pur managed pentru asta. .NET 8. Binarul se numește `flatcheck.exe` și, publicat ca
 `PublishSingleFile`, se copiază oriunde ca până acum.
 
+Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași patru
+moduri pe un folder de sesiune Siril, în patru taburi. Nu e o a doua implementare: stă
+peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
+Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
+
 `flatcheck.py` este prototipul Python din care a fost portat. Nu se menține în paralel,
 dar rămâne **oracolul numeric**: `crosscheck.py` rulează amândouă implementările pe
 aceiași octeți și compară fiecare cifră.
@@ -391,14 +396,97 @@ gradient orizontal, vertical, diagonal.
 
 ---
 
+## Aplicația cu ferestre
+
+Pe lângă `flatcheck.exe` există `FlatCheck.Wpf.exe`, care face **exact aceleași măsurători**
+pe un folder întreg, cu patru taburi în loc de patru rulări.
+
+Nu e o reimplementare: amândouă aplicațiile stau peste aceeași bibliotecă, `FlatCheck.Core`,
+și trec prin același lanț (`Runs/`). Cifrele sunt aceleași prin construcție, nu prin grijă —
+iar raportul pe care fereastra îl salvează pe disc e produs de același cod care scrie în
+consolă, comparat caracter cu caracter de un test.
+
+### Cum se folosește
+
+Îi dai **un folder**: directorul de lucru al sesiunii din Siril, cel cu subfolderele
+`flats/`, `darks/`, `biases/`, `lights/`, `process/`. Se poate alege din fereastră sau da
+ca argument:
+
+```bash
+FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
+```
+
+Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end**, cu ecran
+de așteptare. Rulează una după alta, nu în paralel: un cadru de 24 MP ajunge la sute de MB
+în analiză, iar două lanțuri simultane ar putea trece de un gigaoctet.
+
+Dacă nu găsește `process/pp_flat_stacked.fit`, aplicația nu pornește pe folderul acela și
+spune ce e de făcut — să rulezi scriptul **`OSC_Preprocessing.ssf`** din Siril. Fișierul
+acela e intrarea modului de structură, prin convenție.
+
+### Cele patru taburi
+
+| tab | ce face | când rulează |
+|---|---|---|
+| **Structura** | modul 1 pe `process/pp_flat_stacked.fit` | la deschiderea folderului |
+| **Ratio** | modul 2 între două mastere din `process/` | la alegere, și la orice schimbare |
+| **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
+| **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
+
+**Structura** arată aceleași cifre ca în consolă — cele patru teste de abatere cu verdictul
+fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict —
+plus harta reziduală. Salvează în folderul ales:
+
+- **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
+  raportul, linia hărții;
+- `flatcheck.png` — aceeași hartă care se vede pe ecran, aceiași octeți.
+
+**Ratio** propune masterele găsite în `process/` (`pp_flat*.fit`) și preselectează primele
+două, ceea ce pe cazul obișnuit — setul A și setul B — înseamnă că nu ai nimic de ales. Se
+poate lua și un fișier din altă parte; dacă nu e un master de flat, aplicația explică ce
+sunt fișierele astea și de ce testul are nevoie de unul, în loc să eșueze la parsare.
+
+**End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
+32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate
+ieși legitim `INAPLICABIL`: pe un câmp mai larg de ~40 de grade diagonală cerul și
+vignetarea au aceeași formă, deci nu se produce nicio cifră. **Nu e o eroare** — vezi
+secțiunea despre când merge `--light`. Pe date ca astea răspunde tabul Ratio.
+
+**Expunere** listează din `flats/` **doar raw-uri de aparat** (`.nef`, `.cr2`, `.cr3`,
+`.arw`, `.dng`, `.raf`). Modul are nevoie de mozaicul CFA intact și de scala ADU originală,
+iar pe un raw white și black se citesc exact din fișier în loc să fie ghicite din maxim.
+Comutatorul „Sky" schimbă pragurile și recalculează pe loc.
+
+### Ce nu face
+
+Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
+ieșire. Pentru scripting și pentru cazurile în care trebuie să spui uneltei ceva ce headerul
+nu zice — un câmp pe care headerul nu-l dă, o scală ADU greșit ghicită — `flatcheck.exe`
+rămâne unealta.
+
+---
+
 ## Build, rulare, teste
+
+Soluția are patru proiecte:
+
+| proiect | ce e |
+|---|---|
+| `FlatCheck.Core` | nucleul: citire, analiză, rapoarte, PNG. Nicio interfață. |
+| `FlatCheck` | aplicația de consolă, `flatcheck.exe` |
+| `FlatCheck.Wpf` | aplicația cu ferestre, `FlatCheck.Wpf.exe` |
+| `FlatCheck.Tests`, `FlatCheck.Wpf.Tests` | testele |
 
 ```bash
 dotnet build FlatCheck.sln -c Release
 ```
 
+> **Pe Linux, soluția întreagă nu se mai construiește**, fiindcă `FlatCheck.Wpf` țintește
+> `net8.0-windows`. Consola rămâne portabilă dacă îi construiești proiectul direct:
+> `dotnet build FlatCheck/FlatCheck.csproj -c Release`.
+
 ```bash
-dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+dotnet publish FlatCheck/FlatCheck.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
 ```
 
 Cele două flaguri de la urmă contează de când se citește raw: libraw vine ca DLL-uri
@@ -412,6 +500,13 @@ lipsește. Nu există cale prin care lipsa lor să producă cifre greșite.
 
 Pentru Linux, `-r linux-x64` (pachetul runtime e deja referit). Alte platforme — arm64,
 macOS — n-au binare libraw în pachetele astea, deci acolo merge doar FITS-ul.
+
+Aplicația cu ferestre se publică la fel, fără `PublishSingleFile` (WPF nu se împachetează
+la fel de curat într-un singur fișier):
+
+```bash
+dotnet publish FlatCheck.Wpf/FlatCheck.Wpf.csproj -c Release -r win-x64 --self-contained
+```
 
 ```bash
 dotnet test FlatCheck.sln

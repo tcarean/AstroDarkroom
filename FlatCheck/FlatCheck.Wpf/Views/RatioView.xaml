@@ -1,0 +1,176 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- RatioView - tabul 2, rotatia la 180 de grade.
+
+     Singurul tab cu alegeri sus: doua liste cu masterele din process/, si cate un buton
+     pentru un fisier de altundeva. Orice schimbare recalculeaza imediat - nu exista buton
+     de "calculeaza", fiindca nu exista nimic de confirmat. -->
+
+<UserControl x:Class="FlatCheck.Wpf.RatioView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FlatCheck.Wpf">
+
+  <UserControl.Resources>
+    <!-- In liste se arata doar numele fisierului; calea intreaga ar rupe latimea si
+         oricum toate stau in acelasi folder. -->
+    <local:FileNameConverter x:Key="FileName" />
+    <DataTemplate x:Key="FileItem">
+      <TextBlock Text="{Binding Converter={StaticResource FileName}}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- ============================================================ alegerile -->
+    <Border Grid.Row="0" Background="{StaticResource PanelBg}" Padding="20,14"
+            BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="16" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Heading}"
+                   Text="SETUL A  (inainte de rotatie)" />
+        <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Heading}"
+                   Text="SETUL B  (dupa rotatia de 180)" />
+
+        <DockPanel Grid.Row="1" Grid.Column="0">
+          <Button DockPanel.Dock="Right" Content="Alt fisier..." Margin="8,0,0,0"
+                  Click="ChooseA" />
+          <ComboBox ItemsSource="{Binding Candidates}"
+                    SelectedItem="{Binding FileA, Mode=TwoWay}"
+                    ItemTemplate="{StaticResource FileItem}" />
+        </DockPanel>
+
+        <DockPanel Grid.Row="1" Grid.Column="2">
+          <Button DockPanel.Dock="Right" Content="Alt fisier..." Margin="8,0,0,0"
+                  Click="ChooseB" />
+          <ComboBox ItemsSource="{Binding Candidates}"
+                    SelectedItem="{Binding FileB, Mode=TwoWay}"
+                    ItemTemplate="{StaticResource FileItem}" />
+        </DockPanel>
+      </Grid>
+    </Border>
+
+    <!-- ============================================================ rezultatele -->
+    <Grid Grid.Row="1">
+      <local:MessagePanel Margin="20" />
+
+      <Grid Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="3*" MinWidth="420" />
+          <ColumnDefinition Width="2*" MinWidth="280" />
+        </Grid.ColumnDefinitions>
+
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
+          <StackPanel>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="VERDICT" Style="{StaticResource Heading}" Margin="0,0,12,0"
+                             VerticalAlignment="Center" />
+                  <Border Background="{Binding Verdict, Converter={StaticResource VerdictToBrush}}"
+                          CornerRadius="4" Padding="12,4">
+                    <TextBlock Text="{Binding Verdict}" Foreground="#16161A"
+                               FontSize="16" FontWeight="Bold" />
+                  </Border>
+                </StackPanel>
+                <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
+              </StackPanel>
+            </Border>
+
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="TESTE" />
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="structura ramasa in raportul A/B" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding Structure}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding StructureVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="imprastiere 4 colturi" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding Corners}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding CornerVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+              <StackPanel>
+                <TextBlock Style="{StaticResource Muted}"
+                           Text="Vignetarea si praful sunt fixe pe senzor, deci se anuleaza in raportul A/B. Orice gradient extern e fix in lume, deci se inverseaza la rotatie si apare aici la ~2x amplitudine - eroarea reala din fiecare master e cam jumatate din cifrele de mai sus." />
+                <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
+                           Text="Punct orb cunoscut: o contaminare care e ea insasi simetrica radial fata de axa optica (de exemplu caderea de lumina a unui monitor centrat pe obiectiv) supravietuieste rotatiei si iese curata aici. Contra-testul e unul de DISTANTA: un set la 30 cm, unul la 60 cm, comparate tot aici - vignetarea obiectivului nu depinde de distanta, iar caderea panoului da." />
+              </StackPanel>
+            </Border>
+
+            <local:ReportPanel Margin="0,14,0,0" />
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Column="1" Margin="10,18,20,18">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+          <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA RAPORTULUI A/B" />
+          <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
+            <Image Source="{Binding Map, Converter={StaticResource PngToImage}}"
+                   Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+          </Border>
+          <TextBlock Grid.Row="2" Style="{StaticResource Faint}" Margin="2,10,0,0"
+                     Text="Pe un setup curat harta e uniform alba. Orice structura vizibila aici e contaminare externa, la dublul amplitudinii reale." />
+        </Grid>
+      </Grid>
+
+      <local:BusyOverlay />
+    </Grid>
+  </Grid>
+</UserControl>

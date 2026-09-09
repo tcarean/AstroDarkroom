@@ -17,6 +17,7 @@
 
 // StructureReport.cs - StructureResult -> textul din consola. Doar formatare.
 
+using System.Collections.Generic;
 using System.IO;
 
 namespace FlatCheck
@@ -71,46 +72,75 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Scara comuna a celor patru teste de abatere de la simetria radiala. Nu se
-        /// aplica offsetului centrului de iluminare, care masoara o pozitie.
+        /// Scara comuna a celor patru teste de abatere de la simetria radiala: numele
+        /// benzii, intervalul si intelesul. Nu se aplica offsetului centrului de
+        /// iluminare, care masoara o pozitie.
+        ///
+        /// Se intoarce ca date, nu ca text deja scris, fiindca o citesc doi consumatori:
+        /// raportul de mai jos, care o insira in coloane, si aplicatia WPF, care o pune
+        /// intr-un tabel cu banda curenta evidentiata. Pragurile raman singurele din Th;
+        /// o a doua lista de benzi ar fi divergat la prima recalibrare.
         /// </summary>
+        internal static IReadOnlyList<(string Band, string Range, string Meaning)> Scale()
+            => new[]
+            {
+                ("PERFECT", $"sub {Th.ResidPerfect:F0} %",
+                            "calitate perfecta"),
+                ("BUN", $"{Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %",
+                        "utilizabil; background extraction scoate ce ramane"),
+                ("ACCEPTABIL", $"{Th.ResidUsable:F0} - {Th.ResidCheck:F0} %",
+                               "utilizabil, dar confirma cu --light inainte de un stretch dur"),
+                ("REFA", $"peste {Th.ResidCheck:F0} %",
+                         "refa flat-urile"),
+            };
+
+        /// <summary>
+        /// De ce reziduul dupa modelul radial e cel care conteaza. Scos separat din
+        /// acelasi motiv ca <see cref="Scale"/>: il arata si fereastra, sub tabel.
+        /// </summary>
+        internal static string WhyResidualMatters()
+            => "Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din\n"
+             + "cadru NU se explica printr-un model pur radial, adica exact eroarea de\n"
+             + "flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt\n"
+             + "vederi partiale ale aceleiasi abateri.";
+
         static void WriteScale(TextWriter w)
         {
             w.WriteLine("\n  SCARA celor patru teste de abatere de mai sus");
-            Band(w, $"sub {Th.ResidPerfect:F0} %", "calitate perfecta");
-            Band(w, $"{Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %", "utilizabil; background extraction scoate ce ramane");
-            Band(w, $"{Th.ResidUsable:F0} - {Th.ResidCheck:F0} %", "utilizabil, dar confirma cu --light inainte de un stretch dur");
-            Band(w, $"peste {Th.ResidCheck:F0} %", "refa flat-urile");
-            w.WriteLine("    Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din");
-            w.WriteLine("    cadru NU se explica printr-un model pur radial, adica exact eroarea de");
-            w.WriteLine("    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt");
-            w.WriteLine("    vederi partiale ale aceleiasi abateri.");
+            foreach (var (_, range, meaning) in Scale())
+                w.WriteLine($"    {range,-13}{meaning}");
+            Indent(WhyResidualMatters(), w);
         }
 
-        static void Band(TextWriter w, string range, string meaning)
-            => w.WriteLine($"    {range,-13}{meaning}");
-
-        static void WriteAdvice(string verdict, TextWriter w)
+        /// <summary>
+        /// Ce sa faca omul cu verdictul asta. Intors ca sir, nu scris direct, fiindca il
+        /// arata si fereastra, sub verdictul colorat - iar doua formulari ale aceluiasi
+        /// sfat ar diverge exact acolo unde conteaza cel mai mult sa nu divergem.
+        /// </summary>
+        internal static string Advice(string verdict) => verdict switch
         {
-            switch (verdict)
-            {
-                case "PERFECT":
-                    w.WriteLine("    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.");
-                    break;
-                case "BUN":
-                    w.WriteLine("    Utilizabil ca atare. Ce ramane sta in intervalul pe care background");
-                    w.WriteLine("    extraction il scoate fara efort.");
-                    break;
-                case "ACCEPTABIL":
-                    w.WriteLine("    Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de");
-                    w.WriteLine("    un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.");
-                    break;
-                default:
-                    w.WriteLine("    Abatere prea mare de la simetria radiala => sursa neuniforma, light");
-                    w.WriteLine("    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.");
-                    w.WriteLine("    Vezi harta reziduala pentru forma problemei.");
-                    break;
-            }
+            "PERFECT" =>
+                "Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.",
+
+            "BUN" =>
+                "Utilizabil ca atare. Ce ramane sta in intervalul pe care background\n"
+              + "extraction il scoate fara efort.",
+
+            "ACCEPTABIL" =>
+                "Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de\n"
+              + "un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.",
+
+            _ =>
+                "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
+              + "leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.\n"
+              + "Vezi harta reziduala pentru forma problemei.",
+        };
+
+        static void WriteAdvice(string verdict, TextWriter w) => Indent(Advice(verdict), w);
+
+        static void Indent(string text, TextWriter w)
+        {
+            foreach (string line in text.Split('\n')) w.WriteLine("    " + line);
         }
     }
 }

@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Teste pentru aplicatia cu ferestre.
+
+       Proiect separat de FlatCheck.Tests, si nu un folder in el, dintr-un motiv anume:
+       ca sa tinteasca net8.0-windows trebuie sa fie Windows-only, iar FlatCheck.Tests -
+       care verifica nucleul si paritatea cu flatcheck.py - merita sa ramana portabil.
+
+       Ce se testeaza aici: deducerea structurii de foldere, mesajele de explicatie,
+       maparea verdict -> culoare, convertoarele si ViewModel-urile. Adica tot ce are
+       reguli. Ce NU se testeaza: XAML-ul - acolo nu e nicio decizie, doar asezare. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <!-- Un proiect WPF NU primeste System.IO in usings-urile implicite: acolo Path ar
+       intra in coliziune cu System.Windows.Shapes.Path. Testele nu deseneaza forme, dar
+       umbla mult cu fisiere, deci il aducem explicit. -->
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FlatCheck.Wpf\FlatCheck.Wpf.csproj" />
+    <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Fixturile FITS si folderul temporar se IMPRUMUTA din FlatCheck.Tests, prin link,
+       in loc sa fie copiate. Doua generatoare de FITS sintetic ar fi insemnat ca un test
+       de aici si unul de acolo lucreaza pe cadre usor diferite fara sa se stie. -->
+  <ItemGroup>
+    <Compile Include="..\FlatCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
+    <Compile Include="..\FlatCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
+  </ItemGroup>
+
+</Project>

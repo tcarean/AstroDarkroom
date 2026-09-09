@@ -1,0 +1,67 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- ReportPanel - raportul brut, exact cum l-ar fi scris consola.
+
+     Pliat implicit: panourile de deasupra spun acelasi lucru mai bine asezat. Exista
+     fiindca e textul care se lipeste pe un forum sau intr-un mesaj, si fiindca e exact
+     continutul fisierului salvat pe disc - nu o a doua redactare a lui.
+
+     TextBox si nu TextBlock, ca sa se poata selecta si copia. IsReadOnly, evident. -->
+
+<UserControl x:Class="FlatCheck.Wpf.ReportPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <StackPanel Visibility="{Binding Report, Converter={StaticResource NotNullToVis}}">
+
+    <ToggleButton x:Name="Toggle" HorizontalAlignment="Left" Margin="0,4,0,0"
+                  Cursor="Hand" Background="Transparent" BorderThickness="0">
+      <ToggleButton.Template>
+        <ControlTemplate TargetType="ToggleButton">
+          <StackPanel Orientation="Horizontal" Background="Transparent">
+            <TextBlock x:Name="chev" Text="&#x25B8;" Foreground="{StaticResource MutedBr}"
+                       VerticalAlignment="Center" Margin="0,0,7,0" />
+            <TextBlock Text="Raport text (identic cu iesirea din consola)"
+                       Foreground="{StaticResource MutedBr}" FontSize="12" />
+          </StackPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="chev" Property="Text" Value="&#x25BE;" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="chev" Property="Foreground" Value="{StaticResource AccentBr}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </ToggleButton.Template>
+    </ToggleButton>
+
+    <Border Style="{StaticResource Card}" Margin="0,8,0,0" Padding="0"
+            Visibility="{Binding IsChecked, ElementName=Toggle, Converter={StaticResource BoolToVis}}">
+      <TextBox Text="{Binding Report, Mode=OneWay}" IsReadOnly="True"
+               FontFamily="{StaticResource MonoFont}" FontSize="12"
+               Background="Transparent" Foreground="{StaticResource MutedBr}"
+               BorderThickness="0" Padding="14" MaxHeight="420"
+               VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+               TextWrapping="NoWrap" />
+    </Border>
+
+  </StackPanel>
+</UserControl>

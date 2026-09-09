@@ -1,0 +1,58 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- BusyOverlay - ecranul de asteptare al unui tab.
+
+     Nu are proprietati proprii: se leaga la DataContext-ul mostenit, care in orice tab e
+     un TabViewModel. Asa acelasi control merge in toate patru fara nicio parametrizare.
+
+     Acopera tot tabul, cu un fundal aproape opac, ca sa nu se poata apasa pe controale
+     in timp ce se calculeaza - alternativa ar fi fost sa dezactivez fiecare buton pe rand. -->
+
+<UserControl x:Class="FlatCheck.Wpf.BusyOverlay"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+
+  <Border Background="#E01B1B1D">
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                MaxWidth="460" Margin="24">
+
+      <TextBlock Text="{Binding BusyMessage}" FontSize="15" FontWeight="SemiBold"
+                 TextWrapping="Wrap" HorizontalAlignment="Center"
+                 TextAlignment="Center" />
+
+      <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0"
+                 Text="{Binding BusyDetail}" HorizontalAlignment="Center"
+                 TextAlignment="Center"
+                 Visibility="{Binding BusyDetail, Converter={StaticResource NotNullToVis}}" />
+
+      <!-- Bara e determinata doar pe serie, unde se stie cate cadre sunt. Pentru o
+           singura analiza nu se poate sti cat mai dureaza, deci merge nedefinit in loc
+           sa minta cu un procent inventat. -->
+      <ProgressBar Width="280" Margin="0,18,0,0" IsIndeterminate="True"
+                   Visibility="{Binding ProgressKnown, Converter={StaticResource NotBoolToVis}}" />
+
+      <ProgressBar Width="280" Margin="0,18,0,0" Minimum="0" Maximum="1"
+                   Value="{Binding Progress, Mode=OneWay}"
+                   Visibility="{Binding ProgressKnown, Converter={StaticResource BoolToVis}}" />
+
+    </StackPanel>
+  </Border>
+</UserControl>

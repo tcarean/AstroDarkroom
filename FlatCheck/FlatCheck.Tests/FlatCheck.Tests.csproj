@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlatCheck\FlatCheck.csproj" />
+    <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
   </ItemGroup>
 
 </Project>
