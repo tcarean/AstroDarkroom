@@ -23,6 +23,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ImageVisualCompare.Core;
 using ImageVisualCompare.Wpf.Imaging;
+using ImageVisualCompare.Wpf.Interop;
 using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Wpf;
@@ -40,6 +41,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
+        DarkTitleBar.Apply(this);
+
         Compare.ViewChanged += (_, _) => UpdateZoomReadout();
         Compare.CursorContentPointChanged += (_, point) => UpdatePixelReadout(point);
 
@@ -48,9 +51,8 @@ public partial class MainWindow : Window
         FitButton.Click += (_, _) => Compare.ZoomToFit();
         ActualSizeButton.Click += (_, _) => Compare.ZoomToActualSize();
         OpenButton.Click += async (_, _) => await OpenPairAsync();
-        AboutButton.Click += (_, _) => MessageBox.Show(
-            this, VersionInfo.About, "About " + VersionInfo.Banner,
-            MessageBoxButton.OK, MessageBoxImage.Information);
+        AboutButton.Click += (_, _) =>
+            MessageDialog.Show(this, "About " + VersionInfo.Banner, VersionInfo.About);
 
         Title = VersionInfo.Banner;
         StatusLegal.Text = $"{VersionInfo.Banner} · {VersionInfo.Copyright}";
@@ -109,8 +111,7 @@ public partial class MainWindow : Window
             // so would only make the user dismiss their own decision.
             if (!result.WasDeclined)
             {
-                MessageBox.Show(this, result.Error, "Cannot compare these files",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageDialog.Show(this, "Cannot compare these files", result.Error!);
             }
         }
     }
@@ -151,12 +152,7 @@ public partial class MainWindow : Window
 
         try
         {
-            return MessageBox.Show(
-                this,
-                request.Message,
-                "Images have different sizes",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning) == MessageBoxResult.Yes;
+            return MessageDialog.Confirm(this, "Images have different sizes", request.Message);
         }
         finally
         {

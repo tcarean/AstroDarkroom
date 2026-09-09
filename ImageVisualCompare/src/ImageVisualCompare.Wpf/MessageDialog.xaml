@@ -1,0 +1,42 @@
+<Window x:Class="ImageVisualCompare.Wpf.MessageDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        SizeToContent="WidthAndHeight"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource ChromeBrush}">
+
+    <!-- MaxWidth on the panel rather than on the Window: SizeToContent measures with infinite
+         width, so a wrapping TextBlock would never wrap and the window would grow to the
+         longest line. This is what gives the text something to wrap against. -->
+    <Grid Margin="22,20,22,18" MaxWidth="520">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" MaxHeight="440" VerticalScrollBarVisibility="Auto">
+            <TextBlock x:Name="MessageText"
+                       TextWrapping="Wrap"
+                       Foreground="{StaticResource TextBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="13"
+                       LineHeight="20"
+                       LineStackingStrategy="BlockLineHeight" />
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,22,0,0">
+            <!-- Primary first, the way Windows orders Yes/No. -->
+            <Button x:Name="PrimaryButton"
+                    Style="{StaticResource DialogButton}"
+                    IsDefault="True" />
+            <Button x:Name="SecondaryButton"
+                    Style="{StaticResource DialogButton}"
+                    Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
+</Window>

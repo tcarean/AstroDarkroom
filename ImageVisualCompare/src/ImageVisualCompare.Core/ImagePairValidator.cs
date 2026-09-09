@@ -79,8 +79,8 @@ public static class ImagePairValidator
             $"A: {before.FileName} — {before.Dimensions}",
             $"B: {after.FileName} — {after.Dimensions}",
             string.Empty,
-            // Short lines on purpose: a MessageBox wraps whatever is too long for its default
-            // width, and a resolution split across two lines is exactly the part being read.
+            // Broken into short lines on purpose. The dialog wraps anything longer, and a
+            // resolution split across two lines is exactly the part being read.
             $"Both can be padded with black to {plan.Dimensions},",
             "anchored top-left, and compared on that canvas.",
             "The image files themselves are not modified.",

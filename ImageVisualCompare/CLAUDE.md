@@ -53,11 +53,17 @@ User documentation lives in `README.md`. Do not restate it here or in comments.
     the peak down. Turns every expected file failure into a message rather than a crash.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
-  - `Services/FileDialogService.cs` — the two open dialogs and the file filter.
+  - `Services/FileDialogService.cs` — the two open dialogs and the file filter. These are
+    the Windows common dialogs and follow the *system* theme, which is the one place the
+    palette is not ours to choose.
+  - `Interop/DarkTitleBar.cs` — the DWM opt-in that makes a window's caption dark. Every
+    `Window` in the application calls `Apply` in its constructor.
   - `Controls/CompareView.xaml(.cs)` — the comparison surface. All input handling, the
     shared transform, the clip, the overlay, the scrollbars.
   - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
   - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
+  - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
+    `Confirm` to ask yes or no.
   - `App.xaml.cs` — command line pair, handed over once via `TakeStartupSelection`.
   - `Theme.xaml` — the dark palette and every control style.
 - `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
@@ -113,6 +119,16 @@ this — the app has to be launched.
 own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
 larger than its own pixel count and quietly break the 1:1 zoom level.
 
+**No `MessageBox`, and every window opts into a dark caption.** `MessageBox.Show` opens a
+Win32 window that cannot be themed at all — white background, black text — and on a tool for
+judging dark images that is a bright rectangle over the picture being compared, not a
+cosmetic complaint. `MessageDialog` replaces it. The caption is a separate problem: it belongs
+to the desktop window manager, WPF cannot reach it and does not follow the system theme
+either, so each window asks DWM for it through `DarkTitleBar.Apply` — in the constructor, so
+the attribute is set before the first frame and the caption is never white even briefly. On
+Windows 11 the caption is set to the exact chrome colour; Windows 10 has no such attribute and
+gets the generic dark caption, which is close but not `#1B1F26`.
+
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
 they appear, which changes the fit scale, which can change whether they are needed.
 
@@ -158,8 +174,9 @@ mismatched pair never reaches a decode, whether it was refused outright or decli
 prompt.
 
 What remains untested is now genuinely untestable without UI automation: event wiring, mouse
-capture, and property assignment. Every number those controls put on screen comes from Core
-and has a test. `MainWindow`, `FileDialogService` and `MemoryHousekeeping` have none.
+capture, property assignment, and the interop that darkens a caption. Every number those controls put on screen comes from Core
+and has a test. `MainWindow`, `MessageDialog`, `DarkTitleBar`,
+`FileDialogService` and `MemoryHousekeeping` have none.
 
 Be aware of what that has meant in practice: both real defects found in this project lived in
 the untested layer, and neither would have been caught by any reasonable unit test. One was

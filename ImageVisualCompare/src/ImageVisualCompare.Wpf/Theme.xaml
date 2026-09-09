@@ -64,12 +64,15 @@
         <Setter Property="Margin" Value="3,0" />
         <Setter Property="Padding" Value="10,0" />
         <Setter Property="Cursor" Value="Hand" />
+        <!-- Bound through the control rather than hard-coded in the template so a style built
+             on this one can pick a different resting border, which DialogButton does. -->
+        <Setter Property="BorderBrush" Value="{StaticResource ChromeBorderBrush}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border x:Name="Chrome"
                             Background="{StaticResource ChromeBrush}"
-                            BorderBrush="{StaticResource ChromeBorderBrush}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="1"
                             CornerRadius="4">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -86,6 +89,20 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Roomier than a toolbar button, because a dialog is read before it is clicked. The
+         default button carries the accent border so the keyboard answer is visible. -->
+    <Style x:Key="DialogButton" TargetType="Button" BasedOn="{StaticResource ToolButton}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="MinWidth" Value="92" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Margin" Value="8,0,0,0" />
+        <Style.Triggers>
+            <Trigger Property="IsDefault" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 
     <!-- Thumb only, no repeat buttons: these bars float over the image, so every pixel of

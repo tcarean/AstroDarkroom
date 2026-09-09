@@ -12,7 +12,7 @@
     <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
          MSBuild o duce in AssemblyInformationalVersion, de unde o citeste VersionInfo -
          deci asta e singurul loc de schimbat. -->
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
 
     <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
          unde il citeste VersionInfo.Copyright si il afiseaza in bara de stare - deci si

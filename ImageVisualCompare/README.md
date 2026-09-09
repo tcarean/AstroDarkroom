@@ -8,6 +8,11 @@ loc și la același zoom. Făcut pentru a compara două variante ale aceleiași 
 Aplicație WPF pe .NET 9, Windows, x64, **fără nicio dependință NuGet**. Decodarea se face
 prin WIC, codecul din Windows pe care îl folosește WPF oricum.
 
+Totul e întunecat, indiferent de tema sistemului — fereastra, bara de titlu și casetele de
+mesaj — fiindcă un chrome luminos în jurul unei imagini astro strică percepția a ce e cu
+adevărat întunecat în poză. Singura excepție e dialogul de deschidere fișiere: ăla e dialogul
+comun Windows și urmează tema sistemului, nu a aplicației.
+
 > **Documentația de utilizator stă aici, în acest fișier.** Nu o duplica în comentarii.
 
 ---
