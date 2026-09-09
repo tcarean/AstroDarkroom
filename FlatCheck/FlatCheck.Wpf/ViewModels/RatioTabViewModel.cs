@@ -83,8 +83,12 @@ namespace FlatCheck.Wpf
             Candidates.Clear();
             foreach (string p in session.RatioCandidates()) Candidates.Add(p);
 
+            // Primul si ULTIMUL, nu primele doua. Pe un folder cu exact doua mastere e
+            // acelasi lucru; pe unul cu mai multe, cele doua capete sunt alegerea mai
+            // buna - un al treilea master aparut intre timp nu impinge setul B afara din
+            // preselectie.
             _fileA = Candidates.Count > 0 ? Candidates[0] : null;
-            _fileB = Candidates.Count > 1 ? Candidates[1] : null;
+            _fileB = Candidates.Count > 1 ? Candidates[Candidates.Count - 1] : null;
             Raise(nameof(FileA));
             Raise(nameof(FileB));
         }

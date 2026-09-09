@@ -441,10 +441,19 @@ plus harta reziduală. Salvează în folderul ales:
   raportul, linia hărții;
 - `flatcheck.png` — aceeași hartă care se vede pe ecran, aceiași octeți.
 
-**Ratio** propune masterele găsite în `process/` (`pp_flat*.fit`) și preselectează primele
-două, ceea ce pe cazul obișnuit — setul A și setul B — înseamnă că nu ai nimic de ales. Se
-poate lua și un fișier din altă parte; dacă nu e un master de flat, aplicația explică ce
-sunt fișierele astea și de ce testul are nevoie de unul, în loc să eșueze la parsare.
+**Ratio** propune masterele găsite în `process/` (`pp_flat*.fit`) și preselectează **primul
+și ultimul** din listă, ceea ce pe cazul obișnuit — setul A și setul B — înseamnă că nu ai
+nimic de ales. Se poate lua și un fișier din altă parte; dacă nu e un master de flat,
+aplicația explică ce sunt fișierele astea și de ce testul are nevoie de unul, în loc să
+eșueze la parsare.
+
+`pp_flat_stacked.fit` **nu apare în listă**, deși se potrivește tiparului: el e stiva
+*tuturor* flat-urilor, produsă de scriptul de preprocesare, iar testul compară două stive
+făcute **separat** — una dinainte, una de după rotire. Comparat cu unul dintre seturi ar
+da o cifră fără sens, fiindcă jumătate din el chiar *e* setul acela. (Conta și practic:
+sortarea fiind ordinală, ar fi căzut ultimul, adică exact pe preselecția setului B.) Dacă
+la tine chiar e unul dintre cele două seturi, îl poți alege oricând cu „Alt fișier..." —
+exclus din listă nu înseamnă respins.
 
 **End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
 32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate

@@ -158,8 +158,56 @@ public class SirilSessionTests
         File.WriteAllText(Path.Combine(s.ProcessDir, "pp_light_00001.fit"), "x");
         File.WriteAllText(Path.Combine(s.ProcessDir, "flat_necalibrat.fit"), "x");
 
-        Assert.Equal(new[] { "pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_stacked.fit" },
+        Assert.Equal(new[] { "pp_flat_A.fit", "pp_flat_B.fit" },
                      s.RatioCandidates().Select(Path.GetFileName).ToArray());
+    }
+
+    /// <summary>
+    /// Masterul general NU e candidat pentru testul de rotatie: e stiva tuturor
+    /// flat-urilor, iar testul compara doua stive facute separat. Comparat cu unul dintre
+    /// seturi ar da o cifra fara sens - jumatate din el chiar e setul acela.
+    ///
+    /// Conteaza si practic: sortarea fiind ordinala, ar fi cazut ultimul in lista, adica
+    /// exact pe preselectia setului B.
+    /// </summary>
+    [Fact]
+    public void TheOverallFlatMasterIsNotARatioCandidate()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+
+        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_A.fit"), "x");
+
+        Assert.DoesNotContain(SirilSession.FlatMasterName,
+                              s.RatioCandidates().Select(Path.GetFileName));
+        Assert.True(File.Exists(s.FlatMasterPath), "masterul exista, doar nu e propus");
+    }
+
+    /// <summary>Potrivirea tiparului e insensibila la litere mari; excluderea la fel.</summary>
+    [Fact]
+    public void TheExclusionIgnoresCase()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, master: false);
+
+        File.WriteAllText(Path.Combine(s.ProcessDir, "PP_FLAT_STACKED.FIT"), "x");
+        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_A.fit"), "x");
+
+        Assert.Equal(new[] { "pp_flat_A.fit" },
+                     s.RatioCandidates().Select(Path.GetFileName).ToArray());
+    }
+
+    /// <summary>
+    /// Scos din lista, dar NU respins: lista propune, iar "Alt fisier..." ramane o
+    /// portita pentru fluxurile in care masterul chiar e unul dintre cele doua seturi.
+    /// </summary>
+    [Fact]
+    public void TheOverallMasterIsStillAValidManualChoice()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+
+        Assert.True(SirilSession.IsFlatMasterName(s.FlatMasterPath));
     }
 
     [Theory]

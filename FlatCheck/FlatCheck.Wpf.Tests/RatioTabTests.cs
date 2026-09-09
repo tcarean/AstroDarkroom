@@ -61,6 +61,36 @@ public class RatioTabTests
         Assert.EndsWith("pp_flat_B.fit", vm.FileB);
     }
 
+    /// <summary>
+    /// Cu mai multe mastere se aleg CAPETELE listei, nu primele doua. Cerut de utilizator:
+    /// pe un folder unde apare si masterul combinat, sau un al treilea set, primele doua
+    /// n-ar mai fi perechea de comparat.
+    /// </summary>
+    [Fact]
+    public void WithMoreThanTwoMastersTheLastOneIsPreselectedAsB()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_C.fit", "pp_flat_D.fit");
+
+        var vm = Attached(f);
+
+        Assert.EndsWith("pp_flat_A.fit", vm.FileA);
+        Assert.EndsWith("pp_flat_D.fit", vm.FileB);
+    }
+
+    /// <summary>Sortarea e ordinala, deci "ultimul" e ultimul din lista afisata.</summary>
+    [Fact]
+    public void TheDefaultForBIsTheLastEntryInTheList()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_C.fit");
+
+        var vm = Attached(f);
+
+        Assert.Equal(vm.Candidates[0], vm.FileA);
+        Assert.Equal(vm.Candidates[^1], vm.FileB);
+    }
+
     [Fact]
     public void WithASingleMasterOnlyTheFirstSlotIsFilled()
     {
@@ -148,7 +178,9 @@ public class RatioTabTests
         await vm.RecomputeAsync();
         string first = vm.Structure;
 
-        vm.FileB = vm.Candidates.Single(c => c.EndsWith("pp_flat_C.fit"));
+        // Cel din MIJLOC: ultimul e deja preselectat pentru B, deci a-l pune din nou
+        // n-ar schimba nimic si testul ar trece fara sa verifice ceva.
+        vm.FileB = vm.Candidates.Single(c => c.EndsWith("pp_flat_B.fit"));
         await vm.RecomputeAsync();
 
         Assert.NotEqual(first, vm.Structure);
