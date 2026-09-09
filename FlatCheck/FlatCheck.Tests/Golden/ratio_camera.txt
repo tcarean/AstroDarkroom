@@ -42,7 +42,7 @@ Copyright (C) 2026 Tudor Carean
         stanga-jos    :  94.27 % din media colturilor
         dreapta-jos   : 106.01 % din media colturilor
     asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
-    reziduu dupa model rad. :  9.42 %   [BUN]  <- CEL MAI IMPORTANT
+    reziduu dupa model rad. :  9.43 %   [BUN]  <- CEL MAI IMPORTANT
     inclinare (gradient)    : 12.01 %   [ACCEPTABIL]
 
   SCARA celor patru teste de abatere de mai sus

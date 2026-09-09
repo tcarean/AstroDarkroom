@@ -519,4 +519,91 @@ public class MetricsTests
 
         Assert.Equal(4, k);
     }
+
+    // ------------------------------------------------- profilul radial nu sare
+
+    /// <summary>
+    /// Max relative deviation of a profile from its own 9-point Savitzky-Golay
+    /// smoothing, in percent. A profile that steps from one bin to the next scores high;
+    /// a smooth one scores its own discretisation floor.
+    ///
+    /// Coefficients are the exact rationals for window 9, degree 2, so there is no fit to
+    /// disagree about.
+    /// </summary>
+    static double ProfileRoughnessPct(double[] prof)
+    {
+        double[] sg = { -21, 14, 39, 54, 59, 54, 39, 14, -21 };
+        const double norm = 231.0;
+        if (prof.Length < 9) return double.NaN;
+
+        double worst = 0;
+        for (int i = 4; i < prof.Length - 4; i++)
+        {
+            double smooth = 0;
+            for (int j = 0; j < 9; j++) smooth += sg[j] * prof[i - 4 + j];
+            smooth /= norm;
+            worst = Math.Max(worst, Math.Abs(prof[i] - smooth) / smooth * 100);
+        }
+        return worst;
+    }
+
+    /// <summary>
+    /// THE REGRESSION TEST for the ring artefact.
+    ///
+    /// Beyond the inscribed circle a constant-radius ring is only partial arcs. On a
+    /// frame with a gradient those arcs hold a bimodal distribution - one end dark, the
+    /// other bright - and the median lands in the sparse gap between the two modes, so it
+    /// jumps from one bin to the next by an amount set by the gradient. The interpolated
+    /// model inherited the jumps and `img / model` drew them as concentric rings that
+    /// were not in the flat at all: reproduced on a synthetic frame that is nothing but
+    /// smooth vignetting times an 11 % ramp.
+    ///
+    /// Symmetrising kills the odd part - the whole gradient - before the profile is
+    /// taken. Both halves are asserted, so the test says what it protects against and
+    /// fails if someone drops the symmetrisation as redundant.
+    /// </summary>
+    /// <summary>
+    /// The scene is deliberately the size of a real analysis raster (2400x1600 prepares
+    /// to 1200x800) rather than the usual 512 fixture. At 256x256 the profile's own
+    /// discretisation floor is ~0.17 %, the same order as the artefact, so the fixture
+    /// sizes used elsewhere would only show a factor of two. At analysis size the
+    /// artefact is 77x the floor, which is what the real masters showed.
+    /// </summary>
+    [Fact]
+    public void RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised()
+    {
+        var tilted = Img.Prepare(Make(2400, 1600,
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(2400, 1600), 2400, 0.12)));
+        double cx = tilted.W / 2.0, cy = tilted.H / 2.0;
+
+        var (_, rawProf, _) = Metrics.RadialModel(tilted, cx, cy);
+        var (_, symProf, _) = Metrics.RadialModel(Img.Symmetrise(tilted), cx, cy);
+
+        double raw = ProfileRoughnessPct(rawProf), sym = ProfileRoughnessPct(symProf);
+
+        // masurat: 1.54 % brut, 0.02 % simetrizat
+        Assert.True(raw > 1.0, $"profilul brut ar trebui sa sara, dar a dat {raw:F3} %");
+        Assert.True(sym < 0.1, $"profilul simetrizat ar trebui neted, dar a dat {sym:F3} %");
+    }
+
+    /// <summary>
+    /// Si celalalt capat: pe un camp radial simetrizarea nu are ce sa scoata, deci
+    /// profilul nu se muta mai mult decat artefactul de o jumatate de pixel al centrarii
+    /// (problema cunoscuta 5) - masurat 0.20 % pe 256x256, si scade ca ~1/n.
+    /// </summary>
+    [Fact]
+    public void RadialModel_OnARadialField_SymmetrisingBarelyMovesTheProfile()
+    {
+        var radial = Img.Prepare(Make(512, 512, FitsTestData.Radial(512, 512)));
+        double cx = radial.W / 2.0, cy = radial.H / 2.0;
+
+        var (_, plain, _) = Metrics.RadialModel(radial, cx, cy);
+        var (_, sym, _) = Metrics.RadialModel(Img.Symmetrise(radial), cx, cy);
+
+        Assert.Equal(plain.Length, sym.Length);
+        double scale = plain.Average();
+        for (int i = 0; i < plain.Length; i++)
+            Assert.True(Math.Abs(plain[i] - sym[i]) / scale < 0.005,
+                $"binul {i} s-a mutat cu {Math.Abs(plain[i] - sym[i]) / scale * 100:F3} %");
+    }
 }

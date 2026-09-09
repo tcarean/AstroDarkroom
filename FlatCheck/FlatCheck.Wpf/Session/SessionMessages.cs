@@ -157,6 +157,35 @@ namespace FlatCheck.Wpf
             + "(.nef, .cr2, .cr3, .arw, .dng, .raf). Pe ele white si black se citesc exact "
             + "din fisier, nu se mai ghicesc din maxim.";
 
+        // --------------------------------------------------- cum citesc tabul
+        //
+        // Intrebarea "e dubios?" are doua jumatati, si numai una e a ochiului. Textul asta
+        // exista fiindca despartirea nu se vede din asezarea ecranului: cifrele din stanga
+        // si harta din dreapta arata ca doua vederi ale aceluiasi lucru, cand de fapt una
+        // decide si cealalta explica.
+
+        /// <summary>Ce decid cifrele si ce decide ochiul - intro-ul de deasupra celor doua randuri.</summary>
+        internal static string HowToReadIntro() =>
+            "Tabul raspunde la doua intrebari diferite, si nu cu aceleasi mijloace.";
+
+        /// <summary>Cele doua jumatati ale citirii, in ordinea in care se folosesc.</summary>
+        internal static IReadOnlyList<(string Shape, string Meaning)> HowToReadRows() => new[]
+        {
+            ("CAT DE MULT - decid cifrele, nu harta",
+             "\"Reziduu dupa model radial\" e chiar masura a cat din cadru nu se explica "
+             + "printr-o functie pur radiala, pe scara de mai jos. Sub 2 % nu conteaza ce "
+             + "forma are. Intre 2 si 10 % background extraction scoate ce ramane, oricare "
+             + "ar fi forma. Verdictul de utilizabilitate NU depinde niciodata de ce vezi "
+             + "in harta."),
+
+            ("CE FEL - aici intra ochiul, dar nu de la zero",
+             "Forma spune ce sa schimbi la sedinta urmatoare, nu daca flat-ul e bun. Si "
+             + "cifrele fac o parte din treaba inainte sa te uiti: daca \"inclinare\" e "
+             + "aproape de reziduu, e un gradient, si tabul Ratio spune daca e fix pe "
+             + "aparat sau in lume; daca reziduul e mare si inclinarea mica, e ceva local - "
+             + "pete sau un colt. Ce ramane pentru ochi e ghidul de sub harta."),
+        };
+
         // ------------------------------------------------------- ghidul hartii
         //
         // DE CE E DOCUMENTATIE SI NU DIAGNOSTIC. Unealta nu clasifica forma hartii si nu
@@ -197,12 +226,13 @@ namespace FlatCheck.Wpf
              + "obiectiv. Tabul Ratio spune daca e fix in lume (cerul) sau fix pe aparat "
              + "(difuzorul, parasolarul)."),
 
-            ("cercuri sau arce concentrice, descentrate",
-             "Modelul radial absoarbe orice inel centrat pe senzor, deci un inel care "
-             + "ramane e obligatoriu centrat in alta parte: caderea de lumina e "
-             + "descentrata. Ceva rotund din fata obiectivului - elastic, parasolar, "
-             + "filtru, marginea difuzorului - e in afara axei. Apare de obicei "
-             + "impreuna cu un dipol."),
+            ("cercuri sau arce concentrice",
+             "Un inel centrat pe senzor NU poate ramane in harta - modelul radial il "
+             + "absoarbe prin constructie. Deci daca vezi unul, e centrat in alta parte: "
+             + "ceva rotund din fata obiectivului e in afara axei, sau lumina nu e "
+             + "difuza. Nu s-a vazut inca pe un master real: inelele care apareau pe "
+             + "mastere cu gradient mare erau un artefact al modelului radial, corectat "
+             + "intre timp - profilul se ia acum din rasterul simetrizat la 180 de grade."),
 
             ("pata locala intr-un colt sau la o margine",
              "Light leak: vizor, montura, latura difuzorului. Nu se roteste cu cerul, "

@@ -96,6 +96,9 @@ namespace FlatCheck.Wpf
         /// <summary>Ghidul de citire al hartii. Documentatie, nu diagnostic - vezi MapGuideViewModel.</summary>
         public MapGuideViewModel MapGuide { get; } = new();
 
+        /// <summary>Ce decid cifrele si ce decide ochiul. Sta sub verdict, in coloana cifrelor.</summary>
+        public HowToReadViewModel HowToRead { get; } = new();
+
         /// <summary>Unde s-a salvat raportul, sau gol daca inca nu s-a salvat.</summary>
         public string SavedTo { get => _savedTo; private set => Set(ref _savedTo, value); }
 

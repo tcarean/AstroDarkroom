@@ -273,6 +273,20 @@ binds the two. Structure and Ratio get all three; **End-to-end gets the legend o
 because its map is the fitted radial term, graded against `Th.LightRad*` rather than the
 residual scale, so those caps would mean nothing on it.
 
+The guide's ring row was **rewritten** after the artefact described under `RadialModel`
+was found: it used to say rings meant a decentred round obstruction, which was the reading
+of an artefact, and sent the author looking for an object that had never been there. Don't
+restore the old wording from git history - `TheRingRowDoesNotClaimARingMeansADecentredObstruction`
+fails if you do.
+
+The Structure tab carries a fourth block, `HowToReadPanel`, under the verdict: **which
+half of the screen decides what.** The numbers answer "how much" and own the verdict; the
+map answers "what kind" and never votes. The screen's own layout suggests the opposite -
+two columns look like two views of one thing - so it is said in words. Same collapsed
+pattern and the same `GuideRow` template as the map guide, text in `SessionMessages`
+beside it, state in `HowToReadViewModel`. The disclosure toggle those three share lives in
+`Dark.xaml` as `Style x:Key="Disclosure"`; it had been hand-written twice before that.
+
 The scale switch is why `StructureTabViewModel` and `RatioTabViewModel` keep the residual
 **raster** rather than only the PNG bytes: the raster is already in the result, whereas
 pre-encoding four PNGs per run in the core would be ~7 MB and three encodings nobody may
@@ -760,6 +774,31 @@ like every other NaN in the tool.
 80 equal-width bins out to `rmax`, takes the median per bin (bins with < 8 pixels
 are dropped), then rebuilds a 2-D model by linear interpolation of that profile.
 `Interp` clamps at both ends, matching `np.interp`.
+
+**It is fed `Img.Symmetrise(img)`, not `img`** - the mean of the raster and its 180°
+rotation. The residual is still `img / model`, so the gradient the map exists to show is
+untouched. This is a fix, not a refinement: beyond the inscribed circle a constant-radius
+ring is only partial arcs, a gradient makes their pixel distribution bimodal, and the
+median falls into the sparse gap between the two modes - so it jumps from bin to bin by
+an amount set by the gradient. The interpolated model inherited the jumps and the map drew
+them as **concentric rings plus a hard circular edge on the inscribed radius, on a frame
+that contained neither**. Reproduced on a synthetic that is nothing but smooth vignetting
+times an 11 % ramp; measured on it, the worst ring-to-ring step went from 2.47 % to 0.11 %.
+The verdict numbers barely move (`LargeScalePtp` is restricted to the inscribed radius,
+where the median was already exact - the golden files shifted by 0.01-0.03 points and no
+band changed), but the map is the only place a *shape* is read, and it was lying. Symmetrise
+rather than switch the ring statistic to the mean: the mean cures it equally well but gives
+up the median's robustness to stars, hot pixels and dust, and the analyzer accepts single
+frames. Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`
+and `OnAGradient_TheResidualHasNoRingsOutToTheCorner`, both of which assert the *un*fixed
+behaviour too, so removing the symmetrisation as redundant fails loudly.
+
+A radial profile cannot be odd, so nothing the model is entitled to keep is lost. What is
+lost is a half-pixel's worth of accuracy: `Rotate180` mirrors about `((H-1)/2, (W-1)/2)`
+while the rings are measured about `(H/2, W/2)`, so a field radial about the latter is
+perturbed by ~0.3 % on a 512² raster and ~2.8 % on 64², fading as ~1/n. Same cause as
+known issue 5, negligible at analysis resolution, and pinned by
+`Symmetrise_OnTheFixtureFieldCostsOnlyTheHalfPixelArtefact`.
 
 **`AzimuthalAsymmetry(img, cx, cy, nsect = 12, nrings = 10)`** - 10 rings spanning
 `0.15·r_ins` to `r_ins`, 12 angular sectors. Per ring: median of each sector, then

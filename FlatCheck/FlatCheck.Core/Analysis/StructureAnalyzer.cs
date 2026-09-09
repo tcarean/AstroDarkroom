@@ -85,7 +85,12 @@ namespace FlatCheck
             double vignStops = Math.Log2(ctr / cmean);
             double spread = (cor.Values.Max() - cor.Values.Min()) / cmean * 100;
 
-            var (_, _, model) = Metrics.RadialModel(img, cx, cy);
+            // Profilul se ia din rasterul SIMETRIZAT la 180 de grade, nu din img: altfel
+            // mediana pe inel sare dincolo de cercul inscris si harta capata inele
+            // concentrice care nu sunt in flat. Vezi Img.Symmetrise pentru mecanism.
+            // Reziduul ramane insa al lui img - simetrizarea ar anula tocmai gradientul
+            // pe care harta trebuie sa-l arate.
+            var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(img), cx, cy);
             var resid = Img.Divide(img, model);
             double rIns = Math.Min(Math.Min(cx, cy), Math.Min(w - cx, h - cy));
             double resPtp = Metrics.LargeScalePtp(resid, cx, cy, rIns) * 100;

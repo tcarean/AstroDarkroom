@@ -97,5 +97,40 @@ namespace FlatCheck
                     o.Set(y, x, a.At(a.H - 1 - y, a.W - 1 - x));
             return o;
         }
+
+        /// <summary>
+        /// Media dintre raster si rotitul lui cu 180 de grade.
+        ///
+        /// Anuleaza EXACT partea impara - deci orice gradient liniar - si lasa neatinsa
+        /// partea para. Un profil radial nu poate fi impar, deci modelul radial nu pierde
+        /// nimic din ce are voie sa contina, si se scoate exact ce il facea sa sara.
+        ///
+        /// DE CE E NEVOIE, fiindca nu e evident: dincolo de cercul inscris, un inel de
+        /// raza constanta nu mai e un inel intreg, sunt arce parciale. Pe un cadru cu
+        /// gradient, distributia pixelilor din arcele alea e BIMODALA - un capat intunecat,
+        /// celalalt luminos - iar mediana cade in golul rarefiat dintre cele doua moduri,
+        /// deci sare de la un inel la urmatorul cu o amplitudine data de gradient. Modelul
+        /// interpolat mostenea salturile, si img/model le arata ca inele concentrice plus
+        /// o margine dura pe cercul inscris. Reprodus pe un raster sintetic care e doar
+        /// vignetare neteda ori un gradient de 11%: inelele apar fara sa existe nicio
+        /// margine in date.
+        ///
+        /// Cifrele de verdict nu depindeau de asta - LargeScalePtp e restrans la cercul
+        /// inscris, unde mediana era deja exacta (masurat: reziduul se muta cu sub 0.05
+        /// puncte) - dar HARTA mintea, si harta e singurul lucru din care se citeste forma
+        /// unei probleme.
+        ///
+        /// Alternativa era media pe inel in loc de mediana, care vindeca bimodalitatea la
+        /// fel de bine (masurat, aceleasi cifre), dar renunta la robustetea medianei fata
+        /// de stele, pixeli fierbinti si praf - iar analizorul primeste si cadre unice.
+        /// </summary>
+        internal static Img Symmetrise(Img a)
+        {
+            var o = new Img(a.H, a.W);
+            for (int y = 0; y < a.H; y++)
+                for (int x = 0; x < a.W; x++)
+                    o.Set(y, x, (a.At(y, x) + a.At(a.H - 1 - y, a.W - 1 - x)) / 2.0);
+            return o;
+        }
     }
 }

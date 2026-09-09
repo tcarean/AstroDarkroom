@@ -96,4 +96,60 @@ public class MapGuideTests
             SessionMessages.MapGuideShapes().Select(s => s.Shape),
             vm.Shapes.Select(r => r.Shape));
     }
+
+    /// <summary>
+    /// Randul despre inele NU mai trebuie sa spuna ca inelele inseamna un obstacol rotund
+    /// descentrat. Aia era citirea unui artefact al modelului radial, corectat de atunci -
+    /// iar cineva care citea harta pleca sa caute un obiect care nu existase niciodata.
+    /// Testul exista ca sa nu se intoarca formularea veche din istoria git.
+    /// </summary>
+    [Fact]
+    public void TheRingRowDoesNotClaimARingMeansADecentredObstruction()
+    {
+        var rings = SessionMessages.MapGuideShapes().Single(s => s.Shape.Contains("cercuri"));
+
+        Assert.DoesNotContain("descentrat", rings.Shape);
+        Assert.Contains("NU poate", rings.Meaning);       // un inel centrat pe senzor
+        Assert.Contains("artefact", rings.Meaning);       // si de ce se vedeau inainte
+    }
+
+    // ------------------------------------------------- cum citesc tabul
+
+    /// <summary>
+    /// Cele doua jumatati ale citirii. Textul trebuie sa spuna explicit care decide -
+    /// altfel cifrele din stanga si harta din dreapta arata ca doua vederi ale aceluiasi
+    /// lucru, si asta e chiar confuzia pe care panoul o rezolva.
+    /// </summary>
+    [Fact]
+    public void TheHowToReadNoteSeparatesHowMuchFromWhatKind()
+    {
+        var rows = SessionMessages.HowToReadRows();
+
+        Assert.Equal(2, rows.Count);
+        Assert.Contains("CAT DE MULT", rows[0].Shape);
+        Assert.Contains("CE FEL", rows[1].Shape);
+        Assert.Contains("cifrele", rows[0].Shape);
+        Assert.Contains("NU depinde", rows[0].Meaning);   // verdictul nu depinde de harta
+    }
+
+    [Fact]
+    public void TheHowToReadNoteUsesNoDiacritics()
+    {
+        string all = SessionMessages.HowToReadIntro() + string.Concat(
+            SessionMessages.HowToReadRows().Select(s => s.Shape + s.Meaning));
+
+        Assert.All(all, c => Assert.True(c < 128, $"caracter non-ASCII: '{c}'"));
+    }
+
+    [Fact]
+    public void TheHowToReadViewModelCarriesTheSameTextAndStartsCollapsed()
+    {
+        var vm = new HowToReadViewModel();
+
+        Assert.Equal(SessionMessages.HowToReadIntro(), vm.Intro);
+        Assert.Equal(
+            SessionMessages.HowToReadRows().Select(s => s.Shape),
+            vm.Rows.Select(r => r.Shape));
+        Assert.False(vm.IsExpanded);
+    }
 }

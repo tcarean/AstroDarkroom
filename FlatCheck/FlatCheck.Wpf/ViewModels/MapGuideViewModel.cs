@@ -57,4 +57,29 @@ namespace FlatCheck.Wpf
         /// </summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
+
+    /// <summary>
+    /// "Cum citesc tabul": ce decid cifrele si ce decide ochiul.
+    ///
+    /// Aceeasi forma ca ghidul hartii, si din acelasi motiv - documentatie afisata, cu un
+    /// intro si doua randuri - dar alt subiect si alt loc pe ecran: ghidul sta sub harta
+    /// si vorbeste despre forme, asta sta sub verdict si vorbeste despre despartirea
+    /// dintre "cat de mult" (cifrele) si "ce fel" (harta). Despartirea nu se vede din
+    /// asezarea ecranului, fiindca cifrele si harta arata ca doua vederi ale aceluiasi
+    /// lucru, cand de fapt una decide si cealalta explica.
+    /// </summary>
+    public sealed class HowToReadViewModel : ObservableObject
+    {
+        bool _expanded;
+
+        public string Intro => SessionMessages.HowToReadIntro();
+
+        public IReadOnlyList<GuideRow> Rows { get; } =
+            SessionMessages.HowToReadRows()
+                .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
+                .ToList();
+
+        /// <summary>Pliat implicit, ca ghidul hartii: verdictul trebuie sa ramana primul lucru vizibil.</summary>
+        public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
+    }
 }

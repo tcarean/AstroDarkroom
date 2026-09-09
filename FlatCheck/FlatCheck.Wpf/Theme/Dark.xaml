@@ -511,6 +511,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
   </DataTemplate>
 
+  <!-- Butonul de pliere: chevron plus eticheta din Content. Aparea a treia oara scris de
+       mana (raportul text, ghidul hartii, cum citesc tabul), deci sta o data aici. -->
+  <Style x:Key="Disclosure" TargetType="ToggleButton">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <StackPanel Orientation="Horizontal" Background="Transparent">
+            <TextBlock x:Name="chev" Text="&#x25B8;" Foreground="{StaticResource MutedBr}"
+                       VerticalAlignment="Center" Margin="0,0,7,0" />
+            <TextBlock Text="{TemplateBinding Content}"
+                       Foreground="{StaticResource MutedBr}" FontSize="12" />
+          </StackPanel>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="chev" Property="Text" Value="&#x25BE;" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="chev" Property="Foreground" Value="{StaticResource AccentBr}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- Un rand din ghidul hartii: numele formei, apoi ce a insemnat. Numele intai si
        aldin, ca sa se poata scana lista dupa forma vazuta pe ecran. -->
   <DataTemplate x:Key="GuideRowTemplate">

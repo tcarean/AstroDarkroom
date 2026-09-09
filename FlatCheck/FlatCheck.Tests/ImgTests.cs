@@ -130,4 +130,92 @@ public class ImgTests
         Array.Fill(img.D, v);
         return img;
     }
+
+    // ---------------------------------------------------------------- Symmetrise
+
+    /// <summary>
+    /// The defining property, and the one the radial model relies on: whatever goes in,
+    /// what comes out is exactly even under a 180 degree rotation. That is what makes a
+    /// ring's pixel distribution symmetric, so its median stops falling into the gap
+    /// between two modes and stops jumping from bin to bin.
+    /// </summary>
+    [Fact]
+    public void Symmetrise_OutputIsExactlyInvariantUnderRotation()
+    {
+        var tilted = TestImages.From(64, 48,
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(64, 48), 64, 0.20));
+
+        var sym = Img.Symmetrise(tilted);
+        var spun = Img.Rotate180(sym);
+
+        for (int i = 0; i < sym.D.Length; i++)
+            Assert.Equal(sym.D[i], spun.D[i], 12);
+    }
+
+    /// <summary>
+    /// A field that is already even about the ROTATION centre comes back untouched, bit
+    /// for bit - so the radial model gives up nothing it was entitled to keep.
+    ///
+    /// Note the centre: `Rotate180` mirrors about ((H-1)/2, (W-1)/2), the true middle of
+    /// the pixel indices, so the scene here is built about that and not about (w/2, h/2)
+    /// like <see cref="FitsTestData.Radial"/>. That half-pixel difference is known issue
+    /// 5, and the next test measures what it costs.
+    /// </summary>
+    [Fact]
+    public void Symmetrise_LeavesAFieldAlreadyEvenAboutTheRotationCentreUntouched()
+    {
+        const int w = 64, h = 48;
+        double cx = (w - 1) / 2.0, cy = (h - 1) / 2.0;
+        var even = TestImages.From(w, h, (x, y) =>
+        {
+            double dx = x - cx, dy = y - cy;
+            return 30000 * (1 - 0.45 * (dx * dx + dy * dy) / (cx * cx + cy * cy));
+        });
+
+        var sym = Img.Symmetrise(even);
+
+        for (int i = 0; i < even.D.Length; i++)
+            Assert.Equal(even.D[i], sym.D[i], 12);
+    }
+
+    /// <summary>
+    /// On the fixture generator's radial field - centred on (w/2, h/2), half a pixel off
+    /// the rotation centre - symmetrising does perturb the values. It is the same
+    /// systematic half-pixel artefact as known issue 5 and it fades as ~1/n: measured
+    /// 2.81 % worst case on 64x48, 0.32 % on 512x512, and well under a tenth of that on
+    /// a real analysis raster. Pinned so that a future change of the centring convention
+    /// shows up here rather than as a mystery in the residual.
+    /// </summary>
+    [Fact]
+    public void Symmetrise_OnTheFixtureFieldCostsOnlyTheHalfPixelArtefact()
+    {
+        var small = TestImages.From(64, 48, FitsTestData.Radial(64, 48));
+        var large = TestImages.From(512, 512, FitsTestData.Radial(512, 512));
+
+        Assert.InRange(WorstRelativeChangePct(small), 1.0, 4.0);
+        Assert.InRange(WorstRelativeChangePct(large), 0.1, 0.6);
+    }
+
+    static double WorstRelativeChangePct(Img a)
+    {
+        var sym = Img.Symmetrise(a);
+        double worst = 0;
+        for (int i = 0; i < a.D.Length; i++)
+            worst = Math.Max(worst, Math.Abs(sym.D[i] - a.D[i]) / a.D[i] * 100);
+        return worst;
+    }
+
+    /// <summary>Media a doua valori simetrice, pe cel mai mic caz posibil.</summary>
+    [Fact]
+    public void Symmetrise_AveragesEachPixelWithItsOpposite()
+    {
+        var a = new Img(1, 2);
+        a.Set(0, 0, 10);
+        a.Set(0, 1, 20);
+
+        var sym = Img.Symmetrise(a);
+
+        Assert.Equal(15.0, sym.At(0, 0), 9);
+        Assert.Equal(15.0, sym.At(0, 1), 9);
+    }
 }

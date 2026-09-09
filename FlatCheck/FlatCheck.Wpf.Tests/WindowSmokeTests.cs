@@ -160,6 +160,7 @@ public class WindowSmokeTests
             // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
             // ce exista suita asta sa prinda.
             vm.Structure.MapGuide.IsExpanded = true;
+            vm.Structure.HowToRead.IsExpanded = true;
             vm.Ratio.MapGuide.IsExpanded = true;
             Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura-ghid");
             Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-ghid");

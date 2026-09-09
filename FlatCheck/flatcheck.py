@@ -514,7 +514,13 @@ def _structure_body(img, cx, cy):
     vign_stops = np.log2(ctr / cvals.mean())
     spread = (cvals.max() - cvals.min()) / cvals.mean() * 100
 
-    r, rc, prof, model = radial_model(img, cx, cy)
+    # Profilul se ia din rasterul SIMETRIZAT la 180 de grade, nu din img. Dincolo de
+    # cercul inscris inelele sunt arce parciale, un gradient le face distributia bimodala,
+    # si mediana cade in golul dintre moduri - deci sare de la un inel la altul, iar
+    # img/model mostenea salturile ca inele concentrice care nu erau in flat. Partea
+    # impara (orice gradient) se anuleaza exact, partea para ramane, si un profil radial
+    # nu poate fi impar. Reziduul ramane al lui img, ca gradientul sa ramana vizibil.
+    r, rc, prof, model = radial_model((img + img[::-1, ::-1]) / 2, cx, cy)
     resid = img / np.maximum(model, 1e-12)
     r_ins = min(cx, cy, w - cx, h - cy)
     res_ptp = large_scale_ptp(resid, cx, cy, r_ins) * 100

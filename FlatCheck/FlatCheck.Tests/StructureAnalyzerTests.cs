@@ -149,4 +149,73 @@ public class StructureAnalyzerTests
 
         Assert.Equal(1.0, Stats.Percentile(r.Residual.D.ToList(), 50), 3);
     }
+
+    /// <summary>
+    /// The map must not invent rings. On a frame carrying nothing but smooth vignetting
+    /// and a linear gradient, the residual used to show concentric rings outside the
+    /// inscribed circle plus a hard circular edge on it - see <see cref="Img.Symmetrise"/>
+    /// for the mechanism. Someone reading that map would go looking for a round
+    /// obstruction that was never there, which is exactly what happened.
+    ///
+    /// Read as ring MEANS: the mean over each ring collapses the gradient (the two halves
+    /// cancel), so what is left is the radial behaviour of the model, and it has to be
+    /// smooth from one ring to the next. Rings are sampled from 0.6x the inscribed radius
+    /// out to the corner, which spans the whole region where the artefact lived, and only
+    /// rings holding at least 2000 pixels are used - the last sliver before the corner tip
+    /// is four arcs of some 90 pixels each, whose mean is sampling noise and jumps 0.5 %
+    /// on its own.
+    ///
+    /// Measured on this scene: 2.47 % worst step from the raw profile, 0.11 % from the
+    /// symmetrised one, over 57 rings. Both are asserted, so the test states what it
+    /// protects against.
+    /// </summary>
+    [Fact]
+    public void OnAGradient_TheResidualHasNoRingsOutToTheCorner()
+    {
+        var img = Img.Prepare(TestImages.From(2400, 1600,
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(2400, 1600), 2400, 0.12)));
+        double cx = img.W / 2.0, cy = img.H / 2.0;
+
+        var (_, _, rawModel) = Metrics.RadialModel(img, cx, cy);
+        var fixedResidual = StructureAnalyzer.Analyze(TestImages.From(2400, 1600,
+            FitsTestData.WithLinearGradient(FitsTestData.Radial(2400, 1600), 2400, 0.12))).Residual;
+
+        double worstRaw = WorstRingStep(Img.Divide(img, rawModel));
+        double worstFixed = WorstRingStep(fixedResidual);
+
+        Assert.True(worstRaw > 1.0,
+            $"profilul brut ar trebui sa lase inele, dar cel mai mare salt a fost {worstRaw:F3} %");
+        Assert.True(worstFixed < 0.5,
+            $"harta nu ar trebui sa aiba inele, dar cel mai mare salt a fost {worstFixed:F3} %");
+    }
+
+    /// <summary>Cel mai mare salt intre mediile a doua inele consecutive, in procente.</summary>
+    static double WorstRingStep(Img resid)
+    {
+        double cx = resid.W / 2.0, cy = resid.H / 2.0;
+        double rIns = Math.Min(cx, cy), rMax = Math.Sqrt(cx * cx + cy * cy);
+        double step = 0.02 * rIns;
+
+        double worst = 0, prev = double.NaN;
+        int rings = 0;
+        for (double rad = 0.6 * rIns; rad < rMax; rad += step)
+        {
+            double sum = 0; int n = 0;
+            for (int y = 0; y < resid.H; y++)
+                for (int x = 0; x < resid.W; x++)
+                {
+                    double d = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                    if (d >= rad && d < rad + step) { sum += resid.At(y, x); n++; }
+                }
+            if (n < 2000) continue;
+
+            double mean = sum / n;
+            if (!double.IsNaN(prev)) worst = Math.Max(worst, Math.Abs(mean - prev) * 100);
+            prev = mean;
+            rings++;
+        }
+
+        Assert.True(rings > 40, $"prea putine inele masurate: {rings}");
+        return worst;
+    }
 }

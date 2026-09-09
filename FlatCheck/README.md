@@ -72,7 +72,8 @@ zgomot". Aia e o cifră, și se poate măsura.
 
 Modelul radial și asimetria se calculează în jurul **centrului senzorului**, nu al
 vârfului de iluminare fitat. Fitarea centrului ar absorbi exact gradientul liniar pe care
-îl cauți, iar testul s-ar anula singur.
+îl cauți, iar testul s-ar anula singur. Profilul radial se ia însă din rasterul simetrizat
+la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost-reparată).
 
 ---
 
@@ -482,10 +483,45 @@ forma, care spune *de ce*. Aceeași listă e și în fereastră, sub hartă, la 
 |---|---|
 | pete fără direcție | Abateri mici, fără o axă preferată. Semnătura difuzorului plus zgomotul cerului. Background extraction le scoate fără efort. |
 | dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. `--ratio` spune dacă e fix în lume sau fix pe aparat. |
-| cercuri sau arce concentrice, descentrate | Modelul radial absoarbe orice inel centrat pe senzor, deci un inel care rămâne e centrat **în altă parte**: căderea de lumină e descentrată. Ceva rotund din fața obiectivului — elastic, parasolar, filtru, marginea difuzorului — e în afara axei. Apare de obicei împreună cu un dipol. |
+| cercuri sau arce concentrice | Un inel centrat pe senzor **nu poate** rămâne în hartă — modelul radial îl absoarbe prin construcție. Deci dacă vezi unul, e centrat în altă parte: ceva rotund din fața obiectivului e în afara axei, sau lumina nu e difuză. **Nu s-a văzut încă pe un master real:** inelele care apăreau pe mastere cu gradient mare erau un artefact al modelului radial, corectat între timp — vezi mai jos. |
 | pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. Nu se rotește cu cerul, deci `--ratio` o pune pe aparat. |
 | pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Testul prin rotație e **orb** la ea prin construcție; contra-testul e distanța — un set la 30 cm, unul la 60. |
 | granulație fină peste tot | Zgomot, nu structură: prea puține cadre sau expunere prea joasă. Nu e nimic de reparat la sursă, doar de stivuit mai mult. |
+
+### Cine decide: cifrele sau harta
+
+Cele două jumătăți ale ecranului nu au același rol, deși arată ca două vederi ale
+aceluiași lucru.
+
+- **Cât de mult** — decid **cifrele**. „Reziduu după modelul radial" e chiar măsura a cât
+  din cadru nu se explică printr-o funcție pur radială, pe scara de reziduu. Sub 2% nu
+  contează ce formă are; între 2 și 10% background extraction scoate ce rămâne, oricare ar
+  fi forma. **Verdictul nu depinde niciodată de ce vezi în hartă.**
+- **Ce fel** — aici intră ochiul, dar nu de la zero. Forma spune ce să schimbi la ședința
+  următoare, nu dacă flat-ul e bun. Și cifrele fac o parte din treabă înainte: dacă
+  `inclinare` e aproape de reziduu, e un gradient, și `--ratio` spune dacă e fix pe aparat
+  sau în lume; dacă reziduul e mare și înclinarea mică, e ceva local. Ce rămâne pentru ochi
+  e tabelul de mai sus.
+
+Aceeași explicație e în fereastră, sub verdictul din tabul Structură.
+
+### O capcană care a fost reparată
+
+Profilul radial se ia din **rasterul simetrizat la 180°**, adică din media dintre master
+și rotitul lui, nu direct din master. Reziduul rămâne `img/model`, deci gradientul se vede
+în continuare.
+
+Motivul: dincolo de cercul înscris, un inel de rază constantă nu mai e un inel întreg,
+sunt arce parțiale. Pe un cadru cu gradient, distribuția pixelilor din arcele alea e
+bimodală — un capăt întunecat, celălalt luminos — iar mediana cade în golul dintre cele
+două moduri, deci sare de la un inel la altul. Modelul moștenea salturile și harta le
+desena drept **cercuri concentrice plus o margine dură pe cercul înscris, pe un cadru care
+nu conținea niciuna.** Reprodus pe un cadru sintetic care e doar vignetare netedă ori un
+gradient de 11%.
+
+Cifrele de verdict nu erau afectate — reziduul se măsoară doar în cercul înscris, unde
+mediana era deja exactă — dar harta e singurul loc din care se citește o *formă*, iar ea
+mințea. Dacă ai hărți salvate dinainte cu inele pe ele, ăsta era motivul.
 
 ---
 
