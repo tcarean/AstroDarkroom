@@ -25,51 +25,80 @@ public class ImagePairValidatorTests
         new(path, width, height, 16, ColorChannels.Rgb);
 
     [Fact]
-    public void MatchingDimensionsPass()
+    public void MatchingDimensionsNeedNoPadding()
     {
-        ValidationResult result = ImagePairValidator.Validate(
+        PadPlan plan = ImagePairValidator.Inspect(
             Info(@"C:\before.png", 5794, 3637),
             Info(@"C:\after.tif", 5794, 3637));
 
-        Assert.True(result.IsValid);
-        Assert.Null(result.Error);
+        Assert.False(plan.RequiresPadding);
+        Assert.Equal(5794, plan.Width);
+        Assert.Equal(3637, plan.Height);
     }
 
     [Theory]
-    [InlineData(5794, 3637, 6000, 3637)]
-    [InlineData(5794, 3637, 5794, 4000)]
-    [InlineData(5794, 3637, 3637, 5794)]
-    public void MismatchedDimensionsFail(int widthA, int heightA, int widthB, int heightB)
+    [InlineData(5794, 3637, 6000, 3637, 6000, 3637)]
+    [InlineData(5794, 3637, 5794, 4000, 5794, 4000)]
+    [InlineData(5794, 3637, 3637, 5794, 5794, 5794)]
+    [InlineData(2000, 1000, 1800, 1200, 2000, 1200)]
+    public void TheCanvasIsTheLargerExtentOnEachAxis(
+        int widthA, int heightA, int widthB, int heightB, int expectedWidth, int expectedHeight)
     {
-        ValidationResult result = ImagePairValidator.Validate(
+        PadPlan plan = ImagePairValidator.Inspect(
             Info(@"C:\before.png", widthA, heightA),
             Info(@"C:\after.png", widthB, heightB));
 
-        Assert.False(result.IsValid);
-        Assert.NotNull(result.Error);
+        Assert.True(plan.RequiresPadding);
+        Assert.Equal(expectedWidth, plan.Width);
+        Assert.Equal(expectedHeight, plan.Height);
     }
 
     [Fact]
-    public void TheFailureMessageNamesBothFilesAndBothResolutions()
+    public void TheCanvasIsBigEnoughForEitherImageWhicheverWayRoundTheyAreGiven()
     {
-        ValidationResult result = ImagePairValidator.Validate(
-            Info(@"C:\astro\before.png", 5794, 3637),
-            Info(@"C:\astro\after.png", 6000, 4000));
+        ImageInfo small = Info(@"C:\a.png", 1800, 1200);
+        ImageInfo large = Info(@"C:\b.png", 2000, 1000);
 
-        Assert.NotNull(result.Error);
-        Assert.Contains("before.png", result.Error);
-        Assert.Contains("after.png", result.Error);
-        Assert.Contains("5794 \u00d7 3637", result.Error);
-        Assert.Contains("6000 \u00d7 4000", result.Error);
+        Assert.Equal(ImagePairValidator.Inspect(small, large), ImagePairValidator.Inspect(large, small));
+    }
+
+    [Fact]
+    public void TheQuestionNamesBothFilesBothResolutionsAndTheResult()
+    {
+        // Sized so that the padded canvas matches neither original outright, which is the case
+        // where a message echoing only one of them would mislead.
+        ImageInfo before = Info(@"C:\astro\before.png", 5794, 4000);
+        ImageInfo after = Info(@"C:\astro\after.png", 6000, 3637);
+        PadPlan plan = ImagePairValidator.Inspect(before, after);
+
+        string message = ImagePairValidator.DescribeMismatch(before, after, plan);
+
+        Assert.Contains("before.png", message);
+        Assert.Contains("after.png", message);
+        Assert.Contains("5794 \u00d7 4000", message);
+        Assert.Contains("6000 \u00d7 3637", message);
+        Assert.Contains("6000 \u00d7 4000", message);
+        Assert.Contains("black", message);
+    }
+
+    [Fact]
+    public void APadRequestCarriesItsOwnWording()
+    {
+        ImageInfo before = Info(@"C:\a.png", 100, 100);
+        ImageInfo after = Info(@"C:\b.png", 120, 100);
+        var request = new PadRequest(before, after, ImagePairValidator.Inspect(before, after));
+
+        Assert.Equal(ImagePairValidator.DescribeMismatch(before, after, request.Plan), request.Message);
+        Assert.Equal("120 \u00d7 100", request.Plan.Dimensions);
     }
 
     [Fact]
     public void BitDepthAndChannelLayoutDoNotHaveToMatch()
     {
-        ValidationResult result = ImagePairValidator.Validate(
+        PadPlan plan = ImagePairValidator.Inspect(
             new ImageInfo(@"C:\a.png", 100, 100, 16, ColorChannels.Rgb),
             new ImageInfo(@"C:\b.png", 100, 100, 8, ColorChannels.Rgba));
 
-        Assert.True(result.IsValid);
+        Assert.False(plan.RequiresPadding);
     }
 }

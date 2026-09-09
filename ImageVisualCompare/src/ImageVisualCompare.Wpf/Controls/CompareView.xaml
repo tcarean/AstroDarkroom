@@ -18,6 +18,14 @@
              the bitmap into it. A Canvas measures with infinite space, so the image keeps its
              true pixel size and the transform alone decides what is seen. -->
         <Canvas x:Name="AfterLayer">
+            <!-- Both backdrops cover the whole shared canvas, which is larger than an image
+                 whenever the pair had to be padded. Without this one the padding beside B
+                 would show the control background instead of black. -->
+            <Rectangle x:Name="AfterBackdrop"
+                       Canvas.Left="0"
+                       Canvas.Top="0"
+                       Fill="{StaticResource ImageBackdropBrush}" />
+
             <Image x:Name="AfterImage"
                    Canvas.Left="0"
                    Canvas.Top="0"
@@ -27,14 +35,15 @@
 
         <Canvas x:Name="BeforeLayer">
             <!-- Image A sits on top of image B, so without an opaque backdrop a file with an
-                 alpha channel would blend into B on the left while B blends into the canvas
-                 colour on the right. The two halves would then be composited over different
+                 alpha channel would blend into B on the left while B blends into the backdrop
+                 on the right. The two halves would then be composited over different
                  backgrounds and the comparison would be showing an artefact of the display.
-                 This rectangle gives A the same backdrop B has. -->
+                 This rectangle gives A the same backdrop B has — same brush, same size, same
+                 transform. -->
             <Rectangle x:Name="BeforeBackdrop"
                        Canvas.Left="0"
                        Canvas.Top="0"
-                       Fill="{StaticResource CanvasBrush}" />
+                       Fill="{StaticResource ImageBackdropBrush}" />
 
             <Image x:Name="BeforeImage"
                    Canvas.Left="0"

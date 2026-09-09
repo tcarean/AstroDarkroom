@@ -21,12 +21,17 @@ using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
-/// <summary>The two images being compared, guaranteed to share a pixel size.</summary>
-public sealed record ImagePair(LoadedImage Before, LoadedImage After)
+/// <summary>The two images being compared, on the canvas they share.</summary>
+/// <param name="Pad">
+/// The common canvas. Equal to both images when they agree; the larger extent on each axis
+/// when they do not, in which case the smaller one is shown padded with black. The padding
+/// is layout only — no bitmap here is any larger than the file it came from.
+/// </param>
+public sealed record ImagePair(LoadedImage Before, LoadedImage After, PadPlan Pad)
 {
-    public int PixelWidth => Before.Info.PixelWidth;
+    public int PixelWidth => Pad.Width;
 
-    public int PixelHeight => Before.Info.PixelHeight;
+    public int PixelHeight => Pad.Height;
 
     /// <summary>Combined footprint of both Bgra32 buffers, for the memory readout.</summary>
     public long DisplayBytes => Before.Info.DisplayBytes + After.Info.DisplayBytes;
@@ -36,13 +41,20 @@ public sealed record ImagePair(LoadedImage Before, LoadedImage After)
 /// <param name="FileName">The file currently being decoded, or null when finished.</param>
 public readonly record struct ImageLoadProgress(double Fraction, string? FileName);
 
-public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error)
+/// <summary>
+/// The outcome of a load. Declining the padding is deliberately not a failure: the user
+/// answered a question, so there is nothing to report back to them and the caller can go
+/// straight back to picking files.
+/// </summary>
+public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool WasDeclined = false)
 {
     public bool IsSuccess => Pair is not null;
 
     public static ImagePairLoadResult Success(ImagePair pair) => new(pair, null);
 
     public static ImagePairLoadResult Failure(string error) => new(null, error);
+
+    public static ImagePairLoadResult Declined { get; } = new(null, null, WasDeclined: true);
 }
 
 /// <summary>
@@ -50,19 +62,26 @@ public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error)
 /// </summary>
 public sealed class ImagePairLoader(IImageLoader loader)
 {
+    /// <param name="confirmPadding">
+    /// Asked, and only asked, when the two images differ in size: answering yes pads them to
+    /// a common canvas, no abandons the load. It is invoked on a thread pool thread, so a UI
+    /// implementation has to marshal. Leaving it null means a mismatched pair is refused
+    /// outright, which is the right default for anything without a user attached.
+    /// </param>
     public async Task<ImagePairLoadResult> LoadAsync(
         string beforePath,
         string afterPath,
         IProgress<ImageLoadProgress>? progress = null,
+        Func<PadRequest, Task<bool>>? confirmPadding = null,
         CancellationToken cancellationToken = default)
     {
         string currentPath = beforePath;
 
         try
         {
-            // Both headers first. A mismatched pair is then rejected having allocated nothing,
-            // instead of after spending several seconds and ~170 MB on pixels about to be thrown
-            // away.
+            // Both headers first. A pair that turns out to need a decision is then put to the
+            // user having allocated nothing, instead of after spending several seconds and
+            // ~170 MB on pixels that may be about to be thrown away.
             ImageInfo beforeInfo = await Task.Run(() => loader.Probe(beforePath), cancellationToken)
                 .ConfigureAwait(false);
 
@@ -70,10 +89,20 @@ public sealed class ImagePairLoader(IImageLoader loader)
             ImageInfo afterInfo = await Task.Run(() => loader.Probe(afterPath), cancellationToken)
                 .ConfigureAwait(false);
 
-            ValidationResult validation = ImagePairValidator.Validate(beforeInfo, afterInfo);
-            if (!validation.IsValid)
+            PadPlan pad = ImagePairValidator.Inspect(beforeInfo, afterInfo);
+
+            if (pad.RequiresPadding)
             {
-                return ImagePairLoadResult.Failure(validation.Error!);
+                if (confirmPadding is null)
+                {
+                    return ImagePairLoadResult.Failure(
+                        ImagePairValidator.DescribeMismatch(beforeInfo, afterInfo, pad));
+                }
+
+                if (!await confirmPadding(new PadRequest(beforeInfo, afterInfo, pad)).ConfigureAwait(false))
+                {
+                    return ImagePairLoadResult.Declined;
+                }
             }
 
             // Sequentially, not in parallel: the transient decode buffer is the largest single
@@ -88,7 +117,7 @@ public sealed class ImagePairLoader(IImageLoader loader)
             LoadedImage after = await loader.LoadAsync(afterPath, cancellationToken).ConfigureAwait(false);
 
             progress?.Report(new ImageLoadProgress(1, null));
-            return ImagePairLoadResult.Success(new ImagePair(before, after));
+            return ImagePairLoadResult.Success(new ImagePair(before, after, pad));
         }
         catch (OperationCanceledException)
         {

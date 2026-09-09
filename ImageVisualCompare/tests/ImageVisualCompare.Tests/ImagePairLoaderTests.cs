@@ -46,7 +46,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task RejectsAMismatchedPairWithBothResolutionsInTheMessage()
+    public async Task WithNoOneToAskAMismatchedPairIsStillRefused()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 64, 48);
         string after = _images.WritePng("after.png", PixelFormats.Bgr24, 65, 48);
@@ -71,6 +71,82 @@ public class ImagePairLoaderTests : IDisposable
         Assert.False(result.IsSuccess);
         Assert.Equal(2, loader.ProbeCount);
         Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task DecliningThePaddingCostsNothingAndIsNotAnError()
+    {
+        var loader = new RecordingLoader(
+            new ImageInfo("a.png", 100, 100, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 200, 100, 8, ColorChannels.Rgb));
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader)
+            .LoadAsync("a.png", "b.png", confirmPadding: _ => Task.FromResult(false));
+
+        Assert.True(result.WasDeclined);
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Error);
+        Assert.Equal(0, loader.LoadCount);
+    }
+
+    [Fact]
+    public async Task AcceptingThePaddingGivesACanvasBigEnoughForBothImages()
+    {
+        var loader = new RecordingLoader(
+            new ImageInfo("a.png", 100, 200, 8, ColorChannels.Rgb),
+            new ImageInfo("b.png", 300, 50, 8, ColorChannels.Rgb));
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader)
+            .LoadAsync("a.png", "b.png", confirmPadding: _ => Task.FromResult(true));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Pair!.Pad.RequiresPadding);
+        Assert.Equal(300, result.Pair.PixelWidth);
+        Assert.Equal(200, result.Pair.PixelHeight);
+
+        // The images themselves are untouched: the padding is something the view draws, not
+        // something anyone copied pixels for.
+        Assert.Equal(100, result.Pair.Before.Info.PixelWidth);
+        Assert.Equal(300, result.Pair.After.Info.PixelWidth);
+    }
+
+    [Fact]
+    public async Task TheQuestionCarriesBothFilesAndTheResultingCanvas()
+    {
+        var loader = new RecordingLoader(
+            new ImageInfo(@"C:\astro\a.png", 100, 200, 8, ColorChannels.Rgb),
+            new ImageInfo(@"C:\astro\b.png", 300, 50, 8, ColorChannels.Rgb));
+        PadRequest? asked = null;
+
+        await new ImagePairLoader(loader).LoadAsync("a.png", "b.png", confirmPadding: request =>
+        {
+            asked = request;
+            return Task.FromResult(true);
+        });
+
+        Assert.NotNull(asked);
+        Assert.Contains("a.png", asked!.Value.Message);
+        Assert.Contains("b.png", asked.Value.Message);
+        Assert.Contains("300 \u00d7 200", asked.Value.Message);
+    }
+
+    [Fact]
+    public async Task AMatchingPairIsNeverQuestioned()
+    {
+        var info = new ImageInfo("x.png", 10, 10, 8, ColorChannels.Rgb);
+        var loader = new RecordingLoader(info, info);
+        bool asked = false;
+
+        ImagePairLoadResult result = await new ImagePairLoader(loader).LoadAsync(
+            "a.png", "b.png", confirmPadding: _ =>
+            {
+                asked = true;
+                return Task.FromResult(true);
+            });
+
+        Assert.True(result.IsSuccess);
+        Assert.False(asked);
+        Assert.False(result.Pair!.Pad.RequiresPadding);
     }
 
     [Fact]

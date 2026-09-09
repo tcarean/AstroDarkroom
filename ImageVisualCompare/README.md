@@ -19,10 +19,19 @@ citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat. Nu există nicio
 cod care să întrebe ce format are fișierul — totul se normalizează la Bgra32 la încărcare,
 iar formatul real e afișat în bara de stare ca să știi mereu ce ai deschis.
 
-**Singura condiție: cele două imagini trebuie să aibă exact aceleași dimensiuni în pixeli.**
-Altfel comparația n-ar însemna nimic, iar aplicația refuză perechea cu un mesaj care arată
-ambele rezoluții. Adâncimea de biți și numărul de canale *pot* să difere între ele — poți
-compara un PNG pe 16 biți cu un TIFF pe 8 biți fără probleme.
+Adâncimea de biți și numărul de canale *pot* să difere între cele două — poți compara un PNG
+pe 16 biți cu un TIFF pe 8 biți fără probleme.
+
+**Dacă dimensiunile în pixeli diferă, ești întrebat înainte să se încarce ceva.** Mesajul arată
+ambele rezoluții și dimensiunea pânzei comune (maximul pe fiecare axă). Dacă accepți, cele două
+se compară pe acea pânză, fiecare ancorată în colțul din stânga-sus, iar restul rămâne negru —
+imaginea mai îngustă are negru în dreapta, cea mai scundă are negru dedesubt. Dacă refuzi, se
+redeschide selectorul de fișiere.
+
+Fișierele de pe disc nu sunt atinse, și nici pixelii din memorie: negrul e fundalul peste care
+se desenează oricum ambele imagini, nu o copie mai mare a lor. Citirea RGB din bara de stare
+arată `—` acolo unde o imagine nu ajunge, deci se vede imediat că ești în zona de padding și
+nu într-o zonă neagră din poză.
 
 Un export „32 bit" din Siril ajunge pe disc ca PNG pe **16 biți pe canal** (48 bpp), fiindcă
 formatul PNG nu are un mod pe 32 de biți. Windows raportează corect „bit depth 48".
@@ -78,6 +87,10 @@ Dimensiunea perechii și formatul real al fiecărui fișier, coordonata pixelulu
 și **valorile RGB din ambele imagini în acel pixel**. Ultima parte e adesea singurul mod de a
 vedea o diferență: pe un fundal întunecat, o diferență de una-două unități din 255 e complet
 invizibilă cu ochiul, dar se citește imediat în cifre.
+
+Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded · A 600 × 300 ·
+B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre
+imagini nu are dimensiunea aceea.
 
 În dreapta barei de stare stau permanent versiunea și copyright-ul. Butonul `About` din
 toolbar arată nota completă de licență.

@@ -21,8 +21,9 @@ User documentation lives in `README.md`. Do not restate it here or in comments.
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
     therefore search rather than index.
   - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on.
-  - `ImagePairValidator.cs` — equal pixel dimensions or refusal, with both resolutions in
-    the message.
+  - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
+    larger extent on each axis, plus whether that meant padding and the question to put to
+    the user if it did.
   - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
     so Core needs no `WindowsBase` reference.
   - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
@@ -45,10 +46,11 @@ User documentation lives in `README.md`. Do not restate it here or in comments.
     `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
     words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
     anything it does not recognise.
-  - `Imaging/ImagePairLoader.cs` — probes **both** headers and validates before decoding
-    either. A mismatched pair is then rejected having allocated nothing. Decodes
-    sequentially, never in parallel, to keep the peak down. Turns every expected file
-    failure into a message rather than a crash.
+  - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before
+    decoding either, so a pair that needs a decision costs nothing until it is made. A
+    mismatch is put to the caller through `confirmPadding`; with no delegate it is refused,
+    which is what anything headless wants. Decodes sequentially, never in parallel, to keep
+    the peak down. Turns every expected file failure into a message rather than a crash.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
   - `Services/FileDialogService.cs` — the two open dialogs and the file filter.
@@ -86,11 +88,20 @@ zoom. A `Canvas` measures with infinite space and the transform alone decides wh
 image coordinates and travels with the pan; on the layer it stays put on screen, which is
 what a before/after slider needs.
 
-**Image A needs an opaque backdrop.** A is drawn over B, so a file with an alpha channel
-would blend into B on the left while B blends into the canvas colour on the right — two
-halves composited over different backgrounds, which is exactly the artefact this tool exists
-to rule out. `BeforeBackdrop` gives A the same backdrop B has. Verified with a 50%-alpha red
-over opaque blue: the left half reads 137,10,13 (A over the canvas), not 128,0,127 (A over B).
+**Both layers need the same opaque backdrop.** A is drawn over B, so a file with an alpha
+channel would blend into B on the left while B blends into whatever is behind it on the right
+— two halves composited over different backgrounds, which is exactly the artefact this tool
+exists to rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and
+the same transform for that reason. Verified with a 50%-alpha red over opaque blue: the left
+half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B).
+
+**Padding is layout, never pixels.** When the two images differ in size they are compared on
+a canvas as large as the pair needs, and the smaller one simply does not reach the far edge —
+the backdrop is what fills the gap. Nothing is copied into a larger buffer — at 84 MB an
+image, that copy would be the most expensive thing here. Both are anchored top-left, and that is what
+keeps a content coordinate equal to a pixel coordinate in *both* images: the pixel readout
+needs no offsets and prints `—` past the end of an image on its own bounds check. Centring
+would break that, and `PadPlan` is where the offsets would have to go.
 
 **Never set `InvariantGlobalization`.** WPF's font cache constructs `CultureInfo("en")` while
 computing typography availability; in invariant mode that throws `CultureNotFoundException`
@@ -98,8 +109,8 @@ and takes the process down during text layout. It was set in `Directory.Build.pr
 phases and only crashed once a Consolas run appeared in the status bar. No unit test catches
 this — the app has to be launched.
 
-**Images are sized explicitly in pixels.** `image.Width = pair.PixelWidth`, not the natural
-size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
+**Images are sized explicitly in pixels.** `image.Width = pair.Before.Info.PixelWidth` — its
+own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
 larger than its own pixel count and quietly break the 1:1 zoom level.
 
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
@@ -137,13 +148,14 @@ forces a finaliser pass and does *not* bother with large object heap compaction.
 
 ## Testing
 
-126 cases. `dotnet test ImageVisualCompare.sln`.
+142 cases. `dotnet test ImageVisualCompare.sln`.
 
 Covered: everything in Core, and the imaging layer. `WicImageLoaderTests` generates fixtures
 at run time in six pixel formats plus TIFF via `TempImages`, so the real codecs are exercised
 without binary files in the repository. `ImagePairLoaderTests` covers valid, mismatched,
 missing and corrupt inputs, progress reporting, and — with a recording fake — that a
-mismatched pair never reaches a decode.
+mismatched pair never reaches a decode, whether it was refused outright or declined at the
+prompt.
 
 What remains untested is now genuinely untestable without UI automation: event wiring, mouse
 capture, and property assignment. Every number those controls put on screen comes from Core

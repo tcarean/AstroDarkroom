@@ -105,8 +105,13 @@ public partial class MainWindow : Window
                 return;
             }
 
-            MessageBox.Show(this, result.Error, "Cannot compare these files",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            // Declining the padding is an answer, not an error. Showing a second dialog saying
+            // so would only make the user dismiss their own decision.
+            if (!result.WasDeclined)
+            {
+                MessageBox.Show(this, result.Error, "Cannot compare these files",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
     }
 
@@ -124,13 +129,40 @@ public partial class MainWindow : Window
 
         try
         {
-            return await _loader.LoadAsync(selection.BeforePath, selection.AfterPath, progress);
+            return await _loader.LoadAsync(
+                selection.BeforePath, selection.AfterPath, progress, ConfirmPaddingAsync);
         }
         finally
         {
             LoadingOverlay.Visibility = Visibility.Collapsed;
         }
     }
+
+    /// <summary>
+    /// Asks before padding a mismatched pair. Called from a thread pool thread, and reached
+    /// before either file has been decoded, so this is the last cheap moment to back out.
+    /// </summary>
+    private Task<bool> ConfirmPaddingAsync(PadRequest request) => Dispatcher.InvokeAsync(() =>
+    {
+        // The overlay is up at this point and a dialog sitting on top of a progress bar that
+        // is not moving reads as a hang.
+        Visibility overlay = LoadingOverlay.Visibility;
+        LoadingOverlay.Visibility = Visibility.Collapsed;
+
+        try
+        {
+            return MessageBox.Show(
+                this,
+                request.Message,
+                "Images have different sizes",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning) == MessageBoxResult.Yes;
+        }
+        finally
+        {
+            LoadingOverlay.Visibility = overlay;
+        }
+    }).Task;
 
     private void ShowPair(ImagePair pair)
     {
@@ -149,8 +181,14 @@ public partial class MainWindow : Window
 
         Title = $"{pair.Before.Info.FileName}  vs  {pair.After.Info.FileName}  —  {VersionInfo.Banner}";
         ToolbarTitle.Text = $"{pair.Before.Info.FileName}   vs   {pair.After.Info.FileName}";
+        // When the pair had to be padded, the canvas size alone would be a half-truth: neither
+        // image is that size. Both originals are named instead.
+        string dimensions = pair.Pad.RequiresPadding
+            ? $"{pair.Pad.Dimensions} padded  ·  A {pair.Before.Info.Dimensions}  ·  B {pair.After.Info.Dimensions}"
+            : pair.Before.Info.Dimensions;
+
         StatusPair.Text =
-            $"{pair.Before.Info.Dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}";
+            $"{dimensions}  ·  A {pair.Before.Info.FormatDescription}  ·  B {pair.After.Info.FormatDescription}";
 
         UpdateZoomReadout();
         StatusMemory.Text = MemoryHousekeeping.Snapshot().Describe();

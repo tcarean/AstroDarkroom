@@ -72,6 +72,7 @@ public partial class CompareView : UserControl
         BeforeImage.RenderTransform = _transform;
         AfterImage.RenderTransform = _transform;
         BeforeBackdrop.RenderTransform = _transform;
+        AfterBackdrop.RenderTransform = _transform;
 
         Canvas.SetRight(ZoomBadge, 10);
         Canvas.SetTop(ZoomBadge, 10);
@@ -114,18 +115,22 @@ public partial class CompareView : UserControl
         BeforeImage.Source = pair.Before.Bitmap;
         AfterImage.Source = pair.After.Bitmap;
 
+        // Each image keeps its own pixel size, and both sit at the origin of a canvas as big
+        // as the pair needs. That is the whole of the padding: a smaller image simply does not
+        // reach the far edge, and the backdrop behind it is what fills the gap. No bitmap is
+        // ever copied into a larger buffer — at 84 MB an image, that copy would be the most
+        // expensive thing the application does.
+        //
         // Sized explicitly in pixels rather than left to the natural size: WPF derives that
         // from the file's DPI metadata, so a 72 dpi export would otherwise lay out larger than
         // its own pixel count and quietly break the 1:1 zoom level.
-        foreach (Image image in new[] { BeforeImage, AfterImage })
-        {
-            image.Width = pair.PixelWidth;
-            image.Height = pair.PixelHeight;
-        }
+        SetPixelSize(BeforeImage, pair.Before.Info.PixelWidth, pair.Before.Info.PixelHeight);
+        SetPixelSize(AfterImage, pair.After.Info.PixelWidth, pair.After.Info.PixelHeight);
 
-        BeforeBackdrop.Width = pair.PixelWidth;
-        BeforeBackdrop.Height = pair.PixelHeight;
+        SetPixelSize(BeforeBackdrop, pair.PixelWidth, pair.PixelHeight);
+        SetPixelSize(AfterBackdrop, pair.PixelWidth, pair.PixelHeight);
         BeforeBackdrop.Visibility = Visibility.Visible;
+        AfterBackdrop.Visibility = Visibility.Visible;
 
         Viewport.SetContentSize(pair.PixelWidth, pair.PixelHeight);
         UpdateViewportSize();
@@ -133,7 +138,7 @@ public partial class CompareView : UserControl
         Divider.Reset();
 
         Minimap.Show(
-            CreateThumbnail(pair.Before.Bitmap, ThumbnailMaxWidth, ThumbnailMaxHeight),
+            CreateThumbnail(pair.Before.Bitmap, pair.PixelWidth, pair.PixelHeight, ThumbnailMaxWidth, ThumbnailMaxHeight),
             pair.PixelWidth,
             pair.PixelHeight,
             Viewport);
@@ -146,6 +151,7 @@ public partial class CompareView : UserControl
         BeforeImage.Source = null;
         AfterImage.Source = null;
         BeforeBackdrop.Visibility = Visibility.Collapsed;
+        AfterBackdrop.Visibility = Visibility.Collapsed;
         Minimap.Hide();
         Viewport.SetContentSize(0, 0);
         Sync();
@@ -313,21 +319,36 @@ public partial class CompareView : UserControl
         e.Handled = true;
     }
 
+    private static void SetPixelSize(FrameworkElement element, double width, double height)
+    {
+        element.Width = width;
+        element.Height = height;
+    }
+
     /// <summary>
     /// Renders a thumbnail once, up front, rather than letting the minimap scale the full
     /// image on every repaint.
     /// </summary>
-    private static BitmapSource CreateThumbnail(BitmapSource source, int maxWidth, int maxHeight)
+    /// <remarks>
+    /// The thumbnail is of the shared canvas, not of the image: the minimap draws the viewport
+    /// rectangle against the content size, so a padded pair whose thumbnail had the image's own
+    /// aspect ratio would put that rectangle in the wrong place.
+    /// </remarks>
+    private static BitmapSource CreateThumbnail(
+        BitmapSource source, double contentWidth, double contentHeight, int maxWidth, int maxHeight)
     {
-        SizeD box = AspectFit.Fit(source.PixelWidth, source.PixelHeight, maxWidth, maxHeight);
+        SizeD box = AspectFit.Fit(contentWidth, contentHeight, maxWidth, maxHeight);
         int width = Math.Max(1, (int)Math.Round(box.Width));
         int height = Math.Max(1, (int)Math.Round(box.Height));
+
+        double scale = box.Width / contentWidth;
 
         var visual = new DrawingVisual();
         RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
         using (DrawingContext context = visual.RenderOpen())
         {
-            context.DrawImage(source, new Rect(0, 0, width, height));
+            context.DrawRectangle(Brushes.Black, null, new Rect(0, 0, width, height));
+            context.DrawImage(source, new Rect(0, 0, source.PixelWidth * scale, source.PixelHeight * scale));
         }
 
         var target = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
