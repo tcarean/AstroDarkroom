@@ -169,19 +169,32 @@ public class SirilSessionTests
     public void TheNameCheckIgnoresCase()
     {
         Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\PP_FLAT_STACKED.FIT"));
-        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\Pp_Flat_A.Fit"));
+        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\Pp_Flat_Stacked_A.Fit"));
     }
 
     [Theory]
     [InlineData("pp_flat_stacked.fit", true)]
-    [InlineData("pp_flat_A.fit", true)]
-    [InlineData(@"C:\altundeva\pp_flat_B.fit", true)]
+    [InlineData("pp_flat_stacked_A.fit", true)]
+    [InlineData(@"C:\altundeva\pp_flat_stacked_B.fit", true)]
     [InlineData("flat_stacked.fit", false)]      // necalibrat: fara prefixul pp_
     [InlineData("pp_light_00001.fit", false)]
     [InlineData("pp_flat_stacked.fits", false)]  // extensie diferita
     [InlineData("pp_flat_stacked.tif", false)]
     public void AFileIsAFlatMasterOnlyIfItsNameSaysSo(string path, bool expected)
         => Assert.Equal(expected, SirilSession.IsFlatMasterName(path));
+
+    /// <summary>
+    /// Cadrele calibrate individuale stau in acelasi process/, cu acelasi prefix, si
+    /// arata la fel - dar nu sunt mastere. Tiparul a fost "pp_flat*.fit" si le prindea,
+    /// deci dialogul din tabul Ratio le si propunea. O pereche de cadre individuale da un
+    /// rezultat sigur si fals: zgomotul unui cadru e de acelasi ordin cu semnalul cautat.
+    /// </summary>
+    [Theory]
+    [InlineData("pp_flat_00001.fit")]
+    [InlineData("pp_flat_00042.fit")]
+    [InlineData("pp_flat_.fit")]
+    public void AnIndividualCalibratedFlatIsNotAFlatMaster(string name)
+        => Assert.False(SirilSession.IsFlatMasterName(@"C:\sesiune\process\" + name));
 
     [Fact]
     public void AnEmptyPathIsNotAFlatMaster()

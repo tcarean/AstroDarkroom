@@ -295,7 +295,17 @@ preselect two, which in a normal session offered the individual frames; a pair o
 frames yields a confident, wrong answer, because one frame's noise is the same order as
 the signal. So it asks for two files explicitly, and carries a panel that explains what
 the mode needs and what it cannot tell you - the only tab that must document itself before
-it can be used at all. `RatioTabViewModel`'s text properties are deliberately *instance*
+it can be used at all.
+
+The same trap survived one layer down until it was found in use: the two file dialogs
+filtered on `pp_flat*.fit`, which in a real `process/` is mostly `pp_flat_00001.fit` and
+its ninety siblings, and `SirilSession.IsFlatMasterName` accepted exactly what the filter
+offered. So the tab still *proposed* the pair that yields the confident wrong answer.
+`RatioPattern` is now `pp_flat_stacked*.fit` - the stack, not the frames - the dialog
+builds its filter from that constant rather than repeating the string, and the refusal
+message says why an individual frame is not a master. The `*` after `stacked` is there
+because two masters brought into one folder must be renamed, and
+`pp_flat_stacked_0deg.fit` is still a stack. `RatioTabViewModel`'s text properties are deliberately *instance*
 properties even though their values are constant: `{Binding}` resolves through the
 DataContext and never sees a static one, so the documentation would have rendered blank.
 
@@ -630,8 +640,9 @@ carries the 8.3 legacy where `*.fit` also catches `.fits`. Sorting is ordinal on
 name (`StringComparer.Ordinal` / Python `sorted()`) - if the two implementations listed
 frames in different orders, `crosscheck.py` would report differences that do not exist.
 The glob supports `*` and `?` only; character classes are literal in both, so `fnmatch`
-is deliberately not used on the Python side. The WPF app reuses the same matcher for its
-`process/` listings, so `pp_flat*.fit` there means exactly what `--pattern` means here.
+is deliberately not used on the Python side. The WPF app reuses the same matcher for the
+names it accepts, so `pp_flat_stacked*.fit` there means exactly what `--pattern` means
+here.
 
 The default pattern `pp_light_*.fit` excludes `r_pp_light_*` because the glob is anchored
 at the start, and that is correct rather than incidental: registered frames are

@@ -550,10 +550,14 @@ cele două mastere în Siril, și ce **nu** îți poate spune testul. Îl poți 
 deschis: e singurul mod al aplicației care cere ceva ce nu se poate deduce din folderul
 deschis.
 
-Dacă fișierul ales nu e un master de flat, aplicația explică ce sunt fișierele astea și de
-ce testul are nevoie de unul, în loc să eșueze la parsare. `pp_flat_stacked.fit` **este** o
-alegere validă — în fluxul normal chiar e alegerea: câte unul din fiecare dintre cele două
-sesiuni. Același fișier în ambele sloturi se refuză la alegere, cu explicație.
+Ferestrele de deschidere propun `pp_flat_stacked*.fit`, adică **stiva**, nu cadrele
+calibrate individuale (`pp_flat_00001.fit` și următoarele) care stau în același `process/`
+cu același prefix. Dacă fișierul ales nu e un master de flat, aplicația explică ce sunt
+fișierele astea și de ce testul are nevoie de unul, în loc să eșueze la parsare.
+`pp_flat_stacked.fit` **este** o alegere validă — în fluxul normal chiar e alegerea: câte
+unul din fiecare dintre cele două sesiuni; iar dacă ai adus ambele mastere în același
+folder și ai redenumit unul, `pp_flat_stacked_0deg.fit` rămâne recunoscut. Același fișier
+în ambele sloturi se refuză la alegere, cu explicație.
 
 După calcul, tabul arată întâi **de unde vin cele două stive** — câte cadre și de la ce oră,
 din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-l poate

@@ -123,8 +123,8 @@ public class ConverterTests
 
     [Fact]
     public void OnlyTheFileNameIsShownInLists()
-        => Assert.Equal("pp_flat_A.fit",
-                        Run(new FileNameConverter(), @"C:\sesiune\process\pp_flat_A.fit"));
+        => Assert.Equal("pp_flat_stacked_A.fit",
+                        Run(new FileNameConverter(), @"C:\sesiune\process\pp_flat_stacked_A.fit"));
 
     [Fact]
     public void TheBoolConvertersAgreeOnWhatTrueMeans()

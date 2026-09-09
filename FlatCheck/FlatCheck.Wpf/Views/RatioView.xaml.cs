@@ -46,9 +46,13 @@ namespace FlatCheck.Wpf
                 // setul B e prin definitie alta sedinta, deci alt folder - iar dupa prima
                 // alegere dialogul retine el singur unde a fost.
                 InitialDirectory = isA ? vm.InitialDirectory : null,
-                // Filtrul propune ce trebuie, dar nu poate garanta nimic: omul poate
-                // oricand alege "Toate fisierele". Verificarea adevarata e in ViewModel.
-                Filter = "Master de flat (pp_flat*.fit)|pp_flat*.fit|Toate fisierele|*.*",
+                // Tiparul vine din SirilSession, nu scris a doua oara aici: dialogul
+                // trebuie sa propuna exact ce accepta validarea, altfel omul alege din
+                // lista ceva ce i se refuza imediat dupa. Filtrul tot nu garanteaza
+                // nimic - se poate oricand trece pe "Toate fisierele" - deci verificarea
+                // adevarata ramane in ViewModel.
+                Filter = $"Master de flat ({SirilSession.RatioPattern})|{SirilSession.RatioPattern}"
+                         + "|Toate fisierele|*.*",
                 CheckFileExists = true,
             };
 

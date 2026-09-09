@@ -47,7 +47,7 @@ public class MainViewModelTests
     public async Task RatioWaitsForTwoExplicitChoices()
     {
         using var f = new SessionFixture()
-            .WithFlatMaster().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+            .WithFlatMaster().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = new MainViewModel();
 
         await vm.OpenAsync(f.Root);

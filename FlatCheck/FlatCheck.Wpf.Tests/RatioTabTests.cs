@@ -44,7 +44,8 @@ public class RatioTabTests
     [Fact]
     public void TheTabStartsEmptyAndExplainsWhatItNeeds()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
 
         var vm = Attached(f);
 
@@ -65,7 +66,7 @@ public class RatioTabTests
     [Fact]
     public void TheDocumentationStatesWhatTheTestCannotTell()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit");
         var vm = Attached(f);
 
         Assert.Contains("CE NU ITI SPUNE", vm.Documentation);
@@ -82,7 +83,8 @@ public class RatioTabTests
     [Fact]
     public void ChoosingSomethingElseExplainsWhatAFlatMasterIs()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
 
         vm.Choose(isA: true, path: @"C:\undeva\poza.jpg");
@@ -94,12 +96,34 @@ public class RatioTabTests
         Assert.Contains("180", vm.ErrorText);
     }
 
+    /// <summary>
+    /// Cadrul calibrat individual e capcana reala a tabului: sta in acelasi process/, are
+    /// acelasi prefix si arata la fel ca masterul. Pana la corectarea tiparului dialogul
+    /// il si propunea, iar perechea iesea cu un verdict sigur si fals. Refuzul spune
+    /// explicit de ce, altfel arata ca un moft.
+    /// </summary>
+    [Fact]
+    public void ChoosingAnIndividualCalibratedFlatIsRefusedAndExplained()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var vm = Attached(f);
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_00001.fit"));
+
+        Assert.True(vm.HasError);
+        Assert.Null(vm.FileA);
+        Assert.Contains("pp_flat_00001.fit", vm.ErrorText);
+        Assert.Contains("zgomotul unui singur cadru", vm.ErrorText);
+    }
+
     [Fact]
     public void ARejectedChoiceDoesNotReplaceTheCurrentSelection()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
         string before = vm.FileA;
 
         vm.Choose(isA: true, path: @"C:\undeva\flat_necalibrat.fit");
@@ -114,7 +138,7 @@ public class RatioTabTests
     [Fact]
     public void AFlatMasterFromAnotherSessionIsAccepted()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit");
         var vm = Attached(f);
 
         vm.Choose(isA: false, path: @"C:\alta-sesiune\process\pp_flat_stacked.fit");
@@ -130,7 +154,7 @@ public class RatioTabTests
     [Fact]
     public void TheOverallMasterOfAnotherSessionIsAccepted()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit");
         var vm = Attached(f);
 
         vm.Choose(isA: true, path: @"C:\sesiune-0deg\process\pp_flat_stacked.fit");
@@ -149,11 +173,12 @@ public class RatioTabTests
     [Fact]
     public void TheSameFileInBothSlotsIsRefusedAtChoiceTime()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
 
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_A.fit"));
 
         Assert.True(vm.HasError);
         Assert.Contains("DIFERITE", vm.ErrorText);
@@ -165,10 +190,11 @@ public class RatioTabTests
     [Fact]
     public async Task ItAttributesTheStructureOfTheCombinedMaster()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
 
         await vm.RecomputeAsync();
 
@@ -188,10 +214,11 @@ public class RatioTabTests
     [Fact]
     public async Task TheAdviceComesFromTheSharedResidualScale()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
 
         await vm.RecomputeAsync();
 
@@ -205,10 +232,11 @@ public class RatioTabTests
     [Fact]
     public async Task BothMapsAreAvailableAndTheToggleSwitchesThem()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
 
         await vm.RecomputeAsync();
         byte[] sensor = vm.Map;
@@ -223,13 +251,14 @@ public class RatioTabTests
     [Fact]
     public async Task ChoosingTheSecondFileComputes()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
 
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
         Assert.False(vm.HasResult);
 
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
         await vm.RecomputeAsync();
 
         Assert.True(vm.HasResult);
@@ -238,9 +267,9 @@ public class RatioTabTests
     [Fact]
     public async Task WithoutTwoFilesNothingIsComputed()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
 
         await vm.RecomputeAsync();
 
@@ -250,9 +279,10 @@ public class RatioTabTests
     [Fact]
     public void ResetClearsBothChoices()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
 
         vm.Reset();
 
@@ -268,8 +298,8 @@ public class RatioTabTests
     static async Task<RatioTabViewModel> Computed(SessionFixture f)
     {
         var vm = Attached(f);
-        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
-        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
         await vm.RecomputeAsync();
         return vm;
     }
@@ -283,7 +313,8 @@ public class RatioTabTests
     [Fact]
     public async Task TheScaleAppliesToBothMaps()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = await Computed(f);
 
         byte[] sensorAtTen = vm.Map;
@@ -308,7 +339,8 @@ public class RatioTabTests
     [Fact]
     public async Task TheLegendFollowsTheDisplayedMap()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
         var vm = await Computed(f);
         Cap(vm, null).IsSelected = true;
 

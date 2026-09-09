@@ -129,7 +129,7 @@ public class WindowSmokeTests
     {
         using var f = new SessionFixture()
             .WithFlatMaster()
-            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit")
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit")
             .WithLightSeries(6)
             .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
 
@@ -146,8 +146,8 @@ public class WindowSmokeTests
             Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-gol");
 
             // ...si abia apoi cu rezultat, dupa cele doua alegeri explicite.
-            vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
-            vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+            vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+            vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
             await vm.Ratio.RecomputeAsync();
 
             Render(new MainWindow { DataContext = vm }, 1360, 820, "fereastra");

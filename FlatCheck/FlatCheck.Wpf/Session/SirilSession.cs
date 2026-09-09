@@ -51,8 +51,22 @@ namespace FlatCheck.Wpf
         /// <summary>Scriptul Siril care produce continutul lui process/.</summary>
         internal const string PreprocessingScript = "OSC_Preprocessing.ssf";
 
-        /// <summary>Tiparul candidatilor pentru testul de rotatie 180.</summary>
-        internal const string RatioPattern = "pp_flat*.fit";
+        /// <summary>
+        /// Tiparul fisierelor acceptate de testul de rotatie 180: MASTERE de flat, adica
+        /// stive, nu cadre individuale.
+        ///
+        /// A fost "pp_flat*.fit", si ala prindea si cadrele calibrate individuale pe care
+        /// Siril le scrie in acelasi folder cu acelasi prefix - pp_flat_00001.fit si
+        /// urmatoarele. Exact capcana pentru care s-a scos lista de candidati: o pereche
+        /// de cadre individuale da un rezultat sigur si fals, fiindca zgomotul unui
+        /// singur cadru e de acelasi ordin cu semnalul cautat. Dialogul le propunea in
+        /// continuare.
+        ///
+        /// "*" de dupa "stacked" ramane fiindca cele doua mastere pot ajunge in acelasi
+        /// folder, iar atunci macar unul trebuie redenumit (pp_flat_stacked_0deg.fit);
+        /// numele stivei ramane recunoscut, cadrele individuale nu intra.
+        /// </summary>
+        internal const string RatioPattern = "pp_flat_stacked*.fit";
 
         /// <summary>Raportul de structura, salvat langa datele sesiunii.</summary>
         internal const string ResultFileName = "Rezultat testare.txt";
@@ -110,6 +124,9 @@ namespace FlatCheck.Wpf
         /// rescrierea tabului, dar aia era o reparatie de PRESELECTIE - sortarea fiind
         /// ordinala, "pp_flat_stacked.fit" cadea dupa "pp_flat_A/B.fit" si ateriza pe
         /// preselectia setului B. Fara lista si fara preselectie, motivul a disparut.
+        ///
+        /// Ce se refuza acum sunt cadrele individuale calibrate (pp_flat_00001.fit) -
+        /// vezi <see cref="RatioPattern"/>.
         /// </summary>
         internal static bool IsFlatMasterName(string path)
             => !string.IsNullOrEmpty(path)
