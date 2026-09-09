@@ -195,9 +195,17 @@ namespace FlatCheck
         }
 
         // Structura de scala mare (izolata de zgomot prin mediere pe tile-uri).
+        /// <summary>
+        /// Latura dalei folosita de metricile de scara mare. Scoasa separat fiindca o
+        /// citesc doi consumatori - <see cref="LargeScalePtp"/> si modul de atribuire -
+        /// iar doua formule ar fi divergat la prima ajustare a lui ntiles.
+        /// </summary>
+        internal static int TileSize(Img src, int ntiles = 40)
+            => Math.Max(2, (int)(src.W / (double)ntiles));
+
         internal static double LargeScalePtp(Img resid, double cx, double cy, double rIns, int ntiles = 40)
         {
-            int k = Math.Max(2, (int)(resid.W / (double)ntiles));
+            int k = TileSize(resid, ntiles);
             Img t = Img.BlockMean(resid, k);
             var inside = new List<double>();
             for (int y = 0; y < t.H; y++)

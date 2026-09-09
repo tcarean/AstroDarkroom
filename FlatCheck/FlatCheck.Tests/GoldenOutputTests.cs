@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -212,33 +213,57 @@ public class GoldenOutputTests
 
     // ---------------------------------------------------------------- ratio
 
+    /// <summary>
+    /// The defining pair: a gradient that INVERTS between the two orientations is fixed
+    /// in the world, so it lands in the informative component and the combined master
+    /// comes back clean. This is the case the mode exists for.
+    /// </summary>
     [Fact]
-    public void Ratio_OfAFrameAgainstItself_IsClean()
+    public void Ratio_WhenTheGradientInverts_ItIsAttributedToTheWorld()
     {
         using var ws = new TempWorkspace();
-        string a = Flat(ws, "a.fit", FitsTestData.Radial(Size, Size));
-        string b = Flat(ws, "b.fit", FitsTestData.Radial(Size, Size));
+        string a = Flat(ws, "a.fit", FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, +0.12));
+        string b = Flat(ws, "b.fit", FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, -0.12));
 
         var (output, exit) = RunCli(ws, a, "--ratio", b, "-o", ws.PathTo("out.png"));
 
         Assert.Equal(0, exit);
-        Assert.Contains("VERDICT: OK", output);
-        AssertGolden("ratio_identical", output);
+        Assert.Contains("VERDICT: PERFECT", output);
+        AssertGolden("ratio_world", output);
     }
 
+    /// <summary>
+    /// The mirror, and the case the mode used to be blind to: the same gradient in both
+    /// orientations does not invert, so it belongs to the camera. The world component
+    /// must read zero and the gradient must survive into the verdict.
+    /// </summary>
     [Fact]
-    public void Ratio_CleanAgainstGradient_ReportsProblem()
+    public void Ratio_WhenTheGradientIsInBothOrientations_ItStaysWithTheCamera()
     {
         using var ws = new TempWorkspace();
-        string a = Flat(ws, "a.fit", FitsTestData.Radial(Size, Size));
         var grad = FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12);
+        string a = Flat(ws, "a.fit", grad);
         string b = Flat(ws, "b.fit", grad);
 
         var (output, exit) = RunCli(ws, a, "--ratio", b, "-o", ws.PathTo("out.png"));
 
-        Assert.Equal(3, exit);
-        Assert.Contains("VERDICT: PROBLEMA", output);
-        AssertGolden("ratio_gradient", output);
+        Assert.Contains("gradient extern / orientare :  0.00 % +/- 0.00 %", output);
+        Assert.Contains("inclinare (gradient)    :", output);
+        AssertGolden("ratio_camera", output);
+    }
+
+    /// <summary>The second map, for the shape of the external component.</summary>
+    [Fact]
+    public void Ratio_WritesBothMaps()
+    {
+        using var ws = new TempWorkspace();
+        string a = Flat(ws, "a.fit", FitsTestData.Radial(Size, Size));
+        string b = Flat(ws, "b.fit", FitsTestData.WithLinearGradient(FitsTestData.Radial(Size, Size), Size, 0.12));
+
+        RunCli(ws, a, "--ratio", b, "-o", ws.PathTo("out.png"));
+
+        Assert.True(File.Exists(ws.PathTo("out.png")));
+        Assert.True(File.Exists(ws.PathTo("out-lume.png")));
     }
 
     [Fact]

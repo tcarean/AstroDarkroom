@@ -42,6 +42,10 @@ namespace FlatCheck.Wpf
             var dlg = new Microsoft.Win32.OpenFileDialog
             {
                 Title = isA ? "Masterul setului A" : "Masterul setului B",
+                // Doar un punct de plecare. Setul A e adesea in sesiunea deschisa, dar
+                // setul B e prin definitie alta sedinta, deci alt folder - iar dupa prima
+                // alegere dialogul retine el singur unde a fost.
+                InitialDirectory = isA ? vm.InitialDirectory : null,
                 // Filtrul propune ce trebuie, dar nu poate garanta nimic: omul poate
                 // oricand alege "Toate fisierele". Verificarea adevarata e in ViewModel.
                 Filter = "Master de flat (pp_flat*.fit)|pp_flat*.fit|Toate fisierele|*.*",

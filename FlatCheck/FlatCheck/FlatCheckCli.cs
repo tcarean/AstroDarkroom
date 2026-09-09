@@ -119,7 +119,21 @@ namespace FlatCheck
         {
             var run = RatioRun.Execute(o.Image, o.Ratio, w);
             SaveMap(o.OutPng, run.Png, w);
+            // Modul desparte masterul in doua componente, deci are doua forme de aratat.
+            // A doua merge langa prima, cu un sufix, ca sa nu ceara inca un argument.
+            SaveMap(WorldMapPath(o.OutPng), run.SecondaryPng, w);
             return run.Result.Verdict;
+        }
+
+        /// <summary>
+        /// Calea hartii componentei fixe in lume: acelasi nume, cu "-lume" inainte de
+        /// extensie. "harta.png" -> "harta-lume.png".
+        /// </summary>
+        internal static string WorldMapPath(string path)
+        {
+            string dir = Path.GetDirectoryName(path);
+            string name = Path.GetFileNameWithoutExtension(path) + "-lume" + Path.GetExtension(path);
+            return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
         static string RunLight(Options o, TextWriter w)
@@ -155,7 +169,7 @@ namespace FlatCheck
         {
             w.WriteLine("Utilizare:");
             w.WriteLine("  flatcheck <flat.fit>                    # test structura");
-            w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180");
+            w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180");
             w.WriteLine("  flatcheck <light.fit> --light           # test end-to-end, un cadru");
             w.WriteLine("  flatcheck <folder/> --light             # test end-to-end pe toata seria");
             w.WriteLine("  flatcheck <flat_brut.NEF> --expo        # verificare expunere");

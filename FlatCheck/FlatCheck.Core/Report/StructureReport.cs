@@ -29,7 +29,18 @@ namespace FlatCheck
             w.WriteLine($"\n=== STRUCTURA: {path} ===");
             w.WriteLine($"    dimensiune analiza : {r.Width} x {r.Height} (dupa 2x2 + downsample)");
             w.WriteLine($"    median / max ADU   : {r.RawMedian:F0} / {r.RawMax:F0}");
+            WriteBody(r, w);
+        }
 
+        /// <summary>
+        /// Tot ce urmeaza dupa antet: informativele, cele patru teste, scara si
+        /// verdictul. Scos separat fiindca modul de atribuire ruleaza aceeasi baterie
+        /// pe masterul combinat (A+B)/2 si vrea exact acest corp sub antetul lui - dar
+        /// nu si randul de ADU, care pe un raster normalizat la mediana 1 n-ar insemna
+        /// nimic.
+        /// </summary>
+        internal static void WriteBody(StructureResult r, TextWriter w)
+        {
             WriteInformative(r, w);
 
             w.WriteLine("\n  TESTE");
@@ -100,9 +111,11 @@ namespace FlatCheck
         /// </summary>
         internal static string WhyResidualMatters()
             => "Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din\n"
-             + "cadru NU se explica printr-un model pur radial, adica exact eroarea de\n"
-             + "flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt\n"
-             + "vederi partiale ale aceleiasi abateri.";
+             + "cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a\n"
+             + "erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat\n"
+             + "(optica; se imparte corect din lights) si partea fixa in lume (iluminarea;\n"
+             + "nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,\n"
+             + "asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.";
 
         static void WriteScale(TextWriter w)
         {

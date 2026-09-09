@@ -120,10 +120,34 @@ public class RunsTests
         var direct = RatioAnalyzer.Analyze(ImageLoader.LoadImage(a), ImageLoader.LoadImage(b));
         var run = RatioRun.Execute(a, b, new StringWriter());
 
-        Assert.Equal(direct.PtpPct, run.Result.PtpPct, 12);
-        Assert.Equal(direct.CornerSpreadPct, run.Result.CornerSpreadPct, 12);
+        Assert.Equal(direct.WorldPtpPct, run.Result.WorldPtpPct, 12);
+        Assert.Equal(direct.WorldErrPct, run.Result.WorldErrPct, 12);
+        Assert.Equal(direct.Sensor.CornerSpreadPct, run.Result.Sensor.CornerSpreadPct, 12);
         Assert.Equal(direct.Verdict, run.Result.Verdict);
+
+        // Doua harti: reziduul partii fixe pe aparat, si raportul A/B.
         Assert.NotNull(run.Png);
+        Assert.NotNull(run.SecondaryPng);
+        Assert.NotEqual(run.Png, run.SecondaryPng);
+    }
+
+    /// <summary>
+    /// Provenienta vine din headerele FITS, nu din nume: e singurul loc din raport in
+    /// care se vede daca cele doua stive chiar pot fi din doua orientari diferite.
+    /// </summary>
+    [Fact]
+    public void RatioRun_ReadsTheStackProvenanceFromTheHeaders()
+    {
+        using var ws = new TempWorkspace();
+        string a = WriteFlat(ws, "a.fit");
+        string b = WriteFlat(ws, "b.fit");
+
+        var run = RatioRun.Execute(a, b, new StringWriter());
+
+        // Fixture-urile n-au STACKCNT/DATE-OBS, iar lipsa lor nu e o eroare.
+        Assert.Equal(0, run.Result.StackCountA);
+        Assert.Null(run.Result.DateObsA);
+        Assert.Contains("necunoscut", RatioReport.Provenance(run.Result.StackCountA, run.Result.DateObsA));
     }
 
     // ---------------------------------------------------------------- expunere

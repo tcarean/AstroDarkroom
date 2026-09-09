@@ -496,21 +496,14 @@ def severity(verdict_name):
 
 
 # ---------------------------------------------------------------- moduri
-def mode_structure(path, plot_path):
-    raw = load_image(path)
-    img = prepare(raw)
+def _structure_body(img, cx, cy):
+    """INFORMATIV + TESTE + SCARA + VERDICT, pentru un raster deja pregatit.
+
+    Impartit din mode_structure fiindca modul de atribuire ruleaza exact aceeasi
+    baterie pe masterul combinat (A+B)/2 si vrea acelasi corp sub antetul lui.
+    """
     h, w = img.shape
 
-    print(f"\n=== STRUCTURA: {path} ===")
-    print(f"    dimensiune analiza : {w} x {h} (dupa 2x2 + downsample)")
-    print(f"    median / max ADU   : {np.median(raw):.0f} / {raw.max():.0f}")
-
-    # ATENTIE: modelul si asimetria se calculeaza in jurul centrului SENZORULUI,
-    # nu al centrului fitat. Axa optica e la centrul senzorului prin constructie
-    # (obiectivul e centrat pe montura). Daca ai centra pe varful de iluminare,
-    # fitul ar absorbi exact gradientul liniar pe care il cauti: un gradient
-    # peste vignetare cvasi-patratica doar muta varful. Testul s-ar autoanula.
-    cx, cy = w / 2.0, h / 2.0
     # Din acelasi fit ies doua lucruri: inclinarea, care e un test, si offsetul varfului,
     # care e doar informativ - nu e scale-invariant, si peste un prag nici macar monoton.
     fx, fy, tilt, centroid_valid = fit_center(img)
@@ -566,9 +559,11 @@ def mode_structure(path, plot_path):
     _band(f"{TH_RESID_USABLE:.0f} - {TH_RESID_CHECK:.0f} %", "utilizabil, dar confirma cu --light inainte de un stretch dur")
     _band(f"peste {TH_RESID_CHECK:.0f} %", "refa flat-urile")
     print('    Cel mai important e "reziduu dupa model rad.": masoara direct cat din')
-    print("    cadru NU se explica printr-un model pur radial, adica exact eroarea de")
-    print("    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt")
-    print("    vederi partiale ale aceleiasi abateri.")
+    print("    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a")
+    print("    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat")
+    print("    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;")
+    print("    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,")
+    print("    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.")
 
     # verdictul general e cel mai prost dintre cele patru, exprimat in vocabularul
     # benzilor de reziduu
@@ -587,43 +582,145 @@ def mode_structure(path, plot_path):
         print("    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.")
         print("    Vezi harta reziduala pentru forma problemei.")
 
+    return worst, resid, rc, prof, az, r_ins
+
+
+def mode_structure(path, plot_path):
+    raw = load_image(path)
+    img = prepare(raw)
+    h, w = img.shape
+
+    print(f"\n=== STRUCTURA: {path} ===")
+    print(f"    dimensiune analiza : {w} x {h} (dupa 2x2 + downsample)")
+    print(f"    median / max ADU   : {np.median(raw):.0f} / {raw.max():.0f}")
+
+    # ATENTIE: modelul si asimetria se calculeaza in jurul centrului SENZORULUI,
+    # nu al centrului fitat. Axa optica e la centrul senzorului prin constructie
+    # (obiectivul e centrat pe montura). Daca ai centra pe varful de iluminare,
+    # fitul ar absorbi exact gradientul liniar pe care il cauti: un gradient
+    # peste vignetare cvasi-patratica doar muta varful. Testul s-ar autoanula.
+    cx, cy = w / 2.0, h / 2.0
+    worst, resid, rc, prof, az, r_ins = _structure_body(img, cx, cy)
+
     make_plot(plot_path, img, resid, rc, prof, az, cx, cy, r_ins, path, "reziduu / model radial")
     return worst
 
 
+def world_map_path(out):
+    """Calea hartii componentei fixe in lume: acelasi nume, cu "-lume" inainte de
+    extensie. "harta.png" -> "harta-lume.png"."""
+    base, ext = os.path.splitext(out)
+    return base + "-lume" + ext
+
+
+def _provenance(header):
+    """De unde vine o stiva, din headerul FITS. Singurul loc din raport in care se vede
+    daca cele doua chiar POT fi din doua orientari diferite: doua stive care incep una
+    imediat dupa cealalta n-au avut cand sa fie rotite."""
+    n = header.get("STACKCNT")
+    d = header.get("DATE-OBS")
+    cadre = f"{int(float(n))} cadre stivuite" if n not in (None, "") else "numar de cadre necunoscut"
+    try:
+        cand = f"prima expunere {str(d).strip().strip(chr(39)).strip()}" if d not in (None, "") else "data necunoscuta"
+    except Exception:
+        cand = "data necunoscuta"
+    return f"{cadre}, {cand}"
+
+
+def split_by_rotation(world):
+    """Desparte log(W) in partea care se inverseaza la rotatia de 180 si cea care nu.
+
+    Pe grila de dale, nu pe pixeli: fara mediere ambele jumatati ar fi dominate de
+    zgomotul de fotoni, care se imparte egal, si raportul lor ar fi mereu 1 indiferent
+    de semnal.
+
+    Taiere CENTRATA inainte de dale, ca rotatia sa cada exact peste grila: block_mean
+    arunca blocurile partiale doar de la capat, deci grila lui e ancorata sus-stanga.
+    """
+    log = np.log(np.clip(world, 0.01, 100.0))
+    h, w = log.shape
+    k = max(2, int(w / 40))
+    hh, ww = h // k * k, w // k * k
+    oy, ox = (h - hh) // 2, (w - ww) // 2
+    t = block_mean(log[oy:oy + hh, ox:ox + ww], k)
+    r = t[::-1, ::-1]
+    return (t - r) / 2, (t + r) / 2
+
+
 def mode_ratio(path_a, path_b, plot_path):
-    a, b = prepare(load_image(path_a)), prepare(load_image(path_b))
+    """Modul 2: ATRIBUIRE prin rotatie la 180 de grade.
+
+    Vezi comentariul lung din FlatCheck.Core/Analysis/RatioAnalyzer.cs pentru de ce modul
+    nu mai da verdict despre curatenia setup-ului: nu poate. Doua stive din aceeasi
+    orientare si doua stive rotite dintr-un setup cu adevarat curat produc date statistic
+    identice - in ambele cazuri A/B e numai zgomot.
+
+    Ce poate: sa desparta structura ne-radiala in partea fixa pe APARAT, adica masterul
+    combinat (A+B)/2, de unde vine verdictul, si partea fixa in LUME, informativa.
+    """
+    raw_a, hdr_a = load_image_with_header(path_a)
+    raw_b, hdr_b = load_image_with_header(path_b)
+    a, b = prepare(raw_a), prepare(raw_b)
     if a.shape != b.shape:
         sys.exit("Cele doua imagini au dimensiuni diferite.")
-    ratio = a / np.maximum(b, 1e-12)
-    ratio /= np.median(ratio)
-    h, w = ratio.shape
 
-    print(f"\n=== TEST ROTATIE 180: {path_a}  /  {path_b} ===")
-    print("    Vignetarea si praful sunt fixe pe senzor -> se anuleaza in raport.")
-    print("    Orice gradient extern se inverseaza -> apare aici, la ~2x amplitudine.")
+    # Normalizarea la mediana 1 inainte de mediere e "multiplicative normalized input"
+    # din Siril: fara ea, un cer care se stinge intre cele doua stive ar cantari A mai
+    # greu decat B si gradientul nu s-ar anula complet.
+    a = a / np.median(a)
+    b = b / np.median(b)
+    h, w = a.shape
 
-    ptp = large_scale_ptp(ratio, w / 2, h / 2, np.hypot(w, h)) * 100
-    cor, ctr = corner_stats(ratio)
+    print(f"\n=== ATRIBUIRE PRIN ROTATIE 180 ===")
+    print(f"    A : {path_a}")
+    print(f"        {_provenance(hdr_a)}")
+    print(f"    B : {path_b}")
+    print(f"        {_provenance(hdr_b)}")
+    print("    Cele doua stive trebuie sa fie din DOUA orientari la 180 de grade, cu")
+    print("    aparatul rotit in jurul axei optice si nimic altceva schimbat. Tool-ul NU")
+    print("    poate verifica asta din pixeli - verifica randurile de mai sus. Doua stive")
+    print("    din aceeasi orientare dau un rezultat increzator si fara sens.")
+
+    world = a / np.maximum(b, 1e-12)
+    world = world / np.median(world)
+    odd, even = split_by_rotation(world)
+
+    # Impartit la 2: W poarta contaminarea la amplitudine dubla, fiindca in B e inversata.
+    # Cifrele raportate sunt per orientare, adica cat e in fiecare master luat separat.
+    world_ptp = (np.percentile(odd, 95) - np.percentile(odd, 5)) / 2 * 100
+    world_err = (np.percentile(even, 95) - np.percentile(even, 5)) / 2 * 100
+    cor, _ = corner_stats(world)
     cvals = np.array(list(cor.values()))
-    spread = (cvals.max() - cvals.min()) / cvals.mean() * 100
+    world_corner = (cvals.max() - cvals.min()) / cvals.mean() * 100 / 2
 
-    print(f"\n    structura in raport A/B : {ptp:5.2f} %   [{verdict(ptp, TH_RATIO_OK, TH_RATIO_BAD)}]")
-    print(f"    imprastiere 4 colturi   : {spread:5.2f} %   [{verdict(spread, TH_RATIO_OK, TH_RATIO_BAD)}]")
-    print(f"    (eroarea reala in fiecare master e ~jumatate din cifrele astea)")
+    print("\n  COMPONENTA FIXA IN LUME  (informativ - nu e un verdict)")
+    print(f"    gradient extern / orientare : {world_ptp:5.2f} % +/- {world_err:.2f} %   "
+          f"[{verdict(world_ptp, TH_RATIO_OK, TH_RATIO_BAD)}]")
+    print(f"    imprastiere colturi         : {world_corner:5.2f} %")
+    print("    Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de")
+    print("    eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul")
+    print("    masuratorii: cand cifra si eroarea ei sunt comparabile, nu s-a detectat")
+    print("    nimic peste zgomot.")
 
-    worst = max(verdict(ptp, TH_RATIO_OK, TH_RATIO_BAD),
-                verdict(spread, TH_RATIO_OK, TH_RATIO_BAD),
-                key=lambda s: {"OK": 0, "SUSPECT": 1, "PROBLEMA": 2}[s])
-    print(f"\n  VERDICT: {worst}")
-    if worst == "OK":
-        print("    Setup-ul de flats e curat. Poti construi biblioteca pe el.")
-    else:
-        print("    Setup-ul contamineaza flat-ul. Repara sursa inainte de biblioteca.")
+    sensor = (a + b) / 2
+    print("\n  STRUCTURA MASTERULUI COMBINAT (A+B)/2 - partea fixa pe aparat")
+    print(f"    dimensiune analiza : {w} x {h} (dupa 2x2 + downsample)")
+    print("    Ce urmeaza e ce a ramas dupa ce s-a scos tot ce putea scoate rotatia. Fiind")
+    print("    fix pe aparat, se imparte corect din lights - DAR numai daca era la fel si")
+    print("    cand ai fotografiat lights-urile. Vignetarea obiectivului era. O curea")
+    print("    cazuta pe lentila, condensul sau o parasolara stramba se rotesc si ele cu")
+    print("    aparatul, arata identic aici, si la lights nu mai sunt acolo.")
 
-    r, rc, prof, _ = radial_model(ratio, w / 2, h / 2)
-    az = azimuthal_asymmetry(ratio, w / 2, h / 2)
-    make_plot(plot_path, ratio, ratio, rc, prof, az, w / 2, h / 2,
+    cx, cy = w / 2.0, h / 2.0
+    worst, resid, rc, prof, az, r_ins = _structure_body(sensor, cx, cy)
+
+    # Doua harti: reziduul partii fixe pe aparat, care se potriveste cu verdictul, si
+    # raportul A/B, pentru forma gradientului extern.
+    make_plot(plot_path, sensor, resid, rc, prof, az, cx, cy, r_ins,
+              f"{path_a} + {path_b}", "reziduu / model radial")
+    _, rc2, prof2, _ = radial_model(world, cx, cy)
+    az2 = azimuthal_asymmetry(world, cx, cy)
+    make_plot(world_map_path(plot_path), world, world, rc2, prof2, az2, cx, cy,
               min(w, h) / 2, f"{path_a} / {path_b}", "raport A/B")
     return worst
 

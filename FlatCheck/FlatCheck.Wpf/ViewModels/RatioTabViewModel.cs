@@ -15,17 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RatioTabViewModel.cs - tabul 2, testul de rotatie la 180 de grade.
+// RatioTabViewModel.cs - tabul 2, atribuirea prin rotatie la 180 de grade.
 //
-// Singurul tab care NU ruleaza la pornire: are nevoie de doua fisiere alese de om, si
-// nu exista o conventie care sa spuna care sunt. Lista se populeaza din process/ cu
-// masterele de flat gasite acolo; se poate alege si un fisier din alta parte, si atunci
-// se verifica numele - vezi SessionMessages.NotAFlatMaster pentru de ce se explica in
-// loc sa se refuze scurt.
+// DE CE NU MAI CAUTA IN FOLDER. Pana la rescriere, tabul isi umplea o lista din
+// process/ si preselecta doua fisiere. Era gresit din constructie: modul cere doua
+// MASTERE, cate unul pentru fiecare orientare, iar un folder de sesiune Siril nu
+// contine niciodata asa ceva - cele doua orientari sunt doua sedinte, deci doua foldere.
+// Ce oferea lista erau cadrele individuale, si o pereche de cadre individuale produce
+// un rezultat sigur si fals: zgomotul unui singur cadru e de acelasi ordin cu semnalul
+// cautat. Deci acum se cer explicit doua fisiere, si nimic nu se presupune.
 //
-// Recalculeaza la orice schimbare a oricareia dintre cele doua alegeri.
+// Singurul tab care NU ruleaza la pornire, si acum cu si mai multa dreptate: pana nu
+// alege omul doua fisiere, nu exista nimic de calculat. Pana atunci arata documentatia -
+// vezi SessionMessages.RatioNeedsTwoMasters.
 
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,63 +42,95 @@ namespace FlatCheck.Wpf
 
         string _fileA;
         string _fileB;
-        string _structure = "";
-        string _structureVerdict = "";
+        string _world = "";
+        string _worldLabel = "";
+        string _worldCorner = "";
+        string _provenanceA = "";
+        string _provenanceB = "";
         string _corners = "";
         string _cornerVerdict = "";
+        string _azimuthal = "";
+        string _azimuthalVerdict = "";
+        string _residual = "";
+        string _residualVerdict = "";
+        string _tilt = "";
+        string _tiltVerdict = "";
         string _verdict = "";
         string _advice = "";
         byte[] _map;
+        byte[] _worldMap;
+        bool _showWorldMap;
 
-        /// <summary>Masterele gasite in process/. Se arata doar numele, nu calea intreaga.</summary>
-        public ObservableCollection<string> Candidates { get; } = new();
+        public string FileA { get => _fileA; private set => Set(ref _fileA, value); }
+        public string FileB { get => _fileB; private set => Set(ref _fileB, value); }
 
-        public string FileA
-        {
-            get => _fileA;
-            set { if (Set(ref _fileA, value)) OnSelectionChanged(); }
-        }
+        /// <summary>Componenta fixa in lume, cu bara ei de eroare. Text din nucleu.</summary>
+        public string World { get => _world; private set => Set(ref _world, value); }
+        public string WorldLabel { get => _worldLabel; private set => Set(ref _worldLabel, value); }
+        public string WorldCorner { get => _worldCorner; private set => Set(ref _worldCorner, value); }
 
-        public string FileB
-        {
-            get => _fileB;
-            set { if (Set(ref _fileB, value)) OnSelectionChanged(); }
-        }
+        /// <summary>Cate cadre si de cand, din headerele FITS. Precondistia se vede aici.</summary>
+        public string ProvenanceA { get => _provenanceA; private set => Set(ref _provenanceA, value); }
+        public string ProvenanceB { get => _provenanceB; private set => Set(ref _provenanceB, value); }
 
-        public string Structure { get => _structure; private set => Set(ref _structure, value); }
-        public string StructureVerdict { get => _structureVerdict; private set => Set(ref _structureVerdict, value); }
+        // Bateria de structura pe masterul combinat - aceleasi patru teste ca tabul 1.
         public string Corners { get => _corners; private set => Set(ref _corners, value); }
         public string CornerVerdict { get => _cornerVerdict; private set => Set(ref _cornerVerdict, value); }
+        public string Azimuthal { get => _azimuthal; private set => Set(ref _azimuthal, value); }
+        public string AzimuthalVerdict { get => _azimuthalVerdict; private set => Set(ref _azimuthalVerdict, value); }
+        public string Residual { get => _residual; private set => Set(ref _residual, value); }
+        public string ResidualVerdict { get => _residualVerdict; private set => Set(ref _residualVerdict, value); }
+        public string Tilt { get => _tilt; private set => Set(ref _tilt, value); }
+        public string TiltVerdict { get => _tiltVerdict; private set => Set(ref _tiltVerdict, value); }
+
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
-        public byte[] Map { get => _map; private set => Set(ref _map, value); }
 
         /// <summary>
-        /// Umple lista si preselecteaza primele doua mastere, daca exista. Preselectia e
-        /// o comoditate, nu o presupunere: pe un folder cu exact doua mastere - cazul
-        /// obisnuit, setul A si setul B - tabul e gata sa calculeze fara nicio alegere.
+        /// Cele doua harti si comutatorul dintre ele. Modul desparte masterul in doua
+        /// componente, deci are doua forme de aratat: reziduul partii fixe pe aparat, care
+        /// se potriveste cu verdictul, si raportul A/B, care arata forma gradientului
+        /// extern. <see cref="Map"/> e cea afisata.
+        /// </summary>
+        public byte[] Map => _showWorldMap ? _worldMap : _map;
+
+        public bool ShowWorldMap
+        {
+            get => _showWorldMap;
+            set { if (Set(ref _showWorldMap, value)) Raise(nameof(Map)); }
+        }
+
+        // ------------------------------------------------------------ textele fixe
+        // Vin din nucleu, nu se rescriu aici: aceleasi propozitii sunt in raportul salvat.
+
+        // Proprietati de INSTANTA, desi valoarea e constanta: {Binding} rezolva prin
+        // DataContext, deci nu vede proprietati statice - o legare la una ar esua tacut,
+        // si tocmai documentatia tabului ar fi ramas goala.
+        public string Documentation => SessionMessages.RatioNeedsTwoMasters();
+        public string Precondition => RatioReport.Precondition();
+        public string WorldMeaning => RatioReport.WorldMeaning();
+        public string SensorCaveat => RatioReport.SensorCaveat();
+
+        /// <summary>
+        /// Retine sesiunea si atat. Nu propune nimic si nu calculeaza nimic: cele doua
+        /// mastere vin din doua sedinte, iar folderul curent e cel mult unul dintre ele.
         /// </summary>
         internal void Attach(SirilSession session, CancellationToken ct)
         {
             _session = session;
             _ct = ct;
-
-            Candidates.Clear();
-            foreach (string p in session.RatioCandidates()) Candidates.Add(p);
-
-            // Primul si ULTIMUL, nu primele doua. Pe un folder cu exact doua mastere e
-            // acelasi lucru; pe unul cu mai multe, cele doua capete sunt alegerea mai
-            // buna - un al treilea master aparut intre timp nu impinge setul B afara din
-            // preselectie.
-            _fileA = Candidates.Count > 0 ? Candidates[0] : null;
-            _fileB = Candidates.Count > 1 ? Candidates[Candidates.Count - 1] : null;
-            Raise(nameof(FileA));
-            Raise(nameof(FileB));
+            HasResult = false;
+            ClearError();
         }
 
+        /// <summary>Folderul de la care porneste dialogul pentru setul A.</summary>
+        internal string InitialDirectory => _session != null && Directory.Exists(_session.ProcessDir)
+            ? _session.ProcessDir
+            : null;
+
         /// <summary>
-        /// Un fisier ales de mana, din afara listei. Se valideaza dupa nume, iar daca nu e
-        /// un master de flat se explica ce sunt fisierele astea si de ce testul cere unul.
+        /// Un fisier ales de om. Se valideaza dupa nume, iar daca nu e un master de flat
+        /// se explica ce sunt fisierele astea si de ce testul cere unul.
         /// </summary>
         internal void Choose(bool isA, string path)
         {
@@ -107,15 +142,19 @@ namespace FlatCheck.Wpf
                 return;
             }
 
-            ClearError();
-            if (!Candidates.Contains(path)) Candidates.Add(path);
-            if (isA) FileA = path; else FileB = path;
-        }
+            // Prins la alegere, nu la calcul: asa omul vede imediat ce a gresit, si
+            // selectia buna de dinainte nu se pierde.
+            string other = isA ? FileB : FileA;
+            if (string.Equals(path, other, System.StringComparison.OrdinalIgnoreCase))
+            {
+                Fail("Aceleasi doua fisiere", SessionMessages.SameFileTwice());
+                return;
+            }
 
-        void OnSelectionChanged()
-        {
-            if (_session == null) return;
-            _ = RecomputeAsync();
+            ClearError();
+            if (isA) FileA = path; else FileB = path;
+            if (!string.IsNullOrEmpty(FileA) && !string.IsNullOrEmpty(FileB))
+                _ = RecomputeAsync();
         }
 
         internal Task RecomputeAsync()
@@ -123,15 +162,6 @@ namespace FlatCheck.Wpf
             if (string.IsNullOrEmpty(FileA) || string.IsNullOrEmpty(FileB))
             {
                 HasResult = false;
-                return Task.CompletedTask;
-            }
-
-            if (FileA == FileB)
-            {
-                Fail("Aceleasi doua fisiere",
-                     "Testul compara doua stive DIFERITE: una inainte de rotatia camerei, una "
-                   + "dupa. Impartind un fisier la el insusi iese 1 peste tot, deci un \"OK\" "
-                   + "care nu inseamna nimic.");
                 return Task.CompletedTask;
             }
 
@@ -148,37 +178,52 @@ namespace FlatCheck.Wpf
 
                 Report = text.ToString();
                 Populate(outcome.Result);
-                Map = outcome.Png;
+                _map = outcome.Png;
+                _worldMap = outcome.SecondaryPng;
+                Raise(nameof(Map));
                 HasResult = true;
             });
         }
 
         void Populate(RatioResult r)
         {
-            Structure = $"{r.PtpPct:F2} %";
-            StructureVerdict = r.PtpVerdict;
-            Corners = $"{r.CornerSpreadPct:F2} %";
-            CornerVerdict = r.CornerVerdict;
+            World = RatioReport.WorldValue(r);
+            WorldLabel = r.WorldLabel;
+            WorldCorner = $"{r.WorldCornerPct:F2} %";
+            ProvenanceA = RatioReport.Provenance(r.StackCountA, r.DateObsA);
+            ProvenanceB = RatioReport.Provenance(r.StackCountB, r.DateObsB);
+
+            Corners = $"{r.Sensor.CornerSpreadPct:F2} %";
+            CornerVerdict = r.Sensor.CornerVerdict;
+            Azimuthal = $"{r.Sensor.AzimuthalMaxPct:F2} %";
+            AzimuthalVerdict = r.Sensor.AzimuthalVerdict;
+            Residual = $"{r.Sensor.ResidualPtpPct:F2} %";
+            ResidualVerdict = r.Sensor.ResidualVerdict;
+            Tilt = $"{r.Sensor.TiltPct:F2} %";
+            TiltVerdict = r.Sensor.TiltVerdict;
+
             Verdict = r.Verdict;
-            Advice = r.Verdict == "OK"
-                ? "Setup-ul de flats e curat. Poti construi biblioteca pe el."
-                : "Setup-ul contamineaza flat-ul. Repara sursa inainte de biblioteca.";
+            // Sfatul vine din nucleu, ca la tabul de structura: e acelasi verdict, pe
+            // aceeasi scara, deci trebuie sa fie aceeasi fraza.
+            Advice = StructureReport.Advice(r.Verdict);
         }
 
         internal override void Reset()
         {
             base.Reset();
             _session = null;
-            Candidates.Clear();
-            _fileA = null;
-            _fileB = null;
-            Raise(nameof(FileA));
-            Raise(nameof(FileB));
-            Structure = Corners = "";
-            StructureVerdict = CornerVerdict = "";
+            FileA = null;
+            FileB = null;
+            World = WorldLabel = WorldCorner = "";
+            ProvenanceA = ProvenanceB = "";
+            Corners = Azimuthal = Residual = Tilt = "";
+            CornerVerdict = AzimuthalVerdict = ResidualVerdict = TiltVerdict = "";
             Verdict = "";
             Advice = "";
-            Map = null;
+            _map = null;
+            _worldMap = null;
+            ShowWorldMap = false;
+            Raise(nameof(Map));
         }
     }
 }

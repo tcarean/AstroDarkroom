@@ -1,0 +1,67 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== ATRIBUIRE PRIN ROTATIE 180 ===
+    A : <TMP>/a.fit
+        numar de cadre necunoscut, data necunoscuta
+    B : <TMP>/b.fit
+        numar de cadre necunoscut, data necunoscuta
+    Cele doua stive trebuie sa fie din DOUA orientari la 180 de grade, cu
+    aparatul rotit in jurul axei optice si nimic altceva schimbat. Tool-ul NU
+    poate verifica asta din pixeli - verifica randurile de mai sus. Doua stive
+    din aceeasi orientare dau un rezultat increzator si fara sens.
+
+  COMPONENTA FIXA IN LUME  (informativ - nu e un verdict)
+    gradient extern / orientare :  0.00 % +/- 0.00 %   [OK]
+    imprastiere colturi         :  0.00 %
+    Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de
+    eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul
+    masuratorii: cand cifra si eroarea ei sunt comparabile, nu s-a detectat
+    nimic peste zgomot.
+
+  STRUCTURA MASTERULUI COMBINAT (A+B)/2 - partea fixa pe aparat
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    Ce urmeaza e ce a ramas dupa ce s-a scos tot ce putea scoate rotatia. Fiind
+    fix pe aparat, se imparte corect din lights - DAR numai daca era la fel si
+    cand ai fotografiat lights-urile. Vignetarea obiectivului era. O curea
+    cazuta pe lentila, condensul sau o parasolara stramba se rotesc si ele cu
+    aparatul, arata identic aici, si la lights nu mai sunt acolo.
+
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
+    offset centru iluminare :  7.55 %
+        varf iluminare = (142, 128)  vs  centru senzor = (128, 128)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+
+  TESTE
+    imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]
+        stanga-sus    :  94.01 % din media colturilor
+        dreapta-sus   : 105.71 % din media colturilor
+        stanga-jos    :  94.27 % din media colturilor
+        dreapta-jos   : 106.01 % din media colturilor
+    asimetrie azimutala max : 10.82 %   [ACCEPTABIL]
+    reziduu dupa model rad. :  9.42 %   [BUN]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 12.01 %   [ACCEPTABIL]
+
+  SCARA celor patru teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
+
+  VERDICT: ACCEPTABIL
+    Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de
+    un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.
+
+    -> harta salvata: <TMP>/out.png
+
+    -> harta salvata: <TMP>/out-lume.png
+

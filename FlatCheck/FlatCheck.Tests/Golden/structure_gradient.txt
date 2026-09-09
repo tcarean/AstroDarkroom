@@ -29,9 +29,11 @@ Copyright (C) 2026 Tudor Carean
     10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
     peste 20 %   refa flat-urile
     Cel mai important e "reziduu dupa model rad.": masoara direct cat din
-    cadru NU se explica printr-un model pur radial, adica exact eroarea de
-    flat. Imprastierea colturilor, asimetria azimutala si inclinarea sunt
-    vederi partiale ale aceleiasi abateri.
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
 
   VERDICT: ACCEPTABIL
     Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de

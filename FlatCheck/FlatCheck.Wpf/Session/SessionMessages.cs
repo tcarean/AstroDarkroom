@@ -84,7 +84,48 @@ namespace FlatCheck.Wpf
             + "ramane simetric radial si doar amplitudinea e gresita. Nu se poate detecta, "
             + "doar evita.\n\n"
             + "Cum obtii doua: fotografiezi ~15 flat-uri, rotesti aparatul 180 de grade in "
-            + "jurul axei optice, mai faci ~15, si stivuiesti cele doua seturi SEPARAT.";
+            + "jurul axei optice, mai faci ~15, si stivuiesti cele doua seturi SEPARAT - "
+            + "adica in doua foldere de sesiune, cate unul pentru fiecare orientare.";
+
+        /// <summary>
+        /// Documentatia tabului, aratata inainte de orice calcul. Modul asta e singurul
+        /// care cere ceva ce nu se poate deduce dintr-un folder, deci e singurul care
+        /// trebuie sa explice ce vrea INAINTE, nu dupa ce a esuat.
+        /// </summary>
+        internal static string RatioNeedsTwoMasters() =>
+            "CE FACE. Desparte structura ne-radiala a flat-ului tau in doua: ce e fixat de "
+            + "APARAT (obiectiv, senzor - se imparte corect din lights) si ce e fixat in "
+            + "LUME (panou neuniform, gradient de cer - nu se reproduce). Verdictul e al "
+            + "primei parti, adica al masterului pe care il obtii stivuind ambele orientari.\n\n"
+
+            + "DE CE AI NEVOIE: DOUA MASTERE DE FLAT, DIN DOUA SEDINTE.\n"
+            + "  1. ~15 flat-uri.\n"
+            + "  2. Rotesti aparatul 180 de grade in jurul axei optice. Nu muta nimic "
+            + "altceva - nici trepiedul, nici sursa, nici distanta.\n"
+            + "  3. Inca ~15 flat-uri.\n"
+            + "  4. Stivuiesti cele doua seturi SEPARAT, in doua foldere de sesiune, cu "
+            + $"scriptul de preprocesare. Iti raman doua fisiere {SirilSession.FlatMasterName}, "
+            + "cate unul in fiecare process/.\n\n"
+
+            + "Rotatia nu trebuie sa fie exacta. Vignetarea e rotational simetrica, deci "
+            + "se anuleaza la orice unghi; cele 180 de grade servesc doar la inversarea "
+            + "gradientului extern, iar o eroare de unghi doar subraporteaza, nu "
+            + "supraraporteaza.\n\n"
+
+            + "CE NU ITI SPUNE. Daca partea fixata de aparat e obiectivul (inofensiva) sau "
+            + "ceva PE obiectiv - curea, condens, parasolara stramba - care se roteste "
+            + "odata cu el si arata identic, dar la lights nu mai e acolo. Pentru asta "
+            + "compara doua sedinte diferite cu acelasi obiectiv.";
+
+        /// <summary>
+        /// Acelasi fisier in ambele sloturi. Prins la alegere, nu la calcul, ca sa nu se
+        /// piarda selectia buna de dinainte.
+        /// </summary>
+        internal static string SameFileTwice() =>
+            "Testul compara doua stive DIFERITE: una dinainte de rotatia aparatului, una "
+            + "de dupa. Impartind un fisier la el insusi iese 1 peste tot, deci o "
+            + "componenta externa de exact zero - care nu inseamna \"setup curat\", "
+            + "inseamna \"nu s-a masurat nimic\".";
 
         /// <summary>Cand process/ nu contine cadre calibrate pentru testul end-to-end.</summary>
         internal static string NoLightSeries(SirilSession s) =>

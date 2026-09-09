@@ -141,73 +141,35 @@ public class SirilSessionTests
         var s = Session(ws, process: false, master: false);
 
         Assert.Empty(s.LightSeries());
-        Assert.Empty(s.RatioCandidates());
     }
 
-    // ------------------------------------------------------------------ candidatii ratio
-
-    /// <summary>Cerinta 6: lista se filtreaza pe "pp_flat*" cu extensia .fit.</summary>
-    [Fact]
-    public void RatioCandidatesAreTheFlatMastersInProcess()
-    {
-        using var ws = new TempWorkspace();
-        var s = Session(ws);
-
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_A.fit"), "x");
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_B.fit"), "x");
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_light_00001.fit"), "x");
-        File.WriteAllText(Path.Combine(s.ProcessDir, "flat_necalibrat.fit"), "x");
-
-        Assert.Equal(new[] { "pp_flat_A.fit", "pp_flat_B.fit" },
-                     s.RatioCandidates().Select(Path.GetFileName).ToArray());
-    }
+    // ------------------------------------------------------- ce e un master de flat
 
     /// <summary>
-    /// Masterul general NU e candidat pentru testul de rotatie: e stiva tuturor
-    /// flat-urilor, iar testul compara doua stive facute separat. Comparat cu unul dintre
-    /// seturi ar da o cifra fara sens - jumatate din el chiar e setul acela.
+    /// Masterul general al unei sesiuni E un master de flat, deci e o intrare valida - si
+    /// in fluxul normal chiar E intrarea: cele doua orientari sunt doua sedinte, deci doua
+    /// foldere, si din fiecare se ia pp_flat_stacked.fit.
     ///
-    /// Conteaza si practic: sortarea fiind ordinala, ar fi cazut ultimul in lista, adica
-    /// exact pe preselectia setului B.
+    /// A existat o excludere a lui, pana la rescrierea tabului. Nu era o regula de domeniu:
+    /// era o reparatie de PRESELECTIE dintr-o vreme in care tabul isi umplea singur o lista
+    /// din process/ si, sortarea fiind ordinala, "pp_flat_stacked.fit" cadea dupa
+    /// "pp_flat_A/B.fit" si ateriza pe preselectia setului B. Fara lista, motivul a disparut.
     /// </summary>
     [Fact]
-    public void TheOverallFlatMasterIsNotARatioCandidate()
-    {
-        using var ws = new TempWorkspace();
-        var s = Session(ws);
-
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_A.fit"), "x");
-
-        Assert.DoesNotContain(SirilSession.FlatMasterName,
-                              s.RatioCandidates().Select(Path.GetFileName));
-        Assert.True(File.Exists(s.FlatMasterPath), "masterul exista, doar nu e propus");
-    }
-
-    /// <summary>Potrivirea tiparului e insensibila la litere mari; excluderea la fel.</summary>
-    [Fact]
-    public void TheExclusionIgnoresCase()
-    {
-        using var ws = new TempWorkspace();
-        var s = Session(ws, master: false);
-
-        File.WriteAllText(Path.Combine(s.ProcessDir, "PP_FLAT_STACKED.FIT"), "x");
-        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_A.fit"), "x");
-
-        Assert.Equal(new[] { "pp_flat_A.fit" },
-                     s.RatioCandidates().Select(Path.GetFileName).ToArray());
-    }
-
-    /// <summary>
-    /// Scos din lista, dar NU respins: lista propune, iar "Alt fisier..." ramane o
-    /// portita pentru fluxurile in care masterul chiar e unul dintre cele doua seturi.
-    /// </summary>
-    [Fact]
-    public void TheOverallMasterIsStillAValidManualChoice()
+    public void TheOverallFlatMasterIsAValidInput()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws);
 
         Assert.True(SirilSession.IsFlatMasterName(s.FlatMasterPath));
+    }
+
+    /// <summary>Potrivirea tiparului e insensibila la litere mari.</summary>
+    [Fact]
+    public void TheNameCheckIgnoresCase()
+    {
+        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\PP_FLAT_STACKED.FIT"));
+        Assert.True(SirilSession.IsFlatMasterName(@"C:\undeva\Pp_Flat_A.Fit"));
     }
 
     [Theory]

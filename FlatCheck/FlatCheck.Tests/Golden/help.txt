@@ -2,7 +2,7 @@ flatcheck <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 Utilizare:
   flatcheck <flat.fit>                    # test structura
-  flatcheck <A.fit> --ratio <B.fit>       # test rotatie 180
+  flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180
   flatcheck <light.fit> --light           # test end-to-end, un cadru
   flatcheck <folder/> --light             # test end-to-end pe toata seria
   flatcheck <flat_brut.NEF> --expo        # verificare expunere

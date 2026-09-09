@@ -68,6 +68,9 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
+    /// <summary>Calea unuia dintre masterele scrise de <see cref="WithFlatMasters"/>.</summary>
+    internal string MasterPath(string name) => Path.Combine(ProcessDir, name);
+
     /// <summary>O serie de lights calibrate, cu vignetare reziduala usor diferita.</summary>
     internal SessionFixture WithLightSeries(int count, IEnumerable<string>? cards = null)
     {

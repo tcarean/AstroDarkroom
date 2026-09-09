@@ -169,5 +169,13 @@ namespace FlatCheck
             => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
         internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+
+        /// <summary>
+        /// Valoarea bruta a unui card, fara ghilimelele din jurul sirurilor FITS.
+        /// Folosita pentru DATE-OBS in modul de atribuire, unde data nu se interpreteaza,
+        /// doar se arata omului.
+        /// </summary>
+        internal static string HStr(IReadOnlyDictionary<string, string> h, string k, string def)
+            => h.TryGetValue(k, out var v) ? v.Trim().Trim('\'').Trim() : def;
     }
 }

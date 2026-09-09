@@ -100,37 +100,16 @@ namespace FlatCheck.Wpf
                 : Array.Empty<string>();
 
         /// <summary>
-        /// Candidatii pentru --ratio: masterele de flat din process/, FARA
-        /// <see cref="FlatMasterName"/>. Aceeasi potrivire in proces ca la consola, deci
-        /// "pp_flat*.fit" chiar inseamna ".fit", nu si ".fits" prin mostenirea 8.3 din
-        /// Win32.
-        ///
-        /// De ce se scoate masterul: el e stiva TUTUROR flat-urilor, produsa de scriptul
-        /// de preprocesare, iar testul de rotatie compara doua stive facute SEPARAT, una
-        /// dinainte si una de dupa rotirea aparatului. Comparat cu unul dintre seturi, ar
-        /// da o cifra care nu inseamna nimic - jumatate din el chiar E setul acela.
-        ///
-        /// Conteaza si practic, nu doar conceptual: sortarea fiind ordinala,
-        /// "pp_flat_stacked.fit" cade DUPA "pp_flat_A.fit" si "pp_flat_B.fit" ('s' = 115
-        /// vs 'A' = 65), deci ar fi ajuns exact pe preselectia setului B.
-        ///
-        /// Se scoate doar din LISTA. Ales de mana prin "Alt fisier...", tot trece: lista
-        /// propune, validarea spune doar daca fisierul e un master de flat.
-        /// </summary>
-        internal IReadOnlyList<string> RatioCandidates()
-        {
-            if (!Directory.Exists(ProcessDir)) return Array.Empty<string>();
-
-            return SeriesFinder.Find(ProcessDir, RatioPattern)
-                .Where(p => !string.Equals(Path.GetFileName(p), FlatMasterName,
-                                           StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        /// <summary>
         /// Un fisier e acceptat de tabul Ratio doar daca e un master de flat. Verificarea
-        /// e pe NUME, nu pe cale, ca sa mearga si pentru un fisier ales de mana din alt
-        /// folder - cerinta 6 spune sa explicam, nu sa refuzam tacut.
+        /// e pe NUME, nu pe cale: in fluxul normal cele doua mastere vin din DOUA foldere
+        /// de sesiune diferite - cate unul pentru fiecare orientare - deci calea nu spune
+        /// nimic. Cerinta 6 spune sa explicam, nu sa refuzam tacut.
+        ///
+        /// Nu exista o regula separata pentru "pp_flat_stacked.fit": el E masterul de flat
+        /// al unei sesiuni, deci exact ce cere modul. A existat o excludere a lui pana la
+        /// rescrierea tabului, dar aia era o reparatie de PRESELECTIE - sortarea fiind
+        /// ordinala, "pp_flat_stacked.fit" cadea dupa "pp_flat_A/B.fit" si ateriza pe
+        /// preselectia setului B. Fara lista si fara preselectie, motivul a disparut.
         /// </summary>
         internal static bool IsFlatMasterName(string path)
             => !string.IsNullOrEmpty(path)

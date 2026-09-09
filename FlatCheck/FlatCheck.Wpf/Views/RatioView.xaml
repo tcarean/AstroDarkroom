@@ -17,11 +17,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- RatioView - tabul 2, rotatia la 180 de grade.
+<!-- RatioView - tabul 2, atribuirea prin rotatie la 180 de grade.
 
-     Singurul tab cu alegeri sus: doua liste cu masterele din process/, si cate un buton
-     pentru un fisier de altundeva. Orice schimbare recalculeaza imediat - nu exista buton
-     de "calculeaza", fiindca nu exista nimic de confirmat. -->
+     Singurul tab care cere doua fisiere alese explicit, si singurul care isi explica
+     cerintele INAINTE de orice calcul. Motivul e in RatioTabViewModel: modul are nevoie
+     de doua MASTERE, cate unul pentru fiecare orientare, iar cele doua vin din doua
+     sedinte, deci din doua foldere de sesiune. Un folder nu le poate propune, si o lista
+     care incearca oferea de fapt cadrele individuale - din care iese un rezultat sigur si
+     fals. Deci: documentatia sus, doua butoane, si nimic presupus. -->
 
 <UserControl x:Class="FlatCheck.Wpf.RatioView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -29,12 +32,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:FlatCheck.Wpf">
 
   <UserControl.Resources>
-    <!-- In liste se arata doar numele fisierului; calea intreaga ar rupe latimea si
-         oricum toate stau in acelasi folder. -->
+    <!-- Se arata doar numele fisierului; calea intreaga ar rupe latimea, iar cele doua
+         stau acum in foldere diferite, deci nici nu se pot alinia. -->
     <local:FileNameConverter x:Key="FileName" />
-    <DataTemplate x:Key="FileItem">
-      <TextBlock Text="{Binding Converter={StaticResource FileName}}" />
-    </DataTemplate>
   </UserControl.Resources>
 
   <Grid>
@@ -43,46 +43,80 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <!-- ============================================================ alegerile -->
+    <!-- ============================================ documentatia si alegerile -->
     <Border Grid.Row="0" Background="{StaticResource PanelBg}" Padding="20,14"
             BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1">
-      <Grid>
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="16" />
-          <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-          <RowDefinition Height="Auto" />
-          <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+      <StackPanel>
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Heading}"
-                   Text="SETUL A  (inainte de rotatie)" />
-        <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Heading}"
-                   Text="SETUL B  (dupa rotatia de 180)" />
+        <Expander IsExpanded="True" Foreground="{StaticResource TextBr}"
+                  Header="Cum se foloseste testul asta">
+          <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,4"
+                     TextWrapping="Wrap" Text="{Binding Documentation, Mode=OneTime}" />
+        </Expander>
 
-        <DockPanel Grid.Row="1" Grid.Column="0">
-          <Button DockPanel.Dock="Right" Content="Alt fisier..." Margin="8,0,0,0"
-                  Click="ChooseA" />
-          <ComboBox ItemsSource="{Binding Candidates}"
-                    SelectedItem="{Binding FileA, Mode=TwoWay}"
-                    ItemTemplate="{StaticResource FileItem}" />
-        </DockPanel>
+        <Grid Margin="0,14,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="16" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="1" Grid.Column="2">
-          <Button DockPanel.Dock="Right" Content="Alt fisier..." Margin="8,0,0,0"
-                  Click="ChooseB" />
-          <ComboBox ItemsSource="{Binding Candidates}"
-                    SelectedItem="{Binding FileB, Mode=TwoWay}"
-                    ItemTemplate="{StaticResource FileItem}" />
-        </DockPanel>
-      </Grid>
+          <TextBlock Grid.Row="0" Grid.Column="0" Style="{StaticResource Heading}"
+                     Text="SETUL A  (inainte de rotatie)" />
+          <TextBlock Grid.Row="0" Grid.Column="2" Style="{StaticResource Heading}"
+                     Text="SETUL B  (dupa rotatia de 180)" />
+
+          <DockPanel Grid.Row="1" Grid.Column="0" Margin="0,6,0,0">
+            <Button DockPanel.Dock="Right" Content="Alege..." Margin="8,0,0,0"
+                    Click="ChooseA" />
+            <Border Background="{StaticResource WindowBg}" BorderThickness="1"
+                    BorderBrush="{StaticResource BorderBr}" Padding="8,5" CornerRadius="3">
+              <TextBlock TextTrimming="CharacterEllipsis"
+                         Text="{Binding FileA, Converter={StaticResource FileName},
+                                       TargetNullValue=nimic ales}" />
+            </Border>
+          </DockPanel>
+
+          <DockPanel Grid.Row="1" Grid.Column="2" Margin="0,6,0,0">
+            <Button DockPanel.Dock="Right" Content="Alege..." Margin="8,0,0,0"
+                    Click="ChooseB" />
+            <Border Background="{StaticResource WindowBg}" BorderThickness="1"
+                    BorderBrush="{StaticResource BorderBr}" Padding="8,5" CornerRadius="3">
+              <TextBlock TextTrimming="CharacterEllipsis"
+                         Text="{Binding FileB, Converter={StaticResource FileName},
+                                       TargetNullValue=nimic ales}" />
+            </Border>
+          </DockPanel>
+        </Grid>
+      </StackPanel>
     </Border>
 
     <!-- ============================================================ rezultatele -->
     <Grid Grid.Row="1">
       <local:MessagePanel Margin="20" />
+
+      <!-- Starea de pornire. MessagePanel apare doar la eroare, iar "n-ai ales inca
+           nimic" nu e o eroare - fara asta, tabul se deschidea pe un dreptunghi gol.
+           Doua legari imbricate in loc de un MultiBinding: cea din afara ascunde
+           indiciul cand exista rezultat, cea dinauntru cand exista eroare. -->
+      <Grid Visibility="{Binding HasResult, Converter={StaticResource NotBoolToVis}}">
+        <Border Visibility="{Binding HasError, Converter={StaticResource NotBoolToVis}}"
+                Style="{StaticResource Card}" Margin="20" Padding="24"
+                HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="640">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Heading}"
+                       Text="ALEGE CELE DOUA MASTERE" />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Text="Cate unul pentru fiecare orientare, cu butoanele de mai sus. In fluxul obisnuit sunt doua fisiere pp_flat_stacked.fit, din doua foldere de sesiune diferite - unul de dinainte de rotatie, unul de dupa." />
+            <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap"
+                       Text="Tabul nu propune nimic, si asta e o decizie: folderul deschis e cel mult una dintre cele doua sedinte, iar ce ar putea propune din el sunt cadre individuale - din care iese un rezultat increzator si gresit." />
+          </StackPanel>
+        </Border>
+      </Grid>
 
       <Grid Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
         <Grid.ColumnDefinitions>
@@ -93,6 +127,60 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
           <StackPanel>
 
+            <!-- Provenienta sus, nu ingropata in raport: e singurul loc din care se vede
+                 daca cele doua stive chiar POT fi din doua orientari diferite. -->
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock Style="{StaticResource Heading}" Text="DE UNDE VIN CELE DOUA STIVE" />
+                <!-- Stilul Number aliniaza la dreapta, ca sa se insiruie cifrele in
+                     coloane. Aici sunt propozitii, deci se suprascrie. -->
+                <TextBlock Style="{StaticResource Number}" Margin="0,8,0,0"
+                           HorizontalAlignment="Left"
+                           Text="{Binding ProvenanceA, StringFormat='A : {0}'}" />
+                <TextBlock Style="{StaticResource Number}" Margin="0,3,0,0"
+                           HorizontalAlignment="Left"
+                           Text="{Binding ProvenanceB, StringFormat='B : {0}'}" />
+                <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
+                           TextWrapping="Wrap" Text="{Binding Precondition, Mode=OneTime}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Componenta fixa in lume. Informativa: nu voteaza in verdict. -->
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"
+                       Text="COMPONENTA FIXA IN LUME  (informativ)" />
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="150" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="gradient extern / orientare" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding World}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding WorldLabel}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="150" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="imprastiere colturi" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding WorldCorner}" VerticalAlignment="Center" />
+                </Grid>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,12,0,0"
+                           TextWrapping="Wrap" Text="{Binding WorldMeaning, Mode=OneTime}" />
+              </StackPanel>
+            </Border>
+
+            <!-- Verdictul: structura masterului combinat, adica a partii fixe pe aparat. -->
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"
+                       Text="STRUCTURA MASTERULUI COMBINAT  (A+B)/2" />
             <Border Style="{StaticResource Card}">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
@@ -104,27 +192,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                                FontSize="16" FontWeight="Bold" />
                   </Border>
                 </StackPanel>
-                <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
+                <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0"
+                           TextWrapping="Wrap" Text="{Binding Advice}" />
+                <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
+                           TextWrapping="Wrap" Text="{Binding SensorCaveat, Mode=OneTime}" />
               </StackPanel>
             </Border>
 
-            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="TESTE" />
-            <Border Style="{StaticResource Card}">
+            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
               <StackPanel>
                 <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="structura ramasa in raportul A/B" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding Structure}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding StructureVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" MinWidth="96" />
@@ -137,15 +214,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                                   Content="{Binding CornerVerdict}"
                                   ContentTemplate="{StaticResource VerdictChip}" />
                 </Grid>
-              </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
-              <StackPanel>
-                <TextBlock Style="{StaticResource Muted}"
-                           Text="Vignetarea si praful sunt fixe pe senzor, deci se anuleaza in raportul A/B. Orice gradient extern e fix in lume, deci se inverseaza la rotatie si apare aici la ~2x amplitudine - eroarea reala din fiecare master e cam jumatate din cifrele de mai sus." />
-                <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
-                           Text="Punct orb cunoscut: o contaminare care e ea insasi simetrica radial fata de axa optica (de exemplu caderea de lumina a unui monitor centrat pe obiectiv) supravietuieste rotatiei si iese curata aici. Contra-testul e unul de DISTANTA: un set la 30 cm, unul la 60 cm, comparate tot aici - vignetarea obiectivului nu depinde de distanta, iar caderea panoului da." />
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="asimetrie azimutala max" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding Azimuthal}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding AzimuthalVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+                <Grid Margin="0,0,0,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="reziduu dupa model radial" VerticalAlignment="Center"
+                             FontWeight="Bold" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding Residual}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding ResidualVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="inclinare (gradient)" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding Tilt}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding TiltVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
               </StackPanel>
             </Border>
 
@@ -154,19 +262,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </StackPanel>
         </ScrollViewer>
 
+        <!-- Doua harti, fiindca modul a despartit masterul in doua componente. Implicit
+             se arata cea care se potriveste cu verdictul. -->
         <Grid Grid.Column="1" Margin="10,18,20,18">
           <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
           </Grid.RowDefinitions>
-          <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA RAPORTULUI A/B" />
-          <Border Grid.Row="1" Style="{StaticResource Card}" Padding="8">
+
+          <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA" />
+
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+            <!-- Numai a doua leaga in doua sensuri. Prima e OneWay pentru ca legarea
+                 TwoWay printr-un convertor fara ConvertBack arunca in momentul in care
+                 grupul isi actualizeaza celalalt buton - iar grupul face asta la
+                 incarcare, deci fereastra nici nu pornea. -->
+            <RadioButton GroupName="RatioMap" Margin="0,0,16,0"
+                         Content="fix pe aparat"
+                         IsChecked="{Binding ShowWorldMap, Converter={StaticResource Not},
+                                             Mode=OneWay}" />
+            <RadioButton GroupName="RatioMap"
+                         Content="fix in lume (A/B)"
+                         IsChecked="{Binding ShowWorldMap, Mode=TwoWay}" />
+          </StackPanel>
+
+          <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
             <Image Source="{Binding Map, Converter={StaticResource PngToImage}}"
                    Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
           </Border>
-          <TextBlock Grid.Row="2" Style="{StaticResource Faint}" Margin="2,10,0,0"
-                     Text="Pe un setup curat harta e uniform alba. Orice structura vizibila aici e contaminare externa, la dublul amplitudinii reale." />
+
+          <TextBlock Grid.Row="3" Style="{StaticResource Faint}" Margin="2,10,0,0"
+                     TextWrapping="Wrap"
+                     Text="Prima harta e reziduul partii fixe pe aparat, deci se potriveste cu verdictul de mai sus. A doua e raportul A/B: pe ea se vede FORMA gradientului extern, la dublul amplitudinii reale." />
         </Grid>
       </Grid>
 

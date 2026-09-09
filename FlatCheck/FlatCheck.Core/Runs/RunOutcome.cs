@@ -57,10 +57,20 @@ namespace FlatCheck
         /// </summary>
         internal readonly byte[] Png;
 
-        internal RunOutcome(TResult result, byte[] png)
+        /// <summary>
+        /// A doua harta, cand modul produce doua, altfel null. Numai modul de atribuire:
+        /// el desparte masterul in doua componente, iar fiecare are alta forma de aratat -
+        /// reziduul partii fixe pe aparat (care se potriveste cu verdictul) si raportul
+        /// A/B (care arata forma gradientului extern). Fereastra le comuta; consola le
+        /// scrie pe amandoua.
+        /// </summary>
+        internal readonly byte[] SecondaryPng;
+
+        internal RunOutcome(TResult result, byte[] png, byte[] secondaryPng = null)
         {
             Result = result;
             Png = png;
+            SecondaryPng = secondaryPng;
         }
     }
 }

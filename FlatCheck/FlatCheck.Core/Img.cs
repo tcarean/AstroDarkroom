@@ -63,5 +63,39 @@ namespace FlatCheck
             for (int i = 0; i < a.D.Length; i++) o.D[i] = a.D[i] / Math.Max(b.D[i], 1e-12);
             return o;
         }
+
+        /// <summary>
+        /// Taie un dreptunghi centrat, aruncand egal de la ambele capete.
+        ///
+        /// Exista pentru modul de atribuire, singurul care roteste rasterul cu 180 de
+        /// grade si compara rezultatul cu originalul. <see cref="BlockMean"/> arunca
+        /// blocurile partiale doar de la CAPAT, deci grila lui e ancorata sus-stanga:
+        /// rotita cu 180 nu mai cade peste ea insasi, ci decalata cu pana la o dala.
+        /// Pe un gradient neted eroarea e mica, dar e sistematica - masurata, muta
+        /// raportul par/impar cu ~20%. Taierea centrata inainte de dale o elimina.
+        ///
+        /// NU se foloseste in LargeScalePtp: acolo grila ancorata sus-stanga e ce face
+        /// flatcheck.py, iar paritatea numerica e testata.
+        /// </summary>
+        internal static Img CropCentred(Img a, int h, int w)
+        {
+            if (h == a.H && w == a.W) return a;
+            int oy = (a.H - h) / 2, ox = (a.W - w) / 2;
+            var o = new Img(h, w);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    o.Set(y, x, a.At(oy + y, ox + x));
+            return o;
+        }
+
+        /// <summary>Rasterul rotit cu 180 de grade in jurul centrului lui.</summary>
+        internal static Img Rotate180(Img a)
+        {
+            var o = new Img(a.H, a.W);
+            for (int y = 0; y < a.H; y++)
+                for (int x = 0; x < a.W; x++)
+                    o.Set(y, x, a.At(a.H - 1 - y, a.W - 1 - x));
+            return o;
+        }
     }
 }

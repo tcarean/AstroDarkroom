@@ -37,9 +37,14 @@ public class MainViewModelTests
         Assert.False(vm.IsRunning);
     }
 
-    /// <summary>Cu doua mastere preselectate, si tabul Ratio e gata fara nicio alegere.</summary>
+    /// <summary>
+    /// Tabul Ratio nu calculeaza la deschidere, oricate mastere ar fi in folder, si asta
+    /// e o decizie: modul cere doua stive din DOUA orientari, adica din doua sedinte,
+    /// deci din doua foldere. Ce poate propune un singur folder sunt cadre individuale,
+    /// din care iese un rezultat sigur si fals.
+    /// </summary>
     [Fact]
-    public async Task RatioIsComputedWhenTwoMastersArePresent()
+    public async Task RatioWaitsForTwoExplicitChoices()
     {
         using var f = new SessionFixture()
             .WithFlatMaster().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
@@ -47,7 +52,9 @@ public class MainViewModelTests
 
         await vm.OpenAsync(f.Root);
 
-        Assert.True(vm.Ratio.HasResult);
+        Assert.False(vm.Ratio.HasResult);
+        Assert.Null(vm.Ratio.FileA);
+        Assert.Null(vm.Ratio.FileB);
     }
 
     /// <summary>Tabul de expunere isi ia lista, dar nu calculeaza pana nu se alege ceva.</summary>

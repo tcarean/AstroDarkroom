@@ -14,12 +14,17 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul de rotatie 180. Ce se verifica: lista se filtreaza corect, alegerea de mana e
-/// validata cu explicatie, si orice schimbare recalculeaza.
+/// Tabul de atribuire prin rotatie 180.
+///
+/// Tabul NU mai cauta in folder, si de-aia nu mai exista teste de lista aici. Modul cere
+/// doua MASTERE, cate unul pentru fiecare orientare, iar cele doua orientari sunt doua
+/// sedinte, deci doua foldere de sesiune. Ce putea propune un singur folder erau cadrele
+/// individuale, din care iese un rezultat sigur si fals - zgomotul unui cadru e de
+/// acelasi ordin cu semnalul cautat. Deci se cer explicit doua fisiere, si ce se
+/// verifica aici e validarea alegerii si atribuirea rezultata.
 /// </summary>
 public class RatioTabTests
 {
@@ -30,84 +35,49 @@ public class RatioTabTests
         return vm;
     }
 
-    // ------------------------------------------------------------------ lista
-
-    /// <summary>Cerinta 6: lista propune doar masterele de flat din process/.</summary>
-    [Fact]
-    public void OnlyFlatMastersAreOffered()
-    {
-        using var f = new SessionFixture()
-            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit")
-            .WithLightSeries(2);
-
-        var vm = Attached(f);
-
-        Assert.All(vm.Candidates, c => Assert.True(SirilSession.IsFlatMasterName(c)));
-        Assert.DoesNotContain(vm.Candidates, c => c.Contains("pp_light"));
-    }
+    // ------------------------------------------------------------------ pornire
 
     /// <summary>
-    /// Cu exact doua mastere - cazul obisnuit, setul A si setul B - tabul e gata sa
-    /// calculeze fara nicio alegere.
+    /// Tabul porneste gol: nu propune nimic, fiindca un folder de sesiune nu poate sti
+    /// care sunt cele doua orientari. In schimb explica ce ii trebuie, inainte de orice.
     /// </summary>
     [Fact]
-    public void TwoMastersArePreselectedAsAAndB()
+    public void TheTabStartsEmptyAndExplainsWhatItNeeds()
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
 
         var vm = Attached(f);
 
-        Assert.EndsWith("pp_flat_A.fit", vm.FileA);
-        Assert.EndsWith("pp_flat_B.fit", vm.FileB);
+        Assert.Null(vm.FileA);
+        Assert.Null(vm.FileB);
+        Assert.False(vm.HasResult);
+
+        Assert.Contains("DOUA MASTERE", vm.Documentation);
+        Assert.Contains("DOUA SEDINTE", vm.Documentation);
+        Assert.Contains("180", vm.Documentation);
     }
 
     /// <summary>
-    /// Cu mai multe mastere se aleg CAPETELE listei, nu primele doua. Cerut de utilizator:
-    /// pe un folder unde apare si masterul combinat, sau un al treilea set, primele doua
-    /// n-ar mai fi perechea de comparat.
+    /// Documentatia trebuie sa spuna si ce NU poate testul: ca partea fixa pe aparat
+    /// poate fi optica (inofensiva) sau ceva pe obiectiv (nu). Fara asta, un verdict bun
+    /// pe un master contaminat citeste ca o garantie.
     /// </summary>
     [Fact]
-    public void WithMoreThanTwoMastersTheLastOneIsPreselectedAsB()
-    {
-        using var f = new SessionFixture()
-            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_C.fit", "pp_flat_D.fit");
-
-        var vm = Attached(f);
-
-        Assert.EndsWith("pp_flat_A.fit", vm.FileA);
-        Assert.EndsWith("pp_flat_D.fit", vm.FileB);
-    }
-
-    /// <summary>Sortarea e ordinala, deci "ultimul" e ultimul din lista afisata.</summary>
-    [Fact]
-    public void TheDefaultForBIsTheLastEntryInTheList()
-    {
-        using var f = new SessionFixture()
-            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_C.fit");
-
-        var vm = Attached(f);
-
-        Assert.Equal(vm.Candidates[0], vm.FileA);
-        Assert.Equal(vm.Candidates[^1], vm.FileB);
-    }
-
-    [Fact]
-    public void WithASingleMasterOnlyTheFirstSlotIsFilled()
+    public void TheDocumentationStatesWhatTheTestCannotTell()
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
-
         var vm = Attached(f);
 
-        Assert.NotNull(vm.FileA);
-        Assert.Null(vm.FileB);
+        Assert.Contains("CE NU ITI SPUNE", vm.Documentation);
+        Assert.Contains("obiectiv", vm.Documentation);
     }
 
     // ------------------------------------------------------------------ validare
 
     /// <summary>
-    /// CERINTA 6, partea a doua: un fisier care nu incepe cu "pp_flat" nu se refuza
-    /// scurt - se explica ce sunt fisierele astea in iesirea Siril si de ce testul cere
-    /// unul. Mesajul trebuie sa spuna si de ce un flat NECALIBRAT nu merge.
+    /// Un fisier care nu incepe cu "pp_flat" nu se refuza scurt - se explica ce sunt
+    /// fisierele astea in iesirea Siril si de ce testul cere unul, inclusiv de ce un flat
+    /// NECALIBRAT nu merge.
     /// </summary>
     [Fact]
     public void ChoosingSomethingElseExplainsWhatAFlatMasterIs()
@@ -129,6 +99,7 @@ public class RatioTabTests
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
         var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
         string before = vm.FileA;
 
         vm.Choose(isA: true, path: @"C:\undeva\flat_necalibrat.fit");
@@ -136,72 +107,132 @@ public class RatioTabTests
         Assert.Equal(before, vm.FileA);
     }
 
-    /// <summary>Un master dintr-un alt folder e acceptat si intra in lista.</summary>
+    /// <summary>
+    /// Cazul NORMAL, nu exceptia: cele doua mastere vin din doua foldere de sesiune
+    /// diferite, cate unul pentru fiecare orientare.
+    /// </summary>
     [Fact]
-    public void AFlatMasterFromAnotherFolderIsAccepted()
+    public void AFlatMasterFromAnotherSessionIsAccepted()
     {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
         var vm = Attached(f);
 
-        vm.Choose(isA: false, path: @"C:\alta-sesiune\pp_flat_vechi.fit");
+        vm.Choose(isA: false, path: @"C:\alta-sesiune\process\pp_flat_stacked.fit");
 
         Assert.False(vm.HasError);
-        Assert.Equal(@"C:\alta-sesiune\pp_flat_vechi.fit", vm.FileB);
-        Assert.Contains(@"C:\alta-sesiune\pp_flat_vechi.fit", vm.Candidates);
+        Assert.Equal(@"C:\alta-sesiune\process\pp_flat_stacked.fit", vm.FileB);
     }
 
-    // ------------------------------------------------------------------ calcul
-
+    /// <summary>
+    /// Masterul general al unei sesiuni e exact ce cere modul, nu ceva de refuzat: in
+    /// fluxul normal, ambele fisiere sunt "pp_flat_stacked.fit", din doua foldere.
+    /// </summary>
     [Fact]
-    public async Task ItComparesTheTwoChosenMasters()
+    public void TheOverallMasterOfAnotherSessionIsAccepted()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
+        var vm = Attached(f);
+
+        vm.Choose(isA: true, path: @"C:\sesiune-0deg\process\pp_flat_stacked.fit");
+        vm.Choose(isA: false, path: @"C:\sesiune-180deg\process\pp_flat_stacked.fit");
+
+        Assert.False(vm.HasError);
+        Assert.EndsWith("pp_flat_stacked.fit", vm.FileA);
+        Assert.EndsWith("pp_flat_stacked.fit", vm.FileB);
+    }
+
+    /// <summary>
+    /// Acelasi fisier in ambele sloturi da o componenta externa de exact zero - care nu
+    /// inseamna "setup curat", inseamna "nu s-a masurat nimic". Prins la ALEGERE, ca sa
+    /// nu se piarda selectia buna de dinainte.
+    /// </summary>
+    [Fact]
+    public void TheSameFileInBothSlotsIsRefusedAtChoiceTime()
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
         var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_A.fit"));
+
+        Assert.True(vm.HasError);
+        Assert.Contains("DIFERITE", vm.ErrorText);
+        Assert.Null(vm.FileB);
+    }
+
+    // ------------------------------------------------------------------ atribuire
+
+    [Fact]
+    public async Task ItAttributesTheStructureOfTheCombinedMaster()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
 
         await vm.RecomputeAsync();
 
         Assert.True(vm.HasResult);
         Assert.NotEmpty(vm.Verdict);
-        Assert.NotEmpty(vm.Structure);
-        Assert.NotEmpty(vm.Corners);
+        Assert.NotEmpty(vm.World);          // componenta fixa in lume, cu bara de eroare
+        Assert.NotEmpty(vm.Corners);        // bateria de structura pe (A+B)/2
+        Assert.NotEmpty(vm.Residual);
+        Assert.NotEmpty(vm.ProvenanceA);    // cate cadre si de cand
         Assert.NotNull(vm.Map);
     }
 
-    /// <summary>Aplicatia trebuie sa permita schimbarea fisierelor si recalcularea.</summary>
-    [Fact]
-    public async Task ChangingAFileRecomputes()
-    {
-        using var f = new SessionFixture()
-            .WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit", "pp_flat_C.fit");
-        var vm = Attached(f);
-
-        await vm.RecomputeAsync();
-        string first = vm.Structure;
-
-        // Cel din MIJLOC: ultimul e deja preselectat pentru B, deci a-l pune din nou
-        // n-ar schimba nimic si testul ar trece fara sa verifice ceva.
-        vm.FileB = vm.Candidates.Single(c => c.EndsWith("pp_flat_B.fit"));
-        await vm.RecomputeAsync();
-
-        Assert.NotEqual(first, vm.Structure);
-    }
-
     /// <summary>
-    /// Acelasi fisier de doua ori da 1 peste tot, deci un "OK" care nu inseamna nimic.
-    /// Se opreste inainte, cu explicatie.
+    /// Verdictul tabului e verdictul de STRUCTURA al masterului combinat, pe aceeasi
+    /// scara ca tabul 1 - deci si sfatul trebuie sa fie acelasi text, nu unul rescris.
     /// </summary>
     [Fact]
-    public async Task ComparingAFileWithItselfIsRefused()
+    public async Task TheAdviceComesFromTheSharedResidualScale()
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
         var vm = Attached(f);
-        vm.FileB = vm.FileA;
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
 
         await vm.RecomputeAsync();
 
+        Assert.Equal(StructureReport.Advice(vm.Verdict), vm.Advice);
+    }
+
+    /// <summary>
+    /// Doua harti, fiindca modul desparte masterul in doua componente. Comutatorul
+    /// schimba ce se vede, si cele doua chiar sunt diferite.
+    /// </summary>
+    [Fact]
+    public async Task BothMapsAreAvailableAndTheToggleSwitchesThem()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+
+        await vm.RecomputeAsync();
+        byte[] sensor = vm.Map;
+
+        vm.ShowWorldMap = true;
+
+        Assert.NotNull(vm.Map);
+        Assert.NotEqual(sensor, vm.Map);
+    }
+
+    /// <summary>Alegerea celui de-al doilea fisier declanseaza singura calculul.</summary>
+    [Fact]
+    public async Task ChoosingTheSecondFileComputes()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
+        var vm = Attached(f);
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
         Assert.False(vm.HasResult);
-        Assert.True(vm.HasError);
-        Assert.Contains("DIFERITE", vm.ErrorText);
+
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+        await vm.RecomputeAsync();
+
+        Assert.True(vm.HasResult);
     }
 
     [Fact]
@@ -209,41 +240,24 @@ public class RatioTabTests
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
         var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
 
         await vm.RecomputeAsync();
 
         Assert.False(vm.HasResult);
-        Assert.False(vm.HasError);
-    }
-
-    /// <summary>Doua mastere cu dimensiuni diferite: eroare explicata, nu crash.</summary>
-    [Fact]
-    public async Task MismatchedSizesBecomeAnExplanation()
-    {
-        using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit");
-        File.WriteAllBytes(Path.Combine(f.ProcessDir, "pp_flat_mic.fit"),
-            FlatCheck.Tests.FitsTestData.BuildFits(
-                64, 64, FlatCheck.Tests.FitsTestData.Radial(64, 64)));
-
-        var vm = Attached(f);
-        await vm.RecomputeAsync();
-
-        Assert.True(vm.HasError);
-        Assert.Contains("dimensiuni diferite", vm.ErrorText);
     }
 
     [Fact]
-    public async Task TheReportIsTheConsoleText()
+    public void ResetClearsBothChoices()
     {
         using var f = new SessionFixture().WithFlatMasters("pp_flat_A.fit", "pp_flat_B.fit");
         var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
 
-        await vm.RecomputeAsync();
+        vm.Reset();
 
-        var expected = new StringWriter();
-        RunReport.WriteBanner(expected);
-        RatioRun.Execute(vm.FileA, vm.FileB, expected);
-
-        Assert.Equal(expected.ToString(), vm.Report);
+        Assert.Null(vm.FileA);
+        Assert.Null(vm.FileB);
+        Assert.False(vm.ShowWorldMap);
     }
 }

@@ -1,8 +1,8 @@
 # flatcheck
 
 Diagnostic cantitativ pentru flat frames de astrofoto. Răspunde la patru întrebări:
-e master flat-ul simetric radial, e *setup-ul* de flat curat, corectează flat-ul un
-light real, și e un flat brut expus corect.
+e master flat-ul simetric radial, cât din abaterea lui e fixată de *aparat* și cât de
+*lume*, corectează flat-ul un light real, și e un flat brut expus corect.
 
 Consolă mică în C#, cu **o singură dependință**: reader FITS propriu și encoder PNG
 propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — libraw, prin
@@ -32,7 +32,7 @@ Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales
 | mod | ce vrea |
 |---|---|
 | structură (implicit) | master flat **calibrat** — `process/pp_flat_stacked.fit` |
-| `--ratio` | două master flats calibrate, A și B |
+| `--ratio` | două master flats calibrate, din două orientări la 180° — de regulă `pp_flat_stacked.fit` din două foldere de sesiune |
 | `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
 | `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
 
@@ -91,23 +91,62 @@ modelul radial** — cel care contează cel mai mult, fiindcă măsoară direct 
 se explică printr-un model pur radial — și înclinarea, adică amplitudinea vârf-la-vârf a
 gradientului liniar peste cadru. Salvează o hartă reziduală PNG.
 
-### 2. Rotație 180° — `--ratio`
+Ce iese de aici e o **limită superioară** a erorii de flat, nu eroarea: tot ce măsoară e
+suma părții fixate de aparat (inofensivă) și a celei fixate în lume (dăunătoare), iar un
+singur master nu conține informația care le desparte — vezi „Scara de reziduu" și modul 2.
+Rămâne totuși testul cu care începi, fiindcă e singurul care nu cere să mai fotografiezi
+nimic.
+
+### 2. Atribuire prin rotație 180° — `--ratio`
 
 ```bash
-flatcheck pp_flat_A.fit --ratio pp_flat_B.fit
+flatcheck sesiune_0deg/process/pp_flat_stacked.fit --ratio sesiune_180deg/process/pp_flat_stacked.fit
 ```
 
-Validează **setup-ul**, nu masterul. Tragi ~15 flats, rotești camera 180° în jurul axei
-optice, mai tragi ~15, stivuiești separat cele două seturi. Vignetarea și praful sunt
-fixe *pe senzor*, deci se anulează în A/B; orice gradient extern e fix *în lume*, deci se
-inversează și apare în A/B la ~2× amplitudine. De aceea eroarea reală din fiecare master e
-cam jumătate din cifrele raportate aici.
+Nu îți spune dacă setup-ul e curat — **nu poate**, și e important să știi de ce. Îți spune
+altceva, la care niciun alt mod nu poate răspunde: **din structura ne-radială a flat-ului
+tău, cât e fixat de aparat și cât e fixat în lume.**
 
-**Punct orb:** contaminarea care e ea însăși simetrică radial în jurul axei optice — de
-exemplu căderea de backlight a unui monitor pe care ai centrat obiectivul — supraviețuiește
-rotației și e raportată „curat". Contra-testul e un **test de distanță**: un set la 30 cm,
-unul la 60 cm, apoi `--ratio` între ele. Vignetarea obiectivului nu depinde de distanță,
-contaminarea de la panou depinde.
+Tragi ~15 flats, rotești camera 180° în jurul axei optice, mai tragi ~15, stivuiești
+**separat** cele două seturi — adică în două foldere de sesiune, câte unul pentru fiecare
+orientare. Din cele două mastere se calculează:
+
+| | ce e | cum se citește |
+|---|---|---|
+| `(A+B)/2` | partea fixă **pe aparat** | e chiar masterul pe care îl obții stivuind ambele orientări. **De aici vine verdictul**, pe aceeași scară de reziduu ca modul 1. |
+| `A/B` | partea fixă **în lume** | informativ: atât ți-a scos rotația din master. |
+
+Rotația **nu trebuie să fie exactă.** Vignetarea e rotațional simetrică, deci se anulează
+la orice unghi; cele 180° servesc doar la inversarea gradientului extern. O eroare de unghi
+δ lasă amplitudinea măsurată la `2·G·cos(δ/2)` — la 10° pierzi 0.4%, la 30° pierzi 3.4%.
+Testul **subraportează, niciodată nu supraraportează**.
+
+**Bara de eroare nu e calibrată, e derivată.** `log(A/B)` trebuie să fie exact antisimetric
+la rotația de 180°: o contaminare fixă în lume intră integral în partea impară și zero în
+cea pară, iar zgomotul se împarte cu varianță egală. Deci partea pară e un estimator al
+zgomotului din partea impară, construit din aceleași date, fără nicio constantă de reglat.
+Când cifra și eroarea ei sunt comparabile, nu s-a detectat nimic peste zgomot.
+
+**Trei lucruri pe care modul NU le poate face**, și pe care raportul le spune pe față:
+
+- **Nu poate verifica din pixeli că ai rotit.** Două stive din aceeași orientare și două
+  stive rotite dintr-un setup cu adevărat curat produc date statistic identice — în ambele
+  cazuri `A/B` e numai zgomot. De aceea raportul tipărește `STACKCNT` și `DATE-OBS` pentru
+  ambele fișiere: două stive care încep una imediat după cealaltă n-au avut când să fie
+  rotite.
+- **„Fix pe aparat" nu înseamnă „inofensiv".** Vignetarea obiectivului se împarte corect
+  din lights. O curea căzută pe lentilă, condensul sau o parasolară strâmbă se rotesc și
+  ele cu aparatul, arată identic aici, și la lights nu mai sunt acolo. Ca să le deosebești,
+  compară două ședințe diferite cu **același obiectiv**: semnătura fixă pe aparat trebuie
+  să iasă la fel.
+- **Punct orb:** orice contaminare care se rotește împreună cu aparatul — inclusiv una
+  radial simetrică în jurul axei optice, cum e căderea de backlight a unui monitor pe care
+  ai centrat obiectivul. Contra-testul e un **test de distanță**: un set la 30 cm, unul la
+  60 cm. Vignetarea obiectivului nu depinde de distanță, contaminarea de la panou depinde.
+
+Scrie **două** hărți: la calea dată cu `-o`, reziduul părții fixe pe aparat (cea care se
+potrivește cu verdictul), și lângă ea, cu sufixul `-lume`, raportul `A/B` — pe care se
+vede *forma* gradientului extern.
 
 ### 3. End-to-end — `--light`
 
@@ -266,8 +305,8 @@ putut verifica. Necunoscut înseamnă neverificat, nu suspect.
 **Contra-exemplu concret.** Tokina la 20 mm pe D3300 acoperă ~70° diagonală. Pe o sesiune
 reală de Cale Lactee cu setup-ul ăsta, corelația între componenta radială raportată și
 gradientul de cer a ieșit **−0.94** (R² = 0.88): 88% din ce raporta unealta drept „flat"
-era explicat de cer. Pentru astfel de date răspunsul îl dă `--ratio`, care nu implică
-cerul deloc.
+era explicat de cer. Pentru astfel de date răspunsul îl dă `--ratio`: el nu implică cerul
+deloc și separă direct cât din abaterea masterului e fixată de aparat.
 
 ---
 
@@ -285,10 +324,21 @@ sunt amplitudini în procente, deci împart o scară, nu un prag:
 | 10–20% | `ACCEPTABIL` | utilizabil, dar confirmă cu `--light` înainte de un stretch dur |
 | > 20% | `REFA` | refă flat-urile |
 
-Cel mai important e **reziduul după modelul radial**: măsoară direct eroarea de flat.
-Celelalte trei sunt vederi parțiale ale aceleiași abateri — colțurile o prind doar unde
-stau cele patru cutii, testul azimutal doar în interiorul cercului înscris, iar înclinarea
-doar partea care e un plan.
+Cel mai important e **reziduul după modelul radial**: măsoară direct cât din cadru nu se
+explică printr-un model pur radial. Celelalte trei sunt vederi parțiale ale aceleiași
+abateri — colțurile o prind doar unde stau cele patru cutii, testul azimutal doar în
+interiorul cercului înscris, iar înclinarea doar partea care e un plan.
+
+**E o limită superioară a erorii de flat, nu eroarea.** Ce măsoară e suma a două lucruri
+cu urmări opuse: o parte fixată de **aparat** (optica — se împarte corect din lights, deci
+inofensivă) și una fixată în **lume** (iluminarea — nu se reproduce, deci dăunătoare). Pe
+un singur master cele două nu se pot separa; informația pur și simplu nu e acolo. `--ratio`
+e cel care le desparte.
+
+De-aia un obiectiv cu vignetare genuin ne-radială iese aici ca „eroare" fără să fie una.
+Măsurat pe biblioteca proprie: un master de Nikkor 35 DX are 4.00% de împrăștiere a
+colțurilor, din care doar ~1.3% era cerul — restul a supraviețuit rotației de 180°, deci e
+fixat de aparat.
 
 Offsetul centrului de iluminare **nu** e pe scara asta și, din 1.2.0, nu mai e nici test:
 apare sub `INFORMATIV (nu sunt teste)`, fără verdict. Măsoară o poziție, iar poziția aia e
@@ -314,8 +364,8 @@ setup despre care ești sigur. Toate stau în `FlatCheck/Thresholds.cs`.
 | asimetrie azimutală | structură | *scara de reziduu* | |
 | reziduu după model radial | structură | *scara de reziduu* | |
 | înclinare (gradient) | structură | *scara de reziduu* | |
-| structură în A/B | `--ratio` | 1% | 3% |
-| împrăștiere colțuri în A/B | `--ratio` | 1% | 3% |
+| cele patru teste pe `(A+B)/2` | `--ratio` | *scara de reziduu* | |
+| gradient extern / orientare | `--ratio` | 1% | 3% (doar etichetă informativă) |
 | \|componentă radială\| | `--light` | 2% | 5% |
 | câmp diagonal | `--light` | 20° | 40° (refuz) |
 | eroarea mediei pe serie | `--light` folder | 2.00 puncte | |
@@ -327,9 +377,9 @@ setup despre care ești sigur. Toate stau în `FlatCheck/Thresholds.cs`.
 Pragurile de serie sunt cele mai puțin calibrate din fișier: vin dintr-o singură sesiune
 reală. Recalibrează-le când ai una despre care ești sigur.
 
-`--ratio` își păstrează pragurile mai strânse fiindcă are altă treabă: raportul A/B ar
-trebui să fie *fără trăsături*, iar „background extraction scoate ce rămâne" nu se aplică
-unui test de validare a setup-ului.
+`--ratio` **nu are praguri proprii pentru verdict**: verdictul lui e cel de structură,
+pe masterul combinat, deci pe aceeași scară de reziduu ca modul 1. Pragurile de 1%/3%
+au rămas doar ca etichetă pe componenta fixă în lume, care e informativă și nu votează.
 
 ---
 
@@ -350,14 +400,15 @@ Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, u
 
 ```
 flatcheck <flat.fit>                     # structură
-flatcheck <A.fit> --ratio <B.fit>        # rotație 180
+flatcheck <A.fit> --ratio <B.fit>        # atribuire prin rotație 180
 flatcheck <light.fit> --light            # end-to-end, un cadru
 flatcheck <folder/> --light              # end-to-end pe toată seria
 flatcheck <flat_brut.fit> --expo         # expunere
 flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 
-  -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png)
+  -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
+                           una lângă ea, cu sufixul -lume)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
@@ -387,10 +438,16 @@ lights-urilor.
 
 O hartă divergentă albastru → alb → roșu, cu albul fixat la **1.0** și intervalul scalat
 la percentilele 1/99 plus 10% padding. Fixarea la 1.0 e validă pentru toți apelanții:
-reziduul de structură e `img/model ≈ 1`, raportul e normalizat la mediana 1, iar harta din
-`--light` e `1 + radial/a`.
+reziduul de structură e `img/model ≈ 1`, ambele hărți din `--ratio` sunt centrate pe 1
+(reziduul masterului combinat, și `A/B` normalizat la mediana 1), iar harta din `--light`
+e `1 + radial/a`.
 
-Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar harta reziduală.
+**`--ratio` scrie două hărți**, fiindcă desparte masterul în două componente. La calea dată
+cu `-o` merge reziduul părții fixe pe aparat — cea care se potrivește cu verdictul — iar
+lângă ea, cu sufixul `-lume`, raportul `A/B`, pe care se vede *forma* gradientului extern.
+În fereastră aceleași două stau sub un comutator.
+
+Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar hărțile de mai sus.
 Cifrele din consolă sunt aceleași; harta există ca să vezi *forma* unei probleme —
 gradient orizontal, vertical, diagonal.
 
@@ -429,7 +486,7 @@ acela e intrarea modului de structură, prin convenție.
 | tab | ce face | când rulează |
 |---|---|---|
 | **Structura** | modul 1 pe `process/pp_flat_stacked.fit` | la deschiderea folderului |
-| **Ratio** | modul 2 între două mastere din `process/` | la alegere, și la orice schimbare |
+| **Ratio** | modul 2 între două mastere alese explicit, din două sesiuni | după ce alegi ambele fișiere |
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
 
@@ -441,19 +498,29 @@ plus harta reziduală. Salvează în folderul ales:
   raportul, linia hărții;
 - `flatcheck.png` — aceeași hartă care se vede pe ecran, aceiași octeți.
 
-**Ratio** propune masterele găsite în `process/` (`pp_flat*.fit`) și preselectează **primul
-și ultimul** din listă, ceea ce pe cazul obișnuit — setul A și setul B — înseamnă că nu ai
-nimic de ales. Se poate lua și un fișier din altă parte; dacă nu e un master de flat,
-aplicația explică ce sunt fișierele astea și de ce testul are nevoie de unul, în loc să
-eșueze la parsare.
+**Ratio** nu caută nimic în folder și nu presupune nimic: îți cere **două fișiere alese
+explicit**, prin două butoane. Motivul e că modul are nevoie de două *mastere*, câte unul
+pentru fiecare orientare, iar cele două orientări sunt două ședințe — deci două foldere de
+sesiune. Un singur folder nu le poate propune; ce putea propune erau cadrele individuale,
+iar o pereche de cadre individuale dă un rezultat sigur și fals, fiindcă zgomotul unui
+cadru e de același ordin cu semnalul căutat.
 
-`pp_flat_stacked.fit` **nu apare în listă**, deși se potrivește tiparului: el e stiva
-*tuturor* flat-urilor, produsă de scriptul de preprocesare, iar testul compară două stive
-făcute **separat** — una dinainte, una de după rotire. Comparat cu unul dintre seturi ar
-da o cifră fără sens, fiindcă jumătate din el chiar *e* setul acela. (Conta și practic:
-sortarea fiind ordinală, ar fi căzut ultimul, adică exact pe preselecția setului B.) Dacă
-la tine chiar e unul dintre cele două seturi, îl poți alege oricând cu „Alt fișier..." —
-exclus din listă nu înseamnă respins.
+Deasupra selectoarelor stă un panou care explică exact ce îi trebuie modului, cum se produc
+cele două mastere în Siril, și ce **nu** îți poate spune testul. Îl poți plia, dar pornește
+deschis: e singurul mod al aplicației care cere ceva ce nu se poate deduce din folderul
+deschis.
+
+Dacă fișierul ales nu e un master de flat, aplicația explică ce sunt fișierele astea și de
+ce testul are nevoie de unul, în loc să eșueze la parsare. `pp_flat_stacked.fit` **este** o
+alegere validă — în fluxul normal chiar e alegerea: câte unul din fiecare dintre cele două
+sesiuni. Același fișier în ambele sloturi se refuză la alegere, cu explicație.
+
+După calcul, tabul arată întâi **de unde vin cele două stive** — câte cadre și de la ce oră,
+din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-l poate
+verifica singur: că cele două chiar pot fi din două orientări diferite. Apoi componenta
+fixă în lume, informativă, cu bara ei de eroare. Apoi verdictul și cele patru teste, pe
+masterul combinat. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
+potrivește cu verdictul) sau raportul `A/B`.
 
 **End to end** rulează pe toată seria și își umple tabelul pe măsură ce cadrele sunt gata —
 32 de cadre iau vreo două minute, iar un ecran gol tot timpul ăla ar părea blocat. Poate

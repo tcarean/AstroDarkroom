@@ -24,7 +24,10 @@ not a copy.
   goodwill; now it is a compile boundary.
   - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
     entry point; `Load(string)` is a thin file wrapper, which is what lets the
-    reader be tested without touching disk.
+    reader be tested without touching disk. `HInt`/`HDbl`/`HStr` read single cards out of
+    a header dictionary with a default, so a missing card is never an error - which is
+    what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
+    FITS header at all.
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -42,31 +45,52 @@ not a copy.
     WPF app's `flats/` filter, so a camera the reader learns is a camera the list offers.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
-    `Divide`.
+    `Divide`, and for the attribution mode `CropCentred` + `Rotate180`. Those last two
+    exist because that mode is the only one that compares a raster with its own 180°
+    rotation, and `BlockMean` drops partial blocks only at the *end* - so its grid is
+    anchored top-left and a rotation lands up to one tile off. Deliberately **not** used
+    by `LargeScalePtp`: there the top-left anchoring is what `flatcheck.py` does, and the
+    numeric parity is tested.
   - `Stats.cs` - numeric primitives: `Percentile`, `RobustPtp`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
   - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
-    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`.
+    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`, plus
+    `TileSize` - the tile side the large-scale metrics use, pulled out because
+    `LargeScalePtp` and the attribution mode both need it and two copies of the formula
+    would have diverged at the first adjustment of `ntiles`.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
     "Versioning".
-  - `Analysis/` - one analyzer per mode, each a pure `Img -> XxxResult` function:
+  - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`.
     No I/O, no printing - this is where every number is decided. Two of them are not
     `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
     (it decides whether `--light` applies at all, before any pixel is read), and
     `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it combines
     per-frame results; the file loading stays in `Runs/`, like every other mode).
+    `RatioAnalyzer` is `Img × Img -> RatioResult` and is the one analyzer that *calls*
+    another: the verdict of the attribution mode is `StructureAnalyzer` run on the
+    combined master, through `AnalyzePrepared` - the overload that skips `Img.Prepare`
+    because the caller has already prepared its input. `Prepare` is only block means,
+    hence linear, so the mean of the prepared rasters equals the prepared mean, at a
+    thirtieth of the memory.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. All the Romanian output lives here and nowhere else. `LightSeriesReport`
     is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
-    its table instead of sitting silent for two minutes. `RunReport` holds the two lines
+    its table instead of sitting silent for two minutes. `StructureReport.WriteBody` is
+    split off for the same reason in the other direction: the attribution mode prints its
+    own header and then wants that exact body - minus the ADU line, which means nothing on
+    a raster normalised to a median of 1. `RunReport` holds the two lines
     that frame every mode - the version banner and the "harta salvata" line - because
     both applications write them and two copies would have diverged.
-    Three pieces are exposed as values rather than only written: `StructureReport.Scale()`,
-    `StructureReport.Advice()` and `LightReport.Diagnosis()`. The console formats them into
-    columns, the WPF app puts them in a table and under a coloured chip; the wording has
-    one definition either way.
+    Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
+    `StructureReport.Advice()`, `LightReport.Diagnosis()`, and from `RatioReport` the five
+    that the Ratio tab shows verbatim - `Provenance`, `WorldValue`, `Precondition`,
+    `WorldMeaning`, `SensorCaveat`. The console formats them into columns, the WPF app puts
+    them in cards and under a coloured chip; the wording has one definition either way.
+    `WorldValue` and `WorldLine` are split for exactly that reason: the console wants the
+    figure with its label glued on, the window shows the label as a separate chip, and
+    without the split the verdict appeared twice on one row.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, plus
     `SeriesFinder` (which files a series run covers). This is the layer both applications
@@ -75,7 +99,8 @@ not a copy.
     into a `TextWriter` the caller supplies** (so the console keeps streaming a 32-frame
     table, and anyone who wants the string passes a `StringWriter`), and the residual map
     comes back as **PNG bytes** rather than being written to disk (the window wants to
-    show it, not save it).
+    show it, not save it). `RunOutcome.SecondaryPng` was added for the attribution mode,
+    the only one that produces two maps, and is null everywhere else.
   - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
@@ -86,15 +111,20 @@ not a copy.
   - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
     rather than restating it. It used to carry a full copy of the user documentation;
     it drifted, and the copy was the wrong one - see the convention below.
-  - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map to
+  - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
-    `Console` directly.
+    `Console` directly. `WorldMapPath` lives here rather than in the core because naming a
+    second output file is a console concern: the window never writes either map to a path
+    of its own choosing.
   - `Options.cs` - CLI parsing.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See "The two applications".
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
-    master, which are ratio candidates, which are raw flats) and `SessionMessages` (the
-    explanations shown when the input is not usable). The only part of the app with real
-    rules, and the part with the most tests.
+    master, which are raw flats, what counts as a flat master by name) and
+    `SessionMessages` (the explanations shown when the input is not usable, plus the
+    Ratio tab's in-UI documentation). The only part of the app with real rules, and the
+    part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
+    proposes nothing, because the two masters it needs live in two *different* session
+    folders - see "The two applications".
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
     `MainViewModel` for the folder. They are `public` because WPF binding reads public
     properties by reflection - and that has a useful consequence: a public view-model
@@ -117,7 +147,8 @@ not a copy.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
   ported from. Prior art only for *features*; **not maintained in parallel** - don't
   feel obliged to mirror C#-side changes into it, except where parity is tested (see
-  "Parity with Python"), which now includes the `--light` guard and series mode. It is, however, the reference for
+  "Parity with Python"), which now includes the `--light` guard, series mode and the
+  rewritten attribution mode. It is, however, the reference for
   *numeric* behaviour: see "Parity with Python" below.
 - `README.md` - **the** user-facing documentation, in Romanian, and the single source
   for it. See the note in "Conventions".
@@ -203,9 +234,9 @@ map. What differs is only what each does with the three outputs.
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder |
+| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders |
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
-| map | written to `-o <path>` | shown from memory, saved as `flatcheck.png` |
+| map | written to `-o <path>` (`--ratio` writes a second, `-lume`) | shown from memory (`--ratio` offers both behind a toggle), saved as `flatcheck.png` |
 | result | exit code | coloured verdict |
 | options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky` | `--sky` only (a checkbox) |
 
@@ -219,6 +250,17 @@ It adds a workflow: one folder instead of four invocations, `process/pp_flat_sta
 by convention instead of by typing, structure and end-to-end started on open. It does not
 add an analysis, a threshold or a wording. If a change here needs a new number, that number
 belongs in `Analysis/`, and the console gets it too.
+
+**The Ratio tab is the one exception to "one folder in".** It proposes nothing and starts
+empty, because the two masters it needs are two *shoots*, hence two session folders - the
+open one is at most one of them. It used to list `pp_flat*.fit` from `process/` and
+preselect two, which in a normal session offered the individual frames; a pair of single
+frames yields a confident, wrong answer, because one frame's noise is the same order as
+the signal. So it asks for two files explicitly, and carries a panel that explains what
+the mode needs and what it cannot tell you - the only tab that must document itself before
+it can be used at all. `RatioTabViewModel`'s text properties are deliberately *instance*
+properties even though their values are constant: `{Binding}` resolves through the
+DataContext and never sees a static one, so the documentation would have rendered blank.
 
 **Structure and the light series run one after the other, not in parallel.** A 24 MP frame
 runs into the high hundreds of MB in analysis (known issue 7) and the series holds a loaded
@@ -325,24 +367,93 @@ Is the master flat radially symmetric? Runs on the final master.
    `reziduu dupa model rad.` as the metric that matters most. Writes the residual
    heat map PNG.
 
-### 2. 180° rotation - `flatcheck A.fit --ratio B.fit`
+What the mode gives is an **upper bound** on the flat error, not the error: everything it
+measures is the sum of a camera-fixed part (harmless - the flat divides it out) and a
+world-fixed part (harmful). One master does not contain the information to separate them;
+mode 2 does. The report says so, and the bound is still the right thing to run first,
+because it is the only test that costs no extra shooting.
 
-Validates the **setup**, not the master. Shoot ~15 flats, rotate the camera 180°
-about the optical axis, shoot ~15 more, stack the two sets separately.
-Vignetting and dust are fixed *on the sensor* so they cancel in A/B; any external
-gradient is fixed *in the world* so it inverts, and shows up in A/B at ~2×
-amplitude. Hence "the real error in each master is about half these numbers".
+### 2. Attribution by 180° rotation - `flatcheck A.fit --ratio B.fit`
 
-Computes `A/B` normalised to median 1, then `LargeScalePtp` over the whole frame
-(the inscribed radius is passed as the full diagonal, i.e. no masking) and the
-corner spread. Tighter thresholds than mode 1, because the ratio should be
-featureless.
+**This mode was rewritten. It used to answer "is the flat setup clean?" with
+OK/SUSPECT/PROBLEMA. It cannot, and the rewrite is the consequence.** Measured on three
+real master pairs whose geometry was known with certainty:
 
-**Known blind spot**, documented in the source: contamination that is itself
-radially symmetric about the optical axis (e.g. a monitor backlight falloff
-centred on the lens) survives the rotation and is reported clean. The counter-test
-is a *distance* test - one set at 30 cm, one at 60 cm, `--ratio` between them,
-since lens vignetting is distance-invariant and panel contamination is not.
+| pair | old verdict | ground truth |
+|---|---|---|
+| two correctly rotated stacks, real ~1.2% sky gradient | `SUSPECT`, "fix the source" | correct as a measurement, but the gradient had **already** been cancelled from the master by that very rotation. Not actionable. |
+| two correctly rotated stacks, session whose master carries 11% of non-radial structure | `OK`, "build your library on it" | the defect is camera-fixed, and to camera-fixed things this test is blind by construction. |
+| two stacks from the **same** orientation, i.e. no test performed at all | `OK`, "build your library on it" | nothing was measured. |
+
+Two false greens out of three. The cause is not threshold calibration: **two stacks from
+the same orientation and two rotated stacks from a genuinely clean setup produce
+statistically identical data** - in both cases `A/B` is only noise. The information that
+would separate them is not in the pixels, so no threshold can extract it.
+
+What *can* be computed from the two files, and what nothing else in the tool can:
+
+```
+S = (A + B) / 2     the CAMERA-fixed part - the external gradient cancels because it is
+                    inverted in B. This IS the master you get by stacking both
+                    orientations, so its structure verdict is the verdict of your flat.
+                    (Verified: 4.02% computed here vs 4.00% measured on the real
+                    pp_flat_stacked.fit built from all 30 frames.)
+
+W = A / B           the WORLD-fixed part, at double amplitude. Informative: it says how
+                    much the rotation removed, not whether the setup is good.
+```
+
+So the mode's verdict is **`StructureAnalyzer` run on `S`** - the whole mode-1 battery,
+reused unchanged - and `W` is reported as information. `Th.RatioOk/Bad` survive only as an
+informative label on `W`; they no longer decide anything.
+
+**The error bar is derived, not calibrated.** `log(A/B)` must be exactly antisymmetric
+under a 180° rotation: a world-fixed contamination goes entirely into the odd part and
+zero into the even part, while noise splits with equal variance. So the even part is an
+unbiased estimator of the noise in the odd part, built from the same data, with no
+assumption and no constant to tune. Validated on a pair with no rotation at all
+(odd/even = 1.17x) against a rotated one (2.59x). Both figures are halved before
+reporting, since `W` carries the contamination at 2x.
+
+Three details that are load-bearing:
+
+- **Each stack is normalised to a median of 1 before averaging.** That is Siril's
+  `multiplicative normalized input`. Without it, a twilight sky fading 12% between the
+  two stacks would weight A more heavily than B and the gradient would not fully cancel.
+- **The odd/even split runs on the tile grid, and on a centred crop.** On raw pixels both
+  halves are dominated by shot noise, which splits equally, so the ratio would be 1
+  regardless of signal. And `Img.BlockMean` drops partial blocks only at the *end*, so its
+  grid is anchored top-left and a 180° rotation lands up to one tile off - measured, that
+  moves the even/odd ratio by ~20%. `Img.CropCentred` exists for this and **is not used by
+  `LargeScalePtp`**, where the top-left anchoring is what `flatcheck.py` does and parity is
+  tested.
+- **`StructureAnalyzer.AnalyzePrepared`** takes an already-prepared raster, so `S` is built
+  at analysis resolution rather than full resolution. `Prepare` is only block means, hence
+  linear, so the mean of the prepared rasters equals the prepared mean - at a thirtieth of
+  the memory.
+
+**What the mode cannot do**, stated in the report itself because it is not visible in the
+numbers:
+
+- **It cannot verify from pixels that you rotated.** Hence `RatioRun` reads `STACKCNT` and
+  `DATE-OBS` from both headers and prints them: two stacks that start one right after the
+  other had no time to be rotated. A missing header is not an error - a raw has none - and
+  prints "necunoscut".
+- **"Camera-fixed" does not mean "harmless".** Lens vignetting divides out of the lights
+  correctly. A strap over the front element, dew, or a crooked hood rotate with the camera
+  too, look identical here, and are not there at light time. Telling them apart needs the
+  same test on a **second session with the same lens**: the camera-fixed signature must
+  come out the same. That comparison is not in the tool, and it is the check that actually
+  caught the 11% case above.
+- **Blind spot**, wider than the source used to claim: not just contamination radially
+  symmetric about the optical axis (a monitor backlight centred on the lens), but
+  **anything that rotates with the camera**. The counter-test for the panel case is a
+  *distance* test - one set at 30 cm, one at 60 cm - since lens vignetting is
+  distance-invariant and panel contamination is not.
+
+Writes **two** maps: the residual of `S` at the `-o` path, since that is the one matching
+the verdict, and `A/B` beside it with a `-lume` suffix (`FlatCheckCli.WorldMapPath`).
+`RunOutcome.SecondaryPng` exists for this and is null for every other mode.
 
 ### 3. End-to-end - `flatcheck light.fit --light`, or `flatcheck process/ --light`
 
@@ -629,8 +740,8 @@ Every threshold lives in `Th`. Full picture:
 | azimuthal asymmetry (max) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | residual after radial model | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
-| A/B structure | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
-| A/B corner spread | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` |
+| the four structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
+| world-fixed gradient per orientation | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` - informative label only |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
 | field of view (diagonal) | light | 20° | 40° = refused | `Th.LightFovOk/Max` |
 | focal length, no pixel size | light | 120 mm | below 60 mm = refused | `Th.LightFocalOk/Min` |
@@ -660,10 +771,20 @@ Boundaries are strict `<`, so each one falls into the worse band. `NaN` degrades
 `REFA`, same rule as `Verdict`.
 
 **`reziduu dupa model rad.` is the one that matters most**, and the console output says
-so inline. It measures the departure from the radial model directly - which *is* the
-flat error. The other three are partial views of the same deviation: the corners catch it
-only where the four boxes sit, the azimuthal test only inside the inscribed circle, and
-the tilt only the part of it that is a plane.
+so inline. It measures the departure from the radial model directly. The other three are
+partial views of the same deviation: the corners catch it only where the four boxes sit,
+the azimuthal test only inside the inscribed circle, and the tilt only the part of it that
+is a plane.
+
+**It is an upper bound on the flat error, not the flat error**, and the report used to
+claim otherwise - the sentence said "adica exact eroarea de flat". What it measures is the
+sum of two things with opposite consequences: a part fixed to the camera (the optics;
+divides out of the lights correctly, harmless) and a part fixed in the world (the
+illumination; does not reproduce, harmful). On a single master the two cannot be
+separated - the information is not there. `--ratio` is what separates them, and
+`WhyResidualMatters` now says so and points at it. This is why a lens with genuine
+non-radial vignetting reads as "error" here and is not one: measured on this library, a
+Nikkor 35 DX master carries 4.00% of corner spread of which only ~1.3% was the sky.
 
 The structure mode prints the scale itself, under the heading
 `SCARA celor patru teste de abatere de mai sus`, so the numbers can be read without
@@ -692,12 +813,16 @@ stops, an 11% twilight-sky gradient) the offset said 42.36% `PROBLEMA` and the m
 `OnAFlatLensWithAGradient_TheTiltCarriesTheVerdict`.
 
 `Stats.Severity` still spans both ladders (`OK`/`PERFECT` = 0, `BUN` = 1,
-`SUSPECT`/`ACCEPTABIL` = 2, `PROBLEMA`/`REFA` = 3): `--ratio` and `--light` keep the
-`OK`/`SUSPECT`/`PROBLEMA` vocabulary, and the exit code is derived across all modes.
+`SUSPECT`/`ACCEPTABIL` = 2, `PROBLEMA`/`REFA` = 3), and the exit code is derived across
+all modes. Since the rewrite `--ratio` gives a **residual-scale** verdict, like structure,
+because its verdict *is* a structure verdict; only `--light` still speaks
+`OK`/`SUSPECT`/`PROBLEMA`. The `OK`/`SUSPECT`/`PROBLEMA` words survive in `--ratio` output
+only as the informative label on the world-fixed component.
 
-The `--ratio` mode keeps its own tighter 1%/3% thresholds. Its job is different: the A/B
-ratio should be *featureless*, and "background extraction removes it" does not apply to
-a setup-validation test.
+The `--ratio` mode has **no verdict thresholds of its own** since the rewrite: its verdict
+is the structure verdict of the combined master, so it lives on this same scale. The
+1%/3% pair survives only as a label on the world-fixed component, which is informative
+and does not vote.
 
 Since phase 8 every threshold lives in `Th` - `--light` no longer has 2.0/5.0 inline
 and `--expo` no longer keeps its bands as locals. `Th.ExpoLo`/`Th.ExpoHi` used to be
@@ -710,9 +835,15 @@ suggested-stops arithmetic.
 `PngWriter.EncodeResidualMap` produces a diverging blue → white → red heat map, with white
 pinned at **1.0** and the range scaled to the 1st/99th percentile plus 10%
 padding. Pinning at 1.0 is valid for every caller: the structure residual is
-`img/model ≈ 1`, the ratio is normalised to median 1, and the `--light` map is
-`1 + radial/a`. If you add a caller whose data isn't centred on 1, the map will be
-misleading.
+`img/model ≈ 1`, both attribution maps are centred on 1 (the residual of the combined
+master, and `A/B` normalised to median 1), and the `--light` map is `1 + radial/a`. If you
+add a caller whose data isn't centred on 1, the map will be misleading.
+
+`--ratio` is the only mode that writes **two** maps. The primary one, at the `-o` path, is
+the residual of the camera-fixed master, because that is the one the verdict describes;
+the secondary goes beside it with a `-lume` suffix (`FlatCheckCli.WorldMapPath`) and shows
+the *shape* of the external gradient. The window offers the same two behind a radio
+toggle, from `RunOutcome.Png` / `SecondaryPng`.
 
 The encoder writes signature + IHDR (8-bit, colour type 2 = RGB) + a single IDAT
 (each row prefixed with filter byte 0, deflated via `ZLibStream`) + IEND, with a
@@ -753,6 +884,12 @@ difference or on a version desync.
 differing only in wording. Coverage spans all four modes, all four bands of the residual
 scale, both gradient directions, non-square frames, BITPIX 16/32/-32, and the exposure
 bands either side of each boundary.
+
+The attribution rewrite is mirrored in `flatcheck.py` in full - `_structure_body` split
+out of `mode_structure` exactly as `StructureReport.WriteBody` was, plus
+`split_by_rotation`, `world_map_path` and `_provenance`. Four `--ratio` scenarios cover it,
+and they compare 32 numbers each. If you change a formula in `RatioAnalyzer`, change it
+there too, or every one of them turns into a diff.
 
 Intentional divergences:
 
@@ -796,6 +933,10 @@ Since phase 8 the tool is usable from a script:
 | 3 | PROBLEMA / REFA |
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
+
+Since the `--ratio` rewrite, mode 2 exits on the residual-scale band of the combined
+master rather than on `OK`/`SUSPECT`/`PROBLEMA` - which changed real outcomes: the ISO800
+pair in the flats library went from `OK`/0 to `ACCEPTABIL`/2.
 
 ## Known issues and gotchas
 
@@ -1009,7 +1150,7 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"   # optional: the session folder
 
 ```bash
 flatcheck process/pp_flat_stacked.fit                  # 1. structure
-flatcheck pp_flat_A.fit --ratio pp_flat_B.fit          # 2. 180 rotation
+flatcheck s_0deg/process/pp_flat_stacked.fit --ratio s_180deg/process/pp_flat_stacked.fit   # 2. attribution
 flatcheck process/pp_light_00001.fit --light           # 3. end-to-end
 flatcheck flat_brut.fit --expo                         # 4. exposure
 flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight off the raw

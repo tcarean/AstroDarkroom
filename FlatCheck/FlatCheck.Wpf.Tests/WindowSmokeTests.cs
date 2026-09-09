@@ -141,6 +141,15 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
 
+            // Tabul Ratio porneste gol - randat asa, fiindca aia e starea pe care o vede
+            // omul cand deschide fereastra, si are propriile legari (documentatia).
+            Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio-gol");
+
+            // ...si abia apoi cu rezultat, dupa cele doua alegeri explicite.
+            vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_A.fit"));
+            vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_B.fit"));
+            await vm.Ratio.RecomputeAsync();
+
             Render(new MainWindow { DataContext = vm }, 1360, 820, "fereastra");
             Render(new StructureView { DataContext = vm.Structure }, name: "tab-structura");
             Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio");

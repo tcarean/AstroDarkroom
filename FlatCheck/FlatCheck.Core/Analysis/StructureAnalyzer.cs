@@ -48,9 +48,25 @@ namespace FlatCheck
 
     internal static class StructureAnalyzer
     {
-        internal static StructureResult Analyze(Img raw)
+        internal static StructureResult Analyze(Img raw) => Run(raw, Img.Prepare(raw));
+
+        /// <summary>
+        /// Aceeasi analiza, pe un raster deja trecut prin <see cref="Img.Prepare"/>.
+        ///
+        /// Exista pentru modul de atribuire, care isi construieste intrarea - media
+        /// celor doua orientari - si ar plati de doua ori memoria daca ar trebui sa o
+        /// tina la rezolutie intreaga. Prepare fiind numai medii de blocuri, e liniara:
+        /// media rasterelor pregatite e acelasi lucru cu pregatirea mediei, la o
+        /// treizecime din memorie.
+        ///
+        /// RawMedian/RawMax ies atunci de pe rasterul pregatit si normalizat, deci nu
+        /// mai inseamna ADU. Nu se tiparesc: raportul de atribuire cheama
+        /// StructureReport.WriteBody, care nu include randul acela.
+        /// </summary>
+        internal static StructureResult AnalyzePrepared(Img prepared) => Run(prepared, prepared);
+
+        static StructureResult Run(Img raw, Img img)
         {
-            Img img = Img.Prepare(raw);
             int h = img.H, w = img.W;
 
             // ATENTIE: modelul radial si asimetria se calculeaza in jurul centrului
