@@ -77,7 +77,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </Border>
 
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"
-                     Text="SCARA CELOR PATRU TESTE" />
+                     Text="SCARA CELOR CINCI TESTE" />
           <Border Style="{StaticResource Card}" Padding="6">
             <StackPanel>
               <ItemsControl ItemsSource="{Binding Scale}"

@@ -192,6 +192,39 @@ public class StructureTabTests
         Assert.Empty(vm.LocalSpotWarning);
     }
 
+    /// <summary>
+    /// Fiecare rand de test isi spune ce masoara. Asimetria azimutala si inclinarea au
+    /// stat cu o cifra, un verdict si nicio descriere, fiindca notele se scriau inline
+    /// aici si nimeni nu numara cate lipsesc. Acum vin toate din nucleu, iar testul asta
+    /// cade daca mai apare un rand fara nota.
+    /// </summary>
+    [Fact]
+    public async Task EveryTestRowCarriesItsOwnDescription()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+
+        var vm = await Run(f);
+
+        Assert.All(vm.Tests, t => Assert.True(t.HasNote, "rand fara descriere: " + t.Label));
+    }
+
+    /// <summary>Descrierile vin din nucleu, nu sunt rescrise in fereastra.</summary>
+    [Fact]
+    public async Task TheDescriptionsAreTheOnesTheCoreDefines()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+
+        var vm = await Run(f);
+
+        Assert.Equal(StructureReport.TestNote(nameof(StructureResult.AzimuthalMaxPct)), vm.Tests[1].Note);
+        Assert.Equal(StructureReport.TestNote(nameof(StructureResult.ResidualPtpPct)), vm.Tests[2].Note);
+        Assert.Equal(StructureReport.TestNote(nameof(StructureResult.TiltPct)), vm.Tests[3].Note);
+        Assert.Equal(StructureReport.TestNote(nameof(StructureResult.MaxTilePct)), vm.Tests[4].Note);
+        // coltul isi adauga cele patru procente pe un al doilea rand
+        Assert.StartsWith(StructureReport.TestNote(nameof(StructureResult.CornerSpreadPct)), vm.Tests[0].Note);
+        Assert.Contains("stanga-sus", vm.Tests[0].Note);
+    }
+
     /// <summary>Reziduul e cel care conteaza cel mai mult, si se vede ca atare.</summary>
     [Fact]
     public async Task OnlyTheResidualRowIsMarkedAsTheKeyOne()
@@ -237,6 +270,10 @@ public class StructureTabTests
         Assert.Equal(4, vm.Scale.Count);
         Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" },
                      vm.Scale.Select(s => s.Band).ToArray());
+
+        // Titlul din XAML numara TESTELE, nu benzile, si a ramas "PATRU" o versiune
+        // intreaga dupa ce testele au ajuns cinci - vazut abia intr-o randare.
+        Assert.Equal(5, vm.Tests.Count);
 
         var current = Assert.Single(vm.Scale.Where(s => s.IsCurrent));
         Assert.Equal(vm.Verdict, current.Band);

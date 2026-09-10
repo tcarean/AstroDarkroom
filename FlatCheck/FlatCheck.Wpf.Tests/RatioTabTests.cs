@@ -200,13 +200,126 @@ public class RatioTabTests
 
         Assert.True(vm.HasResult);
         Assert.NotEmpty(vm.Verdict);
-        Assert.NotEmpty(vm.World);          // componenta fixa in lume, cu bara de eroare
-        Assert.NotEmpty(vm.Corners);        // bateria de structura pe (A+B)/2
-        Assert.NotEmpty(vm.Residual);
-        Assert.NotEmpty(vm.MaxTile);        // al cincilea test, ca in tabul 1
-        Assert.NotEmpty(vm.MaxTileVerdict);
+        Assert.Equal(2, vm.WorldRows.Count);    // componenta fixa in lume, cu bara de eroare
+        Assert.Equal(5, vm.Tests.Count);    // bateria de structura pe (A+B)/2
+        Assert.All(vm.Tests, t => Assert.NotEmpty(t.Value));
+        Assert.All(vm.Tests, t => Assert.True(t.HasVerdict));
         Assert.NotEmpty(vm.ProvenanceA);    // cate cadre si de cand
         Assert.NotNull(vm.Map);
+    }
+
+    /// <summary>
+    /// Fiecare rand isi spune ce masoara, ca in tabul 1. Aici lipseau toate cinci, fiindca
+    /// randurile erau blocuri de Grid scrise de mana in XAML, fara loc pentru o descriere.
+    /// </summary>
+    [Fact]
+    public async Task EveryTestRowCarriesItsOwnDescription()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        await vm.RecomputeAsync();
+
+        Assert.All(vm.Tests, t => Assert.True(t.HasNote, "rand fara descriere: " + t.Label));
+    }
+
+    /// <summary>
+    /// Cele doua randuri ale componentei fixe in lume. Primul are cifra cu bara de eroare
+    /// si eticheta informativa drept pastila; al doilea, doar cifra. Amandoua cu descrierea
+    /// din nucleu - al doilea nu avea niciun cuvant, primul nu spunea ce e pastila.
+    /// </summary>
+    [Fact]
+    public async Task TheWorldRowsCarryTheirDescriptionsAndOnlyTheFirstHasAChip()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        await vm.RecomputeAsync();
+
+        Assert.Contains("gradient extern", vm.WorldRows[0].Label);
+        Assert.Contains("+/-", vm.WorldRows[0].Value);
+        Assert.True(vm.WorldRows[0].HasVerdict);
+        Assert.Equal(RatioReport.WorldNote(), vm.WorldRows[0].Note);
+
+        Assert.Contains("colturi", vm.WorldRows[1].Label);
+        Assert.False(vm.WorldRows[1].HasVerdict);
+        Assert.Equal(RatioReport.WorldCornerNote(), vm.WorldRows[1].Note);
+    }
+
+    /// <summary>
+    /// Regula pentru tot ecranul, nu pentru un card: orice rand cu o cifra pe el are si
+    /// un rand de text sub ea. Asta e testul care ar fi prins de la inceput ca doua
+    /// randuri din Ratio n-aveau nimic.
+    /// </summary>
+    [Fact]
+    public async Task EveryRowOnTheScreenCarriesADescription()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        await vm.RecomputeAsync();
+
+        var all = vm.WorldRows.Concat(vm.Tests).Concat(vm.Informative).ToList();
+        Assert.Equal(2 + 5 + 3, all.Count);
+        Assert.All(all, r => Assert.True(r.HasNote, "rand fara descriere: " + r.Label));
+        Assert.All(all, r => Assert.True(r.Note!.Length > 30, "descriere prea scurta: " + r.Label));
+    }
+
+    /// <summary>
+    /// Si marimile informative, ca in consola: raportul --ratio tipareste tot WriteBody,
+    /// inclusiv vignetarea, centrul de iluminare si petele locale ale masterului combinat.
+    /// Fara verdict, fiindca nu sunt teste; si fara linia de niveluri ADU, pe care nici
+    /// consola n-o tipareste in --ratio, fiindca masterul combinat e normalizat la 1.
+    /// </summary>
+    [Fact]
+    public async Task TheInformativeRowsAreShownWithoutVerdict()
+    {
+        using var f = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var vm = Attached(f);
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        await vm.RecomputeAsync();
+
+        Assert.Equal(3, vm.Informative.Count);
+        Assert.All(vm.Informative, r => Assert.False(r.HasVerdict));
+        Assert.All(vm.Informative, r => Assert.True(r.HasNote, "rand fara descriere: " + r.Label));
+        Assert.Contains(vm.Informative, r => r.Label.Contains("vignetare"));
+        Assert.Contains(vm.Informative, r => r.Label.Contains("offset"));
+        Assert.Contains(vm.Informative, r => r.Label.Contains("pete locale"));
+        Assert.DoesNotContain(vm.Informative, r => r.Label.Contains("ADU"));
+        Assert.Empty(vm.LocalSpotWarning);       // camp radial curat: nimic de atentionat
+    }
+
+    /// <summary>
+    /// Cele doua taburi arata ACEEASI baterie - Ratio o ruleaza pe masterul combinat, dar
+    /// analizorul e acelasi - deci etichetele, ordinea si descrierile trebuie sa fie
+    /// identice. Erau doua compuneri separate, si au divergat: al cincilea test a trebuit
+    /// adaugat de doua ori, iar descrierile au ajuns doar intr-un tab.
+    /// </summary>
+    [Fact]
+    public async Task TheRowsAreTheSameOnesTheStructureTabShows()
+    {
+        using var rf = new SessionFixture().WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var ratio = Attached(rf);
+        ratio.Choose(isA: true, path: rf.MasterPath("pp_flat_stacked_A.fit"));
+        ratio.Choose(isA: false, path: rf.MasterPath("pp_flat_stacked_B.fit"));
+        await ratio.RecomputeAsync();
+
+        using var sf = new SessionFixture().WithFlatMaster();
+        var structure = new StructureTabViewModel();
+        await structure.RunAsync(sf.Session, CancellationToken.None);
+
+        Assert.Equal(structure.Tests.Select(t => t.Label), ratio.Tests.Select(t => t.Label));
+        Assert.Equal(structure.Tests.Select(t => t.Note), ratio.Tests.Select(t => t.Note));
+        Assert.Equal(structure.Tests.Select(t => t.IsKey), ratio.Tests.Select(t => t.IsKey));
+        Assert.Equal(structure.Informative.Select(t => t.Label), ratio.Informative.Select(t => t.Label));
     }
 
     /// <summary>

@@ -104,10 +104,26 @@ hartă reziduală PNG.
 Pe lângă cele cinci teste, raportul dă o cifră informativă, **pete locale**: cea mai adâncă
 pată compactă rămasă după ce se scade structura de scară mare, cu poziția ei în rasterul
 de analiză. Un gradient nu intră în ea; o umbră de praf, un inel de condens sau o scurgere
-mică intră întreagă. Peste 2 % raportul tipărește o **atenționare**, nu un verdict, fiindcă
-răspunsul depinde de ce faci cu flat-ul: o pată fixă pe aparat e *corectă* pentru sesiunea
-ale cărei lights au aceeași pată, și *greșită* pentru un flat de bibliotecă, unde praful se
-va fi mutat. Caută poziția în hartă înainte să decizi.
+mică intră întreagă.
+
+**Semnul e diagnosticul**, și raportul îl scrie în cuvinte lângă cifră:
+
+| semn | ce înseamnă | cauze tipice |
+|---|---|---|
+| negativ, `(mai intunecat)` | pata e mai întunecată decât ce o înconjoară | praf pe senzor sau pe filtru, condens, un obstacol |
+| pozitiv, `(mai luminos)` | pata e mai luminoasă | scurgere de lumină, o reflexie |
+
+Peste pragul de 2 % raportul tipărește o **atenționare**, nu un verdict, fiindcă răspunsul
+depinde de ce faci cu flat-ul: o pată fixă pe aparat e *corectă* pentru sesiunea ale cărei
+lights au aceeași pată, și *greșită* pentru un flat de bibliotecă, unde praful se va fi
+mutat. Sub prag cifra e doar informativă. Caută poziția în hartă înainte să decizi.
+
+Un lucru de știut înainte să te iei după ea: cifra găsește ce e *compact*, dar prinde și
+muchia unei structuri mari, dacă aceasta e mai abruptă decât fereastra din care se scade
+fondul local. Măsurat pe biblioteca proprie, extrema unui master de Nikkor 35 la f/2.8 e o
+dungă verticală pe marginea din stânga (−0.44 %), nu o pată rotundă. Amândouă rămân la o
+cincime din prag, deci nu s-a aprins nimic — dar dacă vezi vreodată atenționarea, uită-te
+întâi dacă forma din hartă e rotundă. Numai aia e praf.
 
 #### Ce nu vede modul structură
 
@@ -397,7 +413,7 @@ continuare o decentrare reală a axei optice, ponderată cu cât te costă ea de
 ## Praguri
 
 Sunt **reguli empirice, nu constante fizice** — un punct de plecare, de calibrat pe un
-setup despre care ești sigur. Toate stau în `FlatCheck/Thresholds.cs`.
+setup despre care ești sigur. Toate stau în `FlatCheck.Core/Thresholds.cs`.
 
 | metrică | mod | OK sub | PROBLEMĂ peste |
 |---|---|---|---|
@@ -623,7 +639,8 @@ acela e intrarea modului de structură, prin convenție.
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
-atenționarea de praf sub verdict când e cazul — plus harta reziduală. Salvează în folderul
+atenționarea de praf sub verdict când e cazul, fiecare rând cu descrierea lui sub el — plus
+harta reziduală. Salvează în folderul
 ales:
 
 - **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
@@ -658,8 +675,12 @@ folder și ai redenumit unul, `pp_flat_stacked_0deg.fit` rămâne recunoscut. Ac
 După calcul, tabul arată întâi **de unde vin cele două stive** — câte cadre și de la ce oră,
 din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-l poate
 verifica singur: că cele două chiar pot fi din două orientări diferite. Apoi componenta
-fixă în lume, informativă, cu bara ei de eroare. Apoi verdictul și cele cinci teste, pe
-masterul combinat. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
+fixă în lume, informativă, cu bara ei de eroare, cu cele două rânduri explicate sub ele
+și cu eticheta OK/SUSPECT/PROBLEMĂ spusă pe față drept informativă, cu pragurile ei — ea
+nu votează. Apoi verdictul și cele cinci teste, pe
+masterul combinat, fiecare cu descrierea lui, urmate de mărimile informative — vignetarea,
+centrul de iluminare, petele locale — și de atenționarea de praf când e cazul, exact ca
+în tabul Structură și ca în raportul din consolă. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
 potrivește cu verdictul) sau raportul `A/B`. Scara și legenda se aplică celei afișate,
 oricare dintre cele două e.
 

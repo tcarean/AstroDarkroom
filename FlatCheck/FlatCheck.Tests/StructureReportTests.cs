@@ -122,12 +122,67 @@ public class StructureReportTests
         Assert.Contains("fixa pe aparat", warning);
     }
 
-    [Fact]
-    public void TheLocalSpotValueCarriesTheSignAndThePosition()
+    /// <summary>
+    /// The sign is the diagnosis, so the row says which direction in words rather than
+    /// leaving it to be inferred. A minus on a row called "pete locale" reads as an
+    /// arithmetic slip if you do not already know direction is the point - the first
+    /// question asked once the figure existed was whether it could be negative at all.
+    /// </summary>
+    [Theory]
+    [InlineData(-0.31, "-0.31 % (mai intunecat) la (729, 873)")]
+    [InlineData(0.36, "+0.36 % (mai luminos) la (729, 873)")]
+    [InlineData(0.0, "+0.00 % la (729, 873)")]     // a constant residual states no direction
+    public void TheLocalSpotValueNamesTheDirectionInWords(double pct, string expected)
     {
-        var r = new StructureResult { LocalSpotPct = -0.31, LocalSpotX = 729, LocalSpotY = 873 };
+        var r = new StructureResult { LocalSpotPct = pct, LocalSpotX = 729, LocalSpotY = 873 };
 
-        Assert.Equal("-0.31 % la (729, 873)", StructureReport.LocalSpotValue(r));
+        Assert.Equal(expected, StructureReport.LocalSpotValue(r));
+    }
+
+    [Fact]
+    public void TheLocalSpotNoteExplainsBothDirections()
+    {
+        string note = StructureReport.LocalSpotNote();
+
+        Assert.Contains("minus", note);
+        Assert.Contains("mai intunecat", note);
+        Assert.Contains("praf", note);
+        Assert.Contains("plus", note);
+        Assert.Contains("mai luminos", note);
+        Assert.Contains("scurgere", note);
+    }
+
+    /// <summary>
+    /// The note states the warning threshold, because it is the only place the user
+    /// learns from where the figure starts to matter - and it takes the number from
+    /// <see cref="Th.LocalSpotWarn"/> rather than spelling it out, so a recalibration
+    /// cannot leave the text quoting the old value.
+    ///
+    /// The assertion cannot tell a literal "2" from the formatted constant while the two
+    /// agree; what it catches is the two drifting apart afterwards, which is the actual
+    /// risk. Same shape as `TheFixedCapsAreTheResidualScaleBoundaries`.
+    /// </summary>
+    [Fact]
+    public void TheLocalSpotNoteQuotesTheThresholdFromTh()
+    {
+        string note = StructureReport.LocalSpotNote();
+
+        Assert.Contains($"Peste {Th.LocalSpotWarn:F0} %", note);
+        Assert.Contains("atentionare", note);
+        Assert.Contains("informativa", note);
+    }
+
+    /// <summary>The console prints the whole note under the row, indented like its neighbours.</summary>
+    [Fact]
+    public void TheReportPrintsTheNoteUnderTheRow()
+    {
+        var w = new StringWriter();
+
+        StructureReport.Write(Result(FitsTestData.Radial(512, 512)), "x.fit", w);
+        string text = w.ToString();
+
+        foreach (string line in StructureReport.LocalSpotNote().Split('\n'))
+            Assert.Contains("        " + line, text);
     }
 
     /// <summary>The report prints the warning under the informative rows, indented like them.</summary>
@@ -147,6 +202,73 @@ public class StructureReportTests
 
         Assert.Contains("    ATENTIE: pata compacta de", w.ToString());
         Assert.Contains("pete locale (praf etc.) : -", w.ToString());
+    }
+
+    // ---------------------------------------------------------------- notele testelor
+
+    /// <summary>
+    /// Every one of the five tests explains itself. Two of them - the azimuthal
+    /// asymmetry and the tilt - sat in the window with a number, a verdict and no word
+    /// about what they measured, because the two notes that did exist were written
+    /// inline in the view-model and nobody noticed the other three were missing.
+    /// Keyed by the result field name, so reordering the rows cannot silently unpair
+    /// a note from its metric.
+    /// </summary>
+    [Theory]
+    [InlineData(nameof(StructureResult.CornerSpreadPct))]
+    [InlineData(nameof(StructureResult.AzimuthalMaxPct))]
+    [InlineData(nameof(StructureResult.ResidualPtpPct))]
+    [InlineData(nameof(StructureResult.TiltPct))]
+    [InlineData(nameof(StructureResult.MaxTilePct))]
+    public void EveryTestHasANote(string metric)
+    {
+        string note = StructureReport.TestNote(metric);
+
+        Assert.False(string.IsNullOrWhiteSpace(note));
+        Assert.True(note!.Length > 30, "a note this short explains nothing: " + note);
+    }
+
+    [Fact]
+    public void AnUnknownMetricHasNoNote()
+    {
+        Assert.Null(StructureReport.TestNote("VignetteStops"));
+    }
+
+    /// <summary>
+    /// The two that were missing say the thing that is not visible from the number: the
+    /// azimuthal test compares sectors of one ring and only inside the inscribed circle,
+    /// the tilt is a peak-to-peak amplitude that also catches a decentred axis.
+    /// </summary>
+    [Fact]
+    public void TheAzimuthalNoteSaysWhatIsComparedAndWhere()
+    {
+        string note = StructureReport.TestNote(nameof(StructureResult.AzimuthalMaxPct))!;
+
+        Assert.Contains("sectoare", note);
+        Assert.Contains("inel", note);
+        Assert.Contains("cercul inscris", note);
+    }
+
+    [Fact]
+    public void TheTiltNoteSaysItIsAnAmplitudeAndCatchesDecentring()
+    {
+        string note = StructureReport.TestNote(nameof(StructureResult.TiltPct))!;
+
+        Assert.Contains("varf-la-varf", note);
+        Assert.Contains("gradient", note);
+        Assert.Contains("decentrata", note);
+    }
+
+    /// <summary>No diacritics, like every other string the tool shows.</summary>
+    [Theory]
+    [InlineData(nameof(StructureResult.CornerSpreadPct))]
+    [InlineData(nameof(StructureResult.AzimuthalMaxPct))]
+    [InlineData(nameof(StructureResult.ResidualPtpPct))]
+    [InlineData(nameof(StructureResult.TiltPct))]
+    [InlineData(nameof(StructureResult.MaxTilePct))]
+    public void TheNotesUseNoDiacritics(string metric)
+    {
+        Assert.All(StructureReport.TestNote(metric)!, c => Assert.True(c < 128, $"non-ASCII: '{c}'"));
     }
 
     // ---------------------------------------------------------------- scara

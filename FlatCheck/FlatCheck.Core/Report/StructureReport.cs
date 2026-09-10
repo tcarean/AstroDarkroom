@@ -97,14 +97,45 @@ namespace FlatCheck
             w.WriteLine("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,");
             w.WriteLine("        iar peste un prag cade inapoi spre 0. Amplitudinea o da \"inclinare\".");
             w.WriteLine($"    pete locale (praf etc.) : {LocalSpotValue(r)}");
-            w.WriteLine("        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.");
+            foreach (string line in LocalSpotNote().Split('\n')) w.WriteLine("        " + line);
             string warning = LocalSpotWarning(r);
             if (warning != null) Indent(warning, w);
         }
 
-        /// <summary>Cifra de "pete locale", cu semn si cu pozitia in rasterul de analiza.</summary>
+        /// <summary>
+        /// Cifra de "pete locale": marimea cu semn, ce inseamna semnul, si pozitia in
+        /// rasterul de analiza.
+        ///
+        /// Semnul e numit chiar pe rand, nu lasat sa fie dedus. Un minus pe o linie care
+        /// se cheama "pete locale" arata ca o eroare de calcul daca nu stii ca directia e
+        /// tocmai informatia - prima intrebare pusa dupa ce a aparut cifra a fost daca
+        /// poate fi negativa.
+        /// </summary>
         internal static string LocalSpotValue(StructureResult r)
-            => $"{r.LocalSpotPct:+0.00;-0.00} % la ({r.LocalSpotX}, {r.LocalSpotY})";
+            => $"{r.LocalSpotPct:+0.00;-0.00} %{SignWord(r.LocalSpotPct)} la ({r.LocalSpotX}, {r.LocalSpotY})";
+
+        /// <summary>
+        /// Directia abaterii, in cuvinte. Gol la exact zero (un reziduu constant), unde
+        /// "mai luminos" ar fi o afirmatie despre nimic.
+        /// </summary>
+        static string SignWord(double pct)
+            => pct < 0 ? " (mai intunecat)" : pct > 0 ? " (mai luminos)" : "";
+
+        /// <summary>
+        /// Ce e cifra, ce inseamna semnul ei, si de la ce valoare urmeaza o atentionare.
+        ///
+        /// Pragul se INTERPOLEAZA din <see cref="Th.LocalSpotWarn"/>, nu se scrie ca
+        /// literal: altfel o recalibrare a pragului ar lasa textul spunand vechea valoare,
+        /// si exact acest text e singurul loc din care utilizatorul afla de unde incolo
+        /// conteaza cifra. Pinuit de <c>TheLocalSpotNoteQuotesTheThresholdFromTh</c>.
+        ///
+        /// Intors ca sir, ca <see cref="Advice"/>: il arata si fereastra, sub rand.
+        /// </summary>
+        internal static string LocalSpotNote()
+            => "Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.\n"
+             + "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
+             + "condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).\n"
+             + $"Peste {Th.LocalSpotWarn:F0} % urmeaza o atentionare; sub atat cifra e doar informativa.";
 
         /// <summary>
         /// Atentionarea pentru o pata compacta, sau null cand nu e cazul. Nu e un verdict,
@@ -120,6 +151,46 @@ namespace FlatCheck
                 + "    Corecta pentru sesiunea ale carei lights au aceeasi pata; NU pentru un\n"
                 + "    flat de biblioteca. Cauta pozitia de mai sus in harta reziduala."
                 : null;
+
+        /// <summary>
+        /// Ce masoara fiecare dintre cele cinci teste, intr-o propozitie.
+        ///
+        /// FARA APELANT IN CONSOLA, ca <see cref="MapScaleLabel"/> si celelalte: raportul
+        /// de consola isi tine explicatiile grupate sub scara, iar cinci note intercalate
+        /// intre randuri ar ineca tocmai cifrele. Fereastra pune fiecare nota sub randul
+        /// ei, unde nu costa nimic.
+        ///
+        /// Stau totusi aici, si nu in ViewModel, fiindca sunt propozitii de diagnostic:
+        /// regula e ca nicio explicatie pentru utilizator nu se scrie intr-un ViewModel,
+        /// ca sa nu existe doua formulari ale aceluiasi lucru cand mai apare un consumator.
+        /// Doua dintre ele chiar erau scrise inline acolo.
+        ///
+        /// Cheia e numele cifrei din <see cref="StructureResult"/>, nu un index: o lista
+        /// pe pozitii s-ar rupe tacut daca cineva reordoneaza randurile.
+        /// </summary>
+        internal static string TestNote(string metric) => metric switch
+        {
+            nameof(StructureResult.CornerSpreadPct) =>
+                "cat difera intre ele cele patru cutii de colt; pe un camp pur radial ar fi egale",
+
+            nameof(StructureResult.AzimuthalMaxPct) =>
+                "cat difera intre ele cele 12 sectoare ale aceluiasi inel, pe inelul cel mai "
+              + "prost; doar in cercul inscris, singurul loc unde toate azimuturile sunt "
+              + "esantionate",
+
+            nameof(StructureResult.ResidualPtpPct) =>
+                "masoara direct cat din cadru NU se explica printr-un model pur radial",
+
+            nameof(StructureResult.TiltPct) =>
+                "amplitudinea varf-la-varf a gradientului liniar peste cadru; prinde si o axa "
+              + "optica decentrata, ponderata cu cat costa ea fotometric",
+
+            nameof(StructureResult.MaxTilePct) =>
+                "cea mai abatuta dala de pe tot cadrul; prinde un defect compact pe care "
+              + "reziduul il taie ca extrema",
+
+            _ => null,
+        };
 
         /// <summary>
         /// Scara comuna a celor cinci teste de abatere de la simetria radiala: numele

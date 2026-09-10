@@ -191,67 +191,14 @@ namespace FlatCheck.Wpf
             // "0 / 0", iar fereastra si consola trebuie sa spuna acelasi lucru.
             Levels = $"median / max ADU  {StructureReport.Levels(r)}";
 
+            // Cele cinci randuri se construiesc in StructureRows, de unde le ia si tabul
+            // Ratio: e aceeasi baterie, si doua compuneri ale ei au divergat deja o data.
             Tests.Clear();
-            Tests.Add(new MetricRow
-            {
-                Label = "imprastiere 4 colturi",
-                Value = Pct(r.CornerSpreadPct),
-                Verdict = r.CornerVerdict,
-                Note = CornerNote(r),
-            });
-            Tests.Add(new MetricRow
-            {
-                Label = "asimetrie azimutala max",
-                Value = Pct(r.AzimuthalMaxPct),
-                Verdict = r.AzimuthalVerdict,
-            });
-            Tests.Add(new MetricRow
-            {
-                Label = "reziduu dupa model radial",
-                Value = Pct(r.ResidualPtpPct),
-                Verdict = r.ResidualVerdict,
-                IsKey = true,
-                Note = "masoara direct cat din cadru NU se explica printr-un model pur radial",
-            });
-            Tests.Add(new MetricRow
-            {
-                Label = "inclinare (gradient)",
-                Value = Pct(r.TiltPct),
-                Verdict = r.TiltVerdict,
-            });
-            Tests.Add(new MetricRow
-            {
-                Label = "pata maxima (o dala)",
-                Value = Pct(r.MaxTilePct),
-                Verdict = r.MaxTileVerdict,
-                Note = "cea mai abatuta dala de pe tot cadrul; prinde un defect compact "
-                     + "pe care reziduul il taie ca extrema",
-            });
+            foreach (var row in StructureRows.Tests(r)) Tests.Add(row);
 
+            // Si randurile informative vin din StructureRows, tot pentru amandoua taburile.
             Informative.Clear();
-            Informative.Add(new MetricRow
-            {
-                Label = "vignetare centru -> colt",
-                Value = $"{r.VignetteStops:F2} stopuri",
-                Note = $"coltul e {r.CornerMean / r.CentreMedian * 100:F0} % din centru; "
-                     + "e o proprietate a obiectivului, nu o eroare",
-            });
-            Informative.Add(new MetricRow
-            {
-                Label = "offset centru iluminare",
-                Value = r.CentroidValid ? Pct(r.CentroidOffsetPct) : "nedeterminat",
-                Note = r.CentroidValid
-                    ? $"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor ({r.SensorCx:F0}, {r.SensorCy:F0}); "
-                      + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea"
-                    : "varf in afara cadrului sau fit degenerat",
-            });
-            Informative.Add(new MetricRow
-            {
-                Label = "pete locale (praf etc.)",
-                Value = StructureReport.LocalSpotValue(r),
-                Note = "cea mai adanca pata compacta, dupa scoaterea structurii de scara mare; "
-                     + "pozitia e in rasterul de analiza",
-            });
+            foreach (var row in StructureRows.Informative(r)) Informative.Add(row);
 
             // Atentionarea, nu un verdict: textul si pragul vin din nucleu.
             LocalSpotWarning = StructureReport.LocalSpotWarning(r) ?? "";
@@ -270,12 +217,8 @@ namespace FlatCheck.Wpf
             Advice = StructureReport.Advice(r.Verdict);
         }
 
-        /// <summary>Cele patru colturi, ca procent din media lor - la fel ca in raport.</summary>
-        static string CornerNote(StructureResult r)
-            => string.Join("   ", r.Corners.Select(
-                c => $"{c.Key} {c.Value / r.CornerMean * 100:F1} %"));
-
-        static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
+        /// <summary>Formatarea unei cifre, comuna cu randurile de test.</summary>
+        static string Pct(double v) => StructureRows.Pct(v);
 
         /// <summary>
         /// Raportul si harta, in folderul sesiunii. Esecul de scriere nu anuleaza

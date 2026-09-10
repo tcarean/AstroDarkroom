@@ -60,20 +60,25 @@ not a copy.
     package ever has to change.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
-    `Divide`, and for the attribution mode `CropCentred` + `Rotate180`. Those last two
+    `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
+    radial model is fed - see `RadialModel` under "Shared pipeline"), and for the
+    attribution mode `CropCentred` + `Rotate180`. Those last two
     exist because that mode is the only one that compares a raster with its own 180°
     rotation, and `BlockMean` drops partial blocks only at the *end* - so its grid is
     anchored top-left and a rotation lands up to one tile off. Deliberately **not** used
     by `LargeScalePtp`: there the top-left anchoring is what `flatcheck.py` does, and the
     numeric parity is tested.
-  - `Stats.cs` - numeric primitives: `Percentile`, `RobustPtp`, `Interp`, `Solve`,
+  - `Stats.cs` - numeric primitives: `Percentile`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
   - `Metrics.cs` - the pure geometry and metrics: `FitCenter`, `RadialModel`,
-    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `TileBackground`, plus
-    `TileSize` - the tile side the large-scale metrics use, pulled out because
-    `LargeScalePtp` and the attribution mode both need it and two copies of the formula
-    would have diverged at the first adjustment of `ntiles`.
+    `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `MaxTileDeviation` (the worst
+    tile - the fifth structure test), `LocalSpots` (the deepest compact spot after the
+    large-scale structure is subtracted - informative, with a warning), `TileBackground`,
+    plus `TileSize` - the tile side the large-scale metrics use, pulled out because
+    `LargeScalePtp`, `MaxTileDeviation`, `LocalSpots` and the attribution mode all need
+    it and two copies of the formula would have diverged at the first adjustment of
+    `ntiles`.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
     "Versioning".
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
@@ -110,13 +115,23 @@ not a copy.
     have no console caller today, and live here anyway so a future `--scala` reuses them
     instead of rewriting them.
     Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
-    `StructureReport.Advice()`, `LightReport.Diagnosis()`, `ExposureReport`'s
+    `StructureReport.Advice()`, `StructureReport.TestNote()` (one sentence per deviation
+    test, keyed by the `StructureResult` field name so reordering the rows cannot unpair a
+    note from its metric), `StructureReport.Levels()` (the median / max line, formatted
+    for a float master as well as an ADU one - both applications print it), the three
+    `LocalSpot*` pieces (`LocalSpotValue` with the sign named in words, `LocalSpotNote`
+    with the warning threshold read from `Th.LocalSpotWarn`, `LocalSpotWarning` or null -
+    all three printed by the console too, see "1. Structure"), `LightReport.Diagnosis()`, `ExposureReport`'s
     `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around the exposure
     histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason` (the raw-vs-screen
-    table and its explanation) - all six window-only, like `MapScaleLabel`, and for the same
+    table and its explanation) - all window-only, like `MapScaleLabel`, and for the same
     reason, and from
-    `RatioReport` the five that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
-    `Precondition`, `WorldMeaning`, `SensorCaveat`. The console formats them into columns, the WPF app puts
+    `RatioReport` the seven that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
+    `Precondition`, `WorldMeaning`, `SensorCaveat`, and the two window-only notes under the
+    world-fixed rows, `WorldNote` (what "per orientation" means, and that the coloured
+    label does not vote, with its thresholds read from `Th.RatioOk`/`Th.RatioBad`) and
+    `WorldCornerNote`. Those two rows were the last on the Ratio screen without a
+    description; `EveryRowOnTheScreenCarriesADescription` now covers every row on it. The console formats them into columns, the WPF app puts
     them in cards and under a coloured chip; the wording has one definition either way.
     `WorldValue` and `WorldLine` are split for exactly that reason: the console wants the
     figure with its label glued on, the window shows the label as a separate chip, and
@@ -163,14 +178,48 @@ not a copy.
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
-    either. They are `public` because WPF binding
+    either. `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
+    deviation battery, built once for **both** the Structure and the Ratio tab, since Ratio
+    runs the same analyzer on the combined master. They are `public` because WPF binding
     reads public properties by reflection - and that has a useful consequence: a public
     view-model **cannot** expose an internal core type, so the compiler itself stops a
     `StructureResult` from leaking into XAML. `MapScaleOption.CapPct` is `internal` for
     exactly that reason, while `Label` and `IsSelected` are what XAML binds.
+    `TestNote` earns its place the hard way: two of the five rows - the azimuthal
+    asymmetry and the tilt - sat in the window showing a number, a verdict and no word
+    about what they measured, for a whole version. The two notes that did exist were
+    written inline in `StructureTabViewModel`, so nothing counted the missing three.
+    `EveryTestRowCarriesItsOwnDescription` now fails if a row loses its note. The console
+    has no caller: its explanations are grouped under the scale, and five notes threaded
+    between the rows would drown the figures.
+
+    **The Ratio tab was the same battery composed a second time**, and that is why it kept
+    falling behind: five hand-written `Grid` blocks in XAML with the labels as literals and
+    ten string properties behind them, so the fifth test had to be added twice and the
+    notes reached only one tab. Both tabs now render `StructureRows.Tests(result)` through
+    the shared `MetricRowTemplate`, and `TheRowsAreTheSameOnesTheStructureTabShows`
+    compares the two tabs' labels, notes and key flags directly. Ratio's list is a
+    **replaceable `IReadOnlyList`, not an `ObservableCollection`**, for the reason
+    `Histograms` is: `Choose` starts `RecomputeAsync` without awaiting it and the token is
+    the session's, not the run's, so two quick picks leave two analyses in flight with
+    neither cancelling the other - a collection cleared and refilled by both ends up with
+    duplicated rows, a replaced reference just lets the last one win. Structure keeps its
+    `ObservableCollection` because `MainViewModel.OpenAsync` cancels the previous run first.
+
+    `StructureRows.Informative` does the same for the three no-verdict rows (vignetting,
+    illumination centre, local spots), so Ratio now shows everything the console's
+    `--ratio` report prints under `INFORMATIV`, plus the dust warning under its verdict.
+    The one line deliberately left out is `median / max ADU`: it belongs to the structure
+    mode's header, not to `WriteBody`, because on Ratio's combined master - normalised to a
+    median of 1 - it would mean nothing, and the console does not print it there either.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
     inherited `TabViewModel`, so the same three controls serve all four tabs;
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
+    Headings that COUNT something are literals in XAML and no test reads them: the
+    Structure tab said "SCARA CELOR PATRU TESTE" for a whole version after the tests
+    became five, and it was caught by looking at a `FLATCHECK_DUMP_SCREENS` render, not by
+    the suite. `TheScaleHasFourBandsAndMarksTheCurrentOne` now also asserts the test count,
+    which is the number that heading quotes.
     Every set of radio chips needs its own `GroupName` (`StructureMapScale`,
     `RatioMapScale`, `ExposureHistogramSource`): WPF groups radio buttons by name across
     the whole window, so a shared name makes one tab's chips uncheck another's.
@@ -1084,6 +1133,30 @@ implementations: on a symmetric scene two tiles come out equal to the last bit a
 numpy sum in different orders, which is how `crosscheck.py` caught a position flip on the
 diagonal fixture. Not a test; the warning threshold is `Th.LocalSpotWarn`.
 
+**The sign is kept, and the report names it in words.** Negative means darker than the
+surroundings (dust, dew, an obstruction), positive means brighter (a light leak, a
+reflection). `StructureReport.LocalSpotValue` appends `(mai intunecat)` / `(mai luminos)`,
+and says nothing at exactly zero, where a constant residual has no direction to state. The
+row was printing a bare signed number, and the first question asked once the figure existed
+was whether a minus meant a bug - which is the answer to whether the wording was needed.
+`StructureReport.LocalSpotNote` carries the explanation and **states the threshold, read
+from `Th.LocalSpotWarn` rather than written out**, so a recalibration cannot leave the text
+quoting the old value; it is the only place the user learns where the figure starts to
+matter. Both applications print that note, the window with the newlines flattened.
+
+**What it can misread, measured on two real masters.** The metric finds the deepest
+*compact* departure, but a large-scale feature with a ridge steeper than the 7x7
+neighbourhood (~250 px on the sensor) also survives the high-pass. On
+`Nikkor 35mm DX/f2.8-sky/ISO400` the extreme is -0.44 % and the five deepest tiles all sit
+at `x=117` with different `y`: a vertical stripe down the left edge, i.e. the edge of the
+frame's large dark region, not a spot. On the ISO800 master of the same lens the extreme is
+`+0.36 %` in the top-right corner, the same kind of thing. Both are a fifth of the warning
+threshold, so nothing fired and nothing should have - but on a master with a harder edge
+this could warn about dust that is not there. The counter-measure if it ever does: check
+whether the extreme is round or elongated before trusting it, since only the round case is
+dust. Deliberately not automated - that needs a shape threshold nobody has calibrated, and
+the figure is informative, not a verdict.
+
 **Verdict ladder** - `Verdict(val, ok, bad)` → `OK` / `SUSPECT` / `PROBLEMA`;
 `Rank` maps those to 0/1/2 and the mode verdict is the worst of its tests. Note
 that `NaN` compares false against both bounds and therefore degrades to
@@ -1434,8 +1507,8 @@ compare whole output.
   both change without the *behaviour* changing. So `Golden/*.txt` carry the placeholder
   and survive a bump untouched.
 - `crosscheck.py` scrubs it in `norm()`, and checks version agreement once up front in
-  `check_versions()`. Without that, a desync would turn all 34 scenarios into diffs -
-  34 diffs to learn one thing.
+  `check_versions()`. Without that, a desync would turn all 42 scenarios into diffs -
+  42 diffs to learn one thing.
 
 What *does* fail, and should:
 
@@ -1490,7 +1563,7 @@ Four things follow, and all four are pinned by tests:
 Unlike the version banner, the copyright line is **not** scrubbed anywhere: it is
 constant, so the golden files carry it verbatim and `crosscheck.py` compares it as
 ordinary text. That is deliberate - if the line ever stops being printed, the golden
-files fail. `--help` is not one of `crosscheck.py`'s 34 scenarios (argparse and
+files fail. `--help` is not one of `crosscheck.py`'s 42 scenarios (argparse and
 `WriteUsage` produce entirely different text), so the two warranty notices are worded
 the same by choice, not by test.
 

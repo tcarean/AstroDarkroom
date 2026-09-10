@@ -600,8 +600,10 @@ def _structure_body(img, cx, cy):
     print("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un")
     print("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,")
     print('        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".')
-    print(f"    pete locale (praf etc.) : {spot_pct:+.2f} % la ({spot_x}, {spot_y})")
-    print("        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.")
+    print(f"    pete locale (praf etc.) : {spot_pct:+.2f} %{_sign_word(spot_pct)} "
+          f"la ({spot_x}, {spot_y})")
+    for line in _local_spot_note().split("\n"):
+        print("        " + line)
     if spot_flagged:
         print(f"    ATENTIE: pata compacta de {abs(spot_pct):.2f} % la ({spot_x}, {spot_y}), "
               f"peste {TH_LOCAL_SPOT_WARN:.0f} %.")
@@ -661,6 +663,30 @@ def _structure_body(img, cx, cy):
         print("    flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.")
 
     return worst, resid, rc, prof, az, r_ins
+
+
+def _sign_word(pct):
+    """Directia abaterii, in cuvinte. Gol la exact zero (reziduu constant), unde "mai
+    luminos" ar fi o afirmatie despre nimic."""
+    if pct < 0:
+        return " (mai intunecat)"
+    if pct > 0:
+        return " (mai luminos)"
+    return ""
+
+
+def _local_spot_note():
+    """Ce e cifra, ce inseamna semnul ei, si de la ce valoare urmeaza o atentionare.
+
+    Pragul se interpoleaza din TH_LOCAL_SPOT_WARN, nu se scrie ca literal: o recalibrare
+    ar lasa altfel textul spunand vechea valoare, iar textul asta e singurul loc din care
+    utilizatorul afla de unde incolo conteaza cifra.
+    """
+    return ("Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.\n"
+            "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
+            "condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).\n"
+            f"Peste {TH_LOCAL_SPOT_WARN:.0f} % urmeaza o atentionare; sub atat cifra e "
+            "doar informativa.")
 
 
 def _levels(raw):

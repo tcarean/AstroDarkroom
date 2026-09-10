@@ -81,6 +81,30 @@ namespace FlatCheck
         internal static string WorldLine(RatioResult r)
             => $"{WorldValue(r)}   [{r.WorldLabel}]";
 
+        /// <summary>
+        /// Ce e cifra din randul "gradient extern / orientare" si ce e eticheta de langa
+        /// ea. FARA APELANT IN CONSOLA, ca StructureReport.TestNote: consola are deja
+        /// "(informativ - nu e un verdict)" in titlul sectiunii, iar fereastra pune nota
+        /// sub rand, unde titlul e departe si pastila colorata arata a verdict.
+        ///
+        /// Pragurile se INTERPOLEAZA din Th.RatioOk / Th.RatioBad, nu se scriu ca literal,
+        /// din acelasi motiv ca la StructureReport.LocalSpotNote.
+        /// </summary>
+        internal static string WorldNote()
+            => "cat gradient extern a purtat fiecare orientare in parte: jumatate din ce "
+             + "arata raportul A/B, fiindca rotatia il inverseaza si A/B il numara de doua ori. "
+             + "Eticheta e informativa si nu voteaza: OK sub "
+             + $"{Th.RatioOk:F0} %, SUSPECT pana la {Th.RatioBad:F0} %, PROBLEMA peste";
+
+        /// <summary>
+        /// Randul "imprastiere colturi" al componentei fixe in lume. Statea pe ecran fara
+        /// niciun cuvant. Tot fara apelant in consola.
+        /// </summary>
+        internal static string WorldCornerNote()
+            => "acelasi gradient extern, citit doar in cele patru colturi ale raportului A/B: "
+             + "cat difera coltul cel mai luminos de cel mai intunecat, tot per orientare. "
+             + "Vederea partiala a randului de sus, cum e imprastierea colturilor pentru reziduu";
+
         internal static string WorldMeaning()
             => "Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de\n"
              + "eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul\n"

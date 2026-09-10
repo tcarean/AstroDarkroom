@@ -34,8 +34,11 @@ Copyright (C) 2026 Tudor Carean
         E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
         obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
         iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
-    pete locale (praf etc.) : +0.12 % la (16, 10)
+    pete locale (praf etc.) : +0.12 % (mai luminos) la (16, 10)
         Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
+        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
+        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
 
   TESTE
     imprastiere 4 colturi   : 12.00 %   [ACCEPTABIL]

@@ -150,37 +150,20 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                        Text="COMPONENTA FIXA IN LUME  (informativ)" />
             <Border Style="{StaticResource Card}">
               <StackPanel>
-                <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="150" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="gradient extern / orientare" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding World}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding WorldLabel}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="150" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="imprastiere colturi" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding WorldCorner}" VerticalAlignment="Center" />
-                </Grid>
-                <TextBlock Style="{StaticResource Faint}" Margin="0,12,0,0"
+                <!-- Aceleasi randuri MetricRow ca restul ecranului, cu descrierea sub
+                     fiecare. Erau doua Grid-uri scrise de mana: unul fara niciun cuvant
+                     sub el, celalalt cu o pastila colorata care arata a verdict fara sa
+                     fie - nota spune acum ca e informativa si care ii sunt pragurile. -->
+                <ItemsControl ItemsSource="{Binding WorldRows}"
+                              ItemTemplate="{StaticResource MetricRowTemplate}" />
+                <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0"
                            TextWrapping="Wrap" Text="{Binding WorldMeaning, Mode=OneTime}" />
               </StackPanel>
             </Border>
 
             <!-- Verdictul: structura masterului combinat, adica a partii fixe pe aparat. -->
             <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"
-                       Text="STRUCTURA MASTERULUI COMBINAT  (A+B)/2" />
+                       Text="STRUCTURA MASTERULUI COMBINAT  (A+B)/2  -  partea fixa pe aparat" />
             <Border Style="{StaticResource Card}">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
@@ -196,78 +179,33 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                            TextWrapping="Wrap" Text="{Binding Advice}" />
                 <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0"
                            TextWrapping="Wrap" Text="{Binding SensorCaveat, Mode=OneTime}" />
+                <!-- Atentionarea de praf pe masterul combinat, ca in tabul Structura:
+                     galben, nu rosu, si nu in pastila - intreaba la ce folosesti flat-ul. -->
+                <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="0,12,0,0"
+                           TextWrapping="Wrap" Text="{Binding LocalSpotWarning}"
+                           Visibility="{Binding LocalSpotWarning, Converter={StaticResource NotNullToVis}}" />
               </StackPanel>
             </Border>
 
+            <!-- Cele cinci teste, dintr-o singura lista si cu acelasi sablon ca tabul
+                 Structura. Erau cinci blocuri de Grid scrise de mana, cu etichetele ca
+                 literale si fara loc pentru o descriere - de aceea au ramas fara
+                 descrieri cand tabul 1 le-a capatat. Randurile vin din StructureRows,
+                 deci cele doua taburi nu mai pot diverge. -->
             <Border Style="{StaticResource Card}" Margin="0,14,0,0">
-              <StackPanel>
-                <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="imprastiere 4 colturi" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding Corners}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding CornerVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="asimetrie azimutala max" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding Azimuthal}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding AzimuthalVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="reziduu dupa model radial" VerticalAlignment="Center"
-                             FontWeight="Bold" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding Residual}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding ResidualVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid Margin="0,0,0,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="inclinare (gradient)" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding Tilt}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding TiltVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-                <Grid>
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" MinWidth="96" />
-                    <ColumnDefinition Width="Auto" MinWidth="104" />
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Text="pata maxima (o dala)" VerticalAlignment="Center" />
-                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
-                             Text="{Binding MaxTile}" VerticalAlignment="Center" />
-                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
-                                  Content="{Binding MaxTileVerdict}"
-                                  ContentTemplate="{StaticResource VerdictChip}" />
-                </Grid>
-              </StackPanel>
+              <ItemsControl ItemsSource="{Binding Tests}"
+                            ItemTemplate="{StaticResource MetricRowTemplate}" />
+            </Border>
+
+            <!-- Marimile fara verdict, tot din StructureRows: ce tipareste consola sub
+                 INFORMATIV pentru modul de atribuire. Fara linia de niveluri ADU, care pe masterul
+                 combinat, normalizat la mediana 1, n-ar insemna nimic - nici consola n-o
+                 tipareste acolo. -->
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"
+                       Text="INFORMATIV (nu sunt teste)" />
+            <Border Style="{StaticResource Card}">
+              <ItemsControl ItemsSource="{Binding Informative}"
+                            ItemTemplate="{StaticResource MetricRowTemplate}" />
             </Border>
 
             <local:ReportPanel Margin="0,14,0,0" />

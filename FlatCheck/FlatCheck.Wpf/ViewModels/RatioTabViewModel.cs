@@ -43,21 +43,12 @@ namespace FlatCheck.Wpf
 
         string _fileA;
         string _fileB;
-        string _world = "";
-        string _worldLabel = "";
-        string _worldCorner = "";
+        IReadOnlyList<MetricRow> _worldRows = System.Array.Empty<MetricRow>();
         string _provenanceA = "";
         string _provenanceB = "";
-        string _corners = "";
-        string _cornerVerdict = "";
-        string _azimuthal = "";
-        string _azimuthalVerdict = "";
-        string _residual = "";
-        string _residualVerdict = "";
-        string _tilt = "";
-        string _tiltVerdict = "";
-        string _maxTile = "";
-        string _maxTileVerdict = "";
+        IReadOnlyList<MetricRow> _tests = System.Array.Empty<MetricRow>();
+        IReadOnlyList<MetricRow> _informative = System.Array.Empty<MetricRow>();
+        string _localSpotWarning = "";
         string _verdict = "";
         string _advice = "";
         string _mapLegend = "";
@@ -81,26 +72,47 @@ namespace FlatCheck.Wpf
         public string FileA { get => _fileA; private set => Set(ref _fileA, value); }
         public string FileB { get => _fileB; private set => Set(ref _fileB, value); }
 
-        /// <summary>Componenta fixa in lume, cu bara ei de eroare. Text din nucleu.</summary>
-        public string World { get => _world; private set => Set(ref _world, value); }
-        public string WorldLabel { get => _worldLabel; private set => Set(ref _worldLabel, value); }
-        public string WorldCorner { get => _worldCorner; private set => Set(ref _worldCorner, value); }
+        /// <summary>
+        /// Componenta fixa in lume: cifra cu bara ei de eroare si eticheta informativa, si
+        /// imprastierea colturilor. Doua randuri MetricRow, ca restul ecranului, fiecare cu
+        /// descrierea lui din nucleu - stateau ca doua Grid-uri scrise de mana, unul fara
+        /// niciun cuvant sub el si celalalt cu o pastila colorata care arata a verdict fara
+        /// sa fie. Lista inlocuibila, ca <see cref="Tests"/>, din acelasi motiv.
+        /// </summary>
+        public IReadOnlyList<MetricRow> WorldRows { get => _worldRows; private set => Set(ref _worldRows, value); }
 
         /// <summary>Cate cadre si de cand, din headerele FITS. Precondistia se vede aici.</summary>
         public string ProvenanceA { get => _provenanceA; private set => Set(ref _provenanceA, value); }
         public string ProvenanceB { get => _provenanceB; private set => Set(ref _provenanceB, value); }
 
-        // Bateria de structura pe masterul combinat - aceleasi cinci teste ca tabul 1.
-        public string Corners { get => _corners; private set => Set(ref _corners, value); }
-        public string CornerVerdict { get => _cornerVerdict; private set => Set(ref _cornerVerdict, value); }
-        public string Azimuthal { get => _azimuthal; private set => Set(ref _azimuthal, value); }
-        public string AzimuthalVerdict { get => _azimuthalVerdict; private set => Set(ref _azimuthalVerdict, value); }
-        public string Residual { get => _residual; private set => Set(ref _residual, value); }
-        public string ResidualVerdict { get => _residualVerdict; private set => Set(ref _residualVerdict, value); }
-        public string Tilt { get => _tilt; private set => Set(ref _tilt, value); }
-        public string TiltVerdict { get => _tiltVerdict; private set => Set(ref _tiltVerdict, value); }
-        public string MaxTile { get => _maxTile; private set => Set(ref _maxTile, value); }
-        public string MaxTileVerdict { get => _maxTileVerdict; private set => Set(ref _maxTileVerdict, value); }
+        /// <summary>
+        /// Bateria de structura pe masterul combinat - aceleasi cinci randuri ca tabul 1,
+        /// construite de <see cref="StructureRows"/>, deci cu aceleasi etichete, aceeasi
+        /// ordine si aceleasi descrieri. Erau zece proprietati si cinci blocuri de Grid
+        /// scrise de mana in XAML, si de aceea au ramas fara descrieri cand tabul 1 le-a
+        /// capatat.
+        ///
+        /// LISTA SE INLOCUIESTE, nu se goleste si se reumple - si asta nu e un detaliu:
+        /// Choose() porneste RecomputeAsync fara sa astepte, iar tokenul e al sesiunii, nu
+        /// al rularii, deci doua alegeri rapide lasa doua calcule in aer si NICIUNUL nu-l
+        /// anuleaza pe celalalt. O ObservableCollection golita si reumpluta de amandoua ar
+        /// iesi cu randuri duplicate; o referinta inlocuita lasa pur si simplu ultimul sa
+        /// castige. Acelasi motiv ca la Histograms pe tabul de expunere.
+        /// </summary>
+        public IReadOnlyList<MetricRow> Tests { get => _tests; private set => Set(ref _tests, value); }
+
+        /// <summary>
+        /// Marimile fara verdict ale masterului combinat - vignetare, centru de iluminare,
+        /// pete locale - exact ce tipareste consola sub INFORMATIV in raportul --ratio.
+        /// Aceeasi lista inlocuibila ca <see cref="Tests"/>, din acelasi motiv.
+        /// </summary>
+        public IReadOnlyList<MetricRow> Informative { get => _informative; private set => Set(ref _informative, value); }
+
+        /// <summary>
+        /// Atentionarea de praf pe masterul combinat, sau gol. Ca in tabul 1: sta sub
+        /// verdict fara sa-l coloreze, cu textul din StructureReport.LocalSpotWarning.
+        /// </summary>
+        public string LocalSpotWarning { get => _localSpotWarning; private set => Set(ref _localSpotWarning, value); }
 
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
@@ -253,22 +265,28 @@ namespace FlatCheck.Wpf
 
         void Populate(RatioResult r)
         {
-            World = RatioReport.WorldValue(r);
-            WorldLabel = r.WorldLabel;
-            WorldCorner = $"{r.WorldCornerPct:F2} %";
+            WorldRows = new[]
+            {
+                new MetricRow
+                {
+                    Label = "gradient extern / orientare",
+                    Value = RatioReport.WorldValue(r),
+                    Verdict = r.WorldLabel,          // informativa; nota spune ca nu voteaza
+                    Note = RatioReport.WorldNote(),
+                },
+                new MetricRow
+                {
+                    Label = "imprastiere colturi",
+                    Value = StructureRows.Pct(r.WorldCornerPct),
+                    Note = RatioReport.WorldCornerNote(),
+                },
+            };
             ProvenanceA = RatioReport.Provenance(r.StackCountA, r.DateObsA);
             ProvenanceB = RatioReport.Provenance(r.StackCountB, r.DateObsB);
 
-            Corners = $"{r.Sensor.CornerSpreadPct:F2} %";
-            CornerVerdict = r.Sensor.CornerVerdict;
-            Azimuthal = $"{r.Sensor.AzimuthalMaxPct:F2} %";
-            AzimuthalVerdict = r.Sensor.AzimuthalVerdict;
-            Residual = $"{r.Sensor.ResidualPtpPct:F2} %";
-            ResidualVerdict = r.Sensor.ResidualVerdict;
-            Tilt = $"{r.Sensor.TiltPct:F2} %";
-            TiltVerdict = r.Sensor.TiltVerdict;
-            MaxTile = $"{r.Sensor.MaxTilePct:F2} %";
-            MaxTileVerdict = r.Sensor.MaxTileVerdict;
+            Tests = StructureRows.Tests(r.Sensor);
+            Informative = StructureRows.Informative(r.Sensor);
+            LocalSpotWarning = StructureReport.LocalSpotWarning(r.Sensor) ?? "";
 
             Verdict = r.Verdict;
             // Sfatul vine din nucleu, ca la tabul de structura: e acelasi verdict, pe
@@ -282,10 +300,11 @@ namespace FlatCheck.Wpf
             _session = null;
             FileA = null;
             FileB = null;
-            World = WorldLabel = WorldCorner = "";
+            WorldRows = System.Array.Empty<MetricRow>();
             ProvenanceA = ProvenanceB = "";
-            Corners = Azimuthal = Residual = Tilt = MaxTile = "";
-            CornerVerdict = AzimuthalVerdict = ResidualVerdict = TiltVerdict = MaxTileVerdict = "";
+            Tests = System.Array.Empty<MetricRow>();
+            Informative = System.Array.Empty<MetricRow>();
+            LocalSpotWarning = "";
             Verdict = "";
             Advice = "";
             // Rasterele si encodarile pleaca; alegerea de scara ramane, ca la Structura.
