@@ -306,6 +306,59 @@ public class HistEqAnalyzerTests
         Assert.All(r.Channels, c => Assert.Equal(1200 * 50, c.Equalised.Length));
         Assert.Equal(1200 * 50, r.Mosaic!.Length);
         Assert.Equal(1200 * 50 * 3, r.CompositeRgb.Length);
+
+        // ...si rasterele intregi, pe care le arata fereastra
+        Assert.Equal((2400, 100), (r.FullW, r.FullH));
+        Assert.All(r.Channels, c => { Assert.Equal(2400 * 100, c.Full.Length); Assert.Equal((2400, 100), (c.FullW, c.FullH)); });
+        Assert.Equal(4800 * 200, r.MosaicFull!.Length);
+        Assert.Equal(2400 * 100 * 3, r.CompositeFullRgb.Length);
+    }
+
+    /// <summary>
+    /// The shrunk rasters are derived from the full ones, not recomputed: the k x k block
+    /// mean of Full, rounded Siril's way, is Equalised byte for byte - and the same for the
+    /// mosaic with 2k. If the two ever came from different LUTs this would catch it.
+    /// </summary>
+    [Fact]
+    public void TheShrunkRastersAreTheBlockMeansOfTheFullOnes()
+    {
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(4800, 200, center: 3000));
+        var r = HistEqAnalyzer.Analyze(Mono(4800, 200, scene), Rggb);
+
+        static byte[] BlockMean(byte[] g, int w, int h, int k)
+        {
+            int ow = w / k, oh = h / k;
+            var o = new byte[ow * oh];
+            for (int y = 0; y < oh; y++)
+                for (int x = 0; x < ow; x++)
+                {
+                    int s = 0;
+                    for (int dy = 0; dy < k; dy++)
+                        for (int dx = 0; dx < k; dx++)
+                            s += g[(y * k + dy) * w + x * k + dx];
+                    o[y * ow + x] = HistEqLut.RoundToByte(s / (double)(k * k));
+                }
+            return o;
+        }
+
+        foreach (var c in r.Channels)
+            Assert.Equal(BlockMean(c.Full, c.FullW, c.FullH, r.Shrink), c.Equalised);
+        Assert.Equal(BlockMean(r.MosaicFull!, r.SourceW, r.SourceH, 2 * r.Shrink), r.Mosaic);
+    }
+
+    /// <summary>On a small frame nothing is shrunk, so Full IS Equalised and the mosaic is the frame.</summary>
+    [Fact]
+    public void WithoutShrinkingTheFullRastersAreTheDisplayedOnes()
+    {
+        var r = HistEqAnalyzer.Analyze(TestImages.FlatCfa(64, 48, 1000), Rggb);
+
+        Assert.All(r.Channels, c => { Assert.Same(c.Full, c.Equalised); Assert.Equal((32, 24), (c.FullW, c.FullH)); });
+        Assert.Equal(64 * 48, r.MosaicFull!.Length);
+        Assert.Equal(r.CompositeRgb, r.CompositeFullRgb);
+
+        var mono = HistEqAnalyzer.Analyze(Mono(40, 30, FitsTestData.Radial(40, 30)), null);
+        Assert.Null(mono.MosaicFull);
+        Assert.Equal((40, 30), (mono.FullW, mono.FullH));
     }
 
     [Fact]

@@ -196,7 +196,10 @@ not a copy.
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
-    whose option list depends on the result (six chips on a CFA frame, one on mono). `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
+    whose option list depends on the result (six chips on a CFA frame, `Mozaic` first and
+    default, one on mono). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
+    a factor, plus the effective factor the control writes back - so a test can drive it
+    and the tab can reset it on a new file (and deliberately not on a chip change). `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
     deviation battery, built once for **both** the Structure and the Ratio tab, since Ratio
     runs the same analyzer on the combined master. They are `public` because WPF binding
     reads public properties by reflection - and that has a useful consequence: a public
@@ -243,7 +246,19 @@ not a copy.
     name across the whole window, so a shared name makes one tab's chips uncheck
     another's. `HistEqView` is the one tab whose `BusyOverlay` sits inside the right-hand
     column rather than over the whole tab - the list stays clickable while a frame is
-    computing, and a new click supersedes the run (see "What the window adds").
+    computing, and a new click supersedes the run (see "What the window adds"). Its
+    picture sits in `ZoomableImage`, a `UserControl` that owns the pointer interaction
+    (Ctrl+wheel about the cursor, drag to pan, double-click fit/100 %, keys) and computes
+    the effective factor - "fit" needs the viewport size, which only the control knows.
+    `LayoutTransform`, not `RenderTransform`, so the scrollable extent follows the zoom;
+    `NearestNeighbor` at factor >= 1 so magnified pixels are crisp squares; "fit" is
+    capped at 1.0, so a picture smaller than the viewport is shown at its size rather
+    than blown up (found on the 128 px test fixtures, where fit came out at 4x).
+  - `Presentation/RasterBitmaps.cs` - a byte raster straight into a frozen `BitmapSource`
+    (`Gray8` / `Rgb24`), no PNG. The maps still go through `PngWriter` because the PNG *is*
+    the file the console writes and the window shows those exact bytes; the equalised
+    views have no file on the window side, and at sensor resolution a PNG of equalised
+    noise would be 15-20 MB and seconds per view.
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
     its own list of verdict names), `ChannelPalette` (R/G/B hues for the exposure
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
@@ -1085,6 +1100,17 @@ from blue - looked up by `CfaPattern` colour, never by position, and the mean of
 greys when the order is unknown), one grey per position, and `Mosaic`, the whole frame as
 one layer shrunk by `2k` so it comes out the same size. On mono: one channel, `Mosaic` null.
 
+**Two resolutions, on purpose.** Every raster exists twice: shrunk (`Equalised`, `Mosaic`,
+`CompositeRgb`, the `Img.Prepare` rule) for the console's PNG and the tests, and at full
+resolution (`Full`, `MosaicFull`, `CompositeFullRgb`) for the window, which shows the latter
+directly as a bitmap so that 100 % is one sensor pixel and the `Mozaic` view shows the R/G/B
+chequerboard exactly as Siril does. The shrunk ones are derived from the full ones
+(`TheShrunkRastersAreTheBlockMeansOfTheFullOnes`), never recomputed. A first cut showed the
+shrunk rasters in the window too, through PNG, and the user asked what zooming into
+block means was for; nothing. The window's default view is `Mozaic` - the one that matches
+Siril on an undebayered raw - while the console keeps writing the composite; the two do
+not have to agree, since the window saves no file here.
+
 **Why it shows what linear hides, and what it destroys.** A flat is a narrow distribution
 relative to the file's scale, so the CDF is steep across the vignetting range. Measured on
 a synthetic with 5 % vignetting: a 0.3 % ripple is a third of a grey level in the linear
@@ -1104,15 +1130,16 @@ rank-based, the master's lower noise makes a shared pattern look *sharper* there
 fainter (`HistEqReport.MasterVersusFrame()`).
 
 **Cost, measured** (Release, D3300 24 MP, same files as the modes beside it): the float
-master takes 1.7 s and 672 MB peak against 3.3 s / 611 MB for structure; the NEF 1.9 s and
-498 MB against 3.2 s / 1.1 GB for `--expo`. Loading dominates. Two things were expensive in
+master takes ~2-3 s and 690 MB peak against 3.3 s / 611 MB for structure; the NEF ~2-3 s
+and 516 MB against 3.2 s / 1.1 GB for `--expo`. Keeping the full-resolution rasters for
+the window costs ~18 MB of that. Loading dominates. Two things were expensive in
 the first cut and are documented where they were fixed: the four position medians for the
 CFA decision were sorted copies of 6 M values (~2 s) and now come off the 65536-bin
 histogram (`HistEqLut.Median`, within a bin of exact), and the shrink went through `double`
 rasters (1.1 GB peak on the master) and is now a byte block mean with the same arithmetic.
-Per-view PNGs on that master: 150-380 ms and 3.6 MB for the RGB composite, 130-250 ms and
-0.85-1.3 MB for a grey - equalised noise compresses badly, so the files are several times
-the residual map's.
+The console's PNG on that master: 150-380 ms and 3.6 MB for the shrunk RGB composite -
+equalised noise compresses badly, so the file is several times the residual map's. The
+window encodes nothing (see `RasterBitmaps`).
 
 No Python counterpart and no `crosscheck.py` scenario, by decision: there is no number to
 compare.

@@ -86,7 +86,11 @@ namespace FlatCheck
              + "zgomotul mai mic al masterului face o forma comuna sa para acolo mai CLARA, nu mai "
              + "slaba.";
 
-        /// <summary>Ce vedere e pe ecran, ca legenda sub poza.</summary>
+        /// <summary>
+        /// Ce vedere e pe ecran, ca legenda sub poza. Marimea e cea la rezolutie intreaga,
+        /// fiindca pe aia o arata fereastra: mozaicul cat senzorul, o pozitie sau
+        /// compozitul la jumatate pe fiecare latura.
+        /// </summary>
         internal static string ViewCaption(HistEqResult r, string viewLabel)
         {
             string what = viewLabel switch
@@ -97,7 +101,9 @@ namespace FlatCheck
                 "mono" => "cadrul egalizat pe repartitia lui",
                 _ => $"pozitia {viewLabel} egalizata pe repartitia ei",
             };
-            return $"{what}; {r.W} x {r.H} px.";
+            bool mosaic = viewLabel == "Mozaic";
+            int w = mosaic ? r.SourceW : r.FullW, h = mosaic ? r.SourceH : r.FullH;
+            return $"{what}; {w} x {h} px.";
         }
     }
 }

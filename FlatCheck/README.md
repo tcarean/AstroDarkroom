@@ -794,12 +794,23 @@ trecătoare — un nor, o umbră, o pâlpâire — și s-a mediat. Una care se v
 fixă pe montaj, și pe ea o măsoară cifrele din Structura. Egalizarea fiind pe ranguri,
 zgomotul mai mic al masterului face o formă comună să pară acolo mai *clară*, nu mai slabă.
 
-Deasupra pozei stau vederile, pe un cadru CFA: `RGB` (implicit — cele patru poziții
-egalizate fiecare pe repartiția ei, în culorile lor), câte un gri pe poziție (`R`, `G1`,
-`G2`, `B`, sau `CFA[y,x]` când fișierul nu spune ordinea) și `Mozaic` — tot mozaicul
-egalizat ca un singur strat, literal ce arată Siril pe un raw deschis nedebayerizat. Pe un
-cadru mono e o singură vedere și nu apar chipuri. Comutarea nu recitește nimic. Tabul nu
-salvează niciun fișier; consola scrie compozitul.
+Deasupra pozei stau vederile, pe un cadru CFA: `Mozaic` (implicit — tot mozaicul egalizat
+ca un singur strat, literal ce arată Siril pe un raw deschis nedebayerizat, deci vederea
+din care s-au citit tipare până acum), `RGB` (cele patru poziții egalizate fiecare pe
+repartiția ei, în culorile lor, cu mai mult contrast) și câte un gri pe poziție (`R`, `G1`,
+`G2`, `B`, sau `CFA[y,x]` când fișierul nu spune ordinea). Pe un cadru mono e o singură
+vedere și nu apar chipuri. Comutarea nu recitește nimic. Tabul nu salvează niciun fișier;
+consola scrie compozitul, micșorat.
+
+Poza din fereastră e **la rezoluția senzorului**, nu micșorată ca PNG-ul consolei: se
+arată direct din raster, fără encodare. Stă într-un viewport de 520 px, potrivită
+întreagă la început, cu zoom și deplasare: Ctrl + rotiță mărește în jurul cursorului,
+tragerea cu mouse-ul deplasează, dublu click comută între potrivit și 100 %, iar butoanele
+`−`, `+`, `potrivit`, `100 %` fac același lucru. La 100 % un pixel de pe ecran e un pixel de
+senzor; pe `Mozaic` se vede tabla de șah R/G/B a mozaicului, exact ca în Siril la 100 %.
+Peste 100 % pixelii se desenează ca pătrate, sub 100 % neteziți. „Potrivit" nu mărește
+niciodată peste 100 %: o poză mai mică decât viewport-ul se arată la mărimea ei. Zoom-ul se
+păstrează când schimbi vederea și se resetează când schimbi fișierul.
 
 > Tabelul de mai jos e în oglindă cu ghidul pliat „Cum citesc poza egalizată" din fereastră
 > (`SessionMessages.HistEqGuideRows`). Nu există test care să lege cele două — dacă
@@ -809,9 +820,10 @@ salvează niciun fișier; consola scrie compozitul.
 |---|---|
 | de ce un flat curat arată zgomotos | egalizarea întinde *orice* distribuție pe 0..255, și a unui cadru fără nicio structură. Atunci ce rămâne de întins e zgomotul. Granulație fină peste tot înseamnă „n-are altceva de arătat". |
 | de ce nu se poate citi cât de mare e o formă | fiecare nivel de gri primește același număr de pixeli, indiferent cât de apropiate erau valorile. O undă de 0.5 % și un gradient de 10 % cu aceeași formă ies identic. Amplitudinea e în tabul Structura. |
-| vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
+| vederea Mozaic (implicită) | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat, de asta e prima. Trei culori în aceeași histogramă, deci la 100 % se vede tabla de șah; micșorată, se mediază. |
+| vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei, cu mai mult contrast decât mozaicul. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
 | vederile pe canal | aceeași poză, un singur canal, în gri. Ca să vezi dacă o formă e în toate canalele sau doar într-unul. |
-| vederea Mozaic | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat. Trei culori în aceeași histogramă, deci un caroiaj fin; la mărimea ecranului se mediază. |
+| zoom și deplasare | Ctrl + rotiță, tragere cu mouse-ul, dublu click. La 100 % un pixel de pe ecran e un pixel de senzor. Se păstrează la schimbarea vederii, se resetează la schimbarea fișierului. |
 | masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
 | unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
 

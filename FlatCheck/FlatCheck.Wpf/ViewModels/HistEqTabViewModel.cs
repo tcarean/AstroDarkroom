@@ -29,12 +29,15 @@
 // ultima rulare sa incheie starea de ocupat, iar lambda de aici verifica jetonul propriu
 // dupa await inainte sa scrie ceva.
 //
-// Encodarea PNG a vederii alese se face pe firul de interfata si se tine in cache pe
-// chip, cu acelasi argument ca la harta reziduala (StructureTabViewModel). Masurat pe
-// masterul real de 24 MP (1504x1004): compozitul RGB 150-380 ms si 3.6 MB, o vedere pe
-// canal 130-230 ms si 1.3 MB, mozaicul 150-250 ms si 0.85 MB - zgomotul egalizat se
-// comprima prost, deci fisierele sunt de cateva ori cat harta. O data pe chip, apoi din
-// cache; un Task.Run aici ar avea nevoie de exact contorul de mai sus, pe inca un drum.
+// POZA NU TRECE PRIN PNG. Vederea aleasa se face bitmap direct din rasterul la rezolutie
+// intreaga (RasterBitmaps), fara encodare: la 100 % un pixel de pe ecran e un pixel de
+// senzor, si pe mozaic se vede tabla de sah ca in Siril. PNG-ul ramane al consolei.
+// Prima varianta encoda PNG-uri din rasterele micsorate (150-380 ms si 0.85-3.6 MB pe
+// vedere, masurat), si zoom-ul ar fi marit medii de blocuri. Bitmap-urile se tin in cache
+// pe chip, inghetate; costul e memoria rasterului, nimic altceva.
+//
+// Zoom-ul se reseteaza la FISIER nou, nu la schimbarea vederii: a te uita la acelasi loc
+// pe G1 dupa Mozaic e exact rostul chipurilor.
 
 using System;
 using System.Collections.Generic;
@@ -43,6 +46,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
@@ -53,7 +57,7 @@ namespace FlatCheck.Wpf
         CancellationTokenSource _runCts;
 
         HistEqFileRow _selected;
-        byte[] _image;
+        ImageSource _image;
         string _caption = "";
         string _frame = "";
         string _channels = "";
@@ -62,7 +66,7 @@ namespace FlatCheck.Wpf
         /// <summary>Ultimul rezultat, ca vederile sa se poata comuta fara sa se reciteasca fisierul.</summary>
         HistEqResult _last;
 
-        readonly Dictionary<HistEqViewOption, byte[]> _cache = new();
+        readonly Dictionary<HistEqViewOption, ImageSource> _cache = new();
 
         public HistEqTabViewModel()
         {
@@ -78,11 +82,14 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value)) Recompute(); }
         }
 
-        /// <summary>PNG-ul vederii alese, sau null.</summary>
-        public byte[] Image { get => _image; private set => Set(ref _image, value); }
+        /// <summary>Bitmap-ul vederii alese, la rezolutie intreaga, sau null.</summary>
+        public ImageSource Image { get => _image; private set => Set(ref _image, value); }
 
-        /// <summary>Comutatorul de vederi: RGB, pozitiile, mozaicul.</summary>
+        /// <summary>Comutatorul de vederi: mozaicul, RGB, pozitiile.</summary>
         public HistEqViewViewModel View { get; } = new();
+
+        /// <summary>Potrivit sau un factor; controlul din XAML il citeste si il scrie.</summary>
+        public ImageZoomViewModel Zoom { get; } = new();
 
         /// <summary>Ghidul de citire. Documentatie, nu diagnostic.</summary>
         public HistEqGuideViewModel Guide { get; } = new();
@@ -165,26 +172,20 @@ namespace FlatCheck.Wpf
                 ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
-                Populate(outcome.Result, row.IsMaster, outcome.Png);
+                Populate(outcome.Result, row.IsMaster);
             });
         }
 
         /// <summary>
         /// Internal, nu private, ca testele de randare sa poata aduce un rezultat construit
-        /// direct cu HistEqAnalyzer, fara fisier. <paramref name="compositePng"/> e ce a
-        /// encodat deja rularea, ca sa nu se reencodeze compozitul de doua ori; null
-        /// inseamna "encodeaza la cerere".
+        /// direct cu HistEqAnalyzer, fara fisier. Fisier nou = zoom la potrivit.
         /// </summary>
-        internal void Populate(HistEqResult r, bool isMaster = false, byte[] compositePng = null)
+        internal void Populate(HistEqResult r, bool isMaster = false)
         {
             _last = r;
             _cache.Clear();
             View.Rebuild(r);
-            if (compositePng != null)
-            {
-                HistEqViewOption composite = View.Options.First(o => o.Kind == HistEqViewKind.Composite);
-                _cache[composite] = compositePng;
-            }
+            Zoom.Reset();
 
             Frame = HistEqReport.FrameLine(r);
             Channels = string.Join("\n", Enumerable.Range(0, r.Channels.Length).Select(i => HistEqReport.ChannelLine(r, i)));
@@ -200,18 +201,18 @@ namespace FlatCheck.Wpf
             HistEqViewOption option = View.Selected;
             if (r == null || option == null) return;
 
-            if (!_cache.TryGetValue(option, out byte[] png))
+            if (!_cache.TryGetValue(option, out ImageSource bitmap))
             {
-                png = option.Kind switch
+                bitmap = option.Kind switch
                 {
-                    HistEqViewKind.Channel => HistEqRun.EncodeChannel(r, option.Index),
-                    HistEqViewKind.Mosaic => HistEqRun.EncodeMosaic(r),
-                    _ => HistEqRun.EncodeComposite(r),
+                    HistEqViewKind.Channel => RasterBitmaps.Grey(r.Channels[option.Index].Full, r.FullW, r.FullH),
+                    HistEqViewKind.Mosaic => RasterBitmaps.Grey(r.MosaicFull, r.SourceW, r.SourceH),
+                    _ => RasterBitmaps.Rgb(r.CompositeFullRgb, r.FullW, r.FullH),
                 };
-                _cache[option] = png;
+                _cache[option] = bitmap;
             }
 
-            Image = png;
+            Image = bitmap;
             Caption = HistEqReport.ViewCaption(r, option.Label);
         }
 
@@ -225,6 +226,7 @@ namespace FlatCheck.Wpf
             _last = null;
             _cache.Clear();
             Image = null;
+            Zoom.Reset();
             Caption = "";
             Frame = "";
             Channels = "";

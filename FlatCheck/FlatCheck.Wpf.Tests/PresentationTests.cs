@@ -22,6 +22,39 @@ using System.Windows.Media.Imaging;
 
 namespace FlatCheck.Wpf.Tests;
 
+/// <summary>Un raster de octeti devine bitmap fara nicio conversie de valori.</summary>
+public class RasterBitmapsTests
+{
+    [Fact]
+    public void GreyKeepsEveryByteWhereItWas()
+    {
+        var grey = new byte[] { 0, 17, 128, 255, 3, 200 };
+
+        BitmapSource b = RasterBitmaps.Grey(grey, 3, 2);
+
+        Assert.Equal(PixelFormats.Gray8, b.Format);
+        Assert.Equal((3, 2), (b.PixelWidth, b.PixelHeight));
+        Assert.True(b.IsFrozen);
+        var back = new byte[6];
+        b.CopyPixels(back, 3, 0);
+        Assert.Equal(grey, back);
+    }
+
+    [Fact]
+    public void RgbKeepsTheChannelOrder()
+    {
+        var rgb = new byte[] { 10, 20, 30, 40, 50, 60 };
+
+        BitmapSource b = RasterBitmaps.Rgb(rgb, 2, 1);
+
+        Assert.Equal(PixelFormats.Rgb24, b.Format);
+        Assert.Equal((2, 1), (b.PixelWidth, b.PixelHeight));
+        var back = new byte[6];
+        b.CopyPixels(back, 6, 0);
+        Assert.Equal(rgb, back);
+    }
+}
+
 /// <summary>
 /// Culorile si convertoarele. Marunte, dar culoarea unui verdict e primul lucru pe care
 /// il vede omul, si o greseala aici arata verde un flat de refacut.

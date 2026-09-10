@@ -204,6 +204,13 @@ public class WindowSmokeTests
             vm.View.Options.First(o => o.Label == "G1").IsSelected = true;
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-canal");
 
+            // zoom-ul: 100 % si un factor mare, cu controlul de deplasare in joc
+            vm.Zoom.Actual.Execute(null);
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-100");
+            vm.Zoom.Manual(3);
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-zoom");
+            Assert.Equal(3, vm.Zoom.EffectiveZoom, 9);
+
             var mono = HistEqAnalyzer.Analyze(
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
             vm.Populate(mono);
@@ -213,6 +220,9 @@ public class WindowSmokeTests
             Assert.True(vm.HasResult);
             Assert.False(vm.View.IsVisible);
             Assert.Equal("", vm.MasterNote);
+            // fisier nou: inapoi la potrivit, si controlul a scris factorul efectiv sub 1
+            Assert.True(vm.Zoom.IsFit);
+            Assert.InRange(vm.Zoom.EffectiveZoom, 0.01, 1.0);
         });
 
     /// <summary>

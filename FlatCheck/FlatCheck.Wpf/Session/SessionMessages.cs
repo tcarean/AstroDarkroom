@@ -381,22 +381,29 @@ namespace FlatCheck.Wpf
              + "apropiate erau valorile lor. O unda de 0.5 % si un gradient de 10 % cu aceeasi "
              + "forma ies identic. Amplitudinea e in tabul Structura, nu aici."),
 
+            ("vederea Mozaic (implicita)",
+             "Tot mozaicul egalizat ca un singur strat - literal ce arata Siril pe un raw "
+             + "deschis nedebayerizat, cum il deschide implicit; de asta e prima. Cele trei "
+             + "culori sunt trei populatii in aceeasi histograma, deci la 100 % se vede tabla "
+             + "de sah a mozaicului, ca in Siril; micsorata, se mediaza."),
+
             ("vederea RGB",
              "Cele patru pozitii Bayer, fiecare egalizata pe repartitia ei si pusa in "
-             + "culoarea ei - Siril pe o imagine debayerizata. O nuanta uniforma nu inseamna "
-             + "nimic (fiecare canal e intins separat); o nuanta care VARIAZA pe cadru "
-             + "inseamna ca un canal are alta forma decat celelalte - o sursa cu gradient de "
-             + "culoare, o scurgere de lumina colorata."),
+             + "culoarea ei - Siril pe o imagine debayerizata. Are mai mult contrast decat "
+             + "mozaicul, fiindca fiecare canal e intins pe tot intervalul lui. O nuanta "
+             + "uniforma nu inseamna nimic; o nuanta care VARIAZA pe cadru inseamna ca un "
+             + "canal are alta forma decat celelalte - o sursa cu gradient de culoare, o "
+             + "scurgere de lumina colorata."),
 
             ("vederile pe canal",
              "Aceeasi poza, un singur canal, in gri. Utile cand compozitul e greu de citit "
              + "sau cand vrei sa vezi daca o forma e in toate canalele sau doar intr-unul."),
 
-            ("vederea Mozaic",
-             "Tot mozaicul egalizat ca un singur strat - literal ce arata Siril pe un raw "
-             + "deschis nedebayerizat, cum il deschide implicit. Cele trei culori sunt trei "
-             + "populatii in aceeasi histograma, deci apare un caroiaj fin; la marimea "
-             + "ecranului se mediaza."),
+            ("zoom si deplasare",
+             "Ctrl + rotita mareste in jurul cursorului, tragerea cu mouse-ul deplaseaza, "
+             + "dublu click comuta intre potrivit si 100 %. La 100 % un pixel de pe ecran e "
+             + "un pixel de senzor - poza e la rezolutie intreaga, nu micsorata. Zoom-ul se "
+             + "pastreaza cand schimbi vederea si se reseteaza cand schimbi fisierul."),
 
             ("masterul fata de un cadru",
              "Masterul e stiva cadrelor de sub el. O forma care se vede pe un cadru si "

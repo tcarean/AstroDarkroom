@@ -59,13 +59,19 @@
 // gri, si "mozaicul" - tot cadrul egalizat ca un singur strat, adica literal Siril pe un
 // fisier nedebayerizat, cum deschide el un raw implicit. Pe mono, o singura vedere.
 //
+// DOUA REZOLUTII. Fiecare raster exista si intreg (Full, MosaicFull, CompositeFullRgb),
+// pentru fereastra, care il arata direct ca bitmap - la 100 % un pixel de ecran e un
+// pixel de senzor - si micsorat cu regula lui Img.Prepare, pentru PNG-ul consolei si
+// pentru teste. Cel micsorat e media blocurilor celui intreg, nu o a doua socoteala.
+//
 // MASURAT (Release, D3300, 6016 x 4016, pe aceleasi fisiere ca modurile de comparatie):
-//   - master float FITS: 1.7 s si 672 MB varf, fata de 3.3 s / 611 MB la modul de structura;
-//   - NEF: 1.9 s si 498 MB varf, fata de 3.2 s / 1.1 GB la --expo.
-// Incarcarea domina (~0.5 s FITS, ~1 s libraw); analiza in sine e ~1 s: doua treceri
-// peste date pe pozitie pentru histograma si tabel, una pentru mozaic, si micsorarea.
-// Doua lucruri au fost scumpe in prima varianta si sunt notate la locul lor: mediana
-// prin sortare (HistEqLut.Median) si micsorarea prin rastere double (Shrink).
+//   - master float FITS: ~2-3 s si 690 MB varf, fata de 3.3 s / 611 MB la modul de structura;
+//   - NEF: ~2-3 s si 516 MB varf, fata de 3.2 s / 1.1 GB la --expo.
+// Rasterele intregi pastrate costa ~18 MB pe un cadru de 24 MP (au fost 672 / 498 MB
+// fara ele). Incarcarea domina (~0.5 s FITS, ~1 s libraw); analiza in sine e ~1 s: doua
+// treceri peste date pe pozitie pentru histograma si tabel, una pentru mozaic, si
+// micsorarea. Doua lucruri au fost scumpe in prima varianta si sunt notate la locul lor:
+// mediana prin sortare (HistEqLut.Median) si micsorarea prin rastere double (Shrink).
 
 using System;
 using System.Collections.Generic;
@@ -85,11 +91,21 @@ namespace FlatCheck
         /// <summary>'R', 'G' sau 'B'; '\0' cand fisierul n-a spus ordinea sau pe mono.</summary>
         internal char Colour;
 
-        /// <summary>Marimea rasterului de AFISAT, dupa micsorare.</summary>
+        /// <summary>Marimea rasterului micsorat - cel pe care il scrie consola.</summary>
         internal int H, W;
 
-        /// <summary>H*W niveluri de gri, rand cu rand.</summary>
+        /// <summary>H*W niveluri de gri, rand cu rand; media blocurilor din Full.</summary>
         internal byte[] Equalised;
+
+        /// <summary>Marimea rasterului la rezolutie intreaga (a pozitiei, adica H/2 x W/2 din senzor pe CFA).</summary>
+        internal int FullH, FullW;
+
+        /// <summary>
+        /// Rasterul egalizat la rezolutie intreaga, FullH*FullW. Fereastra il arata pe
+        /// acesta, direct ca bitmap, ca la 100 % un pixel de pe ecran sa fie un pixel de
+        /// senzor; Equalised e derivat din el.
+        /// </summary>
+        internal byte[] Full;
 
         /// <summary>Intervalul de intrare al pixelilor nenuli, in unitatile fisierului.</summary>
         internal double Min, Max;
@@ -114,7 +130,7 @@ namespace FlatCheck
         /// <summary>4 pe un cadru CFA, 1 pe unul mono. Niciodata null.</summary>
         internal HistEqChannel[] Channels;
 
-        /// <summary>Marimea comuna a tuturor vederilor.</summary>
+        /// <summary>Marimea comuna a tuturor vederilor micsorate.</summary>
         internal int H, W;
 
         /// <summary>H*W*3. RGB pe CFA cu ordine cunoscuta; gri (triplat) pe mono sau ordine necunoscuta.</summary>
@@ -122,6 +138,15 @@ namespace FlatCheck
 
         /// <summary>Mozaicul egalizat ca un singur strat, H*W gri; null pe mono (acolo canalul E mozaicul).</summary>
         internal byte[] Mosaic;
+
+        /// <summary>Marimea la rezolutie intreaga a canalelor si a compozitului.</summary>
+        internal int FullH, FullW;
+
+        /// <summary>Compozitul la rezolutie intreaga, FullH*FullW*3.</summary>
+        internal byte[] CompositeFullRgb;
+
+        /// <summary>Mozaicul la rezolutie intreaga, SourceH*SourceW; null pe mono.</summary>
+        internal byte[] MosaicFull;
 
         internal int ChannelCount => Channels.Length;
     }
@@ -261,6 +286,9 @@ namespace FlatCheck
                     Max = lut.Max,
                     NonZero = lut.NonZero,
                     LevelsUsed = LevelsUsed(full),
+                    Full = full,
+                    FullH = h,
+                    FullW = w,
                 };
                 (channels[i].Equalised, channels[i].H, channels[i].W) = Shrink(full, h, w, k);
             }
@@ -276,15 +304,19 @@ namespace FlatCheck
                 Channels = channels,
                 H = channels[0].H,
                 W = channels[0].W,
+                FullH = channels[0].FullH,
+                FullW = channels[0].FullW,
             };
-            r.CompositeRgb = Composite(r);
+            r.CompositeRgb = Composite(r, full: false);
+            r.CompositeFullRgb = Composite(r, full: true);
 
             if (isCfa)
             {
                 // Tot cadrul ca un singur strat, micsorat cu 2k ca sa iasa cat canalele:
                 // floor(floor(H/2)/k) == floor(H/(2k)), deci marimile chiar coincid.
                 var lut = HistEqLut.Build(data.D);
-                (r.Mosaic, _, _) = Shrink(ApplyLut(lut, data.D), data.H, data.W, 2 * k);
+                r.MosaicFull = ApplyLut(lut, data.D);
+                (r.Mosaic, _, _) = Shrink(r.MosaicFull, data.H, data.W, 2 * k);
             }
             return r;
         }
@@ -342,33 +374,37 @@ namespace FlatCheck
         /// frecventa. Fara ordine cunoscuta, media celor patru: o atribuire de culori ar fi
         /// o ghicire, si unealta nu ghiceste mozaicuri. Pe mono, griul triplat.
         /// </summary>
-        static byte[] Composite(HistEqResult r)
+        static byte[] Composite(HistEqResult r, bool full)
         {
-            int n = r.H * r.W;
+            // Aceeasi socoteala pe rasterele micsorate (consola) si pe cele intregi
+            // (fereastra); alegerea sursei e singura diferenta.
+            byte[] Of(HistEqChannel c) => full ? c.Full : c.Equalised;
+            int n = full ? r.FullH * r.FullW : r.H * r.W;
             var rgb = new byte[n * 3];
 
             if (!r.IsCfa)
             {
-                byte[] g = r.Channels[0].Equalised;
+                byte[] g = Of(r.Channels[0]);
                 for (int i = 0; i < n; i++) { rgb[i * 3] = g[i]; rgb[i * 3 + 1] = g[i]; rgb[i * 3 + 2] = g[i]; }
                 return rgb;
             }
 
             if (r.Cfa == null)
             {
+                var all = r.Channels.Select(Of).ToArray();
                 for (int i = 0; i < n; i++)
                 {
                     int s = 0;
-                    foreach (var c in r.Channels) s += c.Equalised[i];
+                    foreach (byte[] c in all) s += c[i];
                     byte m = HistEqLut.RoundToByte(s / 4.0);
                     rgb[i * 3] = m; rgb[i * 3 + 1] = m; rgb[i * 3 + 2] = m;
                 }
                 return rgb;
             }
 
-            byte[] red = r.Channels.First(c => c.Colour == 'R').Equalised;
-            byte[] blue = r.Channels.First(c => c.Colour == 'B').Equalised;
-            var greens = r.Channels.Where(c => c.Colour == 'G').Select(c => c.Equalised).ToArray();
+            byte[] red = Of(r.Channels.First(c => c.Colour == 'R'));
+            byte[] blue = Of(r.Channels.First(c => c.Colour == 'B'));
+            var greens = r.Channels.Where(c => c.Colour == 'G').Select(Of).ToArray();
             for (int i = 0; i < n; i++)
             {
                 rgb[i * 3] = red[i];

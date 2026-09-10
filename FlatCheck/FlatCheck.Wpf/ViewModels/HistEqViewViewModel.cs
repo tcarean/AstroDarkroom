@@ -100,10 +100,13 @@ namespace FlatCheck.Wpf
             var list = new List<HistEqViewOption>();
             if (r.IsCfa)
             {
+                // Mozaicul primul, deci implicit: e vederea care se potriveste cu Siril pe un
+                // raw deschis nedebayerizat, adica cea din care omul a citit tipare pana acum.
+                // Compozitul e mai bogat, dar nu e cel cunoscut.
+                list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, "Mozaic"));
                 list.Add(new HistEqViewOption(this, HistEqViewKind.Composite, 0, "RGB"));
                 for (int i = 0; i < r.Channels.Length; i++)
                     list.Add(new HistEqViewOption(this, HistEqViewKind.Channel, i, r.Channels[i].Label));
-                list.Add(new HistEqViewOption(this, HistEqViewKind.Mosaic, 0, "Mozaic"));
             }
             else
             {

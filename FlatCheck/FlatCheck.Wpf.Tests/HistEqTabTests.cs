@@ -16,6 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using FlatCheck.Tests;
 
 namespace FlatCheck.Wpf.Tests;
@@ -128,17 +130,47 @@ public class HistEqTabTests
 
         vm.Selected = vm.Files[0];
         await vm.RecomputeAsync();
-        byte[] master = vm.Image!;
+        ImageSource master = vm.Image!;
+        vm.Zoom.Manual(3);
 
         vm.Selected = vm.Files[1];
         await vm.RecomputeAsync();
 
         Assert.True(vm.HasResult);
-        Assert.NotEqual(master, vm.Image);
+        Assert.NotSame(master, vm.Image);
         Assert.Equal("", vm.MasterNote);
         Assert.Contains("CFA (ordine RGGB", vm.Frame);
-        Assert.Equal(new[] { "RGB", "R", "G1", "G2", "B", "Mozaic" }, vm.View.Options.Select(o => o.Label));
+        // mozaicul primul si implicit; RGB al doilea
+        Assert.Equal(new[] { "Mozaic", "RGB", "R", "G1", "G2", "B" }, vm.View.Options.Select(o => o.Label));
+        Assert.Equal("Mozaic", vm.View.Selected.Label);
         Assert.True(vm.View.IsVisible);
+        // fisier nou = zoom la potrivit
+        Assert.True(vm.Zoom.IsFit);
+    }
+
+    /// <summary>
+    /// Fereastra arata rasterele la rezolutie intreaga, direct ca bitmap: mozaicul cat
+    /// cadrul, o pozitie la jumatate pe fiecare latura, compozitul color.
+    /// </summary>
+    [Fact]
+    public async Task ThePictureIsTheFullResolutionRaster_NotAShrunkPng()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+        var vm = Attached(f);
+        vm.Selected = vm.Files[1];
+        await vm.RecomputeAsync();
+
+        var mosaic = (BitmapSource)vm.Image!;
+        Assert.Equal((128, 128), (mosaic.PixelWidth, mosaic.PixelHeight));
+        Assert.Equal(PixelFormats.Gray8, mosaic.Format);
+        Assert.Contains("128 x 128 px", vm.Caption);
+
+        vm.View.Options.First(o => o.Label == "RGB").IsSelected = true;
+        var rgb = (BitmapSource)vm.Image!;
+        Assert.Equal((64, 64), (rgb.PixelWidth, rgb.PixelHeight));
+        Assert.Equal(PixelFormats.Rgb24, rgb.Format);
+        Assert.Contains("64 x 64 px", vm.Caption);
     }
 
     /// <summary>
@@ -153,21 +185,25 @@ public class HistEqTabTests
         var vm = Attached(f);
         vm.Selected = vm.Files[1];
         await vm.RecomputeAsync();
-        byte[] rgb = vm.Image!;
+        ImageSource mosaic = vm.Image!;
         string report = vm.Report;
+        vm.Zoom.Manual(2);
 
         vm.View.Options.First(o => o.Label == "R").IsSelected = true;
-        byte[] red = vm.Image!;
-        vm.View.Options.First(o => o.Label == "Mozaic").IsSelected = true;
-        byte[] mosaic = vm.Image!;
+        ImageSource red = vm.Image!;
         vm.View.Options.First(o => o.Label == "RGB").IsSelected = true;
+        ImageSource rgb = vm.Image!;
+        vm.View.Options.First(o => o.Label == "Mozaic").IsSelected = true;
 
-        Assert.NotEqual(rgb, red);
-        Assert.NotEqual(red, mosaic);
-        Assert.Same(rgb, vm.Image);
+        Assert.NotSame(mosaic, red);
+        Assert.NotSame(red, rgb);
+        Assert.Same(mosaic, vm.Image);     // din cache, acelasi obiect
         Assert.Same(report, vm.Report);
         Assert.False(vm.IsBusy);
         Assert.True(vm.Pending.IsCompleted);
+        // schimbarea vederii NU reseteaza zoom-ul
+        Assert.False(vm.Zoom.IsFit);
+        Assert.Equal(2, vm.Zoom.Zoom);
         Assert.Contains("pozitia R", HistEqReport.ViewCaption(HistEqAnalyzer.Analyze(TestImages.FlatCfa(8, 8, 100), null), "R"));
     }
 
@@ -204,11 +240,13 @@ public class HistEqTabTests
         vm.Selected = vm.Files[0];
         await vm.RecomputeAsync();
 
+        vm.Zoom.Manual(2);
         vm.Reset();
 
         Assert.Empty(vm.Files);
         Assert.Null(vm.Selected);
         Assert.Null(vm.Image);
+        Assert.True(vm.Zoom.IsFit);
         Assert.False(vm.HasResult);
         Assert.Equal("", vm.Frame);
         Assert.Equal("", vm.MasterNote);
