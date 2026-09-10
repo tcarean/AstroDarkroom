@@ -38,7 +38,7 @@ namespace FlatCheck
             string path, double? sat, double? black, bool sky, TextWriter report)
         {
             LoadedFrame f = ImageLoader.Load(path);
-            var r = ExposureAnalyzer.Analyze(f.Image, sat, black, sky, f.Scale);
+            var r = ExposureAnalyzer.Analyze(f.Image, sat, black, sky, f.Scale, f.Cfa);
             ExposureReport.Write(r, path, report);
             return new RunOutcome<ExposureResult>(r, null);
         }

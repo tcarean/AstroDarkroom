@@ -22,6 +22,8 @@
 // verificabila intr-un test - "51.6 %" e un lucru pe care il poti asserta, un
 // StringFormat dintr-un binding nu.
 
+using System.Windows.Media;
+
 namespace FlatCheck.Wpf
 {
     /// <summary>Un rand de metrica: eticheta, valoare, si eventual un verdict colorat.</summary>
@@ -57,6 +59,49 @@ namespace FlatCheck.Wpf
     {
         public string Shape { get; init; }
         public string Meaning { get; init; }
+    }
+
+    /// <summary>
+    /// Un canal pe cardul de histograme. Tot ce e aici e deja formatat sau deja
+    /// normalizat: desenul nu mai calculeaza nimic, iar un test poate asserta "44.4 %".
+    ///
+    /// Pragurile sunt COPIATE pe fiecare rand, desi sunt aceleasi pe toate. Asa sablonul
+    /// se leaga local, cu {Binding BandLo}, in loc de un RelativeSource catre stramosul
+    /// potrivit - o legare care compileaza, arata bine, si se rupe tacut cand sablonul e
+    /// refolosit in alt loc din arbore.
+    /// </summary>
+    public sealed class ChannelHistogramRow
+    {
+        /// <summary>"R", "G1", ... sau "CFA[0,1]" cand fisierul n-a spus ordinea.</summary>
+        public string Label { get; init; }
+
+        /// <summary>Pozitia in mozaic, cand eticheta e o culoare; altfel gol.</summary>
+        public string Position { get; init; }
+
+        public Brush Colour { get; init; }
+
+        /// <summary>Mediana canalului intreg si a ferestrei centrale, deja formatate.</summary>
+        public string Median { get; init; }
+        public string Centre { get; init; }
+
+        public string Note { get; init; }
+        public bool IsBrightest { get; init; }
+
+        /// <summary>Cele doua curbe, 0..1, fiecare normalizata la propriul varf.</summary>
+        public double[] Whole { get; init; }
+        public double[] CentreCurve { get; init; }
+
+        /// <summary>Mediana centrului, in procente - linia verticala de pe desen.</summary>
+        public double Marker { get; init; }
+
+        public double BandLo { get; init; }
+        public double BandHi { get; init; }
+        public double TooLow { get; init; }
+        public double TooHigh { get; init; }
+        public string BandLabel { get; init; }
+
+        public bool HasNote => !string.IsNullOrEmpty(Note);
+        public bool HasPosition => !string.IsNullOrEmpty(Position);
     }
 
     /// <summary>Un cadru din tabelul seriei end-to-end.</summary>

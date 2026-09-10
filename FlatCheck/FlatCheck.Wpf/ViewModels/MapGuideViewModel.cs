@@ -82,4 +82,26 @@ namespace FlatCheck.Wpf
         /// <summary>Pliat implicit, ca ghidul hartii: verdictul trebuie sa ramana primul lucru vizibil.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
+
+    /// <summary>
+    /// "Cum citesc histogramele", pe tabul de expunere. A treia bucata de documentatie
+    /// afisata in fereastra, cu aceeasi forma ca celelalte doua si din acelasi motiv:
+    /// desenul arata ce e, dar nu si de ce doua curbe, sau de ce cea lata NU inseamna
+    /// subexpunere - iar aia e chiar concluzia gresita pe care o trage cineva care se uita
+    /// prima oara la histograma unui flat.
+    /// </summary>
+    public sealed class HistogramGuideViewModel : ObservableObject
+    {
+        bool _expanded;
+
+        public string Intro => SessionMessages.HistogramGuideIntro();
+
+        public IReadOnlyList<GuideRow> Rows { get; } =
+            SessionMessages.HistogramGuideRows()
+                .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
+                .ToList();
+
+        /// <summary>Pliat implicit, ca celelalte doua ghiduri.</summary>
+        public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
+    }
 }

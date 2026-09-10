@@ -150,4 +150,38 @@ public class ConverterTests
         Assert.Equal(Visibility.Collapsed, Run(c, ""));
         Assert.Equal(Visibility.Visible, Run(c, "ceva"));
     }
+
+    // ---------------------------------------------------------------- culorile canalelor
+
+    /// <summary>
+    /// Culorile canalelor sunt un al doilea sistem de culoare pe acelasi ecran, deci
+    /// merita spus in test si ce NU sunt: nu trec prin Stats.Severity si nu inseamna o
+    /// judecata. Un canal rosu nu e "mai rau" decat unul verde.
+    /// </summary>
+    [Fact]
+    public void TheThreeChannelColoursAreDistinct()
+    {
+        Assert.NotEqual(ChannelPalette.For('R'), ChannelPalette.For('G'));
+        Assert.NotEqual(ChannelPalette.For('G'), ChannelPalette.For('B'));
+        Assert.NotEqual(ChannelPalette.For('R'), ChannelPalette.For('B'));
+    }
+
+    /// <summary>
+    /// Cand fisierul n-a spus ordinea, orice canal primeste aceeasi culoare neutra: patru
+    /// curbe colorate R/G/G/B pe un mozaic necunoscut ar arata exact ca o masuratoare.
+    /// </summary>
+    [Theory]
+    [InlineData('\0')]
+    [InlineData('W')]
+    [InlineData('r')]
+    public void AnUnknownColourIsNeutral(char c)
+        => Assert.Equal(ChannelPalette.Unknown, ChannelPalette.For(c));
+
+    /// <summary>Se leaga din mai multe fire, deci trebuie sa fie inghetate.</summary>
+    [Fact]
+    public void TheChannelBrushesAreFrozen()
+    {
+        foreach (char c in new[] { 'R', 'G', 'B', '\0' })
+            Assert.True(ChannelPalette.BrushFor(c).IsFrozen);
+    }
 }

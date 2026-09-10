@@ -301,6 +301,60 @@ public class FitsReaderTests
         Assert.Equal(FitsReader.LoadWithHeader(fits).Image.D, FitsReader.Load(fits).D);
     }
 
+    // ---------------------------------------------------------------- BAYERPAT
+
+    /// <summary>
+    /// Siril writes BAYERPAT on a frame that came through the Conversion tab, so the
+    /// exposure mode can name the four positions instead of numbering them.
+    /// </summary>
+    [Fact]
+    public void ACfaFitsCarriesTheMosaicOrder()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
+            16, 16, FitsTestData.Constant(500), extraCards: FitsTestData.BayerCards("RGGB")));
+
+        LoadedFrame f = new FitsReader().Load(path);
+
+        Assert.NotNull(f.Cfa);
+        Assert.Equal("RGGB", f.Cfa.Letters);
+        Assert.Equal("BAYERPAT", f.Cfa.Source);
+    }
+
+    /// <summary>
+    /// The offsets are not decoration: a crop that starts on an odd column shifts the
+    /// mosaic phase, so the same BAYERPAT then describes a different raster.
+    /// </summary>
+    [Fact]
+    public void TheBayerOffsetsShiftTheOrder()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
+            16, 16, FitsTestData.Constant(500),
+            extraCards: FitsTestData.BayerCards("RGGB", xOffset: 1)));
+
+        Assert.Equal("GRBG", new FitsReader().Load(path).Cfa.Letters);
+    }
+
+    /// <summary>
+    /// A debayered frame carries no BAYERPAT - correctly, there is no mosaic left to
+    /// name - and so does every synthetic fixture in this suite. That must stay a plain
+    /// "unknown" and change nothing else about the load.
+    /// </summary>
+    [Fact]
+    public void WithoutTheCardTheOrderIsSimplyUnknown()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("plain.fit",
+            FitsTestData.BuildFits(16, 16, FitsTestData.Constant(500)));
+
+        LoadedFrame f = new FitsReader().Load(path);
+
+        Assert.Null(f.Cfa);
+        Assert.Null(f.Scale);
+        Assert.NotNull(f.Image);
+    }
+
     static byte[] Sixteen(int count, short value)
     {
         var b = new byte[count * 2];

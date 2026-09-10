@@ -28,8 +28,10 @@
 // cadru la 55 %.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,12 +49,35 @@ namespace FlatCheck.Wpf
         string _global = "";
         string _clipping = "";
         string _channels = "";
+        string _channelOrder = "";
+        IReadOnlyList<ChannelHistogramRow> _histograms = System.Array.Empty<ChannelHistogramRow>();
+        string _reading = "";
         string _verdict = "";
         string _advice = "";
         bool _isRaw = true;
 
         /// <summary>Raw-urile din flats/, cu calea completa; se afiseaza doar numele.</summary>
         public ObservableCollection<string> Files { get; } = new();
+
+        /// <summary>
+        /// Cate un rand de histograma pe canal: patru pe CFA, unul pe mono.
+        ///
+        /// Lista se INLOCUIESTE intreaga la fiecare rulare, nu se goleste si se reumple,
+        /// deci nu are ce cauta aici un ObservableCollection. Motivul e concret: alegerea
+        /// unui fisier porneste o rulare pe care n-o asteapta nimeni, iar o a doua alegere
+        /// (sau comutatorul Sky) poate porni una peste ea. Pe proprietati simple castiga
+        /// ultima si gata; o colectie golita si reumpluta din doua rulari deodata ajunge
+        /// cu randuri duplicate si cu null-uri in ea. Seria end-to-end chiar are nevoie de
+        /// ObservableCollection, fiindca isi adauga randurile pe masura ce vin - aici nu.
+        /// </summary>
+        public IReadOnlyList<ChannelHistogramRow> Histograms
+        {
+            get => _histograms;
+            private set => Set(ref _histograms, value);
+        }
+
+        /// <summary>Ghidul de citire al histogramelor. Documentatie, nu diagnostic.</summary>
+        public HistogramGuideViewModel HistogramGuide { get; } = new();
 
         public string Selected
         {
@@ -72,6 +97,17 @@ namespace FlatCheck.Wpf
         public string Global { get => _global; private set => Set(ref _global, value); }
         public string Clipping { get => _clipping; private set => Set(ref _clipping, value); }
         public string Channels { get => _channels; private set => Set(ref _channels, value); }
+
+        /// <summary>
+        /// De unde stim (sau nu stim) care pozitie CFA e R, G sau B. Sta in ViewModel si
+        /// nu in XAML fiindca are doua variante, iar care dintre ele apare e chiar o
+        /// informatie despre fisier.
+        /// </summary>
+        public string ChannelOrder { get => _channelOrder; private set => Set(ref _channelOrder, value); }
+
+        /// <summary>Cum se citeste expunerea fisierului asta - textul de sub histograme.</summary>
+        public string Reading { get => _reading; private set => Set(ref _reading, value); }
+
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
 
@@ -132,12 +168,13 @@ namespace FlatCheck.Wpf
             Global = $"{r.GlobalMedianPct:F1} %";
             Clipping = $"{r.CentreClipPct:F3} %";
             Channels = DescribeChannels(r);
+            ChannelOrder = DescribeOrder(r);
+            Reading = ExposureReport.HistogramReading(r);
+            FillHistograms(r);
             IsRawFlat = r.IsRaw;
             Verdict = VerdictText(r);
             Advice = AdviceText(r);
         }
-
-        static readonly string[] ChannelNames = { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" };
 
         static string DescribeChannels(ExposureResult r)
         {
@@ -147,10 +184,78 @@ namespace FlatCheck.Wpf
             for (int i = 0; i < 4; i++)
             {
                 double pct = (r.ChannelMedians[i] - r.Black) / r.Range * 100;
-                parts[i] = $"{ChannelNames[i]} {pct:F1} %"
+                parts[i] = $"{r.ChannelLabel(i),-8} {pct:F1} %"
                          + (i == r.BrightestChannel ? "  (cel mai luminos)" : "");
             }
             return string.Join("\n", parts);
+        }
+
+        /// <summary>
+        /// Ordinea culorilor se citeste din fisier sau nu se stie deloc - nu se ghiceste.
+        /// Cand nu se stie, propozitia e cea dintotdeauna: nici nu conteaza pentru verdict,
+        /// fiindca limitantul e canalul cel mai luminos oricare ar fi culoarea lui.
+        /// </summary>
+        static string DescribeOrder(ExposureResult r)
+        {
+            if (!r.IsCfa)
+                return "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.";
+
+            return r.Cfa != null
+                ? $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
+                + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant."
+                : "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
+                + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
+                + "luminos clipeaza primul, deci el e cel limitant.";
+        }
+
+        /// <summary>
+        /// Un rand de desen pe canal. Normalizarea si formatarea sunt de acelasi fel ca
+        /// "44.4 %": pregatesc o cifra ca sa poata fi aratata, nu decid nimic despre ea.
+        /// Pragurile vin gata alese in r.Bands, deci banda desenata E banda care a votat.
+        /// </summary>
+        void FillHistograms(ExposureResult r)
+        {
+            ExposureBands b = r.Bands;
+            string bandLabel = ExposureReport.BandLabel(b);
+
+            Histograms = r.Channels.Select(c => new ChannelHistogramRow
+                {
+                    Label = c.Label,
+                    Position = r.IsCfa && r.Cfa != null ? $"CFA[{c.Position / 2},{c.Position % 2}]" : "",
+                    Colour = ChannelPalette.BrushFor(c.Colour),
+                    Median = $"{c.MedianPct:F1} % tot canalul",
+                    Centre = $"{c.CentreMedianPct:F1} %",
+                    Note = ExposureReport.ChannelNote(r, c),
+                    IsBrightest = c.IsBrightest && r.IsCfa,
+                    Whole = Normalise(c.Whole),
+                    CentreCurve = Normalise(c.Centre),
+                    Marker = c.CentreMedianPct,
+                    BandLo = b.Lo,
+                    BandHi = b.Hi,
+                    // Pe cer nu exista umar galben in stanga, deci nici zona de desenat:
+                    // NaN spune desenului "sari peste", nu "deseneaza o zona de latime 0".
+                    TooLow = b.HasLowShoulder ? b.TooLow : double.NaN,
+                    TooHigh = b.TooHigh,
+                    BandLabel = bandLabel,
+                }).ToList();
+        }
+
+        /// <summary>
+        /// Cosurile scalate la propriul varf. Fiecare curba pe scara ei fiindca fereastra
+        /// centrala are 4 % din pixelii canalului: pe o scara comuna ar fi o linie plata,
+        /// si tocmai ea e cea care decide. Ce se compara intre curbe e POZITIA, nu inaltimea.
+        /// </summary>
+        static double[] Normalise(LevelHistogram h)
+        {
+            var o = new double[LevelHistogram.Bins];
+            if (h == null) return o;
+
+            int peak = 0;
+            foreach (int n in h.Counts) if (n > peak) peak = n;
+            if (peak == 0) return o;
+
+            for (int i = 0; i < o.Length; i++) o[i] = h.Counts[i] / (double)peak;
+            return o;
         }
 
         /// <summary>
@@ -172,8 +277,9 @@ namespace FlatCheck.Wpf
 
             double cen = r.CentreMedianPct;
             bool clipping = r.CentreClipPct > Th.ExpoClip;
-            double target = r.IsSky ? Th.ExpoSkyTarget : Th.ExpoTarget;
-            double stops = cen > 0 ? Math.Log2(target / cen) : double.NaN;
+            // Tinta vine din benzile pe care s-a dat verdictul, nu se realege aici.
+            ExposureBands b = r.Bands;
+            double stops = cen > 0 ? Math.Log2(b.Target / cen) : double.NaN;
 
             if (r.IsSky)
                 return r.Verdict switch
@@ -184,7 +290,7 @@ namespace FlatCheck.Wpf
                     ExposureVerdict.TooLow =>
                         $"PREA JOS pentru sky flat.\nCreste cu ~{stops:F1} stopuri, dar repede - cerul se stinge.",
                     ExposureVerdict.Ok =>
-                        $"OK pentru sky flat (centru {Th.ExpoSkyLo:F0}-{Th.ExpoSkyHi:F0} %).\n"
+                        $"OK pentru sky flat (centru {b.Lo:F0}-{b.Hi:F0} %).\n"
                       + "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre, nu "
                       + "din a urca expunerea - ai risca stele. NU forta mai sus.",
                     _ =>
@@ -205,7 +311,7 @@ namespace FlatCheck.Wpf
                 ExposureVerdict.AcceptableLow =>
                     $"Acceptabil, dar cam jos.\nAi putea creste cu ~{stops:F1} stopuri.",
                 ExposureVerdict.Ok =>
-                    $"OK - centrul e in tinta {Th.ExpoLo:F0}-{Th.ExpoHi:F0} %.",
+                    $"OK - centrul e in tinta {b.Lo:F0}-{b.Hi:F0} %.",
                 _ =>
                     $"Acceptabil, dar cam sus.\nAi putea scadea cu ~{-stops:F1} stopuri.",
             };
@@ -241,9 +347,14 @@ namespace FlatCheck.Wpf
             _selected = null;
             Raise(nameof(Selected));
             Scale = Centre = Global = Clipping = Channels = "";
+            ChannelOrder = "";
+            Reading = "";
+            Histograms = System.Array.Empty<ChannelHistogramRow>();
             Verdict = "";
             Advice = "";
             IsRawFlat = true;
+            // HistogramGuide.IsExpanded ramane cum l-a lasat omul: e o preferinta de
+            // vizualizare, nu un rezultat - la fel ca la ghidul hartii.
         }
     }
 }

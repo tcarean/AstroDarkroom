@@ -1073,9 +1073,49 @@ def make_plot(out, img, resid, rc, prof, az, cx, cy, r_ins, title, resid_label):
 TH_EXPO_LO, TH_EXPO_HI = 50.0, 60.0   # tinta: canalul cel mai luminos in [50,60]%
 TH_EXPO_CLIP = 0.05                   # % pixeli saturati peste care e clipping
 
+# Ordinea culorilor in mozaic. NU e o constanta: RGGB e cea mai des intalnita, dar
+# exista si GBRG, GRBG, BGGR. Se citeste din fisier - din rawpy pe un raw, din cardul
+# BAYERPAT pe un FITS scos prin Conversion - iar cand fisierul tace ramane None si
+# pozitiile raman anonime. Nu se ghiceste: o eticheta "R" pe canalul gresit ar parea
+# masurata.
+def cfa_parse(letters, source):
+    """Intoarce (litere, sursa) daca e un mozaic Bayer valid, altfel None."""
+    if not letters:
+        return None
+    s = str(letters).strip().upper()
+    if len(s) != 4 or any(c not in 'RGB' for c in s) or s.count('G') != 2:
+        return None
+    return (s, source)
+
+
+def cfa_shift(cfa, dy, dx):
+    """Acelasi mozaic privit de la (dy, dx) - pentru XBAYROFF / YBAYROFF."""
+    if cfa is None or (dy % 2 == 0 and dx % 2 == 0):
+        return cfa
+    s, source = cfa
+    return (''.join(s[((y + dy) % 2) * 2 + ((x + dx) % 2)]
+                    for y in range(2) for x in range(2)), source)
+
+
+def cfa_name(cfa, i):
+    """Numele pozitiei: R, G1, G2, B - sau CFA[y,x] cand nu se stie ordinea."""
+    if cfa is None:
+        return f"CFA[{i // 2},{i % 2}]"
+    s = cfa[0]
+    if s[i] != 'G':
+        return s[i]
+    return "G1" if i < s.index('G', s.index('G') + 1) else "G2"
+
+
+def cfa_from_header(header):
+    return cfa_shift(cfa_parse(header.get('BAYERPAT'), "BAYERPAT"),
+                     int(header.get('YBAYROFF', 0) or 0),
+                     int(header.get('XBAYROFF', 0) or 0))
+
+
 def load_raw_for_expo(path):
-    """Intoarce (data2D, white, black, exposure_str). Pt NEF foloseste rawpy
-    (white/black exacte). Pt FITS auto-detecteaza scala si o anunta."""
+    """Intoarce (data2D, white, black, exposure_str, sursa_scalei, cfa). Pt NEF
+    foloseste rawpy (white/black exacte). Pt FITS auto-detecteaza scala si o anunta."""
     p = path.lower()
     if p.endswith(('.nef', '.cr2', '.cr3', '.arw', '.dng', '.raf')):
         import rawpy
@@ -1083,6 +1123,13 @@ def load_raw_for_expo(path):
         data = raw.raw_image_visible.astype(np.float64)
         white = float(raw.white_level)
         black = float(np.median(raw.black_level_per_channel))
+        # Culorile celor patru pozitii ale zonei VIZIBILE - aceeasi zona din care vin
+        # pixelii de mai sus. Indexul iese din raw_colors_visible si se traduce prin
+        # color_desc: al doilea verde poate sta pe indexul 3, nu pe 1 (masurat pe D3300:
+        # color_desc='RGBG', pattern 0/1/3/2 -> RGGB).
+        cdesc = raw.color_desc.decode() if isinstance(raw.color_desc, bytes) else raw.color_desc
+        cfa = cfa_parse(''.join(cdesc[i] for i in raw.raw_colors_visible[:2, :2].flatten()),
+                        "rawpy")
         exp = None
         try:
             import exifread
@@ -1091,9 +1138,9 @@ def load_raw_for_expo(path):
             exp = str(t.get('EXIF ExposureTime')) if 'EXIF ExposureTime' in t else None
         except Exception:
             pass
-        return data, white, black, exp, "rawpy (exact)"
+        return data, white, black, exp, "rawpy (exact)", cfa
     # FITS: auto-detect scala din valoarea maxima
-    data = load_image(path)
+    data, header = load_image_with_header(path)
     mx = data.max()
     if mx <= 1.5:
         white = 1.0
@@ -1103,11 +1150,13 @@ def load_raw_for_expo(path):
         white = 16383.0
     else:
         white = 65535.0
-    return data, white, 0.0, None, f"auto-detectat din max={mx:.0f} (foloseste --sat/--black daca e gresit)"
+    return (data, white, 0.0, None,
+            f"auto-detectat din max={mx:.0f} (foloseste --sat/--black daca e gresit)",
+            cfa_from_header(header))
 
 
 def mode_expo(path, sat_override=None, black_override=None, sky=False):
-    data, white, black, exp, src = load_raw_for_expo(path)
+    data, white, black, exp, src, cfa = load_raw_for_expo(path)
     if sat_override is not None:
         white = sat_override
         src = f"--sat={sat_override}"
@@ -1146,10 +1195,16 @@ def mode_expo(path, sat_override=None, black_override=None, sky=False):
 
     if is_cfa:
         pcts = (meds - black) / rng * 100
-        names = ['CFA[0,0]', 'CFA[0,1]', 'CFA[1,0]', 'CFA[1,1]']
-        print("    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):")
-        for n, pc in zip(names, pcts):
-            marker = "  <- cel mai luminos" if n == names[bright] else ""
+        # Culorile se scriu doar cand fisierul chiar a spus ordinea; fara ea linia ramane
+        # cea dintotdeauna, cu pozitiile anonime.
+        if cfa is None:
+            names = ['CFA[0,0]', 'CFA[0,1]', 'CFA[1,0]', 'CFA[1,1]']
+            print("    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):")
+        else:
+            names = [f"{cfa_name(cfa, i):<2} (CFA[{i // 2},{i % 2}])" for i in range(4)]
+            print(f"    nivel median GLOBAL per canal CFA (ordinea R/G/B din {cfa[1]}):")
+        for i, (n, pc) in enumerate(zip(names, pcts)):
+            marker = "  <- cel mai luminos" if i == bright else ""
             print(f"        {n}: {pc:5.1f}%{marker}")
     else:
         print("    imagine mono/procesata (fara CFA)")

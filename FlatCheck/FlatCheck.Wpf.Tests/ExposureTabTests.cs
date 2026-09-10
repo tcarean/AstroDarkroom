@@ -203,6 +203,175 @@ public class ExposureTabTests
         Assert.Equal(expected.ToString(), vm.Report);
     }
 
+    // ------------------------------------------------------------------ histograme
+
+    /// <summary>
+    /// Un rand pe pozitie Bayer, cu ambele curbe gata normalizate. Fiecare curba e scalata
+    /// la propriul varf, deci maximul ei e 1 - altfel fereastra centrala, care are 4 % din
+    /// pixelii canalului, ar fi o linie plata, si tocmai ea decide.
+    /// </summary>
+    [Fact]
+    public async Task PickingAFileFillsOneHistogramRowPerChannel()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.Equal(4, vm.Histograms.Count);
+        Assert.Single(vm.Histograms.Where(r => r.IsBrightest));
+        foreach (var row in vm.Histograms)
+        {
+            Assert.Equal(200, row.Whole.Length);
+            Assert.Equal(200, row.CentreCurve.Length);
+            Assert.Equal(1.0, row.Whole.Max(), 9);
+            Assert.Equal(1.0, row.CentreCurve.Max(), 9);
+            Assert.NotNull(row.Colour);
+        }
+    }
+
+    /// <summary>
+    /// Without a BAYERPAT card the rows stay positions, and the tab says so rather than
+    /// picking an order - it differs between cameras.
+    /// </summary>
+    [Fact]
+    public async Task WithoutABayerPatternTheRowsAreLabelledByPosition()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.Equal(new[] { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" },
+                     vm.Histograms.Select(r => r.Label));
+        Assert.All(vm.Histograms, r => Assert.Equal("", r.Position));
+        Assert.Contains("Nu stiu", vm.ChannelOrder);
+    }
+
+    /// <summary>...and with it, they get their colours, read off the file and named as such.</summary>
+    [Fact]
+    public async Task WithABayerPatternTheRowsAreNamedByColour()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.Equal(new[] { "R", "G1", "G2", "B" }, vm.Histograms.Select(r => r.Label));
+        Assert.Equal("CFA[0,1]", vm.Histograms[1].Position);
+        Assert.Equal("G1", vm.Histograms.First(r => r.IsBrightest).Label);
+        Assert.Contains("RGGB", vm.ChannelOrder);
+        Assert.Contains("BAYERPAT", vm.ChannelOrder);
+    }
+
+    /// <summary>
+    /// The shaded band is the one that votes, so flipping "Sky" has to move it on every
+    /// row. On the sky ladder there is no low shoulder, which the drawing must skip
+    /// rather than paint at zero width - hence NaN.
+    /// </summary>
+    [Fact]
+    public async Task TheSkySwitchMovesTheBandOnEveryRow()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.All(vm.Histograms, r =>
+        {
+            Assert.Equal(Th.ExpoLo, r.BandLo, 9);
+            Assert.Equal(Th.ExpoHi, r.BandHi, 9);
+            Assert.Equal(Th.ExpoTooLow, r.TooLow, 9);
+        });
+
+        vm.Sky = true;
+        await vm.RecomputeAsync();
+
+        Assert.All(vm.Histograms, r =>
+        {
+            Assert.Equal(Th.ExpoSkyLo, r.BandLo, 9);
+            Assert.Equal(Th.ExpoSkyHi, r.BandHi, 9);
+            Assert.True(double.IsNaN(r.TooLow), "umarul de jos nu exista pe scara de cer");
+            Assert.Contains("sky", r.BandLabel);
+        });
+    }
+
+    /// <summary>The marker is the decision figure, not a second measurement of it.</summary>
+    [Fact]
+    public async Task TheMarkerOnTheBrightestRowIsTheVerdictFigure()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        var bright = vm.Histograms.First(r => r.IsBrightest);
+        Assert.Equal(vm.Centre, $"{bright.Marker:F1} %");
+        Assert.Equal(bright.Centre, vm.Centre);
+    }
+
+    [Fact]
+    public async Task TheReadingNamesTheChannelThatDecides()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.NotEmpty(vm.Reading);
+        Assert.Contains("G1", vm.Reading);
+    }
+
+    /// <summary>A debayered file has no mosaic left, so it gets one unnamed row.</summary>
+    [Fact]
+    public async Task ADebayeredFileGetsOneMonoRow()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithFlats();
+        string path = Path.Combine(f.FlatsDir, "debayerizat.fit");
+        File.WriteAllBytes(path, FlatCheck.Tests.FitsTestData.BuildFits(
+            128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000)));
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        var only = Assert.Single(vm.Histograms);
+        Assert.Equal("mono", only.Label);
+        Assert.False(only.IsBrightest);
+        Assert.Contains("nu e un flat brut", vm.Reading);
+    }
+
+    [Fact]
+    public async Task ResetClearsTheHistogramsButKeepsTheGuideOpen()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+        vm.HistogramGuide.IsExpanded = true;
+
+        vm.Reset();
+
+        Assert.Empty(vm.Histograms);
+        Assert.Empty(vm.Reading);
+        Assert.Empty(vm.ChannelOrder);
+        // Preferinta de vizualizare supravietuieste, ca la ghidul hartii.
+        Assert.True(vm.HistogramGuide.IsExpanded);
+    }
+
     [Fact]
     public async Task ResetClearsEverything()
     {

@@ -227,6 +227,15 @@ nivelul. Sparge cadrul în cele 4 poziții Bayer și ia mediana fiecăreia; dac�
 `max/min > 1.15` tratează fișierul ca CFA și folosește canalul cel mai luminos (el
 clipează primul, deci el e limitativ).
 
+**Canalele își spun culoarea, dar numai când fișierul o spune.** Pe un raw ordinea vine
+din libraw (`filters` + `cdesc`), pe un FITS din cardul `BAYERPAT` pe care îl scrie Siril
+la Conversion — și atunci raportul scrie `R (CFA[0,0])`, `G1 (CFA[0,1])` și așa mai
+departe. Fără sursă, pozițiile rămân anonime, ca înainte. Nu se ghicește: ordinea diferă
+de la aparat la aparat (RGGB e cea mai des întâlnită, dar există și GBRG, GRBG, BGGR), iar
+o etichetă pusă pe canalul greșit ar părea măsurată. Pe un D3300 iese `RGGB`. Pentru
+verdict oricum nu contează care e care — limitativ e cel mai luminos, orice culoare ar
+avea.
+
 **Cifra care decide e mediana ferestrei centrale de 20%, nu mediana globală.** Un flat are
 prin definiție o distribuție largă — asta *e* vignetarea — deci mediana globală e trasă în
 jos de colțuri. Dacă te iei după ea, supraexpui până clipează centrul, exact unde semnalul
@@ -614,6 +623,27 @@ secțiunea despre când merge `--light`. Pe date ca astea răspunde tabul Ratio.
 iar pe un raw white și black se citesc exact din fișier în loc să fie ghicite din maxim.
 Comutatorul „Sky" schimbă pragurile și recalculează pe loc.
 
+Tabul desenează și **câte o histogramă pe canal**, pe aceeași axă procentuală pe care stau
+toate cifrele lui, cu banda țintă, dunga de clipping și mediana centrului trase peste. Sub
+ele, un paragraf dedus din rezultat spune cum e expus fișierul ăsta anume: cine decide, cât
+mai e până la saturație, și de ce curba lată **nu** înseamnă subexpunere. Desenul explică;
+verdictul rămâne mediana ferestrei centrale a canalului celui mai luminos și atât.
+
+> Tabelul de mai jos e în oglindă cu ghidul pliat „Cum citesc histogramele" din fereastră
+> (`SessionMessages.HistogramGuideRows`). Nu există test care să lege cele două — dacă
+> reformulezi într-un loc, treci și prin celălalt.
+
+| ce vezi | ce înseamnă |
+|---|---|
+| două curbe pe fiecare canal | cea palidă și lată e tot canalul; cea plină și îngustă e fereastra centrală de 20%, chiar cea din care se ia verdictul. Fiecare e scalată la propriul vârf, deci **înălțimile** nu se compară — pozițiile se compară. |
+| linia verticală | mediana ferestrei centrale, singura cifră care decide. Pe canalul cel mai luminos e chiar numărul din pastila de verdict. |
+| banda verde | ținta, din exact aceleași praguri ca verdictul. Se mută când bifezi „Sky". |
+| benzile galbene și roșii | aceeași scară mai departe. Pe cer nu există galben în stânga: acolo ținta începe chiar de la pragul de prea-jos. |
+| dunga roșie din dreapta | 98–100% din white, unde analizorul numără pixelii saturați. Orice masă a curbei pline acolo înseamnă PREA SUS, oricât de cuminte ar fi mediana. |
+| de ce curba palidă e mult mai lată | aia **e** vignetarea, nu subexpunere: colțurile unui flat sunt mai întunecate prin construcție. Dacă expui după ea, clipezi centrul. |
+| de ce canalele au vârfuri diferite | filtrele Bayer lasă să treacă cantități diferite din lumina sursei. Pe un panou cald poate conduce R, pe cer la ora albastră de obicei B. Unealta nu face balans de alb — tocmai asta e ideea. |
+| ce **nu** e | histograma de pe aparat. Aia e a JPEG-ului procesat (debayer + WB + gama) și stă mult mai la dreapta. |
+
 ### Ce nu face
 
 Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
@@ -702,7 +732,11 @@ Sunt intenționate, nu scăpări:
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)
 - Linia de sursă a scalei scrie `libraw (exact)` acolo unde Python scrie `rawpy (exact)`.
-  E aceeași bibliotecă; numele diferă fiindcă `rawpy` e ambalajul de Python al ei.
+  E aceeași bibliotecă; numele diferă fiindcă `rawpy` e ambalajul de Python al ei. Din
+  același motiv, pe un raw linia cu ordinea canalelor scrie `din libraw` față de
+  `din rawpy`. Pe FITS amândouă citesc `BAYERPAT`, deci acolo linia e identică.
+- Fără histograme pe canal — sunt doar în fereastră. În consolă un paragraf despre forma
+  unei curbe pe care consola n-o desenează n-ar avea ce căuta.
 - `Percentile` pe o listă goală întoarce 0 în loc să arunce.
 - Interpretarea din `--light` scrie diagnosticul cu majuscule („Fondul CADE/CREȘTE spre
   margini") față de minusculele din Python. Semnul *e* diagnosticul, deci accentul e

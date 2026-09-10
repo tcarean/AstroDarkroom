@@ -53,6 +53,13 @@ public class CrossCheckFixtures
         Write(dir, "raw_cfa.fit", rawCfa);      // --expo and --expo --sky
         Write(dir, "raw12bit.fit", raw12);      // --expo --sat 4095 --black 150
 
+        // Acelasi mozaic, dar cu ordinea culorilor scrisa in header - cum o scrie Siril
+        // pe un cadru trecut prin Conversion. Amandoua implementarile citesc BAYERPAT, deci
+        // linia canalelor trebuie sa iasa identica; pe un raw ar diferi sursa (libraw vs
+        // rawpy), la fel ca linia de scala.
+        File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat.fit"),
+            FitsTestData.BuildFits(Size, Size, rawCfa, extraCards: FitsTestData.BayerCards("RGGB")));
+
         // --- wider coverage, to exercise branches the golden scenarios miss ---
 
         // over-correction: background RISES toward the edges, so radPct goes negative

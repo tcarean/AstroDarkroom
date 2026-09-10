@@ -113,6 +113,16 @@ public class RawReaderTests
         Assert.NotNull(f.Header);
         Assert.Empty(f.Header);
 
+        // The mosaic order comes off the file too. Not asserted as a literal, because
+        // FLATCHECK_NEF may point at any camera and the order differs between them - what
+        // must hold is that it decoded to a real Bayer order at all. Measured on the
+        // D3300 this was written against: filters=0xB4B4B4B4, cdesc="RGBG" -> RGGB, with
+        // the second green at cdesc index 3 (see CfaPatternTests).
+        Assert.NotNull(f.Cfa);
+        Assert.Equal("libraw", f.Cfa.Source);
+        Assert.Equal(4, f.Cfa.Letters.Length);
+        Assert.Equal(2, f.Cfa.Letters.Count(c => c == 'G'));
+
         // Undebayered: the four Bayer positions must NOT agree. If they do, something in
         // the chain demosaiced the frame and the exposure mode has nothing left to measure.
         var r = ExposureAnalyzer.Analyze(f.Image, null, null, false, f.Scale);

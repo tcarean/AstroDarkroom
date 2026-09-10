@@ -27,6 +27,7 @@
 //     raw_image_visible din rawpy (asta foloseste flatcheck.py)
 //   - color.maximum                        -> white
 //   - color.black + color.cblack[0..3]     -> black, pe canal
+//   - iparams.filters + iparams.cdesc      -> ce culoare are fiecare pozitie Bayer
 // Nicio interpolare, niciun balans de alb, nicio gama: --expo masoara nivelul ADU
 // original, iar orice developare l-ar distruge.
 //
@@ -117,6 +118,13 @@ namespace FlatCheck
             if (h <= 0 || w <= 0)
                 throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
 
+            // Ordinea culorilor, evaluata la originea zonei VIZIBILE - aceleasi margini pe
+            // care le sare copierea de mai jos. Numai locale, niciun camp: un camp de tip
+            // libraw ar forta incarcarea assembly-ului si pe rularile pe FITS (vezi nota
+            // de sus si RawReaderTests.HoldsNoLibrawTypedFields).
+            LibRawImageParams ip = d.RawData.IParams;
+            CfaPattern cfa = CfaPattern.FromLibRaw(ip.Filters, ip.Cdesc, s.TopMargin, s.LeftMargin);
+
             // Zona VIZIBILA, ca raw_image_visible din rawpy: se sare peste marginile
             // mascate (pixelii de calibrare de sub capacul senzorului), altfel medianele
             // ar fi trase in jos de o banda neagra pe care aparatul n-o considera imagine.
@@ -160,6 +168,7 @@ namespace FlatCheck
                 // ca "necunoscut" si ruleaza cu o nota, in loc sa refuze.
                 Header = NoHeader,
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
+                Cfa = cfa,
             };
         }
     }

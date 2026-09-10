@@ -412,6 +412,27 @@ public class GoldenOutputTests
         AssertGolden("expo_cfa", output);
     }
 
+    /// <summary>
+    /// Same frame, plus the card Siril writes when the file came through Conversion. The
+    /// only line that moves is the channel listing, which now carries the colours - which
+    /// is why no other golden had to be re-approved for this feature.
+    /// </summary>
+    [Fact]
+    public void Expo_WithABayerPattern_NamesTheChannels()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = ws.WriteFile("raw_bayerpat.fit", FitsTestData.BuildFits(
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB")));
+
+        var (output, exit) = RunCli(ws, f, "--expo");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("ordinea R/G/B din BAYERPAT", output);
+        Assert.Contains("G1 (CFA[0,1]):", output);
+        AssertGolden("expo_cfa_bayerpat", output);
+    }
+
     [Fact]
     public void Expo_WithSky_UsesSkyThresholds()
     {

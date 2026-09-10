@@ -94,12 +94,18 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
-    /// <summary>Un flat brut analizabil: FITS cu mozaic CFA, la scala ADU originala.</summary>
-    internal string WriteAnalysableRawFlat(string name, double centre = 34000)
+    /// <summary>
+    /// Un flat brut analizabil: FITS cu mozaic CFA, la scala ADU originala.
+    ///
+    /// Cu <paramref name="bayerPat"/> poarta si ordinea culorilor, cum o scrie Siril pe un
+    /// cadru trecut prin Conversion - atunci canalele se numesc R/G1/G2/B in loc de pozitii.
+    /// </summary>
+    internal string WriteAnalysableRawFlat(string name, double centre = 34000, string? bayerPat = null)
     {
         WithFlats();
         string path = Path.Combine(FlatsDir, name);
-        Write(path, FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: centre)));
+        Write(path, FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: centre)),
+              bayerPat == null ? null : FitsTestData.BayerCards(bayerPat));
         return path;
     }
 

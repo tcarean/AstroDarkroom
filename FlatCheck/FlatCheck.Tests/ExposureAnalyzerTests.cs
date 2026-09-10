@@ -218,6 +218,221 @@ public class ExposureAnalyzerTests
         Assert.False(r.LooksDebayered);
     }
 
+    // ---------------------------------------------------------------- bands
+
+    /// <summary>
+    /// The bands exist as a value so the window can draw the ladder that actually votes.
+    /// If these drift from Th, the chart would shade a band the verdict does not use.
+    /// </summary>
+    [Fact]
+    public void ThePanelBandsAreTheThresholdsClassifyUses()
+    {
+        var b = ExposureBands.For(false);
+
+        Assert.False(b.Sky);
+        Assert.Equal(Th.ExpoTooLow, b.TooLow, 9);
+        Assert.Equal(Th.ExpoLo, b.Lo, 9);
+        Assert.Equal(Th.ExpoHi, b.Hi, 9);
+        Assert.Equal(Th.ExpoTooHigh, b.TooHigh, 9);
+        Assert.Equal(Th.ExpoTarget, b.Target, 9);
+        Assert.True(b.HasLowShoulder);
+    }
+
+    /// <summary>
+    /// On the sky ladder the target starts exactly at the too-low threshold, so there is
+    /// no "acceptable but low" shoulder - which is the honest shape, not an oversight.
+    /// </summary>
+    [Fact]
+    public void TheSkyBandsHaveNoLowShoulder()
+    {
+        var b = ExposureBands.For(true);
+
+        Assert.True(b.Sky);
+        Assert.Equal(Th.ExpoSkyLo, b.TooLow, 9);
+        Assert.Equal(b.TooLow, b.Lo, 9);
+        Assert.Equal(Th.ExpoSkyHi, b.Hi, 9);
+        Assert.Equal(Th.ExpoSkyTooHigh, b.TooHigh, 9);
+        Assert.Equal(Th.ExpoSkyTarget, b.Target, 9);
+        Assert.False(b.HasLowShoulder);
+    }
+
+    [Fact]
+    public void TheResultCarriesTheBandsItWasJudgedOn()
+    {
+        Assert.Equal(Th.ExpoLo, AtLevel(55).Bands.Lo, 9);
+        Assert.Equal(Th.ExpoSkyLo, AtLevel(55, sky: true).Bands.Lo, 9);
+    }
+
+    // ---------------------------------------------------------------- histograms
+
+    /// <summary>The bin ladder, probed at both ends and on a boundary.</summary>
+    [Theory]
+    [InlineData(0.0, 0)]
+    [InlineData(0.49, 0)]
+    [InlineData(0.5, 1)]
+    [InlineData(55.0, 110)]
+    [InlineData(99.9, 199)]
+    [InlineData(100.0, 199)]      // at white: the last bin, not out of range
+    [InlineData(300.0, 199)]      // above white, e.g. a --sat below the real one
+    [InlineData(-0.1, 0)]         // below black
+    [InlineData(-500.0, 0)]
+    public void BinOfClampsInsteadOfDroppingPixels(double pct, int expected)
+        => Assert.Equal(expected, LevelHistogram.BinOf(pct));
+
+    /// <summary>
+    /// Nothing is dropped: each channel's histogram holds every pixel of that channel, and
+    /// the centre one holds exactly the decision window - 13x13 = 169 on a 128px frame,
+    /// the same window the clipping tests above rely on.
+    /// </summary>
+    [Fact]
+    public void EveryChannelHistogramCountsEveryPixelOfThatChannel()
+    {
+        var r = AtLevel(55);
+
+        Assert.Equal(4, r.Channels.Length);
+        foreach (var c in r.Channels)
+        {
+            Assert.Equal(N * N / 4, c.Whole.Total);
+            Assert.Equal(N * N / 4, c.Whole.Counts.Sum());
+            Assert.Equal(169, c.Centre.Total);
+            Assert.Equal(169, c.Centre.Counts.Sum());
+        }
+    }
+
+    /// <summary>
+    /// A channel held at one level lands in one bin. FlatCfa is constant per position and
+    /// --sat makes the percentage exact, so this pins the axis: 55% really is bin 110.
+    /// </summary>
+    [Fact]
+    public void AConstantChannelLandsInOneBin()
+    {
+        var r = AtLevel(55);
+        var bright = r.Channels[r.BrightestChannel];
+
+        Assert.Equal(1, bright.Whole.Counts.Count(n => n > 0));
+        Assert.Equal(N * N / 4, bright.Whole.Counts[LevelHistogram.BinOf(55)]);
+    }
+
+    /// <summary>
+    /// A saturated tail must stay visible rather than fall off the axis - it is the one
+    /// thing that overrides the median. Here --sat sits below the real level, so every
+    /// pixel of the brightest channel reads above white.
+    /// </summary>
+    [Fact]
+    public void LevelsAtOrAboveWhiteLandInTheLastBin()
+    {
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 2000), Sat, null, false);
+        var bright = r.Channels[r.BrightestChannel];
+
+        Assert.Equal(N * N / 4, bright.Whole.Counts[LevelHistogram.Bins - 1]);
+    }
+
+    /// <summary>The other end: a black level above the data must not produce a negative index.</summary>
+    [Fact]
+    public void LevelsBelowBlackLandInTheFirstBin()
+    {
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 500), 1000, 600, false);
+
+        Assert.Equal(N * N / 4, r.Channels[0].Whole.Counts[0]);
+    }
+
+    /// <summary>
+    /// The claim the whole card rests on: the centre curve of the brightest channel is
+    /// the very window the verdict is read from. If these two ever differ, the chart is
+    /// explaining a different measurement than the one on screen.
+    /// </summary>
+    [Fact]
+    public void TheCentreOfTheBrightestChannelIsTheDecisionWindow()
+    {
+        var r = ExposureAnalyzer.Analyze(
+            TestImages.From(256, 256, FitsTestData.WithBayerMosaic(
+                FitsTestData.Radial(256, 256, center: 34000))), null, null, false);
+
+        Assert.Equal(r.CentreMedianPct, r.Channels[r.BrightestChannel].CentreMedianPct, 12);
+        Assert.Equal(r.GlobalMedianPct, r.Channels[r.BrightestChannel].MedianPct, 12);
+        Assert.Single(r.Channels.Where(c => c.IsBrightest));
+    }
+
+    /// <summary>
+    /// The card's own argument, as a number: on a vignetted frame the whole-channel curve
+    /// sits below the centre curve. That distance is vignetting, not underexposure.
+    /// </summary>
+    [Fact]
+    public void TheWholeChannelCurveSitsBelowTheCentreCurve()
+    {
+        var r = ExposureAnalyzer.Analyze(
+            TestImages.From(256, 256, FitsTestData.WithBayerMosaic(
+                FitsTestData.Radial(256, 256, center: 34000))), null, null, false);
+
+        foreach (var c in r.Channels)
+            Assert.True(c.MedianPct < c.CentreMedianPct,
+                $"{c.Label}: global {c.MedianPct} vs centru {c.CentreMedianPct}");
+    }
+
+    /// <summary>A mono/processed frame has no mosaic left, so it gets one unnamed channel.</summary>
+    [Fact]
+    public void OnAMonoFrameThereIsOneChannel()
+    {
+        var r = ExposureAnalyzer.Analyze(
+            TestImages.From(N, N, FitsTestData.Radial(N, N, center: 30000)), null, null, false);
+
+        Assert.False(r.IsCfa);
+        var only = Assert.Single(r.Channels);
+        Assert.Equal("mono", only.Label);
+        Assert.Equal('\0', only.Colour);
+        Assert.Equal(N * N, only.Whole.Total);
+        Assert.Equal(r.CentreMedianPct, only.CentreMedianPct, 12);
+        Assert.Equal(r.GlobalMedianPct, only.MedianPct, 12);
+    }
+
+    // ---------------------------------------------------------------- channel names
+
+    /// <summary>
+    /// With the order read off the file the positions get their colours. The two greens
+    /// are numbered, because on a correct mosaic they sit at almost the same level and
+    /// "almost" is what the histogram is there to show.
+    /// </summary>
+    [Fact]
+    public void WithAKnownOrderTheChannelsAreNamedByColour()
+    {
+        var r = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, 550), Sat, null, false,
+                                         null, CfaPattern.Parse("RGGB", "BAYERPAT"));
+
+        Assert.Equal(new[] { "R", "G1", "G2", "B" }, r.Channels.Select(c => c.Label));
+        Assert.Equal(new[] { 'R', 'G', 'G', 'B' }, r.Channels.Select(c => c.Colour));
+        Assert.Equal("G1", r.Channels[r.BrightestChannel].Label);
+    }
+
+    /// <summary>
+    /// Without it they stay positions. Naming them anyway would be a guess wearing the
+    /// clothes of a measurement - the order differs between cameras.
+    /// </summary>
+    [Fact]
+    public void WithoutAKnownOrderTheChannelsStayPositions()
+    {
+        var r = AtLevel(55);
+
+        Assert.Null(r.Cfa);
+        Assert.Equal(new[] { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" },
+                     r.Channels.Select(c => c.Label));
+        Assert.All(r.Channels, c => Assert.Equal('\0', c.Colour));
+    }
+
+    /// <summary>A different order relabels the same pixels; no figure moves.</summary>
+    [Fact]
+    public void TheOrderChangesOnlyTheNames()
+    {
+        var img = TestImages.FlatCfa(N, N, 550);
+
+        var plain = ExposureAnalyzer.Analyze(img, Sat, null, false);
+        var named = ExposureAnalyzer.Analyze(img, Sat, null, false, null,
+                                             CfaPattern.Parse("BGGR", "BAYERPAT"));
+
+        Assert.Equal(plain.CentreMedianPct, named.CentreMedianPct, 12);
+        Assert.Equal(plain.Verdict, named.Verdict);
+        Assert.Equal(new[] { "B", "G1", "G2", "R" }, named.Channels.Select(c => c.Label));
+    }
+
     // ---------------------------------------------------------------- scale
 
     [Fact]
@@ -364,6 +579,19 @@ public class ExposureAnalyzerTests
         Assert.Equal(fromFlags.LooksDebayered, fromRaw.LooksDebayered);
         Assert.Equal(fromFlags.IsRaw, fromRaw.IsRaw);
         Assert.Equal(fromFlags.Verdict, fromRaw.Verdict);
+
+        // ...including everything the histogram card shows, which is the same claim one
+        // layer down: the chart must not depend on which container the pixels arrived in.
+        for (int i = 0; i < fromFlags.Channels.Length; i++)
+        {
+            Assert.Equal(fromFlags.Channels[i].Whole.Counts, fromRaw.Channels[i].Whole.Counts);
+            Assert.Equal(fromFlags.Channels[i].Centre.Counts, fromRaw.Channels[i].Centre.Counts);
+            Assert.Equal(fromFlags.Channels[i].P99Pct, fromRaw.Channels[i].P99Pct, 12);
+            Assert.Equal(fromFlags.Channels[i].ClipPct, fromRaw.Channels[i].ClipPct, 12);
+            Assert.Equal(fromFlags.Channels[i].CentreMedianPct, fromRaw.Channels[i].CentreMedianPct, 12);
+            Assert.Equal(fromFlags.Channels[i].CentreP1Pct, fromRaw.Channels[i].CentreP1Pct, 12);
+            Assert.Equal(fromFlags.Channels[i].CentreP99Pct, fromRaw.Channels[i].CentreP99Pct, 12);
+        }
 
         // The one field that is *allowed* to differ, and must: the report has to say where
         // the numbers came from, otherwise the user cannot tell an exact scale from a guess.

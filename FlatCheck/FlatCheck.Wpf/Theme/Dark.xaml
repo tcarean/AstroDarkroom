@@ -551,6 +551,57 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </StackPanel>
   </DataTemplate>
 
+  <!-- Un canal pe cardul de histograme: identitatea in stanga, desenul in dreapta.
+
+       Pragurile se leaga LOCAL (BandLo, BandHi, ...), din randul insusi, nu printr-un
+       RelativeSource catre tab: legarile prin stramosi compileaza si arata bine pana cand
+       sablonul ajunge in alt loc din arbore, si atunci se rup tacut. Randul le poarta
+       copiate tocmai ca sa nu fie nevoie de asa ceva. -->
+  <DataTemplate x:Key="ChannelHistogramRowTemplate">
+    <Grid Margin="0,0,0,14">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="124" />
+        <ColumnDefinition Width="*" MinWidth="220" />
+      </Grid.ColumnDefinitions>
+
+      <StackPanel Grid.Column="0" Margin="0,0,12,0">
+        <Border x:Name="chip" Background="{Binding Colour}" CornerRadius="4"
+                Padding="9,2" HorizontalAlignment="Left"
+                BorderBrush="Transparent" BorderThickness="1.5">
+          <TextBlock Text="{Binding Label}" Foreground="#16161A"
+                     FontSize="12" FontWeight="Bold" />
+        </Border>
+        <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0"
+                   Text="{Binding Position}"
+                   Visibility="{Binding HasPosition, Converter={StaticResource BoolToVis}}" />
+        <TextBlock Style="{StaticResource Number}" HorizontalAlignment="Left"
+                   Margin="0,5,0,0" FontWeight="SemiBold" Text="{Binding Centre}" />
+        <TextBlock Style="{StaticResource Faint}" Text="centru 20 %" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" Text="{Binding Median}" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" Text="{Binding Note}"
+                   Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+      </StackPanel>
+
+      <Border Grid.Column="1" Background="{StaticResource PanelBg2}" CornerRadius="4"
+              Padding="6,4">
+        <local:HistogramCanvas Height="96"
+                               Whole="{Binding Whole}" Centre="{Binding CentreCurve}"
+                               Fill="{Binding Colour}" Marker="{Binding Marker}"
+                               BandLo="{Binding BandLo}" BandHi="{Binding BandHi}"
+                               TooLow="{Binding TooLow}" TooHigh="{Binding TooHigh}"
+                               BandLabel="{Binding BandLabel}" />
+      </Border>
+    </Grid>
+
+    <DataTemplate.Triggers>
+      <!-- Canalul care decide se scoate in evidenta cu un contur, nu cu inca o culoare:
+           culorile de aici identifica un canal, nu judeca. -->
+      <DataTrigger Binding="{Binding IsBrightest}" Value="True">
+        <Setter TargetName="chip" Property="BorderBrush" Value="{StaticResource TextBr}" />
+      </DataTrigger>
+    </DataTemplate.Triggers>
+  </DataTemplate>
+
   <DataTemplate x:Key="SeriesRowTemplate">
     <Grid Margin="0,0,0,4">
       <Grid.ColumnDefinitions>

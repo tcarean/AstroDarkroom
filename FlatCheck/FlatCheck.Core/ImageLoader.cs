@@ -45,6 +45,13 @@ namespace FlatCheck
 
         /// <summary>Scala ADU exacta din fisier, sau null daca fisierul n-o poarta.</summary>
         internal ExposureScale Scale;
+
+        /// <summary>
+        /// Ordinea culorilor in mozaicul CFA, sau null cand fisierul n-o spune. Acelasi
+        /// principiu ca la <see cref="Scale"/>: null e raspunsul corect pentru un fisier
+        /// care tace, nu o eroare - ordinea difera de la aparat la aparat si nu se ghiceste.
+        /// </summary>
+        internal CfaPattern Cfa;
     }
 
     internal static class ImageLoader

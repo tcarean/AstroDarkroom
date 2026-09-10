@@ -41,9 +41,17 @@ namespace FlatCheck
         public LoadedFrame Load(string path)
         {
             var (img, hdr) = LoadWithHeader(File.ReadAllBytes(path));
+
+            // Ordinea culorilor, daca fisierul o poarta. Siril scrie BAYERPAT pe un cadru
+            // trecut prin tab-ul Conversion, si NU o scrie pe unul debayerizat - ceea ce e
+            // exact corect: acolo nu mai exista mozaic de numit. Offset-urile intra prin
+            // Shift, fiindca un decupaj impar fata de senzor muta faza mozaicului.
+            CfaPattern cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
+                ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0));
+
             // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
-            return new LoadedFrame { Image = img, Header = hdr, Scale = null };
+            return new LoadedFrame { Image = img, Header = hdr, Scale = null, Cfa = cfa };
         }
 
         // ========================================================= I/O FITS

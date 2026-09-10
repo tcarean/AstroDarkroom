@@ -17,18 +17,25 @@
 
 // ExposureReport.cs - ExposureResult -> textul din consola. Doar formatare.
 //
-// Corectiile sugerate sunt log2(57/centru) stopuri - 57 fiind mijlocul benzii tinta
-// 50-65 - si log2(30/centru) pentru sky flats.
+// Corectiile sugerate sunt log2(tinta/centru) stopuri, unde tinta e mijlocul benzii -
+// 57 pe panou, 30 pe cer. Nu se mai alege aici intre cele doua: vine din r.Bands, adica
+// din exact scara pe care s-a dat verdictul.
+//
+// Trei bucati de aici NU se tiparesc in consola - HistogramReading, ChannelNote si
+// BandLabel. Sunt textul care insoteste histogramele din fereastra, si stau aici din
+// acelasi motiv ca RunReport.MapLegend: formularea are un singur loc, chiar daca azi are
+// un singur cititor. In consola n-ar avea ce cauta - un paragraf despre forma unei curbe
+// pe care consola n-o deseneaza.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FlatCheck
 {
     internal static class ExposureReport
     {
-        static readonly string[] ChannelNames = { "CFA[0,0]", "CFA[0,1]", "CFA[1,0]", "CFA[1,1]" };
-
         internal static void Write(ExposureResult r, string path, TextWriter w)
         {
             w.WriteLine($"\n=== EXPUNERE: {path} ===");
@@ -36,11 +43,16 @@ namespace FlatCheck
 
             if (r.IsCfa)
             {
-                w.WriteLine("    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):");
+                // Culorile se scriu doar cand fisierul chiar a spus ordinea. Fara card,
+                // linia ramane exact cea de dinainte - pozitiile anonime - fiindca ordinea
+                // difera de la aparat la aparat si o eticheta ghicita ar parea masurata.
+                w.WriteLine(r.Cfa != null
+                    ? $"    nivel median GLOBAL per canal CFA (ordinea R/G/B din {r.Cfa.Source}):"
+                    : "    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):");
                 for (int i = 0; i < 4; i++)
                 {
                     string mk = i == r.BrightestChannel ? "  <- cel mai luminos" : "";
-                    w.WriteLine($"        {ChannelNames[i]}: {(r.ChannelMedians[i] - r.Black) / r.Range * 100,5:F1}%{mk}");
+                    w.WriteLine($"        {ChannelColumn(r, i)}: {(r.ChannelMedians[i] - r.Black) / r.Range * 100,5:F1}%{mk}");
                 }
             }
             else
@@ -90,6 +102,7 @@ namespace FlatCheck
         static void WriteSky(ExposureResult r, TextWriter w)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
+            ExposureBands b = r.Bands;
             w.WriteLine("    [mod --sky: praguri pt flats pe cer, nu pe panou]");
             switch (r.Verdict)
             {
@@ -99,10 +112,10 @@ namespace FlatCheck
                     break;
                 case ExposureVerdict.TooLow:
                     w.WriteLine("    VERDICT: PREA JOS pentru sky flat");
-                    w.WriteLine($"    Creste cu ~{Math.Log2(Th.ExpoSkyTarget / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
+                    w.WriteLine($"    Creste cu ~{Math.Log2(b.Target / r.CentreMedianPct):F1} stopuri (dar repede, cerul se stinge).");
                     break;
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {Th.ExpoSkyLo:F0}-{Th.ExpoSkyHi:F0}%)");
+                    w.WriteLine($"    VERDICT: OK pentru sky flat  (centru {b.Lo:F0}-{b.Hi:F0}%)");
                     w.WriteLine("    La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre,");
                     w.WriteLine("    nu din a urca expunerea (ai risca stele). NU forta mai sus.");
                     break;
@@ -116,12 +129,13 @@ namespace FlatCheck
         static void WritePanel(ExposureResult r, TextWriter w)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
+            ExposureBands b = r.Bands;
             double cen = r.CentreMedianPct;
             switch (r.Verdict)
             {
                 case ExposureVerdict.TooHigh:
                     {
-                        double stops = cen > 0 ? Math.Log2(Th.ExpoTarget / cen) : -1;
+                        double stops = cen > 0 ? Math.Log2(b.Target / cen) : -1;
                         w.WriteLine("    VERDICT: PREA SUS" + (clipping ? " (CLIPPING in centru!)" : ""));
                         w.WriteLine($"    Scade expunerea cu ~{-stops:F1} stopuri.");
                         if (clipping)
@@ -130,21 +144,117 @@ namespace FlatCheck
                     }
                 case ExposureVerdict.TooLow:
                     w.WriteLine("    VERDICT: PREA JOS");
-                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
+                    w.WriteLine($"    Creste expunerea cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
                     w.WriteLine("    Sub ~30% in centru masterul iese zgomotos (zgomot fixed-pattern).");
                     break;
                 case ExposureVerdict.AcceptableLow:
                     w.WriteLine("    VERDICT: ACCEPTABIL, dar cam jos");
-                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
+                    w.WriteLine($"    Ai putea creste cu ~{Math.Log2(b.Target / cen):F1} stopuri.");
                     break;
                 case ExposureVerdict.Ok:
-                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {Th.ExpoLo:F0}-{Th.ExpoHi:F0}%)");
+                    w.WriteLine($"    VERDICT: OK  (centrul in tinta {b.Lo:F0}-{b.Hi:F0}%)");
                     break;
                 default:
                     w.WriteLine("    VERDICT: ACCEPTABIL, dar cam sus");
-                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(Th.ExpoTarget / cen):F1} stopuri.");
+                    w.WriteLine($"    Ai putea scadea cu ~{-Math.Log2(b.Target / cen):F1} stopuri.");
                     break;
             }
+        }
+
+        // =============================================================== pentru fereastra
+        //
+        // Ce urmeaza nu se tipareste nicaieri in consola. Vezi nota din capul fisierului.
+
+        /// <summary>
+        /// Coloana din stanga a unui canal: numele culorii cand se stie, plus pozitia -
+        /// care ramane vizibila oricum, ca linia sa se poata lega de mozaic.
+        /// </summary>
+        static string ChannelColumn(ExposureResult r, int i)
+            => r.Cfa != null
+                ? $"{r.ChannelLabel(i),-2} (CFA[{i / 2},{i % 2}])"
+                : r.ChannelLabel(i);
+
+        /// <summary>Eticheta benzii tinta, pentru desen: "tinta 50-65 %".</summary>
+        internal static string BandLabel(ExposureBands b)
+            => b.Sky ? $"tinta sky {b.Lo:F0}-{b.Hi:F0} %" : $"tinta {b.Lo:F0}-{b.Hi:F0} %";
+
+        /// <summary>
+        /// Nota scurta de sub eticheta unui canal, sau "" cand n-are nimic de spus.
+        /// </summary>
+        internal static string ChannelNote(ExposureResult r, ChannelLevels c)
+        {
+            var parts = new List<string>();
+            if (c.IsBrightest && r.IsCfa) parts.Add("cel mai luminos - decide expunerea");
+            if (c.ClipPct > Th.ExpoClip) parts.Add($"clipping {c.ClipPct:F2} % pe tot canalul");
+            return string.Join("; ", parts);
+        }
+
+        /// <summary>
+        /// Cum se citeste expunerea fisierului asta, in cuvinte. Nu adauga nicio masuratoare
+        /// si nu schimba niciun verdict: pune in propozitii cifrele care sunt deja pe ecran,
+        /// fiindca legatura dintre ele - de ce curba lata NU inseamna subexpunere, cat mai e
+        /// pana la saturatie - nu se vede din desen singur.
+        /// </summary>
+        internal static string HistogramReading(ExposureResult r)
+        {
+            if (!r.IsRaw)
+                return "Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci ce se "
+                     + "vede mai jos e distributia lui de niveluri, nu o expunere. Cifrele n-au "
+                     + "cum sa insemne ceva pana nu rulezi pe cadrul brut de la aparat.";
+
+            ChannelLevels c = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
+            ExposureBands b = r.Bands;
+            var s = new List<string>();
+
+            // 1. cine decide
+            if (!r.IsCfa)
+                s.Add("Cadrul e mono sau deja procesat, deci se masoara pe tot, nu pe canale.");
+            else if (c.Colour != '\0')
+                s.Add($"Canalul cel mai luminos e {c.Label}, deci el decide: el clipeaza primul.");
+            else
+                s.Add($"Canalul cel mai luminos e {c.Label} - nu stiu ce culoare are - deci el "
+                    + "decide: el clipeaza primul.");
+
+            // 2. unde sta varful fata de banda
+            double cen = r.CentreMedianPct;
+            if (cen < b.Lo)
+                s.Add($"Varful ferestrei centrale e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
+                    + $"{BandLabel(b)}.");
+            else if (cen > b.Hi)
+                s.Add($"Varful ferestrei centrale e la {cen:F1} %, cu {cen - b.Hi:F1} puncte peste "
+                    + $"{BandLabel(b)}.");
+            else
+                s.Add($"Varful ferestrei centrale e la {cen:F1} %, in {BandLabel(b)}.");
+
+            // 3. cat mai e pana sus - sau ca nu mai e deloc
+            if (r.CentreClipPct > Th.ExpoClip)
+                s.Add($"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
+                    + "deci PREA SUS oricare ar fi mediana - acolo se pierde exact informatia "
+                    + "de vignetare, unde semnalul e maxim.");
+            else if (c.CentreP99Pct > 0)
+                s.Add($"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din white, "
+                    + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la saturatie.");
+
+            // 4. de ce curba din fundal e lata
+            double drop = cen - c.MedianPct;
+            if (drop > 0.5)
+                s.Add($"Mediana intregului canal e cu {drop:F1} puncte sub centru - aia e "
+                    + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
+                    + "expui dupa ea, clipezi centrul.");
+
+            // 5. daca mai clipeaza si altcineva
+            if (r.IsCfa)
+            {
+                var others = r.Channels
+                    .Where(x => x.Position != c.Position && x.ClipPct > Th.ExpoClip)
+                    .Select(x => x.Label)
+                    .ToList();
+                if (others.Count > 0)
+                    s.Add($"Are pixeli saturati si pe tot cadrul, nu doar in centru: "
+                        + $"{string.Join(", ", others)}.");
+            }
+
+            return string.Join(" ", s);
         }
     }
 }

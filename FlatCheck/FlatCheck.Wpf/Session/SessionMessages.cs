@@ -186,6 +186,73 @@ namespace FlatCheck.Wpf
              + "pete sau un colt. Ce ramane pentru ochi e ghidul de sub harta."),
         };
 
+        // --------------------------------------------------- ghidul histogramelor
+        //
+        // Acelasi fel de text ca ghidul hartii de mai jos: documentatie aratata in
+        // fereastra, pliata, scrisa o data. Si aceeasi limita - explica ce se vede, NU
+        // clasifica. Verdictul ramane mediana ferestrei centrale a canalului celui mai
+        // luminos, si nimic din desen nu voteaza.
+        //
+        // Tabelul e in oglinda cu README, sectiunea despre tabul Expunere. NU exista test
+        // care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+
+        /// <summary>Ce e axa si ce rol are desenul, inainte de lista de citiri.</summary>
+        internal static string HistogramGuideIntro() =>
+            "Axa orizontala e aceeasi pe care stau toate cifrele tabului: procente din "
+            + "(white - black), adica din intervalul util al senzorului. Zero e negrul "
+            + "aparatului, 100 e saturatia.\n\n"
+            + "Desenul EXPLICA, nu voteaza. Verdictul e mediana ferestrei centrale a "
+            + "canalului celui mai luminos si nimic altceva - histogramele arata de unde "
+            + "vine cifra aia si ce se intampla in jurul ei.";
+
+        /// <summary>
+        /// Cum se citeste desenul, in ordinea in care merita privit: intai cele doua
+        /// curbe, apoi cifra care decide, apoi benzile, apoi capcanele.
+        /// </summary>
+        internal static IReadOnlyList<(string Shape, string Meaning)> HistogramGuideRows() => new[]
+        {
+            ("doua curbe pe fiecare canal",
+             "Cea palida si lata e tot canalul; cea plina si ingusta e fereastra centrala "
+             + "de 20 %, chiar cea din care se ia verdictul. Fiecare e scalata la propriul "
+             + "varf, deci INALTIMILE nu se compara intre ele - pozitiile se compara."),
+
+            ("linia verticala",
+             "Mediana ferestrei centrale, singura cifra care decide. Pe canalul cel mai "
+             + "luminos e chiar numarul din pastila de verdict, de sus."),
+
+            ("banda verde",
+             "Tinta, din exact aceleasi praguri ca verdictul. Se muta cand bifezi \"Sky\": "
+             + "un sky flat TREBUIE sa stea mai jos, fiindca cerul se stinge continuu si "
+             + "SNR-ul vine din numarul de cadre."),
+
+            ("benzile galbene si rosii",
+             "Aceeasi scara mai departe: galben \"acceptabil, dar\", rosu prea jos sau prea "
+             + "sus. Pe cer nu exista galben in stanga - acolo tinta incepe chiar de la "
+             + "pragul de prea-jos."),
+
+            ("dunga rosie din dreapta",
+             "98-100 % din white: acolo analizorul numara pixelii saturati. Orice masa a "
+             + "curbei pline in dunga aia inseamna PREA SUS, oricat de cuminte ar fi "
+             + "mediana - acolo se pierde informatia de vignetare, exact unde semnalul e maxim."),
+
+            ("de ce curba palida e mult mai lata",
+             "Aia e vignetarea, nu subexpunere: colturile unui flat SUNT mai intunecate "
+             + "prin constructie, si distanta dintre cele doua varfuri e chiar cat de "
+             + "adanca e. Daca expui dupa curba lata, clipezi centrul si pierzi exact ce "
+             + "masori."),
+
+            ("de ce canalele au varfuri diferite",
+             "Filtrele Bayer lasa sa treaca cantitati diferite din lumina sursei. Pe un "
+             + "panou cald poate conduce R, pe cer la ora albastra de obicei B. Cel mai "
+             + "luminos clipeaza primul, deci el e limitantul. Unealta nu face balans de "
+             + "alb - tocmai asta e ideea."),
+
+            ("ce NU e desenul asta",
+             "Nu e histograma de pe aparat. Aia e a JPEG-ului procesat - debayer, balans "
+             + "de alb, gama - si sta mult mai la dreapta. De aceea un cadru care pare "
+             + "\"la limita\" pe ecranul aparatului poate fi la 40 % in date brute."),
+        };
+
         // ------------------------------------------------------- ghidul hartii
         //
         // DE CE E DOCUMENTATIE SI NU DIAGNOSTIC. Unealta nu clasifica forma hartii si nu

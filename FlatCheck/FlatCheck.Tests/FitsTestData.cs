@@ -56,6 +56,18 @@ internal static class FitsTestData
     internal static string[] WcsCards(double degPerPixel) =>
         new[] { Card("CDELT1", degPerPixel.ToString("0.#########")) };
 
+    /// <summary>
+    /// Ordinea mozaicului, asa cum o scrie Siril pe un cadru trecut prin Conversion.
+    /// Offset-urile sunt optionale fiindca si Siril le scrie doar cand exista un decupaj.
+    /// </summary>
+    internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0)
+    {
+        var cards = new List<string> { Card("BAYERPAT", "'" + pattern + "'") };
+        if (xOffset != 0) cards.Add(Card("XBAYROFF", xOffset.ToString()));
+        if (yOffset != 0) cards.Add(Card("YBAYROFF", yOffset.ToString()));
+        return cards.ToArray();
+    }
+
     static byte[] HeaderBlocks(IEnumerable<string> cards)
     {
         var list = cards.ToList();

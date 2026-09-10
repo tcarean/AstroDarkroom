@@ -1,0 +1,16 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPUNERE: <TMP>/raw_bayerpat.fit ===
+    saturatie (white) : 65535   black : 0   sursa: auto-detectat din max=34000 (foloseste --sat/--black daca e gresit)
+    nivel median GLOBAL per canal CFA (ordinea R/G/B din BAYERPAT):
+        R  (CFA[0,0]):  27.6%
+        G1 (CFA[0,1]):  44.4%  <- cel mai luminos
+        G2 (CFA[1,0]):  44.4%
+        B  (CFA[1,1]):  21.3%
+    canal cel mai luminos, mediana GLOBALA :  44.4%  (trasa in jos de colturi)
+    canal cel mai luminos, CENTRU 20%      :  51.6%  <- ASTA decide expunerea
+    clipping in centru (>=98% white)       : 0.000%
+
+    VERDICT: OK  (centrul in tinta 50-65%)
+

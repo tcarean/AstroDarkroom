@@ -40,9 +40,14 @@ not a copy.
     pixels came from, and that is what keeps the two formats from growing separate
     behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
-    get the undebayered Bayer mosaic plus the exact white/black levels out of a camera
-    raw. `IsRawPath` is the extension gate; `RawExtensions` exposes the same list to the
-    WPF app's `flats/` filter, so a camera the reader learns is a camera the list offers.
+    get the undebayered Bayer mosaic, the exact white/black levels, and the CFA colour
+    order out of a camera raw. `IsRawPath` is the extension gate; `RawExtensions` exposes
+    the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
+    camera the list offers.
+  - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
+    file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
+    `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`). Never guessed - see "The channel order" under
+    mode 4. Used only for *naming*; no figure depends on it.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, and for the attribution mode `CropCentred` + `Rotate180`. Those last two
@@ -62,7 +67,12 @@ not a copy.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
     "Versioning".
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
-    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`.
+    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`. Beside
+    them, `ExposureBands` - the verdict ladder as a *value*, because two places need it
+    (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
+    constants would have been a second definition of the verdict. `ExposureAnalyzer` also
+    carries `LevelHistogram` and `ChannelLevels`, the per-channel distributions; they are
+    filled in the loop the analyzer already ran and change no existing figure.
     No I/O, no printing - this is where every number is decided. Two of them are not
     `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
     (it decides whether `--light` applies at all, before any pixel is read), and
@@ -87,9 +97,11 @@ not a copy.
     have no console caller today, and live here anyway so a future `--scala` reuses them
     instead of rewriting them.
     Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
-    `StructureReport.Advice()`, `LightReport.Diagnosis()`, and from `RatioReport` the five
-    that the Ratio tab shows verbatim - `Provenance`, `WorldValue`, `Precondition`,
-    `WorldMeaning`, `SensorCaveat`. The console formats them into columns, the WPF app puts
+    `StructureReport.Advice()`, `LightReport.Diagnosis()`, `ExposureReport`'s
+    `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around the exposure
+    histograms - window-only, like `MapScaleLabel`, and for the same reason), and from
+    `RatioReport` the five that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
+    `Precondition`, `WorldMeaning`, `SensorCaveat`. The console formats them into columns, the WPF app puts
     them in cards and under a coloured chip; the wording has one definition either way.
     `WorldValue` and `WorldLine` are split for exactly that reason: the console wants the
     figure with its label glued on, the window shows the label as a separate chip, and
@@ -144,7 +156,11 @@ not a copy.
     `RatioMapScale`): WPF groups radio buttons by name across the whole window, so a
     shared name makes one tab's chips uncheck the other's.
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
-    its own list of verdict names) and the value converters.
+    its own list of verdict names), `ChannelPalette` (R/G/B hues for the exposure
+    histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
+    not a worse channel, and an unknown mosaic order paints all four the neutral accent so
+    the screen cannot imply a measurement that was never made), `HistogramCanvas` (the
+    hand-drawn chart) and the value converters.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
     templates. The converters live there rather than in `App.xaml` because a
     `StaticResource` inside a dictionary resolves in *that* dictionary.
@@ -278,6 +294,18 @@ was found: it used to say rings meant a decentred round obstruction, which was t
 of an artefact, and sent the author looking for an object that had never been there. Don't
 restore the old wording from git history - `TheRingRowDoesNotClaimARingMeansADecentredObstruction`
 fails if you do.
+
+The Exposure tab adds the same kind of thing around its histograms: a card of one chart per
+channel, a paragraph derived from the result (`ExposureReport.HistogramReading`), and a
+collapsed guide whose text is in `SessionMessages` and mirrors the README **by hand** - no
+test binds the two, exactly like the map guide. All of it is drawing and wording; the
+numbers come from `ExposureAnalyzer` and the bands from `ExposureBands`, so the shaded
+target band *is* the band that voted. `Histograms` is a **replaceable list, not an
+`ObservableCollection`**: picking a file starts a run nobody awaits, and a second pick (or
+the Sky toggle) can start another over it - scalar properties just let the last one win,
+but a collection cleared and refilled by two runs at once ends up with duplicated rows and
+nulls in it. The light series is the opposite case and does need `ObservableCollection`,
+because it appends rows as frames finish.
 
 The Structure tab carries a fourth block, `HowToReadPanel`, under the verdict: **which
 half of the screen decides what.** The numbers answer "how much" and own the verdict; the
@@ -674,6 +702,38 @@ median of each. If `max/min > 1.15` the file is treated as CFA and the brightest
 channel is used (the brightest channel clips first, so it is the limiting one);
 otherwise the frame is treated as mono/processed and the whole frame is used.
 
+#### The channel order
+
+Since the histogram card, the four positions get their colours - but **only when the file
+says which is which**, and it is never guessed. A raw carries `filters` + `cdesc`; a FITS
+from Siril's Conversion tab carries `BAYERPAT` (plus `XBAYROFF`/`YBAYROFF`, which shift
+the mosaic phase and go through `CfaPattern.Shift`). Anything else stays `CFA[y,x]`. The
+order differs between cameras - RGGB is commonest, but GBRG, GRBG and BGGR all exist - so
+a label on the wrong channel would look measured when it is not. It changes no figure:
+the limiting channel is the brightest one whatever colour it is.
+
+**The index-3 trap.** `FC(row, col)` returns an index into `cdesc`, not a colour, and
+libraw puts the second green at index 3 on Nikon. Measured on a real D3300 NEF:
+`filters = 0xB4B4B4B4`, `cdesc = "RGBG"`, FC gives 0/1/**3**/2 -> RGGB. A decoder that
+assumes 1 = G mislabels half the mosaic. `CfaPatternTests` carries that exact vector
+alongside the four textbook masks.
+
+#### The histograms
+
+Each channel also carries two distributions - the whole channel, and the same central 20%
+window the verdict is read from - as `LevelHistogram`: 200 bins of 0.5% on the *percentage*
+axis, clamped at both ends so a saturated tail stays visible in the last bin rather than
+falling off. The axis is deliberately the one the verdict lives on, so `ExposureBands`
+becomes intervals on the chart directly.
+
+They are filled in the loops the analyzer already ran, and **nothing existing moved**: the
+brightest channel's centre list is still the one `CentreMedianPct` and `CentreClipPct` come
+from, bit for bit. The other three windows are new work and cost 3 x 4% of the frame.
+
+The window normalises each curve to its own peak (the centre window holds 4% of a channel's
+pixels; on a shared scale the curve that decides would be a flat line). **The chart never
+votes** - it explains where the deciding number came from. The console prints none of this.
+
 The decision metric is the median of a **central 20% × 20% window** of the
 brightest channel, **not** the global median. This is the single most important
 design point of this mode: a flat has a wide distribution *by definition* - that
@@ -987,10 +1047,12 @@ compares twice: the full text, and every numeric token as a float. It also check
 up front, that both report the same version. It exits non-zero on any unexplained numeric
 difference or on a version desync.
 
-**Current status: 38 of 39 scenarios agree numerically** - 22 byte-identical, 16
+**Current status: 39 of 40 scenarios agree numerically** - 23 byte-identical, 16
 differing only in wording. Coverage spans all four modes, all four bands of the residual
-scale, both gradient directions, non-square frames, BITPIX 16/32/-32, and the exposure
-bands either side of each boundary.
+scale, both gradient directions, non-square frames, BITPIX 16/32/-32, the exposure
+bands either side of each boundary, and a CFA frame carrying `BAYERPAT` (`expo cfa
+BAYERPAT`, byte-identical), which is what pins the channel-naming line across the two
+implementations.
 
 The attribution rewrite is mirrored in `flatcheck.py` in full - `_structure_body` split
 out of `mode_structure` exactly as `StructureReport.WriteBody` was, plus
@@ -1005,7 +1067,11 @@ Intentional divergences:
   suggestions - libraw hands over `shutter`, but nothing consumes it yet.
 - `Percentile` on an empty list returns 0 instead of raising.
 - The scale-source line reads `libraw (exact)` where Python reads `rawpy (exact)`. Same
-  library; `rawpy` is its Python wrapper.
+  library; `rawpy` is its Python wrapper. For the same reason, on a raw the channel-order
+  line reads `din libraw` against `din rawpy`. On a FITS both read `BAYERPAT`, so that
+  line is identical - which is what the `expo cfa BAYERPAT` scenario checks.
+- No per-channel histograms in the console; they exist only in the window, and so does
+  their wording (`ExposureReport.HistogramReading` and friends have no console caller).
 - `--sat` is echoed as `--sat=4095` rather than Python's `--sat=4095.0`.
 - The `--light` interpretation capitalises the diagnosis - "Fondul CADE/CRESTE spre
   margini" against Python's lower case. The sign *is* the diagnosis, so the emphasis

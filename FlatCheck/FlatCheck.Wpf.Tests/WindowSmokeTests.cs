@@ -225,13 +225,16 @@ public class WindowSmokeTests
 
     /// <summary>
     /// Tabul de expunere CU rezultat: alt drum prin sabloane decat cel gol - panoul de
-    /// niveluri, lista canalelor CFA, verdictul.
+    /// niveluri, lista canalelor CFA, verdictul, si cele patru desene de histograma.
+    ///
+    /// Ghidul se randeaza si desfasurat, din acelasi motiv ca la ghidul hartii: pliat,
+    /// legarile lui din interiorul cardului nu sunt niciodata evaluate.
     /// </summary>
     [Fact]
     public async Task TheExposureTabRendersAResult()
     {
         using var f = new SessionFixture().WithFlatMaster();
-        string path = f.WriteAnalysableRawFlat("flat.fit");
+        string path = f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
         var vm = new ExposureTabViewModel();
 
         await _sta.InvokeAsync(async () =>
@@ -242,15 +245,52 @@ public class WindowSmokeTests
 
             using var errors = new BindingErrors();
             Render(new ExposureView { DataContext = vm }, name: "tab-expunere-rezultat");
+
+            vm.HistogramGuide.IsExpanded = true;
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-ghid");
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 
         Assert.True(vm.HasResult);
+        Assert.Equal(4, vm.Histograms.Count);
+    }
+
+    /// <summary>
+    /// Un cadru fara mozaic ia alt drum: un singur rand de histograma, fara culoare si
+    /// fara pozitie, plus explicatia in locul verdictului.
+    /// </summary>
+    [Fact]
+    public async Task TheExposureTabRendersAMonoResult()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithFlats();
+        string path = Path.Combine(f.FlatsDir, "debayerizat.fit");
+        File.WriteAllBytes(path, FlatCheck.Tests.FitsTestData.BuildFits(
+            128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000)));
+        var vm = new ExposureTabViewModel();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            vm.Attach(f.Session, CancellationToken.None);
+            vm.Selected = path;
+            await vm.RecomputeAsync();
+
+            using var errors = new BindingErrors();
+            Render(new ExposureView { DataContext = vm }, name: "tab-expunere-mono");
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+
+        Assert.Single(vm.Histograms);
+        Assert.False(vm.IsRawFlat);
     }
 
     /// <summary>
     /// Tabul de expunere inainte de orice alegere: are lista, dar niciun rezultat. E
     /// starea in care il gaseste omul cand comuta pe el, deci trebuie sa se desene.
+    ///
+    /// Acopera si desenul de histograma cu TOATE proprietatile pe valoarea implicita -
+    /// curbe null, praguri NaN - fiindca elementul exista in sablon inainte sa existe
+    /// vreo cifra. E singurul test care trece pe drumul ala.
     /// </summary>
     [Fact]
     public async Task TheExposureTabRendersBeforeAnythingIsPicked()
