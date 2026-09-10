@@ -232,6 +232,44 @@ and wheel are not unit-testable and are checked by hand.
 Measure after 0.1: peak memory of `--histeq` on the 24 MP master (was 672 MB) and the
 window's working set with one file shown, and write both into the analyzer header.
 
+## Amendment A - plain wheel zooms, drag pans (requested after use)
+
+The Ctrl+wheel convention came from "the page still has to scroll over the picture".
+In use the user wants the picture to behave like Siril's viewer: the wheel zooms, full
+stop. Decision: **over the picture the wheel zooms about the cursor, no modifier**; the
+page scrolls with the wheel anywhere else (the list column, the text under the picture,
+the guide), and with its scrollbar over the picture. Nothing else in the control changes;
+drag-to-pan is already there and stays.
+
+### A.1 `FlatCheck.Wpf/Views/ZoomableImage.xaml.cs`
+
+- `OnWheel`: drop the `Ctrl` test; always zoom and set `e.Handled = true`, so the page
+  `ScrollViewer` never sees the event. Keep `PreviewMouseWheel` (tunnelling), so the inner
+  `ScrollViewer` does not consume the wheel as a scroll first.
+- Pan is unchanged, but make it visible: set `scroller.Cursor = Cursors.Hand` whenever the
+  picture is larger than the viewport (`ScrollableWidth > 0 || ScrollableHeight > 0`),
+  `SizeAll` while dragging, and the default cursor when there is nothing to pan. Recompute
+  in `Apply()` and after `ScrollChanged`. At "fit" there is nothing to pan, and the cursor
+  says so instead of the drag silently doing nothing.
+- Header comment: replace the "wheel without Ctrl stays the page's" paragraph with the
+  decision above.
+
+### A.2 Wording - the three places that say "Ctrl + rotita"
+
+`HistEqView.xaml` (the `Faint` line under the picture), `SessionMessages.HistEqGuideRows`
+("zoom si deplasare"), and `README.md` (the paragraph and the mirrored table row) all
+become "rotita = zoom in jurul cursorului, trage cu mouse-ul = deplasare, dublu click =
+potrivit / 100 %". `CLAUDE.md`'s `ZoomableImage` entry: "wheel about the cursor" and the
+sentence that the page scrolls with the wheel outside the picture.
+
+### A.3 Tests
+
+Nothing to add: the wheel and the cursor are pointer interaction, checked by eye. The
+smoke renders still cover the control's bindings. Check by hand on
+`Nikkor 35mm DX/f2.8-sky/ISO400`: wheel over the picture zooms and the page stays put;
+wheel over the caption scrolls the page; at fit the cursor is the arrow, after one wheel
+step it is the hand and dragging moves the picture.
+
 ## To check by eye when done
 
 `FLATCHECK_DUMP_SCREENS` renders, then the real window on

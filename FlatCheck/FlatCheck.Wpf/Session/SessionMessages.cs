@@ -400,8 +400,9 @@ namespace FlatCheck.Wpf
              + "sau cand vrei sa vezi daca o forma e in toate canalele sau doar intr-unul."),
 
             ("zoom si deplasare",
-             "Ctrl + rotita mareste in jurul cursorului, tragerea cu mouse-ul deplaseaza, "
-             + "dublu click comuta intre potrivit si 100 %. La 100 % un pixel de pe ecran e "
+             "Rotita mareste in jurul cursorului, tragerea cu mouse-ul deplaseaza, "
+             + "dublu click comuta intre potrivit si 100 %. Pagina se deruleaza cu rotita "
+             + "in afara pozei. La 100 % un pixel de pe ecran e "
              + "un pixel de senzor - poza e la rezolutie intreaga, nu micsorata. Zoom-ul se "
              + "pastreaza cand schimbi vederea si se reseteaza cand schimbi fisierul."),
 

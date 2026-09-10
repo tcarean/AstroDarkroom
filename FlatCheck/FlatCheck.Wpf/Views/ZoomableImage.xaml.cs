@@ -27,6 +27,12 @@
 // La factor >= 1 pixelii se deseneaza ca patrate crispe (NearestNeighbor), sub 1 se
 // netezesc (HighQuality): ce se mareste e chiar ce s-a calculat, iar pe mozaic tabla
 // de sah R/G/B se vede la 100 % exact ca in Siril.
+//
+// ROTITA FACE ZOOM, fara modificator, ca in vizualizatorul din Siril. Prima varianta cerea
+// Ctrl ca pagina sa se poata derula si peste poza; in folosire omul a vrut poza sa se
+// poarte ca un vizualizator. Pagina se deruleaza cu rotita oriunde in afara pozei si cu
+// bara ei peste poza. Cursorul spune cand e ceva de tras: mana cand poza depaseste
+// viewport-ul, sageata la "potrivit", cand n-are ce deplasa.
 
 using System;
 using System.Windows;
@@ -69,7 +75,16 @@ namespace FlatCheck.Wpf
             scroller.PreviewMouseMove += OnMouseMove;
             scroller.PreviewMouseLeftButtonUp += OnMouseUp;
             scroller.MouseDoubleClick += OnDoubleClick;
+            scroller.ScrollChanged += (_, _) => UpdateCursor();
             KeyDown += OnKey;
+        }
+
+        bool CanPan => scroller.ScrollableWidth > 0 || scroller.ScrollableHeight > 0;
+
+        void UpdateCursor()
+        {
+            if (_dragging) return;
+            scroller.Cursor = CanPan ? Cursors.Hand : null;
         }
 
         public ImageSource Source
@@ -137,6 +152,7 @@ namespace FlatCheck.Wpf
             RenderOptions.SetBitmapScalingMode(image,
                 z >= 1.0 ? BitmapScalingMode.NearestNeighbor : BitmapScalingMode.HighQuality);
             SetCurrentValue(EffectiveZoomProperty, z);
+            UpdateCursor();
         }
 
         /// <summary>
@@ -162,9 +178,7 @@ namespace FlatCheck.Wpf
 
         void OnWheel(object sender, MouseWheelEventArgs e)
         {
-            // Fara Ctrl rotita ramane a paginii: tabul deruleaza in continuare peste poza.
-            if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
-
+            // Handled: nici ScrollViewer-ul de aici, nici cel al paginii nu mai vad rotita.
             double factor = e.Delta > 0 ? ImageZoomViewModel.Step : 1.0 / ImageZoomViewModel.Step;
             ZoomAbout(e.GetPosition(scroller), EffectiveZoom * factor);
             e.Handled = true;
@@ -173,10 +187,12 @@ namespace FlatCheck.Wpf
         void OnMouseDown(object sender, MouseButtonEventArgs e)
         {
             Focus();
+            if (!CanPan) return;   // la "potrivit" n-are ce trage; dublu click-ul ramane
             _dragStart = e.GetPosition(scroller);
             _dragOffsetX = scroller.HorizontalOffset;
             _dragOffsetY = scroller.VerticalOffset;
             _dragging = true;
+            scroller.Cursor = Cursors.SizeAll;
             scroller.CaptureMouse();
         }
 
@@ -186,7 +202,6 @@ namespace FlatCheck.Wpf
             Point p = e.GetPosition(scroller);
             scroller.ScrollToHorizontalOffset(_dragOffsetX - (p.X - _dragStart.X));
             scroller.ScrollToVerticalOffset(_dragOffsetY - (p.Y - _dragStart.Y));
-            scroller.Cursor = Cursors.SizeAll;
         }
 
         void OnMouseUp(object sender, MouseButtonEventArgs e)
@@ -194,7 +209,7 @@ namespace FlatCheck.Wpf
             if (!_dragging) return;
             _dragging = false;
             scroller.ReleaseMouseCapture();
-            scroller.Cursor = null;
+            UpdateCursor();
         }
 
         void OnDoubleClick(object sender, MouseButtonEventArgs e)

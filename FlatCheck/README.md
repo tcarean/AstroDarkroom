@@ -804,9 +804,11 @@ consola scrie compozitul, micșorat.
 
 Poza din fereastră e **la rezoluția senzorului**, nu micșorată ca PNG-ul consolei: se
 arată direct din raster, fără encodare. Stă într-un viewport de 520 px, potrivită
-întreagă la început, cu zoom și deplasare: Ctrl + rotiță mărește în jurul cursorului,
-tragerea cu mouse-ul deplasează, dublu click comută între potrivit și 100 %, iar butoanele
-`−`, `+`, `potrivit`, `100 %` fac același lucru. La 100 % un pixel de pe ecran e un pixel de
+întreagă la început, cu zoom și deplasare: rotița mărește în jurul cursorului (fără niciun
+modificator, ca în Siril; pagina se derulează cu rotița în afara pozei), tragerea cu
+mouse-ul deplasează când poza depășește viewport-ul (cursorul devine mână), dublu click
+comută între potrivit și 100 %, iar butoanele `−`, `+`, `potrivit`, `100 %` fac același
+lucru. La 100 % un pixel de pe ecran e un pixel de
 senzor; pe `Mozaic` se vede tabla de șah R/G/B a mozaicului, exact ca în Siril la 100 %.
 Peste 100 % pixelii se desenează ca pătrate, sub 100 % neteziți. „Potrivit" nu mărește
 niciodată peste 100 %: o poză mai mică decât viewport-ul se arată la mărimea ei. Zoom-ul se
@@ -823,7 +825,7 @@ păstrează când schimbi vederea și se resetează când schimbi fișierul.
 | vederea Mozaic (implicită) | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat, de asta e prima. Trei culori în aceeași histogramă, deci la 100 % se vede tabla de șah; micșorată, se mediază. |
 | vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei, cu mai mult contrast decât mozaicul. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
 | vederile pe canal | aceeași poză, un singur canal, în gri. Ca să vezi dacă o formă e în toate canalele sau doar într-unul. |
-| zoom și deplasare | Ctrl + rotiță, tragere cu mouse-ul, dublu click. La 100 % un pixel de pe ecran e un pixel de senzor. Se păstrează la schimbarea vederii, se resetează la schimbarea fișierului. |
+| zoom și deplasare | rotiță, tragere cu mouse-ul, dublu click; pagina se derulează cu rotița în afara pozei. La 100 % un pixel de pe ecran e un pixel de senzor. Se păstrează la schimbarea vederii, se resetează la schimbarea fișierului. |
 | masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
 | unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
 

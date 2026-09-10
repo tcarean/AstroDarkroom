@@ -248,8 +248,11 @@ not a copy.
     column rather than over the whole tab - the list stays clickable while a frame is
     computing, and a new click supersedes the run (see "What the window adds"). Its
     picture sits in `ZoomableImage`, a `UserControl` that owns the pointer interaction
-    (Ctrl+wheel about the cursor, drag to pan, double-click fit/100 %, keys) and computes
-    the effective factor - "fit" needs the viewport size, which only the control knows.
+    (wheel about the cursor with no modifier - the user asked for Siril's behaviour after
+    a Ctrl+wheel first cut, so the page scrolls with the wheel only outside the picture;
+    drag to pan, with a hand cursor only when there is something to pan; double-click
+    fit/100 %; keys) and computes the effective factor - "fit" needs the viewport size,
+    which only the control knows.
     `LayoutTransform`, not `RenderTransform`, so the scrollable extent follows the zoom;
     `NearestNeighbor` at factor >= 1 so magnified pixels are crisp squares; "fit" is
     capped at 1.0, so a picture smaller than the viewport is shown at its size rather

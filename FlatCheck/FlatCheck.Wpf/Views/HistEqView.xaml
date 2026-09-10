@@ -158,7 +158,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
               <TextBlock Style="{StaticResource Faint}" Margin="0,8,0,0" Text="{Binding Caption}" />
               <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0"
-                         Text="Ctrl + rotita = zoom in jurul cursorului, trage cu mouse-ul = deplasare, dublu click = potrivit / 100 %. La 100 % un pixel de pe ecran e un pixel de senzor; pe Mozaic se vede tabla de sah a mozaicului, ca in Siril." />
+                         Text="Rotita = zoom in jurul cursorului, trage cu mouse-ul = deplasare, dublu click = potrivit / 100 %. La 100 % un pixel de pe ecran e un pixel de senzor; pe Mozaic se vede tabla de sah a mozaicului, ca in Siril." />
               <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" Text="{Binding Caveat}" />
               <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" Text="{Binding MasterNote}"
                          Visibility="{Binding MasterNote, Converter={StaticResource NotNullToVis}}" />
