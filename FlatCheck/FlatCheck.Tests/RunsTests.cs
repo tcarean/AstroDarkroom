@@ -370,6 +370,96 @@ public class RunsTests
     /// Cele doua aplicatii scriu acelasi antet, fiindca il scriu din acelasi loc. Daca
     /// cineva l-ar rescrie in WPF, raportul salvat ar putea ramane pe o versiune veche.
     /// </summary>
+    // ---------------------------------------------------------------- egalizare de histograma
+
+    static string WriteCfaFlat(TempWorkspace ws)
+        => ws.WriteFile("raw.fit", FitsTestData.BuildFits(Size, Size,
+               FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000)),
+               extraCards: FitsTestData.BayerCards("RGGB")));
+
+    [Fact]
+    public void HistEqRun_ProducesTheSameRastersAsTheAnalyzer()
+    {
+        using var ws = new TempWorkspace();
+        string path = WriteCfaFlat(ws);
+
+        LoadedFrame f = ImageLoader.Load(path);
+        var direct = HistEqAnalyzer.Analyze(f.Image, f.Cfa);
+        var run = HistEqRun.Execute(path, new StringWriter());
+
+        Assert.Equal(direct.CompositeRgb, run.Result.CompositeRgb);
+        Assert.Equal(direct.Mosaic, run.Result.Mosaic);
+        Assert.Equal(direct.Channels.Select(c => c.Label), run.Result.Channels.Select(c => c.Label));
+        for (int i = 0; i < 4; i++)
+            Assert.Equal(direct.Channels[i].Equalised, run.Result.Channels[i].Equalised);
+    }
+
+    [Fact]
+    public void HistEqRun_ReturnsTheSamePngBytesAsEncodingTheComposite()
+    {
+        using var ws = new TempWorkspace();
+        var run = HistEqRun.Execute(WriteCfaFlat(ws), new StringWriter());
+
+        Assert.Equal(HistEqRun.EncodeComposite(run.Result), run.Png);
+        Assert.Null(run.SecondaryPng);
+    }
+
+    [Fact]
+    public void HistEqRun_ReturnsADecodablePngOfTheDisplaySize()
+    {
+        using var ws = new TempWorkspace();
+        var run = HistEqRun.Execute(WriteCfaFlat(ws), new StringWriter());
+
+        var d = PngDecoder.Decode(run.Png);
+
+        Assert.Equal(run.Result.W, d.Width);
+        Assert.Equal(run.Result.H, d.Height);
+        Assert.All(d.Chunks, c => Assert.True(c.CrcValid));
+    }
+
+    [Fact]
+    public void HistEqRun_WritesTheReportText()
+    {
+        using var ws = new TempWorkspace();
+        string path = WriteCfaFlat(ws);
+        var expected = new StringWriter();
+        var actual = new StringWriter();
+
+        var run = HistEqRun.Execute(path, actual);
+        HistEqReport.Write(run.Result, path, expected);
+
+        Assert.Equal(expected.ToString(), actual.ToString());
+        Assert.Contains("EGALIZARE DE HISTOGRAMA", actual.ToString());
+    }
+
+    /// <summary>The per-view encoders the window uses: greys, all of the composite's size.</summary>
+    [Fact]
+    public void HistEqRun_EncodesEveryViewAtTheSameSize()
+    {
+        using var ws = new TempWorkspace();
+        var run = HistEqRun.Execute(WriteCfaFlat(ws), new StringWriter());
+
+        var mosaic = PngDecoder.Decode(HistEqRun.EncodeMosaic(run.Result)!);
+        Assert.Equal((run.Result.W, run.Result.H), (mosaic.Width, mosaic.Height));
+        for (int i = 0; i < 4; i++)
+        {
+            var d = PngDecoder.Decode(HistEqRun.EncodeChannel(run.Result, i));
+            Assert.Equal((run.Result.W, run.Result.H), (d.Width, d.Height));
+            var (r, g, b) = d.At(3, 3);
+            Assert.Equal(r, g); Assert.Equal(g, b);
+        }
+    }
+
+    [Fact]
+    public void HistEqRun_OnAMonoFrame_HasNoMosaicToEncode()
+    {
+        using var ws = new TempWorkspace();
+        var run = HistEqRun.Execute(WriteFlat(ws), new StringWriter());
+
+        Assert.Null(HistEqRun.EncodeMosaic(run.Result));
+        Assert.Single(run.Result.Channels);
+    }
+
     [Fact]
     public void TheBannerIsTheFirstTwoLinesAndCarriesVersionAndCopyright()
     {

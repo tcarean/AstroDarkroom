@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - folderul sesiunii si cele patru taburi.
+// MainViewModel.cs - folderul sesiunii si cele cinci taburi.
 //
 // Doua decizii de comportament merita explicate:
 //
@@ -51,12 +51,14 @@ namespace FlatCheck.Wpf
             Ratio = new RatioTabViewModel();
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
+            HistEq = new HistEqTabViewModel();
         }
 
         public StructureTabViewModel Structure { get; }
         public RatioTabViewModel Ratio { get; }
         public LightTabViewModel Light { get; }
         public ExposureTabViewModel Exposure { get; }
+        public HistEqTabViewModel HistEq { get; }
 
         /// <summary>Folderul sesiunii, sau gol daca nu s-a ales inca niciunul.</summary>
         public string Folder
@@ -121,6 +123,9 @@ namespace FlatCheck.Wpf
             // citesc din folder, nu din vreun calcul, deci n-au de ce sa astepte.
             Ratio.Attach(session, ct);
             Exposure.Attach(session, ct);
+            // Tot o lista, tot fara calcul: masterul de 24 MP nu se incarca de doua ori la
+            // deschidere - il citeste deja Structura, mai jos.
+            HistEq.Attach(session, ct);
 
             IsRunning = true;
             try
@@ -158,6 +163,7 @@ namespace FlatCheck.Wpf
             Ratio.Reset();
             Light.Reset();
             Exposure.Reset();
+            HistEq.Reset();
         }
 
         void ClearProblem()

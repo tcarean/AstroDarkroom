@@ -54,9 +54,35 @@ public class OptionsTests
         Assert.False(o.Light);
         Assert.False(o.Expo);
         Assert.False(o.Sky);
+        Assert.False(o.Histeq);
         Assert.Equal("flatcheck.png", o.OutPng);
         Assert.Null(o.Sat);
         Assert.Null(o.Black);
+    }
+
+    [Fact]
+    public void HisteqFlag_IsParsed_OnEitherSideOfThePath()
+    {
+        var after = Options.Parse(new[] { "flat.NEF", "--histeq", "-o", "poza.png" });
+        var before = Options.Parse(new[] { "--histeq", "flat.NEF", "-o", "poza.png" });
+
+        Assert.True(after.Histeq);
+        Assert.True(before.Histeq);
+        Assert.Equal("flat.NEF", after.Image);
+        Assert.Equal("flat.NEF", before.Image);
+        Assert.Equal("poza.png", after.OutPng);
+        Assert.Null(after.Error);
+    }
+
+    /// <summary>Mode flags are not mutually validated here; dispatch order in the CLI decides.</summary>
+    [Fact]
+    public void HisteqAndExpoTogether_BothStaySet()
+    {
+        var o = Options.Parse(new[] { "--histeq", "--expo", "flat.NEF" });
+
+        Assert.True(o.Histeq);
+        Assert.True(o.Expo);
+        Assert.Null(o.Error);
     }
 
     [Fact]

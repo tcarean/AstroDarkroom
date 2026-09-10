@@ -33,6 +33,27 @@ public class PngWriterTests
         return rgb;
     }
 
+    // ---------------------------------------------------------------- grey
+
+    /// <summary>
+    /// EncodeGrey is the RGB encoder with the three components equal - no second
+    /// colour type, so the decoder here needs no second path either.
+    /// </summary>
+    [Fact]
+    public void EncodeGrey_WritesEachByteToAllThreeComponents()
+    {
+        var grey = new byte[] { 0, 17, 128, 255, 3, 200 };
+
+        var d = PngDecoder.Decode(PngWriter.EncodeGrey(grey, 3, 2));
+
+        Assert.Equal(2, d.ColorType);
+        for (int i = 0; i < grey.Length; i++)
+        {
+            var (r, g, b) = d.At(i % 3, i / 3);
+            Assert.Equal(grey[i], r); Assert.Equal(grey[i], g); Assert.Equal(grey[i], b);
+        }
+    }
+
     // ---------------------------------------------------------------- container
 
     [Fact]

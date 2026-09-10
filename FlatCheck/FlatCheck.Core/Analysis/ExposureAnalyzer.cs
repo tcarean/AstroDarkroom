@@ -174,7 +174,7 @@ namespace FlatCheck
         /// Numele unei pozitii Bayer: culoarea cand fisierul a spus ordinea, pozitia cand
         /// nu. Nu se ghiceste - ordinea difera de la aparat la aparat.
         /// </summary>
-        internal string ChannelLabel(int i) => Cfa?.Name(i) ?? $"CFA[{i / 2},{i % 2}]";
+        internal string ChannelLabel(int i) => Mosaic.Label(Cfa, i);
     }
 
     internal static class ExposureAnalyzer
@@ -225,7 +225,7 @@ namespace FlatCheck
             for (int y = 0; y < data.H; y++)
                 for (int x = 0; x < data.W; x++)
                 {
-                    int c = (y & 1) * 2 + (x & 1);
+                    int c = Mosaic.PositionOf(y, x);
                     double v = data.At(y, x);
                     ch[c].Add(v);
                     wholeHist[c].Add((v - black) / rng * 100);
@@ -233,7 +233,7 @@ namespace FlatCheck
             var meds = ch.Select(c => Stats.Percentile(c, 50)).ToArray();
             double mmax = meds.Max(), mmin = meds.Min();
             double cfaSpread = mmax / Math.Max(mmin, 1e-9);
-            bool isCfa = cfaSpread > 1.15;
+            bool isCfa = Mosaic.LooksCfa(cfaSpread);
             int bright = Array.IndexOf(meds, mmax);
 
             // fereastra centrala 20%x20%, pe FIECARE pozitie Bayer refacuta ca sub-imagine.

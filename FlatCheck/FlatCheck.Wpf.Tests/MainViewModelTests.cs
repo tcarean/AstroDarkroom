@@ -70,6 +70,24 @@ public class MainViewModelTests
         Assert.False(vm.Exposure.HasResult);
     }
 
+    /// <summary>
+    /// Tabul de histograma primeste lista - masterul intai - si nu calculeaza nimic la
+    /// deschidere: masterul de 24 MP il citeste deja Structura atunci.
+    /// </summary>
+    [Fact]
+    public async Task HistEqGetsItsListWithTheMasterFirstButWaitsForAChoice()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF", "b.NEF");
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal(3, vm.HistEq.Files.Count);
+        Assert.True(vm.HistEq.Files[0].IsMaster);
+        Assert.False(vm.HistEq.HasResult);
+        Assert.Null(vm.HistEq.Selected);
+    }
+
     // ------------------------------------------------------------------ folder invalid
 
     /// <summary>
@@ -145,12 +163,18 @@ public class MainViewModelTests
 
         await vm.OpenAsync(good.Root);
         Assert.True(vm.Structure.HasResult);
+        vm.HistEq.Selected = vm.HistEq.Files[0];
+        await vm.HistEq.RecomputeAsync();
+        Assert.True(vm.HistEq.HasResult);
 
         await vm.OpenAsync(bad.Root);
 
         Assert.False(vm.Structure.HasResult);
         Assert.False(vm.Light.HasResult);
         Assert.Empty(vm.Light.Frames);
+        Assert.False(vm.HistEq.HasResult);
+        Assert.Empty(vm.HistEq.Files);
+        Assert.Null(vm.HistEq.Image);
     }
 
     [Fact]

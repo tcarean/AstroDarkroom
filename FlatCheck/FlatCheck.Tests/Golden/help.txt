@@ -8,6 +8,7 @@ Utilizare:
   flatcheck <flat_brut.NEF> --expo        # verificare expunere
   flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril
   flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
+  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea "Histogram" din Siril, pe canale
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
@@ -17,6 +18,9 @@ Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim
 
 --light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,
 fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
+
+--histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,
+deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.
 
 Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
 vandabilitate sau potrivire pentru un scop anume. E software liber:

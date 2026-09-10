@@ -39,6 +39,10 @@ namespace FlatCheck
         internal bool Light;
         internal bool Expo;
         internal bool Sky;
+
+        // Modul 5: vederea "Histogram" din Siril. Nu are verdict si nu are optiuni
+        // proprii; -o e unde se scrie poza.
+        internal bool Histeq;
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
@@ -58,7 +62,7 @@ namespace FlatCheck
         internal string Error;
 
         static readonly HashSet<string> BoolFlags = new()
-        { "--light", "--expo", "--sky", "-h", "--help" };
+        { "--light", "--expo", "--sky", "--histeq", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
         { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov" };
@@ -82,6 +86,7 @@ namespace FlatCheck
                     if (a == "--light") o.Light = true;
                     else if (a == "--expo") o.Expo = true;
                     else if (a == "--sky") o.Sky = true;
+                    else if (a == "--histeq") o.Histeq = true;
                     continue;
                 }
 

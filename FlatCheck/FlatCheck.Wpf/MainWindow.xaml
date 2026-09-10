@@ -17,10 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow - bara cu folderul, apoi cele patru taburi.
+<!-- MainWindow - bara cu folderul, apoi cele cinci taburi.
 
      Cand folderul nu e bun, taburile nu se arata deloc si in locul lor apare explicatia.
-     E deliberat: patru panouri goale l-ar pune pe om sa le deschida pe rand ca sa
+     E deliberat: cinci panouri goale l-ar pune pe om sa le deschida pe rand ca sa
      inteleaga ca de fapt trebuie sa ruleze un script in Siril. -->
 
 <Window x:Class="FlatCheck.Wpf.MainWindow"
@@ -115,7 +115,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </StackPanel>
       </Border>
 
-      <!-- cele patru taburi -->
+      <!-- cele cinci taburi -->
       <TabControl>
         <TabControl.Style>
           <Style TargetType="TabControl" BasedOn="{StaticResource {x:Type TabControl}}">
@@ -143,6 +143,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </TabItem>
         <TabItem Header="Expunere">
           <local:ExposureView DataContext="{Binding Exposure}" />
+        </TabItem>
+        <TabItem Header="Histogram">
+          <local:HistEqView DataContext="{Binding HistEq}" />
         </TabItem>
       </TabControl>
     </Grid>

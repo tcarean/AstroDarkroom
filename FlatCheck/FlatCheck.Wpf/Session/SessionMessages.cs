@@ -341,5 +341,73 @@ namespace FlatCheck.Wpf
              "Zgomot, nu structura: prea putine cadre sau expunere prea joasa. Cifrele "
              + "raman mici; nu e nimic de reparat la sursa, doar de stivuit mai mult."),
         };
+
+        // --------------------------------------------------- tabul de histograma
+
+        /// <summary>
+        /// Cand nu e nici master, nici vreun cadru citibil in flats/. Prin MainViewModel nu
+        /// se ajunge aici - Check() cere masterul - dar tabul se ataseaza si in teste.
+        /// </summary>
+        internal static string NoFlatFrames(SirilSession s) =>
+            $"Nimic de egalizat: nici masterul {SirilSession.FlatMasterName} in process/, nici "
+            + $"vreun cadru citibil in:\n{s.FlatsDir}\n\n"
+            + "Tabul arata cadrele asa cum au fost trase - raw de aparat (.nef, .cr2, .cr3, "
+            + ".arw, .dng, .raf) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
+            + "facut din ele, ca sa se vada ce s-a mediat si ce a ramas.";
+
+        // Ghidul de mai jos e in oglinda cu tabelul din README ("Histogram"). Nu exista
+        // test care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+
+        /// <summary>Ce e poza, inainte de lista de citiri.</summary>
+        internal static string HistEqGuideIntro() =>
+            "E vederea \"Histogram\" din Siril, refacuta: imaginea trecuta prin propria ei "
+            + "functie de repartitie, astfel incat fiecare nivel de gri sa primeasca acelasi "
+            + "numar de pixeli. Nu e un grafic si nu e o masuratoare. Pe un flat, a carui "
+            + "distributie e ingusta fata de scala fisierului, curba e abrupta exact pe "
+            + "intervalul vignetarii, si tot ce nu e uniform iese la contrast maxim.\n\n"
+            + "Poza EXPLICA, nu voteaza: nicio cifra din unealta nu se schimba cu ce se vede "
+            + "aici, si nicio forma de aici nu intra in vreun verdict.";
+
+        /// <summary>Cum se citeste poza, in ordinea in care merita privita.</summary>
+        internal static IReadOnlyList<(string Shape, string Meaning)> HistEqGuideRows() => new[]
+        {
+            ("de ce un flat curat arata zgomotos",
+             "Egalizarea intinde ORICE distributie pe 0..255, si a unui cadru fara nicio "
+             + "structura. Atunci ce ramane de intins e zgomotul, si el ajunge la contrast "
+             + "maxim. Granulatie fina peste tot inseamna \"n-are altceva de aratat\"."),
+
+            ("de ce nu se poate citi cat de mare e o forma",
+             "Fiecare nivel de gri primeste acelasi numar de pixeli, indiferent cat de "
+             + "apropiate erau valorile lor. O unda de 0.5 % si un gradient de 10 % cu aceeasi "
+             + "forma ies identic. Amplitudinea e in tabul Structura, nu aici."),
+
+            ("vederea RGB",
+             "Cele patru pozitii Bayer, fiecare egalizata pe repartitia ei si pusa in "
+             + "culoarea ei - Siril pe o imagine debayerizata. O nuanta uniforma nu inseamna "
+             + "nimic (fiecare canal e intins separat); o nuanta care VARIAZA pe cadru "
+             + "inseamna ca un canal are alta forma decat celelalte - o sursa cu gradient de "
+             + "culoare, o scurgere de lumina colorata."),
+
+            ("vederile pe canal",
+             "Aceeasi poza, un singur canal, in gri. Utile cand compozitul e greu de citit "
+             + "sau cand vrei sa vezi daca o forma e in toate canalele sau doar intr-unul."),
+
+            ("vederea Mozaic",
+             "Tot mozaicul egalizat ca un singur strat - literal ce arata Siril pe un raw "
+             + "deschis nedebayerizat, cum il deschide implicit. Cele trei culori sunt trei "
+             + "populatii in aceeasi histograma, deci apare un caroiaj fin; la marimea "
+             + "ecranului se mediaza."),
+
+            ("masterul fata de un cadru",
+             "Masterul e stiva cadrelor de sub el. O forma care se vede pe un cadru si "
+             + "lipseste de pe master a fost trecatoare - un nor, o umbra, o palpaire - si "
+             + "s-a mediat. Una care se vede pe amandoua e fixa pe montaj, si pe ea o "
+             + "masoara cifrele din Structura. Zgomotul mai mic al masterului face o forma "
+             + "comuna sa para acolo mai CLARA, nu mai slaba: egalizarea e pe ranguri."),
+
+            ("unde e cifra",
+             "In tabul Structura: reziduul dupa modelul radial, colturile, inclinarea, pata "
+             + "maxima. Poza de aici spune CE FORMA are ce masoara ele."),
+        };
     }
 }

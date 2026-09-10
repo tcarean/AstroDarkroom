@@ -164,6 +164,22 @@ namespace FlatCheck
         internal static void Write(string path, byte[] rgb, int w, int h)
             => File.WriteAllBytes(path, Encode(rgb, w, h));
 
+        /// <summary>
+        /// Un raster gri, scris ca RGB cu cele trei componente egale. Encoderul ramane cu
+        /// un singur tip de culoare; a adauga tipul 0 pentru vederile egalizate ar fi
+        /// insemnat o a doua cale prin IHDR si prin decoderul din teste, pentru octeti pe
+        /// care nimeni nu-i numara.
+        /// </summary>
+        internal static byte[] EncodeGrey(byte[] grey, int w, int h)
+        {
+            var rgb = new byte[grey.Length * 3];
+            for (int i = 0; i < grey.Length; i++)
+            {
+                rgb[i * 3] = grey[i]; rgb[i * 3 + 1] = grey[i]; rgb[i * 3 + 2] = grey[i];
+            }
+            return Encode(rgb, w, h);
+        }
+
         /// <summary>Encodeaza in memorie - punctul de intrare real, ca sa fie testabil fara disc.</summary>
         internal static byte[] Encode(byte[] rgb, int w, int h)
         {

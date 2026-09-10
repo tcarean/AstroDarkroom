@@ -257,4 +257,77 @@ public class SirilSessionTests
         Assert.Equal(new[] { "DSC_0001.NEF", "DSC_0002.NEF", "DSC_0003.NEF" },
                      s.RawFlats().Select(Path.GetFileName).ToArray());
     }
+
+    // ------------------------------------------------------------------ tabul de histograma
+
+    /// <summary>Pentru egalizare un FITS convertit e la fel de bun ca raw-ul; restul nu.</summary>
+    [Fact]
+    public void FlatFramesListRawAndFitsAndNothingElse_InOrdinalOrder()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+
+        foreach (string n in new[] { "b.fit", "a.NEF", "c.FITS", "d.jpg", "e.txt", "A.fts" })
+            File.WriteAllText(Path.Combine(s.FlatsDir, n), "x");
+
+        Assert.Equal(new[] { "A.fts", "a.NEF", "b.fit", "c.FITS" },
+                     s.FlatFrames().Select(Path.GetFileName).ToArray());
+
+        using var bare = new TempWorkspace();
+        Assert.Empty(Session(bare, flats: false).FlatFrames());
+    }
+
+    [Fact]
+    public void TheHistEqCandidatesPutTheMasterFirst()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+        foreach (string n in new[] { "DSC_0002.NEF", "DSC_0001.NEF" })
+            File.WriteAllText(Path.Combine(s.FlatsDir, n), "x");
+
+        var c = s.HistEqCandidates();
+
+        Assert.Equal(3, c.Count);
+        Assert.True(c[0].IsMaster);
+        Assert.Equal(s.FlatMasterPath, c[0].Path);
+        Assert.Equal(new[] { "DSC_0001.NEF", "DSC_0002.NEF" }, c.Skip(1).Select(x => Path.GetFileName(x.Path)));
+        Assert.All(c.Skip(1), x => Assert.False(x.IsMaster));
+    }
+
+    [Fact]
+    public void WithoutTheMasterFileTheCandidatesAreJustTheFrames()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, master: false);
+        File.WriteAllText(Path.Combine(s.FlatsDir, "a.NEF"), "x");
+
+        var c = s.HistEqCandidates();
+
+        Assert.Single(c);
+        Assert.False(c[0].IsMaster);
+    }
+
+    [Fact]
+    public void WithNeitherMasterNorFramesTheCandidatesAreEmpty()
+    {
+        using var ws = new TempWorkspace();
+        Assert.Empty(Session(ws, master: false, flats: false).HistEqCandidates());
+    }
+
+    /// <summary>
+    /// Doar masterul prin conventie: o a doua stiva in process/ e treaba tabului Ratio,
+    /// si aici ar aparea ca "inca un master", ceea ce nu e.
+    /// </summary>
+    [Fact]
+    public void AnotherStackInProcessIsNotACandidate()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_stacked_0deg.fit"), "x");
+
+        var c = s.HistEqCandidates();
+
+        Assert.Single(c);
+        Assert.Equal(s.FlatMasterPath, c[0].Path);
+    }
 }

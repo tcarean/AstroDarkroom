@@ -397,6 +397,72 @@ public class GoldenOutputTests
         return dir;
     }
 
+    // ---------------------------------------------------------------- histeq
+
+    /// <summary>
+    /// No verdict, exit 0, a PNG of the display size beside the report. The golden file
+    /// pins the table and the caveat; the numbers in it are input ranges, so they move
+    /// only if the fixture does.
+    /// </summary>
+    [Fact]
+    public void Histeq_OnACfaFlat_WritesThePictureAndExitsZero()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = ws.WriteFile("raw_bayerpat.fit", FitsTestData.BuildFits(
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB")));
+        string png = ws.PathTo("out.png");
+
+        var (output, exit) = RunCli(ws, f, "--histeq", "-o", png);
+
+        Assert.Equal(0, exit);
+        Assert.Contains("CFA (ordine RGGB, din BAYERPAT)", output);
+        Assert.Contains("nu da verdict", output);
+        var d = PngDecoder.Decode(File.ReadAllBytes(png));
+        Assert.Equal((Size / 2, Size / 2), (d.Width, d.Height));
+        AssertGolden("histeq_cfa", output);
+    }
+
+    [Fact]
+    public void Histeq_OnAMonoFlat_ReportsOneChannel()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "flat.fit", FitsTestData.Radial(Size, Size));
+
+        var (output, exit) = RunCli(ws, f, "--histeq", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(0, exit);
+        Assert.Contains("mono/procesat", output);
+        AssertGolden("histeq_mono", output);
+    }
+
+    /// <summary>The folder check runs before dispatch, so it holds for the new flag too.</summary>
+    [Fact]
+    public void Histeq_OnAFolder_IsRefusedLikeEveryModeButLight()
+    {
+        using var ws = new TempWorkspace();
+
+        var (output, exit) = RunCli(ws, ws.Dir, "--histeq");
+
+        Assert.Equal(1, exit);
+        Assert.Contains("un folder se poate da doar cu --light", output);
+    }
+
+    /// <summary>--histeq wins over --expo: dispatch is first-match, and it comes first.</summary>
+    [Fact]
+    public void Histeq_TakesPrecedenceOverExpo()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = Flat(ws, "raw.fit", scene);
+
+        var (output, exit) = RunCli(ws, f, "--expo", "--histeq", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(0, exit);
+        Assert.Contains("EGALIZARE DE HISTOGRAMA", output);
+        Assert.DoesNotContain("VERDICT", output);
+    }
+
     // ---------------------------------------------------------------- expo
 
     [Fact]

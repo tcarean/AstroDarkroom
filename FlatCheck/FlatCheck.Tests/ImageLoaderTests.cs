@@ -147,6 +147,23 @@ public class ImageLoaderTests
     public void TheFitsReaderClaimsOnlyFitsExtensions(string path, bool claimed)
         => Assert.Equal(claimed, new FitsReader().Handles(path));
 
+    /// <summary>
+    /// The listing rule the window uses for the histogram tab is the same set of
+    /// extensions the reader claims - one list, exposed, like RawReader's.
+    /// </summary>
+    [Theory]
+    [InlineData("x.fit", true)]
+    [InlineData("x.FITS", true)]
+    [InlineData("x.fts", true)]
+    [InlineData("x.NEF", false)]
+    [InlineData("x.txt", false)]
+    [InlineData("", false)]
+    public void IsFitsPath_IsTheExtensionListOnly(string path, bool expected)
+    {
+        Assert.Equal(expected, FitsReader.IsFitsPath(path));
+        Assert.Equal(new[] { ".fit", ".fits", ".fts" }, FitsReader.FitsExtensions);
+    }
+
     [Theory]
     [InlineData("x.NEF", true)]
     [InlineData("x.fit", false)]

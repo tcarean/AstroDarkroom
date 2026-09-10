@@ -64,6 +64,21 @@ public class ExposureAnalyzerTests
         Assert.Equal(r.ChannelMedians.Max(), r.ChannelMedians[r.BrightestChannel], 9);
     }
 
+    /// <summary>
+    /// The CFA rule is the shared one in Mosaic, and it is strict: a spread of exactly
+    /// the threshold is still mono. Pinned here so the extraction cannot have moved it.
+    /// </summary>
+    [Fact]
+    public void TheCfaDecisionIsStrictlyAboveTheSharedThreshold()
+    {
+        double s = Mosaic.CfaSpreadMin;
+        var atThreshold = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, Sat * s, rGain: 1 / s, bGain: 1 / s), Sat, null, false);
+        var justAbove = ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, Sat * s, rGain: 1 / (s + 0.001), bGain: 1 / (s + 0.001)), Sat, null, false);
+
+        Assert.False(atThreshold.IsCfa);
+        Assert.True(justAbove.IsCfa);
+    }
+
     // ---------------------------------------------------------------- panel bands
 
     [Theory]

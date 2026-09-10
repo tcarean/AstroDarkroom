@@ -155,6 +155,7 @@ public class WindowSmokeTests
             Render(new RatioView { DataContext = vm.Ratio }, name: "tab-ratio");
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
+            Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-gol");
 
             // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
             // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
@@ -173,7 +174,46 @@ public class WindowSmokeTests
         Assert.True(vm.Light.HasResult);
         Assert.True(vm.Ratio.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
+        Assert.Equal(3, vm.HistEq.Files.Count);
     }
+
+    /// <summary>
+    /// Tabul de histograma CU rezultat: chipurile de vedere, poza, nota de master, ghidul
+    /// desfasurat, apoi o vedere pe canal si un rezultat mono (fara chipuri). Rezultatul
+    /// vine direct din analizor, ca la previzualizarea de pe tabul de expunere.
+    /// </summary>
+    [Fact]
+    public void TheHistEqTabRendersAResult()
+        => _sta.Invoke(() =>
+        {
+            // Un mozaic pe un camp radial, nu FlatCfa: acela e constant pe canal si se
+            // egalizeaza intr-un alb uniform, ceea ce e corect si nu se vede nimic din el.
+            var cfa = HistEqAnalyzer.Analyze(
+                FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.WithBayerMosaic(
+                    FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000))),
+                CfaPattern.Parse("RGGB", "BAYERPAT"));
+            var vm = new HistEqTabViewModel();
+            vm.Populate(cfa, isMaster: true);
+
+            using var errors = new BindingErrors();
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq");
+
+            vm.Guide.IsExpanded = true;
+            Render(new HistEqView { DataContext = vm }, h: 1600, name: "tab-histeq-ghid");
+
+            vm.View.Options.First(o => o.Label == "G1").IsSelected = true;
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-canal");
+
+            var mono = HistEqAnalyzer.Analyze(
+                FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
+            vm.Populate(mono);
+            Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono");
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(vm.HasResult);
+            Assert.False(vm.View.IsVisible);
+            Assert.Equal("", vm.MasterNote);
+        });
 
     /// <summary>
     /// Ecranul de problema are propriile legari, si e chiar ecranul pe care il vede cineva

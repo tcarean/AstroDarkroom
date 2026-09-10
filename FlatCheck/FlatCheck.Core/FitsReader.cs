@@ -32,10 +32,26 @@ namespace FlatCheck
         /// tot aici, dar decizia aia e a lui ImageLoader si e scrisa acolo - nu se ascunde
         /// intr-un "Handles care intoarce mereu true".
         /// </summary>
-        public bool Handles(string path)
+        public bool Handles(string path) => IsFitsPath(path);
+
+        static readonly string[] Extensions = { ".fit", ".fits", ".fts" };
+
+        /// <summary>
+        /// Extensiile FITS, expuse din acelasi motiv ca RawReader.RawExtensions: aplicatia
+        /// WPF listeaza dupa ele cadrele din flats/ pentru tabul de histograma, si o a doua
+        /// lista ar fi divergat de asta.
+        /// </summary>
+        internal static IReadOnlyList<string> FitsExtensions => Extensions;
+
+        /// <summary>
+        /// Doar extensia, ca la raw. E o regula de LISTARE, nu de dispecerat: ce nu
+        /// revendica nimeni ajunge tot aici, prin decizia lui ImageLoader.
+        /// </summary>
+        internal static bool IsFitsPath(string path)
         {
+            if (string.IsNullOrEmpty(path)) return false;
             string ext = Path.GetExtension(path).ToLowerInvariant();
-            return ext == ".fit" || ext == ".fits" || ext == ".fts";
+            return Array.IndexOf(Extensions, ext) >= 0;
         }
 
         public LoadedFrame Load(string path)

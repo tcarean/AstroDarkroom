@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
-// Ordinea de dispecerat: --expo -> --ratio -> --light -> structura (implicit).
+// Ordinea de dispecerat: --histeq -> --expo -> --ratio -> --light -> structura (implicit).
 //
 // CE A MAI RAMAS AICI, dupa ce nucleul a devenit FlatCheck.Core: exact ce e al consolei
 // si al nimanui altcuiva - argumentele, alegerea modului, scrierea hartii pe disc si
@@ -32,6 +32,7 @@
 //     2  SUSPECT
 //     3  PROBLEMA
 // Verdictele sunt monotone, deci "orice != 0" inseamna "nu e curat, uita-te".
+// --histeq n-are verdict: 0 inseamna doar ca a scris poza.
 
 using System;
 using System.IO;
@@ -70,7 +71,8 @@ namespace FlatCheck
             int code;
             try
             {
-                if (o.Expo) code = ExitFor(RunExpo(o, stdout));
+                if (o.Histeq) code = RunHisteq(o, stdout);
+                else if (o.Expo) code = ExitFor(RunExpo(o, stdout));
                 else if (o.Ratio != null) code = ExitFor(RunRatio(o, stdout));
                 else if (o.Light) code = ExitFor(RunLight(o, stdout));
                 else code = ExitFor(RunStructure(o, stdout));
@@ -159,6 +161,18 @@ namespace FlatCheck
         static ExposureVerdict RunExpo(Options o, TextWriter w)
             => ExposureRun.Execute(o.Image, o.Sat, o.Black, o.Sky, w).Result.Verdict;
 
+        /// <summary>
+        /// Nu trece prin ExitFor: modul n-are verdict de tradus, iar un "OK" inventat ar
+        /// pune un succes acolo unde tabelul codurilor promite "utilizabil ca atare".
+        /// 0 = a scris poza; orice esec ajunge la catch-ul de mai sus, cu 1.
+        /// </summary>
+        static int RunHisteq(Options o, TextWriter w)
+        {
+            var run = HistEqRun.Execute(o.Image, w);
+            SaveMap(o.OutPng, run.Png, w);
+            return 0;
+        }
+
         static void SaveMap(string path, byte[] png, TextWriter w)
         {
             File.WriteAllBytes(path, png);
@@ -175,6 +189,7 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <flat_brut.NEF> --expo        # verificare expunere");
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril");
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer");
+            w.WriteLine("  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea \"Histogram\" din Siril, pe canale");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
@@ -184,6 +199,9 @@ namespace FlatCheck
             w.WriteLine();
             w.WriteLine("--light nu merge pe orice: peste ~40 de grade diagonala refuza sa raspunda,");
             w.WriteLine("fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.");
+            w.WriteLine();
+            w.WriteLine("--histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,");
+            w.WriteLine("deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.");
             w.WriteLine();
 
             // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare

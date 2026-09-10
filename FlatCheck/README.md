@@ -2,7 +2,9 @@
 
 Diagnostic cantitativ pentru flat frames de astrofoto. Răspunde la patru întrebări:
 e master flat-ul simetric radial, cât din abaterea lui e fixată de *aparat* și cât de
-*lume*, corectează flat-ul un light real, și e un flat brut expus corect.
+*lume*, corectează flat-ul un light real, și e un flat brut expus corect. Al cincilea mod
+nu răspunde la nimic — arată: cadrul văzut prin egalizare de histogramă, adică vederea
+„Histogram" din Siril, în care orice neuniformitate iese la contrast maxim.
 
 Consolă mică în C#, cu **o singură dependință**: reader FITS propriu și encoder PNG
 propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — libraw, prin
@@ -11,8 +13,8 @@ propriu (prin `ZLibStream` din BCL), iar pentru fișierele raw de aparat — lib
 pur managed pentru asta. .NET 8. Binarul se numește `flatcheck.exe` și, publicat ca
 `PublishSingleFile`, se copiază oriunde ca până acum.
 
-Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași patru
-moduri pe un folder de sesiune Siril, în patru taburi. Nu e o a doua implementare: stă
+Există și o **aplicație cu ferestre**, `FlatCheck.Wpf.exe`, care rulează aceleași cinci
+moduri pe un folder de sesiune Siril, în cinci taburi. Nu e o a doua implementare: stă
 peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
 Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
 
@@ -82,7 +84,7 @@ la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost
 
 ---
 
-## Cele patru moduri
+## Cele cinci moduri
 
 ### 1. Structură (implicit)
 
@@ -324,6 +326,48 @@ subexpus.
 
 ---
 
+### 5. Egalizare de histogramă — `--histeq`
+
+```bash
+flatcheck flats/DSC_0060.NEF --histeq -o poza.png
+```
+
+Nu e un test și nu dă verdict. E **vederea „Histogram" din Siril 1.4.4**, refăcută: imaginea
+trecută prin propria ei funcție de repartiție, astfel încât fiecare nivel de gri să
+primească același număr de pixeli. Pe un flat — o distribuție îngustă față de scala
+fișierului — curba e abruptă exact pe intervalul vignetării, și tot ce nu e uniform iese
+la contrast maxim, inclusiv ce nu se vede deloc pe imaginea liniară. Măsurat pe un
+sintetic cu 5 % vignetare: o undă de 0.3 % e o treime de nivel de gri în afișarea liniară
+și vreo cincisprezece niveluri egalizată.
+
+Ce face, exact ca Siril (citit din sursa lui, `image_display.c` și `histogram.c`):
+
+- o histogramă cu 65536 de coșuri **pe canal**, din care pixelii egali cu zero lipsesc;
+- tabelul de transfer e repartiția cumulată înmulțită cu 255, rotunjită ca `round_to_BYTE`;
+- pe un cadru CFA cele patru poziții Bayer se egalizează **fiecare pe repartiția ei**, ca
+  straturile unei imagini debayerizate în Siril; consola scrie compozitul RGB (R din
+  poziția roșie, G media celor doi verzi, B din cea albastră — după culoare, nu după
+  poziție, deci ordinea vine din fișier și nu se ghicește; fără ordine, media celor patru
+  în gri).
+
+Ce diferă: coșurile stau pe `[min, max]` ale canalului, nu pe 0..65535 absolut, fiindcă
+rasterele pot fi la orice scală (0..4095, 0..65535, 0..1); pe date întregi maparea e
+identică, pe float e mai fină. Egalizarea se face la rezoluție întreagă, apoi rezultatul
+pe 8 biți se micșorează la ~1500 px pe latura lungă, cu aceeași regulă ca rasterul de
+analiză.
+
+**Ce NU se poate citi din poză.** Amplitudinea. Fiecare nivel de gri primește același număr
+de pixeli, indiferent cât de apropiate erau valorile lor, deci o undă de 0.5 % și un
+gradient de 10 % cu aceeași formă ies identic — și un flat perfect își arată propriul
+zgomot la contrast maxim. Poza spune **ce formă** are ce măsoară modul de structură;
+cifrele sunt acolo. Iese cu 0 când a scris poza; raportul e informativ.
+
+Acceptă orice fișier pe care îl citește unealta: raw de aparat sau FITS, cadru individual
+sau master. Pe un master (float, 0..1, cu mozaic CFA intact cum îl scrie Siril) merge la
+fel; ce se vede acolo e ce a rămas după stivuire.
+
+---
+
 ## Când merge și când NU merge `--light`
 
 Modul separă fondul în „plan de poluare luminoasă" + „termeni radiali = eroare de flat".
@@ -452,6 +496,7 @@ au rămas doar ca etichetă pe componenta fixă în lume, care e informativă ș
 | 3 | `PROBLEMA` / `REFA` |
 
 Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, uită-te".
+`--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut.
 
 ---
 
@@ -465,9 +510,10 @@ flatcheck <folder/> --light              # end-to-end pe toată seria
 flatcheck <flat_brut.fit> --expo         # expunere
 flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
+flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
-                           una lângă ea, cu sufixul -lume)
+                           una lângă ea, cu sufixul -lume; la --histeq e poza egalizată)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
@@ -628,7 +674,7 @@ Dacă nu găsește `process/pp_flat_stacked.fit`, aplicația nu pornește pe fol
 spune ce e de făcut — să rulezi scriptul **`OSC_Preprocessing.ssf`** din Siril. Fișierul
 acela e intrarea modului de structură, prin convenție.
 
-### Cele patru taburi
+### Cele cinci taburi
 
 | tab | ce face | când rulează |
 |---|---|---|
@@ -636,6 +682,7 @@ acela e intrarea modului de structură, prin convenție.
 | **Ratio** | modul 2 între două mastere alese explicit, din două sesiuni | după ce alegi ambele fișiere |
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
+| **Histogram** | modul 5 pe masterul din `process/` sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
@@ -734,6 +781,40 @@ flat, și se strânge spre saturație. Pe vederea din previzualizare **nu exist�
 țintă**, iar verdictul nu se uită la ea deloc. Vederea lipsește, cu explicație, pe un FITS
 sau pe un raw fără previzualizare decodabilă.
 
+**Histogram** listează în stânga **masterul din `process/` pe prima poziție**, marcat, și
+apoi cadrele din `flats/` — raw de aparat **și** FITS, fiindcă pentru egalizare un flat
+trecut prin Conversion e la fel de bun ca NEF-ul. Un click egalizează fișierul; alt click
+egalizează altul, iar dacă primul încă se calcula, e abandonat — lista rămâne apăsabilă,
+ecranul de așteptare acoperă doar poza. Nimic nu rulează singur la deschidere: masterul de
+24 MP îl citește deja tabul Structura atunci.
+
+Masterul e acolo pentru o singură întrebare: **s-au mediat imperfecțiunile văzute pe
+cadrele individuale?** O formă care se vede pe un cadru și lipsește de pe master a fost
+trecătoare — un nor, o umbră, o pâlpâire — și s-a mediat. Una care se vede pe amândouă e
+fixă pe montaj, și pe ea o măsoară cifrele din Structura. Egalizarea fiind pe ranguri,
+zgomotul mai mic al masterului face o formă comună să pară acolo mai *clară*, nu mai slabă.
+
+Deasupra pozei stau vederile, pe un cadru CFA: `RGB` (implicit — cele patru poziții
+egalizate fiecare pe repartiția ei, în culorile lor), câte un gri pe poziție (`R`, `G1`,
+`G2`, `B`, sau `CFA[y,x]` când fișierul nu spune ordinea) și `Mozaic` — tot mozaicul
+egalizat ca un singur strat, literal ce arată Siril pe un raw deschis nedebayerizat. Pe un
+cadru mono e o singură vedere și nu apar chipuri. Comutarea nu recitește nimic. Tabul nu
+salvează niciun fișier; consola scrie compozitul.
+
+> Tabelul de mai jos e în oglindă cu ghidul pliat „Cum citesc poza egalizată" din fereastră
+> (`SessionMessages.HistEqGuideRows`). Nu există test care să lege cele două — dacă
+> reformulezi într-un loc, treci și prin celălalt.
+
+| ce vezi | ce înseamnă |
+|---|---|
+| de ce un flat curat arată zgomotos | egalizarea întinde *orice* distribuție pe 0..255, și a unui cadru fără nicio structură. Atunci ce rămâne de întins e zgomotul. Granulație fină peste tot înseamnă „n-are altceva de arătat". |
+| de ce nu se poate citi cât de mare e o formă | fiecare nivel de gri primește același număr de pixeli, indiferent cât de apropiate erau valorile. O undă de 0.5 % și un gradient de 10 % cu aceeași formă ies identic. Amplitudinea e în tabul Structura. |
+| vederea RGB | cele patru poziții, fiecare egalizată separat și pusă în culoarea ei. O nuanță uniformă nu înseamnă nimic; o nuanță care *variază* pe cadru înseamnă că un canal are altă formă decât celelalte — o sursă cu gradient de culoare, o scurgere colorată. |
+| vederile pe canal | aceeași poză, un singur canal, în gri. Ca să vezi dacă o formă e în toate canalele sau doar într-unul. |
+| vederea Mozaic | tot mozaicul ca un singur strat — Siril pe un raw nedebayerizat. Trei culori în aceeași histogramă, deci un caroiaj fin; la mărimea ecranului se mediază. |
+| masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
+| unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
+
 ### Ce nu face
 
 Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
@@ -818,6 +899,8 @@ Dependințe pentru Python: `numpy`, `astropy`, `matplotlib`, opțional `rawpy` p
 
 Sunt intenționate, nu scăpări:
 
+- **`--histeq` există doar în C#.** N-are paritate în `flatcheck.py` și niciun scenariu în
+  `crosscheck.py`, prin decizie: nu produce nicio cifră de comparat.
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)

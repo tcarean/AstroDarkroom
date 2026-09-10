@@ -1,0 +1,14 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+== EGALIZARE DE HISTOGRAMA (vederea "Histogram" din Siril) ==
+fisier:     <TMP>/flat.fit
+cadru:      512 x 512, mono/procesat (fara mozaic CFA)
+afisare:    512 x 512 (nemicsorat), 65536 cosuri pe canal
+
+canal      interval intrare               niveluri folosite
+  mono       16500 .. 30000                 256 / 256
+
+INFORMATIV: modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un gradient de 10 % ies la fel, iar un flat perfect isi arata propriul zgomot la contrast maxim. Cifrele sunt in modul de structura.
+
+    -> harta salvata: <TMP>/out.png
+

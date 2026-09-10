@@ -2,7 +2,10 @@
 
 Quantitative diagnostic for astrophotography flat frames. Answers four questions:
 is the master flat radially symmetric, is the flat *setup* clean, does the flat
-actually correct a real light, and is a raw flat exposed correctly.
+actually correct a real light, and is a raw flat exposed correctly. A fifth mode answers
+nothing and shows: the frame through histogram equalisation, Siril's "Histogram" display
+mode, where every grey level holds the same number of pixels and any non-uniformity is
+at full contrast. See "5. Histogram equalisation" under "The five modes".
 
 Two applications - a console tool and a WPF window - over one core library. The core
 hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL), and reaches for a
@@ -50,6 +53,12 @@ not a copy.
     file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
     `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`). Never guessed - see "The channel order" under
     mode 4. Used only for *naming*; no figure depends on it.
+  - `Mosaic.cs` - the CFA rule shared by `--expo` and `--histeq`: `PositionOf(y, x)`,
+    `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four position rasters, and
+    `Label`/`ColourOf` over a `CfaPattern`. It used to be inline in `ExposureAnalyzer`;
+    two copies of `(y & 1) * 2 + (x & 1)` and of `1.15` would have diverged at the first
+    adjustment. `ExposureAnalyzer` uses the rule, not `Split` - it fills its histograms in
+    the same pass it reads the pixels, and a second copy of the data would cost memory.
   - `PreviewImage.cs` - the camera's own rendering of the frame, in two forms:
     `EmbeddedPreview` (the bytes as they sit in the raw, captured while the file is open)
     and `PreviewImage` (decoded RGB, made only on request). Neither may decide anything -
@@ -82,7 +91,8 @@ not a copy.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
     "Versioning".
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
-    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`. Beside
+    `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
+    `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5). Beside
     them, `ExposureBands` - the verdict ladder as a *value*, because two places need it
     (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
     constants would have been a second definition of the verdict. `ExposureAnalyzer` also
@@ -135,10 +145,14 @@ not a copy.
     them in cards and under a coloured chip; the wording has one definition either way.
     `WorldValue` and `WorldLine` are split for exactly that reason: the console wants the
     figure with its label glued on, the window shows the label as a separate chip, and
-    without the split the verdict appeared twice on one row.
+    without the split the verdict appeared twice on one row. `HistEqReport` has no verdict
+    to write; what it exposes as values is `Caveat()` (what the picture cannot show),
+    `MasterVersusFrame()` and `ViewCaption()` - window-only, like the others.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
-    `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, plus
-    `SeriesFinder` (which files a series run covers). This is the layer both applications
+    `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
+    plus `SeriesFinder` (which files a series run covers). `HistEqRun` also carries the
+    per-view encoders (`EncodeChannel`, `EncodeMosaic`) the window calls on demand; the
+    console only ever writes the composite. This is the layer both applications
     call, and the reason neither of them re-derives a number. `ExposureRun` is the only one
     with an opt-in: `withPreview` decodes the camera preview, and defaults to false because
     only the window shows it. Two shape decisions are
@@ -151,7 +165,8 @@ not a copy.
   - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
-    nothing - the "harta salvata" line comes from `RunReport`.
+    nothing - the "harta salvata" line comes from `RunReport`. `EncodeGrey` writes a grey
+    raster as RGB with equal components; the encoder keeps its single colour type.
 - `FlatCheck/` - the console app. `AssemblyName` is `flatcheck`, so the binary is
   `flatcheck.exe`, not `FlatCheck.exe`. Three files, and that is the point: what is left
   here is what belongs to a command line and to nothing else.
@@ -168,7 +183,9 @@ not a copy.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master, which are raw flats, what counts as a flat master by name) and
     `SessionMessages` (the explanations shown when the input is not usable, the
-    Ratio tab's in-UI documentation, and the residual map's shape guide). The only part
+    Ratio tab's in-UI documentation, and the residual map's shape guide). `FlatFrames()`
+    lists raws *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and
+    `HistEqCandidates()` puts the flat master in front of them for the Histogram tab. The only part
     of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
@@ -178,7 +195,8 @@ not a copy.
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
-    either. `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
+    either. `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
+    whose option list depends on the result (six chips on a CFA frame, one on mono). `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
     deviation battery, built once for **both** the Structure and the Ratio tab, since Ratio
     runs the same analyzer on the combined master. They are `public` because WPF binding
     reads public properties by reflection - and that has a useful consequence: a public
@@ -221,8 +239,11 @@ not a copy.
     the suite. `TheScaleHasFourBandsAndMarksTheCurrentOne` now also asserts the test count,
     which is the number that heading quotes.
     Every set of radio chips needs its own `GroupName` (`StructureMapScale`,
-    `RatioMapScale`, `ExposureHistogramSource`): WPF groups radio buttons by name across
-    the whole window, so a shared name makes one tab's chips uncheck another's.
+    `RatioMapScale`, `ExposureHistogramSource`, `HistEqView`): WPF groups radio buttons by
+    name across the whole window, so a shared name makes one tab's chips uncheck
+    another's. `HistEqView` is the one tab whose `BusyOverlay` sits inside the right-hand
+    column rather than over the whole tab - the list stays clickable while a frame is
+    computing, and a new click supersedes the run (see "What the window adds").
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
     its own list of verdict names), `ChannelPalette` (R/G/B hues for the exposure
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
@@ -400,7 +421,7 @@ map. What differs is only what each does with the three outputs.
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders |
+| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/` |
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
 | map | written to `-o <path>` (`--ratio` writes a second, `-lume`), always on the automatic scale | shown from memory (`--ratio` offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | result | exit code | coloured verdict |
@@ -501,6 +522,17 @@ because two masters brought into one folder must be renamed, and
 properties even though their values are constant: `{Binding}` resolves through the
 DataContext and never sees a static one, so the documentation would have rendered blank.
 
+**The Histogram tab lists the flat master first, then `flats/`, and lets a click interrupt
+a click.** The master is there for one question - did what the individual frames show
+average out? - and it is not preselected and not run at folder open, because the Structure
+run is reading that same 24 MP file at that moment. The loader covers the picture, not the
+tab: the list stays clickable, a new pick cancels the running frame's own token and starts
+over, and a superseded run may not touch the screen. That last part is general and lives in
+`TabViewModel.RunGuardedAsync`: it numbers its runs and lets only the latest one clear the
+busy state, show an error or drop the result; the other tabs never overlap runs, so for
+them nothing changes. `TabViewModelTests` pins it with a stub tab. The per-view PNGs are
+encoded on the UI thread and cached per chip, for the same measured reason as the map.
+
 **Structure and the light series run one after the other, not in parallel.** A 24 MP frame
 runs into the high hundreds of MB in analysis (known issue 7) and the series holds a loaded
 frame besides; two chains at once could pass a gigabyte on an ordinary machine. The time
@@ -574,11 +606,11 @@ what dispatches. All four modes accept both, exactly like `flatcheck.py`'s
 `load_image_with_header`. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note.
 
-## The four modes
+## The five modes
 
-Dispatch order in `FlatCheckCli.Run` is `--expo` → `--ratio` → `--light` → structure
-(default). The modes are mutually exclusive; the first match wins. The WPF app has no
-dispatch: each tab is one mode.
+Dispatch order in `FlatCheckCli.Run` is `--histeq` → `--expo` → `--ratio` → `--light` →
+structure (default). The modes are mutually exclusive; the first match wins. The WPF app
+has no dispatch: each tab is one mode.
 
 Each mode's chain lives in `Runs/`, in the core, and both applications call it - see
 "The two applications".
@@ -1013,6 +1045,78 @@ be wrongly reported as underexposed.
 Suggested corrections are `log2(57/cenMed)` stops - 57 being the midpoint of the
 50-65 target band.
 
+### 5. Histogram equalisation - `flatcheck flat.NEF --histeq [-o poza.png]`
+
+Not a test. The frame rendered the way Siril 1.4.4's "Histogram" display mode renders it,
+so that patterns invisible in a linear view can be seen - and, on the window's tab, so
+that a frame can be put beside the master it went into. No verdict, no threshold, no `Th`
+entry, exit code 0 when the picture was written. **It never votes**, and the report and
+the tab both say what it cannot show.
+
+**What Siril does**, read in `src/gui/image_display.c` (`remap()`, the `HISTEQ_DISPLAY`
+branch) and `src/gui/histogram.c` (`computeHisto()`) at tag `1.4.4`; the quoted code is
+in `PLAN-HISTEQ.md`:
+
+1. One histogram **per layer**, 65536 bins, pixels equal to zero skipped. The RGB view is
+   composited afterwards from the per-layer 8-bit buffers, so on a debayered image each
+   colour is equalised on its own CDF; on an undebayered file (a raw opened as CFA, the
+   default) the mosaic is one layer.
+2. `index[i] = round_to_BYTE(cumulative(i) / nb_pixels * 255)`, cumulative *including*
+   bin `i`, `index[0] = 0`, `nb_pixels` = all pixels, zeros included - so a frame with
+   many dead pixels never reaches 255. Float data is first quantised as `round(v * 65535)`.
+3. The lo/hi cutoff sliders are disabled in that mode.
+
+**What we do the same, and what differs.** `HistEqLut.Build` mirrors 1 and 2, including
+the `(byte)(x + 0.5)` rounding (`TheLutIsTheInclusiveCdfTimes255_RoundedLikeSiril` pins a
+hand-computed vector: `{1, 2, 2, 3}` -> `64, 191, 255`). Bins sit on the channel's own
+`[min, max]` of non-zero values rather than on 0..65535, because our rasters are doubles at
+whatever scale the file had; on integer data the mapping is provably identical (no two ADU
+values share a bin, and the CDF at a value is the count at or below it either way), on
+float it is finer. Equalisation runs at full resolution per channel, and the 8-bit result is
+then shrunk with `Img.Prepare`'s `k` rule (`HistEqAnalyzer.ShrinkFactor`) - so a D3300
+channel lands at 1500 x 1000, the residual map's size. Block-meaning *before* equalising
+would give a stronger stretch (noise averaged out before the CDF) but is not what Siril
+shows; deliberately not built.
+
+**Channels.** The CFA decision is `Mosaic.LooksCfa` on the four position medians, the same
+rule as `--expo`. On a CFA frame the four positions are equalised separately and the result
+carries: `CompositeRgb` (R from the position that *is* red, G the mean of the two greens, B
+from blue - looked up by `CfaPattern` colour, never by position, and the mean of the four
+greys when the order is unknown), one grey per position, and `Mosaic`, the whole frame as
+one layer shrunk by `2k` so it comes out the same size. On mono: one channel, `Mosaic` null.
+
+**Why it shows what linear hides, and what it destroys.** A flat is a narrow distribution
+relative to the file's scale, so the CDF is steep across the vignetting range. Measured on
+a synthetic with 5 % vignetting: a 0.3 % ripple is a third of a grey level in the linear
+view and ~15 levels equalised (`ATinyRippleInvisibleInTheLinearViewBecomesManyGreyLevels`).
+The price is that amplitude is gone by construction - a 0.5 % and a 10 % pattern of the
+same shape render identically, and a clean flat shows its own noise at full contrast. That
+is `HistEqReport.Caveat()`, printed by the console and shown under the picture. Note the
+comparison the test makes is against the linear view *on the file's scale*, not against a
+min..max stretch: on a field whose distribution is nearly uniform across its range,
+equalisation *is* that stretch; what the mode adds over it is adaptivity, and that is a
+property of real, noisy flats rather than of the synthetic.
+
+**The master beside a frame.** The window's list puts `process/pp_flat_stacked.fit` first.
+A shape on a frame and not on the master was transient and averaged out; a shape on both
+is fixed to the setup and is what the Structure numbers measure. Because the transform is
+rank-based, the master's lower noise makes a shared pattern look *sharper* there, not
+fainter (`HistEqReport.MasterVersusFrame()`).
+
+**Cost, measured** (Release, D3300 24 MP, same files as the modes beside it): the float
+master takes 1.7 s and 672 MB peak against 3.3 s / 611 MB for structure; the NEF 1.9 s and
+498 MB against 3.2 s / 1.1 GB for `--expo`. Loading dominates. Two things were expensive in
+the first cut and are documented where they were fixed: the four position medians for the
+CFA decision were sorted copies of 6 M values (~2 s) and now come off the 65536-bin
+histogram (`HistEqLut.Median`, within a bin of exact), and the shrink went through `double`
+rasters (1.1 GB peak on the master) and is now a byte block mean with the same arithmetic.
+Per-view PNGs on that master: 150-380 ms and 3.6 MB for the RGB composite, 130-250 ms and
+0.85-1.3 MB for a grey - equalised noise compresses badly, so the files are several times
+the residual map's.
+
+No Python counterpart and no `crosscheck.py` scenario, by decision: there is no number to
+compare.
+
 ## Shared pipeline and algorithms
 
 **`Prepare(data, targetLong = 1200)`** - `BlockMean(data, 2)` then
@@ -1367,6 +1471,8 @@ there too, or every one of them turns into a diff.
 
 Intentional divergences:
 
+- `--histeq` exists only in C#. No Python counterpart, no `crosscheck.py` scenario, no
+  `CrossCheckFixtures` entry: the mode produces a picture, not a number to compare.
 - No 4-panel matplotlib figure (residual PNG only).
 - No EXIF read beyond the pixels, so no `suggest_shutter(...)` shutter-speed
   suggestions - libraw hands over `shutter`, but nothing consumes it yet.
@@ -1411,6 +1517,8 @@ Since phase 8 the tool is usable from a script:
 | 3 | PROBLEMA / REFA |
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
+`--histeq` has no verdict and does not go through `ExitFor`: 0 means the picture was
+written, 1 that it could not be.
 
 Since the `--ratio` rewrite, mode 2 exits on the residual-scale band of the combined
 master rather than on `OK`/`SUSPECT`/`PROBLEMA` - which changed real outcomes: the ISO800

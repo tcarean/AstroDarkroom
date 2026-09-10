@@ -15,12 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TabViewModel.cs - ce au in comun cele patru taburi.
+// TabViewModel.cs - ce au in comun cele cinci taburi.
 //
-// Toate patru fac acelasi lucru: arata un ecran de asteptare, calculeaza pe alt fir,
-// apoi ori arata rezultate, ori arata o explicatie. Starea aia - ocupat / rezultat /
-// eroare - e aici, o singura data, ca cele patru sa nu ajunga cu patru feluri de a
-// esua.
+// Toate fac acelasi lucru: arata un ecran de asteptare, calculeaza pe alt fir, apoi ori
+// arata rezultate, ori arata o explicatie. Starea aia - ocupat / rezultat / eroare - e
+// aici, o singura data, ca cele cinci sa nu ajunga cu cinci feluri de a esua.
+//
+// RULARI DEPASITE. Tabul de histograma lasa lista apasabila cat timp calculeaza, deci
+// o a doua rulare poate porni peste prima. RunGuardedAsync isi numara rularile si lasa
+// doar pe ultima sa incheie starea: o rulare depasita nu stinge ecranul de asteptare
+// (il are cea noua), nu arata eroare si nu goleste rezultatul. Pentru celelalte taburi,
+// care nu suprapun niciodata rulari, verificarea e mereu adevarata si nu schimba nimic.
 //
 // DE CE SUNT PUBLICE clasele astea, cand tot restul aplicatiei e internal: legarea WPF
 // citeste prin reflexie proprietati publice. Consecinta e utila, nu doar birocratica -
@@ -45,6 +50,7 @@ namespace FlatCheck.Wpf
         string _errorText;
         bool _hasResult;
         string _report = "";
+        int _generation;
 
         /// <summary>Cat timp e true, tabul isi arata ecranul de asteptare.</summary>
         public bool IsBusy
@@ -98,9 +104,15 @@ namespace FlatCheck.Wpf
         ///
         /// Anularea nu e o eroare - inseamna ca omul a schimbat folderul sau a inchis
         /// fereastra, si atunci tabul ramane pur si simplu gol.
+        ///
+        /// O rulare DEPASITA - a pornit alta peste ea - nu mai atinge nimic dupa ce se
+        /// termina: nici rezultatul, nici eroarea, nici ecranul de asteptare, care sunt
+        /// toate ale celei noi. Munca ei se opreste singura la verificarea jetonului din
+        /// lambda; aici se garanteaza doar ca terminarea ei e tacuta.
         /// </summary>
         protected async Task RunGuardedAsync(string busyMessage, Func<Task> work)
         {
+            int gen = ++_generation;
             BeginBusy(busyMessage);
             try
             {
@@ -108,16 +120,17 @@ namespace FlatCheck.Wpf
             }
             catch (OperationCanceledException)
             {
-                HasResult = false;
+                if (gen == _generation) HasResult = false;
             }
             catch (Exception e)
             {
+                if (gen != _generation) return;
                 HasResult = false;
                 Fail("Analiza a esuat", Describe(e));
             }
             finally
             {
-                EndBusy();
+                if (gen == _generation) EndBusy();
             }
         }
 

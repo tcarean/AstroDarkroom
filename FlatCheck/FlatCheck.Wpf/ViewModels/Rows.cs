@@ -117,6 +117,27 @@ namespace FlatCheck.Wpf
         public string Gap { get; init; }       // "+52 puncte"
     }
 
+    /// <summary>
+    /// Un rand din lista tabului de histograma: masterul din process/ sau un cadru din
+    /// flats/. Formatat aici, nu printr-un convertor, ca un test sa poata asserta "MASTER"
+    /// si "process/" direct.
+    /// </summary>
+    public sealed class HistEqFileRow
+    {
+        public string Path { get; init; }
+
+        /// <summary>Numai numele fisierului.</summary>
+        public string Name { get; init; }
+
+        /// <summary>"process/" pentru master, "flats/" pentru un cadru.</summary>
+        public string Where { get; init; }
+
+        public bool IsMaster { get; init; }
+
+        /// <summary>Chipul din lista: "MASTER" pe master, gol pe un cadru.</summary>
+        public string Tag => IsMaster ? "MASTER" : "";
+    }
+
     /// <summary>Un cadru din tabelul seriei end-to-end.</summary>
     public sealed class SeriesRow
     {

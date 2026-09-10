@@ -104,4 +104,25 @@ namespace FlatCheck.Wpf
         /// <summary>Pliat implicit, ca celelalte doua ghiduri.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
+
+    /// <summary>
+    /// "Cum citesc poza egalizata", pe tabul de histograma. Al patrulea ghid, cu aceeasi
+    /// forma. Motivul lui e cel mai apasat dintre toate: poza arata orice neuniformitate
+    /// la contrast maxim si nu spune cat de mare e, iar cineva care o vede prima oara
+    /// citeste zgomotul unui flat curat drept defect.
+    /// </summary>
+    public sealed class HistEqGuideViewModel : ObservableObject
+    {
+        bool _expanded;
+
+        public string Intro => SessionMessages.HistEqGuideIntro();
+
+        public IReadOnlyList<GuideRow> Rows { get; } =
+            SessionMessages.HistEqGuideRows()
+                .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
+                .ToList();
+
+        /// <summary>Pliat implicit, ca celelalte trei.</summary>
+        public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
+    }
 }

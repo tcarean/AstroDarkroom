@@ -151,6 +151,7 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--ratio", flat, "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--expo"));
+        Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--histeq", "-o", png));
     }
 
     /// <summary>
@@ -169,6 +170,7 @@ public class VersionTests
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--ratio", flat, "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--light", "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--expo"));
+        Assert.Equal(VersionInfo.Copyright, SecondLine(flat, "--histeq", "-o", png));
         Assert.Equal(VersionInfo.Copyright, SecondLine("--help"));
         Assert.Equal(VersionInfo.Copyright, SecondLine(ws.PathTo("nu-exista.fit")));
     }

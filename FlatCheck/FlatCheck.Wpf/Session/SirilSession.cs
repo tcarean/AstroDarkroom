@@ -43,6 +43,13 @@ namespace FlatCheck.Wpf
         NoFlatMaster,    // process/ exista, dar masterul de flat nu
     }
 
+    /// <summary>
+    /// Un fisier pe care il poate arata tabul de histograma: masterul din process/ sau un
+    /// cadru din flats/. Steagul e ce deosebeste randul din lista - masterul e stiva
+    /// celorlalte, nu inca un cadru.
+    /// </summary>
+    internal readonly record struct HistEqCandidate(string Path, bool IsMaster);
+
     internal sealed class SirilSession
     {
         /// <summary>Numele pe care il da scriptul OSC_Preprocessing.ssf masterului de flat.</summary>
@@ -148,6 +155,39 @@ namespace FlatCheck.Wpf
                 .Where(RawReader.IsRawPath)
                 .OrderBy(Path.GetFileName, StringComparer.Ordinal)
                 .ToList();
+        }
+
+        /// <summary>
+        /// Cadrele din flats/ pe care le poate citi incarcatorul: raw de aparat SI FITS.
+        /// Pentru egalizarea de histograma un flat trecut prin Conversion e la fel de bun
+        /// ca NEF-ul; motivul pentru care tabul de expunere accepta doar raw (white si
+        /// black exacte) nu se aplica aici. Ambele liste de extensii vin din cititoare.
+        /// </summary>
+        internal IReadOnlyList<string> FlatFrames()
+        {
+            if (!Directory.Exists(FlatsDir)) return Array.Empty<string>();
+
+            return Directory.EnumerateFiles(FlatsDir)
+                .Where(p => RawReader.IsRawPath(p) || FitsReader.IsFitsPath(p))
+                .OrderBy(Path.GetFileName, StringComparer.Ordinal)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca fisierul exista, apoi
+        /// cadrele din flats/. In fereastra masterul exista mereu - Check() refuza folderul
+        /// fara el - dar clasa asta se testeaza singura si nu arunca niciodata.
+        ///
+        /// Numai masterul prin conventie, nu orice stiva din process/: doua stive intr-un
+        /// folder sunt treaba tabului Ratio. Si nimic nu se dedubleaza dupa continut - un
+        /// master copiat in flats/ apare de doua ori, sub doua cai, ceea ce e adevarul.
+        /// </summary>
+        internal IReadOnlyList<HistEqCandidate> HistEqCandidates()
+        {
+            var list = new List<HistEqCandidate>();
+            if (File.Exists(FlatMasterPath)) list.Add(new HistEqCandidate(FlatMasterPath, true));
+            list.AddRange(FlatFrames().Select(p => new HistEqCandidate(p, false)));
+            return list;
         }
     }
 }
