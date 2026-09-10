@@ -16,7 +16,7 @@
   <PropertyGroup>
     <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
          Trebuie sa ramana identica cu __version__ din flatcheck.py. -->
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
 
     <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
          unde il citeste VersionInfo.Copyright si il tipareste sub banner. Programul e

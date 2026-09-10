@@ -153,11 +153,44 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="HISTOGRAME PE CANAL" />
           <Border Style="{StaticResource Card}">
             <StackPanel>
+              <!-- Sursa desenelor. GroupName UNIC in fereastra: WPF grupeaza radio-urile
+                   dupa nume peste tot, si un nume comun cu alt tab ar debifa chipurile
+                   celuilalt. Stins cand fisierul n-are previzualizare. -->
+              <ItemsControl ItemsSource="{Binding Source.Options}" Margin="0,0,0,12"
+                            IsEnabled="{Binding Source.IsEnabled}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <RadioButton GroupName="ExposureHistogramSource" Margin="0,0,18,0"
+                                 Content="{Binding Label}"
+                                 IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
               <ItemsControl ItemsSource="{Binding Histograms}"
                             ItemTemplate="{StaticResource ChannelHistogramRowTemplate}" />
-              <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0"
-                         Text="Axa orizontala e in % din white (din intervalul util al senzorului). Curba palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din dreapta = clipping peste 98 % din white." />
-              <TextBlock Style="{StaticResource Muted}" Margin="0,14,0,0" Text="{Binding Reading}" />
+              <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Caption}" />
+
+              <!-- Tabelul raw / ecran: pe amandoua vederile, fiindca el e tot rostul. -->
+              <StackPanel Margin="0,14,0,0"
+                          Visibility="{Binding HasComparison, Converter={StaticResource BoolToVis}}">
+                <TextBlock Style="{StaticResource Heading}" Margin="0,0,0,6"
+                           Text="SENZOR vs ECRAN, CENTRU 20 %" />
+                <ItemsControl ItemsSource="{Binding Comparison}"
+                              ItemTemplate="{StaticResource ScreenPairRowTemplate}" />
+              </StackPanel>
+
+              <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding SourceNote}"
+                         Visibility="{Binding SourceNote, Converter={StaticResource NotNullToVis}}" />
+              <!-- Citirea cifrelor brute, doar pe vederea bruta: sub desenul ecranului, o
+                   propozitie despre "varful la 55 %" ar contrazice curba de deasupra. -->
+              <TextBlock Style="{StaticResource Muted}" Margin="0,14,0,0" Text="{Binding Reading}"
+                         Visibility="{Binding Source.IsPreviewSelected, Converter={StaticResource NotBoolToVis}}" />
             </StackPanel>
           </Border>
 

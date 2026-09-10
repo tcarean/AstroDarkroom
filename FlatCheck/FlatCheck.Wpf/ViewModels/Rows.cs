@@ -104,6 +104,19 @@ namespace FlatCheck.Wpf
         public bool HasPosition => !string.IsNullOrEmpty(Position);
     }
 
+    /// <summary>
+    /// Un rand din tabelul de comparatie raw / ecran: acelasi canal, cele doua cifre, si
+    /// diferenta. Toate trei sunt mediane ale ferestrei centrale, deja formatate.
+    /// </summary>
+    public sealed class ScreenPairRow
+    {
+        public string Channel { get; init; }   // "R", "G (media G1, G2)", sau eticheta de rezerva
+        public Brush Colour { get; init; }
+        public string Raw { get; init; }       // "29.0 %"
+        public string Screen { get; init; }    // "81.2 %"
+        public string Gap { get; init; }       // "+52 puncte"
+    }
+
     /// <summary>Un cadru din tabelul seriei end-to-end.</summary>
     public sealed class SeriesRow
     {

@@ -33,12 +33,19 @@ namespace FlatCheck
         /// calculul de dupa e acelasi, bit cu bit.
         ///
         /// Nu produce harta: modul masoara un nivel, n-are ce desena.
+        ///
+        /// <paramref name="withPreview"/>: decodeaza si previzualizarea aparatului, daca
+        /// fisierul are una. Implicit false, fiindca numai fereastra o arata: consola n-are
+        /// ce face cu ea, iar decodarea costa zeci pana la sute de milisecunde. Octetii ei
+        /// sunt oricum in LoadedFrame; aici se plateste doar decodarea.
         /// </summary>
         internal static RunOutcome<ExposureResult> Execute(
-            string path, double? sat, double? black, bool sky, TextWriter report)
+            string path, double? sat, double? black, bool sky, TextWriter report,
+            bool withPreview = false)
         {
             LoadedFrame f = ImageLoader.Load(path);
-            var r = ExposureAnalyzer.Analyze(f.Image, sat, black, sky, f.Scale, f.Cfa);
+            PreviewImage preview = withPreview ? PreviewReader.Decode(f.Preview) : null;
+            var r = ExposureAnalyzer.Analyze(f.Image, sat, black, sky, f.Scale, f.Cfa, preview);
             ExposureReport.Write(r, path, report);
             return new RunOutcome<ExposureResult>(r, null);
         }

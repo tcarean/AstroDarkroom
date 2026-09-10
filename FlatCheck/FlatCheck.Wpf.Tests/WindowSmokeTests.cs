@@ -257,6 +257,38 @@ public class WindowSmokeTests
     }
 
     /// <summary>
+    /// Tabul cu previzualizarea aparatului: comutatorul aprins, vederea pe previzualizare
+    /// (randuri fara benzi), tabelul raw / ecran si nota de sub el. Alt drum prin sabloane
+    /// decat cel cu comutatorul stins, pe care il acopera celelalte doua teste de mai sus.
+    /// Previzualizarea e un JPEG facut in test, deci nu e nevoie de niciun raw.
+    /// </summary>
+    [Fact]
+    public void TheExposureTabRendersThePreviewView()
+        => _sta.Invoke(() =>
+        {
+            PreviewImage preview = PreviewReader.Decode(FlatCheck.Tests.TestImages.JpegOf(160, 120, (x, y) =>
+            {
+                double d = Math.Sqrt((x - 80) * (x - 80) + (y - 60) * (y - 60)) / 100.0;
+                byte v = (byte)(230 - 60 * d);
+                return ((byte)(v - 40), v, (byte)Math.Min(255, v + 15));
+            }));
+            var r = ExposureAnalyzer.Analyze(FlatCheck.Tests.TestImages.FlatCfa(128, 128, 550), 1000, null, false,
+                                             null, CfaPattern.Parse("RGGB", "BAYERPAT"), preview);
+            var vm = new ExposureTabViewModel();
+            vm.Populate(r);
+
+            using var errors = new BindingErrors();
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-comparatie");
+
+            vm.Source.Preview.IsSelected = true;
+            Render(new ExposureView { DataContext = vm }, h: 1400, name: "tab-expunere-ecran");
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(vm.Source.IsPreviewSelected);
+            Assert.Equal(3, vm.Histograms.Count);
+        });
+
+    /// <summary>
     /// Un cadru fara mozaic ia alt drum: un singur rand de histograma, fara culoare si
     /// fara pozitie, plus explicatia in locul verdictului.
     /// </summary>

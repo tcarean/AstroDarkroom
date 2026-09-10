@@ -15,11 +15,47 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using SixLabors.ImageSharp;
+
 namespace FlatCheck.Tests;
 
 /// <summary>Builds in-memory rasters directly, skipping the FITS round trip.</summary>
 internal static class TestImages
 {
+    /// <summary>
+    /// A real JPEG, encoded with ImageSharp's own encoder, wrapped as the undecoded
+    /// preview a raw would carry. This is what lets the preview path be tested end to end
+    /// without a NEF: the same package decodes it back, and the WPF tests reuse it.
+    /// Quality 95 keeps a flat field within 1/255 of its input.
+    /// </summary>
+    internal static EmbeddedPreview JpegOf(int w, int h, Func<int, int, (byte R, byte G, byte B)> pixel,
+                                           int quality = 95)
+    {
+        using var img = new SixLabors.ImageSharp.Image<SixLabors.ImageSharp.PixelFormats.Rgb24>(w, h);
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var (r, g, b) = pixel(x, y);
+                img[x, y] = new SixLabors.ImageSharp.PixelFormats.Rgb24(r, g, b);
+            }
+        using var ms = new MemoryStream();
+        img.SaveAsJpeg(ms, new SixLabors.ImageSharp.Formats.Jpeg.JpegEncoder { Quality = quality });
+        return new EmbeddedPreview(true, ms.ToArray(), w, h, 0, $"previzualizare JPEG {w}x{h} din test");
+    }
+
+    /// <summary>An already-decoded RGB preview, the bitmap fallback path.</summary>
+    internal static EmbeddedPreview RgbOf(int w, int h, Func<int, int, (byte R, byte G, byte B)> pixel)
+    {
+        var rgb = new byte[w * h * 3];
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                var (r, g, b) = pixel(x, y);
+                int o = (y * w + x) * 3;
+                rgb[o] = r; rgb[o + 1] = g; rgb[o + 2] = b;
+            }
+        return new EmbeddedPreview(false, rgb, w, h, 0, $"miniatura RGB {w}x{h} din test");
+    }
     internal static Img From(int w, int h, Func<int, int, double> f)
     {
         var img = new Img(h, w);

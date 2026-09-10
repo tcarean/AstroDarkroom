@@ -122,6 +122,18 @@ namespace FlatCheck
         internal LevelHistogram Whole, Centre;
     }
 
+    /// <summary>
+    /// Nivelurile din previzualizarea aparatului: trei canale, fara mozaic si fara
+    /// verdict. Aceleasi cosuri ca la raw, ca cele doua sa se poata citi una langa alta.
+    /// </summary>
+    internal sealed class PreviewLevels
+    {
+        /// <summary>Exact 3: R, G, B, in ordinea asta.</summary>
+        internal ChannelLevels[] Channels;
+
+        internal string Source;
+    }
+
     internal sealed class ExposureResult
     {
         internal double White, Black, Range;
@@ -149,6 +161,12 @@ namespace FlatCheck
         /// fereastra deseneaza exact banda care a votat.
         /// </summary>
         internal ExposureBands Bands;
+
+        /// <summary>
+        /// Ce a aratat aparatul pe ecran, sau null cand fisierul n-a purtat o
+        /// previzualizare sau nimeni n-a cerut-o. Nu intra in niciun verdict.
+        /// </summary>
+        internal PreviewLevels Preview;
 
         internal bool IsRaw => !(LevelTooLow || LooksDebayered);
 
@@ -178,9 +196,13 @@ namespace FlatCheck
         /// Ordinea culorilor citita din fisier, sau null cand fisierul n-o spune. Nu
         /// schimba nicio cifra - doar cum se numesc canalele in raport si in fereastra.
         /// </param>
+        /// <param name="preview">
+        /// Previzualizarea aparatului, decodata, sau null. Produce doar
+        /// <see cref="ExposureResult.Preview"/>; nimic din verdict nu o atinge.
+        /// </param>
         internal static ExposureResult Analyze(Img data, double? satOverride, double? blackOverride,
                                                bool sky, ExposureScale fileScale = null,
-                                               CfaPattern cfa = null)
+                                               CfaPattern cfa = null, PreviewImage preview = null)
         {
             double mx = data.D.Max();
             double white;
@@ -279,8 +301,84 @@ namespace FlatCheck
             r.Channels = isCfa
                 ? CfaChannels(r, ch, wholeHist, cenPer, centreHist)
                 : MonoChannel(r, data, cenVals);
+            r.Preview = preview != null ? AnalyzePreview(preview) : null;
             r.Verdict = Classify(r);
             return r;
+        }
+
+        /// <summary>
+        /// Histogramele previzualizarii, pe axa 0..100 % din 255. NU primeste praguri si NU
+        /// produce verdict: ce se vede aici a trecut prin balans de alb, gama si curba de
+        /// ton, deci nu mai are nicio legatura cu cata lumina a cazut pe senzor. Exista ca
+        /// sa fie pusa langa nivelul real - diferenta e cea care deruteaza.
+        ///
+        /// Fereastra centrala e aceeasi fractie ca la raw, 0.4..0.6 pe ambele axe. E
+        /// invarianta la orientarile pe care le poate avea o previzualizare - o rotatie de
+        /// 180 de grade o duce in ea insasi, una de 90 schimba W cu H dar nu fractiile - si
+        /// nu-i pasa ca previzualizarea e cu cativa pixeli mai ingusta decat zona vizibila
+        /// a raw-ului (6000 fata de 6016 pe D3300). Amandoua arata ca niste bug-uri cui nu
+        /// le-a masurat; nu sunt.
+        /// </summary>
+        internal static PreviewLevels AnalyzePreview(PreviewImage p)
+        {
+            const double White = 255.0;
+            int cy0 = (int)(p.H * 0.4), cy1 = (int)(p.H * 0.6);
+            int cx0 = (int)(p.W * 0.4), cx1 = (int)(p.W * 0.6);
+
+            var channels = new ChannelLevels[3];
+            double bestMedian = double.NegativeInfinity;
+            int best = 0;
+
+            for (int c = 0; c < 3; c++)
+            {
+                var whole = new LevelHistogram();
+                var centre = new LevelHistogram();
+                var all = new double[p.W * p.H];
+                var mid = new List<double>(Math.Max(0, (cy1 - cy0) * (cx1 - cx0)));
+                int clipped = 0;
+
+                for (int y = 0; y < p.H; y++)
+                    for (int x = 0; x < p.W; x++)
+                    {
+                        double v = p.At(y, x, c);
+                        double pct = v / White * 100;
+                        all[y * p.W + x] = v;
+                        whole.Add(pct);
+                        if (v >= 0.98 * White) clipped++;
+                        if (y >= cy0 && y < cy1 && x >= cx0 && x < cx1)
+                        {
+                            mid.Add(v);
+                            centre.Add(pct);
+                        }
+                    }
+
+                double[] sortedAll = Stats.Sorted(all);
+                double[] sortedMid = Stats.Sorted(mid.ToArray());
+                double median = Stats.OfSorted(sortedAll, 50) / White * 100;
+
+                channels[c] = new ChannelLevels
+                {
+                    Position = c,
+                    Label = "RGB"[c].ToString(),
+                    Colour = "RGB"[c],
+                    MedianPct = median,
+                    P99Pct = Stats.OfSorted(sortedAll, 99) / White * 100,
+                    ClipPct = all.Length == 0 ? 0 : clipped / (double)all.Length * 100,
+                    CentreMedianPct = Stats.OfSorted(sortedMid, 50) / White * 100,
+                    CentreP1Pct = Stats.OfSorted(sortedMid, 1) / White * 100,
+                    CentreP99Pct = Stats.OfSorted(sortedMid, 99) / White * 100,
+                    Whole = whole,
+                    Centre = centre,
+                };
+
+                if (median > bestMedian) { bestMedian = median; best = c; }
+            }
+
+            // "Cel mai luminos" doar ca sa fie consecvent cu randurile raw; pe partea asta
+            // nu decide nimic, si fereastra nu-l scoate in evidenta.
+            channels[best].IsBrightest = true;
+
+            return new PreviewLevels { Channels = channels, Source = p.Source };
         }
 
         /// <summary>Un procent din (white - black), scara pe care sta tot modul.</summary>

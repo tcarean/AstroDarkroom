@@ -602,6 +602,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </DataTemplate.Triggers>
   </DataTemplate>
 
+  <!-- Un rand din tabelul raw / ecran: pastila canalului, cifra din senzor, sageata,
+       cifra de pe ecran, diferenta. Aceleasi coloane pe toate randurile, cu font
+       monospatiat, ca sa se poata citi pe verticala. -->
+  <DataTemplate x:Key="ScreenPairRowTemplate">
+    <Grid Margin="0,0,0,6">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" MinWidth="140" />
+        <ColumnDefinition Width="90" />
+        <ColumnDefinition Width="30" />
+        <ColumnDefinition Width="90" />
+        <ColumnDefinition Width="110" />
+      </Grid.ColumnDefinitions>
+      <StackPanel Grid.Column="0" Orientation="Horizontal">
+        <Border Background="{Binding Colour}" CornerRadius="3" Width="10" Height="10"
+                Margin="0,0,8,0" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Channel}" FontSize="12" TextTrimming="CharacterEllipsis"
+                   VerticalAlignment="Center" />
+      </StackPanel>
+      <TextBlock Grid.Column="1" Style="{StaticResource Number}" FontSize="12"
+                 FontWeight="SemiBold" Text="{Binding Raw}" />
+      <TextBlock Grid.Column="2" Style="{StaticResource Number}" FontSize="12"
+                 HorizontalAlignment="Center" Foreground="{StaticResource FaintBr}" Text="&#x2192;" />
+      <TextBlock Grid.Column="3" Style="{StaticResource Number}" FontSize="12"
+                 Text="{Binding Screen}" />
+      <TextBlock Grid.Column="4" Style="{StaticResource Number}" FontSize="12"
+                 Foreground="{StaticResource FaintBr}" Text="{Binding Gap}" />
+    </Grid>
+  </DataTemplate>
+
   <DataTemplate x:Key="SeriesRowTemplate">
     <Grid Margin="0,0,0,4">
       <Grid.ColumnDefinitions>

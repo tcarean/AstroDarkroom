@@ -46,6 +46,10 @@
   <ItemGroup>
     <Compile Include="..\FlatCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
     <Compile Include="..\FlatCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
+    <!-- TestImages aduce JpegOf: previzualizarea aparatului, facuta in test cu encoderul
+         ImageSharp, ca tabul de expunere sa poata fi testat cu comutatorul aprins fara
+         niciun raw adevarat. -->
+    <Compile Include="..\FlatCheck.Tests\TestImages.cs" Link="Shared\TestImages.cs" />
   </ItemGroup>
 
 </Project>

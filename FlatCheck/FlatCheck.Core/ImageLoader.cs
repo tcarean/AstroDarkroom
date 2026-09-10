@@ -52,6 +52,13 @@ namespace FlatCheck
         /// care tace, nu o eroare - ordinea difera de la aparat la aparat si nu se ghiceste.
         /// </summary>
         internal CfaPattern Cfa;
+
+        /// <summary>
+        /// Previzualizarea inglobata, NEDECODATA, sau null cand formatul n-o poarta (FITS,
+        /// mereu). Se copiaza cat timp fisierul e oricum deschis - cativa MB cel mult - si
+        /// se decodeaza numai daca cineva o cere; vezi ExposureRun si PreviewReader.
+        /// </summary>
+        internal EmbeddedPreview Preview;
     }
 
     internal static class ImageLoader

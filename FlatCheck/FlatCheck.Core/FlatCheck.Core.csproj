@@ -18,23 +18,40 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
-  <!-- Singura dependenta externa a uneltei, si numai pentru modul de expunere pe
-       fisiere raw de aparat. Restul (FITS, PNG) ramane scris de mana, ca pana acum.
+  <!-- Dependentele externe. Regula e in CLAUDE.md, "The dependencies": se discuta
+       inainte si se aproba, nu se evita si nu se adauga in tacere. Licenta fiecareia si
+       DE CE e compatibila cu GPLv3 sunt scrise in THIRD-PARTY-NOTICES.md. Ce ramane scris
+       de mana - FITS, PNG, toate calculele - ramane asa fiindca acolo e onest.
 
-       De ce un pachet: nu exista NICIO librarie .NET pur managed care sa decodeze
-       mozaicul Bayer dintr-un NEF. Sdcb.LibRaw leaga chiar libraw-ul pe care il
-       foloseste si rawpy in flatcheck.py, deci cifrele ies bit-identice: aceeasi suma
-       pe toti pixelii, nu doar "aproape". Orice alternativa ori debayerizeaza (si atunci
-       modul n-are ce masura), ori e comerciala, ori porneste un dcraw.exe extern.
+       Sdcb.LibRaw, si numai pentru fisiere raw de aparat: nu exista NICIO librarie .NET
+       pur managed care sa decodeze mozaicul Bayer dintr-un NEF. Leaga chiar libraw-ul
+       pe care il foloseste si rawpy in flatcheck.py, deci cifrele ies bit-identice.
+       Orice alternativa ori debayerizeaza (si atunci modul de expunere n-are ce masura), ori e
+       comerciala, ori porneste un dcraw.exe extern. Pachetele runtime.* aduc DLL-uri
+       native (raw_r, jpeg8, lcms2, zlib1, ~2.1 MB); ele NU intra in flatcheck.exe decat
+       la publish cu IncludeNativeLibrariesForSelfExtract (vezi README). Fara ele
+       modurile pe FITS merg neschimbate; doar caile raw refuza, cu mesaj explicit.
 
-       Pachetele runtime.* aduc DLL-uri native (raw_r, jpeg8, lcms2, zlib1, ~2.1 MB).
-       Ele NU intra in flatcheck.exe decat la publish cu
-       IncludeNativeLibrariesForSelfExtract (vezi README). Fara ele modurile pe FITS merg
-       neschimbate; doar caile raw refuza, cu mesaj explicit: vezi RawReader.Load. -->
+       SixLabors.ImageSharp, si numai pentru previzualizarea JPEG pe care aparatul o
+       ingloba in raw - imaginea din care si-a calculat histograma de pe ecran. Nu
+       inlocuieste nimic scris de mana: alternativa era un decodor JPEG propriu, cu
+       Huffman, DCT si subesantionare, pentru o poza care nu voteaza nimic. Pur managed,
+       deci PublishSingleFile nu se schimba. Versiunea e FIXATA si din motive juridice:
+       licenta Six Labors e conditionata si grantul vine cu versiunea luata. Atins dintr-un
+       singur fisier, PreviewReader.cs, ca sa poata fi inlocuit daca licenta se muta.
+
+       DE CE 3.1.x SI NU 4.x: de la 4.0.0 pachetul aduce un task MSBuild care cere o cheie
+       de licenta la compilare - pe Debug e avertisment, pe Release e EROARE. Proiectele
+       open source primesc cheia gratuit, dar pe baza de cerere, si oricine cloneaza repo-ul
+       ar avea nevoie de a lui ca sa faca publish. 3.1.x are exact aceiasi termeni de licenta
+       (Split License 1.0, ramura Apache 2.0 pentru open source) si niciun task; singura
+       diferenta de API care ne priveste e ca 3.x nu aplica niciodata profilul ICC la decodare,
+       ceea ce e chiar comportamentul dorit. Vezi THIRD-PARTY-NOTICES.md. -->
   <ItemGroup>
     <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
     <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
     <PackageReference Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
   </ItemGroup>
 
   <!-- Nucleul ramane internal in intregime. Nu i s-a construit o suprafata publica

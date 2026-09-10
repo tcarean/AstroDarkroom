@@ -161,6 +161,11 @@ namespace FlatCheck
                     $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}). "
                   + "Foloseste --sat si --black daca stii valorile corecte.");
 
+            // Previzualizarea aparatului, aleasa din METADATE (lista de miniaturi e deja
+            // marsalizata in d) si despachetata numai ea. Se face aici, cat fisierul e
+            // deschis, ca sa nu se mai deschida o data pentru cativa MB de octeti.
+            EmbeddedPreview preview = TryCapturePreview(ctx, d.ThumbnailList);
+
             return new LoadedFrame
             {
                 Image = img,
@@ -169,7 +174,100 @@ namespace FlatCheck
                 Header = NoHeader,
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
                 Cfa = cfa,
+                Preview = preview,
             };
+        }
+
+        /// <summary>
+        /// Latura lunga peste care o previzualizare nu mai e "de marime medie". Pe D3300
+        /// alege intrarea de 1620x1080 in locul celei de 6000x4000: aceleasi mediane la
+        /// 0.4 puncte, la a douasprezecea parte din timp si a treisprezecea din memorie.
+        /// </summary>
+        internal const int PreferredMaxLongSide = 3000;
+
+        /// <summary>
+        /// Cea mai potrivita previzualizare din fisier, sau null. Regula, in ordine:
+        /// cel mai mare JPEG cu latura lunga sub <see cref="PreferredMaxLongSide"/>; altfel
+        /// cel mai mare JPEG de orice marime (PreviewReader il va scala la decodare);
+        /// altfel un bitmap deja decodat de libraw, oricat de mic.
+        ///
+        /// Alegerea se face din lista de metadate - ThumbCount intrari, fiecare cu format
+        /// si dimensiuni - deci fara niciun cost pe ce nu se alege. Indecsii NU sunt
+        /// stabili intre aparate, de aia se enumereaza si nu se presupun.
+        ///
+        /// Nu arunca niciodata: Load a mers luni de zile fara previzualizare, si o
+        /// miniatura ciudata pe vreun aparat nu are voie sa-l strice acum. Lipsa ei lasa
+        /// doar comutatorul din fereastra stins.
+        /// </summary>
+        static EmbeddedPreview TryCapturePreview(RawContext ctx, LibRawThumbnailList list)
+        {
+            try
+            {
+                int count = Math.Min(list.ThumbCount, list.ThumbList?.Length ?? 0);
+                int bestMid = -1, bestAny = -1, bestOther = -1;
+                long areaMid = 0, areaAny = 0, areaOther = 0;
+
+                for (int i = 0; i < count; i++)
+                {
+                    LibRawThumbnailItem t = list.ThumbList[i];
+                    long area = (long)t.Width * t.Height;
+                    if (t.Width == 0 || t.Height == 0) continue;
+
+                    if (t.Format == InternalThumbnailFormat.Jpeg)
+                    {
+                        if (Math.Max(t.Width, t.Height) <= PreferredMaxLongSide && area > areaMid) { bestMid = i; areaMid = area; }
+                        if (area > areaAny) { bestAny = i; areaAny = area; }
+                    }
+                    else if (area > areaOther) { bestOther = i; areaOther = area; }
+                }
+
+                // Regulile 1 si 2: un JPEG, de preferat mediu.
+                int jpegIdx = bestMid >= 0 ? bestMid : bestAny;
+                if (jpegIdx >= 0)
+                {
+                    EmbeddedPreview j = Export(ctx, jpegIdx, list.ThumbList[jpegIdx].Flip);
+                    if (j != null) return j;
+                }
+
+                // Regula 3: ce a mai ramas, daca libraw il da ca bitmap decodat.
+                return bestOther >= 0 ? Export(ctx, bestOther, list.ThumbList[bestOther].Flip) : null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Despacheteaza o singura intrare si ii copiaza octetii. ProcessedImage
+        /// impacheteaza memorie nativa si e IDisposable: copia se face in interiorul
+        /// using-ului si niciun span nu iese de acolo.
+        /// </summary>
+        static EmbeddedPreview Export(RawContext ctx, int index, int flip)
+        {
+            ctx.UnpackThumbnail(index);
+            using ProcessedImage t = ctx.ExportThumbnail(index);
+            if (t.Width <= 0 || t.Height <= 0 || t.DataSize <= 0) return null;
+
+            if (t.ImageType == ProcessedImageType.Jpeg)
+            {
+                // Pe intrarile JPEG libraw raporteaza Bits = 0 (masurat), deci aici nu se
+                // verifica adancimea - octetii sunt fluxul comprimat, nu pixeli.
+                byte[] data = t.AsSpan<byte>().ToArray();
+                return new EmbeddedPreview(true, data, t.Width, t.Height, flip,
+                    $"previzualizare JPEG {t.Width}x{t.Height} din fisier");
+            }
+
+            if (t.ImageType == ProcessedImageType.Bitmap && t.Bits == 8 && t.Channels == 3
+                && t.DataSize == t.Width * t.Height * 3)
+            {
+                byte[] data = t.AsSpan<byte>().ToArray();
+                return new EmbeddedPreview(false, data, t.Width, t.Height, flip,
+                    $"miniatura RGB {t.Width}x{t.Height} din fisier");
+            }
+
+            // Altceva (alt bit depth, alt numar de canale) nu se reinterpreteaza.
+            return null;
         }
     }
 }

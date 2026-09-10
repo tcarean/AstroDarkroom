@@ -643,6 +643,24 @@ verdictul rămâne mediana ferestrei centrale a canalului celui mai luminos și 
 | de ce curba palidă e mult mai lată | aia **e** vignetarea, nu subexpunere: colțurile unui flat sunt mai întunecate prin construcție. Dacă expui după ea, clipezi centrul. |
 | de ce canalele au vârfuri diferite | filtrele Bayer lasă să treacă cantități diferite din lumina sursei. Pe un panou cald poate conduce R, pe cer la ora albastră de obicei B. Unealta nu face balans de alb — tocmai asta e ideea. |
 | ce **nu** e | histograma de pe aparat. Aia e a JPEG-ului procesat (debayer + WB + gama) și stă mult mai la dreapta. |
+| comutatorul de deasupra desenelor | alege la ce te uiți: datele brute, pe care le măsoară unealta, sau previzualizarea pe care aparatul a înglobat-o în raw, chiar imaginea din care și-a calculat histograma de pe ecran. Numai vederea brută are bandă țintă. Pe cealaltă nu e nicio țintă și nici n-ar putea fi: ar însemna să expui după ecran. |
+| de ce ecranul e mult mai la dreapta | gama plus curba de ton, pe care nicio setare din aparat nu le scoate. O curbă compresivă întinde cel mai tare nivelurile de jos și de mijloc, adică exact unde stă un flat. Pe aparatele măsurate, ecranul s-a saturat înaintea senzorului cu o treime de stop până la un stop, deci e o alarmă într-un singur sens, nu un instrument de măsură. |
+
+**Ce a arătat aparatul.** Comutatorul de deasupra desenelor trece de la datele brute la
+previzualizarea JPEG înglobată în raw, decodată din fișier. Sub desene, un tabel pune cele
+două cifre cap la cap pe fiecare canal, centru cu centru. Măsurat pe două flat-uri de cer
+din bibliotecă, canalul albastru:
+
+| fișier | senzor (raw) | ecranul aparatului | vârf pe ecran |
+|---|---|---|---|
+| Nikkor 35 DX, ISO 800 | 29.0 % | 81.2 % | 84.7 % |
+| Samyang f/2.0, ISO 1600 | 32.1 % | 98.0 % | 100.0 %, cu pixeli la 255 |
+
+Al doilea arăta ars pe aparat și avea 1.6 stopuri de rezervă în fișier. Diferența nu e o
+constantă de ținut minte: pe aparatul măsurat e maximă pe la raw 25 %, chiar unde stă un
+flat, și se strânge spre saturație. Pe vederea din previzualizare **nu există bandă
+țintă**, iar verdictul nu se uită la ea deloc. Vederea lipsește, cu explicație, pe un FITS
+sau pe un raw fără previzualizare decodabilă.
 
 ### Ce nu face
 
@@ -735,8 +753,9 @@ Sunt intenționate, nu scăpări:
   E aceeași bibliotecă; numele diferă fiindcă `rawpy` e ambalajul de Python al ei. Din
   același motiv, pe un raw linia cu ordinea canalelor scrie `din libraw` față de
   `din rawpy`. Pe FITS amândouă citesc `BAYERPAT`, deci acolo linia e identică.
-- Fără histograme pe canal — sunt doar în fereastră. În consolă un paragraf despre forma
-  unei curbe pe care consola n-o desenează n-ar avea ce căuta.
+- Fără histograme pe canal și fără comparația cu previzualizarea aparatului — sunt doar în
+  fereastră. În consolă un paragraf despre forma unei curbe pe care consola n-o desenează
+  n-ar avea ce căuta. Versiunea Python nu citește deloc previzualizarea înglobată în raw.
 - `Percentile` pe o listă goală întoarce 0 în loc să arunce.
 - Interpretarea din `--light` scrie diagnosticul cu majuscule („Fondul CADE/CREȘTE spre
   margini") față de minusculele din Python. Semnul *e* diagnosticul, deci accentul e
@@ -764,3 +783,18 @@ General Public License pentru detalii.
 Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
 <https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare și la
 `flatcheck --help`; copyright-ul se tipărește la fiecare rulare, sub versiune.
+
+### Componente terțe
+
+Unealta leagă trei componente scrise de alții, toate compatibile cu GPLv3:
+
+| componentă | rol | licență |
+|---|---|---|
+| Sdcb.LibRaw | ambalajul C# peste libraw | MIT |
+| LibRaw (DLL-urile native) | citirea fișierelor raw de aparat | LGPL-2.1 (opțiunea aleasă din dubla LGPL-2.1 / CDDL-1.0) |
+| SixLabors.ImageSharp 3.1.x | decodarea previzualizării JPEG din raw | Six Labors Split License 1.0, care acordă termenii Apache 2.0 proiectelor open source. Fixat pe 3.1.x fiindcă de la 4.0 pachetul cere o cheie de licență la compilare, pe Release ca eroare. |
+
+Cititorul FITS, encoderul PNG, toate calculele și toate pragurile sunt scrise de mână.
+
+Motivele pentru care fiecare licență e compatibilă — inclusiv de ce LibRaw se ia sub LGPL
+și nu sub CDDL — sunt în [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

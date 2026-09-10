@@ -256,5 +256,108 @@ namespace FlatCheck
 
             return string.Join(" ", s);
         }
+
+        // ================================================= previzualizarea aparatului
+        //
+        // Tot pentru fereastra, tot netiparit in consola. Aici se pun cap la cap cele doua
+        // cifre - ce a masurat senzorul si ce a aratat ecranul - si se spune de ce difera.
+        // Nimic de aici nu voteaza.
+
+        /// <summary>
+        /// Perechea raw -> ecran pe fiecare canal, CENTRU cu CENTRU: mediana ferestrei de
+        /// 20 % din raw langa mediana aceleiasi ferestre din previzualizare. Nu se compara
+        /// medianele intregului cadru - cea din raw e trasa in jos de vignetare intr-un fel
+        /// in care cea din previzualizare nu e, si diferenta ar fi in parte obiectivul.
+        ///
+        /// Imperecherea e dupa CULOAREA canalului raw, nu dupa indexul lui si nu dupa
+        /// mozaicul din header: un raw judecat mono are un singur canal fara culoare, chiar
+        /// daca fisierul a spus ordinea. Cei doi verzi se mediaza fata de singurul G.
+        /// Fara nicio culoare pe partea raw, o singura pereche: cel mai luminos cu cel mai
+        /// luminos, si eticheta o spune.
+        /// </summary>
+        internal static IReadOnlyList<(string Channel, char Colour, double RawPct, double ScreenPct)>
+            ScreenComparison(ExposureResult r)
+        {
+            var rows = new List<(string, char, double, double)>();
+            if (r.Preview == null) return rows;
+
+            bool anyColour = r.Channels.Any(c => c.Colour != '\0');
+            if (anyColour)
+            {
+                foreach (ChannelLevels p in r.Preview.Channels)
+                {
+                    var raws = r.Channels.Where(c => c.Colour == p.Colour).ToList();
+                    if (raws.Count == 0) continue;
+                    string label = raws.Count == 1
+                        ? p.Label
+                        : $"{p.Label} (media {string.Join(", ", raws.Select(c => c.Label))})";
+                    rows.Add((label, p.Colour, raws.Average(c => c.CentreMedianPct), p.CentreMedianPct));
+                }
+                return rows;
+            }
+
+            ChannelLevels rawBest = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
+            ChannelLevels prevBest = r.Preview.Channels.OrderByDescending(c => c.MedianPct).First();
+            rows.Add(($"cel mai luminos: {rawBest.Label} in raw, {prevBest.Label} pe ecran",
+                      '\0', rawBest.CentreMedianPct, prevBest.CentreMedianPct));
+            return rows;
+        }
+
+        /// <summary>
+        /// De ce difera atat de mult cele doua, si la ce mai e bun ecranul. Spune doar ce
+        /// sustine rezultatul: diferenta masurata pe canalul care decide, mecanismul (gama
+        /// plus curba de ton, pe care nicio setare nu le scoate), de ce un flat e cazul cel
+        /// mai nefavorabil, si regula utila - ecranul se satureaza inaintea senzorului cand
+        /// balansul de alb amplifica si curba ajunge la 255, deci e o alarma intr-un singur
+        /// sens, nu un instrument de masura. Formulata ca mecanism si observatie, nu ca lege.
+        /// </summary>
+        internal static string ScreenReading(ExposureResult r)
+        {
+            if (r.Preview == null) return "";
+
+            var s = new List<string>();
+            if (!r.IsRaw)
+                s.Add("Fisierul nu e un flat brut - e deja calibrat sau debayerizat - deci niciuna "
+                    + "din cele doua curbe nu e o expunere. Comparatia de mai jos ramane adevarata "
+                    + "despre cele doua developari, atat.");
+
+            ChannelLevels raw = r.Channels[r.IsCfa ? r.BrightestChannel : 0];
+            ChannelLevels screen = raw.Colour != '\0'
+                ? r.Preview.Channels.FirstOrDefault(c => c.Colour == raw.Colour)
+                : null;
+            screen ??= r.Preview.Channels.OrderByDescending(c => c.MedianPct).First();
+
+            double gap = screen.CentreMedianPct - raw.CentreMedianPct;
+            s.Add($"Pe canalul care decide, senzorul e la {raw.CentreMedianPct:F1} % si ecranul "
+                + $"aparatului arata {screen.CentreMedianPct:F1} %: {gap:+0.0;-0.0} puncte, in "
+                + "aceeasi fereastra centrala de 20 %.");
+
+            s.Add("Cea mai mare parte e gama: un JPEG e codificat gamma prin definitie, ca sa "
+                + "imparta 256 de trepte dupa cum vede ochiul, nu dupa cat primeste senzorul. "
+                + "Nicio setare din aparat n-o scoate - Picture Control Neutral si contrastul "
+                + "la minim taie curba SUPLIMENTARA, nu codificarea. Restul e curba de ton si "
+                + "balansul de alb, care e diferit pe fiecare canal.");
+
+            s.Add("O curba compresiva intinde cel mai tare nivelurile de jos si de mijloc, "
+                + "adica exact unde sta un flat. De aia un flat pare alarmant pe ecran cand nu e, "
+                + "si de aia diferenta nu e o constanta de tinut minte: se schimba cu aparatul, "
+                + "cu Picture Control si cu lumina.");
+
+            s.Add("La ce mai e bun ecranul: cat timp balansul de alb amplifica un canal si curba "
+                + "de ton ajunge la 255, JPEG-ul se satureaza INAINTEA senzorului - pe aparatele "
+                + "masurate aici, cu o treime de stop pana la un stop. Deci \"nu e lipit de "
+                + "margine\" e o garantie solida ca n-ai ars nimic. \"E lipit\" nu e informatie: de "
+                + "acolo incolo ecranul sta pe loc, oricat ai depasi. E o alarma intr-un singur "
+                + "sens, nu un instrument de masura.");
+
+            return string.Join(" ", s);
+        }
+
+        /// <summary>De ce nu se poate arata comparatia pe fisierul asta.</summary>
+        internal static string NoPreviewReason(ExposureResult r)
+            => "Fisierul asta nu poarta o previzualizare a aparatului - un FITS n-are niciodata, "
+             + "iar unele raw-uri convertite o pierd - sau ea nu s-a putut decoda. Nu am ce "
+             + "pune langa nivelul real, deci se arata doar datele brute. Verdictul nu e afectat: "
+             + "el se da oricum numai pe ele.";
     }
 }

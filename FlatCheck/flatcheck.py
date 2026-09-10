@@ -52,7 +52,7 @@ import numpy as np
 
 # Versiunea uneltei. Se incrementeaza MANUAL la fiecare feature/fix; nu o schimba de
 # capul tau. Trebuie sa ramana identica cu VersionInfo.Value din C# (FlatCheck/Version.cs).
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 # Notita de copyright, pe a doua linie a oricarei rulari - sub banner. GPLv3 cere ca
 # fiecare copie sa o poarte. Identica cu VersionInfo.Copyright din C#.

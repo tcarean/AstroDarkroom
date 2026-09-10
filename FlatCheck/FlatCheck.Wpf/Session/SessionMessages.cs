@@ -200,10 +200,12 @@ namespace FlatCheck.Wpf
         internal static string HistogramGuideIntro() =>
             "Axa orizontala e aceeasi pe care stau toate cifrele tabului: procente din "
             + "(white - black), adica din intervalul util al senzorului. Zero e negrul "
-            + "aparatului, 100 e saturatia.\n\n"
+            + "aparatului, 100 e saturatia. Pe previzualizarea aparatului, axa e procente "
+            + "din 255 - tot \"cat din intervalul disponibil\", singurul fel in care cele "
+            + "doua se pot citi una langa alta.\n\n"
             + "Desenul EXPLICA, nu voteaza. Verdictul e mediana ferestrei centrale a "
-            + "canalului celui mai luminos si nimic altceva - histogramele arata de unde "
-            + "vine cifra aia si ce se intampla in jurul ei.";
+            + "canalului celui mai luminos, pe datele brute, si nimic altceva - "
+            + "histogramele arata de unde vine cifra aia si ce se intampla in jurul ei.";
 
         /// <summary>
         /// Cum se citeste desenul, in ordinea in care merita privit: intai cele doua
@@ -251,6 +253,23 @@ namespace FlatCheck.Wpf
              "Nu e histograma de pe aparat. Aia e a JPEG-ului procesat - debayer, balans "
              + "de alb, gama - si sta mult mai la dreapta. De aceea un cadru care pare "
              + "\"la limita\" pe ecranul aparatului poate fi la 40 % in date brute."),
+
+            ("comutatorul de deasupra desenelor",
+             "Alege la ce te uiti: datele brute, pe care le masoara unealta, sau "
+             + "previzualizarea pe care aparatul a inglobat-o in raw - chiar imaginea din "
+             + "care si-a calculat histograma de pe ecran. Numai vederea bruta are banda "
+             + "tinta, fiindca numai ea spune ceva despre lumina de pe senzor. Pe cealalta "
+             + "nu e nicio tinta, si nici n-ar putea fi: ar insemna sa expui dupa ecran. "
+             + "Tabelul de sub desene pune cele doua cifre cap la cap, pe fiecare canal."),
+
+            ("de ce ecranul e mult mai la dreapta",
+             "Gama plus curba de ton, pe care nicio setare din aparat nu le scoate: un JPEG "
+             + "e codificat gamma prin definitie. O curba compresiva intinde cel mai tare "
+             + "nivelurile de jos si de mijloc, adica exact unde sta un flat. Si, pe "
+             + "aparatele masurate aici, ecranul s-a saturat inaintea senzorului, cu o "
+             + "treime de stop pana la un stop: deci e o alarma intr-un singur sens - \"nu "
+             + "e lipit\" e o garantie, \"e lipit\" nu e informatie - nu un instrument de "
+             + "masura."),
         };
 
         // ------------------------------------------------------- ghidul hartii

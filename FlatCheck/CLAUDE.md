@@ -4,11 +4,12 @@ Quantitative diagnostic for astrophotography flat frames. Answers four questions
 is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly.
 
-Two applications - a console tool and a WPF window - over one core library, with
-**exactly one NuGet dependency**: the core hand-parses FITS and hand-writes PNG (via
-`ZLibStream` from the BCL), and leans on libraw (`Sdcb.LibRaw`) for camera raw files only.
-.NET 8. See "The one dependency" below before adding a second, and "The two applications"
-for what each one owns.
+Two applications - a console tool and a WPF window - over one core library. The core
+hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL), and reaches for a
+package where hand-rolling would be dishonest work: libraw (`Sdcb.LibRaw`) for camera raw
+files, ImageSharp for the JPEG preview the camera embeds in them. .NET 8. See
+"The dependencies" below before adding another, and "The two applications" for what each
+one owns.
 
 ## Structure
 
@@ -35,8 +36,9 @@ not a copy.
     stateless instance per format and asks each `Handles`; what nobody claims falls back
     to FITS, and that fallback is an explicit field rather than the last array element, so
     a reorder cannot break it silently. `Load` returns a `LoadedFrame` (pixels, FITS
-    header, ADU scale); the missing fields are the right answer per format, not errors - a
-    raw has no FITS header, a FITS has no ADU scale. Nothing below it knows where the
+    header, ADU scale, CFA colour order, embedded preview); the missing fields are the
+    right answer per format, not errors - a raw has no FITS header, a FITS has neither an
+    ADU scale nor a preview, and either may be silent about the mosaic order. Nothing below it knows where the
     pixels came from, and that is what keeps the two formats from growing separate
     behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
@@ -48,6 +50,14 @@ not a copy.
     file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
     `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`). Never guessed - see "The channel order" under
     mode 4. Used only for *naming*; no figure depends on it.
+  - `PreviewImage.cs` - the camera's own rendering of the frame, in two forms:
+    `EmbeddedPreview` (the bytes as they sit in the raw, captured while the file is open)
+    and `PreviewImage` (decoded RGB, made only on request). Neither may decide anything -
+    see "The camera's preview" under mode 4.
+  - `PreviewReader.cs` - the only file that names a `SixLabors.ImageSharp` type, exactly as
+    `RawReader.cs` is the only one that names libraw. `Decode(EmbeddedPreview)` returns
+    null on any failure, including a missing assembly; it is also the swap point if the
+    package ever has to change.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, and for the attribution mode `CropCentred` + `Rotate180`. Those last two
@@ -72,7 +82,10 @@ not a copy.
     (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
     constants would have been a second definition of the verdict. `ExposureAnalyzer` also
     carries `LevelHistogram` and `ChannelLevels`, the per-channel distributions; they are
-    filled in the loop the analyzer already ran and change no existing figure.
+    filled in the loop the analyzer already ran and change no existing figure. Beside them
+    `PreviewLevels` and `AnalyzePreview`, the same two types over the camera's own
+    rendering - three channels, no bands, no verdict, and `Analyze` fills
+    `ExposureResult.Preview` only when handed one.
     No I/O, no printing - this is where every number is decided. Two of them are not
     `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
     (it decides whether `--light` applies at all, before any pixel is read), and
@@ -99,7 +112,9 @@ not a copy.
     Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
     `StructureReport.Advice()`, `LightReport.Diagnosis()`, `ExposureReport`'s
     `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around the exposure
-    histograms - window-only, like `MapScaleLabel`, and for the same reason), and from
+    histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason` (the raw-vs-screen
+    table and its explanation) - all six window-only, like `MapScaleLabel`, and for the same
+    reason, and from
     `RatioReport` the five that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
     `Precondition`, `WorldMeaning`, `SensorCaveat`. The console formats them into columns, the WPF app puts
     them in cards and under a coloured chip; the wording has one definition either way.
@@ -109,7 +124,9 @@ not a copy.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, plus
     `SeriesFinder` (which files a series run covers). This is the layer both applications
-    call, and the reason neither of them re-derives a number. Two shape decisions are
+    call, and the reason neither of them re-derives a number. `ExposureRun` is the only one
+    with an opt-in: `withPreview` decodes the camera preview, and defaults to false because
+    only the window shows it. Two shape decisions are
     load-bearing and explained at length in `Runs/RunOutcome.cs`: the report is **written
     into a `TextWriter` the caller supplies** (so the console keeps streaming a 32-frame
     table, and anyone who wants the string passes a `StringWriter`), and the residual map
@@ -144,7 +161,9 @@ not a copy.
     `MainViewModel` for the folder, and two small companions of the residual map shared by
     the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
-    shape guide's text and its collapsed state). They are `public` because WPF binding
+    shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
+    that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
+    either. They are `public` because WPF binding
     reads public properties by reflection - and that has a useful consequence: a public
     view-model **cannot** expose an internal core type, so the compiler itself stops a
     `StructureResult` from leaking into XAML. `MapScaleOption.CapPct` is `internal` for
@@ -152,9 +171,9 @@ not a copy.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
     inherited `TabViewModel`, so the same three controls serve all four tabs;
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
-    The scale chips' `GroupName` **must differ per tab** (`StructureMapScale` /
-    `RatioMapScale`): WPF groups radio buttons by name across the whole window, so a
-    shared name makes one tab's chips uncheck the other's.
+    Every set of radio chips needs its own `GroupName` (`StructureMapScale`,
+    `RatioMapScale`, `ExposureHistogramSource`): WPF groups radio buttons by name across
+    the whole window, so a shared name makes one tab's chips uncheck another's.
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
     its own list of verdict names), `ChannelPalette` (R/G/B hues for the exposure
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
@@ -169,8 +188,10 @@ not a copy.
   `InternalsVisibleTo`. `Golden/` holds the characterization snapshots.
 - `FlatCheck.Wpf.Tests/` - xUnit tests for the window app, `net8.0-windows`. Separate
   project rather than a folder, so `FlatCheck.Tests` - which carries the parity story -
-  stays portable. Borrows `FitsTestData` and `TempWorkspace` from it by `<Compile Link>`
-  rather than copying them.
+  stays portable. Borrows `FitsTestData`, `TempWorkspace` and `TestImages` from it by
+  `<Compile Link>` rather than copying them - the last one for `JpegOf`, which encodes a
+  camera preview in the test so the Exposure tab can be exercised with the source switch
+  on without a real raw anywhere in the suite.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
   ported from. Prior art only for *features*; **not maintained in parallel** - don't
   feel obliged to mirror C#-side changes into it, except where parity is tested (see
@@ -212,9 +233,30 @@ All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
   never been compiled. Code comments explain *why the code is the way it is*; the README
   explains *how to use the tool*.
 
-## The one dependency
+## The dependencies
 
-`Sdcb.LibRaw`, plus its `runtime.win64` / `runtime.linux64` native packages. It exists for
+### The rule
+
+**Dependencies are discussed before they are added, not avoided.** The tool still leans
+toward hand-rolled where hand-rolled is honest - the FITS reader and the PNG encoder stay
+as they are, and nothing replaces them. But a package is a normal thing to reach for when
+it does a real job better than we would. Bring the candidate, its licence, its size and its
+alternatives to the author, and let them decide. **Do not add one silently**, and do not
+add one to save yourself an afternoon on something the BCL already does.
+
+Two constraints do not bend:
+
+- **Licence compatibility is not negotiable.** The tool is GPLv3-or-later, so anything
+  linked in has to be GPLv3-compatible, and the reason it is has to be written down. See
+  `THIRD-PARTY-NOTICES.md`, which is the file that records those decisions, and "Licensing"
+  below.
+- **The single-copyable-binary promise.** Pure-managed packages keep `PublishSingleFile`
+  simple. Per-RID native binaries cost the same care `Sdcb.LibRaw` already needs, which is
+  a point against, not a veto.
+
+### `Sdcb.LibRaw`
+
+Plus its `runtime.win64` / `runtime.linux64` native packages. It exists for
 one reason: `--expo` on a camera raw, which was the last feature gap against
 `flatcheck.py`.
 
@@ -247,10 +289,58 @@ Three properties keep the cost contained, and all three are worth preserving:
   `RawReader`, of either kind. `HoldsNoLibrawTypedFields_SoTheAssemblyStaysLazilyLoaded`
   pins it; nothing else would notice.
 - **Nothing is developed.** Only `raw_image` (cropped to the visible area, like rawpy's
-  `raw_image_visible`), `color.maximum` and the black levels. No demosaic, no white
+  `raw_image_visible`), `color.maximum` and the black levels, plus `idata.filters` /
+  `idata.cdesc` for the mosaic order and the embedded preview bytes. No demosaic, no white
   balance, no gamma - all of which would make the measurement meaningless.
 
-Don't add a second dependency at a lower standard of evidence than this one.
+**Its licence takes a decision, so it is recorded rather than assumed.** The C# wrapper is
+MIT. The native `runtime.*` packages are LibRaw itself, offered as **LGPL-2.1-only OR
+CDDL-1.0**. We take the LGPL option: CDDL is not GPL-compatible, so choosing it would break
+the tool's own licence. LGPL-2.1 §3 permits applying GPL v2 "or any later version" to a
+copy, which is what brings it into a GPLv3 work.
+
+### `SixLabors.ImageSharp`
+
+Decodes the JPEG preview the camera embeds in a raw - the image the camera's own screen
+histogram was computed from. Reached from exactly one file, `PreviewReader.cs`, the same
+containment `RawReader.cs` has.
+
+It is not there to replace anything hand-rolled: the PNG encoder still writes our own
+bytes. It is there because the alternative was a hand-rolled JPEG decoder - Huffman, DCT,
+chroma subsampling, YCbCr, progressive mode - which is an order of magnitude beyond an
+encoder that only writes, for a picture that never votes on a verdict.
+
+**The licence needs reading, and it is fine here.** ImageSharp 3.x and later are under the
+Six Labors Split License 1.0, which is a *conditional dual* licence, not a restrictive one.
+It grants Apache-2.0 terms when "You are consuming the Work in for use in software licensed
+under an Open Source or Source Available license"; a commercial licence is required only
+for the other cases, essentially proprietary use above 1M USD revenue. FlatCheck is GPLv3,
+so it qualifies on the first condition with nothing to change. Apache-2.0 then flows into
+GPLv3 one-directionally, which the ASF states plainly: "Apache 2 software can therefore be
+included in GPLv3 projects."
+
+Two consequences worth keeping:
+
+- **Pin the version.** The licence text is "Version 1.0, June 2022" and does not say which
+  licence version governs which release. The grant travels with the version taken, so
+  pinning is legal hygiene as well as reproducibility.
+- **It is pinned to 3.1.x, not 4.x, and that is about the build, not the licence.** From
+  4.0.0 the package ships an MSBuild task that validates a licence key at compile time: a
+  warning on Debug, an **error on Release** without a `sixlabors.lic` or
+  `$(SixLaborsLicenseKey)`. Six Labors grants that key free to open-source projects, but on
+  application, and anyone cloning this repo would need their own to publish. 3.1.x carries
+  the identical Split License 1.0 text, no task, and the only API difference that matters
+  here - it never applies an ICC profile on decode - is the behaviour wanted anyway. Moving
+  to 4.x means obtaining the key *and* setting `ColorProfileHandling.Preserve` explicitly.
+- **Because GPLv3 forces every derivative to stay GPLv3**, and GPLv3 is an open source
+  licence, everyone downstream qualifies on the same condition. The eligibility does not
+  break as the tool is passed on.
+
+`StbImageSharp` (Unlicense/MIT, zero dependencies, ~identical output measured against an
+independent decoder on real previews) was the alternative, and would have carried no licence
+footnote at all. ImageSharp was chosen for robustness on the awkward cases a camera preview
+can be - progressive, CMYK/YCCK, unusual sampling - and for scaled decoding. If its licence
+ever moves, StbImageSharp is the drop-in fallback and the seam is one file wide.
 
 ## The two applications
 
@@ -306,6 +396,17 @@ the Sky toggle) can start another over it - scalar properties just let the last 
 but a collection cleared and refilled by two runs at once ends up with duplicated rows and
 nulls in it. The light series is the opposite case and does need `ObservableCollection`,
 because it appends rows as frames finish.
+
+Above the charts sits a switch, `HistogramSourceViewModel`, on the `MapScaleViewModel`
+pattern: two radio chips, raw data or the camera's preview. Flipping it rebuilds the rows
+from the **retained** `ExposureResult`; nothing is re-read or re-analysed. It is disabled
+when the file carries no preview (every FITS, and a raw whose preview would not decode), and
+disabling it forces the selection back to raw. The chips' `GroupName` is
+`ExposureHistogramSource`, unique in the window for the same reason the map scale ones are.
+Under the charts, a three-row table pairs the raw centre median with the preview's, per
+colour, on both views - it is the payoff, so it is never hidden behind the switch.
+`Populate` is `internal` so a test can hand in a result carrying a preview built from a JPEG
+the test encoded itself (`TestImages.JpegOf`); no raw file is needed anywhere in the suite.
 
 The Structure tab carries a fourth block, `HowToReadPanel`, under the verdict: **which
 half of the screen decides what.** The numbers answer "how much" and own the verdict; the
@@ -734,6 +835,62 @@ The window normalises each curve to its own peak (the centre window holds 4% of 
 pixels; on a shared scale the curve that decides would be a flat line). **The chart never
 votes** - it explains where the deciding number came from. The console prints none of this.
 
+#### The camera's preview
+
+The window can switch the same charts to **what the camera showed on its screen**: the JPEG
+preview embedded in the raw, which is the image the camera's own histogram was computed
+from. The gap is the whole point. Measured, centre window of the brightest channel, on two
+sky flats from this library:
+
+| file | raw | camera screen | screen peak |
+|---|---|---|---|
+| Nikkor 35 DX, ISO 800 | 29.0 % | 81.2 % | 84.7 % |
+| Samyang f/2.0, ISO 1600 | 32.1 % | 98.0 % | 100.0 % (pixels at 255) |
+
+The second one looked burnt on the camera and had 1.6 stops of headroom in the file.
+
+**Where the bytes come from.** `RawReader.Decode` reads libraw's thumbnail *list*
+(`d.ThumbnailList`: count, and per entry format, size, flip) - metadata already marshalled -
+and picks by rule: the largest JPEG whose long side is at most 3000 px; failing that the
+largest JPEG (decoded scaled, see below); failing that a bitmap libraw already decoded;
+failing that null. Only the winner is unpacked; the bytes are copied while the file is open,
+so nothing is reopened. On the D3300 that picks the 1620x1080 entry, which agrees with the
+6000x4000 one to 0.4 points at a twelfth of the time. Indices are **not** stable across
+cameras, hence the enumeration. Two libraw facts that look like bugs: JPEG entries report
+`Bits = 0` (the 8-bit check is for the bitmap path only), and asking past `ThumbCount`
+throws error -9.
+
+**Decoding is opt-in.** `ExposureRun.Execute(..., withPreview)` defaults to false. The
+console never decodes; the structure, ratio and light modes never decode; the window passes
+true. Measured with ImageSharp on the D3300: 16 ms / 5 MB for the 1620 px preview, 460 ms /
+69 MB for the 6000 px one at native size, 485 ms / 9 MB with `TargetSize` - so `TargetSize`
+buys memory, not time, and the mid-size selection is what makes it cheap.
+
+**No ICC transform.** A preview run through an embedded colour profile is a different image
+from the one on the screen. On ImageSharp 3.1.x the decoder never applies one; on 4.x there
+is `ColorProfileHandling.Convert` and it would have to be set to `Preserve` explicitly. The
+reader also sets `SkipMetadata`, so the profile is not even read.
+
+**The preview side has no bands and no verdict.** `PreviewRows` sets all four band fields to
+`NaN`, `HistogramCanvas` skips `NaN` zones, and nothing else was touched. A target band on
+the screen's axis would say "expose until the screen reads 50-65 %", which is the exact
+mistake this view exists to cure. It also cannot be computed: mapping the raw target onto
+the screen needs the transfer curve, a flat contains only a narrow slice of it, and fitting
+a power law to that slice predicts values over 100 % - the same ill-posed extrapolation as
+the rejected `radPct`-to-zero-sky one. `ThePreviewNeverChangesTheVerdict` pins that
+attaching a preview leaves every verdict figure bit-identical.
+
+**The comparison pairs centre with centre, by colour.** `ExposureReport.ScreenComparison`
+reads the colour off `Channels[i].Colour`, never off `Cfa`: a raw judged `!IsCfa` has a
+single "mono" channel while `Cfa` may still be set. The two greens are averaged. Whole-frame
+medians are not compared - the raw one is pulled down by vignetting in a way the preview's
+is not, so that gap would be partly the lens.
+
+`ScreenReading` states the mechanism and the measurement, not a law: the screen saturates
+before the sensor *when* the white balance multiplies the channel by 1 or more and the tone
+curve reaches 255, which on every camera measured here it did, by a third of a stop to a
+stop. So "not touching the edge" is a guarantee; "touching the edge" is not information.
+
 The decision metric is the median of a **central 20% × 20% window** of the
 brightest channel, **not** the global median. This is the single most important
 design point of this mode: a flat has a wide distribution *by definition* - that
@@ -1148,6 +1305,12 @@ behaviour that is either deliberate or not worth changing.
    twice. Measured peak was ~330 MB on a 3000x2000 frame before that change; a 24 MP
    D3300 frame still runs into the high hundreds of MB. Runtime is fine
    (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000).
+8. **A raw whose only preview is full-size costs a decode of it.** The window's exposure
+   tab decodes the camera preview; when a camera offers no mid-size one, the largest is
+   decoded with `TargetSize`, which was measured at ~9 MB and ~0.5 s on a 6000x4000
+   preview - the time is spent in entropy decoding regardless of the target. Every raw
+   load also copies the chosen preview's bytes (a few MB at most), including modes that
+   never look at them; that is the price of opening the file once.
 
 ## Versioning
 
@@ -1209,6 +1372,13 @@ and its position on line 1, for every mode, for `--help`, and for failed runs.
 
 The tool is **GPLv3-or-later**. The full text is in `LICENSE` at the repo root (the
 verbatim FSF `gpl-3.0.txt` - don't reword it, and don't reflow it).
+
+**Third-party code has its own file.** `THIRD-PARTY-NOTICES.md` lists every package linked
+in, its licence, and - the part that matters - *why* that licence is compatible with
+GPLv3. Two of the current entries take a real decision rather than inheriting one: LibRaw
+is dual-licensed and only one of its two options is GPL-compatible, and ImageSharp's
+licence is conditional and has to be shown to apply. A package added without an entry there
+is a package whose compatibility nobody checked. See "The dependencies" above for the rule.
 
 Four things follow, and all four are pinned by tests:
 

@@ -129,6 +129,42 @@ public class RawReaderTests
         Assert.True(r.IsCfa, "spread " + r.CfaSpread);
         Assert.False(r.LooksDebayered);
         Assert.False(r.LevelTooLow);
+
+        // The camera's preview, captured from the thumbnail metadata while the file was
+        // open, undecoded. On the D3300 rule 1 picks the 1620x1080 entry over the
+        // 6000x4000 one; on another camera it may pick differently, but never above the
+        // preferred cap when a JPEG under it exists.
+        Assert.NotNull(f.Preview);
+        Assert.True(f.Preview.IsJpeg || f.Preview.Data.Length == f.Preview.W * f.Preview.H * 3);
+        Assert.True(f.Preview.W > 0 && f.Preview.H > 0);
+
+        PreviewImage p = PreviewReader.Decode(f.Preview);
+        Assert.NotNull(p);
+        Assert.Equal(p.W * p.H * 3, p.Rgb.Length);
+        Assert.True(p.W >= 160 && p.H >= 120, $"{p.W}x{p.H}");
+    }
+
+    /// <summary>
+    /// The claim the preview feature exists for, on a real file: the camera's rendering
+    /// sits far above the sensor's level. Measured, centre window of the brightest
+    /// channel: 29.0 -> 81.2 on a Nikkor sky flat, 32.1 -> 98.0 on a Samyang one. The
+    /// gap varies with white balance and Picture Control, so only its direction and its
+    /// size class are asserted.
+    /// </summary>
+    [Fact]
+    public void ARealRawsPreviewSitsWellAboveItsSensorLevel()
+    {
+        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        if (string.IsNullOrEmpty(path)) return;
+
+        LoadedFrame f = ImageLoader.Load(path);
+        PreviewImage img = PreviewReader.Decode(f.Preview);
+        var r = ExposureAnalyzer.Analyze(f.Image, null, null, false, f.Scale, f.Cfa, img);
+
+        Assert.NotNull(r.Preview);
+        double raw = r.Channels[r.BrightestChannel].CentreMedianPct;
+        double screen = r.Preview.Channels.Max(c => c.CentreMedianPct);
+        Assert.True(screen > raw + 10, $"raw {raw:F1} vs ecran {screen:F1}");
     }
 
     /// <summary>

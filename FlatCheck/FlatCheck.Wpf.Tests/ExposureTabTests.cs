@@ -353,6 +353,179 @@ public class ExposureTabTests
         Assert.Contains("nu e un flat brut", vm.Reading);
     }
 
+    // ------------------------------------------------------------------ previzualizarea aparatului
+
+    /// <summary>
+    /// Un rezultat cu previzualizare, fara niciun raw adevarat: JPEG-ul se face in test
+    /// cu encoderul ImageSharp, se decodeaza cu PreviewReader si intra in analizor ca
+    /// intr-o rulare reala. Previzualizarea e mult mai luminoasa decat raw-ul, ca pe un
+    /// aparat adevarat.
+    /// </summary>
+    static ExposureResult ResultWithPreview(bool cfa = true)
+    {
+        Img img = cfa
+            ? FlatCheck.Tests.TestImages.FlatCfa(128, 128, 550)
+            : FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 550));
+        PreviewImage preview = PreviewReader.Decode(FlatCheck.Tests.TestImages.JpegOf(160, 120, (x, y) =>
+        {
+            // centru mai luminos decat colturile, ca sa se vada ca tabelul ia CENTRUL
+            double d = Math.Sqrt((x - 80) * (x - 80) + (y - 60) * (y - 60)) / 100.0;
+            byte v = (byte)(230 - 60 * d);
+            return ((byte)(v - 40), v, (byte)Math.Min(255, v + 15));
+        }));
+        return ExposureAnalyzer.Analyze(img, 1000, null, false, null,
+                                        cfa ? CfaPattern.Parse("RGGB", "BAYERPAT") : null, preview);
+    }
+
+    static ExposureTabViewModel Loaded(ExposureResult r)
+    {
+        var vm = new ExposureTabViewModel();
+        vm.Populate(r);
+        return vm;
+    }
+
+    /// <summary>Un FITS n-are previzualizare: comutatorul e stins, vederea e pe brute, si se spune de ce.</summary>
+    [Fact]
+    public async Task WithoutAPreviewTheSwitchIsDisabled()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+
+        var vm = Attached(f);
+        vm.Selected = path;
+        await vm.RecomputeAsync();
+
+        Assert.False(vm.Source.IsEnabled);
+        Assert.False(vm.Source.IsPreviewSelected);
+        Assert.Empty(vm.Comparison);
+        Assert.False(vm.HasComparison);
+        Assert.Contains("nu poarta o previzualizare", vm.SourceNote);
+        Assert.Contains("Banda verde", vm.Caption);
+    }
+
+    [Fact]
+    public void WithAPreviewTheSwitchIsEnabledAndStartsOnRaw()
+    {
+        var vm = Loaded(ResultWithPreview());
+
+        Assert.True(vm.Source.IsEnabled);
+        Assert.False(vm.Source.IsPreviewSelected);
+        Assert.Equal(4, vm.Histograms.Count);          // randurile raw
+        Assert.Equal("", vm.SourceNote);               // pe brute, cu previzualizare disponibila: nimic de explicat
+        Assert.True(vm.HasComparison);
+    }
+
+    /// <summary>
+    /// Comutarea reface randurile din rezultatul tinut, nu reruleaza nimic: cifrele
+    /// verdictului raman identice si tabul nu trece prin starea de asteptare.
+    /// </summary>
+    [Fact]
+    public void TheSwitchDoesNotRerunTheAnalysis()
+    {
+        var vm = Loaded(ResultWithPreview());
+        string centre = vm.Centre, verdict = vm.Verdict;
+
+        vm.Source.Preview.IsSelected = true;
+
+        Assert.True(vm.Source.IsPreviewSelected);
+        Assert.Equal(3, vm.Histograms.Count);
+        Assert.Equal(centre, vm.Centre);
+        Assert.Equal(verdict, vm.Verdict);
+        Assert.False(vm.IsBusy);
+        Assert.Contains("ecranul aparatului arata", vm.SourceNote);
+        Assert.Contains("FARA banda tinta", vm.Caption);
+
+        vm.Source.Raw.IsSelected = true;
+        Assert.Equal(4, vm.Histograms.Count);
+        Assert.Equal("", vm.SourceNote);
+    }
+
+    /// <summary>
+    /// Decizia cea mai importanta a functiei: pe previzualizare nu exista benzi, nota,
+    /// sau canal "care decide". Toate cele patru praguri sunt NaN, deci desenul nu
+    /// traseaza nicio zona - fara niciun steag in HistogramCanvas.
+    /// </summary>
+    [Fact]
+    public void ThePreviewRowsCarryNoBands()
+    {
+        var vm = Loaded(ResultWithPreview());
+        vm.Source.Preview.IsSelected = true;
+
+        Assert.Equal(new[] { "R", "G", "B" }, vm.Histograms.Select(r => r.Label));
+        Assert.All(vm.Histograms, r =>
+        {
+            Assert.True(double.IsNaN(r.BandLo));
+            Assert.True(double.IsNaN(r.BandHi));
+            Assert.True(double.IsNaN(r.TooLow));
+            Assert.True(double.IsNaN(r.TooHigh));
+            Assert.Null(r.BandLabel);
+            Assert.False(r.IsBrightest);
+            Assert.Equal("", r.Position);
+            Assert.Equal(1.0, r.Whole.Max(), 9);
+        });
+    }
+
+    /// <summary>Tabelul compara centru cu centru, nu mediana intregului cadru.</summary>
+    [Fact]
+    public void TheComparisonPairsCentreWithCentre()
+    {
+        ExposureResult r = ResultWithPreview();
+        var vm = Loaded(r);
+
+        Assert.Equal(3, vm.Comparison.Count);
+        Assert.Equal(new[] { "R", "G (media G1, G2)", "B" }, vm.Comparison.Select(c => c.Channel));
+
+        ChannelLevels rawR = r.Channels.Single(c => c.Colour == 'R');
+        ChannelLevels prevR = r.Preview.Channels.Single(c => c.Colour == 'R');
+        Assert.Equal($"{rawR.CentreMedianPct:F1} %", vm.Comparison[0].Raw);
+        Assert.Equal($"{prevR.CentreMedianPct:F1} %", vm.Comparison[0].Screen);
+        Assert.NotEqual($"{prevR.MedianPct:F1} %", vm.Comparison[0].Screen);   // centrul e mai luminos decat cadrul
+        Assert.StartsWith("+", vm.Comparison[0].Gap);
+    }
+
+    /// <summary>Un raw judecat mono (un singur canal, fara culoare): o singura pereche, fara exceptie.</summary>
+    [Fact]
+    public void AMonoRawGetsOneComparisonRow()
+    {
+        var vm = Loaded(ResultWithPreview(cfa: false));
+
+        var row = Assert.Single(vm.Comparison);
+        Assert.Contains("cel mai luminos", row.Channel);
+        vm.Source.Preview.IsSelected = true;
+        Assert.Equal(3, vm.Histograms.Count);
+    }
+
+    [Fact]
+    public void ResetKeepsTheChosenSourceButDisablesIt()
+    {
+        var vm = Loaded(ResultWithPreview());
+        vm.Source.Preview.IsSelected = true;
+
+        vm.Reset();
+
+        Assert.Empty(vm.Histograms);
+        Assert.Empty(vm.Comparison);
+        Assert.Equal("", vm.SourceNote);
+        Assert.False(vm.Source.IsEnabled);
+        // Stingerea trage alegerea inapoi pe brute: n-are ce arata pe previzualizare.
+        Assert.False(vm.Source.IsPreviewSelected);
+    }
+
+    /// <summary>Un fisier nou fara previzualizare, dupa unul cu: comutatorul se stinge si vederea revine pe brute.</summary>
+    [Fact]
+    public void ANewFileWithoutAPreviewFallsBackToRaw()
+    {
+        var vm = Loaded(ResultWithPreview());
+        vm.Source.Preview.IsSelected = true;
+
+        vm.Populate(ExposureAnalyzer.Analyze(FlatCheck.Tests.TestImages.FlatCfa(128, 128, 550), 1000, null, false));
+
+        Assert.False(vm.Source.IsEnabled);
+        Assert.False(vm.Source.IsPreviewSelected);
+        Assert.Equal(4, vm.Histograms.Count);
+        Assert.Contains("nu poarta o previzualizare", vm.SourceNote);
+    }
+
     [Fact]
     public async Task ResetClearsTheHistogramsButKeepsTheGuideOpen()
     {
