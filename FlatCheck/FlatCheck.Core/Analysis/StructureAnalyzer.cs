@@ -41,9 +41,13 @@ namespace FlatCheck
         internal double CornerSpreadPct;
         internal double AzimuthalMaxPct;
         internal double ResidualPtpPct;
+        internal double MaxTilePct;                  // cea mai abatuta dala, pe tot cadrul
+        internal double LocalSpotPct;                // cea mai adanca pata compacta, CU SEMN
+        internal int LocalSpotX, LocalSpotY;         // unde e, in pixelii rasterului de analiza
+        internal bool LocalSpotFlagged;              // |LocalSpotPct| >= Th.LocalSpotWarn
         internal Img Residual;                       // img / model radial, pentru harta
-        internal string CornerVerdict, AzimuthalVerdict, ResidualVerdict, TiltVerdict;
-        internal string Verdict;                     // cel mai prost dintre cele patru
+        internal string CornerVerdict, AzimuthalVerdict, ResidualVerdict, TiltVerdict, MaxTileVerdict;
+        internal string Verdict;                     // cel mai prost dintre cele cinci
     }
 
     internal static class StructureAnalyzer
@@ -92,20 +96,30 @@ namespace FlatCheck
             // pe care harta trebuie sa-l arate.
             var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(img), cx, cy);
             var resid = Img.Divide(img, model);
-            double rIns = Math.Min(Math.Min(cx, cy), Math.Min(w - cx, h - cy));
-            double resPtp = Metrics.LargeScalePtp(resid, cx, cy, rIns) * 100;
+            // Pe tot cadrul, nu doar in cercul inscris - vezi Metrics.LargeScalePtp
+            // pentru ce costa restrictia si de ce nu mai e nevoie de ea.
+            double resPtp = Metrics.LargeScalePtp(resid) * 100;
+            // Reziduul taie 5% din dale la fiecare capat, deci un defect compact ii scapa
+            // complet. Dala cea mai abatuta il prinde; e al cincilea test.
+            double maxTile = Metrics.MaxTileDeviation(resid) * 100;
+            // Si, separat, ce e mic SI fix pe aparat - praf, inel, scurgere mica - dupa
+            // scoaterea structurii de scara mare. Nu voteaza: raspunsul depinde de ce
+            // faci cu flat-ul (sesiune vs biblioteca), deci da o atentionare.
+            var (spot, spotX, spotY) = Metrics.LocalSpots(resid);
+            double spotPct = spot * 100;
 
             var az = Metrics.AzimuthalAsymmetry(img, cx, cy);
             double azMax = az.Count > 0 ? az.Max(v => v.ptp) : double.NaN;
 
-            // Toate patru masoara aceeasi abatere de la simetria radiala, din unghiuri
-            // diferite, si toate patru sunt amplitudini fractionare in procente - deci
+            // Toate cinci masoara aceeasi abatere de la simetria radiala, din unghiuri
+            // diferite, si toate cinci sunt amplitudini fractionare in procente - deci
             // impart scara de reziduu. Offsetul centrului masoara altceva, o pozitie, si
             // nu mai da verdict deloc: e raportat informativ.
             string vCorner = Stats.ResidualVerdict(spread);
             string vAzim = Stats.ResidualVerdict(azMax);
             string vResid = Stats.ResidualVerdict(resPtp);
             string vTilt = Stats.ResidualVerdict(tilt);
+            string vMaxTile = Stats.ResidualVerdict(maxTile);
 
             return new StructureResult
             {
@@ -127,15 +141,23 @@ namespace FlatCheck
                 CornerSpreadPct = spread,
                 AzimuthalMaxPct = azMax,
                 ResidualPtpPct = resPtp,
+                MaxTilePct = maxTile,
+                LocalSpotPct = spotPct,
+                LocalSpotX = spotX,
+                LocalSpotY = spotY,
+                // !(x < prag) si nu (x >= prag), ca NaN sa cada pe partea atentionata -
+                // aceeasi conventie ca Stats.Verdict.
+                LocalSpotFlagged = !(Math.Abs(spotPct) < Th.LocalSpotWarn),
                 Residual = resid,
                 CornerVerdict = vCorner,
                 AzimuthalVerdict = vAzim,
                 ResidualVerdict = vResid,
                 TiltVerdict = vTilt,
-                // verdictul general e cel mai prost dintre cele patru, exprimat in
+                MaxTileVerdict = vMaxTile,
+                // verdictul general e cel mai prost dintre cele cinci, exprimat in
                 // vocabularul benzilor de reziduu
                 Verdict = Stats.ResidualBands[
-                    new[] { vCorner, vAzim, vResid, vTilt }.Max(Stats.Severity)],
+                    new[] { vCorner, vAzim, vResid, vTilt, vMaxTile }.Max(Stats.Severity)],
             };
         }
     }

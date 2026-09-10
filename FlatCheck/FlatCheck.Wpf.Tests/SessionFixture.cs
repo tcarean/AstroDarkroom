@@ -50,12 +50,16 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
-    /// <summary>Masterul de flat, prin conventia scriptului OSC_Preprocessing.ssf.</summary>
-    internal SessionFixture WithFlatMaster(Func<int, int, double>? scene = null)
+    /// <summary>
+    /// Masterul de flat, prin conventia scriptului OSC_Preprocessing.ssf. Implicit pe 16
+    /// biti; <paramref name="bitpix"/> -32 da ce scrie Siril de fapt - float, cu valorile
+    /// impartite la 65535 - pentru testele care privesc scara fisierului.
+    /// </summary>
+    internal SessionFixture WithFlatMaster(Func<int, int, double>? scene = null, int bitpix = 16)
     {
         WithProcess();
-        Write(Path.Combine(ProcessDir, SirilSession.FlatMasterName),
-              scene ?? FitsTestData.Radial(Size, Size));
+        File.WriteAllBytes(Path.Combine(ProcessDir, SirilSession.FlatMasterName),
+            FitsTestData.BuildFits(Size, Size, scene ?? FitsTestData.Radial(Size, Size), bitpix: bitpix));
         return this;
     }
 

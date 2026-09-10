@@ -182,8 +182,11 @@ namespace FlatCheck.Wpf
              "Forma spune ce sa schimbi la sedinta urmatoare, nu daca flat-ul e bun. Si "
              + "cifrele fac o parte din treaba inainte sa te uiti: daca \"inclinare\" e "
              + "aproape de reziduu, e un gradient, si tabul Ratio spune daca e fix pe "
-             + "aparat sau in lume; daca reziduul e mare si inclinarea mica, e ceva local - "
-             + "pete sau un colt. Ce ramane pentru ochi e ghidul de sub harta."),
+             + "aparat sau in lume; daca \"pata maxima\" e mult peste reziduu, e ceva "
+             + "compact - o scurgere mica, condens - si \"pete locale\" spune unde; iar "
+             + "daca a aparut atentionarea de praf, intrebarea nu mai e daca flat-ul e "
+             + "bun, ci pentru ce il folosesti: sesiunea ale carei lights au aceeasi "
+             + "pata, sau biblioteca. Ce ramane pentru ochi e ghidul de sub harta."),
         };
 
         // --------------------------------------------------- ghidul histogramelor
@@ -326,8 +329,13 @@ namespace FlatCheck.Wpf
 
             ("pata rotunda in centru",
              "Iluminare contaminata simetric fata de axa: un panou prea aproape, "
-             + "backlight-ul unui monitor. Testul prin rotatie e orb la ea prin "
-             + "constructie; contra-testul e distanta - un set la 30 cm, unul la 60."),
+             + "backlight-ul unui monitor. Cand e chiar centrata, NU poate aparea pe "
+             + "harta si nu o vede niciun test - modelul radial o absoarbe intreaga, "
+             + "exact ca vignetarea; masurat, o pata de 10% in centru lasa harta goala "
+             + "si toate cifrele sub 0.1%. Singura ei urma e cifra de vignetare, care "
+             + "creste. Se vede doar cand e putin descentrata, si atunci ca o semiluna, "
+             + "nu ca un disc. Testul prin rotatie e la fel de orb la ea; contra-testul "
+             + "e distanta - un set la 30 cm, unul la 60."),
 
             ("granulatie fina peste tot",
              "Zgomot, nu structura: prea putine cadre sau expunere prea joasa. Cifrele "

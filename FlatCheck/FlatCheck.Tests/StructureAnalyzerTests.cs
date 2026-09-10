@@ -107,8 +107,132 @@ public class StructureAnalyzerTests
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(N, N), N, 0.12);
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
 
-        var all = new[] { r.CornerVerdict, r.AzimuthalVerdict, r.ResidualVerdict, r.TiltVerdict };
+        var all = new[] { r.CornerVerdict, r.AzimuthalVerdict, r.ResidualVerdict, r.TiltVerdict, r.MaxTileVerdict };
         Assert.Equal(all.Max(Stats.Severity), Stats.Severity(r.Verdict));
+    }
+
+    // ------------------------------------------------- pata maxima si petele locale
+
+    /// <summary>A compact +10 % blotch in a corner, the size of a fingertip on a 24 MP frame.</summary>
+    static Func<int, int, double> CornerBlotch(Func<int, int, double> b, int w, int h, double amp) =>
+        (x, y) =>
+        {
+            double dx = x - 0.1 * w, dy = y - 0.1 * h, s = 0.05 * w;
+            return b(x, y) * (1 + amp * Math.Exp(-(dx * dx + dy * dy) / (2 * s * s)));
+        };
+
+    /// <summary>A dust shadow: a disc of radius <paramref name="radius"/> px, <paramref name="depth"/> darker.</summary>
+    static Func<int, int, double> DustShadow(Func<int, int, double> b, double px, double py, double radius, double depth) =>
+        (x, y) =>
+        {
+            double dx = x - px, dy = y - py;
+            return b(x, y) * (dx * dx + dy * dy < radius * radius ? 1 - depth : 1);
+        };
+
+    /// <summary>
+    /// THE false negative that motivated the fifth test. The residual trims 5 % of the
+    /// tiles at each end, so a compact blotch vanished from it and the mode said PERFECT
+    /// with a +10 % blotch plainly visible in the map. Measured before the change: 0.04 %
+    /// residual, PERFECT. The worst tile reads it, and it carries the verdict.
+    /// </summary>
+    [Fact]
+    public void ACompactBlotchInACorner_IsNoLongerReportedAsPerfect()
+    {
+        const int W = 1536, H = 1024;   // 3:2 like a real sensor -> 768x512
+        var scene = CornerBlotch(FitsTestData.Radial(W, H), W, H, 0.10);
+
+        var r = StructureAnalyzer.Analyze(TestImages.From(W, H, scene));
+
+        Assert.True(r.ResidualPtpPct < Th.ResidPerfect, "the trimmed residual still misses it: " + r.ResidualPtpPct);
+        Assert.InRange(r.MaxTilePct, 7.0, 10.5);       // most of the injected 10 %
+        Assert.Equal("BUN", r.MaxTileVerdict);
+        Assert.NotEqual("PERFECT", r.Verdict);
+    }
+
+    /// <summary>
+    /// The dust case, stated as the user stated it: a compact shadow is correct for the
+    /// session whose lights carry the same shadow and wrong for a library flat. So it is
+    /// flagged, with a position, and it is not turned into a verdict of its own - the
+    /// verdict comes from the worst tile like any other deviation.
+    /// </summary>
+    [Fact]
+    public void ADustShadow_RaisesTheLocalSpotWarningAndSaysWhere()
+    {
+        const int W = 1536, H = 1024;
+        // 5 % deep, radius 30 px on the sensor -> ~15 px on the 768x512 raster, at (0.3w, 0.3h)
+        var scene = DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05);
+
+        var r = StructureAnalyzer.Analyze(TestImages.From(W, H, scene));
+
+        Assert.True(r.LocalSpotFlagged);
+        Assert.InRange(r.LocalSpotPct, -5.5, -3.0);   // negative: a shadow
+        Assert.InRange(r.LocalSpotX, 0.3 * 768 - 12, 0.3 * 768 + 12);
+        Assert.InRange(r.LocalSpotY, 0.3 * 512 - 12, 0.3 * 512 + 12);
+        Assert.NotNull(StructureReport.LocalSpotWarning(r));
+    }
+
+    /// <summary>
+    /// And it still finds the shadow under a gradient: the gradient goes into the other
+    /// four tests, the shadow into this one. Measured on 24 MP: 4.71 % with a 12 % ramp
+    /// and 3 % noise on top, against 4.99 % on its own.
+    /// </summary>
+    [Fact]
+    public void ADustShadowUnderAGradient_IsStillFlagged()
+    {
+        const int W = 1536, H = 1024;
+        var scene = FitsTestData.WithLinearGradient(
+            DustShadow(FitsTestData.Radial(W, H), 0.3 * W, 0.3 * H, 30, 0.05), W, 0.12);
+
+        var r = StructureAnalyzer.Analyze(TestImages.From(W, H, scene));
+
+        Assert.True(r.LocalSpotFlagged);
+        Assert.InRange(r.LocalSpotPct, -5.5, -3.0);
+        Assert.Equal("ACCEPTABIL", r.Verdict);          // the gradient, not the dust
+    }
+
+    [Fact]
+    public void ACleanFieldRaisesNoLocalSpotWarning()
+    {
+        var r = StructureAnalyzer.Analyze(TestImages.From(N, N, FitsTestData.Radial(N, N)));
+
+        Assert.False(r.LocalSpotFlagged);
+        Assert.True(Math.Abs(r.LocalSpotPct) < 0.5, "local spot floor was " + r.LocalSpotPct);
+        Assert.Equal("PERFECT", r.MaxTileVerdict);
+        Assert.Null(StructureReport.LocalSpotWarning(r));
+    }
+
+    /// <summary>A gradient is not a spot: the warning must not fire on the commonest defect.</summary>
+    [Fact]
+    public void AGradientRaisesNoLocalSpotWarning()
+    {
+        var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(N, N), N, 0.25);
+
+        var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));
+
+        Assert.False(r.LocalSpotFlagged);
+        Assert.Equal("REFA", r.Verdict);
+    }
+
+    /// <summary>
+    /// The residual now covers the whole frame, so on a 3:2 frame it reads the same
+    /// gradient whichever way it runs, and close to the tilt. Restricted to the
+    /// inscribed circle it read 6.5 % along the long axis against 9.7 % along the
+    /// short one, for a tilt of 12 %.
+    /// </summary>
+    [Fact]
+    public void OnAThreeByTwoFrame_TheResidualReadsAGradientTheSameAlongEitherAxis()
+    {
+        const int W = 1536, H = 1024;
+        var radial = FitsTestData.Radial(W, H);
+        var alongX = FitsTestData.WithLinearGradient(radial, W, 0.12);
+        Func<int, int, double> alongY = (x, y) => radial(x, y) * (1.0 + 0.12 * (y / (double)H - 0.5));
+
+        var rx = StructureAnalyzer.Analyze(TestImages.From(W, H, alongX));
+        var ry = StructureAnalyzer.Analyze(TestImages.From(W, H, alongY));
+
+        Assert.InRange(rx.ResidualPtpPct / ry.ResidualPtpPct, 0.9, 1.1);
+        Assert.True(rx.ResidualPtpPct > 0.8 * rx.TiltPct,
+            $"residual {rx.ResidualPtpPct:F2} should read most of the tilt {rx.TiltPct:F2}");
     }
 
     [Fact]

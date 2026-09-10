@@ -548,14 +548,35 @@ Is the master flat radially symmetric? Runs on the final master.
    vignetting in stops (informative only, *not* a test) and the spread between
    the four corners (a test - the corners should all be equal on a radial field).
 4. `RadialModel` around the sensor centre → residual `img / model`, then
-   `LargeScalePtp` of that residual (tile-averaged, inside the inscribed radius).
+   `LargeScalePtp` of that residual (tile-averaged, `p95 - p5`, **whole frame** - see
+   "Shared pipeline" for why the inscribed-circle restriction went) and
+   `MaxTileDeviation` (the single worst tile, whole frame - what the 5% trims of the
+   residual throw away).
 5. `AzimuthalAsymmetry` → per-ring peak-to-peak across 12 sectors; the max is the
    metric.
-6. Verdict = the worst of the four tests - corner spread, azimuthal asymmetry,
-   residual, tilt - on the shared residual scale (see
+6. Verdict = the worst of the five tests - corner spread, azimuthal asymmetry,
+   residual, tilt, worst tile - on the shared residual scale (see
    "The residual scale" below). Prints that scale, and marks
    `reziduu dupa model rad.` as the metric that matters most. Writes the residual
    heat map PNG.
+7. `LocalSpots` → the deepest *compact* spot after the large-scale structure is
+   subtracted (fine tiles minus their 7x7 neighbourhood median), with its position.
+   **Informative, with a warning above `Th.LocalSpotWarn`** (2%), never a verdict: a
+   dust shadow is correct for the session whose lights carry the same shadow and wrong
+   for a library flat, and the tool cannot know which use is intended. The wording is
+   `StructureReport.LocalSpotWarning`, shown by the console under the informative rows
+   and by the window under the verdict. Measured on the real Nikkor 35 f/2.8 master the
+   dust shadow visible in the map is -0.31%, well under the warning - which is the
+   measurement behind "dust at f/2 is below threshold" above.
+
+**Why a fifth test.** `LargeScalePtp` trims 5% of the tiles at each end so that it
+measures structure rather than noise - and that same trim drops any defect covering under
+5% of the frame, however deep. Measured on a 24 MP synthetic: a +10% blotch the size of a
+fingertip in a corner read 0.04% residual and `PERFECT`, with the blotch plainly visible
+in the map. The worst tile reads 9.3% on it. On a gradient the worst tile reads half the
+tilt (it is a per-pixel deviation, the tilt is peak-to-peak), so it never carries the
+verdict for a gradient; it exists for the compact case. Pinned by
+`ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`.
 
 What the mode gives is an **upper bound** on the flat error, not the error: everything it
 measures is the sum of a camera-fixed part (harmless - the flat divides it out) and a
@@ -1001,9 +1022,10 @@ an amount set by the gradient. The interpolated model inherited the jumps and th
 them as **concentric rings plus a hard circular edge on the inscribed radius, on a frame
 that contained neither**. Reproduced on a synthetic that is nothing but smooth vignetting
 times an 11 % ramp; measured on it, the worst ring-to-ring step went from 2.47 % to 0.11 %.
-The verdict numbers barely move (`LargeScalePtp` is restricted to the inscribed radius,
-where the median was already exact - the golden files shifted by 0.01-0.03 points and no
-band changed), but the map is the only place a *shape* is read, and it was lying. Symmetrise
+The verdict numbers barely moved at the time (`LargeScalePtp` was then restricted to the
+inscribed radius, where the median was already exact - the golden files shifted by
+0.01-0.03 points and no band changed), but the map is the only place a *shape* is read,
+and it was lying. Symmetrise
 rather than switch the ring statistic to the mean: the mean cures it equally well but gives
 up the median's robustness to stars, hot pixels and dust, and the analyzer accepts single
 frames. Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`
@@ -1023,10 +1045,44 @@ known issue 5, negligible at analysis resolution, and pinned by
 there is every azimuth sampled - out in the corners the comparison would be
 invalid. Rings needing at least `nsect - 1` populated sectors.
 
-**`LargeScalePtp(resid, cx, cy, rIns, ntiles = 40)`** - block-means the residual
-into ~40-wide tiles, keeps tiles whose centre is inside `rIns`, and returns
-`p95 - p5`. The tile averaging is essential: noise falls as `√(px/tile)` while
-structure survives. Without it the metric would measure noise, not error.
+**`LargeScalePtp(resid, ntiles = 40)`** - block-means the residual into ~40-wide tiles
+over the **whole frame** and returns `p95 - p5`. The tile averaging is essential: noise
+falls as `√(px/tile)` while structure survives. Without it the metric would measure noise,
+not error.
+
+It used to keep only the tiles inside the inscribed circle, because beyond it the radial
+profile came from partial arcs and was not trusted. The symmetrisation above fixed exactly
+that (`OnAGradient_TheResidualHasNoRingsOutToTheCorner` asserts the model is smooth out to
+the corner), so the restriction had become a leftover with a real cost: on a 3:2 frame the
+circle holds 53% of the tiles, the corners - where a gradient is largest and where light
+leaks live - were invisible to the "most important" metric, and the same gradient read
+6.5% along the long axis and 9.7% along the short one, because the circle's diameter is
+the short side. Whole-frame it reads 10.4 / 10.6, close to the tilt's 12, and the floor on
+a clean radial field stays under 0.1% at analysis resolution. Pinned by
+`LargeScalePtp_ReadsAGradientTheSameAlongEitherAxis` and
+`OnAThreeByTwoFrame_TheResidualReadsAGradientTheSameAlongEitherAxis`. `flatcheck.py`
+mirrors it, and the golden files moved (0.24 → 0.29 on the clean fixture, 9.43 → 10.36 on
+the gradient one, which crossed into `ACCEPTABIL` - the verdict there was already
+`ACCEPTABIL` through the corners).
+
+**`MaxTileDeviation(resid, ntiles = 40)`** - the same tile grid, `max |tile - 1|`, whole
+frame. The fifth test; see "Why a fifth test" under mode 1. Floor 0.13-0.37% on clean
+fields, 0.4% at 10% pixel noise.
+
+**`LocalSpots(resid, ntiles = 80, win = 3)`** - finer tiles (80 across, ~18 px at analysis
+resolution, so a 60 px dust shadow is not diluted), each minus the median of its 7x7
+neighbourhood, and the largest |difference| wins, with sign and position. A gradient is
+smooth so the neighbourhood median follows it (0.46% at a 12% ramp, 0.68% at 25%); a dust
+shadow, ring or small leak stays whole (4.99% on a 5% shadow, 4.71% with a 12% ramp and 3%
+noise on top). **Only tiles with a whole neighbourhood are evaluated** - a 3-tile border is
+skipped - because at the edge the truncated neighbourhood's median no longer follows a
+gradient and the difference comes from the gradient, not a spot: measured on the 256 px
+golden fixture, -0.76% in the corner on a *clean* field and -1.61% under a 60% gradient,
+one step from a false dust warning. A spot right on the edge is caught by the worst tile
+anyway. Ties within 1e-12 keep the first tile in row-major order, in both
+implementations: on a symmetric scene two tiles come out equal to the last bit and C# and
+numpy sum in different orders, which is how `crosscheck.py` caught a position flip on the
+diagonal fixture. Not a test; the warning threshold is `Th.LocalSpotWarn`.
 
 **Verdict ladder** - `Verdict(val, ok, bad)` → `OK` / `SUSPECT` / `PROBLEMA`;
 `Rank` maps those to 0/1/2 and the mode verdict is the worst of its tests. Note
@@ -1044,7 +1100,9 @@ Every threshold lives in `Th`. Full picture:
 | azimuthal asymmetry (max) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | residual after radial model | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
-| the four structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
+| worst tile (`pata maxima`) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
+| local spot (`pete locale`) | structure | 2% = warning only, never a verdict | | `Th.LocalSpotWarn` |
+| the five structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | world-fixed gradient per orientation | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` - informative label only |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
 | field of view (diagonal) | light | 20° | 40° = refused | `Th.LightFovOk/Max` |
@@ -1058,11 +1116,11 @@ Every threshold lives in `Th`. Full picture:
 
 ### The residual scale
 
-The four structure deviation tests - corner spread, azimuthal asymmetry, residual after
-the radial model, and tilt - all measure *the same thing* from different angles: how much
-of the frame fails to be explained by a purely radial function. All four are fractional
-amplitudes in percent, so they share one four-band scale rather than a pass/fail
-threshold:
+The five structure deviation tests - corner spread, azimuthal asymmetry, residual after
+the radial model, tilt, and the worst tile - all measure *the same thing* from different
+angles: how much of the frame fails to be explained by a purely radial function. All five
+are fractional amplitudes in percent, so they share one four-band scale rather than a
+pass/fail threshold:
 
 | band | verdict | meaning |
 |---|---|---|
@@ -1075,10 +1133,18 @@ Boundaries are strict `<`, so each one falls into the worse band. `NaN` degrades
 `REFA`, same rule as `Verdict`.
 
 **`reziduu dupa model rad.` is the one that matters most**, and the console output says
-so inline. It measures the departure from the radial model directly. The other three are
-partial views of the same deviation: the corners catch it only where the four boxes sit,
-the azimuthal test only inside the inscribed circle, and the tilt only the part of it that
-is a plane.
+so inline. It measures the departure from the radial model directly, over the whole frame.
+Corners, azimuthal and tilt are partial views of the same deviation: the corners catch it
+only where the four boxes sit, the azimuthal test only inside the inscribed circle, and
+the tilt only the part of it that is a plane. The worst tile is its complement: the
+residual trims extremes, the worst tile *is* the extreme.
+
+**The five do not read the same defect with the same number**, and that is by shape, not
+by miscalibration. Measured on a 3:2 frame with a 12% gradient: tilt 12.0, corners 11.5,
+residual 10.4, azimuthal 7.3 (its rings stop at the inscribed circle), worst tile 6.0 (a
+per-pixel deviation, half the peak-to-peak). The verdict is the worst of the five, so a
+gradient is carried by the tilt and the corners, a compact blotch by the worst tile, and
+a broad blotch inside the circle by the residual and the azimuthal test.
 
 **It is an upper bound on the flat error, not the flat error**, and the report used to
 claim otherwise - the sentence said "adica exact eroarea de flat". What it measures is the
@@ -1091,7 +1157,7 @@ non-radial vignetting reads as "error" here and is not one: measured on this lib
 Nikkor 35 DX master carries 4.00% of corner spread of which only ~1.3% was the sky.
 
 The structure mode prints the scale itself, under the heading
-`SCARA celor patru teste de abatere de mai sus`, so the numbers can be read without
+`SCARA celor cinci teste de abatere de mai sus`, so the numbers can be read without
 consulting these docs.
 
 The illumination-centre offset is **not** on this scale, and since 1.2.0 it is not a test
@@ -1111,8 +1177,8 @@ it still catches genuine decentring: a radial field centred off the sensor centr
 a linear term of about `offset x curvature`, so the tilt weights the offset by what it
 actually costs photometrically. On the real Samyang master that prompted the change (0.15
 stops, an 11% twilight-sky gradient) the offset said 42.36% `PROBLEMA` and the mode said
-`REFA`; the tilt says 12.36% `ACCEPTABIL`, in line with the other three tests
-(12.62 / 7.05 / 6.05). Pinned by `FitCenter_TiltIsInvariantToTheVignettingDepth`,
+`REFA`; the tilt says 12.36% `ACCEPTABIL`, in line with the other tests
+(12.62 / 7.05 / 6.05 at the time). Pinned by `FitCenter_TiltIsInvariantToTheVignettingDepth`,
 `FitCenter_WhenAFlatFieldMakesTheVertexEscape_TheTiltStillReadsTheGradient` and
 `OnAFlatLensWithAGradient_TheTiltCarriesTheVerdict`.
 
@@ -1150,9 +1216,16 @@ lens, full red was `+3 %` on one and `+10 %` on the other, and nothing on screen
 Two auto-scaled maps can only be compared by shape.
 
 **The fixed caps are not new numbers.** `PngWriter.FixedCapsPct` is
-`{ Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck }` and `DefaultCapPct` is `Th.ResidUsable`,
-so a map at ±10% saturates exactly where the verdict leaves `BUN`. Don't duplicate the
-values; `TheFixedCapsAreTheResidualScaleBoundaries` is what stops the two from drifting.
+`{ Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck }` and `DefaultCapPct` is `Th.ResidUsable`.
+Don't duplicate the values; `TheFixedCapsAreTheResidualScaleBoundaries` is what stops the
+two from drifting.
+
+**But a cap is not a band, and the docs used to say it was.** The cap is a per-pixel
+deviation from the model; the bands are peak-to-peak amplitudes. A one-sided +10% blotch
+reaches the 10% cap right at the `BUN` boundary; a 10% gradient runs from -5% to +5% and
+reaches only half of it, saturating at 20%, i.e. at `REFA`. Measured: at a 10% gradient
+the map's p1/p99 sit at -4.9/+4.8%. There is no cap that is exact for both, so the README
+explains it under "Scara culorilor" and the numbers stay as they are.
 
 **The console was deliberately left alone**, and so was every file written to disk. A
 legend line in the console would move every golden file *and* break `crosscheck.py`'s text
@@ -1199,17 +1272,19 @@ FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
 python crosscheck.py /tmp/xc
 ```
 
-`crosscheck.py` runs both implementations over identical FITS across 34 scenarios and
+`crosscheck.py` runs both implementations over identical FITS across 42 scenarios and
 compares twice: the full text, and every numeric token as a float. It also checks once,
 up front, that both report the same version. It exits non-zero on any unexplained numeric
 difference or on a version desync.
 
-**Current status: 39 of 40 scenarios agree numerically** - 23 byte-identical, 16
+**Current status: 41 of 42 scenarios agree numerically** - 25 byte-identical, 16
 differing only in wording. Coverage spans all four modes, all four bands of the residual
-scale, both gradient directions, non-square frames, BITPIX 16/32/-32, the exposure
-bands either side of each boundary, and a CFA frame carrying `BAYERPAT` (`expo cfa
-BAYERPAT`, byte-identical), which is what pins the channel-naming line across the two
-implementations.
+scale, both gradient directions, non-square frames, BITPIX 16/32/-32, a float master
+divided by 65535 as Siril writes it (`structure float 0..1`, which pins the levels line
+that used to print `0 / 0`), a dust shadow (`structure dust shadow`, which pins the local
+spot warning and its position), the exposure bands either side of each boundary, and a CFA
+frame carrying `BAYERPAT` (`expo cfa BAYERPAT`, byte-identical), which is what pins the
+channel-naming line across the two implementations.
 
 The attribution rewrite is mirrored in `flatcheck.py` in full - `_structure_body` split
 out of `mode_structure` exactly as `StructureReport.WriteBody` was, plus
@@ -1284,8 +1359,14 @@ behaviour that is either deliberate or not worth changing.
    right file, and tightening it would change behaviour no test asks for.
 3. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes negative
    and indexing throws. Not reachable with real frames.
-4. **`_crcTable` is lazily initialised static mutable state** - benign single-threaded,
-   but a data race if anything is ever parallelised.
+4. **`_crcTable` used to be lazily initialised**, and that was a real race, not a
+   theoretical one: the field was assigned *before* the table was filled, so a second
+   thread arriving in that window saw a non-null table of zeros and wrote a wrong CRC -
+   a corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs out of 32000. In
+   the window it was reachable, since the Ratio tab can encode while Structure is still
+   running. It is now a `static readonly` built by a static method, which the CLR
+   publishes only when complete; `EncodingOnManyThreadsGivesTheSameBytesAsSerially` pins
+   the determinism. Kept in this list so nobody reintroduces the lazy form.
 5. **The corner-spread metric has a non-zero floor.** The analysis centre is
    `(w/2, h/2)`, but pixel indices run `0..w-1`, whose true middle is `(w-1)/2`. That
    half-pixel offset puts the top-left corner fractionally farther from the centre than

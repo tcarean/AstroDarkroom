@@ -113,6 +113,36 @@ public class MapGuideTests
         Assert.Contains("artefact", rings.Meaning);       // si de ce se vedeau inainte
     }
 
+    /// <summary>
+    /// Randul despre pata centrala trebuie sa spuna ca modul structura e orb la ea, nu
+    /// doar testul prin rotatie: masurat, o pata de 10% exact in centru lasa harta goala
+    /// si toate cifrele sub 0.1%, fiindca modelul radial o absoarbe intreaga. Inainte,
+    /// randul descria o forma care nu poate aparea pe harta.
+    /// </summary>
+    [Fact]
+    public void TheCentralBlobRowSaysTheStructureModeCannotSeeIt()
+    {
+        var blob = SessionMessages.MapGuideShapes().Single(s => s.Shape.Contains("centru"));
+
+        Assert.Contains("NU poate aparea", blob.Meaning);
+        Assert.Contains("absoarbe", blob.Meaning);
+        Assert.Contains("vignetare", blob.Meaning);     // singura urma pe care o lasa
+    }
+
+    /// <summary>
+    /// "CE FEL" trimite la cifrele care despart un gradient de ceva compact, si numeste
+    /// intrebarea pe care o pune atentionarea de praf: sesiune sau biblioteca.
+    /// </summary>
+    [Fact]
+    public void TheWhatKindRowPointsAtTheSpotFiguresAndTheDustQuestion()
+    {
+        var row = SessionMessages.HowToReadRows()[1];
+
+        Assert.Contains("pata maxima", row.Meaning);
+        Assert.Contains("pete locale", row.Meaning);
+        Assert.Contains("biblioteca", row.Meaning);
+    }
+
     // ------------------------------------------------- cum citesc tabul
 
     /// <summary>

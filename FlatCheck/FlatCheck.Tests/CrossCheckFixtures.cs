@@ -100,6 +100,16 @@ public class CrossCheckFixtures
             FitsTestData.BuildFits(Size, Size, radial, bitpix: -32));
         File.WriteAllBytes(Path.Combine(dir, "int32.fit"),
             FitsTestData.BuildFits(Size, Size, radial, bitpix: 32));
+        // what Siril actually writes: float, divided by 65535 - pins the levels line,
+        // which used to print "0 / 0" on every real master
+        File.WriteAllBytes(Path.Combine(dir, "float01.fit"),
+            FitsTestData.BuildFits(Size, Size, FitsTestData.Scaled(radial, 1.0 / 65535), bitpix: -32));
+        // a dust shadow: the local-spot warning and its position, in both implementations
+        Write(dir, "dust.fit", (x, y) =>
+        {
+            double dx = x - 0.3 * Size, dy = y - 0.3 * Size;
+            return radial(x, y) * (dx * dx + dy * dy < 12 * 12 ? 0.95 : 1.0);
+        });
 
         // exposure levels either side of the band boundaries
         foreach (var (name, pct) in new[]

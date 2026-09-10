@@ -79,6 +79,12 @@ sau la <https://www.gnu.org/licenses/gpl-3.0.html>."""
 #     peste 20 % refa flat-urile
 TH_RESID_PERFECT, TH_RESID_USABLE, TH_RESID_CHECK = 2.0, 10.0, 20.0
 
+# Pragul de la care "pete locale" (local_spots) tipareste atentionarea. Nu e un verdict: o
+# pata compacta fixa pe aparat - praf, condens, o scurgere mica - e corecta pentru sesiunea
+# ale carei lights o au si ele, si gresita pentru un flat de biblioteca. Se atentioneaza,
+# nu se voteaza.
+TH_LOCAL_SPOT_WARN = TH_RESID_PERFECT
+
 # Offsetul centrului de iluminare nu mai are praguri, fiindca nu mai e un test. Pana in
 # 1.2.0 avea 4%/10% pe scara OK/SUSPECT/PROBLEMA, si era gresit: offsetul e ~ -b/(2d),
 # adica raportul dintre gradient si curbura, deci nu e o fractie si nu e scale-invariant.
@@ -442,22 +448,66 @@ def robust_ptp(a, lo=2, hi=98):
     return float(np.percentile(a, hi) - np.percentile(a, lo))
 
 
-def large_scale_ptp(resid, cx, cy, r_ins, ntiles=40):
-    """Ptp al structurii de scala mare, izolata de zgomot.
+def large_scale_ptp(resid, ntiles=40):
+    """Ptp al structurii de scala mare, izolata de zgomot, pe TOT cadrul.
 
     Mediem reziduul pe tile-uri: zgomotul scade cu sqrt(N_px/tile), structura
     supravietuieste. Fara asta, metrica masoara zgomot, nu erori.
+
+    Initial lua doar dalele din cercul inscris, fiindca dincolo de el profilul radial
+    venea din arce partiale. Simetrizarea a rezolvat asta, iar restrictia costa: pe un
+    cadru 3:2 cercul e 53% din dale, colturile nu se vedeau deloc, si acelasi gradient
+    citea 6.5% pe axa lunga si 9.7% pe cea scurta. Pe tot cadrul: 10.4 / 10.6.
+    """
+    h, w = resid.shape
+    k = max(2, int(w / ntiles))
+    t = block_mean(resid, k)
+    if t.size < 10:
+        return float('nan')
+    return robust_ptp(t, 5, 95)
+
+
+def max_tile_deviation(resid, ntiles=40):
+    """Cea mai mare abatere a unei singure dale fata de model, in valoare absoluta, pe
+    tot cadrul. Fractie.
+
+    large_scale_ptp taie 5% din dale la fiecare capat, deci un defect COMPACT - o
+    scurgere mica, o pata de condens - dispare din el oricat de adanc ar fi. Masurat: o
+    pata de +10% cat un deget intr-un colt citea 0.04% la reziduu si PERFECT; aici 9.3%.
+    """
+    h, w = resid.shape
+    k = max(2, int(w / ntiles))
+    t = block_mean(resid, k)
+    return float(np.abs(t - 1.0).max())
+
+
+def local_spots(resid, ntiles=80, win=3):
+    """Cea mai adanca pata COMPACTA: fiecare dala fina minus mediana vecinatatii ei
+    (2*win+1 pe latura), pastrata cea mai mare in valoare absoluta, cu semn si pozitie
+    in pixelii rasterului de analiza. Fractie.
+
+    Un gradient e neted, deci mediana vecinatatii il urmareste si diferenta iese ~0; o
+    umbra de praf, un inel sau o scurgere mica raman intregi. Raspunde la "e ceva mic si
+    fix pe aparat?", intrebare care nu da verdict ci o atentionare: o asemenea pata e
+    corecta pentru sesiunea ale carei lights o au si ele, si gresita in biblioteca.
+
+    Numai dalele cu vecinatatea intreaga (fara o bordura de `win` dale): la margine
+    mediana vecinatatii taiate nu mai urmareste un gradient, si diferenta iese din
+    gradient, nu dintr-o pata - masurat, -1.61% in colt sub un gradient de 60%.
     """
     h, w = resid.shape
     k = max(2, int(w / ntiles))
     t = block_mean(resid, k)
     th_, tw = t.shape
-    y, x = np.mgrid[0:th_, 0:tw]
-    tr = np.hypot((x + 0.5) * k - cx, (y + 0.5) * k - cy)
-    inside = tr < r_ins
-    if inside.sum() < 10:
-        return float('nan')
-    return robust_ptp(t[inside], 5, 95)
+    worst, wx, wy = 0.0, win, win
+    for y in range(win, th_ - win):
+        for x in range(win, tw - win):
+            hp = float(t[y, x] - np.median(t[y - win:y + win + 1, x - win:x + win + 1]))
+            # toleranta la egalitate: pe o scena simetrica doua dale ies egale pana la
+            # ultimul bit, si C# aduna in alta ordine; sub 1e-12 ramane prima, in amandoua
+            if abs(hp) > abs(worst) + 1e-12:
+                worst, wx, wy = hp, x, y
+    return worst, int((wx + 0.5) * k), int((wy + 0.5) * k)
 
 
 def verdict(val, ok, bad):
@@ -523,7 +573,16 @@ def _structure_body(img, cx, cy):
     r, rc, prof, model = radial_model((img + img[::-1, ::-1]) / 2, cx, cy)
     resid = img / np.maximum(model, 1e-12)
     r_ins = min(cx, cy, w - cx, h - cy)
-    res_ptp = large_scale_ptp(resid, cx, cy, r_ins) * 100
+    res_ptp = large_scale_ptp(resid) * 100
+    # Reziduul taie 5% din dale la fiecare capat, deci un defect compact ii scapa
+    # complet. Dala cea mai abatuta il prinde; e al cincilea test.
+    max_tile = max_tile_deviation(resid) * 100
+    # Si, separat, ce e mic SI fix pe aparat, dupa scoaterea structurii de scara mare.
+    # Nu voteaza: raspunsul depinde de ce faci cu flat-ul, deci da o atentionare.
+    spot, spot_x, spot_y = local_spots(resid)
+    spot_pct = spot * 100
+    # not (x < prag), ca NaN sa cada pe partea atentionata - conventia din verdict()
+    spot_flagged = not (abs(spot_pct) < TH_LOCAL_SPOT_WARN)
 
     az = azimuthal_asymmetry(img, cx, cy)
     az_max = max(v for _, v in az) if az else float('nan')
@@ -541,14 +600,23 @@ def _structure_body(img, cx, cy):
     print("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un")
     print("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,")
     print('        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".')
+    print(f"    pete locale (praf etc.) : {spot_pct:+.2f} % la ({spot_x}, {spot_y})")
+    print("        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.")
+    if spot_flagged:
+        print(f"    ATENTIE: pata compacta de {abs(spot_pct):.2f} % la ({spot_x}, {spot_y}), "
+              f"peste {TH_LOCAL_SPOT_WARN:.0f} %.")
+        print("        E fixa pe aparat - praf pe senzor sau pe filtru, condens, o scurgere mica.")
+        print("        Corecta pentru sesiunea ale carei lights au aceeasi pata; NU pentru un")
+        print("        flat de biblioteca. Cauta pozitia de mai sus in harta reziduala.")
 
-    # Toate patru masoara aceeasi abatere de la simetria radiala, din unghiuri diferite,
-    # si toate patru sunt amplitudini fractionare in procente, deci impart scara de
+    # Toate cinci masoara aceeasi abatere de la simetria radiala, din unghiuri diferite,
+    # si toate cinci sunt amplitudini fractionare in procente, deci impart scara de
     # reziduu. Offsetul centrului masoara altceva, o pozitie, si nu mai da verdict.
     v_corner = resid_verdict(spread)
     v_azim = resid_verdict(az_max)
     v_resid = resid_verdict(res_ptp)
     v_tilt = resid_verdict(tilt)
+    v_max_tile = resid_verdict(max_tile)
 
     print(f"\n  TESTE")
     print(f"    imprastiere 4 colturi   : {spread:5.2f} %   [{v_corner}]")
@@ -557,9 +625,10 @@ def _structure_body(img, cx, cy):
     print(f"    asimetrie azimutala max : {az_max:5.2f} %   [{v_azim}]")
     print(f"    reziduu dupa model rad. : {res_ptp:5.2f} %   [{v_resid}]  <- CEL MAI IMPORTANT")
     print(f"    inclinare (gradient)    : {tilt:5.2f} %   [{v_tilt}]")
+    print(f"    pata maxima (o dala)    : {max_tile:5.2f} %   [{v_max_tile}]")
 
-    # Scara comuna a celor patru teste de abatere. Nu se aplica offsetului centrului.
-    print(f"\n  SCARA celor patru teste de abatere de mai sus")
+    # Scara comuna a celor cinci teste de abatere. Nu se aplica offsetului centrului.
+    print(f"\n  SCARA celor cinci teste de abatere de mai sus")
     _band(f"sub {TH_RESID_PERFECT:.0f} %", "calitate perfecta")
     _band(f"{TH_RESID_PERFECT:.0f} - {TH_RESID_USABLE:.0f} %", "utilizabil; background extraction scoate ce ramane")
     _band(f"{TH_RESID_USABLE:.0f} - {TH_RESID_CHECK:.0f} %", "utilizabil, dar confirma cu --light inainte de un stretch dur")
@@ -570,10 +639,12 @@ def _structure_body(img, cx, cy):
     print("    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;")
     print("    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,")
     print("    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.")
+    print('    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere')
+    print("    mica, o pata de condens - pe care reziduul il taie ca extrema.")
 
-    # verdictul general e cel mai prost dintre cele patru, exprimat in vocabularul
+    # verdictul general e cel mai prost dintre cele cinci, exprimat in vocabularul
     # benzilor de reziduu
-    worst = RESID_BANDS[max(severity(v) for v in (v_corner, v_azim, v_resid, v_tilt))]
+    worst = RESID_BANDS[max(severity(v) for v in (v_corner, v_azim, v_resid, v_tilt, v_max_tile))]
     print(f"\n  VERDICT: {worst}")
     if worst == "PERFECT":
         print("    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.")
@@ -585,10 +656,21 @@ def _structure_body(img, cx, cy):
         print("    un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.")
     else:
         print("    Abatere prea mare de la simetria radiala => sursa neuniforma, light")
-        print("    leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.")
-        print("    Vezi harta reziduala pentru forma problemei.")
+        print("    leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,")
+        print("    ruleaza --ratio pe doua stive rotite: daca abaterea e fixa pe aparat,")
+        print("    flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.")
 
     return worst, resid, rc, prof, az, r_ins
+
+
+def _levels(raw):
+    """"median / max", dupa scara fisierului. Siril scrie masterul ca float impartit la
+    65535, deci mediana e ~0.014 si cu zero zecimale linia iesea "0 / 0". Pragul de 1.5
+    e cel cu care --expo recunoaste un fisier normalizat."""
+    med, mx = float(np.median(raw)), float(raw.max())
+    if mx <= 1.5:
+        return f"{med:.4f} / {mx:.4f} (float normalizat 0..1)"
+    return f"{med:.0f} / {mx:.0f}"
 
 
 def mode_structure(path, plot_path):
@@ -598,7 +680,7 @@ def mode_structure(path, plot_path):
 
     print(f"\n=== STRUCTURA: {path} ===")
     print(f"    dimensiune analiza : {w} x {h} (dupa 2x2 + downsample)")
-    print(f"    median / max ADU   : {np.median(raw):.0f} / {raw.max():.0f}")
+    print(f"    median / max ADU   : {_levels(raw)}")
 
     # ATENTIE: modelul si asimetria se calculeaza in jurul centrului SENZORULUI,
     # nu al centrului fitat. Axa optica e la centrul senzorului prin constructie

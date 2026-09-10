@@ -60,6 +60,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 </Border>
               </StackPanel>
               <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
+              <!-- Atentionarea pentru o pata compacta. Galben, nu rosu, si nu in pastila
+                   de verdict: nu spune ca flat-ul e prost, intreaba la ce il folosesti. -->
+              <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="0,12,0,0"
+                         TextWrapping="Wrap" Text="{Binding LocalSpotWarning}"
+                         Visibility="{Binding LocalSpotWarning, Converter={StaticResource NotNullToVis}}" />
             </StackPanel>
           </Border>
 

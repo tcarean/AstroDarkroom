@@ -424,7 +424,7 @@ public class MetricsTests
     {
         var img = Make(400, 400, (x, y) => 1.0);
 
-        Assert.Equal(0, Metrics.LargeScalePtp(img, 200, 200, 200), 9);
+        Assert.Equal(0, Metrics.LargeScalePtp(img), 9);
     }
 
     /// <summary>
@@ -440,19 +440,19 @@ public class MetricsTests
 
         var perPixel = img.D.ToList();
         double pixelPtp = Stats.Percentile(perPixel, 95) - Stats.Percentile(perPixel, 5);
-        double tiled = Metrics.LargeScalePtp(img, 200, 200, 200);
+        double tiled = Metrics.LargeScalePtp(img);
 
         Assert.True(pixelPtp > 0.15, "per-pixel spread was " + pixelPtp);
         Assert.True(tiled < pixelPtp / 5, "tiled ptp was " + tiled + " vs per-pixel " + pixelPtp);
     }
 
     [Fact]
-    public void LargeScalePtp_WithTooFewTilesInside_ReturnsNaN()
+    public void LargeScalePtp_OnAFrameTooSmallForTenTiles_ReturnsNaN()
     {
-        var img = Make(400, 400, (x, y) => 1.0);
+        // 6 px wide -> tiles of 2 px -> 3x3 = 9 tiles, one short of the minimum
+        var img = Make(6, 6, (x, y) => 1.0);
 
-        // a radius this small admits almost no tile centres
-        Assert.True(double.IsNaN(Metrics.LargeScalePtp(img, 200, 200, rIns: 1)));
+        Assert.True(double.IsNaN(Metrics.LargeScalePtp(img)));
     }
 
     [Fact]
@@ -461,9 +461,158 @@ public class MetricsTests
         // a horizontal ramp of amplitude 0.10 across the frame
         var img = Make(400, 400, (x, y) => 1.0 + 0.10 * (x / 400.0 - 0.5));
 
-        double ptp = Metrics.LargeScalePtp(img, 200, 200, 200);
+        double ptp = Metrics.LargeScalePtp(img);
 
         Assert.True(ptp > 0.05, "ramp should survive tiling, got " + ptp);
+    }
+
+    /// <summary>
+    /// The metric covers the whole frame, not only the inscribed circle. It used to stop
+    /// at the circle, and on a 3:2 frame that meant the same gradient read 6.5 % along
+    /// the long axis and 9.7 % along the short one - the circle's diameter is the short
+    /// side. Whole-frame: 10.4 / 10.6. A defect must not read differently depending on
+    /// which way it happens to run.
+    /// </summary>
+    [Fact]
+    public void LargeScalePtp_ReadsAGradientTheSameAlongEitherAxis()
+    {
+        var alongX = Make(600, 400, (x, y) => 1.0 + 0.10 * (x / 600.0 - 0.5));
+        var alongY = Make(600, 400, (x, y) => 1.0 + 0.10 * (y / 400.0 - 0.5));
+
+        double px = Metrics.LargeScalePtp(alongX), py = Metrics.LargeScalePtp(alongY);
+
+        Assert.InRange(px / py, 0.9, 1.1);
+        Assert.InRange(px, 0.08, 0.10);   // most of the 10 % ramp, minus the 5 % trims
+    }
+
+    /// <summary>
+    /// And the edges count. A band along the top edge lies almost entirely outside the
+    /// inscribed circle, so it used to be invisible here. It still gets trimmed as an
+    /// extreme when it holds under 5 % of the tiles - which is what MaxTileDeviation is
+    /// for - but at ~8 % of the grid it now moves the figure.
+    /// </summary>
+    [Fact]
+    public void LargeScalePtp_SeesABandAlongTheEdgeOutsideTheInscribedCircle()
+    {
+        // top two rows of 15 px tiles on a 600x400 frame, raised by 10 %: 80 of 1040 tiles
+        var img = Make(600, 400, (x, y) => y < 30 ? 1.10 : 1.0);
+
+        Assert.True(Metrics.LargeScalePtp(img) > 0.05, "edge band should register, got " + Metrics.LargeScalePtp(img));
+    }
+
+    // ---------------------------------------------------------------- MaxTileDeviation
+
+    [Fact]
+    public void MaxTileDeviation_OnAConstantResidual_IsZero()
+    {
+        Assert.Equal(0, Metrics.MaxTileDeviation(Make(400, 400, (x, y) => 1.0)), 9);
+    }
+
+    /// <summary>
+    /// The reason it exists. LargeScalePtp trims 5 % of the tiles at each end, so a
+    /// compact defect - a small light leak, a dew patch - vanishes from it however deep
+    /// it is. Measured on a 24 MP synthetic: a +10 % blotch the size of a fingertip in a
+    /// corner read 0.04 % residual and PERFECT, with the blotch plainly visible in the
+    /// map. The worst tile still reads it.
+    /// </summary>
+    [Fact]
+    public void MaxTileDeviation_SeesACompactBlotchThatTheTrimmedResidualDropsEntirely()
+    {
+        // a gaussian blotch of +10 %, sigma 4 % of the width, well inside one corner
+        var img = Make(600, 400, (x, y) =>
+        {
+            double dx = x - 60, dy = y - 40;
+            return 1.0 + 0.10 * Math.Exp(-(dx * dx + dy * dy) / (2 * 24.0 * 24.0));
+        });
+
+        double trimmed = Metrics.LargeScalePtp(img), worst = Metrics.MaxTileDeviation(img);
+
+        Assert.True(trimmed < 0.02, "the trimmed residual should drop it, got " + trimmed);
+        Assert.True(worst > 0.07, "the worst tile should read most of the 10 %, got " + worst);
+    }
+
+    [Fact]
+    public void MaxTileDeviation_IsBlindToSign_SoADewPatchCountsLikeALeak()
+    {
+        var img = Make(400, 400, (x, y) => x < 40 && y < 40 ? 0.92 : 1.0);
+
+        Assert.InRange(Metrics.MaxTileDeviation(img), 0.075, 0.081);
+    }
+
+    /// <summary>On pixel noise alone the tile mean stays near 1: the metric measures structure, not grain.</summary>
+    [Fact]
+    public void MaxTileDeviation_AveragesPixelNoiseAway()
+    {
+        var rng = new Random(4321);
+        var img = Make(400, 400, (x, y) => 1.0 + (rng.NextDouble() - 0.5) * 0.2);
+
+        // 10x10 tiles of +/-10 % uniform noise: 0.6 % rms per tile, and the worst of
+        // 1600 tiles sits at ~3.5 sigma
+        Assert.True(Metrics.MaxTileDeviation(img) < 0.03, "got " + Metrics.MaxTileDeviation(img));
+    }
+
+    // ---------------------------------------------------------------- LocalSpots
+
+    /// <summary>
+    /// The one question the other figures cannot ask: is there something SMALL and
+    /// fixed to the camera? A gradient is smooth, so the neighbourhood median follows
+    /// it and the difference is ~0; a dust shadow is not, so it stays whole.
+    /// </summary>
+    [Fact]
+    public void LocalSpots_IgnoresAGradientButKeepsADustShadow()
+    {
+        // 12 % ramp across the frame plus a 5 % dust shadow of radius 12 px at (180, 120)
+        var img = Make(600, 400, (x, y) =>
+        {
+            double v = 1.0 + 0.12 * (x / 600.0 - 0.5);
+            double dx = x - 180, dy = y - 120;
+            if (dx * dx + dy * dy < 12 * 12) v *= 0.95;
+            return v;
+        });
+
+        var (dev, sx, sy) = Metrics.LocalSpots(img);
+
+        Assert.InRange(dev, -0.055, -0.035);        // most of the 5 %, negative: a shadow
+        Assert.InRange(sx, 165, 195);               // and it says where
+        Assert.InRange(sy, 105, 135);
+    }
+
+    [Fact]
+    public void LocalSpots_OnAPureGradient_StaysNearZero()
+    {
+        var img = Make(600, 400, (x, y) => 1.0 + 0.25 * (x / 600.0 - 0.5));
+
+        var (dev, _, _) = Metrics.LocalSpots(img);
+
+        Assert.True(Math.Abs(dev) < 0.01, "a 25 % ramp should not read as a spot, got " + dev);
+    }
+
+    [Fact]
+    public void LocalSpots_OnAConstantResidual_IsZeroAtTheFirstEvaluatedTile()
+    {
+        var (dev, sx, sy) = Metrics.LocalSpots(Make(400, 400, (x, y) => 1.0));
+
+        Assert.Equal(0, dev, 9);
+        Assert.Equal(17, sx);   // first tile with a whole 7x7 neighbourhood: tile 3 of 5 px, centre 17.5 -> 17
+        Assert.Equal(17, sy);
+    }
+
+    /// <summary>
+    /// Pixel noise is the floor. The raster here is the one AFTER Prepare, where every
+    /// value is already a mean of 16 sensor pixels: a real master sits at 0.2-0.3 % rms
+    /// there, and 4 % rms is a stack so noisy it would be unusable for other reasons.
+    /// Measured on 24 MP synthetics: 0.26 % on a clean field, 1.1 % at 10 % noise per
+    /// sensor pixel. The warning threshold is 2 %, and the floor must stay clear of it.
+    /// </summary>
+    [Fact]
+    public void LocalSpots_StaysUnderTheWarningThresholdOnHeavyPixelNoise()
+    {
+        var rng = new Random(99);
+        var img = Make(1200, 800, (x, y) => 1.0 + (rng.NextDouble() - 0.5) * 0.14);   // 4 % rms
+
+        var (dev, _, _) = Metrics.LocalSpots(img);
+
+        Assert.True(Math.Abs(dev) * 100 < Th.LocalSpotWarn, "noise floor reached the warning: " + dev * 100 + " %");
     }
 
     // ---------------------------------------------------------------- TileBackground

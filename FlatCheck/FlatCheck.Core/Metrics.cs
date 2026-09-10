@@ -203,19 +203,102 @@ namespace FlatCheck
         internal static int TileSize(Img src, int ntiles = 40)
             => Math.Max(2, (int)(src.W / (double)ntiles));
 
-        internal static double LargeScalePtp(Img resid, double cx, double cy, double rIns, int ntiles = 40)
+        /// <summary>
+        /// p95 - p5 al dalelor, pe TOT cadrul.
+        ///
+        /// Initial lua doar dalele din cercul inscris, fiindca dincolo de el
+        /// profilul radial venea din arce partiale si nu era de incredere. Simetrizarea
+        /// (vezi <see cref="Img.Symmetrise"/>) a rezolvat exact asta, deci restrictia
+        /// ramasese fara motiv - si costa mult: pe un cadru 3:2 cercul inscris e 53% din
+        /// dale, iar colturile, unde traiesc scurgerile de lumina si unde gradientul e
+        /// cel mai mare, nu se vedeau deloc. Tot din cauza ei acelasi gradient citea
+        /// 6.5% pe axa lunga si 9.7% pe cea scurta; pe tot cadrul citeste 10.4 / 10.6.
+        /// Podeaua pe un camp radial curat a ramas sub 0.1% la rezolutia de analiza.
+        /// </summary>
+        internal static double LargeScalePtp(Img resid, int ntiles = 40)
         {
             int k = TileSize(resid, ntiles);
             Img t = Img.BlockMean(resid, k);
-            var inside = new List<double>();
-            for (int y = 0; y < t.H; y++)
-                for (int x = 0; x < t.W; x++)
+            if (t.D.Length < 10) return double.NaN;
+            return Stats.Percentile(t.D, 95) - Stats.Percentile(t.D, 5);
+        }
+
+        /// <summary>
+        /// Cea mai mare abatere a unei singure dale fata de model, in valoare absoluta,
+        /// pe tot cadrul. Fractie, nu procent.
+        ///
+        /// Exista fiindca <see cref="LargeScalePtp"/> taie 5% din dale la fiecare capat,
+        /// deci un defect COMPACT - o scurgere mica de lumina, o pata de condens - care
+        /// acopera sub 5% din cadru dispare din el complet, oricat de adanc ar fi. Masurat:
+        /// o pata de +10% cat un deget intr-un colt citea 0.04% la reziduu si verdict
+        /// PERFECT, cu pata perfect vizibila in harta. Aici citeste 9.3%.
+        ///
+        /// E tot o limita superioara, ca celelalte: o umbra de praf adanca (diafragma
+        /// inchisa) e fixa pe aparat si se imparte corect din lights-urile aceleiasi
+        /// sesiuni, dar tot aici se vede. Pentru asta exista <see cref="LocalSpots"/> si
+        /// atentionarea din raport.
+        /// </summary>
+        internal static double MaxTileDeviation(Img resid, int ntiles = 40)
+        {
+            Img t = Img.BlockMean(resid, TileSize(resid, ntiles));
+            double worst = 0;
+            foreach (double v in t.D) worst = Math.Max(worst, Math.Abs(v - 1.0));
+            return worst;
+        }
+
+        /// <summary>
+        /// Cea mai adanca pata COMPACTA: fiecare dala fina minus mediana vecinatatii ei,
+        /// si se pastreaza cea mai mare in valoare absoluta, cu semn si cu pozitia (in
+        /// pixelii rasterului de analiza). Fractie, nu procent.
+        ///
+        /// Scaderea medianei locale e ce o deosebeste de <see cref="MaxTileDeviation"/>:
+        /// un gradient e neted, deci mediana vecinatatii il urmareste si diferenta iese
+        /// ~0 (masurat: 0.46% la un gradient de 12%, 0.68% la 25%), pe cand o umbra de
+        /// praf, un inel sau o scurgere mica raman intregi (4.99% pe o umbra de 5%, si
+        /// tot 4.71% cand umbra sta sub un gradient de 12% cu zgomot). Raspunde deci la o
+        /// intrebare pe care celelalte cifre n-o pot pune: E CEVA MIC SI FIX PE APARAT?
+        /// Raspunsul conteaza altfel decat un verdict: o asemenea pata e corecta pentru
+        /// sesiunea ale carei lights o au si ele, si gresita pentru un flat de biblioteca.
+        /// De aceea nu voteaza - da o atentionare.
+        ///
+        /// Dalele sunt de doua ori mai fine decat la celelalte doua metrici (80 pe
+        /// latime, ~18 px la rezolutia de analiza), ca o umbra de praf de 60 px sa nu se
+        /// dilueze; vecinatatea e 7x7 dale, adica ~250 px pe senzor, mai lata decat orice
+        /// pata de praf de pe un DSLR.
+        ///
+        /// Se evalueaza NUMAI dalele cu vecinatatea intreaga, deci fara o bordura de
+        /// <paramref name="win"/> dale (~55 px la rezolutia de analiza, ~110 pe senzor).
+        /// La margine vecinatatea e taiata pe o parte, mediana ei nu mai urmareste un
+        /// gradient, si diferenta iese din gradient, nu dintr-o pata: masurat pe 256 px,
+        /// -0.76% in colt pe un camp CURAT si -1.61% sub un gradient de 60% - la un pas de
+        /// atentionarea de 2%, pentru un praf care nu exista. O pata chiar pe margine o
+        /// prinde oricum <see cref="MaxTileDeviation"/>.
+        ///
+        /// Podeaua: sub 0.1% pe camp curat, 1.1% la 10% zgomot pe pixelul senzorului;
+        /// masterele reale au 0.2-0.3% zgomot. Pe un master real de Nikkor 35 la f/2.8
+        /// umbra de praf vizibila in harta are -0.31%, deci sub orice prag - cum spune si
+        /// documentatia ca la deschideri mari praful e sub prag.
+        /// </summary>
+        internal static (double dev, int x, int y) LocalSpots(Img resid, int ntiles = 80, int win = 3)
+        {
+            int k = TileSize(resid, ntiles);
+            Img t = Img.BlockMean(resid, k);
+            double worst = 0; int wx = win, wy = win;
+            var nb = new List<double>((2 * win + 1) * (2 * win + 1));
+            for (int y = win; y < t.H - win; y++)
+                for (int x = win; x < t.W - win; x++)
                 {
-                    double tr = Math.Sqrt(((x + 0.5) * k - cx) * ((x + 0.5) * k - cx) + ((y + 0.5) * k - cy) * ((y + 0.5) * k - cy));
-                    if (tr < rIns) inside.Add(t.At(y, x));
+                    nb.Clear();
+                    for (int dy = -win; dy <= win; dy++)
+                        for (int dx = -win; dx <= win; dx++)
+                            nb.Add(t.At(y + dy, x + dx));
+                    double hp = t.At(y, x) - Stats.Percentile(nb, 50);
+                    // Toleranta la egalitate: pe o scena simetrica doua dale pot iesi egale pana
+                    // la ultimul bit, iar C# si numpy aduna in alta ordine, deci ar alege alta
+                    // dala. Sub 1e-12 ramane prima in ordinea randurilor, in amandoua.
+                    if (Math.Abs(hp) > Math.Abs(worst) + 1e-12) { worst = hp; wx = x; wy = y; }
                 }
-            if (inside.Count < 10) return double.NaN;
-            return Stats.Percentile(inside, 95) - Stats.Percentile(inside, 5);
+            return (worst, (int)((wx + 0.5) * k), (int)((wy + 0.5) * k));
         }
 
         // Fond local per tile (percentila mica = robust la stele/nebulozitate).

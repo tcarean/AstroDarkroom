@@ -241,7 +241,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                                   Content="{Binding ResidualVerdict}"
                                   ContentTemplate="{StaticResource VerdictChip}" />
                 </Grid>
-                <Grid>
+                <Grid Margin="0,0,0,10">
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" MinWidth="96" />
@@ -252,6 +252,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                              Text="{Binding Tilt}" VerticalAlignment="Center" />
                   <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
                                   Content="{Binding TiltVerdict}"
+                                  ContentTemplate="{StaticResource VerdictChip}" />
+                </Grid>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" MinWidth="96" />
+                    <ColumnDefinition Width="Auto" MinWidth="104" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="pata maxima (o dala)" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}"
+                             Text="{Binding MaxTile}" VerticalAlignment="Center" />
+                  <ContentControl Grid.Column="2" Margin="14,0,0,0" HorizontalAlignment="Left"
+                                  Content="{Binding MaxTileVerdict}"
                                   ContentTemplate="{StaticResource VerdictChip}" />
                 </Grid>
               </StackPanel>

@@ -55,6 +55,7 @@ namespace FlatCheck.Wpf
         string _levels = "";
         string _verdict = "";
         string _advice = "";
+        string _localSpotWarning = "";
         string _whyResidual = StructureReport.WhyResidualMatters();
         string _savedTo = "";
         string _saveError = "";
@@ -80,6 +81,14 @@ namespace FlatCheck.Wpf
 
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
+
+        /// <summary>
+        /// Atentionarea pentru o pata compacta (praf, condens, scurgere mica), sau gol.
+        /// Sta sub verdict fara sa-l coloreze: nu e un verdict, e o intrebare pusa
+        /// omului - flat de sesiune sau de biblioteca? Textul vine din
+        /// StructureReport.LocalSpotWarning, ca sa fie cel din raportul salvat.
+        /// </summary>
+        public string LocalSpotWarning { get => _localSpotWarning; private set => Set(ref _localSpotWarning, value); }
 
         /// <summary>Constant, dar tinut ca proprietate ca sa se poata lega din XAML.</summary>
         public string WhyResidual { get => _whyResidual; private set => Set(ref _whyResidual, value); }
@@ -178,7 +187,9 @@ namespace FlatCheck.Wpf
         void Populate(StructureResult r)
         {
             Size = $"{r.Width} x {r.Height} px  (dupa 2x2 + downsample)";
-            Levels = $"median {r.RawMedian:F0} ADU  /  max {r.RawMax:F0} ADU";
+            // Formatarea vine din nucleu: pe un master float scris de Siril, "F0" dadea
+            // "0 / 0", iar fereastra si consola trebuie sa spuna acelasi lucru.
+            Levels = $"median / max ADU  {StructureReport.Levels(r)}";
 
             Tests.Clear();
             Tests.Add(new MetricRow
@@ -208,6 +219,14 @@ namespace FlatCheck.Wpf
                 Value = Pct(r.TiltPct),
                 Verdict = r.TiltVerdict,
             });
+            Tests.Add(new MetricRow
+            {
+                Label = "pata maxima (o dala)",
+                Value = Pct(r.MaxTilePct),
+                Verdict = r.MaxTileVerdict,
+                Note = "cea mai abatuta dala de pe tot cadrul; prinde un defect compact "
+                     + "pe care reziduul il taie ca extrema",
+            });
 
             Informative.Clear();
             Informative.Add(new MetricRow
@@ -226,6 +245,16 @@ namespace FlatCheck.Wpf
                       + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea"
                     : "varf in afara cadrului sau fit degenerat",
             });
+            Informative.Add(new MetricRow
+            {
+                Label = "pete locale (praf etc.)",
+                Value = StructureReport.LocalSpotValue(r),
+                Note = "cea mai adanca pata compacta, dupa scoaterea structurii de scara mare; "
+                     + "pozitia e in rasterul de analiza",
+            });
+
+            // Atentionarea, nu un verdict: textul si pragul vin din nucleu.
+            LocalSpotWarning = StructureReport.LocalSpotWarning(r) ?? "";
 
             Scale.Clear();
             foreach (var (band, range, meaning) in StructureReport.Scale())
@@ -276,6 +305,7 @@ namespace FlatCheck.Wpf
             Levels = "";
             Verdict = "";
             Advice = "";
+            LocalSpotWarning = "";
             SavedTo = "";
             SaveError = "";
             Map = null;

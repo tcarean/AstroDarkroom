@@ -17,6 +17,7 @@
 
 // StructureReport.cs - StructureResult -> textul din consola. Doar formatare.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -28,12 +29,26 @@ namespace FlatCheck
         {
             w.WriteLine($"\n=== STRUCTURA: {path} ===");
             w.WriteLine($"    dimensiune analiza : {r.Width} x {r.Height} (dupa 2x2 + downsample)");
-            w.WriteLine($"    median / max ADU   : {r.RawMedian:F0} / {r.RawMax:F0}");
+            w.WriteLine($"    median / max ADU   : {Levels(r)}");
             WriteBody(r, w);
         }
 
         /// <summary>
-        /// Tot ce urmeaza dupa antet: informativele, cele patru teste, scara si
+        /// "median / max", formatate dupa scara fisierului. Siril scrie masterul ca float
+        /// impartit la 65535, deci mediana e ~0.014 - iar cu zero zecimale linia iesea
+        /// "0 / 0", ca si cum fisierul ar fi gol. Pragul de 1.5 e acelasi pe care --expo
+        /// il foloseste ca sa recunoasca un fisier normalizat. Il arata si fereastra.
+        /// </summary>
+        internal static string Levels(StructureResult r)
+        {
+            bool normalised = r.RawMax <= 1.5;
+            string fmt = normalised ? "F4" : "F0";
+            string line = $"{r.RawMedian.ToString(fmt)} / {r.RawMax.ToString(fmt)}";
+            return normalised ? line + " (float normalizat 0..1)" : line;
+        }
+
+        /// <summary>
+        /// Tot ce urmeaza dupa antet: informativele, cele cinci teste, scara si
         /// verdictul. Scos separat fiindca modul de atribuire ruleaza aceeasi baterie
         /// pe masterul combinat (A+B)/2 si vrea exact acest corp sub antetul lui - dar
         /// nu si randul de ADU, care pe un raster normalizat la mediana 1 n-ar insemna
@@ -50,6 +65,7 @@ namespace FlatCheck
             w.WriteLine($"    asimetrie azimutala max : {r.AzimuthalMaxPct,5:F2} %   [{r.AzimuthalVerdict}]");
             w.WriteLine($"    reziduu dupa model rad. : {r.ResidualPtpPct,5:F2} %   [{r.ResidualVerdict}]  <- CEL MAI IMPORTANT");
             w.WriteLine($"    inclinare (gradient)    : {r.TiltPct,5:F2} %   [{r.TiltVerdict}]");
+            w.WriteLine($"    pata maxima (o dala)    : {r.MaxTilePct,5:F2} %   [{r.MaxTileVerdict}]");
 
             WriteScale(w);
 
@@ -58,7 +74,7 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cele doua marimi care NU sunt teste. Vignetarea e o proprietate a
+        /// Marimile care NU sunt teste. Vignetarea e o proprietate a
         /// obiectivului, nu o eroare. Offsetul centrului de iluminare a fost si el un
         /// test pana in 1.2.0 si nu mai e: fiind ~ -b/(2d), adica raportul dintre
         /// gradient si curbura, nu e scale-invariant - iar peste pragul la care varful
@@ -80,10 +96,33 @@ namespace FlatCheck
             w.WriteLine("        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un");
             w.WriteLine("        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,");
             w.WriteLine("        iar peste un prag cade inapoi spre 0. Amplitudinea o da \"inclinare\".");
+            w.WriteLine($"    pete locale (praf etc.) : {LocalSpotValue(r)}");
+            w.WriteLine("        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.");
+            string warning = LocalSpotWarning(r);
+            if (warning != null) Indent(warning, w);
         }
 
+        /// <summary>Cifra de "pete locale", cu semn si cu pozitia in rasterul de analiza.</summary>
+        internal static string LocalSpotValue(StructureResult r)
+            => $"{r.LocalSpotPct:+0.00;-0.00} % la ({r.LocalSpotX}, {r.LocalSpotY})";
+
         /// <summary>
-        /// Scara comuna a celor patru teste de abatere de la simetria radiala: numele
+        /// Atentionarea pentru o pata compacta, sau null cand nu e cazul. Nu e un verdict,
+        /// si de aceea nu voteaza: o pata fixa pe aparat e corecta pentru sesiunea ale
+        /// carei lights o au si ele, si gresita pentru un flat de biblioteca - raspunsul
+        /// depinde de ce faci cu flat-ul, nu de flat. Intors ca sir fiindca il arata si
+        /// fereastra, sub verdict.
+        /// </summary>
+        internal static string LocalSpotWarning(StructureResult r)
+            => r.LocalSpotFlagged
+                ? $"ATENTIE: pata compacta de {Math.Abs(r.LocalSpotPct):F2} % la ({r.LocalSpotX}, {r.LocalSpotY}), peste {Th.LocalSpotWarn:F0} %.\n"
+                + "    E fixa pe aparat - praf pe senzor sau pe filtru, condens, o scurgere mica.\n"
+                + "    Corecta pentru sesiunea ale carei lights au aceeasi pata; NU pentru un\n"
+                + "    flat de biblioteca. Cauta pozitia de mai sus in harta reziduala."
+                : null;
+
+        /// <summary>
+        /// Scara comuna a celor cinci teste de abatere de la simetria radiala: numele
         /// benzii, intervalul si intelesul. Nu se aplica offsetului centrului de
         /// iluminare, care masoara o pozitie.
         ///
@@ -115,11 +154,13 @@ namespace FlatCheck
              + "erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat\n"
              + "(optica; se imparte corect din lights) si partea fixa in lume (iluminarea;\n"
              + "nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,\n"
-             + "asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.";
+             + "asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.\n"
+             + "\"Pata maxima\" prinde ce le scapa celorlalte: un defect compact - o scurgere\n"
+             + "mica, o pata de condens - pe care reziduul il taie ca extrema.";
 
         static void WriteScale(TextWriter w)
         {
-            w.WriteLine("\n  SCARA celor patru teste de abatere de mai sus");
+            w.WriteLine("\n  SCARA celor cinci teste de abatere de mai sus");
             foreach (var (_, range, meaning) in Scale())
                 w.WriteLine($"    {range,-13}{meaning}");
             Indent(WhyResidualMatters(), w);
@@ -143,10 +184,15 @@ namespace FlatCheck
                 "Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de\n"
               + "un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.",
 
+            // Trimite la --ratio INAINTE de "refa": cifra e o limita superioara, si o
+            // parte fixa pe aparat (o optica genuin ne-radiala, o axa decentrata) iese
+            // tot aici, fara sa fie o eroare de flat. Masurat: o axa decentrata cu 5% din
+            // latime da REFA pe un flat care corecteaza perfect.
             _ =>
                 "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
-              + "leak, camera inclinata, sau ambient. NU e vignetare. Refa flat-urile.\n"
-              + "Vezi harta reziduala pentru forma problemei.",
+              + "leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,\n"
+              + "ruleaza --ratio pe doua stive rotite: daca abaterea e fixa pe aparat,\n"
+              + "flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.",
         };
 
         static void WriteAdvice(string verdict, TextWriter w) => Indent(Advice(verdict), w);

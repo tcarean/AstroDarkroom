@@ -64,6 +64,8 @@ SCENARIOS = [
     ("structure tall 512x768", ["tall.fit"]),
     ("structure float32",      ["float32.fit"]),
     ("structure int32",        ["int32.fit"]),
+    ("structure float 0..1",   ["float01.fit"]),
+    ("structure dust shadow",  ["dust.fit"]),
 
     ("ratio clean/gradient",   ["clean.fit", "--ratio", "grad.fit"]),
     ("ratio clean/clean",      ["clean.fit", "--ratio", "clean.fit"]),

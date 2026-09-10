@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using FlatCheck.Tests;
+
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
@@ -118,21 +120,76 @@ public class StructureTabTests
     // ------------------------------------------------------------------ randurile
 
     /// <summary>
-    /// Cele patru teste apar toate, in ordinea din consola, si fiecare cu verdictul lui.
+    /// Cele cinci teste apar toate, in ordinea din consola, si fiecare cu verdictul lui.
     /// </summary>
     [Fact]
-    public async Task TheFourDeviationTestsAreShownWithTheirOwnVerdicts()
+    public async Task TheFiveDeviationTestsAreShownWithTheirOwnVerdicts()
     {
         using var f = new SessionFixture().WithFlatMaster();
 
         var vm = await Run(f);
 
-        Assert.Equal(4, vm.Tests.Count);
+        Assert.Equal(5, vm.Tests.Count);
         Assert.All(vm.Tests, t => Assert.True(t.HasVerdict));
         Assert.Contains("colturi", vm.Tests[0].Label);
         Assert.Contains("azimutala", vm.Tests[1].Label);
         Assert.Contains("reziduu", vm.Tests[2].Label);
         Assert.Contains("nclinare", vm.Tests[3].Label);
+        Assert.Contains("pata maxima", vm.Tests[4].Label);
+    }
+
+    /// <summary>
+    /// Pe un master float scris de Siril (valorile impartite la 65535) eticheta de
+    /// niveluri spunea "median 0 ADU / max 0 ADU", ca si cum fisierul ar fi gol.
+    /// Formatarea vine acum din nucleu si e cea din raport.
+    /// </summary>
+    [Fact]
+    public async Task OnAFloatMasterTheLevelsAreNotRoundedToZero()
+    {
+        using var f = new SessionFixture().WithFlatMaster(
+            FitsTestData.Scaled(FitsTestData.Radial(256, 256), 1.0 / 65535), bitpix: -32);
+
+        var vm = await Run(f);
+
+        Assert.DoesNotContain(" 0 /", vm.Levels);
+        Assert.Contains("float normalizat", vm.Levels);
+        Assert.Contains("0.45", vm.Levels);     // 30000 / 65535 = 0.4578 at the centre
+    }
+
+    /// <summary>
+    /// Atentionarea de praf: apare cand exista o pata compacta, cu textul din nucleu, si
+    /// lipseste pe un master curat. Nu e verdict - verdictul ramane cel al testelor.
+    /// </summary>
+    [Fact]
+    public async Task ADustShadowShowsTheLocalSpotWarningFromTheCore()
+    {
+        // fixture-ul scrie 128x128 -> raster de 64x64, dale fine de 2 px: o umbra de
+        // 8 px raza pe senzor e 4 px pe raster, cat sa umple o dala fara sa umple si
+        // vecinatatea de 7x7 din care se scade mediana
+        const int S = 128;
+        var radial = FitsTestData.Radial(S, S);
+        Func<int, int, double> dust = (x, y) =>
+        {
+            double dx = x - 0.3 * S, dy = y - 0.3 * S;
+            return radial(x, y) * (dx * dx + dy * dy < 8 * 8 ? 0.92 : 1.0);
+        };
+        using var f = new SessionFixture().WithFlatMaster(dust);
+
+        var vm = await Run(f);
+
+        Assert.StartsWith("ATENTIE", vm.LocalSpotWarning);
+        Assert.Contains("biblioteca", vm.LocalSpotWarning);
+        Assert.Contains(vm.LocalSpotWarning.Split('\n')[0], vm.Report);   // acelasi text ca in raport
+    }
+
+    [Fact]
+    public async Task ACleanMasterShowsNoLocalSpotWarning()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+
+        var vm = await Run(f);
+
+        Assert.Empty(vm.LocalSpotWarning);
     }
 
     /// <summary>Reziduul e cel care conteaza cel mai mult, si se vede ca atare.</summary>
@@ -159,10 +216,11 @@ public class StructureTabTests
 
         var vm = await Run(f);
 
-        Assert.Equal(2, vm.Informative.Count);
+        Assert.Equal(3, vm.Informative.Count);
         Assert.All(vm.Informative, r => Assert.False(r.HasVerdict));
         Assert.Contains(vm.Informative, r => r.Label.Contains("vignetare"));
         Assert.Contains(vm.Informative, r => r.Label.Contains("offset"));
+        Assert.Contains(vm.Informative, r => r.Label.Contains("pete locale"));
     }
 
     /// <summary>
@@ -239,6 +297,7 @@ public class StructureTabTests
         Assert.Empty(vm.Informative);
         Assert.Empty(vm.Scale);
         Assert.Empty(vm.Verdict);
+        Assert.Empty(vm.LocalSpotWarning);
         Assert.Empty(vm.Report);
         Assert.Null(vm.Map);
         Assert.Empty(vm.MapLegend);

@@ -36,6 +36,10 @@ Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales
 | `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
 | `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
 
+Siril 1.4 scrie masterul ca **float**, cu valorile împărțite la 65535, deci linia
+`median / max ADU` iese de forma `0.0143 / 0.0190 (float normalizat 0..1)`. Nu e un
+fișier gol; toate metricile sunt rapoarte, deci scara nu contează.
+
 Prefixul `pp_` din Siril înseamnă „calibrat". Un stack necalibrat mai are un piedestal
 de ~150-600 ADU care aplatizează profilul și subraportează vignetarea cu ~1% — iar
 **toate testele vor spune „OK" oricum**, fiindcă profilul rămâne simetric radial, doar
@@ -61,7 +65,8 @@ o metrică nouă nu e invariantă la scală, ăsta e un semn că e greșită.
 
 Pentru un obiectiv fotografic fără tren optic, un flat *corect* este prin construcție o
 funcție **pur radială** centrată pe axa optică. Vignetarea e simetrică rotațional; praful
-la f/2 e sub prag.
+la f/2 e sub prag (măsurat: umbra de praf vizibilă pe un master de Nikkor 35 la f/2.8 are
+0.31 %, la un prag de 2 %).
 
 Prin urmare orice abatere de la simetria radială **nu e vignetare — e eroare**: sursă de
 lumină neuniformă, light leak, cameră înclinată, lumină ambientală, hârtie difuzoare
@@ -86,11 +91,32 @@ flatcheck process/pp_flat_stacked.fit
 ```
 
 Rulează pe masterul final. Raportează informativ vignetarea și offsetul centrului de
-iluminare față de centrul senzorului, apoi patru teste de abatere de la simetria radială:
+iluminare față de centrul senzorului, apoi cinci teste de abatere de la simetria radială:
 împrăștierea celor patru colțuri, asimetria azimutală pe 12 sectoare, **reziduul după
 modelul radial** — cel care contează cel mai mult, fiindcă măsoară direct cât din cadru nu
-se explică printr-un model pur radial — și înclinarea, adică amplitudinea vârf-la-vârf a
-gradientului liniar peste cadru. Salvează o hartă reziduală PNG.
+se explică printr-un model pur radial — înclinarea, adică amplitudinea vârf-la-vârf a
+gradientului liniar peste cadru, și **pata maximă**, cea mai abătută dală de pe tot
+cadrul, care prinde un defect compact pe care reziduul îl taie ca extremă. Salvează o
+hartă reziduală PNG.
+
+#### Praful: sesiune sau bibliotecă
+
+Pe lângă cele cinci teste, raportul dă o cifră informativă, **pete locale**: cea mai adâncă
+pată compactă rămasă după ce se scade structura de scară mare, cu poziția ei în rasterul
+de analiză. Un gradient nu intră în ea; o umbră de praf, un inel de condens sau o scurgere
+mică intră întreagă. Peste 2 % raportul tipărește o **atenționare**, nu un verdict, fiindcă
+răspunsul depinde de ce faci cu flat-ul: o pată fixă pe aparat e *corectă* pentru sesiunea
+ale cărei lights au aceeași pată, și *greșită* pentru un flat de bibliotecă, unde praful se
+va fi mutat. Caută poziția în hartă înainte să decizi.
+
+#### Ce nu vede modul structură
+
+O pată **rotundă și centrată exact pe axă** — un panou prea aproape, backlight-ul unui
+monitor pe care ai centrat obiectivul — e absorbită întreagă de modelul radial, exact ca
+vignetarea: măsurat, o pată de 10 % în centru lasă toate cifrele sub 0.1 % și harta goală.
+Singura ei urmă e cifra de vignetare, care crește. Se vede doar dacă e puțin descentrată,
+și atunci ca o semilună, nu ca un disc. `--ratio` e la fel de orb la ea; contra-testul e
+distanța — un set la 30 cm, unul la 60.
 
 Ce iese de aici e o **limită superioară** a erorii de flat, nu eroarea: tot ce măsoară e
 suma părții fixate de aparat (inofensivă) și a celei fixate în lume (dăunătoare), iar un
@@ -322,10 +348,10 @@ deloc și separă direct cât din abaterea masterului e fixată de aparat.
 
 ## Scara de reziduu
 
-Cele patru teste de abatere din modul structură — împrăștierea colțurilor, asimetria
-azimutală, reziduul după modelul radial și înclinarea — măsoară *același lucru* din
-unghiuri diferite: cât din cadru nu se explică printr-o funcție pur radială. Toate patru
-sunt amplitudini în procente, deci împart o scară, nu un prag:
+Cele cinci teste de abatere din modul structură — împrăștierea colțurilor, asimetria
+azimutală, reziduul după modelul radial, înclinarea și pata maximă — măsoară *același
+lucru* din unghiuri diferite: cât din cadru nu se explică printr-o funcție pur radială.
+Toate cinci sunt amplitudini în procente, deci împart o scară, nu un prag:
 
 | bandă | verdict | ce înseamnă |
 |---|---|---|
@@ -335,9 +361,14 @@ sunt amplitudini în procente, deci împart o scară, nu un prag:
 | > 20% | `REFA` | refă flat-urile |
 
 Cel mai important e **reziduul după modelul radial**: măsoară direct cât din cadru nu se
-explică printr-un model pur radial. Celelalte trei sunt vederi parțiale ale aceleiași
-abateri — colțurile o prind doar unde stau cele patru cutii, testul azimutal doar în
-interiorul cercului înscris, iar înclinarea doar partea care e un plan.
+explică printr-un model pur radial, pe tot cadrul, colțuri incluse. Colțurile, asimetria
+azimutală și înclinarea sunt vederi parțiale ale aceleiași abateri — colțurile o prind doar
+unde stau cele patru cutii, testul azimutal doar în interiorul cercului înscris, iar
+înclinarea doar partea care e un plan. **Pata maximă** e complementul reziduului: acesta
+taie 5 % din dale la fiecare capăt, ca să nu măsoare zgomot, deci un defect *compact* — o
+scurgere mică, o pată de condens — dispare din el oricât de adânc ar fi. Măsurat: o pată de
++10 % cât un deget într-un colț dădea reziduu 0.04 % și verdict `PERFECT`, cu pata perfect
+vizibilă în hartă. Pata maximă citește 9.3 % pe ea.
 
 **E o limită superioară a erorii de flat, nu eroarea.** Ce măsoară e suma a două lucruri
 cu urmări opuse: o parte fixată de **aparat** (optica — se împarte corect din lights, deci
@@ -374,7 +405,9 @@ setup despre care ești sigur. Toate stau în `FlatCheck/Thresholds.cs`.
 | asimetrie azimutală | structură | *scara de reziduu* | |
 | reziduu după model radial | structură | *scara de reziduu* | |
 | înclinare (gradient) | structură | *scara de reziduu* | |
-| cele patru teste pe `(A+B)/2` | `--ratio` | *scara de reziduu* | |
+| pata maximă (o dală) | structură | *scara de reziduu* | |
+| pete locale (praf) | structură | 2 % (doar atenționare, nu votează) | |
+| cele cinci teste pe `(A+B)/2` | `--ratio` | *scara de reziduu* | |
 | gradient extern / orientare | `--ratio` | 1% | 3% (doar etichetă informativă) |
 | \|componentă radială\| | `--light` | 2% | 5% |
 | câmp diagonal | `--light` | 20° | 40° (refuz) |
@@ -469,10 +502,18 @@ plin nu înseamnă nimic anume: măsurat pe două mastere ale aceluiași obiecti
 formă**, nu prin intensitate.
 
 De aceea **în fereastră** harta se poate pune pe o scară fixă, dintr-un rând de butoane:
-`±2 %`, `±10 %`, `±20 %` — chiar granițele scării de reziduu, deci saturația înseamnă „iese
-din bandă" — plus `auto`, utilă ca să vezi *forma* pe un master aproape perfect, unde `±2`
-e deja prea grosier. Implicit e **`±10 %`**, banda în care se așteaptă să trăiască un flat
-normal, ca două sesiuni să se compare dintr-o privire fără să apeși nimic.
+`±2 %`, `±10 %`, `±20 %` — chiar granițele scării de reziduu — plus `auto`, utilă ca să
+vezi *forma* pe un master aproape perfect, unde `±2` e deja prea grosier. Implicit e
+**`±10 %`**, banda în care se așteaptă să trăiască un flat normal, ca două sesiuni să se
+compare dintr-o privire fără să apeși nimic.
+
+Plafonul și banda nu sunt însă același lucru, și merită știut când citești culoarea:
+plafonul e abaterea unui *pixel* față de model, banda e o amplitudine *vârf-la-vârf*. O
+pată unilaterală de +10 % atinge plafonul de 10 % chiar la granița benzii `BUN`; un
+gradient de 10 % merge de la −5 % la +5 %, deci ajunge doar la jumătatea lui, și saturează
+abia la 20 %, adică la `REFA`. Măsurat: la un gradient de 10 % harta are capetele la
+−4.9 / +4.8 %. Nu există un plafon corect pentru amândouă, așa că se explică aici, nu se
+schimbă cifrele.
 
 Sub fiecare hartă stă o **legendă** cu capetele reale ale scării afișate, de exemplu
 `albastru = -10.0 %   alb = 0 (exact pe model)   rosu = +10.0 %`. Pe `auto` arată cele două
@@ -494,7 +535,7 @@ forma, care spune *de ce*. Aceeași listă e și în fereastră, sub hartă, la 
 | dipol (o parte albastră, cealaltă roșie) | Un gradient, deci o direcție; se potrivește cu `inclinare`. Sursă neuniformă, lumină ambientală, sau un obstacol întins asimetric peste obiectiv. `--ratio` spune dacă e fix în lume sau fix pe aparat. |
 | cercuri sau arce concentrice | Un inel centrat pe senzor **nu poate** rămâne în hartă — modelul radial îl absoarbe prin construcție. Deci dacă vezi unul, e centrat în altă parte: ceva rotund din fața obiectivului e în afara axei, sau lumina nu e difuză. **Nu s-a văzut încă pe un master real:** inelele care apăreau pe mastere cu gradient mare erau un artefact al modelului radial, corectat între timp — vezi mai jos. |
 | pată locală într-un colț sau la o margine | Light leak: vizor, montură, latura difuzorului. Nu se rotește cu cerul, deci `--ratio` o pune pe aparat. |
-| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Testul prin rotație e **orb** la ea prin construcție; contra-testul e distanța — un set la 30 cm, unul la 60. |
+| pată rotundă în centru | Iluminare contaminată simetric față de axă: un panou prea aproape, backlight-ul unui monitor. Când e chiar centrată, **nu poate apărea pe hartă** și nu o vede niciun test — modelul radial o absoarbe întreagă, exact ca vignetarea; măsurat, o pată de 10% în centru lasă harta goală și toate cifrele sub 0.1%. Singura ei urmă e cifra de vignetare, care crește. Se vede doar când e puțin descentrată, și atunci ca o semilună, nu ca un disc. Testul prin rotație e la fel de orb la ea; contra-testul e distanța — un set la 30 cm, unul la 60. |
 | granulație fină peste tot | Zgomot, nu structură: prea puține cadre sau expunere prea joasă. Nu e nimic de reparat la sursă, doar de stivuit mai mult. |
 
 ### Cine decide: cifrele sau harta
@@ -509,8 +550,10 @@ aceluiași lucru.
 - **Ce fel** — aici intră ochiul, dar nu de la zero. Forma spune ce să schimbi la ședința
   următoare, nu dacă flat-ul e bun. Și cifrele fac o parte din treabă înainte: dacă
   `inclinare` e aproape de reziduu, e un gradient, și `--ratio` spune dacă e fix pe aparat
-  sau în lume; dacă reziduul e mare și înclinarea mică, e ceva local. Ce rămâne pentru ochi
-  e tabelul de mai sus.
+  sau în lume; dacă `pata maximă` e mult peste reziduu, e ceva compact — o scurgere mică,
+  condens — și `pete locale` spune unde; iar dacă a apărut atenționarea de praf, întrebarea
+  nu mai e dacă flat-ul e bun, ci pentru ce îl folosești: sesiunea ale cărei lights au
+  aceeași pată, sau biblioteca. Ce rămâne pentru ochi e tabelul de mai sus.
 
 Aceeași explicație e în fereastră, sub verdictul din tabul Structură.
 
@@ -528,9 +571,16 @@ desena drept **cercuri concentrice plus o margine dură pe cercul înscris, pe u
 nu conținea niciuna.** Reprodus pe un cadru sintetic care e doar vignetare netedă ori un
 gradient de 11%.
 
-Cifrele de verdict nu erau afectate — reziduul se măsoară doar în cercul înscris, unde
-mediana era deja exactă — dar harta e singurul loc din care se citește o *formă*, iar ea
-mințea. Dacă ai hărți salvate dinainte cu inele pe ele, ăsta era motivul.
+Cifrele de verdict nu erau afectate — reziduul se măsura pe atunci doar în cercul înscris,
+unde mediana era deja exactă — dar harta e singurul loc din care se citește o *formă*, iar
+ea mințea. Dacă ai hărți salvate dinainte cu inele pe ele, ăsta era motivul.
+
+Odată modelul valid până în colț, restricția reziduului la cercul înscris a rămas fără
+motiv, și a fost scoasă: pe un cadru 3:2 cercul acoperă 53 % din dale, colțurile — unde
+gradientul e cel mai mare și unde stau scurgerile de lumină — nu se vedeau deloc, iar
+același gradient citea 6.5 % dacă mergea pe axa lungă și 9.7 % pe cea scurtă. Pe tot cadrul
+citește 10.4 / 10.6. Dacă ai rapoarte vechi, reziduul de acolo e mai mic decât ce iese
+acum pe același master; cifra veche subestima.
 
 ---
 
@@ -571,9 +621,10 @@ acela e intrarea modului de structură, prin convenție.
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
 
-**Structura** arată aceleași cifre ca în consolă — cele patru teste de abatere cu verdictul
-fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict —
-plus harta reziduală. Salvează în folderul ales:
+**Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
+fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
+atenționarea de praf sub verdict când e cazul — plus harta reziduală. Salvează în folderul
+ales:
 
 - **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
   raportul, linia hărții;
@@ -607,7 +658,7 @@ folder și ai redenumit unul, `pp_flat_stacked_0deg.fit` rămâne recunoscut. Ac
 După calcul, tabul arată întâi **de unde vin cele două stive** — câte cadre și de la ce oră,
 din headerele FITS — fiindcă acolo se vede singurul lucru pe care tool-ul nu-l poate
 verifica singur: că cele două chiar pot fi din două orientări diferite. Apoi componenta
-fixă în lume, informativă, cu bara ei de eroare. Apoi verdictul și cele patru teste, pe
+fixă în lume, informativă, cu bara ei de eroare. Apoi verdictul și cele cinci teste, pe
 masterul combinat. Harta are un comutator: reziduul părții fixe pe aparat (implicit, se
 potrivește cu verdictul) sau raportul `A/B`. Scara și legenda se aplică celei afișate,
 oricare dintre cele două e.

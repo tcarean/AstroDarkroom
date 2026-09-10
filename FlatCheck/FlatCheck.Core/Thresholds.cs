@@ -39,6 +39,14 @@ namespace FlatCheck
         public const double ResidUsable = 10.0;
         public const double ResidCheck = 20.0;
 
+        // Pragul de la care "pete locale" (Metrics.LocalSpots) tipareste atentionarea.
+        // Nu e un verdict: o pata compacta fixa pe aparat - praf, condens, o scurgere
+        // mica - e corecta pentru sesiunea ale carei lights o au si ele, si gresita
+        // pentru un flat de biblioteca. Raspunsul depinde de ce faci cu flat-ul, nu de
+        // flat, deci se atentioneaza, nu se voteaza. Acelasi 2% ca banda PERFECT: sub
+        // atat nu conteaza nici forma, nici ce e fix pe aparat.
+        public const double LocalSpotWarn = ResidPerfect;
+
         // Offsetul centrului de iluminare nu mai are praguri, fiindca nu mai e un test.
         // Pana in 1.2.0 avea 4%/10% pe scara OK/SUSPECT/PROBLEMA, si era gresit: offsetul
         // e ~ -b/(2d), adica raportul dintre gradient si curbura, deci NU e o fractie si

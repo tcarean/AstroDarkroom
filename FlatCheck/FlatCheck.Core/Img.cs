@@ -115,10 +115,11 @@ namespace FlatCheck
         /// vignetare neteda ori un gradient de 11%: inelele apar fara sa existe nicio
         /// margine in date.
         ///
-        /// Cifrele de verdict nu depindeau de asta - LargeScalePtp e restrans la cercul
-        /// inscris, unde mediana era deja exacta (masurat: reziduul se muta cu sub 0.05
-        /// puncte) - dar HARTA mintea, si harta e singurul lucru din care se citeste forma
-        /// unei probleme.
+        /// Cifrele de verdict nu depindeau de asta la vremea aceea - LargeScalePtp era
+        /// restrans la cercul inscris, unde mediana era deja exacta (masurat: reziduul se
+        /// muta cu sub 0.05 puncte) - dar HARTA mintea, si harta e singurul lucru din care
+        /// se citeste forma unei probleme. Odata modelul valid pana in colt, restrictia a
+        /// fost scoasa; vezi Metrics.LargeScalePtp.
         ///
         /// Alternativa era media pe inel in loc de mediana, care vindeca bimodalitatea la
         /// fel de bine (masurat, aceleasi cifre), dar renunta la robustetea medianei fata

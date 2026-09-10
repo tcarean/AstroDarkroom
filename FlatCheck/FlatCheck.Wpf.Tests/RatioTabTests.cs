@@ -203,6 +203,8 @@ public class RatioTabTests
         Assert.NotEmpty(vm.World);          // componenta fixa in lume, cu bara de eroare
         Assert.NotEmpty(vm.Corners);        // bateria de structura pe (A+B)/2
         Assert.NotEmpty(vm.Residual);
+        Assert.NotEmpty(vm.MaxTile);        // al cincilea test, ca in tabul 1
+        Assert.NotEmpty(vm.MaxTileVerdict);
         Assert.NotEmpty(vm.ProvenanceA);    // cate cadre si de cand
         Assert.NotNull(vm.Map);
     }

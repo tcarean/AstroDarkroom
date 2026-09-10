@@ -56,6 +56,8 @@ namespace FlatCheck.Wpf
         string _residualVerdict = "";
         string _tilt = "";
         string _tiltVerdict = "";
+        string _maxTile = "";
+        string _maxTileVerdict = "";
         string _verdict = "";
         string _advice = "";
         string _mapLegend = "";
@@ -88,7 +90,7 @@ namespace FlatCheck.Wpf
         public string ProvenanceA { get => _provenanceA; private set => Set(ref _provenanceA, value); }
         public string ProvenanceB { get => _provenanceB; private set => Set(ref _provenanceB, value); }
 
-        // Bateria de structura pe masterul combinat - aceleasi patru teste ca tabul 1.
+        // Bateria de structura pe masterul combinat - aceleasi cinci teste ca tabul 1.
         public string Corners { get => _corners; private set => Set(ref _corners, value); }
         public string CornerVerdict { get => _cornerVerdict; private set => Set(ref _cornerVerdict, value); }
         public string Azimuthal { get => _azimuthal; private set => Set(ref _azimuthal, value); }
@@ -97,6 +99,8 @@ namespace FlatCheck.Wpf
         public string ResidualVerdict { get => _residualVerdict; private set => Set(ref _residualVerdict, value); }
         public string Tilt { get => _tilt; private set => Set(ref _tilt, value); }
         public string TiltVerdict { get => _tiltVerdict; private set => Set(ref _tiltVerdict, value); }
+        public string MaxTile { get => _maxTile; private set => Set(ref _maxTile, value); }
+        public string MaxTileVerdict { get => _maxTileVerdict; private set => Set(ref _maxTileVerdict, value); }
 
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Advice { get => _advice; private set => Set(ref _advice, value); }
@@ -263,6 +267,8 @@ namespace FlatCheck.Wpf
             ResidualVerdict = r.Sensor.ResidualVerdict;
             Tilt = $"{r.Sensor.TiltPct:F2} %";
             TiltVerdict = r.Sensor.TiltVerdict;
+            MaxTile = $"{r.Sensor.MaxTilePct:F2} %";
+            MaxTileVerdict = r.Sensor.MaxTileVerdict;
 
             Verdict = r.Verdict;
             // Sfatul vine din nucleu, ca la tabul de structura: e acelasi verdict, pe
@@ -278,8 +284,8 @@ namespace FlatCheck.Wpf
             FileB = null;
             World = WorldLabel = WorldCorner = "";
             ProvenanceA = ProvenanceB = "";
-            Corners = Azimuthal = Residual = Tilt = "";
-            CornerVerdict = AzimuthalVerdict = ResidualVerdict = TiltVerdict = "";
+            Corners = Azimuthal = Residual = Tilt = MaxTile = "";
+            CornerVerdict = AzimuthalVerdict = ResidualVerdict = TiltVerdict = MaxTileVerdict = "";
             Verdict = "";
             Advice = "";
             // Rasterele si encodarile pleaca; alegerea de scara ramane, ca la Structura.

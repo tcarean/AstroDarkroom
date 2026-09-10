@@ -156,6 +156,29 @@ public class PngWriterTests
                 Assert.Equal(((byte)(x * 10), (byte)(y * 10), (byte)7), d.At(x, y));
     }
 
+    /// <summary>
+    /// The CRC table used to be filled lazily, with the field assigned BEFORE the fill:
+    /// a second thread arriving in that window read a table of zeros and wrote a wrong
+    /// CRC, i.e. a corrupt PNG. Reproduced with 8 threads: 5261 wrong CRCs in 2000
+    /// rounds. The window can hit it - the Ratio tab encodes while Structure still runs.
+    /// The table is now a static readonly built whole; this pins that many threads
+    /// encoding at once all produce the serial bytes, CRCs included.
+    /// </summary>
+    [Fact]
+    public void EncodingOnManyThreadsGivesTheSameBytesAsSerially()
+    {
+        var rng = new Random(7);
+        var rgb = new byte[64 * 48 * 3];
+        rng.NextBytes(rgb);
+        byte[] expected = PngWriter.Encode(rgb, 64, 48);
+
+        var results = new byte[64][];
+        Parallel.For(0, results.Length, i => results[i] = PngWriter.Encode(rgb, 64, 48));
+
+        Assert.All(results, r => Assert.Equal(expected, r));
+        Assert.All(results, r => PngDecoder.Decode(r));   // every chunk CRC validates
+    }
+
     [Fact]
     public void WriteProducesTheSameBytesAsEncode()
     {

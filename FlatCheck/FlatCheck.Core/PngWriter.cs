@@ -35,9 +35,16 @@
 // ecran nu spunea asta. Doua hartii pe scara automata se pot compara doar prin forma.
 //
 // Plafoanele oferite (FixedCapsPct) NU sunt numere noi: sunt granitele scarii de
-// reziduu, Th.Resid*. Asta e ce le face sa insemne ceva - o harta la +/-10% se satureaza
-// exact acolo unde verdictul iese din banda BUN. Nu le duplica; daca scara se
-// recalibreaza, se recalibreaza si ele.
+// reziduu, Th.Resid*. Nu le duplica; daca scara se recalibreaza, se recalibreaza si ele.
+//
+// Dar plafonul si banda NU sunt acelasi lucru, si merita spus exact: plafonul e abaterea
+// unui PIXEL fata de model, banda e o amplitudine varf-la-varf. O pata unilaterala de
+// +10% atinge plafonul de 10% chiar la granita benzii BUN; un gradient de 10% (care
+// merge de -5% la +5%) ajunge doar la jumatatea lui. Masurat: la un gradient de 10%
+// harta are p1/p99 la -4.9/+4.8%. Deci pe chipul implicit de +/-10% saturatia inseamna
+// "iese din BUN" pentru o pata si "a ajuns la REFA" pentru un gradient. Nu exista un
+// plafon care sa fie exact pentru amandoua, asa ca se explica in legenda si in README,
+// nu se schimba cifrele.
 //
 // Encoderul scrie semnatura + IHDR (8 biti, color type 2 = RGB) + un singur IDAT
 // (fiecare rand precedat de filter byte 0, deflatat prin ZLibStream) + IEND, cu CRC-32
@@ -203,22 +210,30 @@ namespace FlatCheck
             var cb = new byte[4]; WriteBE(cb, 0, (int)crc); s.Write(cb, 0, 4);
         }
 
-        // NOTA (problema cunoscuta 11): tabel static initializat lenes. Benign
-        // single-threaded, dar ar fi o cursa daca s-ar paraleliza ceva.
-        static uint[] _crcTable;
+        // Construita o singura data, la initializarea tipului, si publicata gata umpluta.
+        // A fost un camp initializat lenes ("if null, umple"), ceea ce era o cursa reala,
+        // nu teoretica: campul se atribuia INAINTE de umplere, deci un al doilea fir care
+        // intra in acel moment vedea tabela ne-nula, o citea cu zerouri si scria un CRC
+        // gresit - adica un PNG corupt. Reprodus: 8 fire, 2000 de runde, 5261 de CRC-uri
+        // gresite. In fereastra e chiar posibil, fiindca tabul Ratio poate encoda in timp
+        // ce Structura inca ruleaza. Un initializator static are garantia CLR-ului ca
+        // nimeni nu vede tabela pana nu e gata.
+        static readonly uint[] _crcTable = BuildCrcTable();
+
+        static uint[] BuildCrcTable()
+        {
+            var table = new uint[256];
+            for (uint n = 0; n < 256; n++)
+            {
+                uint c = n;
+                for (int k = 0; k < 8; k++) c = (c & 1) != 0 ? 0xedb88320 ^ (c >> 1) : c >> 1;
+                table[n] = c;
+            }
+            return table;
+        }
 
         internal static uint Crc32(byte[] type, byte[] data)
         {
-            if (_crcTable == null)
-            {
-                _crcTable = new uint[256];
-                for (uint n = 0; n < 256; n++)
-                {
-                    uint c = n;
-                    for (int k = 0; k < 8; k++) c = (c & 1) != 0 ? 0xedb88320 ^ (c >> 1) : c >> 1;
-                    _crcTable[n] = c;
-                }
-            }
             uint crc = 0xffffffff;
             foreach (byte bb in type) crc = _crcTable[(crc ^ bb) & 0xff] ^ (crc >> 8);
             foreach (byte bb in data) crc = _crcTable[(crc ^ bb) & 0xff] ^ (crc >> 8);
