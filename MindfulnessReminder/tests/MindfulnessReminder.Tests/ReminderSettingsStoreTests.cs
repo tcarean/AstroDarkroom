@@ -242,6 +242,145 @@ public class ReminderSettingsStoreTests
             _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.RetryValueName));
     }
 
+    // ------------------------------------------------- the unlock switch and the two messages
+
+    [Fact]
+    public void The_defaults_have_the_unlock_reminder_on_and_the_same_message_on_both()
+    {
+        Assert.True(ReminderSettings.Default.UnlockEnabled);
+        Assert.Equal(ReminderSettings.DefaultMessage, ReminderSettings.Default.UnlockMessage);
+        Assert.Equal(ReminderSettings.DefaultMessage, ReminderSettings.Default.PeriodicMessage);
+    }
+
+    [Fact]
+    public void The_unlock_switch_and_both_messages_survive_a_round_trip()
+    {
+        var saved = new ReminderSettings(true, 30)
+        {
+            UnlockEnabled = false,
+            UnlockMessage = "Welcome back",
+            PeriodicMessage = "Look away from the screen",
+        };
+
+        Store().Save(saved);
+
+        Assert.Equal(saved, Store().Load());
+    }
+
+    /// <summary>An upgrade from a build that never wrote them: on, and the old text on both.</summary>
+    [Fact]
+    public void A_registry_without_the_unlock_values_lands_on_the_defaults()
+    {
+        Store().Save(new ReminderSettings(true, 30)
+        {
+            UnlockEnabled = false,
+            UnlockMessage = "a",
+            PeriodicMessage = "b",
+        });
+
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.UnlockEnabledValueName);
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.UnlockMessageValueName);
+        _registry.DeleteValue(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PeriodicMessageValueName);
+
+        var loaded = Store().Load();
+
+        Assert.True(loaded.UnlockEnabled);
+        Assert.Equal(ReminderSettings.DefaultMessage, loaded.UnlockMessage);
+        Assert.Equal(ReminderSettings.DefaultMessage, loaded.PeriodicMessage);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("\r\n")]
+    public void A_blank_message_in_the_registry_reads_as_the_default(string written)
+    {
+        _registry.SetString(
+            RegistrySettingsStore.KeyPath, RegistrySettingsStore.PeriodicMessageValueName, written);
+
+        Assert.Equal(ReminderSettings.DefaultMessage, Store().Load().PeriodicMessage);
+    }
+
+    /// <summary>Cut, not rejected: a hand-edited message cannot push the text into the Close button.</summary>
+    [Fact]
+    public void An_over_long_message_in_the_registry_is_cut_at_the_limit()
+    {
+        _registry.SetString(
+            RegistrySettingsStore.KeyPath,
+            RegistrySettingsStore.UnlockMessageValueName,
+            new string('x', ReminderSettings.MaxMessageLength + 20));
+
+        Assert.Equal(
+            new string('x', ReminderSettings.MaxMessageLength),
+            Store().Load().UnlockMessage);
+    }
+
+    [Fact]
+    public void Saving_normalizes_the_messages_before_they_reach_the_registry()
+    {
+        Store().Save(new ReminderSettings(true, 30)
+        {
+            UnlockMessage = "  Breathe\r\nout  ",
+            PeriodicMessage = " ",
+        });
+
+        Assert.Equal(
+            "Breathe  out",
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.UnlockMessageValueName));
+        Assert.Equal(
+            ReminderSettings.DefaultMessage,
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.PeriodicMessageValueName));
+    }
+
+    [Theory]
+    [InlineData("Ground yourself", "Ground yourself")]
+    [InlineData("  Breathe  ", "Breathe")]
+    [InlineData("one\ttwo", "one two")]
+    [InlineData(null, "Ground yourself")]
+    public void Message_normalization_keeps_what_it_can(string? written, string expected)
+    {
+        Assert.Equal(expected, ReminderSettings.NormalizeMessage(written));
+    }
+
+    /// <summary>A message cut at the limit does not end in the space it was cut after.</summary>
+    [Fact]
+    public void A_message_cut_at_the_limit_is_trimmed_after_the_cut()
+    {
+        var written = new string('x', ReminderSettings.MaxMessageLength - 1) + " yyyy";
+
+        Assert.Equal(
+            new string('x', ReminderSettings.MaxMessageLength - 1),
+            ReminderSettings.NormalizeMessage(written));
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("", false)]
+    [InlineData("   ", false)]
+    [InlineData("x", true)]
+    [InlineData("  x  ", true)]
+    public void The_dialog_message_check_refuses_blank_and_accepts_text(string? message, bool acceptable)
+    {
+        Assert.Equal(acceptable, ReminderSettings.IsMessageAcceptable(message));
+    }
+
+    [Fact]
+    public void The_dialog_message_check_matches_the_length_limit()
+    {
+        Assert.True(ReminderSettings.IsMessageAcceptable(new string('x', ReminderSettings.MaxMessageLength)));
+        Assert.False(ReminderSettings.IsMessageAcceptable(new string('x', ReminderSettings.MaxMessageLength + 1)));
+    }
+
+    [Fact]
+    public void The_unlock_switch_is_written_as_the_same_one_and_zero_strings_as_the_others()
+    {
+        Store().Save(new ReminderSettings(true, 30) { UnlockEnabled = false });
+
+        Assert.Equal(
+            "0",
+            _registry.GetString(RegistrySettingsStore.KeyPath, RegistrySettingsStore.UnlockEnabledValueName));
+    }
+
     /// <summary>Strings, not DWORDs, so IRegistryStore stays the four methods it had.</summary>
     [Fact]
     public void The_pause_flags_are_written_as_the_same_one_and_zero_strings_as_the_others()

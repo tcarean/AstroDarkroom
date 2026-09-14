@@ -23,7 +23,12 @@ public interface IReminderPresenter
     /// <summary>True while a reminder is on screen, or scheduled to appear shortly.</summary>
     bool IsShowing { get; }
 
-    void Show();
+    /// <summary>
+    /// Shows a reminder that says <paramref name="message"/>. The coordinator chooses the
+    /// text, because the coordinator is what knows which of the two reminders this is;
+    /// the presenter only draws what it is handed.
+    /// </summary>
+    void Show(string message);
 
     void BringToFront();
 }

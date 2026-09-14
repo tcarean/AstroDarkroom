@@ -44,6 +44,12 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
     public const string RetryValueName = "PauseRetrySeconds";
 
+    public const string UnlockEnabledValueName = "UnlockReminderEnabled";
+
+    public const string UnlockMessageValueName = "UnlockMessage";
+
+    public const string PeriodicMessageValueName = "PeriodicMessage";
+
     private readonly IRegistryStore _registry;
 
     public RegistrySettingsStore(IRegistryStore registry)
@@ -60,9 +66,14 @@ public sealed class RegistrySettingsStore : ISettingsStore
         var minutes = ReadNumber(IntervalValueName, ReminderSettings.DefaultIntervalMinutes);
 
         // Normalize rather than reject: an out-of-range value still says what was wanted, and
-        // clamping is what stops a hand-edited 0 from becoming a reminder on every tick.
+        // clamping is what stops a hand-edited 0 from becoming a reminder on every tick. The
+        // messages go through the same door: a missing one is a build that never wrote it,
+        // an empty one is a wiped value, and both land on the default text.
         return new ReminderSettings(enabled, minutes)
         {
+            UnlockEnabled = ReadFlag(UnlockEnabledValueName, defaults.UnlockEnabled),
+            UnlockMessage = ReadText(UnlockMessageValueName, defaults.UnlockMessage),
+            PeriodicMessage = ReadText(PeriodicMessageValueName, defaults.PeriodicMessage),
             PauseWhileMicrophoneInUse =
                 ReadFlag(PauseMicrophoneValueName, defaults.PauseWhileMicrophoneInUse),
             PauseWhileFullScreen =
@@ -79,6 +90,9 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
         WriteFlag(EnabledValueName, normalized.PeriodicEnabled);
         WriteNumber(IntervalValueName, normalized.IntervalMinutes);
+        WriteFlag(UnlockEnabledValueName, normalized.UnlockEnabled);
+        _registry.SetString(KeyPath, UnlockMessageValueName, normalized.UnlockMessage);
+        _registry.SetString(KeyPath, PeriodicMessageValueName, normalized.PeriodicMessage);
         WriteFlag(PauseMicrophoneValueName, normalized.PauseWhileMicrophoneInUse);
         WriteFlag(PauseFullScreenValueName, normalized.PauseWhileFullScreen);
         WriteNumber(RetryValueName, normalized.RetrySeconds);
@@ -95,6 +109,15 @@ public sealed class RegistrySettingsStore : ISettingsStore
             "1" => true,
             _ => fallback,
         };
+
+    /// <summary>
+    /// Only absence falls back here. What the value SAYS is left to
+    /// <see cref="ReminderSettings.NormalizeMessage"/>, which is where "empty means the
+    /// default" and the length cap live, so that the rule is written once for the registry
+    /// and the dialog alike.
+    /// </summary>
+    private string ReadText(string valueName, string fallback)
+        => _registry.GetString(KeyPath, valueName) ?? fallback;
 
     private int ReadNumber(string valueName, int fallback)
         => int.TryParse(

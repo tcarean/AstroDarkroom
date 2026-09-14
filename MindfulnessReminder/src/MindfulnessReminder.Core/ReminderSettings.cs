@@ -18,8 +18,14 @@
 namespace MindfulnessReminder.Core;
 
 /// <summary>
-/// What the Settings window edits: whether the periodic reminder runs at all, how far apart
-/// the reminders are, and the two conditions under which one is held back.
+/// What the Settings window edits: whether each of the two reminders runs at all, what each
+/// of them says, how far apart the periodic ones are, and the two conditions under which
+/// any reminder is held back.
+///
+/// The two reminders -- the one on unlock and the periodic one -- are independent. Each has
+/// its own switch and its own message, and neither switch has any say over the other: the
+/// periodic schedule still restarts on every unlock with the unlock reminder turned off,
+/// and the unlock reminder still appears with the periodic one turned off.
 ///
 /// The interval is kept as whole minutes because that is the unit the user types and the
 /// unit the tray tooltip counts down in; anything finer would be a number nobody can enter.
@@ -27,11 +33,12 @@ namespace MindfulnessReminder.Core;
 /// tick, and they are enforced on the way out of the registry as well as in the dialog,
 /// because a hand-edited registry value must not be able to do that either.
 ///
-/// The two pause settings are init-only properties rather than more positional parameters.
-/// That is not tidiness: every one of them has a default that is the same on a fresh machine
-/// and in a hand-written test, so writing it out at every call site would be repetition with
-/// nothing to say, and "new ReminderSettings(true, 30)" goes on meaning exactly what it
-/// meant before they existed.
+/// The pause settings, the unlock switch and the two messages are init-only properties
+/// rather than more positional parameters. That is not tidiness: every one of them has a
+/// default that is the same on a fresh machine and in a hand-written test, so writing it
+/// out at every call site would be repetition with nothing to say, and
+/// "new ReminderSettings(true, 30)" goes on meaning exactly what it meant before they
+/// existed.
 /// </summary>
 public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
 {
@@ -56,12 +63,37 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
 
     public const int DefaultRetrySeconds = 20;
 
+    /// <summary>What both reminders said before the text became a setting.</summary>
+    public const string DefaultMessage = "Ground yourself";
+
     /// <summary>
-    /// What a machine with no saved settings gets: on, every 30 minutes, both pauses on.
-    /// The two pauses come from the property initializers below rather than from here, so
-    /// each default is written once.
+    /// Fifty characters: two lines at the reminder window's 30 px type, which is what fits
+    /// between the dot and the Close button. The window is a fixed size on purpose -- it is
+    /// placed by hand on the primary monitor -- so a longer message would run into the
+    /// button rather than grow the window.
+    /// </summary>
+    public const int MaxMessageLength = 50;
+
+    /// <summary>
+    /// What a machine with no saved settings gets: both reminders on, every 30 minutes, both
+    /// pauses on, and the same message on each. Everything but the two positional values
+    /// comes from the property initializers below rather than from here, so each default is
+    /// written once.
     /// </summary>
     public static readonly ReminderSettings Default = new(true, DefaultIntervalMinutes);
+
+    /// <summary>
+    /// Whether a reminder appears when the workstation is unlocked. Independent of
+    /// <see cref="PeriodicEnabled"/>, and it has no bearing on the periodic schedule, which
+    /// restarts on every unlock either way.
+    /// </summary>
+    public bool UnlockEnabled { get; init; } = true;
+
+    /// <summary>What the reminder shown on unlock says. Never empty after <see cref="Normalize"/>.</summary>
+    public string UnlockMessage { get; init; } = DefaultMessage;
+
+    /// <summary>What the periodic reminder says. Never empty after <see cref="Normalize"/>.</summary>
+    public string PeriodicMessage { get; init; } = DefaultMessage;
 
     /// <summary>
     /// Hold a reminder back while the microphone or the camera is live -- a call, a meeting,
@@ -83,7 +115,10 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     /// <summary>True when either pause is switched on and the activity monitor is worth asking.</summary>
     public bool PausesForAnything => PauseWhileMicrophoneInUse || PauseWhileFullScreen;
 
-    /// <summary>Clamps both numbers into range. Everything that builds settings goes through this.</summary>
+    /// <summary>
+    /// Clamps both numbers into range and both messages into shape. Everything that builds
+    /// settings goes through this.
+    /// </summary>
     public ReminderSettings Normalize()
     {
         var normalized = IntervalMinutes switch
@@ -93,12 +128,65 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
             _ => this,
         };
 
-        return normalized.RetrySeconds switch
+        normalized = normalized.RetrySeconds switch
         {
             < MinRetrySeconds => normalized with { RetrySeconds = MinRetrySeconds },
             > MaxRetrySeconds => normalized with { RetrySeconds = MaxRetrySeconds },
             _ => normalized,
         };
+
+        var unlockMessage = NormalizeMessage(normalized.UnlockMessage);
+        var periodicMessage = NormalizeMessage(normalized.PeriodicMessage);
+
+        // A "with" allocates, so it is skipped when there is nothing to change: Normalize
+        // runs on every load and every save, and most of them find the messages as written.
+        return ReferenceEquals(unlockMessage, normalized.UnlockMessage)
+               && ReferenceEquals(periodicMessage, normalized.PeriodicMessage)
+            ? normalized
+            : normalized with { UnlockMessage = unlockMessage, PeriodicMessage = periodicMessage };
+    }
+
+    /// <summary>
+    /// The message rule, in the same spirit as the clamps above: whatever was written is
+    /// read as generously as possible rather than refused. Line breaks and tabs become
+    /// spaces, because the box has one line of input and the window wraps for itself;
+    /// surrounding space is dropped; nothing at all -- a wiped registry value, or a box the
+    /// user cleared with that reminder switched off -- means the default; and anything past
+    /// the limit is cut at it, so a hand-edited registry cannot push the text into the
+    /// Close button.
+    ///
+    /// Returns the SAME instance when nothing needed doing, which is what lets
+    /// <see cref="Normalize"/> avoid copying the record for nothing.
+    /// </summary>
+    public static string NormalizeMessage(string? message)
+    {
+        if (message is null)
+        {
+            return DefaultMessage;
+        }
+
+        var text = message;
+
+        if (text.AsSpan().IndexOfAny('\r', '\n', '\t') >= 0)
+        {
+            text = text.Replace('\r', ' ').Replace('\n', ' ').Replace('\t', ' ');
+        }
+
+        var trimmed = text.AsSpan().Trim();
+
+        if (trimmed.IsEmpty)
+        {
+            return DefaultMessage;
+        }
+
+        if (trimmed.Length > MaxMessageLength)
+        {
+            trimmed = trimmed[..MaxMessageLength].TrimEnd();
+        }
+
+        return trimmed.Length == message.Length && ReferenceEquals(text, message)
+            ? message
+            : trimmed.ToString();
     }
 
     /// <summary>True when <paramref name="minutes"/> is something the dialog may accept.</summary>
@@ -108,4 +196,21 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     /// <summary>True when <paramref name="seconds"/> is something the dialog may accept.</summary>
     public static bool IsRetryInRange(int seconds)
         => seconds is >= MinRetrySeconds and <= MaxRetrySeconds;
+
+    /// <summary>
+    /// True when <paramref name="message"/> is something the dialog may accept: something
+    /// other than whitespace, and no longer than the window can show. The dialog refuses
+    /// rather than falling back, because there is a user standing there to tell; the
+    /// fallback in <see cref="NormalizeMessage"/> is for the registry, where there is not.
+    /// </summary>
+    public static bool IsMessageAcceptable(string? message)
+    {
+        if (message is null)
+        {
+            return false;
+        }
+
+        var trimmed = message.AsSpan().Trim();
+        return !trimmed.IsEmpty && trimmed.Length <= MaxMessageLength;
+    }
 }

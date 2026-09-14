@@ -20,7 +20,10 @@ namespace MindfulnessReminder.Core;
 /// <summary>
 /// The single place that decides when a reminder appears. Two things can ask for one -- an
 /// unlock, and the periodic schedule -- and both go through here, so the rules about not
-/// stacking windows are written once.
+/// stacking windows are written once. Each has its own switch and its own message in
+/// <see cref="ReminderSettings"/>, and the two are independent: turning the unlock reminder
+/// off does not stop the schedule restarting on unlock, and turning the periodic one off
+/// does not stop the unlock reminder.
 ///
 /// The unlock side is less trivial than it sounds. Windows can raise SessionUnlock twice for
 /// a single unlock, so bursts are collapsed by a short debounce window. And if a reminder
@@ -200,6 +203,17 @@ public sealed class ReminderCoordinator : IDisposable
         SyncTimer();
         CountdownChanged?.Invoke(this, EventArgs.Empty);
 
+        // The unlock reminder's own switch, and it sits HERE: after the schedule has been
+        // restarted, because that belongs to the periodic reminder, and before anything to
+        // do with windows, because everything from this line down IS the unlock reminder.
+        // That includes raising a window left open from before the lock, and it includes
+        // the activity read -- a reminder that is not going to appear has no reason to walk
+        // the registry to find out whether it would have been held back.
+        if (!Settings.UnlockEnabled)
+        {
+            return;
+        }
+
         if (_presenter.IsShowing)
         {
             _presenter.BringToFront();
@@ -224,7 +238,7 @@ public sealed class ReminderCoordinator : IDisposable
         }
 
         _lastShownAt = now;
-        _presenter.Show();
+        _presenter.Show(Settings.UnlockMessage);
     }
 
     internal void HandleLock()
@@ -262,7 +276,9 @@ public sealed class ReminderCoordinator : IDisposable
 
             // The deadline is spent whether or not a window actually appears. A reminder
             // already on screen means the moment has been served; re-arming anyway is what
-            // keeps a due deadline from firing again on the very next tick.
+            // keeps a due deadline from firing again on the very next tick. It is raised
+            // with whatever it already says -- possibly the unlock message -- rather than
+            // having its text swapped under the user's eyes.
             _lastShownAt = now;
 
             if (_presenter.IsShowing)
@@ -271,7 +287,7 @@ public sealed class ReminderCoordinator : IDisposable
             }
             else
             {
-                _presenter.Show();
+                _presenter.Show(Settings.PeriodicMessage);
             }
         }
         else

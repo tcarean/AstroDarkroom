@@ -19,6 +19,7 @@
 <Window x:Class="MindfulnessReminder.App.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="clr-namespace:MindfulnessReminder.Core;assembly=MindfulnessReminder.Core"
         Title="Mindfulness Reminder Settings"
         Width="420"
         SizeToContent="Height"
@@ -61,20 +62,66 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!--
+            Two reminders, two switches, one panel under each. The two are independent of
+            each other, which the layout says by giving them the same shape: a switch, and
+            under it everything that only matters while that switch is on.
+        -->
         <CheckBox Grid.Row="0"
+                  x:Name="UnlockCheck"
+                  Content="Remind me when I unlock the computer"
+                  FontWeight="SemiBold" />
+
+        <StackPanel Grid.Row="1"
+                    Margin="24,2,0,0"
+                    IsEnabled="{Binding IsChecked, ElementName=UnlockCheck}">
+            <!--
+                One line of input: the window wraps for itself, and a line break typed here
+                would only be turned into a space on save. MaxLength is the one limit the
+                window can show, read from Core so the dialog and the registry clamp agree.
+            -->
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Message" VerticalAlignment="Center" />
+
+                <TextBox Grid.Column="1"
+                         x:Name="UnlockMessageBox"
+                         Margin="8,0,0,0"
+                         MaxLength="{x:Static core:ReminderSettings.MaxMessageLength}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"
+                         TextChanged="OnAnyTextChanged" />
+            </Grid>
+        </StackPanel>
+
+        <Border Grid.Row="2"
+                Height="1"
+                Margin="0,20,0,0"
+                Background="{StaticResource SeparatorBrush}" />
+
+        <CheckBox Grid.Row="3"
                   x:Name="EnabledCheck"
+                  Margin="0,18,0,0"
                   Content="Remind me while I work"
                   FontWeight="SemiBold" />
 
         <!--
-            Requirement: with the feature switched off the interval must read as unavailable.
-            Binding the whole panel to the checkbox does that for the label, the box and the
-            hint at once, with no code behind it to keep in step. Every template in the theme
-            carries its own disabled trigger so this still shows through on a dark window.
+            Requirement: with the feature switched off the interval and the message must read
+            as unavailable. Binding the whole panel to the checkbox does that for the labels,
+            the boxes and the hint at once, with no code behind it to keep in step. Every
+            template in the theme carries its own disabled trigger so this still shows
+            through on a dark window.
         -->
-        <StackPanel Grid.Row="1"
+        <StackPanel Grid.Row="4"
                     Margin="24,14,0,0"
                     IsEnabled="{Binding IsChecked, ElementName=EnabledCheck}">
 
@@ -89,7 +136,7 @@
                          VerticalContentAlignment="Center"
                          Padding="2"
                          PreviewTextInput="OnIntervalPreviewTextInput"
-                         TextChanged="OnIntervalTextChanged" />
+                         TextChanged="OnAnyTextChanged" />
 
                 <TextBlock Text="minutes" VerticalAlignment="Center" />
             </StackPanel>
@@ -99,19 +146,41 @@
                        FontSize="11"
                        Style="{StaticResource HintTextStyle}"
                        Text="Between 1 and 480 minutes. The countdown restarts when you save." />
+
+            <!--
+                One line of input: the window wraps for itself, and a line break typed here
+                would only be turned into a space on save. MaxLength is the one limit the
+                window can show, read from Core so the dialog and the registry clamp agree.
+            -->
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="Message" VerticalAlignment="Center" />
+
+                <TextBox Grid.Column="1"
+                         x:Name="PeriodicMessageBox"
+                         Margin="8,0,0,0"
+                         MaxLength="{x:Static core:ReminderSettings.MaxMessageLength}"
+                         VerticalContentAlignment="Center"
+                         Padding="4,2"
+                         TextChanged="OnAnyTextChanged" />
+            </Grid>
         </StackPanel>
 
-        <Border Grid.Row="2"
+        <Border Grid.Row="5"
                 Height="1"
                 Margin="0,20,0,0"
                 Background="{StaticResource SeparatorBrush}" />
 
         <!--
-            The two pauses sit at the TOP level, not inside the panel above, because they are
-            not part of the periodic reminder: they hold back the reminder shown on unlock as
-            well, which happens whether or not the periodic one is switched on.
+            The two pauses sit at the TOP level, under both reminders and inside neither
+            panel, because they belong to neither: they hold back whichever reminder is
+            about to appear, and each reminder can be switched on without the other.
         -->
-        <StackPanel Grid.Row="3" Margin="0,18,0,0">
+        <StackPanel Grid.Row="6" Margin="0,18,0,0">
             <CheckBox x:Name="PauseMicrophoneCheck"
                       Content="Pause while the microphone or camera is in use"
                       FontWeight="SemiBold"
@@ -143,7 +212,7 @@
                              VerticalContentAlignment="Center"
                              Padding="2"
                              PreviewTextInput="OnIntervalPreviewTextInput"
-                             TextChanged="OnIntervalTextChanged" />
+                             TextChanged="OnAnyTextChanged" />
 
                     <TextBlock Text="seconds" VerticalAlignment="Center" />
                 </StackPanel>
@@ -155,7 +224,7 @@
             </StackPanel>
         </StackPanel>
 
-        <TextBlock Grid.Row="4"
+        <TextBlock Grid.Row="7"
                    x:Name="ErrorText"
                    Margin="0,14,0,0"
                    FontSize="11"
@@ -163,7 +232,7 @@
                    TextWrapping="Wrap"
                    Visibility="Collapsed" />
 
-        <StackPanel Grid.Row="5"
+        <StackPanel Grid.Row="8"
                     Orientation="Horizontal"
                     HorizontalAlignment="Right"
                     Margin="0,22,0,0">

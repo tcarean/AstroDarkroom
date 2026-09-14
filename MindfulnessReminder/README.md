@@ -3,7 +3,8 @@
 A tray-resident reminder for Windows. It shows a small always-on-top window that says
 **Ground yourself** every time you unlock the workstation, and — since 1.1.0 — at a set
 interval while you work. Since 1.2.0 it waits instead of interrupting a call or a full-screen
-application.
+application. Each of the two reminders has its own switch and its own message in
+**Settings...**.
 
 ## Behaviour
 
@@ -14,14 +15,38 @@ application.
 - The reminder always appears on the primary monitor, on top of everything, with a
   single **Close** button. Esc closes it; **Enter deliberately does not** — see
   [Periodic reminders](#periodic-reminders).
+- There are two reminders, the one on unlock and the periodic one, and they are independent:
+  each has its own switch and its own message — see
+  [Two reminders, two messages](#two-reminders-two-messages).
 - The tray tooltip counts down to the next reminder:
-  `Mindfulness Reminder 1.3.0 - next in 12 min`, or says why one is being held back:
-  `Mindfulness Reminder 1.3.0 - paused while your mic is on`.
+  `Mindfulness Reminder 1.4.0 - next in 12 min`, or says why one is being held back:
+  `Mindfulness Reminder 1.4.0 - paused while your mic is on`.
 - Since 1.2.0 a reminder waits rather than interrupting a call or a full-screen application —
   see [Pausing](#pausing-for-what-you-are-doing).
 - Since 1.3.0 the **Settings**, **About** and tray-menu surfaces are dark. The reminder itself
   is not, and that is deliberate: a dark rectangle appearing over dark work is easy to miss,
   and being seen is the whole point of it.
+
+## Two reminders, two messages
+
+Added in 1.4.0. **Remind me when I unlock the computer** and **Remind me while I work** are
+two switches in **Settings...**, both **on** by default, and under each is the **Message**
+that reminder shows. Both say *Ground yourself* until you change them; up to 50 characters
+each. A message box is greyed out while its reminder is off, and a reminder that is switched
+on will not save with an empty message.
+
+The two switches are independent. Turning the unlock reminder off does not stop the
+countdown restarting on unlock, so the periodic reminder still comes a whole interval after
+you come back; turning the periodic one off does not stop the unlock reminder. The two
+pauses below them hold back whichever reminder is about to appear, so they sit outside both.
+
+A long message is scaled down to fit the window rather than growing it, so the reminder keeps
+the same size and place on screen whatever it says. To see what a message will look like
+before saving it:
+
+```
+src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe --preview "Take a slow breath"
+```
 
 ## Periodic reminders
 
@@ -64,7 +89,7 @@ on its way past, so one is coming anyway.
 
 **The tray tooltip says so while it is happening**, not only after a reminder has been held
 back. Join a call and within ten seconds hovering the icon reads
-`Mindfulness Reminder 1.3.0 - paused while your mic is on` instead of a countdown — which is
+`Mindfulness Reminder 1.4.0 - paused while your mic is on` instead of a countdown — which is
 honest, because that countdown would otherwise run down to a reminder that is not going to
 arrive. Leave the call and the countdown comes back just as quickly.
 
@@ -158,6 +183,7 @@ alongside the copy already in the tray. Anything over ten minutes is clamped to 
 | Held-back reminder | postponed by a retry gap, re-checked | The alternative is asking on every one-second tick, which would walk the registry 1800 times per reminder |
 | Tooltip freshness | the reading refreshes every 10 s when idle | Reading only when a reminder falls due makes the feature invisible for up to a whole interval; 10 s is faster than anyone can hover the icon after joining a call, and 200× cheaper than every tick |
 | Settings window | modeless, hand-validated `TextBox` | A modal `ShowDialog` would disable every other window, so a reminder falling due would appear with a dead Close button; and WPF has no numeric spinner in the BCL, which is not worth a package |
+| Reminder text | fixed-size window, text scaled down only when it must | A 50-character message can wrap to one more line than fits above the Close button; shrinking it keeps the window the same size and in the same place, and a `Viewbox` that only scales down leaves every shorter message, the default included, exactly as it was |
 | Dark theme | the settings window, About and the tray menu, not the reminder | The three you go to on purpose are dark; the reminder stays a pale card, because a dark rectangle appearing over dark work is easy to miss and the point of it is to be seen. Written by hand -- control templates for WPF, a `ToolStripRenderer` for the menu -- so it costs no package |
 | About | a window, not a `MessageBox` | A Win32 dialog cannot be themed, and a white About box opening out of a dark tray menu reads as a different program. Being a window is also what lets it carry the app icon |
 
@@ -181,6 +207,7 @@ src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe -
 ```
 
 `--preview` shows the window once and exits: no tray icon, no registry access, no session hook.
+With a text after it, that text is the message; without one it shows the default.
 
 To see what the pause checks can currently detect:
 
@@ -211,7 +238,7 @@ user can actually see it:
 
 | where | what it shows |
 |---|---|
-| tray tooltip | `Mindfulness Reminder 1.3.0 - next in 12 min` -- hovering the icon says which build is running, and when the next reminder is due |
+| tray tooltip | `Mindfulness Reminder 1.4.0 - next in 12 min` -- hovering the icon says which build is running, and when the next reminder is due |
 | **About** | the banner on the first line, the copyright on the second, the licence notice below |
 | crash dialog | the error, then the banner, so a screenshot of it says which version broke |
 

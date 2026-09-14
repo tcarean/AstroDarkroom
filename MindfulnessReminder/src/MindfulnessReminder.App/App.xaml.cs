@@ -42,7 +42,10 @@ public partial class App : WpfApplication
 
     /// <summary>
     /// Shows the reminder once and quits, so the window can be checked without locking the
-    /// machine. No tray icon, no registry access, no session hook.
+    /// machine. No tray icon, no registry access, no session hook. An optional argument
+    /// after it is the message to show, so a text can be tried against the window before
+    /// it is saved -- which is the only way to see what the length cap looks like without
+    /// the registry being involved. Without one it shows the default text.
     /// </summary>
     private const string PreviewSwitch = "--preview";
 
@@ -80,9 +83,9 @@ public partial class App : WpfApplication
     {
         base.OnStartup(e);
 
-        if (e.Args.Contains(PreviewSwitch, StringComparer.OrdinalIgnoreCase))
+        if (PreviewMessage(e.Args) is { } previewMessage)
         {
-            ShowPreview();
+            ShowPreview(previewMessage);
             return;
         }
 
@@ -139,9 +142,29 @@ public partial class App : WpfApplication
         }
     }
 
-    private void ShowPreview()
+    /// <summary>
+    /// The message <c>--preview</c> should show, or null when the switch was not given. The
+    /// argument after the switch is the text; it goes through the same normalization the
+    /// saved setting does, so the preview shows what the app would actually show, and an
+    /// empty or missing one is the default message.
+    /// </summary>
+    private static string? PreviewMessage(string[] args)
     {
-        var window = new BreakWindow();
+        var index = Array.FindIndex(
+            args,
+            argument => argument.Equals(PreviewSwitch, StringComparison.OrdinalIgnoreCase));
+
+        if (index < 0)
+        {
+            return null;
+        }
+
+        return ReminderSettings.NormalizeMessage(index + 1 < args.Length ? args[index + 1] : null);
+    }
+
+    private void ShowPreview(string message)
+    {
+        var window = new BreakWindow(message);
         window.Closed += (_, _) => Shutdown();
         window.Show();
     }

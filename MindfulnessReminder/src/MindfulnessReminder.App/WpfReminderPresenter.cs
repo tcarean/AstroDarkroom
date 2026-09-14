@@ -38,6 +38,9 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
     private BreakWindow? _window;
     private DispatcherTimer? _pendingShow;
 
+    /// <summary>What the window queued by <see cref="Show"/> is going to say, once the delay is up.</summary>
+    private string? _pendingMessage;
+
     public WpfReminderPresenter(Dispatcher dispatcher, TimeSpan? showDelay = null)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -49,14 +52,19 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
     /// <summary>A queued show counts as showing, so a burst cannot queue two windows.</summary>
     public bool IsShowing => _window is not null || _pendingShow is not null;
 
-    public void Show()
+    public void Show(string message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+
         if (IsShowing)
         {
+            // Raised as it is, with the text it already has. A window that is still in its
+            // 600 ms queue keeps the message it was queued with for the same reason.
             BringToFront();
             return;
         }
 
+        _pendingMessage = message;
         _pendingShow = new DispatcherTimer(DispatcherPriority.Normal, _dispatcher)
         {
             Interval = _showDelay,
@@ -68,9 +76,10 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
 
     private void OnPendingShowElapsed(object? sender, EventArgs e)
     {
+        var message = _pendingMessage ?? ReminderSettings.DefaultMessage;
         CancelPendingShow();
 
-        var window = new BreakWindow();
+        var window = new BreakWindow(message);
         window.Closed += OnWindowClosed;
         _window = window;
         window.Show();
@@ -112,5 +121,6 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
         timer.Stop();
         timer.Tick -= OnPendingShowElapsed;
         _pendingShow = null;
+        _pendingMessage = null;
     }
 }

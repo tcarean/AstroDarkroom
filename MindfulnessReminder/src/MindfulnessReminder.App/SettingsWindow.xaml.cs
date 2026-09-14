@@ -41,8 +41,12 @@ public partial class SettingsWindow : Window
 
         InitializeComponent();
 
+        UnlockCheck.IsChecked = current.UnlockEnabled;
+        UnlockMessageBox.Text = current.UnlockMessage;
+
         EnabledCheck.IsChecked = current.PeriodicEnabled;
         IntervalBox.Text = current.IntervalMinutes.ToString(CultureInfo.InvariantCulture);
+        PeriodicMessageBox.Text = current.PeriodicMessage;
 
         PauseMicrophoneCheck.IsChecked = current.PauseWhileMicrophoneInUse;
         PauseFullScreenCheck.IsChecked = current.PauseWhileFullScreen;
@@ -69,9 +73,35 @@ public partial class SettingsWindow : Window
 
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
+        var unlockEnabled = UnlockCheck.IsChecked == true;
         var enabled = EnabledCheck.IsChecked == true;
         var pauseForMicrophone = PauseMicrophoneCheck.IsChecked == true;
         var pauseForFullScreen = PauseFullScreenCheck.IsChecked == true;
+
+        // The messages follow the rule the numbers do, below: only a reminder that is
+        // switched on needs a usable one. A blank box with its reminder switched off falls
+        // back to the default text rather than standing in the way of the save.
+        if (!TryReadMessage(UnlockMessageBox, out var unlockMessage))
+        {
+            if (unlockEnabled)
+            {
+                Refuse(MessageComplaint, UnlockMessageBox);
+                return;
+            }
+
+            unlockMessage = ReminderSettings.DefaultMessage;
+        }
+
+        if (!TryReadMessage(PeriodicMessageBox, out var periodicMessage))
+        {
+            if (enabled)
+            {
+                Refuse(MessageComplaint, PeriodicMessageBox);
+                return;
+            }
+
+            periodicMessage = ReminderSettings.DefaultMessage;
+        }
 
         if (!TryReadInterval(out var minutes))
         {
@@ -116,6 +146,9 @@ public partial class SettingsWindow : Window
 
         var settings = new ReminderSettings(enabled, minutes)
         {
+            UnlockEnabled = unlockEnabled,
+            UnlockMessage = unlockMessage,
+            PeriodicMessage = periodicMessage,
             PauseWhileMicrophoneInUse = pauseForMicrophone,
             PauseWhileFullScreen = pauseForFullScreen,
             RetrySeconds = seconds,
@@ -137,6 +170,22 @@ public partial class SettingsWindow : Window
     private void SyncRetryAvailability()
         => RetryPanel.IsEnabled =
             PauseMicrophoneCheck.IsChecked == true || PauseFullScreenCheck.IsChecked == true;
+
+    private static string MessageComplaint
+        => "Enter what the reminder should say, up to "
+           + ReminderSettings.MaxMessageLength
+           + " characters.";
+
+    /// <summary>
+    /// The text as typed; trimming and the rest are Normalize's job on the way out. Only
+    /// whether it is acceptable is decided here, because that is the part with a user to
+    /// tell.
+    /// </summary>
+    private static bool TryReadMessage(TextBox box, out string message)
+    {
+        message = box.Text;
+        return ReminderSettings.IsMessageAcceptable(message);
+    }
 
     private bool TryReadInterval(out int minutes)
         => int.TryParse(
@@ -169,8 +218,8 @@ public partial class SettingsWindow : Window
     private void OnIntervalPreviewTextInput(object sender, TextCompositionEventArgs e)
         => e.Handled = !e.Text.All(char.IsAsciiDigit);
 
-    /// <summary>Shared by both boxes: any edit clears the complaint about either.</summary>
-    private void OnIntervalTextChanged(object sender, TextChangedEventArgs e) => ClearError();
+    /// <summary>Shared by every box: any edit clears the complaint about any of them.</summary>
+    private void OnAnyTextChanged(object sender, TextChangedEventArgs e) => ClearError();
 
     private void ShowError(string message)
     {

@@ -338,8 +338,9 @@ public class ReminderCoordinatorTests
         Assert.Null(coordinator.Remaining);
     }
 
+    /// <summary>The two switches are independent; this is one half of that, the other is below.</summary>
     [Fact]
-    public void A_disabled_feature_still_shows_the_reminder_on_unlock()
+    public void Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone()
     {
         using var coordinator = CreateCoordinator(settings: new ReminderSettings(false, 30));
         coordinator.Start();
@@ -416,6 +417,182 @@ public class ReminderCoordinatorTests
         _monitor.RaiseUnlocked();
 
         Assert.Equal(1, _presenter.ShowCount);
+    }
+
+    // ------------------------------------------------- the two switches and the two messages
+
+    private static readonly ReminderSettings TwoMessages = ReminderSettings.Default with
+    {
+        UnlockMessage = "Welcome back",
+        PeriodicMessage = "Look away from the screen",
+    };
+
+    [Fact]
+    public void The_unlock_reminder_says_the_unlock_message()
+    {
+        using var coordinator = CreateCoordinator(settings: TwoMessages);
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(new[] { "Welcome back" }, _presenter.Messages);
+    }
+
+    [Fact]
+    public void The_periodic_reminder_says_the_periodic_message()
+    {
+        using var coordinator = CreateCoordinator(settings: TwoMessages);
+        coordinator.Start();
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(new[] { "Look away from the screen" }, _presenter.Messages);
+    }
+
+    /// <summary>The other half of independence: the unlock switch alone silences the unlock.</summary>
+    [Fact]
+    public void Switching_the_unlock_reminder_off_shows_nothing_on_unlock()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _presenter.ShowCount);
+    }
+
+    /// <summary>
+    /// The restart on unlock belongs to the periodic reminder, not to the unlock one, so the
+    /// unlock switch must not be allowed to skip it: with 10 minutes left before a lock, the
+    /// next reminder is still a whole interval after the unlock.
+    /// </summary>
+    [Fact]
+    public void Switching_the_unlock_reminder_off_still_restarts_the_countdown_on_unlock()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+
+        _clock.Advance(TimeSpan.FromMinutes(20));
+        _monitor.RaiseLocked();
+        _clock.Advance(TimeSpan.FromHours(3));
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(TimeSpan.FromMinutes(30), coordinator.Remaining);
+        Assert.True(_timer.IsRunning);
+
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(1, _presenter.ShowCount);
+    }
+
+    /// <summary>A reminder that is not going to appear has no reason to walk the registry.</summary>
+    [Fact]
+    public void An_unlock_with_the_unlock_reminder_off_does_not_read_the_activity_monitor()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _activity.ReadCount);
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+    }
+
+    /// <summary>
+    /// Raising a window left open from before the lock is the unlock reminder acting, and
+    /// the switch is off. The window is still there; it is simply not touched.
+    /// </summary>
+    [Fact]
+    public void An_unlock_with_the_unlock_reminder_off_leaves_an_open_reminder_where_it_is()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: ReminderSettings.Default with { UnlockEnabled = false });
+        coordinator.Start();
+        _presenter.SimulateShown();
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _presenter.BringToFrontCount);
+        Assert.Equal(0, _presenter.ShowCount);
+    }
+
+    [Fact]
+    public void With_both_reminders_off_nothing_ever_appears_and_no_timer_runs()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: new ReminderSettings(false, 30) { UnlockEnabled = false });
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+        _clock.Advance(TimeSpan.FromHours(6));
+        _timer.RaiseTick();
+        _monitor.RaiseLocked();
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Equal(0, _presenter.BringToFrontCount);
+        Assert.False(_timer.IsRunning);
+        Assert.Null(coordinator.Remaining);
+    }
+
+    /// <summary>
+    /// The window on screen keeps the text it opened with. Swapping it for the periodic
+    /// message would change a reminder under the user's eyes, and the deadline is served
+    /// either way.
+    /// </summary>
+    [Fact]
+    public void A_periodic_reminder_due_over_the_unlock_reminder_raises_it_without_changing_its_text()
+    {
+        using var coordinator = CreateCoordinator(settings: TwoMessages);
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(new[] { "Welcome back" }, _presenter.Messages);
+        Assert.Equal(1, _presenter.BringToFrontCount);
+    }
+
+    [Fact]
+    public void Applying_settings_that_switch_the_unlock_reminder_off_takes_effect_on_the_next_unlock()
+    {
+        using var coordinator = CreateCoordinator(TimeSpan.Zero);
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+        _presenter.SimulateClosed();
+        Assert.Equal(1, _presenter.ShowCount);
+
+        coordinator.ApplySettings(ReminderSettings.Default with { UnlockEnabled = false });
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(1, _presenter.ShowCount);
+    }
+
+    [Fact]
+    public void Applying_new_messages_takes_effect_on_the_next_reminder()
+    {
+        using var coordinator = CreateCoordinator(TimeSpan.Zero);
+        coordinator.Start();
+
+        _monitor.RaiseUnlocked();
+        _presenter.SimulateClosed();
+
+        coordinator.ApplySettings(TwoMessages);
+        _monitor.RaiseUnlocked();
+        _presenter.SimulateClosed();
+        _clock.Advance(TimeSpan.FromMinutes(30));
+        _timer.RaiseTick();
+
+        Assert.Equal(
+            new[] { ReminderSettings.DefaultMessage, "Welcome back", "Look away from the screen" },
+            _presenter.Messages);
     }
 
     // ------------------------------------------------------- pausing for what the user is doing
@@ -826,9 +1003,13 @@ public class ReminderCoordinatorTests
 
         public bool IsShowing { get; private set; }
 
-        public void Show()
+        /// <summary>Every message handed to Show, in order, so a test can say which reminder it was.</summary>
+        public List<string> Messages { get; } = [];
+
+        public void Show(string message)
         {
             ShowCount++;
+            Messages.Add(message);
             IsShowing = true;
         }
 

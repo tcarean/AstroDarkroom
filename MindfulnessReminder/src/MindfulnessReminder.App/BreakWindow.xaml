@@ -78,8 +78,8 @@
         <Grid Margin="36,32,36,28">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <Ellipse Grid.Row="0"
@@ -87,15 +87,32 @@
                      HorizontalAlignment="Center"
                      Fill="#2A7A6E" />
 
-            <TextBlock Grid.Row="1"
-                       Margin="0,22,0,0"
-                       Text="Ground yourself"
-                       HorizontalAlignment="Center"
-                       FontFamily="Segoe UI Light, Segoe UI"
-                       FontSize="30"
-                       Foreground="#1D2B28"
-                       TextWrapping="Wrap"
-                       TextAlignment="Center" />
+            <!--
+                No Text here: the message is a setting, and the code-behind fills it in
+                from whichever of the two reminders this is.
+
+                The window is a fixed size, placed by hand on the primary monitor, and the
+                message can run to three lines at this type size, which is one more than
+                fits above the button. The Viewbox scales the text DOWN when that happens
+                and never up, so the default message is drawn exactly as it always was and
+                a long one shrinks to fit instead of running into the Close button. The
+                explicit Width on the TextBlock is what makes it wrap inside the Viewbox at
+                all; a Viewbox measures its child with unlimited space otherwise.
+            -->
+            <Viewbox Grid.Row="1"
+                     Margin="0,22,0,14"
+                     Stretch="Uniform"
+                     StretchDirection="DownOnly"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center">
+                <TextBlock x:Name="MessageText"
+                           Width="332"
+                           FontFamily="Segoe UI Light, Segoe UI"
+                           FontSize="30"
+                           Foreground="#1D2B28"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center" />
+            </Viewbox>
 
             <!--
                 Deliberately NOT IsDefault. The reminder now appears in the middle of work,
@@ -108,7 +125,6 @@
                     Content="Close"
                     Style="{StaticResource CloseButtonStyle}"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Bottom"
                     IsCancel="True"
                     Click="OnCloseClick" />
         </Grid>

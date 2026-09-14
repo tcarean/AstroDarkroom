@@ -1,8 +1,9 @@
 # Mindfulness Reminder
 
-A tray-resident break reminder for Windows. It shows an always-on-top "Ground yourself"
-window on every workstation unlock, and at a configurable interval while the user works --
-unless the user is on a call or in a full-screen application, in which case it waits.
+A tray-resident break reminder for Windows. It shows an always-on-top reminder window on
+every workstation unlock, and at a configurable interval while the user works -- unless the
+user is on a call or in a full-screen application, in which case it waits. The two reminders
+have a switch and a message each, and both say "Ground yourself" until changed.
 
 .NET 8, **zero external dependencies** — WPF for the windows, Windows Forms purely for
 `NotifyIcon`, both from the WindowsDesktop shared framework. See "Conventions" before adding
@@ -19,11 +20,12 @@ a package.
     the `IntervalSchedule`.
   - `IntervalSchedule.cs` — the deadline arithmetic for the periodic reminder. No timer, no
     events, no UI. Read "The periodic reminder" below before touching it.
-  - `ReminderSettings.cs` — `record(bool PeriodicEnabled, int IntervalMinutes)` plus three
-    init-only properties for the two pauses and their retry gap, the bounds, and
-    `Normalize()`. Everything that builds settings goes through `Normalize`. The pause
-    settings are init-only rather than more positional parameters so that
-    `new ReminderSettings(true, 30)` goes on meaning what it always meant.
+  - `ReminderSettings.cs` — `record(bool PeriodicEnabled, int IntervalMinutes)` plus six
+    init-only properties: the unlock switch, the two messages, the two pauses and their retry
+    gap. Also the bounds, `Normalize()`, and `NormalizeMessage()`. Everything that builds
+    settings goes through `Normalize`. The properties are init-only rather than more
+    positional parameters so that `new ReminderSettings(true, 30)` goes on meaning what it
+    always meant.
   - `ISettingsStore.cs` / `RegistrySettingsStore.cs` — settings persistence over
     `IRegistryStore`, under the key the auto-start marker already uses.
   - `TrayTooltip.cs` — the hover text, as a pure function. It is a separate type because of
@@ -54,7 +56,8 @@ a package.
     the request), and `--preview` / `--detect` — both of which run BEFORE the mutex is
     claimed, so they work alongside the copy already in the tray.
   - `TrayIconHost.cs` — the icon and its four-item menu.
-  - `BreakWindow.xaml(.cs)` — the reminder. `SettingsWindow.xaml(.cs)` — the settings.
+  - `BreakWindow.xaml(.cs)` — the reminder; takes its message in the constructor and has no
+    text of its own. `SettingsWindow.xaml(.cs)` — the settings.
     `AboutWindow.xaml(.cs)` — the licence notice, a window rather than a `MessageBox` since
     the dark theme; it displays `LicenseInfo.AboutText` and composes nothing itself.
   - `SystemEventsSessionMonitor.cs`, `DispatcherPeriodicTimer.cs`,
@@ -185,6 +188,49 @@ Core, and tested, because a report that quietly lost the one moment the reading 
 send someone hunting a bug that is not there. The message box is shown only after the run
 ends, so it cannot disturb what is being measured.
 
+## Two reminders, two switches, two messages
+
+Added in 1.4.0. The unlock reminder got its own switch, and each reminder got its own
+message. `UnlockEnabled`, `UnlockMessage` and `PeriodicMessage` on `ReminderSettings`, all
+init-only, all with the old behaviour as their default.
+
+**The two are independent, and the tests say so from both sides.**
+`Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone` and
+`Switching_the_unlock_reminder_off_shows_nothing_on_unlock`. Nothing about one switch is
+allowed to read the other.
+
+**The unlock gate sits AFTER the schedule restart and BEFORE everything else** in
+`HandleUnlock`. The restart belongs to the periodic reminder -- with the unlock reminder off,
+a lock of three hours is still followed by a whole interval, not by a deadline set before the
+lock. Everything below the gate is the unlock reminder acting: the already-showing raise,
+the debounce, the activity read and the window. With the switch off none of it runs, and in
+particular the registry is not walked to decide whether a reminder that is not going to
+appear would have been held back.
+
+**The coordinator picks the text, the presenter draws it.** `IReminderPresenter.Show` takes
+the message, because the coordinator is the one thing that knows which reminder this is.
+`BringToFront` takes nothing: a window already open -- or already in its 600 ms queue --
+keeps the text it opened with rather than having it swapped under the user's eyes when the
+other reminder falls due over it.
+
+**Messages are normalized like numbers are clamped.** `NormalizeMessage` turns line breaks
+and tabs into spaces, trims, reads nothing at all as `DefaultMessage`, and cuts at
+`MaxMessageLength` (50). The registry goes through it silently; the dialog refuses a blank
+message with `IsMessageAcceptable` instead, but only for a reminder that is switched on --
+the same rule the numbers follow, for the same reason. The `TextBox` `MaxLength` reads the
+constant through `x:Static`, so the box and the clamp cannot drift apart.
+
+**The window stays a fixed size, and the text scales down to fit.** 50 characters can wrap
+to three lines at 30 px, one more than fits above the Close button; a `Viewbox` with
+`StretchDirection="DownOnly"` shrinks such a message and leaves every shorter one, the
+default included, drawn exactly as before. Growing the window instead would have meant
+placing it after layout rather than in `OnSourceInitialized`. The `TextBlock` inside the
+`Viewbox` has an explicit `Width`; without it a `Viewbox` measures its child with unlimited
+space and nothing wraps.
+
+`--preview "some text"` shows a message without saving it, through the same normalization
+the saved one gets. It is the way to see what a candidate message looks like at the cap.
+
 ## The tray tooltip
 
 `NotifyIcon.Text` is capped at 63 characters and **throws** above it. That is the only
@@ -291,7 +337,7 @@ after, so neither is worth a window.
 ## Settings storage
 
 `HKCU\Software\MindfulnessReminder`, the key `StartupRegistrar` already keeps
-`AutoStartInitialized` under. Five values:
+`AutoStartInitialized` under. Eight values:
 
 | value | contents |
 |---|---|
@@ -300,16 +346,20 @@ after, so neither is worth a window.
 | `PauseWhileMicrophoneInUse` | `"1"` / `"0"` |
 | `PauseWhileFullScreen` | `"1"` / `"0"` |
 | `PauseRetrySeconds` | decimal string |
+| `UnlockReminderEnabled` | `"1"` / `"0"` |
+| `UnlockMessage` | the text, as typed after normalization |
+| `PeriodicMessage` | the text, as typed after normalization |
 
 All of them **strings, not DWORDs**, so `IRegistryStore` stays the four methods it had and
 `FakeRegistryStore` needed no change.
 
 Reading is deliberately forgiving. A missing value is a fresh machine, a corrupt one is a
 hand-edited registry, and neither is a reason to fail to start; both land on the defaults
-(**on**, 30 minutes, both pauses **on**, 20 seconds) — and a value missing because it was
-written by an older build is exactly the first of those. Out-of-range values are **clamped
-rather than rejected** — a hand-edited `0` would otherwise mean a reminder on every tick of
-the timer.
+(both reminders **on**, 30 minutes, both pauses **on**, 20 seconds, "Ground yourself" on
+both) — and a value missing because it was written by an older build is exactly the first of
+those. Out-of-range values are **clamped rather than rejected** — a hand-edited `0` would
+otherwise mean a reminder on every tick of the timer. A blank or over-long message is treated
+the same way: the default text, or the text cut at the limit.
 
 The dialog is the exception: it refuses to save an out-of-range number and says so, because
 there is a user standing there to tell. Clamping silently is for the registry, where there
@@ -333,6 +383,13 @@ src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe -
 
 `--preview` shows the window once and exits: no tray icon, no registry access, no session
 hook, no timer.
+
+```bash
+src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe --preview "Take a slow breath"
+```
+
+With a text after it, that text is the message, after the same normalization a saved one gets;
+it is how to see a candidate message at the 50-character cap without saving it.
 
 ```bash
 src\MindfulnessReminder.App\bin\Release\net8.0-windows\MindfulnessReminder.exe --detect

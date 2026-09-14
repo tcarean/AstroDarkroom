@@ -28,9 +28,18 @@ namespace MindfulnessReminder.App;
 
 public partial class BreakWindow : Window
 {
-    public BreakWindow()
+    /// <summary>
+    /// <paramref name="message"/> is what the window says. It comes from the coordinator,
+    /// which is the one thing that knows whether this is the unlock reminder or the
+    /// periodic one; the window itself has no idea, and does not need one.
+    /// </summary>
+    public BreakWindow(string message)
     {
+        ArgumentNullException.ThrowIfNull(message);
+
         InitializeComponent();
+
+        MessageText.Text = message;
     }
 
     protected override void OnSourceInitialized(EventArgs e)
