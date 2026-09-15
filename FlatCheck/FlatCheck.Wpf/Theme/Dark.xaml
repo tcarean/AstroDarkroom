@@ -117,6 +117,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Padding" Value="14" />
   </Style>
 
+  <!-- Log-ul ferestrei de rulare Siril: text mono, doar citire, pe fundalul ferestrei.
+       Singurul TextBox din aplicatie, deci stil cu cheie, nu implicit. -->
+  <Style x:Key="LogBox" TargetType="TextBox">
+    <Setter Property="Background" Value="{StaticResource WindowBg}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderBr}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontFamily" Value="{StaticResource MonoFont}" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Padding" Value="8" />
+    <Setter Property="IsReadOnly" Value="True" />
+    <Setter Property="AcceptsReturn" Value="True" />
+    <Setter Property="TextWrapping" Value="NoWrap" />
+    <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+    <Setter Property="CaretBrush" Value="{StaticResource TextBr}" />
+    <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
+  </Style>
+
   <!-- ============================================================ butoane -->
 
   <Style TargetType="Button">

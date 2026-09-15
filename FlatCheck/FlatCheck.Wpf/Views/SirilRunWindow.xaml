@@ -1,0 +1,142 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- SirilRunWindow - log-ul unei rulari de script Siril, live.
+
+     Modala peste fereastra principala: cat ruleaza Siril in process/ n-are sens sa se
+     poata alege alt folder sau porni o analiza pe acelasi. Se deschide deja pornita -
+     scriptul a fost ales pe cardul de problema - si arata trei lucruri: comanda curenta
+     cu bara ei de progres, liniile de log ca in panoul Siril, si la sfarsit verdictul
+     rularii. Inchiderea in timpul rularii opreste Siril, dupa confirmare. -->
+
+<Window x:Class="FlatCheck.Wpf.SirilRunWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Icon="/FlatCheck.Wpf;component/Icon/flatcheck.ico"
+        Width="900" Height="600" MinWidth="560" MinHeight="360"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBg}"
+        TextOptions.TextFormattingMode="Display">
+
+  <Grid Margin="20,16,20,16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <!-- ============================================================ antet -->
+    <StackPanel Grid.Row="0">
+      <TextBlock Text="{Binding ScriptName}" FontSize="15" FontWeight="SemiBold" />
+      <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding ScriptPath}"
+                 TextTrimming="CharacterEllipsis" />
+      <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0" TextTrimming="CharacterEllipsis">
+        <Run Text="folder de lucru:" /> <Run Text="{Binding Folder, Mode=OneWay}" />
+      </TextBlock>
+    </StackPanel>
+
+    <TextBlock Grid.Row="1" Margin="0,10,0,0" Foreground="#F0C674" TextWrapping="Wrap"
+               Text="{Binding Warning}"
+               Visibility="{Binding HasWarning, Converter={StaticResource BoolToVis}}" />
+
+    <!-- ============================================================ progres -->
+    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="12,10">
+      <StackPanel>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" FontFamily="{StaticResource MonoFont}"
+                     TextTrimming="CharacterEllipsis">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                <Setter Property="Text" Value="{Binding Step}" />
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding Step}" Value="">
+                    <Setter Property="Text" Value="pornesc siril-cli..." />
+                    <Setter Property="Foreground" Value="{StaticResource MutedBr}" />
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+          <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Margin="12,0,0,0"
+                     Text="{Binding ProgressLabel}" />
+        </Grid>
+
+        <!-- nedefinita intre operatiile cu progres; definita cand Siril raporteaza procente -->
+        <ProgressBar Margin="0,8,0,0" IsIndeterminate="True">
+          <ProgressBar.Style>
+            <Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <MultiDataTrigger>
+                  <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsRunning}" Value="True" />
+                    <Condition Binding="{Binding ProgressKnown}" Value="False" />
+                  </MultiDataTrigger.Conditions>
+                  <Setter Property="Visibility" Value="Visible" />
+                </MultiDataTrigger>
+              </Style.Triggers>
+            </Style>
+          </ProgressBar.Style>
+        </ProgressBar>
+        <ProgressBar Margin="0,8,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}"
+                     Visibility="{Binding ProgressKnown, Converter={StaticResource BoolToVis}}" />
+      </StackPanel>
+    </Border>
+
+    <!-- ============================================================ log -->
+    <TextBox x:Name="LogBox" Grid.Row="3" Margin="0,12,0,0" Style="{StaticResource LogBox}"
+             Text="{Binding Log, Mode=OneWay}" TextChanged="ScrollToEnd" />
+
+    <!-- ============================================================ verdictul rularii -->
+    <TextBlock Grid.Row="4" Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Outcome}">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+          <Setter Property="Visibility" Value="Collapsed" />
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+              <Setter Property="Foreground" Value="#8FD18F" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsFailure}" Value="True">
+              <Setter Property="Visibility" Value="Visible" />
+              <Setter Property="Foreground" Value="#F0857E" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
+
+    <!-- ============================================================ butoane -->
+    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+      <Button Content="Opreste" MinWidth="96" Click="CancelRun"
+              Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}" />
+      <Button Content="Inchide" MinWidth="96" Margin="10,0,0,0" IsCancel="True" Click="CloseWindow"
+              IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}" />
+    </StackPanel>
+  </Grid>
+</Window>

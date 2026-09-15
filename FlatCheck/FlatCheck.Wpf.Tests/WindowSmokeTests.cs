@@ -31,6 +31,7 @@
 // Ce se verifica: fereastra se construieste, se aseaza, se deseneaza intr-un bitmap, si
 // nu produce nicio eroare de legare pe drum. Ce nu se verifica: cum arata.
 
+using FlatCheck.Tests;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
@@ -270,6 +271,96 @@ public class WindowSmokeTests
 
         Assert.True(vm.HasProblem);
     }
+
+    /// <summary>
+    /// Ecranul de problema cu blocul de rulare in toate starile lui: se poate apasa (cu
+    /// avertismentul ca Siril e deschis), blocat de un folder lipsa, blocat fara Siril.
+    /// Instalarea e falsa, ca desenul sa nu depinda de masina.
+    /// </summary>
+    [Fact]
+    public async Task TheProblemScreenRendersTheRunBlock()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        string script = Path.Combine(ws.Dir, "OSC_Preprocessing_WithoutDark.ssf");
+        File.WriteAllText(script, SirilInstallTests.WithoutDark);
+        string cli = Path.Combine(ws.Dir, "siril-cli.exe");
+        File.WriteAllText(cli, "x");
+        foreach (string d in new[] { "biases", "flats" })
+        {
+            Directory.CreateDirectory(Path.Combine(f.Root, d));
+            File.WriteAllText(Path.Combine(f.Root, d, "a.NEF"), "x");
+        }
+
+        var install = new SirilInstall(cli, new[] { script }, Path.Combine(ws.Dir, "config.ini"));
+        var vm = new MainViewModel(() => install, () => true);
+
+        await _sta.InvokeAsync(async () =>
+        {
+            await vm.OpenAsync(f.Root);
+
+            using var errors = new BindingErrors();
+            // continutul, nu fereastra: un Window neafisat se randeaza transparent
+            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problema-blocat");
+
+            Directory.CreateDirectory(Path.Combine(f.Root, "lights"));
+            File.WriteAllText(Path.Combine(f.Root, "lights", "a.NEF"), "x");
+            vm.Preprocess.Refresh();
+            Render((FrameworkElement)new MainWindow { DataContext = vm }.Content, 1360, 820, "problema-ruleaza");
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+
+        Assert.True(vm.Preprocess.CanRun);
+        Assert.True(vm.Preprocess.HasWarning);
+    }
+
+    /// <summary>
+    /// Fereastra de rulare: in timpul rularii (bara, comanda curenta, log), apoi reusita,
+    /// apoi esuata. Liniile sunt cele inregistrate de la siril-cli, printr-un runner fals.
+    /// </summary>
+    [Fact]
+    public async Task TheRunWindowRendersRunningAndFinished()
+        => await _sta.InvokeAsync(async () =>
+        {
+            using var errors = new BindingErrors();
+
+            var running = new SirilRunViewModel(@"E:\sesiune", @"C:\scripturi\OSC_Preprocessing_WithoutDark.ssf",
+                                                SirilInstallTests.WithoutDark) { Warning = SessionMessages.SirilGuiRunning() };
+            var gate = new TaskCompletionSource<int>();
+            Task run = running.RunAsync((onLine, ct) =>
+            {
+                onLine("log: Welcome to siril 1.4.4 for windows (x86_64 ucrt64) - CLI");
+                onLine("log: Running command: requires");
+                onLine("log: Running command: cd");
+                onLine("log: Running command: convert");
+                onLine("progress: Converting files, 0.00%");
+                onLine("\x1b[A\x1b[2KTprogress: 33.33%");
+                return gate.Task;
+            });
+            var window = new SirilRunWindow(running, (_, _) => Task.FromResult(0));
+            Render((FrameworkElement)window.Content, 900, 600, "siril-ruleaza");
+            Assert.True(running.IsRunning);
+
+            gate.SetResult(0);
+            await run;
+            Render((FrameworkElement)window.Content, 900, 600, "siril-reusit");
+            Assert.True(running.IsSuccess);
+
+            var failed = new SirilRunViewModel(@"E:\sesiune", @"C:\scripturi\OSC_Preprocessing_WithoutDark.ssf",
+                                               SirilInstallTests.WithoutDark);
+            await failed.RunAsync((onLine, ct) =>
+            {
+                onLine("log: Running command: requires");
+                onLine("log: Running command: cd");
+                return Task.FromResult(1);
+            });
+            var failedWindow = new SirilRunWindow(failed, (_, _) => Task.FromResult(1));
+            Render((FrameworkElement)failedWindow.Content, 900, 600, "siril-esuat");
+            Assert.True(failed.IsFailure);
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
 
     /// <summary>
     /// Refuzul gardei de camp: alt drum prin sabloane - fara harta, fara panoul de cifre,

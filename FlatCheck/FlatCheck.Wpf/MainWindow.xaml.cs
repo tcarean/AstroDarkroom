@@ -60,6 +60,26 @@ namespace FlatCheck.Wpf
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
             => new AboutWindow { Owner = this }.ShowDialog();
 
+        /// <summary>
+        /// Butonul de pe ecranul de problema: porneste scriptul ales in siril-cli, modal,
+        /// cu log-ul live. Cand fereastra se inchide dupa o rulare reusita, folderul se
+        /// redeschide - Check() spune daca a aparut masterul, nu fereastra de rulare.
+        /// Starea se reverifica la apasare: Siril se poate fi deschis intre timp.
+        /// </summary>
+        void RunPreprocessing(object sender, RoutedEventArgs e)
+        {
+            PreprocessViewModel p = _vm.Preprocess;
+            p.Refresh();
+            if (p.CanRun == false) return;
+
+            string folder = _vm.Folder;
+            var run = new SirilRunViewModel(folder, p.SelectedPath) { Warning = p.Warning };
+            var window = new SirilRunWindow(run, SirilScriptRun.For(p.CliPath, folder, p.SelectedPath)) { Owner = this };
+            window.ShowDialog();
+
+            if (run.Succeeded == true) _ = _vm.ReopenAsync();
+        }
+
         void Choose()
         {
             var dlg = new Microsoft.Win32.OpenFolderDialog

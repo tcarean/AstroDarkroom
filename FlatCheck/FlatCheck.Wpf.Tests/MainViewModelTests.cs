@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using FlatCheck.Tests;
+
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
@@ -88,12 +90,48 @@ public class MainViewModelTests
         Assert.Null(vm.HistEq.Selected);
     }
 
+    /// <summary>
+    /// Sesiunea Smida din arhiva: masterul in masters/, cum il lasa OSC_Preprocessing.ssf
+    /// din Siril 1.4, lights calibrate in process/. Se deschide si ruleaza amandoua.
+    /// </summary>
+    [Fact]
+    public async Task AFolderWithTheMasterInMastersOpensAndRuns()
+    {
+        using var f = new SessionFixture().WithFlatMasterInMasters().WithLightSeries(6);
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.False(vm.HasProblem);
+        Assert.True(vm.Structure.HasResult);
+        Assert.True(vm.Light.HasResult);
+        Assert.True(vm.HistEq.Files[0].IsMaster);
+    }
+
+    /// <summary>Fara process/ dar cu masterul in masters/: structura ruleaza, seria lipseste cu explicatie.</summary>
+    [Fact]
+    public async Task WithoutProcessButWithTheMasterInMastersStructureStillRuns()
+    {
+        using var f = new SessionFixture().WithFlatMasterInMasters();
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.False(vm.HasProblem);
+        Assert.True(vm.Structure.HasResult);
+        Assert.False(vm.Light.HasResult);
+        Assert.True(vm.Light.HasError);
+    }
+
     // ------------------------------------------------------------------ folder invalid
 
     /// <summary>
     /// CERINTA 4: fara masterul de flat, aplicatia nu porneste pe folderul asta si spune
-    /// exact ce sa faca - sa ruleze scriptul OSC_Preprocessing.ssf in Siril. Un mesaj care
-    /// ar descrie doar fisierul lipsa l-ar lasa pe om sa caute singur legatura.
+    /// exact ce sa faca - sa ruleze scriptul de preprocesare in Siril. Un mesaj care ar
+    /// descrie doar fisierul lipsa l-ar lasa pe om sa caute singur legatura.
+    ///
+    /// Scriptul numit e WithoutDark, scriptul autorului; cel standard din Siril 1.4 merge
+    /// la fel de bine de cand masterul se cauta si in masters/.
     /// </summary>
     [Fact]
     public async Task WithoutTheFlatMasterItNamesTheSirilScriptToRun()
@@ -104,7 +142,7 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
 
         Assert.True(vm.HasProblem);
-        Assert.Contains("OSC_Preprocessing.ssf", vm.ProblemText);
+        Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", vm.ProblemText);
         Assert.Contains("pp_flat_stacked.fit", vm.ProblemText);
         Assert.Contains("Siril", vm.ProblemText);
     }
@@ -118,8 +156,209 @@ public class MainViewModelTests
         await vm.OpenAsync(f.Root);
 
         Assert.True(vm.HasProblem);
-        Assert.Contains("OSC_Preprocessing.ssf", vm.ProblemText);
+        Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", vm.ProblemText);
         Assert.Contains("process/", vm.ProblemText);
+    }
+
+    // ------------------------------------------------------------------ rularea scriptului
+
+    /// <summary>
+    /// O instalare Siril falsa: "siril-cli" e un fisier oarecare (doar existenta conteaza
+    /// aici), scripturile sunt fisiere .ssf scrise in test. Folderele de intrare cerute de
+    /// WithoutDark se pun optional.
+    /// </summary>
+    static SirilInstall FakeInstall(TempWorkspace ws, bool cli = true, params string[] scripts)
+    {
+        string cliPath = Path.Combine(ws.Dir, "siril-cli.exe");
+        File.WriteAllText(cliPath, "nu conteaza");
+
+        var paths = new List<string>();
+        foreach (string name in scripts)
+        {
+            string p = Path.Combine(ws.Dir, name);
+            File.WriteAllText(p, SirilInstallTests.WithoutDark);
+            paths.Add(p);
+        }
+        return new SirilInstall(cli ? cliPath : null, paths, Path.Combine(ws.Dir, "config.ini"));
+    }
+
+    static void WithInputs(SessionFixture f, params string[] folders)
+    {
+        foreach (string name in folders)
+        {
+            Directory.CreateDirectory(Path.Combine(f.Root, name));
+            File.WriteAllText(Path.Combine(f.Root, name, "DSC_0001.NEF"), "x");
+        }
+    }
+
+    /// <summary>Pe un folder fara master, cu Siril instalat si cu intrarile la loc, se poate apasa.</summary>
+    [Fact]
+    public async Task WithoutTheMasterTheScriptCanBeRunFromHere_WithoutDarkProposed()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        var install = FakeInstall(ws, true, "Z_alt.ssf", "OSC_Preprocessing_WithoutDark.ssf", "A_alt.ssf");
+        var vm = new MainViewModel(() => install, () => false);
+
+        await vm.OpenAsync(f.Root);
+
+        var p = vm.Preprocess;
+        Assert.True(p.IsOffered);
+        Assert.Equal(3, p.Scripts.Count);
+        Assert.Equal("OSC_Preprocessing_WithoutDark.ssf", p.Selected?.Name);
+        Assert.Null(p.Blocker);
+        Assert.Null(p.Warning);
+        Assert.True(p.CanRun);
+        Assert.Equal(install.CliPath, p.CliPath);
+        Assert.EndsWith("OSC_Preprocessing_WithoutDark.ssf", p.SelectedPath);
+    }
+
+    [Fact]
+    public async Task WithoutProcessAtAllTheScriptIsOfferedToo()
+    {
+        using var f = new SessionFixture();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Preprocess.IsOffered);
+        Assert.True(vm.Preprocess.CanRun);
+    }
+
+    /// <summary>
+    /// Un subfolder de intrare lipsa sau gol blocheaza butonul si se numeste - altfel
+    /// Siril s-ar opri la linia trei cu un "cd" esuat, si omul ar citi log-ul ca sa afle.
+    /// </summary>
+    [Fact]
+    public async Task AMissingInputFolderBlocksTheButtonAndIsNamed()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats");
+        Directory.CreateDirectory(Path.Combine(f.Root, "lights"));   // exista, dar gol
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+
+        await vm.OpenAsync(f.Root);
+
+        var p = vm.Preprocess;
+        Assert.True(p.IsOffered);
+        Assert.False(p.CanRun);
+        Assert.Contains("lights/", p.Blocker);
+        Assert.DoesNotContain("goale: biases", p.Blocker);
+        Assert.Contains("OSC_Preprocessing_WithoutDark.ssf", p.Blocker);
+    }
+
+    [Fact]
+    public async Task WithoutSirilCliTheButtonIsBlockedAndSaysSo()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        var vm = new MainViewModel(() => FakeInstall(ws, false, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Preprocess.IsOffered);
+        Assert.False(vm.Preprocess.CanRun);
+        Assert.Equal(SessionMessages.SirilCliNotFound(), vm.Preprocess.Blocker);
+    }
+
+    [Fact]
+    public async Task WithoutAnyScriptTheButtonIsBlockedAndNamesTheConfig()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        var vm = new MainViewModel(() => FakeInstall(ws, true), () => false);
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.False(vm.Preprocess.CanRun);
+        Assert.Contains("config.ini", vm.Preprocess.Blocker);
+        Assert.Null(vm.Preprocess.Selected);
+    }
+
+    /// <summary>Siril deschis e un avertisment, nu un blocaj: nu se stie pe ce folder lucreaza.</summary>
+    [Fact]
+    public async Task SirilRunningIsAWarningNotABlocker()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        bool running = true;
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => running);
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.Preprocess.CanRun);
+        Assert.Equal(SessionMessages.SirilGuiRunning(), vm.Preprocess.Warning);
+
+        // se reverifica la apasare: Siril s-a inchis intre timp
+        running = false;
+        vm.Preprocess.Refresh();
+        Assert.Null(vm.Preprocess.Warning);
+    }
+
+    /// <summary>Alt script, alte cerinte: schimbarea alegerii reface blocajul.</summary>
+    [Fact]
+    public async Task ChangingTheScriptRechecksTheInputs()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "lights");
+        var install = FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf");
+        string onlyLights = Path.Combine(ws.Dir, "Doar_lights.ssf");
+        File.WriteAllText(onlyLights, "requires 1.2.0\ncd lights\nconvert light -out=../process\ncd ..\nclose\n");
+        install = new SirilInstall(install.CliPath, new[] { install.Scripts[0], onlyLights });
+        var vm = new MainViewModel(() => install, () => false);
+
+        await vm.OpenAsync(f.Root);
+        Assert.False(vm.Preprocess.CanRun);
+
+        vm.Preprocess.Selected = vm.Preprocess.Scripts.First(s => s.Name == "Doar_lights.ssf");
+
+        Assert.True(vm.Preprocess.CanRun);
+        Assert.Null(vm.Preprocess.Blocker);
+    }
+
+    /// <summary>Pe un folder bun nu e nimic de rulat; pe unul inexistent, niciun script nu ajuta.</summary>
+    [Fact]
+    public async Task TheScriptIsNotOfferedOnAGoodFolderOrOnAMissingOne()
+    {
+        using var good = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+
+        await vm.OpenAsync(good.Root);
+        Assert.False(vm.Preprocess.IsOffered);
+        Assert.False(vm.Preprocess.CanRun);
+
+        await vm.OpenAsync(Path.Combine(Path.GetTempPath(), "nu-exista-" + Guid.NewGuid()));
+        Assert.False(vm.Preprocess.IsOffered);
+        Assert.Empty(vm.Preprocess.Scripts);
+    }
+
+    /// <summary>Dupa rulare, acelasi folder se redeschide si trece prin Check() din nou.</summary>
+    [Fact]
+    public async Task ReopeningAfterTheScriptPicksUpTheNewMaster()
+    {
+        using var f = new SessionFixture().WithProcess();
+        using var ws = new TempWorkspace();
+        WithInputs(f, "biases", "flats", "lights");
+        var vm = new MainViewModel(() => FakeInstall(ws, true, "OSC_Preprocessing_WithoutDark.ssf"), () => false);
+
+        await vm.OpenAsync(f.Root);
+        Assert.True(vm.HasProblem);
+        Assert.True(vm.Preprocess.IsOffered);
+
+        f.WithFlatMaster();   // ce ar fi produs scriptul
+        await vm.ReopenAsync();
+
+        Assert.False(vm.HasProblem);
+        Assert.False(vm.Preprocess.IsOffered);
+        Assert.True(vm.Structure.HasResult);
     }
 
     [Fact]

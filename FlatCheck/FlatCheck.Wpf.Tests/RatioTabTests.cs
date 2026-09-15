@@ -38,6 +38,22 @@ public class RatioTabTests
     // ------------------------------------------------------------------ pornire
 
     /// <summary>
+    /// Dialogul pentru setul A porneste din folderul masterului sesiunii deschise - acolo
+    /// sunt stivele, oriunde le-ar fi pus scriptul - si din process/ cand nu e master.
+    /// </summary>
+    [Fact]
+    public void TheDialogStartsWhereTheSessionKeepsItsMaster()
+    {
+        using var inMasters = new SessionFixture().WithFlatMasterInMasters().WithProcess();
+        using var inProcess = new SessionFixture().WithFlatMaster();
+        using var none = new SessionFixture().WithProcess();
+
+        Assert.Equal(inMasters.MastersDir, Attached(inMasters).InitialDirectory);
+        Assert.Equal(inProcess.ProcessDir, Attached(inProcess).InitialDirectory);
+        Assert.Equal(none.ProcessDir, Attached(none).InitialDirectory);
+    }
+
+    /// <summary>
     /// Tabul porneste gol: nu propune nimic, fiindca un folder de sesiune nu poate sti
     /// care sunt cele doua orientari. In schimb explica ce ii trebuie, inainte de orice.
     /// </summary>

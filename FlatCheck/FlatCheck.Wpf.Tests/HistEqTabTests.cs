@@ -57,6 +57,18 @@ public class HistEqTabTests
         Assert.False(vm.HasError);
     }
 
+    /// <summary>Coloana "unde" spune folderul REAL al masterului, care poate fi masters/.</summary>
+    [Fact]
+    public void AMasterInMastersIsListedWithItsRealFolder()
+    {
+        using var f = new SessionFixture().WithFlatMasterInMasters();
+
+        var vm = Attached(f);
+
+        Assert.True(vm.Files[0].IsMaster);
+        Assert.Equal("masters/", vm.Files[0].Where);
+    }
+
     /// <summary>Jumatate de raspuns e tot un raspuns: masterul singur se poate vedea.</summary>
     [Fact]
     public void WithTheMasterButNoFlatsFolder_TheListHasOneRowAndNoError()

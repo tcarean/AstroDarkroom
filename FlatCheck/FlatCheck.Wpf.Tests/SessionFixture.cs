@@ -36,6 +36,7 @@ internal sealed class SessionFixture : IDisposable
     internal SirilSession Session => new(_ws.Dir);
 
     internal string ProcessDir => Path.Combine(Root, "process");
+    internal string MastersDir => Path.Combine(Root, "masters");
     internal string FlatsDir => Path.Combine(Root, "flats");
 
     internal SessionFixture WithProcess()
@@ -51,17 +52,25 @@ internal sealed class SessionFixture : IDisposable
     }
 
     /// <summary>
-    /// Masterul de flat, prin conventia scriptului OSC_Preprocessing.ssf. Implicit pe 16
-    /// biti; <paramref name="bitpix"/> -32 da ce scrie Siril de fapt - float, cu valorile
+    /// Masterul de flat, prin conventia scripturilor Siril: in process/ (scripturile din
+    /// depozit, WithoutDark si fratii lui) sau, cu <paramref name="folder"/> = "masters",
+    /// acolo unde il lasa scripturile din instalarea 1.4. Implicit pe 16 biti;
+    /// <paramref name="bitpix"/> -32 da ce scrie Siril de fapt - float, cu valorile
     /// impartite la 65535 - pentru testele care privesc scara fisierului.
     /// </summary>
-    internal SessionFixture WithFlatMaster(Func<int, int, double>? scene = null, int bitpix = 16)
+    internal SessionFixture WithFlatMaster(Func<int, int, double>? scene = null, int bitpix = 16,
+                                           string folder = "process")
     {
-        WithProcess();
-        File.WriteAllBytes(Path.Combine(ProcessDir, SirilSession.FlatMasterName),
+        string dir = Path.Combine(Root, folder);
+        Directory.CreateDirectory(dir);
+        File.WriteAllBytes(Path.Combine(dir, SirilSession.FlatMasterName),
             FitsTestData.BuildFits(Size, Size, scene ?? FitsTestData.Radial(Size, Size), bitpix: bitpix));
         return this;
     }
+
+    /// <summary>Masterul in masters/, cum il lasa OSC_Preprocessing.ssf din Siril 1.4.</summary>
+    internal SessionFixture WithFlatMasterInMasters(Func<int, int, double>? scene = null)
+        => WithFlatMaster(scene, folder: "masters");
 
     internal SessionFixture WithFlatMasters(params string[] names)
     {

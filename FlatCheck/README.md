@@ -33,7 +33,7 @@ Cea mai probabilă cauză de rezultat greșit nu e în cod, e în fișierul ales
 
 | mod | ce vrea |
 |---|---|
-| structură (implicit) | master flat **calibrat** — `process/pp_flat_stacked.fit` |
+| structură (implicit) | master flat **calibrat** — `pp_flat_stacked.fit`, în `process/` sau în `masters/`, după scriptul Siril folosit |
 | `--ratio` | două master flats calibrate, din două orientări la 180° — de regulă `pp_flat_stacked.fit` din două foldere de sesiune |
 | `--light` | light **calibrat cu flat**, **fără background extraction**, **neregistrat** |
 | `--expo` | un **singur cadru brut, necalibrat** — de preferat chiar `.NEF`-ul |
@@ -89,7 +89,7 @@ la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost
 ### 1. Structură (implicit)
 
 ```bash
-flatcheck process/pp_flat_stacked.fit
+flatcheck process/pp_flat_stacked.fit          # sau masters/pp_flat_stacked.fit, după scriptul Siril
 ```
 
 Rulează pe masterul final. Raportează informativ vignetarea și offsetul centrului de
@@ -659,7 +659,7 @@ consolă, comparat caracter cu caracter de un test.
 ### Cum se folosește
 
 Îi dai **un folder**: directorul de lucru al sesiunii din Siril, cel cu subfolderele
-`flats/`, `darks/`, `biases/`, `lights/`, `process/`. Se poate alege din fereastră sau da
+`flats/`, `darks/`, `biases/`, `lights/` și `process/` sau `masters/`. Se poate alege din fereastră sau da
 ca argument:
 
 ```bash
@@ -670,9 +670,47 @@ Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end
 de așteptare. Rulează una după alta, nu în paralel: un cadru de 24 MP ajunge la sute de MB
 în analiză, iar două lanțuri simultane ar putea trece de un gigaoctet.
 
-Dacă nu găsește `process/pp_flat_stacked.fit`, aplicația nu pornește pe folderul acela și
-spune ce e de făcut — să rulezi scriptul **`OSC_Preprocessing.ssf`** din Siril. Fișierul
-acela e intrarea modului de structură, prin convenție.
+Masterul de flat, `pp_flat_stacked.fit`, se caută în **două locuri**, fiindcă scripturile
+Siril îl lasă în două: `process/` (scripturile din depozitul de scripturi, ca
+`OSC_Preprocessing_WithoutDark.ssf`) și `masters/` (scripturile din instalarea Siril 1.4,
+ca `OSC_Preprocessing.ssf`). Ambele merg. Dacă există în amândouă, se ia **cel mai nou** și
+tabul Structura arată un avertisment cu ambele căi — două mastere înseamnă două rulări de
+preprocesare, posibil din două seturi de flat-uri, și trebuie să știi pe care îl vezi.
+`process/` în sine nu e obligatoriu: un folder cu masterul în `masters/` și fără cadre
+rulează structura, iar tabul End-to-end spune singur că n-are serie.
+
+Dacă nu găsește masterul în niciunul din cele două locuri, aplicația nu pornește pe
+folderul acela și spune ce e de făcut — să rulezi scriptul de preprocesare din Siril.
+Fișierul acela e intrarea modului de structură, prin convenție.
+
+#### Rularea scriptului din aplicație
+
+Pe același ecran e un buton **Rulează în Siril**, care rulează scriptul fără să deschizi
+Siril: pornește `siril-cli.exe` din instalarea ta, pe folderul sesiunii, cu scriptul ales
+dintr-o listă. Lista e cea din meniul de scripturi al lui Siril — fișierele `.ssf` bifate în
+*Preferințe › Scripturi* plus cele din folderele de scripturi de acolo, citite din
+`config.1.4.ini` — iar propus e **`OSC_Preprocessing_WithoutDark.ssf`**, din depozitul de
+scripturi pe care Siril îl descarcă — scriptul autorului, pentru un aparat fără darks.
+`OSC_Preprocessing.ssf` din instalare merge la fel de bine: acela lasă masterul în
+`masters/`, unde aplicația îl caută și ea. Aplicația nu aduce niciun script cu ea și nu
+modifică niciunul; ce rulează e exact fișierul pe care l-ar rula Siril.
+
+Se deschide o fereastră cu ieșirea lui Siril în timp real, ca panoul lui de log: comanda
+curentă (*comanda 7 din 20*, cu textul ei întreg, fiindcă Siril tipărește doar verbul), bara
+de progres a operației în curs, și liniile de log. Liniile de progres — trei sferturi din ce
+scrie Siril — devin bara, nu text. La sfârșit fereastra spune dacă scriptul a reușit sau la
+ce comandă s-a oprit, iar când o închizi folderul se redeschide și analiza pornește pe ce a
+produs. **Oprește** omoară procesul; ce a apucat să scrie rămâne în `process/`, iar o rulare
+nouă suprascrie tot — verificat: scriptul rulat a doua oară peste un `process/` complet sau
+parțial reface fiecare fișier și iese cu 0.
+
+Trei lucruri pot ține butonul blocat, și ecranul spune care: `siril-cli.exe` negăsit (se
+caută prin intrarea de instalare din registru, apoi în `Program Files\Siril\bin`), niciun
+script `.ssf` în configurarea Siril, sau un subfolder de intrare lipsă ori gol — scriptul
+ales e citit dinainte și folderele în care intră (`biases/`, `flats/`, `lights/` pentru
+WithoutDark) trebuie să existe și să aibă fișiere, altfel Siril s-ar opri la a treia linie.
+Dacă Siril e deschis apare un avertisment, nu un blocaj: două procese care scriu în același
+`process/` strică fișierele, dar aplicația nu poate ști pe ce folder lucrează celălalt.
 
 Butonul **Despre** din bara de sus (sau **F1**) deschide o fereastră cu versiunea,
 copyright-ul, nota de licență și de garanție — același text pe care consola îl tipărește la
@@ -687,7 +725,7 @@ călătoresc garantat cu programul.
 
 | tab | ce face | când rulează |
 |---|---|---|
-| **Structura** | modul 1 pe `process/pp_flat_stacked.fit` | la deschiderea folderului |
+| **Structura** | modul 1 pe `pp_flat_stacked.fit` din `masters/` sau `process/` | la deschiderea folderului |
 | **Ratio** | modul 2 între două mastere alese explicit, din două sesiuni | după ce alegi ambele fișiere |
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |

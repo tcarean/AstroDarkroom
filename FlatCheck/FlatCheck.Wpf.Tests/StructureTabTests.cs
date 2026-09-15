@@ -33,6 +33,44 @@ public class StructureTabTests
         return vm;
     }
 
+    /// <summary>Masterul din masters/ (Siril 1.4) se analizeaza la fel, si sursa spune de unde a venit.</summary>
+    [Fact]
+    public async Task ItAnalysesAMasterKeptInMasters()
+    {
+        using var f = new SessionFixture().WithFlatMasterInMasters();
+
+        var vm = await Run(f);
+
+        Assert.True(vm.HasResult);
+        Assert.Equal(Path.Combine(f.MastersDir, SirilSession.FlatMasterName), vm.Source);
+        Assert.False(vm.HasSourceWarning);
+    }
+
+    /// <summary>
+    /// Doua mastere in folder: se masoara cel mai nou si se spune, cu ambele cai, fiindca
+    /// pot veni din doua seturi de flat-uri diferite si omul trebuie sa stie pe care il vede.
+    /// </summary>
+    [Fact]
+    public async Task WithTwoMastersTheNewerIsAnalysedAndAWarningNamesBoth()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithFlatMasterInMasters();
+        string inProcess = Path.Combine(f.ProcessDir, SirilSession.FlatMasterName);
+        string inMasters = Path.Combine(f.MastersDir, SirilSession.FlatMasterName);
+        File.SetLastWriteTimeUtc(inMasters, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(inProcess, new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+
+        var vm = await Run(f);
+
+        Assert.Equal(inProcess, vm.Source);
+        Assert.True(vm.HasSourceWarning);
+        Assert.Contains(inProcess, vm.SourceWarning);
+        Assert.Contains(inMasters, vm.SourceWarning);
+        Assert.Contains("DOUA", vm.SourceWarning);
+
+        vm.Reset();
+        Assert.False(vm.HasSourceWarning);
+    }
+
     [Fact]
     public async Task ItAnalysesTheConventionalFlatMaster()
     {

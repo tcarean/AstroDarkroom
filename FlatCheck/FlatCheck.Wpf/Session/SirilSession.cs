@@ -50,13 +50,28 @@ namespace FlatCheck.Wpf
     /// </summary>
     internal readonly record struct HistEqCandidate(string Path, bool IsMaster);
 
+    /// <summary>
+    /// Rezultatul cautarii masterului: calea aleasa (null = nu e nicaieri) si, cand
+    /// exista in ambele locuri, calea celui mai vechi, pe care nu il masoara nimeni.
+    /// </summary>
+    internal readonly record struct FlatMasterLookup(string Path, string Other)
+    {
+        internal bool Ambiguous => Other != null;
+    }
+
     internal sealed class SirilSession
     {
         /// <summary>Numele pe care il da scriptul OSC_Preprocessing.ssf masterului de flat.</summary>
         internal const string FlatMasterName = "pp_flat_stacked.fit";
 
-        /// <summary>Scriptul Siril care produce continutul lui process/.</summary>
-        internal const string PreprocessingScript = "OSC_Preprocessing.ssf";
+        /// <summary>
+        /// Scriptul de preprocesare numit in mesaje si propus implicit de butonul de
+        /// rulare: cel pe care il foloseste autorul (aparat fara darks), din depozitul de
+        /// scripturi Siril, nu din instalare - vezi SirilInstall pentru unde e fisierul.
+        /// Lasa masterul in process/; scriptul standard din instalarea 1.4 il lasa in
+        /// masters/, si ambele locuri se accepta - vezi <see cref="FlatMasterCandidates"/>.
+        /// </summary>
+        internal const string PreprocessingScript = "OSC_Preprocessing_WithoutDark.ssf";
 
         /// <summary>
         /// Tiparul fisierelor acceptate de testul de rotatie 180: MASTERE de flat, adica
@@ -86,10 +101,41 @@ namespace FlatCheck.Wpf
         }
 
         internal string ProcessDir => Path.Combine(Root, "process");
+        internal string MastersDir => Path.Combine(Root, "masters");
         internal string FlatsDir => Path.Combine(Root, "flats");
 
-        /// <summary>Intrarea modului 1, prin conventie. Vezi cerinta 4.</summary>
-        internal string FlatMasterPath => Path.Combine(ProcessDir, FlatMasterName);
+        /// <summary>
+        /// Unde poate sta masterul de flat, in ordinea in care se cauta. Doua conventii
+        /// Siril coexista: scripturile din depozit (WithoutDark si fratii lui) il lasa in
+        /// process/, langa cadrele calibrate; scripturile din instalarea 1.4
+        /// (OSC_Preprocessing.ssf) il scriu in masters/. Ambele exista in arhiva reala,
+        /// deci se accepta amandoua.
+        /// </summary>
+        internal IReadOnlyList<string> FlatMasterCandidates => new[]
+        {
+            Path.Combine(MastersDir, FlatMasterName),
+            Path.Combine(ProcessDir, FlatMasterName),
+        };
+
+        /// <summary>
+        /// Intrarea modului 1: masterul gasit in unul din cele doua locuri, sau null.
+        /// Cand exista in amandoua se ia CEL MAI NOU - e ce a produs ultima preprocesare -
+        /// si <see cref="FlatMasterLookup.Other"/> il numeste pe celalalt, ca tabul sa
+        /// poata avertiza: doua mastere in acelasi folder inseamna doua rulari, si omul
+        /// trebuie sa stie pe care il masoara.
+        /// </summary>
+        internal FlatMasterLookup FindFlatMaster()
+        {
+            var existing = FlatMasterCandidates.Where(File.Exists).ToList();
+            if (existing.Count == 0) return new FlatMasterLookup(null, null);
+            if (existing.Count == 1) return new FlatMasterLookup(existing[0], null);
+
+            var byAge = existing.OrderByDescending(File.GetLastWriteTimeUtc).ToList();
+            return new FlatMasterLookup(byAge[0], byAge[1]);
+        }
+
+        /// <summary>Calea masterului gasit, sau null. Vezi <see cref="FindFlatMaster"/>.</summary>
+        internal string FlatMasterPath => FindFlatMaster().Path;
 
         /// <summary>Unde se scrie raportul de structura: in folderul dat, nu in process/.</summary>
         internal string ResultTextPath => Path.Combine(Root, ResultFileName);
@@ -99,15 +145,37 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// Prima verificare, inainte de orice calcul. Ordinea conteaza: un folder gresit
-        /// ales si un folder corect pe care nu s-a rulat inca scriptul sunt doua greseli
-        /// diferite, si merita doua mesaje diferite.
+        /// ales, unul pe care nu s-a rulat inca niciun script si unul pe care scriptul a
+        /// rulat dar n-a lasat masterul sunt trei greseli diferite, si merita trei mesaje.
+        ///
+        /// Singurul lucru cerut e MASTERUL, oriunde ar fi din cele doua locuri. process/
+        /// nu e o conditie: un folder cu masters/ si fara process/ - cadrele sterse ca sa
+        /// faca loc, masterul pastrat - ruleaza structura, iar tabul end-to-end spune
+        /// singur ca n-are serie.
         /// </summary>
         internal SessionProblem Check()
         {
             if (!Directory.Exists(Root)) return SessionProblem.NoFolder;
-            if (!Directory.Exists(ProcessDir)) return SessionProblem.NoProcessDir;
-            if (!File.Exists(FlatMasterPath)) return SessionProblem.NoFlatMaster;
+            if (!Directory.Exists(ProcessDir) && !Directory.Exists(MastersDir)) return SessionProblem.NoProcessDir;
+            if (FlatMasterPath == null) return SessionProblem.NoFlatMaster;
             return SessionProblem.None;
+        }
+
+        /// <summary>
+        /// Dintre subfolderele in care intra un script (SirilScript.RequiredFolders), cele
+        /// care lipsesc sau sunt goale - adica exact cele la care Siril s-ar opri cu
+        /// "cd" esuat sau cu o conversie fara fisiere. Gol inseamna ca se poate porni.
+        /// </summary>
+        internal IReadOnlyList<string> MissingInputFolders(IEnumerable<string> required)
+        {
+            var missing = new List<string>();
+            foreach (string name in required)
+            {
+                string dir = Path.Combine(Root, name);
+                bool present = Directory.Exists(dir) && Directory.EnumerateFiles(dir).Any();
+                if (!present) missing.Add(name);
+            }
+            return missing;
         }
 
         /// <summary>
@@ -174,18 +242,20 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca fisierul exista, apoi
+        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca exista, apoi
         /// cadrele din flats/. In fereastra masterul exista mereu - Check() refuza folderul
         /// fara el - dar clasa asta se testeaza singura si nu arunca niciodata.
         ///
-        /// Numai masterul prin conventie, nu orice stiva din process/: doua stive intr-un
-        /// folder sunt treaba tabului Ratio. Si nimic nu se dedubleaza dupa continut - un
-        /// master copiat in flats/ apare de doua ori, sub doua cai, ceea ce e adevarul.
+        /// Numai masterul prin conventie - cel pe care il masoara si Structura, deci acelasi
+        /// cand sunt doua - nu orice stiva din process/: doua stive intr-un folder sunt
+        /// treaba tabului Ratio. Si nimic nu se dedubleaza dupa continut - un master copiat
+        /// in flats/ apare de doua ori, sub doua cai, ceea ce e adevarul.
         /// </summary>
         internal IReadOnlyList<HistEqCandidate> HistEqCandidates()
         {
             var list = new List<HistEqCandidate>();
-            if (File.Exists(FlatMasterPath)) list.Add(new HistEqCandidate(FlatMasterPath, true));
+            string master = FlatMasterPath;
+            if (master != null) list.Add(new HistEqCandidate(master, true));
             list.AddRange(FlatFrames().Select(p => new HistEqCandidate(p, false)));
             return list;
         }

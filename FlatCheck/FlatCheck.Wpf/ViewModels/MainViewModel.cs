@@ -45,13 +45,27 @@ namespace FlatCheck.Wpf
         string _problemText;
         bool _running;
 
-        public MainViewModel()
+        readonly Func<SirilInstall> _locate;
+        readonly Func<bool> _sirilGuiRunning;
+
+        public MainViewModel() : this(null, null) { }
+
+        /// <summary>
+        /// Cele doua intrebari despre masina - unde e Siril, si daca ruleaza - se dau din
+        /// afara ca testele sa nu depinda de ce e instalat pe calculatorul care le ruleaza.
+        /// Null inseamna raspunsul adevarat.
+        /// </summary>
+        internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning)
         {
+            _locate = locate ?? SirilInstall.Locate;
+            _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
+
             Structure = new StructureTabViewModel();
             Ratio = new RatioTabViewModel();
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
+            Preprocess = new PreprocessViewModel();
         }
 
         public StructureTabViewModel Structure { get; }
@@ -59,6 +73,13 @@ namespace FlatCheck.Wpf
         public LightTabViewModel Light { get; }
         public ExposureTabViewModel Exposure { get; }
         public HistEqTabViewModel HistEq { get; }
+
+        /// <summary>
+        /// Blocul "ruleaza scriptul de aici" de pe ecranul de problema. Exista mereu, ca
+        /// legarile din XAML sa aiba pe ce sta; e oferit doar cand problema e una pe care
+        /// un script o rezolva.
+        /// </summary>
+        public PreprocessViewModel Preprocess { get; }
 
         /// <summary>Folderul sesiunii, sau gol daca nu s-a ales inca niciunul.</summary>
         public string Folder
@@ -111,6 +132,11 @@ namespace FlatCheck.Wpf
                 _session = null;
                 ProblemTitle = SessionMessages.Title(problem);
                 ProblemText = SessionMessages.Explain(session, problem);
+
+                // Un script Siril produce process/ si masterul din el; un folder care nu
+                // exista nu-l ajuta niciun script.
+                if (problem == SessionProblem.NoProcessDir || problem == SessionProblem.NoFlatMaster)
+                    Preprocess.Attach(session, _locate(), _sirilGuiRunning);
                 return;
             }
 
@@ -157,8 +183,12 @@ namespace FlatCheck.Wpf
             cts.Dispose();
         }
 
+        /// <summary>Dupa o rulare de script reusita: acelasi folder, de la capat, prin Check().</summary>
+        internal Task ReopenAsync() => OpenAsync(Folder);
+
         void ResetTabs()
         {
+            Preprocess.Detach();
             Structure.Reset();
             Ratio.Reset();
             Light.Reset();

@@ -25,16 +25,26 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class SirilSessionTests
 {
-    /// <summary>Un folder de sesiune ca cel produs de scripturile Siril.</summary>
+    /// <summary>
+    /// Un folder de sesiune ca cel produs de scripturile Siril. Masterul se scrie in
+    /// <paramref name="masterIn"/>: "process" (scripturile din depozit) sau "masters"
+    /// (scripturile din instalarea 1.4).
+    /// </summary>
     static SirilSession Session(TempWorkspace ws, bool process = true, bool master = true,
-                                bool flats = true)
+                                bool flats = true, string masterIn = "process")
     {
         if (process) Directory.CreateDirectory(Path.Combine(ws.Dir, "process"));
         if (flats) Directory.CreateDirectory(Path.Combine(ws.Dir, "flats"));
-        if (master)
-            File.WriteAllBytes(Path.Combine(ws.Dir, "process", SirilSession.FlatMasterName),
-                               FitsTestData.BuildFits(32, 32, FitsTestData.Radial(32, 32)));
+        if (master) WriteMaster(ws, masterIn);
         return new SirilSession(ws.Dir);
+    }
+
+    static string WriteMaster(TempWorkspace ws, string folder, double k = 0.45)
+    {
+        Directory.CreateDirectory(Path.Combine(ws.Dir, folder));
+        string path = Path.Combine(ws.Dir, folder, SirilSession.FlatMasterName);
+        File.WriteAllBytes(path, FitsTestData.BuildFits(32, 32, FitsTestData.Radial(32, 32, k: k)));
+        return path;
     }
 
     // ------------------------------------------------------------------ validare
@@ -67,7 +77,7 @@ public class SirilSessionTests
         Assert.Equal(SessionProblem.NoFlatMaster, Session(b, master: false).Check());
     }
 
-    /// <summary>Cerinta 4: intrarea modului 1 se ia prin conventie, nu se cauta.</summary>
+    /// <summary>Cerinta 4: intrarea modului 1 se ia prin conventie, nu se cauta dupa continut.</summary>
     [Fact]
     public void TheFlatMasterIsTakenByConventionFromProcess()
     {
@@ -75,6 +85,93 @@ public class SirilSessionTests
         var s = Session(ws);
 
         Assert.Equal(Path.Combine(ws.Dir, "process", "pp_flat_stacked.fit"), s.FlatMasterPath);
+        Assert.False(s.FindFlatMaster().Ambiguous);
+    }
+
+    // ------------------------------------------------------------- masters/ sau process/
+
+    /// <summary>
+    /// A doua conventie: OSC_Preprocessing.ssf din Siril 1.4 scrie masterul in masters/,
+    /// nu in process/. Sesiunea Smida din arhiva e asa, si aplicatia o refuza inainte.
+    /// </summary>
+    [Fact]
+    public void AMasterInMastersIsFoundAndPassesTheCheck()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, masterIn: "masters");
+
+        Assert.Equal(SessionProblem.None, s.Check());
+        Assert.Equal(Path.Combine(ws.Dir, "masters", "pp_flat_stacked.fit"), s.FlatMasterPath);
+        Assert.False(s.FindFlatMaster().Ambiguous);
+    }
+
+    /// <summary>
+    /// Singurul lucru cerut e masterul. Un folder cu masters/ si fara process/ - cadrele
+    /// sterse ca sa faca loc - ruleaza structura; seria de lights e pur si simplu goala.
+    /// </summary>
+    [Fact]
+    public void ProcessIsNotRequiredWhenTheMasterIsInMasters()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, process: false, masterIn: "masters");
+
+        Assert.Equal(SessionProblem.None, s.Check());
+        Assert.Empty(s.LightSeries());
+    }
+
+    /// <summary>
+    /// In ambele locuri inseamna doua rulari de preprocesare. Se ia cel mai NOU - ce a
+    /// produs ultima - si celalalt se numeste, ca tabul sa poata avertiza.
+    /// </summary>
+    [Fact]
+    public void WithAMasterInBothPlacesTheNewerWinsAndTheOtherIsNamed()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, masterIn: "process");
+        string inProcess = s.FlatMasterPath;
+        string inMasters = WriteMaster(ws, "masters", k: 0.5);
+
+        File.SetLastWriteTimeUtc(inProcess, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(inMasters, new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+        var newerInMasters = s.FindFlatMaster();
+        Assert.Equal(inMasters, newerInMasters.Path);
+        Assert.Equal(inProcess, newerInMasters.Other);
+        Assert.True(newerInMasters.Ambiguous);
+
+        File.SetLastWriteTimeUtc(inProcess, new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc));
+        var newerInProcess = s.FindFlatMaster();
+        Assert.Equal(inProcess, newerInProcess.Path);
+        Assert.Equal(inMasters, newerInProcess.Other);
+
+        // si tabul de histograma pune in fata acelasi master pe care il masoara Structura
+        Assert.Equal(inProcess, s.HistEqCandidates()[0].Path);
+    }
+
+    [Fact]
+    public void WithNoMasterAnywhereThePathIsNullAndBothPlacesAreNamed()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, master: false);
+
+        Assert.Null(s.FlatMasterPath);
+        Assert.Equal(SessionProblem.NoFlatMaster, s.Check());
+        Assert.Equal(new[] { Path.Combine(ws.Dir, "masters", "pp_flat_stacked.fit"),
+                             Path.Combine(ws.Dir, "process", "pp_flat_stacked.fit") },
+                     s.FlatMasterCandidates);
+        Assert.Contains("masters", SessionMessages.Explain(s, SessionProblem.NoFlatMaster));
+        Assert.Contains("process", SessionMessages.Explain(s, SessionProblem.NoFlatMaster));
+    }
+
+    /// <summary>"Nu s-a rulat nimic" inseamna ca lipsesc amandoua folderele, nu doar process/.</summary>
+    [Fact]
+    public void NoProcessDirMeansNeitherFolderExists()
+    {
+        using var a = new TempWorkspace();
+        using var b = new TempWorkspace();
+
+        Assert.Equal(SessionProblem.NoProcessDir, Session(a, process: false, master: false).Check());
+        Directory.CreateDirectory(Path.Combine(b.Dir, "masters"));
+        Assert.Equal(SessionProblem.NoFlatMaster, Session(b, process: false, master: false).Check());
     }
 
     /// <summary>Cerinta 5: raportul se salveaza in folderul dat, nu in process/.</summary>

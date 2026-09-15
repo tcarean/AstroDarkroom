@@ -194,10 +194,20 @@ namespace FlatCheck.Wpf
             ClearError();
         }
 
-        /// <summary>Folderul de la care porneste dialogul pentru setul A.</summary>
-        internal string InitialDirectory => _session != null && Directory.Exists(_session.ProcessDir)
-            ? _session.ProcessDir
-            : null;
+        /// <summary>
+        /// Folderul de la care porneste dialogul pentru setul A: cel in care sta masterul
+        /// sesiunii deschise, fiindca acolo sunt stivele; altfel process/, daca exista.
+        /// </summary>
+        internal string InitialDirectory
+        {
+            get
+            {
+                if (_session == null) return null;
+                string master = _session.FlatMasterPath;
+                if (master != null) return Path.GetDirectoryName(master);
+                return Directory.Exists(_session.ProcessDir) ? _session.ProcessDir : null;
+            }
+        }
 
         /// <summary>
         /// Un fisier ales de om. Se valideaza dupa nume, iar daca nu e un master de flat

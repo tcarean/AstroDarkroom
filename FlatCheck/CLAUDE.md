@@ -190,15 +190,27 @@ not a copy.
   - `Options.cs` - CLI parsing.
 - `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See "The two applications".
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
-    master, which are raw flats, what counts as a flat master by name) and
+    master, which are raw flats, what counts as a flat master by name - and **where the
+    master may be**: `masters/` or `process/`, see "Two places for the master" under "What
+    the window adds") and
     `SessionMessages` (the explanations shown when the input is not usable, the
-    Ratio tab's in-UI documentation, and the residual map's shape guide). `FlatFrames()`
+    Ratio tab's in-UI documentation, and the residual map's shape guide), plus the four
+    files behind the "run the script from here" button - see "Running the Siril script"
+    under "What the window adds": `SirilInstall` (where `siril-cli.exe` and the `.ssf`
+    scripts are; the config parsing is pure, `Locate()` is the only thing that touches the
+    machine), `SirilScript` (commands and input folders read out of a `.ssf`),
+    `SirilLogLine` (one stdout line, sorted into log / progress / other) and
+    `SirilScriptRun` (the `Process` wrapper, plus the `SirilRunner` delegate the tests
+    replace). `FlatFrames()`
     lists raws *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and
     `HistEqCandidates()` puts the flat master in front of them for the Histogram tab. The only part
     of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
+    `PreprocessViewModel` (the script block on the problem card: list, default, blocker,
+    warning - decides nothing about flats) and `SirilRunViewModel` (one script run as the
+    run window sees it: log text, progress, current command, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
     properties only - `VersionInfo`, `RunReport.WarrantyLines`, `ThirdParty.Components`
     copied into public `ComponentRow`s, headings from `SessionMessages`; it formulates
@@ -245,6 +257,9 @@ not a copy.
     The one line deliberately left out is `median / max ADU`: it belongs to the structure
     mode's header, not to `WriteBody`, because on Ratio's combined master - normalised to a
     median of 1 - it would mean nothing, and the console does not print it there either.
+  - `Views/SirilRunWindow.xaml` - the live log of a script run, modal over the main
+    window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
+    Siril), scrolls the log to the end. Rendered by `WindowSmokeTests` in three states.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
     inherited `TabViewModel`, so the same three controls serve all four tabs;
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
@@ -488,7 +503,7 @@ map. What differs is only what each does with the three outputs.
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/` |
+| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/`. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
 | map | written to `-o <path>` (`--ratio` writes a second, `-lume`), always on the automatic scale | shown from memory (`--ratio` offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | result | exit code | coloured verdict |
@@ -500,7 +515,7 @@ window would be four more controls in service of the rarer case.
 
 ### What the window adds, and what it does not
 
-It adds a workflow: one folder instead of four invocations, `process/pp_flat_stacked.fit`
+It adds a workflow: one folder instead of four invocations, `pp_flat_stacked.fit` found
 by convention instead of by typing, structure and end-to-end started on open. It does not
 add an analysis, a threshold or a wording. If a change here needs a new number, that number
 belongs in `Analysis/`, and the console gets it too.
@@ -557,6 +572,98 @@ two columns look like two views of one thing - so it is said in words. Same coll
 pattern and the same `GuideRow` template as the map guide, text in `SessionMessages`
 beside it, state in `HowToReadViewModel`. The disclosure toggle those three share lives in
 `Dark.xaml` as `Style x:Key="Disclosure"`; it had been hand-written twice before that.
+
+#### Two places for the master
+
+Siril has two conventions for where `pp_flat_stacked.fit` lands, and both exist in the
+author's archive: the scripts repo (`OSC_Preprocessing_WithoutDark.ssf` and its siblings)
+stacks with no `-out=`, so the master stays in `process/` beside the calibrated frames;
+the scripts shipped with the 1.4 install (`OSC_Preprocessing.ssf`, `Mono_Preprocessing.ssf`,
+the `Extract_*` ones) use `-out=../masters/pp_flat_stacked`. `2026-06-18-doar-cer-acasa` is
+the first kind, `2026-08-12-Smida` the second, and the window refused the second for a
+whole version because `FlatMasterPath` was a fixed path into `process/`.
+
+`SirilSession.FlatMasterCandidates` lists both paths, `FindFlatMaster()` picks the one
+that exists, and `FlatMasterPath` is that or null. Three decisions, all the user's:
+
+- **When both exist, the newest wins** (by last-write time) - that is what the last
+  preprocessing produced - and `FlatMasterLookup.Other` names the older one so the
+  Structure tab can show `SessionMessages.TwoFlatMasters` under the source line. Two
+  masters in one folder are two runs, possibly from two sets of flats, and the user has
+  to know which one the numbers are about. The Histogram tab's master entry is the same
+  file, through the same lookup.
+- **Only the master is required.** `Check()` no longer demands `process/`: a folder with
+  `masters/` and no `process/` (frames deleted to save space, master kept) runs
+  Structure, and the End-to-end tab explains by itself that it has no series.
+  `NoProcessDir` now means "neither folder exists", i.e. nothing was ever run.
+- **Nothing else moved.** The light series stays in `process/` under both conventions;
+  the console takes explicit paths; the core knows no folders. The Ratio dialog starts
+  in the folder the open session's master is in, since that is where the stacks are.
+
+The problem message for a missing master prints both paths it looked at.
+
+#### Running the Siril script from the window
+
+The problem card (no preprocessing run at all, or no flat master in either `masters/` or
+`process/`) carries a **Ruleaza in Siril**
+button. It runs `siril-cli.exe -d <session> -s <script>` from the user's own install and
+shows the output live in `SirilRunWindow`; when that window closes after an exit code of 0,
+`MainViewModel.ReopenAsync` runs `Check()` again, so whether the master appeared is decided
+by the same code as always, never by the run window. Nothing here is a number, so nothing
+is in the core.
+
+What was measured before it was built, on Siril 1.4.4, and what follows from it:
+
+- **stdout is live through a pipe.** Timed with a Python reader: the gaps between lines
+  match the work, not a flush at exit. So a plain `Process` with redirected stdout is
+  enough; the named-pipe mode (`-p`) was not needed. Exit code 0 on success, 1 when the
+  script stops at a command; stderr stays empty but is read anyway.
+- **Three quarters of the output is progress.** 1735 lines for a 3+3+3-frame session, 1324
+  of them `progress: <label>, x%` or the ANSI-prefixed update form
+  (`ESC[A ESC[2K Tprogress: 66.67%`). `SirilLogLine` turns those into a bar and shows only
+  the `log:` lines as text, which is what Siril's own log pane shows. The debug prints
+  ("Block 0: ...", "seqfile ... already exists") are dropped. The parser is pinned on
+  recorded lines, not on what Siril ought to print.
+- **Re-running overwrites cleanly.** The script run a second time over a complete
+  `process/`, and a third time over one with the master and the `pp_light*` files deleted,
+  rebuilt every file and exited 0; the only complaints were `seqfile ... already exists,
+  not overwriting`, about the `.seq` index files, which is harmless. So "Opreste" mid-run
+  leaves a folder the next run fixes, and the cancel message says so.
+- **Siril prints only the verb** (`Running command: cd`). `SirilRunViewModel` counts those
+  lines and reads the full command out of the script (`SirilScript.Commands`), so the
+  window and the failure verdict can say `comanda 2 din 20:  cd biases`.
+
+Four decisions:
+
+- **The script is chosen on the card, not in the run window.** The window is the log of a
+  run already started; a window that first asks and then runs would be two screens in
+  one. The list is what Siril's script menu shows - the `.ssf` entries of `selected_scripts`
+  plus the `.ssf` files under `script_path`, from `%LOCALAPPDATA%\siril\config.<ver>.ini` -
+  and `OSC_Preprocessing_WithoutDark.ssf` is preselected when present. **Nothing is
+  bundled**: the tool runs exactly the file Siril would, from wherever Siril keeps it (on
+  this machine the scripts repo Siril clones into `%LOCALAPPDATA%\siril-scripts`, not the
+  install's `scripts/` folder, which holds only the six stock ones).
+- **WithoutDark is the default because it is the user's script** (a camera without
+  darks), not because of where it writes: since "Two places for the master" above, the
+  stock `OSC_Preprocessing.ssf` works just as well. `SirilSession.PreprocessingScript` is
+  the name the messages quote.
+- **Inputs are checked before launching.** `SirilScript.RequiredFolders` reads the `cd
+  <name>` commands with a plain name out of the chosen script (`cd ../process` and `cd ..`
+  are not inputs), and `SirilSession.MissingInputFolders` refuses a folder that lacks any
+  of them or has one empty - Siril would otherwise die at line three with a failed `cd`
+  and the user would read the log to learn why. It is a rule of form, not an understanding
+  of the script; a script that enters folders differently is simply not pre-checked.
+- **Siril open is a warning, not a refusal.** `SirilInstall.IsGuiRunning` looks for a
+  `siril` process (`siril-cli`, ours, has a different name). Two processes writing the same
+  `process/` corrupt it, but the tool cannot know which folder the GUI has open. Checked when
+  the card is built and again on the click.
+
+`MainViewModel` takes the two machine questions - `Func<SirilInstall>` and `Func<bool>` -
+as optional constructor arguments so the tests do not depend on what the running machine
+has installed; the parameterless constructor uses `SirilInstall.Locate` and
+`IsGuiRunning`. `SirilCliIntegrationTests` do use the real `siril-cli` when it is there
+(a probe script that loads the fixture master, and one that fails on `cd nu-exista`) and
+pass without checking anything when it is not - xunit 2 has no dynamic skip.
 
 The scale switch is why `StructureTabViewModel` and `RatioTabViewModel` keep the residual
 **raster** rather than only the PNG bytes: the raster is already in the result, whereas
@@ -658,7 +765,7 @@ informative (see "The residual scale").
 ## Input contract
 
 Modes 1-3 want a **calibrated** FITS - flat-dark/offset already subtracted. In the
-Siril workflow that is `process/pp_flat_stacked.fit` (the `pp_` prefix means
+Siril workflow that is `pp_flat_stacked.fit` in `process/` or `masters/` (the `pp_` prefix means
 calibrated). An uncalibrated stack still has a ~150-600 ADU pedestal which
 flattens the profile and under-reports vignetting by ~1%, and **all tests will
 report OK anyway**, because the profile stays radially symmetric - only the
@@ -1180,7 +1287,7 @@ min..max stretch: on a field whose distribution is nearly uniform across its ran
 equalisation *is* that stretch; what the mode adds over it is adaptivity, and that is a
 property of real, noisy flats rather than of the synthetic.
 
-**The master beside a frame.** The window's list puts `process/pp_flat_stacked.fit` first.
+**The master beside a frame.** The window's list puts the session's `pp_flat_stacked.fit` first.
 A shape on a frame and not on the master was transient and averaged out; a shape on both
 is fixed to the setup and is what the Structure numbers measure. Because the transform is
 rank-based, the master's lower noise makes a shared pattern look *sharper* there, not
@@ -1848,7 +1955,7 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"   # optional: the session folder
 ```
 
 ```bash
-flatcheck process/pp_flat_stacked.fit                  # 1. structure
+flatcheck process/pp_flat_stacked.fit                  # 1. structure (or masters/pp_flat_stacked.fit, Siril 1.4 stock scripts)
 flatcheck s_0deg/process/pp_flat_stacked.fit --ratio s_180deg/process/pp_flat_stacked.fit   # 2. attribution
 flatcheck process/pp_light_00001.fit --light           # 3. end-to-end
 flatcheck flat_brut.fit --expo                         # 4. exposure

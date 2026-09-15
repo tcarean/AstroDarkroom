@@ -44,6 +44,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
           <TextBlock Style="{StaticResource Faint}" Text="{Binding Source}"
                      TextTrimming="CharacterEllipsis" />
+          <!-- doua mastere in folder (masters/ si process/): se spune care s-a luat -->
+          <TextBlock Margin="0,6,0,0" Foreground="#F0C674" TextWrapping="Wrap" FontSize="12"
+                     Text="{Binding SourceWarning}"
+                     Visibility="{Binding HasSourceWarning, Converter={StaticResource BoolToVis}}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" Text="{Binding Size}" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,1,0,0" Text="{Binding Levels}" />
 

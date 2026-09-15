@@ -51,6 +51,7 @@ namespace FlatCheck.Wpf
     public sealed class StructureTabViewModel : TabViewModel
     {
         string _source = "";
+        string _sourceWarning = "";
         string _size = "";
         string _levels = "";
         string _verdict = "";
@@ -75,6 +76,18 @@ namespace FlatCheck.Wpf
 
         /// <summary>Fisierul analizat, ca sa se vada pe ce s-a lucrat.</summary>
         public string Source { get => _source; private set => Set(ref _source, value); }
+
+        /// <summary>
+        /// Avertismentul ca folderul are DOUA mastere (masters/ si process/) si s-a luat
+        /// cel mai nou. Gol in cazul obisnuit. Vezi SirilSession.FindFlatMaster.
+        /// </summary>
+        public string SourceWarning
+        {
+            get => _sourceWarning;
+            private set { if (Set(ref _sourceWarning, value)) Raise(nameof(HasSourceWarning)); }
+        }
+
+        public bool HasSourceWarning => !string.IsNullOrEmpty(_sourceWarning);
 
         public string Size { get => _size; private set => Set(ref _size, value); }
         public string Levels { get => _levels; private set => Set(ref _levels, value); }
@@ -129,7 +142,9 @@ namespace FlatCheck.Wpf
         internal Task RunAsync(SirilSession session, CancellationToken ct)
             => RunGuardedAsync("Analizez structura masterului de flat...", async () =>
             {
-                string path = session.FlatMasterPath;
+                FlatMasterLookup master = session.FindFlatMaster();
+                string path = master.Path;
+                SourceWarning = master.Ambiguous ? SessionMessages.TwoFlatMasters(master) : "";
                 var text = new StringWriter();
 
                 var outcome = await Task.Run(() =>
@@ -244,6 +259,7 @@ namespace FlatCheck.Wpf
         {
             base.Reset();
             Source = "";
+            SourceWarning = "";
             Size = "";
             Levels = "";
             Verdict = "";

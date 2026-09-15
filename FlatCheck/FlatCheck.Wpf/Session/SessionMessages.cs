@@ -27,6 +27,7 @@
 // e acelasi fel de text: documentatie aratata in fereastra, scrisa o data si bine.
 
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FlatCheck.Wpf
 {
@@ -35,7 +36,7 @@ namespace FlatCheck.Wpf
         internal static string Title(SessionProblem p) => p switch
         {
             SessionProblem.NoFolder => "Folderul nu exista",
-            SessionProblem.NoProcessDir => "Lipseste subfolderul process/",
+            SessionProblem.NoProcessDir => "Nu s-a rulat niciun script de preprocesare",
             SessionProblem.NoFlatMaster => "Lipseste masterul de flat",
             _ => "",
         };
@@ -52,23 +53,24 @@ namespace FlatCheck.Wpf
             SessionProblem.NoFolder =>
                 $"Nu gasesc folderul:\n{s.Root}\n\n"
                 + "Alege folderul de lucru al sesiunii - cel care contine subfolderele "
-                + "flats/, darks/, biases/, lights/ si process/.",
+                + "flats/, darks/, biases/, lights/ si process/ sau masters/.",
 
             SessionProblem.NoProcessDir =>
-                $"Folderul ales nu are subfolderul process/:\n{s.Root}\n\n"
-                + "Acolo isi pune Siril rezultatele calibrarii, deci lipsa lui inseamna ca "
+                $"Folderul ales nu are nici subfolderul process/, nici masters/:\n{s.Root}\n\n"
+                + "Acolo isi pune Siril rezultatele calibrarii, deci lipsa lor inseamna ca "
                 + $"nu s-a rulat inca niciun script de preprocesare.\n\n"
-                + $"Deschide sesiunea in Siril si ruleaza scriptul {SirilSession.PreprocessingScript}, "
-                + "apoi alege din nou folderul.",
+                + $"Ruleaza scriptul {SirilSession.PreprocessingScript} - de aici, cu butonul de "
+                + "mai jos, sau din Siril si apoi alege din nou folderul.",
 
             SessionProblem.NoFlatMaster =>
-                $"Nu gasesc masterul de flat:\n{s.FlatMasterPath}\n\n"
-                + $"Asta e fisierul pe care il produce scriptul {SirilSession.PreprocessingScript} "
-                + "din Siril: flat-urile stivuite si CALIBRATE (prefixul \"pp_\" inseamna "
-                + "exact ca flat-dark-ul si offsetul au fost deja scazute). Toate testele de "
-                + "structura pornesc de la el.\n\n"
-                + $"Deschide sesiunea in Siril si ruleaza {SirilSession.PreprocessingScript}, "
-                + "apoi alege din nou folderul.",
+                $"Nu gasesc masterul de flat, {SirilSession.FlatMasterName}, in niciunul din "
+                + "cele doua locuri in care il lasa scripturile Siril:\n"
+                + string.Join("\n", s.FlatMasterCandidates) + "\n\n"
+                + "Asta e fisierul pe care il produce scriptul de preprocesare: flat-urile "
+                + "stivuite si CALIBRATE (prefixul \"pp_\" inseamna exact ca flat-dark-ul si "
+                + "offsetul au fost deja scazute). Toate testele de structura pornesc de la el.\n\n"
+                + $"Ruleaza {SirilSession.PreprocessingScript} - de aici, cu butonul de mai jos, "
+                + "sau din Siril si apoi alege din nou folderul.",
 
             _ => "",
         };
@@ -81,8 +83,8 @@ namespace FlatCheck.Wpf
         internal static string NotAFlatMaster(string path) =>
             $"Fisierul ales nu e un master de flat:\n{path}\n\n"
             + "Testul de rotatie la 180 de grade compara doua MASTERE de flat, adica doua "
-            + "stive calibrate de flat-uri - fisierele pe care Siril le scrie in process/ cu "
-            + $"numele de forma {SirilSession.RatioPattern}.\n\n"
+            + "stive calibrate de flat-uri - fisierele pe care Siril le scrie in process/ sau "
+            + $"in masters/, cu numele de forma {SirilSession.RatioPattern}.\n\n"
             + "Cadrele individuale calibrate stau in acelasi folder si arata la fel "
             + "(pp_flat_00001.fit si urmatoarele), dar NU merg: zgomotul unui singur cadru "
             + "e de acelasi ordin cu semnalul cautat, deci o pereche de cadre da un "
@@ -114,7 +116,7 @@ namespace FlatCheck.Wpf
             + "  3. Inca ~15 flat-uri.\n"
             + "  4. Stivuiesti cele doua seturi SEPARAT, in doua foldere de sesiune, cu "
             + $"scriptul de preprocesare. Iti raman doua fisiere {SirilSession.FlatMasterName}, "
-            + "cate unul in fiecare process/.\n\n"
+            + "cate unul in fiecare sesiune - in masters/ sau in process/, dupa script.\n\n"
 
             + "Rotatia nu trebuie sa fie exacta. Vignetarea e rotational simetrica, deci "
             + "se anuleaza la orice unghi; cele 180 de grade servesc doar la inversarea "
@@ -135,6 +137,18 @@ namespace FlatCheck.Wpf
             + "de dupa. Impartind un fisier la el insusi iese 1 peste tot, deci o "
             + "componenta externa de exact zero - care nu inseamna \"setup curat\", "
             + "inseamna \"nu s-a masurat nimic\".";
+
+        /// <summary>
+        /// Masterul exista si in masters/, si in process/: doua preprocesari pe acelasi
+        /// folder. Se masoara cel mai nou, si omul trebuie sa stie care, fiindca cele doua
+        /// pot veni din seturi de flat-uri diferite.
+        /// </summary>
+        internal static string TwoFlatMasters(FlatMasterLookup m) =>
+            "Sunt DOUA mastere de flat in folderul asta, in masters/ si in process/ - doua "
+            + "rulari de preprocesare. Se masoara cel mai nou:\n" + m.Path + "\n"
+            + "Celalalt, mai vechi, nu e citit:\n" + m.Other + "\n"
+            + "Daca nu e cel pe care il vrei, sterge-l sau redenumeste-l pe celalalt si "
+            + "alege din nou folderul.";
 
         /// <summary>Cand process/ nu contine cadre calibrate pentru testul end-to-end.</summary>
         internal static string NoLightSeries(SirilSession s) =>
@@ -349,7 +363,7 @@ namespace FlatCheck.Wpf
         /// se ajunge aici - Check() cere masterul - dar tabul se ataseaza si in teste.
         /// </summary>
         internal static string NoFlatFrames(SirilSession s) =>
-            $"Nimic de egalizat: nici masterul {SirilSession.FlatMasterName} in process/, nici "
+            $"Nimic de egalizat: nici masterul {SirilSession.FlatMasterName} in masters/ sau process/, nici "
             + $"vreun cadru citibil in:\n{s.FlatsDir}\n\n"
             + "Tabul arata cadrele asa cum au fost trase - raw de aparat (.nef, .cr2, .cr3, "
             + ".arw, .dng, .raf) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
@@ -417,6 +431,72 @@ namespace FlatCheck.Wpf
              "In tabul Structura: reziduul dupa modelul radial, colturile, inclinarea, pata "
              + "maxima. Poza de aici spune CE FORMA are ce masoara ele."),
         };
+
+        // ------------------------------------------------------- rularea scriptului
+        //
+        // Textele blocului de pe ecranul de problema si ale ferestrei de rulare. Niciunul
+        // nu interpreteaza ce a facut scriptul: dupa rulare folderul se redeschide si
+        // Check() spune singur daca masterul a aparut.
+
+        /// <summary>Ce face butonul, inainte de lista de scripturi.</summary>
+        internal static string PreprocessLead() =>
+            "Scriptul se poate rula de aici, cu Siril-ul instalat pe calculator (siril-cli, "
+            + "fara fereastra). Lista de mai jos e cea din meniul de scripturi al lui Siril; "
+            + "propus e cel care lasa masterul in process/. Iesirea se vede intr-o fereastra, "
+            + "ca in Siril, iar cand o inchizi folderul se redeschide singur.";
+
+        internal static string SirilCliNotFound() =>
+            "Nu gasesc siril-cli.exe: nici prin intrarea de instalare din registru, nici in "
+            + "Program Files\\Siril\\bin. Fara el scriptul se ruleaza din Siril, si apoi alegi "
+            + "din nou folderul.";
+
+        internal static string NoSirilScripts(string configPath) =>
+            "N-am gasit niciun script .ssf. Lista se ia din configurarea Siril ("
+            + (configPath ?? "fisierul de configurare nu exista")
+            + "): scripturile bifate in Preferinte > Scripturi si folderele de scripturi de "
+            + "acolo. Bifeaza scriptul in Siril - sau ia depozitul de scripturi din acelasi "
+            + "loc - si alege din nou folderul.";
+
+        internal static string NoScriptChosen() => "Alege un script din lista.";
+
+        internal static string ScriptUnreadable(string path, string why) =>
+            $"Nu pot citi scriptul:\n{path}\n\n{why}";
+
+        /// <summary>
+        /// Ce ii lipseste folderului ca sa poata porni scriptul ales. Se spune si ce cere
+        /// scriptul in total, ca lipsa sa aiba context.
+        /// </summary>
+        internal static string MissingScriptInputs(string script, IEnumerable<string> required,
+                                                   IEnumerable<string> missing) =>
+            $"Scriptul {script} intra in subfolderele {string.Join(", ", required.Select(f => f + "/"))}. "
+            + $"In folderul ales lipsesc sau sunt goale: {string.Join(", ", missing.Select(f => f + "/"))}. "
+            + "Pune acolo cadrele de la aparat, apoi apasa din nou.";
+
+        internal static string SirilGuiRunning() =>
+            "Siril e deschis. Daca are ca folder de lucru chiar folderul asta, doua procese "
+            + "ar scrie in acelasi process/ in acelasi timp si fisierele s-ar strica. "
+            + "Inchide-l, sau asigura-te ca lucreaza in alt folder, inainte sa apesi Ruleaza.";
+
+        internal static string RunWindowTitle() => "Procesare Siril";
+
+        internal static string RunStep(int index, int total, string command) =>
+            total > 0 ? $"comanda {index} din {total}:  {command}" : $"comanda {index}:  {command}";
+
+        internal static string RunSucceeded() =>
+            "Scriptul s-a terminat cu succes. Inchide fereastra: folderul se redeschide si "
+            + "analiza porneste pe ce a produs.";
+
+        internal static string RunFailed(int code, string step) =>
+            $"Siril s-a oprit cu codul {code}"
+            + (string.IsNullOrEmpty(step) ? "." : $", la {step}.")
+            + " Log-ul de mai sus spune de ce; folderul ramane cum era.";
+
+        internal static string RunCancelled() =>
+            "Rulare anulata. Siril a fost oprit la mijloc, deci process/ poate contine "
+            + "fisiere pe jumatate scrise; o rulare noua le suprascrie.";
+
+        internal static string RunStartFailed(string why) =>
+            $"Nu am putut porni siril-cli:\n{why}";
 
         // ------------------------------------------------------------------ Despre
         //

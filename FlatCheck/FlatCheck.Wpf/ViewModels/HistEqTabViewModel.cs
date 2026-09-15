@@ -123,7 +123,8 @@ namespace FlatCheck.Wpf
                 {
                     Path = c.Path,
                     Name = Path.GetFileName(c.Path),
-                    Where = c.IsMaster ? "process/" : "flats/",
+                    // folderul real al fisierului: masterul poate fi in masters/ sau process/
+                    Where = Path.GetFileName(Path.GetDirectoryName(c.Path)) + "/",
                     IsMaster = c.IsMaster,
                 });
 
