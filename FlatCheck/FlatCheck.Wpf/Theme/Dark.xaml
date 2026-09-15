@@ -86,6 +86,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="FontSize" Value="11" />
   </Style>
 
+  <!-- Link-urile din "Despre". Implicit WPF le face albastru inchis pe fundal negru, adica
+       de necitit; accentul temei, subliniat abia la trecerea cu mouse-ul. -->
+  <Style TargetType="Hyperlink">
+    <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
+    <Setter Property="TextDecorations" Value="{x:Null}" />
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
+        <Setter Property="TextDecorations" Value="Underline" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
   <!-- Cifrele se aliniaza pe coloana doar cu font monospatiat. -->
   <Style x:Key="Number" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -548,6 +561,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                  FontSize="12" FontWeight="SemiBold" TextWrapping="Wrap" />
       <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0"
                  Text="{Binding Meaning}" TextWrapping="Wrap" />
+    </StackPanel>
+  </DataTemplate>
+
+  <!-- O componenta terta din "Despre": numele si rolul pe primul rand, licenta si
+       copyright-ul sub el, link-ul la proiect ultimul. Licenta e ce cere afisat LGPL-ul,
+       deci sta pe randul ei, nu intr-un tooltip. Link-ul n-are handler aici - un
+       dictionar de resurse n-are code-behind - il prinde fereastra, prin evenimentul
+       rutat Hyperlink.RequestNavigate. -->
+  <DataTemplate x:Key="ComponentRowTemplate">
+    <StackPanel Margin="0,0,0,10">
+      <TextBlock TextWrapping="Wrap">
+        <Run Text="{Binding Name, Mode=OneWay}" FontWeight="SemiBold" />
+        <Run Text=" - " Foreground="{StaticResource FaintBr}" />
+        <Run Text="{Binding Role, Mode=OneWay}" Foreground="{StaticResource MutedBr}" FontSize="12" />
+      </TextBlock>
+      <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" Text="{Binding Licence}" />
+      <TextBlock Style="{StaticResource Faint}" Text="{Binding Copyright}" />
+      <TextBlock Margin="0,2,0,0" FontSize="11">
+        <Hyperlink NavigateUri="{Binding Url}">
+          <Run Text="{Binding Url, Mode=OneWay}" />
+        </Hyperlink>
+      </TextBlock>
     </StackPanel>
   </DataTemplate>
 

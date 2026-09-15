@@ -207,11 +207,8 @@ namespace FlatCheck
             // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare
             // poarta doar copyright-ul; disclaimerul intreg ar ingrosa fiecare raport
             // degeaba, deci sta aici, unde omul vine oricum sa citeasca.
-            w.WriteLine("Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de");
-            w.WriteLine("vandabilitate sau potrivire pentru un scop anume. E software liber:");
-            w.WriteLine("il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea");
-            w.WriteLine("ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,");
-            w.WriteLine("sau la <https://www.gnu.org/licenses/gpl-3.0.html>.");
+            // Textul sta in RunReport.WarrantyLines, fiindca il arata si fereastra "Despre".
+            foreach (string line in RunReport.WarrantyLines) w.WriteLine(line);
         }
     }
 }

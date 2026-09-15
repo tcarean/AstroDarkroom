@@ -121,6 +121,29 @@ public class WindowSmokeTests
         });
 
     /// <summary>
+    /// Fereastra "Despre": XAML nou, un sablon nou in tema, o resursa de icoana citita
+    /// prin decodor si link-uri legate la proprietati - toate lucruri care compileaza cu
+    /// numele gresit si cad abia la afisare.
+    /// </summary>
+    [Fact]
+    public void TheAboutWindowLoadsAndRenders()
+        => _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+            var about = new AboutWindow();
+
+            // Se deseneaza CONTINUTUL, nu fereastra: un Window neafisat se randeaza
+            // transparent (asa iese si "fereastra" de mai jos), iar panoul radacina
+            // mosteneste DataContext-ul si trece prin aceleasi legari.
+            Render((FrameworkElement)about.Content, 600, 720, "despre");
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+
+            // icoana e cadrul mare, nu cel de 16 px scalat
+            var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
+            Assert.Equal(256, logo.PixelWidth);
+        });
+
+    /// <summary>
     /// Cele patru taburi, cu rezultate reale in ele. Un tab gol s-ar desena si cu jumatate
     /// din sabloane gresite - abia cu date se ating toate legarile.
     /// </summary>

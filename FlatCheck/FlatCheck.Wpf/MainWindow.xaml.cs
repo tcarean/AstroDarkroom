@@ -56,6 +56,10 @@ namespace FlatCheck.Wpf
 
         void ChooseFolder(object sender, RoutedEventArgs e) => Choose();
 
+        /// <summary>Butonul "Despre" si F1, prin ApplicationCommands.Help - vezi MainWindow.xaml.</summary>
+        void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+            => new AboutWindow { Owner = this }.ShowDialog();
+
         void Choose()
         {
             var dlg = new Microsoft.Win32.OpenFolderDialog

@@ -51,6 +51,28 @@ namespace FlatCheck
         }
 
         /// <summary>
+        /// Notita de garantie si de licenta - GPLv3 sectiunea 5(d). Consola o tipareste
+        /// la --help (banner-ul poarta doar copyright-ul; cinci linii in plus pe fiecare
+        /// raport ar ineca cifrele), fereastra o arata in "Despre". Un singur text pentru
+        /// amandoua, ca sa nu poata spune doua lucruri diferite despre aceeasi licenta.
+        ///
+        /// Liniile sunt rupte la ~70 de coloane pentru consola; fereastra le lipeste cu
+        /// spatiu si impacheteaza singura. Textul e verificat de Golden/help.txt, deci o
+        /// reformulare aici se vede si acolo.
+        /// </summary>
+        internal static readonly string[] WarrantyLines =
+        {
+            "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
+            "vandabilitate sau potrivire pentru un scop anume. E software liber:",
+            "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
+            "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
+            "sau la <" + LicenseUrl + ">.",
+        };
+
+        /// <summary>Unde e textul complet al licentei, pentru cine n-are fisierul LICENSE la indemana.</summary>
+        internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
+
+        /// <summary>
         /// Anuntul hartii reziduale. Calea o stie apelantul - el a ales unde scrie -
         /// deci nu se poate genera in interiorul modului; dar formularea e aceeasi
         /// peste tot, si de asta sta aici.

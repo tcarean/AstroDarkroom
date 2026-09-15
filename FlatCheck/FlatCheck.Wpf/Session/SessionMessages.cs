@@ -417,5 +417,35 @@ namespace FlatCheck.Wpf
              "In tabul Structura: reziduul dupa modelul radial, colturile, inclinarea, pata "
              + "maxima. Poza de aici spune CE FORMA are ce masoara ele."),
         };
+
+        // ------------------------------------------------------------------ Despre
+        //
+        // Textele ferestrei "Despre". Cifra, versiunea si notita de garantie NU stau aici:
+        // vin din VersionInfo si RunReport, aceleasi cu ale consolei. Aici sunt doar
+        // titlurile si propozitiile pe care consola n-are unde sa le tipareasca.
+
+        internal static string AboutTitle() => "Despre FlatCheck";
+
+        /// <summary>Prima linie din README, ce face unealta intr-o propozitie.</summary>
+        internal static string AboutTagline() =>
+            "Diagnostic cantitativ pentru flat frames de astrofoto.";
+
+        internal static string AboutLicenceHeading() => "LICENTA";
+
+        internal static string AboutLicenseLinkLabel() =>
+            "Textul complet al GNU General Public License v3";
+
+        internal static string AboutThirdPartyHeading() => "COMPONENTE TERTE";
+
+        /// <summary>
+        /// De ce e lista aici si nu doar intr-un fisier: LGPL-ul LibRaw cere notita acolo
+        /// unde programul isi arata propriul copyright, si un exe copiat singur n-are
+        /// fisierul de notite langa el. Motivele de compatibilitate raman in fisier.
+        /// </summary>
+        internal static string AboutThirdPartyLead() =>
+            "Unealta leaga trei componente scrise de altii, toate compatibile cu GPLv3. "
+            + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise "
+            + "de mana. Motivele pentru care fiecare licenta e compatibila sunt in "
+            + "THIRD-PARTY-NOTICES.md, langa sursa.";
     }
 }

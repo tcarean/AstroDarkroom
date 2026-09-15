@@ -90,6 +90,13 @@ not a copy.
     `ntiles`.
   - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
     "Versioning".
+  - `ThirdParty.cs` - the third-party components as a *value*: name, role, licence,
+    copyright notice, URL and the NuGet packages that bring each one in. It is what the
+    window's "Despre" shows, and it exists because LGPL-2.1 §6 wants LibRaw's notice
+    displayed wherever the program displays its own - see "Licensing". `ThirdPartyTests`
+    binds it to the `PackageReference`s in the Core csproj in both directions and to the
+    headings of `THIRD-PARTY-NOTICES.md`, so **a new package needs an entry here too**;
+    see "The dependencies".
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5). Beside
@@ -123,7 +130,9 @@ not a copy.
     both applications write them and two copies would have diverged. It also holds
     `MapScaleLabel` and `MapLegend`, the two bits of wording that go with the map; they
     have no console caller today, and live here anyway so a future `--scala` reuses them
-    instead of rewriting them.
+    instead of rewriting them. And `WarrantyLines` + `LicenseUrl`: the GPLv3 §5(d)
+    notice, which the console prints at `--help` and the window shows in "Despre" -
+    one text, so the two cannot describe the same licence differently.
     Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
     `StructureReport.Advice()`, `StructureReport.TestNote()` (one sentence per deviation
     test, keyed by the `StructureResult` field name so reordering the rows cannot unpair a
@@ -190,7 +199,10 @@ not a copy.
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
-    `MainViewModel` for the folder, and two small companions of the residual map shared by
+    `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
+    properties only - `VersionInfo`, `RunReport.WarrantyLines`, `ThirdParty.Components`
+    copied into public `ComponentRow`s, headings from `SessionMessages`; it formulates
+    nothing), and two small companions of the residual map shared by
     the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
@@ -257,6 +269,19 @@ not a copy.
     `NearestNeighbor` at factor >= 1 so magnified pixels are crisp squares; "fit" is
     capped at 1.0, so a picture smaller than the viewport is shown at its size rather
     than blown up (found on the 128 px test fixtures, where fit came out at 4x).
+  - `Views/AboutWindow.xaml` - the "Despre" window: icon, banner, copyright, the GPLv3
+    warranty notice and the third-party list. Opened from the `Despre` button in the top
+    bar and from **F1**, both through `ApplicationCommands.Help` (whose default gesture is
+    F1), so no view-model has to open a window. Modal, centred on its owner, `IsCancel`
+    on the close button. Hyperlinks are handled once, on the window, through the routed
+    `Hyperlink.RequestNavigate` - the component rows live in a `DataTemplate` in
+    `Dark.xaml`, and a resource dictionary has no code-behind to put a handler in.
+    `WindowSmokeTests` renders the window's *content*, not the window: an unshown
+    `Window` renders transparent (the existing `fereastra` dump is blank for the same
+    reason), while the root panel inherits the DataContext and walks the same bindings.
+  - `Presentation/AppIcon.cs` - the largest frame of `flatcheck.ico`, chosen through
+    `BitmapDecoder`: an `<Image>` handed the `.ico` directly takes whichever frame comes
+    first, which at 72 px on screen can be the 16 px one scaled up.
   - `Presentation/RasterBitmaps.cs` - a byte raster straight into a frozen `BitmapSource`
     (`Gray8` / `Rgb24`), no PNG. The maps still go through `PngWriter` because the PNG *is*
     the file the console writes and the window shows those exact bytes; the equalised
@@ -354,6 +379,17 @@ Two constraints do not bend:
 - **The single-copyable-binary promise.** Pure-managed packages keep `PublishSingleFile`
   simple. Per-RID native binaries cost the same care `Sdcb.LibRaw` already needs, which is
   a point against, not a veto.
+
+**A new package means three places, and a test enforces two of them.** Besides the
+`PackageReference` itself: an entry in `THIRD-PARTY-NOTICES.md` (the *why* of the
+compatibility) and an entry in `FlatCheck.Core/ThirdParty.cs` (the name, role, licence,
+copyright notice and URL that the window's "Despre" **displays**).
+`ThirdPartyTests.EveryPackageTheCoreLinksIsListed` fails if a package in the Core csproj
+is not claimed by exactly one component, or a component claims a package that is gone;
+`EveryComponentHasAnEntryInTheNoticesFile` fails if the notices file has no heading for
+it. The README's table under "Componente terțe" is the fourth copy and is kept by hand.
+The list is displayed rather than only shipped because the single-file exe carries no
+notices file beside it, and because LGPL-2.1 §6 asks for it - see "Licensing".
 
 ### `Sdcb.LibRaw`
 
@@ -468,6 +504,11 @@ It adds a workflow: one folder instead of four invocations, `process/pp_flat_sta
 by convention instead of by typing, structure and end-to-end started on open. It does not
 add an analysis, a threshold or a wording. If a change here needs a new number, that number
 belongs in `Analysis/`, and the console gets it too.
+
+It adds a "Despre" window (button in the top bar, or F1), which adds no number either:
+version, copyright and the warranty notice are the console's own strings, and the
+third-party list is `ThirdParty.Components` from the core. See "Licensing" for why the
+window has to exist at all.
 
 It also adds three things around the residual map, none of which is a number: a **scale
 switch** (auto / ±2 / ±10 / ±20 %, default ±10, caps from `Th.Resid*` - see "PNG output"),
@@ -1685,7 +1726,7 @@ is dual-licensed and only one of its two options is GPL-compatible, and ImageSha
 licence is conditional and has to be shown to apply. A package added without an entry there
 is a package whose compatibility nobody checked. See "The dependencies" above for the rule.
 
-Four things follow, and all four are pinned by tests:
+Five things follow, and all five are pinned by tests:
 
 - **Every source file starts with the notice**, above the file's own header comment:
   the SPDX line, the copyright, and all three paragraphs of the standard GNU notice
@@ -1704,8 +1745,18 @@ Four things follow, and all four are pinned by tests:
 - **`--help` carries the warranty disclaimer** and points at `LICENSE` - GPLv3 §5(d),
   which wants a program that displays legal notices to display that one too. It lives
   there rather than under the banner on purpose: five lines on top of every report,
-  every run, would drown the numbers. `WriteUsage` in C#, the argparse `epilog`
-  (`__warranty__`) in Python.
+  every run, would drown the numbers. The text is `RunReport.WarrantyLines` in C#, which
+  `WriteUsage` prints line by line and the window's "Despre" shows as one paragraph -
+  `Golden/help.txt` pins the console side, `AboutTests` the window side; the argparse
+  `epilog` (`__warranty__`) in Python.
+- **The window's "Despre" is its §5(d) notice**, and it also carries the third-party
+  list with each component's copyright line. That second part is LGPL-2.1 §6: when a
+  program displays copyright notices at runtime - and this one does, on line 2 of every
+  report and in the window's top bar - it must include the library's notice among them,
+  with a reference to the LGPL. The list comes from `ThirdParty.Components`; LibRaw's
+  copyright line there is the one from LibRaw 0.21.1's `COPYRIGHT` file, the version the
+  runtime packages ship. `LibRawIsTakenUnderTheLgplAndCarriesItsCopyright` pins both the
+  licence choice and the notice.
 - **One source of truth per language for the copyright string**: `<Copyright>` in
   `Directory.Build.props` (read back through `AssemblyCopyrightAttribute` by
   `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback), and

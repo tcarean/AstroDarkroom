@@ -674,6 +674,15 @@ Dacă nu găsește `process/pp_flat_stacked.fit`, aplicația nu pornește pe fol
 spune ce e de făcut — să rulezi scriptul **`OSC_Preprocessing.ssf`** din Siril. Fișierul
 acela e intrarea modului de structură, prin convenție.
 
+Butonul **Despre** din bara de sus (sau **F1**) deschide o fereastră cu versiunea,
+copyright-ul, nota de licență și de garanție — același text pe care consola îl tipărește la
+`--help` — și lista componentelor terțe, cu licența fiecăreia și link la proiect. E acolo
+și din obligație, nu doar din politețe: GPLv3 cere ca un program cu interfață să-și arate
+singur notița, iar LGPL-ul sub care e luat LibRaw cere ca notița bibliotecii să apară
+lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
+`THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
+călătoresc garantat cu programul.
+
 ### Cele cinci taburi
 
 | tab | ce face | când rulează |
@@ -951,7 +960,8 @@ General Public License pentru detalii.
 
 Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
 <https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare și la
-`flatcheck --help`; copyright-ul se tipărește la fiecare rulare, sub versiune.
+`flatcheck --help` și în fereastra **Despre** a aplicației cu ferestre; copyright-ul se
+tipărește la fiecare rulare, sub versiune.
 
 ### Componente terțe
 
@@ -966,4 +976,5 @@ Unealta leagă trei componente scrise de alții, toate compatibile cu GPLv3:
 Cititorul FITS, encoderul PNG, toate calculele și toate pragurile sunt scrise de mână.
 
 Motivele pentru care fiecare licență e compatibilă — inclusiv de ce LibRaw se ia sub LGPL
-și nu sub CDDL — sunt în [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+și nu sub CDDL — sunt în [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). Aceeași listă,
+cu notița de copyright a fiecărei componente, o arată și fereastra **Despre**.

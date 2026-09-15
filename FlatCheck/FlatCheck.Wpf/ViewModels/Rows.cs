@@ -147,4 +147,17 @@ namespace FlatCheck.Wpf
         public string Tiles { get; init; }
         public string Verdict { get; init; }
     }
+    /// <summary>
+    /// O componenta terta din fereastra "Despre". Copie publica a lui ThirdPartyComponent
+    /// din nucleu, care e internal: un ViewModel public nu poate expune un tip internal
+    /// catre XAML, si compilatorul e cel care tine granita asta.
+    /// </summary>
+    public sealed class ComponentRow
+    {
+        public string Name { get; init; }
+        public string Role { get; init; }
+        public string Licence { get; init; }
+        public string Copyright { get; init; }
+        public string Url { get; init; }
+    }
 }
