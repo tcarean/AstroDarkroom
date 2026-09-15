@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FlatCheck.Wpf"
         Title="FlatCheck" Height="820" Width="1360"
+        Icon="/FlatCheck.Wpf;component/Icon/flatcheck.ico"
         MinHeight="560" MinWidth="960"
         WindowStartupLocation="CenterScreen"
         Background="{StaticResource WindowBg}"

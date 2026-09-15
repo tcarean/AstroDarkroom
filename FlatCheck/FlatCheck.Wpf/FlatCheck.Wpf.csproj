@@ -20,6 +20,12 @@
     <AssemblyName>FlatCheck.Wpf</AssemblyName>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
 
+    <!-- Icoana exe-ului (Explorer, fixarea in taskbar). Aceeasi ca la consola, din Icon/
+         la radacina. Fereastra o primeste separat, prin <Resource> de mai jos si
+         Icon= in MainWindow.xaml: fara ea WPF o cauta in exe-ul procesului, care la
+         "dotnet FlatCheck.Wpf.dll" sau sub un test e dotnet.exe. -->
+    <ApplicationIcon>..\Icon\flatcheck.ico</ApplicationIcon>
+
     <!-- NU pune InvariantGlobalization aici, oricat de tentant ar fi prin simetrie cu
          proiectul consola. WPF cere date de cultura ca sa poata lega ceva de o
          proprietate: cu ele scoase, fereastra crapa la INCARCAREA XAML-ului, cu
@@ -33,6 +39,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\Icon\flatcheck.ico" Link="Icon\flatcheck.ico" />
   </ItemGroup>
 
   <ItemGroup>

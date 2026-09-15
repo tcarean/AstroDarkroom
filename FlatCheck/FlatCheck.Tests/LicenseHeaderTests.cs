@@ -97,6 +97,12 @@ public class LicenseHeaderTests
 
         foreach (string f in Directory.EnumerateFiles(root, "*.py", SearchOption.TopDirectoryOnly))
             yield return f;
+
+        // Generatorul icoanei nu apartine niciunui proiect, dar e sursa scrisa de mana.
+        string icon = Path.Combine(root, "Icon");
+        if (Directory.Exists(icon))
+            foreach (string f in Directory.EnumerateFiles(icon, "*.py", SearchOption.TopDirectoryOnly))
+                yield return f;
     }
 
     /// <summary>

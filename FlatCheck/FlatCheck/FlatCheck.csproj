@@ -14,6 +14,10 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>flatcheck</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Icoana din proprietatile fisierului si din Explorer. Acelasi fisier ca la
+         aplicatia WPF, din Icon/ la radacina - generat de Icon/make_icon.py. -->
+    <ApplicationIcon>..\Icon\flatcheck.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

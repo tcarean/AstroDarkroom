@@ -286,6 +286,19 @@ not a copy.
   "Parity with Python"), which now includes the `--light` guard, series mode and the
   rewritten attribution mode. It is, however, the reference for
   *numeric* behaviour: see "Parity with Python" below.
+- `Icon/` - `flatcheck.ico`, the one icon of both applications: `<ApplicationIcon>` in both
+  csproj files (the exe, hence Explorer and a pinned taskbar entry) and, for the WPF app
+  only, a linked `<Resource>` plus `Icon=` on `MainWindow` (title bar and the running
+  window's taskbar button - without it WPF takes the icon from the process exe, which
+  under `dotnet FlatCheck.Wpf.dll` or a test host is `dotnet.exe`). The drawing is the
+  core idea: radial vignetting rings and a reticle on the sensor centre. It is generated,
+  not drawn by hand, by `make_icon.py` (Pillow, a dev-time tool only - nothing in the
+  applications links it), which draws **each size separately**: at 16-24 px the rings
+  drop from five to three and the reticle thickens, because a downscaled 256 px drawing
+  loses the reticle below a pixel. The `.ico` is committed; rerun the script only when
+  the drawing changes. `IconTests` pins that both projects point at this one file and
+  that the window's icon loads with all eight sizes; `LicenseHeaderTests` also scans
+  `Icon/*.py`.
 - `README.md` - **the** user-facing documentation, in Romanian, and the single source
   for it. See the note in "Conventions".
 - `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
