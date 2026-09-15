@@ -21,13 +21,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
      Cand folderul nu e bun, taburile nu se arata deloc si in locul lor apare explicatia.
      E deliberat: cinci panouri goale l-ar pune pe om sa le deschida pe rand ca sa
-     inteleaga ca de fapt trebuie sa ruleze un script in Siril. -->
+     inteleaga ca de fapt trebuie sa ruleze un script in Siril.
+
+     Fereastra porneste maximizata: harta si histogramele se citesc la marimea ecranului.
+     Height/Width raman dimensiunea la care revine dupa "Restaurare". -->
 
 <Window x:Class="FlatCheck.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FlatCheck.Wpf"
-        Title="FlatCheck" Height="820" Width="1360"
+        Title="FlatCheck" Height="820" Width="1360" WindowState="Maximized"
         Icon="/FlatCheck.Wpf;component/Icon/flatcheck.ico"
         MinHeight="560" MinWidth="960"
         WindowStartupLocation="CenterScreen"
