@@ -432,6 +432,79 @@ namespace FlatCheck.Wpf
              + "maxima. Poza de aici spune CE FORMA are ce masoara ele."),
         };
 
+        // ------------------------------------------------------- netezire
+        //
+        // Ghidul tabului de netezire. Ca celelalte, e in oglinda cu README ("Netezire")
+        // fara test care sa le lege. Spre deosebire de celelalte e DESCHIS implicit: e
+        // preconditia tabului, ca documentatia de pe Ratio - un buton care scrie un fisier
+        // de 96 MB langa master nu se apasa inainte de a sti ce face.
+
+        /// <summary>Ce face butonul si ce nu poate sti, inainte de lista.</summary>
+        internal static string SmoothGuideIntro() =>
+            "Scrie un al doilea master, pp_flat_stacked" + SirilSession.SmoothedSuffix + ".fit, langa cel "
+            + "fotografiat: acelasi flat, cu tot ce e neted pastrat si tot ce nu e scos - textura "
+            + "difuzorului, umbrele de praf, petele compacte. Nu e o analiza si nu da verdict; "
+            + "ce raporteaza e CE A SCOS, fiindca asta e singurul lucru dupa care se poate "
+            + "decide daca fisierul e de incredere.\n\n"
+            + "Masterul fotografiat ramane neatins si ramane masterul sesiunii: tabul Structura "
+            + "arata in continuare textura, ca sa se vada de ce a fost nevoie de netezire.";
+
+        /// <summary>Ce pastreaza, ce scoate, scara, cum ajunge in Siril.</summary>
+        internal static IReadOnlyList<(string Shape, string Meaning)> SmoothGuideRows() => new[]
+        {
+            ("ce pastreaza",
+             "Tot ce e neted la scara aleasa: vignetarea, colturile inegale, un gradient, "
+             + "petele largi ale unui monitor. Nu stie ce e al obiectivului si ce e al sursei - "
+             + "doar --ratio le desparte - deci o iluminare proasta ramane la fel de proasta "
+             + "in fisierul netezit. Bateria de structura de dedesubt arata ca ce era al "
+             + "obiectivului a ramas: cifrele se misca sub o jumatate de punct."),
+
+            ("ce scoate",
+             "Textura difuzorului (celule de ~300 px pe un master prin material pus pe "
+             + "monitor), umbrele de praf, petele compacte, zgomotul. Praful poate fi si "
+             + "ceva dorit: o umbra de praf e corecta pentru sesiunea ale carei lights o "
+             + "au si ele, si gresita intr-un flat de biblioteca. Harta din dreapta arata "
+             + "exact ce a plecat; daca in ea se vede altceva decat textura si praf, "
+             + "netezirea a luat si ceva real."),
+
+            ("scara",
+             "Sigma nucleului de netezire, in pixeli de senzor. La 300 px celulele "
+             + "difuzorului trec la ~30 % in RMS si o structura reala de 300 px e luata "
+             + "partial; la 150 px ramane, dar raman si mai multe celule; la 600 px pleaca "
+             + "aproape tot ce nu e vignetare. Singurul buton al modului."),
+
+            ("cum se citeste harta",
+             "Harta principala e original / netezit: alb unde nu s-a scos nimic, culoare unde "
+             + "s-a scos. Pe un master curat e zgomot uniform plus punctele de praf. Cea de-a "
+             + "doua harta e reziduul flat-ului netezit dupa propriul lui model radial - ce "
+             + "face obiectivul, odata textura plecata."),
+
+            ("cum ajunge in Siril",
+             "Scripturile numesc pp_flat_stacked explicit si nu iau fisierul netezit singure. "
+             + "Redenumeste-l in locul masterului (pastreaza originalul sub alt nume) sau "
+             + "da-l la calibrate cu -flat=. Fisierul are headerul masterului, BAYERPAT "
+             + "inclusiv, deci Siril il trateaza ca pe un master CFA."),
+
+            ("ce nu se poate verifica de aici",
+             "Ca flat-ul netezit chiar corecteaza mai bine: asta o spune doar modul --light "
+             + "pe lights calibrate, si pe un camp mai larg de 40 de grade el refuza. Pe o "
+             + "lentila larga verificarea ramane harta de aici si un stack de lights intins tare."),
+        };
+
+        /// <summary>Intrebarea de suprascriere, cand fisierul netezit exista deja.</summary>
+        internal static string SmoothOverwriteQuestion(string path) =>
+            $"Exista deja un flat netezit:\n{path}\n\nIl scriu din nou peste el?";
+
+        /// <summary>Eticheta butonului.</summary>
+        internal static string SmoothButtonLabel() => "Netezeste si salveaza";
+
+        /// <summary>Cand omul a raspuns "nu" la suprascriere: rezultatul ramane pe ecran, fisierul vechi ramane pe disc.</summary>
+        internal static string SmoothNotOverwritten(string path) =>
+            $"Nu s-a scris nimic: fisierul existent a fost pastrat.\n{path}";
+
+        /// <summary>Titlul ecranului de refuz (raw, cub).</summary>
+        internal static string SmoothRefusedTitle() => "Nu se poate netezi";
+
         // ------------------------------------------------------- rularea scriptului
         //
         // Textele blocului de pe ecranul de problema si ale ferestrei de rulare. Niciunul

@@ -112,7 +112,55 @@ namespace FlatCheck
         /// poate fi negativa.
         /// </summary>
         internal static string LocalSpotValue(StructureResult r)
-            => $"{r.LocalSpotPct:+0.00;-0.00} %{SignWord(r.LocalSpotPct)} la ({r.LocalSpotX}, {r.LocalSpotY})";
+            => LocalSpotValue(r.LocalSpotPct, r.LocalSpotX, r.LocalSpotY);
+
+        /// <summary>
+        /// Aceeasi formulare pentru o pata masurata pe alt raster - modul de netezire o
+        /// citeste de pe componenta scoasa, nu de pe reziduul structurii.
+        /// </summary>
+        internal static string LocalSpotValue(double pct, int x, int y)
+        {
+            // Ce se rotunjeste la zero SE ARATA ca zero: .NET pastreaza semnul unui zero
+            // negativ si "-0.00001" iesea "-+0.00" (sectiunea pozitiva a formatului, cu
+            // minusul zeroului negativ in fata). Masurat pe golden-ul modului de netezire.
+            double shown = Math.Abs(pct) < 0.005 ? 0.0 : pct;
+            return $"{shown:+0.00;-0.00} %{SignWord(shown)} la ({x}, {y})";
+        }
+
+        /// <summary>
+        /// Eticheta unui test, cu cheia numelui cifrei din <see cref="StructureResult"/>,
+        /// ca <see cref="TestNote"/>. E ce tipareste WriteBody in fata cifrei; raportul
+        /// de netezire o refoloseste in tabelul lui "inainte / dupa", ca cele doua rapoarte
+        /// sa numeasca testele la fel.
+        /// </summary>
+        internal static string TestLabel(string metric) => metric switch
+        {
+            nameof(StructureResult.CornerSpreadPct) => "imprastiere 4 colturi",
+            nameof(StructureResult.AzimuthalMaxPct) => "asimetrie azimutala max",
+            nameof(StructureResult.ResidualPtpPct) => "reziduu dupa model rad.",
+            nameof(StructureResult.TiltPct) => "inclinare (gradient)",
+            nameof(StructureResult.MaxTilePct) => "pata maxima (o dala)",
+            _ => null,
+        };
+
+        /// <summary>Cheile celor cinci teste, in ordinea din raport.</summary>
+        internal static readonly string[] TestKeys =
+        {
+            nameof(StructureResult.CornerSpreadPct), nameof(StructureResult.AzimuthalMaxPct),
+            nameof(StructureResult.ResidualPtpPct), nameof(StructureResult.TiltPct),
+            nameof(StructureResult.MaxTilePct),
+        };
+
+        /// <summary>Cifra si verdictul testului <paramref name="metric"/> din <paramref name="r"/>.</summary>
+        internal static (double Value, string Verdict) Test(StructureResult r, string metric) => metric switch
+        {
+            nameof(StructureResult.CornerSpreadPct) => (r.CornerSpreadPct, r.CornerVerdict),
+            nameof(StructureResult.AzimuthalMaxPct) => (r.AzimuthalMaxPct, r.AzimuthalVerdict),
+            nameof(StructureResult.ResidualPtpPct) => (r.ResidualPtpPct, r.ResidualVerdict),
+            nameof(StructureResult.TiltPct) => (r.TiltPct, r.TiltVerdict),
+            nameof(StructureResult.MaxTilePct) => (r.MaxTilePct, r.MaxTileVerdict),
+            _ => throw new ArgumentException("test necunoscut: " + metric),
+        };
 
         /// <summary>
         /// Directia abaterii, in cuvinte. Gol la exact zero (un reziduu constant), unde

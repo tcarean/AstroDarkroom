@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
-// Ordinea de dispecerat: --histeq -> --expo -> --ratio -> --light -> structura (implicit).
+// Ordinea de dispecerat: --smooth -> --histeq -> --expo -> --ratio -> --light -> structura (implicit).
 //
 // CE A MAI RAMAS AICI, dupa ce nucleul a devenit FlatCheck.Core: exact ce e al consolei
 // si al nimanui altcuiva - argumentele, alegerea modului, scrierea hartii pe disc si
@@ -71,7 +71,8 @@ namespace FlatCheck
             int code;
             try
             {
-                if (o.Histeq) code = RunHisteq(o, stdout);
+                if (o.Smooth != null) code = RunSmooth(o, stdout, stderr);
+                else if (o.Histeq) code = RunHisteq(o, stdout);
                 else if (o.Expo) code = ExitFor(RunExpo(o, stdout));
                 else if (o.Ratio != null) code = ExitFor(RunRatio(o, stdout));
                 else if (o.Light) code = ExitFor(RunLight(o, stdout));
@@ -173,6 +174,38 @@ namespace FlatCheck
             return 0;
         }
 
+        /// <summary>
+        /// Ca --histeq, nu trece prin ExitFor: n-are verdict. 0 = a scris flat-ul netezit
+        /// si hartile; 1 = a refuzat intrarea (raw, cub) sau a esuat. Fisierul FITS se
+        /// scrie INAINTE de harti: el e produsul, hartile sunt explicatia lui.
+        /// </summary>
+        static int RunSmooth(Options o, TextWriter w, TextWriter err)
+        {
+            var run = SmoothRun.Execute(o.Image, o.ScalePx, w);
+            if (run.Refused)
+            {
+                err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
+                return 1;
+            }
+            using (var fs = new FileStream(o.Smooth, FileMode.Create, FileAccess.Write))
+                SmoothRun.WriteFits(run, o.Image, fs);
+            w.WriteLine(SmoothReport.SavedLine(o.Smooth));
+            SaveMap(o.OutPng, run.Png, w);
+            SaveMap(AfterMapPath(o.OutPng), run.SecondaryPng, w);
+            return 0;
+        }
+
+        /// <summary>
+        /// Calea hartii reziduului flat-ului netezit: acelasi nume, cu "-dupa" inainte de
+        /// extensie. "harta.png" -> "harta-dupa.png". Aceeasi conventie ca WorldMapPath.
+        /// </summary>
+        internal static string AfterMapPath(string path)
+        {
+            string dir = Path.GetDirectoryName(path);
+            string name = Path.GetFileNameWithoutExtension(path) + "-dupa" + Path.GetExtension(path);
+            return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
+        }
+
         static void SaveMap(string path, byte[] png, TextWriter w)
         {
             File.WriteAllBytes(path, png);
@@ -190,9 +223,11 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril");
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea \"Histogram\" din Siril, pe canale");
+            w.WriteLine("  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
+            w.WriteLine($"            --scale <px> (pt --smooth: scara de netezire pe senzor; implicit {SmoothAnalyzer.DefaultScalePx:F0})");
             w.WriteLine();
             w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");
@@ -202,6 +237,10 @@ namespace FlatCheck
             w.WriteLine();
             w.WriteLine("--histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,");
             w.WriteLine("deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.");
+            w.WriteLine();
+            w.WriteLine("--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura");
+            w.WriteLine("difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta");
+            w.WriteLine("acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).");
             w.WriteLine();
 
             // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare

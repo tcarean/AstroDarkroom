@@ -125,4 +125,23 @@ namespace FlatCheck.Wpf
         /// <summary>Pliat implicit, ca celelalte trei.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
+
+    /// <summary>
+    /// Ghidul tabului de netezire. Aceeasi forma ca celelalte, dar DESCHIS implicit: e
+    /// preconditia tabului, nu o nota de subsol - un buton care scrie un fisier langa
+    /// master nu se apasa inainte de a sti ce face. Vezi SessionMessages.SmoothGuideIntro.
+    /// </summary>
+    public sealed class SmoothGuideViewModel : ObservableObject
+    {
+        bool _expanded = true;
+
+        public string Intro => SessionMessages.SmoothGuideIntro();
+
+        public IReadOnlyList<GuideRow> Rows { get; } =
+            SessionMessages.SmoothGuideRows()
+                .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
+                .ToList();
+
+        public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
+    }
 }

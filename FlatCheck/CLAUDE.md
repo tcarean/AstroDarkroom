@@ -5,7 +5,9 @@ is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly. A fifth mode answers
 nothing and shows: the frame through histogram equalisation, Siril's "Histogram" display
 mode, where every grey level holds the same number of pixels and any non-uniformity is
-at full contrast. See "5. Histogram equalisation" under "The five modes".
+at full contrast. See "5. Histogram equalisation" under "The six modes". A sixth mode
+*produces* something: a second master flat with everything smooth kept and everything
+else - diffuser texture, dust, blotches - removed. See "6. Smoothed flat".
 
 Two applications - a console tool and a WPF window - over one core library. The core
 hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL), and reaches for a
@@ -32,6 +34,16 @@ not a copy.
     a header dictionary with a default, so a missing card is never an error - which is
     what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
     FITS header at all.
+  - `FitsWriter.cs` - the hand-rolled FITS writer, the reader's pair, with one consumer:
+    `--smooth`. One primary 2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the
+    input's raw cards copied minus the structural ones it rewrites, `HISTORY` at the end.
+    Writes into a `Stream` for the same reason the report is a `TextWriter` - 96 MB of
+    float need not sit in memory twice; `Encode` over a `MemoryStream` is for tests. It
+    copies the **raw 80-character cards** (`LoadedFrame.Cards`, kept by `FitsReader.LoadFull`
+    alongside the dictionary), not the parsed dictionary, which loses comments and
+    truncates strings at `/` (known issue 1). `LoadedFrame` also carries `Planes`
+    (`NAXIS3`) and `Bitpix`, both so `SmoothRun` can refuse a cube and write the input's
+    type back.
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -53,9 +65,13 @@ not a copy.
     file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
     `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`). Never guessed - see "The channel order" under
     mode 4. Used only for *naming*; no figure depends on it.
-  - `Mosaic.cs` - the CFA rule shared by `--expo` and `--histeq`: `PositionOf(y, x)`,
-    `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four position rasters, and
-    `Label`/`ColourOf` over a `CfaPattern`. It used to be inline in `ExposureAnalyzer`;
+  - `Mosaic.cs` - the CFA rule shared by `--expo`, `--histeq` and `--smooth`:
+    `PositionOf(y, x)`, `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four
+    position rasters, `Extract` (one position, for the mode that works them one at a time
+    and has no use for four copies), `Merge` (the inverse, back to the *original* size -
+    an odd last row or column is filled from the nearest line of the same parity, so a
+    CFA keeps its colours and a flat never gets a line of zeros), and `Label`/`ColourOf`
+    over a `CfaPattern`. It used to be inline in `ExposureAnalyzer`;
     two copies of `(y & 1) * 2 + (x & 1)` and of `1.15` would have diverged at the first
     adjustment. `ExposureAnalyzer` uses the rule, not `Split` - it fills its histograms in
     the same pass it reads the pixels, and a second copy of the data would cost memory.
@@ -76,7 +92,11 @@ not a copy.
     rotation, and `BlockMean` drops partial blocks only at the *end* - so its grid is
     anchored top-left and a rotation lands up to one tile off. Deliberately **not** used
     by `LargeScalePtp`: there the top-left anchoring is what `flatcheck.py` does, and the
-    numeric parity is tested.
+    numeric parity is tested. `TileMedians` is the third grid, for `--smooth` only: tile
+    *medians*, **partial last row and column kept**, and the real centre of every tile
+    returned - a partial 8-px tile fitted one full tile from its neighbour put a 0.8 %
+    error band along the edge of the synthetic; with real centres the whole-frame error
+    is 0.19 %.
   - `Stats.cs` - numeric primitives: `Percentile`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
@@ -99,7 +119,9 @@ not a copy.
     see "The dependencies".
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
-    `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5). Beside
+    `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
+    `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
+    measurements - read it before touching the method). Beside
     them, `ExposureBands` - the verdict ladder as a *value*, because two places need it
     (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
     constants would have been a second definition of the verdict. `ExposureAnalyzer` also
@@ -156,10 +178,22 @@ not a copy.
     figure with its label glued on, the window shows the label as a separate chip, and
     without the split the verdict appeared twice on one row. `HistEqReport` has no verdict
     to write; what it exposes as values is `Caveat()` (what the picture cannot show),
-    `MasterVersusFrame()` and `ViewCaption()` - window-only, like the others.
+    `MasterVersusFrame()` and `ViewCaption()` - window-only, like the others. `SmoothReport`
+    prints "what was removed" and the structure battery before/after; it reuses the
+    structure report's own labels through `StructureReport.TestLabel`/`TestKeys`/`Test`
+    (added for it, so the two reports cannot name a test differently) and
+    `LocalSpotValue(pct, x, y)`, the overload that formats a spot measured on another
+    raster. That overload also rounds to zero *before* formatting: .NET keeps the sign of
+    a negative zero, and `-0.00001` printed as `-+0.00`.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
-    plus `SeriesFinder` (which files a series run covers). `HistEqRun` also carries the
+    `SmoothRun`, plus `SeriesFinder` (which files a series run covers). `SmoothRun` is the
+    second run that can refuse (a raw, a colour cube - `LightRun`'s shape) and the only
+    one whose product is a file: `WriteFits(outcome, sourcePath, Stream)` is called by the
+    console on a `FileStream` and by the window after the overwrite question, never by
+    the run itself, for the reason `RunOutcome.cs` gives for the map. `OutputBitpix` is
+    "same type in, same type out" (16 stays 16, everything else becomes -32), and nothing
+    is renormalised. `HistEqRun` also carries the
     per-view encoders (`EncodeChannel`, `EncodeMosaic`) the window calls on demand; the
     console only ever writes the composite. This is the layer both applications
     call, and the reason neither of them re-derives a number. `ExposureRun` is the only one
@@ -503,11 +537,12 @@ map. What differs is only what each does with the three outputs.
 
 | | console | window |
 |---|---|---|
-| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/`. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
+| input | one file (or a folder, with `--light`) | one Siril session folder - **except the Ratio tab**, which takes two files chosen by hand, normally from two *other* folders; the Histogram tab lists the flat master and every raw or FITS in `flats/`; the Netezire tab takes the session's master and writes beside it. A folder without a master in either `masters/` or `process/` can be preprocessed from the window, through the user's own `siril-cli` |
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
-| map | written to `-o <path>` (`--ratio` writes a second, `-lume`), always on the automatic scale | shown from memory (`--ratio` offers both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
+| map | written to `-o <path>` (`--ratio` writes a second, `-lume`; `--smooth` a second, `-dupa`), always on the automatic scale | shown from memory (`--ratio` and the Netezire tab offer both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
+| smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_netezit.fit` beside the master, on a button, after asking about an existing file |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky` | `--sky` only (a checkbox) |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale` | `--sky` (a checkbox) and the smoothing scale (three chips) |
 
 The console keeps the options because it is the scriptable one, and because `--fov` and
 `--sat` exist for telling the tool something the header does not say. Adding them to the
@@ -717,6 +752,27 @@ runs into the high hundreds of MB in analysis (known issue 7) and the series hol
 frame besides; two chains at once could pass a gigabyte on an ordinary machine. The time
 saved would not be worth it.
 
+**The Netezire tab runs on a button and never on open.** It writes a ~96 MB file beside
+the master, and a file is not something to produce because a folder was looked at. Its
+guide (`SessionMessages.SmoothGuideRows`, mirrored in the README by hand) is the one guide
+that starts *expanded*: it is the button's precondition. Three scale chips
+(`SmoothScaleViewModel`: half, default, double of `SmoothAnalyzer.DefaultScalePx`, so no
+second list of numbers) and the button; the button awaits `MainViewModel.WhenIdleAsync`
+first, so a click during the structure run does not overlap it on the same 24 MP master.
+The file is written *after* the numbers are on screen, and an existing file is asked
+about through a `Func<string, bool>` the `MainViewModel` constructor takes (a `MessageBox`
+in the app, a fixed answer in tests); a "no" keeps the old file and says so, the result
+stays. The output is `pp_flat_stacked_netezit.fit` in the master's own folder
+(`SirilSession.SmoothedMasterPath`, `SmoothedSuffix`), and **it must not become the
+session's master**: `FlatMasterCandidates` are exact paths, so the Structure tab keeps
+measuring the shot master and keeps showing the texture the smoothing was made for. It
+does match `RatioPattern`, which is right - a smoothed stack is a stack. The tab keeps the
+two rasters (removed component, smoothed flat's residual) behind a radio toggle, cached
+per (map, cap) like Ratio; `MapScaleViewModel` took a constructor argument for its
+default cap so this tab can start at ±2 % (`Th.ResidPerfect`) - what is removed is small,
+and at ±10 % the map would be white. `Populate` is `internal` and sets `HasResult`, so the
+smoke test renders the tab from an analyzer result without writing a file.
+
 ### Three things about the WPF project that were learned the hard way
 
 - **No `<InvariantGlobalization>`**, however tempting the symmetry with the console. WPF
@@ -785,11 +841,11 @@ what dispatches. All four modes accept both, exactly like `flatcheck.py`'s
 `load_image_with_header`. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note.
 
-## The five modes
+## The six modes
 
-Dispatch order in `FlatCheckCli.Run` is `--histeq` → `--expo` → `--ratio` → `--light` →
-structure (default). The modes are mutually exclusive; the first match wins. The WPF app
-has no dispatch: each tab is one mode.
+Dispatch order in `FlatCheckCli.Run` is `--smooth` → `--histeq` → `--expo` → `--ratio` →
+`--light` → structure (default). The modes are mutually exclusive; the first match wins.
+The WPF app has no dispatch: each tab is one mode.
 
 Each mode's chain lives in `Runs/`, in the core, and both applications call it - see
 "The two applications".
@@ -1308,6 +1364,62 @@ window encodes nothing (see `RasterBitmaps`).
 No Python counterpart and no `crosscheck.py` scenario, by decision: there is no number to
 compare.
 
+### 6. Smoothed flat - `flatcheck flat.fit --smooth netezit.fit [--scale 300]`
+
+Not a test either: it **writes a second master**, the input with everything smooth kept
+and everything else removed - the diffuser's texture, dust shadows, compact blotches,
+noise. It exists for a flat shot through fabric on a monitor, whose texture reaches the
+lights as a blanket of cells at a few percent. `PLAN-SMOOTH.md` is the full record; the
+short version:
+
+- **Why not a radial synthetic flat.** It would drop the texture and also everything the
+  lens does besides vignetting, and on the Tokina 20 the four corners differ by 6-16 %.
+- **What it does**, per Bayer position (mono: the whole frame): tile medians on ~150
+  sensor px with partial tiles kept (`Img.TileMedians`); a local **quadratic** fit at every
+  tile over its Gaussian neighbourhood, sigma = `ScalePx` (**300 sensor px**, the one
+  knob); 3 rounds of two-sided clipping at `max(2.5 MAD, 2 % of the level)`; per pixel,
+  the bilinear blend of the four surrounding tiles' quadratic predictions; `Mosaic.Merge`.
+- **No radial model, deliberately.** Two designs with one failed on the real masters and
+  the analyzer's header says how: a global polynomial over the residual cannot follow the
+  mid-scale structure every master has (monitor blotches at 1000-1500 px, a decentred
+  ring), and a ring-median model **puts rings into the file** - beyond the inscribed
+  circle the median jumps ring to ring (the artefact `RadialModel` documents), and a
+  150-px field cannot absorb 22-px rings. Nothing in the method knows a centre, so rings
+  are impossible by construction. Don't reintroduce one.
+- **The clip floor is load-bearing.** Relative to the MAD alone, 8 % of a very clean
+  master's tiles (Samyang, tile RMS 0.06 %) were rejected and the smooth 0.5 % structure
+  with them. `ClipFloor = 0.02` of the level fixes it; the four clean masters now reject
+  nothing, the textured one rejects its dust, its bright spot and its deepest cells.
+- **What it reports** is *what was removed* - `Prepare(input) / Prepare(smoothed)`: p1/p99
+  per pixel, `LargeScalePtp`, `MaxTileDeviation`, `LocalSpots` on it - plus the structure
+  battery before and after (`AnalyzePrepared` on both prepared rasters). No verdict; a
+  warning when the removed component's worst tile reaches `Th.SmoothKeptWarn` (2 %).
+- **Measured on five real masters** (the numbers in `PLAN-SMOOTH.md` and in the analyzer):
+  every verdict and vignetting depth unchanged, the five tests within half a point;
+  removed 0.12-0.39 % ptp on the four clean masters, 3.7 % on the textured one, whose
+  compact spot goes from +6.19 % to +0.62 %; rings ±0.02 %; CFA levels within 0.1 %; 4-5 s
+  per 24 MP master. On a synthetic with known truth the floor is 0.19 % over the whole
+  frame, corners included. What the cells leave behind (~30 % in rms at their own
+  correlation length) is fundamental to any finite kernel; the scale trades it against
+  real 300-px structure (the Nikkor's ring is partly taken at 300, kept at 150).
+- **What it cannot know:** lens versus source. A monitor's blotches and a sky gradient
+  stay, because they are smooth; only `--ratio` separates them. Dust may be wanted (a
+  same-session flat). The report and the tab say both.
+- **Refuses** a raw (a single uncalibrated frame; `--expo` is for raws, and `Cards` is
+  empty there) and a colour cube (`Planes > 1`: the reader averages the planes and the
+  file written back would be mono). Exit 0 when the file was written, 1 otherwise - the
+  `--histeq` rule; it does not go through `ExitFor`. Refuses to overwrite its input.
+- **Output:** the input's type and scale, the input's cards verbatim (`BAYERPAT` included,
+  so Siril treats it as the CFA master it is), two `HISTORY` lines. The console writes the
+  two maps at `-o` and `-dupa` (`FlatCheckCli.AfterMapPath`): the removed component, and
+  the smoothed flat's own residual. Siril's scripts name `pp_flat_stacked` explicitly and
+  will not pick the file up by themselves; the report says so.
+
+No Python counterpart and no `crosscheck.py` scenario: the product is a file. The method
+was chosen and validated with a numpy prototype that reproduced these figures; the C#
+port matches it to the second decimal on the five masters, and the prototype was not
+kept.
+
 ## Shared pipeline and algorithms
 
 **`Prepare(data, targetLong = 1200)`** - `BlockMean(data, 2)` then
@@ -1478,6 +1590,7 @@ Every threshold lives in `Th`. Full picture:
 | standard error of the mean | light, series | 2.0 pts | | `Th.LightSeriesSemMax` |
 | \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
 | frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
+| worst tile of the removed component | smooth | 2 % = warning only, never a verdict | | `Th.SmoothKeptWarn` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
 | centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
@@ -1664,6 +1777,7 @@ Intentional divergences:
 
 - `--histeq` exists only in C#. No Python counterpart, no `crosscheck.py` scenario, no
   `CrossCheckFixtures` entry: the mode produces a picture, not a number to compare.
+- `--smooth` exists only in C#, for the same reason: it produces a file.
 - No 4-panel matplotlib figure (residual PNG only).
 - No EXIF read beyond the pixels, so no `suggest_shutter(...)` shutter-speed
   suggestions - libraw hands over `shutter`, but nothing consumes it yet.
@@ -1709,7 +1823,8 @@ Since phase 8 the tool is usable from a script:
 
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
 `--histeq` has no verdict and does not go through `ExitFor`: 0 means the picture was
-written, 1 that it could not be.
+written, 1 that it could not be. `--smooth` likewise: 0 means the smoothed flat and its
+maps were written, 1 that the input was refused (raw, cube) or the file could not be.
 
 Since the `--ratio` rewrite, mode 2 exits on the residual-scale band of the combined
 master rather than on `OK`/`SUSPECT`/`PROBLEMA` - which changed real outcomes: the ISO800

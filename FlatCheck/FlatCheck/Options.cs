@@ -43,6 +43,12 @@ namespace FlatCheck
         // Modul 5: vederea "Histogram" din Siril. Nu are verdict si nu are optiuni
         // proprii; -o e unde se scrie poza.
         internal bool Histeq;
+
+        // Modul 6: flat-ul netezit. Valoarea e CALEA fisierului FITS de scris - explicit,
+        // fara nume implicit: un mod care scrie 96 MB langa master trebuie sa i se spuna
+        // unde. -o ramane harta. --scale e scara de netezire, in pixeli de senzor.
+        internal string Smooth;
+        internal double ScalePx = SmoothAnalyzer.DefaultScalePx;
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
@@ -65,7 +71,7 @@ namespace FlatCheck
         { "--light", "--expo", "--sky", "--histeq", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
-        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov" };
+        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale" };
 
         internal static Options Parse(string[] args)
         {
@@ -118,6 +124,14 @@ namespace FlatCheck
                             if (fov <= 0 || fov >= 180)
                                 return o.Fail($"--fov asteapta grade intre 0 si 180, a primit {v}");
                             o.Fov = fov; break;
+                        case "--smooth":
+                            if (v.Length == 0) return o.Fail("--smooth asteapta calea fisierului FITS de scris, a primit sirul gol");
+                            o.Smooth = v; break;
+                        case "--scale":
+                            if (!TryNum(v, out var scale)) return o.Fail($"--scale asteapta un numar, a primit '{v}'");
+                            if (scale < 50 || scale > 2000)
+                                return o.Fail($"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}");
+                            o.ScalePx = scale; break;
                     }
                     continue;
                 }
@@ -134,6 +148,11 @@ namespace FlatCheck
                 return o.Fail("astept un singur fisier de intrare, am primit: " + string.Join(", ", positional));
             o.Image = positional[0];
 
+            // Fisierul netezit nu se scrie peste intrare: ar distruge singurul master
+            // fotografiat, si exact el trebuie sa ramana, ca sa se vada ce s-a scos.
+            if (o.Smooth != null && SamePath(o.Smooth, o.Image))
+                return o.Fail("--smooth nu poate scrie peste fisierul de intrare; da alta cale");
+
             // --sat 0 ar face rng = 0 si toate procentele ar iesi NaN/infinit
             double black = o.Black ?? 0.0;
             if (o.Sat.HasValue && o.Sat.Value <= black)
@@ -143,6 +162,16 @@ namespace FlatCheck
         }
 
         Options Fail(string message) { Error = message; return this; }
+
+        /// <summary>Aceeasi cale pe disc, dupa normalizare; fara distinctie de litere pe Windows.</summary>
+        static bool SamePath(string a, string b)
+        {
+            string fa, fb;
+            try { fa = System.IO.Path.GetFullPath(a); fb = System.IO.Path.GetFullPath(b); }
+            catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }
+            var cmp = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return string.Equals(fa, fb, cmp);
+        }
 
         static bool TryNum(string s, out double v)
             => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out v);

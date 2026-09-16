@@ -307,4 +307,71 @@ public class OptionsTests
         Assert.Equal("process", o.Image);
         Assert.True(o.Light);
     }
+
+    // ---------------------------------------------------------------- --smooth
+
+    [Fact]
+    public void SmoothFlag_TakesTheOutputPath_OnEitherSideOfTheInput()
+    {
+        var after = Options.Parse(new[] { "flat.fit", "--smooth", "netezit.fit" });
+        var before = Options.Parse(new[] { "--smooth", "netezit.fit", "flat.fit" });
+
+        Assert.Null(after.Error);
+        Assert.Null(before.Error);
+        Assert.Equal("flat.fit", after.Image);
+        Assert.Equal("flat.fit", before.Image);
+        Assert.Equal("netezit.fit", after.Smooth);
+        Assert.Equal("netezit.fit", before.Smooth);
+        Assert.Equal(SmoothAnalyzer.DefaultScalePx, after.ScalePx);
+    }
+
+    [Fact]
+    public void SmoothFlag_RefusesToWriteOverTheInput()
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--smooth", "FLAT.FIT" });
+
+        Assert.NotNull(o.Error);
+        Assert.Contains("peste fisierul de intrare", o.Error);
+    }
+
+    [Fact]
+    public void SmoothFlag_NeedsAValue()
+    {
+        Assert.Contains("lipseste valoarea", Options.Parse(new[] { "flat.fit", "--smooth" }).Error);
+        Assert.Contains("asteapta o valoare", Options.Parse(new[] { "flat.fit", "--smooth", "--expo" }).Error);
+    }
+
+    [Theory]
+    [InlineData("150", 150.0)]
+    [InlineData("600", 600.0)]
+    public void ScaleFlag_SetsTheSmoothingScale(string value, double expected)
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", value });
+
+        Assert.Null(o.Error);
+        Assert.Equal(expected, o.ScalePx);
+    }
+
+    [Theory]
+    [InlineData("10")]
+    [InlineData("5000")]
+    [InlineData("abc")]
+    public void ScaleFlag_RefusesNonsense(string value)
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", value });
+
+        Assert.NotNull(o.Error);
+        Assert.Contains("--scale", o.Error);
+    }
+
+    /// <summary>--scale without --smooth parses and is simply unused; dispatch never reads it.</summary>
+    [Fact]
+    public void ScaleFlag_WithoutSmooth_IsAccepted()
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--scale", "200" });
+
+        Assert.Null(o.Error);
+        Assert.Null(o.Smooth);
+        Assert.Equal(200, o.ScalePx);
+    }
 }

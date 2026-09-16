@@ -619,4 +619,95 @@ public class GoldenOutputTests
     {
         Assert.Equal(expected, FlatCheckCli.ExitFor(verdict));
     }
+
+    // ---------------------------------------------------------------- smooth
+
+    /// <summary>
+    /// No verdict, exit 0, the FITS beside the report and two maps. The golden file pins
+    /// the "what was removed" block and the before/after table on a clean field, where
+    /// the removed component is the method's floor.
+    /// </summary>
+    [Fact]
+    public void Smooth_OnACleanFlat_WritesTheFileAndExitsZero()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+        string fits = ws.PathTo("netezit.fit");
+        string png = ws.PathTo("out.png");
+
+        var (output, exit) = RunCli(ws, f, "--smooth", fits, "--scale", "50", "-o", png);
+
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(fits));
+        Assert.True(File.Exists(png));
+        Assert.True(File.Exists(FlatCheckCli.AfterMapPath(png)));
+        var (back, _, _, _, _) = FitsReader.LoadFull(File.ReadAllBytes(fits));
+        Assert.Equal((Size, Size), (back.W, back.H));
+        Assert.DoesNotContain("ATENTIE", output);
+        AssertGolden("smooth_clean", output);
+    }
+
+    /// <summary>
+    /// A fabric-like texture plus one dust spot: the warning fires, the file is still
+    /// written, and the before/after table shows the worst tile dropping.
+    /// </summary>
+    [Fact]
+    public void Smooth_OnATexturedFlat_WarnsAndStillWritesTheFile()
+    {
+        using var ws = new TempWorkspace();
+        var radial = FitsTestData.Radial(Size, Size);
+        string f = Flat(ws, "textured.fit", (x, y) =>
+            radial(x, y)
+            * (1 + 0.03 * Math.Sin(x / 6.0) * Math.Cos(y / 7.0))
+            * (1 - 0.15 * Math.Exp(-((x - 400) * (x - 400) + (y - 120) * (y - 120)) / (2 * 8.0 * 8.0))));
+        string fits = ws.PathTo("netezit.fit");
+
+        var (output, exit) = RunCli(ws, f, "--smooth", fits, "--scale", "50", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(fits));
+        Assert.Contains("ATENTIE", output);
+        AssertGolden("smooth_textured", output);
+    }
+
+    [Fact]
+    public void Smooth_RefusesAColourCube_AndWritesNothing()
+    {
+        using var ws = new TempWorkspace();
+        string f = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(64, 64, 3, (x, y, p) => 1000 + p));
+        string fits = ws.PathTo("netezit.fit");
+
+        var (output, exit) = RunCli(ws, f, "--smooth", fits, "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(1, exit);
+        Assert.False(File.Exists(fits));
+        Assert.Contains("3 planuri", output);
+        AssertGolden("smooth_refuses_cube", output);
+    }
+
+    [Fact]
+    public void Smooth_RefusesToOverwriteTheInput()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+
+        var (output, exit) = RunCli(ws, f, "--smooth", f);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("peste fisierul de intrare", output);
+    }
+
+    /// <summary>--smooth wins over every other mode flag: dispatch is first-match, and it comes first.</summary>
+    [Fact]
+    public void Smooth_TakesPrecedenceOverHisteq()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+
+        var (output, exit) = RunCli(ws, f, "--histeq", "--smooth", ws.PathTo("s.fit"), "--scale", "50", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(0, exit);
+        Assert.Contains("NETEZIRE", output);
+        Assert.DoesNotContain("EGALIZARE", output);
+    }
 }

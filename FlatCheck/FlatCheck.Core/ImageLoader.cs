@@ -43,6 +43,21 @@ namespace FlatCheck
         /// <summary>Cardurile FITS; GOL (nu null) pentru un raw - vezi LightSuitability.</summary>
         internal IReadOnlyDictionary<string, string> Header;
 
+        /// <summary>
+        /// Aceleasi carduri, dar BRUTE - cele 80 de caractere ale fiecaruia, in ordinea din
+        /// fisier, fara END. Gol pentru un raw. Exista pentru modul de netezire, care scrie
+        /// un al doilea master si vrea sa-i dea headerul intrarii neatins: dictionarul de
+        /// mai sus pierde comentariile si taie sirurile la primul '/', deci nu poate fi
+        /// sursa unui header scris inapoi.
+        /// </summary>
+        internal IReadOnlyList<string> Cards = System.Array.Empty<string>();
+
+        /// <summary>NAXIS3 al HDU-ului citit; 1 pentru o imagine 2D si pentru un raw.</summary>
+        internal int Planes = 1;
+
+        /// <summary>BITPIX al HDU-ului citit; 0 pentru un raw, care n-are asa ceva.</summary>
+        internal int Bitpix;
+
         /// <summary>Scala ADU exacta din fisier, sau null daca fisierul n-o poarta.</summary>
         internal ExposureScale Scale;
 

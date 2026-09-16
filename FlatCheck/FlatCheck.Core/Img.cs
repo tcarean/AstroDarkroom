@@ -88,6 +88,51 @@ namespace FlatCheck
             return o;
         }
 
+        /// <summary>
+        /// Grila de mediane pe dale de <paramref name="k"/> px, CU dalele partiale de la
+        /// capat, si centrul real al fiecarei dale in pixeli.
+        ///
+        /// Deliberat NU grila lui <see cref="BlockMean"/>, care arunca blocurile partiale:
+        /// netezirea trebuie sa ajunga pana la ultimul pixel, iar daca ultimele 58 de
+        /// randuri ale unui senzor de 4016 n-au dala, valoarea lor se extrapoleaza. Si
+        /// centrul dalei partiale se intoarce ca atare, nu ca "inca un pas": o dala de 8
+        /// px tratata ca una intreaga (fitata la o dala distanta de vecina ei, cand e la
+        /// jumatate) a pus o banda de eroare de 0.8 % de-a lungul marginii drepte pe
+        /// sinteticul cu adevar cunoscut. Cu centrele reale banda a disparut (0.19 % pe
+        /// tot cadrul).
+        ///
+        /// Mediana, nu media: o dala cu un pixel fierbinte sau cu o umbra de praf mica
+        /// isi tine valoarea tipica.
+        /// </summary>
+        internal static (Img Tiles, double[] CentreY, double[] CentreX) TileMedians(Img a, int k)
+        {
+            int th = (a.H + k - 1) / k, tw = (a.W + k - 1) / k;
+            var t = new Img(th, tw);
+            var cy = new double[th];
+            var cx = new double[tw];
+            var buf = new double[k * k];
+            for (int i = 0; i < tw; i++)
+                cx[i] = (i * k + Math.Min(a.W, (i + 1) * k)) / 2.0;
+            for (int j = 0; j < th; j++)
+            {
+                int y0 = j * k, y1 = Math.Min(a.H, (j + 1) * k);
+                cy[j] = (y0 + y1) / 2.0;
+                for (int i = 0; i < tw; i++)
+                {
+                    int x0 = i * k, x1 = Math.Min(a.W, (i + 1) * k);
+                    int n = 0;
+                    for (int y = y0; y < y1; y++)
+                        for (int x = x0; x < x1; x++)
+                            buf[n++] = a.At(y, x);
+                    var vals = new double[n];
+                    Array.Copy(buf, vals, n);
+                    Array.Sort(vals);
+                    t.Set(j, i, Stats.OfSorted(vals, 50));
+                }
+            }
+            return (t, cy, cx);
+        }
+
         /// <summary>Rasterul rotit cu 180 de grade in jurul centrului lui.</summary>
         internal static Img Rotate180(Img a)
         {

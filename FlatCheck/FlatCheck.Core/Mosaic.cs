@@ -68,6 +68,52 @@ namespace FlatCheck
         }
 
         /// <summary>
+        /// O singura pozitie, ca raster de H/2 x W/2 - aceeasi decupare ca <see cref="Split"/>,
+        /// dar pentru un singur <paramref name="p"/>. Exista pentru modul de netezire, care
+        /// lucreaza pozitiile pe rand si n-are de ce sa tina toate patru copiile deodata:
+        /// pe un cadru de 24 MP asta e 190 MB in plus, degeaba.
+        /// </summary>
+        internal static Img Extract(Img a, int p)
+        {
+            int h = a.H / 2, w = a.W / 2;
+            int oy = p / 2, ox = p % 2;
+            var o = new Img(h, w);
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                    o.Set(y, x, a.At(y * 2 + oy, x * 2 + ox));
+            return o;
+        }
+
+        /// <summary>
+        /// Inversul lui <see cref="Split"/>: cele patru pozitii, reimpletite intr-un raster
+        /// de marimea ORIGINALA <paramref name="h"/> x <paramref name="w"/>.
+        ///
+        /// Split arunca un rand sau o coloana impara de la capat; aici linia lipsa se umple
+        /// copiind cea mai apropiata linie para, ca iesirea sa aiba mereu forma intrarii si
+        /// ultimul rand al unui cadru de 4017 sa nu fie zero - un flat cu o linie de zerouri
+        /// ar imparti lights-urile la zero pe acea linie.
+        /// </summary>
+        internal static Img Merge(Img[] positions, int h, int w)
+        {
+            var o = new Img(h, w);
+            int ph = h / 2, pw = w / 2;
+            for (int y = 0; y < h; y++)
+            {
+                int sy = Math.Min(y / 2, ph - 1);
+                for (int x = 0; x < w; x++)
+                {
+                    int sx = Math.Min(x / 2, pw - 1);
+                    // pe linia impara de la capat, randul y (sau coloana x) cade in afara
+                    // pozitiilor: se ia pozitia cu ACEEASI paritate - deci aceeasi culoare
+                    // pe un CFA - de pe ultima linie para, prin sy/sx prinse mai sus
+                    int p = PositionOf(y, x);
+                    o.Set(y, x, positions[p].At(sy, sx));
+                }
+            }
+            return o;
+        }
+
+        /// <summary>
         /// Numele pozitiei <paramref name="i"/>: culoarea cand fisierul a spus ordinea,
         /// pozitia cand nu. Nu se ghiceste - ordinea difera de la aparat la aparat.
         /// </summary>

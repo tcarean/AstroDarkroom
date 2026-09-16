@@ -180,6 +180,9 @@ public class WindowSmokeTests
             Render(new LightView { DataContext = vm.Light }, name: "tab-end-to-end");
             Render(new ExposureView { DataContext = vm.Exposure }, name: "tab-expunere");
             Render(new HistEqView { DataContext = vm.HistEq }, name: "tab-histeq-gol");
+            // Netezirea porneste goala, cu ghidul deschis si butonul activ - starea pe
+            // care o vede omul; rezultatul ei se randeaza in testul dedicat.
+            Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-netezire-gol");
 
             // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
             // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
@@ -199,6 +202,57 @@ public class WindowSmokeTests
         Assert.True(vm.Ratio.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
         Assert.Equal(3, vm.HistEq.Files.Count);
+        Assert.True(vm.Smooth.CanRun);
+        Assert.False(vm.Smooth.HasResult);
+    }
+
+    /// <summary>
+    /// Tabul de netezire CU rezultat - ambele harti, atentionarea, cele doua baterii -
+    /// si in starea de refuz (cub de culoare). Rezultatul vine prin Populate, fara
+    /// fisier scris, ca la tabul de histograma.
+    /// </summary>
+    [Fact]
+    public async Task TheSmoothTabRendersAResultAndARefusal()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var blotched = TestImages.From(256, 256, (x, y) =>
+            FitsTestData.Radial(256, 256)(x, y)
+            * (1 + 0.10 * Math.Exp(-((x - 60) * (x - 60) + (y - 180) * (y - 180)) / (2 * 10.0 * 10.0))));
+        var result = SmoothAnalyzer.Analyze(blotched, 12);
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new SmoothTabViewModel(_ => true);
+            vm.Attach(f.Session, CancellationToken.None);
+            vm.Populate(result);
+            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-netezire");
+
+            vm.ShowAfterMap = true;
+            vm.Guide.IsExpanded = false;
+            Render(new SmoothView { DataContext = vm }, name: "tab-netezire-dupa");
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+
+        Assert.True(result.RemovedFlagged);
+
+        // refuzul, prin rularea reala pe un cub
+        using var g = new SessionFixture().WithProcess();
+        File.WriteAllBytes(Path.Combine(g.ProcessDir, SirilSession.FlatMasterName),
+            FitsTestData.BuildFitsCube(32, 32, 3, (x, y, p) => 1000 + p));
+        var refused = new SmoothTabViewModel(_ => true);
+        refused.Attach(g.Session, CancellationToken.None);
+        await refused.RunAsync();
+        Assert.True(refused.HasError);
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+            Render(new SmoothView { DataContext = refused }, name: "tab-netezire-refuz");
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
     }
 
     /// <summary>

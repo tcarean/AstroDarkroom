@@ -9,9 +9,11 @@ Utilizare:
   flatcheck <flat_brut.fit> --expo        # idem, pe un FITS brut din Siril
   flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
   flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea "Histogram" din Siril, pe canale
+  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
+            --scale <px> (pt --smooth: scara de netezire pe senzor; implicit 300)
 
 Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
@@ -21,6 +23,10 @@ fiindca acolo cerul si vignetarea au aceeasi forma. Vezi README.md.
 
 --histeq e o poza, nu un test: fiecare nivel de gri primeste acelasi numar de pixeli,
 deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scris-o.
+
+--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura
+difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta
+acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).
 
 Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
 vandabilitate sau potrivire pentru un scop anume. E software liber:

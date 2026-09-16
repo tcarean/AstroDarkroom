@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - folderul sesiunii si cele cinci taburi.
+// MainViewModel.cs - folderul sesiunii si cele sase taburi.
 //
 // Doua decizii de comportament merita explicate:
 //
@@ -48,14 +48,18 @@ namespace FlatCheck.Wpf
         readonly Func<SirilInstall> _locate;
         readonly Func<bool> _sirilGuiRunning;
 
-        public MainViewModel() : this(null, null) { }
+        /// <summary>Lantul pornit la deschidere (structura, seria, ratio), ca tabul de netezire sa-l poata astepta.</summary>
+        Task _chain = Task.CompletedTask;
+
+        public MainViewModel() : this(null, null, null) { }
 
         /// <summary>
         /// Cele doua intrebari despre masina - unde e Siril, si daca ruleaza - se dau din
         /// afara ca testele sa nu depinda de ce e instalat pe calculatorul care le ruleaza.
-        /// Null inseamna raspunsul adevarat.
+        /// Null inseamna raspunsul adevarat. A treia e intrebarea de suprascriere a tabului
+        /// de netezire: implicit un MessageBox, in teste un raspuns dat dinainte.
         /// </summary>
-        internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning)
+        internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null)
         {
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
@@ -65,14 +69,28 @@ namespace FlatCheck.Wpf
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
+            Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
             Preprocess = new PreprocessViewModel();
         }
+
+        static bool AskOnScreen(string question)
+            => System.Windows.MessageBox.Show(question, "FlatCheck", System.Windows.MessageBoxButton.YesNo,
+                   System.Windows.MessageBoxImage.Question, System.Windows.MessageBoxResult.No)
+               == System.Windows.MessageBoxResult.Yes;
 
         public StructureTabViewModel Structure { get; }
         public RatioTabViewModel Ratio { get; }
         public LightTabViewModel Light { get; }
         public ExposureTabViewModel Exposure { get; }
         public HistEqTabViewModel HistEq { get; }
+        public SmoothTabViewModel Smooth { get; }
+
+        /// <summary>
+        /// Se termina cand lantul de la deschidere s-a terminat. Tabul de netezire ruleaza
+        /// dintr-un click, deci s-ar putea suprapune peste structura daca omul apasa in
+        /// timpul ei; asteapta intai - regula "secvential, nu paralel" de mai sus.
+        /// </summary>
+        internal Task WhenIdleAsync() => _chain;
 
         /// <summary>
         /// Blocul "ruleaza scriptul de aici" de pe ecranul de problema. Exista mereu, ca
@@ -152,24 +170,33 @@ namespace FlatCheck.Wpf
             // Tot o lista, tot fara calcul: masterul de 24 MP nu se incarca de doua ori la
             // deschidere - il citeste deja Structura, mai jos.
             HistEq.Attach(session, ct);
+            // Nici netezirea nu calculeaza la deschidere: scrie un fisier, si un fisier
+            // nu se produce fiindca s-a deschis un folder. Asteapta un click.
+            Smooth.Attach(session, ct, WhenIdleAsync);
 
             IsRunning = true;
+            _chain = RunChainAsync(session, ct);
             try
             {
-                await Structure.RunAsync(session, ct).ConfigureAwait(true);
-                if (ct.IsCancellationRequested) return;
-
-                await Light.RunAsync(session, ct).ConfigureAwait(true);
-                if (ct.IsCancellationRequested) return;
-
-                // Tabul Ratio are, de obicei, doua mastere preselectate; abia acum, dupa
-                // ce celelalte doua au terminat, se poate calcula fara sa se bata pe memorie.
-                await Ratio.RecomputeAsync().ConfigureAwait(true);
+                await _chain.ConfigureAwait(true);
             }
             finally
             {
                 IsRunning = false;
             }
+        }
+
+        async Task RunChainAsync(SirilSession session, CancellationToken ct)
+        {
+            await Structure.RunAsync(session, ct).ConfigureAwait(true);
+            if (ct.IsCancellationRequested) return;
+
+            await Light.RunAsync(session, ct).ConfigureAwait(true);
+            if (ct.IsCancellationRequested) return;
+
+            // Tabul Ratio are, de obicei, doua mastere preselectate; abia acum, dupa
+            // ce celelalte doua au terminat, se poate calcula fara sa se bata pe memorie.
+            await Ratio.RecomputeAsync().ConfigureAwait(true);
         }
 
         /// <summary>Se cheama la inchiderea ferestrei, ca sa nu ramana fire care lucreaza degeaba.</summary>
@@ -194,6 +221,7 @@ namespace FlatCheck.Wpf
             Light.Reset();
             Exposure.Reset();
             HistEq.Reset();
+            Smooth.Reset();
         }
 
         void ClearProblem()

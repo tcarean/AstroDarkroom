@@ -137,6 +137,28 @@ namespace FlatCheck.Wpf
         /// <summary>Calea masterului gasit, sau null. Vezi <see cref="FindFlatMaster"/>.</summary>
         internal string FlatMasterPath => FindFlatMaster().Path;
 
+        /// <summary>
+        /// Sufixul flat-ului netezit: "pp_flat_stacked_netezit.fit", langa masterul din care
+        /// s-a facut. Numele NU e unul din <see cref="FlatMasterCandidates"/> - cai exacte,
+        /// nu tipare - deci masterul sesiunii ramane cel fotografiat si tabul Structura
+        /// arata in continuare textura; fisierul netezit nu trebuie sa ascunda problema
+        /// pentru care a fost facut. Se potriveste insa cu <see cref="RatioPattern"/>, ceea
+        /// ce e corect: o stiva netezita e tot o stiva.
+        /// </summary>
+        internal const string SmoothedSuffix = "_netezit";
+
+        /// <summary>Unde scrie tabul de netezire, sau null cand nu exista master.</summary>
+        internal string SmoothedMasterPath
+        {
+            get
+            {
+                string master = FlatMasterPath;
+                if (master == null) return null;
+                return Path.Combine(Path.GetDirectoryName(master),
+                    Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
+            }
+        }
+
         /// <summary>Unde se scrie raportul de structura: in folderul dat, nu in process/.</summary>
         internal string ResultTextPath => Path.Combine(Root, ResultFileName);
 

@@ -84,7 +84,7 @@ la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost
 
 ---
 
-## Cele cinci moduri
+## Cele șase moduri
 
 ### 1. Structură (implicit)
 
@@ -368,6 +368,78 @@ fel; ce se vede acolo e ce a rămas după stivuire.
 
 ---
 
+### 6. Netezire — `--smooth`
+
+```bash
+flatcheck process/pp_flat_stacked.fit --smooth process/pp_flat_stacked_netezit.fit
+flatcheck process/pp_flat_stacked.fit --smooth netezit.fit --scale 150
+```
+
+Nu e un test și nu dă verdict. Scrie **un al doilea master**: același flat, cu tot ce e
+neted păstrat și tot ce nu e scos — textura difuzorului, umbrele de praf, petele compacte,
+zgomotul. Pentru un flat tras printr-un material pus pe monitor, a cărui textură ajunge în
+lights ca o pătură de celule de câțiva la sută.
+
+**De ce nu un flat sintetic radial.** Un model pur radial ar scoate textura, dar ar scoate
+și tot ce face obiectivul în afară de vignetare — iar pe un Tokina 20 mm cele patru
+colțuri diferă între ele cu 6-16 %, ceea ce e exact cazul în care un model radial
+corectează mai prost decât flat-ul pe care îl înlocuiește. Netezirea păstrează colțurile
+inegale, gradientul, petele largi: tot ce e neted la scara aleasă.
+
+**Ce face**, pe fiecare poziție Bayer separat (pe mono, pe tot cadrul):
+
+1. mediana pe dale de ~150 px pe senzor, cu dalele parțiale de la margine păstrate;
+2. în fiecare dală, un fit pătratic local pe dalele vecine, ponderat gaussian cu sigma =
+   scara (implicit 300 px pe senzor);
+3. robust: dalele care se abat de la fitul local cu peste 2.5 MAD *și* peste 2 % din
+   nivel — praf, pete, celulele cele mai adânci — nu mai cântăresc în fitul nimănui;
+4. pe fiecare pixel, media biliniară a predicțiilor celor patru dale din jur.
+
+Fără model radial, deliberat: două variante cu model radial au picat pe masterele reale.
+Un polinom global nu urmărește structura de scară medie pe care o are orice master
+(petele monitorului la 1000-1500 px, un inel descentrat), iar un model pe inele **pune
+inele în fișier** — dincolo de cercul înscris mediana pe inel sare de la un inel la altul,
+și un câmp local de 150 px nu le poate compensa. Netezirea de mai sus nu știe de niciun
+centru, deci nu poate face inele.
+
+**Ce raportează** e *ce a scos*, fiindcă asta e singura cifră după care se poate decide
+dacă fișierul e de încredere: p1/p99 pe pixel, structura la scară mare (p95 − p5 pe dale)
+și dala cea mai abătută a raportului `original / netezit`, pata cea mai adâncă, și
+bateria de structură pe intrare și pe ieșire, față în față. Când dala cea mai abătută
+trece de 2 % raportul atenționează că s-a scos și ceva de scară mare — praf adânc, o
+pată, sau o structură reală mai îngustă decât scara — și lasă decizia omului.
+
+Măsurat pe cinci mastere reale (Nikkor 35 DX pe cer la două ISO-uri, Tokina 20 cu
+difuzorul lângă lentilă și pe monitor, Samyang 135 pe LCD), la 300 px: toate verdictele
+și adâncimile de vignetare rămân neschimbate; cele cinci teste se mișcă sub o jumătate de
+punct; componenta scoasă e de 0.12-0.39 % pe cele patru mastere curate (zgomot de pixel
+plus praful) și 3.7 % pe cel cu textură, unde pata compactă cade de la +6.19 % la +0.62 %
+și textura din fișier de la ±3 % la ±0.3 %. Pe un sintetic cu adevăr cunoscut eroarea
+metodei e sub 0.2 % pe tot cadrul, colțuri incluse.
+
+**Ce NU știe.** Ce e al obiectivului și ce e al sursei: petele unui monitor, gradientul
+cerului, colțurile inegale ale unui panou rămân, fiindcă sunt netede — doar `--ratio` le
+desparte. Și ce scoate poate fi ceva dorit: o umbră de praf e corectă pentru sesiunea ale
+cărei lights o au și ele, și greșită într-un flat de bibliotecă. O structură reală de
+~300 px (inelul descentrat al Nikkor-ului, 0.3-0.5 %) e luată parțial la 300 px și rămâne
+la 150 px; scara e singurul buton. Ce rămâne din celule e fundamental: un câmp aleator cu
+lungimea de corelație de 300 px trece printr-un nucleu de 300 px la ~30 % în RMS.
+
+**Fișierul** are tipul intrării (float rămâne float la aceleași valori, 16 biți rămân 16
+biți), headerul intrării copiat card cu card — `BAYERPAT`, `STACKCNT`, `DATE-OBS` — plus
+două linii `HISTORY`. Nimic nu se renormalizează. Scripturile Siril numesc
+`pp_flat_stacked` explicit, deci nu iau fișierul netezit singure: redenumește-l în locul
+masterului (păstrează originalul) sau dă-l la `calibrate` cu `-flat=`. Modul refuză un raw
+(un cadru, necalibrat — pentru raw există `--expo`) și un cub de culoare (cititorul l-ar
+media într-un mono).
+
+**Verificarea** pe care o poți face singur: netezește două mastere ale aceleiași lentile
+și trece-le prin `--ratio`; ce rămâne trebuie să fie un câmp neted de ordin mic. Că flat-ul
+netezit chiar corectează mai bine o spune doar `--light` pe lights calibrate — și pe un
+câmp mai larg de 40° el refuză.
+
+---
+
 ## Când merge și când NU merge `--light`
 
 Modul separă fondul în „plan de poluare luminoasă" + „termeni radiali = eroare de flat".
@@ -496,7 +568,9 @@ au rămas doar ca etichetă pe componenta fixă în lume, care e informativă ș
 | 3 | `PROBLEMA` / `REFA` |
 
 Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, uită-te".
-`--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut.
+`--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut. La fel
+`--smooth`: 0 înseamnă că a scris flat-ul netezit și hărțile, 1 că a refuzat intrarea
+(raw, cub de culoare) sau n-a putut scrie.
 
 ---
 
@@ -511,13 +585,16 @@ flatcheck <flat_brut.fit> --expo         # expunere
 flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
+flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, praf, pete
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
-                           una lângă ea, cu sufixul -lume; la --histeq e poza egalizată)
+                           una lângă ea, cu sufixul -lume; la --histeq e poza egalizată;
+                           --smooth mai scrie una cu sufixul -dupa)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
   --fov <grade>            diagonala câmpului, dacă headerul nu o dă (--light)
+  --scale <px>             scara de netezire, în pixeli de senzor (--smooth; implicit 300)
 ```
 
 Flagurile pot veni oriunde: `flatcheck --expo f.fit` și `flatcheck f.fit --expo` sunt
@@ -721,7 +798,7 @@ lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
 `THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
 călătoresc garantat cu programul.
 
-### Cele cinci taburi
+### Cele șase taburi
 
 | tab | ce face | când rulează |
 |---|---|---|
@@ -730,6 +807,7 @@ călătoresc garantat cu programul.
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
 | **Histogram** | modul 5 pe masterul din `process/` sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
+| **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_netezit.fit` lângă el | la buton, niciodată singur — scrie un fișier |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
@@ -876,6 +954,29 @@ păstrează când schimbi vederea și se resetează când schimbi fișierul.
 | masterul față de un cadru | vezi paragraful de mai sus: ce lipsește de pe master s-a mediat, ce e pe amândouă e fix pe montaj. |
 | unde e cifra | în tabul Structura. Poza spune ce *formă* are ce măsoară ea. |
 
+**Netezire** e modul 6 pe masterul sesiunii, și singurul tab care **nu rulează singur**:
+scrie un fișier de ~96 MB lângă master, și un fișier nu se produce fiindcă s-a deschis un
+folder. Ghidul stă deschis deasupra butonului, fiindcă e precondiția lui; sub el, trei
+chipuri de scară (150 / 300 / 600 px, implicit 300) și butonul „Netezește și salvează".
+Butonul așteaptă lanțul de la deschidere — structura citește același master de 24 MP — și
+întreabă înainte să suprascrie un fișier netezit existent; un „nu" lasă cifrele pe ecran
+și fișierul vechi pe disc, și spune asta.
+
+După rulare: cifrele despre *ce s-a scos*, atenționarea galbenă când s-a scos și ceva de
+scară mare, bateria de structură **înainte** și **după** (aceleași rânduri ca în tabul
+Structura, cu verdictul fiecăreia), și în dreapta două hărți în spatele unui comutator —
+`original / netezit`, adică exact ce a plecat, și reziduul flat-ului netezit după propriul
+model radial, adică ce face obiectivul odată textura plecată. Scara hărții pornește la
+±2 %, nu la ±10 % ca la celelalte taburi: ce se scoate e mic, și la 10 % harta ar fi albă.
+
+Fișierul netezit **nu devine masterul sesiunii**: numele lui nu e printre cele două căi pe
+care le caută aplicația, deci tabul Structura măsoară în continuare masterul fotografiat
+și arată textura pentru care a fost nevoie de netezire. Dialogul din Ratio îl acceptă
+însă, fiindcă o stivă netezită e tot o stivă.
+
+> Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
+> secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.
+
 ### Ce nu face
 
 Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
@@ -962,6 +1063,9 @@ Sunt intenționate, nu scăpări:
 
 - **`--histeq` există doar în C#.** N-are paritate în `flatcheck.py` și niciun scenariu în
   `crosscheck.py`, prin decizie: nu produce nicio cifră de comparat.
+- **`--smooth` există doar în C#**, din același motiv: produce un fișier, nu o cifră.
+  Metoda a fost aleasă și validată cu un prototip numpy pe cinci mastere reale, iar
+  portul C# reproduce prototipul la a doua zecimală; prototipul n-a fost păstrat.
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)

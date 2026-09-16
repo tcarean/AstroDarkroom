@@ -1,0 +1,36 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== NETEZIRE: <TMP>/clean.fit ===
+    cadru              : 512 x 512, mono/procesat (fara mozaic CFA)
+    scara de netezire  : 50 px pe senzor (dale de 12 px, nucleu gaussian sigma 4.2 dale)
+    dale respinse      : niciuna din 1849 (praf, pete, textura peste 2 %)
+
+  CE S-A SCOS (original / netezit, la rezolutia de analiza 256 x 256)
+    p1 / p99 pe pixel        : +0.00 % / +0.01 %  (zgomotul de pixel intra aici)
+    structura la scara mare  :  0.00 %  (p95 - p5 pe dale)
+    dala cea mai abatuta     :  0.01 %
+    pata cea mai adanca      : +0.00 % la (244, 19)
+
+  INAINTE / DUPA - cele cinci teste de structura
+    imprastiere 4 colturi   :  0.57 % [PERFECT]  ->   0.57 % [PERFECT]
+    asimetrie azimutala max :  0.29 % [PERFECT]  ->   0.29 % [PERFECT]
+    reziduu dupa model rad. :  0.29 % [PERFECT]  ->   0.29 % [PERFECT]
+    inclinare (gradient)    :  0.41 % [PERFECT]  ->   0.41 % [PERFECT]
+    pata maxima (o dala)    :  0.37 % [PERFECT]  ->   0.37 % [PERFECT]
+    VERDICT                 : PERFECT  ->  PERFECT
+
+    INFORMATIV: fisierul netezit pastreaza TOT ce e neted in master si scoate tot ce nu e. Nu stie
+    ce e al obiectivului si ce e al sursei: petele unui monitor, gradientul cerului sau
+    colturile inegale ale unui panou raman, fiindca sunt netede; doar --ratio le desparte.
+    Ce scoate - textura, praful, petele compacte - poate fi si ceva dorit: o umbra de
+    praf e corecta pentru sesiunea ale carei lights o au si ele. O structura reala mai
+    ingusta decat scara (~300 px) e luata partial; scara e singurul buton.
+    Scripturile Siril numesc pp_flat_stacked explicit, deci nu iau fisierul netezit singure:
+    redenumeste-l in locul masterului (pastreaza originalul) sau da-l la calibrate cu -flat=.
+    -> flat netezit salvat: <TMP>/netezit.fit
+
+    -> harta salvata: <TMP>/out.png
+
+    -> harta salvata: <TMP>/out-dupa.png
+

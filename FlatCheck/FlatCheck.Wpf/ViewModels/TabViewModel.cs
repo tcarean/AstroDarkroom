@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TabViewModel.cs - ce au in comun cele cinci taburi.
+// TabViewModel.cs - ce au in comun cele sase taburi.
 //
 // Toate fac acelasi lucru: arata un ecran de asteptare, calculeaza pe alt fir, apoi ori
 // arata rezultate, ori arata o explicatie. Starea aia - ocupat / rezultat / eroare - e
-// aici, o singura data, ca cele cinci sa nu ajunga cu cinci feluri de a esua.
+// aici, o singura data, ca cele sase sa nu ajunga cu sase feluri de a esua.
 //
 // RULARI DEPASITE. Tabul de histograma lasa lista apasabila cat timp calculeaza, deci
 // o a doua rulare poate porni peste prima. RunGuardedAsync isi numara rularile si lasa

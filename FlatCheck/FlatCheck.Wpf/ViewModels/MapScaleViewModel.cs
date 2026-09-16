@@ -80,7 +80,11 @@ namespace FlatCheck.Wpf
     {
         MapScaleOption _selected;
 
-        public MapScaleViewModel()
+        /// <param name="defaultCapPct">
+        /// Plafonul bifat la inceput; implicit cel din nucleu. Tabul de netezire da
+        /// Th.ResidPerfect: ce se scoate e mic, si la +-10 % harta lui ar fi alba.
+        /// </param>
+        public MapScaleViewModel(double? defaultCapPct = null)
         {
             // "auto" prima, apoi plafoanele in ordine crescatoare, ca in scara de reziduu.
             var options = new List<MapScaleOption> { new MapScaleOption(this, null) };
@@ -89,7 +93,8 @@ namespace FlatCheck.Wpf
 
             // Implicit plafonul din nucleu, nu "auto": banda in care se asteapta sa
             // traiasca un flat normal, deci doua sesiuni se compara fara sa apesi nimic.
-            _selected = options.First(o => o.CapPct == PngWriter.DefaultCapPct);
+            double cap = defaultCapPct ?? PngWriter.DefaultCapPct;
+            _selected = options.First(o => o.CapPct == cap);
             _selected.IsSelected = true;
         }
 

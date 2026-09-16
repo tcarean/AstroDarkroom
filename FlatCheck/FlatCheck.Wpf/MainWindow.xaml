@@ -195,6 +195,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="Histogram">
           <local:HistEqView DataContext="{Binding HistEq}" />
         </TabItem>
+        <TabItem Header="Netezire">
+          <local:SmoothView DataContext="{Binding Smooth}" />
+        </TabItem>
       </TabControl>
     </Grid>
   </Grid>

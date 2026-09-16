@@ -56,6 +56,16 @@ namespace FlatCheck
         // nemonoton, dand un fals negativ exact pe obiectivele cele mai plate. Ce se
         // masoara acum e Th.Resid* pe "inclinare": acelasi gradient, luat ca amplitudine.
 
+        // --- netezire ---
+        // Pragul de la care raportul de netezire atentioneaza ca s-a scos mai mult decat
+        // textura: cea mai abatuta dala a componentei scoase (original / netezit), pe
+        // rasterul de analiza. Nu e un verdict - fisierul se scrie oricum - ci semnalul
+        // ca netezirea a luat si ceva de scara mare, pe care omul trebuie sa-l vada in
+        // harta. Masurat la scara implicita de 300 px pe cinci mastere reale: 0.40-0.71 %
+        // pe cele patru curate, 4.2 % pe cel cu textura de tesatura - deci acelasi 2 % ca
+        // banda PERFECT lasa o marja de 3x in ambele directii.
+        public const double SmoothKeptWarn = ResidPerfect;
+
         // --- rotatie 180 ---
         public const double RatioOk = 1.0, RatioBad = 3.0;
 

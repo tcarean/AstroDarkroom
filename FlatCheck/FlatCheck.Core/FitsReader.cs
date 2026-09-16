@@ -56,7 +56,7 @@ namespace FlatCheck
 
         public LoadedFrame Load(string path)
         {
-            var (img, hdr) = LoadWithHeader(File.ReadAllBytes(path));
+            var (img, hdr, cards, planes, bitpix) = LoadFull(File.ReadAllBytes(path));
 
             // Ordinea culorilor, daca fisierul o poarta. Siril scrie BAYERPAT pe un cadru
             // trecut prin tab-ul Conversion, si NU o scrie pe unul debayerizat - ceea ce e
@@ -67,7 +67,11 @@ namespace FlatCheck
 
             // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
-            return new LoadedFrame { Image = img, Header = hdr, Scale = null, Cfa = cfa };
+            return new LoadedFrame
+            {
+                Image = img, Header = hdr, Scale = null, Cfa = cfa,
+                Cards = cards, Planes = planes, Bitpix = bitpix,
+            };
         }
 
         // ========================================================= I/O FITS
@@ -88,11 +92,25 @@ namespace FlatCheck
         /// </summary>
         internal static (Img Image, IReadOnlyDictionary<string, string> Header) LoadWithHeader(byte[] raw)
         {
+            var (img, hdr, _, _, _) = LoadFull(raw);
+            return (img, hdr);
+        }
+
+        /// <summary>
+        /// Ca <see cref="LoadWithHeader"/>, plus cardurile brute ale HDU-ului din care a
+        /// venit imaginea (fara END), numarul de planuri si BITPIX-ul lui. Cardurile
+        /// brute sunt ce copiaza FitsWriter intr-un fisier scris inapoi; dictionarul nu
+        /// poate fi sursa, fiindca pierde comentariile si taie sirurile la primul '/'.
+        /// </summary>
+        internal static (Img Image, IReadOnlyDictionary<string, string> Header, IReadOnlyList<string> Cards, int Planes, int Bitpix)
+            LoadFull(byte[] raw)
+        {
 
             int pos = 0;
             while (pos < raw.Length)
             {
                 var hdr = new Dictionary<string, string>();
+                var cards = new List<string>();
                 bool end = false;
                 while (!end)
                 {
@@ -102,6 +120,7 @@ namespace FlatCheck
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
                         string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
                         if (key == "END") { end = true; break; }   // nimic dupa END nu mai conteaza
+                        cards.Add(card);
                         if (card.Length > 10 && card[8] == '=')
                         {
                             string val = card.Substring(9);
@@ -159,7 +178,7 @@ namespace FlatCheck
                             img.D[i] = s / n3;
                         }
                     }
-                    return (img, hdr);
+                    return (img, hdr, cards, n3, bitpix);
                 }
                 // HDU fara imagine 2D utila: sar peste blocurile lui de date si continui
                 pos += (int)dataBlocks;
