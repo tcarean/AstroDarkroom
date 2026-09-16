@@ -395,6 +395,34 @@ public class RatioTabTests
         Assert.True(vm.HasResult);
     }
 
+    /// <summary>
+    /// O realegere in timpul calculului nu asteapta si nu concureaza: o depaseste. Pe
+    /// ecran ramane perechea aleasa ultima, oricare din cele doua rulari termina prima.
+    /// Inainte, cele doua continuari scriau in acelasi cache de pe doua fire si testul
+    /// de mai sus pica din cand in cand.
+    /// </summary>
+    [Fact]
+    public async Task ASecondPickSupersedesTheFirst()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit", "pp_flat_stacked_C.fit");
+        var vm = Attached(f);
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));   // porneste A+B
+        Task first = vm.Pending;
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_C.fit"));    // peste ea: C+B
+        Task second = vm.Pending;
+        await Task.WhenAll(first, second);
+
+        Assert.True(vm.HasResult);
+        Assert.False(vm.IsBusy);
+        Assert.False(vm.HasError);
+        Assert.Contains("pp_flat_stacked_C.fit", vm.Report);
+        Assert.DoesNotContain("pp_flat_stacked_A.fit", vm.Report);
+        Assert.NotNull(vm.Map);
+    }
+
     [Fact]
     public async Task WithoutTwoFilesNothingIsComputed()
     {

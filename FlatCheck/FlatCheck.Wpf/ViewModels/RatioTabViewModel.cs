@@ -28,6 +28,17 @@
 // Singurul tab care NU ruleaza la pornire, si acum cu si mai multa dreptate: pana nu
 // alege omul doua fisiere, nu exista nimic de calculat. Pana atunci arata documentatia -
 // vezi SessionMessages.RatioNeedsTwoMasters.
+//
+// O ALEGERE NOUA O DEPASESTE PE CEA IN CURS. Choose porneste calculul fara sa-l astepte,
+// deci o realegere in timpul lui pornea a doua analiza peste prima, si amandoua ajungeau
+// pe ecran, in ordinea in care terminau. In aplicatie firul de interfata le serializa;
+// in teste, fara context de sincronizare, cele doua continuari rulau in paralel si
+// scriau in acelasi _mapCache de pe doua fire - un Dictionary, deci o exceptie rara si
+// un test care pica din cand in cand. Acum fiecare rulare are jetonul ei, legat de al
+// sesiunii, ca la tabul de histograma: cea noua o anuleaza pe cea veche, iar lambda
+// veche se opreste la verificarea de dupa await fara sa atinga nimic. Analiza deja
+// pornita in RatioRun tot merge pana la capat - nu primeste jeton - dar rezultatul ei
+// nu mai ajunge nicaieri.
 
 using System.Collections.Generic;
 using System.IO;
@@ -40,6 +51,7 @@ namespace FlatCheck.Wpf
     {
         SirilSession _session;
         CancellationToken _ct;
+        CancellationTokenSource _runCts;
 
         string _fileA;
         string _fileB;
@@ -235,8 +247,11 @@ namespace FlatCheck.Wpf
             ClearError();
             if (isA) FileA = path; else FileB = path;
             if (!string.IsNullOrEmpty(FileA) && !string.IsNullOrEmpty(FileB))
-                _ = RecomputeAsync();
+                Pending = RecomputeAsync();
         }
+
+        /// <summary>Ultima rulare pornita de o alegere, ca un test sa poata astepta una pe care n-a pornit-o el.</summary>
+        internal Task Pending { get; private set; } = Task.CompletedTask;
 
         internal Task RecomputeAsync()
         {
@@ -248,14 +263,30 @@ namespace FlatCheck.Wpf
 
             string a = FileA, b = FileB;
 
+            // Rularea de dinainte, daca mai merge, e depasita: jetonul ei se anuleaza, iar
+            // lambda ei se opreste la prima verificare de dupa await, fara sa scrie nimic.
+            CancellationTokenSource old = _runCts;
+            old?.Cancel();
+            old?.Dispose();
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(_ct);
+            _runCts = cts;
+            CancellationToken ct = cts.Token;
+
             return RunGuardedAsync("Compar cele doua mastere de flat...", async () =>
             {
                 var text = new StringWriter();
                 var outcome = await Task.Run(() =>
                 {
                     RunReport.WriteBanner(text);
-                    return RatioRun.Execute(a, b, text);
-                }, _ct).ConfigureAwait(true);
+                    var run = RatioRun.Execute(a, b, text);
+                    ct.ThrowIfCancellationRequested();
+                    return run;
+                }, ct).ConfigureAwait(true);
+
+                // Daca intre timp s-a ales alt fisier, jetonul asta e anulat si rezultatul
+                // nu mai are ce cauta pe ecran - nici in _mapCache, pe care l-ar imparti
+                // cu rularea noua.
+                ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
                 Populate(outcome.Result);
@@ -306,6 +337,11 @@ namespace FlatCheck.Wpf
 
         internal override void Reset()
         {
+            CancellationTokenSource cts = _runCts;
+            _runCts = null;
+            try { cts?.Cancel(); } catch (System.ObjectDisposedException) { }
+            cts?.Dispose();
+
             base.Reset();
             _session = null;
             FileA = null;

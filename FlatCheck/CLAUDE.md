@@ -287,11 +287,26 @@ not a copy.
     the shared `MetricRowTemplate`, and `TheRowsAreTheSameOnesTheStructureTabShows`
     compares the two tabs' labels, notes and key flags directly. Ratio's list is a
     **replaceable `IReadOnlyList`, not an `ObservableCollection`**, for the reason
-    `Histograms` is: `Choose` starts `RecomputeAsync` without awaiting it and the token is
-    the session's, not the run's, so two quick picks leave two analyses in flight with
-    neither cancelling the other - a collection cleared and refilled by both ends up with
-    duplicated rows, a replaced reference just lets the last one win. Structure keeps its
+    `Histograms` is: `Choose` starts `RecomputeAsync` without awaiting it, so two quick
+    picks put two analyses in flight - a collection cleared and refilled by both ends up
+    with duplicated rows, a replaced reference just lets the last one win. Since the
+    per-run token below, only the latest run reaches the screen at all, but the list
+    shape stays: it is right whatever the timing. Structure keeps its
     `ObservableCollection` because `MainViewModel.OpenAsync` cancels the previous run first.
+
+    **Each Ratio run has its own token, linked to the session's**, the Histogram tab's
+    pattern: a new pick cancels the previous run's token, and the superseded lambda stops
+    at its check after the await without touching anything. It used to run on the
+    session's token alone, so a re-pick during a run let both results land, in whichever
+    order they finished. In the app the UI thread serialised the two continuations; in
+    the tests there is no synchronisation context, the two continuations ran in parallel
+    on the pool, both mutated `_mapCache` (a `Dictionary`) from two threads, and
+    `ChoosingTheSecondFileComputes` failed once in a while - the guard turned the
+    exception in the latest run into `HasResult = false`. `RatioRun.Execute` takes no
+    token, so an analysis already started still runs to the end (memory overlaps for its
+    duration, as on the Histogram tab); its result is dropped. `Pending` exposes the run a
+    pick started, so a test can await one it did not start;
+    `ASecondPickSupersedesTheFirst` pins that the last pair wins.
 
     `StructureRows.Informative` does the same for the three no-verdict rows (vignetting,
     illumination centre, local spots), so Ratio now shows everything the console's
