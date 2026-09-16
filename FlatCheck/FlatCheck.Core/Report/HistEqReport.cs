@@ -87,6 +87,20 @@ namespace FlatCheck
              + "slaba.";
 
         /// <summary>
+        /// Ce inseamna sa pui flat-ul netezit langa masterul din care s-a facut. Tot text
+        /// de ecran. Ultima propozitie e cea care se intreaba: netezitul are zgomotul
+        /// scos, deci egalizarea pe ranguri intinde ce a RAMAS - oricat de mic - pe toata
+        /// scara de gri, si un flat mai curat arata mai zgomotos, nu invers.
+        /// </summary>
+        internal static string SmoothedVersusMaster()
+            => "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
+             + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
+             + "netezire; una care se vede pe amandoua e neteda la scara aleasa si a ramas - "
+             + "obiectiv sau sursa, poza nu spune; --ratio spune. Egalizarea fiind pe ranguri, "
+             + "ce a ramas pe netezit, oricat de mic in amplitudine, iese la contrast maxim: un "
+             + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.";
+
+        /// <summary>
         /// Ce vedere e pe ecran, ca legenda sub poza. Marimea e cea la rezolutie intreaga,
         /// fiindca pe aia o arata fereastra: mozaicul cat senzorul, o pozitie sau
         /// compozitul la jumatate pe fiecare latura.

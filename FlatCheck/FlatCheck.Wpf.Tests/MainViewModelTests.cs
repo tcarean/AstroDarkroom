@@ -90,6 +90,59 @@ public class MainViewModelTests
         Assert.Null(vm.HistEq.Selected);
     }
 
+    /// <summary>Cazul A prin fereastra: un folder cu netezitul deja scris il listeaza pe loc, al doilea.</summary>
+    [Fact]
+    public async Task AFolderOpenedWithASmoothedMasterListsItAtOnce()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster().WithRawFlats("a.NEF");
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.HistEq.Files.Select(r => r.Tag));
+        Assert.Null(vm.HistEq.Selected);
+    }
+
+    /// <summary>
+    /// Cazul B, cap-coada: butonul de netezire scrie fisierul si randul apare in lista
+    /// tabului Histogram, fara sa porneasca nimic acolo - "nimic la deschidere" e si
+    /// "nimic la o scriere".
+    /// </summary>
+    [Fact]
+    public async Task SmoothingFromTheWindowPutsTheSmoothedMasterIntoTheHistogramList()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
+        var vm = new MainViewModel(null, null, _ => true);
+
+        await vm.OpenAsync(f.Root);
+        Assert.Equal(new[] { "MASTER", "" }, vm.HistEq.Files.Select(r => r.Tag));
+
+        await vm.Smooth.RunAsync();
+
+        Assert.Equal(f.Session.SmoothedMasterPath, vm.Smooth.SavedTo);
+        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.HistEq.Files.Select(r => r.Tag));
+        Assert.Equal(vm.Smooth.SavedTo, vm.HistEq.Files[1].Path);
+        Assert.Null(vm.HistEq.Selected);
+        Assert.False(vm.HistEq.HasResult);
+    }
+
+    /// <summary>Alt folder, fara netezit: randul NETEZIT nu supravietuieste schimbarii.</summary>
+    [Fact]
+    public async Task OpeningAnotherFolderDropsTheSmoothedRow()
+    {
+        using var a = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
+        using var b = new SessionFixture().WithFlatMaster();
+        var vm = new MainViewModel();
+
+        await vm.OpenAsync(a.Root);
+        Assert.Contains(vm.HistEq.Files, r => r.IsSmoothed);
+
+        await vm.OpenAsync(b.Root);
+
+        Assert.DoesNotContain(vm.HistEq.Files, r => r.IsSmoothed);
+        Assert.Single(vm.HistEq.Files);
+    }
+
     /// <summary>
     /// Sesiunea Smida din arhiva: masterul in masters/, cum il lasa OSC_Preprocessing.ssf
     /// din Siril 1.4, lights calibrate in process/. Se deschide si ruleaza amandoua.

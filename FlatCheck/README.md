@@ -840,7 +840,7 @@ călătoresc garantat cu programul.
 | **Ratio** | modul 2 între două mastere alese explicit, din două sesiuni | după ce alegi ambele fișiere |
 | **End to end** | modul 3 pe toată seria `pp_light_*.fit` din `process/` | la deschiderea folderului |
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
-| **Histogram** | modul 5 pe masterul din `process/` sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
+| **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
 | **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_netezit.fit` lângă el | la buton, niciodată singur — scrie un fișier |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
@@ -940,12 +940,23 @@ flat, și se strânge spre saturație. Pe vederea din previzualizare **nu exist�
 țintă**, iar verdictul nu se uită la ea deloc. Vederea lipsește, cu explicație, pe un FITS
 sau pe un raw fără previzualizare decodabilă.
 
-**Histogram** listează în stânga **masterul din `process/` pe prima poziție**, marcat, și
-apoi cadrele din `flats/` — raw de aparat **și** FITS, fiindcă pentru egalizare un flat
-trecut prin Conversion e la fel de bun ca NEF-ul. Un click egalizează fișierul; alt click
-egalizează altul, iar dacă primul încă se calcula, e abandonat — lista rămâne apăsabilă,
-ecranul de așteptare acoperă doar poza. Nimic nu rulează singur la deschidere: masterul de
-24 MP îl citește deja tabul Structura atunci.
+**Histogram** listează în stânga **masterul pe prima poziție**, marcat `MASTER`; sub el,
+**când există, `pp_flat_stacked_netezit.fit`**, marcat `NETEZIT` — fișierul scris de tabul
+Netezire, exact pe calea pe care o scrie acela, nu orice stivă din folder; și apoi cadrele
+din `flats/` — raw de aparat **și** FITS, fiindcă pentru egalizare un flat trecut prin
+Conversion e la fel de bun ca NEF-ul. Un click egalizează fișierul; alt click egalizează
+altul, iar dacă primul încă se calcula, e abandonat — lista rămâne apăsabilă, ecranul de
+așteptare acoperă doar poza. Nimic nu rulează singur la deschidere: masterul de 24 MP îl
+citește deja tabul Structura atunci.
+
+Rândul `NETEZIT` **apare și singur**, în timpul sesiunii, de îndată ce butonul din Netezire
+a scris fișierul; ce era ales în listă rămâne ales și nimic nu se recalculează — cu o
+excepție: dacă pe ecran era chiar flat-ul netezit și acesta a fost rescris, poza se reface,
+altfel ar arăta octeți care nu mai există pe disc. Sub poza netezitului stă o notă a lui:
+o formă care se vede pe master și lipsește de aici a fost scoasă de netezire; una care se
+vede pe amândouă e netedă la scara aleasă și a rămas. Și, egalizarea fiind pe ranguri, ce a
+rămas pe netezit, oricât de mic în amplitudine, iese la contrast maxim — un netezit care
+pare mai *zgomotos* decât masterul e poza așteptată, nu un defect.
 
 Masterul e acolo pentru o singură întrebare: **s-au mediat imperfecțiunile văzute pe
 cadrele individuale?** O formă care se vede pe un cadru și lipsește de pe master a fost
@@ -1008,7 +1019,9 @@ model radial, adică ce face obiectivul odată textura plecată. Scara hărții 
 Fișierul netezit **nu devine masterul sesiunii**: numele lui nu e printre cele două căi pe
 care le caută aplicația, deci tabul Structura măsoară în continuare masterul fotografiat
 și arată textura pentru care a fost nevoie de netezire. Dialogul din Ratio îl acceptă
-însă, fiindcă o stivă netezită e tot o stivă.
+însă, fiindcă o stivă netezită e tot o stivă. Și **apare în tabul Histogram**, ca rând
+propriu sub master, marcat `NETEZIT`, imediat ce a fost scris — ca să se vadă, unul lângă
+altul, ce a scos netezirea și ce a lăsat.
 
 > Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
 > secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.

@@ -77,6 +77,21 @@ public class HistEqReportTests
         Assert.Contains("INFORMATIV: " + c, Written(HistEqAnalyzer.Analyze(TestImages.FlatCfa(32, 32, 1000), null)));
     }
 
+    /// <summary>
+    /// Cele doua note de ecran, master si netezit, nu se confunda; a netezitului spune
+    /// ce a plecat si de ce netezitul pare mai zgomotos, nu mai curat.
+    /// </summary>
+    [Fact]
+    public void TheSmoothedNoteSaysWhatWasRemovedAndWhyItLooksNoisier()
+    {
+        string s = HistEqReport.SmoothedVersusMaster();
+
+        Assert.Contains("netezit", s);
+        Assert.Contains("ZGOMOTOS", s);
+        Assert.Contains("--ratio", s);
+        Assert.NotEqual(HistEqReport.MasterVersusFrame(), s);
+    }
+
     [Fact]
     public void AnAllZeroChannelIsReportedAsSuch()
     {

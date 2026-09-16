@@ -72,6 +72,17 @@ internal sealed class SessionFixture : IDisposable
     internal SessionFixture WithFlatMasterInMasters(Func<int, int, double>? scene = null)
         => WithFlatMaster(scene, folder: "masters");
 
+    /// <summary>
+    /// Flat-ul netezit langa master, unde il scrie tabul Netezire: o copie a masterului.
+    /// Pentru lista si pentru egalizare continutul nu conteaza, doar sa se incarce.
+    /// </summary>
+    internal SessionFixture WithSmoothedMaster()
+    {
+        string master = Session.FlatMasterPath ?? throw new InvalidOperationException("intai masterul");
+        File.Copy(master, SirilSession.SmoothedPathBeside(master), overwrite: true);
+        return this;
+    }
+
     internal SessionFixture WithFlatMasters(params string[] names)
     {
         WithProcess();

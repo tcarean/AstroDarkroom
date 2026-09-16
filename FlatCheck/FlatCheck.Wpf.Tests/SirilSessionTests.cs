@@ -385,10 +385,10 @@ public class SirilSessionTests
         var c = s.HistEqCandidates();
 
         Assert.Equal(3, c.Count);
-        Assert.True(c[0].IsMaster);
+        Assert.Equal(HistEqKind.Master, c[0].Kind);
         Assert.Equal(s.FlatMasterPath, c[0].Path);
         Assert.Equal(new[] { "DSC_0001.NEF", "DSC_0002.NEF" }, c.Skip(1).Select(x => Path.GetFileName(x.Path)));
-        Assert.All(c.Skip(1), x => Assert.False(x.IsMaster));
+        Assert.All(c.Skip(1), x => Assert.Equal(HistEqKind.Frame, x.Kind));
     }
 
     [Fact]
@@ -401,7 +401,7 @@ public class SirilSessionTests
         var c = s.HistEqCandidates();
 
         Assert.Single(c);
-        Assert.False(c[0].IsMaster);
+        Assert.Equal(HistEqKind.Frame, c[0].Kind);
     }
 
     [Fact]
@@ -426,5 +426,67 @@ public class SirilSessionTests
 
         Assert.Single(c);
         Assert.Equal(s.FlatMasterPath, c[0].Path);
+    }
+
+    /// <summary>
+    /// Flat-ul netezit scris de tabul Netezire sta langa master si se listeaza dupa el,
+    /// ca al treilea fel de rand - nu master, nu cadru.
+    /// </summary>
+    [Fact]
+    public void ASmoothedMasterIsListedRightAfterTheMaster()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws);
+        File.Copy(s.FlatMasterPath, s.SmoothedMasterPath);
+        foreach (string n in new[] { "DSC_0002.NEF", "DSC_0001.NEF" })
+            File.WriteAllText(Path.Combine(s.FlatsDir, n), "x");
+
+        var c = s.HistEqCandidates();
+
+        Assert.Equal(new[] { HistEqKind.Master, HistEqKind.Smoothed, HistEqKind.Frame, HistEqKind.Frame },
+                     c.Select(x => x.Kind));
+        Assert.Equal(s.SmoothedMasterPath, c[1].Path);
+        Assert.Equal("pp_flat_stacked_netezit.fit", Path.GetFileName(c[1].Path));
+    }
+
+    /// <summary>
+    /// Cu mastere in ambele locuri, netezitul de langa cel VECHI e netezirea altui master
+    /// decat cel de pe ecran, si nu apare. Doar calea exacta de langa cel ales.
+    /// </summary>
+    [Fact]
+    public void ASmoothedFileBesideTheOlderMasterIsNotListed()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, masterIn: "process");
+        string inProcess = s.FlatMasterPath;
+        string inMasters = WriteMaster(ws, "masters", k: 0.5);
+        File.SetLastWriteTimeUtc(inProcess, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.SetLastWriteTimeUtc(inMasters, new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+        File.Copy(inProcess, SirilSession.SmoothedPathBeside(inProcess));
+
+        var c = s.HistEqCandidates();
+
+        Assert.Equal(inMasters, s.FlatMasterPath);
+        Assert.Single(c);
+        Assert.Equal(HistEqKind.Master, c[0].Kind);
+
+        // ...si apare de indata ce e langa cel ales
+        File.Copy(inMasters, s.SmoothedMasterPath);
+        Assert.Equal(new[] { HistEqKind.Master, HistEqKind.Smoothed }, s.HistEqCandidates().Select(x => x.Kind));
+    }
+
+    /// <summary>Fara master nu exista "langa master": un _netezit ratacit nu se listeaza si nu arunca.</summary>
+    [Fact]
+    public void WithoutAMasterASmoothedFileIsNotListed()
+    {
+        using var ws = new TempWorkspace();
+        var s = Session(ws, master: false);
+        File.WriteAllText(Path.Combine(s.ProcessDir, "pp_flat_stacked_netezit.fit"), "x");
+        File.WriteAllText(Path.Combine(s.FlatsDir, "a.NEF"), "x");
+
+        Assert.Null(s.SmoothedMasterPath);
+        var c = s.HistEqCandidates();
+        Assert.Single(c);
+        Assert.Equal(HistEqKind.Frame, c[0].Kind);
     }
 }

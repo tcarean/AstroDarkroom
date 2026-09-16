@@ -17,11 +17,19 @@
 
 // HistEqTabViewModel.cs - tabul "Histogram": un cadru vazut prin egalizare de histograma.
 //
-// Lista are masterul din process/ pe prima pozitie si apoi cadrele din flats/, raw sau
-// FITS. Masterul e acolo pentru o singura intrebare - s-au mediat imperfectiunile de pe
-// cadrele individuale? - si nu se preselecteaza si nu ruleaza singur la deschidere: e un
-// FITS float de 24 MP, iar tabul Structura il citeste deja atunci (regula "secvential, nu
-// paralel" din MainViewModel).
+// Lista are masterul pe prima pozitie, flat-ul netezit de langa el cand exista, si apoi
+// cadrele din flats/, raw sau FITS. Masterul e acolo pentru o singura intrebare - s-au
+// mediat imperfectiunile de pe cadrele individuale? - si nu se preselecteaza si nu ruleaza
+// singur la deschidere: e un FITS float de 24 MP, iar tabul Structura il citeste deja
+// atunci (regula "secvential, nu paralel" din MainViewModel). Netezitul e acolo pentru
+// cealalta intrebare - ce a scos netezirea si ce a lasat - si e un al treilea fel de rand,
+// nu al doilea master: chip NETEZIT, IsMaster fals.
+//
+// LISTA SE REFACE CAND NETEZIREA SCRIE. Tabul Netezire poate produce fisierul in timpul
+// sesiunii; MainViewModel leaga evenimentul lui la FileWritten, care reciteste lista din
+// sesiune - o singura definitie a listei, HistEqCandidates - si pastreaza alegerea, fara
+// sa porneasca nimic. Cu o exceptie: daca fisierul rescris e chiar cel ales, se
+// recalculeaza, altfel poza de pe ecran ar fi a unor octeti care nu mai exista pe disc.
 //
 // LOADER-UL ACOPERA POZA, NU TABUL. Lista ramane apasabila cat timp se calculeaza, si
 // un click pe alt fisier ANULEAZA rularea curenta si porneste alta. Ca o rulare depasita
@@ -73,7 +81,7 @@ namespace FlatCheck.Wpf
             View.Changed += RefreshImage;
         }
 
-        /// <summary>Masterul intai, apoi cadrele din flats/.</summary>
+        /// <summary>Masterul intai, netezitul cand exista, apoi cadrele din flats/.</summary>
         public ObservableCollection<HistEqFileRow> Files { get; } = new();
 
         public HistEqFileRow Selected
@@ -117,16 +125,7 @@ namespace FlatCheck.Wpf
             _session = session;
             _parent = ct;
 
-            Files.Clear();
-            foreach (HistEqCandidate c in session.HistEqCandidates())
-                Files.Add(new HistEqFileRow
-                {
-                    Path = c.Path,
-                    Name = Path.GetFileName(c.Path),
-                    // folderul real al fisierului: masterul poate fi in masters/ sau process/
-                    Where = Path.GetFileName(Path.GetDirectoryName(c.Path)) + "/",
-                    IsMaster = c.IsMaster,
-                });
+            FillFiles();
 
             _selected = null;
             Raise(nameof(Selected));
@@ -135,6 +134,56 @@ namespace FlatCheck.Wpf
                 Fail("Nimic de egalizat", SessionMessages.NoFlatFrames(session));
             else
                 ClearError();
+        }
+
+        /// <summary>Lista, din sesiune: masterul, netezitul cand exista, cadrele.</summary>
+        void FillFiles()
+        {
+            Files.Clear();
+            IReadOnlyList<HistEqCandidate> candidates = _session.HistEqCandidates();
+            int lastOfGroup = -1;
+            for (int i = 0; i < candidates.Count; i++)
+                if (candidates[i].Kind != HistEqKind.Frame) lastOfGroup = i;
+
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                HistEqCandidate c = candidates[i];
+                Files.Add(new HistEqFileRow
+                {
+                    Path = c.Path,
+                    Name = Path.GetFileName(c.Path),
+                    // folderul real al fisierului: masterul poate fi in masters/ sau process/
+                    Where = Path.GetFileName(Path.GetDirectoryName(c.Path)) + "/",
+                    Kind = c.Kind,
+                    ClosesGroup = i == lastOfGroup,
+                });
+            }
+        }
+
+        /// <summary>
+        /// Alt tab a scris un fisier. Daca e flat-ul netezit al sesiunii curente, lista se
+        /// reface si alegerea se pastreaza (dupa cale); daca fisierul ales e chiar cel
+        /// rescris, se recalculeaza. Orice alta cale, sau lipsa sesiunii, nu face nimic.
+        /// </summary>
+        internal void FileWritten(string path)
+        {
+            if (_session == null || path == null) return;
+            if (!string.Equals(path, _session.SmoothedMasterPath, StringComparison.OrdinalIgnoreCase)) return;
+
+            string selectedPath = Selected?.Path;
+
+            // Cu un ListBox legat in doua sensuri, Files.Clear() impinge null in setter-ul
+            // lui Selected chiar acum; Recompute() se opreste la Selected == null fara sa
+            // atinga _runCts, deci o rulare in curs nu e anulata si Populate-ul ei ajunge pe
+            // ecran ca pana acum. Alegerea se pune apoi direct in camp, nu prin setter, ca
+            // sa nu porneasca o rulare pe un fisier care nu s-a schimbat.
+            FillFiles();
+            _selected = selectedPath == null ? null
+                : Files.FirstOrDefault(r => string.Equals(r.Path, selectedPath, StringComparison.OrdinalIgnoreCase));
+            Raise(nameof(Selected));
+
+            if (_selected != null && string.Equals(selectedPath, path, StringComparison.OrdinalIgnoreCase))
+                Recompute();
         }
 
         void Recompute()
@@ -173,7 +222,7 @@ namespace FlatCheck.Wpf
                 ct.ThrowIfCancellationRequested();
 
                 Report = text.ToString();
-                Populate(outcome.Result, row.IsMaster);
+                Populate(outcome.Result, row.Kind);
             });
         }
 
@@ -181,7 +230,7 @@ namespace FlatCheck.Wpf
         /// Internal, nu private, ca testele de randare sa poata aduce un rezultat construit
         /// direct cu HistEqAnalyzer, fara fisier. Fisier nou = zoom la potrivit.
         /// </summary>
-        internal void Populate(HistEqResult r, bool isMaster = false)
+        internal void Populate(HistEqResult r, HistEqKind kind = HistEqKind.Frame)
         {
             _last = r;
             _cache.Clear();
@@ -190,7 +239,12 @@ namespace FlatCheck.Wpf
 
             Frame = HistEqReport.FrameLine(r);
             Channels = string.Join("\n", Enumerable.Range(0, r.Channels.Length).Select(i => HistEqReport.ChannelLine(r, i)));
-            MasterNote = isMaster ? HistEqReport.MasterVersusFrame() : "";
+            MasterNote = kind switch
+            {
+                HistEqKind.Master => HistEqReport.MasterVersusFrame(),
+                HistEqKind.Smoothed => HistEqReport.SmoothedVersusMaster(),
+                _ => "",
+            };
 
             RefreshImage();
             HasResult = true;
@@ -224,6 +278,9 @@ namespace FlatCheck.Wpf
             try { cts?.Cancel(); } catch (ObjectDisposedException) { }
             cts?.Dispose();
 
+            // fara sesiune, FileWritten nu mai are ce reface: un folder inchis nu se
+            // umple la loc fiindca Netezirea a scris in el
+            _session = null;
             _last = null;
             _cache.Clear();
             Image = null;

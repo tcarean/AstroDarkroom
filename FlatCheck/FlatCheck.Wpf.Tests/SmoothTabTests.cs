@@ -55,12 +55,15 @@ public class SmoothTabTests
     {
         using var f = new SessionFixture().WithFlatMaster();
         var vm = Attached(f);
+        var saved = new List<string>();
+        vm.Saved += saved.Add;
 
         await vm.RunAsync();
 
         Assert.True(vm.HasResult);
         Assert.False(vm.HasError);
         Assert.Equal(vm.Target, vm.SavedTo);
+        Assert.Equal(new[] { vm.Target }, saved);      // o data, cu calea
         Assert.True(File.Exists(vm.Target));
         Assert.Equal("", vm.SaveError);
         Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.LastScalePx);
@@ -110,6 +113,8 @@ public class SmoothTabTests
         File.WriteAllBytes(target, new byte[] { 1, 2, 3 });
         string? asked = null;
         var vm = Attached(f, q => { asked = q; return false; });
+        bool fired = false;
+        vm.Saved += _ => fired = true;
 
         await vm.RunAsync();
 
@@ -117,6 +122,7 @@ public class SmoothTabTests
         Assert.Contains(target, asked);
         Assert.True(vm.HasResult);                       // the numbers stay on screen
         Assert.Equal("", vm.SavedTo);
+        Assert.False(fired);                             // nothing on disk changed
         Assert.Contains(target, vm.SaveError);
         Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(target));
         Assert.DoesNotContain("salvat:", vm.Report);
@@ -129,10 +135,13 @@ public class SmoothTabTests
         string target = f.Session.SmoothedMasterPath;
         File.WriteAllBytes(target, new byte[] { 1, 2, 3 });
         var vm = Attached(f, _ => true);
+        string? saved = null;
+        vm.Saved += p => saved = p;
 
         await vm.RunAsync();
 
         Assert.Equal(target, vm.SavedTo);
+        Assert.Equal(target, saved);
         Assert.True(new FileInfo(target).Length > 2880);
     }
 
@@ -157,6 +166,8 @@ public class SmoothTabTests
         File.WriteAllBytes(Path.Combine(f.ProcessDir, SirilSession.FlatMasterName),
             FitsTestData.BuildFitsCube(32, 32, 3, (x, y, p) => 1000 + p));
         var vm = Attached(f);
+        bool fired = false;
+        vm.Saved += _ => fired = true;
 
         await vm.RunAsync();
 
@@ -164,6 +175,7 @@ public class SmoothTabTests
         Assert.True(vm.HasError);
         Assert.Contains("3 planuri", vm.ErrorText);
         Assert.False(File.Exists(vm.Target));
+        Assert.False(fired);
     }
 
     [Fact]

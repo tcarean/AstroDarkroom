@@ -153,6 +153,7 @@ public class WindowSmokeTests
     {
         using var f = new SessionFixture()
             .WithFlatMaster()
+            .WithSmoothedMaster()      // randul NETEZIT si linia mutata sub el, in lista de histograma
             .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit")
             .WithLightSeries(6)
             .WithRawFlats("DSC_0101.NEF", "DSC_0102.NEF");
@@ -201,7 +202,7 @@ public class WindowSmokeTests
         Assert.True(vm.Light.HasResult);
         Assert.True(vm.Ratio.HasResult);
         Assert.Equal(2, vm.Exposure.Files.Count);
-        Assert.Equal(3, vm.HistEq.Files.Count);
+        Assert.Equal(4, vm.HistEq.Files.Count);    // master, netezit, doua cadre
         Assert.True(vm.Smooth.CanRun);
         Assert.False(vm.Smooth.HasResult);
     }
@@ -280,7 +281,7 @@ public class WindowSmokeTests
                     FlatCheck.Tests.FitsTestData.Radial(128, 128, center: 34000))),
                 CfaPattern.Parse("RGGB", "BAYERPAT"));
             var vm = new HistEqTabViewModel();
-            vm.Populate(cfa, isMaster: true);
+            vm.Populate(cfa, HistEqKind.Master);
 
             using var errors = new BindingErrors();
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq");
@@ -298,15 +299,16 @@ public class WindowSmokeTests
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-zoom");
             Assert.Equal(3, vm.Zoom.EffectiveZoom, 9);
 
+            // mono, si ca netezit: nota de sub poza e a treia, cea a netezitului
             var mono = HistEqAnalyzer.Analyze(
                 FlatCheck.Tests.TestImages.From(128, 128, FlatCheck.Tests.FitsTestData.Radial(128, 128)), null);
-            vm.Populate(mono);
+            vm.Populate(mono, HistEqKind.Smoothed);
             Render(new HistEqView { DataContext = vm }, name: "tab-histeq-mono");
 
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
             Assert.True(vm.HasResult);
             Assert.False(vm.View.IsVisible);
-            Assert.Equal("", vm.MasterNote);
+            Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
             // fisier nou: inapoi la potrivit, si controlul a scris factorul efectiv sub 1
             Assert.True(vm.Zoom.IsFit);
             Assert.InRange(vm.Zoom.EffectiveZoom, 0.01, 1.0);

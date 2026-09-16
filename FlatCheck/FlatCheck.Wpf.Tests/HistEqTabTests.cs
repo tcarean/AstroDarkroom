@@ -23,10 +23,12 @@ using FlatCheck.Tests;
 namespace FlatCheck.Wpf.Tests;
 
 /// <summary>
-/// Tabul "Histogram". Comportamentul cerut: lista cu masterul intai si cadrele din
-/// flats/ dupa el; un click calculeaza, alt click recalculeaza, iar un click in timpul
-/// unui calcul il inlocuieste in loc sa astepte. Cifrele nu se verifica aici - nu exista
-/// cifre - ci ca poza chiar se schimba cu fisierul si cu vederea.
+/// Tabul "Histogram". Comportamentul cerut: lista cu masterul intai, flat-ul netezit
+/// dupa el cand exista, si cadrele din flats/ dupa ei; un click calculeaza, alt click
+/// recalculeaza, iar un click in timpul unui calcul il inlocuieste in loc sa astepte.
+/// Netezitul poate aparea si in timpul sesiunii, scris de tabul Netezire - lista se
+/// reface fara sa strice alegerea. Cifrele nu se verifica aici - nu exista cifre - ci ca
+/// poza chiar se schimba cu fisierul si cu vederea.
 /// </summary>
 public class HistEqTabTests
 {
@@ -51,9 +53,19 @@ public class HistEqTabTests
                      vm.Files.Select(r => r.Name));
         Assert.True(vm.Files[0].IsMaster);
         Assert.Equal("MASTER", vm.Files[0].Tag);
+        Assert.True(vm.Files[0].HasTag);
+        Assert.True(vm.Files[0].ClosesGroup);     // fara netezit, linia sta sub master
         Assert.Equal("process/", vm.Files[0].Where);
         Assert.Equal(f.Session.FlatMasterPath, vm.Files[0].Path);
-        Assert.All(vm.Files.Skip(1), r => { Assert.False(r.IsMaster); Assert.Equal("", r.Tag); Assert.Equal("flats/", r.Where); });
+        Assert.All(vm.Files.Skip(1), r =>
+        {
+            Assert.False(r.IsMaster);
+            Assert.False(r.IsSmoothed);
+            Assert.Equal("", r.Tag);
+            Assert.False(r.HasTag);
+            Assert.False(r.ClosesGroup);
+            Assert.Equal("flats/", r.Where);
+        });
         Assert.False(vm.HasError);
     }
 
@@ -67,6 +79,39 @@ public class HistEqTabTests
 
         Assert.True(vm.Files[0].IsMaster);
         Assert.Equal("masters/", vm.Files[0].Where);
+    }
+
+    /// <summary>
+    /// Cazul A: fisierul netezit exista la deschidere. Al doilea rand, chip NETEZIT, nu
+    /// master; linia de sub grup se muta sub el.
+    /// </summary>
+    [Fact]
+    public void ASmoothedMasterPresentAtOpenIsListedSecond_TaggedNetezit()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster().WithRawFlats("DSC_0001.NEF");
+
+        var vm = Attached(f);
+
+        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.Files.Select(r => r.Tag));
+        HistEqFileRow smoothed = vm.Files[1];
+        Assert.False(smoothed.IsMaster);
+        Assert.True(smoothed.IsSmoothed);
+        Assert.True(smoothed.HasTag);
+        Assert.Equal("pp_flat_stacked_netezit.fit", smoothed.Name);
+        Assert.Equal("process/", smoothed.Where);
+        Assert.Equal(f.Session.SmoothedMasterPath, smoothed.Path);
+        Assert.Equal(new[] { false, true, false }, vm.Files.Select(r => r.ClosesGroup));
+    }
+
+    [Fact]
+    public void ASmoothedMasterInMastersIsListedWithItsRealFolder()
+    {
+        using var f = new SessionFixture().WithFlatMasterInMasters().WithSmoothedMaster();
+
+        var vm = Attached(f);
+
+        Assert.Equal("NETEZIT", vm.Files[1].Tag);
+        Assert.Equal("masters/", vm.Files[1].Where);
     }
 
     /// <summary>Jumatate de raspuns e tot un raspuns: masterul singur se poate vedea.</summary>
@@ -131,6 +176,25 @@ public class HistEqTabTests
         // un master mono: o singura vedere, deci fara chipuri
         Assert.Single(vm.View.Options);
         Assert.False(vm.View.IsVisible);
+    }
+
+    /// <summary>Netezitul are nota lui, nu pe a masterului; si masterul o pastreaza pe a lui.</summary>
+    [Fact]
+    public async Task PickingTheSmoothedMasterShowsTheSmoothedNote()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
+        var vm = Attached(f);
+
+        vm.Selected = vm.Files[1];
+        await vm.RecomputeAsync();
+
+        Assert.True(vm.HasResult);
+        Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
+        Assert.Contains("pp_flat_stacked_netezit.fit", vm.Report);
+
+        vm.Selected = vm.Files[0];
+        await vm.RecomputeAsync();
+        Assert.Equal(HistEqReport.MasterVersusFrame(), vm.MasterNote);
     }
 
     [Fact]
@@ -242,6 +306,90 @@ public class HistEqTabTests
         Assert.Equal("", vm.MasterNote);
         Assert.Contains("CFA", vm.Frame);
         Assert.Contains("flat.fit", vm.Report);
+    }
+
+    // ------------------------------------------------------------------ fisier scris de alt tab
+
+    /// <summary>
+    /// Cazul B: netezitul apare in timpul sesiunii. Lista se reface, alegerea ramane,
+    /// nimic nu se recalculeaza - poza e acelasi obiect.
+    /// </summary>
+    [Fact]
+    public async Task AFileWrittenLaterAppearsInTheList_WithoutDisturbingTheSelection()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        f.WriteAnalysableRawFlat("flat.fit", bayerPat: "RGGB");
+        var vm = Attached(f);
+        vm.Selected = vm.Files[1];
+        await vm.RecomputeAsync();
+        ImageSource picture = vm.Image!;
+        Assert.Equal(2, vm.Files.Count);
+
+        f.WithSmoothedMaster();
+        vm.FileWritten(f.Session.SmoothedMasterPath);
+        await vm.Pending;
+
+        Assert.Equal(new[] { "MASTER", "NETEZIT", "" }, vm.Files.Select(r => r.Tag));
+        Assert.Equal(new[] { false, true, false }, vm.Files.Select(r => r.ClosesGroup));
+        Assert.NotNull(vm.Selected);
+        Assert.Same(vm.Files[2], vm.Selected);
+        Assert.Same(picture, vm.Image);
+        Assert.False(vm.IsBusy);
+    }
+
+    /// <summary>Fisierul de pe ecran a fost rescris: poza se reface, altfel ar arata octeti care nu mai exista.</summary>
+    [Fact]
+    public async Task RewritingTheSelectedSmoothedFileRerunsIt()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
+        var vm = Attached(f);
+        vm.Selected = vm.Files[1];
+        await vm.RecomputeAsync();
+        ImageSource before = vm.Image!;
+
+        vm.FileWritten(f.Session.SmoothedMasterPath);
+        await vm.Pending;
+
+        Assert.Same(vm.Files[1], vm.Selected);
+        Assert.True(vm.Selected!.IsSmoothed);
+        Assert.NotSame(before, vm.Image);
+        Assert.True(vm.HasResult);
+        Assert.Equal(HistEqReport.SmoothedVersusMaster(), vm.MasterNote);
+    }
+
+    /// <summary>Singurul fisier de care ii pasa tabului e netezitul sesiunii; orice altceva nu misca nimic.</summary>
+    [Fact]
+    public async Task AWriteOfSomeOtherPathIsIgnored()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF");
+        var vm = Attached(f);
+        vm.Selected = vm.Files[0];
+        await vm.RecomputeAsync();
+        HistEqFileRow selected = vm.Selected!;
+        ImageSource picture = vm.Image!;
+
+        vm.FileWritten(f.Session.FlatMasterPath);
+        vm.FileWritten(Path.Combine(f.ProcessDir, "altceva_netezit.fit"));
+        vm.FileWritten(null!);
+        await vm.Pending;
+
+        Assert.Equal(2, vm.Files.Count);
+        Assert.Same(selected, vm.Selected);
+        Assert.Same(picture, vm.Image);
+    }
+
+    [Fact]
+    public void FileWrittenBeforeAttachOrAfterResetIsHarmless()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithSmoothedMaster();
+        var fresh = new HistEqTabViewModel();
+        fresh.FileWritten(f.Session.SmoothedMasterPath);
+        Assert.Empty(fresh.Files);
+
+        var vm = Attached(f);
+        vm.Reset();
+        vm.FileWritten(f.Session.SmoothedMasterPath);
+        Assert.Empty(vm.Files);
     }
 
     [Fact]

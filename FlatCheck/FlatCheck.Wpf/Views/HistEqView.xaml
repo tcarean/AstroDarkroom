@@ -45,20 +45,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel DockPanel.Dock="Top">
           <TextBlock Style="{StaticResource Heading}" Margin="0,0,0,8" Text="MASTERUL SI FLAT-URILE" />
           <TextBlock Style="{StaticResource Faint}" Margin="0,0,0,10"
-                     Text="Masterul e stiva cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a mediat si ce a ramas." />
+                     Text="Masterul e stiva cadrelor de sub el: compara-l cu ele ca sa vezi ce s-a mediat si ce a ramas. Cand exista, flat-ul netezit facut din el sta langa el." />
         </StackPanel>
 
         <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding Selected, Mode=TwoWay}">
           <ListBox.ItemTemplate>
             <DataTemplate>
-              <!-- Masterul se desparte de cadre printr-o linie sub el si un chip, nu
-                   printr-o a doua lista: e acelasi fel de alegere, cu alt inteles. -->
+              <!-- Masterul si, cand exista, flat-ul netezit se despart de cadre printr-o
+                   linie sub ultimul din ei si cate un chip, nu printr-o a doua lista: e
+                   acelasi fel de alegere, cu alt inteles. Chipul NETEZIT e stins, ca sa
+                   nu para al doilea master. -->
               <Border x:Name="row" BorderBrush="{StaticResource BorderBr}" BorderThickness="0">
                 <StackPanel>
                   <StackPanel Orientation="Horizontal">
-                    <Border Background="{StaticResource AccentBr}" CornerRadius="3"
+                    <Border x:Name="chip" Background="{StaticResource AccentBr}" CornerRadius="3"
                             Padding="6,1" Margin="0,0,8,0" VerticalAlignment="Center"
-                            Visibility="{Binding IsMaster, Converter={StaticResource BoolToVis}}">
+                            Visibility="{Binding HasTag, Converter={StaticResource BoolToVis}}">
                       <TextBlock Text="{Binding Tag}" Foreground="#16161A"
                                  FontSize="10" FontWeight="Bold" />
                     </Border>
@@ -68,10 +70,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 </StackPanel>
               </Border>
               <DataTemplate.Triggers>
-                <DataTrigger Binding="{Binding IsMaster}" Value="True">
+                <DataTrigger Binding="{Binding ClosesGroup}" Value="True">
                   <Setter TargetName="row" Property="BorderThickness" Value="0,0,0,1" />
                   <Setter TargetName="row" Property="Padding" Value="0,0,0,8" />
                   <Setter TargetName="row" Property="Margin" Value="0,0,0,4" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsSmoothed}" Value="True">
+                  <Setter TargetName="chip" Property="Background" Value="{StaticResource MutedBr}" />
                 </DataTrigger>
               </DataTemplate.Triggers>
             </DataTemplate>

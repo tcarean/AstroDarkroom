@@ -241,7 +241,11 @@ not a copy.
     `SirilScriptRun` (the `Process` wrapper, plus the `SirilRunner` delegate the tests
     replace). `FlatFrames()`
     lists raws *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and
-    `HistEqCandidates()` puts the flat master in front of them for the Histogram tab. The only part
+    `HistEqCandidates()` puts the flat master in front of them for the Histogram tab, and
+    between the two the smoothed master **when the file exists** - by the exact path
+    `SmoothedMasterPath` names, never by pattern, so a `_netezit` beside the *older* of
+    two masters is not listed (it is another master's smoothing). Three kinds of row,
+    `HistEqKind`. The only part
     of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
@@ -757,10 +761,25 @@ because two masters brought into one folder must be renamed, and
 properties even though their values are constant: `{Binding}` resolves through the
 DataContext and never sees a static one, so the documentation would have rendered blank.
 
-**The Histogram tab lists the flat master first, then `flats/`, and lets a click interrupt
-a click.** The master is there for one question - did what the individual frames show
-average out? - and it is not preselected and not run at folder open, because the Structure
-run is reading that same 24 MP file at that moment. The loader covers the picture, not the
+**The Histogram tab lists the flat master first, then the smoothed master when it exists,
+then `flats/`, and lets a click interrupt a click.** The master is there for one question
+- did what the individual frames show average out? - and it is not preselected and not run
+at folder open, because the Structure run is reading that same 24 MP file at that moment.
+The smoothed one is there for the other question - what did the smoothing take out, what
+did it leave - and it is a **third kind of row**, not a second master: chip `NETEZIT`,
+`IsMaster` false, its own note under the picture (`HistEqReport.SmoothedVersusMaster`,
+which also says why a smoothed flat looks *noisier* under a rank-based transform). It can
+also appear **during the session**: `SmoothTabViewModel.Saved` fires once, with the path,
+right after the file is written (not on a refused overwrite, not on a write error), and
+`MainViewModel` wires it to `HistEq.FileWritten` in its constructor - the one wire between
+two tabs, placed there so neither knows the other. `FileWritten` rebuilds the list from
+`HistEqCandidates()` (one definition of the list), keeps the selection by path without
+re-running, and re-runs only if the selected file *is* the one rewritten - the picture
+would otherwise be of bytes no longer on disk. It ignores any other path and a missing
+session, and `Reset` drops the session for that reason. Rebuild, not insert: `ClosesGroup`
+(the separator under the last of master + smoothed) is an `init` flag set by whoever sees
+the whole list. A Histogram read overlapping a Netezire write is accepted, not prevented:
+the write gets `IOException`, lands in `SaveError`, and the numbers stay. The loader covers the picture, not the
 tab: the list stays clickable, a new pick cancels the running frame's own token and starts
 over, and a superseded run may not touch the screen. That last part is general and lives in
 `TabViewModel.RunGuardedAsync`: it numbers its runs and lets only the latest one clear the
@@ -787,7 +806,8 @@ stays. The output is `pp_flat_stacked_netezit.fit` in the master's own folder
 (`SirilSession.SmoothedMasterPath`, `SmoothedSuffix`), and **it must not become the
 session's master**: `FlatMasterCandidates` are exact paths, so the Structure tab keeps
 measuring the shot master and keeps showing the texture the smoothing was made for. It
-does match `RatioPattern`, which is right - a smoothed stack is a stack. The tab keeps the
+does match `RatioPattern`, which is right - a smoothed stack is a stack - and it is listed
+by the Histogram tab as its own kind of row, see above. The tab keeps the
 two rasters (removed component, smoothed flat's residual) behind a radio toggle, cached
 per (map, cap) like Ratio; `MapScaleViewModel` took a constructor argument for its
 default cap so this tab can start at ±2 % (`Th.ResidPerfect`) - what is removed is small,

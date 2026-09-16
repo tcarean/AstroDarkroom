@@ -118,9 +118,9 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un rand din lista tabului de histograma: masterul din process/ sau un cadru din
-    /// flats/. Formatat aici, nu printr-un convertor, ca un test sa poata asserta "MASTER"
-    /// si "process/" direct.
+    /// Un rand din lista tabului de histograma: masterul din masters/ sau process/,
+    /// flat-ul netezit de langa el, sau un cadru din flats/. Formatat aici, nu printr-un
+    /// convertor, ca un test sa poata asserta "MASTER", "NETEZIT" si "process/" direct.
     /// </summary>
     public sealed class HistEqFileRow
     {
@@ -129,13 +129,33 @@ namespace FlatCheck.Wpf
         /// <summary>Numai numele fisierului.</summary>
         public string Name { get; init; }
 
-        /// <summary>"process/" pentru master, "flats/" pentru un cadru.</summary>
+        /// <summary>Folderul real: "process/" sau "masters/" pentru master si netezit, "flats/" pentru un cadru.</summary>
         public string Where { get; init; }
 
-        public bool IsMaster { get; init; }
+        /// <summary>Felul randului. Internal - un tip intern nu poate iesi printr-o proprietate publica.</summary>
+        internal HistEqKind Kind { get; init; }
 
-        /// <summary>Chipul din lista: "MASTER" pe master, gol pe un cadru.</summary>
-        public string Tag => IsMaster ? "MASTER" : "";
+        public bool IsMaster => Kind == HistEqKind.Master;
+
+        /// <summary>Flat-ul netezit scris de tabul Netezire. NU e master: IsMaster ramane fals.</summary>
+        public bool IsSmoothed => Kind == HistEqKind.Smoothed;
+
+        /// <summary>Chipul din lista: "MASTER" pe master, "NETEZIT" pe flat-ul netezit, gol pe un cadru.</summary>
+        public string Tag => Kind switch
+        {
+            HistEqKind.Master => "MASTER",
+            HistEqKind.Smoothed => "NETEZIT",
+            _ => "",
+        };
+
+        public bool HasTag => Tag.Length > 0;
+
+        /// <summary>
+        /// Ultimul rand din grupul master + netezit: sub el sta linia care il desparte de
+        /// cadre. Se pune la construirea listei, care vede tot grupul; de aceea lista se
+        /// reface intreaga cand apare un fisier, nu se insereaza un rand.
+        /// </summary>
+        public bool ClosesGroup { get; init; }
     }
 
     /// <summary>Un cadru din tabelul seriei end-to-end.</summary>

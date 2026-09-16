@@ -71,6 +71,12 @@ namespace FlatCheck.Wpf
             HistEq = new HistEqTabViewModel();
             Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
             Preprocess = new PreprocessViewModel();
+
+            // Singura legatura intre doua taburi: flat-ul netezit pe care il scrie Netezire
+            // apare in lista tabului Histogram, langa master. Legata aici, ca niciunul din
+            // ele sa nu-l cunoasca pe celalalt; FileWritten ignora singur o cale care nu e
+            // a sesiunii curente, deci schimbarea folderului nu are nimic de dezlegat.
+            Smooth.Saved += HistEq.FileWritten;
         }
 
         static bool AskOnScreen(string question)

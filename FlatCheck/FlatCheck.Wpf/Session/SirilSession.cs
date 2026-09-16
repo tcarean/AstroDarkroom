@@ -44,11 +44,17 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un fisier pe care il poate arata tabul de histograma: masterul din process/ sau un
-    /// cadru din flats/. Steagul e ce deosebeste randul din lista - masterul e stiva
-    /// celorlalte, nu inca un cadru.
+    /// Ce fel de rand e in lista tabului de histograma. Masterul e stiva celorlalte;
+    /// flat-ul netezit e masterul fara textura, scris de tabul Netezire; un cadru e un
+    /// cadru. Un bool nu poate spune trei lucruri.
     /// </summary>
-    internal readonly record struct HistEqCandidate(string Path, bool IsMaster);
+    internal enum HistEqKind { Master, Smoothed, Frame }
+
+    /// <summary>
+    /// Un fisier pe care il poate arata tabul de histograma: masterul din masters/ sau
+    /// process/, flat-ul netezit de langa el cand exista, sau un cadru din flats/.
+    /// </summary>
+    internal readonly record struct HistEqCandidate(string Path, HistEqKind Kind);
 
     /// <summary>
     /// Rezultatul cautarii masterului: calea aleasa (null = nu e nicaieri) si, cand
@@ -153,11 +159,14 @@ namespace FlatCheck.Wpf
             get
             {
                 string master = FlatMasterPath;
-                if (master == null) return null;
-                return Path.Combine(Path.GetDirectoryName(master),
-                    Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
+                return master == null ? null : SmoothedPathBeside(master);
             }
         }
+
+        /// <summary>Numele flat-ului netezit facut din <paramref name="master"/>, in acelasi folder.</summary>
+        internal static string SmoothedPathBeside(string master)
+            => Path.Combine(Path.GetDirectoryName(master),
+                Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
 
         /// <summary>Unde se scrie raportul de structura: in folderul dat, nu in process/.</summary>
         internal string ResultTextPath => Path.Combine(Root, ResultFileName);
@@ -264,21 +273,30 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca exista, apoi
-        /// cadrele din flats/. In fereastra masterul exista mereu - Check() refuza folderul
-        /// fara el - dar clasa asta se testeaza singura si nu arunca niciodata.
+        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca exista; dupa el
+        /// flat-ul netezit, DOAR daca exista - pe calea exacta pe care o scrie tabul
+        /// Netezire, <see cref="SmoothedMasterPath"/>, nu dupa tipar; apoi cadrele din
+        /// flats/. In fereastra masterul exista mereu - Check() refuza folderul fara el -
+        /// dar clasa asta se testeaza singura si nu arunca niciodata.
         ///
         /// Numai masterul prin conventie - cel pe care il masoara si Structura, deci acelasi
         /// cand sunt doua - nu orice stiva din process/: doua stive intr-un folder sunt
-        /// treaba tabului Ratio. Si nimic nu se dedubleaza dupa continut - un master copiat
-        /// in flats/ apare de doua ori, sub doua cai, ceea ce e adevarul.
+        /// treaba tabului Ratio. Din acelasi motiv un fisier netezit de langa masterul mai
+        /// VECHI, cand sunt doua, nu apare: e netezirea altui master decat cel de pe ecran.
+        /// Si nimic nu se dedubleaza dupa continut - un master copiat in flats/ apare de
+        /// doua ori, sub doua cai, ceea ce e adevarul.
         /// </summary>
         internal IReadOnlyList<HistEqCandidate> HistEqCandidates()
         {
             var list = new List<HistEqCandidate>();
             string master = FlatMasterPath;
-            if (master != null) list.Add(new HistEqCandidate(master, true));
-            list.AddRange(FlatFrames().Select(p => new HistEqCandidate(p, false)));
+            if (master != null)
+            {
+                list.Add(new HistEqCandidate(master, HistEqKind.Master));
+                string smoothed = SmoothedPathBeside(master);
+                if (File.Exists(smoothed)) list.Add(new HistEqCandidate(smoothed, HistEqKind.Smoothed));
+            }
+            list.AddRange(FlatFrames().Select(p => new HistEqCandidate(p, HistEqKind.Frame)));
             return list;
         }
     }

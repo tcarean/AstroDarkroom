@@ -227,6 +227,15 @@ namespace FlatCheck.Wpf
         /// <summary>Unde s-a scris flat-ul, sau gol.</summary>
         public string SavedTo { get => _savedTo; private set => Set(ref _savedTo, value); }
 
+        /// <summary>
+        /// Ridicat o singura data, cu calea, dupa ce fisierul chiar s-a scris - nu la un
+        /// refuz de suprascriere si nu la o eroare de scriere, cand pe disc nu s-a
+        /// schimbat nimic de folosit. E un fapt pe care tabul il RAPORTEAZA, spre deosebire
+        /// de intrebarea de suprascriere, pe care o PUNE; de aici eveniment, nu delegat in
+        /// constructor. Cine asculta e MainViewModel, care reface lista tabului Histogram.
+        /// </summary>
+        internal event Action<string> Saved;
+
         /// <summary>De ce nu s-a scris (refuz de suprascriere, disc), sau gol. Cifrele raman.</summary>
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
@@ -317,6 +326,7 @@ namespace FlatCheck.Wpf
                     }, ct).ConfigureAwait(true);
                     text.WriteLine(SmoothReport.SavedLine(target));
                     SavedTo = target;
+                    Saved?.Invoke(target);
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
