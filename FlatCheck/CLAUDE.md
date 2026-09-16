@@ -377,13 +377,30 @@ not a copy.
   for it. See the note in "Conventions".
 - `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
 
-All eight phases of [REFACTOR-TESTS.md](REFACTOR-TESTS.md) are done.
+- `docs/` - measurements that outlived the plans they were made for. **Implementation
+  plans are deleted once done**: their step lists go stale at the first later change and
+  git history keeps them anyway (`git log --all -- PLAN-HISTEQ.md`). What does not go
+  stale - a measurement made on a date on named files, a design tried and rejected - is
+  folded into this file or into the header comment of the code it explains, and the long
+  form, when there is one, lands here: `siril-histeq-source.md` (the Siril 1.4.4 code the
+  `--histeq` mode mirrors) and `smooth-validation.md` (the five real masters, the three
+  designs and the acceptance tables behind `--smooth`). **`docs/` is maintained, in one
+  precise sense**: each file is the evidence behind a decision that is still in force, and
+  each says at the top which code it covers and what it was measured on. A change to that
+  code means the evidence is re-run and the file updated - or, if the decision goes, the
+  file goes with it. A measurement left standing next to code it no longer describes is
+  the same trap as a stale plan, only better hidden. (The one file that needs no re-run on
+  our side is the Siril source excerpt: it stays true for the Siril tag it quotes, and
+  changes only if the mode starts mirroring another version.)
+
+The test refactoring that produced the current suite (eight phases, 2026) and the seven
+feature plans since were run to completion and removed, per the rule above.
 
 ## Conventions
 
 - **User-facing text (CLI messages, `--help`, window labels, code comments) is in
   Romanian** - keep new text consistent with this. Documentation *about* the code
-  (this file, the refactoring plan) is in English.
+  (this file, `docs/`, an implementation plan while it lives) is in English.
 - **Nothing is computed outside `FlatCheck.Core`.** If a change needs a new number, a new
   threshold or a new sentence of diagnosis, it belongs in `Analysis/`, `Thresholds.cs` or
   `Report/` - never in a view-model. Both applications then get it, and get the same one.
@@ -1214,8 +1231,14 @@ the screen's axis would say "expose until the screen reads 50-65 %", which is th
 mistake this view exists to cure. It also cannot be computed: mapping the raw target onto
 the screen needs the transfer curve, a flat contains only a narrow slice of it, and fitting
 a power law to that slice predicts values over 100 % - the same ill-posed extrapolation as
-the rejected `radPct`-to-zero-sky one. `ThePreviewNeverChangesTheVerdict` pins that
-attaching a preview leaves every verdict figure bit-identical.
+the rejected `radPct`-to-zero-sky one. Measured on a D3300 frame with full tonal range,
+fitting a power law on a flat-like slice and predicting the screen value at raw 57 %
+(measured: 95.7 %): fit on 23-31 % predicts 90.5 %, on 20-35 % predicts **100.9 %**, on
+10-60 % predicts 98.2 % - moving the window by a few points flips the sign of the error,
+because the real curve saturates at 100 and no power law does. And the curve is per
+channel anyway (white balance multiplies R by 2.355 and B by 1.086 on that file), so one
+raw target would land in three places on the three charts. `ThePreviewNeverChangesTheVerdict`
+pins that attaching a preview leaves every verdict figure bit-identical.
 
 **The comparison pairs centre with centre, by colour.** `ExposureReport.ScreenComparison`
 reads the colour off `Channels[i].Colour`, never off `Cfa`: a raw judged `!IsCfa` has a
@@ -1290,7 +1313,7 @@ the tab both say what it cannot show.
 
 **What Siril does**, read in `src/gui/image_display.c` (`remap()`, the `HISTEQ_DISPLAY`
 branch) and `src/gui/histogram.c` (`computeHisto()`) at tag `1.4.4`; the quoted code is
-in `PLAN-HISTEQ.md`:
+in `docs/siril-histeq-source.md`:
 
 1. One histogram **per layer**, 65536 bins, pixels equal to zero skipped. The RGB view is
    composited afterwards from the per-layer 8-bit buffers, so on a debayered image each
@@ -1369,8 +1392,8 @@ compare.
 Not a test either: it **writes a second master**, the input with everything smooth kept
 and everything else removed - the diffuser's texture, dust shadows, compact blotches,
 noise. It exists for a flat shot through fabric on a monitor, whose texture reaches the
-lights as a blanket of cells at a few percent. `PLAN-SMOOTH.md` is the full record; the
-short version:
+lights as a blanket of cells at a few percent. `docs/smooth-validation.md` is the full
+record; the short version:
 
 - **Why not a radial synthetic flat.** It would drop the texture and also everything the
   lens does besides vignetting, and on the Tokina 20 the four corners differ by 6-16 %.
@@ -1394,7 +1417,7 @@ short version:
   per pixel, `LargeScalePtp`, `MaxTileDeviation`, `LocalSpots` on it - plus the structure
   battery before and after (`AnalyzePrepared` on both prepared rasters). No verdict; a
   warning when the removed component's worst tile reaches `Th.SmoothKeptWarn` (2 %).
-- **Measured on five real masters** (the numbers in `PLAN-SMOOTH.md` and in the analyzer):
+- **Measured on five real masters** (the numbers in `docs/smooth-validation.md` and in the analyzer):
   every verdict and vignetting depth unchanged, the five tests within half a point;
   removed 0.12-0.39 % ptp on the four clean masters, 3.7 % on the textured one, whose
   compact spot goes from +6.19 % to +0.62 %; rings ±0.02 %; CFA levels within 0.1 %; 4-5 s
@@ -1487,6 +1510,19 @@ up the median's robustness to stars, hot pixels and dust, and the analyzer accep
 frames. Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`
 and `OnAGradient_TheResidualHasNoRingsOutToTheCorner`, both of which assert the *un*fixed
 behaviour too, so removing the symmetrisation as redundant fails loudly.
+
+**A "vignetting edge" metric was prototyped on the same occasion and rejected; don't
+build it.** The rings on the Nikkor ISO800 map had been read as a hard-edged, decentred
+falloff, and a metric for hard edges in the radial profile (max deviation from a
+Savitzky-Golay smoothing of the ring medians) read 0.03 % on ISO400 and 0.98 % on ISO800,
+a clean 30x separation - which was the artefact above, not the flat: on a synthetic with
+no edge at all it read 3.05 %, and from the ring *mean* it read 0.05 % on both masters.
+With the symmetrised profile both real masters read 0.06 %, so there is no real positive
+in the library. Its dynamic range was also too narrow to threshold (synthetics at
+1504x1004: smooth 0.02, a soft 10 % knee 0.24, a 1 % hard step 0.38, a 3 % hard step
+1.16), and small rasters sit above that margin by discretisation alone (64x64 fixture
+0.80 %, 256x256 0.15 %). If a real hard edge ever turns up, that is the starting point;
+until then the metric has nothing to measure.
 
 A radial profile cannot be odd, so nothing the model is entitled to keep is lost. What is
 lost is a half-pixel's worth of accuracy: `Rotate180` mirrors about `((H-1)/2, (W-1)/2)`
