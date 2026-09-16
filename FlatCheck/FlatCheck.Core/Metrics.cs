@@ -138,6 +138,96 @@ namespace FlatCheck
         }
 
         // ========================================================= metrici
+        /// <summary>
+        /// Cata TEXTURA FINA are un raster: partea structurata a componentei fine, in
+        /// procente. Componenta fina e <c>raster / neted - 1</c>, unde "neted" e rasterul
+        /// trecut de doua ori printr-un filtru cutie de <paramref name="box"/> px (o cutie
+        /// aplicata de doua ori e un triunghi - destul de aproape de un gaussian pentru un
+        /// DETECTOR, si fara nicio dependinta). Zgomotul de pixel se estimeaza din
+        /// diferentele intre vecini orizontali (impartite la radical din 2) si se scade in
+        /// cuadratura, ca sa ramana doar ce e corelat spatial: textura difuzorului, nu
+        /// granulatia. Bordura de <paramref name="inset"/> px nu intra in statistica, fiindca
+        /// acolo cutia e trunchiata.
+        ///
+        /// Exista pentru propunerea de scara a modului de netezire: pe rasterul de analiza
+        /// al unui senzor de 6016 px (1504 px, 4 px de senzor pe pixel) cutia e de 32 px,
+        /// adica 128 px pe senzor, iar celulele de ~300 px ale unui difuzor pus pe monitor
+        /// ies la 0.69 % fata de 0.04-0.06 % pe un master fara textura. Masurat pe cinci
+        /// mastere reale; pragurile in Th.SmoothTexture*.
+        ///
+        /// Cutia si bordura sunt RELATIVE la latimea rasterului (1/47 si 1/15 din ea), nu
+        /// fixe in pixeli: cu 32 px ficsi pe un fixture de 256 px cutia era o optime din
+        /// cadru, curbura vignetarii se scurgea in "textura" cu 0.14 % si nimic nu mai
+        /// trecea de niciun prag. Pe rasterul real cele doua definitii coincid (32 si 100).
+        ///
+        /// NU prin BlockMean marit inapoi: grila de blocuri isi pune propriile margini in
+        /// componenta fina (masurat: perioade de 32 px care erau blocurile, nu textura).
+        /// </summary>
+        internal static double FineTexture(Img a)
+        {
+            int box = Math.Max(4, (int)Math.Round(a.W / 47.0));
+            int inset = Math.Max(box, (int)(a.W / 15.0));
+            Img smooth = BoxBlur(BoxBlur(a, box), box);
+            int iy = Math.Min(inset, a.H / 4), ix = Math.Min(inset, a.W / 4);
+            double sum = 0, sumSq = 0, dSumSq = 0;
+            long n = 0, dn = 0;
+            for (int y = iy; y < a.H - iy; y++)
+            {
+                double prev = double.NaN;
+                for (int x = ix; x < a.W - ix; x++)
+                {
+                    double s = smooth.At(y, x);
+                    double f = s > 0 ? a.At(y, x) / s - 1 : 0;
+                    sum += f; sumSq += f * f; n++;
+                    if (!double.IsNaN(prev)) { double d = f - prev; dSumSq += d * d; dn++; }
+                    prev = f;
+                }
+            }
+            if (n < 2) return 0;
+            double mean = sum / n;
+            double var = sumSq / n - mean * mean;
+            double noiseVar = dn > 0 ? dSumSq / dn / 2 : 0;
+            return Math.Sqrt(Math.Max(var - noiseVar, 0)) * 100;
+        }
+
+        /// <summary>
+        /// Media pe o cutie de <paramref name="box"/> px centrata pe fiecare pixel, prin sume
+        /// glisante pe randuri si apoi pe coloane; la margini cutia se trunchiaza si se
+        /// imparte la cati pixeli a acoperit. Separabil, deci O(pixeli), oricat de mare e cutia.
+        /// </summary>
+        internal static Img BoxBlur(Img a, int box)
+        {
+            int r = box / 2;
+            var tmp = new Img(a.H, a.W);
+            for (int y = 0; y < a.H; y++)
+            {
+                double s = 0; int cnt = 0;
+                for (int x = 0; x < Math.Min(a.W, r); x++) { s += a.At(y, x); cnt++; }
+                for (int x = 0; x < a.W; x++)
+                {
+                    int add = x + r, drop = x - r - 1;
+                    if (add < a.W) { s += a.At(y, add); cnt++; }
+                    if (drop >= 0) { s -= a.At(y, drop); cnt--; }
+                    tmp.Set(y, x, s / cnt);
+                }
+            }
+            var o = new Img(a.H, a.W);
+            var col = new double[a.H];
+            for (int x = 0; x < a.W; x++)
+            {
+                double s = 0; int cnt = 0;
+                for (int y = 0; y < Math.Min(a.H, r); y++) { s += tmp.At(y, x); cnt++; }
+                for (int y = 0; y < a.H; y++)
+                {
+                    int add = y + r, drop = y - r - 1;
+                    if (add < a.H) { s += tmp.At(add, x); cnt++; }
+                    if (drop >= 0) { s -= tmp.At(drop, x); cnt--; }
+                    o.Set(y, x, s / cnt);
+                }
+            }
+            return o;
+        }
+
         internal static (Dictionary<string, double> vals, double ctr) CornerStats(Img img, double frac = 0.05)
         {
             int h = img.H, w = img.W;

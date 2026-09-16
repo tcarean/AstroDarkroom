@@ -181,11 +181,28 @@ namespace FlatCheck
         /// </summary>
         static int RunSmooth(Options o, TextWriter w, TextWriter err)
         {
-            var run = SmoothRun.Execute(o.Image, o.ScalePx, w);
-            if (run.Refused)
+            SmoothRunOutcome run;
+            if (o.ScaleAuto)
             {
-                err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
-                return 1;
+                // Propunerea intai. Fara textura sau nedeterminat: niciun fisier, cod 2 -
+                // nu e o eroare, e "citeste asta inainte sa decizi", ce inseamna 2 peste tot.
+                var advice = SmoothRun.Advise(o.Image, w);
+                if (advice.Refused)
+                {
+                    err.WriteLine("EROARE: " + advice.Refusal.Split('\n')[0]);
+                    return 1;
+                }
+                if (advice.Advice.Kind != SmoothAdviceKind.Proposed) return 2;
+                run = SmoothRun.Execute(advice.Frame, o.Image, advice.Advice.ScalePx, w);
+            }
+            else
+            {
+                run = SmoothRun.Execute(o.Image, o.ScalePx, w);
+                if (run.Refused)
+                {
+                    err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
+                    return 1;
+                }
             }
             using (var fs = new FileStream(o.Smooth, FileMode.Create, FileAccess.Write))
                 SmoothRun.WriteFits(run, o.Image, fs);
@@ -227,7 +244,8 @@ namespace FlatCheck
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
-            w.WriteLine($"            --scale <px> (pt --smooth: scara de netezire pe senzor; implicit {SmoothAnalyzer.DefaultScalePx:F0})");
+            w.WriteLine($"            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit {SmoothAnalyzer.DefaultScalePx:F0};");
+            w.WriteLine("                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)");
             w.WriteLine();
             w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");

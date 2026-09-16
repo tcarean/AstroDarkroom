@@ -49,6 +49,10 @@ namespace FlatCheck
         // unde. -o ramane harta. --scale e scara de netezire, in pixeli de senzor.
         internal string Smooth;
         internal double ScalePx = SmoothAnalyzer.DefaultScalePx;
+
+        // --scale auto: unealta propune scara (SmoothScaleAdvisor) si netezeste la ea;
+        // fara textura sau nedeterminat, nu scrie nimic si iese cu 2.
+        internal bool ScaleAuto;
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
@@ -128,7 +132,8 @@ namespace FlatCheck
                             if (v.Length == 0) return o.Fail("--smooth asteapta calea fisierului FITS de scris, a primit sirul gol");
                             o.Smooth = v; break;
                         case "--scale":
-                            if (!TryNum(v, out var scale)) return o.Fail($"--scale asteapta un numar, a primit '{v}'");
+                            if (string.Equals(v, "auto", StringComparison.OrdinalIgnoreCase)) { o.ScaleAuto = true; break; }
+                            if (!TryNum(v, out var scale)) return o.Fail($"--scale asteapta un numar sau 'auto', a primit '{v}'");
                             if (scale < 50 || scale > 2000)
                                 return o.Fail($"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}");
                             o.ScalePx = scale; break;

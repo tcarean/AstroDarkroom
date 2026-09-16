@@ -153,6 +153,7 @@ public class VersionTests
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--expo"));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--histeq", "-o", png));
         Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--smooth", ws.PathTo("s.fit"), "--scale", "50", "-o", png));
+        Assert.Equal(VersionInfo.Banner, FirstLine(flat, "--smooth", ws.PathTo("s.fit"), "--scale", "auto", "-o", png));
     }
 
     /// <summary>

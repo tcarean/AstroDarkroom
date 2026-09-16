@@ -233,6 +233,15 @@ public class WindowSmokeTests
             vm.Guide.IsExpanded = false;
             Render(new SmoothView { DataContext = vm }, name: "tab-netezire-dupa");
 
+            // propunerea de scara, cu tabelul treptelor
+            vm.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(s => new SmoothScaleTrial
+            {
+                ScalePx = s, TextureAfterPct = s < 200 ? 0.09 : 0.02, AzimuthalDelta = s > 500 ? -0.8 : 0,
+                TextureGone = s >= 200, StructureLost = s > 500, RemovedPtpPct = 3,
+            }).ToList()));
+            Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-netezire-propunere");
+            Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.ProposedScalePx);
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 

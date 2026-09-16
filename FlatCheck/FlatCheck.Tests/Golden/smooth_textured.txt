@@ -5,6 +5,7 @@ Copyright (C) 2026 Tudor Carean
     cadru              : 512 x 512, mono/procesat (fara mozaic CFA)
     scara de netezire  : 50 px pe senzor (dale de 12 px, nucleu gaussian sigma 4.2 dale)
     dale respinse      : 4 din 1849 (praf, pete, textura peste 2 %)
+    textura fina       : 0.47 % inainte -> 0.00 % dupa (structura sub ~128 px pe senzor, fara zgomotul de pixel)
 
   CE S-A SCOS (original / netezit, la rezolutia de analiza 256 x 256)
     p1 / p99 pe pixel        : -2.91 % / +2.92 %  (zgomotul de pixel intra aici)

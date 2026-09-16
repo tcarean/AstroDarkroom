@@ -92,6 +92,74 @@ public class SmoothReportTests
     }
 
     [Fact]
+    public void TheTextureLineShowsBeforeAndAfter()
+    {
+        var r = new SmoothResult { InputTexturePct = 0.6912, OutputTexturePct = 0.0234 };
+
+        Assert.StartsWith("0.69 % inainte -> 0.02 % dupa", SmoothReport.TextureLine(r));
+        Assert.Contains("textura fina", Written(Clean()));
+    }
+
+    // ---------------------------------------------------------------- the scale advice
+
+    static SmoothScaleTrial Trial(double scale, double texture, double az, double tilt) => new()
+    {
+        ScalePx = scale, TextureAfterPct = texture, AzimuthalDelta = az, TiltDelta = tilt, RemovedPtpPct = 1.5,
+        TextureGone = texture < Th.SmoothTextureGone,
+        StructureLost = !(az > -Th.SmoothScaleLoss) || !(tilt > -Th.SmoothScaleLoss),
+    };
+
+    static string WrittenAdvice(SmoothScaleAdvice a)
+    {
+        var w = new StringWriter();
+        SmoothReport.WriteAdvice(a, "master.fit", w);
+        return w.ToString();
+    }
+
+    [Fact]
+    public void TheProposedAdviceNamesTheScale_TheRungs_AndTheThresholds()
+    {
+        var a = SmoothScaleAdvisor.Decide(0.69, new[] { Trial(150, 0.09, -0.2, -0.1), Trial(300, 0.02, 0, 0), Trial(600, 0.01, -0.8, 0.1) });
+
+        string text = WrittenAdvice(a);
+
+        Assert.Contains("=== NETEZIRE, propunere de scara: master.fit ===", text);
+        Assert.Contains($"0.69 % (peste {Th.SmoothTextureMin:F2} %: e de netezit)", text);
+        Assert.Contains("scara  150 px", text);
+        Assert.Contains("-> textura ramane", text);
+        Assert.Contains("-> potrivita", text);
+        Assert.Contains("-> ia si structura reala", text);
+        Assert.Contains("SCARA PROPUSA: 300 px", text);
+        Assert.Contains($"sub {Th.SmoothTextureGone:F2} %", text);
+        Assert.Contains($"peste {Th.SmoothScaleLoss:F1} puncte", text);
+        Assert.Contains("Regula propune, nu decide", text);
+    }
+
+    [Fact]
+    public void TheNoTextureAdviceSaysSo_AndQuotesTheThreshold()
+    {
+        var a = new SmoothScaleAdvice { Kind = SmoothAdviceKind.NoTexture, InputTexturePct = 0.05 };
+
+        string text = WrittenAdvice(a);
+
+        Assert.Contains("NIMIC DE NETEZIT", text);
+        Assert.Contains($"sub {Th.SmoothTextureMin:F2} %", text);
+        Assert.DoesNotContain("INCERCARI", text);
+    }
+
+    [Fact]
+    public void TheUndeterminedAdviceExplainsTheDegeneracy()
+    {
+        var a = SmoothScaleAdvisor.Decide(0.7, new[] { Trial(150, 0.09, 0, 0), Trial(300, 0.02, -0.9, 0), Trial(600, 0.01, -1.2, 0) });
+
+        string text = WrittenAdvice(a);
+
+        Assert.Contains("NEDETERMINAT", text);
+        Assert.Contains("aceeasi marime", text);
+        Assert.Equal("NEDETERMINAT: textura si structura reala au aceeasi marime", SmoothReport.AdviceVerdict(a));
+    }
+
+    [Fact]
     public void TheRejectedLineSaysNoneWhenNothingWasRejected_AndCountsPerPositionOtherwise()
     {
         Assert.StartsWith("niciuna din", SmoothReport.RejectedLine(Clean()));

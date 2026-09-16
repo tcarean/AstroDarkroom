@@ -76,7 +76,98 @@ namespace FlatCheck.Wpf
         {
             _confirm = confirm ?? (_ => true);
             Run = new RelayCommand(() => Pending = RunAsync(), () => CanRun && IsIdle);
+            Advise = new RelayCommand(() => Pending = AdviseAsync(), () => CanRun && IsIdle);
             MapScale.Changed += RefreshMap;
+        }
+
+        IReadOnlyList<MetricRow> _adviceRows = Array.Empty<MetricRow>();
+        string _adviceTexture = "";
+        string _adviceVerdict = "";
+        string _adviceNote = "";
+
+        /// <summary>Al doilea buton: propune scara, bifeaza chipul, omul apasa netezirea.</summary>
+        internal RelayCommand Advise { get; }
+        public System.Windows.Input.ICommand AdviseCommand => Advise;
+        public string AdviseLabel => SessionMessages.SmoothAdviseLabel();
+
+        /// <summary>Cate un rand pe treapta incercata; gol pana la prima propunere si pe "nimic de netezit".</summary>
+        public IReadOnlyList<MetricRow> AdviceRows { get => _adviceRows; private set => Set(ref _adviceRows, value); }
+
+        /// <summary>Textura fina a intrarii, cu pragul.</summary>
+        public string AdviceTexture { get => _adviceTexture; private set => Set(ref _adviceTexture, value); }
+
+        /// <summary>"SCARA PROPUSA: 300 px" / "NIMIC DE NETEZIT" / "NEDETERMINAT: ...".</summary>
+        public string AdviceVerdict
+        {
+            get => _adviceVerdict;
+            private set { if (Set(ref _adviceVerdict, value)) Raise(nameof(HasAdvice)); }
+        }
+
+        public bool HasAdvice => !string.IsNullOrEmpty(_adviceVerdict);
+
+        public string AdviceNote { get => _adviceNote; private set => Set(ref _adviceNote, value); }
+
+        /// <summary>Ce nu stie regula. Instanta, ca {Binding} sa o vada.</summary>
+        public string AdviceCaveat => SmoothReport.AdviceCaveat().Replace('\n', ' ');
+
+        /// <summary>Scara propusa la ultima propunere; NaN cand n-a fost una.</summary>
+        internal double ProposedScalePx { get; private set; } = double.NaN;
+
+        /// <summary>
+        /// Propunerea: sfatuitorul pe masterul sesiunii, dupa lantul de la deschidere ca si
+        /// netezirea, apoi chipul propus bifat. Nu scrie niciun fisier; rezultatul de pe
+        /// ecran, daca exista unul, ramane.
+        /// </summary>
+        internal async Task AdviseAsync()
+        {
+            if (_session == null || !CanRun) return;
+            string path = _session.FlatMasterPath;
+            CancellationToken ct = _ct;
+
+            await RunGuardedAsync("Propun scara de netezire...", async () =>
+            {
+                Run.RaiseCanExecuteChanged();
+                Advise.RaiseCanExecuteChanged();
+                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                ct.ThrowIfCancellationRequested();
+
+                var text = new StringWriter();
+                var outcome = await Task.Run(() =>
+                {
+                    RunReport.WriteBanner(text);
+                    var run = SmoothRun.Advise(path, text);
+                    ct.ThrowIfCancellationRequested();
+                    return run;
+                }, ct).ConfigureAwait(true);
+
+                if (outcome.Refused)
+                {
+                    Report = text.ToString();
+                    Fail(SessionMessages.SmoothRefusedTitle(), outcome.Refusal);
+                    return;
+                }
+                PopulateAdvice(outcome.Advice);
+                if (!HasResult) Report = text.ToString();
+            }).ConfigureAwait(true);
+            Run.RaiseCanExecuteChanged();
+            Advise.RaiseCanExecuteChanged();
+        }
+
+        /// <summary>Internal, ca testele de randare sa poata aduce o propunere fara fisier.</summary>
+        internal void PopulateAdvice(SmoothScaleAdvice a)
+        {
+            AdviceTexture = SmoothReport.InputTextureLine(a);
+            AdviceRows = a.Trials.Select(t => new MetricRow
+            {
+                Label = $"scara {t.ScalePx:F0} px",
+                Value = SmoothReport.TrialVerdict(t),
+                Note = $"textura ramasa {t.TextureAfterPct:F2} %, asimetrie {t.AzimuthalDelta:+0.00;-0.00}, "
+                     + $"inclinare {t.TiltDelta:+0.00;-0.00}, scos {t.RemovedPtpPct:F2} % ptp",
+            }).ToList();
+            AdviceNote = SmoothReport.AdviceNote(a).Replace('\n', ' ');
+            AdviceVerdict = SmoothReport.AdviceVerdict(a);
+            ProposedScalePx = a.ScalePx;
+            if (a.Kind == SmoothAdviceKind.Proposed) Scale.SelectScale(a.ScalePx);
         }
 
         /// <summary>Masterul din care se face flat-ul netezit.</summary>
@@ -89,7 +180,7 @@ namespace FlatCheck.Wpf
         public bool CanRun
         {
             get => _canRun;
-            private set { if (Set(ref _canRun, value)) Run.RaiseCanExecuteChanged(); }
+            private set { if (Set(ref _canRun, value)) { Run.RaiseCanExecuteChanged(); Advise?.RaiseCanExecuteChanged(); } }
         }
 
         /// <summary>Butonul. Porneste rularea; rezultatul nu e asteptat de nimeni in afara testelor.</summary>
@@ -167,6 +258,7 @@ namespace FlatCheck.Wpf
             Source = session.FlatMasterPath ?? "";
             Target = session.SmoothedMasterPath ?? "";
             CanRun = session.FlatMasterPath != null;
+            Advise.RaiseCanExecuteChanged();
             ClearError();
         }
 
@@ -301,6 +393,11 @@ namespace FlatCheck.Wpf
             Map = null;
             MapLegend = "";
             LastScalePx = double.NaN;
+            AdviceRows = Array.Empty<MetricRow>();
+            AdviceTexture = "";
+            AdviceVerdict = "";
+            AdviceNote = "";
+            ProposedScalePx = double.NaN;
             _removedRaster = null;
             _afterResidual = null;
             _mapCache.Clear();

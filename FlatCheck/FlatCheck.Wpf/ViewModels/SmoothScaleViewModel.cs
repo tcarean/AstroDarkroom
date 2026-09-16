@@ -80,6 +80,13 @@ namespace FlatCheck.Wpf
 
         internal event Action Changed;
 
+        /// <summary>Bifeaza chipul cu scara data (propunerea sfatuitorului); fara efect daca nu e o treapta.</summary>
+        internal void SelectScale(double scalePx)
+        {
+            SmoothScaleOption o = Options.FirstOrDefault(x => Math.Abs(x.ScalePx - scalePx) < 1e-9);
+            if (o != null) o.IsSelected = true;
+        }
+
         internal void Select(SmoothScaleOption option)
         {
             if (ReferenceEquals(option, _selected)) return;

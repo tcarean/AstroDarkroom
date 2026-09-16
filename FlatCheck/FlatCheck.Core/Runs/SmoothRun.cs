@@ -59,24 +59,68 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>Propunerea de scara, sau refuzul (raw, cub) - acelasi ca la Execute.</summary>
+    internal sealed class SmoothAdviceOutcome
+    {
+        internal readonly SmoothScaleAdvice Advice;
+        /// <summary>Cadrul incarcat, ca rularea de dupa propunere sa nu-l mai citeasca o data.</summary>
+        internal readonly LoadedFrame Frame;
+        internal readonly string Refusal;
+        internal bool Refused => Advice == null;
+
+        internal SmoothAdviceOutcome(SmoothScaleAdvice a, LoadedFrame f, string refusal)
+        {
+            Advice = a;
+            Frame = f;
+            Refusal = refusal;
+        }
+    }
+
     internal static class SmoothRun
     {
         internal static SmoothRunOutcome Execute(string path, double scalePx, TextWriter report)
         {
             LoadedFrame f = ImageLoader.Load(path);
-
-            // Refuzurile INAINTE de orice calcul, ca la --light: un fisier scris pe un
-            // raw sau pe un cub ar fi un fisier gresit cu aerul unuia bun.
-            string refusal = f.Cards.Count == 0 ? SmoothReport.RefusalRaw(path)
-                           : f.Planes > 1 ? SmoothReport.RefusalCube(path, f.Planes)
-                           : null;
+            string refusal = Refusal(f, path);
             if (refusal != null)
             {
                 report.WriteLine();
                 report.WriteLine(refusal);
                 return new SmoothRunOutcome(null, null, null, null, refusal);
             }
+            return Execute(f, path, scalePx, report);
+        }
 
+        /// <summary>
+        /// Propunerea de scara: incarca, refuza ce refuza si Execute, altfel ruleaza
+        /// sfatuitorul si scrie tabelul lui. Cadrul ramane in rezultat, ca o netezire la
+        /// scara propusa sa porneasca fara o a doua citire a fisierului de 96 MB.
+        /// </summary>
+        internal static SmoothAdviceOutcome Advise(string path, TextWriter report)
+        {
+            LoadedFrame f = ImageLoader.Load(path);
+            string refusal = Refusal(f, path);
+            if (refusal != null)
+            {
+                report.WriteLine();
+                report.WriteLine(refusal);
+                return new SmoothAdviceOutcome(null, null, refusal);
+            }
+            SmoothScaleAdvice a = SmoothScaleAdvisor.Advise(f.Image);
+            SmoothReport.WriteAdvice(a, path, report);
+            return new SmoothAdviceOutcome(a, f, null);
+        }
+
+        // Refuzurile INAINTE de orice calcul, ca la --light: un fisier scris pe un raw sau
+        // pe un cub ar fi un fisier gresit cu aerul unuia bun.
+        static string Refusal(LoadedFrame f, string path)
+            => f.Cards.Count == 0 ? SmoothReport.RefusalRaw(path)
+             : f.Planes > 1 ? SmoothReport.RefusalCube(path, f.Planes)
+             : null;
+
+        /// <summary>Netezirea unui cadru deja incarcat si deja acceptat.</summary>
+        internal static SmoothRunOutcome Execute(LoadedFrame f, string path, double scalePx, TextWriter report)
+        {
             var r = SmoothAnalyzer.Analyze(f.Image, scalePx);
             SmoothReport.Write(r, path, report);
             return new SmoothRunOutcome(r, f,

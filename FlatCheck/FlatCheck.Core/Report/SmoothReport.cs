@@ -36,6 +36,7 @@ namespace FlatCheck
             w.WriteLine($"    cadru              : {FrameLine(r)}");
             w.WriteLine($"    scara de netezire  : {ScaleLine(r)}");
             w.WriteLine($"    dale respinse      : {RejectedLine(r)}");
+            w.WriteLine($"    textura fina       : {TextureLine(r)}");
 
             w.WriteLine($"\n  CE S-A SCOS (original / netezit, la rezolutia de analiza {r.Width} x {r.Height})");
             foreach (string line in RemovedLines(r)) w.WriteLine("    " + line);
@@ -65,6 +66,10 @@ namespace FlatCheck
         /// <summary>"300 px pe senzor (dale de 150 px, nucleu gaussian sigma 2.0 dale)".</summary>
         internal static string ScaleLine(SmoothResult r)
             => $"{r.ScalePx:F0} px pe senzor (dale de {r.TilePx} px, nucleu gaussian sigma {r.SigmaTiles:F1} dale)";
+
+        /// <summary>"1.19 % inainte -> 0.11 % dupa (structura sub ~128 px, fara zgomotul de pixel)".</summary>
+        internal static string TextureLine(SmoothResult r)
+            => $"{r.InputTexturePct:F2} % inainte -> {r.OutputTexturePct:F2} % dupa (structura sub ~128 px pe senzor, fara zgomotul de pixel)";
 
         /// <summary>"niciuna din 1107 pe pozitie" / "66, 58, 57, 69 din 1107 pe pozitie".</summary>
         internal static string RejectedLine(SmoothResult r)
@@ -125,6 +130,74 @@ namespace FlatCheck
             => $"NETEZIRE: {path} are {planes} planuri de culoare (debayerizat).\n"
              + "Cititorul le-ar media intr-un singur raster, si scris inapoi ca mono fisierul ar\n"
              + "pierde doua canale. Stivuieste flat-urile ca CFA (fara debayerizare) si reia.";
+
+        // ------------------------------------------------------- propunerea de scara
+
+        internal static void WriteAdvice(SmoothScaleAdvice a, string path, TextWriter w)
+        {
+            w.WriteLine($"\n=== NETEZIRE, propunere de scara: {path} ===");
+            w.WriteLine($"    textura fina intrare : {InputTextureLine(a)}");
+            if (a.Trials.Count > 0)
+            {
+                w.WriteLine("\n  INCERCARI (cate o netezire pe treapta)");
+                foreach (SmoothScaleTrial t in a.Trials)
+                    w.WriteLine("    " + TrialLine(t));
+            }
+            w.WriteLine();
+            w.WriteLine("  " + AdviceVerdict(a));
+            Indent(AdviceNote(a), w);
+            w.WriteLine();
+            Indent(AdviceCaveat(), w);
+        }
+
+        /// <summary>"0.69 % (peste 0.20 %: e de netezit)" / "0.05 % (sub 0.20 %: nimic de netezit)".</summary>
+        internal static string InputTextureLine(SmoothScaleAdvice a)
+            => $"{a.InputTexturePct:F2} % " + (a.Kind == SmoothAdviceKind.NoTexture
+                ? $"(sub {Th.SmoothTextureMin:F2} %: nimic de netezit)"
+                : $"(peste {Th.SmoothTextureMin:F2} %: e de netezit)");
+
+        /// <summary>Un rand pe treapta: cifrele si concluzia ei.</summary>
+        internal static string TrialLine(SmoothScaleTrial t)
+            => $"scara {t.ScalePx,4:F0} px : textura ramasa {t.TextureAfterPct:F2} %, "
+             + $"asimetrie {t.AzimuthalDelta:+0.00;-0.00}, inclinare {t.TiltDelta:+0.00;-0.00}, "
+             + $"scos {t.RemovedPtpPct:F2} % ptp  -> {TrialVerdict(t)}";
+
+        internal static string TrialVerdict(SmoothScaleTrial t)
+            => t.StructureLost ? "ia si structura reala"
+             : !t.TextureGone ? "textura ramane"
+             : "potrivita";
+
+        /// <summary>Linia de concluzie, pe cele trei raspunsuri.</summary>
+        internal static string AdviceVerdict(SmoothScaleAdvice a) => a.Kind switch
+        {
+            SmoothAdviceKind.Proposed => $"SCARA PROPUSA: {a.ScalePx:F0} px",
+            SmoothAdviceKind.NoTexture => "NIMIC DE NETEZIT",
+            _ => "NEDETERMINAT: textura si structura reala au aceeasi marime",
+        };
+
+        /// <summary>De ce, in doua propozitii.</summary>
+        internal static string AdviceNote(SmoothScaleAdvice a) => a.Kind switch
+        {
+            SmoothAdviceKind.Proposed =>
+                $"Cea mai mica treapta la care textura ramasa scade sub {Th.SmoothTextureGone:F2} % fara ca\n"
+              + $"asimetria azimutala sau inclinarea sa scada cu peste {Th.SmoothScaleLoss:F1} puncte - cele doua\n"
+              + "teste pe care textura nu le atinge, deci o scadere acolo e structura reala care pleaca.",
+            SmoothAdviceKind.NoTexture =>
+                $"Textura fina a masterului e sub {Th.SmoothTextureMin:F2} %: nu exista celule de difuzor de scos.\n"
+              + "O netezire ar lua doar praful, si daca vrei asta (flat de biblioteca) alege scara de mana;\n"
+              + "pentru sesiunea ale carei lights au acelasi praf, flat-ul e mai bun asa cum e.",
+            _ =>
+                "Orice treapta care scoate textura scade si asimetria azimutala sau inclinarea cu peste\n"
+              + $"{Th.SmoothScaleLoss:F1} puncte: textura difuzorului si o structura reala a obiectivului au aceeasi\n"
+              + "marime, si niciun nucleu nu le desparte. Refa flat-urile cu difuzorul mai aproape de\n"
+              + "lentila (celulele se defocalizeaza) sau alege scara de mana, stiind ce pierzi.",
+        };
+
+        /// <summary>Ce nu poate sti regula. Sta sub concluzie in raport si pe tab.</summary>
+        internal static string AdviceCaveat()
+            => "Regula propune, nu decide: nu stie ce e al obiectivului si ce e al sursei - punctul cald al\n"
+             + "unui LCD arata la fel ca un inel al lentilei - si e oarba la o structura reala care sta doar\n"
+             + "in colturi, in afara cercului inscris. Uita-te in harta componentei scoase inainte sa apesi.";
 
         /// <summary>"-> fisier salvat: ...", perechea lui RunReport.WriteMapSaved pentru FITS.</summary>
         internal static string SavedLine(string path) => $"    -> flat netezit salvat: {path}";

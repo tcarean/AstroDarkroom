@@ -438,6 +438,38 @@ media într-un mono).
 netezit chiar corectează mai bine o spune doar `--light` pe lights calibrate — și pe un
 câmp mai larg de 40° el refuză.
 
+#### Cum se alege scara, și `--scale auto`
+
+Scara trebuie să stea între mărimea a ce vrei să scoți și mărimea celei mai mici structuri
+reale pe care vrei să o păstrezi. Amândouă se citesc din master, și `--scale auto` le
+citește în locul tău:
+
+1. **Textura fină a intrării** — partea structurată a componentei sub ~128 px pe senzor,
+   cu zgomotul de pixel scăzut. Sub 0.20 % nu există nimic de netezit și unealta nu
+   rulează nimic: pe masterele reale cele fără textură dau 0.04-0.06 %, cel cu difuzorul pe
+   monitor 0.69 %.
+2. Altfel, **câte o netezire pe fiecare treaptă** (150 / 300 / 600 px, ~15 s în total pe
+   24 MP) și două cifre pe treaptă: textura rămasă în fișier (sub 0.05 % a plecat) și cât
+   au *scăzut* asimetria azimutală și înclinarea — singurele două teste pe care textura nu
+   le atinge, deci o scădere acolo de peste 0.5 puncte e structură reală care pleacă.
+3. **Cea mai mică treaptă** la care textura a plecat și garda tace. Pe masterul cu
+   difuzorul pe monitor: 150 lasă 0.09 % textură, 300 lasă 0.02 % cu garda la 0.00 / -0.01,
+   deci 300. La 600 garda prinde inelul real al Nikkor-ului (asimetria -0.79) și petele
+   monitorului pe Tokina (-0.80).
+
+Trei răspunsuri: `SCARA PROPUSA`, după care netezirea rulează la ea și scrie fișierul
+(cod 0); `NIMIC DE NETEZIT` și `NEDETERMINAT` (textura și structura reală au aceeași
+mărime), care nu scriu nimic și ies cu **2** — nu e o eroare, e „citește înainte să
+decizi". Regula **propune, nu decide**: nu știe ce e al obiectivului și ce e al sursei —
+punctul cald al unui LCD arată la fel ca un inel al lentilei — și e oarbă la o structură
+reală care stă doar în colțuri, în afara cercului înscris. Pragurile stau pe cinci mastere;
+unul cu textură slabă, de 0.15-0.25 %, cade lângă primul.
+
+De mână, criteriile sunt aceleași: uită-te la harta „ce s-a scos" la ±2 % — doar celule și
+praf e bine, o formă netedă și mare înseamnă scara prea mare; și la tabelul înainte /
+după — „pata maxima" și reziduul scad când pleacă textura, dar asimetria și înclinarea
+n-au voie să se miște.
+
 ---
 
 ## Când merge și când NU merge `--light`
@@ -570,7 +602,8 @@ au rămas doar ca etichetă pe componenta fixă în lume, care e informativă ș
 Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, uită-te".
 `--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut. La fel
 `--smooth`: 0 înseamnă că a scris flat-ul netezit și hărțile, 1 că a refuzat intrarea
-(raw, cub de culoare) sau n-a putut scrie.
+(raw, cub de culoare) sau n-a putut scrie; cu `--scale auto`, 2 înseamnă că n-a scris
+nimic fiindcă nu e nimic de netezit sau scara e nedeterminată.
 
 ---
 
@@ -594,7 +627,8 @@ flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, p
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
   --fov <grade>            diagonala câmpului, dacă headerul nu o dă (--light)
-  --scale <px>             scara de netezire, în pixeli de senzor (--smooth; implicit 300)
+  --scale <px>|auto        scara de netezire, în pixeli de senzor (--smooth; implicit 300);
+                           'auto' o propune din master și netezește la ea, sau iese cu 2
 ```
 
 Flagurile pot veni oriunde: `flatcheck --expo f.fit` și `flatcheck f.fit --expo` sunt
@@ -957,7 +991,9 @@ păstrează când schimbi vederea și se resetează când schimbi fișierul.
 **Netezire** e modul 6 pe masterul sesiunii, și singurul tab care **nu rulează singur**:
 scrie un fișier de ~96 MB lângă master, și un fișier nu se produce fiindcă s-a deschis un
 folder. Ghidul stă deschis deasupra butonului, fiindcă e precondiția lui; sub el, trei
-chipuri de scară (150 / 300 / 600 px, implicit 300) și butonul „Netezește și salvează".
+chipuri de scară (150 / 300 / 600 px, implicit 300), butonul „Propune scara" — care
+rulează regula de mai sus (`--scale auto`), arată tabelul treptelor și bifează chipul
+propus, fără să scrie nimic — și butonul „Netezește și salvează".
 Butonul așteaptă lanțul de la deschidere — structura citește același master de 24 MP — și
 întreabă înainte să suprascrie un fișier netezit existent; un „nu" lasă cifrele pe ecran
 și fișierul vechi pe disc, și spune asta.

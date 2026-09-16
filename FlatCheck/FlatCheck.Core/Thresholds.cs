@@ -66,6 +66,28 @@ namespace FlatCheck
         // banda PERFECT lasa o marja de 3x in ambele directii.
         public const double SmoothKeptWarn = ResidPerfect;
 
+        // Propunerea de scara (SmoothScaleAdvisor), pe Metrics.FineTexture - partea
+        // structurata a componentei fine sub ~128 px pe senzor, in procente, pe rasterul
+        // de analiza. Masurat in C# pe cinci mastere reale (2026-09-16):
+        //   intrare: 0.04-0.06 % pe cele patru fara textura, 0.69 % pe cel cu difuzorul pe
+        //   monitor (celule de ~300 px). Pragul de 0.20 lasa 3x in ambele directii.
+        //   dupa netezire, pe cel cu textura: 0.09 % la 150 px, 0.02 % la 300, 0.01 % la
+        //   600; pe cele curate 0.01-0.02 % la orice scara. Pragul de 0.05 spune "a plecat"
+        //   de la 300 in sus, cu 1.8x fata de 150 si 2.5x fata de ce ramane la 300.
+        // Cinci mastere ajung ca sa se vada ca ideea tine, nu ca sa fie calibrat: un master
+        // cu textura slaba, de 0.15-0.25 %, cade langa primul prag.
+        public const double SmoothTextureMin = 0.20;    // sub atat, nimic de netezit
+        public const double SmoothTextureGone = 0.05;   // sub atat, textura a plecat
+
+        // Garda "scara prea mare": cat au voie sa SCADA asimetria azimutala si inclinarea,
+        // in puncte, intre master si fisierul netezit. Sunt cele doua teste pe care textura
+        // nu le atinge (sectoare mari, respectiv un plan), deci o scadere e structura reala
+        // care pleaca. Masurat: la 300 px pe masterul cu textura se misca 0.00 si -0.01;
+        // la 600 px inelul real al unui Nikkor 35 DX scade asimetria cu 0.79 si petele
+        // monitorului pe Tokina cu 0.80. Colturile, reziduul si pata maxima NU pot fi
+        // garda: scad cand pleaca textura (1.47 puncte la pata maxima).
+        public const double SmoothScaleLoss = 0.5;
+
         // --- rotatie 180 ---
         public const double RatioOk = 1.0, RatioBad = 3.0;
 

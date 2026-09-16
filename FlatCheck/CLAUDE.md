@@ -121,7 +121,11 @@ not a copy.
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
     `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
-    measurements - read it before touching the method). Beside
+    measurements - read it before touching the method) and `SmoothScaleAdvisor` (proposes
+    the smoothing scale from the master - `Metrics.FineTexture` on the input, then one
+    smoothing per rung of the three-chip ladder, with the azimuthal asymmetry and the tilt
+    as the "too large" guards; pure, and `Decide` is separately pure over hand-made
+    trials). Beside
     them, `ExposureBands` - the verdict ladder as a *value*, because two places need it
     (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
     constants would have been a second definition of the verdict. `ExposureAnalyzer` also
@@ -788,7 +792,11 @@ two rasters (removed component, smoothed flat's residual) behind a radio toggle,
 per (map, cap) like Ratio; `MapScaleViewModel` took a constructor argument for its
 default cap so this tab can start at ±2 % (`Th.ResidPerfect`) - what is removed is small,
 and at ±10 % the map would be white. `Populate` is `internal` and sets `HasResult`, so the
-smoke test renders the tab from an analyzer result without writing a file.
+smoke test renders the tab from an analyzer result without writing a file. The second
+button, `Propune scara`, runs `SmoothRun.Advise` the same guarded way, fills the rung
+rows and the verdict from `SmoothReport`'s advice strings, selects the proposed chip
+through `SmoothScaleViewModel.SelectScale`, and writes nothing; `PopulateAdvice` is
+`internal` for the smoke test.
 
 ### Three things about the WPF project that were learned the hard way
 
@@ -1437,6 +1445,27 @@ record; the short version:
   two maps at `-o` and `-dupa` (`FlatCheckCli.AfterMapPath`): the removed component, and
   the smoothed flat's own residual. Siril's scripts name `pp_flat_stacked` explicitly and
   will not pick the file up by themselves; the report says so.
+- **The scale can be proposed** (`--scale auto`, the tab's `Propune scara`), by
+  `SmoothScaleAdvisor`. `Metrics.FineTexture` on the prepared input - the structured part
+  of the component under ~128 sensor px (a double box blur of `W/47`, so the same fraction
+  of the frame on a fixture as on the sensor; a fixed 32 px leaked vignetting curvature
+  on a 256-px fixture), pixel noise subtracted in quadrature - says whether there is
+  texture at all: `Th.SmoothTextureMin` 0.20 % against 0.04-0.06 % on the four clean
+  masters and 0.69 % on the textured one. If there is, one smoothing per rung of the
+  three-chip ladder; a rung is acceptable when the output's texture is under
+  `Th.SmoothTextureGone` (0.05 %: 0.09 at 150, 0.02 at 300 on the textured master) and
+  neither the **azimuthal asymmetry** nor the **tilt** dropped by more than
+  `Th.SmoothScaleLoss` (0.5 points) - those two are the tests the texture does not touch,
+  whereas corners, residual and worst tile *drop when the texture leaves* (1.47 points at
+  the worst tile) and cannot be guards; the removed component's own large-scale figure
+  was tried and missed the Nikkor's ring at 600 px (0.24 %) where the azimuthal drop was
+  unambiguous (-0.79). The smallest acceptable rung is proposed; none means
+  `NEDETERMINAT`, no texture means `NIMIC DE NETEZIT`, and in both cases the console
+  writes no file and exits 2. On the five masters: 300 on the textured one, "nothing"
+  on the four others. It proposes, never decides: lens versus source is still invisible,
+  and a real feature only in the corners escapes both guards - the report says so. The
+  window's button waits for the opening chain like the other one, selects the chip, and
+  writes nothing.
 
 No Python counterpart and no `crosscheck.py` scenario: the product is a file. The method
 was chosen and validated with a numpy prototype that reproduced these figures; the C#
@@ -1627,6 +1656,9 @@ Every threshold lives in `Th`. Full picture:
 | \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
 | frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
 | worst tile of the removed component | smooth | 2 % = warning only, never a verdict | | `Th.SmoothKeptWarn` |
+| fine texture of the input | smooth, `--scale auto` | 0.20 % = "nothing to smooth" below | | `Th.SmoothTextureMin` |
+| fine texture of the output | smooth, `--scale auto` | 0.05 % = texture gone below | | `Th.SmoothTextureGone` |
+| drop in azimuthal asymmetry or tilt | smooth, `--scale auto` | 0.5 pts = scale too large above | | `Th.SmoothScaleLoss` |
 | centre clipping | expo | 0.05% | - | `Th.ExpoClip` |
 | centre level | expo | 50-65% | - | `Th.ExpoLo/Hi` |
 | centre level (sky) | expo `--sky` | 15-50% | - | `Th.ExpoSkyLo/Hi` |
@@ -1860,7 +1892,9 @@ Since phase 8 the tool is usable from a script:
 Verdict severity is monotonic, so "anything non-zero" means "not clean, go look".
 `--histeq` has no verdict and does not go through `ExitFor`: 0 means the picture was
 written, 1 that it could not be. `--smooth` likewise: 0 means the smoothed flat and its
-maps were written, 1 that the input was refused (raw, cube) or the file could not be.
+maps were written, 1 that the input was refused (raw, cube) or the file could not be;
+with `--scale auto`, 2 means no file was written because there was nothing to smooth or
+the scale was undetermined - "read this before you decide", the meaning 2 has elsewhere.
 
 Since the `--ratio` rewrite, mode 2 exits on the residual-scale band of the combined
 master rather than on `OK`/`SUSPECT`/`PROBLEMA` - which changed real outcomes: the ISO800

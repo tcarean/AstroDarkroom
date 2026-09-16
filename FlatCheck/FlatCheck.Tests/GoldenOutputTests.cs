@@ -697,6 +697,48 @@ public class GoldenOutputTests
         Assert.Contains("peste fisierul de intrare", output);
     }
 
+    /// <summary>
+    /// --scale auto on a textured fixture: the advice table, then the smoothing at the
+    /// proposed rung and the file. The texture is FINE here (a 13-px weave) so that, as on
+    /// a real sensor, it averages out inside the azimuthal sectors and the guard stays
+    /// silent; the 38-px weave of the other textured golden is too coarse for a 512-px
+    /// frame's sectors and reads as structure. Every rung clears it, so the first is
+    /// proposed; the golden pins the table's shape.
+    /// </summary>
+    [Fact]
+    public void SmoothAuto_OnATexturedFlat_ProposesAScaleAndWritesTheFile()
+    {
+        using var ws = new TempWorkspace();
+        var radial = FitsTestData.Radial(Size, Size);
+        string f = Flat(ws, "textured.fit", (x, y) => radial(x, y) * (1 + 0.03 * Math.Sin(x / 2.0) * Math.Cos(y / 2.3)));
+        string fits = ws.PathTo("netezit.fit");
+
+        var (output, exit) = RunCli(ws, f, "--smooth", fits, "--scale", "auto", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(fits));
+        Assert.Contains("SCARA PROPUSA", output);
+        Assert.Contains("=== NETEZIRE: ", output);
+        AssertGolden("smooth_auto_proposed", output);
+    }
+
+    /// <summary>--scale auto on a clean fixture: "nothing to smooth", no file, exit 2 - read before deciding.</summary>
+    [Fact]
+    public void SmoothAuto_OnACleanFlat_WritesNothingAndExitsTwo()
+    {
+        using var ws = new TempWorkspace();
+        string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
+        string fits = ws.PathTo("netezit.fit");
+
+        var (output, exit) = RunCli(ws, f, "--smooth", fits, "--scale", "auto", "-o", ws.PathTo("out.png"));
+
+        Assert.Equal(2, exit);
+        Assert.False(File.Exists(fits));
+        Assert.False(File.Exists(ws.PathTo("out.png")));
+        Assert.Contains("NIMIC DE NETEZIT", output);
+        AssertGolden("smooth_auto_no_texture", output);
+    }
+
     /// <summary>--smooth wins over every other mode flag: dispatch is first-match, and it comes first.</summary>
     [Fact]
     public void Smooth_TakesPrecedenceOverHisteq()

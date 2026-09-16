@@ -203,6 +203,76 @@ public class SmoothTabTests
         Assert.False(vm.Run.CanExecute(null));
     }
 
+    // ---------------------------------------------------------------- the scale proposal
+
+    /// <summary>Master fara textura: propunerea spune "nimic de netezit", nu scrie nimic si lasa chipul.</summary>
+    [Fact]
+    public async Task ProposingOnACleanMasterSaysNothingToSmooth_AndLeavesTheChip()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = Attached(f);
+        var chip = vm.Scale.Selected;
+
+        await vm.AdviseAsync();
+
+        Assert.True(vm.HasAdvice);
+        Assert.StartsWith("NIMIC DE NETEZIT", vm.AdviceVerdict);
+        Assert.Empty(vm.AdviceRows);
+        Assert.Contains($"sub {Th.SmoothTextureMin:F2} %", vm.AdviceTexture);
+        Assert.Same(chip, vm.Scale.Selected);
+        Assert.True(double.IsNaN(vm.ProposedScalePx));
+        Assert.False(vm.HasResult);
+        Assert.False(File.Exists(vm.Target));
+        Assert.Contains("propunere de scara", vm.Report);
+    }
+
+    /// <summary>
+    /// Master cu textura: cele trei trepte, o propunere, si chipul propus bifat - fara
+    /// fisier scris; netezirea ramane a butonului ei.
+    /// </summary>
+    [Fact]
+    public async Task ProposingOnATexturedMasterSelectsTheChip_AndWritesNoFile()
+    {
+        // The same 512-px master with a 13-px weave as the --scale auto golden: on the
+        // 128-px fixture master there is no texture period that is both fine enough to
+        // average out inside the azimuthal sectors and coarse enough not to count as pixel
+        // noise in the texture metric, so the tab is exercised at the golden's size.
+        using var f = new SessionFixture().WithProcess();
+        var radial = FitsTestData.Radial(512, 512);
+        File.WriteAllBytes(Path.Combine(f.ProcessDir, SirilSession.FlatMasterName),
+            FitsTestData.BuildFits(512, 512, (x, y) => radial(x, y) * (1 + 0.03 * Math.Sin(x / 2.0) * Math.Cos(y / 2.3))));
+        var vm = Attached(f);
+
+        await vm.AdviseAsync();
+
+        Assert.True(vm.HasAdvice);
+        Assert.StartsWith("SCARA PROPUSA", vm.AdviceVerdict);
+        Assert.Equal(3, vm.AdviceRows.Count);
+        Assert.False(double.IsNaN(vm.ProposedScalePx));
+        Assert.Equal(vm.ProposedScalePx, vm.Scale.ScalePx);
+        Assert.Single(vm.Scale.Options, o => o.IsSelected);
+        Assert.False(File.Exists(vm.Target));
+
+        // and the smoothing that follows uses the proposed chip
+        await vm.RunAsync();
+        Assert.Equal(vm.ProposedScalePx, vm.LastScalePx);
+        Assert.True(File.Exists(vm.Target));
+    }
+
+    [Fact]
+    public async Task ResetClearsTheAdvice()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        var vm = Attached(f);
+        await vm.AdviseAsync();
+
+        vm.Reset();
+
+        Assert.False(vm.HasAdvice);
+        Assert.Empty(vm.AdviceRows);
+        Assert.False(vm.Advise.CanExecute(null));
+    }
+
     /// <summary>Butonul asteapta lantul de la deschidere: apasat in timpul structurii, nu se suprapune peste ea.</summary>
     [Fact]
     public async Task TheButtonWaitsForTheOpeningChain()

@@ -473,6 +473,13 @@ namespace FlatCheck.Wpf
              + "partial; la 150 px ramane, dar raman si mai multe celule; la 600 px pleaca "
              + "aproape tot ce nu e vignetare. Singurul buton al modului."),
 
+            ("propunerea de scara",
+             "\"Propune scara\" masoara textura fina a masterului (sub 0.20 % nu e nimic de "
+             + "netezit), apoi incearca cele trei trepte si o bifeaza pe cea mai mica la care "
+             + "textura a plecat fara ca asimetria azimutala sau inclinarea sa scada cu peste "
+             + "0.5 puncte - cele doua teste pe care textura nu le atinge. Propune, nu decide: "
+             + "nu stie ce e al obiectivului si ce e al sursei. ~15 s pe un master de 24 MP."),
+
             ("cum se citeste harta",
              "Harta principala e original / netezit: alb unde nu s-a scos nimic, culoare unde "
              + "s-a scos. Pe un master curat e zgomot uniform plus punctele de praf. Cea de-a "
@@ -497,6 +504,9 @@ namespace FlatCheck.Wpf
 
         /// <summary>Eticheta butonului.</summary>
         internal static string SmoothButtonLabel() => "Netezeste si salveaza";
+
+        /// <summary>Eticheta butonului de propunere a scarii.</summary>
+        internal static string SmoothAdviseLabel() => "Propune scara";
 
         /// <summary>Cand omul a raspuns "nu" la suprascriere: rezultatul ramane pe ecran, fisierul vechi ramane pe disc.</summary>
         internal static string SmoothNotOverwritten(string path) =>

@@ -30,11 +30,11 @@ namespace FlatCheck.Tests;
 /// </summary>
 public class SmoothAnalyzerTests
 {
-    const int W = 1024, H = 683;
-    const int Tile = 25;                       // Metrics.TileSize on a 1024-wide raster
-    const double Sigma2 = 2 * Tile;            // scale (sigma in px) that gives sigma = 2 tiles on mono
+    internal const int W = 1024, H = 683;
+    internal const int Tile = 25;                       // Metrics.TileSize on a 1024-wide raster
+    internal const double Sigma2 = 2 * Tile;            // scale (sigma in px) that gives sigma = 2 tiles on mono
 
-    static Func<int, int, double> Truth(bool blobs = false, int seed = 1)
+    internal static Func<int, int, double> Truth(bool blobs = false, int seed = 1)
     {
         double cx = W / 2.0, cy = H / 2.0, hd = Math.Sqrt(cx * cx + cy * cy);
         var rng = new Random(seed);
@@ -53,7 +53,7 @@ public class SmoothAnalyzerTests
         };
     }
 
-    static Func<int, int, double> Cells(int count = 400, double sigma = 12.6, double amp = 0.03, int seed = 2)
+    internal static Func<int, int, double> Cells(int count = 400, double sigma = 12.6, double amp = 0.03, int seed = 2)
     {
         var rng = new Random(seed);
         var cells = new List<(double x, double y, double a)>();
@@ -73,7 +73,7 @@ public class SmoothAnalyzerTests
 
     static readonly (double x, double y)[] DustAt = { (170, 136), (851, 510), (987, 34) };
 
-    static Func<int, int, double> Dust(double depth = 0.15, double sigma = 10)
+    internal static Func<int, int, double> Dust(double depth = 0.15, double sigma = 10)
         => (x, y) =>
         {
             double s = 0;
@@ -82,7 +82,7 @@ public class SmoothAnalyzerTests
             return 1 + s;
         };
 
-    static Func<int, int, double> Noise(double sigma = 0.005, int seed = 3)
+    internal static Func<int, int, double> Noise(double sigma = 0.005, int seed = 3)
     {
         var rng = new Random(seed);
         return (x, y) =>
@@ -93,7 +93,7 @@ public class SmoothAnalyzerTests
         };
     }
 
-    static Img Observed(Func<int, int, double> truth, params Func<int, int, double>[] factors)
+    internal static Img Observed(Func<int, int, double> truth, params Func<int, int, double>[] factors)
         => TestImages.From(W, H, (x, y) =>
         {
             double v = truth(x, y);
@@ -101,10 +101,10 @@ public class SmoothAnalyzerTests
             return v;
         });
 
-    static Img Error(Img smoothed, Func<int, int, double> truth)
+    internal static Img Error(Img smoothed, Func<int, int, double> truth)
         => TestImages.From(W, H, (x, y) => smoothed.At(y, x) / truth(x, y) - 1);
 
-    static double MaxAbs(Img e, int inset = 0)
+    internal static double MaxAbs(Img e, int inset = 0)
     {
         double m = 0;
         for (int y = inset; y < e.H - inset; y++)
@@ -113,7 +113,7 @@ public class SmoothAnalyzerTests
         return m;
     }
 
-    static double Rms(Img e)
+    internal static double Rms(Img e)
     {
         double s = 0;
         foreach (double v in e.D) s += v * v;

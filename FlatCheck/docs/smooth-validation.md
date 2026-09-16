@@ -180,3 +180,57 @@ because the pixels do not say whether it is the lens or the source. This is the 
 limit the structure mode has, and `--ratio` is still the only thing that separates the
 two. The mode removes texture, dust and blotches; it does not remove illumination.
 
+
+## Choosing the scale (measured 2026-09-16, behind `--scale auto`)
+
+**Covers:** `FlatCheck.Core/Analysis/SmoothScaleAdvisor.cs`, `Metrics.FineTexture` and the
+three `Th.SmoothTexture*` / `Th.SmoothScaleLoss` thresholds. Re-run on the five masters if
+any of them changes: `flatcheck <master> --smooth out.fit --scale auto` prints everything
+in the tables below.
+
+Three scales on the five masters, through `flatcheck --smooth`. Per scale: the texture left
+in the smoothed file (structured part of the fine component under ~128 sensor px, pixel
+noise subtracted), the change in the azimuthal asymmetry and the tilt (after minus before,
+points), and the removed component block-meaned over 2-sigma blocks (max deviation, %).
+The first table is the numpy measurement of the sweep (Gaussian of sigma 64 on the G1
+position raster); the second is the C# metric that shipped (double box of W/47 on the
+analysis raster).
+
+| master | texture in (numpy) | 150: texture, azim, tilt, L2 | 300 | 600 |
+|---|---|---|---|---|
+| nikkor_iso400 | 0.13 % | 0.09, 0.00, -0.01, 0.11 | 0.08, -0.07, -0.03, 0.14 | 0.06, **-0.79**, -0.14, 0.24 |
+| nikkor_iso800 | 0.14 % | 0.09, -0.08, -0.01, 0.12 | 0.08, -0.21, -0.02, 0.22 | 0.06, **-0.49**, -0.07, 0.25 |
+| tokina_aproape | 0.13 % | 0.11, -0.08, 0.00, 0.10 | 0.10, -0.20, -0.02, 0.24 | 0.08, **-0.80**, -0.14, **1.71** |
+| tokina_pemonitor | **1.19 %** | **0.33**, -0.20, -0.11, 1.22 | 0.11, 0.00, -0.01, 0.82 | 0.07, -0.19, +0.11, 0.89 |
+| samyang_lcd | 0.07 % | 0.05, -0.01, -0.01, 0.12 | 0.05, -0.02, +0.01, 0.17 | 0.03, -0.08, +0.02, 0.60 |
+
+| master | texture in (C#) | after 150 | after 300 | after 600 |
+|---|---|---|---|---|
+| nikkor_iso400 | 0.05 % | 0.02 | 0.01 | 0.01 |
+| nikkor_iso800 | 0.06 % | 0.02 | 0.01 | 0.01 |
+| tokina_aproape | 0.04 % | 0.02 | 0.02 | 0.01 |
+| tokina_pemonitor | **0.69 %** | **0.09** | 0.02 | 0.01 |
+| samyang_lcd | 0.04 % | 0.01 | 0.01 | 0.01 |
+
+What it decided:
+
+- The input alone says whether there is texture: 0.69 % against 0.04-0.06 % in C# (12-17x;
+  8x in numpy). `Th.SmoothTextureMin = 0.20` leaves ~3x either way.
+- "Texture gone" is the output under `Th.SmoothTextureGone = 0.05`: 0.09 at 150 (not gone),
+  0.02 at 300 (gone) on the textured master; clean masters' outputs sit at 0.01-0.02.
+- "Too large" is read off the azimuthal asymmetry and the tilt, not off the removed
+  component's large-scale figure: L2 caught the monitor blotches on tokina_aproape at 600
+  (1.71) but missed the Nikkor's ring at 600 (0.24) where the azimuthal drop was -0.79.
+  Corners, residual and worst tile respond to the texture leaving (worst tile -1.47 at
+  300 on the textured master) and cannot be guards. `Th.SmoothScaleLoss = 0.5` points.
+- Picks: tokina_pemonitor 300 (150 leaves texture; 300 clears it with the guards at 0.00 /
+  -0.01); the other four "nothing to smooth". No undetermined case among the five.
+
+Known limits: the Samyang's LCD hot spot is the source, not the lens, and the rule cannot
+know that - it proposes nothing there only because there is no texture. The two guards are
+blind to a real feature that sits only in the corners, outside the inscribed circle and
+not a plane. The texture threshold rests on five masters; one with faint texture of
+0.15-0.25 % sits near it. And the metric's box is a fraction of the frame width (`W/47`),
+so on small test fixtures a texture coarser than a few percent of the width no longer
+averages out inside the azimuthal sectors and the guard reads it as structure - the
+golden fixture for `--scale auto` uses a 13-px weave for that reason.

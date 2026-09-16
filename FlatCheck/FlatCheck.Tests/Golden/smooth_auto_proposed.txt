@@ -1,0 +1,54 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== NETEZIRE, propunere de scara: <TMP>/textured.fit ===
+    textura fina intrare : 1.04 % (peste 0.20 %: e de netezit)
+
+  INCERCARI (cate o netezire pe treapta)
+    scara  150 px : textura ramasa 0.00 %, asimetrie +0.03, inclinare +0.03, scos 0.12 % ptp  -> potrivita
+    scara  300 px : textura ramasa 0.00 %, asimetrie +0.01, inclinare +0.03, scos 0.11 % ptp  -> potrivita
+    scara  600 px : textura ramasa 0.00 %, asimetrie +0.00, inclinare +0.02, scos 0.11 % ptp  -> potrivita
+
+  SCARA PROPUSA: 150 px
+    Cea mai mica treapta la care textura ramasa scade sub 0.05 % fara ca
+    asimetria azimutala sau inclinarea sa scada cu peste 0.5 puncte - cele doua
+    teste pe care textura nu le atinge, deci o scadere acolo e structura reala care pleaca.
+
+    Regula propune, nu decide: nu stie ce e al obiectivului si ce e al sursei - punctul cald al
+    unui LCD arata la fel ca un inel al lentilei - si e oarba la o structura reala care sta doar
+    in colturi, in afara cercului inscris. Uita-te in harta componentei scoase inainte sa apesi.
+
+=== NETEZIRE: <TMP>/textured.fit ===
+    cadru              : 512 x 512, mono/procesat (fara mozaic CFA)
+    scara de netezire  : 150 px pe senzor (dale de 12 px, nucleu gaussian sigma 12.5 dale)
+    dale respinse      : niciuna din 1849 (praf, pete, textura peste 2 %)
+    textura fina       : 1.04 % inainte -> 0.00 % dupa (structura sub ~128 px pe senzor, fara zgomotul de pixel)
+
+  CE S-A SCOS (original / netezit, la rezolutia de analiza 256 x 256)
+    p1 / p99 pe pixel        : -2.73 % / +2.77 %  (zgomotul de pixel intra aici)
+    structura la scara mare  :  0.12 %  (p95 - p5 pe dale)
+    dala cea mai abatuta     :  0.16 %
+    pata cea mai adanca      : -1.78 % (mai intunecat) la (127, 97)
+
+  INAINTE / DUPA - cele cinci teste de structura
+    imprastiere 4 colturi   :  0.71 % [PERFECT]  ->   0.51 % [PERFECT]
+    asimetrie azimutala max :  0.33 % [PERFECT]  ->   0.36 % [PERFECT]
+    reziduu dupa model rad. :  0.31 % [PERFECT]  ->   0.33 % [PERFECT]
+    inclinare (gradient)    :  0.41 % [PERFECT]  ->   0.44 % [PERFECT]
+    pata maxima (o dala)    :  0.41 % [PERFECT]  ->   0.42 % [PERFECT]
+    VERDICT                 : PERFECT  ->  PERFECT
+
+    INFORMATIV: fisierul netezit pastreaza TOT ce e neted in master si scoate tot ce nu e. Nu stie
+    ce e al obiectivului si ce e al sursei: petele unui monitor, gradientul cerului sau
+    colturile inegale ale unui panou raman, fiindca sunt netede; doar --ratio le desparte.
+    Ce scoate - textura, praful, petele compacte - poate fi si ceva dorit: o umbra de
+    praf e corecta pentru sesiunea ale carei lights o au si ele. O structura reala mai
+    ingusta decat scara (~300 px) e luata partial; scara e singurul buton.
+    Scripturile Siril numesc pp_flat_stacked explicit, deci nu iau fisierul netezit singure:
+    redenumeste-l in locul masterului (pastreaza originalul) sau da-l la calibrate cu -flat=.
+    -> flat netezit salvat: <TMP>/netezit.fit
+
+    -> harta salvata: <TMP>/out.png
+
+    -> harta salvata: <TMP>/out-dupa.png
+

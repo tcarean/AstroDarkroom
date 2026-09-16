@@ -119,6 +119,13 @@ namespace FlatCheck
         /// <summary>RemovedMaxTilePct la sau peste Th.SmoothKeptWarn: s-a scos mai mult decat textura.</summary>
         internal bool RemovedFlagged;
 
+        /// <summary>
+        /// Textura fina a intrarii si a iesirii (Metrics.FineTexture pe rasterele de
+        /// analiza), in procente. Prima spune daca era ceva de netezit, a doua daca a plecat;
+        /// pe ele sta propunerea de scara (SmoothScaleAdvisor).
+        /// </summary>
+        internal double InputTexturePct, OutputTexturePct;
+
         /// <summary>Bateria de structura pe intrare si pe iesire, pe rasterele de analiza.</summary>
         internal StructureResult Before, After;
     }
@@ -212,6 +219,8 @@ namespace FlatCheck
                 RemovedSpotY = sy,
                 // !(x < prag), ca NaN sa cada pe partea atentionata - conventia Stats.Verdict
                 RemovedFlagged = !(maxTile < Th.SmoothKeptWarn),
+                InputTexturePct = Metrics.FineTexture(prepIn),
+                OutputTexturePct = Metrics.FineTexture(prepOut),
                 Before = StructureAnalyzer.AnalyzePrepared(prepIn),
                 After = StructureAnalyzer.AnalyzePrepared(prepOut),
             };

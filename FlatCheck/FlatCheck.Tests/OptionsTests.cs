@@ -364,6 +364,17 @@ public class OptionsTests
         Assert.Contains("--scale", o.Error);
     }
 
+    [Fact]
+    public void ScaleFlag_AcceptsAuto_InAnyCase()
+    {
+        var o = Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", "Auto" });
+
+        Assert.Null(o.Error);
+        Assert.True(o.ScaleAuto);
+        Assert.Equal(SmoothAnalyzer.DefaultScalePx, o.ScalePx);
+        Assert.False(Options.Parse(new[] { "flat.fit", "--smooth", "s.fit", "--scale", "300" }).ScaleAuto);
+    }
+
     /// <summary>--scale without --smooth parses and is simply unused; dispatch never reads it.</summary>
     [Fact]
     public void ScaleFlag_WithoutSmooth_IsAccepted()

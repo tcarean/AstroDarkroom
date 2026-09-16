@@ -136,6 +136,43 @@ public class SmoothRunTests
         Assert.Contains("3 planuri", text.ToString());
     }
 
+    // ---------------------------------------------------------------- Advise
+
+    [Fact]
+    public void Advise_GivesTheAdvisorsAnswer_AndKeepsTheFrameForTheRunAfter()
+    {
+        using var ws = new TempWorkspace();
+        string path = WriteFlat(ws);
+
+        var text = new StringWriter();
+        var outcome = SmoothRun.Advise(path, text);
+        var direct = SmoothScaleAdvisor.Advise(ImageLoader.LoadImage(path));
+
+        Assert.False(outcome.Refused);
+        Assert.Equal(direct.Kind, outcome.Advice.Kind);
+        Assert.Equal(direct.InputTexturePct, outcome.Advice.InputTexturePct, 12);
+        Assert.NotNull(outcome.Frame);
+        Assert.Contains("propunere de scara", text.ToString());
+
+        // and the frame it kept runs the smoothing without a second load
+        var run = SmoothRun.Execute(outcome.Frame, path, Scale, new StringWriter());
+        Assert.False(run.Refused);
+        Assert.Equal(SmoothAnalyzer.Analyze(ImageLoader.LoadImage(path), Scale).RemovedPtpPct, run.Result.RemovedPtpPct, 12);
+    }
+
+    [Fact]
+    public void Advise_RefusesACube_LikeExecute()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(64, 64, 3, (x, y, p) => 1000 + p));
+
+        var outcome = SmoothRun.Advise(path, new StringWriter());
+
+        Assert.True(outcome.Refused);
+        Assert.Null(outcome.Advice);
+        Assert.Contains("3 planuri", outcome.Refusal);
+    }
+
     /// <summary>A raw carries no FITS cards; the run refuses before reading a pixel's worth of analysis.</summary>
     [Fact]
     public void ARawIsRefused_WithTheRawMessage()

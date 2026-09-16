@@ -13,7 +13,8 @@ Utilizare:
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
-            --scale <px> (pt --smooth: scara de netezire pe senzor; implicit 300)
+            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit 300;
+                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)
 
 Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
