@@ -229,6 +229,13 @@ internal static class FitsTestData
     internal static Func<int, int, double> WithLinearGradient(Func<int, int, double> b, int w, double g) =>
         (x, y) => b(x, y) * (1.0 + g * (x / (double)w - 0.5));
 
+    /// <summary>
+    /// Multiplies by a saddle <c>1 + s * xn * yn</c> (xn, yn in [-1, 1]): the even non-radial
+    /// term a twilight sky leaves in a wide-field flat, which a 180-degree rotation cannot cancel.
+    /// </summary>
+    internal static Func<int, int, double> WithSaddle(Func<int, int, double> b, int w, int h, double s) =>
+        (x, y) => b(x, y) * (1.0 + s * (2.0 * x / w - 1.0) * (2.0 * y / h - 1.0));
+
     /// <summary>Per-Bayer-position gain, so the four CFA channels separate (RGGB-like).</summary>
     internal static Func<int, int, double> WithBayerMosaic(
         Func<int, int, double> b, double rGain = 0.62, double bGain = 0.48) =>

@@ -61,7 +61,10 @@ defocused fabric at monitor distance. With the diffuser at the lens it is under 
    figures, but the **radial model puts rings into the file**: beyond the inscribed
    circle a ring is partial arcs, any even non-radial structure makes the ring
    distribution bimodal and the median jumps bin to bin - the artefact `CLAUDE.md`
-   documents for the map, which the symmetrisation cures only for the odd part. The
+   documents for the map. (At the time the symmetrisation cured it only for the odd
+   part; since 2026-09-17 `Metrics.RadialModel` also takes the even 2θ term off the
+   partial rings, and the figures below were measured with the plain ring median. The
+   rejection does not rest on the artefact alone - see the next sentence but one.) The
    field, at a kernel of 150 px, cannot absorb 22 px rings, so they survive into the
    output. Measured: ring-profile amplitude of the removed component ±0.11-0.13 % on
    tokina_pemonitor, visible as concentric circles in the ratio of two smoothed masters;

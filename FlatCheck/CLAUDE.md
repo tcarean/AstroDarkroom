@@ -1591,6 +1591,45 @@ frames. Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymme
 and `OnAGradient_TheResidualHasNoRingsOutToTheCorner`, both of which assert the *un*fixed
 behaviour too, so removing the symmetrisation as redundant fails loudly.
 
+**The same artefact has a second face, and symmetrising does not touch it.** Symmetrise
+removes the *odd* part only. An *even* non-radial term - a saddle (`xy`) or a falloff
+steeper along one axis than the other (`x² - y²`), which is what a twilight sky leaves in a
+70° field and what a 180° rotation cannot cancel - goes through it untouched, and the median
+on the left/right arcs beyond the inscribed circle absorbed it into the profile: the model's
+slope kinked from 0.21 to 0.71 % per bin exactly on that circle and the map drew a crease
+there, with two lens-shaped lobes bounded by sharp arcs. Found on the Tokina 20 sky master
+(15 + 15 frames rotated 180°, a -6 % sky saddle at the corners), reproduced arc for arc on a
+smooth synthetic with the fitted coefficients, which is what proved the arcs were the
+model's: the error of the map against the true residual was 8.9 % outside the circle.
+
+So on the partial rings the profile is now the median of `v / (1 + q_c r² cos 2θ + q_s r² sin 2θ)`,
+where `q` is the *relative* 2θ amplitude per `r²` - a ratio, like every other figure in the
+tool, since a sky term multiplies and grows with `r²`. `q` is estimated on each identifiable
+partial ring by `Metrics.RingFit` - on the medians of 15° sectors, by least median of
+squares, so a compact blotch that symmetrising turns into an antipodal pair (which *is* a 2θ
+signal on its rings) cannot enter it - then smoothed with a running median over 7 rings; in
+the corners, where the arcs can no longer separate a 2θ term from the constant (a purely
+geometric criterion, `RingFitMinDet` on the correlation determinant of the basis), `q` is
+carried from the last identifiable rings. Inside the circle nothing changed: the ring median
+is exact on a full ring and immune to anything compact. `a0` stays a pixel median
+everywhere, so the profile's noise and robustness are what they were.
+
+Measured: on the sky master the sharpest step between 8-px tiles of the residual went
+3.58 → 0.23 % on the synthetic and 2.71 → 0.44 % on the master; the true-residual error
+on the synthetic 8.9 → 0.5 %; the four clean masters in the library moved by 0.0-0.3
+points and no verdict changed; the monitor master with its blotches - genuine even
+structure, -2 to -5 % on its partial rings, seen by two independent estimators - reads
+2 points more on the worst tile, which is what the median had been hiding in the profile.
+The golden files moved by 0.01-0.05 points. The header comment of `RadialModel` lists the
+four designs that were measured and rejected on the way (a0 straight from a per-ring fit,
+a global quadratic even correction, absolute amplitudes held from the last ring, a 4θ
+term) and why each failed; read it before changing the method. Pinned by
+`RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner` (the model against the same
+scene without the saddle, under 1 % everywhere) and by
+`ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`, which is the test the rejected
+designs failed. `flatcheck.py` mirrors it in full (`radial_model`, `_ring_fit`) and all 43
+`crosscheck.py` scenarios still agree.
+
 **A "vignetting edge" metric was prototyped on the same occasion and rejected; don't
 build it.** The rings on the Nikkor ISO800 map had been read as a hard-edged, decentred
 falloff, and a metric for hard edges in the radial profile (max deviation from a

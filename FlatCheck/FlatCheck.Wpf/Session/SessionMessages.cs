@@ -335,7 +335,9 @@ namespace FlatCheck.Wpf
              + "ceva rotund din fata obiectivului e in afara axei, sau lumina nu e "
              + "difuza. Nu s-a vazut inca pe un master real: inelele care apareau pe "
              + "mastere cu gradient mare erau un artefact al modelului radial, corectat "
-             + "intre timp - profilul se ia acum din rasterul simetrizat la 180 de grade."),
+             + "intre timp - profilul se ia acum din rasterul simetrizat la 180 de grade, "
+             + "iar pe inelele partiale de dincolo de cercul inscris se scoate si termenul "
+             + "par (o sa a cerului), care desena o creasta pe acel cerc."),
 
             ("pata locala intr-un colt sau la o margine",
              "Light leak: vizor, montura, latura difuzorului. Nu se roteste cu cerul, "

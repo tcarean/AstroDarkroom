@@ -37,7 +37,7 @@ namespace FlatCheck.Tests;
 ///
 ///   - They are the only end-to-end test of the numbers. The unit tests check Percentile,
 ///     FitCenter and LargeScalePtp in isolation; only these check that the whole chain
-///     Load -> Prepare -> RadialModel -> residual -> verdict still produces 0.29 % on a
+///     Load -> Prepare -> RadialModel -> residual -> verdict still produces 0.30 % on a
 ///     clean radial field.
 ///
 /// They remain deliberately dumb - they assert nothing about *why* a number is right,
@@ -186,7 +186,7 @@ public class GoldenOutputTests
         Assert.Contains("2 - 10 %", output);
         Assert.Contains("10 - 20 %", output);
         Assert.Contains("peste 20 %", output);
-        Assert.Contains("reziduu dupa model rad. :  0.29 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
+        Assert.Contains("reziduu dupa model rad. :  0.30 %   [PERFECT]  <- CEL MAI IMPORTANT", output);
         Assert.Contains("pata maxima (o dala)    :", output);
         Assert.Contains("Cel mai important e \"reziduu dupa model rad.\"", output);
     }

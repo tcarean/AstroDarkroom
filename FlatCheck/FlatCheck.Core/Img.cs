@@ -169,6 +169,10 @@ namespace FlatCheck
         /// Alternativa era media pe inel in loc de mediana, care vindeca bimodalitatea la
         /// fel de bine (masurat, aceleasi cifre), dar renunta la robustetea medianei fata
         /// de stele, pixeli fierbinti si praf - iar analizorul primeste si cadre unice.
+        ///
+        /// Simetrizarea scoate DOAR partea impara. Partea para neradiala - o sa, o cadere mai
+        /// abrupta pe o axa - trece prin ea neatinsa si are aceeasi soarta pe arcele partiale;
+        /// pe aceea o trateaza Metrics.RadialModel, pe inel, cu o corectie 2t. Vezi acolo.
         /// </summary>
         internal static Img Symmetrise(Img a)
         {

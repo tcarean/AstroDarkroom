@@ -97,8 +97,56 @@ namespace FlatCheck
             return (cx, cy, tilt, true);
         }
 
-        // Profil radial robust (percentila per inel) + model 2D reconstruit prin interpolare.
-        internal static (double[] centers, double[] prof, Img model) RadialModel(Img img, double cx, double cy, int nbins = 80, double pct = 50)
+        // Profil radial robust + model 2D reconstruit prin interpolare.
+        //
+        // In cercul inscris profilul e mediana pe inel, ca dintotdeauna: exacta pe un inel
+        // intreg si imuna la ce e compact. Dincolo de el un inel e doar arce partiale, la
+        // azimuturi fixe (stanga si dreapta, apoi doar colturile), si orice statistica pe
+        // arce mosteneste dependenta de azimut a campului. Img.Symmetrise scoate exact partea
+        // IMPARA (gradientul) inainte; partea PARA neradiala - o sa (xy) sau o cadere mai
+        // abrupta pe o axa decat pe cealalta (x^2 - y^2) - trece prin simetrizare neatinsa,
+        // si mediana pe arcele din stanga/dreapta o absorbea in profil: panta modelului sarea
+        // de la 0.21 la 0.71 % per bin chiar pe cercul inscris, iar harta desena o creasta pe
+        // el si doi lobi cu margini dure. Masurat pe masterul de cer al Tokinei 20 (15 + 15
+        // cadre rotite la 180 de grade; saua cerului, -6 % la colturi, e para si rotatia nu o
+        // poate anula) si reprodus pe un sintetic neted cu aceiasi coeficienti: eroarea hartii
+        // fata de reziduul adevarat, in afara cercului, 8.9 % cu mediana si 0.5 % cu corectia;
+        // cea mai abrupta treapta intre dale de 8 px 3.58 -> 0.23 %.
+        //
+        // CORECTIA, pe inelele partiale: profilul e mediana lui
+        //     v / (1 + q_c r^2 cos 2t + q_s r^2 sin 2t),
+        // cu q amplitudinile RELATIVE per r^2 ale termenului 2t (raport, ca orice metrica din
+        // tool: o sa a cerului inmulteste, nu aduna, si creste cu r^2). q se estimeaza pe
+        // fiecare inel identificabil prin RingFit - pe MEDIANELE sectoarelor de 15 grade, cu
+        // LMedS - si se netezeste cu o mediana glisanta peste RingSmooth inele; in colturi,
+        // unde arcele nu mai pot separa termenul 2t de constanta (criteriu pur geometric,
+        // RingFitMinDet pe determinantul matricei de corelatie a bazei), q vine de la
+        // ultimele inele identificabile. a0 ramane o mediana pe pixeli peste tot, deci
+        // zgomotul si robustetea profilului sunt cele de dinainte.
+        //
+        // Ce a fost incercat si respins, in ordine:
+        //  - a0 direct din fitul pe inel (LS cu taiere la 3 MAD, apoi L1): o pata compacta de
+        //    10 % intr-un colt, simetrizata in doua jumatati antipodale, E un semnal 2t pe
+        //    inelele ei, si fitul o absorbea cu a0 mutat cu 2.3 % - un inel fals in harta.
+        //  - un fit global patratic al partii pare (astigmatism + sa) impartit inainte de
+        //    mediana: aliaza termenii radiali de ordin mai mare intr-un astigmatism fals
+        //    (0.3 % pe un camp perfect radial pe 3:2) si muta dala maxima a Nikkor 800 cu
+        //    1.3 puncte fara motiv.
+        //  - amplitudini absolute tinute de la ultimul inel identificabil: pe o sa
+        //    multiplicativa gresesc cu factorul vignetarii (1.4 % in colt), si o pata din
+        //    ultimul inel se propaga in toate cele patru colturi.
+        //  - termenul 4t: in colturi extrapolarea lui explodeaza (dala maxima 9.8 -> 28 %).
+        // Pe cele patru mastere curate din biblioteca cifrele se muta cu 0.0-0.3 puncte; pe
+        // masterul de monitor cu petele lui (structura para reala, -2..-5 % pe inelele
+        // partiale, vazuta de ambii estimatori) dala maxima creste cu 2 puncte - ce mediana
+        // ascundea in profil iese acum in reziduu, unde ii e locul.
+        internal const double RingFitMinDet = 0.10;   // sub atat termenii 2t nu se mai pot separa de a0 pe arcele unui inel
+        internal const int RingSectors = 24;          // sectoare de 15 grade; fitul pe inel se face pe medianele lor
+        internal const int RingSmooth = 7;            // mediana glisanta a amplitudinilor 2t, in inele
+        internal const double RingTripleMinDet = 1e-9; // un triplet de sectoare cu determinantul sub atat nu da candidat LMedS
+        internal const double RingFitTie = 1e-9;      // toleranta (relativ la nivel) la alegerea inlierilor, pt scene fara zgomot
+
+        internal static (double[] centers, double[] prof, Img model) RadialModel(Img img, double cx, double cy, int nbins = 80)
         {
             int h = img.H, w = img.W;
             double rmax = 0;
@@ -109,22 +157,79 @@ namespace FlatCheck
                     if (r > rmax) rmax = r;
                 }
             var binVals = new List<double>[nbins];
-            for (int i = 0; i < nbins; i++) binVals[i] = new List<double>();
+            var binCos = new List<double>[nbins];
+            var binSin = new List<double>[nbins];
+            var binSector = new List<int>[nbins];
+            for (int i = 0; i < nbins; i++)
+            {
+                binVals[i] = new List<double>();
+                binCos[i] = new List<double>();
+                binSin[i] = new List<double>();
+                binSector[i] = new List<int>();
+            }
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
                     double r = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
                     int idx = Math.Min((int)(r / rmax * nbins), nbins - 1);
+                    double t = Math.Atan2(y - cy, x - cx);
                     binVals[idx].Add(img.At(y, x));
+                    binCos[idx].Add(Math.Cos(2 * t));
+                    binSin[idx].Add(Math.Sin(2 * t));
+                    binSector[idx].Add(Math.Min((int)((t + Math.PI) / (2 * Math.PI) * RingSectors), RingSectors - 1));
                 }
+            double rIns = Math.Min(cx, cy);
+            var ringBins = new List<int>();
+            for (int i = 0; i < nbins; i++)
+                if (binVals[i].Count >= 8) ringBins.Add(i);
+            // amplitudinile relative per r^2 pe inelele partiale identificabile
+            var qRing = new List<int>();
+            var qCos = new List<double>();
+            var qSin = new List<double>();
+            for (int n = 0; n < ringBins.Count; n++)
+            {
+                int i = ringBins[n];
+                double center = (i + 0.5) / nbins * rmax;
+                if (center < rIns) continue;
+                var fit = RingFit(binVals[i], binCos[i], binSin[i], binSector[i]);
+                if (fit == null) continue;
+                qRing.Add(n);
+                qCos.Add(fit[1] / fit[0] / (center * center));
+                qSin.Add(fit[2] / fit[0] / (center * center));
+            }
             var centers = new List<double>();
             var prof = new List<double>();
-            for (int i = 0; i < nbins; i++)
-                if (binVals[i].Count >= 8)
+            for (int n = 0; n < ringBins.Count; n++)
+            {
+                int i = ringBins[n];
+                double center = (i + 0.5) / nbins * rmax;
+                centers.Add(center);
+                if (center < rIns || qRing.Count == 0)
                 {
-                    centers.Add((i + 0.5) / nbins * rmax);
-                    prof.Add(Stats.Percentile(binVals[i], pct));
+                    prof.Add(Stats.Percentile(binVals[i], 50));
+                    continue;
                 }
+                // mediana glisanta peste inelele identificabile din jur; in colturi, peste ultimele
+                int pos = 0;
+                while (pos < qRing.Count && qRing[pos] < n) pos++;
+                int lo, hi;
+                if (pos < qRing.Count && qRing[pos] == n)
+                {
+                    lo = Math.Max(0, pos - RingSmooth / 2);
+                    hi = Math.Min(qRing.Count, pos + RingSmooth / 2 + 1);
+                }
+                else
+                {
+                    lo = Math.Max(0, qRing.Count - RingSmooth);
+                    hi = qRing.Count;
+                }
+                double qc = Stats.Percentile(qCos.GetRange(lo, hi - lo), 50) * center * center;
+                double qs = Stats.Percentile(qSin.GetRange(lo, hi - lo), 50) * center * center;
+                var v = binVals[i]; var c = binCos[i]; var s = binSin[i];
+                var corrected = new List<double>(v.Count);
+                for (int p = 0; p < v.Count; p++) corrected.Add(v[p] / (1 + qc * c[p] + qs * s[p]));
+                prof.Add(Stats.Percentile(corrected, 50));
+            }
             var ca = centers.ToArray();
             var pa = prof.ToArray();
             var model = new Img(h, w);
@@ -135,6 +240,93 @@ namespace FlatCheck
                     model.Set(y, x, Stats.Interp(r, ca, pa));
                 }
             return (ca, pa, model);
+        }
+
+        /// <summary>
+        /// Un inel identificabil: (a0, a2, b2) ale lui a0 + a2*cos(2t) + b2*sin(2t) peste
+        /// medianele sectoarelor, prin cele mai mici patrate ponderate (ponderea = pixelii
+        /// sectorului) pe sectoarele pe care le accepta o estimare LMedS - solutia exacta a
+        /// fiecarui triplet de sectoare, castiga cea cu mediana patratelor reziduurilor cea
+        /// mai mica. Breakdown 50 %: o pata compacta care, simetrizata, ocupa 2-4 sectoare din
+        /// 12 nu intra in estimare. Null cand baza nu e identificabila pe arce (geometrie pura)
+        /// sau cand sunt sub 4 sectoare. Pereche numerica: <c>_ring_fit</c> din flatcheck.py.
+        /// </summary>
+        static double[] RingFit(List<double> v, List<double> c, List<double> s, List<int> sector)
+        {
+            int n = v.Count;
+            double sc = 0, ss = 0, scc = 0, sss = 0, scs = 0;
+            for (int i = 0; i < n; i++)
+            {
+                sc += c[i]; ss += s[i];
+                scc += c[i] * c[i]; sss += s[i] * s[i]; scs += c[i] * s[i];
+            }
+            double det = (n * (scc * sss - scs * scs) - sc * (sc * sss - scs * ss) + ss * (sc * scs - scc * ss))
+                         / (n * scc * sss);
+            if (!(det >= RingFitMinDet)) return null;
+
+            var med = new List<double>(); var mc = new List<double>(); var ms = new List<double>(); var wt = new List<double>();
+            for (int k = 0; k < RingSectors; k++)
+            {
+                var vals = new List<double>();
+                double sumC = 0, sumS = 0;
+                for (int i = 0; i < n; i++)
+                    if (sector[i] == k) { vals.Add(v[i]); sumC += c[i]; sumS += s[i]; }
+                if (vals.Count < 8) continue;
+                med.Add(Stats.Percentile(vals, 50));
+                mc.Add(sumC / vals.Count);
+                ms.Add(sumS / vals.Count);
+                wt.Add(vals.Count);
+            }
+            int m = med.Count;
+            if (m < 4) return null;
+
+            double[] best = null; double bestScore = 0;
+            var res = new double[m];
+            for (int i = 0; i < m - 2; i++)
+                for (int j = i + 1; j < m - 1; j++)
+                    for (int k = j + 1; k < m; k++)
+                    {
+                        double d3 = (mc[j] * ms[k] - ms[j] * mc[k]) - (mc[i] * ms[k] - ms[i] * mc[k])
+                                    + (mc[i] * ms[j] - ms[i] * mc[j]);
+                        if (Math.Abs(d3) < RingTripleMinDet) continue;
+                        // regula lui Cramer pe [[1, mc, ms]] * cand = med
+                        double c0 = (med[i] * (mc[j] * ms[k] - ms[j] * mc[k]) - med[j] * (mc[i] * ms[k] - ms[i] * mc[k])
+                                     + med[k] * (mc[i] * ms[j] - ms[i] * mc[j])) / d3;
+                        double c1 = ((med[j] * ms[k] - ms[j] * med[k]) - (med[i] * ms[k] - ms[i] * med[k])
+                                     + (med[i] * ms[j] - ms[i] * med[j])) / d3;
+                        double c2 = ((mc[j] * med[k] - med[j] * mc[k]) - (mc[i] * med[k] - med[i] * mc[k])
+                                     + (mc[i] * med[j] - med[i] * mc[j])) / d3;
+                        for (int p = 0; p < m; p++)
+                        {
+                            double e = med[p] - (c0 + c1 * mc[p] + c2 * ms[p]);
+                            res[p] = e * e;
+                        }
+                        double score = Stats.Percentile((double[])res.Clone(), 50);
+                        if (best == null || score < bestScore) { best = new[] { c0, c1, c2 }; bestScore = score; }
+                    }
+            if (best == null) return null;
+
+            double scale = 1.4826 * Math.Sqrt(bestScore) * (1 + 5.0 / (m - 3));
+            var inlier = new bool[m]; int inliers = 0;
+            for (int p = 0; p < m; p++)
+            {
+                double e = med[p] - (best[0] + best[1] * mc[p] + best[2] * ms[p]);
+                inlier[p] = Math.Abs(e) <= 2.5 * scale + RingFitTie * Math.Abs(best[0]);
+                if (inlier[p]) inliers++;
+            }
+            if (inliers < 4) return best;
+            double k0 = 0, kc = 0, ks = 0, kcc = 0, kss = 0, kcs = 0, kv = 0, kvc = 0, kvs = 0;
+            for (int p = 0; p < m; p++)
+            {
+                if (!inlier[p]) continue;
+                double wgt = wt[p];
+                k0 += wgt; kc += wgt * mc[p]; ks += wgt * ms[p];
+                kcc += wgt * mc[p] * mc[p]; kss += wgt * ms[p] * ms[p]; kcs += wgt * mc[p] * ms[p];
+                kv += wgt * med[p]; kvc += wgt * med[p] * mc[p]; kvs += wgt * med[p] * ms[p];
+            }
+            var A = new double[3, 3] { { k0, kc, ks }, { kc, kcc, kcs }, { ks, kcs, kss } };
+            var sol = Stats.Solve(A, new[] { kv, kvc, kvs }, 3);
+            return sol ?? best;
         }
 
         // ========================================================= metrici

@@ -752,6 +752,20 @@ Cifrele de verdict nu erau afectate — reziduul se măsura pe atunci doar în c
 unde mediana era deja exactă — dar harta e singurul loc din care se citește o *formă*, iar
 ea mințea. Dacă ai hărți salvate dinainte cu inele pe ele, ăsta era motivul.
 
+Capcana are și o a doua față, pe care simetrizarea nu o atinge: simetrizarea scoate doar
+partea *impară* (gradientul). Un termen *par* și neradial — o șa, adică colțurile în perechi
+diagonale, sau o cădere mai abruptă pe o axă decât pe cealaltă — trece prin ea neatins, iar
+mediana pe arcele parțiale de dincolo de cercul înscris îl absorbea în profil. Rezultatul:
+o creastă exact pe cercul înscris și doi lobi cu margini dure, pe un flat care nu conținea
+nicio margine. Așa arată *cerul* la un câmp de 70°: bolta e curbată în cadru, mai tare pe
+direcția apusului decât perpendicular, și rotația la 180° nu poate anula un termen par.
+Găsit pe un master de cer cu Tokina la 20 mm, reprodus pe un sintetic neted cu aceiași
+coeficienți. De atunci, pe inelele parțiale profilul se ia după ce se împarte termenul 2θ
+estimat robust pe inel (pe medianele sectoarelor, deci o pată compactă nu intră în el) și
+netezit pe inelele vecine; în cercul înscris nimic nu s-a schimbat. Pe masterele curate
+cifrele s-au mișcat cu sub 0.3 puncte; un master de monitor cu pete își arată acum în
+reziduu structura pară pe care mediana o ascundea parțial în profil.
+
 Odată modelul valid până în colț, restricția reziduului la cercul înscris a rămas fără
 motiv, și a fost scoasă: pe un cadru 3:2 cercul acoperă 53 % din dale, colțurile — unde
 gradientul e cel mai mare și unde stau scurgerile de lumină — nu se vedeau deloc, iar

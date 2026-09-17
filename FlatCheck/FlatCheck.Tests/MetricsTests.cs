@@ -736,6 +736,38 @@ public class MetricsTests
     }
 
     /// <summary>
+    /// THE REGRESSION TEST for the second face of the ring artefact.
+    ///
+    /// Symmetrising removes the odd part only. An EVEN non-radial term - here a saddle,
+    /// the term a twilight sky leaves in a 70-degree field and a 180-degree rotation
+    /// keeps - goes through it untouched, and a per-ring median taken on the partial
+    /// arcs beyond the inscribed circle absorbs it into the profile: the model's slope
+    /// kinked on that circle and the map drew a crease there, with two hard-edged lobes.
+    /// Seen on the Tokina sky master and reproduced on a smooth synthetic.
+    ///
+    /// The model is compared with the truth - the same scene without the saddle - so the
+    /// test states the property rather than the symptom: the radial part is recovered to
+    /// under 1 % everywhere, corners included. Measured: see the assertion message for the
+    /// ring fit; the ring median missed by several percent on the same scene.
+    /// </summary>
+    [Fact]
+    public void RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner()
+    {
+        var saddle = Img.Prepare(Make(2400, 1600,
+            FitsTestData.WithSaddle(FitsTestData.Radial(2400, 1600), 2400, 1600, 0.11)));
+        var truth = Img.Prepare(Make(2400, 1600, FitsTestData.Radial(2400, 1600)));
+        double cx = saddle.W / 2.0, cy = saddle.H / 2.0;
+
+        var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(saddle), cx, cy);
+        var (_, _, reference) = Metrics.RadialModel(truth, cx, cy);
+
+        double worst = 0;
+        for (int i = 0; i < model.D.Length; i++)
+            worst = Math.Max(worst, Math.Abs(model.D[i] / reference.D[i] - 1) * 100);
+        Assert.True(worst < 1.0, $"modelul radial ar trebui sa ignore saua, dar s-a abatut cu {worst:F3} %");
+    }
+
+    /// <summary>
     /// Si celalalt capat: pe un camp radial simetrizarea nu are ce sa scoata, deci
     /// profilul nu se muta mai mult decat artefactul de o jumatate de pixel al centrarii
     /// (problema cunoscuta 5) - masurat 0.20 % pe 256x256, si scade ca ~1/n.
