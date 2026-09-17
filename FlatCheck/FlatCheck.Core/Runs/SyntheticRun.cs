@@ -131,14 +131,21 @@ namespace FlatCheck
 
         /// <summary>
         /// Obiectivele pe care raw-ul le indica singur: cele cu ID-ul lui Nikon (in fisierele
-        /// monturii aparatului), minus cele al caror nume contrazice gama din MakerNote.
+        /// monturii aparatului), minus cele al caror nume contrazice gama din MakerNote - si,
+        /// fiindca doar profilele Adobe poarta ID-uri Nikon, obiectivele lensfun ale acelorasi
+        /// producatori a caror gama nu contrazice raw-ul. Fara ele lista restransa arata doar
+        /// jumatatea Adobe, si utilizatorul a intrebat unde a disparut Tokina din lensfun.
         /// Goala fara ID. Consola si fereastra pornesc de aici, deci aleg la fel.
         /// </summary>
         internal static IReadOnlyList<LensChoice> CandidatesFromRaw(LensCatalog cat, LoadedFrame f)
         {
             if (f?.NikonLensId == null) return Array.Empty<LensChoice>();
             string hint = f.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            return LensCatalog.Narrow(cat.ByLensId(f.NikonLensId.Value, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+            var byId = LensCatalog.Narrow(cat.ByLensId(f.NikonLensId.Value, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
+            if (byId.Count == 0) return byId;
+            var makers = new HashSet<string>(byId.Select(l => l.Maker), StringComparer.OrdinalIgnoreCase);
+            var lensfun = cat.Lenses.Where(l => l.Source == ProfileSource.Lensfun && makers.Contains(l.Maker)).ToList();
+            return byId.Concat(LensCatalog.Narrow(lensfun, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture)).ToList();
         }
 
         internal static SyntheticRunOutcome Execute(string referencePath, SyntheticRequest req, ProfileSources sources,

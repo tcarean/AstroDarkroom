@@ -150,7 +150,10 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   ends within 1 mm or 5 % (names round), aperture within 0.25 stops (Nikon's codes step in
   sixths). A name that does not parse is kept, so the narrowing can only remove wrong
   lenses, never lose the right one for a strange name; when every hit contradicts the raw,
-  the list is empty and the console asks for `--lens`. `LensSpec.Describe` is the
+  the list is empty and the console asks for `--lens`. lensfun entries carry no Nikon IDs,
+  so `CandidatesFromRaw` adds the lensfun lenses whose maker matches a surviving Adobe hit
+  and whose name does not contradict the range: on this machine the raw yields the two
+  Adobe generations (AT-X PRO DX, atx-i CF) and the two lensfun entries below. `LensSpec.Describe` is the
   "11-20 mm f/2.8" in `SyntheticReport.RawLensLabel`, printed in the refusal and in the
   window's prefill note.
 
@@ -227,6 +230,24 @@ is REFA, exit 3.
 | on monitor | +0.09 | 6.4 % | BUN |
 | Adobe vs lensfun synthetic | −0.16 | 11.7 % | ACCEPTABIL |
 
+**lensfun has two entries for this lens**, and the figures above use the first:
+`Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8` (`slr-tokina.xml`, crop 1.61,
+"Taken with Canon EOS 7D M2", 50 profiles; at 20 mm f/2.8 `k = -0.6195, 0.3276, -0.1494`),
+chosen with `--lens "Aspherical" --source lensfun`; it writes 0.85 / 0.56 / 0.26 / 0.24
+stops. The second, `Tokina AF 11-20mm f/2.8 AT-X Pro DX` (crop 1.534, "Taken with Nikon
+D7100", 100 profiles; at 20 mm f/2.8 `k = -1.0395, 0.9223, -0.3793`), writes
+0.92 / 0.70 / 0.37 / 0.34. Measured 2026-09-17 on the sky master as reference:
+
+| pair | stops | depth verdict |
+|---|---|---|
+| lensfun 7D2 entry vs lensfun D7100 entry | −0.06 | BUN |
+| Adobe vs lensfun D7100 entry | −0.22 | ACCEPTABIL |
+| sky master vs lensfun 7D2 entry | −0.58 | REFA |
+| sky master vs lensfun D7100 entry | −0.64 | REFA |
+
+So the three published models span 0.69-0.92 stops at the corner: the two lensfun
+calibrations agree to 0.06, and Adobe is the shallow one by 0.16-0.22.
+
 On the sky master against the Adobe synthetic (the numbers behind the user's question that
 produced the table): vignetting 0.27 / 0.69 / −0.42 stops; offset 2.58 / 0.10 / 0.35 %;
 corners 10.28 ACCEPTABIL / 0.00 PERFECT / 10.26 ACCEPTABIL; azimuthal 7.25 / 0.09 / 7.13;
@@ -297,6 +318,14 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   lists 139 in `AlternateLensIDs`, and so do the two Nikkor 18-200 files and the Sigma
   18-35 (`grep -l` over the folder). The Samyang (manual) and the Nikkor 35 DX give IDs 74
   and 159.
+- **The two Adobe Tokina 11-20 files are one optic.** `NIKON CORPORATION (Tokina AT-X
+  11-20mm F2.8 PRO DX) - RAW.lcp` and `... (Tokina atx-i 11-20mm f2.8 CF) - RAW.lcp`
+  (both dated 2026-04-06) differ only in the names and the IDs: every `VignetteModelParam`,
+  `FocalLength` and `ApertureValue` hashes identically (`md5sum` over the extracted
+  attributes), and a `diff` with the names masked shows nothing else. The AT-X file has
+  `LensID` 122 with 139 in `AlternateLensIDs`; the atx-i file has `LensID` 139. The
+  author's raw reports 139, so the copy is the atx-i (Tokina's 2020 rebadge of the 2015
+  AT-X, same optical formula). The lensfun entries are named for the AT-X and apply to it.
 - The test fixtures (`LensProfileTestData`) are a hand-written LCP in the attribute form
   (three entries: 20 mm f/2.8 with the piecewise table, 20 mm f/4, 18 mm decentred) on two
   mounts and a lensfun file with the Tokina, a lens without vignetting and the D3300

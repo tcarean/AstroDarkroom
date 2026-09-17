@@ -506,8 +506,20 @@ public class SyntheticRunTests
         using var ws = new TempWorkspace();
         var sources = LensProfileTestData.Sources(ws);
         var tokina = new LoadedFrame { Camera = "NIKON D3300", NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
-        var req = new SyntheticRequest();
 
+        // the Adobe file on the camera's mount by ID, plus the lensfun Tokina of the same range:
+        // lensfun carries no Nikon IDs, so it joins by maker and range
+        var candidates = SyntheticRun.CandidatesFromRaw(sources.Catalog, tokina);
+        Assert.Equal(2, candidates.Count);
+        Assert.Equal(ProfileSource.Adobe, candidates[0].Source);
+        Assert.Equal("NIKON CORPORATION", candidates[0].Mount);
+        Assert.Equal(ProfileSource.Lensfun, candidates[1].Source);
+        Assert.Contains("11-20", candidates[1].Name);
+
+        // both sit on the Nikon mount, so the console lists them and asks for --source; with it, one is chosen
+        string both = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, tokina);
+        Assert.Contains("2 obiective", both);
+        var req = new SyntheticRequest { Source = ProfileSource.Adobe };
         Assert.Null(SyntheticRun.ChooseLens(req, sources, tokina));
         Assert.Equal("NIKON CORPORATION", req.Lens.Mount);
         Assert.Equal(ProfileSource.Adobe, req.Lens.Source);
@@ -519,11 +531,11 @@ public class SyntheticRunTests
         string refusal = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, nikkor);
         Assert.Contains("--lens", refusal);
 
-        // no camera: both mounts survive and the refusal names what the raw said
+        // no camera: both Adobe mounts and the lensfun entry survive, and the refusal names what the raw said
         var unknownCamera = new LoadedFrame { NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8 };
         string ambiguous = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, unknownCamera);
         Assert.Contains("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", ambiguous);
-        Assert.Contains("2 obiective", ambiguous);
+        Assert.Contains("3 obiective", ambiguous);
     }
 
     [Fact]

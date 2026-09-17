@@ -1147,9 +1147,13 @@ aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma ș
 dintr-un raw din `flats/`, când există: ID-ul Nikon al obiectivului **și gama lui** (focala
 minimă și maximă, deschiderea maximă) din MakerNote. ID-ul singur nu ajunge — 139 e și
 Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa că obiectivele
-al căror nume contrazice gama sunt scoase; rămâne unul, e ales; rămân mai multe (cele două
-generații ale Tokinei 11-20), lista se restrânge la ele și alegi tu, iar nota de sub câmpuri
-spune ce a citit din raw. Câmpurile rămân editabile; ce scrii bate ce s-a citit. Panoul „Profilele: de unde vin și cum se actualizează" e **pliat
+al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași producător
+cu aceeași gamă intră și ele (lensfun nu poartă ID-uri Nikon); rămâne unul, e ales; rămân
+mai multe (cele două generații Adobe ale Tokinei 11-20 și cele două intrări lensfun), lista se
+restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw. Pentru Tokina
+alegerea nu contează: atx-i 11-20 F2.8 CF (2020) e AT-X 11-20 F2.8 PRO DX (2015) cu altă
+carcasă, cele două fișiere Adobe au parametri de vignetare identici byte cu byte, iar
+intrările lensfun, calibrate pe exemplare AT-X, se aplică și lui. Câmpurile rămân editabile; ce scrii bate ce s-a citit. Panoul „Profilele: de unde vin și cum se actualizează" e **pliat
 implicit**: spune unde caută profilele Adobe, ce copie lensfun folosește (folderul,
 commit-ul, data) și cum se înlocuiește. „Scrie flat sintetic" așteaptă lanțul de la
 deschidere, întreabă înainte să suprascrie, arată adâncimea scrisă în cele patru puncte

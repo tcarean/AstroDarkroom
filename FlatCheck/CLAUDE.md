@@ -1636,10 +1636,17 @@ alphabetically first hit, a Nikkor, for a raw shot with the Tokina. `LensSpec.Pa
 the range out of a lens *name* ("11-20mm F2.8", "18-200mm f3.5-5.6G", "135mm f/2.0";
 nothing out of "Zeiss Batis 2/25", which then contradicts nothing) and
 `LensCatalog.Narrow` drops the hits that contradict the raw (1 mm or 5 % on a focal, a
-quarter stop on the aperture). `SyntheticRun.CandidatesFromRaw` is the one place both
+quarter stop on the aperture). Only Adobe files carry Nikon IDs, so the lensfun lenses of
+the same maker(s) as the surviving hits, narrowed by the same range, join the candidates -
+without that the narrowed list showed the Adobe half only and the user asked where the
+lensfun Tokina had gone. `SyntheticRun.CandidatesFromRaw` is the one place both
 applications start from; the window then preselects a single survivor and, when several
-survive (the two Tokina 11-20 generations), narrows the list to them and says so
-(`OfferCandidates`) rather than picking one. Output: float, 1.0 on the
+survive (the two Adobe generations of the Tokina 11-20 and its two lensfun entries),
+narrows the list to them and says so (`OfferCandidates`) rather than picking one. For
+this lens the choice is moot: the atx-i 11-20 F2.8 CF (2020) is the AT-X 11-20 F2.8 PRO
+DX (2015) in a new barrel, Adobe's two files carry byte-identical vignetting parameters
+(checked), and the raw's primary ID 139 is the atx-i file's `LensID` while the AT-X file
+has 122 with 139 as an alternate - so the user's copy is the atx-i. Output: float, 1.0 on the
 axis, the reference frame's cards minus the structural ones (`BAYERPAT` included, so Siril
 takes it as a CFA master), `HISTORY` naming source, lens, profile and model; nothing
 renormalised. Exit 0 written, 1 refused (cube, or focal / f-stop / crop unknown), 2 the
