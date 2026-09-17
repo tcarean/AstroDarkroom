@@ -517,6 +517,47 @@ namespace FlatCheck.Wpf
         /// <summary>Titlul ecranului de refuz (raw, cub).</summary>
         internal static string SmoothRefusedTitle() => "Nu se poate netezi";
 
+        // ------------------------------------------------------- flatul sintetic
+        //
+        // Tabul Sintetic scrie un flat din profilul de vignetare publicat al obiectivului.
+        // Textele de aici sunt doar ale ferestrei: ce spune raportul despre flat vine din
+        // SyntheticReport, ca la consola. Panoul cu sursele e COLAPSAT implicit - e
+        // documentatie, nu preconditie: butonul nu face nimic periculos si lista de
+        // obiective se explica singura.
+
+        internal static string SyntheticGuideIntro() =>
+            "Scrie un flat radial, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, din profilul de "
+            + "vignetare publicat al obiectivului - modelul lui, nu o masuratoare a exemplarului tau. "
+            + "N-are nicio sursa de lumina in el, deci nici curbura cerului, nici caderea unui panou; "
+            + "n-are nici partea cromatica, nici praful, nici umbrirea specifica body-ului. "
+            + "\"Compara cu masterul\" spune cu cat difera masterul fotografiat de model, in stopuri, si in ce forma.";
+
+        internal static string SyntheticSourcesTitle() => "Profilele: de unde vin si cum se actualizeaza";
+
+        internal static string SyntheticButtonLabel() => "Scrie flat sintetic";
+
+        internal static string SyntheticCompareLabel() => "Compara cu masterul";
+
+        /// <summary>Un ID de obiectiv purtat de mai multe obiective: lista s-a restrans la ele, omul alege.</summary>
+        internal static string SyntheticLensCandidates(string rawLabel, int count) =>
+            $"{rawLabel} se potriveste cu {count} obiective - lista de mai sus s-a restrans la ele, alege-l pe al tau";
+
+        internal static string SyntheticOverwriteQuestion(string path) =>
+            $"Exista deja un flat sintetic:\n{path}\n\nIl scriu din nou peste el?";
+
+        internal static string SyntheticNotOverwritten(string path) =>
+            $"Nu s-a scris nimic: fisierul existent a fost pastrat.\n{path}";
+
+        internal static string SyntheticRefusedTitle() => "Nu se poate scrie flatul sintetic";
+
+        internal static string SyntheticNoLensSelected() => "Alege un obiectiv din lista.";
+
+        internal static string SyntheticNoProfiles() =>
+            "Niciun profil de obiectiv gasit: nici Adobe pe masina, nici folderul lensfun/ langa program. "
+            + "Vezi panoul \"" + SyntheticSourcesTitle() + "\".";
+
+        // Nota comparatiei vine din AgainstReport.Meaning(), ca in consola.
+
         // ------------------------------------------------------- rularea scriptului
         //
         // Textele blocului de pe ecranul de problema si ale ferestrei de rulare. Niciunul

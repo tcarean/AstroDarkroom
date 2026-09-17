@@ -1,0 +1,259 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+<!-- SyntheticView - tabul 7, flatul sintetic din profilul obiectivului.
+     Ca tabul Netezire: cifrele la stanga, harta (a comparatiei) la dreapta. Panoul cu
+     sursele profilelor e COLAPSAT implicit - e documentatie, nu preconditie. Lista de
+     obiective se cauta dupa text; focala, diafragma si crop-ul sunt preumplute din fisiere
+     si raman editabile. -->
+<UserControl x:Class="FlatCheck.Wpf.SyntheticView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FlatCheck.Wpf">
+  <UserControl.Resources>
+    <!-- Un rand al comparatiei: in stanga eticheta cu nota ei dedesubt (coloana elastica, nota
+         se rupe pe mai multe randuri in aceeasi coloana), in dreapta A, B si A / B, fiecare
+         cu cifra si, unde e, verdictul - coloane cat continutul, lipite, aliniate intre
+         randuri prin SharedSizeGroup. Prima varianta dadea coloanelor de valori tot restul
+         latimii si nota trecea pe sub ele; utilizatorul a vrut spatiul la text. -->
+    <DataTemplate x:Key="CompareRowTemplate">
+      <Grid Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" MinWidth="200" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="CmpA" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="CmpB" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="CmpD" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Top">
+          <TextBlock Text="{Binding Label}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap" Text="{Binding Note}"
+                     Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Top">
+          <TextBlock Style="{StaticResource Number}" Text="{Binding A}" VerticalAlignment="Center" />
+          <ContentControl Margin="8,0,0,0" Content="{Binding AVerdict}" ContentTemplate="{StaticResource VerdictChip}"
+                          Visibility="{Binding HasAVerdict, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Top">
+          <TextBlock Style="{StaticResource Number}" Text="{Binding B}" VerticalAlignment="Center" />
+          <ContentControl Margin="8,0,0,0" Content="{Binding BVerdict}" ContentTemplate="{StaticResource VerdictChip}"
+                          Visibility="{Binding HasBVerdict, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Top">
+          <TextBlock Style="{StaticResource Number}" Text="{Binding Diff}" VerticalAlignment="Center" />
+          <ContentControl Margin="8,0,0,0" Content="{Binding DiffVerdict}" ContentTemplate="{StaticResource VerdictChip}"
+                          Visibility="{Binding HasDiffVerdict, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+        <Grid.Style>
+          <Style TargetType="Grid">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsKey}" Value="True">
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Grid.Style>
+      </Grid>
+    </DataTemplate>
+    <!-- Un rand al adancimii scrise: eticheta cu nota ei dedesubt, care se rupe pe mai multe
+         randuri in coloana din stanga si nu trece sub valoare; valoarea singura, in dreapta.
+         MetricRowTemplate din Dark.xaml intinde nota sub toata latimea, cum vor taburile de
+         structura; aici utilizatorul a vrut-o tinuta la eticheta. -->
+    <DataTemplate x:Key="DepthRowTemplate">
+      <Grid Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" SharedSizeGroup="DepthV" />
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Top">
+          <TextBlock Text="{Binding Label}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap" Text="{Binding Note}"
+                     Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+        </StackPanel>
+        <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Value}" VerticalAlignment="Top" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+  <Grid>
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="3*" MinWidth="440" />
+        <ColumnDefinition Width="2*" MinWidth="280" />
+      </Grid.ColumnDefinitions>
+      <!-- ========================================================== cifrele -->
+      <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Padding="20,18,10,18">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Faint}" TextTrimming="CharacterEllipsis">
+            <Run Text="referinta: " /><Run Text="{Binding Source, Mode=OneWay}" />
+          </TextBlock>
+          <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis">
+            <Run Text="in: " /><Run Text="{Binding Target, Mode=OneWay}" />
+          </TextBlock>
+          <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap" Text="{Binding Guide.Intro}" />
+          <!-- sursele profilelor, colapsat implicit -->
+          <ToggleButton Style="{StaticResource Disclosure}" Margin="0,14,0,0"
+                        Content="{Binding Guide.Title}"
+                        IsChecked="{Binding Guide.IsExpanded, Mode=TwoWay}" />
+          <Border Style="{StaticResource Card}" Margin="0,8,0,0" Padding="14"
+                  Visibility="{Binding Guide.IsExpanded, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Text="{Binding AdobeWhere}" />
+              <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding LensfunWhere}" />
+              <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding ProfilesSummary}" />
+            </StackPanel>
+          </Border>
+          <!-- obiectivul: cautare + lista -->
+          <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+            <StackPanel>
+              <DockPanel>
+                <TextBlock Style="{StaticResource Faint}" Text="obiectiv:" Margin="0,0,10,0" VerticalAlignment="Center" DockPanel.Dock="Left" />
+                <TextBox Style="{StaticResource Field}" Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" />
+              </DockPanel>
+              <ListBox Margin="0,8,0,0" MaxHeight="220" ItemsSource="{Binding Lenses}"
+                       SelectedItem="{Binding SelectedLens, Mode=TwoWay}"
+                       ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <DockPanel>
+                      <Border DockPanel.Dock="Left" Background="{StaticResource PanelBg2}" CornerRadius="3" Padding="6,1" Margin="0,0,10,0">
+                        <TextBlock Style="{StaticResource Faint}" Text="{Binding SourceLabel}" />
+                      </Border>
+                      <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0" Text="{Binding Mount}" />
+                      <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+              <!-- focala, diafragma, crop; preumplute, editabile -->
+              <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                <TextBlock Style="{StaticResource Faint}" Text="focala (mm):" VerticalAlignment="Center" />
+                <TextBox Style="{StaticResource Field}" Width="64" Margin="6,0,14,0" Text="{Binding FocalText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Style="{StaticResource Faint}" Text="f/" VerticalAlignment="Center" />
+                <TextBox Style="{StaticResource Field}" Width="56" Margin="6,0,14,0" Text="{Binding FStopText, UpdateSourceTrigger=PropertyChanged}" />
+                <TextBlock Style="{StaticResource Faint}" Text="crop:" VerticalAlignment="Center" />
+                <TextBox Style="{StaticResource Field}" Width="56" Margin="6,0,0,0" Text="{Binding CropText, UpdateSourceTrigger=PropertyChanged}" />
+              </StackPanel>
+              <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding PrefillNote}"
+                         Visibility="{Binding PrefillNote, Converter={StaticResource NotNullToVis}}" />
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <Button Padding="14,6" Content="{Binding ButtonLabel}" Command="{Binding RunCommand}" />
+                <Button Margin="10,0,0,0" Padding="14,6" Content="{Binding CompareLabel}" Command="{Binding CompareCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+          <local:MessagePanel Margin="0,14,0,0" />
+          <!-- rezultatul scrierii -->
+          <StackPanel Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+            <TextBlock Style="{StaticResource Faint}" Margin="2,14,0,0" TextWrapping="Wrap" Text="{Binding ProfileLine}" />
+            <TextBlock Style="{StaticResource Faint}" Margin="2,2,0,0" TextWrapping="Wrap" Text="{Binding ModelLine}" />
+            <TextBlock Style="{StaticResource Muted}" Margin="2,12,0,0" TextWrapping="Wrap"
+                       Visibility="{Binding SavedTo, Converter={StaticResource NotNullToVis}}">
+              <Run Text="Flat sintetic salvat:" />
+              <Run Text="{Binding SavedTo, Mode=OneWay}" />
+            </TextBlock>
+            <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="2,12,0,0"
+                       TextWrapping="Wrap" Text="{Binding SaveError}"
+                       Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="ADANCIMEA VIGNETARII SCRISE" />
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <ItemsControl Grid.IsSharedSizeScope="True" ItemsSource="{Binding Depth}" ItemTemplate="{StaticResource DepthRowTemplate}" />
+                <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="0,8,0,0" TextWrapping="Wrap"
+                           Text="{Binding CornerNote}"
+                           Visibility="{Binding HasCornerNote, Converter={StaticResource BoolToVis}}" />
+              </StackPanel>
+            </Border>
+            <TextBlock Style="{StaticResource Faint}" Margin="2,18,0,0" TextWrapping="Wrap" Text="{Binding Caveat}" />
+            <TextBlock Style="{StaticResource Faint}" Margin="2,8,0,0" TextWrapping="Wrap" Text="{Binding SirilNote}" />
+          </StackPanel>
+          <!-- comparatia master / sintetic -->
+          <StackPanel Visibility="{Binding HasCompare, Converter={StaticResource BoolToVis}}">
+            <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="MASTERUL FATA DE FLATUL SINTETIC" />
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Style="{StaticResource Muted}" Text="verdictul diferentei" Margin="0,0,12,0" VerticalAlignment="Center" />
+                  <Border Background="{Binding CompareVerdict, Converter={StaticResource VerdictToBrush}}"
+                          CornerRadius="4" Padding="10,3">
+                    <TextBlock Text="{Binding CompareVerdict}" Foreground="#16161A" FontWeight="Bold" />
+                  </Border>
+                </StackPanel>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,0,0,12" TextWrapping="Wrap" Text="{Binding CompareVerdictDetail}" />
+                <!-- capul de tabel si randurile impart aceleasi grupuri de latime -->
+                <Grid Grid.IsSharedSizeScope="True">
+                  <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                  </Grid.RowDefinitions>
+                  <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" MinWidth="200" />
+                      <ColumnDefinition Width="Auto" SharedSizeGroup="CmpA" />
+                      <ColumnDefinition Width="Auto" SharedSizeGroup="CmpB" />
+                      <ColumnDefinition Width="Auto" SharedSizeGroup="CmpD" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="1" Style="{StaticResource Faint}" Margin="0,0,12,0" Text="{Binding CompareColumnA}" />
+                    <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Margin="0,0,12,0" Text="{Binding CompareColumnB}" />
+                    <TextBlock Grid.Column="3" Style="{StaticResource Faint}" Text="{Binding CompareColumnDiff}" />
+                  </Grid>
+                  <ItemsControl Grid.Row="1" ItemsSource="{Binding CompareTable}" ItemTemplate="{StaticResource CompareRowTemplate}" />
+                </Grid>
+                <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding CompareNote}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+          <local:ReportPanel Margin="0,14,0,0" />
+        </StackPanel>
+      </ScrollViewer>
+      <!-- ========================================================== harta comparatiei -->
+      <Grid Grid.Column="1" Margin="10,18,20,18"
+            Visibility="{Binding HasCompare, Converter={StaticResource BoolToVis}}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="*" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="HARTA: master / sintetic" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,8">
+          <TextBlock Style="{StaticResource Faint}" Text="scara:" Margin="0,0,10,0" VerticalAlignment="Center" />
+          <ItemsControl ItemsSource="{Binding MapScale.Options}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <RadioButton GroupName="SyntheticMapScale" Margin="0,0,14,0"
+                             Content="{Binding Label}"
+                             IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
+          <Image Source="{Binding CompareMap, Converter={StaticResource PngToImage}}"
+                 Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+        </Border>
+        <TextBlock Grid.Row="3" Style="{StaticResource Muted}" Margin="2,8,0,0" Text="{Binding MapLegend}" />
+      </Grid>
+    </Grid>
+    <local:BusyOverlay />
+  </Grid>
+</UserControl>

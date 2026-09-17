@@ -103,6 +103,13 @@ public class LicenseHeaderTests
         if (Directory.Exists(icon))
             foreach (string f in Directory.EnumerateFiles(icon, "*.py", SearchOption.TopDirectoryOnly))
                 yield return f;
+
+        // La fel scriptul de actualizare a bazei lensfun; XML-urile de langa el sunt datele
+        // altcuiva (CC BY-SA) si nu poarta notita noastra.
+        string lensfun = Path.Combine(root, "lensfun");
+        if (Directory.Exists(lensfun))
+            foreach (string f in Directory.EnumerateFiles(lensfun, "*.py", SearchOption.TopDirectoryOnly))
+                yield return f;
     }
 
     /// <summary>

@@ -62,6 +62,28 @@ namespace FlatCheck
         internal ExposureScale Scale;
 
         /// <summary>
+        /// Ce stie fisierul despre fotografiere, pentru flatul sintetic: focala (FOCALLEN
+        /// pe FITS, libraw pe raw), diafragma (doar raw - Siril nu scrie f-numarul),
+        /// numele aparatului (INSTRUME / libraw) si ID-ul de obiectiv Nikon (doar raw; e
+        /// ce poarta si profilele Adobe in LensID / AlternateLensIDs). Null cand fisierul
+        /// tace - acelasi principiu ca la Scale.
+        /// </summary>
+        internal double? FocalMm;
+        internal double? FNumber;
+        internal string Camera;
+        internal long? NikonLensId;
+
+        /// <summary>
+        /// Gama obiectivului din MakerNote-ul raw-ului, cum o decodeaza libraw: focala minima
+        /// si maxima, si deschiderea maxima la focala minima. Un ID Nikon e purtat de mai
+        /// multe obiective (139: Tokina 11-20 f/2.8, Nikkor 18-200 f/3.5-5.6, Sigma 18-35
+        /// f/1.8), si gama e ce le desparte. Null cand libraw da zero.
+        /// </summary>
+        internal double? LensMinFocalMm;
+        internal double? LensMaxFocalMm;
+        internal double? LensMaxAperture;
+
+        /// <summary>
         /// Ordinea culorilor in mozaicul CFA, sau null cand fisierul n-o spune. Acelasi
         /// principiu ca la <see cref="Scale"/>: null e raspunsul corect pentru un fisier
         /// care tace, nu o eroare - ordinea difera de la aparat la aparat si nu se ghiceste.

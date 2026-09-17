@@ -86,7 +86,7 @@ public class ThirdPartyTests
     [Fact]
     public void EveryComponentNamesItsLicenceAndUrl()
     {
-        Assert.Equal(3, ThirdParty.Components.Count);
+        Assert.Equal(4, ThirdParty.Components.Count);
 
         foreach (var c in ThirdParty.Components)
         {
@@ -95,8 +95,32 @@ public class ThirdPartyTests
             Assert.False(string.IsNullOrWhiteSpace(c.Licence));
             Assert.False(string.IsNullOrWhiteSpace(c.Copyright));
             Assert.StartsWith("https://", c.Url);
-            Assert.NotEmpty(c.Packages);
+            // O componenta de cod vine printr-un pachet; una de date (lensfun) vine ca fisiere
+            // si nu revendica niciun pachet - dar e singura care are voie sa nu revendice.
+            if (!c.IsData) Assert.NotEmpty(c.Packages);
         }
+        Assert.Single(ThirdParty.Components, c => c.IsData);
+    }
+
+    /// <summary>
+    /// CC BY-SA cere atribuirea: baza lensfun e livrata ca fisiere langa exe, deci notita
+    /// ei trebuie sa apara in lista pe care programul o afiseaza, cu licenta si sursa, iar
+    /// folderul din repo trebuie sa poarte licenta si versiunea copiei.
+    /// </summary>
+    [Fact]
+    public void TheLensfunDatabaseIsAttributedAndItsFolderCarriesLicenceAndVersion()
+    {
+        var lf = Assert.Single(ThirdParty.Components, c => c.Name.StartsWith("lensfun"));
+        Assert.True(lf.IsData);
+        Assert.Contains("CC BY-SA", lf.Licence);
+        Assert.Contains("github.com/lensfun", lf.Url);
+
+        string folder = Path.Combine(RepoDir(), ProfileLocator.LensfunFolderName);
+        Assert.True(File.Exists(Path.Combine(folder, "LICENSE.txt")), "lensfun/LICENSE.txt lipseste");
+        string version = File.ReadAllText(Path.Combine(folder, ProfileLocator.LensfunVersionFile));
+        Assert.Contains("upstream commit:", version);
+        Assert.Contains("CC BY-SA", version + File.ReadAllText(Path.Combine(folder, "LICENSE.txt")));
+        Assert.NotEmpty(Directory.EnumerateFiles(folder, "*.xml"));
     }
 
     /// <summary>

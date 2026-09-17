@@ -104,6 +104,49 @@ Copyright (c) Six Labors.
 
 ---
 
+## lensfun (baza de date)
+
+**Rol.** Profilele de vignetare ale obiectivelor, pentru flatul sintetic (`--synthetic`,
+tabul Sintetic): coeficienții modelului `pa` (Pablo D'Angelo / Hugin) pe focală, diafragmă
+și distanță, plus crop factor-ul aparatelor. Fișierele XML din `data/db` sunt copiate
+**neschimbate** în folderul `lensfun/` de la rădăcina repo-ului și livrate lângă exe;
+`lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e copia, iar
+`lensfun/update-lensfun.py` o reîmprospătează. Nu se folosește biblioteca lensfun
+(LGPL-3), numai datele; citirea și modelul sunt ale noastre (`FlatCheck.Core/LensProfiles/`).
+
+**Licență.** Creative Commons Attribution-Share Alike 3.0 (CC BY-SA 3.0), declarată în
+README-ul proiectului lensfun pentru „the lens database (data/ subdirectory)".
+
+**Compatibilitate.** Sunt date, nu cod: nu se leagă în program și nu devin parte din
+lucrarea GPLv3, ci sunt agregate lângă ea, neschimbate. CC BY-SA cere două lucruri, și
+amândouă sunt îndeplinite: **atribuirea** - componenta apare în fereastra „Despre", aici și
+în README, iar folderul poartă `LICENSE.txt` - și **share-alike pentru date**, care se
+respectă de la sine, fiindcă datele se redistribuie sub aceeași licență, nemodificate.
+(CC BY-SA 3.0 nu e declarată compatibilă cu GPLv3 pentru *adaptări*; nu facem una.)
+
+**De ce se livrează, și nu se citește de pe mașină ca profilele Adobe.** Nu există o
+instalare standard a bazei lensfun pe Windows; darktable și RawTherapee au fiecare copia
+lor. O copie lângă exe e cea care merge fără nimic altceva instalat, și se actualizează
+înlocuind fișierele din folder.
+
+Copyright (C) the lensfun contributors.
+
+- Proiect: <https://github.com/lensfun/lensfun>
+- Licența datelor: <https://creativecommons.org/licenses/by-sa/3.0/>
+
+---
+
+## Profilele Adobe (.lcp) - nu sunt o componentă livrată
+
+Flatul sintetic citește și profilele de obiectiv ale Adobe, dacă Lightroom, Camera Raw sau
+DNG Converter le-a instalat pe mașină (`C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0`
+și `%APPDATA%\Adobe\CameraRaw\LensProfiles`). **Nu se copiază, nu se înglobează și nu se
+redistribuie**: sunt ale Adobe, se citesc de unde le-a pus Adobe, și fără ele jumătatea
+Adobe a listei e goală. De aceea nu apar în lista din „Despre" - nu e nimic al lor în
+program - dar sunt menționate aici, ca următorul cititor să nu le adauge.
+
+---
+
 ## Componente de test
 
 Folosite numai la compilarea și rularea testelor, deci nu sunt distribuite cu unealta.

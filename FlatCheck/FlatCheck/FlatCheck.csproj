@@ -24,6 +24,17 @@
     <ProjectReference Include="..\FlatCheck.Core\FlatCheck.Core.csproj" />
   </ItemGroup>
 
+  <!-- Baza lensfun (CC BY-SA 3.0), livrata neschimbata in folderul lensfun/ de langa exe:
+       profilele de vignetare pentru flatul sintetic. Nu e inglobata in assembly - se
+       actualizeaza inlocuind fisierele din folder. Sursa e lensfun/ de la radacina repo-ului,
+       copiata la build si la publish. Vezi THIRD-PARTY-NOTICES.md. -->
+  <ItemGroup>
+    <None Include="..\lensfun\*.xml;..\lensfun\*.dtd;..\lensfun\LENSFUN-VERSION.txt;..\lensfun\LICENSE.txt"
+          Link="lensfun\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="FlatCheck.Tests" />
   </ItemGroup>

@@ -168,6 +168,27 @@ namespace FlatCheck.Wpf
             => Path.Combine(Path.GetDirectoryName(master),
                 Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
 
+        /// <summary>
+        /// Sufixul flat-ului SINTETIC (tabul Sintetic): pp_flat_stacked_sintetic.fit, langa
+        /// master, din aceleasi motive ca la cel netezit - nu devine masterul sesiunii, dar
+        /// se potriveste cu RatioPattern si cu ce asteapta --against.
+        /// </summary>
+        internal const string SyntheticSuffix = "_sintetic";
+
+        /// <summary>Unde scrie tabul Sintetic, sau null cand nu exista master.</summary>
+        internal string SyntheticMasterPath
+        {
+            get
+            {
+                string master = FlatMasterPath;
+                return master == null ? null : SyntheticPathBeside(master);
+            }
+        }
+
+        internal static string SyntheticPathBeside(string master)
+            => Path.Combine(Path.GetDirectoryName(master),
+                Path.GetFileNameWithoutExtension(master) + SyntheticSuffix + Path.GetExtension(master));
+
         /// <summary>Unde se scrie raportul de structura: in folderul dat, nu in process/.</summary>
         internal string ResultTextPath => Path.Combine(Root, ResultFileName);
 

@@ -71,7 +71,10 @@ namespace FlatCheck
             int code;
             try
             {
-                if (o.Smooth != null) code = RunSmooth(o, stdout, stderr);
+                if (o.Lenses) code = RunLenses(o, stdout);
+                else if (o.Synthetic != null) code = RunSynthetic(o, stdout, stderr);
+                else if (o.Against != null) code = ExitFor(RunAgainst(o, stdout));
+                else if (o.Smooth != null) code = RunSmooth(o, stdout, stderr);
                 else if (o.Histeq) code = RunHisteq(o, stdout);
                 else if (o.Expo) code = ExitFor(RunExpo(o, stdout));
                 else if (o.Ratio != null) code = ExitFor(RunRatio(o, stdout));
@@ -213,6 +216,52 @@ namespace FlatCheck
         }
 
         /// <summary>
+        /// Sursele de profile: implicit cele ale masinii (folderele Adobe si lensfun/ de langa
+        /// exe); cu --profiles <dir>, folderul dat (cu .lcp-uri oriunde in el) si subfolderul
+        /// lui lensfun/. Asa ruleaza si testele, pe XML scris de ele.
+        /// </summary>
+        static ProfileSources Sources(Options o)
+            => o.Profiles != null
+                ? ProfileLocator.Locate(new[] { o.Profiles }, Path.Combine(o.Profiles, ProfileLocator.LensfunFolderName))
+                : ProfileLocator.Locate();
+
+        /// <summary>--lenses: lista obiectivelor cu profil (toate, sau cele care contin --lens). Mereu 0.</summary>
+        static int RunLenses(Options o, TextWriter w)
+        {
+            ProfileSources sources = Sources(o);
+            SyntheticReport.WriteList(sources.Catalog.Search(o.Lens, o.Source), sources.Catalog, o.Lens, sources, w);
+            return 0;
+        }
+
+        /// <summary>
+        /// --synthetic: ca --smooth, fara verdict. 0 = a scris flatul; 1 = referinta refuzata
+        /// sau ceva de neaflat (focala, diafragma, crop); 2 = obiectivul nu s-a putut alege
+        /// (nimic sau prea multe) - "citeste lista inainte sa decizi", ce inseamna 2 peste tot.
+        /// </summary>
+        static int RunSynthetic(Options o, TextWriter w, TextWriter err)
+        {
+            var req = new SyntheticRequest { LensText = o.Lens, Source = o.Source };
+            SyntheticRunOutcome run = SyntheticRun.Execute(o.Image, req, Sources(o), o.Focal, o.FStop, o.Crop, w);
+            if (run.Refused)
+            {
+                err.WriteLine("EROARE: " + run.Refusal.Split('\n')[0]);
+                return run.RefusedChoice ? 2 : 1;
+            }
+            using (var fs = new FileStream(o.Synthetic, FileMode.Create, FileAccess.Write))
+                SyntheticRun.WriteFits(run, o.Image, fs);
+            w.WriteLine(SyntheticReport.SavedLine(o.Synthetic));
+            return 0;
+        }
+
+        /// <summary>--against: structura pe raportul celor doua flaturi; harta raportului la -o.</summary>
+        static string RunAgainst(Options o, TextWriter w)
+        {
+            var run = AgainstRun.Execute(o.Image, o.Against, w);
+            SaveMap(o.OutPng, run.Png, w);
+            return run.Result.Verdict;
+        }
+
+        /// <summary>
         /// Calea hartii reziduului flat-ului netezit: acelasi nume, cu "-dupa" inainte de
         /// extensie. "harta.png" -> "harta-dupa.png". Aceeasi conventie ca WorldMapPath.
         /// </summary>
@@ -241,11 +290,16 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer");
             w.WriteLine("  flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea \"Histogram\" din Siril, pe canale");
             w.WriteLine("  flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete");
+            w.WriteLine("  flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului");
+            w.WriteLine("  flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)");
+            w.WriteLine("  flatcheck <A.fit> --against <B.fit>     # cat si cum difera doua flaturi (ex. real fata de sintetic)");
             w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
             w.WriteLine($"            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit {SmoothAnalyzer.DefaultScalePx:F0};");
             w.WriteLine("                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)");
+            w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic;");
+            w.WriteLine("                         focala si diafragma vin din raw sau din FOCALLEN cand nu le dai; crop-ul din baza lensfun)");
             w.WriteLine();
             w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");
@@ -259,6 +313,10 @@ namespace FlatCheck
             w.WriteLine("--smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura");
             w.WriteLine("difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta");
             w.WriteLine("acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).");
+            w.WriteLine();
+            w.WriteLine("--synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -");
+            w.WriteLine("modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara");
+            w.WriteLine("cu un flat real: vignetarea raportului e diferenta in stopuri, harta e forma ei.");
             w.WriteLine();
 
             // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare

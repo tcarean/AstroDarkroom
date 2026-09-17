@@ -7,7 +7,11 @@ nothing and shows: the frame through histogram equalisation, Siril's "Histogram"
 mode, where every grey level holds the same number of pixels and any non-uniformity is
 at full contrast. See "5. Histogram equalisation" under "The six modes". A sixth mode
 *produces* something: a second master flat with everything smooth kept and everything
-else - diffuser texture, dust, blotches - removed. See "6. Smoothed flat".
+else - diffuser texture, dust, blotches - removed. See "6. Smoothed flat". A seventh
+*produces* one too, from nothing: a radial flat written from the lens's published
+vignetting profile (Adobe LCP read from the machine, or the lensfun database shipped beside
+the exe), plus `--against`, which reads how much and in what shape two flats differ. See
+"7. Synthetic flat".
 
 Two applications - a console tool and a WPF window - over one core library. The core
 hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL), and reaches for a
@@ -33,7 +37,8 @@ not a copy.
     reader be tested without touching disk. `HInt`/`HDbl`/`HStr` read single cards out of
     a header dictionary with a default, so a missing card is never an error - which is
     what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
-    FITS header at all.
+    FITS header at all. `LoadHeader(path)` reads the header blocks alone, for the window's
+    Sintetic tab, which wants `FOCALLEN` and `INSTRUME` out of a 96 MB master at open.
   - `FitsWriter.cs` - the hand-rolled FITS writer, the reader's pair, with one consumer:
     `--smooth`. One primary 2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the
     input's raw cards copied minus the structural ones it rewrites, `HISTORY` at the end.
@@ -53,14 +58,20 @@ not a copy.
     a reorder cannot break it silently. `Load` returns a `LoadedFrame` (pixels, FITS
     header, ADU scale, CFA colour order, embedded preview); the missing fields are the
     right answer per format, not errors - a raw has no FITS header, a FITS has neither an
-    ADU scale nor a preview, and either may be silent about the mosaic order. Nothing below it knows where the
+    ADU scale nor a preview, and either may be silent about the mosaic order. Since the
+    synthetic flat it also carries what the file knows about the shot - `FocalMm`,
+    `FNumber`, `Camera`, `NikonLensId` - null where the format is silent (a Siril FITS has
+    no f-number; a D3300 raw with third-party glass has no lens name but has the Nikon
+    lens ID). Nothing below it knows where the
     pixels came from, and that is what keeps the two formats from growing separate
     behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
     get the undebayered Bayer mosaic, the exact white/black levels, and the CFA colour
     order out of a camera raw. `IsRawPath` is the extension gate; `RawExtensions` exposes
     the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
-    camera the list offers.
+    camera the list offers. `ShootingInfo` reads focal length, f-number, make/model and
+    the Nikon lens ID out of `ImageOtherParams` / `IParams` / `LensInfo` - locals only, for
+    the lazy-loading reason above.
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
     file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
     `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`, and `ROWORDER`, which on a bottom-up file of
@@ -118,9 +129,25 @@ not a copy.
     binds it to the `PackageReference`s in the Core csproj in both directions and to the
     headings of `THIRD-PARTY-NOTICES.md`, so **a new package needs an entry here too**;
     see "The dependencies".
+  - `LensProfiles/` - the lens vignetting profiles behind the synthetic flat.
+    `VignettingModel` is the factor `V(x, y)` as a value, with the two coordinate
+    conventions verified from sources (its header quotes them): Adobe's r in units of the
+    focal length, lensfun's `pa` r at the half-diagonal of a 36x24 frame over the
+    calibration crop. `LcpReader` (Adobe XMP, both the attribute and the element form,
+    with the piecewise tables) and `LensfunReader` (`<lens>` + `<camera>` for crop
+    factors) are pure over text; `ProfileLocator` is the only file that looks at the
+    machine. `LensProfile` / `LensCatalog` hold the list: **lensfun parsed up front,
+    Adobe lazily** - 3531 `.lcp` files and 36 s to parse them all on the author's
+    machine, against 2 s for the list from file names (`AdobeProfileFile.FromName`: the
+    `<Camera> (<Lens>) - RAW.lcp` convention, with the fixed-lens phones and compacts as
+    camera-named stubs). A file is parsed when its lens is chosen, or when a Nikon lens
+    ID is looked up, and then only the files of the camera's mount, in parallel.
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
+    `SyntheticFlatBuilder` (mode 7: a `VignettingModel` and a frame size in, the raster
+    and its depth at four reference points out), `AgainstAnalyzer` (in `Runs/AgainstRun.cs`:
+    two rasters prepared, normalised to median 1, their ratio through the structure battery),
     `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
     measurements - read it before touching the method) and `SmoothScaleAdvisor` (proposes
     the smoothing scale from the master - `Metrics.FineTexture` on the input, then one
@@ -147,7 +174,10 @@ not a copy.
     hence linear, so the mean of the prepared rasters equals the prepared mean, at a
     thirtieth of the memory.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
-    function. All the Romanian output lives here and nowhere else. `LightSeriesReport`
+    function. All the Romanian output lives here and nowhere else. `SyntheticReport` also
+    carries the `--lenses` list, the refusals, and the two texts the window's sources panel
+    shows (`AdobeWhere`, `LensfunWhere`), so console and window say the same about where
+    profiles come from. `LightSeriesReport`
     is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
     its table instead of sitting silent for two minutes. `StructureReport.WriteBody` is
     split off for the same reason in the other direction: the attribution mode prints its
@@ -192,9 +222,13 @@ not a copy.
     a negative zero, and `-0.00001` printed as `-+0.00`.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
-    `SmoothRun`, plus `SeriesFinder` (which files a series run covers). `SmoothRun` is the
-    second run that can refuse (a raw, a colour cube - `LightRun`'s shape) and the only
-    one whose product is a file: `WriteFits(outcome, sourcePath, Stream)` is called by the
+    `SmoothRun`, `SyntheticRun`, `AgainstRun`, plus `SeriesFinder` (which files a series
+    run covers). `SyntheticRun` is the third run that can refuse and the second whose
+    product is a file (`WriteFits` on the caller's stream, like `SmoothRun`); its
+    `SyntheticRequest` carries every value with the source it came from, so the report
+    can print "cerut" beside "profil folosit". `SmoothRun` is the
+    second run that can refuse (a raw, a colour cube - `LightRun`'s shape) and the first
+    whose product is a file: `WriteFits(outcome, sourcePath, Stream)` is called by the
     console on a `FileStream` and by the window after the overwrite question, never by
     the run itself, for the reason `RunOutcome.cs` gives for the map. `OutputBitpix` is
     "same type in, same type out" (16 stays 16, everything else becomes -32), and nothing
@@ -231,7 +265,8 @@ not a copy.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
     master, which are raw flats, what counts as a flat master by name - and **where the
     master may be**: `masters/` or `process/`, see "Two places for the master" under "What
-    the window adds") and
+    the window adds"; also `SmoothedMasterPath` and `SyntheticMasterPath`, the two files
+    the writing tabs put beside the master, neither ever the session's master) and
     `SessionMessages` (the explanations shown when the input is not usable, the
     Ratio tab's in-UI documentation, and the residual map's shape guide), plus the four
     files behind the "run the script from here" button - see "Running the Siril script"
@@ -250,8 +285,10 @@ not a copy.
     of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
-  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error), plus
-    `PreprocessViewModel` (the script block on the problem card: list, default, blocker,
+  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error) -
+    `SyntheticTabViewModel` being the seventh, with `LensRow` (a public row over an internal
+    `LensChoice`) and `SyntheticGuideViewModel` (the sources panel, collapsed by default) -
+    plus `PreprocessViewModel` (the script block on the problem card: list, default, blocker,
     warning - decides nothing about flats) and `SirilRunViewModel` (one script run as the
     run window sees it: log text, progress, current command, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
@@ -319,7 +356,9 @@ not a copy.
     window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
     Siril), scrolls the log to the end. Rendered by `WindowSmokeTests` in three states.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
-    inherited `TabViewModel`, so the same three controls serve all four tabs;
+    inherited `TabViewModel`, so the same three controls serve every tab; `SyntheticView`
+    is the one with text boxes (`Style x:Key="Field"` in `Dark.xaml`, keyed like `LogBox`
+    because a TextBox is not an ordinary control of this app);
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
     Headings that COUNT something are literals in XAML and no test reads them: the
     Structure tab said "SCARA CELOR PATRU TESTE" for a whole version after the tests
@@ -397,6 +436,13 @@ not a copy.
   the drawing changes. `IconTests` pins that both projects point at this one file and
   that the window's icon loads with all eight sizes; `LicenseHeaderTests` also scans
   `Icon/*.py`.
+- `lensfun/` - a verbatim copy of the lensfun database (`data/db`, 59 XML files,
+  5.2 MB, CC BY-SA 3.0), committed, with `LENSFUN-VERSION.txt` (upstream commit and date),
+  `LICENSE.txt` and `update-lensfun.py` (dev-time refresh; GPL header, scanned by
+  `LicenseHeaderTests`). Both application csproj files copy it next to the exe at build
+  and publish; the tool reads `lensfun/*.xml` beside its own exe and nothing is embedded.
+  Not git-ignored: a fresh clone must build, and the user's decision (2026-09-17) was
+  "whole database, not embedded, folder beside the exe". Updating is replacing the files.
 - `README.md` - **the** user-facing documentation, in Romanian, and the single source
   for it. See the note in "Conventions".
 - `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
@@ -407,8 +453,13 @@ not a copy.
   stale - a measurement made on a date on named files, a design tried and rejected - is
   folded into this file or into the header comment of the code it explains, and the long
   form, when there is one, lands here: `siril-histeq-source.md` (the Siril 1.4.4 code the
-  `--histeq` mode mirrors) and `smooth-validation.md` (the five real masters, the three
-  designs and the acceptance tables behind `--smooth`). **`docs/` is maintained, in one
+  `--histeq` mode mirrors), `smooth-validation.md` (the five real masters, the three
+  designs and the acceptance tables behind `--smooth`), `radial-model-even-term.md` (the
+  second face of the ring artefact: the sky session that exposed it, the five designs
+  measured and rejected, the exact algorithm of `RadialModel` / `RingFit` and its
+  before/after figures) and `lens-profiles.md` (the synthetic flat: the Adobe and lensfun
+  model definitions quoted from their sources, the catalog and reader rules, the output
+  format, `--against`, and the acceptance figures). **`docs/` is maintained, in one
   precise sense**: each file is the evidence behind a decision that is still in force, and
   each says at the top which code it covers and what it was measured on. A change to that
   code means the evidence is re-run and the file updated - or, if the decision goes, the
@@ -478,6 +529,14 @@ copyright notice and URL that the window's "Despre" **displays**).
 is not claimed by exactly one component, or a component claims a package that is gone;
 `EveryComponentHasAnEntryInTheNoticesFile` fails if the notices file has no heading for
 it. The README's table under "Componente terțe" is the fourth copy and is kept by hand.
+
+**A data component is the exception the test knows about.** The lensfun database is
+shipped as files, not linked as a package, so its `ThirdPartyComponent` claims no package
+(`IsData`), and `EveryComponentNamesItsLicenceAndUrl` allows exactly one such component.
+It is still displayed in "Despre": CC BY-SA asks for attribution, and that list is where
+the program shows its notices. The Adobe profiles are deliberately **not** a component:
+they are read from where Adobe installed them and never copied - the notices file says
+so, under its own heading, so that nobody adds them.
 The list is displayed rather than only shipped because the single-file exe carries no
 notices file beside it, and because LGPL-2.1 §6 asks for it - see "Licensing".
 
@@ -582,8 +641,9 @@ map. What differs is only what each does with the three outputs.
 | report | written to stdout | shown as panels, saved as `Rezultat testare.txt` |
 | map | written to `-o <path>` (`--ratio` writes a second, `-lume`; `--smooth` a second, `-dupa`), always on the automatic scale | shown from memory (`--ratio` and the Netezire tab offer both behind a toggle), on a switchable scale with a legend and a shape guide, saved as `flatcheck.png` - the file on the automatic scale, like the console's |
 | smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_netezit.fit` beside the master, on a button, after asking about an existing file |
+| synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_sintetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale` | `--sky` (a checkbox) and the smoothing scale (three chips) |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list and its three prefilled fields |
 
 The console keeps the options because it is the scriptable one, and because `--fov` and
 `--sat` exist for telling the tool something the header does not say. Adding them to the
@@ -902,9 +962,9 @@ what dispatches. All four modes accept both, exactly like `flatcheck.py`'s
 `load_image_with_header`. A raw carries no FITS header, so `--light` sees an empty
 dictionary and lands in the guard's `Unknown` layer - runs, with a note.
 
-## The six modes
+## The seven modes
 
-Dispatch order in `FlatCheckCli.Run` is `--smooth` → `--histeq` → `--expo` → `--ratio` →
+Dispatch order in `FlatCheckCli.Run` is `--lenses` → `--synthetic` → `--against` → `--smooth` → `--histeq` → `--expo` → `--ratio` →
 `--light` → structure (default). The modes are mutually exclusive; the first match wins.
 The WPF app has no dispatch: each tab is one mode.
 
@@ -1523,6 +1583,140 @@ was chosen and validated with a numpy prototype that reproduced these figures; t
 port matches it to the second decimal on the five masters, and the prototype was not
 kept.
 
+### 7. Synthetic flat - `flatcheck ref.fit --synthetic out.fit --lens <text>`, `--lenses`, `--against`
+
+Not a test: it **writes a radial flat from the lens's published vignetting profile** -
+the lens's model, not a measurement of the user's copy - and `--against` reads how much
+and in what shape a real flat differs from it (or from any other flat). Built after the
+Tokina 20 mm session showed that no illumination available here gives the vignetting
+depth to better than half a stop: sky 0.27 stops at the corner (the dome brightens
+toward the horizon all around the zenith and fills the corners), monitor up close
+0.78-0.85 (the panel's angular falloff), the two public databases 0.66 (Adobe) and 0.83
+(lensfun). `docs/lens-profiles.md` is the evidence file.
+
+**Two sources, one list, both read by our own code** (no new package - `System.Xml.Linq`):
+
+- **Adobe LCP**, from the machine only, never copied:
+  `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0\**` and
+  `%APPDATA%\Adobe\CameraRaw\LensProfiles`; `--profiles <dir>` replaces both (the tests run
+  on hand-written XML that way, `LensProfileTestData`). The model, from the "Adobe Camera
+  Model" document (Vignette Model, p. 8; descriptors, p. 18): `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`,
+  `r² = ((u-u0)/fx)² + ((v-v0)/fy)²` with `FocalLengthX = fx / Dmax`, `ImageXCenter = u0 / Dmax`,
+  and when `FocalLengthX` is absent the nominal focal length in mm - so with the sensor's
+  long side at `36 / SensorFormatFactor` mm, `fx / Dmax = f · SFF / 36`: **r is the distance
+  in mm over the focal length in mm.** Cross-checked inside the same file: the
+  `VignetteModelPiecewiseParam` tables end at r = 0.7094, which is the DX corner
+  (14.1 mm / 20 mm), where the table reads 0.603 and the polynomial 0.597. "These model
+  parameters are identical for all color channels" - the model is achromatic, and the
+  report says so. Aperture is APEX (`f = 2^(Av/2)`). Some profiles are decentred
+  (`ImageXCenter` 0.4938 on the 14-20 f/2) and the model honours it.
+- **lensfun**, the `pa` model: same polynomial, r normalised to the half-diagonal of a
+  36x24 frame divided by the lens entry's `<cropfactor>` (`mod-color.cpp`:
+  `hugin_scale_in_millimeters = hypot(36,24)/CropFactor/2`, then rescaled to focal units
+  by `(f / that)^(2,4,6)`; `modifier.cpp:79` normalises everything to focal units). So it
+  needs the user's camera crop, taken from lensfun's own `<camera>` entries by `INSTRUME`
+  (D3300: 1.523) or from `--crop`; on a body with a different crop the corner can sit past
+  r = 1 (1.06 here) and the report says "extrapolare mica". The polynomial *is* the
+  vignetting factor in both (lensfun multiplies to apply, divides to correct).
+
+**Decisions.** Nearest profile, reported, no interpolation: nearest focal, then nearest
+f-stop in stops, then the farthest distance (flats are at infinity); the report prints
+"cerut" and "profil folosit". The same lens exists per mount in Adobe, so the mount is
+chosen by the reference frame's camera maker word (`INSTRUME` / libraw) and an exact
+name match beats partial ones; what still ties is listed and the exit code is 2. Focal
+from `FOCALLEN` or libraw, f-stop from libraw only (Siril writes no f-number) or
+`--fstop`; `LoadedFrame` grew `FocalMm`, `FNumber`, `Camera`, `NikonLensId` for it, filled
+by both readers (`FitsReader.LoadHeader` reads the header alone, for the window's prefill
+on a 96 MB master). libraw gives no lens *name* on a D3300 with a third-party lens, but it
+gives the Nikon lens ID (139 for the Tokina 11-20), which Adobe's profiles carry in
+`AlternateLensIDs`, and - in `LensInfo.MakerNotes`, where the top-level `MinFocal` /
+`MaxFocal` are zero - the lens's range, 11-20 mm f/2.8. **The ID alone is not enough**: 139
+is also the Nikkor 18-200 f/3.5-5.6 and the Sigma 18-35 f/1.8, and the first cut took the
+alphabetically first hit, a Nikkor, for a raw shot with the Tokina. `LensSpec.Parse` reads
+the range out of a lens *name* ("11-20mm F2.8", "18-200mm f3.5-5.6G", "135mm f/2.0";
+nothing out of "Zeiss Batis 2/25", which then contradicts nothing) and
+`LensCatalog.Narrow` drops the hits that contradict the raw (1 mm or 5 % on a focal, a
+quarter stop on the aperture). `SyntheticRun.CandidatesFromRaw` is the one place both
+applications start from; the window then preselects a single survivor and, when several
+survive (the two Tokina 11-20 generations), narrows the list to them and says so
+(`OfferCandidates`) rather than picking one. Output: float, 1.0 on the
+axis, the reference frame's cards minus the structural ones (`BAYERPAT` included, so Siril
+takes it as a CFA master), `HISTORY` naming source, lens, profile and model; nothing
+renormalised. Exit 0 written, 1 refused (cube, or focal / f-stop / crop unknown), 2 the
+lens could not be chosen. `--lenses` lists lenses with focals and apertures only when the
+filtered list is at most `SyntheticReport.ListDetailsMax` (40) long, because the details
+need the Adobe file parsed.
+
+**`--against`** (`AgainstAnalyzer`, `AgainstRun`, `AgainstReport`): both frames prepared,
+each normalised to median 1, and **three** structure analyses - A, B and the ratio A / B -
+printed as a table of three columns (`AgainstReport.Rows`: vignetting in stops, illumination
+offset, local spot, then the five tests with their verdicts). The first version showed the
+battery on the ratio alone, and "vignetare -0.42 stopuri" could not be read without knowing
+that the master has 0.27 and the synthetic 0.69; the user asked for the three values side by
+side. In the third column the figures are about the *difference*: the vignetting is the
+depth difference (positive = A falls more toward the corner), the five tests say whether the
+difference is radial, the map shows its shape. The rows carry their own notes
+(`AgainstReport.TestNote`), written about the difference - the Structure tab's notes said
+"a property of the lens, not an error" under a row that here *is* the error. Not `--ratio`,
+which separates camera-fixed from world-fixed by rotation.
+
+**The verdict of the difference has two parts, and the exit code follows the worse.** The
+shape is the five tests on the ratio. The depth is the vignetting difference in stops, and
+it got a verdict after the sky master - 0.42 stops shallower than the model, "clearly
+enormous" to the user - came out ACCEPTABIL on shape alone. No new threshold: a difference
+of D stops leaves `2^|D| - 1` of error in the corner of a light calibrated with the wrong
+flat (`AgainstResult.DepthErrorOf`), a fractional amplitude like every other figure, so it
+goes through `Stats.ResidualVerdict` unchanged - under 0.03 stops PERFECT, 0.14 BUN, 0.26
+ACCEPTABIL, else REFA (`AgainstReport.DepthScale`, derived from `Th.Resid*` by
+`StopsFor`, never written out). On the Tokina masters: sky -0.42 → 34 % REFA, close
+monitor +0.16 → 12 % ACCEPTABIL, on-monitor +0.09 → 6 % BUN, Adobe vs lensfun 0.16 →
+ACCEPTABIL; the row's note says that under ACCEPTABIL the difference is within what the two
+databases disagree by (~0.2 stops). The depth row is the only one with a verdict in the
+difference column - the five tests carry theirs on A and B, and "PERFECT next to 0.11 % on a
+ratio" said nothing the shape verdict at the top does not. The golden `against_radial`
+pair is 0.30 stops apart, hence REFA and exit 3 there. The window shows the same rows
+through `CompareRow` (public): label and note on the left in the one elastic column, the
+three values in shared-size `Auto` columns packed on the right - the first cut gave the
+values the width and let the note run under them. The four depth rows of the written flat
+carry notes too (`SyntheticReport.DepthRows`; the console prints label and value only),
+through their own `DepthRowTemplate` in `SyntheticView.xaml` - label and wrapping note in
+the left column, the value alone on the right - because the shared `MetricRowTemplate`
+runs the note under the value, which is what the structure tabs want and this one does not.
+
+**Measured on the Tokina masters against the Adobe synthetic** (corner, stops): the
+close-monitor master +0.16, the sky master -0.42, the on-monitor master +0.09; Adobe
+against lensfun -0.16 with a PERFECT ratio (both radial). These are the acceptance
+numbers of the mode, and they say which real master was wrong (the sky one, by half a
+stop) and by how much the panel adds at mid-field (0.1).
+
+**What the report says it cannot contain:** the chromatic part of the falloff (on the sky
+master R falls ~25 % deeper than B), body-specific shading, dust, any non-radial
+structure, the user's own copy; and that the two databases differ by ~0.2 stops on the
+same lens. Pinned by `VignettingModelTests` (the piecewise cross-check, the decentred
+model, the lensfun normalisation at r = 1), the reader tests on hand-written XML, the
+catalog tests, `SyntheticFlatTests` (a synthetic is PERFECT for the structure battery;
+against itself it is PERFECT at zero stops), `SyntheticRunTests`, and the golden files
+`synthetic_written`, `synthetic_lensfun`, `synthetic_ambiguous`, `lenses`, `against_radial`.
+
+**The window's Sintetic tab** (`SyntheticTabViewModel`, `SyntheticView`): a searchable
+list with a source chip and the mount per row, focal / f-stop / crop text boxes prefilled
+from the master's header and from the first raw in `flats/` (after the opening chain, in
+the background; a raw libraw cannot open leaves the f-stop empty and says so), the
+sources panel **collapsed by default** (it is documentation, not a precondition: where the
+Adobe profiles are, which lensfun copy is in use with its commit and date, how to replace
+it - `SyntheticReport.AdobeWhere` / `LensfunWhere`, so console and window say the same),
+the write button on the Netezire pattern (waits for idle, asks before overwriting, `Saved`
+event, never the session's master: `SirilSession.SyntheticMasterPath`), and the comparison
+- `AgainstRun` on the master and the file just written: the verdict, the three-column rows
+and the map on a switchable scale. **The comparison follows the write by itself**
+(`RunAsync` chains `CompareAsync(Report)`, which appends to the write's report instead of
+starting a second banner) after a real write - not after a refused overwrite, whose old
+file may be another lens's, and not after a write error. The first cut needed a second
+click, and the screen after "Scrie" - depth table, no comparison - was reported as a bug.
+"Compara cu masterul" stays for a file written in an earlier session. The catalog is located once, in the
+background, on the first `Attach` (`Func<ProfileSources>` in the `MainViewModel`
+constructor for the tests). `SyntheticTabTests` and two smoke renders pin it.
+
 ## Shared pipeline and algorithms
 
 **`Prepare(data, targetLong = 1200)`** - `BlockMean(data, 2)` then
@@ -1623,7 +1817,9 @@ structure, -2 to -5 % on its partial rings, seen by two independent estimators -
 The golden files moved by 0.01-0.05 points. The header comment of `RadialModel` lists the
 four designs that were measured and rejected on the way (a0 straight from a per-ring fit,
 a global quadratic even correction, absolute amplitudes held from the last ring, a 4θ
-term) and why each failed; read it before changing the method. Pinned by
+term) and why each failed; read it before changing the method, and read
+`docs/radial-model-even-term.md` for the full specification of `RingFit` (constants,
+sector rule, LMedS, the smoothing across rings) with every measurement behind it. Pinned by
 `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner` (the model against the same
 scene without the saddle, under 1 % everywhere) and by
 `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`, which is the test the rejected
@@ -1938,6 +2134,8 @@ Intentional divergences:
 - `--histeq` exists only in C#. No Python counterpart, no `crosscheck.py` scenario, no
   `CrossCheckFixtures` entry: the mode produces a picture, not a number to compare.
 - `--smooth` exists only in C#, for the same reason: it produces a file.
+- `--synthetic`, `--lenses` and `--against` exist only in C#: a file, a list, and the
+  already-verified structure battery on a ratio.
 - No 4-panel matplotlib figure (residual PNG only).
 - No EXIF read beyond the pixels, so no `suggest_shutter(...)` shutter-speed
   suggestions - libraw hands over `shutter`, but nothing consumes it yet.
@@ -1987,6 +2185,10 @@ written, 1 that it could not be. `--smooth` likewise: 0 means the smoothed flat 
 maps were written, 1 that the input was refused (raw, cube) or the file could not be;
 with `--scale auto`, 2 means no file was written because there was nothing to smooth or
 the scale was undetermined - "read this before you decide", the meaning 2 has elsewhere.
+`--synthetic` follows the same shape: 0 written, 1 refused (a colour cube, or a focal
+length, f-stop or crop factor nobody could supply), 2 the lens could not be chosen from
+the text (none, or several - the candidates are printed). `--lenses` is always 0.
+`--against` goes through `ExitFor` on the verdict of the *difference*.
 
 Since the `--ratio` rewrite, mode 2 exits on the residual-scale band of the combined
 master rather than on `OK`/`SUSPECT`/`PROBLEMA` - which changed real outcomes: the ISO800
@@ -2221,6 +2423,13 @@ RIDs (arm64, macOS) have no libraw binary in these packages, so FITS-only there.
 Note the explicit project path: `dotnet publish` on the solution would now also try the
 WPF project, which cannot be single-filed the same way.
 
+**The `lensfun/` folder rides beside the exe**, in the build output and in the publish
+folder (both csproj files copy it): the single copyable binary is now "the exe, plus the
+`lensfun` folder if you want the lensfun half of the lens list". Without the folder every
+mode still runs; `--lenses` says which folder it looked at, and the window's panel too.
+The Adobe half needs nothing shipped: it is read from where Lightroom / Camera Raw / DNG
+Converter installed it.
+
 The window app publishes without `PublishSingleFile`:
 
 ```bash
@@ -2240,6 +2449,9 @@ flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight o
 flatcheck sky_flat.fit --expo --sky                    # 4b. sky flat
 flatcheck flat_brut.fit --expo --sat 4095 --black 150  # override, mostly for FITS
 flatcheck flat.fit -o harta.png                        # custom PNG path
+flatcheck --lenses --lens "Tokina 11-20"               # 7. which lenses have a vignetting profile
+flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_sintetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
+flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic.fit   # how much the master differs from the model
 ```
 
 Remember: the flag must come *after* the file path.

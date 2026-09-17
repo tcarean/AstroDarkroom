@@ -47,7 +47,15 @@ namespace FlatCheck
         string Licence,
         string Copyright,
         string Url,
-        string[] Packages);
+        string[] Packages)
+    {
+        /// <summary>
+        /// O componenta de DATE, nu de cod: nu vine printr-un pachet NuGet, ci ca fisiere
+        /// livrate langa exe (baza lensfun). Lista de pachete e goala si testul care leaga
+        /// componentele de csproj o stie.
+        /// </summary>
+        internal bool IsData => Packages.Length == 0;
+    }
 
     internal static class ThirdParty
     {
@@ -80,6 +88,17 @@ namespace FlatCheck
                 Copyright: "Copyright (c) Six Labors",
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
+
+            // Date, nu cod: baza de profile de obiective, copiata neschimbata in folderul
+            // lensfun/ de langa exe, pentru flatul sintetic. CC BY-SA cere atribuirea, si
+            // lista asta e locul in care programul isi arata notitele - de aceea e aici.
+            new ThirdPartyComponent(
+                Name: "lensfun (baza de date)",
+                Role: "profilele de vignetare ale obiectivelor, pentru flatul sintetic (fisierele din lensfun/)",
+                Licence: "CC BY-SA 3.0 (doar datele; biblioteca lensfun nu e folosita)",
+                Copyright: "Copyright (C) the lensfun contributors",
+                Url: "https://github.com/lensfun/lensfun",
+                Packages: System.Array.Empty<string>()),
         };
     }
 }

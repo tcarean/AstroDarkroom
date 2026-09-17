@@ -166,6 +166,11 @@ namespace FlatCheck
             // deschis, ca sa nu se mai deschida o data pentru cativa MB de octeti.
             EmbeddedPreview preview = TryCapturePreview(ctx, d.ThumbnailList);
 
+            // Ce stie raw-ul despre fotografiere, pentru flatul sintetic. Pe D3300 cu un
+            // obiectiv de alta marca libraw nu da NUMELE obiectivului, dar da ID-ul Nikon
+            // (139 la Tokina 11-20), pe care profilele Adobe il poarta in AlternateLensIDs.
+            var (focalMm, fNumber, cameraName, nikonLensId, lensMin, lensMax, lensAp) = ShootingInfo(ctx, ip);
+
             return new LoadedFrame
             {
                 Image = img,
@@ -175,7 +180,46 @@ namespace FlatCheck
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
                 Cfa = cfa,
                 Preview = preview,
+                FocalMm = focalMm,
+                FNumber = fNumber,
+                Camera = cameraName,
+                NikonLensId = nikonLensId,
+                LensMinFocalMm = lensMin,
+                LensMaxFocalMm = lensMax,
+                LensMaxAperture = lensAp,
             };
+        }
+
+        /// <summary>
+        /// Focala, diafragma, numele aparatului, ID-ul de obiectiv Nikon si gama obiectivului
+        /// (focala minima / maxima, deschiderea maxima la focala minima), fiecare null cand
+        /// libraw le da zero sau goale. Numai locale, ca peste tot in acest fisier.
+        ///
+        /// Gama vine din LensInfo.MakerNotes, nu din campurile de sus ale lui LensInfo: pe
+        /// D3300 cu Tokina 11-20, MinFocal / MaxFocal de sus sunt 0, iar MakerNotes da 11, 20
+        /// si 2.8 (LensData din MakerNote-ul Nikon, decodat de libraw). Masurat, nu presupus.
+        /// </summary>
+        static (double? FocalMm, double? FNumber, string Camera, long? NikonLensId, double? LensMinFocal, double? LensMaxFocal, double? LensMaxAperture)
+            ShootingInfo(RawContext ctx, LibRawImageParams ip)
+        {
+            LibRawImageOtherParams other = ctx.ImageOtherParams;
+            double? focal = other.FocalLength > 0 ? other.FocalLength : null;
+            double? fnum = other.Aperture > 0 ? other.Aperture : null;
+            string make = (ip.Make ?? "").Trim(), model = (ip.Model ?? "").Trim();
+            string camera = model.Length == 0 ? null : model.StartsWith(make, StringComparison.OrdinalIgnoreCase) || make.Length == 0 ? model : make + " " + model;
+            long? lensId = null;
+            double? lensMin = null, lensMax = null, lensAp = null;
+            try
+            {
+                long id = ctx.LensInfo.Nikon.LensIDNumber;
+                if (id > 0) lensId = id;
+                var notes = ctx.LensInfo.MakerNotes;
+                if (notes.MinFocal > 0) lensMin = notes.MinFocal;
+                if (notes.MaxFocal > 0) lensMax = notes.MaxFocal;
+                if (notes.MaxAperture4MinFocal > 0) lensAp = notes.MaxAperture4MinFocal;
+            }
+            catch (Exception) { lensId = null; lensMin = lensMax = lensAp = null; }
+            return (focal, fnum, camera, lensId, lensMin, lensMax, lensAp);
         }
 
         /// <summary>

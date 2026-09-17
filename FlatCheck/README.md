@@ -84,7 +84,7 @@ la 180° — vezi [„O capcană care a fost reparată"](#o-capcană-care-a-fost
 
 ---
 
-## Cele șase moduri
+## Cele șapte moduri
 
 ### 1. Structură (implicit)
 
@@ -476,6 +476,90 @@ n-au voie să se miște.
 
 ---
 
+### 7. Flat sintetic — `--synthetic`, `--lenses`, `--against`
+
+```bash
+flatcheck --lenses --lens "Tokina 11-20"                         # ce obiective au profil
+flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_sintetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
+flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic.fit   # cu cât diferă masterul de model
+```
+
+Nu e un test și nu dă verdict. Scrie **un flat radial din profilul de vignetare publicat
+al obiectivului**: modelul lui, nu o măsurătoare a exemplarului tău. Există pentru cazul
+în care nicio sursă de lumină nu dă adâncimea reală a vignetării: măsurat pe Tokina 20 mm
+f/2.8, cerul dă 0.27 stopuri în colț (bolta se luminează spre orizont de jur împrejurul
+zenitului și umple colțurile), monitorul de aproape 0.78-0.85 (căderea unghiulară a
+panoului), iar cele două baze publice 0.66 (Adobe) și 0.83 (lensfun). Un flat sintetic
+n-are nicio sursă în el, deci nici curbura cerului, nici căderea panoului.
+
+**Două surse de profile, o singură listă.**
+
+- **Adobe (.lcp)**, citite de pe disc dacă Lightroom, Camera Raw sau DNG Converter (gratuit)
+  le-a instalat: `C:\ProgramData\Adobe\CameraRaw\LensProfiles\1.0` și
+  `%APPDATA%\Adobe\CameraRaw\LensProfiles`. Nu se copiază și nu se redistribuie; fără
+  Adobe, jumătatea asta a listei e goală. Un fișier per obiectiv și montură, cu un profil
+  per (focală, diafragmă, distanță). Modelul, din documentul „Adobe Camera Model":
+  `V = 1 + a1·r² + a2·r⁴ + a3·r⁶`, cu r în unități de focală (distanța în mm împărțită la
+  focala în mm), același pentru toate canalele.
+- **lensfun**, baza de date (CC BY-SA 3.0) livrată cu unealta în folderul `lensfun/` de
+  lângă exe. Modelul `pa` (Hugin): același polinom, cu r normalizat la semidiagonala unui
+  cadru 36×24 împărțit la crop-ul aparatului de calibrare; de aceea lensfun are nevoie de
+  crop-ul aparatului tău, pe care îl ia din propria bază de camere după `INSTRUME` sau din
+  `--crop`. **Actualizare:** descarcă fișierele XML din
+  <https://github.com/lensfun/lensfun/tree/master/data/db>, înlocuiește-le pe cele din
+  folder și repornește; `lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e
+  copia, iar `lensfun/update-lensfun.py` face același lucru dintr-o comandă.
+
+Obiectivul se alege după text (`--lens` caută toate cuvintele în nume, producător și
+montură; `--source adobe|lensfun` restrânge), profilul se alege **cel mai apropiat**,
+nu interpolat — focala cea mai apropiată, apoi diafragma cea mai apropiată în stopuri,
+apoi distanța cea mai mare — și raportul spune ce s-a cerut și ce s-a folosit. Focala vine
+din `FOCALLEN` sau din raw, diafragma numai din raw (un FITS Siril n-o poartă) sau din
+`--fstop`. Același obiectiv pe două monturi (Adobe are câte un fișier per montură) se
+alege după aparatul din `INSTRUME`; când tot rămân mai multe, lista lor se tipărește și
+codul de ieșire e 2.
+
+**Ce raportează:** adâncimea scrisă, în procente din axă și în stopuri, în patru puncte —
+colț (cutia de 5 % a testului de colțuri), marginea lungă, marginea scurtă, jumătatea
+semidiagonalei — exact punctele în care s-au comparat masterele reale cu bazele. Pe
+Tokina la 20 mm f/2.8: Adobe 0.69 / 0.52 / 0.31 / 0.29 stopuri, lensfun 0.85 / 0.56 /
+0.26 / 0.24 (pe D3300 colțul cade la r = 1.06, dincolo de senzorul de calibrare, și
+raportul o spune).
+
+**Ce NU conține**, spus și de raport: partea cromatică a căderii (pe masterul de cer R cade
+cu ~25 % mai mult decât B), umbrirea specifică body-ului, praful, orice structură
+neradială — și nici exemplarul tău. Cele două baze diferă între ele cu ~0.2 stopuri în
+colț pe același obiectiv; atâta precizie să-i ceri. Fișierul e float, la mărimea cadrului
+de referință, cu headerul lui copiat (`BAYERPAT` inclusiv, deci Siril îl ia ca master CFA)
+și `HISTORY` cu profilul folosit; 1.0 pe axă, nimic renormalizat.
+
+**`--against`** e testul care închide bucla: bateria de structură pe fiecare din cele două
+flaturi (normalizate la mediana 1) **și** pe raportul lor, într-un tabel cu trei coloane —
+A, B, A / B — cu vignetarea în stopuri, offsetul centrului, pata locală și cele cinci teste.
+În coloana raportului cifrele sunt despre diferență: vignetarea e **diferența de adâncime
+în stopuri** (pozitiv = primul cade mai mult spre colț), cele cinci teste spun dacă diferența
+e radială sau are formă, harta o arată. **Verdictul diferenței are două părți**, forma —
+cele cinci teste pe raport — și adâncimea, și e cel mai rău dintre ele. Adâncimea nu are un
+prag nou: o diferență de D stopuri lasă în colțul unui light calibrat cu flatul greșit o
+eroare de 2^|D| − 1, care trece prin aceeași scară de reziduu — sub 0.03 stopuri PERFECT,
+sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA. Sub ACCEPTABIL diferența nu se deosebește de
+incertitudinea modelului: cele două baze de profile diferă între ele cu ~0.2 stopuri pe
+același obiectiv. Rândul vignetării e singurul cu verdict în coloana diferenței; pe cele
+cinci teste verdictul rămâne pe fiecare flat, forma diferenței fiind cea de sus. Două flaturi
+corecte ale aceluiași obiectiv dau PERFECT și zero stopuri. Merge între oricare două flaturi — real față de sintetic, două
+grosimi de difuzor, două surse — deci e și testul de convergență pentru un difuzor: când
+cerul și monitorul, prin același difuzor, dau aceeași cifră față de model, sursa a
+dispărut din măsurătoare. Măsurat pe Tokina: monitorul de aproape față de sinteticul
+Adobe +0.16 stopuri, cerul fără difuzor -0.42, sinteticul Adobe față de cel lensfun -0.16
+cu structura PERFECT.
+
+**Când să-l folosești.** Sinteticul bate un flat de cer contaminat cu jumătate de stop și
+e cel puțin la egalitate cu unul de monitor; pierde cromaticul și partea de body. Un
+difuzor gros, convergent pe grosime și între două surse, rămâne mai bun — și sinteticul e
+referința cu care îl validezi.
+
+---
+
 ## Când merge și când NU merge `--light`
 
 Modul separă fondul în „plan de poluare luminoasă" + „termeni radiali = eroare de flat".
@@ -607,7 +691,10 @@ Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, u
 `--histeq` n-are verdict: 0 înseamnă doar că a scris poza, 1 că n-a putut. La fel
 `--smooth`: 0 înseamnă că a scris flat-ul netezit și hărțile, 1 că a refuzat intrarea
 (raw, cub de culoare) sau n-a putut scrie; cu `--scale auto`, 2 înseamnă că n-a scris
-nimic fiindcă nu e nimic de netezit sau scara e nedeterminată.
+nimic fiindcă nu e nimic de netezit sau scara e nedeterminată. `--synthetic`: 0 a scris
+flatul, 1 a refuzat referința sau n-a putut afla focala, diafragma ori crop-ul, 2
+obiectivul nu s-a putut alege (niciunul sau prea multe — lista e tipărită). `--lenses` iese
+mereu cu 0. `--against` iese ca structura, pe verdictul *diferenței*.
 
 ---
 
@@ -623,6 +710,9 @@ flatcheck <flat_brut.NEF> --expo         # idem, direct pe raw de aparat
 flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
 flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, praf, pete
+flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
+flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe disc, lensfun/ de lângă exe)
+flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
                            una lângă ea, cu sufixul -lume; la --histeq e poza egalizată;
@@ -633,6 +723,11 @@ flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, p
   --fov <grade>            diagonala câmpului, dacă headerul nu o dă (--light)
   --scale <px>|auto        scara de netezire, în pixeli de senzor (--smooth; implicit 300);
                            'auto' o propune din master și netezește la ea, sau iese cu 2
+  --lens <text>            obiectivul, după cuvinte din nume / producător / montură (--synthetic, --lenses)
+  --source adobe|lensfun   doar una din surse
+  --focal <mm>, --fstop <f>, --crop <factor>   ce nu se poate citi din referință (--synthetic)
+  --profiles <folder>      de unde se iau profilele, în locul mașinii: .lcp oriunde în el,
+                           lensfun/ dedesubt (așa rulează și testele)
 ```
 
 Flagurile pot veni oriunde: `flatcheck --expo f.fit` și `flatcheck f.fit --expo` sunt
@@ -796,7 +891,7 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
 ```
 
 Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end**, cu ecran
-de așteptare. Rulează una după alta, nu în paralel: un cadru de 24 MP ajunge la sute de MB
+de așteptare (și, în fundal, preumplerea tabului Sintetic, care nu scrie nimic). Rulează una după alta, nu în paralel: un cadru de 24 MP ajunge la sute de MB
 în analiză, iar două lanțuri simultane ar putea trece de un gigaoctet.
 
 Masterul de flat, `pp_flat_stacked.fit`, se caută în **două locuri**, fiindcă scripturile
@@ -850,7 +945,7 @@ lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
 `THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
 călătoresc garantat cu programul.
 
-### Cele șase taburi
+### Cele șapte taburi
 
 | tab | ce face | când rulează |
 |---|---|---|
@@ -860,6 +955,7 @@ călătoresc garantat cu programul.
 | **Expunere** | modul 4 pe un raw din `flats/` | la alegere, și la comutarea „Sky" |
 | **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
 | **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_netezit.fit` lângă el | la buton, niciodată singur — scrie un fișier |
+| **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_sintetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
@@ -1044,6 +1140,27 @@ altul, ce a scos netezirea și ce a lăsat.
 > Ghidul pliat „Ce face netezirea" (`SessionMessages.SmoothGuideRows`) e în oglindă cu
 > secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.
 
+**Sintetic** e modul 7. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
+sau `lensfun` pe fiecare rând și montura în dreapta; se caută după text, fiecare cuvânt
+trebuie să apară. Focala, diafragma și crop-ul sunt **preumplute** din fișiere — focala și
+aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma și obiectivul
+dintr-un raw din `flats/`, când există: ID-ul Nikon al obiectivului **și gama lui** (focala
+minimă și maximă, deschiderea maximă) din MakerNote. ID-ul singur nu ajunge — 139 e și
+Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa că obiectivele
+al căror nume contrazice gama sunt scoase; rămâne unul, e ales; rămân mai multe (cele două
+generații ale Tokinei 11-20), lista se restrânge la ele și alegi tu, iar nota de sub câmpuri
+spune ce a citit din raw. Câmpurile rămân editabile; ce scrii bate ce s-a citit. Panoul „Profilele: de unde vin și cum se actualizează" e **pliat
+implicit**: spune unde caută profilele Adobe, ce copie lensfun folosește (folderul,
+commit-ul, data) și cum se înlocuiește. „Scrie flat sintetic" așteaptă lanțul de la
+deschidere, întreabă înainte să suprascrie, arată adâncimea scrisă în cele patru puncte
+**și pornește singur comparația cu masterul** — `--against` pe master și pe fișierul abia
+scris: verdictul diferenței (forma și adâncimea, cel mai rău dintre ele) și tabelul cu trei
+coloane — masterul, sinteticul, diferența — pentru vignetare (cu verdictul adâncimii),
+offset, pata locală și cele cinci teste, fiecare rând cu eticheta și nota lui în stânga și
+cele trei valori strânse în dreapta, plus harta, pe scară comutabilă. Cele patru adâncimi
+scrise poartă și ele câte o notă: ce punct e și cu ce se compară. „Compară cu masterul" rulează
+aceeași comparație separat, pentru un fișier sintetic scris altă dată. Fișierul nu devine masterul sesiunii, ca și cel netezit.
+
 ### Ce nu face
 
 Nu înlocuiește consola: n-are `--fov`, `--sat`, `--black`, `--pattern`, nici coduri de
@@ -1087,6 +1204,12 @@ lipsește. Nu există cale prin care lipsa lor să producă cifre greșite.
 
 Pentru Linux, `-r linux-x64` (pachetul runtime e deja referit). Alte platforme — arm64,
 macOS — n-au binare libraw în pachetele astea, deci acolo merge doar FITS-ul.
+
+**Folderul `lensfun/` merge lângă exe**: build-ul și publish-ul îl copiază singure lângă
+`flatcheck.exe` și `FlatCheck.Wpf.exe`, iar unealta citește `lensfun/*.xml` de lângă
+propriul executabil. E jumătatea lensfun a listei de obiective din modul 7; fără folder
+totul merge, doar lista are numai profilele Adobe de pe mașină (dacă există) și spune ce
+folder a căutat. Când copiezi binarul, copiază și folderul.
 
 Aplicația cu ferestre se publică la fel, fără `PublishSingleFile` (WPF nu se împachetează
 la fel de curat într-un singur fișier):
@@ -1133,6 +1256,8 @@ Sunt intenționate, nu scăpări:
 - **`--smooth` există doar în C#**, din același motiv: produce un fișier, nu o cifră.
   Metoda a fost aleasă și validată cu un prototip numpy pe cinci mastere reale, iar
   portul C# reproduce prototipul la a doua zecimală; prototipul n-a fost păstrat.
+- **`--synthetic`, `--lenses` și `--against` există doar în C#.** Primele două produc un
+  fișier și o listă; `--against` e bateria de structură, deja verificată, pe un raport.
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)
@@ -1174,13 +1299,18 @@ tipărește la fiecare rulare, sub versiune.
 
 ### Componente terțe
 
-Unealta leagă trei componente scrise de alții, toate compatibile cu GPLv3:
+Unealta leagă trei componente scrise de alții și livrează o bază de date a altora, toate
+compatibile cu GPLv3:
 
 | componentă | rol | licență |
 |---|---|---|
 | Sdcb.LibRaw | ambalajul C# peste libraw | MIT |
 | LibRaw (DLL-urile native) | citirea fișierelor raw de aparat | LGPL-2.1 (opțiunea aleasă din dubla LGPL-2.1 / CDDL-1.0) |
 | SixLabors.ImageSharp 3.1.x | decodarea previzualizării JPEG din raw | Six Labors Split License 1.0, care acordă termenii Apache 2.0 proiectelor open source. Fixat pe 3.1.x fiindcă de la 4.0 pachetul cere o cheie de licență la compilare, pe Release ca eroare. |
+| baza de date lensfun (folderul `lensfun/`) | profilele de vignetare pentru flatul sintetic; date, nu cod, copiate neschimbate | CC BY-SA 3.0 |
+
+Profilele Adobe (.lcp) nu sunt o componentă: se citesc de pe mașină, de unde le-a pus
+Adobe, și nu se copiază nicăieri.
 
 Cititorul FITS, encoderul PNG, toate calculele și toate pragurile sunt scrise de mână.
 

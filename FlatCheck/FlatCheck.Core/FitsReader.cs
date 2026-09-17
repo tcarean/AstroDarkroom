@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Text;
 
 namespace FlatCheck
 {
@@ -54,6 +55,47 @@ namespace FlatCheck
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
+        /// <summary>
+        /// Doar headerul HDU-ului primar, fara pixeli: blocurile de 2880 pana la END. Pentru
+        /// cine vrea FOCALLEN sau INSTRUME dintr-un master de 96 MB fara sa-l citeasca (tabul
+        /// Sintetic, la deschiderea sesiunii). Dictionar gol daca fisierul nu incepe cu SIMPLE.
+        /// </summary>
+        internal static IReadOnlyDictionary<string, string> LoadHeader(string path)
+        {
+            var hdr = new Dictionary<string, string>(StringComparer.Ordinal);
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var block = new byte[2880];
+            for (int b = 0; b < 1000; b++)
+            {
+                int got = 0;
+                while (got < block.Length)
+                {
+                    int n = fs.Read(block, got, block.Length - got);
+                    if (n <= 0) return hdr;
+                    got += n;
+                }
+                for (int c = 0; c < 36; c++)
+                {
+                    string card = Encoding.ASCII.GetString(block, c * 80, 80);
+                    string key = card.Substring(0, 8).Trim();
+                    if (key == "END") return hdr;
+                    if (key.Length == 0 || card.Length < 10 || card[8] != '=') continue;
+                    string value = card.Substring(10);
+                    int slash = value.IndexOf('/');
+                    if (slash >= 0 && !value.TrimStart().StartsWith("'")) value = value.Substring(0, slash);
+                    else if (slash >= 0)
+                    {
+                        int close = value.IndexOf('\'', value.IndexOf('\'') + 1);
+                        if (close >= 0) value = value.Substring(0, close + 1);
+                    }
+                    value = value.Trim();
+                    if (value.Length >= 2 && value[0] == '\'' && value[value.Length - 1] == '\'') value = value.Substring(1, value.Length - 2).Trim();
+                    hdr[key] = value;
+                }
+            }
+            return hdr;
+        }
+
         public LoadedFrame Load(string path)
         {
             var (img, hdr, cards, planes, bitpix) = LoadFull(File.ReadAllBytes(path));
@@ -70,10 +112,14 @@ namespace FlatCheck
 
             // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
+            double focal = HDbl(hdr, "FOCALLEN", 0.0);
+            string camera = HStr(hdr, "INSTRUME", null);
             return new LoadedFrame
             {
                 Image = img, Header = hdr, Scale = null, Cfa = cfa,
                 Cards = cards, Planes = planes, Bitpix = bitpix,
+                FocalMm = focal > 0 ? focal : null,
+                Camera = string.IsNullOrWhiteSpace(camera) ? null : camera.Trim(),
             };
         }
 

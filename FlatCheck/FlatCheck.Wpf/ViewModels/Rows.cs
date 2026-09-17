@@ -55,6 +55,28 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>O forma din ghidul hartii: numele ei si ce a insemnat pe mastere reale.</summary>
+    /// <summary>
+    /// Un rand al tabelului de comparatie din tabul Sintetic: aceeasi marime pe masterul
+    /// fotografiat (A), pe flatul sintetic (B) si pe raportul lor, cu verdictul unde e un
+    /// test. Copiat din AgainstRow din nucleu, care e internal.
+    /// </summary>
+    public sealed class CompareRow
+    {
+        public string Label { get; init; }
+        public string A { get; init; }
+        public string AVerdict { get; init; }
+        public string B { get; init; }
+        public string BVerdict { get; init; }
+        public string Diff { get; init; }
+        public string DiffVerdict { get; init; }
+        public string Note { get; init; }
+        public bool IsKey { get; init; }
+        public bool HasAVerdict => !string.IsNullOrEmpty(AVerdict);
+        public bool HasBVerdict => !string.IsNullOrEmpty(BVerdict);
+        public bool HasDiffVerdict => !string.IsNullOrEmpty(DiffVerdict);
+        public bool HasNote => !string.IsNullOrEmpty(Note);
+    }
+
     public sealed class GuideRow
     {
         public string Shape { get; init; }

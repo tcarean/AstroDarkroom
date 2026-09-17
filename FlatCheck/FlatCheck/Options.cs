@@ -50,6 +50,17 @@ namespace FlatCheck
         internal string Smooth;
         internal double ScalePx = SmoothAnalyzer.DefaultScalePx;
 
+        // Flatul sintetic si comparatia. --lenses n-are nevoie de fisier de intrare.
+        internal string Synthetic;
+        internal string Lens;
+        internal ProfileSource? Source;
+        internal double? Focal;
+        internal double? FStop;
+        internal double? Crop;
+        internal string Profiles;
+        internal bool Lenses;
+        internal string Against;
+
         // --scale auto: unealta propune scara (SmoothScaleAdvisor) si netezeste la ea;
         // fara textura sau nedeterminat, nu scrie nimic si iese cu 2.
         internal bool ScaleAuto;
@@ -72,10 +83,11 @@ namespace FlatCheck
         internal string Error;
 
         static readonly HashSet<string> BoolFlags = new()
-        { "--light", "--expo", "--sky", "--histeq", "-h", "--help" };
+        { "--light", "--expo", "--sky", "--histeq", "--lenses", "-h", "--help" };
 
         static readonly HashSet<string> ValueFlags = new()
-        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale" };
+        { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
+          "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against" };
 
         internal static Options Parse(string[] args)
         {
@@ -97,6 +109,7 @@ namespace FlatCheck
                     else if (a == "--expo") o.Expo = true;
                     else if (a == "--sky") o.Sky = true;
                     else if (a == "--histeq") o.Histeq = true;
+                    else if (a == "--lenses") o.Lenses = true;
                     continue;
                 }
 
@@ -137,6 +150,30 @@ namespace FlatCheck
                             if (scale < 50 || scale > 2000)
                                 return o.Fail($"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}");
                             o.ScalePx = scale; break;
+                        case "--synthetic":
+                            if (v.Length == 0) return o.Fail("--synthetic asteapta calea fisierului FITS de scris, a primit sirul gol");
+                            o.Synthetic = v; break;
+                        case "--lens": o.Lens = v; break;
+                        case "--source":
+                            if (string.Equals(v, "adobe", StringComparison.OrdinalIgnoreCase)) o.Source = ProfileSource.Adobe;
+                            else if (string.Equals(v, "lensfun", StringComparison.OrdinalIgnoreCase)) o.Source = ProfileSource.Lensfun;
+                            else return o.Fail($"--source asteapta 'adobe' sau 'lensfun', a primit '{v}'");
+                            break;
+                        case "--focal":
+                            if (!TryNum(v, out var focal) || focal <= 0) return o.Fail($"--focal asteapta milimetri, a primit '{v}'");
+                            o.Focal = focal; break;
+                        case "--fstop":
+                            if (!TryNum(v, out var fstop) || fstop <= 0) return o.Fail($"--fstop asteapta un f-numar, a primit '{v}'");
+                            o.FStop = fstop; break;
+                        case "--crop":
+                            if (!TryNum(v, out var cropf) || cropf <= 0) return o.Fail($"--crop asteapta un crop factor, a primit '{v}'");
+                            o.Crop = cropf; break;
+                        case "--profiles":
+                            if (v.Length == 0) return o.Fail("--profiles asteapta un folder, a primit sirul gol");
+                            o.Profiles = v; break;
+                        case "--against":
+                            if (v.Length == 0) return o.Fail("--against asteapta un al doilea flat, a primit sirul gol");
+                            o.Against = v; break;
                     }
                     continue;
                 }
@@ -148,15 +185,18 @@ namespace FlatCheck
                 positional.Add(a);
             }
 
-            if (positional.Count == 0) return o.Fail("lipseste fisierul de intrare");
+            // --lenses e o lista, nu o analiza: n-are nevoie de fisier de intrare.
+            if (positional.Count == 0 && !o.Lenses) return o.Fail("lipseste fisierul de intrare");
             if (positional.Count > 1)
                 return o.Fail("astept un singur fisier de intrare, am primit: " + string.Join(", ", positional));
-            o.Image = positional[0];
+            o.Image = positional.Count > 0 ? positional[0] : null;
 
             // Fisierul netezit nu se scrie peste intrare: ar distruge singurul master
             // fotografiat, si exact el trebuie sa ramana, ca sa se vada ce s-a scos.
             if (o.Smooth != null && SamePath(o.Smooth, o.Image))
                 return o.Fail("--smooth nu poate scrie peste fisierul de intrare; da alta cale");
+            if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
+                return o.Fail("--synthetic nu poate scrie peste cadrul de referinta; da alta cale");
 
             // --sat 0 ar face rng = 0 si toate procentele ar iesi NaN/infinit
             double black = o.Black ?? 0.0;
@@ -171,6 +211,7 @@ namespace FlatCheck
         /// <summary>Aceeasi cale pe disc, dupa normalizare; fara distinctie de litere pe Windows.</summary>
         static bool SamePath(string a, string b)
         {
+            if (a == null || b == null) return false;
             string fa, fb;
             try { fa = System.IO.Path.GetFullPath(a); fb = System.IO.Path.GetFullPath(b); }
             catch (Exception) { return string.Equals(a, b, StringComparison.OrdinalIgnoreCase); }

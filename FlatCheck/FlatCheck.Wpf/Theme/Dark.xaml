@@ -117,6 +117,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Padding" Value="14" />
   </Style>
 
+  <!-- Campurile de scris ale tabului Sintetic (cautarea, focala, diafragma, crop-ul):
+       stil cu cheie, ca LogBox, fiindca TextBox-ul nu e un control obisnuit al aplicatiei. -->
+  <Style x:Key="Field" TargetType="TextBox">
+    <Setter Property="Background" Value="{StaticResource PanelBg2}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderBr}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontFamily" Value="{StaticResource UiFont}" />
+    <Setter Property="FontSize" Value="13" />
+    <Setter Property="Padding" Value="6,3" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="CaretBrush" Value="{StaticResource TextBr}" />
+    <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
+  </Style>
+
   <!-- Log-ul ferestrei de rulare Siril: text mono, doar citire, pe fundalul ferestrei.
        Singurul TextBox din aplicatie, deci stil cu cheie, nu implicit. -->
   <Style x:Key="LogBox" TargetType="TextBox">

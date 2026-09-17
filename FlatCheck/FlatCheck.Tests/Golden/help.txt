@@ -10,11 +10,16 @@ Utilizare:
   flatcheck <sky_flat.NEF> --expo --sky   # expunere pt flats pe cer
   flatcheck <flat.NEF> --histeq -o <poza.png>   # vederea "Histogram" din Siril, pe canale
   flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fara textura, praf, pete
+  flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
+  flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)
+  flatcheck <A.fit> --against <B.fit>     # cat si cum difera doua flaturi (ex. real fata de sintetic)
   optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)
             --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)
             --fov <grade> (diagonala campului, daca headerul n-o da)
             --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit 300;
                          'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)
+            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic;
+                         focala si diafragma vin din raw sau din FOCALLEN cand nu le dai; crop-ul din baza lensfun)
 
 Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.
@@ -28,6 +33,10 @@ deci se vede forma a ce nu e uniform, nu si cat de mare e. Iese cu 0 cand a scri
 --smooth scrie un al doilea master care pastreaza tot ce e neted si scoate textura
 difuzorului, praful si petele. Nu da verdict; raporteaza CE A SCOS, si scrie harta
 acelei componente la -o (plus reziduul flat-ului netezit, cu sufixul -dupa).
+
+--synthetic scrie un flat radial din profilul de vignetare publicat al obiectivului -
+modelul lui, acromatic, fara praf si fara nicio sursa de lumina. --against il compara
+cu un flat real: vignetarea raportului e diferenta in stopuri, harta e forma ei.
 
 Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
 vandabilitate sau potrivire pentru un scop anume. E software liber:

@@ -184,6 +184,8 @@ public class WindowSmokeTests
             // Netezirea porneste goala, cu ghidul deschis si butonul activ - starea pe
             // care o vede omul; rezultatul ei se randeaza in testul dedicat.
             Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-netezire-gol");
+            await vm.Synthetic.Pending;
+            Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-sintetic-gol");
 
             // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
             // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
@@ -270,6 +272,39 @@ public class WindowSmokeTests
     /// desfasurat, apoi o vedere pe canal si un rezultat mono (fara chipuri). Rezultatul
     /// vine direct din analizor, ca la previzualizarea de pe tabul de expunere.
     /// </summary>
+    /// <summary>
+    /// The synthetic tab with a written flat and a comparison, from hand-made profiles and an
+    /// analyzer result - no file, no Adobe on the machine. Both cards visible, the map on the
+    /// right, the sources panel expanded, and no binding error.
+    /// </summary>
+    [Fact]
+    public async Task TheSyntheticTabRendersAResultAndAComparison()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var adobe = sources.Catalog.Lenses.First(l => l.Source == ProfileSource.Adobe && l.Mount.StartsWith("NIKON"));
+        var profile = sources.Catalog.ProfilesOf(adobe).First(p => p.FocalMm == 20 && Math.Abs(p.FStop - 2.8) < 0.01);
+        var built = SyntheticFlatBuilder.Build(profile, 600, 400, 0);
+        var against = AgainstAnalyzer.Analyze(built.Flat, built.Flat);
+
+        await _sta.InvokeAsync(async () =>
+        {
+            await Task.CompletedTask;
+            using var errors = new BindingErrors();
+            var vm = new SyntheticTabViewModel(_ => true, () => sources);
+            vm.Populate(built, new SyntheticRequest { FocalMm = 20, FocalSource = "FOCALLEN", FStop = 2.8, FStopSource = "--fstop" });
+            vm.PopulateCompare(against);
+            vm.Guide.IsExpanded = true;
+            Render(new SyntheticView { DataContext = vm }, h: 1600, name: "tab-sintetic");
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(vm.HasResult);
+            Assert.True(vm.HasCompare);
+            Assert.Equal(4, vm.Depth.Count);
+            Assert.Equal("PERFECT", vm.CompareVerdict);
+            Assert.NotNull(vm.CompareMap);
+        });
+    }
+
     [Fact]
     public void TheHistEqTabRendersAResult()
         => _sta.Invoke(() =>

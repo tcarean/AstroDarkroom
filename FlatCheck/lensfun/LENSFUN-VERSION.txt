@@ -1,0 +1,7 @@
+lensfun database snapshot
+source: https://github.com/lensfun/lensfun/tree/master/data/db
+upstream commit: e34596cb525731af0c2a1a1e4be73c633fa2e916
+upstream date: 2026-09-16T10:58:59Z
+downloaded: 2026-09-17
+files: 59
+licence: see LICENSE in this folder / THIRD-PARTY-NOTICES.md

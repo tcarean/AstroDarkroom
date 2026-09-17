@@ -59,7 +59,8 @@ namespace FlatCheck.Wpf
         /// Null inseamna raspunsul adevarat. A treia e intrebarea de suprascriere a tabului
         /// de netezire: implicit un MessageBox, in teste un raspuns dat dinainte.
         /// </summary>
-        internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null)
+        internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null,
+                               Func<ProfileSources> locateProfiles = null)
         {
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
@@ -70,6 +71,7 @@ namespace FlatCheck.Wpf
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
             Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
+            Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, locateProfiles ?? ProfileLocator.Locate);
             Preprocess = new PreprocessViewModel();
 
             // Singura legatura intre doua taburi: flat-ul netezit pe care il scrie Netezire
@@ -90,6 +92,7 @@ namespace FlatCheck.Wpf
         public ExposureTabViewModel Exposure { get; }
         public HistEqTabViewModel HistEq { get; }
         public SmoothTabViewModel Smooth { get; }
+        public SyntheticTabViewModel Synthetic { get; }
 
         /// <summary>
         /// Se termina cand lantul de la deschidere s-a terminat. Tabul de netezire ruleaza
@@ -179,6 +182,7 @@ namespace FlatCheck.Wpf
             // Nici netezirea nu calculeaza la deschidere: scrie un fisier, si un fisier
             // nu se produce fiindca s-a deschis un folder. Asteapta un click.
             Smooth.Attach(session, ct, WhenIdleAsync);
+            Synthetic.Attach(session, ct, WhenIdleAsync);
 
             IsRunning = true;
             _chain = RunChainAsync(session, ct);
@@ -228,6 +232,7 @@ namespace FlatCheck.Wpf
             Exposure.Reset();
             HistEq.Reset();
             Smooth.Reset();
+            Synthetic.Reset();
         }
 
         void ClearProblem()

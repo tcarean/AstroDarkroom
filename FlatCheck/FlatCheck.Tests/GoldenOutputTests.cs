@@ -773,4 +773,110 @@ public class GoldenOutputTests
         Assert.Contains("NETEZIRE", output);
         Assert.DoesNotContain("EGALIZARE", output);
     }
+
+    // ---------------------------------------------------------------- synthetic / against
+
+    static string Reference(TempWorkspace ws, string name = "ref.fit") =>
+        ws.WriteFile(name, FitsTestData.BuildFits(240, 160, FitsTestData.Radial(240, 160),
+            extraCards: new[] { FitsTestData.Card("FOCALLEN", "20.0"), FitsTestData.Card("INSTRUME", "'Nikon D3300'"), FitsTestData.Card("BAYERPAT", "'RGGB'") }));
+
+    /// <summary>
+    /// The whole synthetic report: which profile, requested vs used, the depth table, the
+    /// caveat, the saved line. The lens is named exactly, the mount comes from INSTRUME.
+    /// </summary>
+    [Fact]
+    public void Synthetic_WritesTheFlatAndReportsTheProfileItUsed()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+        string outPath = ws.PathTo("sintetic.fit");
+
+        var (output, exit) = RunCli(ws, reference, "--synthetic", outPath, "--lens", "Tokina AT-X 11-20mm F2.8 PRO DX",
+            "--fstop", "2.8", "--profiles", profiles);
+
+        AssertGolden("synthetic_written", output);
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(outPath));
+        var (img, hdr, cards, _, bitpix) = FitsReader.LoadFull(File.ReadAllBytes(outPath));
+        Assert.Equal(-32, bitpix);
+        Assert.Equal("RGGB", FitsReader.HStr(hdr, "BAYERPAT", ""));
+        Assert.InRange(img.At(80, 120), 0.99, 1.0);
+    }
+
+    /// <summary>lensfun needs the camera's crop; here it comes from the database by INSTRUME, and the corner is extrapolated.</summary>
+    [Fact]
+    public void Synthetic_FromLensfun_TakesTheCropFromTheDatabase()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+
+        var (output, exit) = RunCli(ws, reference, "--synthetic", ws.PathTo("s.fit"), "--lens", "Aspherical",
+            "--source", "lensfun", "--fstop", "2.8", "--profiles", profiles);
+
+        AssertGolden("synthetic_lensfun", output);
+        Assert.Equal(0, exit);
+    }
+
+    /// <summary>Two lenses match: nothing is written, the candidates are listed, exit 2 - "read this first".</summary>
+    [Fact]
+    public void Synthetic_AnAmbiguousLensListsTheCandidatesAndExitsTwo()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+        string outPath = ws.PathTo("s.fit");
+
+        var (output, exit) = RunCli(ws, reference, "--synthetic", outPath, "--lens", "11-20", "--fstop", "2.8", "--profiles", profiles);
+
+        AssertGolden("synthetic_ambiguous", output);
+        Assert.Equal(2, exit);
+        Assert.False(File.Exists(outPath));
+    }
+
+    /// <summary>A FITS reference carries no f-number: without --fstop the mode refuses with 1.</summary>
+    [Fact]
+    public void Synthetic_WithoutAnFStopRefusesWithOne()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+
+        var (output, exit) = RunCli(ws, reference, "--synthetic", ws.PathTo("s.fit"), "--lens", "Tokina AT-X 11-20mm F2.8 PRO DX", "--profiles", profiles);
+
+        Assert.Equal(1, exit);
+        Assert.Contains("--fstop", output);
+    }
+
+    [Fact]
+    public void Lenses_ListsBothSourcesWithTheirFocalsAndApertures()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+
+        var (output, exit) = RunCli(ws, "--lenses", "--lens", "tokina", "--profiles", profiles);
+
+        AssertGolden("lenses", output);
+        Assert.Equal(0, exit);
+    }
+
+    /// <summary>
+    /// A flat against a deeper copy of itself: the ratio is radial (the shape is PERFECT) and the
+    /// vignetting line reads the depth difference - 0.30 stops, which is 23 % in the corner of a
+    /// calibrated light, REFA on the depth and therefore on the whole, exit 3.
+    /// </summary>
+    [Fact]
+    public void Against_ReadsTheDifferenceBetweenTwoFlats()
+    {
+        using var ws = new TempWorkspace();
+        string a = ws.WriteFile("a.fit", FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: 0.45)));
+        string b = ws.WriteFile("b.fit", FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: 0.30)));
+
+        var (output, exit) = RunCli(ws, a, "--against", b, "-o", ws.PathTo("out.png"));
+
+        AssertGolden("against_radial", output);
+        Assert.Equal(3, exit);
+        Assert.True(File.Exists(ws.PathTo("out.png")));
+    }
 }

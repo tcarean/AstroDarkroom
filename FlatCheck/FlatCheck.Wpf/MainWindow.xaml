@@ -198,6 +198,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="Netezire">
           <local:SmoothView DataContext="{Binding Smooth}" />
         </TabItem>
+        <TabItem Header="Sintetic">
+          <local:SyntheticView DataContext="{Binding Synthetic}" />
+        </TabItem>
       </TabControl>
     </Grid>
   </Grid>

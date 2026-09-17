@@ -1,0 +1,11 @@
+lensfun lens database - a verbatim copy of data/db from https://github.com/lensfun/lensfun
+
+The lensfun database is licensed under the Creative Commons Attribution-Share Alike 3.0
+license (CC BY-SA 3.0): https://creativecommons.org/licenses/by-sa/3.0/
+
+Copyright (C) the lensfun contributors. The files in this folder are unmodified; the
+upstream commit and date they were taken from are in LENSFUN-VERSION.txt, and the
+script update-lensfun.py refreshes them.
+
+FlatCheck reads these files to build synthetic flats from the "pa" vignetting
+calibrations. It does not link the lensfun library (LGPL-3), only the data.
