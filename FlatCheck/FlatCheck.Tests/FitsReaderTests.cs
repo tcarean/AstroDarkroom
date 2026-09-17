@@ -337,6 +337,40 @@ public class FitsReaderTests
     }
 
     /// <summary>
+    /// The header Siril actually writes on a converted or stacked frame: BAYERPAT RGGB
+    /// and ROWORDER 'BOTTOM-UP'. Read in file order on an even height, the row parity
+    /// flips, so position [1,0] - which BAYERPAT calls G - is the real R. Measured on
+    /// pp_flat_stacked.fit (6016x4016): the channel labelled G2 sat at a third of the
+    /// green, exactly where --expo on the source NEF puts R.
+    /// </summary>
+    [Fact]
+    public void ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
+            16, 16, FitsTestData.Constant(500),
+            extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
+
+        CfaPattern cfa = new FitsReader().Load(path).Cfa;
+
+        Assert.Equal("GBRG", cfa.Letters);
+        Assert.Equal("R", cfa.Name(2));      // [1,0]
+        Assert.Equal("BAYERPAT", cfa.Source);
+    }
+
+    /// <summary>On an odd height the bottom row has the top row's parity: no shift.</summary>
+    [Fact]
+    public void ABottomUpFrameOfOddHeightKeepsTheOrder()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cfa.fit", FitsTestData.BuildFits(
+            16, 15, FitsTestData.Constant(500),
+            extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
+
+        Assert.Equal("RGGB", new FitsReader().Load(path).Cfa.Letters);
+    }
+
+    /// <summary>
     /// A debayered frame carries no BAYERPAT - correctly, there is no mosaic left to
     /// name - and so does every synthetic fixture in this suite. That must stay a plain
     /// "unknown" and change nothing else about the load.

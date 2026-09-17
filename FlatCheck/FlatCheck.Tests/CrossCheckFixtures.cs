@@ -60,6 +60,12 @@ public class CrossCheckFixtures
         File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat.fit"),
             FitsTestData.BuildFits(Size, Size, rawCfa, extraCards: FitsTestData.BayerCards("RGGB")));
 
+        // Si cu ROWORDER 'BOTTOM-UP', cum il scrie Siril de fapt: pe inaltimea para faza
+        // mozaicului se muta cu un rand, si amandoua implementarile trebuie s-o mute.
+        File.WriteAllBytes(Path.Combine(dir, "raw_bayerpat_bottomup.fit"),
+            FitsTestData.BuildFits(Size, Size, rawCfa,
+                extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
+
         // --- wider coverage, to exercise branches the golden scenarios miss ---
 
         // over-correction: background RISES toward the edges, so radPct goes negative

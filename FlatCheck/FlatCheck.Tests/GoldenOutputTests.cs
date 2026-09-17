@@ -500,6 +500,27 @@ public class GoldenOutputTests
         AssertGolden("expo_cfa_bayerpat", output);
     }
 
+    /// <summary>
+    /// The same frame with the header Siril really writes - ROWORDER 'BOTTOM-UP' on an
+    /// even height - names [1,0] as R and [0,0] as a green. The numbers do not move (the
+    /// medians are per position, whatever they are called), so this pins only the two
+    /// labels; the golden file above stays the reference for the figures.
+    /// </summary>
+    [Fact]
+    public void Expo_OnABottomUpFrame_NamesTheChannelsByFileRowOrder()
+    {
+        using var ws = new TempWorkspace();
+        var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
+        string f = ws.WriteFile("raw_bayerpat_bottomup.fit", FitsTestData.BuildFits(
+            Size, Size, scene, extraCards: FitsTestData.BayerCards("RGGB", rowOrder: "BOTTOM-UP")));
+
+        var (output, exit) = RunCli(ws, f, "--expo");
+
+        Assert.Equal(0, exit);
+        Assert.Contains("G1 (CFA[0,0]):", output);
+        Assert.Contains("R  (CFA[1,0]):", output);
+    }
+
     [Fact]
     public void Expo_WithSky_UsesSkyThresholds()
     {

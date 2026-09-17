@@ -59,12 +59,16 @@ internal static class FitsTestData
     /// <summary>
     /// Ordinea mozaicului, asa cum o scrie Siril pe un cadru trecut prin Conversion.
     /// Offset-urile sunt optionale fiindca si Siril le scrie doar cand exista un decupaj.
+    /// ROWORDER e optional din alt motiv: Siril il scrie mereu ('BOTTOM-UP'), dar cele
+    /// mai multe fixture-uri de aici nu vor sa-l testeze, si fara card cititorul nu muta
+    /// nimic - exact ca inainte sa existe.
     /// </summary>
-    internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0)
+    internal static string[] BayerCards(string pattern, int xOffset = 0, int yOffset = 0, string? rowOrder = null)
     {
         var cards = new List<string> { Card("BAYERPAT", "'" + pattern + "'") };
         if (xOffset != 0) cards.Add(Card("XBAYROFF", xOffset.ToString()));
         if (yOffset != 0) cards.Add(Card("YBAYROFF", yOffset.ToString()));
+        if (rowOrder != null) cards.Add(Card("ROWORDER", "'" + rowOrder + "'"));
         return cards.ToArray();
     }
 

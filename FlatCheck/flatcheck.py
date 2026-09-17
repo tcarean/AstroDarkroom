@@ -1215,10 +1215,27 @@ def cfa_name(cfa, i):
     return "G1" if i < s.index('G', s.index('G') + 1) else "G2"
 
 
-def cfa_from_header(header):
-    return cfa_shift(cfa_parse(header.get('BAYERPAT'), "BAYERPAT"),
-                     int(header.get('YBAYROFF', 0) or 0),
-                     int(header.get('XBAYROFF', 0) or 0))
+def cfa_for_row_order(cfa, row_order, height):
+    """Acelasi mozaic citit in ordinea randurilor din fisier.
+
+    BAYERPAT descrie coltul din stanga-sus al senzorului, privit de sus in jos; Siril
+    insa scrie randurile de jos in sus (ROWORDER = 'BOTTOM-UP'), iar astropy le da in
+    ordinea fisierului. Pe o inaltime PARA primul rand din fisier e un rand impar al
+    senzorului, deci faza se muta cu un rand: RGGB devine GBRG. Pe o inaltime impara
+    nu se schimba nimic; TOP-DOWN sau lipsa cardului, la fel.
+    """
+    if cfa is None or not row_order:
+        return cfa
+    if str(row_order).strip().upper() != 'BOTTOM-UP':
+        return cfa
+    return cfa_shift(cfa, 1, 0) if height % 2 == 0 else cfa
+
+
+def cfa_from_header(header, height):
+    cfa = cfa_shift(cfa_parse(header.get('BAYERPAT'), "BAYERPAT"),
+                    int(header.get('YBAYROFF', 0) or 0),
+                    int(header.get('XBAYROFF', 0) or 0))
+    return cfa_for_row_order(cfa, header.get('ROWORDER'), height)
 
 
 def load_raw_for_expo(path):
@@ -1260,7 +1277,7 @@ def load_raw_for_expo(path):
         white = 65535.0
     return (data, white, 0.0, None,
             f"auto-detectat din max={mx:.0f} (foloseste --sat/--black daca e gresit)",
-            cfa_from_header(header))
+            cfa_from_header(header, data.shape[0]))
 
 
 def mode_expo(path, sat_override=None, black_override=None, sky=False):

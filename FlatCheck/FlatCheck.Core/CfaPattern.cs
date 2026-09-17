@@ -122,6 +122,26 @@ namespace FlatCheck
         }
 
         /// <summary>
+        /// Acelasi mozaic citit in ordinea RANDURILOR DIN FISIER. BAYERPAT descrie coltul
+        /// din stanga-sus al senzorului, privit de sus in jos; Siril insa scrie randurile
+        /// de jos in sus (ROWORDER = 'BOTTOM-UP'), iar FitsReader le citeste in ordinea
+        /// fisierului. Pe o inaltime PARA, primul rand din fisier e un rand impar al
+        /// senzorului, deci faza mozaicului se muta cu un rand: RGGB devine GBRG. Pe o
+        /// inaltime impara randul de jos are aceeasi paritate ca cel de sus si nu se
+        /// schimba nimic. TOP-DOWN, lipsa cardului, orice altceva: nimic.
+        ///
+        /// Masurat pe pp_flat_stacked.fit (6016x4016, Tokina, cer albastru de amurg):
+        /// fara corectie --histeq numea "G2" pozitia [1,0], care statea la o treime din
+        /// verde - adica exact rosul pe care --expo il vede pe NEF-ul sursa, prin libraw.
+        /// </summary>
+        internal CfaPattern ForRowOrder(string rowOrder, int height)
+        {
+            if (string.IsNullOrEmpty(rowOrder)) return this;
+            if (!string.Equals(rowOrder.Trim(), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase)) return this;
+            return (height & 1) == 0 ? Shift(1, 0) : this;
+        }
+
+        /// <summary>
         /// Numele pozitiei: "R", "G1", "G2", "B". Verzii se numeroteaza in ordinea
         /// rasterului, fiindca sunt doi si trebuie sa se poata deosebi pe ecran - pe un
         /// mozaic corect au aproape acelasi nivel, si tocmai "aproape" e ce se citeste.

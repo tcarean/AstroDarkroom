@@ -61,9 +61,12 @@ namespace FlatCheck
             // Ordinea culorilor, daca fisierul o poarta. Siril scrie BAYERPAT pe un cadru
             // trecut prin tab-ul Conversion, si NU o scrie pe unul debayerizat - ceea ce e
             // exact corect: acolo nu mai exista mozaic de numit. Offset-urile intra prin
-            // Shift, fiindca un decupaj impar fata de senzor muta faza mozaicului.
+            // Shift, fiindca un decupaj impar fata de senzor muta faza mozaicului. Iar
+            // ROWORDER intra prin ForRowOrder: Siril scrie randurile de jos in sus, noi le
+            // citim in ordinea fisierului, si pe o inaltime para asta muta faza cu un rand.
             CfaPattern cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
-                ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0));
+                ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
+                ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), img.H);
 
             // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.

@@ -274,7 +274,11 @@ clipează primul, deci el e limitativ).
 **Canalele își spun culoarea, dar numai când fișierul o spune.** Pe un raw ordinea vine
 din libraw (`filters` + `cdesc`), pe un FITS din cardul `BAYERPAT` pe care îl scrie Siril
 la Conversion — și atunci raportul scrie `R (CFA[0,0])`, `G1 (CFA[0,1])` și așa mai
-departe. Fără sursă, pozițiile rămân anonime, ca înainte. Nu se ghicește: ordinea diferă
+departe. `BAYERPAT` descrie senzorul văzut de sus în jos, dar Siril scrie rândurile de jos
+în sus (`ROWORDER = 'BOTTOM-UP'`), iar pe o înălțime pară asta mută faza mozaicului cu un
+rând: pe un astfel de fișier `RGGB` se citește `GBRG`, deci `R` ajunge la `CFA[1,0]`.
+Unealta face mutarea singură, ca Siril la debayerizare. Fără sursă, pozițiile rămân
+anonime, ca înainte. Nu se ghicește: ordinea diferă
 de la aparat la aparat (RGGB e cea mai des întâlnită, dar există și GBRG, GRBG, BGGR), iar
 o etichetă pusă pe canalul greșit ar părea măsurată. Pe un D3300 iese `RGGB`. Pentru
 verdict oricum nu contează care e care — limitativ e cel mai luminos, orice culoare ar

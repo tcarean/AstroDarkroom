@@ -91,6 +91,7 @@ SCENARIOS = [
 
     ("expo cfa",               ["raw_cfa.fit", "--expo"]),
     ("expo cfa BAYERPAT",      ["raw_bayerpat.fit", "--expo"]),
+    ("expo cfa BOTTOM-UP",     ["raw_bayerpat_bottomup.fit", "--expo"]),
     ("expo cfa --sky",         ["raw_cfa.fit", "--expo", "--sky"]),
     ("expo 12-bit manual",     ["raw12bit.fit", "--expo", "--sat", "4095", "--black", "150"]),
     ("expo debayered",         ["clean.fit", "--expo"]),

@@ -63,8 +63,9 @@ not a copy.
     camera the list offers.
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
     file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
-    `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`). Never guessed - see "The channel order" under
-    mode 4. Used only for *naming*; no figure depends on it.
+    `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`, and `ROWORDER`, which on a bottom-up file of
+    even height moves the phase by one row). Never guessed - see "The channel order"
+    under mode 4. Used only for *naming*; no figure depends on it.
   - `Mosaic.cs` - the CFA rule shared by `--expo`, `--histeq` and `--smooth`:
     `PositionOf(y, x)`, `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four
     position rasters, `Extract` (one position, for the mode that works them one at a time
@@ -1205,7 +1206,22 @@ otherwise the frame is treated as mono/processed and the whole frame is used.
 Since the histogram card, the four positions get their colours - but **only when the file
 says which is which**, and it is never guessed. A raw carries `filters` + `cdesc`; a FITS
 from Siril's Conversion tab carries `BAYERPAT` (plus `XBAYROFF`/`YBAYROFF`, which shift
-the mosaic phase and go through `CfaPattern.Shift`). Anything else stays `CFA[y,x]`. The
+the mosaic phase and go through `CfaPattern.Shift`). Anything else stays `CFA[y,x]`.
+
+**`ROWORDER` is part of the order.** `BAYERPAT` describes the sensor's top-left corner
+seen top-down, but Siril writes every converted or stacked frame bottom-up
+(`ROWORDER = 'BOTTOM-UP'`), and `FitsReader` takes the rows in file order. On an *even*
+height the first row in the file is an odd sensor row, so the phase moves by one row -
+`RGGB` reads as `GBRG` - and `CfaPattern.ForRowOrder` moves it, as Siril does when it
+debayers. On an odd height the bottom row has the top row's parity and nothing moves;
+`TOP-DOWN` or no card, likewise. Found on the Tokina sky-flat master (6016x4016): without
+the shift `--histeq` called position [1,0] "G2" at a third of the green level, which was
+the red channel of a blue twilight sky - `--expo` on the source NEF, through libraw, had
+R exactly there. No figure moved, since every metric is per position; only the two labels
+and the `--histeq` composite were wrong. Pinned by
+`ABottomUpFrameOfEvenHeightShiftsTheOrderByOneRow` and the `expo cfa BOTTOM-UP` scenario.
+
+The
 order differs between cameras - RGGB is commonest, but GBRG, GRBG and BGGR all exist - so
 a label on the wrong channel would look measured when it is not. It changes no figure:
 the limiting channel is the brightest one whatever colour it is.
@@ -1856,19 +1872,21 @@ FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
 python crosscheck.py /tmp/xc
 ```
 
-`crosscheck.py` runs both implementations over identical FITS across 42 scenarios and
+`crosscheck.py` runs both implementations over identical FITS across 43 scenarios and
 compares twice: the full text, and every numeric token as a float. It also checks once,
 up front, that both report the same version. It exits non-zero on any unexplained numeric
 difference or on a version desync.
 
-**Current status: 41 of 42 scenarios agree numerically** - 25 byte-identical, 16
+**Current status: 42 of 43 scenarios agree numerically** - 26 byte-identical, 16
 differing only in wording. Coverage spans all four modes, all four bands of the residual
 scale, both gradient directions, non-square frames, BITPIX 16/32/-32, a float master
 divided by 65535 as Siril writes it (`structure float 0..1`, which pins the levels line
 that used to print `0 / 0`), a dust shadow (`structure dust shadow`, which pins the local
 spot warning and its position), the exposure bands either side of each boundary, and a CFA
 frame carrying `BAYERPAT` (`expo cfa BAYERPAT`, byte-identical), which is what pins the
-channel-naming line across the two implementations.
+channel-naming line across the two implementations, and the same frame with
+`ROWORDER = 'BOTTOM-UP'` (`expo cfa BOTTOM-UP`, byte-identical), which pins that both
+move the phase by one row on an even height.
 
 The attribution rewrite is mirrored in `flatcheck.py` in full - `_structure_body` split
 out of `mode_structure` exactly as `StructureReport.WriteBody` was, plus
@@ -2026,7 +2044,7 @@ compare whole output.
   both change without the *behaviour* changing. So `Golden/*.txt` carry the placeholder
   and survive a bump untouched.
 - `crosscheck.py` scrubs it in `norm()`, and checks version agreement once up front in
-  `check_versions()`. Without that, a desync would turn all 42 scenarios into diffs -
+  `check_versions()`. Without that, a desync would turn all 43 scenarios into diffs -
   42 diffs to learn one thing.
 
 What *does* fail, and should:
@@ -2092,7 +2110,7 @@ Five things follow, and all five are pinned by tests:
 Unlike the version banner, the copyright line is **not** scrubbed anywhere: it is
 constant, so the golden files carry it verbatim and `crosscheck.py` compares it as
 ordinary text. That is deliberate - if the line ever stops being printed, the golden
-files fail. `--help` is not one of `crosscheck.py`'s 42 scenarios (argparse and
+files fail. `--help` is not one of `crosscheck.py`'s 43 scenarios (argparse and
 `WriteUsage` produce entirely different text), so the two warranty notices are worded
 the same by choice, not by test.
 
