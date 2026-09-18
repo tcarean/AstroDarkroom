@@ -47,7 +47,8 @@ namespace FlatCheck.Wpf
     {
         public string Label { get; init; }
         public string SourceLabel { get; init; }
-        public string Mount { get; init; }
+        /// <summary>Montura, plus formatul de calibrare la lensfun (LensChoice.Where).</summary>
+        public string Where { get; init; }
         internal LensChoice Choice { get; init; }
     }
 
@@ -374,7 +375,7 @@ namespace FlatCheck.Wpf
             {
                 Label = l.Name,
                 SourceLabel = l.SourceLabel,
-                Mount = l.Mount,
+                Where = l.Where,
                 Choice = l,
             }).ToList();
 
@@ -516,7 +517,7 @@ namespace FlatCheck.Wpf
         internal void Populate(SyntheticFlatResult r, SyntheticRequest req)
         {
             LensProfile p = r.Profile;
-            ProfileLine = $"{p.Lens.Name}  [{p.Lens.Mount}]  ({p.Lens.SourceLabel}): {p.Settings}   -   cerut: {SyntheticReport.Requested(req)}";
+            ProfileLine = $"{p.Lens.Name}  [{p.Lens.Where}]  ({p.Lens.SourceLabel}): {p.Settings}   -   cerut: {SyntheticReport.Requested(req)}";
             ModelLine = p.Model.Describe();
             CornerNote = SyntheticReport.FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height);
             CornerWarning = SyntheticReport.FormatMatchIsWarning(p.Model, r.CameraCrop, r.Width, r.Height);

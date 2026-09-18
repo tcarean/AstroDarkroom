@@ -572,14 +572,26 @@ n-are nicio sursă în el, deci nici curbura cerului, nici căderea panoului.
   folder și repornește; `lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e
   copia, iar `lensfun/update-lensfun.py` face același lucru dintr-o comandă.
 
-Obiectivul se alege după text (`--lens` caută toate cuvintele în nume, producător și
-montură; `--source adobe|lensfun` restrânge), profilul se alege **cel mai apropiat**,
+Obiectivul se alege după text (`--lens` caută toate cuvintele în nume, producător,
+montură și, la lensfun, formatul de calibrare; `--source adobe|lensfun` restrânge), profilul se alege **cel mai apropiat**,
 nu interpolat — focala cea mai apropiată, apoi diafragma cea mai apropiată în stopuri,
-apoi distanța cea mai mare — și raportul spune ce s-a cerut și ce s-a folosit. Focala vine
+apoi distanța cea mai mare — și raportul spune ce s-a cerut și ce s-a folosit. O intrare
+lensfun scrisă la 10 m și la 1000 m cu aceiași coeficienți e o singură măsurătoare la o
+distanță nescrisă (așa marchează lensfun „nu știu"), și raportul spune „distanța
+nespecificată", nu „infinit": pe Nikkor 35 f/1.8G DX intrarea calibrată pe APS-C are forma
+profilului Adobe de la 0.36 m, nu a celui de la 1.5 m — un perete de aproape, cel mai probabil,
+iar vignetarea acestui obiectiv scade mult la focalizare apropiată. Focala vine
 din `FOCALLEN` sau din raw, diafragma numai din raw (un FITS Siril n-o poartă) sau din
 `--fstop`. Același obiectiv pe două monturi (Adobe are câte un fișier per montură) se
 alege după aparatul din `INSTRUME`; când tot rămân mai multe, lista lor se tipărește și
-codul de ieșire e 2.
+codul de ieșire e 2. **Un obiectiv lensfun poate fi în listă de două ori**, cu același nume
+și aceeași montură: baza îl ține o dată pentru fiecare corp pe care l-a calibrat cineva, iar
+formatul de calibrare stă lângă montură („Nikon F AF, calibrat pe APS-C 1.528" și „..., calibrat
+pe full frame 1"). Sunt două profile diferite, nu o dublare — pe Nikkor 35 f/1.8G DX
+intrarea calibrată pe APS-C dă 0.19 stopuri în colț la f/2.8, cea calibrată pe D780 dă 0.51,
+iar Adobe 0.61 — și amândouă intră în tabelul de vignetare din modul structură. Numele
+singur le potrivește pe amândouă (cod 2, cu lista); adaugă cuvântul formatului
+(`--lens "Nikkor 35mm f/1.8G full"`) ca să o alegi pe una.
 
 **Ce raportează:** adâncimea scrisă, în procente din axă și în stopuri, în patru puncte —
 colț (cutia de 5 % a testului de colțuri), marginea lungă, marginea scurtă, jumătatea
@@ -1216,8 +1228,10 @@ altul, ce a scos netezirea și ce a lăsat.
 > secțiunea „6. Netezire" de mai sus; nu există test care să lege cele două.
 
 **Sintetic** e modul 7. Lista de obiective vine din amândouă sursele, cu un chip `Adobe`
-sau `lensfun` pe fiecare rând și montura în dreapta; se caută după text, fiecare cuvânt
-trebuie să apară. Focala, diafragma și crop-ul sunt **preumplute** din fișiere — focala și
+sau `lensfun` pe fiecare rând și montura în dreapta — la lensfun și formatul pe care a fost
+calibrat profilul, fiindcă același obiectiv poate fi de două ori în bază, calibrat pe două
+formate (vezi mai sus); se caută după text, fiecare cuvânt trebuie să apară, formatul
+inclusiv. Focala, diafragma și crop-ul sunt **preumplute** din fișiere — focala și
 aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma și obiectivul
 dintr-un raw din `flats/`, când există: ID-ul Nikon al obiectivului **și gama lui** (focala
 minimă și maximă, deschiderea maximă) din MakerNote. ID-ul singur nu ajunge — 139 e și

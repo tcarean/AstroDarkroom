@@ -180,7 +180,7 @@ namespace FlatCheck
             return new[]
             {
                 $"{VersionInfo.Banner} --synthetic: flat sintetic din profilul de vignetare, sursa {p.Lens.SourceLabel}",
-                $"obiectiv: {p.Lens.Name} [{p.Lens.Mount}]; profil: {p.Settings}; cerut: {SyntheticReport.Requested(o.Request)}",
+                $"obiectiv: {p.Lens.Name} [{p.Lens.Where}]; profil: {p.Settings}; cerut: {SyntheticReport.Requested(o.Request)}",
                 $"model: {p.Model.Describe()}",
                 $"geometrie si carduri din: {Path.GetFileName(referencePath)}",
             };

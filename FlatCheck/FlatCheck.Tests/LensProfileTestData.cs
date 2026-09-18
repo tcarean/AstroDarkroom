@@ -110,6 +110,7 @@ internal static class LensProfileTestData
             <vignetting model=""pa"" focal=""18"" aperture=""2.8"" distance=""10"" k1=""-0.6246"" k2=""0.2896"" k3=""-0.1245""/>
             <vignetting model=""pa"" focal=""20"" aperture=""2.8"" distance=""10"" k1=""-0.6195"" k2=""0.3276"" k3=""-0.1494""/>
             <vignetting model=""pa"" focal=""20"" aperture=""2.8"" distance=""1000"" k1=""-0.6195"" k2=""0.3276"" k3=""-0.1494""/>
+            <vignetting model=""pa"" focal=""20"" aperture=""4"" distance=""10"" k1=""-0.0500"" k2=""-0.8000"" k3=""0.4500""/>
             <vignetting model=""pa"" focal=""20"" aperture=""4"" distance=""1000"" k1=""-0.0338"" k2=""-0.8254"" k3=""0.4699""/>
         </calibration>
     </lens>
@@ -124,8 +125,84 @@ internal static class LensProfileTestData
     </lens>
 </lensdatabase>";
 
-    /// <summary>A profiles folder as --profiles expects it: an .lcp anywhere in it, and lensfun/ beneath.</summary>
-    internal static string ProfilesDir(TempWorkspace ws)
+    /// <summary>
+    /// The same Tokina, calibrated a second time on a full-frame body: same maker, model and
+    /// mount as the entry in <see cref="LensfunXml"/>, cropfactor 1, deeper coefficients (a DX
+    /// lens on a 36x24 sensor). Two calibrations of one lens are two catalog entries; before
+    /// the crop entered <c>LensChoice</c> the second one was silently unreachable.
+    /// </summary>
+    internal const string LensfunTokinaFullFrameXml = @"<!DOCTYPE lensdatabase SYSTEM ""lensfun-database.dtd"">
+<lensdatabase version=""2"">
+    <lens>
+        <maker>Tokina</maker>
+        <model>Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8</model>
+        <model lang=""en"">Tokina AT-X 11-20 F2.8 PRO DX</model>
+        <mount>Canon EF</mount>
+        <mount>Nikon F AF</mount>
+        <cropfactor>1</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""20"" aperture=""2.8"" distance=""1000"" k1=""-0.9000"" k2=""0.1000"" k3=""-0.0500""/>
+            <vignetting model=""pa"" focal=""20"" aperture=""4"" distance=""1000"" k1=""-0.5000"" k2=""0.0500"" k3=""-0.0200""/>
+        </calibration>
+    </lens>
+</lensdatabase>";
+
+    /// <summary>
+    /// The real pair from the shipped database (slr-nikon.xml, 2026-09-18): the AF-S DX Nikkor
+    /// 35 f/1.8G calibrated once on an unnamed APS-C body ("average crop of Nikon APS-C
+    /// cameras", 1.528) and once on a Nikon D780 (crop 1). At the DX corner and f/2.8 the
+    /// first reads 0.19 stops and the second 0.51, beside Adobe's 0.61 on a D90.
+    /// </summary>
+    internal const string LensfunNikkor35Xml = @"<!DOCTYPE lensdatabase SYSTEM ""lensfun-database.dtd"">
+<lensdatabase version=""2"">
+    <camera>
+        <maker>Nikon Corporation</maker>
+        <maker lang=""en"">Nikon</maker>
+        <model>Nikon D3300</model>
+        <model lang=""en"">D3300</model>
+        <mount>Nikon F AF</mount>
+        <cropfactor>1.523</cropfactor>
+    </camera>
+    <lens>
+        <maker>Nikon</maker>
+        <model>Nikon AF-S DX Nikkor 35mm f/1.8G</model>
+        <model lang=""en"">Nikkor AF-S 35mm f/1.8G DX</model>
+        <mount>Nikon F AF</mount>
+        <!-- Average crop factor of Nikon APS-C cameras -->
+        <cropfactor>1.528</cropfactor>
+        <calibration>
+            <vignetting model=""pa"" focal=""35"" aperture=""1.8"" distance=""10"" k1=""-0.3298"" k2=""-0.0595"" k3=""0.0938""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""1.8"" distance=""1000"" k1=""-0.3298"" k2=""-0.0595"" k3=""0.0938""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""2.8"" distance=""10"" k1=""-0.1367"" k2=""0.0656"" k3=""-0.0502""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""2.8"" distance=""1000"" k1=""-0.1367"" k2=""0.0656"" k3=""-0.0502""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""4"" distance=""10"" k1=""-0.1170"" k2=""0.0027"" k3=""0.0072""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""4"" distance=""1000"" k1=""-0.1170"" k2=""0.0027"" k3=""0.0072""/>
+        </calibration>
+    </lens>
+    <lens>
+        <maker>Nikon</maker>
+        <model>Nikon AF-S DX Nikkor 35mm f/1.8G</model>
+        <model lang=""en"">Nikkor AF-S 35mm f/1.8G DX</model>
+        <mount>Nikon F AF</mount>
+        <cropfactor>1</cropfactor>
+        <calibration>
+            <!-- Taken with Nikon D780 -->
+            <vignetting model=""pa"" focal=""35"" aperture=""1.8"" distance=""10"" k1=""-1.7870"" k2=""1.4093"" k3=""-0.5914""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""1.8"" distance=""1000"" k1=""-1.7870"" k2=""1.4093"" k3=""-0.5914""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""2.8"" distance=""10"" k1=""-0.1581"" k2=""-1.6132"" k3=""0.8860""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""2.8"" distance=""1000"" k1=""-0.1581"" k2=""-1.6132"" k3=""0.8860""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""4"" distance=""10"" k1=""0.1858"" k2=""-2.0061"" k3=""0.9425""/>
+            <vignetting model=""pa"" focal=""35"" aperture=""4"" distance=""1000"" k1=""0.1858"" k2=""-2.0061"" k3=""0.9425""/>
+        </calibration>
+    </lens>
+</lensdatabase>";
+
+    /// <summary>
+    /// A profiles folder as --profiles expects it: an .lcp anywhere in it, and lensfun/ beneath.
+    /// With <paramref name="tokinaOnTwoFormats"/> the lensfun half also carries the Tokina's
+    /// full-frame calibration, so the same lens is listed twice, once per calibration format.
+    /// </summary>
+    internal static string ProfilesDir(TempWorkspace ws, bool tokinaOnTwoFormats = false)
     {
         string dir = Path.Combine(ws.Dir, "profiles");
         Directory.CreateDirectory(Path.Combine(dir, "Tokina"));
@@ -133,13 +210,15 @@ internal static class LensProfileTestData
         File.WriteAllText(Path.Combine(dir, "Tokina", "NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp"), Lcp());
         File.WriteAllText(Path.Combine(dir, "Tokina", "Canon (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp"), Lcp(make: "Canon"));
         File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina.xml"), LensfunXml);
+        if (tokinaOnTwoFormats)
+            File.WriteAllText(Path.Combine(dir, "lensfun", "slr-tokina-ff.xml"), LensfunTokinaFullFrameXml);
         File.WriteAllText(Path.Combine(dir, "lensfun", "LENSFUN-VERSION.txt"), "lensfun database snapshot\nupstream commit: test\n");
         return dir;
     }
 
-    internal static ProfileSources Sources(TempWorkspace ws)
+    internal static ProfileSources Sources(TempWorkspace ws, bool tokinaOnTwoFormats = false)
     {
-        string dir = ProfilesDir(ws);
+        string dir = ProfilesDir(ws, tokinaOnTwoFormats);
         return ProfileLocator.Locate(new[] { dir }, Path.Combine(dir, "lensfun"));
     }
 }

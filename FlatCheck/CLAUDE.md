@@ -146,6 +146,24 @@ not a copy.
     `<Camera> (<Lens>) - RAW.lcp` convention, with the fixed-lens phones and compacts as
     camera-named stubs). A file is parsed when its lens is chosen, or when a Nikon lens
     ID is looked up, and then only the files of the camera's mount, in parallel.
+    **A lensfun lens's identity includes its calibration crop** (`LensChoice.Calibration`,
+    "APS-C 1.528" / "full frame 1"; `Where` = mount + calibration is what every list, table,
+    report and FITS `HISTORY` shows, `Title` = name + calibration what the verdict sentences
+    say): the database holds 20 lenses twice, same name and mount, calibrated on two
+    formats, and with the crop outside the key the two collapsed and `Nearest` took the
+    first in file order - on the Nikkor 35/1.8G DX the poor one (0.19 stops at the DX
+    corner against 0.51 from the hidden D780 entry and 0.61 from Adobe; `docs/lens-profiles.md`
+    §5 and §8). The label is on every lensfun lens, not only the duplicated ones, so a name
+    cannot change when the database gains an entry; Adobe stubs carry none (the body is the
+    mount, the SFF is not in the file name). Pinned by
+    `Lensfun_TheSameLensCalibratedOnTwoFormatsIsTwoLenses`,
+    `ALensfunLensCalibratedOnTwoFormatsIsTwoRows` and the two tab tests of the same name.
+    **A lensfun pair at 10 and 1000 m with identical coefficients is one profile with an
+    unknown distance** (`LensfunReader.CollapseCopiedDistances`, `DistanceM = NaN`, printed
+    "distanta nespecificata"): that is how lensfun marks "measured once, distance not
+    recorded", and the old "infinit" was a copied value presented as a fact - the same
+    Nikkor entry has the floor of Adobe's 0.36 m profile, not the 1.5 m one. A single entry
+    at a stated distance keeps it; a pair with different coefficients keeps both.
     `SensorFormats` is the six nominal crops (full frame 1.0 ... 1" 2.7) with the sensor
     sizes as notes - the fallback for a body the lensfun camera table (1053 entries, the
     one list of cameras, maintained upstream) does not have; the refusal text lists them

@@ -116,7 +116,10 @@ namespace FlatCheck
                 var mounts = lens.Elements("mount").Select(m => m.Value.Trim()).Where(m => m.Length > 0).ToList();
                 string mount = mounts.Count > 0 ? string.Join(" / ", mounts) : "";
                 var aliases = Aliases(lens, "model");
-                var choice = new LensChoice(ProfileSource.Lensfun, maker, model, mount);
+                // Crop-ul de calibrare face parte din identitate: acelasi obiectiv calibrat pe
+                // doua formate e de doua ori in baza, si sunt doua profile diferite (LensChoice).
+                var choice = new LensChoice(ProfileSource.Lensfun, maker, model, mount, LensChoice.CalibrationLabel(crop.Value));
+                var own = new List<LensProfile>();
                 foreach (XElement v in cal.Elements("vignetting"))
                 {
                     if ((string)v.Attribute("model") != "pa") continue;
@@ -127,12 +130,43 @@ namespace FlatCheck
                     var m = new VignettingModel(VignettingModelKind.Lensfun,
                         new[] { k1.Value, Num((string)v.Attribute("k2")) ?? 0, Num((string)v.Attribute("k3")) ?? 0 },
                         null, focal.Value, crop.Value);
-                    profiles.Add(new LensProfile(choice, aliases, null, focal.Value, aperture.Value,
+                    own.Add(new LensProfile(choice, aliases, null, focal.Value, aperture.Value,
                         Num((string)v.Attribute("distance")) ?? double.NaN, m, file));
                 }
+                profiles.AddRange(CollapseCopiedDistances(own));
             }
             return new LensfunData(profiles, cameras);
         }
+
+        /// <summary>
+        /// Aceeasi (focala, diafragma) la doua distante cu EXACT aceiasi coeficienti e conventia
+        /// lensfun pentru "masurat la o singura distanta, nescrisa": scriptul lor de calibrare
+        /// copiaza valorile la 10 si la 1000 m. Doua masuratori reale nu coincid la patru
+        /// zecimale. Perechea devine un singur profil cu distanta necunoscuta (NaN), pe care
+        /// raportul il scrie "distanta nespecificata" in loc de "infinit" - pe Nikkor 35/1.8G
+        /// DX intrarea "APS-C" spunea "infinit" si arata ca un perete de aproape (platoul de
+        /// 0.16-0.17 stopuri de la f/4 la f/22 e cel al profilului Adobe de la 0.36 m, nu cel de
+        /// la 1.5 m). O singura intrare la o distanta declarata ramane cu distanta ei.
+        /// </summary>
+        internal static IReadOnlyList<LensProfile> CollapseCopiedDistances(IReadOnlyList<LensProfile> own)
+        {
+            var result = new List<LensProfile>();
+            foreach (var g in own.GroupBy(p => (p.FocalMm, p.FStop)))
+            {
+                var list = g.ToList();
+                bool copies = list.Count > 1 && list.All(p => SameCoefficients(p.Model, list[0].Model));
+                if (copies)
+                {
+                    LensProfile first = list[0];
+                    result.Add(new LensProfile(first.Lens, first.Aliases, first.LensIds, first.FocalMm, first.FStop, double.NaN, first.Model, first.File));
+                }
+                else result.AddRange(list);
+            }
+            return result;
+        }
+
+        static bool SameCoefficients(VignettingModel a, VignettingModel b)
+            => a.Coefficients != null && b.Coefficients != null && a.Coefficients.SequenceEqual(b.Coefficients);
 
         /// <summary>Elementul fara atribut lang - numele canonic; altfel primul.</summary>
         static string Canonical(XElement e, string name)

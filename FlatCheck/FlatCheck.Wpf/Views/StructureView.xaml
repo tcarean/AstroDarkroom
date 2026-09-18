@@ -57,7 +57,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Text="{Binding Source}" />
           </Border>
           <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0"
-                     Text="{Binding Mount}" VerticalAlignment="Center" />
+                     Text="{Binding Where}" VerticalAlignment="Center" />
           <TextBlock Text="{Binding Lens}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
         </DockPanel>
 

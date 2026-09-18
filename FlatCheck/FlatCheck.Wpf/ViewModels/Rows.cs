@@ -85,7 +85,8 @@ namespace FlatCheck.Wpf
     {
         public string Source { get; init; }       // "Adobe" / "lensfun"
         public string Lens { get; init; }
-        public string Mount { get; init; }
+        /// <summary>Montura, plus formatul de calibrare la lensfun (LensChoice.Where).</summary>
+        public string Where { get; init; }
         public string Profile { get; init; }      // "20 mm, f/2.8, infinit"
         public string Depth { get; init; }        // "0.66 stopuri (colt = 63 % din centru)"
         public string Diff { get; init; }         // "+0.59 stopuri"

@@ -145,6 +145,24 @@ format" never looks like a warning.
   lenses without vignetting are dropped. `LensfunData.CropOf(name)` matches the camera
   model or an alias by containment on letters and digits only, longest match wins
   ("NIKON D3300" → 1.523).
+- **The calibration crop is part of a lensfun lens's identity** (`LensChoice.Calibration`,
+  "APS-C 1.528" / "full frame 1": the nominal format from `SensorFormats.LabelOf` plus the
+  exact `<cropfactor>`). The database holds the same lens, on the same mount, twice when
+  two contributors calibrated it on bodies of different format - 20 of the 692 lenses with
+  vignetting in the shipped copy (Canon EF 50/1.4 and 50/1.8, Nikkor 35/1.8G DX, 60/2.8G
+  Micro, 70-200/2.8 VR, Sigma 50/1.4, Pentax FA 50/1.4 ...). With the key
+  (source, maker, name, mount) the two collapsed into one lens, `Nearest` broke the tie on
+  focal, f-stop and distance by file order, and the second calibration was unreachable
+  from either application. Found on the Nikkor 35 f/1.8G DX (section 8): the entry that
+  won, "average crop of Nikon APS-C cameras", reads 0.19 stops at the DX corner at f/2.8;
+  the hidden D780 entry reads 0.51, beside Adobe's 0.61. The label is shown on **every**
+  lensfun lens, not only the duplicated ones (`LensChoice.Where`: "Nikon F AF, calibrat pe
+  full frame 1", in the lists, the tables, the reports and the FITS `HISTORY`): a name that
+  changed when the database gained a second entry would break `--lens` text and a saved
+  choice. It is searchable ("Nikkor 35mm full"); the bare name matches both, which is the
+  ordinary ambiguity refusal with the list, exit 2. Adobe entries carry no label: the
+  calibration body is already the mount ("NIKON D90"), and the SFF sits in the file, not in
+  its name, so it could not enter the lazily built list.
 - **Laziness** (`LensCatalog`): 3531 `.lcp` files (455 MB) on this machine take 36 s to
   parse; listing them takes 2 s. So Adobe entries are `AdobeProfileFile` stubs from the
   file name: `<Camera> (<Lens>) - RAW.lcp` in `<Maker>/<Mount>/` → name = the text between
@@ -159,6 +177,16 @@ format" never looks like a warning.
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
 - **Nearest** profile: nearest focal length, then nearest f-stop in stops
   (`2·log2 f`), then the farthest distance. Reported as "profil folosit" beside "cerut".
+- **A lensfun pair at 10 and 1000 m with identical coefficients is one profile, distance
+  unknown** (`LensfunReader.CollapseCopiedDistances`, `DistanceM = NaN`, printed
+  "distanta nespecificata"). That is the lensfun convention for "measured at one distance,
+  not recorded": the calibration script copies the values to both ends, and two real
+  measurements never agree to four decimals. Before, the tool took the 1000 m copy and
+  printed "infinit" for it - on the Nikkor 35/1.8G DX the "APS-C" entry said "infinit" while
+  its floor of 0.16-0.17 stops from f/4 to f/22 is the floor of Adobe's 0.36 m profile
+  (0.17-0.19), not of the 1.51 m one (0.23): most likely a wall shot up close, and the label
+  was claiming the opposite (section 8). A single entry at a stated distance keeps it, and a
+  pair with different coefficients is two measurements and keeps both.
 - **Lens choice from text** (`SyntheticRun.ChooseLens`): search hits; an exact name match
   narrows to those; when several remain and the reference frame names a camera, the ones
   whose mount or maker contains the camera's first word win; then `PreferCamera`: the
@@ -318,6 +346,36 @@ at the corner, section 7.) The sky master is 0.4-0.6 stops too flat everywhere; 
 masters match the databases at the corner and fall 0.1 stops too fast at mid-field (the
 panel). The two databases differ by 0.16-0.25 stops at the corner, 0.05 at mid-field - the
 precision one can expect of "official" data.
+
+**Two calibrations of one lensfun lens can differ more than the two databases do.** The
+AF-S DX Nikkor 35 f/1.8G, evaluated with the polynomials at the D3300 corner (14.20 mm),
+stops, 2026-09-18:
+
+| aperture | Adobe (D90, 1.51 m) | lensfun, D780 entry (crop 1) | lensfun, "average APS-C" entry (crop 1.528) |
+|---|---|---|---|
+| f/1.8 | 1.21 | 1.17 | 0.51 |
+| f/2.8 | 0.61 | 0.51 | 0.19 |
+| f/4 | 0.39 | 0.35 | 0.16 |
+| f/5.6 | 0.23 | 0.28 | 0.17 |
+| f/22 | 0.23 (f/11) | 0.23 | 0.17 |
+
+Two independent calibrations on different bodies agree within 0.1 stops at every aperture;
+the third gives half the wide-open falloff and a floor that does not move from f/4 to
+f/22, and it was the only one the tool showed until the calibration crop entered the lens
+key (section 5). Adobe's own file says where that floor comes from: at 0.36 m focus the
+D90 profile reads 0.76 / 0.54 / 0.18 / 0.17-0.19 stops at f/1.8 / 2.8 / 4 / 5.6-11, against
+1.21 / 0.61 / 0.39 / 0.23 at 1.51 m - this lens loses most of its mechanical vignetting when
+focused close, and the "APS-C" entry's floor is the close-focus one. Its `distance` is the
+copied 10 / 1000 pair, i.e. not recorded, and the tool now says so instead of "infinit".
+The D780 entry has the same copied pair but matches Adobe at 1.51 m, so that contributor
+shot from afar. What close focus does not explain (f/2.8 at 0.19 against 0.54) points at a
+source that fills the corners or at in-camera vignette control left on; the two cannot be
+told apart from the coefficients. The sky master of that lens (`Nikkor 35mm DX/f2.8-sky/ISO400`) reads 0.63
+with the 5 % box operator; with the box the tool reports Adobe 0.52, D780 0.42, APS-C 0.16,
+so Adobe stays nearest (+0.11, BUN) and the D780 entry lands at +0.21 (ACCEPTABIL). Since a
+sky source fills the corners, the true depth is at least the master's, which rules the
+0.16 entry out on its own. A single sky flat at f/1.8 would separate the two readings by
+0.7 stops, far beyond any source bias.
 
 ## 9. Acceptance, with the tool itself
 

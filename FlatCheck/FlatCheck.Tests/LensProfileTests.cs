@@ -184,9 +184,12 @@ public class LensProfileReaderTests
     {
         var d = LensfunReader.ReadXml(LensProfileTestData.LensfunXml, "slr-tokina.xml");
 
-        Assert.Equal(4, d.Profiles.Count);
+        Assert.Equal(4, d.Profiles.Count);                       // 18/2.8 at 10 m, 20/2.8 (the copied pair, one profile), 20/4 at 10 m and at 1000 m
         Assert.All(d.Profiles, p => Assert.Equal(ProfileSource.Lensfun, p.Lens.Source));
-        var p = d.Profiles.First(q => q.FocalMm == 20 && q.FStop == 2.8 && q.DistanceM == 1000);
+        var p = d.Profiles.Single(q => q.FocalMm == 20 && q.FStop == 2.8);
+        Assert.True(double.IsNaN(p.DistanceM));                  // 10 m and 1000 m with the same coefficients = one measurement, distance unknown
+        Assert.EndsWith(LensProfile.DistanceUnspecified, p.Settings);
+        Assert.Equal(10, d.Profiles.Single(q => q.FocalMm == 18).DistanceM);      // a single stated distance stays
         Assert.Equal("Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8", p.Lens.Name);
         Assert.Equal("Canon EF / Nikon F AF", p.Lens.Mount);
         Assert.Contains("Tokina AT-X 11-20 F2.8 PRO DX", p.Aliases);
@@ -208,6 +211,51 @@ public class LensProfileReaderTests
         Assert.Equal(1.523, d.CropOf("D3300")!.Value, 9);
         Assert.Null(d.CropOf("Canon EOS 7D"));
         Assert.Null(d.CropOf(null));
+    }
+
+    /// <summary>
+    /// The shipped database holds the Nikkor 35 f/1.8G DX twice - once calibrated on an APS-C
+    /// body, once on a D780 - with the same maker, model and mount. They are two lenses in the
+    /// catalog, told apart by the calibration format, each with its own coefficients. Before
+    /// the crop entered LensChoice the two collapsed into one and Nearest took the first in
+    /// file order: the APS-C entry, 0.19 stops at the DX corner where the D780 one and Adobe
+    /// read 0.51 and 0.61.
+    /// </summary>
+    [Fact]
+    public void Lensfun_TheSameLensCalibratedOnTwoFormatsIsTwoLenses()
+    {
+        var d = LensfunReader.ReadXml(LensProfileTestData.LensfunNikkor35Xml, "slr-nikon.xml");
+
+        var lenses = d.Profiles.Select(p => p.Lens).Distinct().ToList();
+        Assert.Equal(2, lenses.Count);
+        Assert.All(lenses, l => Assert.Equal("Nikon AF-S DX Nikkor 35mm f/1.8G", l.Name));
+        Assert.All(lenses, l => Assert.Equal("Nikon F AF", l.Mount));
+        Assert.Equal(new[] { "APS-C 1.528", "full frame 1" }, lenses.Select(l => l.Calibration).OrderBy(c => c));
+        Assert.NotEqual(lenses[0].Key, lenses[1].Key);
+
+        LensChoice dx = lenses.Single(l => l.Calibration == "APS-C 1.528");
+        LensChoice ff = lenses.Single(l => l.Calibration == "full frame 1");
+        Assert.Equal("Nikon F AF, calibrat pe APS-C 1.528", dx.Where);
+        Assert.Equal("Nikon AF-S DX Nikkor 35mm f/1.8G (calibrat pe full frame 1)", ff.Title);
+        Assert.Contains("[Nikon F AF, calibrat pe full frame 1] (lensfun)", ff.ToString());
+
+        var atDx = d.Profiles.Single(p => p.Lens == dx && p.FStop == 2.8);
+        var atFf = d.Profiles.Single(p => p.Lens == ff && p.FStop == 2.8);
+        Assert.Equal(1.528, atDx.Model.CropFactor, 9);
+        Assert.Equal(1.0, atFf.Model.CropFactor, 9);
+        Assert.Equal(-0.1367, atDx.Model.Coefficients[0], 9);
+        Assert.Equal(-0.1581, atFf.Model.Coefficients[0], 9);
+    }
+
+    /// <summary>An Adobe stub carries no calibration: the body is in the mount already, the SFF only in the file.</summary>
+    [Fact]
+    public void AnAdobeLensHasNoCalibrationLabel_SoItsWhereIsTheMount()
+    {
+        var stub = AdobeProfileFile.FromName(@"C:\p\Nikon\NIKON D90 (Nikon AF-S DX NIKKOR 35mm f1.8G) - RAW.lcp");
+        Assert.False(stub.Lens.HasCalibration);
+        Assert.Equal("NIKON D90", stub.Lens.Where);
+        Assert.Equal(stub.Lens.Name, stub.Lens.Title);
+        Assert.Equal("Adobe|Nikon|Nikon AF-S DX NIKKOR 35mm f1.8G|NIKON D90", stub.Lens.Key);
     }
 
     [Fact]
@@ -291,6 +339,46 @@ public class LensCatalogTests
         Assert.Equal(3, c.Search("").Count);
     }
 
+    /// <summary>
+    /// The calibration format is searchable, so "Nikkor 35mm full" picks one of the two
+    /// calibrations of a lens whose name alone matches both - the way --lens tells them apart.
+    /// </summary>
+    [Fact]
+    public void Search_FindsOneOfTwoCalibrationsByItsFormatWord()
+    {
+        var c = new LensCatalog(LensfunReader.ReadXml(LensProfileTestData.LensfunNikkor35Xml, "x.xml").Profiles);
+
+        Assert.Equal(2, c.Lenses.Count);
+        Assert.Equal(2, c.Search("Nikkor 35mm f/1.8G").Count);
+        var ff = Assert.Single(c.Search("Nikkor 35mm f/1.8G full"));
+        Assert.Equal("full frame 1", ff.Calibration);
+        var dx = Assert.Single(c.Search("nikkor aps-c"));
+        Assert.Equal("APS-C 1.528", dx.Calibration);
+        Assert.Equal(3, c.ProfilesOf(ff).Count);                             // three apertures, each a copied 10 / 1000 m pair
+        Assert.All(c.ProfilesOf(ff), p => Assert.EndsWith(LensProfile.DistanceUnspecified, p.Settings));
+        Assert.NotEqual(c.ProfilesOf(ff)[0].Model.CropFactor, c.ProfilesOf(dx)[0].Model.CropFactor);
+    }
+
+    /// <summary>
+    /// Only an exact copy is the "distance unknown" convention: two entries at 10 and 1000 m
+    /// with different coefficients are two measurements and keep their distances.
+    /// </summary>
+    [Fact]
+    public void OnlyIdenticalCoefficientsAtTwoDistancesCollapse()
+    {
+        var lens = new LensChoice(ProfileSource.Lensfun, "X", "X 50", "M", "full frame 1");
+        LensProfile P(double stop, double dist, double k1) => new(lens, null, null, 50, stop, dist,
+            new VignettingModel(VignettingModelKind.Lensfun, new[] { k1, 0.1, 0.0 }, null, 50, 1.0), "x.xml");
+
+        var collapsed = LensfunReader.CollapseCopiedDistances(new[] { P(2, 10, -0.5), P(2, 1000, -0.5), P(4, 10, -0.2), P(4, 1000, -0.25), P(8, 1000, -0.1) });
+
+        Assert.Equal(4, collapsed.Count);
+        Assert.True(double.IsNaN(collapsed.Single(p => p.FStop == 2).DistanceM));
+        Assert.Equal(new[] { 10.0, 1000.0 }, collapsed.Where(p => p.FStop == 4).Select(p => p.DistanceM));
+        Assert.Equal(1000, collapsed.Single(p => p.FStop == 8).DistanceM);
+        Assert.Equal("50 mm, f/2.0, distanta nespecificata", collapsed[0].Settings);
+    }
+
     [Fact]
     public void Nearest_PicksTheFocalThenTheFStopInStopsThenTheFarthestDistance()
     {
@@ -298,10 +386,11 @@ public class LensCatalogTests
         var lf = c.Lenses.Single(l => l.Source == ProfileSource.Lensfun);
         var ps = c.ProfilesOf(lf);
 
-        var p = LensCatalog.Nearest(ps, 20, 2.8);
+        var p = LensCatalog.Nearest(ps, 20, 4);
         Assert.Equal(20, p!.FocalMm);
-        Assert.Equal(2.8, p.FStop);
-        Assert.Equal(1000, p.DistanceM);                        // infinity over 10 m
+        Assert.Equal(4, p.FStop);
+        Assert.Equal(1000, p.DistanceM);                        // infinity over 10 m, when the two are real measurements
+        Assert.True(double.IsNaN(LensCatalog.Nearest(ps, 20, 2.8)!.DistanceM));   // the copied pair is one profile
 
         Assert.Equal(18, LensCatalog.Nearest(ps, 17, 2.8)!.FocalMm);
         Assert.Equal(4.0, LensCatalog.Nearest(ps, 20, 3.5)!.FStop);    // 3.5 is 0.64 stops from 2.8 and 0.39 from 4
@@ -515,6 +604,35 @@ public class SyntheticRunTests
         Assert.Equal("RGGB", FitsReader.HStr(hdr, "BAYERPAT", ""));
         Assert.Contains(cards, c => c.StartsWith("HISTORY") && c.Contains("--synthetic"));
         Assert.InRange(img.At(80, 120), 0.99, 1.0);
+    }
+
+    /// <summary>
+    /// A lens calibrated on two formats matches its name twice: the choice is refused as
+    /// ambiguous, the list names both calibrations, and the format word picks one. The written
+    /// file then says which calibration it came from.
+    /// </summary>
+    [Fact]
+    public void ALensCalibratedOnTwoFormatsIsAmbiguousByName_AndTheFormatWordPicksOne()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats: true);
+        string reference = ws.WriteFile("ref.fit", Reference());
+
+        var ambiguous = new SyntheticRequest { LensText = "Aspherical", Source = ProfileSource.Lensfun };
+        var refused = SyntheticRun.Execute(reference, ambiguous, sources, null, 2.8, null, new StringWriter());
+        Assert.True(refused.Refused);
+        Assert.True(refused.RefusedChoice);
+        Assert.Contains("calibrat pe APS-C Canon 1.61", refused.Refusal);
+        Assert.Contains("calibrat pe full frame 1", refused.Refusal);
+
+        var req = new SyntheticRequest { LensText = "Aspherical full", Source = ProfileSource.Lensfun };
+        var sw = new StringWriter();
+        var run = SyntheticRun.Execute(reference, req, sources, null, 2.8, null, sw);
+        Assert.False(run.Refused, run.Refusal);
+        Assert.Equal("full frame 1", req.Lens.Calibration);
+        Assert.Equal(1.0, run.Result.Profile.Model.CropFactor, 9);
+        Assert.Contains("[Canon EF / Nikon F AF, calibrat pe full frame 1]  sursa: lensfun", sw.ToString());
+        Assert.Contains(SyntheticRun.History(run, reference), h => h.Contains("calibrat pe full frame 1"));
     }
 
     [Fact]

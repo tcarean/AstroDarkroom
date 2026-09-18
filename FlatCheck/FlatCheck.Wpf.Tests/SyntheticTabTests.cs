@@ -28,10 +28,10 @@ namespace FlatCheck.Wpf.Tests;
 /// </summary>
 public class SyntheticTabTests
 {
-    static (SyntheticTabViewModel Vm, TempWorkspace Ws) Attached(SessionFixture f, Func<string, bool>? confirm = null)
+    static (SyntheticTabViewModel Vm, TempWorkspace Ws) Attached(SessionFixture f, Func<string, bool>? confirm = null, bool tokinaOnTwoFormats = false)
     {
         var ws = new TempWorkspace();
-        var sources = LensProfileTestData.Sources(ws);
+        var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats);
         var vm = new SyntheticTabViewModel(confirm, () => sources);
         vm.Attach(f.Session, CancellationToken.None);
         return (vm, ws);
@@ -255,6 +255,36 @@ public class SyntheticTabTests
         Assert.NotNull(vm.CompareMap);
         Assert.NotEmpty(vm.MapLegend);
         Assert.Contains("COMPARATIE", vm.Report);
+    }
+
+    /// <summary>
+    /// The list shows, beside the mount, the format a lensfun profile was calibrated on, and a
+    /// lens calibrated on two formats is two rows with the same label; the search finds one of
+    /// them by the format word. Adobe rows show the mount alone.
+    /// </summary>
+    [Fact]
+    public async Task ALensCalibratedOnTwoFormatsIsTwoRows_ToldApartByTheCalibration()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, tokinaOnTwoFormats: true);
+        using (ws)
+        {
+            await vm.Pending;
+            Assert.Equal(4, vm.Lenses.Count);                                // two Adobe mounts, two lensfun calibrations
+            var lensfun = vm.Lenses.Where(r => r.SourceLabel == "lensfun").ToList();
+            Assert.Equal(2, lensfun.Count);
+            Assert.Equal(lensfun[0].Label, lensfun[1].Label);
+            Assert.Equal(new[] { "Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61", "Canon EF / Nikon F AF, calibrat pe full frame 1" },
+                         lensfun.Select(r => r.Where).OrderBy(w => w));
+            Assert.All(vm.Lenses.Where(r => r.SourceLabel == "Adobe"), r => Assert.DoesNotContain("calibrat", r.Where));
+
+            vm.Search = "aspherical full";
+            var ff = Assert.Single(vm.Lenses);
+            Assert.Equal("full frame 1", ff.Choice.Calibration);
+            vm.SelectedLens = ff;
+            await vm.FormatPending;
+            Assert.Contains("profil calibrat pe full frame (crop 1)", vm.FormatNote);           // the profile's format, from the chosen calibration
+        }
     }
 
     [Fact]

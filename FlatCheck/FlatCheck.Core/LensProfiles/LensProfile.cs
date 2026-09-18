@@ -46,14 +46,38 @@ namespace FlatCheck
 {
     internal enum ProfileSource { Adobe, Lensfun }
 
-    /// <summary>Identitatea unui obiectiv intr-o sursa: ce se alege din lista.</summary>
-    internal sealed record LensChoice(ProfileSource Source, string Maker, string Name, string Mount)
+    /// <summary>
+    /// Identitatea unui obiectiv intr-o sursa: ce se alege din lista. <paramref name="Calibration"/>
+    /// e formatul senzorului pe care a fost calibrat profilul ("APS-C 1.528", "full frame 1"),
+    /// si face parte din identitate: baza lensfun tine acelasi obiectiv, pe aceeasi montura, de
+    /// doua ori cand doi oameni l-au calibrat pe corpuri de format diferit - 20 din 692 in copia
+    /// livrata, printre ele Nikkor 35 f/1.8G DX, a carui intrare "media APS-C" da 0.19 stopuri in
+    /// coltul DX la f/2.8 si intrarea D780 0.51, langa Adobe 0.61. Cu cheia fara crop cele doua
+    /// se contopeau, Nearest lua prima din fisier, si calibrarea buna nu ajungea niciodata pe
+    /// ecran. Eticheta se pune pe TOATE obiectivele lensfun, nu doar pe cele dublate: un nume
+    /// care s-ar schimba cand baza primeste a doua intrare ar strica textul din --lens. La
+    /// Adobe ramane goala: corpul de calibrare e deja in montura ("NIKON D90"), iar SFF-ul sta
+    /// in fisier, nu in numele lui, deci n-ar putea intra in lista incarcata lenes.
+    /// </summary>
+    internal sealed record LensChoice(ProfileSource Source, string Maker, string Name, string Mount, string Calibration = "")
     {
-        internal string Key => $"{Source}|{Maker}|{Name}|{Mount}";
+        internal string Key => $"{Source}|{Maker}|{Name}|{Mount}" + (HasCalibration ? $"|{Calibration}" : "");
 
         internal string SourceLabel => Source == ProfileSource.Adobe ? "Adobe" : "lensfun";
 
-        public override string ToString() => $"{Name} [{Mount}] ({SourceLabel})";
+        internal bool HasCalibration => !string.IsNullOrEmpty(Calibration);
+
+        /// <summary>Montura, plus calibrarea cand se stie: "Nikon F AF, calibrat pe full frame 1".</summary>
+        internal string Where => HasCalibration ? $"{Mount}, calibrat pe {Calibration}" : Mount;
+
+        /// <summary>Numele, plus calibrarea cand se stie - pentru propozitii care numesc profilul ales.</summary>
+        internal string Title => HasCalibration ? $"{Name} (calibrat pe {Calibration})" : Name;
+
+        /// <summary>"APS-C 1.528", "full frame 1", "format neobisnuit 1.37": formatul nominal si crop-ul exact.</summary>
+        internal static string CalibrationLabel(double crop)
+            => $"{SensorFormats.LabelOf(crop)} {crop.ToString("0.###", CultureInfo.InvariantCulture)}";
+
+        public override string ToString() => $"{Name} [{Where}] ({SourceLabel})";
     }
 
     /// <summary>
@@ -129,7 +153,11 @@ namespace FlatCheck
         internal readonly IReadOnlyList<long> LensIds;
         internal readonly double FocalMm;
         internal readonly double FStop;
-        /// <summary>Distanta de focalizare in metri; NaN cand profilul n-o da.</summary>
+        /// <summary>
+        /// Distanta de focalizare in metri; NaN cand profilul n-o da - un Adobe fara
+        /// FocusDistance, sau o pereche lensfun 10 / 1000 m cu aceiasi coeficienti
+        /// (LensfunReader.CollapseCopiedDistances), care e "o masuratoare, distanta nescrisa".
+        /// </summary>
         internal readonly double DistanceM;
         internal readonly VignettingModel Model;
         internal readonly string File;
@@ -150,9 +178,12 @@ namespace FlatCheck
         internal LensProfile WithLens(LensChoice lens)
             => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File);
 
+        internal const string DistanceUnspecified = "distanta nespecificata";
+
+        /// <summary>"20 mm, f/2.8, infinit" / ", 1.51 m" / ", distanta nespecificata" (NaN: profilul n-o spune).</summary>
         internal string Settings
             => $"{FocalMm.ToString("0.#", CultureInfo.InvariantCulture)} mm, f/{FStop.ToString("0.0", CultureInfo.InvariantCulture)}"
-             + (double.IsNaN(DistanceM) ? "" : DistanceM >= 1000 ? ", infinit" : $", {DistanceM.ToString("0.##", CultureInfo.InvariantCulture)} m");
+             + (double.IsNaN(DistanceM) ? ", " + DistanceUnspecified : DistanceM >= 1000 ? ", infinit" : $", {DistanceM.ToString("0.##", CultureInfo.InvariantCulture)} m");
     }
 
     /// <summary>Un fisier Adobe neparsat inca: ce se stie din numele si folderul lui.</summary>
@@ -226,9 +257,10 @@ namespace FlatCheck
                 .OrderBy(l => l.Source).ThenBy(l => l.Maker).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList();
 
         /// <summary>
-        /// Obiectivele al caror nume, producator sau montura contine TOATE cuvintele cautate
-        /// (si aliasurile, pentru profilele deja parsate), fara sa conteze majusculele; textul
-        /// gol le da pe toate. Optional doar dintr-o sursa.
+        /// Obiectivele al caror nume, producator, montura sau calibrare contine TOATE cuvintele
+        /// cautate (si aliasurile, pentru profilele deja parsate), fara sa conteze majusculele;
+        /// textul gol le da pe toate. Optional doar dintr-o sursa. Calibrarea e in cautare ca
+        /// "Nikkor 35mm full" sa aleaga una din cele doua intrari lensfun ale aceluiasi obiectiv.
         /// </summary>
         internal IReadOnlyList<LensChoice> Search(string text, ProfileSource? source = null)
         {
@@ -237,7 +269,7 @@ namespace FlatCheck
             foreach (LensChoice lens in Lenses)
             {
                 if (source.HasValue && lens.Source != source.Value) continue;
-                string haystack = lens.Name + " " + lens.Maker + " " + lens.Mount + " "
+                string haystack = lens.Name + " " + lens.Maker + " " + lens.Mount + " " + lens.Calibration + " "
                                 + string.Join(" ", Profiles.Where(p => p.Lens == lens).SelectMany(p => p.Aliases).Distinct());
                 if (words.All(w => haystack.Contains(w, StringComparison.OrdinalIgnoreCase)))
                     hits.Add(lens);

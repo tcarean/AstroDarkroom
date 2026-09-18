@@ -389,9 +389,9 @@ public class StructureTabTests
     };
 
     /// <summary>The tab with hand-made profile sources and a fabricated raw in place of the file in flats/.</summary>
-    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithProfiles(SessionFixture f, TempWorkspace ws)
+    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithProfiles(SessionFixture f, TempWorkspace ws, bool tokinaOnTwoFormats = false)
     {
-        var sources = LensProfileTestData.Sources(ws);
+        var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats);
         var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
         await vm.RunAsync(f.Session, CancellationToken.None);
         return (vm, sources);
@@ -437,6 +437,30 @@ public class StructureTabTests
             new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
         RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
         Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>
+    /// A lensfun lens calibrated on two formats is two rows in the table, with the same name
+    /// and the calibration format beside the mount, so the user can tell which one the master
+    /// agrees with; an Adobe row shows the mount alone.
+    /// </summary>
+    [Fact]
+    public async Task ALensfunLensCalibratedOnTwoFormatsIsTwoRowsInTheTable()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws, tokinaOnTwoFormats: true);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(3, vm.ProfileRows.Count);
+        var lensfun = vm.ProfileRows.Where(r => r.Source == "lensfun").ToList();
+        Assert.Equal(2, lensfun.Count);
+        Assert.Equal(lensfun[0].Lens, lensfun[1].Lens);
+        Assert.Contains(lensfun, r => r.Where == "Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61");
+        Assert.Contains(lensfun, r => r.Where == "Canon EF / Nikon F AF, calibrat pe full frame 1");
+        Assert.NotEqual(lensfun[0].Depth, lensfun[1].Depth);
+        Assert.Equal("NIKON CORPORATION", vm.ProfileRows.Single(r => r.Source == "Adobe").Where);
+        Assert.Contains("calibrat pe", vm.Report);
     }
 
     /// <summary>The fixture master is deeper than the model: shape PERFECT, depth worse, and the depth carries the verdict and the advice.</summary>

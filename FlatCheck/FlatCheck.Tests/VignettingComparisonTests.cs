@@ -59,9 +59,9 @@ public class VignettingComparisonTests
         return img;
     }
 
-    static (StructureResult Structure, ShotIdentity Shot, ProfileSources Sources) Setup(TempWorkspace ws, double power = 1.0, bool withRaw = true)
+    static (StructureResult Structure, ShotIdentity Shot, ProfileSources Sources) Setup(TempWorkspace ws, double power = 1.0, bool withRaw = true, bool tokinaOnTwoFormats = false)
     {
-        var sources = LensProfileTestData.Sources(ws);
+        var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats);
         var r = StructureAnalyzer.Analyze(ModelFlat(sources, power));
         var shot = LensIdentification.Identify(Master(), withRaw ? Raw() : null, sources, rawName: "DSC_0001.NEF");
         return (r, shot, sources);
@@ -120,6 +120,36 @@ public class VignettingComparisonTests
         Assert.True(Math.Abs(other.DiffStops) > Math.Abs(c.Nearest.DiffStops));
         Assert.True(Stats.Severity(other.Verdict) >= Stats.Severity(c.Nearest.Verdict));
         Assert.Equal(c.Nearest.Verdict, c.Verdict);
+    }
+
+    /// <summary>
+    /// The raw's candidates take in every calibration of a lensfun lens of the right maker and
+    /// range, so a lens calibrated on two formats is two rows - same name, different "where",
+    /// different depth - and the nearest is chosen among all of them. With one key for both
+    /// the second calibration never reached the table.
+    /// </summary>
+    [Fact]
+    public void ALensfunLensCalibratedOnTwoFormatsIsTwoRows()
+    {
+        using var ws = new TempWorkspace();
+        var (r, shot, sources) = Setup(ws, tokinaOnTwoFormats: true);
+
+        var c = VignettingComparer.Analyze(r, shot, sources.Catalog);
+
+        Assert.True(c.Compared);
+        Assert.Equal(3, c.Profiles.Count);                             // the Nikon Adobe file, and the lensfun entry twice
+        var lensfun = c.Profiles.Where(p => p.Profile.Lens.Source == ProfileSource.Lensfun).ToList();
+        Assert.Equal(2, lensfun.Count);
+        Assert.Equal(lensfun[0].Profile.Lens.Name, lensfun[1].Profile.Lens.Name);
+        Assert.NotEqual(lensfun[0].Profile.Lens.Where, lensfun[1].Profile.Lens.Where);
+        Assert.NotEqual(lensfun[0].Profile.Model.CropFactor, lensfun[1].Profile.Model.CropFactor);
+        Assert.True(Math.Abs(lensfun[0].CornerStops - lensfun[1].CornerStops) > 0.1, "two calibrations, two depths");
+        Assert.Equal(ProfileSource.Adobe, c.Nearest.Profile.Lens.Source);   // the master IS the Adobe model
+
+        var rows = StructureReport.ProfileRows(c);
+        Assert.Equal(3, rows.Select(x => x.Key).Distinct().Count());
+        Assert.Contains(rows, x => x.Where.EndsWith("calibrat pe full frame 1"));
+        Assert.Contains(rows, x => x.Where.EndsWith("calibrat pe APS-C Canon 1.61"));
     }
 
     [Fact]

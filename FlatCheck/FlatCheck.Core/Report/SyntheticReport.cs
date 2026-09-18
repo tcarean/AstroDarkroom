@@ -37,7 +37,7 @@ namespace FlatCheck
             LensProfile p = r.Profile;
             w.WriteLine($"\n=== FLAT SINTETIC din profilul obiectivului ===");
             w.WriteLine($"    cadru de referinta : {referencePath}  ({r.Width} x {r.Height})");
-            w.WriteLine($"    obiectiv           : {p.Lens.Name}  [{p.Lens.Mount}]  sursa: {p.Lens.SourceLabel}");
+            w.WriteLine($"    obiectiv           : {p.Lens.Name}  [{p.Lens.Where}]  sursa: {p.Lens.SourceLabel}");
             w.WriteLine($"    profil folosit     : {p.Settings}   (cerut: {Requested(req)})");
             w.WriteLine($"    model              : {p.Model.Describe()}");
             w.WriteLine($"    fisier profil      : {Path.GetFileName(p.File)}");
@@ -217,7 +217,7 @@ namespace FlatCheck
             bool details = lenses.Count <= ListDetailsMax;
             foreach (LensChoice l in lenses)
             {
-                w.WriteLine($"    {l.SourceLabel,-7} {l.Name}  [{l.Mount}]");
+                w.WriteLine($"    {l.SourceLabel,-7} {l.Name}  [{l.Where}]");
                 if (!details) continue;
                 var ps = catalog.ProfilesOf(l);
                 var focals = ps.Select(p => p.FocalMm).Distinct().OrderBy(f => f).ToList();

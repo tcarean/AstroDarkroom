@@ -25,11 +25,11 @@ namespace FlatCheck
 {
     /// <summary>
     /// Un rand al tabelului "vignetarea fata de profilul obiectivului", gata formatat: sursa
-    /// (Adobe / lensfun), obiectivul, montura, profilul folosit, adancimea lui, diferenta fata
+    /// (Adobe / lensfun), obiectivul, montura si calibrarea (Where), profilul folosit, adancimea lui, diferenta fata
     /// de master, eroarea in colt si verdictul; IsNearest pe cel care da verdictul, Note cu
     /// formatul de calibrare fata de senzor (IsWarning cand e o extrapolare mare).
     /// </summary>
-    internal sealed record ProfileRow(string Key, string Source, string Lens, string Mount, string Profile,
+    internal sealed record ProfileRow(string Key, string Source, string Lens, string Where, string Profile,
                                       string Depth, string Diff, string Error, string Verdict,
                                       bool IsNearest, string Note, bool IsWarning);
 
@@ -120,7 +120,7 @@ namespace FlatCheck
             w.WriteLine($"    master                  : {MasterDepth(c)}");
             foreach (ProfileRow row in ProfileRows(c))
             {
-                w.WriteLine($"    {row.Source,-7} {row.Lens}  [{row.Mount}]");
+                w.WriteLine($"    {row.Source,-7} {row.Lens}  [{row.Where}]");
                 w.WriteLine($"        profil {row.Profile,-24}: {row.Depth}   diferenta {row.Diff} = {row.Error} [{row.Verdict}]"
                           + (row.IsNearest ? "  <- cel mai apropiat, da verdictul" : ""));
                 if (row.IsWarning) w.WriteLine("        " + row.Note);
@@ -168,7 +168,7 @@ namespace FlatCheck
                 LensProfile p = d.Profile;
                 bool warning = d.Extrapolation > SyntheticFlatResult.SmallExtrapolation;
                 string note = SyntheticReport.FormatMatch(p.Model, d.CameraCrop, d.Extrapolation);
-                rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Mount, p.Settings,
+                rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Where, p.Settings,
                     Depth(d.CornerStops), $"{d.DiffStops:+0.00;-0.00} stopuri", $"{d.ErrorPct:F1} %", d.Verdict,
                     ReferenceEquals(d, c.Nearest), note, warning));
             }
@@ -182,7 +182,7 @@ namespace FlatCheck
         /// </summary>
         internal static string ComparisonSummary(VignettingComparison c)
         {
-            string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Name}";
+            string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Title}";
             string verdict = $"verdictul comparatiei: {c.Verdict} - al celui mai apropiat profil ({who}), "
                            + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul";
             string spread = c.Profiles.Count > 1
@@ -252,7 +252,7 @@ namespace FlatCheck
         internal static string DepthDetail(StructureOutcome o)
         {
             ProfileDepth n = o.Profiles.Nearest;
-            return $"{o.Profiles.Verdict} - {n.DiffStops:+0.00;-0.00} stopuri fata de {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Name} = {n.ErrorPct:F1} % eroare in coltul light-ului calibrat";
+            return $"{o.Profiles.Verdict} - {n.DiffStops:+0.00;-0.00} stopuri fata de {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Title} = {n.ErrorPct:F1} % eroare in coltul light-ului calibrat";
         }
 
         internal const string WorseOfBoth = "Cel mai rau dintre ele.";
