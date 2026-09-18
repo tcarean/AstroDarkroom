@@ -112,15 +112,49 @@ namespace FlatCheck
 
             // Scala null, nu una inventata: un FITS chiar nu poarta nivelurile ADU, iar
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
-            double focal = HDbl(hdr, "FOCALLEN", 0.0);
-            string camera = HStr(hdr, "INSTRUME", null);
-            return new LoadedFrame
+            var f = new LoadedFrame
             {
                 Image = img, Header = hdr, Scale = null, Cfa = cfa,
                 Cards = cards, Planes = planes, Bitpix = bitpix,
-                FocalMm = focal > 0 ? focal : null,
-                Camera = string.IsNullOrWhiteSpace(camera) ? null : camera.Trim(),
             };
+            FillShootingInfo(f, hdr);
+            return f;
+        }
+
+        /// <summary>
+        /// Doar ce spune headerul: focala, aparatul, planurile, BITPIX, ordinea CFA. Fara
+        /// pixeli si fara cardurile brute (LoadHeader nu le pastreaza; cine scrie un fisier
+        /// inapoi incarca oricum tot). Un fisier care nu incepe cu SIMPLE da un header gol,
+        /// nu o eroare - la fel ca LoadHeader.
+        /// </summary>
+        public LoadedFrame LoadInfo(string path)
+        {
+            IReadOnlyDictionary<string, string> hdr = LoadHeader(path);
+            int h = HInt(hdr, "NAXIS2", 0);
+            var f = new LoadedFrame
+            {
+                Image = null, Header = hdr, Scale = null,
+                Cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
+                    ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
+                    ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), h),
+                Planes = HInt(hdr, "NAXIS", 2) >= 3 ? Math.Max(1, HInt(hdr, "NAXIS3", 1)) : 1,
+                Bitpix = HInt(hdr, "BITPIX", 0),
+            };
+            FillShootingInfo(f, hdr);
+            return f;
+        }
+
+        /// <summary>
+        /// Ce stie un header FITS despre fotografiere: FOCALLEN si INSTRUME. Niciun
+        /// f-numar - Siril nu-l scrie - si niciun obiectiv. Un singur loc pentru Load si
+        /// LoadInfo, ca cele doua sa nu citeasca headerul diferit.
+        /// </summary>
+        static void FillShootingInfo(LoadedFrame f, IReadOnlyDictionary<string, string> hdr)
+        {
+            double focal = HDbl(hdr, "FOCALLEN", 0.0);
+            string camera = HStr(hdr, "INSTRUME", null);
+            f.FocalMm = focal > 0 ? focal : null;
+            f.Camera = string.IsNullOrWhiteSpace(camera) ? null : camera.Trim();
         }
 
         // ========================================================= I/O FITS

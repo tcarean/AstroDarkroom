@@ -210,6 +210,44 @@ public class WindowSmokeTests
     }
 
     /// <summary>
+    /// Tabul de structura cu comparatia vignetarii fata de profilele obiectivului - randurile
+    /// pe profil, pastilele, detaliul verdictului - si in starea in care nu s-a putut compara.
+    /// Rezultatul vine prin Populate, pe surse de profile facute de mana.
+    /// </summary>
+    [Fact]
+    public void TheStructureTabRendersTheProfileComparisonAndTheGap()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = StructureAnalyzer.Analyze(TestImages.From(256, 256, FitsTestData.Radial(256, 256)));
+        var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 20, Camera = "Nikon D3300" };
+        var raw = new LoadedFrame
+        {
+            Header = new Dictionary<string, string>(), FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
+            NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+        };
+        StructureOutcome compared = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
+        StructureOutcome gap = StructureRun.Compare(r, master, new StructureQuery { Sources = sources });
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+
+            var vm = new StructureTabViewModel();
+            vm.Populate(compared);
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-profil");
+            Assert.True(vm.HasProfileRows);
+
+            vm.Populate(new StructureOutcome(r, null, null, null), gap);
+            Render(new StructureView { DataContext = vm }, h: 1800, name: "tab-structura-fara-raw");
+            Assert.False(vm.HasProfileRows);
+            Assert.NotEmpty(vm.ProfileGap);
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+    }
+
+    /// <summary>
     /// Tabul de netezire CU rezultat - ambele harti, atentionarea, cele doua baterii -
     /// si in starea de refuz (cub de culoare). Rezultatul vine prin Populate, fara
     /// fisier scris, ca la tabul de histograma.

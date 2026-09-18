@@ -29,6 +29,74 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FlatCheck.Wpf">
 
+  <UserControl.Resources>
+    <!-- Un rand din tabelul "vignetarea fata de profilul obiectivului": sursa, obiectivul si
+         montura pe primul rand; profilul folosit, adancimea lui, diferenta fata de master si
+         pastila pe al doilea; nota (formatul de calibrare fata de senzor) pe al treilea, DOAR
+         in coloana numelui, pe cate randuri ii trebuie - intinsa sub cifre arata ca o
+         continuare a lor, si utilizatorul a spus ca "arata dubios". Randul care da
+         verdictul e ingrosat, ca reziduul in tabelul testelor. Local, nu in Dark.xaml:
+         singurul lui consumator e tabul asta. -->
+    <DataTemplate x:Key="LensProfileRowTemplate">
+      <Grid Margin="0,0,0,12">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="Auto" MinWidth="104" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Grid.ColumnSpan="4">
+          <Border DockPanel.Dock="Left" Background="{StaticResource PanelBg2}" CornerRadius="3"
+                  Padding="6,1" Margin="0,0,10,0" VerticalAlignment="Center">
+            <TextBlock Style="{StaticResource Faint}" Text="{Binding Source}" />
+          </Border>
+          <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0"
+                     Text="{Binding Mount}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Lens}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Style="{StaticResource Faint}" Margin="0,3,0,0"
+                   Text="{Binding Profile}" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Style="{StaticResource Number}" Margin="12,3,0,0"
+                   Text="{Binding Depth}" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="1" Grid.Column="2" Style="{StaticResource Number}" Margin="12,3,0,0"
+                   Text="{Binding DiffAndError}" VerticalAlignment="Center" />
+        <ContentControl Grid.Row="1" Grid.Column="3" Margin="14,3,0,0" HorizontalAlignment="Left"
+                        Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}" />
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,3,12,0"
+                   TextWrapping="Wrap" Text="{Binding Note}"
+                   Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock" BasedOn="{StaticResource Faint}">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                  <Setter Property="Foreground" Value="#E3B341" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+
+        <Grid.Style>
+          <Style TargetType="Grid">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsNearest}" Value="True">
+                <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </Grid.Style>
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
   <Grid>
     <local:MessagePanel Margin="20" />
 
@@ -63,6 +131,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                              FontSize="16" FontWeight="Bold" />
                 </Border>
               </StackPanel>
+              <!-- forma si adancimea, cand s-a comparat cu profilul: spune care din cele doua
+                   a dat verdictul, fiindca pastila singura nu poate -->
+              <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap"
+                         Text="{Binding VerdictDetail}"
+                         Visibility="{Binding VerdictDetail, Converter={StaticResource NotNullToVis}}" />
               <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding Advice}" />
               <!-- Atentionarea pentru o pata compacta. Galben, nu rosu, si nu in pastila
                    de verdict: nu spune ca flat-ul e prost, intreaba la ce il folosesti. -->
@@ -78,6 +151,42 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <Border Style="{StaticResource Card}">
             <ItemsControl ItemsSource="{Binding Tests}"
                           ItemTemplate="{StaticResource MetricRowTemplate}" />
+          </Border>
+
+          <!-- Al saselea test, de alt fel: adancimea vignetarii fata de profilele publicate
+               ale obiectivului, pe scara in stopuri. Cele cinci de mai sus sunt oarbe la un
+               exces radial; asta e singurul loc unde se vede. Titlul vine din nucleu. -->
+          <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="{Binding ProfilesHeading}" />
+          <Border Style="{StaticResource Card}">
+            <StackPanel>
+              <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding ProfileGap}"
+                         Visibility="{Binding ProfileGap, Converter={StaticResource NotNullToVis}}" />
+              <StackPanel Visibility="{Binding HasProfileRows, Converter={StaticResource BoolToVis}}">
+                <Grid Margin="0,0,0,12">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="masterul fotografiat" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <TextBlock Grid.Column="1" Style="{StaticResource Number}" Margin="12,0,0,0"
+                             Text="{Binding ProfileMaster}" VerticalAlignment="Center" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding ProfileRows}"
+                              ItemTemplate="{StaticResource LensProfileRowTemplate}" />
+                <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"
+                           Text="{Binding ProfileSummary}" />
+                <!-- Scara adancimii: aceleasi patru benzi ca scara de reziduu de mai jos, in
+                     stopuri, cu banda verdictului marcata - si propozitia care spune ca e
+                     aceeasi scara, tradusa, nu un prag nou. -->
+                <TextBlock Style="{StaticResource Faint}" Margin="0,12,0,4" Text="SCARA ADANCIMII (in stopuri)" />
+                <ItemsControl ItemsSource="{Binding ProfileScale}"
+                              ItemTemplate="{StaticResource ScaleRowTemplate}" />
+                <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,4,0,0"
+                           Text="{Binding ProfileScaleNote}" />
+                <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,10,0,0"
+                           Text="{Binding ProfileNote}" />
+              </StackPanel>
+            </StackPanel>
           </Border>
 
           <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8"

@@ -120,5 +120,18 @@ namespace FlatCheck
 
         /// <summary>Cand nu-ti trebuie decat pixelii - structura, --ratio, seria de --light.</summary>
         internal static Img LoadImage(string path) => Load(path).Image;
+
+        /// <summary>
+        /// Cand nu-ti trebuie decat metadatele - identificarea obiectivului, preumplerea
+        /// tabului Sintetic. Aceeasi dispecerizare ca <see cref="Load"/>, inclusiv caderea
+        /// pe FITS, ca cele doua sa nu poata ajunge la cititoare diferite pentru acelasi
+        /// fisier. <see cref="LoadedFrame.Image"/> e null.
+        /// </summary>
+        internal static LoadedFrame LoadInfo(string path)
+        {
+            foreach (IFrameReader r in Readers)
+                if (r.Handles(path)) return r.LoadInfo(path);
+            return Fits.LoadInfo(path);
+        }
     }
 }

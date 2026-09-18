@@ -776,9 +776,54 @@ public class GoldenOutputTests
 
     // ---------------------------------------------------------------- synthetic / against
 
-    static string Reference(TempWorkspace ws, string name = "ref.fit") =>
-        ws.WriteFile(name, FitsTestData.BuildFits(240, 160, FitsTestData.Radial(240, 160),
+    static string Reference(TempWorkspace ws, string name = "ref.fit", double k = 0.45) =>
+        ws.WriteFile(name, FitsTestData.BuildFits(240, 160, FitsTestData.Radial(240, 160, k: k),
             extraCards: new[] { FitsTestData.Card("FOCALLEN", "20.0"), FitsTestData.Card("INSTRUME", "'Nikon D3300'"), FitsTestData.Card("BAYERPAT", "'RGGB'") }));
+
+    /// <summary>
+    /// Structure with --lens: the five tests as always, then the master's vignetting against
+    /// every matching profile on the camera's mount (the Nikon Adobe file and the lensfun
+    /// entry - not the Canon file), the verdict of the nearest one, and the combined verdict.
+    /// The fixture is made deeper than the model (k = 0.6: 1.12 stops against 0.66-0.85): BUN
+    /// on shape (the half-pixel corner floor of a 240x160 raster, known issue 5), REFA on
+    /// depth, exit 3 - the tablet case, the one the five tests cannot see, with the advice
+    /// reading the plus sign as a source that falls off with angle.
+    /// </summary>
+    [Fact]
+    public void Structure_WithALens_ComparesTheVignettingWithTheProfilesAndTheVerdictFollows()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws, k: 0.6);
+
+        var (output, exit) = RunCli(ws, reference, "--lens", "Tokina", "--fstop", "2.8", "--profiles", profiles, "-o", ws.PathTo("out.png"));
+
+        AssertGolden("structure_with_profiles", output);
+        Assert.Equal(3, exit);
+        Assert.Contains("forma     : BUN", output);
+        Assert.Contains("adancimea : REFA", output);
+        Assert.Contains("VERDICT: REFA", output);
+        Assert.Contains("MAI MULT", output);
+    }
+
+    /// <summary>
+    /// The same without an f-stop: nothing to choose a profile with, so the block says so and
+    /// the verdict and exit code are the five tests' own.
+    /// </summary>
+    [Fact]
+    public void Structure_WithALensButNoFStop_ExplainsAndKeepsTheFiveTestVerdict()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+
+        var (output, exit) = RunCli(ws, reference, "--lens", "Tokina", "--profiles", profiles, "-o", ws.PathTo("out.png"));
+
+        AssertGolden("structure_lens_no_fstop", output);
+        Assert.Equal(0, exit);
+        Assert.Contains("nu se poate compara", output);
+        Assert.Contains("VERDICT: PERFECT", output);
+    }
 
     /// <summary>
     /// The whole synthetic report: which profile, requested vs used, the depth table, the

@@ -25,7 +25,9 @@
 // AgainstRun. Ce face in plus fata de consola e PREUMPLEREA: focala si aparatul din
 // headerul masterului (doar headerul, fara cei 96 MB), diafragma si ID-ul de obiectiv
 // Nikon dintr-un raw din flats/, cand exista - si obiectivul ales din lista dupa acel ID.
-// Toate campurile raman editabile; ce e scris de om bate ce s-a citit din fisiere.
+// Regula e a nucleului (LensIdentification), aceeasi pe care o aplica tabul Structura si
+// consola; aici se citesc doar metadatele (ImageLoader.LoadInfo, niciun pixel) si se pun
+// valorile in campuri. Toate campurile raman editabile; ce e scris de om bate ce s-a citit.
 //
 // Catalogul se incarca o singura data, in fundal, la prima deschidere de sesiune: sute de
 // fisiere .lcp de parsat inseamna o secunda-doua, care nu trebuie sa tina fereastra.
@@ -63,9 +65,10 @@ namespace FlatCheck.Wpf
         CancellationToken _ct;
         Func<Task> _waitIdle;
         readonly Func<string, bool> _confirm;
-        readonly Func<ProfileSources> _locate;
+        readonly ProfileCatalog _catalog;
+        /// <summary>Metadatele unui fisier fara pixeli; in teste, un cadru fabricat in locul unui raw.</summary>
+        readonly Func<string, LoadedFrame> _loadInfo;
         ProfileSources _sources;
-        Task<ProfileSources> _loading;
 
         string _source = "", _target = "";
         bool _canRun;
@@ -90,10 +93,16 @@ namespace FlatCheck.Wpf
         Img _compareResidual;
         readonly Dictionary<MapScaleOption, byte[]> _mapCache = new();
 
-        internal SyntheticTabViewModel(Func<string, bool> confirm = null, Func<ProfileSources> locate = null)
+        internal SyntheticTabViewModel(Func<string, bool> confirm = null, Func<ProfileSources> locate = null,
+                                       Func<string, LoadedFrame> loadInfo = null)
+            : this(confirm, new ProfileCatalog(locate), loadInfo) { }
+
+        /// <param name="catalog">Catalogul comun al ferestrei (MainViewModel il da si tabului Structura).</param>
+        internal SyntheticTabViewModel(Func<string, bool> confirm, ProfileCatalog catalog, Func<string, LoadedFrame> loadInfo)
         {
             _confirm = confirm ?? (_ => true);
-            _locate = locate ?? ProfileLocator.Locate;
+            _catalog = catalog ?? new ProfileCatalog();
+            _loadInfo = loadInfo ?? ImageLoader.LoadInfo;
             Run = new RelayCommand(() => Pending = RunAsync(), () => CanRun && IsIdle && SelectedLens != null);
             Compare = new RelayCommand(() => Pending = CompareAsync(), () => CanCompare && IsIdle);
             MapScale.Changed += RefreshMap;
@@ -273,13 +282,8 @@ namespace FlatCheck.Wpf
             if (CanRun) Pending = PrefillAsync();
         }
 
-        /// <summary>Catalogul, incarcat o singura data, in fundal.</summary>
-        internal Task<ProfileSources> EnsureProfilesAsync()
-        {
-            if (_sources != null) return Task.FromResult(_sources);
-            _loading ??= Task.Run(() => _locate());
-            return _loading;
-        }
+        /// <summary>Catalogul comun, incarcat o singura data, in fundal.</summary>
+        internal Task<ProfileSources> EnsureProfilesAsync() => _catalog.EnsureAsync();
 
         /// <summary>
         /// Preumplerea: catalogul, apoi headerul masterului (FOCALLEN, INSTRUME) si, dupa ce
@@ -292,71 +296,60 @@ namespace FlatCheck.Wpf
             CancellationToken ct = _ct;
             if (session == null) return;
             string master = session.FlatMasterPath;
+            string rawPath = session.ReferenceRawPath;
             try
             {
                 _sources = await EnsureProfilesAsync().ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 ShowSources(_sources);
                 RefreshLenses();
+                ProfileSources sources = _sources;
 
-                var notes = new List<string>();
-                IReadOnlyDictionary<string, string> hdr = await Task.Run(() => FitsReader.LoadHeader(master), ct).ConfigureAwait(true);
+                // Metadatele, fara pixeli: headerul masterului si, cand exista, primul raw
+                // din flats/ - acelasi pe care il ia si tabul Structura. Identificarea e a
+                // nucleului; aici doar se pun valorile in campuri. Un raw pe care libraw
+                // nu-l deschide lasa diafragma goala si spune atat.
+                var (id, reference, rawError) = await Task.Run(() =>
+                {
+                    LoadedFrame reference = _loadInfo(master);
+                    LoadedFrame raw = null;
+                    string error = null;
+                    if (rawPath != null)
+                    {
+                        try { raw = _loadInfo(rawPath); }
+                        catch (Exception e) { error = $"{Path.GetFileName(rawPath)} nu s-a putut citi ({e.Message}); diafragma se scrie de mana"; }
+                    }
+                    return (LensIdentification.Identify(reference, raw, sources, rawName: LensIdentification.NameOf(rawPath)), reference, error);
+                }, ct).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
-                double focal = FitsReader.HDbl(hdr, "FOCALLEN", 0);
-                string camera = FitsReader.HStr(hdr, "INSTRUME", null);
-                _masterW = FitsReader.HInt(hdr, "NAXIS1", 0);
-                _masterH = FitsReader.HInt(hdr, "NAXIS2", 0);
-                if (focal > 0 && FocalText.Length == 0) { FocalText = focal.ToString("0.#", CultureInfo.InvariantCulture); notes.Add("focala din FOCALLEN"); }
+
+                var notes = new List<string>(id.Notes);
+                if (rawError != null) notes.Add(rawError);
+                _masterW = FitsReader.HInt(reference.Header, "NAXIS1", 0);
+                _masterH = FitsReader.HInt(reference.Header, "NAXIS2", 0);
+                if (id.FocalMm.HasValue && FocalText.Length == 0) FocalText = id.FocalMm.Value.ToString("0.#", CultureInfo.InvariantCulture);
+                if (id.FStop.HasValue && FStopText.Length == 0) FStopText = id.FStop.Value.ToString("0.0", CultureInfo.InvariantCulture);
                 if (CropText.Length == 0)
                 {
-                    double? crop = string.IsNullOrWhiteSpace(camera) ? null : _sources.Lensfun.CropOf(camera);
-                    if (crop.HasValue)
+                    if (id.Crop.HasValue && id.CropFromTable)
                     {
-                        _cropSource = SessionMessages.SyntheticCropFromTable(camera);
-                        CropText = crop.Value.ToString("0.###", CultureInfo.InvariantCulture);
-                        notes.Add($"crop din baza lensfun ({camera.Trim()})");
+                        _cropSource = SessionMessages.SyntheticCropFromTable(id.Camera);
+                        CropText = id.Crop.Value.ToString("0.###", CultureInfo.InvariantCulture);
                     }
-                    else CropNote = SessionMessages.SyntheticCropUnknown(camera);
+                    else CropNote = SessionMessages.SyntheticCropUnknown(id.Camera);
                 }
-
-                string raw = session.FlatFrames().FirstOrDefault(RawReader.IsRawPath);
-                LoadedFrame f = null;
-                if (raw != null)
+                if (id.HasRawLensId && SelectedLens == null)
                 {
-                    if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
-                    ct.ThrowIfCancellationRequested();
-                    // Un raw pe care libraw nu-l deschide lasa diafragma goala si spune atat;
-                    // focala si crop-ul din header raman.
-                    try { f = await Task.Run(() => ImageLoader.Load(raw), ct).ConfigureAwait(true); }
-                    catch (OperationCanceledException) { throw; }
-                    catch (Exception) { notes.Add($"{Path.GetFileName(raw)} nu s-a putut citi; diafragma se scrie de mana"); }
-                    ct.ThrowIfCancellationRequested();
-                }
-                if (f != null)
-                {
-                    if (f.FNumber.HasValue && FStopText.Length == 0) { FStopText = f.FNumber.Value.ToString("0.0", CultureInfo.InvariantCulture); notes.Add($"diafragma din {Path.GetFileName(raw)}"); }
-                    if (f.FocalMm.HasValue && FocalText.Length == 0) { FocalText = f.FocalMm.Value.ToString("0.#", CultureInfo.InvariantCulture); notes.Add("focala din raw"); }
-                    if (f.NikonLensId.HasValue && SelectedLens == null)
-                    {
-                        // Aceiasi candidati ca in consola (SyntheticRun.CandidatesFromRaw), apoi
-                        // montura aparatului din header, cand o stim; ce ramane se ofera.
-                        string maker = (camera ?? f.Camera ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-                        var hits = await Task.Run(() => SyntheticRun.CandidatesFromRaw(_sources.Catalog, f), ct).ConfigureAwait(true);
-                        var byMount = string.IsNullOrEmpty(maker) ? hits
-                            : hits.Where(h => (h.Mount + " " + h.Maker).Contains(maker, StringComparison.OrdinalIgnoreCase)).ToList();
-                        var offered = SyntheticRun.PreferCamera(byMount.Count > 0 ? byMount : hits, camera ?? f.Camera);
-                        string note = OfferCandidates(offered, SyntheticReport.RawLensLabel(f));
-                        if (note != null) notes.Add(note);
-                    }
+                    string note = OfferCandidates(id.Candidates, id.RawLensLabel);
+                    if (note != null) notes.Add(note);
                 }
                 PrefillNote = notes.Count == 0 ? "" : "preumplut: " + string.Join("; ", notes);
             }
             catch (OperationCanceledException) { }
             catch (Exception e)
             {
-                // Preumplerea e un confort, nu o analiza: un raw pe care libraw nu-l poate
-                // deschide sau un header ciudat lasa campurile goale si spune de ce. Un task
-                // de fundal care arunca ar dobori aplicatia.
+                // Preumplerea e un confort, nu o analiza: un header ciudat lasa campurile
+                // goale si spune de ce. Un task de fundal care arunca ar dobori aplicatia.
                 PrefillNote = "preumplerea a esuat: " + Describe(e);
             }
         }

@@ -114,9 +114,16 @@ namespace FlatCheck
             _ => 3,
         };
 
+        /// <summary>
+        /// Structura; cu --lens sau --raw si comparatia vignetarii cu profilele obiectivului,
+        /// iar verdictul (si codul de iesire) e cel combinat. Fara ele, exact ce era.
+        /// </summary>
         static string RunStructure(Options o, TextWriter w)
         {
-            var run = StructureRun.Execute(o.Image, w);
+            StructureQuery query = o.Lens != null || o.Raw != null
+                ? new StructureQuery { Sources = Sources(o), RawPath = o.Raw, LensText = o.Lens, Source = o.Source, Focal = o.Focal, FStop = o.FStop, Crop = o.Crop }
+                : null;
+            var run = StructureRun.Execute(o.Image, w, query);
             SaveMap(o.OutPng, run.Png, w);
             return run.Result.Verdict;
         }
@@ -282,6 +289,7 @@ namespace FlatCheck
         {
             w.WriteLine("Utilizare:");
             w.WriteLine("  flatcheck <flat.fit>                    # test structura");
+            w.WriteLine("  flatcheck <flat.fit> --raw <flat.NEF>   # idem, plus vignetarea fata de profilul obiectivului din raw");
             w.WriteLine("  flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180");
             w.WriteLine("  flatcheck <light.fit> --light           # test end-to-end, un cadru");
             w.WriteLine("  flatcheck <folder/> --light             # test end-to-end pe toata seria");
@@ -298,8 +306,11 @@ namespace FlatCheck
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
             w.WriteLine($"            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit {SmoothAnalyzer.DefaultScalePx:F0};");
             w.WriteLine("                         'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)");
-            w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic;");
-            w.WriteLine("                         focala si diafragma vin din raw sau din FOCALLEN cand nu le dai; crop-ul din baza lensfun)");
+            w.WriteLine("            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic");
+            w.WriteLine("                         si pt structura cu --lens/--raw; focala si diafragma vin din raw sau din FOCALLEN");
+            w.WriteLine("                         cand nu le dai; crop-ul din baza lensfun)");
+            w.WriteLine("            --lens <text> | --raw <fisier> (pt structura: compara vignetarea masterului cu profilele");
+            w.WriteLine("                         obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)");
             w.WriteLine();
             w.WriteLine("Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).");
             w.WriteLine("Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.");

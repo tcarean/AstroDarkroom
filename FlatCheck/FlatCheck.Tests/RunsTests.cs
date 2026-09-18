@@ -51,11 +51,11 @@ public class RunsTests
         var direct = StructureAnalyzer.Analyze(ImageLoader.LoadImage(path));
         var run = StructureRun.Execute(path, new StringWriter());
 
-        Assert.Equal(direct.ResidualPtpPct, run.Result.ResidualPtpPct, 12);
-        Assert.Equal(direct.CornerSpreadPct, run.Result.CornerSpreadPct, 12);
-        Assert.Equal(direct.AzimuthalMaxPct, run.Result.AzimuthalMaxPct, 12);
-        Assert.Equal(direct.TiltPct, run.Result.TiltPct, 12);
-        Assert.Equal(direct.Verdict, run.Result.Verdict);
+        Assert.Equal(direct.ResidualPtpPct, run.Result.Structure.ResidualPtpPct, 12);
+        Assert.Equal(direct.CornerSpreadPct, run.Result.Structure.CornerSpreadPct, 12);
+        Assert.Equal(direct.AzimuthalMaxPct, run.Result.Structure.AzimuthalMaxPct, 12);
+        Assert.Equal(direct.TiltPct, run.Result.Structure.TiltPct, 12);
+        Assert.Equal(direct.Verdict, run.Result.Structure.Verdict);
     }
 
     /// <summary>
@@ -89,7 +89,7 @@ public class RunsTests
         string png = ws.PathTo("map.png");
 
         var run = StructureRun.Execute(path, new StringWriter());
-        PngWriter.WriteResidualMap(png, run.Result.Residual);
+        PngWriter.WriteResidualMap(png, run.Result.Structure.Residual);
 
         Assert.Equal(File.ReadAllBytes(png), run.Png);
     }
@@ -102,8 +102,8 @@ public class RunsTests
 
         var img = PngDecoder.Decode(run.Png);
 
-        Assert.Equal(run.Result.Width, img.Width);
-        Assert.Equal(run.Result.Height, img.Height);
+        Assert.Equal(run.Result.Structure.Width, img.Width);
+        Assert.Equal(run.Result.Structure.Height, img.Height);
     }
 
     // ---------------------------------------------------------------- raport A/B

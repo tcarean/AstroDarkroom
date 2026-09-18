@@ -294,6 +294,14 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
+        /// Raw-ul de langa master din care se citesc diafragma si obiectivul - primul din
+        /// flats/, sau null cand nu e niciunul. O singura regula pentru tabul Sintetic
+        /// (preumplerea) si pentru tabul Structura (comparatia cu profilul), ca amandoua sa
+        /// vorbeasca despre acelasi fisier; regula insasi e in nucleu.
+        /// </summary>
+        internal string ReferenceRawPath => LensIdentification.FirstRaw(FlatFrames());
+
+        /// <summary>
         /// Ce listeaza tabul de histograma: masterul intai, DOAR daca exista; dupa el
         /// flat-ul netezit, DOAR daca exista - pe calea exacta pe care o scrie tabul
         /// Netezire, <see cref="SmoothedMasterPath"/>, nu dupa tipar; apoi cadrele din

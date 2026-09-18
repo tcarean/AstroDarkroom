@@ -2,6 +2,7 @@ flatcheck <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
 Utilizare:
   flatcheck <flat.fit>                    # test structura
+  flatcheck <flat.fit> --raw <flat.NEF>   # idem, plus vignetarea fata de profilul obiectivului din raw
   flatcheck <A.fit> --ratio <B.fit>       # atribuire prin rotatie 180
   flatcheck <light.fit> --light           # test end-to-end, un cadru
   flatcheck <folder/> --light             # test end-to-end pe toata seria
@@ -18,8 +19,11 @@ Utilizare:
             --fov <grade> (diagonala campului, daca headerul n-o da)
             --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit 300;
                          'auto' o propune din master si netezeste la ea, sau iese cu 2 fara fisier)
-            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic;
-                         focala si diafragma vin din raw sau din FOCALLEN cand nu le dai; crop-ul din baza lensfun)
+            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (pt --synthetic
+                         si pt structura cu --lens/--raw; focala si diafragma vin din raw sau din FOCALLEN
+                         cand nu le dai; crop-ul din baza lensfun)
+            --lens <text> | --raw <fisier> (pt structura: compara vignetarea masterului cu profilele
+                         obiectivului - dupa nume, sau dupa ID-ul din raw-ul de langa master; verdictul le cuprinde)
 
 Se accepta FITS (.fit/.fits/.fts) si raw de aparat (.nef/.cr2/.cr3/.arw/.dng/.raf).
 Pe raw, --expo ia white si black exacte din fisier, nu le mai ghiceste din maxim.

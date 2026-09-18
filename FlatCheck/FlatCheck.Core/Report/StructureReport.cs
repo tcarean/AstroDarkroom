@@ -23,14 +23,29 @@ using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Un rand al tabelului "vignetarea fata de profilul obiectivului", gata formatat: sursa
+    /// (Adobe / lensfun), obiectivul, montura, profilul folosit, adancimea lui, diferenta fata
+    /// de master, eroarea in colt si verdictul; IsNearest pe cel care da verdictul, Note cu
+    /// formatul de calibrare fata de senzor (IsWarning cand e o extrapolare mare).
+    /// </summary>
+    internal sealed record ProfileRow(string Key, string Source, string Lens, string Mount, string Profile,
+                                      string Depth, string Diff, string Error, string Verdict,
+                                      bool IsNearest, string Note, bool IsWarning);
+
     internal static class StructureReport
     {
         internal static void Write(StructureResult r, string path, TextWriter w)
+            => Write(new StructureOutcome(r, null, null, null), path, w);
+
+        /// <summary>Cu comparatia vignetarii, cand rularea a avut una; altfel identic cu varianta de mai sus.</summary>
+        internal static void Write(StructureOutcome o, string path, TextWriter w)
         {
+            StructureResult r = o.Structure;
             w.WriteLine($"\n=== STRUCTURA: {path} ===");
             w.WriteLine($"    dimensiune analiza : {r.Width} x {r.Height} (dupa 2x2 + downsample)");
             w.WriteLine($"    median / max ADU   : {Levels(r)}");
-            WriteBody(r, w);
+            WriteBody(r, w, o);
         }
 
         /// <summary>
@@ -54,7 +69,14 @@ namespace FlatCheck
         /// nu si randul de ADU, care pe un raster normalizat la mediana 1 n-ar insemna
         /// nimic.
         /// </summary>
-        internal static void WriteBody(StructureResult r, TextWriter w)
+        internal static void WriteBody(StructureResult r, TextWriter w) => WriteBody(r, w, null);
+
+        /// <param name="o">
+        /// Rularea intreaga, cand a avut o comparatie cu profilele: blocul ei se scrie dupa
+        /// scara, iar verdictul si sfatul sunt ale ei (cel mai rau dintre forma si adancime).
+        /// Null sau fara comparatie = cele cinci teste si atat.
+        /// </param>
+        static void WriteBody(StructureResult r, TextWriter w, StructureOutcome o)
         {
             WriteInformative(r, w);
 
@@ -69,8 +91,202 @@ namespace FlatCheck
 
             WriteScale(w);
 
-            w.WriteLine($"\n  VERDICT: {r.Verdict}");
-            WriteAdvice(r.Verdict, w);
+            if (o?.Profiles != null) WriteProfiles(o, w);
+
+            w.WriteLine($"\n  VERDICT: {o?.Verdict ?? r.Verdict}");
+            if (o != null && o.Compared)
+            {
+                Indent(VerdictDetail(o), w);
+                Indent(Advice(o), w);
+            }
+            else WriteAdvice(r.Verdict, w);
+        }
+
+        // ------------------------------------------------ vignetarea fata de profilul obiectivului
+
+        /// <summary>Titlul blocului; fereastra il pune pe cardul ei.</summary>
+        internal const string ProfilesHeading = "VIGNETAREA fata de profilul obiectivului";
+
+        static void WriteProfiles(StructureOutcome o, TextWriter w)
+        {
+            VignettingComparison c = o.Profiles;
+            w.WriteLine($"\n  {ProfilesHeading}");
+            if (!c.Compared)
+            {
+                Indent("nu se poate compara: " + GapText(o), w);
+                Indent(GapMeaning(), w);
+                return;
+            }
+            w.WriteLine($"    master                  : {MasterDepth(c)}");
+            foreach (ProfileRow row in ProfileRows(c))
+            {
+                w.WriteLine($"    {row.Source,-7} {row.Lens}  [{row.Mount}]");
+                w.WriteLine($"        profil {row.Profile,-24}: {row.Depth}   diferenta {row.Diff} = {row.Error} [{row.Verdict}]"
+                          + (row.IsNearest ? "  <- cel mai apropiat, da verdictul" : ""));
+                if (row.IsWarning) w.WriteLine("        " + row.Note);
+            }
+            Indent(ComparisonSummary(c), w);
+            w.WriteLine($"    ({AgainstReport.DepthScale()})");
+            Indent(DepthScaleNote(), w);
+            Indent(ComparisonNote(), w);
+        }
+
+        /// <summary>
+        /// Scara adancimii ca date, pentru fereastra: aceleasi patru benzi ca scara de reziduu,
+        /// cu intervalul in stopuri si eroarea din colt care ii corespunde. Pragurile sunt tot
+        /// Th.Resid*, trecute prin Stats.StopsForError - nu e o a doua lista de numere.
+        /// </summary>
+        internal static IReadOnlyList<(string Band, string Range, string Meaning)> DepthScaleRows()
+        {
+            string S(double pct) => Stats.StopsForError(pct).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+            return new[]
+            {
+                ("PERFECT", $"sub {S(Th.ResidPerfect)} stopuri", $"eroare in colt sub {Th.ResidPerfect:F0} %"),
+                ("BUN", $"{S(Th.ResidPerfect)} - {S(Th.ResidUsable)} stopuri", $"eroare in colt {Th.ResidPerfect:F0} - {Th.ResidUsable:F0} %"),
+                ("ACCEPTABIL", $"{S(Th.ResidUsable)} - {S(Th.ResidCheck)} stopuri", $"eroare in colt {Th.ResidUsable:F0} - {Th.ResidCheck:F0} %; sub atat nu se deosebeste de incertitudinea modelului"),
+                ("REFA", $"peste {S(Th.ResidCheck)} stopuri", $"eroare in colt peste {Th.ResidCheck:F0} %; refa flat-urile"),
+            };
+        }
+
+        /// <summary>De unde vine scara adancimii: nu e un prag nou, e scara celor cinci teste tradusa in stopuri.</summary>
+        internal static string DepthScaleNote()
+            => $"Aceeasi scara de reziduu ca cele cinci teste ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), aplicata erorii pe care\n"
+             + "diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si\n"
+             + "tradusa in stopuri. Nu e un prag nou.";
+
+        /// <summary>"1.26 stopuri (colt = 42 % din centru)" - adancimea masterului, cum o masoara si randul informativ.</summary>
+        internal static string MasterDepth(VignettingComparison c) => Depth(c.MasterStops);
+
+        static string Depth(double stops) => $"{stops:F2} stopuri (colt = {100 * Math.Pow(2, -stops):F0} % din centru)";
+
+        /// <summary>Un rand pe profil, gata formatat, pentru consola si pentru fereastra.</summary>
+        internal static IReadOnlyList<ProfileRow> ProfileRows(VignettingComparison c)
+        {
+            var rows = new List<ProfileRow>();
+            foreach (ProfileDepth d in c.Profiles)
+            {
+                LensProfile p = d.Profile;
+                bool warning = d.Extrapolation > SyntheticFlatResult.SmallExtrapolation;
+                string note = SyntheticReport.FormatMatch(p.Model, d.CameraCrop, d.Extrapolation);
+                rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Mount, p.Settings,
+                    Depth(d.CornerStops), $"{d.DiffStops:+0.00;-0.00} stopuri", $"{d.ErrorPct:F1} %", d.Verdict,
+                    ReferenceEquals(d, c.Nearest), note, warning));
+            }
+            return rows;
+        }
+
+        /// <summary>
+        /// Al cui e verdictul si cat difera profilele intre ele. "Cel mai apropiat", nu "cel
+        /// mai rau": cele doua baze difera intre ele cu ~0.2 stopuri pe acelasi obiectiv, si un
+        /// master care coincide cu una din ele nu e gresit.
+        /// </summary>
+        internal static string ComparisonSummary(VignettingComparison c)
+        {
+            string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Name}";
+            string verdict = $"verdictul comparatiei: {c.Verdict} - al celui mai apropiat profil ({who}), "
+                           + $"{c.Nearest.DiffStops:+0.00;-0.00} stopuri = {c.Nearest.ErrorPct:F1} % eroare in coltul unui light calibrat cu masterul";
+            string spread = c.Profiles.Count > 1
+                ? $"\ncele {c.Profiles.Count} profile difera intre ele cu {c.SpreadStops:F2} stopuri in colt; un master care coincide cu unul din ele nu e gresit"
+                : "\nun singur profil: fara a doua baza nu se stie cat de incert e modelul (de obicei ~0.2 stopuri)";
+            return verdict + spread + RangeOnlyNote(c.Shot);
+        }
+
+        /// <summary>
+        /// Cand obiectivele au fost gasite doar dupa gama (obiectiv manual, fara ID utilizabil):
+        /// lista poate cuprinde si alt obiectiv cu aceeasi gama, si omul trebuie sa stie.
+        /// </summary>
+        internal static string RangeOnlyNote(ShotIdentity shot)
+            => shot != null && shot.CandidatesByRangeOnly
+                ? $"\nobiectivele de mai sus sunt cele ale monturii cu {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor. "
+                + "Daca printre ele e si altul cu aceeasi gama, citeste randul obiectivului tau, nu pe cel mai apropiat."
+                : "";
+
+        /// <summary>Ce poate si ce nu poate spune comparatia. O arata si fereastra, sub tabel.</summary>
+        internal static string ComparisonNote()
+            => "Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul\n"
+             + "loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e\n"
+             + "modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.";
+
+        /// <summary>De ce nu s-a putut compara, in cuvinte.</summary>
+        internal static string GapText(StructureOutcome o)
+        {
+            VignettingComparison c = o.Profiles;
+            ShotIdentity shot = c.Shot;
+            switch (c.Gap)
+            {
+                case ComparisonGap.NoProfiles:
+                    return "niciun profil de obiectiv pe masina - nici Adobe (Lightroom / Camera Raw / DNG Converter), nici folderul lensfun/ langa program";
+                case ComparisonGap.NoRaw:
+                    return o.RawError != null
+                        ? $"raw-ul de langa master nu s-a putut citi ({o.RawError}), deci nu se stie obiectivul"
+                        : "niciun raw langa master (in flats/), deci niciun ID de obiectiv; un FITS nu spune ce obiectiv l-a facut. Da --lens <text> sau --raw <fisier>";
+                case ComparisonGap.NoLensMatch:
+                    return shot != null && shot.HasRawLensId
+                        ? $"{shot.RawLensLabel}: niciun obiectiv din catalog nu i se potriveste (dupa ID si gama). Da --lens <text>"
+                        : "niciun obiectiv nu se potriveste cu textul dat; vezi --lenses";
+                case ComparisonGap.NoFocal:
+                    return "focala nu se stie - nici FOCALLEN in master, nici raw; da --focal <mm>";
+                case ComparisonGap.NoFStop:
+                    return "diafragma nu se stie - Siril n-o scrie in master, si n-a fost niciun raw langa el; da --fstop <f> sau --raw <fisier>";
+                case ComparisonGap.NoCrop:
+                    return $"doar profile lensfun, si crop-ul aparatului nu se stie ({shot?.CropSource}); da --crop <factor>";
+                default:
+                    return "";
+            }
+        }
+
+        /// <summary>Ce ar fi aratat comparatia, ca sa se stie ce lipseste.</summary>
+        internal static string GapMeaning()
+            => "Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea\n"
+             + "unui panou, curbura cerului - trece neobservat prin cele cinci teste si prin --ratio.";
+
+        /// <summary>Cele doua parti ale verdictului, pe doua randuri, cum le tipareste consola sub VERDICT.</summary>
+        internal static string VerdictDetail(StructureOutcome o)
+            => $"forma     : {ShapeDetail(o)}\nadancimea : {DepthDetail(o)}\n{WorseOfBoth}";
+
+        /// <summary>"PERFECT - cele cinci teste de abatere de la simetria radiala". Separat, ca fereastra sa-si puna eticheta ei in fata.</summary>
+        internal static string ShapeDetail(StructureOutcome o)
+            => $"{o.Structure.Verdict} - cele cinci teste de abatere de la simetria radiala";
+
+        /// <summary>"REFA - +0.34 stopuri fata de lensfun Tokina ... = 27.0 % eroare in coltul light-ului calibrat".</summary>
+        internal static string DepthDetail(StructureOutcome o)
+        {
+            ProfileDepth n = o.Profiles.Nearest;
+            return $"{o.Profiles.Verdict} - {n.DiffStops:+0.00;-0.00} stopuri fata de {n.Profile.Lens.SourceLabel} {n.Profile.Lens.Name} = {n.ErrorPct:F1} % eroare in coltul light-ului calibrat";
+        }
+
+        internal const string WorseOfBoth = "Cel mai rau dintre ele.";
+
+        /// <summary>Sfatul rularii: al adancimii cand ea a inrautatit verdictul, altfel al formei.</summary>
+        internal static string Advice(StructureOutcome o)
+            => o.DepthCarriesTheVerdict ? DepthAdvice(o.Profiles.Nearest.DiffStops, o.Profiles.Verdict) : Advice(o.Structure.Verdict);
+
+        /// <summary>
+        /// Ce sa faca omul cand vignetarea masterului nu e cea a obiectivului. Semnul e
+        /// diagnosticul: plus = masterul cade mai mult decat modelul, deci SURSA cade cu unghiul
+        /// (masurat pe masterele de tableta: cos^2 al unghiului de camp, +0.57 stopuri, facut
+        /// radial de rotatia la 90 de grade); minus = sursa umple colturile (cupola cerului
+        /// se lumineaza spre orizont de jur imprejurul zenitului, ambient, o reflexie). Nici
+        /// --ratio, nici mai multe rotatii nu ajuta: excesul se roteste cu aparatul sau e
+        /// simetrizat de rotatie.
+        /// </summary>
+        internal static string DepthAdvice(double diffStops, string verdict)
+        {
+            string cause = diffStops > 0
+                ? "Masterul cade spre colt MAI MULT decat modelul obiectivului: sursa de lumina cade cu\n"
+                + "unghiul - un panou (monitor, tableta) prea aproape sau fara un difuzor adevarat; foile\n"
+                + "mate nu difuzeaza. Ajuta un difuzor lambertian (acril opal, un teanc gros de hartie\n"
+                + "alba) sau un perete alb luminat din lateral; nu ajuta mai multe rotatii."
+                : "Masterul cade spre colt MAI PUTIN decat modelul obiectivului: sursa umple colturile - o\n"
+                + "cupola de cer (se lumineaza spre orizont de jur imprejur), lumina ambianta pe langa\n"
+                + "sursa, o reflexie in parasolar. Fereste obiectivul de tot ce nu e sursa; pe cer, fereste\n"
+                + "zenitul si asteapta un cer mai uniform.";
+            string weight = verdict == "REFA"
+                ? "\nExcesul e radial, deci cele cinci teste si --ratio nu-l vad; nu-l va scoate nici background\n"
+                + "extraction. Refa flat-urile."
+                : "\nExcesul e radial, deci cele cinci teste si --ratio nu-l vad. Sub ACCEPTABIL nu se deosebeste\n"
+                + "de incertitudinea modelului (cele doua baze difera intre ele cu ~0.2 stopuri).";
+            return cause + weight;
         }
 
         /// <summary>

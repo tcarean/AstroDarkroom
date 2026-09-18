@@ -181,6 +181,33 @@ public class RawReaderTests
     /// - same pixels in, same result out, whatever the container - does not need the corners
     /// to be tested. Both offsets are even, so the Bayer phase survives the crop.
     /// </summary>
+    /// <summary>
+    /// The metadata-only load reads the same shot fields the full load does, off the open
+    /// file and before Unpack - which is what makes the lens identification cheap enough
+    /// to run at folder open without waiting for the structure chain.
+    /// </summary>
+    [Fact]
+    public void ARealRawsLoadInfoAgreesWithTheFullLoadOnTheShotFields()
+    {
+        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        if (string.IsNullOrEmpty(path)) return;
+
+        LoadedFrame full = ImageLoader.Load(path);
+        LoadedFrame info = ImageLoader.LoadInfo(path);
+
+        Assert.Null(info.Image);
+        Assert.Null(info.Preview);
+        Assert.Empty(info.Header);
+        Assert.Equal(full.FocalMm, info.FocalMm);
+        Assert.Equal(full.FNumber, info.FNumber);
+        Assert.Equal(full.Camera, info.Camera);
+        Assert.Equal(full.NikonLensId, info.NikonLensId);
+        Assert.Equal(full.LensMinFocalMm, info.LensMinFocalMm);
+        Assert.Equal(full.LensMaxFocalMm, info.LensMaxFocalMm);
+        Assert.Equal(full.LensMaxAperture, info.LensMaxAperture);
+        Assert.NotNull(info.FNumber);
+    }
+
     [Fact]
     public void ARealRawAndAFitsHoldingItsPixelsGiveTheSameNumbers()
     {

@@ -91,6 +91,47 @@ namespace FlatCheck
             catch (TypeInitializationException e) { throw Missing(e); }
         }
 
+        /// <summary>
+        /// Doar metadatele: libraw umple focala, diafragma, aparatul si LensInfo la
+        /// OpenFile, inainte de Unpack, deci se deschide fisierul si se citesc acelea. Fara
+        /// pixeli, fara previzualizare, fara scala - Image null, Header gol. Masurat pe
+        /// D3300: zeci de milisecunde in loc de secunde, si nicio sutime de gigaoctet.
+        /// Aceleasi garzi de incarcare lenesa ca la Load.
+        /// </summary>
+        public LoadedFrame LoadInfo(string path)
+        {
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+
+            try
+            {
+                return ReadInfo(path);
+            }
+            catch (DllNotFoundException e) { throw Missing(e); }
+            catch (FileNotFoundException e) when (e.FileName != path) { throw Missing(e); }
+            catch (BadImageFormatException e) { throw Missing(e); }
+            catch (TypeInitializationException e) { throw Missing(e); }
+        }
+
+        static LoadedFrame ReadInfo(string path)
+        {
+            using RawContext ctx = RawContext.OpenFile(path);
+            LibRawData d = Marshal.PtrToStructure<LibRawData>(ctx.UnsafeGetHandle());
+            var (focalMm, fNumber, cameraName, nikonLensId, lensMin, lensMax, lensAp) = ShootingInfo(ctx, d.RawData.IParams);
+            return new LoadedFrame
+            {
+                Image = null,
+                Header = NoHeader,
+                FocalMm = focalMm,
+                FNumber = fNumber,
+                Camera = cameraName,
+                NikonLensId = nikonLensId,
+                LensMinFocalMm = lensMin,
+                LensMaxFocalMm = lensMax,
+                LensMaxAperture = lensAp,
+            };
+        }
+
         static Exception Missing(Exception inner)
             => new InvalidOperationException(
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "

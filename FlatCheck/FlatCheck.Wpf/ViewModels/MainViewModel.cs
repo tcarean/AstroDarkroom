@@ -60,18 +60,22 @@ namespace FlatCheck.Wpf
         /// de netezire: implicit un MessageBox, in teste un raspuns dat dinainte.
         /// </summary>
         internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null,
-                               Func<ProfileSources> locateProfiles = null)
+                               Func<ProfileSources> locateProfiles = null, Func<string, LoadedFrame> loadInfo = null)
         {
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
 
-            Structure = new StructureTabViewModel();
+            // Catalogul de profile, unul pentru tabul Structura (comparatia vignetarii) si
+            // pentru tabul Sintetic; cititorul de metadate, tot unul, ca testele sa poata
+            // pune un cadru fabricat in locul unui raw.
+            var catalog = new ProfileCatalog(locateProfiles);
+            Structure = new StructureTabViewModel(catalog, loadInfo);
             Ratio = new RatioTabViewModel();
             Light = new LightTabViewModel();
             Exposure = new ExposureTabViewModel();
             HistEq = new HistEqTabViewModel();
             Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
-            Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, locateProfiles ?? ProfileLocator.Locate);
+            Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, catalog, loadInfo);
             Preprocess = new PreprocessViewModel();
 
             // Singura legatura intre doua taburi: flat-ul netezit pe care il scrie Netezire

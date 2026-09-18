@@ -65,106 +65,80 @@ namespace FlatCheck
     internal static class SyntheticRun
     {
         /// <summary>
-        /// Completeaza cererea din cadrul de referinta: focala si diafragma date bat pe
-        /// cele din fisier, crop-ul dat bate baza de camere. Fiecare valoare isi tine sursa,
+        /// Completeaza cererea din identitatea fotografierii: fiecare valoare cu sursa ei,
         /// ca raportul sa spuna de unde a venit. Null cand totul s-a putut completa; altfel
-        /// refuzul.
+        /// refuzul. Identificarea insasi e in LensIdentification, comuna cu fereastra.
         /// </summary>
-        internal static string Complete(SyntheticRequest req, LoadedFrame f, ProfileSources sources,
-                                        double? focal, double? fstop, double? crop, bool lensfunNeedsCrop)
+        internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop)
         {
-            if (focal.HasValue) { req.FocalMm = focal.Value; req.FocalSource = "--focal"; }
-            else if (f.FocalMm.HasValue) { req.FocalMm = f.FocalMm.Value; req.FocalSource = f.Header.Count > 0 ? "FOCALLEN" : "raw (libraw)"; }
-            else return SyntheticReport.NoFocal();
+            if (!id.FocalMm.HasValue) return SyntheticReport.NoFocal();
+            req.FocalMm = id.FocalMm.Value;
+            req.FocalSource = id.FocalSource;
 
-            if (fstop.HasValue) { req.FStop = fstop.Value; req.FStopSource = "--fstop"; }
-            else if (f.FNumber.HasValue) { req.FStop = f.FNumber.Value; req.FStopSource = "raw (libraw)"; }
-            else return SyntheticReport.NoFStop();
+            if (!id.FStop.HasValue) return SyntheticReport.NoFStop();
+            req.FStop = id.FStop.Value;
+            req.FStopSource = id.FStopSource;
 
-            if (crop.HasValue) { req.CameraCrop = crop.Value; req.CropSource = "--crop"; }
-            else
-            {
-                double? known = sources.Lensfun.CropOf(f.Camera);
-                if (known.HasValue) { req.CameraCrop = known.Value; req.CropSource = $"baza lensfun, {f.Camera}"; }
-                else if (lensfunNeedsCrop) return SyntheticReport.NoCrop(f.Camera);
-                else { req.CameraCrop = 0; req.CropSource = "necunoscut - se ia senzorul de calibrare al profilului"; }
-            }
+            if (id.Crop.HasValue) { req.CameraCrop = id.Crop.Value; req.CropSource = id.CropSource; }
+            else if (lensfunNeedsCrop) return SyntheticReport.NoCrop(id.Camera);
+            else { req.CameraCrop = 0; req.CropSource = id.CropSource; }
             return null;
         }
 
+        /// <summary>Pentru teste si pentru apelantii care n-au identificat inca: identifica si completeaza.</summary>
+        internal static string Complete(SyntheticRequest req, LoadedFrame f, ProfileSources sources,
+                                        double? focal, double? fstop, double? crop, bool lensfunNeedsCrop)
+            => Complete(req, LensIdentification.Identify(f, null, sources, focal, fstop, crop), lensfunNeedsCrop);
+
         /// <summary>
-        /// Alege obiectivul din text: exact un rezultat, altfel refuz cu lista. Un ID de
-        /// obiectiv Nikon din raw restrange lista cand textul e gol - si, fiindca ID-ul nu e
-        /// unic, gama din raw (11-20 mm f/2.8) scoate obiectivele al caror nume o contrazice.
+        /// Alege obiectivul din text: exact un rezultat, altfel refuz cu lista. Fara text,
+        /// candidatii pe care raw-ul i-a indicat (identitatea), restransi dupa sursa ceruta.
         /// </summary>
-        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f)
+        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id)
         {
             LensCatalog cat = sources.Catalog;
             IReadOnlyList<LensChoice> hits;
             if (string.IsNullOrWhiteSpace(req.LensText))
             {
-                hits = CandidatesFromRaw(cat, f);
+                hits = id.Candidates;
                 if (req.Source.HasValue) hits = hits.Where(h => h.Source == req.Source.Value).ToList();
                 if (hits.Count == 0) return SyntheticReport.NoLensGiven();
             }
-            else hits = cat.Search(req.LensText, req.Source);
-
-            if (hits.Count == 0) return SyntheticReport.NoMatch(req.LensText, sources);
-            // O potrivire exacta pe nume castiga in fata celor partiale: "Tokina AT-X 11-20mm F2.8 PRO DX"
-            // e continut si de numele variantei "II", daca exista.
-            var exact = hits.Where(h => string.Equals(h.Name, req.LensText?.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
-            if (exact.Count > 0) hits = exact;
-            // Acelasi obiectiv exista pe mai multe monturi (Adobe: un fisier per montura). Cand
-            // cadrul de referinta spune ce aparat e, montura lui castiga: "Nikon D3300" alege
-            // [NIKON CORPORATION] in fata lui [Canon]. Un cuvant din numele aparatului, nu o
-            // tabela de monturi - nu se ghiceste nimic ce nu scrie in fisiere.
-            string makerWord = f?.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            if (hits.Count > 1 && !string.IsNullOrEmpty(makerWord))
+            else
             {
-                var byMount = hits.Where(h => (h.Mount + " " + h.Maker).Contains(makerWord, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (byMount.Count > 0) hits = byMount;
+                hits = MatchLenses(req.LensText, req.Source, sources, id);
+                if (hits.Count == 0) return SyntheticReport.NoMatch(req.LensText, sources);
             }
-            hits = PreferCamera(hits, f?.Camera);
-            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText ?? SyntheticReport.RawLensLabel(f), hits);
+            if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText ?? id.RawLensLabel, hits);
             req.Lens = hits[0];
             return null;
         }
 
         /// <summary>
-        /// Dintre potriviri, cele al caror fisier Adobe e al aparatului insusi ("NIKON D750
-        /// (obiectiv)") bat pe cele generice ale monturii ("NIKON CORPORATION (obiectiv)"):
-        /// Adobe tine profile pe corp, cu SFF-ul corpului, si Lightroom pe acela il ia. Fara
-        /// aparat, sau fara un asemenea fisier, lista ramane cum e.
+        /// Obiectivele care se potrivesc cu un text, restranse cum le restrange si alegerea:
+        /// potrivirea exacta pe nume bate pe cele partiale ("Tokina AT-X 11-20mm F2.8 PRO DX"
+        /// e continut si de numele variantei "II"), montura aparatului cand se stie, apoi
+        /// fisierul propriu al corpului. Fara regula "exact unul": --synthetic o cere,
+        /// comparatia din modul structura compara cu toate cate raman.
         /// </summary>
-        internal static IReadOnlyList<LensChoice> PreferCamera(IReadOnlyList<LensChoice> hits, string camera)
+        internal static IReadOnlyList<LensChoice> MatchLenses(string text, ProfileSource? source, ProfileSources sources, ShotIdentity id)
         {
-            if (hits == null || hits.Count < 2) return hits;
-            string wanted = Letters(camera);
-            if (wanted.Length == 0) return hits;
-            var own = hits.Where(h => Letters(h.Mount).Contains(wanted)).ToList();
-            return own.Count > 0 ? own : hits;
+            IReadOnlyList<LensChoice> hits = sources.Catalog.Search(text, source);
+            if (hits.Count == 0) return hits;
+            var exact = hits.Where(h => string.Equals(h.Name, text.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+            if (exact.Count > 0) hits = exact;
+            string makerWord = id?.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (hits.Count > 1 && !string.IsNullOrEmpty(makerWord))
+            {
+                var byMount = hits.Where(h => (h.Mount + " " + h.Maker).Contains(makerWord, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (byMount.Count > 0) hits = byMount;
+            }
+            return LensIdentification.PreferCamera(hits, id?.Camera);
         }
 
-        static string Letters(string s) => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
-
-        /// <summary>
-        /// Obiectivele pe care raw-ul le indica singur: cele cu ID-ul lui Nikon (in fisierele
-        /// monturii aparatului), minus cele al caror nume contrazice gama din MakerNote - si,
-        /// fiindca doar profilele Adobe poarta ID-uri Nikon, obiectivele lensfun ale acelorasi
-        /// producatori a caror gama nu contrazice raw-ul. Fara ele lista restransa arata doar
-        /// jumatatea Adobe, si utilizatorul a intrebat unde a disparut Tokina din lensfun.
-        /// Goala fara ID. Consola si fereastra pornesc de aici, deci aleg la fel.
-        /// </summary>
-        internal static IReadOnlyList<LensChoice> CandidatesFromRaw(LensCatalog cat, LoadedFrame f)
-        {
-            if (f?.NikonLensId == null) return Array.Empty<LensChoice>();
-            string hint = f.Camera?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-            var byId = LensCatalog.Narrow(cat.ByLensId(f.NikonLensId.Value, hint), f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
-            if (byId.Count == 0) return byId;
-            var makers = new HashSet<string>(byId.Select(l => l.Maker), StringComparer.OrdinalIgnoreCase);
-            var lensfun = cat.Lenses.Where(l => l.Source == ProfileSource.Lensfun && makers.Contains(l.Maker)).ToList();
-            return byId.Concat(LensCatalog.Narrow(lensfun, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture)).ToList();
-        }
+        /// <summary>Pentru teste: identifica intai, apoi alege.</summary>
+        internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f)
+            => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources));
 
         internal static SyntheticRunOutcome Execute(string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
@@ -178,13 +152,16 @@ namespace FlatCheck
         {
             string refusal = f.Planes > 1 ? SyntheticReport.RefusalCube(referencePath, f.Planes) : null;
             bool choice = false;
+            // O singura identificare pentru alegere si completare: ByLensId parseaza fisierele
+            // Adobe ale monturii, si nu e ceva de facut de doua ori.
+            ShotIdentity id = LensIdentification.Identify(f, null, sources, focal, fstop, crop);
             // Fereastra da obiectivul gata ales din lista (req.Lens); consola il cauta din text.
             if (refusal == null && req.Lens == null)
             {
-                refusal = ChooseLens(req, sources, f);
+                refusal = ChooseLens(req, sources, f, id);
                 choice = refusal != null;
             }
-            refusal ??= Complete(req, f, sources, focal, fstop, crop, req.Lens.Source == ProfileSource.Lensfun);
+            refusal ??= Complete(req, id, req.Lens.Source == ProfileSource.Lensfun);
             if (refusal != null)
             {
                 report.WriteLine();

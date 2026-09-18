@@ -170,4 +170,49 @@ public class ImageLoaderTests
     [InlineData("x.jpg", false)]
     public void TheRawReaderClaimsOnlyRawExtensions(string path, bool claimed)
         => Assert.Equal(claimed, new RawReader().Handles(path));
+
+    // ---------------------------------------------------------------- LoadInfo
+
+    /// <summary>
+    /// The metadata-only load must say exactly what the full load says about the shot,
+    /// without reading the pixels: the lens identification and the Sintetic tab's prefill
+    /// run on it, and a field the two loads filled differently would make the tab and
+    /// the console disagree about the same file.
+    /// </summary>
+    [Fact]
+    public void LoadInfoOnAFitsGivesTheShotFieldsWithoutPixels()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("flat.fit", SampleFits(
+            FitsTestData.OpticsCards(135, 3.9)
+                .Concat(FitsTestData.BayerCards("RGGB"))
+                .Append(FitsTestData.Card("INSTRUME", "'Nikon D3300'"))
+                .ToArray()));
+
+        LoadedFrame full = ImageLoader.Load(path);
+        LoadedFrame info = ImageLoader.LoadInfo(path);
+
+        Assert.Null(info.Image);
+        Assert.Equal(full.FocalMm, info.FocalMm);
+        Assert.Equal(full.Camera, info.Camera);
+        Assert.Equal("Nikon D3300", info.Camera);
+        Assert.Null(info.FNumber);
+        Assert.Equal(full.Planes, info.Planes);
+        Assert.Equal(full.Bitpix, info.Bitpix);
+        Assert.Equal(full.Cfa.Letters, info.Cfa.Letters);
+        Assert.Equal(full.Header["FOCALLEN"], info.Header["FOCALLEN"]);
+        Assert.Null(info.Scale);
+    }
+
+    [Fact]
+    public void LoadInfoFallsBackToTheFitsReaderLikeLoad()
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("flat.dat", SampleFits(FitsTestData.OpticsCards(20)));
+
+        LoadedFrame info = ImageLoader.LoadInfo(path);
+
+        Assert.Null(info.Image);
+        Assert.Equal(20, info.FocalMm);
+    }
 }

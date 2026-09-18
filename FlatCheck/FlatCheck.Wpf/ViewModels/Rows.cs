@@ -77,6 +77,27 @@ namespace FlatCheck.Wpf
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
+    /// <summary>
+    /// Un rand din tabelul "vignetarea fata de profilul obiectivului" de pe tabul Structura:
+    /// copia publica a lui ProfileRow din nucleu (internal), cu textele gata formatate acolo.
+    /// </summary>
+    public sealed class LensProfileRow
+    {
+        public string Source { get; init; }       // "Adobe" / "lensfun"
+        public string Lens { get; init; }
+        public string Mount { get; init; }
+        public string Profile { get; init; }      // "20 mm, f/2.8, infinit"
+        public string Depth { get; init; }        // "0.66 stopuri (colt = 63 % din centru)"
+        public string Diff { get; init; }         // "+0.59 stopuri"
+        public string Error { get; init; }        // "50.8 %"
+        public string Verdict { get; init; }
+        public bool IsNearest { get; init; }
+        public string Note { get; init; }
+        public bool IsWarning { get; init; }
+        public string DiffAndError => $"{Diff} = {Error}";
+        public bool HasNote => !string.IsNullOrEmpty(Note);
+    }
+
     public sealed class GuideRow
     {
         public string Shape { get; init; }

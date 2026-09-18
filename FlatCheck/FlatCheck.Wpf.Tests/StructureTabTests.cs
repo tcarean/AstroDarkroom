@@ -379,6 +379,120 @@ public class StructureTabTests
         Assert.Empty(vm.SavedTo);
     }
 
+    // ------------------------------------------ vignetarea fata de profilul obiectivului
+
+    static LoadedFrame RawFrame() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
+        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+    };
+
+    /// <summary>The tab with hand-made profile sources and a fabricated raw in place of the file in flats/.</summary>
+    static async Task<(StructureTabViewModel Vm, ProfileSources Sources)> RunWithProfiles(SessionFixture f, TempWorkspace ws)
+    {
+        var sources = LensProfileTestData.Sources(ws);
+        var vm = new StructureTabViewModel(new ProfileCatalog(() => sources), path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+        await vm.RunAsync(f.Session, CancellationToken.None);
+        return (vm, sources);
+    }
+
+    /// <summary>
+    /// With a raw beside the master the run is the console's "--raw": the vignetting is
+    /// compared with every profile the raw's lens ID points at, the nearest one gives the
+    /// depth verdict, the tab's verdict is the worse of shape and depth, and the saved
+    /// report is - character for character - what the console prints for the same query.
+    /// </summary>
+    [Fact]
+    public async Task WithARawBesideTheMasterTheVignettingIsComparedWithTheLensProfiles()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, sources) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.True(vm.HasProfileRows);
+        Assert.Equal(2, vm.ProfileRows.Count);                        // the Nikon Adobe file and the lensfun entry
+        Assert.Single(vm.ProfileRows, r => r.IsNearest);
+        Assert.Contains("da verdictul", vm.ProfileRows.Single(r => r.IsNearest).Note);
+        Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Verdict));
+        Assert.Empty(vm.ProfileGap);
+        Assert.Contains("stopuri", vm.ProfileMaster);
+        Assert.Contains("apropiat profil", vm.ProfileSummary);
+        Assert.Equal(4, vm.ProfileScale.Count);                        // the depth scale, in stops, band marked
+        Assert.Single(vm.ProfileScale, s => s.IsCurrent);
+        Assert.Equal(vm.ProfileRows.Single(r => r.IsNearest).Verdict, vm.ProfileScale.Single(s => s.IsCurrent).Band);
+        Assert.Contains("Nu e un prag nou", vm.ProfileScaleNote);
+        Assert.All(vm.ProfileRows, r => Assert.NotEmpty(r.Note));
+        Assert.Contains("RADIALA", vm.ProfileNote);
+        Assert.Contains("forma", vm.VerdictDetail);
+        Assert.Contains("adancimea", vm.VerdictDetail);
+        Assert.Equal(5, vm.Tests.Count);                               // the five stay five
+        Assert.Contains(StructureReport.ProfilesHeading, vm.Report);
+        Assert.Contains("VERDICT: " + vm.Verdict, vm.Report);
+
+        var expected = new StringWriter();
+        RunReport.WriteBanner(expected);
+        StructureRun.Execute(f.Session.FlatMasterPath, expected,
+            new StructureQuery { Sources = sources, RawPath = f.Session.ReferenceRawPath, LoadInfo = _ => RawFrame() });
+        RunReport.WriteMapSaved(f.Session.ResidualPngPath, expected);
+        Assert.Equal(expected.ToString(), File.ReadAllText(f.Session.ResultTextPath));
+    }
+
+    /// <summary>The fixture master is deeper than the model: shape PERFECT, depth worse, and the depth carries the verdict and the advice.</summary>
+    [Fact]
+    public async Task WhenTheDepthIsWorseThanTheShapeItCarriesTheVerdictAndTheAdvice()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+
+        string shape = vm.Tests.Select(t => t.Verdict).OrderByDescending(Stats.Severity).First();
+        string depth = vm.ProfileRows.Single(r => r.IsNearest).Verdict;
+        Assert.True(Stats.Severity(depth) > Stats.Severity(shape), $"depth {depth}, shape {shape}");
+        Assert.Equal(depth, vm.Verdict);
+        Assert.Contains("MAI", vm.Advice);                             // the depth's advice, not the shape's
+        Assert.NotEqual(StructureReport.Advice(shape), vm.Advice);
+    }
+
+    /// <summary>
+    /// Without a raw in flats/ nothing knows the lens: the run is the plain console one (the
+    /// existing character-for-character test covers that), and the card says why, in the
+    /// core's words.
+    /// </summary>
+    [Fact]
+    public async Task WithoutARawTheCardExplainsWhyItCannotCompare()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.False(vm.HasProfileRows);
+        Assert.StartsWith("Nu se poate compara: ", vm.ProfileGap);
+        Assert.Contains("niciun raw langa master", vm.ProfileGap);
+        Assert.Empty(vm.VerdictDetail);
+        Assert.Equal(StructureReport.Advice(vm.Verdict), vm.Advice);
+        Assert.DoesNotContain(StructureReport.ProfilesHeading, vm.Report);   // the report stays the console's plain one
+    }
+
+    [Fact]
+    public async Task ResetClearsTheProfileComparisonToo()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("DSC_0001.NEF");
+        using var ws = new TempWorkspace();
+        var (vm, _) = await RunWithProfiles(f, ws);
+        Assert.True(vm.HasProfileRows);
+
+        vm.Reset();
+
+        Assert.False(vm.HasProfileRows);
+        Assert.Empty(vm.ProfileRows);
+        Assert.Empty(vm.ProfileGap);
+        Assert.Empty(vm.ProfileMaster);
+        Assert.Empty(vm.VerdictDetail);
+    }
+
     // -------------------------------------------------------- scara hartii
 
     static MapScaleOption Cap(StructureTabViewModel vm, double? capPct)

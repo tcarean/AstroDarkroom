@@ -142,6 +142,59 @@ singur master nu conține informația care le desparte — vezi „Scara de rezi
 Rămâne totuși testul cu care începi, fiindcă e singurul care nu cere să mai fotografiezi
 nimic.
 
+#### Al șaselea test: vignetarea față de profilul obiectivului
+
+Cele cinci teste măsoară abaterea de la simetria radială, deci sunt **oarbe la un exces
+radial**: un master de tabletă (Tokina 20 mm f/2.8, patru orientări la 90°) a ieșit PERFECT
+pe toate cinci cu 1.26 stopuri de vignetare, când cele două baze de profile dau 0.66–0.92
+pentru obiectivul ăsta. Excesul era căderea unghiulară a panoului, făcută radială de
+rotație; `--ratio` e la fel de orb la el. Singura referință externă pe care o are unealta e
+**profilul publicat al obiectivului** (Adobe LCP de pe mașină, baza lensfun de lângă
+program — vezi modul 7), și asta e comparația:
+
+```bash
+flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF     # obiectivul și diafragma din raw
+flatcheck process/pp_flat_stacked.fit --lens "Tokina 11-20" --fstop 2.8   # sau după nume
+```
+
+Pentru fiecare obiectiv candidat (după ID-ul Nikon din raw, restrâns pe gama din
+MakerNote și pe montura aparatului; sau după textul din `--lens`), profilul cel mai
+apropiat de focală și diafragmă se construiește ca raster la mărimea rasterului de analiză
+și i se măsoară vignetarea cu **exact operatorul masterului** (mediana cutiilor de colț de
+5 % față de centru). Diferența în stopuri, `master − profil`, trece prin aceeași aritmetică
+ca la `--against`: `2^|D| − 1` e eroarea din colțul unui light calibrat cu masterul, pe
+scara de reziduu, deci sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste
+REFA. **Verdictul comparației e al profilului cel mai apropiat**, nu al celui mai rău: cele
+două baze diferă între ele cu ~0.2 stopuri pe același obiectiv, și un master care coincide
+cu una din ele nu e greșit. Verdictul rulării e cel mai rău dintre formă (cele cinci teste)
+și adâncime, și codul de ieșire îl urmează.
+
+**Semnul e diagnosticul.** Plus înseamnă că masterul cade spre colț mai mult decât modelul:
+sursa cade cu unghiul — un panou prea aproape sau fără difuzor adevărat (foile mate nu
+difuzează). Minus înseamnă că sursa umple colțurile: cupola cerului, lumină ambiantă, o
+reflexie în parasolar. Nici `--ratio`, nici mai multe rotații nu ajută, fiindcă excesul se
+rotește cu aparatul sau e simetrizat de rotație.
+
+Măsurat pe biblioteca proprie (2026-09-18, D3300, `--raw` pe primul raw din `flats/`):
+
+| master | vignetare | cel mai apropiat profil | diferența | verdict adâncime |
+|---|---|---|---|---|
+| Tokina 20 f/2.8, tabletă + 7 coperți mate | 1.26 | lensfun 0.91 | +0.34 | REFA |
+| Tokina 20 f/2.8, tabletă + 15 coperți | 1.24 | lensfun 0.91 | +0.33 | REFA |
+| Tokina 20 f/2.8, cer fără difuzor | 0.27 | Adobe 0.66 | −0.39 | REFA |
+| Tokina 20 f/2.8, monitor aproape | 0.85 | lensfun 0.85 | 0.00 | PERFECT |
+| Tokina 20 f/2.8, pe monitor | 0.78 | lensfun 0.85 | −0.07 | BUN |
+| Nikkor 35 DX f/2.8, cer (ISO 400 / 800) | 0.63 / 0.62 | Adobe 0.52 | +0.11 / +0.10 | BUN |
+| Samyang 135 f/2, cer (ISO 400 / 1600) | 0.61 / 0.60 | Nikkor 135 f/2 DC 0.50 | +0.11 / +0.10 | BUN |
+| Samyang 135 f/2.8, cer | 0.15 | lensfun Samyang 0.14 | +0.01 | PERFECT |
+
+Ce nu poate ști: profilul e modelul obiectivului, nu exemplarul tău, și e acromatic;
+masterul e media 2×2 a mozaicului. **Un obiectiv manual** (Samyang) nu are un ID de obiectiv
+pe care să-l poarte vreun profil; atunci candidații sunt obiectivele monturii al căror nume
+spune exact gama din raw (135 mm f/2.0), iar raportul spune că lista poate cuprinde și alt
+obiectiv cu aceeași gamă — citește rândul obiectivului tău. Fără raw lângă master și fără
+`--lens` nu se compară: blocul spune de ce, verdictul rămâne al celor cinci teste.
+
 ### 2. Atribuire prin rotație 180° — `--ratio`
 
 ```bash
@@ -668,6 +721,7 @@ setup despre care ești sigur. Toate stau în `FlatCheck.Core/Thresholds.cs`.
 | înclinare (gradient) | structură | *scara de reziduu* | |
 | pata maximă (o dală) | structură | *scara de reziduu* | |
 | pete locale (praf) | structură | 2 % (doar atenționare, nu votează) | |
+| vignetare față de profilul obiectivului | structură cu `--raw` / `--lens` | 0.03 / 0.14 / 0.26 stopuri = scara de reziduu prin `2^|D| − 1` | REFA peste 0.26 |
 | cele cinci teste pe `(A+B)/2` | `--ratio` | *scara de reziduu* | |
 | gradient extern / orientare | `--ratio` | 1% | 3% (doar etichetă informativă) |
 | \|componentă radială\| | `--light` | 2% | 5% |
@@ -703,7 +757,9 @@ Severitatea e monotonă, deci „orice diferit de 0" înseamnă „nu e curat, u
 nimic fiindcă nu e nimic de netezit sau scara e nedeterminată. `--synthetic`: 0 a scris
 flatul, 1 a refuzat referința sau n-a putut afla focala, diafragma ori crop-ul, 2
 obiectivul nu s-a putut alege (niciunul sau prea multe — lista e tipărită). `--lenses` iese
-mereu cu 0. `--against` iese ca structura, pe verdictul *diferenței*.
+mereu cu 0. `--against` iese ca structura, pe verdictul *diferenței*. Structura cu `--raw`
+sau `--lens` iese pe verdictul combinat — cel mai rău dintre cele cinci teste și adâncimea
+vignetării față de profil.
 
 ---
 
@@ -711,6 +767,7 @@ mereu cu 0. `--against` iese ca structura, pe verdictul *diferenței*.
 
 ```
 flatcheck <flat.fit>                     # structură
+flatcheck <flat.fit> --raw <flat.NEF>    # structură + vignetarea față de profilul obiectivului din raw
 flatcheck <A.fit> --ratio <B.fit>        # atribuire prin rotație 180
 flatcheck <light.fit> --light            # end-to-end, un cadru
 flatcheck <folder/> --light              # end-to-end pe toată seria
@@ -732,9 +789,11 @@ flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
   --fov <grade>            diagonala câmpului, dacă headerul nu o dă (--light)
   --scale <px>|auto        scara de netezire, în pixeli de senzor (--smooth; implicit 300);
                            'auto' o propune din master și netezește la ea, sau iese cu 2
-  --lens <text>            obiectivul, după cuvinte din nume / producător / montură (--synthetic, --lenses)
+  --lens <text>            obiectivul, după cuvinte din nume / producător / montură (--synthetic, --lenses;
+                           la structură compară vignetarea masterului cu toate obiectivele care se potrivesc)
+  --raw <fișier>           un raw de lângă master (structură): diafragma și obiectivul se citesc din el
   --source adobe|lensfun   doar una din surse
-  --focal <mm>, --fstop <f>, --crop <factor>   ce nu se poate citi din referință (--synthetic)
+  --focal <mm>, --fstop <f>, --crop <factor>   ce nu se poate citi din referință (--synthetic, structură cu --lens)
   --profiles <folder>      de unde se iau profilele, în locul mașinii: .lcp oriunde în el,
                            lensfun/ dedesubt (așa rulează și testele)
 ```
@@ -969,7 +1028,14 @@ călătoresc garantat cu programul.
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
 atenționarea de praf sub verdict când e cazul, fiecare rând cu descrierea lui sub el — plus
-harta reziduală. Salvează în folderul
+harta reziduală. Sub teste stă și **vignetarea față de profilul obiectivului**: când în
+`flats/` e un raw, rularea e cea a consolei cu `--raw` pe primul dintre ele (obiectivul după
+ID-ul din raw, diafragma din el, crop-ul din baza lensfun după `INSTRUME`), cu un rând pe
+profil, rândul care dă verdictul îngroșat, scara adâncimii ca tabel de patru benzi în stopuri
+(aceeași scară de reziduu, tradusă, nu un prag nou) cu banda verdictului marcată, și
+verdictul rulării — cel mai rău dintre formă și adâncime — în pastila de sus, cu cele două
+părți scrise sub ea. Fără raw, cardul spune de ce nu s-a putut compara și raportul rămâne cel
+simplu. Salvează în folderul
 ales:
 
 - **`Rezultat testare.txt`** — ieșirea consolei, identică: banner de versiune, copyright,
@@ -1282,6 +1348,9 @@ Sunt intenționate, nu scăpări:
   portul C# reproduce prototipul la a doua zecimală; prototipul n-a fost păstrat.
 - **`--synthetic`, `--lenses` și `--against` există doar în C#.** Primele două produc un
   fișier și o listă; `--against` e bateria de structură, deja verificată, pe un raport.
+- **Structura cu `--raw` / `--lens` există doar în C#**: comparația cu profilele citește
+  cataloagele Adobe și lensfun, pe care Python nu le are. Fără cele două flaguri ieșirea e
+  identică, și cele 15 scenarii de structură din `crosscheck.py` o verifică.
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)

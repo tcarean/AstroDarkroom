@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlatCheck;
@@ -616,11 +617,11 @@ public class SyntheticRunTests
         var other = new LensChoice(ProfileSource.Adobe, "Tokina", "Tokina X", "NIKON D90");
         var lensfun = new LensChoice(ProfileSource.Lensfun, "Tokina", "Tokina X", "Nikon F AF");
         var all = new[] { generic, body, other, lensfun };
-        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(all, "NIKON D750"));
-        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(all, "Nikon D750"));      // case and spacing do not matter
-        Assert.Equal(all, SyntheticRun.PreferCamera(all, "NIKON D3300"));                // no file of its own: nothing changes
-        Assert.Equal(all, SyntheticRun.PreferCamera(all, null));
-        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(new[] { body }, "Canon EOS 6D"));   // a single hit is never dropped
+        Assert.Equal(new[] { body }, LensIdentification.PreferCamera(all, "NIKON D750"));
+        Assert.Equal(new[] { body }, LensIdentification.PreferCamera(all, "Nikon D750"));      // case and spacing do not matter
+        Assert.Equal(all, LensIdentification.PreferCamera(all, "NIKON D3300"));                // no file of its own: nothing changes
+        Assert.Equal(all, LensIdentification.PreferCamera(all, null));
+        Assert.Equal(new[] { body }, LensIdentification.PreferCamera(new[] { body }, "Canon EOS 6D"));   // a single hit is never dropped
     }
 
     [Fact]
@@ -632,7 +633,7 @@ public class SyntheticRunTests
 
         // the Adobe file on the camera's mount by ID, plus the lensfun Tokina of the same range:
         // lensfun carries no Nikon IDs, so it joins by maker and range
-        var candidates = SyntheticRun.CandidatesFromRaw(sources.Catalog, tokina);
+        var candidates = LensIdentification.CandidatesFromRaw(sources.Catalog, tokina);
         Assert.Equal(2, candidates.Count);
         Assert.Equal(ProfileSource.Adobe, candidates[0].Source);
         Assert.Equal("NIKON CORPORATION", candidates[0].Mount);
@@ -650,7 +651,7 @@ public class SyntheticRunTests
 
         // the same ID from a lens whose range every name contradicts: nothing is chosen, --lens is asked for
         var nikkor = new LoadedFrame { Camera = "NIKON D3300", NikonLensId = 139, LensMinFocalMm = 18, LensMaxFocalMm = 200, LensMaxAperture = 3.5 };
-        Assert.Empty(SyntheticRun.CandidatesFromRaw(sources.Catalog, nikkor));
+        Assert.Empty(LensIdentification.CandidatesFromRaw(sources.Catalog, nikkor));
         string refusal = SyntheticRun.ChooseLens(new SyntheticRequest(), sources, nikkor);
         Assert.Contains("--lens", refusal);
 
@@ -708,5 +709,169 @@ public class SyntheticRunTests
         Assert.False(run.Refused);
         Assert.Contains("(cerut: 19 mm din FOCALLEN, f/3.2 din --fstop)", sw.ToString());
         Assert.True(run.Result.Profile.FocalMm == 18 || run.Result.Profile.FocalMm == 20);
+    }
+}
+
+/// <summary>
+/// The one identification the console, the Sintetic tab and the Structure tab share.
+/// Pinned: the precedence (given beats read, the reference beats the raw beside it for the
+/// focal, only a raw gives the f-stop), the sources printed beside each value, the crop
+/// from the lensfun camera table, and the candidates narrowed by range and by mount.
+/// </summary>
+public class LensIdentificationTests
+{
+    static LoadedFrame Master() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
+        FocalMm = 20, Camera = "Nikon D3300",
+    };
+
+    static LoadedFrame Raw() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 18, FNumber = 2.8, Camera = "NIKON D3300",
+        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+    };
+
+    [Fact]
+    public void TheReferenceGivesTheFocal_TheRawBesideItGivesTheFStop_TheTableGivesTheCrop()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+
+        ShotIdentity id = LensIdentification.Identify(Master(), Raw(), sources, rawName: "DSC_0001.NEF");
+
+        Assert.Equal(20, id.FocalMm);                       // FOCALLEN beats the raw's 18
+        Assert.Equal("FOCALLEN", id.FocalSource);
+        Assert.Equal(2.8, id.FStop);
+        Assert.Equal("raw (DSC_0001.NEF)", id.FStopSource);
+        Assert.Equal(1.523, id.Crop!.Value, 3);
+        Assert.True(id.CropFromTable);
+        Assert.Equal("baza lensfun, Nikon D3300", id.CropSource);
+        Assert.Equal("Nikon D3300", id.Camera);
+        Assert.Contains("focala din FOCALLEN", id.Notes);
+        Assert.Contains("diafragma din DSC_0001.NEF", id.Notes);
+        Assert.Contains("crop din baza lensfun (Nikon D3300)", id.Notes);
+
+        // the raw's lens ID, narrowed by its range, then the camera's mount: the Nikon Adobe
+        // file and the lensfun Tokina, not the Canon file
+        Assert.True(id.HasRawLensId);
+        Assert.Equal(2, id.Candidates.Count);
+        Assert.Equal(ProfileSource.Adobe, id.Candidates[0].Source);
+        Assert.Equal("NIKON CORPORATION", id.Candidates[0].Mount);       // not the Canon file of the same lens
+        Assert.Equal(ProfileSource.Lensfun, id.Candidates[1].Source);
+        Assert.Equal("ID-ul Nikon 139 din raw (11-20 mm f/2.8)", id.RawLensLabel);
+    }
+
+    [Fact]
+    public void WhatIsGivenBeatsWhatIsRead()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+
+        ShotIdentity id = LensIdentification.Identify(Master(), Raw(), sources, focal: 11, fstop: 4, crop: 1.0, rawName: "x.NEF");
+
+        Assert.Equal((11.0, "--focal"), (id.FocalMm!.Value, id.FocalSource));
+        Assert.Equal((4.0, "--fstop"), (id.FStop!.Value, id.FStopSource));
+        Assert.Equal((1.0, "--crop"), (id.Crop!.Value, id.CropSource));
+        Assert.False(id.CropFromTable);
+        Assert.Empty(id.Notes);                              // nothing was read, so nothing to note
+    }
+
+    [Fact]
+    public void WithoutARawNothingIsGuessed()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+
+        ShotIdentity id = LensIdentification.Identify(Master(), null, sources);
+
+        Assert.Equal(20, id.FocalMm);
+        Assert.Null(id.FStop);
+        Assert.Null(id.FStopSource);
+        Assert.False(id.HasRawLensId);
+        Assert.Empty(id.Candidates);
+        Assert.Null(id.Raw);
+    }
+
+    [Fact]
+    public void ARawReferenceIsItsOwnSourceOfEverything()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+
+        ShotIdentity id = LensIdentification.Identify(Raw(), null, sources);
+
+        Assert.Equal((18.0, "raw (libraw)"), (id.FocalMm!.Value, id.FocalSource));
+        Assert.Equal((2.8, "raw (libraw)"), (id.FStop!.Value, id.FStopSource));
+        Assert.Contains("focala din raw", id.Notes);
+        Assert.Equal(2, id.Candidates.Count);
+    }
+
+    [Fact]
+    public void AnUnknownCameraLeavesTheCropUnknownWithTheReason()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var master = Master();
+        master.Camera = "Pentax K-1";
+
+        ShotIdentity id = LensIdentification.Identify(master, null, sources);
+
+        Assert.Null(id.Crop);
+        Assert.StartsWith("necunoscut", id.CropSource);
+        Assert.Equal("Pentax K-1", id.Camera);
+    }
+
+    /// <summary>
+    /// A manual lens (Samyang 135 f/2 on a D3300) gives an ID no profile carries, but the
+    /// camera's non-CPU lens data gives the range: then the candidates are the lenses on
+    /// the camera's mount whose NAME says exactly that range, flagged as such - and never
+    /// when the camera is unknown, since "11-20 mm f/2.8 on every mount" is a list, not an
+    /// identification.
+    /// </summary>
+    [Fact]
+    public void WhenTheIdMatchesNothingTheRawsRangeStillNamesTheCandidates()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var manual = Raw();
+        manual.NikonLensId = 999;                                   // no profile carries it
+
+        ShotIdentity id = LensIdentification.Identify(Master(), manual, sources, rawName: "x.NEF");
+
+        Assert.True(id.CandidatesByRangeOnly);
+        Assert.Equal(2, id.Candidates.Count);                       // the Nikon Adobe file and the lensfun entry, not the Canon file
+        Assert.All(id.Candidates, c => Assert.Contains("11-20", c.Name));
+        Assert.StartsWith("gama 11-20 mm f/2.8 din raw (ID-ul Nikon 999", id.RawLensLabel);
+
+        // a range that no name matches: nothing, and the gap stays "no match"
+        manual.LensMaxAperture = 5.6;
+        id = LensIdentification.Identify(Master(), manual, sources, rawName: "x.NEF");
+        Assert.Empty(id.Candidates);
+        Assert.False(id.CandidatesByRangeOnly);
+
+        // no camera: no range fallback
+        var noCamera = Raw();
+        noCamera.NikonLensId = 999;
+        noCamera.Camera = null;
+        var master = Master();
+        master.Camera = null;
+        id = LensIdentification.Identify(master, noCamera, sources, rawName: "x.NEF");
+        Assert.Empty(id.Candidates);
+
+        // the ID still wins when it matches
+        id = LensIdentification.Identify(Master(), Raw(), sources, rawName: "x.NEF");
+        Assert.False(id.CandidatesByRangeOnly);
+    }
+
+    [Fact]
+    public void FirstRawIsTheRuleBothTabsShare()
+    {
+        Assert.Equal("b.NEF", LensIdentification.FirstRaw(new[] { "a.fit", "b.NEF", "c.nef" }));
+        Assert.Null(LensIdentification.FirstRaw(new[] { "a.fit" }));
+        Assert.Null(LensIdentification.FirstRaw(null));
+        Assert.Equal("b.NEF", LensIdentification.NameOf(@"E:\x\flats\b.NEF"));
+        Assert.Null(LensIdentification.NameOf(null));
     }
 }

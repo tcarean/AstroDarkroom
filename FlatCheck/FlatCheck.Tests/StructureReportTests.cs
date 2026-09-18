@@ -284,4 +284,189 @@ public class StructureReportTests
         Assert.Contains("pata maxima (o dala)    :", w.ToString());
         Assert.Contains("Pata maxima", StructureReport.WhyResidualMatters());
     }
+
+    // ---------------------------------------------------------------- vignetarea fata de profil
+
+    static LoadedFrame MasterFrame() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
+        FocalMm = 20, Camera = "Nikon D3300",
+    };
+
+    static LoadedFrame RawFrame() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
+        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+    };
+
+    /// <summary>The fixture master (k = 0.45, 0.86 stops) against the fixture profiles, through the run's own Compare.</summary>
+    static StructureOutcome Compared(TempWorkspace ws, bool withRaw = true, string lensText = null, double? fstop = null)
+    {
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        var query = new StructureQuery
+        {
+            Sources = sources, RawPath = withRaw ? "DSC_0001.NEF" : null, LoadInfo = _ => RawFrame(),
+            LensText = lensText, FStop = fstop,
+        };
+        return StructureRun.Compare(r, MasterFrame(), query);
+    }
+
+    [Fact]
+    public void TheProfileBlockNamesTheMasterEveryProfileAndTheNearestOne()
+    {
+        using var ws = new TempWorkspace();
+        StructureOutcome o = Compared(ws);
+        var w = new StringWriter();
+
+        StructureReport.Write(o, "x.fit", w);
+        string text = w.ToString();
+
+        Assert.True(o.Compared);
+        Assert.Contains(StructureReport.ProfilesHeading, text);
+        Assert.Contains("master                  : " + StructureReport.MasterDepth(o.Profiles), text);
+        var rows = StructureReport.ProfileRows(o.Profiles);
+        Assert.Equal(2, rows.Count);
+        Assert.Single(rows, r => r.IsNearest);
+        Assert.Contains("<- cel mai apropiat, da verdictul", text);
+        Assert.Contains(AgainstReport.DepthScale(), text);
+        Assert.Contains("RADIALA", text);
+        foreach (ProfileRow row in rows)
+        {
+            Assert.Contains(row.Lens, text);
+            Assert.Contains(row.Diff, text);
+            Assert.Matches(@"^[+-]\d\.\d\d stopuri$", row.Diff);
+            Assert.NotEmpty(row.Note);
+        }
+    }
+
+    [Fact]
+    public void TheVerdictIsTheWorseOfShapeAndDepth_AndTheDetailSaysBoth()
+    {
+        using var ws = new TempWorkspace();
+        StructureOutcome o = Compared(ws);
+        var w = new StringWriter();
+
+        StructureReport.Write(o, "x.fit", w);
+        string text = w.ToString();
+
+        Assert.Equal("PERFECT", o.Structure.Verdict);                 // the fixture is purely radial
+        Assert.NotEqual("PERFECT", o.Profiles.Verdict);               // but 0.2 stops deeper than the model
+        Assert.Equal(o.Profiles.Verdict, o.Verdict);
+        Assert.True(o.DepthCarriesTheVerdict);
+        Assert.Contains("VERDICT: " + o.Verdict, text);
+        string detail = StructureReport.VerdictDetail(o);
+        Assert.Contains("forma     : PERFECT", detail);
+        Assert.Contains("adancimea : " + o.Profiles.Verdict, detail);
+        Assert.Contains(detail.Split('\n')[0], text);
+        // the advice is the depth's, with the sign read as the cause
+        Assert.Equal(StructureReport.DepthAdvice(o.Profiles.Nearest.DiffStops, o.Profiles.Verdict), StructureReport.Advice(o));
+        Assert.Contains(o.Profiles.Nearest.DiffStops > 0 ? "MAI MULT" : "MAI PUTIN", StructureReport.Advice(o));
+    }
+
+    /// <summary>
+    /// The depth scale is the residual scale in stops - the same Th.Resid* through
+    /// 2^|D| - 1 - and the rows say so: the boundaries in stops must be the ones the
+    /// one-line scale prints, and the note must say it is not a new threshold.
+    /// </summary>
+    [Fact]
+    public void TheDepthScaleRowsAreTheResidualScaleInStops()
+    {
+        var rows = StructureReport.DepthScaleRows();
+
+        Assert.Equal(new[] { "PERFECT", "BUN", "ACCEPTABIL", "REFA" }, rows.Select(r => r.Band));
+        Assert.Contains("sub 0.03 stopuri", rows[0].Range);
+        Assert.Contains("0.14 - 0.26 stopuri", rows[2].Range);
+        Assert.Contains("peste 0.26 stopuri", rows[3].Range);
+        Assert.Contains("sub 2 %", rows[0].Meaning);
+        foreach (string boundary in new[] { "0.03", "0.14", "0.26" })
+            Assert.Contains(boundary, AgainstReport.DepthScale());
+        Assert.Contains("2 / 10 / 20 %", StructureReport.DepthScaleNote());
+        Assert.Contains("Nu e un prag nou", StructureReport.DepthScaleNote());
+    }
+
+    [Fact]
+    public void TheDepthAdviceReadsTheSignAsTheCause()
+    {
+        string deeper = StructureReport.DepthAdvice(+0.5, "REFA");
+        string shallower = StructureReport.DepthAdvice(-0.4, "REFA");
+        string mild = StructureReport.DepthAdvice(+0.2, "ACCEPTABIL");
+
+        Assert.Contains("MAI MULT", deeper);
+        Assert.Contains("difuzor", deeper);
+        Assert.Contains("Refa flat-urile", deeper);
+        Assert.Contains("MAI PUTIN", shallower);
+        Assert.Contains("cer", shallower);
+        Assert.Contains("--ratio nu-l vad", mild);
+        Assert.DoesNotContain("Refa flat-urile", mild);
+        Assert.Contains("0.2 stopuri", mild);
+    }
+
+    [Fact]
+    public void WithoutARawTheBlockExplainsAndTheVerdictStaysTheFiveTests()
+    {
+        using var ws = new TempWorkspace();
+        StructureOutcome o = Compared(ws, withRaw: false);
+        var w = new StringWriter();
+
+        StructureReport.Write(o, "x.fit", w);
+        string text = w.ToString();
+
+        Assert.False(o.Compared);
+        Assert.Equal(ComparisonGap.NoRaw, o.Profiles.Gap);
+        Assert.Equal(o.Structure.Verdict, o.Verdict);
+        Assert.False(o.DepthCarriesTheVerdict);
+        Assert.Contains("nu se poate compara: " + StructureReport.GapText(o), text);
+        Assert.Contains("niciun raw langa master", StructureReport.GapText(o));
+        Assert.Contains("--lens", StructureReport.GapText(o));
+        Assert.Contains("VERDICT: PERFECT", text);
+        Assert.Contains(StructureReport.Advice("PERFECT"), text);     // the shape's advice, unchanged
+    }
+
+    [Fact]
+    public void WithALensButNoFStopTheGapIsTheFStop()
+    {
+        using var ws = new TempWorkspace();
+        StructureOutcome o = Compared(ws, withRaw: false, lensText: "Tokina");
+
+        Assert.Equal(ComparisonGap.NoFStop, o.Profiles.Gap);
+        Assert.Contains("diafragma nu se stie", StructureReport.GapText(o));
+        Assert.Contains("--fstop", StructureReport.GapText(o));
+
+        // the same with the f-stop given compares with every Tokina on the camera's mount
+        o = Compared(ws, withRaw: false, lensText: "Tokina", fstop: 2.8);
+        Assert.True(o.Compared);
+        Assert.Equal(2, o.Profiles.Profiles.Count);
+    }
+
+    [Fact]
+    public void ARawThatCannotBeReadIsNamedInTheGap()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = Result(FitsTestData.Radial(512, 512));
+        var query = new StructureQuery { Sources = sources, RawPath = "bad.NEF", LoadInfo = _ => throw new IOException("stricat") };
+
+        StructureOutcome o = StructureRun.Compare(r, MasterFrame(), query);
+
+        Assert.Equal(ComparisonGap.NoRaw, o.Profiles.Gap);
+        Assert.Contains("bad.NEF nu s-a putut citi", o.RawError);
+        Assert.Contains("stricat", StructureReport.GapText(o));
+        Assert.Equal("PERFECT", o.Verdict);
+    }
+
+    [Fact]
+    public void EveryGapHasWordsAndNoneOfThemUsesDiacritics()
+    {
+        foreach (ComparisonGap gap in Enum.GetValues(typeof(ComparisonGap)))
+        {
+            if (gap == ComparisonGap.None) continue;
+            var c = new VignettingComparison(0.5, LensIdentification.Identify(MasterFrame(), null, null), null, gap, null);
+            string text = StructureReport.GapText(new StructureOutcome(Result(FitsTestData.Radial(256, 256)), c, c.Shot, null));
+            Assert.False(string.IsNullOrWhiteSpace(text), gap.ToString());
+            Assert.DoesNotMatch("[ăâîșțĂÂÎȘȚ]", text);
+        }
+        Assert.DoesNotMatch("[ăâîșțĂÂÎȘȚ]", StructureReport.ComparisonNote() + StructureReport.GapMeaning() + StructureReport.DepthAdvice(1, "REFA") + StructureReport.DepthAdvice(-1, "BUN"));
+    }
 }

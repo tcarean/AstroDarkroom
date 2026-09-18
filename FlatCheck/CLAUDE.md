@@ -64,7 +64,11 @@ not a copy.
     no f-number; a D3300 raw with third-party glass has no lens name but has the Nikon
     lens ID). Nothing below it knows where the
     pixels came from, and that is what keeps the two formats from growing separate
-    behaviour. Mirrors `load_image_with_header` in `flatcheck.py`.
+    behaviour. Mirrors `load_image_with_header` in `flatcheck.py`. `LoadInfo(path)` is the
+    same dispatch **without pixels**: `Image` null, the shot fields filled - on a FITS from
+    the header alone, on a raw from libraw's metadata at `OpenFile`, before `Unpack`
+    (measured: tens of milliseconds, not seconds). It is what the lens identification and
+    the Sintetic tab's prefill read, so neither decodes 24 MP for an f-number.
   - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
     get the undebayered Bayer mosaic, the exact white/black levels, and the CFA colour
     order out of a camera raw. `IsRawPath` is the extension gate; `RawExtensions` exposes
@@ -146,12 +150,27 @@ not a copy.
     sizes as notes - the fallback for a body the lensfun camera table (1053 entries, the
     one list of cameras, maintained upstream) does not have; the refusal text lists them
     and the window offers them as chips.
+    `LensIdentification` is the **one** identification of the shot - focal, f-stop, crop,
+    camera, each with its source, and the lens candidates - from a reference frame (the
+    master, or the console's raw) and a raw beside it, both through `LoadInfo`. It used to
+    live half in `SyntheticRun.Complete` and half in the Sintetic tab's prefill, and the
+    Structure tab's comparison needed exactly the same rule; two copies would have chosen
+    two lenses for one folder. Candidates: the Nikon lens ID narrowed by the MakerNote
+    range, the lensfun lenses of the same makers, the camera's mount, `PreferCamera`; and,
+    when the ID matches nothing but the raw gives a full range, **the lenses of the mount
+    whose name says exactly that range** (`CandidatesByRangeOnly`) - a manual Samyang 135
+    f/2 on a D3300 carries the "non-CPU lens" ID 74, which no profile has, and the range
+    135 mm f/2.0 from the camera's menu; the report says the list may hold another lens
+    of the same range. `FirstRaw` is the "raw beside the master" rule both tabs share.
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
     `SyntheticFlatBuilder` (mode 7: a `VignettingModel` and a frame size in, the raster
     and its depth at four reference points out), `AgainstAnalyzer` (in `Runs/AgainstRun.cs`:
     two rasters prepared, normalised to median 1, their ratio through the structure battery),
+    `VignettingComparison` (the sixth structure test: the master's corner depth against
+    each candidate lens's nearest profile, measured with `CornerStats` on the model raster
+    built at analysis size - see "The sixth test" under mode 1),
     `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
     measurements - read it before touching the method) and `SmoothScaleAdvisor` (proposes
     the smoothing scale from the master - `Metrics.FineTexture` on the input, then one
@@ -206,6 +225,15 @@ not a copy.
     histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason` (the raw-vs-screen
     table and its explanation) - all window-only, like `MapScaleLabel`, and for the same
     reason, and from
+    `StructureReport` also owns the profile block: `ProfileRows`, `MasterDepth`,
+    `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` / `DepthScaleNote` (the depth
+    scale as four bands in stops, `Th.Resid*` through `Stats.StopsForError`, and the sentence
+    that it is the residual scale translated, not a new threshold - the user asked whether it
+    was a second scale), `GapText` / `GapMeaning` (one sentence per
+    `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of the verdict; the
+    console pads them into `VerdictDetail`, the window labels them itself) and
+    `DepthAdvice`, which replaces `Advice` when the depth carried the verdict and reads the
+    sign as the cause. From
     `RatioReport` the seven that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
     `Precondition`, `WorldMeaning`, `SensorCaveat`, and the two window-only notes under the
     world-fixed rows, `WorldNote` (what "per orientation" means, and that the coloured
@@ -227,7 +255,13 @@ not a copy.
   - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
     `SmoothRun`, `SyntheticRun`, `AgainstRun`, plus `SeriesFinder` (which files a series
-    run covers). `SyntheticRun` is the third run that can refuse and the second whose
+    run covers). `StructureRun.Execute` takes an optional `StructureQuery` (profile
+    sources, a raw beside the master, or `--lens` text, plus the overrides) and returns a
+    `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
+    query; with one, present even when it could not compare - `Gap` says why) and the
+    combined verdict. Without a query the output is byte-identical to before, which is
+    what keeps the golden files and `crosscheck.py` still. `Compare` is the second half
+    on its own, so the window can explain a missing raw without reloading the master. `SyntheticRun` is the third run that can refuse and the second whose
     product is a file (`WriteFits` on the caller's stream, like `SmoothRun`); its
     `SyntheticRequest` carries every value with the source it came from, so the report
     can print "cerut" beside "profil folosit". `SmoothRun` is the
@@ -289,6 +323,11 @@ not a copy.
     of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
     proposes nothing, because the two masters it needs live in two *different* session
     folders - see "The two applications".
+    `ProfileCatalog` is the lens-profile catalog loaded once for the whole window (in the
+    background, on first request, retried after a failure) - it was the Sintetic tab's
+    until the Structure tab needed the same list; `MainViewModel` builds it and hands it
+    to both, and a `Func<string, LoadedFrame>` beside it lets the tests put a fabricated
+    raw in place of a file in `flats/`.
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error) -
     `SyntheticTabViewModel` being the seventh, with `LensRow` (a public row over an internal
     `LensChoice`) and `SyntheticGuideViewModel` (the sources panel, collapsed by default) -
@@ -661,7 +700,7 @@ map. What differs is only what each does with the three outputs.
 | smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_netezit.fit` beside the master, on a button, after asking about an existing file |
 | synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_sintetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--raw`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop; the Structure tab's profile comparison takes the first raw in `flats/` by itself |
 
 The console keeps the options because it is the scriptable one, and because `--fov` and
 `--sat` exist for telling the tool something the header does not say. Adding them to the
@@ -726,6 +765,22 @@ two columns look like two views of one thing - so it is said in words. Same coll
 pattern and the same `GuideRow` template as the map guide, text in `SessionMessages`
 beside it, state in `HowToReadViewModel`. The disclosure toggle those three share lives in
 `Dark.xaml` as `Style x:Key="Disclosure"`; it had been hand-written twice before that.
+
+**The Structure tab compares with the profiles in the same run, when `flats/` holds a
+raw.** `SirilSession.ReferenceRawPath` (the first raw, through `LensIdentification.FirstRaw`
+- the Sintetic tab's prefill reads the same file) makes the run exactly `flatcheck master
+--raw <that raw>` with the window's `ProfileCatalog`, so the saved report stays the
+console's and the verdict appears once, already combined - not PERFECT on five tests and
+REFA two seconds later. The catalog is awaited before the run (a second or two on the first
+open, under the busy overlay, which says so). Without a raw the run is the plain one, the
+report identical to `flatcheck master`, and the card under TESTE shows
+`StructureReport.GapText` computed by `StructureRun.Compare` on the master's header alone.
+The rows are `LensProfileRow` (public copy of the core's `ProfileRow`), rendered by a
+template local to `StructureView.xaml`; `Tests` stays five, so the scale heading and the
+Ratio and Netezire tabs, which reuse `StructureRows.Tests`, are untouched. `Populate` is
+`internal` and sets `HasResult` for the smoke test. The one thing the window cannot do
+that the console can is `--lens` by hand: a body without a raw in `flats/` gets the
+explanation, not a lens picker (the user's decision, 2026-09-18: the raws are always there).
 
 #### Two places for the master
 
@@ -1038,6 +1093,56 @@ measures is the sum of a camera-fixed part (harmless - the flat divides it out) 
 world-fixed part (harmful). One master does not contain the information to separate them;
 mode 2 does. The report says so, and the bound is still the right thing to run first,
 because it is the only test that costs no extra shooting.
+
+**The sixth test: the master's vignetting against the lens profiles** (`--raw <flat.NEF>`
+or `--lens <text>`; the window does it by itself when `flats/` holds a raw). The five tests
+measure departure from radial symmetry and are blind by construction to a *radial* excess:
+the tablet masters of 2026-09-18 (Tokina 20 mm f/2.8, four orientations at 90°) read
+PERFECT on all five with 1.26 stops of vignetting, against 0.66-0.92 from the two profile
+databases - the panel's angular falloff, made radial by the rotation, and `--ratio` is
+just as blind. The only external reference the tool has is the lens's published profile,
+so `VignettingComparer.Analyze` puts the master beside every candidate lens's nearest
+profile (focal, then f-stop in stops, then farthest distance - `LensCatalog.Nearest`).
+Decisions, all measured:
+
+- **The profile's depth is measured with the master's own operator.** Not the polynomial
+  at the corner point: the model is built as a raster at the analysis size
+  (`SyntheticFlatBuilder.Build`) and `Metrics.CornerStats` runs on it, so the box median
+  and the half-pixel artefact (known issue 5) are the same on both sides. On a master that
+  *is* the model the difference is 0.00 (`AMasterThatIsTheModelReadsZeroStopsAndPerfect`);
+  what remains is the master's 2x2 block mean, under a thousandth of a stop.
+- **No new threshold.** The difference in stops goes through `Stats.DepthErrorPct`
+  (`2^|D| - 1`, the corner error of a light calibrated with the wrong flat) onto the
+  residual scale, exactly as `--against`'s depth does: 0.03 / 0.14 / 0.26 stops. The
+  arithmetic moved from `AgainstResult` into `Stats` when the second consumer appeared.
+- **The verdict is the nearest profile's, not the worst.** The two databases differ by
+  ~0.2 stops on the same lens (`docs/lens-profiles.md` §8); a master that coincides with
+  one of them is not wrong, and "worst" would have called the good monitor masters REFA
+  (0.15 off Adobe, 0.03 off lensfun). The block prints every profile, marks the nearest,
+  and states the spread between them.
+- **The run's verdict is the worse of shape and depth**, as in `AgainstResult`, and the
+  exit code follows it. When the depth carried it the advice is `DepthAdvice`, which reads
+  the sign: plus = the master falls faster than the model, the source falls off with angle
+  (a panel too close or without a real diffuser; frosted sheets do not diffuse); minus =
+  the source fills the corners (the sky dome, ambient light, a reflection). Neither
+  `--ratio` nor more rotations help.
+- **When it cannot compare it says why and votes nothing** (`ComparisonGap`: no profiles
+  on the machine, no raw and no `--lens`, an ID nothing matches, no focal, no f-stop -
+  Siril writes none - or lensfun-only profiles without a crop). Unknown is not a refusal,
+  the `--light` rule.
+- **Without `--raw`/`--lens` nothing changes**: same text, same golden files, the 15
+  `crosscheck.py` structure scenarios untouched. `--help` moved, and was re-approved.
+
+Measured on the library (2026-09-18, `--raw` on the first raw of each `flats/`; the
+figures are in the README's table): tablet 7 and 15 sheets +0.34 / +0.33 against the
+nearest (lensfun D7100 entry, 0.91) - REFA, exit 3; the sky master -0.39 against Adobe
+0.66 - REFA; monitor close 0.00 against lensfun 7D2 - PERFECT; on-monitor -0.07 - BUN;
+Nikkor 35 DX +0.11 / +0.10 - BUN; Samyang 135 f/2 by range (see `LensIdentification`)
++0.11 / +0.10 against the Nikkor 135 f/2 DC's Adobe file, +0.15 against its own lensfun
+entry - BUN; Samyang at f/2.8 +0.01 - PERFECT. Pinned by `VignettingComparisonTests`,
+the profile half of `StructureReportTests`, the goldens `structure_with_profiles`
+(k = 0.6 fixture: BUN on shape, REFA on depth, exit 3) and `structure_lens_no_fstop`, and
+in the window `StructureTabTests` with a fabricated raw plus two smoke renders.
 
 ### 2. Attribution by 180° rotation - `flatcheck A.fit --ratio B.fit`
 
@@ -1980,6 +2085,7 @@ Every threshold lives in `Th`. Full picture:
 | tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | worst tile (`pata maxima`) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | local spot (`pete locale`) | structure | 2% = warning only, never a verdict | | `Th.LocalSpotWarn` |
+| vignetting vs the lens profile (nearest) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops | | `Th.Resid*` via `Stats.DepthVerdict` |
 | the five structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | world-fixed gradient per orientation | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` - informative label only |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |
@@ -2496,6 +2602,7 @@ flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight o
 flatcheck sky_flat.fit --expo --sky                    # 4b. sky flat
 flatcheck flat_brut.fit --expo --sat 4095 --black 150  # override, mostly for FITS
 flatcheck flat.fit -o harta.png                        # custom PNG path
+flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF   # 1 + the sixth test: vignetting vs the lens profiles, lens and f-stop from the raw
 flatcheck --lenses --lens "Tokina 11-20"               # 7. which lenses have a vignetting profile
 flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_sintetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
 flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic.fit   # how much the master differs from the model

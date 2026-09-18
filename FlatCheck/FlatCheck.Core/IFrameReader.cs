@@ -34,5 +34,14 @@ namespace FlatCheck
         bool Handles(string path);
 
         LoadedFrame Load(string path);
+
+        /// <summary>
+        /// Acelasi cadru, dar FARA pixeli: <see cref="LoadedFrame.Image"/> ramane null si
+        /// se completeaza doar ce spune fisierul despre el - headerul, focala, diafragma,
+        /// aparatul, obiectivul. Exista fiindca identificarea obiectivului si preumplerea
+        /// tabului Sintetic au nevoie de metadate, si o decodare de 24 MP pentru o
+        /// diafragma e o risipa care obliga la asteptari dupa lantul de deschidere.
+        /// </summary>
+        LoadedFrame LoadInfo(string path);
     }
 }

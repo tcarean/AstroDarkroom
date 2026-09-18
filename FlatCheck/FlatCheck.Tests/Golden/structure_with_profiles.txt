@@ -1,0 +1,74 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== STRUCTURA: <TMP>/ref.fit ===
+    dimensiune analiza : 120 x 80 (dupa 2x2 + downsample)
+    median / max ADU   : 24713 / 30000
+
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 1.12 stopuri (colt = 46% din centru)
+    offset centru iluminare :  0.45 %
+        varf iluminare = (60, 40)  vs  centru senzor = (60, 40)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+    pete locale (praf etc.) : +0.31 % (mai luminos) la (9, 21)
+        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
+        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
+        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
+
+  TESTE
+    imprastiere 4 colturi   :  2.39 %   [BUN]
+        stanga-sus    :  98.80 % din media colturilor
+        dreapta-sus   : 100.24 % din media colturilor
+        stanga-jos    :  99.76 % din media colturilor
+        dreapta-jos   : 101.20 % din media colturilor
+    asimetrie azimutala max :  0.75 %   [PERFECT]
+    reziduu dupa model rad. :  1.31 %   [PERFECT]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    :  1.41 %   [PERFECT]
+    pata maxima (o dala)    :  2.03 %   [BUN]
+
+  SCARA celor cinci teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
+    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
+    mica, o pata de condens - pe care reziduul il taie ca extrema.
+
+  VIGNETAREA fata de profilul obiectivului
+    master                  : 1.12 stopuri (colt = 46 % din centru)
+    Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]
+        profil 20 mm, f/2.8, infinit   : 0.66 stopuri (colt = 63 % din centru)   diferenta +0.46 stopuri = 37.5 % [REFA]
+    lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF]
+        profil 20 mm, f/2.8, infinit   : 0.85 stopuri (colt = 56 % din centru)   diferenta +0.28 stopuri = 21.1 % [REFA]  <- cel mai apropiat, da verdictul
+    verdictul comparatiei: REFA - al celui mai apropiat profil (lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8), +0.28 stopuri = 21.1 % eroare in coltul unui light calibrat cu masterul
+    cele 2 profile difera intre ele cu 0.18 stopuri in colt; un master care coincide cu unul din ele nu e gresit
+    (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
+    Aceeasi scara de reziduu ca cele cinci teste (2 / 10 / 20 %), aplicata erorii pe care
+    diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si
+    tradusa in stopuri. Nu e un prag nou.
+    Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul
+    loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e
+    modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.
+
+  VERDICT: REFA
+    forma     : BUN - cele cinci teste de abatere de la simetria radiala
+    adancimea : REFA - +0.28 stopuri fata de lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 = 21.1 % eroare in coltul light-ului calibrat
+    Cel mai rau dintre ele.
+    Masterul cade spre colt MAI MULT decat modelul obiectivului: sursa de lumina cade cu
+    unghiul - un panou (monitor, tableta) prea aproape sau fara un difuzor adevarat; foile
+    mate nu difuzeaza. Ajuta un difuzor lambertian (acril opal, un teanc gros de hartie
+    alba) sau un perete alb luminat din lateral; nu ajuta mai multe rotatii.
+    Excesul e radial, deci cele cinci teste si --ratio nu-l vad; nu-l va scoate nici background
+    extraction. Refa flat-urile.
+
+    -> harta salvata: <TMP>/out.png
+

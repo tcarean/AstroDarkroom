@@ -74,6 +74,10 @@ namespace FlatCheck
         /// adancimile scrise; aceeasi propozitie.
         /// </summary>
         internal static string FormatMatch(VignettingModel m, double cameraCrop, int w, int h)
+            => FormatMatch(m, cameraCrop, cameraCrop > 0 ? m.Extrapolation(w, h, cameraCrop) : double.NaN);
+
+        /// <summary>Aceeasi propozitie, cu extrapolarea deja calculata (SyntheticFlatResult.Extrapolation).</summary>
+        internal static string FormatMatch(VignettingModel m, double cameraCrop, double extrapolation)
         {
             string calib = $"{SensorFormats.LabelOf(m.CropFactor)} (crop {Fmt(m.CropFactor, "0.###")})";
             if (!(cameraCrop > 0))
@@ -83,7 +87,7 @@ namespace FlatCheck
             string head = same
                 ? $"profil calibrat pe {calib}; senzorul tau {yours}: acelasi format"
                 : $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, raza se recalculeaza prin mm";
-            return head + ExtrapolationTail(m.Extrapolation(w, h, cameraCrop));
+            return head + ExtrapolationTail(extrapolation);
         }
 
         /// <summary>Adevarat cand propozitia de mai sus e un avertisment: coltul tau cade mult dincolo de calibrare.</summary>
@@ -155,6 +159,14 @@ namespace FlatCheck
             if (f?.NikonLensId == null) return "(ID obiectiv)";
             string range = LensSpec.Describe(f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture);
             return $"ID-ul Nikon {f.NikonLensId.Value} din raw" + (range.Length > 0 ? $" ({range})" : "");
+        }
+
+        /// <summary>"gama 135 mm f/2.0 din raw (ID-ul Nikon 74 nu se potriveste cu niciun profil)" - candidatii dupa gama singura.</summary>
+        internal static string RawRangeLabel(LoadedFrame f)
+        {
+            string range = LensSpec.Describe(f?.LensMinFocalMm, f?.LensMaxFocalMm, f?.LensMaxAperture);
+            string id = f?.NikonLensId != null ? $" (ID-ul Nikon {f.NikonLensId.Value} nu se potriveste cu niciun profil)" : " (fara ID de obiectiv)";
+            return $"gama {range} din raw" + id;
         }
 
         internal static string NoLensGiven()

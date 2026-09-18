@@ -61,6 +61,13 @@ namespace FlatCheck
         internal bool Lenses;
         internal string Against;
 
+        /// <summary>
+        /// Un raw de langa master, pentru modul structura: din el se citesc diafragma si ID-ul
+        /// de obiectiv, ca in fereastra, si se compara vignetarea masterului cu profilele
+        /// obiectivului. Cu --lens in loc, obiectivele vin din text.
+        /// </summary>
+        internal string Raw;
+
         // --scale auto: unealta propune scara (SmoothScaleAdvisor) si netezeste la ea;
         // fara textura sau nedeterminat, nu scrie nimic si iese cu 2.
         internal bool ScaleAuto;
@@ -87,7 +94,7 @@ namespace FlatCheck
 
         static readonly HashSet<string> ValueFlags = new()
         { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
-          "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against" };
+          "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against", "--raw" };
 
         internal static Options Parse(string[] args)
         {
@@ -171,6 +178,9 @@ namespace FlatCheck
                         case "--profiles":
                             if (v.Length == 0) return o.Fail("--profiles asteapta un folder, a primit sirul gol");
                             o.Profiles = v; break;
+                        case "--raw":
+                            if (v.Length == 0) return o.Fail("--raw asteapta un fisier raw, a primit sirul gol");
+                            o.Raw = v; break;
                         case "--against":
                             if (v.Length == 0) return o.Fail("--against asteapta un al doilea flat, a primit sirul gol");
                             o.Against = v; break;

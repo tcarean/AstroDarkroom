@@ -120,6 +120,22 @@ namespace FlatCheck
              : val < Th.ResidCheck ? "ACCEPTABIL"
              : "REFA";
 
+        /// <summary>
+        /// Eroarea din coltul unui light calibrat cu un flat a carui vignetare difera de cea
+        /// adevarata cu <paramref name="stops"/>: 2^|stops| - 1, in procente. 0.1 stopuri = 7 %,
+        /// 0.42 = 34 %. NaN ramane NaN si cade in REFA, ca peste tot. E ce transforma o
+        /// diferenta de ADANCIME intr-o amplitudine fractionara ca toate celelalte, deci pe
+        /// aceeasi scara de reziduu, fara prag nou; o folosesc --against si comparatia cu
+        /// profilul obiectivului din modul structura.
+        /// </summary>
+        internal static double DepthErrorPct(double stops) => (Math.Pow(2, Math.Abs(stops)) - 1) * 100;
+
+        /// <summary>Verdictul unei diferente de adancime, pe scara de reziduu aplicata erorii din colt.</summary>
+        internal static string DepthVerdict(double stops) => ResidualVerdict(DepthErrorPct(stops));
+
+        /// <summary>Inversul lui <see cref="DepthErrorPct"/>: stopurile la care eroarea din colt atinge un prag.</summary>
+        internal static double StopsForError(double errorPct) => Math.Log2(1 + errorPct / 100);
+
         /// Severitate 0-3, unificata peste ambele scari, ca sa se poata lua "cel mai
         /// prost" dintr-un amestec de verdicte. Orice necunoscut e tratat ca cel mai rau.
         internal static int Severity(string verdict) => verdict switch

@@ -77,17 +77,13 @@ namespace FlatCheck
             Width = w;
             Height = h;
             DepthDiffStops = ratio.VignetteStops;
-            DepthErrorPct = DepthErrorOf(DepthDiffStops);
-            DepthVerdict = Stats.ResidualVerdict(DepthErrorPct);
+            DepthErrorPct = Stats.DepthErrorPct(DepthDiffStops);
+            DepthVerdict = Stats.DepthVerdict(DepthDiffStops);
             Verdict = Stats.Severity(DepthVerdict) > Stats.Severity(ratio.Verdict) ? DepthVerdict : ratio.Verdict;
         }
 
-        /// <summary>
-        /// Eroarea din coltul unui light calibrat cu un flat a carui vignetare difera de cea
-        /// adevarata cu <paramref name="stops"/>: 2^|stops| - 1, in procente. 0.1 stopuri = 7 %,
-        /// 0.42 = 34 %. NaN ramane NaN si cade in REFA, ca peste tot.
-        /// </summary>
-        internal static double DepthErrorOf(double stops) => (Math.Pow(2, Math.Abs(stops)) - 1) * 100;
+        /// <summary>Eroarea din colt pentru o diferenta de adancime; e <see cref="Stats.DepthErrorPct"/>, care are acum si un al doilea consumator.</summary>
+        internal static double DepthErrorOf(double stops) => Stats.DepthErrorPct(stops);
     }
 
     internal static class AgainstAnalyzer
@@ -159,7 +155,7 @@ namespace FlatCheck
             => $"sub {StopsFor(Th.ResidPerfect):F2} stopuri PERFECT, sub {StopsFor(Th.ResidUsable):F2} BUN, sub {StopsFor(Th.ResidCheck):F2} ACCEPTABIL, peste REFA";
 
         /// <summary>Inversul lui <see cref="AgainstResult.DepthErrorOf"/>: stopurile la care eroarea din colt atinge un prag.</summary>
-        internal static double StopsFor(double errorPct) => Math.Log2(1 + errorPct / 100);
+        internal static double StopsFor(double errorPct) => Stats.StopsForError(errorPct);
 
         static string Cell(string value, string verdict) => string.IsNullOrEmpty(verdict) ? value : $"{value} [{verdict}]";
 

@@ -1,5 +1,8 @@
 # Synthetic flats from lens vignetting profiles: specification and evidence
 
+Covers also, since 2026-09-18, the structure mode's sixth test - the master's vignetting
+against the lens profiles (section 11).
+
 Covers `FlatCheck.Core/LensProfiles/` (`VignettingModel`, `LensProfile` / `LensCatalog` /
 `AdobeProfileFile`, `LcpReader`, `LensfunReader`, `ProfileLocator`),
 `Analysis/SyntheticFlatBuilder.cs`, `Report/SyntheticReport.cs`, `Runs/SyntheticRun.cs`,
@@ -375,7 +378,81 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   camera; the golden files `synthetic_written`, `synthetic_lensfun`,
   `synthetic_ambiguous`, `lenses`, `against_radial` pin the console output on them.
 
-## 11. Known limits, for the next change
+## 11. The master against the profiles, inside the structure mode
+
+Code: `Analysis/VignettingComparison.cs`, `LensProfiles/LensIdentification.cs`,
+`Runs/StructureRun.cs` (`StructureQuery`, `StructureOutcome`), the profile block of
+`Report/StructureReport.cs`; window `StructureTabViewModel` + `Session/ProfileCatalog.cs`.
+Measured 2026-09-18 on the library below with the Debug build, `--raw` on the first raw of
+each session's `flats/`.
+
+**Why.** The tablet masters (section 8 of `tokina-tablet-flats` in the author's notes:
+Tokina 20 mm f/2.8, four orientations at 90°, 7 or 15 frosted binder covers on a tablet)
+read PERFECT on all five structure tests with 1.26 stops of vignetting, against 0.66-0.92
+from the two databases. The five tests measure departure from radial symmetry; a radial
+excess is invisible to them and to `--ratio`. The lens profile is the only external
+reference the tool has.
+
+**How.** For each candidate lens (`LensIdentification`: the raw's Nikon ID narrowed by the
+MakerNote range and the camera's mount, the lensfun lenses of the same makers; or, when the
+ID matches nothing, the lenses of the mount whose *name* says exactly the raw's range - the
+manual-lens case), the nearest profile (`LensCatalog.Nearest`) is built as a raster at the
+analysis size and measured with `Metrics.CornerStats`, the master's own operator. On a
+master that is the model the difference is 0.00; the residual is the master's 2x2 block
+mean, under 0.001 stops (`TheProfilesDepthIsMeasuredWithTheMastersOwnOperator`). The
+difference `master - profile` in stops goes through `Stats.DepthErrorPct` onto the residual
+scale (section 7's arithmetic, moved into `Stats`). The verdict is the nearest profile's;
+the run's verdict is the worse of shape and depth. The scale is printed both ways - the
+one-line form in stops (`AgainstReport.DepthScale`) and, in the window, four bands with the
+verdict's marked (`StructureReport.DepthScaleRows`) - each followed by the sentence that it
+is the residual scale translated into stops, not a new threshold: the first screen showed
+the stops line right above the five tests' 2 / 10 / 20 % table and the user asked whether
+they were two different scales.
+
+**Measured** (corner, stops; "nearest" is the profile that gives the verdict):
+
+| session | master | Adobe | lensfun | nearest | diff | depth | shape | run | exit |
+|---|---|---|---|---|---|---|---|---|---|
+| Tokina tablet, 7 sheets | 1.26 | 0.66 | 0.91 / 0.85 | lensfun D7100 | +0.34 | REFA | PERFECT | REFA | 3 |
+| Tokina tablet, 15 sheets | 1.24 | 0.66 | 0.91 / 0.85 | lensfun D7100 | +0.33 | REFA | BUN | REFA | 3 |
+| Tokina sky, no diffuser | 0.27 | 0.66 | 0.91 / 0.85 | Adobe | −0.39 | REFA | ACCEPTABIL | REFA | 3 |
+| Tokina monitor, close | 0.85 | 0.66 | 0.91 / 0.85 | lensfun 7D2 | 0.00 | PERFECT | BUN | BUN | 0 |
+| Tokina on monitor | 0.78 | 0.66 | 0.91 / 0.85 | lensfun 7D2 | −0.07 | BUN | ACCEPTABIL | ACCEPTABIL | 2 |
+| Nikkor 35 DX sky ISO400 | 0.63 | 0.52 (1.51 m) | 0.30 / 0.16 | Adobe | +0.11 | BUN | BUN | BUN | 0 |
+| Nikkor 35 DX sky ISO800 | 0.62 | 0.52 | 0.30 / 0.16 | Adobe | +0.10 | BUN | ACCEPTABIL | ACCEPTABIL | 2 |
+| Samyang 135 f/2 sky ISO400 | 0.61 | Nikkor DC 0.50 | Samyang 0.46 | Adobe (Nikkor) | +0.11 | BUN | BUN | BUN | 0 |
+| Samyang 135 f/2 sky ISO1600 | 0.60 | Nikkor DC 0.50 | Samyang 0.46 | Adobe (Nikkor) | +0.10 | BUN | ACCEPTABIL | ACCEPTABIL | 2 |
+| Samyang 135 f/2.8 sky | 0.15 | Nikkor DC 0.12 | Samyang 0.14 | lensfun Samyang | +0.01 | PERFECT | ACCEPTABIL | ACCEPTABIL | 2 |
+
+Readings:
+
+- The two tablet masters are the case the mode was built for: the only REFA that the five
+  tests did not see. Against Adobe they are +0.59 / +0.58 (50 %); the nearest rule takes
+  the deeper lensfun entry and still reads REFA.
+- The sky master is 0.4 stops too shallow against every profile (−0.39 to −0.64); the sign
+  reads "the source fills the corners", which is section 8's finding.
+- The two monitor masters land on the lensfun 7D2 entry: PERFECT and BUN. "Worst" would
+  have made them ACCEPTABIL / BUN against Adobe (0.19 / 0.11) - the reason the verdict is
+  the nearest profile's.
+- The Nikkor 35 f/1.8G's Adobe file has only a 1.51 m profile at f/2.8 (`Nearest` prefers
+  the farthest distance among equal focal and f-stop, and there is only one); the two
+  lensfun entries for it disagree with each other by 0.14 stops and with Adobe by 0.2-0.4.
+- The Samyang is a manual lens: the D3300 writes the "non-CPU lens" ID 74 and the range set
+  in its menu (135 mm f/2.0), so the candidates come by range and include the Nikkor 135 f/2
+  DC's Adobe file, which happens to be nearest on the two f/2 masters. The block says the
+  list is by range and to read one's own lens's row (+0.15 / +0.14 against the lensfun
+  Samyang: ACCEPTABIL). At f/2.8 both agree within 0.03 stops.
+- Shape and depth are independent: the tablet master is PERFECT on shape and REFA on
+  depth, the on-monitor one the reverse.
+
+**What was left out, and why.** A mid-field point (half semidiagonal) as a second
+informative column would show the panel's 0.1-stop mid-field excess of section 8; it needs
+a new box measurement on the master and was deferred (user's decision). A "worst profile"
+rule, for the reason above. A lens picker in the window for a folder without a raw: the
+raws are always in `flats/` (user's decision); the card explains, the console takes
+`--lens`.
+
+## 12. Known limits, for the next change
 
 - Achromatic by construction; the real falloff is chromatic (R deeper than B by ~25 % of
   the falloff on the sky master). A per-channel synthetic would need per-channel data no

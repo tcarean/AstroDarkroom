@@ -37,6 +37,13 @@
 // FISIERUL SALVAT RAMANE PE SCARA AUTOMATA, oricare chip e bifat. Consola scrie auto, si
 // cele doua aplicatii trebuie sa scrie acelasi fisier pentru acelasi master; chipurile
 // sunt un ajutor de privit, nu o setare de iesire.
+//
+// VIGNETAREA FATA DE PROFILUL OBIECTIVULUI se compara in aceeasi rulare, cand exista un
+// raw in flats/ (SirilSession.ReferenceRawPath): rularea e atunci exact "flatcheck master
+// --raw <acel raw>", cu catalogul comun al ferestrei, deci raportul salvat ramane cel al
+// consolei si verdictul apare o singura data, gata combinat - nu PERFECT pe cinci teste
+// si REFA doua secunde mai tarziu. Fara raw rularea e cea simpla, identica cu "flatcheck
+// master", iar cardul spune de ce nu s-a putut compara (textul nucleului, nu al tabului).
 
 using System;
 using System.Collections.Generic;
@@ -57,7 +64,11 @@ namespace FlatCheck.Wpf
         string _verdict = "";
         string _advice = "";
         string _localSpotWarning = "";
+        string _verdictDetail = "";
         string _whyResidual = StructureReport.WhyResidualMatters();
+        string _profileMaster = "", _profileSummary = "", _profileScaleNote = "", _profileNote = "", _profileGap = "";
+        IReadOnlyList<ScaleRow> _profileScale = Array.Empty<ScaleRow>();
+        IReadOnlyList<LensProfileRow> _profileRows = Array.Empty<LensProfileRow>();
         string _savedTo = "";
         string _saveError = "";
         byte[] _map;
@@ -69,8 +80,17 @@ namespace FlatCheck.Wpf
         /// <summary>Encodarile deja facute, ca sa nu se reencodeze la fiecare click inainte si inapoi.</summary>
         readonly Dictionary<MapScaleOption, byte[]> _mapCache = new();
 
-        public StructureTabViewModel()
+        /// <summary>Catalogul comun de profile, sau null (teste): atunci nu se compara si cardul explica.</summary>
+        readonly ProfileCatalog _catalog;
+        /// <summary>Metadatele unui fisier fara pixeli; in teste, un cadru fabricat in locul unui raw.</summary>
+        readonly Func<string, LoadedFrame> _loadInfo;
+
+        public StructureTabViewModel() : this(null, null) { }
+
+        internal StructureTabViewModel(ProfileCatalog catalog, Func<string, LoadedFrame> loadInfo)
         {
+            _catalog = catalog;
+            _loadInfo = loadInfo ?? ImageLoader.LoadInfo;
             MapScale.Changed += RefreshMap;
         }
 
@@ -102,6 +122,44 @@ namespace FlatCheck.Wpf
         /// StructureReport.LocalSpotWarning, ca sa fie cel din raportul salvat.
         /// </summary>
         public string LocalSpotWarning { get => _localSpotWarning; private set => Set(ref _localSpotWarning, value); }
+
+        /// <summary>
+        /// Cele doua parti ale verdictului - forma (cele cinci teste) si adancimea (fata de
+        /// profil) - cand s-a comparat; gol altfel. Textul e cel de sub VERDICT din consola.
+        /// </summary>
+        public string VerdictDetail { get => _verdictDetail; private set => Set(ref _verdictDetail, value); }
+
+        // ----------------------------------------- vignetarea fata de profilul obiectivului
+
+        /// <summary>Titlul cardului, din nucleu, ca sa fie cel din raport.</summary>
+        public string ProfilesHeading => StructureReport.ProfilesHeading;
+
+        /// <summary>Un rand pe profil; gol cand nu s-a comparat. Lista se inlocuieste, nu se umple.</summary>
+        public IReadOnlyList<LensProfileRow> ProfileRows
+        {
+            get => _profileRows;
+            private set { if (Set(ref _profileRows, value)) Raise(nameof(HasProfileRows)); }
+        }
+
+        public bool HasProfileRows => _profileRows.Count > 0;
+
+        /// <summary>"1.26 stopuri (colt = 42 % din centru)" - adancimea masterului, cea din randul informativ.</summary>
+        public string ProfileMaster { get => _profileMaster; private set => Set(ref _profileMaster, value); }
+
+        /// <summary>Al cui e verdictul si cat difera profilele intre ele.</summary>
+        public string ProfileSummary { get => _profileSummary; private set => Set(ref _profileSummary, value); }
+
+        /// <summary>Scara adancimii in stopuri - aceleasi patru benzi ca scara de reziduu, cu banda verdictului marcata.</summary>
+        public IReadOnlyList<ScaleRow> ProfileScale { get => _profileScale; private set => Set(ref _profileScale, value); }
+
+        /// <summary>De unde vine scara de mai sus: scara celor cinci teste tradusa in stopuri, nu un prag nou.</summary>
+        public string ProfileScaleNote { get => _profileScaleNote; private set => Set(ref _profileScaleNote, value); }
+
+        /// <summary>Ce poate si ce nu poate spune comparatia.</summary>
+        public string ProfileNote { get => _profileNote; private set => Set(ref _profileNote, value); }
+
+        /// <summary>De ce nu s-a putut compara, cand nu s-a putut; gol altfel.</summary>
+        public string ProfileGap { get => _profileGap; private set => Set(ref _profileGap, value); }
 
         /// <summary>Constant, dar tinut ca proprietate ca sa se poata lega din XAML.</summary>
         public string WhyResidual { get => _whyResidual; private set => Set(ref _whyResidual, value); }
@@ -140,30 +198,48 @@ namespace FlatCheck.Wpf
         /// locul de iesire - tabul nu alege singur nicio cale.
         /// </summary>
         internal Task RunAsync(SirilSession session, CancellationToken ct)
-            => RunGuardedAsync("Analizez structura masterului de flat...", async () =>
+        {
+            string rawPath = session.ReferenceRawPath;
+            bool compares = rawPath != null && _catalog != null;
+            return RunGuardedAsync(compares ? "Analizez structura masterului de flat si caut profilul obiectivului..."
+                                            : "Analizez structura masterului de flat...", async () =>
             {
                 FlatMasterLookup master = session.FindFlatMaster();
                 string path = master.Path;
                 SourceWarning = master.Ambiguous ? SessionMessages.TwoFlatMasters(master) : "";
                 var text = new StringWriter();
 
-                var outcome = await Task.Run(() =>
+                // Cu un raw langa master, rularea e cea a consolei cu --raw: catalogul comun,
+                // raw-ul din flats/, comparatia in acelasi raport. Fara, rularea simpla.
+                StructureQuery query = null;
+                if (compares)
+                {
+                    ProfileSources sources = await _catalog.EnsureAsync().ConfigureAwait(true);
+                    ct.ThrowIfCancellationRequested();
+                    query = new StructureQuery { Sources = sources, RawPath = rawPath, LoadInfo = _loadInfo };
+                }
+
+                var (outcome, gap) = await Task.Run(() =>
                 {
                     RunReport.WriteBanner(text);
-                    var run = StructureRun.Execute(path, text);
+                    var run = StructureRun.Execute(path, text, query);
                     RunReport.WriteMapSaved(session.ResidualPngPath, text);
                     ct.ThrowIfCancellationRequested();
-                    return run;
+                    // Fara comparatie, motivul pentru card: acelasi nucleu spune de ce, pe
+                    // metadatele masterului (doar headerul) si fara catalog.
+                    StructureOutcome why = run.Result.Profiles != null ? null
+                        : StructureRun.Compare(run.Result.Structure, _loadInfo(path), new StructureQuery { RawPath = rawPath, LoadInfo = _loadInfo });
+                    return (run, why);
                 }, ct).ConfigureAwait(true);
 
                 Source = path;
                 Report = text.ToString();
-                Populate(outcome.Result);
+                Populate(outcome.Result, gap);
 
                 // Rasterul, apoi harta pe scara aleasa. Octetii primiti de la rulare sunt
                 // cei pe scara automata: se pun direct in cache, ca sa nu se reencodeze
                 // aceeasi imagine cand chipul e chiar "auto".
-                _residual = outcome.Result.Residual;
+                _residual = outcome.Result.Structure.Residual;
                 _mapCache.Clear();
                 _mapCache[MapScale.Options[0]] = outcome.Png;
                 RefreshMap();
@@ -174,6 +250,7 @@ namespace FlatCheck.Wpf
                 // de sus: consola scrie asta, si fisierul trebuie sa fie acelasi.
                 Save(session, outcome.Png);
             });
+        }
 
         /// <summary>
         /// Reface harta pentru scara curenta.
@@ -197,6 +274,53 @@ namespace FlatCheck.Wpf
 
             Map = png;
             MapLegend = RunReport.MapLegend(range);
+        }
+
+        /// <param name="o">Rularea, cu sau fara comparatie.</param>
+        /// <param name="gap">Fara comparatie in rulare: o comparatie care spune de ce nu s-a putut; altfel null.</param>
+        internal void Populate(StructureOutcome o, StructureOutcome gap = null)
+        {
+            Populate(o.Structure);
+            // Internal si cu HasResult, ca testul de randare sa poata arata tabul dintr-un
+            // rezultat, fara sesiune - ca la tabul de netezire.
+            HasResult = true;
+
+            // Verdictul rularii - cel mai rau dintre forma si adancime - si sfatul ei, care e
+            // al adancimii cand ea l-a inrautatit. Textele sunt cele din raport.
+            Verdict = o.Verdict;
+            Advice = StructureReport.Advice(o);
+            // Pe trei randuri, cu etichetele fara umplutura consolei: partile vin din raport.
+            VerdictDetail = o.Compared
+                ? $"forma: {StructureReport.ShapeDetail(o)}\nadancimea: {StructureReport.DepthDetail(o)}\n{StructureReport.WorseOfBoth}"
+                : "";
+
+            StructureOutcome explained = o.Profiles != null ? o : gap;
+            if (explained != null && explained.Compared)
+            {
+                VignettingComparison c = explained.Profiles;
+                ProfileGap = "";
+                ProfileMaster = StructureReport.MasterDepth(c);
+                ProfileRows = StructureReport.ProfileRows(c).Select(r => new LensProfileRow
+                {
+                    Source = r.Source, Lens = r.Lens, Mount = r.Mount, Profile = r.Profile, Depth = r.Depth,
+                    Diff = r.Diff, Error = r.Error, Verdict = r.Verdict, IsNearest = r.IsNearest,
+                    Note = (r.IsNearest ? "Cel mai apropiat profil - da verdictul. " : "") + r.Note, IsWarning = r.IsWarning,
+                }).ToList();
+                ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
+                ProfileScale = StructureReport.DepthScaleRows()
+                    .Select(s => new ScaleRow { Band = s.Band, Range = s.Range, Meaning = s.Meaning, IsCurrent = s.Band == c.Verdict })
+                    .ToList();
+                ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ');
+                ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
+            }
+            else
+            {
+                ProfileRows = Array.Empty<LensProfileRow>();
+                ProfileScale = Array.Empty<ScaleRow>();
+                ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = "";
+                ProfileGap = explained == null ? ""
+                    : "Nu se poate compara: " + StructureReport.GapText(explained) + "\n" + StructureReport.GapMeaning().Replace('\n', ' ');
+            }
         }
 
         void Populate(StructureResult r)
@@ -265,6 +389,10 @@ namespace FlatCheck.Wpf
             Verdict = "";
             Advice = "";
             LocalSpotWarning = "";
+            VerdictDetail = "";
+            ProfileRows = Array.Empty<LensProfileRow>();
+            ProfileScale = Array.Empty<ScaleRow>();
+            ProfileMaster = ProfileSummary = ProfileScaleNote = ProfileNote = ProfileGap = "";
             SavedTo = "";
             SaveError = "";
             Map = null;
