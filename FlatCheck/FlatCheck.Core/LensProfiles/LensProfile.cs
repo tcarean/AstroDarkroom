@@ -178,12 +178,18 @@ namespace FlatCheck
         internal LensProfile WithLens(LensChoice lens)
             => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File);
 
-        internal const string DistanceUnspecified = "distanta nespecificata";
+        internal const string DistanceUnspecified = "nespecificata", DistanceInfinity = "infinit";
+
+        /// <summary>"0.36 m" / "infinit" (1000 m si peste) / "nespecificata" (NaN) - o singura scriere a distantei, pentru Settings si pentru lista.</summary>
+        internal static string DistanceLabel(double distanceM)
+            => double.IsNaN(distanceM) ? DistanceUnspecified
+             : distanceM >= 1000 ? DistanceInfinity
+             : $"{distanceM.ToString("0.##", CultureInfo.InvariantCulture)} m";
 
         /// <summary>"20 mm, f/2.8, infinit" / ", 1.51 m" / ", distanta nespecificata" (NaN: profilul n-o spune).</summary>
         internal string Settings
-            => $"{FocalMm.ToString("0.#", CultureInfo.InvariantCulture)} mm, f/{FStop.ToString("0.0", CultureInfo.InvariantCulture)}"
-             + (double.IsNaN(DistanceM) ? ", " + DistanceUnspecified : DistanceM >= 1000 ? ", infinit" : $", {DistanceM.ToString("0.##", CultureInfo.InvariantCulture)} m");
+            => $"{FocalMm.ToString("0.#", CultureInfo.InvariantCulture)} mm, f/{FStop.ToString("0.0", CultureInfo.InvariantCulture)}, "
+             + (double.IsNaN(DistanceM) ? "distanta " : "") + DistanceLabel(DistanceM);
     }
 
     /// <summary>Un fisier Adobe neparsat inca: ce se stie din numele si folderul lui.</summary>

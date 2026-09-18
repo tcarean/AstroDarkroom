@@ -287,6 +287,54 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// Each row's second line carries the lens's focals, apertures and distances - the
+    /// console's --lenses details, in the console's words - but only while the list is at
+    /// most ListDetailsMax long, because an Adobe row's details cost parsing its file. On a
+    /// longer list the rows stay bare and a note under the list says why; a search that
+    /// shortens it brings the details back, and a stale search cannot fill a newer list.
+    /// </summary>
+    [Fact]
+    public async Task RowsCarryFocalsAperturesAndDistances_OnlyWhileTheListIsShort()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f);
+        using (ws)
+        {
+            await vm.Pending;
+            await vm.DetailsPending;
+            Assert.Equal(3, vm.Lenses.Count);
+            Assert.Empty(vm.ListNote);
+            Assert.False(vm.HasListNote);
+            var lensfun = vm.Lenses.Single(r => r.SourceLabel == "lensfun");
+            Assert.Equal("focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: 10 m, infinit, nespecificata; 4 profile", lensfun.Details);
+            Assert.True(lensfun.HasDetails);
+            Assert.All(vm.Lenses.Where(r => r.SourceLabel == "Adobe"),
+                r => Assert.Equal("focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: infinit; 3 profile", r.Details));
+
+            // a long list: 41 more Adobe stubs (never parsed - the names alone make the list)
+            string dir = Path.Combine(ws.Dir, "profiles", "Many");
+            Directory.CreateDirectory(dir);
+            for (int i = 0; i < SyntheticReport.ListDetailsMax + 1; i++)
+                File.WriteAllText(Path.Combine(dir, $"NIKON CORPORATION (Many Lens {i:00}) - RAW.lcp"), "not parsed");
+            var many = ProfileLocator.Locate(new[] { Path.Combine(ws.Dir, "profiles") }, Path.Combine(ws.Dir, "profiles", "lensfun"));
+            var wide = new SyntheticTabViewModel(_ => true, () => many);
+            wide.Attach(f.Session, CancellationToken.None);
+            await wide.Pending;
+            await wide.DetailsPending;
+            Assert.True(wide.Lenses.Count > SyntheticReport.ListDetailsMax);
+            Assert.All(wide.Lenses, r => Assert.False(r.HasDetails));
+            Assert.True(wide.HasListNote);
+            Assert.StartsWith(SyntheticReport.ListDetailsHidden(wide.Lenses.Count), wide.ListNote);
+
+            wide.Search = "tokina";
+            await wide.DetailsPending;
+            Assert.Equal(3, wide.Lenses.Count);
+            Assert.All(wide.Lenses, r => Assert.True(r.HasDetails));
+            Assert.False(wide.HasListNote);
+        }
+    }
+
     [Fact]
     public async Task ALensIdSharedBySeveralLensesNarrowsTheListInsteadOfPickingTheFirst()
     {

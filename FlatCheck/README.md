@@ -789,7 +789,8 @@ flatcheck <sky_flat.fit> --expo --sky    # expunere pentru flats pe cer
 flatcheck <flat.NEF> --histeq            # vederea „Histogram" din Siril, pe canale
 flatcheck <flat.fit> --smooth <netezit.fit>   # flat netezit: fără textură, praf, pete
 flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului
-flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe disc, lensfun/ de lângă exe)
+flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe disc, lensfun/ de lângă exe);
+                                         # focale, diafragme, distanțe și numărul de profile sub fiecare, pe o listă de cel mult 40
 flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
@@ -1231,7 +1232,11 @@ altul, ce a scos netezirea și ce a lăsat.
 sau `lensfun` pe fiecare rând și montura în dreapta — la lensfun și formatul pe care a fost
 calibrat profilul, fiindcă același obiectiv poate fi de două ori în bază, calibrat pe două
 formate (vezi mai sus); se caută după text, fiecare cuvânt trebuie să apară, formatul
-inclusiv. Focala, diafragma și crop-ul sunt **preumplute** din fișiere — focala și
+inclusiv. Sub fiecare rând stau **focalele, diafragmele și distanțele** profilelor lui, cu
+numărul lor — exact ce tipărește `--lenses` — dar numai când lista are cel mult 40 de
+rânduri, fiindcă detaliile unui obiectiv Adobe cer citirea fișierului lui; pe o listă mai
+lungă rândurile rămân goale și o notă sub listă spune să scrii un text. Focala, diafragma
+și crop-ul sunt **preumplute** din fișiere — focala și
 aparatul din headerul masterului (doar headerul, fără cei 96 MB), diafragma și obiectivul
 dintr-un raw din `flats/`, când există: ID-ul Nikon al obiectivului **și gama lui** (focala
 minimă și maximă, deschiderea maximă) din MakerNote. ID-ul singur nu ajunge — 139 e și

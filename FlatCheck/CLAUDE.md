@@ -1812,9 +1812,16 @@ has 122 with 139 as an alternate - so the user's copy is the atx-i. Output: floa
 axis, the reference frame's cards minus the structural ones (`BAYERPAT` included, so Siril
 takes it as a CFA master), `HISTORY` naming source, lens, profile and model; nothing
 renormalised. Exit 0 written, 1 refused (cube, or focal / f-stop / crop unknown), 2 the
-lens could not be chosen. `--lenses` lists lenses with focals and apertures only when the
-filtered list is at most `SyntheticReport.ListDetailsMax` (40) long, because the details
-need the Adobe file parsed.
+lens could not be chosen. `--lenses` lists lenses with focals, apertures and distances
+(`SyntheticReport.LensDetails`: metres ascending, then "infinit", then "nespecificata" for
+the collapsed lensfun pair, plus the profile count) only when the filtered list is at most
+`SyntheticReport.ListDetailsMax` (40) long, because the details need the Adobe file parsed.
+The Sintetic tab shows the same line under each row, by the same rule: `LensRow.Details`
+is filled in the background (`RefreshDetailsAsync`, generation-counted, parallel over the
+visible rows, `DetailsPending` for the tests), and on a longer list the rows stay bare and
+`ListNote` says why (`SyntheticReport.ListDetailsHidden`). lensfun rows would be free to
+fill on any list, and are deliberately held to the same rule so a long list is not half
+with details and half without.
 
 **`--against`** (`AgainstAnalyzer`, `AgainstRun`, `AgainstReport`): both frames prepared,
 each normalised to median 1, and **three** structure analyses - A, B and the ratio A / B -

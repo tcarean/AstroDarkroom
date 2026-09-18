@@ -395,6 +395,9 @@ lensfun 7D2 entry 0.85 / 0.56 / 0.26 / 0.24; lensfun D7100 entry 0.92 / 0.70 / 0
 
 ```bash
 flatcheck --lenses --lens "Tokina 11-20"
+# under each lens (list of at most 40), measured on this machine's Adobe file:
+#   focale: 11, 14, 16, 18, 20 mm; diafragme: f/2.8, f/4.0, f/5.6, f/8.0, f/11.0, f/16.0, f/22.0; distante: 0.28, 0.69, 0.81, 0.93, 1.01, 1.08 m, infinit; 105 profile
+# the Sintetic tab shows the same line on each row, by the same rule (SyntheticReport.LensDetails)
 flatcheck "<sky master>" --synthetic s_adobe.fit --lens "Tokina atx-i 11-20mm f2.8 CF" --fstop 2.8
 flatcheck "<sky master>" --synthetic s_lensfun.fit --lens "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8" --source lensfun --fstop 2.8
 flatcheck "<monitor close master>" --against s_adobe.fit

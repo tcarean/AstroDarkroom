@@ -6,9 +6,9 @@ Copyright (C) 2026 Tudor Carean
     lensfun: 1 obiective din <TMP>/profiles\lensfun
 
     Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [Canon]
-            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; 3 profile
+            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: infinit; 3 profile
     Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]
-            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; 3 profile
+            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: infinit; 3 profile
     lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]
-            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; 4 profile
+            focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: 10 m, infinit, nespecificata; 4 profile
 

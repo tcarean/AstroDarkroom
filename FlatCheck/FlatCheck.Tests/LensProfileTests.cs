@@ -379,6 +379,28 @@ public class LensCatalogTests
         Assert.Equal("50 mm, f/2.0, distanta nespecificata", collapsed[0].Settings);
     }
 
+    /// <summary>
+    /// The details line under a lens - what --lenses prints and the Sintetic tab shows on the
+    /// row's second line: focals, apertures, distances (metres ascending, then infinity, then
+    /// unspecified), profile count. One wording for both.
+    /// </summary>
+    [Fact]
+    public void LensDetails_ListsFocalsAperturesDistancesAndTheProfileCount()
+    {
+        var c = Catalog();
+        var lf = c.Lenses.Single(l => l.Source == ProfileSource.Lensfun);
+        var adobe = c.Lenses.First(l => l.Source == ProfileSource.Adobe);
+
+        Assert.Equal("focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: 10 m, infinit, nespecificata; 4 profile",
+                     SyntheticReport.LensDetails(lf, c));
+        Assert.Equal("focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: infinit; 3 profile",
+                     SyntheticReport.LensDetails(adobe, c));
+        Assert.Equal("", SyntheticReport.LensDetails(new LensChoice(ProfileSource.Lensfun, "X", "X", "M"), c));
+        Assert.Equal("0.36 m", LensProfile.DistanceLabel(0.36));
+        Assert.Equal("infinit", LensProfile.DistanceLabel(10000));
+        Assert.Equal("nespecificata", LensProfile.DistanceLabel(double.NaN));
+    }
+
     [Fact]
     public void Nearest_PicksTheFocalThenTheFStopInStopsThenTheFarthestDistance()
     {

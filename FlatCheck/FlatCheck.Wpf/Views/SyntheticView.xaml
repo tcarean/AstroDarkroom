@@ -129,16 +129,23 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                        ScrollViewer.VerticalScrollBarVisibility="Auto">
                 <ListBox.ItemTemplate>
                   <DataTemplate>
-                    <DockPanel>
-                      <Border DockPanel.Dock="Left" Background="{StaticResource PanelBg2}" CornerRadius="3" Padding="6,1" Margin="0,0,10,0">
-                        <TextBlock Style="{StaticResource Faint}" Text="{Binding SourceLabel}" />
-                      </Border>
-                      <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0" Text="{Binding Where}" />
-                      <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
+                    <StackPanel>
+                      <DockPanel>
+                        <Border DockPanel.Dock="Left" Background="{StaticResource PanelBg2}" CornerRadius="3" Padding="6,1" Margin="0,0,10,0">
+                          <TextBlock Style="{StaticResource Faint}" Text="{Binding SourceLabel}" />
+                        </Border>
+                        <TextBlock Style="{StaticResource Faint}" DockPanel.Dock="Right" Margin="10,0,0,0" Text="{Binding Where}" />
+                        <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                      </DockPanel>
+                      <!-- focale, diafragme, distante: doar pe o lista scurta (regula consolei) -->
+                      <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" TextWrapping="Wrap" Text="{Binding Details}"
+                                 Visibility="{Binding HasDetails, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
                   </DataTemplate>
                 </ListBox.ItemTemplate>
               </ListBox>
+              <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding ListNote}"
+                         Visibility="{Binding HasListNote, Converter={StaticResource BoolToVis}}" />
               <!-- focala, diafragma, crop; preumplute, editabile -->
               <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                 <TextBlock Style="{StaticResource Faint}" Text="focala (mm):" VerticalAlignment="Center" />

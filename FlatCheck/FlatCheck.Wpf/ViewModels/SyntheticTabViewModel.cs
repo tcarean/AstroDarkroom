@@ -42,14 +42,25 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>Un rand din lista de obiective. Public pentru legare; alegerea nucleului ramane internal.</summary>
-    public sealed class LensRow
+    /// <summary>
+    /// Un rand din lista de obiective. Public pentru legare; alegerea nucleului ramane internal.
+    /// Observabil pentru <see cref="Details"/>, care soseste mai tarziu: un fisier Adobe se
+    /// parseaza in fundal, si randul se completeaza fara sa se reconstruiasca lista (si sa
+    /// se piarda selectia).
+    /// </summary>
+    public sealed class LensRow : ObservableObject
     {
+        string _details = "";
+
         public string Label { get; init; }
         public string SourceLabel { get; init; }
         /// <summary>Montura, plus formatul de calibrare la lensfun (LensChoice.Where).</summary>
         public string Where { get; init; }
         internal LensChoice Choice { get; init; }
+
+        /// <summary>Focale, diafragme, distante, numar de profile (SyntheticReport.LensDetails); gol pe o lista lunga sau pana soseste.</summary>
+        public string Details { get => _details; internal set { if (Set(ref _details, value ?? "")) Raise(nameof(HasDetails)); } }
+        public bool HasDetails => _details.Length > 0;
     }
 
     public sealed class SyntheticGuideViewModel : ObservableObject
@@ -82,6 +93,8 @@ namespace FlatCheck.Wpf
         string _cropSource;
         int _masterW, _masterH;
         int _formatGen;
+        int _detailsGen;
+        string _listNote = "";
         string _prefillNote = "";
         string _adobeWhere = "", _lensfunWhere = "", _profilesSummary = "";
         string _profileLine = "", _modelLine = "", _cornerNote = "";
@@ -145,7 +158,52 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _search, value ?? "")) RefreshLenses(); }
         }
 
-        public IReadOnlyList<LensRow> Lenses { get => _lenses; private set => Set(ref _lenses, value); }
+        public IReadOnlyList<LensRow> Lenses { get => _lenses; private set { if (Set(ref _lenses, value)) RefreshDetails(); } }
+
+        /// <summary>De ce randurile n-au detalii: lista e prea lunga (SyntheticReport.ListDetailsHidden). Gol cand le au.</summary>
+        public string ListNote { get => _listNote; private set { if (Set(ref _listNote, value ?? "")) Raise(nameof(HasListNote)); } }
+        public bool HasListNote => _listNote.Length > 0;
+
+        /// <summary>Calculul din spatele detaliilor randurilor, ca un test sa-l poata astepta.</summary>
+        internal Task DetailsPending { get; private set; } = Task.CompletedTask;
+
+        /// <summary>
+        /// Umple a doua linie a fiecarui rand cu focalele, diafragmele si distantele lui - regula
+        /// consolei (--lenses): numai cand lista are cel mult ListDetailsMax randuri, fiindca
+        /// detaliile unui obiectiv Adobe cer parsarea fisierului lui (~10 ms fiecare, 36 s pe
+        /// toate). Aceeasi regula si pentru lensfun, desi acolo ar fi gratis, ca lista sa nu
+        /// arate jumatate cu detalii, jumatate fara. In fundal, in paralel, cu numar de
+        /// generatie: o cautare noua nu primeste detaliile celei vechi.
+        /// </summary>
+        void RefreshDetails() => DetailsPending = RefreshDetailsAsync();
+
+        async Task RefreshDetailsAsync()
+        {
+            int gen = ++_detailsGen;
+            IReadOnlyList<LensRow> rows = Lenses;
+            ProfileSources sources = _sources;
+            if (sources == null || rows.Count == 0) { ListNote = ""; return; }
+            if (rows.Count > SyntheticReport.ListDetailsMax)
+            {
+                ListNote = SyntheticReport.ListDetailsHidden(rows.Count) + " - scrie un text in campul obiectiv";
+                return;
+            }
+            ListNote = "";
+            List<(LensRow Row, string Details)> details;
+            try
+            {
+                details = await Task.Run(() => rows.AsParallel().AsOrdered()
+                    .Select(r => (r, Safe(() => SyntheticReport.LensDetails(r.Choice, sources.Catalog)))).ToList()).ConfigureAwait(true);
+            }
+            catch (Exception) { return; }
+            if (gen != _detailsGen) return;
+            foreach (var (row, text) in details) row.Details = text;
+        }
+
+        static string Safe(Func<string> f)
+        {
+            try { return f(); } catch (Exception) { return ""; }   // un fisier Adobe stricat lasa randul fara detalii; alegerea lui va spune de ce
+        }
 
         public LensRow SelectedLens
         {

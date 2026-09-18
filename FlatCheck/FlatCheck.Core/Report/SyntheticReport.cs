@@ -218,15 +218,38 @@ namespace FlatCheck
             foreach (LensChoice l in lenses)
             {
                 w.WriteLine($"    {l.SourceLabel,-7} {l.Name}  [{l.Where}]");
-                if (!details) continue;
-                var ps = catalog.ProfilesOf(l);
-                var focals = ps.Select(p => p.FocalMm).Distinct().OrderBy(f => f).ToList();
-                var stops = ps.Select(p => p.FStop).Distinct().OrderBy(f => f).ToList();
-                w.WriteLine($"            focale: {string.Join(", ", focals.Select(f => f.ToString("0.#", CultureInfo.InvariantCulture)))} mm;"
-                          + $" diafragme: f/{string.Join(", f/", stops.Select(f => f.ToString("0.0", CultureInfo.InvariantCulture)))}; {ps.Count} profile");
+                if (details) w.WriteLine("            " + LensDetails(l, catalog));
             }
-            if (!details) w.WriteLine($"\n    ({lenses.Count} obiective; focalele si diafragmele se arata cand lista are cel mult {ListDetailsMax} - da un text la --lens)");
+            if (!details) w.WriteLine($"\n    ({ListDetailsHidden(lenses.Count)} - da un text la --lens)");
         }
+
+        /// <summary>
+        /// Ce are un obiectiv: "focale: 18, 20 mm; diafragme: f/2.8, f/4.0; distante: 0.36, 1.51 m,
+        /// infinit; 3 profile". Distantele crescator, apoi infinit, apoi nespecificata (perechea
+        /// lensfun copiata). Un fisier Adobe se parseaza aici, deci consola si fereastra o cer
+        /// numai pe o lista de cel mult <see cref="ListDetailsMax"/>. Aceeasi propozitie in
+        /// amandoua: consola o tipareste sub rand, fereastra o pune pe a doua linie a randului.
+        /// </summary>
+        internal static string LensDetails(LensChoice lens, LensCatalog catalog)
+        {
+            var ps = catalog.ProfilesOf(lens);
+            if (ps.Count == 0) return "";
+            var focals = ps.Select(p => p.FocalMm).Distinct().OrderBy(f => f).ToList();
+            var stops = ps.Select(p => p.FStop).Distinct().OrderBy(f => f).ToList();
+            var metres = ps.Select(p => p.DistanceM).Where(d => !double.IsNaN(d) && d < 1000).Distinct().OrderBy(d => d)
+                           .Select(d => d.ToString("0.##", CultureInfo.InvariantCulture)).ToList();
+            var distances = new List<string>();
+            if (metres.Count > 0) distances.Add(string.Join(", ", metres) + " m");
+            if (ps.Any(p => p.DistanceM >= 1000)) distances.Add(LensProfile.DistanceInfinity);
+            if (ps.Any(p => double.IsNaN(p.DistanceM))) distances.Add(LensProfile.DistanceUnspecified);
+            return $"focale: {string.Join(", ", focals.Select(f => f.ToString("0.#", CultureInfo.InvariantCulture)))} mm;"
+                 + $" diafragme: f/{string.Join(", f/", stops.Select(f => f.ToString("0.0", CultureInfo.InvariantCulture)))};"
+                 + $" distante: {string.Join(", ", distances)}; {ps.Count} profile";
+        }
+
+        /// <summary>De ce lipsesc detaliile pe o lista lunga; consola si fereastra adauga fiecare cum se scurteaza lista.</summary>
+        internal static string ListDetailsHidden(int count)
+            => $"{count} obiective; focalele, diafragmele si distantele se arata cand lista are cel mult {ListDetailsMax}";
 
         // ---------------------------------------------------------------- panoul din fereastra
 

@@ -319,7 +319,8 @@ public class WindowSmokeTests
     public async Task TheSyntheticTabRendersAResultAndAComparison()
     {
         using var ws = new TempWorkspace();
-        var sources = LensProfileTestData.Sources(ws);
+        using var f = new SessionFixture().WithFlatMaster();
+        var sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats: true);
         var adobe = sources.Catalog.Lenses.First(l => l.Source == ProfileSource.Adobe && l.Mount.StartsWith("NIKON"));
         var profile = sources.Catalog.ProfilesOf(adobe).First(p => p.FocalMm == 20 && Math.Abs(p.FStop - 2.8) < 0.01);
         var built = SyntheticFlatBuilder.Build(profile, 600, 400, 0);
@@ -330,6 +331,12 @@ public class WindowSmokeTests
             await Task.CompletedTask;
             using var errors = new BindingErrors();
             var vm = new SyntheticTabViewModel(_ => true, () => sources);
+            // the list attached to a session, short enough for the rows' second line (focals,
+            // apertures, distances) - the render is the only thing that looks at that line
+            vm.Attach(f.Session, CancellationToken.None);
+            await vm.Pending;
+            await vm.DetailsPending;
+            Assert.All(vm.Lenses, r => Assert.True(r.HasDetails));
             vm.Populate(built, new SyntheticRequest { FocalMm = 20, FocalSource = "FOCALLEN", FStop = 2.8, FStopSource = "--fstop" });
             vm.PopulateCompare(against);
             vm.Guide.IsExpanded = true;
