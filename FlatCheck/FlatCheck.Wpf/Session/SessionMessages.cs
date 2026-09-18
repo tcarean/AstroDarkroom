@@ -538,6 +538,22 @@ namespace FlatCheck.Wpf
 
         internal static string SyntheticCompareLabel() => "Compara cu masterul";
 
+        /// <summary>Aparatul nu e in baza de camere lensfun: chip-urile de senzor sunt rezerva.</summary>
+        internal static string SyntheticCropUnknown(string camera) =>
+            (string.IsNullOrWhiteSpace(camera) ? "crop necunoscut: cadrul de referinta nu spune ce aparat e" : $"crop necunoscut: \"{camera.Trim()}\" nu e in baza de camere lensfun")
+            + " - alege tipul de senzor de mai sus, sau scrie crop-ul (36 impartit la latimea senzorului in mm)";
+
+        /// <summary>Crop-ul a venit dintr-un chip de senzor.</summary>
+        internal static string SyntheticCropFromFormat(string label, string crop) =>
+            $"crop {crop} nominal, din chip-ul {label}; un aparat din baza lensfun l-ar da exact";
+
+        /// <summary>De unde e crop-ul din camp si ce format e: "crop 1.523 din baza lensfun (Nikon D3300) - format APS-C".</summary>
+        internal static string SyntheticCropNote(string crop, string source, string formatLabel) =>
+            $"crop {crop} {source} - {(formatLabel == SensorFormats.Unusual ? formatLabel + ", niciun chip nu i se potriveste" : "format " + formatLabel)}";
+
+        internal static string SyntheticCropTyped() => "tastat";
+        internal static string SyntheticCropFromTable(string camera) => $"din baza lensfun ({camera.Trim()})";
+
         /// <summary>Un ID de obiectiv purtat de mai multe obiective: lista s-a restrans la ele, omul alege.</summary>
         internal static string SyntheticLensCandidates(string rawLabel, int count) =>
             $"{rawLabel} se potriveste cu {count} obiective - lista de mai sus s-a restrans la ele, alege-l pe al tau";

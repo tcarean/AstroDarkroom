@@ -7,7 +7,8 @@ Copyright (C) 2026 Tudor Carean
     profil folosit     : 20 mm, f/2.8, infinit   (cerut: 20 mm din FOCALLEN, f/2.8 din --fstop)
     model              : lensfun pa, V = 1 + k1 r^2 + k2 r^4 + k3 r^6, r la semidiagonala 36x24 / 1.61; k = -0.619500, 0.327600, -0.149400
     fisier profil      : slr-tokina.xml
-    crop aparat        : 1.523  (baza lensfun, Nikon D3300); coltul cade la r = 1.06, dincolo de senzorul de calibrare (extrapolare mica)
+    crop aparat        : 1.523  (baza lensfun, Nikon D3300)
+    format             : profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format, raza se recalculeaza prin mm; coltul tau cade la 1.06 x coltul de calibrare: extrapolare mica
 
   ADANCIMEA VIGNETARII SCRISE (fata de axa)
     colt (cutia de 5 %)         :  55.5 % din axa  ( 0.85 stopuri)

@@ -8,8 +8,9 @@ Covers `FlatCheck.Core/LensProfiles/` (`VignettingModel`, `LensProfile` / `LensC
 `SyntheticView`, the `lensfun/` folder, and the shooting metadata added to `LoadedFrame`.
 Measured 2026-09-17 on the author's machine (Windows 10, Lightroom Classic installed,
 lensfun `data/db` at upstream commit `e34596cb52`, 2026-09-16) and on the masters under
-`E:\Photografie\Astro\Flats and Darks\`. If the model code changes, re-run section 9 and
-update the numbers.
+`E:\Photografie\Astro\Flats and Darks\`; sections 7-9 re-run 2026-09-18 after the Adobe
+model started using the camera's crop (section 4). If the model code changes, re-run
+section 9 and update the numbers.
 
 ## 1. Why the mode exists
 
@@ -43,6 +44,8 @@ fetched 2026-09-17; the PDF's text was extracted with a script, formulas transcr
 Reading of the default: with the sensor's long side at `36 / SensorFormatFactor` mm, a pixel
 offset of `Δu / Dmax` of the long side is `Δu / Dmax · 36 / SFF` mm, and dividing by the
 focal length in mm gives `x_d = (Δu / Dmax) / (f · SFF / 36)`. So `fx / Dmax = f · SFF / 36`
+(the `36 / SFF` long side is the *calibration body's*; on another body the pixel offset
+converts to mm with that body's own crop, section 4)
 and **r is the distance in mm over the nominal focal length in mm.** lensfun's own reading
 agrees: `lens.cpp` says of the ACM model "Coordinates are in units of focal length", and
 `lensfun-convert-lcp` passes the alphas through unchanged with `cropfactor = SensorFormatFactor`.
@@ -89,13 +92,35 @@ the corner sits at r = 1.06: a mild extrapolation the report names.
 Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units of `Dmax`
 (the long side in pixels); the builder feeds `((x + 0.5) − W/2) / Dmax` and the same for y.
 
-- **Adobe**: `fx = FocalX ?? FocalMm · SFF / 36`, `fy = FocalY ?? fx`,
-  `xd = (xN + 0.5 − CenterX) / fx`, `yd = (yN + 0.5 − CenterY) / fy`, `r = hypot(xd, yd)`,
-  `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`; with a table instead of coefficients, linear
-  interpolation in r, clamped at both ends. The camera's crop is not used: the profile's
-  SFF stands for the sensor (Adobe's own assumption; on a D3300 the 24 mm long side that
-  SFF 1.5 implies puts the corner at r = 0.72 instead of 0.705, i.e. 0.69 stops instead
-  of 0.66 at the corner box).
+- **Adobe**, everything in mm: `calibMm = 36 / SFF` (the calibration body's long side),
+  `longSideMm = 36 / cameraCrop` (yours; `calibMm` when the crop is unknown, i.e. 0),
+  `fxMm = FocalX · calibMm` when the profile gives `FocalLengthX` (it is in units of the
+  calibration body's `Dmax`), else `FocalMm`; `xd = (xN · longSideMm − (CenterX − 0.5) ·
+  calibMm) / fxMm`, likewise `yd`, `r = hypot(xd, yd)`, `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`;
+  with a table instead of coefficients, linear interpolation in r, clamped at both ends.
+  At `cameraCrop = SFF` this is exactly `(xN + 0.5 − CenterX) / (FocalX ?? FocalMm · SFF /
+  36)`, the first version's formula. **The first version used the profile's SFF for every
+  camera**: right on a D3300 with the DX file to 1.5 % (1.523 vs 1.5), wrong by the whole
+  corner on a full frame with a DX-calibrated file or the reverse, with no warning. The
+  decentring (`ImageXCenter`) is the lens's, in mm, so it does not scale with the crop.
+  Evidence that the real crop is what Adobe used too: the piecewise table in the Tokina
+  file ends at r = 0.7094, i.e. 14.19 mm at 20 mm, the half-diagonal of a 36 / 1.523 =
+  23.64 mm sensor - not of the 24 mm one SFF 1.5 implies (14.42 mm, r = 0.721).
+  `CalibrationCornerRadius()` = `hypot(36, 24) / 2 / SFF / fxMm` (1 for lensfun), and
+  `Extrapolation(w, h, crop)` = the frame's corner r over it (`SyntheticFlatResult.
+  Extrapolation` is the same for the written flat). `SyntheticReport.FormatMatch(model,
+  crop, w, h)` turns both into the one sentence the console prints at "format" and the tab
+  shows when a lens is picked and under the written depths: the calibration format
+  (`SensorFormats.LabelOf` of the profile's crop / SFF), the user's format, "acelasi
+  format" when the crops are within `SameFormatTolerance` (3 %) or "alt format, raza se
+  recalculeaza prin mm" otherwise, then the corner: inside the profile (below 0.97, "in
+  interiorul profilului"), nothing (0.97-1.0), "extrapolare mica" up to 1.1 (the D3300 on
+  the lensfun entry calibrated at crop 1.61: 1.06), "extrapolare MARE" beyond - a
+  sixth-order polynomial 50 % past its data (a full frame on a DX profile) goes negative on
+  the fixture. `SensorFormats.Nearest` lights the tab's chip within 5 % of a nominal crop
+  (1.523 → APS-C, 1.61 → APS-C Canon, 1.15 → none). `FormatMatchIsWarning` is true only for
+the large extrapolation; the tab colours the sentence amber on that alone, so "acelasi
+format" never looks like a warning.
 - **lensfun**: `longSideMm = 36 / cameraCrop`, `xMm = xN · longSideMm`,
   `yMm = yN · longSideMm`, `huginMm = hypot(36, 24) / CropFactor / 2`,
   `r = hypot(xMm, yMm) / huginMm`, same polynomial. Throws without a camera crop.
@@ -133,8 +158,11 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   (`2·log2 f`), then the farthest distance. Reported as "profil folosit" beside "cerut".
 - **Lens choice from text** (`SyntheticRun.ChooseLens`): search hits; an exact name match
   narrows to those; when several remain and the reference frame names a camera, the ones
-  whose mount or maker contains the camera's first word win; still several → refusal with
-  the list, exit 2. No text + a Nikon lens ID from a raw → `SyntheticRun.CandidatesFromRaw`:
+  whose mount or maker contains the camera's first word win; then `PreferCamera`: the
+  files named for the body itself ("NIKON D750 (lens)", letters and digits compared) beat
+  the generic mount file ("NIKON CORPORATION (lens)"), because Adobe keeps per-body files
+  with the body's SFF and Lightroom takes those; still several → refusal with the list,
+  exit 2. No text + a Nikon lens ID from a raw → `SyntheticRun.CandidatesFromRaw`:
   `ByLensId` (the camera's maker word as hint), then `LensCatalog.Narrow` against the
   range libraw reads out of the MakerNote (`LensMinFocalMm`, `LensMaxFocalMm`,
   `LensMaxAperture` on `LoadedFrame`). The window passes the chosen `LensChoice` directly
@@ -172,8 +200,15 @@ console prints label and value only (`DepthLines`).
 
 `SyntheticRun.Complete` fills focal (`--focal` > `FOCALLEN` > libraw), f-stop
 (`--fstop` > libraw; a FITS from Siril carries none), crop (`--crop` > lensfun cameras by
-`INSTRUME` / libraw model; needed only for lensfun), each with its source string for the
-report. Refusals: a colour cube, no lens chosen (exit 2), no focal / f-stop / crop (exit 1).
+`INSTRUME` / libraw model; required by lensfun, used by Adobe when known and replaced by
+the profile's SFF when not - `CameraCrop` 0, source "necunoscut"), each with its source
+string for the report. The report prints the crop line for both sources
+(`SyntheticReport.CropLine`: value and source only) and, under it, the "format" line
+(`FormatMatch`, section 4). The lensfun camera table (1053 bodies in the shipped
+database) is the one list of cameras; `SensorFormats` (six nominal crops: full frame 1.0,
+APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7, with the sensor sizes as
+notes) is the fallback the refusal text lists and the window offers as chips - a list of
+our own would age at the first new body, six numbers do not. Refusals: a colour cube, no lens chosen (exit 2), no focal / f-stop / crop (exit 1).
 `LoadedFrame` carries `FocalMm`, `FNumber`, `Camera`, `NikonLensId`, `LensMinFocalMm`,
 `LensMaxFocalMm`, `LensMaxAperture`: `FitsReader` from `FOCALLEN` / `INSTRUME`,
 `RawReader.ShootingInfo` from libraw's `ImageOtherParams` (`FocalLength`, `Aperture`),
@@ -223,12 +258,17 @@ against `flat²` gives PERFECT on shape, REFA on depth (0.7 stops = 62 %) and RE
 (`SyntheticFlatTests`); the golden `against_radial` pair (0.45 vs 0.30 fixtures, 0.30 stops)
 is REFA, exit 3.
 
-| master vs Adobe synthetic | stops | corner error | depth verdict |
+| master vs Adobe synthetic (2026-09-18, camera crop 1.523) | stops | corner error | depth verdict |
 |---|---|---|---|
-| sky, no diffuser | −0.42 | 33.6 % | REFA |
-| monitor close | +0.16 | 11.7 % | ACCEPTABIL |
-| on monitor | +0.09 | 6.4 % | BUN |
-| Adobe vs lensfun synthetic | −0.16 | 11.7 % | ACCEPTABIL |
+| sky, no diffuser | −0.39 | 31.5 % | REFA |
+| monitor close | +0.19 | 13.8 % | ACCEPTABIL |
+| on monitor | +0.12 | 8.3 % | BUN |
+| Adobe vs lensfun 7D2 entry | −0.18 | 13.6 % | ACCEPTABIL |
+| Adobe vs lensfun D7100 entry | −0.25 | 18.9 % | ACCEPTABIL |
+
+(With the profile's SFF 1.5 standing for the sensor, the 2026-09-17 figures were −0.42 /
++0.16 / +0.09 / −0.16: the 24 mm long side put the corner 1.5 % further out and the Adobe
+synthetic 0.03 stops deeper.)
 
 **lensfun has two entries for this lens**, and the figures above use the first:
 `Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8` (`slr-tokina.xml`, crop 1.61,
@@ -241,20 +281,21 @@ D7100", 100 profiles; at 20 mm f/2.8 `k = -1.0395, 0.9223, -0.3793`), writes
 | pair | stops | depth verdict |
 |---|---|---|
 | lensfun 7D2 entry vs lensfun D7100 entry | −0.06 | BUN |
-| Adobe vs lensfun D7100 entry | −0.22 | ACCEPTABIL |
+| Adobe vs lensfun D7100 entry | −0.25 | ACCEPTABIL |
 | sky master vs lensfun 7D2 entry | −0.58 | REFA |
 | sky master vs lensfun D7100 entry | −0.64 | REFA |
 
-So the three published models span 0.69-0.92 stops at the corner: the two lensfun
-calibrations agree to 0.06, and Adobe is the shallow one by 0.16-0.22.
+So the three published models span 0.66-0.92 stops at the corner: the two lensfun
+calibrations agree to 0.06, and Adobe is the shallow one by 0.18-0.25.
 
 On the sky master against the Adobe synthetic (the numbers behind the user's question that
-produced the table): vignetting 0.27 / 0.69 / −0.42 stops; offset 2.58 / 0.10 / 0.35 %;
-corners 10.28 ACCEPTABIL / 0.00 PERFECT / 10.26 ACCEPTABIL; azimuthal 7.25 / 0.09 / 7.13;
-residual 9.31 / 0.10 / 9.37; tilt 0.49 / 0.20 / 0.53; worst tile 7.87 / 0.11 / 8.02;
-shape verdict ACCEPTABIL, depth verdict REFA (34 %), verdict of the difference REFA.
-Reading: the sky filled the corners by 0.42 stops and left its 10 % saddle; the synthetic
-is radial (every test under 0.2 %), so every shape in the third column is the master's.
+produced the table; re-run 2026-09-18): vignetting 0.27 / 0.66 / −0.39 stops; offset
+2.58 / 0.10 / 0.36 %; local spot +0.28 / +0.01 / +0.36 %; corners 10.28 ACCEPTABIL / 0.00
+PERFECT / 10.25; azimuthal 7.25 BUN / 0.09 PERFECT / 7.13; residual 9.31 BUN / 0.09
+PERFECT / 9.31; tilt 0.49 / 0.20 / 0.53; worst tile 7.87 BUN / 0.10 PERFECT / 7.96; shape
+verdict ACCEPTABIL, depth verdict REFA (31.5 %), verdict of the difference REFA. Reading:
+the sky filled the corners by 0.39 stops and left its 10 % saddle; the synthetic is
+radial (every test under 0.2 %), so every shape in the third column is the master's.
 
 ## 8. What the profiles say beside the real masters
 
@@ -262,37 +303,39 @@ Points as fractions of the half-width / half-height; masters measured as medians
 boxes at the analysis raster, averaged over the four quadrants. Percent of the centre,
 stops in parentheses.
 
-| point | Adobe LCP | lensfun | sky, no diffuser | monitor, close | on monitor |
+| point | Adobe LCP | lensfun (7D2 entry) | sky, no diffuser | monitor, close | on monitor |
 |---|---|---|---|---|---|
 | half semidiagonal | 82 % (0.28) | 85 % (0.23) | 92 % (0.13) | 78 % (0.36) | 79 % (0.35) |
-| short edge | 81 % (0.30) | 84 % (0.26) | 95 % (0.08) | 79 % (0.34) | 76 % (0.40) |
+| short edge | 81 % (0.31) | 84 % (0.26) | 95 % (0.08) | 79 % (0.34) | 76 % (0.40) |
 | long edge | 70 % (0.51) | 68 % (0.56) | 85 % (0.24) | 63 % (0.67) | 62 % (0.68) |
-| corner (5 % box) | 63 % (0.66) | 56 % (0.83) | 84 % (0.26) | 57 % (0.82) | 59 % (0.77) |
+| corner (5 % box) | 63 % (0.67) | 56 % (0.83) | 84 % (0.26) | 57 % (0.82) | 59 % (0.77) |
 
-The sky master is 0.4-0.6 stops too flat everywhere; the monitor masters match both
-databases at the corner and fall 0.1 stops too fast at mid-field (the panel). The two
-databases differ by 0.17 stops at the corner, 0.05 at mid-field - the precision one can
-expect of "official" data.
+(Adobe column at the camera's crop 1.523, 2026-09-18; the lensfun D7100 entry reads 0.92
+at the corner, section 7.) The sky master is 0.4-0.6 stops too flat everywhere; the monitor
+masters match the databases at the corner and fall 0.1 stops too fast at mid-field (the
+panel). The two databases differ by 0.16-0.25 stops at the corner, 0.05 at mid-field - the
+precision one can expect of "official" data.
 
 ## 9. Acceptance, with the tool itself
 
 `--synthetic` on the sky master as reference (6016×4016, FOCALLEN 20, `--fstop 2.8`),
 then `--against`:
 
-| pair | vignetting of the ratio | verdict of the ratio |
-|---|---|---|
-| monitor close / Adobe synthetic | +0.16 stops | BUN (7.0 % residual: the monitor's own structure) |
-| sky / Adobe synthetic | −0.42 stops | ACCEPTABIL (the sky saddle, 10.3 % corners) |
-| on monitor / Adobe synthetic | +0.09 stops | ACCEPTABIL (its blotches) |
-| Adobe synthetic / lensfun synthetic | −0.16 stops | PERFECT, 0.05 % residual |
+| pair (2026-09-18) | vignetting of the ratio | shape verdict | depth verdict → verdict |
+|---|---|---|---|
+| monitor close / Adobe synthetic | +0.19 stops | BUN (the monitor's own structure) | ACCEPTABIL → ACCEPTABIL |
+| sky / Adobe synthetic | −0.39 stops | ACCEPTABIL (the sky saddle, 10.3 % corners) | REFA → REFA |
+| on monitor / Adobe synthetic | +0.12 stops | ACCEPTABIL (its blotches) | BUN → ACCEPTABIL |
+| Adobe synthetic / lensfun 7D2 synthetic | −0.18 stops | PERFECT, 0.06 % residual | ACCEPTABIL → ACCEPTABIL |
 
-Depth written by the two synthetics (corner / long edge / short edge / half semidiagonal,
-stops): Adobe 0.69 / 0.52 / 0.31 / 0.29; lensfun 0.85 / 0.56 / 0.26 / 0.24.
+Depth written by the synthetics (corner / long edge / short edge / half semidiagonal,
+stops): Adobe 0.67 / 0.51 / 0.31 / 0.28 (crop line "1.523 (baza lensfun, Nikon D3300)");
+lensfun 7D2 entry 0.85 / 0.56 / 0.26 / 0.24; lensfun D7100 entry 0.92 / 0.70 / 0.37 / 0.34.
 
 ```bash
 flatcheck --lenses --lens "Tokina 11-20"
-flatcheck "<sky master>" --synthetic s_adobe.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
-flatcheck "<sky master>" --synthetic s_lensfun.fit --lens "Aspherical" --source lensfun --fstop 2.8
+flatcheck "<sky master>" --synthetic s_adobe.fit --lens "Tokina atx-i 11-20mm f2.8 CF" --fstop 2.8
+flatcheck "<sky master>" --synthetic s_lensfun.fit --lens "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8" --source lensfun --fstop 2.8
 flatcheck "<monitor close master>" --against s_adobe.fit
 flatcheck s_adobe.fit --against s_lensfun.fit
 ```
@@ -340,9 +383,15 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
 - No interpolation between profiles; "nearest" may sit a focal length off, and the report
   says so. If interpolation is ever wanted, do it in stops for the aperture and linearly
   in focal length, and keep reporting both neighbours.
-- Adobe's SFF stands for the sensor; a camera whose long side differs from `36 / SFF`
-  (23.5 vs 24 mm here) shifts r by that ratio. Using the real sensor width would need
-  the pixel pitch, which a Siril FITS does not carry for a DSLR.
+- The camera's crop, not the pixel pitch, sets the frame's physical size (36 / crop for
+  the long side); a body whose sensor is not 3:2 of that width is off by the ratio. A
+  profile calibrated on another format is rescaled through mm and works inside its
+  calibration corner; past it the polynomial extrapolates, and past 1.1x the report says
+  it is not to be trusted - the fix there is a profile calibrated on the right format
+  (Adobe's per-body files, which `PreferCamera` picks when one exists).
+- A camera missing from the lensfun table gets its crop from a sensor-format chip or by
+  hand; the nominal crops are within 1-2 % of the real ones. The chips otherwise only show
+  the format of the crop in the box; the exact value stays the table's.
 - Aliases of unparsed Adobe stubs are not searchable; the name from the file is.
 - The window prefill reads the first raw in `flats/` in full (libraw) once per session,
   after the opening chain; a raw libraw cannot open leaves the f-stop empty and says so.

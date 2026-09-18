@@ -7,12 +7,14 @@ Copyright (C) 2026 Tudor Carean
     profil folosit     : 20 mm, f/2.8, infinit   (cerut: 20 mm din FOCALLEN, f/2.8 din --fstop)
     model              : Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in unitati de focala; a = -1.903047, 4.514725, -4.657911; SFF 1.5
     fisier profil      : NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp
+    crop aparat        : 1.523  (baza lensfun, Nikon D3300)
+    format             : profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format
 
   ADANCIMEA VIGNETARII SCRISE (fata de axa)
-    colt (cutia de 5 %)         :  62.0 % din axa  ( 0.69 stopuri)
-    marginea lunga (st/dr)      :  69.9 % din axa  ( 0.52 stopuri)
-    marginea scurta (sus/jos)   :  80.5 % din axa  ( 0.31 stopuri)
-    jumatate de semidiagonala   :  81.9 % din axa  ( 0.29 stopuri)
+    colt (cutia de 5 %)         :  63.0 % din axa  ( 0.67 stopuri)
+    marginea lunga (st/dr)      :  70.3 % din axa  ( 0.51 stopuri)
+    marginea scurta (sus/jos)   :  80.9 % din axa  ( 0.31 stopuri)
+    jumatate de semidiagonala   :  82.2 % din axa  ( 0.28 stopuri)
 
     INFORMATIV: flatul sintetic e MODELUL obiectivului, nu o masuratoare a exemplarului tau. Are
     doar vignetarea, radiala si acromatica (profilele publicate au un singur set de

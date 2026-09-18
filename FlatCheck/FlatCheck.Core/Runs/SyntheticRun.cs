@@ -87,7 +87,7 @@ namespace FlatCheck
                 double? known = sources.Lensfun.CropOf(f.Camera);
                 if (known.HasValue) { req.CameraCrop = known.Value; req.CropSource = $"baza lensfun, {f.Camera}"; }
                 else if (lensfunNeedsCrop) return SyntheticReport.NoCrop(f.Camera);
-                else { req.CameraCrop = 0; req.CropSource = "nefolosit (profil Adobe)"; }
+                else { req.CameraCrop = 0; req.CropSource = "necunoscut - se ia senzorul de calibrare al profilului"; }
             }
             return null;
         }
@@ -124,10 +124,28 @@ namespace FlatCheck
                 var byMount = hits.Where(h => (h.Mount + " " + h.Maker).Contains(makerWord, StringComparison.OrdinalIgnoreCase)).ToList();
                 if (byMount.Count > 0) hits = byMount;
             }
+            hits = PreferCamera(hits, f?.Camera);
             if (hits.Count > 1) return SyntheticReport.Ambiguous(req.LensText ?? SyntheticReport.RawLensLabel(f), hits);
             req.Lens = hits[0];
             return null;
         }
+
+        /// <summary>
+        /// Dintre potriviri, cele al caror fisier Adobe e al aparatului insusi ("NIKON D750
+        /// (obiectiv)") bat pe cele generice ale monturii ("NIKON CORPORATION (obiectiv)"):
+        /// Adobe tine profile pe corp, cu SFF-ul corpului, si Lightroom pe acela il ia. Fara
+        /// aparat, sau fara un asemenea fisier, lista ramane cum e.
+        /// </summary>
+        internal static IReadOnlyList<LensChoice> PreferCamera(IReadOnlyList<LensChoice> hits, string camera)
+        {
+            if (hits == null || hits.Count < 2) return hits;
+            string wanted = Letters(camera);
+            if (wanted.Length == 0) return hits;
+            var own = hits.Where(h => Letters(h.Mount).Contains(wanted)).ToList();
+            return own.Count > 0 ? own : hits;
+        }
+
+        static string Letters(string s) => new string((s ?? "").Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
 
         /// <summary>
         /// Obiectivele pe care raw-ul le indica singur: cele cu ID-ul lui Nikon (in fisierele

@@ -41,9 +41,8 @@ namespace FlatCheck
             w.WriteLine($"    profil folosit     : {p.Settings}   (cerut: {Requested(req)})");
             w.WriteLine($"    model              : {p.Model.Describe()}");
             w.WriteLine($"    fisier profil      : {Path.GetFileName(p.File)}");
-            if (p.Lens.Source == ProfileSource.Lensfun)
-                w.WriteLine($"    crop aparat        : {r.CameraCrop.ToString("0.###", CultureInfo.InvariantCulture)}  ({req.CropSource})"
-                          + (r.CornerRadius > 1.0 ? $"; coltul cade la r = {r.CornerRadius.ToString("0.00", CultureInfo.InvariantCulture)}, dincolo de senzorul de calibrare (extrapolare mica)" : ""));
+            w.WriteLine("    crop aparat        : " + CropLine(r, req));
+            w.WriteLine("    format             : " + FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height));
 
             w.WriteLine("\n  ADANCIMEA VIGNETARII SCRISE (fata de axa)");
             foreach (string line in DepthLines(r)) w.WriteLine("    " + line);
@@ -52,6 +51,58 @@ namespace FlatCheck
             Indent("INFORMATIV: " + Caveat(), w);
             Indent(SirilNote(), w);
         }
+
+        /// <summary>
+        /// Crop-ul folosit si de unde vine; la lensfun si extrapolarea, la Adobe cand profilul
+        /// a fost calibrat pe alt format decat al tau, si "necunoscut" cand s-a luat SFF-ul.
+        /// </summary>
+        internal static string CropLine(SyntheticFlatResult r, SyntheticRequest req)
+            => r.CameraCrop <= 0
+                ? $"necunoscut  ({req.CropSource}; SFF {Fmt(r.Profile.Model.CropFactor, "0.###")})"
+                : $"{Fmt(r.CameraCrop, "0.###")}  ({req.CropSource})";
+
+        /// <summary>Peste 3 % intre crop si formatul de calibrare: alt format de senzor, nu rotunjirea nominala (1.5 fata de 1.523).</summary>
+        internal const double SameFormatTolerance = 0.03;
+
+        /// <summary>
+        /// Profilul fata de senzorul tau, pe un rand: pe ce format a fost calibrat, ce format ai,
+        /// si ce urmeaza din diferenta - raza recalculata prin mm cand formatele difera, si cat
+        /// de departe cade coltul tau fata de coltul de calibrare: inauntru, extrapolare mica
+        /// (sub 10 %: D3300 pe profilul lensfun calibrat la 1.61 da 1.06) sau MARE (un full
+        /// frame pe un profil DX, 1.5: polinomul de gradul sase nu mai spune nimic acolo).
+        /// Consola o tipareste la "format", fereastra o arata la alegerea obiectivului si sub
+        /// adancimile scrise; aceeasi propozitie.
+        /// </summary>
+        internal static string FormatMatch(VignettingModel m, double cameraCrop, int w, int h)
+        {
+            string calib = $"{SensorFormats.LabelOf(m.CropFactor)} (crop {Fmt(m.CropFactor, "0.###")})";
+            if (!(cameraCrop > 0))
+                return $"profil calibrat pe {calib}; crop-ul tau nu se stie, se ia senzorul de calibrare";
+            string yours = $"{SensorFormats.LabelOf(cameraCrop)} ({Fmt(cameraCrop, "0.###")})";
+            bool same = Math.Abs(cameraCrop - m.CropFactor) / m.CropFactor <= SameFormatTolerance;
+            string head = same
+                ? $"profil calibrat pe {calib}; senzorul tau {yours}: acelasi format"
+                : $"profil calibrat pe {calib}; senzorul tau {yours}: alt format, raza se recalculeaza prin mm";
+            return head + ExtrapolationTail(m.Extrapolation(w, h, cameraCrop));
+        }
+
+        /// <summary>Adevarat cand propozitia de mai sus e un avertisment: coltul tau cade mult dincolo de calibrare.</summary>
+        internal static bool FormatMatchIsWarning(VignettingModel m, double cameraCrop, int w, int h)
+            => cameraCrop > 0 && m.Extrapolation(w, h, cameraCrop) > SyntheticFlatResult.SmallExtrapolation;
+
+        /// <summary>Ce inseamna coltul tau fata de coltul de calibrare; gol cand coincid.</summary>
+        internal static string ExtrapolationTail(double e)
+        {
+            string es = Fmt(e, "0.00");
+            if (!(e > 1.0))
+                return e < 0.97 ? $"; coltul tau cade la {es} din coltul de calibrare, in interiorul profilului" : "";
+            return e <= SyntheticFlatResult.SmallExtrapolation
+                ? $"; coltul tau cade la {es} x coltul de calibrare: extrapolare mica"
+                : $"; coltul tau cade la {es} x coltul de calibrare: extrapolare MARE, polinomul nu e de incredere dincolo de ce a fost calibrat - ia un profil calibrat pe formatul tau";
+        }
+
+        /// <summary>Coada de extrapolare a unui flat scris; gol cand coltul e in interiorul profilului.</summary>
+        internal static string ExtrapolationNote(SyntheticFlatResult r) => ExtrapolationTail(r.Extrapolation);
 
         internal static string Requested(SyntheticRequest req)
             => $"{Fmt(req.FocalMm, "0.#")} mm din {req.FocalSource}, f/{Fmt(req.FStop, "0.0")} din {req.FStopSource}";
@@ -127,7 +178,7 @@ namespace FlatCheck
         internal static string NoCrop(string camera)
             => "FLAT SINTETIC: profilul lensfun are nevoie de crop factor-ul aparatului, si "
              + (camera == null ? "cadrul de referinta nu spune ce aparat e" : $"\"{camera}\" nu e in baza lensfun")
-             + ". Da --crop <factor> (1.5 la DX, 1.0 la full frame).";
+             + $". Da --crop <factor>: {SensorFormats.Describe()}.";
 
         internal static string RefusalCube(string path, int planes)
             => $"FLAT SINTETIC: {path} are {planes} planuri de culoare (debayerizat); da un cadru CFA sau mono ca referinta.";

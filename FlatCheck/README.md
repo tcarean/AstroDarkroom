@@ -505,7 +505,16 @@ n-are nicio sursă în el, deci nici curbura cerului, nici căderea panoului.
   lângă exe. Modelul `pa` (Hugin): același polinom, cu r normalizat la semidiagonala unui
   cadru 36×24 împărțit la crop-ul aparatului de calibrare; de aceea lensfun are nevoie de
   crop-ul aparatului tău, pe care îl ia din propria bază de camere după `INSTRUME` sau din
-  `--crop`. **Actualizare:** descarcă fișierele XML din
+  `--crop`. Și modelul Adobe folosește crop-ul tău, pentru lățimea fizică a cadrului
+  (36 / crop); fără el ia senzorul pe care Adobe a calibrat profilul (SFF) și spune asta.
+  Un profil calibrat pe alt format decât al tău e recalculat prin milimetri și merge
+  până la colțul senzorului de calibrare; dincolo de el polinomul extrapolează, iar peste
+  10 % raportul spune „extrapolare MARE" — ia un profil calibrat pe formatul tău (Adobe
+  ține fișiere pe corp, „NIKON D750 (obiectiv)", pe care programul le preferă când
+  referința numește corpul). Baza de camere lensfun are 1053 de corpuri; pentru unul care
+  lipsește, `--crop` cu unul din cele șase crop-uri nominale (full frame 1.0, APS-C 1.5,
+  APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7) sau 36 împărțit la lățimea senzorului
+  în mm. **Actualizare:** descarcă fișierele XML din
   <https://github.com/lensfun/lensfun/tree/master/data/db>, înlocuiește-le pe cele din
   folder și repornește; `lensfun/LENSFUN-VERSION.txt` spune din ce commit și de când e
   copia, iar `lensfun/update-lensfun.py` face același lucru dintr-o comandă.
@@ -522,7 +531,7 @@ codul de ieșire e 2.
 **Ce raportează:** adâncimea scrisă, în procente din axă și în stopuri, în patru puncte —
 colț (cutia de 5 % a testului de colțuri), marginea lungă, marginea scurtă, jumătatea
 semidiagonalei — exact punctele în care s-au comparat masterele reale cu bazele. Pe
-Tokina la 20 mm f/2.8: Adobe 0.69 / 0.52 / 0.31 / 0.29 stopuri, lensfun 0.85 / 0.56 /
+Tokina la 20 mm f/2.8 pe D3300: Adobe 0.67 / 0.51 / 0.31 / 0.28 stopuri, lensfun 0.85 / 0.56 /
 0.26 / 0.24 (pe D3300 colțul cade la r = 1.06, dincolo de senzorul de calibrare, și
 raportul o spune).
 
@@ -550,8 +559,8 @@ corecte ale aceluiași obiectiv dau PERFECT și zero stopuri. Merge între orica
 grosimi de difuzor, două surse — deci e și testul de convergență pentru un difuzor: când
 cerul și monitorul, prin același difuzor, dau aceeași cifră față de model, sursa a
 dispărut din măsurătoare. Măsurat pe Tokina: monitorul de aproape față de sinteticul
-Adobe +0.16 stopuri, cerul fără difuzor -0.42, sinteticul Adobe față de cel lensfun -0.16
-cu structura PERFECT.
+Adobe +0.19 stopuri, cerul fără difuzor -0.39, sinteticul Adobe față de cel lensfun -0.18
+cu structura PERFECT (cifre din 2026-09-18, cu crop-ul aparatului în modelul Adobe).
 
 **Când să-l folosești.** Sinteticul bate un flat de cer contaminat cu jumătate de stop și
 e cel puțin la egalitate cu unul de monitor; pierde cromaticul și partea de body. Un
@@ -1150,7 +1159,18 @@ Tokina 11-20 f/2.8, și Nikkor 18-200 f/3.5-5.6, și Sigma 18-35 f/1.8 — așa 
 al căror nume contrazice gama sunt scoase, iar obiectivele lensfun ale aceluiași producător
 cu aceeași gamă intră și ele (lensfun nu poartă ID-uri Nikon); rămâne unul, e ales; rămân
 mai multe (cele două generații Adobe ale Tokinei 11-20 și cele două intrări lensfun), lista se
-restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw. Pentru Tokina
+restrânge la ele și alegi tu, iar nota de sub câmpuri spune ce a citit din raw. Sub câmpuri
+stau **chip-urile de tip de senzor** — full frame, APS-C, APS-C Canon, APS-H, Micro 4/3,
+1" — care arată formatul valorii din câmp: se aprinde cel mai apropiat (în 5 %), deci
+1.523 din baza lensfun aprinde APS-C 1.5, iar nota de sub câmp spune mereu de unde e
+crop-ul și ce format e („crop 1.523 din baza lensfun (Nikon D3300) — format APS-C"). Un chip
+apăsat pune crop-ul lui nominal în câmp, pentru un aparat pe care baza nu-l are; o valoare
+tastată aprinde chip-ul ei, iar una fără format (1.15) le lasă stinse și nota o spune. **La
+alegerea unui obiectiv** apare, sub câmpuri, potrivirea profilului cu senzorul tău: pe ce
+format a fost calibrat, ce format ai, și ce urmează — același format; alt format, cu raza
+recalculată prin milimetri; colțul tău în interiorul profilului, extrapolare mică sau MARE.
+Aceeași propoziție o tipărește consola la „format" și o arată tabul sub adâncimile scrise.
+Pentru Tokina
 alegerea nu contează: atx-i 11-20 F2.8 CF (2020) e AT-X 11-20 F2.8 PRO DX (2015) cu altă
 carcasă, cele două fișiere Adobe au parametri de vignetare identici byte cu byte, iar
 intrările lensfun, calibrate pe exemplare AT-X, se aplică și lui. Câmpurile rămân editabile; ce scrii bate ce s-a citit. Panoul „Profilele: de unde vin și cum se actualizează" e **pliat

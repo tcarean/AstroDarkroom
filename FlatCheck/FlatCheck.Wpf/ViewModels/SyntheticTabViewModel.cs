@@ -72,7 +72,12 @@ namespace FlatCheck.Wpf
         string _search = "";
         IReadOnlyList<LensRow> _lenses = Array.Empty<LensRow>();
         LensRow _selectedLens;
-        string _focalText = "", _fstopText = "", _cropText = "";
+        string _focalText = "", _fstopText = "", _cropText = "", _cropNote = "", _formatNote = "";
+        bool _formatWarning, _cornerWarning;
+        bool _cropFromChip;
+        string _cropSource;
+        int _masterW, _masterH;
+        int _formatGen;
         string _prefillNote = "";
         string _adobeWhere = "", _lensfunWhere = "", _profilesSummary = "";
         string _profileLine = "", _modelLine = "", _cornerNote = "";
@@ -92,6 +97,14 @@ namespace FlatCheck.Wpf
             Run = new RelayCommand(() => Pending = RunAsync(), () => CanRun && IsIdle && SelectedLens != null);
             Compare = new RelayCommand(() => Pending = CompareAsync(), () => CanCompare && IsIdle);
             MapScale.Changed += RefreshMap;
+            SensorFormat.Chosen += f =>
+            {
+                _cropFromChip = true;
+                try { CropText = f.CropText; }
+                finally { _cropFromChip = false; }
+                CropNote = SessionMessages.SyntheticCropFromFormat(f.Label, f.CropText);
+                RefreshFormat();
+            };
         }
 
         // ------------------------------------------------------------ ce se leaga
@@ -127,12 +140,83 @@ namespace FlatCheck.Wpf
         public LensRow SelectedLens
         {
             get => _selectedLens;
-            set { if (Set(ref _selectedLens, value)) RaiseCommands(); }
+            set { if (Set(ref _selectedLens, value)) { RaiseCommands(); RefreshFormat(); } }
         }
 
-        public string FocalText { get => _focalText; set => Set(ref _focalText, value ?? ""); }
-        public string FStopText { get => _fstopText; set => Set(ref _fstopText, value ?? ""); }
-        public string CropText { get => _cropText; set => Set(ref _cropText, value ?? ""); }
+        public string FocalText { get => _focalText; set { if (Set(ref _focalText, value ?? "")) RefreshFormat(); } }
+        public string FStopText { get => _fstopText; set { if (Set(ref _fstopText, value ?? "")) RefreshFormat(); } }
+        public string CropText
+        {
+            get => _cropText;
+            set
+            {
+                if (!Set(ref _cropText, value ?? "")) return;
+                if (!_cropFromChip)
+                {
+                    // Chip-urile urmaresc valoarea; nota spune de unde e si ce format e. Sursa o
+                    // pune cine scrie in camp (tabelul, la preumplere); fara ea, e tastat.
+                    double? crop = Num(_cropText);
+                    SensorFormat.Follow(crop);
+                    string source = _cropSource ?? SessionMessages.SyntheticCropTyped();
+                    _cropSource = null;
+                    CropNote = crop.HasValue ? SessionMessages.SyntheticCropNote(_cropText.Trim(), source, SensorFormats.LabelOf(crop.Value))
+                             : _cropText.Trim().Length > 0 ? "" : _cropNote.StartsWith("crop necunoscut") ? _cropNote : "";
+                }
+                RefreshFormat();
+            }
+        }
+
+        /// <summary>Chip-urile de tip de senzor: arata formatul crop-ului din camp, si il pot pune cand nu vine din tabel.</summary>
+        public SensorFormatViewModel SensorFormat { get; } = new();
+
+        /// <summary>De unde e crop-ul din camp si ce format e; sau ca nu se stie inca.</summary>
+        public string CropNote { get => _cropNote; private set => Set(ref _cropNote, value); }
+
+        /// <summary>Profilul ales fata de senzorul tau: formatul de calibrare, al tau, si ce urmeaza. Gol fara obiectiv.</summary>
+        public string FormatNote { get => _formatNote; private set => Set(ref _formatNote, value); }
+
+        /// <summary>Adevarat cand FormatNote e un avertisment (extrapolare mare): se coloreaza.</summary>
+        public bool FormatWarning { get => _formatWarning; private set => Set(ref _formatWarning, value); }
+
+        /// <summary>Acelasi lucru pentru linia de sub adancimile scrise.</summary>
+        public bool CornerWarning { get => _cornerWarning; private set => Set(ref _cornerWarning, value); }
+
+        /// <summary>Calculul din spatele lui FormatNote, ca un test sa-l poata astepta.</summary>
+        internal Task FormatPending { get; private set; } = Task.CompletedTask;
+
+        /// <summary>
+        /// Recalculeaza FormatNote: profilul cel mai apropiat al obiectivului ales (un fisier
+        /// Adobe se parseaza abia acum, unul singur), pus fata in fata cu crop-ul din camp pe
+        /// cadrul masterului. In fundal, cu numar de generatie: doar ultima cerere ajunge pe
+        /// ecran, ca la celelalte taburi.
+        /// </summary>
+        void RefreshFormat() => FormatPending = RefreshFormatAsync();
+
+        async Task RefreshFormatAsync()
+        {
+            int gen = ++_formatGen;
+            LensRow lens = SelectedLens;
+            ProfileSources sources = _sources;
+            if (lens == null || sources == null) { FormatNote = ""; FormatWarning = false; return; }
+            double? focal = Num(FocalText), fstop = Num(FStopText), crop = Num(CropText);
+            int w = _masterW > 0 ? _masterW : 3000, h = _masterH > 0 ? _masterH : 2000;
+            (string Text, bool Warning) note;
+            try
+            {
+                note = await Task.Run(() =>
+                {
+                    var profiles = sources.Catalog.ProfilesOf(lens.Choice);
+                    if (profiles.Count == 0) return ("", false);
+                    LensProfile p = LensCatalog.Nearest(profiles, focal ?? profiles[0].FocalMm, fstop ?? profiles[0].FStop);
+                    return ($"{lens.Label}: " + SyntheticReport.FormatMatch(p.Model, crop ?? 0, w, h),
+                            SyntheticReport.FormatMatchIsWarning(p.Model, crop ?? 0, w, h));
+                }).ConfigureAwait(true);
+            }
+            catch (Exception) { note = ("", false); }   // un fisier Adobe stricat lasa nota goala; scrierea il va refuza cu motivul
+            if (gen != _formatGen) return;
+            FormatNote = note.Text;
+            FormatWarning = note.Warning;
+        }
 
         /// <summary>De unde au venit valorile preumplute, sau ce n-a putut fi citit.</summary>
         public string PrefillNote { get => _prefillNote; private set => Set(ref _prefillNote, value); }
@@ -220,11 +304,19 @@ namespace FlatCheck.Wpf
                 ct.ThrowIfCancellationRequested();
                 double focal = FitsReader.HDbl(hdr, "FOCALLEN", 0);
                 string camera = FitsReader.HStr(hdr, "INSTRUME", null);
+                _masterW = FitsReader.HInt(hdr, "NAXIS1", 0);
+                _masterH = FitsReader.HInt(hdr, "NAXIS2", 0);
                 if (focal > 0 && FocalText.Length == 0) { FocalText = focal.ToString("0.#", CultureInfo.InvariantCulture); notes.Add("focala din FOCALLEN"); }
-                if (!string.IsNullOrWhiteSpace(camera))
+                if (CropText.Length == 0)
                 {
-                    double? crop = _sources.Lensfun.CropOf(camera);
-                    if (crop.HasValue && CropText.Length == 0) { CropText = crop.Value.ToString("0.###", CultureInfo.InvariantCulture); notes.Add($"crop din baza lensfun ({camera.Trim()})"); }
+                    double? crop = string.IsNullOrWhiteSpace(camera) ? null : _sources.Lensfun.CropOf(camera);
+                    if (crop.HasValue)
+                    {
+                        _cropSource = SessionMessages.SyntheticCropFromTable(camera);
+                        CropText = crop.Value.ToString("0.###", CultureInfo.InvariantCulture);
+                        notes.Add($"crop din baza lensfun ({camera.Trim()})");
+                    }
+                    else CropNote = SessionMessages.SyntheticCropUnknown(camera);
                 }
 
                 string raw = session.FlatFrames().FirstOrDefault(RawReader.IsRawPath);
@@ -252,7 +344,8 @@ namespace FlatCheck.Wpf
                         var hits = await Task.Run(() => SyntheticRun.CandidatesFromRaw(_sources.Catalog, f), ct).ConfigureAwait(true);
                         var byMount = string.IsNullOrEmpty(maker) ? hits
                             : hits.Where(h => (h.Mount + " " + h.Maker).Contains(maker, StringComparison.OrdinalIgnoreCase)).ToList();
-                        string note = OfferCandidates(byMount.Count > 0 ? byMount : hits, SyntheticReport.RawLensLabel(f));
+                        var offered = SyntheticRun.PreferCamera(byMount.Count > 0 ? byMount : hits, camera ?? f.Camera);
+                        string note = OfferCandidates(offered, SyntheticReport.RawLensLabel(f));
                         if (note != null) notes.Add(note);
                     }
                 }
@@ -432,9 +525,8 @@ namespace FlatCheck.Wpf
             LensProfile p = r.Profile;
             ProfileLine = $"{p.Lens.Name}  [{p.Lens.Mount}]  ({p.Lens.SourceLabel}): {p.Settings}   -   cerut: {SyntheticReport.Requested(req)}";
             ModelLine = p.Model.Describe();
-            CornerNote = p.Lens.Source == ProfileSource.Lensfun && r.CornerRadius > 1.0
-                ? $"Coltul cade la r = {r.CornerRadius.ToString("0.00", CultureInfo.InvariantCulture)}, dincolo de senzorul pe care a fost calibrat profilul (crop {p.Model.CropFactor.ToString("0.##", CultureInfo.InvariantCulture)} fata de {r.CameraCrop.ToString("0.###", CultureInfo.InvariantCulture)}): o extrapolare mica."
-                : "";
+            CornerNote = SyntheticReport.FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height);
+            CornerWarning = SyntheticReport.FormatMatchIsWarning(p.Model, r.CameraCrop, r.Width, r.Height);
             Depth = SyntheticReport.DepthRows(r).Select(d => new MetricRow { Label = d.Label, Value = d.Value, Note = d.Note }).ToList();
             HasResult = true;
         }
@@ -478,6 +570,11 @@ namespace FlatCheck.Wpf
             FocalText = "";
             FStopText = "";
             CropText = "";
+            CropNote = "";
+            FormatNote = "";
+            FormatWarning = CornerWarning = false;
+            _masterW = _masterH = 0;
+            SensorFormat.Clear();
             PrefillNote = "";
             ProfileLine = "";
             ModelLine = "";

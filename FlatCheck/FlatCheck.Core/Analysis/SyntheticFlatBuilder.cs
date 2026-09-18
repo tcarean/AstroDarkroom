@@ -41,6 +41,9 @@ namespace FlatCheck
         internal readonly double CornerStops, LongEdgeStops, ShortEdgeStops, HalfDiagonalStops;
         /// <summary>Raza coltului in unitatile modelului; peste 1 la lensfun inseamna extrapolare.</summary>
         internal readonly double CornerRadius;
+        /// <summary>Coltul tau fata de coltul senzorului de calibrare: peste 1 = extrapolare, peste 1.1 = una mare.</summary>
+        internal double Extrapolation => CornerRadius / Profile.Model.CalibrationCornerRadius();
+        internal const double SmallExtrapolation = 1.1;
 
         internal SyntheticFlatResult(Img flat, LensProfile profile, double cameraCrop, int w, int h,
                                      double corner, double longEdge, double shortEdge, double halfDiag, double cornerRadius)

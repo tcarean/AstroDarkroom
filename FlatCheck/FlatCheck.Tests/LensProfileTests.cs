@@ -60,6 +60,33 @@ public class VignettingModelTests
             focalX: 20 * 1.5 / 36, focalY: 20 * 1.5 / 36, centerX: 0.4, centerY: 0.5);
         Assert.Equal(centred.Factor(0.3, 0, 0), shifted.Factor(0.2, 0, 0), 12);   // same point, 0.1 Dmax to the right of the shifted centre
         Assert.True(shifted.Factor(0.3, 0, 0) < centred.Factor(0.3, 0, 0));
+        // a camera crop equal to the profile's SFF changes nothing, with or without FocalLengthX
+        Assert.Equal(shifted.Factor(0.2, 0, 0), shifted.Factor(0.2, 0, 1.5), 12);
+        Assert.Equal(centred.Factor(0.3, 0.1, 0), centred.Factor(0.3, 0.1, 1.5), 12);
+    }
+
+    /// <summary>
+    /// The camera's crop sets the frame's physical size; the profile's SFF is the calibration
+    /// body and only the fallback. On the D3300 the difference is 1.5 % (1.523 vs 1.5); on a
+    /// full-frame body with a DX-calibrated profile it is the whole corner.
+    /// </summary>
+    [Fact]
+    public void Adobe_TheCamerasCropSetsTheFrameSize_TheProfilesSffIsOnlyTheFallback()
+    {
+        var m = Adobe();
+        double yN = 4016 / 2.0 / 6016;
+        double rSff = m.Radius(0.5, yN, 0);
+        double rD3300 = m.Radius(0.5, yN, 1.523);
+        double rFx = m.Radius(0.5, yN, 1.0);
+        Assert.Equal(rSff, m.Radius(0.5, yN, 1.5), 12);
+        Assert.InRange(rD3300, 0.700, 0.712);           // 14.2 mm / 20 mm: where the piecewise table ends
+        Assert.Equal(rSff * 1.5 / 1.523, rD3300, 9);
+        Assert.Equal(rSff * 1.5, rFx, 9);                 // 36 mm wide: the corner sits 1.5x further out
+        Assert.True(m.Factor(0.5, yN, 1.0) < m.Factor(0.5, yN, 1.523));
+        // decentring is a property of the lens, in mm: the shift does not scale with the crop
+        var shifted = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
+            focalX: 20 * 1.5 / 36, centerX: 0.4);
+        Assert.Equal(shifted.Radius(0.0, 0, 1.0), (0.1 * 24) / 20, 9);
     }
 
     [Fact]
@@ -85,6 +112,19 @@ public class VignettingModelTests
         Assert.Equal(1.0, m.Radius(halfW, halfH, 1.61), 9);
         Assert.Equal(1 + LensProfileTestData.K1 + LensProfileTestData.K2 + LensProfileTestData.K3, m.Factor(halfW, halfH, 1.61), 9);
         Assert.InRange(m.Radius(halfW, halfH, 1.523), 1.05, 1.07);
+    }
+
+    [Fact]
+    public void SensorFormats_AreTheSixNominalCrops_AndTheRefusalListsThem()
+    {
+        Assert.Equal(6, SensorFormats.All.Count);
+        Assert.Equal(1.0, SensorFormats.All.Single(f => f.Label == "full frame").Crop);
+        Assert.Equal(1.5, SensorFormats.All.Single(f => f.Label == "APS-C").Crop);
+        Assert.Equal(1.6, SensorFormats.All.Single(f => f.Label == "APS-C Canon").Crop);
+        Assert.Equal("1.0", SensorFormats.All[0].CropText);
+        Assert.Contains("APS-C Canon 1.6", SensorFormats.Describe());
+        Assert.Contains("APS-C Canon 1.6", SyntheticReport.NoCrop("Canon EOS 7D"));
+        Assert.Contains("Canon EOS 7D", SyntheticReport.NoCrop("Canon EOS 7D"));
     }
 
     [Fact]
@@ -498,6 +538,89 @@ public class SyntheticRunTests
         Assert.True(refused.Refused);
         Assert.Contains("--crop", refused.Refusal);
         Assert.False(refused.RefusedChoice);
+
+        // the same unknown camera with an Adobe profile: not refused, the profile's SFF stands in, and the report says so
+        var adobeReq = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
+        var sw = new StringWriter();
+        var adobe = SyntheticRun.Execute(other, adobeReq, sources, null, 2.8, null, sw);
+        Assert.False(adobe.Refused, adobe.Refusal);
+        Assert.Equal(0, adobeReq.CameraCrop);
+        Assert.Contains("necunoscut", adobeReq.CropSource);
+        Assert.Contains("crop aparat        : necunoscut", sw.ToString());
+        Assert.Contains("SFF 1.5", sw.ToString());
+        // with the camera known, the crop is used and reported, and at 1.523 vs SFF 1.5 no format warning
+        var known = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
+        var sw2 = new StringWriter();
+        var run2 = SyntheticRun.Execute(reference, known, sources, null, 2.8, null, sw2);
+        Assert.False(run2.Refused);
+        Assert.Equal(1.523, known.CameraCrop, 9);
+        Assert.Contains("crop aparat        : 1.523  (baza lensfun, Nikon D3300)", sw2.ToString());
+        Assert.DoesNotContain("alt format", sw2.ToString());
+        Assert.True(run2.Result.CornerStops < adobe.Result.CornerStops);   // the real 23.6 mm sensor reaches a little less far out than 24 mm
+        // a full-frame body on the DX-calibrated file: the format warning fires
+        var ffReq = new SyntheticRequest { LensText = "Tokina AT-X 11-20mm F2.8 PRO DX", Source = ProfileSource.Adobe };
+        var sw3 = new StringWriter();
+        var ff = SyntheticRun.Execute(reference, ffReq, sources, null, 2.8, 1.0, sw3);
+        Assert.False(ff.Refused);
+        Assert.Contains("format             : profil calibrat pe APS-C (crop 1.5); senzorul tau full frame (1): alt format", sw3.ToString());
+        // ...and the corner sits 1.5x beyond the calibration sensor's: a sixth-order polynomial
+        // extrapolated that far is meaningless (it goes negative on this fixture), and the report says so
+        Assert.InRange(ff.Result.Extrapolation, 1.45, 1.55);
+        Assert.Contains("extrapolare MARE", sw3.ToString());
+        Assert.InRange(run2.Result.Extrapolation, 0.97, 1.0);            // the D3300 sits just inside the DX calibration corner
+        Assert.Equal("", SyntheticReport.ExtrapolationNote(run2.Result));
+        Assert.Contains("format             : profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", sw2.ToString());
+        Assert.Contains("format             : profil calibrat pe APS-C (crop 1.5); crop-ul tau nu se stie", sw.ToString());
+    }
+
+    [Theory]
+    [InlineData(1.523, "APS-C")]
+    [InlineData(1.5, "APS-C")]
+    [InlineData(1.534, "APS-C")]
+    [InlineData(1.61, "APS-C Canon")]
+    [InlineData(1.0, "full frame")]
+    [InlineData(1.005, "full frame")]
+    [InlineData(2.0, "Micro 4/3")]
+    [InlineData(1.15, null)]
+    [InlineData(0.0, null)]
+    public void SensorFormats_NearestLightsTheChipWithinFivePercent(double crop, string label)
+    {
+        Assert.Equal(label, SensorFormats.Nearest(crop)?.Label);
+        Assert.Equal(label ?? SensorFormats.Unusual, SensorFormats.LabelOf(crop));
+    }
+
+    /// <summary>The one sentence both applications say about a profile beside the user's sensor.</summary>
+    [Fact]
+    public void FormatMatch_SaysTheCalibrationFormat_YoursAndWhatFollows()
+    {
+        var adobe = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5);
+        string same = SyntheticReport.FormatMatch(adobe, 1.523, 6000, 4000);
+        Assert.Equal("profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", same);
+        string ff = SyntheticReport.FormatMatch(adobe, 1.0, 6000, 4000);
+        Assert.StartsWith("profil calibrat pe APS-C (crop 1.5); senzorul tau full frame (1): alt format, raza se recalculeaza prin mm; coltul tau cade la 1.50 x coltul de calibrare: extrapolare MARE", ff);
+        string smaller = SyntheticReport.FormatMatch(adobe, 2.0, 6000, 4000);
+        Assert.Contains("Micro 4/3 (2): alt format", smaller);
+        Assert.Contains("cade la 0.75 din coltul de calibrare, in interiorul profilului", smaller);
+        Assert.Equal("profil calibrat pe APS-C (crop 1.5); crop-ul tau nu se stie, se ia senzorul de calibrare", SyntheticReport.FormatMatch(adobe, 0, 6000, 4000));
+        var lensfun = new VignettingModel(VignettingModelKind.Lensfun, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.61);
+        string d3300 = SyntheticReport.FormatMatch(lensfun, 1.523, 6016, 4016);
+        Assert.StartsWith("profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format, raza se recalculeaza prin mm; coltul tau cade la 1.06 x coltul de calibrare: extrapolare mica", d3300);
+        Assert.Contains("format neobisnuit (1.15)", SyntheticReport.FormatMatch(adobe, 1.15, 6000, 4000));
+    }
+
+    [Fact]
+    public void ABodySpecificAdobeFileBeatsTheGenericMountFile()
+    {
+        var generic = new LensChoice(ProfileSource.Adobe, "Tokina", "Tokina X", "NIKON CORPORATION");
+        var body = new LensChoice(ProfileSource.Adobe, "Tokina", "Tokina X", "NIKON D750");
+        var other = new LensChoice(ProfileSource.Adobe, "Tokina", "Tokina X", "NIKON D90");
+        var lensfun = new LensChoice(ProfileSource.Lensfun, "Tokina", "Tokina X", "Nikon F AF");
+        var all = new[] { generic, body, other, lensfun };
+        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(all, "NIKON D750"));
+        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(all, "Nikon D750"));      // case and spacing do not matter
+        Assert.Equal(all, SyntheticRun.PreferCamera(all, "NIKON D3300"));                // no file of its own: nothing changes
+        Assert.Equal(all, SyntheticRun.PreferCamera(all, null));
+        Assert.Equal(new[] { body }, SyntheticRun.PreferCamera(new[] { body }, "Canon EOS 6D"));   // a single hit is never dropped
     }
 
     [Fact]

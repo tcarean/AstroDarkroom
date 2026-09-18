@@ -136,6 +136,80 @@ public class SyntheticTabTests
     }
 
     [Fact]
+    public async Task ASensorFormatChipFillsTheCrop_AndTypingReleasesIt()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f);
+        using (ws)
+        {
+            await vm.Pending;
+            Assert.Equal("1.523", vm.CropText);                  // from the table: the APS-C chip shows it, the note says where from
+            Assert.Equal("APS-C 1.5", vm.SensorFormat.Selected?.Label);
+            Assert.Equal("crop 1.523 din baza lensfun (Nikon D3300) - format APS-C", vm.CropNote);
+            Assert.Equal(6, vm.SensorFormat.Options.Count);
+
+            vm.SensorFormat.Options.Single(o => o.Label.StartsWith("APS-C Canon")).IsSelected = true;
+
+            Assert.Equal("1.6", vm.CropText);
+            Assert.Contains("nominal, din chip-ul APS-C Canon", vm.CropNote);
+            Assert.Equal("APS-C Canon 1.6", vm.SensorFormat.Selected.Label);
+
+            vm.CropText = "1.15";                                // no format within 5 %: every chip off, the note says so
+
+            Assert.Null(vm.SensorFormat.Selected);
+            Assert.All(vm.SensorFormat.Options, o => Assert.False(o.IsSelected));
+            Assert.Equal("crop 1.15 tastat - format neobisnuit, niciun chip nu i se potriveste", vm.CropNote);
+
+            vm.CropText = "1.0";                                 // typing lights the chip it means
+
+            Assert.Equal("full frame 1.0", vm.SensorFormat.Selected?.Label);
+            Assert.Equal("crop 1.0 tastat - format full frame", vm.CropNote);
+
+            vm.CropText = "";
+            Assert.Null(vm.SensorFormat.Selected);
+            Assert.Equal("", vm.CropNote);
+        }
+    }
+
+    /// <summary>Choosing a lens says at once what it was calibrated on and whether that is the user's sensor.</summary>
+    [Fact]
+    public async Task ChoosingALensSaysWhetherItsProfileFitsTheSensor()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f);
+        using (ws)
+        {
+            await vm.Pending;
+            Assert.Equal("", vm.FormatNote);
+
+            vm.Search = "nikon corporation";
+            vm.SelectedLens = vm.Lenses[0];
+            await vm.FormatPending;
+            Assert.StartsWith("Tokina AT-X 11-20mm F2.8 PRO DX: profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format", vm.FormatNote);
+
+            vm.Search = "Aspherical";
+            vm.SelectedLens = vm.Lenses.Single();
+            await vm.FormatPending;
+            Assert.Contains("profil calibrat pe APS-C Canon (crop 1.61); senzorul tau APS-C (1.523): alt format", vm.FormatNote);
+            Assert.Contains("extrapolare", vm.FormatNote);      // the fixture master is square, so the corner sits further out than on 3:2
+
+            vm.CropText = "1.0";                                 // a full frame on the same profile: the note follows the crop
+            await vm.FormatPending;
+            Assert.Contains("senzorul tau full frame (1): alt format", vm.FormatNote);
+            Assert.Contains("extrapolare MARE", vm.FormatNote);
+            Assert.True(vm.FormatWarning);                       // coloured, unlike the same-format line
+
+            vm.CropText = "2.0";                                 // a smaller sensor sits inside the profile: no warning colour
+            await vm.FormatPending;
+            Assert.Contains("in interiorul profilului", vm.FormatNote);
+            Assert.False(vm.FormatWarning);
+
+            vm.SelectedLens = null;
+            Assert.Equal("", vm.FormatNote);
+        }
+    }
+
+    [Fact]
     public async Task TheCompareButtonReadsAFileWrittenEarlier()
     {
         using var f = Fixture();

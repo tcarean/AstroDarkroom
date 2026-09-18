@@ -142,6 +142,10 @@ not a copy.
     `<Camera> (<Lens>) - RAW.lcp` convention, with the fixed-lens phones and compacts as
     camera-named stubs). A file is parsed when its lens is chosen, or when a Nikon lens
     ID is looked up, and then only the files of the camera's mount, in parallel.
+    `SensorFormats` is the six nominal crops (full frame 1.0 ... 1" 2.7) with the sensor
+    sizes as notes - the fallback for a body the lensfun camera table (1053 entries, the
+    one list of cameras, maintained upstream) does not have; the refusal text lists them
+    and the window offers them as chips.
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
@@ -299,7 +303,18 @@ not a copy.
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
-    either. `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
+    either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that
+    show the format of whatever crop is in the box (`Follow`: the nearest nominal crop
+    within `SensorFormats.Tolerance`, lit without raising `Chosen`) and put their nominal
+    crop into it when clicked (`Chosen`). The first cut only wrote and unlit on typing, so
+    1.523 from the camera table sat in the box with no chip lit and looked like a value from
+    nowhere - the user's words. Under the box `CropNote` always says where the crop came
+    from and what format it is; `FormatNote` (recomputed on every lens, crop, focal or
+    f-stop change, in the background with a generation counter; the selected lens's Adobe
+    file is parsed there, one file) says what the chosen profile was calibrated on and
+    whether that is the user's sensor - `SyntheticReport.FormatMatch`, the sentence the
+    console prints at "format" and the tab repeats under the written depths.
+    `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
     whose option list depends on the result (six chips on a CFA frame, `Mozaic` first and
     default, one on mono). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
     a factor, plus the effective factor the control writes back - so a test can drive it
@@ -407,7 +422,10 @@ not a copy.
     hand-drawn chart) and the value converters.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
     templates. The converters live there rather than in `App.xaml` because a
-    `StaticResource` inside a dictionary resolves in *that* dictionary.
+    `StaticResource` inside a dictionary resolves in *that* dictionary. It also styles
+    `ToolTip`: WPF's default tooltip is light, the implicit `TextBlock` style paints text
+    light, and the two met as white on white on the Sintetic tab's sensor chips - the
+    only tooltips in the app so far. Any new tooltip gets the dark one for free.
   - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
   `InternalsVisibleTo`. `Golden/` holds the characterization snapshots.
@@ -643,7 +661,7 @@ map. What differs is only what each does with the three outputs.
 | smoothed flat | written to `--smooth <path>` | written to `pp_flat_stacked_netezit.fit` beside the master, on a button, after asking about an existing file |
 | synthetic flat | written to `--synthetic <path>`, the lens from `--lens` text; `--against` compares two files | written to `pp_flat_stacked_sintetic.fit` beside the master, the lens from a searchable list, focal / f-stop / crop prefilled from the master's header and a raw in `flats/`; the comparison against the file follows the write by itself, and "Compara cu masterul" runs it alone on a file written earlier |
 | result | exit code | coloured verdict |
-| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list and its three prefilled fields |
+| options | `--fov`, `--sat`, `--black`, `--pattern`, `--sky`, `--scale`, `--lens`, `--source`, `--focal`, `--fstop`, `--crop`, `--profiles` | `--sky` (a checkbox), the smoothing scale (three chips), the lens list, its three prefilled fields and the sensor-format chips behind the crop |
 
 The console keeps the options because it is the scriptable one, and because `--fov` and
 `--sat` exist for telling the tool something the header does not say. Adding them to the
@@ -1618,6 +1636,27 @@ toward the horizon all around the zenith and fills the corners), monitor up clos
   (D3300: 1.523) or from `--crop`; on a body with a different crop the corner can sit past
   r = 1 (1.06 here) and the report says "extrapolare mica". The polynomial *is* the
   vignetting factor in both (lensfun multiplies to apply, divides to correct).
+- **The camera's crop sets the frame's physical size for Adobe too.** The first cut took
+  the profile's `SensorFormatFactor` - the calibration body - for every camera: 1.5 % off
+  on a D3300 with the DX file (1.523 vs 1.5; the Adobe synthetic read 0.69 stops instead of
+  0.67), the whole corner off on a full frame with a DX-calibrated file, silently. Now
+  everything goes through mm (`36 / crop` for your frame, `36 / SFF` for the profile's
+  focal-in-pixels and its decentring, see `VignettingModel`'s header), the SFF is the
+  fallback when the crop is unknown and the report says so, a crop more than 3 % from the
+  SFF prints "profil calibrat pe alt format", and `SyntheticFlatResult.Extrapolation`
+  (corner r over `CalibrationCornerRadius`) prints "extrapolare MARE" above 1.1 - a
+  sixth-order polynomial 50 % past its data goes negative, so a DX file on a full frame is
+  refused in words, not numbers - all of it in one sentence, `SyntheticReport.FormatMatch`
+  ("profil calibrat pe APS-C (crop 1.5); senzorul tau APS-C (1.523): acelasi format",
+  or "alt format, raza se recalculeaza prin mm; coltul tau cade la 1.50 x coltul de
+  calibrare: extrapolare MARE"), printed by the console at "format" and shown by the tab
+  when a lens is picked and again under the written depths. Adobe's own piecewise table ends at 14.19 mm, the corner
+  of a 23.64 mm sensor (crop 1.523), which is the evidence the real crop is what Adobe
+  used. `SyntheticRun.PreferCamera` picks a per-body Adobe file ("NIKON D750 (lens)") over
+  the mount's generic one when the reference names that body, since those carry the
+  body's SFF. Console and window agree, and the tab's chips are only for a body the
+  lensfun table lacks: the note under the fields says so and the chosen chip's crop lands
+  in the box.
 
 **Decisions.** Nearest profile, reported, no interpolation: nearest focal, then nearest
 f-stop in stops, then the farthest distance (flats are at infinity); the report prints
@@ -1659,7 +1698,7 @@ each normalised to median 1, and **three** structure analyses - A, B and the rat
 printed as a table of three columns (`AgainstReport.Rows`: vignetting in stops, illumination
 offset, local spot, then the five tests with their verdicts). The first version showed the
 battery on the ratio alone, and "vignetare -0.42 stopuri" could not be read without knowing
-that the master has 0.27 and the synthetic 0.69; the user asked for the three values side by
+that the master has 0.27 and the synthetic 0.69 (0.66 since the crop correction); the user asked for the three values side by
 side. In the third column the figures are about the *difference*: the vignetting is the
 depth difference (positive = A falls more toward the corner), the five tests say whether the
 difference is radial, the map shows its shape. The rows carry their own notes
@@ -1675,10 +1714,10 @@ of D stops leaves `2^|D| - 1` of error in the corner of a light calibrated with 
 flat (`AgainstResult.DepthErrorOf`), a fractional amplitude like every other figure, so it
 goes through `Stats.ResidualVerdict` unchanged - under 0.03 stops PERFECT, 0.14 BUN, 0.26
 ACCEPTABIL, else REFA (`AgainstReport.DepthScale`, derived from `Th.Resid*` by
-`StopsFor`, never written out). On the Tokina masters: sky -0.42 → 34 % REFA, close
-monitor +0.16 → 12 % ACCEPTABIL, on-monitor +0.09 → 6 % BUN, Adobe vs lensfun 0.16 →
-ACCEPTABIL; the row's note says that under ACCEPTABIL the difference is within what the two
-databases disagree by (~0.2 stops). The depth row is the only one with a verdict in the
+`StopsFor`, never written out). On the Tokina masters (2026-09-18, Adobe at crop 1.523):
+sky -0.39 → 31.5 % REFA, close monitor +0.19 → 13.8 % ACCEPTABIL, on-monitor +0.12 → 8.3 %
+BUN, Adobe vs lensfun 0.18-0.25 → ACCEPTABIL; the row's note says that under ACCEPTABIL the
+difference is within what the two databases disagree by (~0.2 stops). The depth row is the only one with a verdict in the
 difference column - the five tests carry theirs on A and B, and "PERFECT next to 0.11 % on a
 ratio" said nothing the shape verdict at the top does not. The golden `against_radial`
 pair is 0.30 stops apart, hence REFA and exit 3 there. The window shows the same rows
@@ -1690,11 +1729,12 @@ through their own `DepthRowTemplate` in `SyntheticView.xaml` - label and wrappin
 the left column, the value alone on the right - because the shared `MetricRowTemplate`
 runs the note under the value, which is what the structure tabs want and this one does not.
 
-**Measured on the Tokina masters against the Adobe synthetic** (corner, stops): the
-close-monitor master +0.16, the sky master -0.42, the on-monitor master +0.09; Adobe
-against lensfun -0.16 with a PERFECT ratio (both radial). These are the acceptance
-numbers of the mode, and they say which real master was wrong (the sky one, by half a
-stop) and by how much the panel adds at mid-field (0.1).
+**Measured on the Tokina masters against the Adobe synthetic** (corner, stops, 2026-09-18
+with the camera's crop): the close-monitor master +0.19, the sky master -0.39, the
+on-monitor master +0.12; Adobe against the lensfun 7D2 entry -0.18 with a PERFECT ratio
+(both radial), against the D7100 entry -0.25. These are the acceptance numbers of the mode,
+and they say which real master was wrong (the sky one, by 0.4 stops) and by how much the
+panel adds at mid-field (0.1).
 
 **What the report says it cannot contain:** the chromatic part of the falloff (on the sky
 master R falls ~25 % deeper than B), body-specific shading, dust, any non-radial

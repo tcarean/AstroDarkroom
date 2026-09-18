@@ -74,6 +74,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="Margin" Value="0,0,0,8" />
   </Style>
 
+  <!-- Tooltip-urile: WPF le deseneaza deschise la culoare, iar textul aplicatiei e deschis,
+       deci ieseau alb pe alb (gasit pe chip-urile de senzor din tabul Sintetic). Fundal si
+       chenar din paleta, text normal, latime maxima ca sa se rupa pe randuri. -->
+  <Style TargetType="ToolTip">
+    <Setter Property="Background" Value="{StaticResource PanelBg2}" />
+    <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+    <Setter Property="BorderBrush" Value="{StaticResource BorderBr}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Padding" Value="8,5" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="HasDropShadow" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                  BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
+            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" MaxWidth="360">
+              <ContentPresenter.Resources>
+                <Style TargetType="TextBlock">
+                  <Setter Property="TextWrapping" Value="Wrap" />
+                  <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+                </Style>
+              </ContentPresenter.Resources>
+            </ContentPresenter>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <Style x:Key="Muted" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource MutedBr}" />
     <Setter Property="FontFamily" Value="{StaticResource UiFont}" />

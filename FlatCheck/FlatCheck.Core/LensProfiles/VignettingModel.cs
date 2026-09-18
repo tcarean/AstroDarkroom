@@ -31,6 +31,18 @@
 //    "Note that these model parameters are identical for all color channels" - modelul e
 //    acromatic, si raportul o spune.
 //
+//    Distanta in mm vine din crop-ul APARATULUI TAU (latura lunga = 36 / crop), nu din
+//    SFF-ul profilului: SFF-ul e senzorul pe care Adobe a calibrat profilul, si prima
+//    versiune il lua drept senzorul tuturor. Pe D3300 cu profilul DX coincideau la 1.5 %;
+//    pe un full frame cu un profil calibrat pe DX, sau invers, coltul ar fi cazut la raza
+//    gresita fara niciun avertisment. Focala in pixeli a profilului (FocalLengthX) e in
+//    unitati de Dmax ale aparatului de calibrare, deci se trece prin mm (FocalX * 36 / SFF),
+//    iar descentrarea (ImageXCenter) e a obiectivului, tot in mm. Fara crop se ia SFF-ul,
+//    ca inainte, si raportul o spune. Capatul tabelului "piecewise", r = 0.7094, cade la
+//    14.19 mm: exact semidiagonala unui senzor de 36 / 1.523 = 23.64 mm, nu a celui de
+//    24 mm pe care il implica SFF 1.5 (14.42 mm, r = 0.721) - crop-ul real e ce a folosit
+//    si Adobe.
+//
 //  - lensfun ("pa", Pablo D'Angelo / Hugin): acelasi polinom, dar r e normalizat la
 //    semidiagonala unui cadru 36 x 24 impartit la crop-ul aparatului de CALIBRARE
 //    (mod-color.cpp: hugin_scale_in_millimeters = hypot(36, 24) / CropFactor / 2), deci
@@ -99,8 +111,8 @@ namespace FlatCheck
         /// <summary>
         /// Factorul de vignetare in punctul (xN, yN): pozitia fata de centrul imaginii, in
         /// unitati de Dmax (latura lunga in pixeli). <paramref name="cameraCrop"/> e crop-ul
-        /// aparatului pe care se aplica; Adobe nu-l foloseste (profilul isi aduce SFF-ul lui),
-        /// lensfun da.
+        /// aparatului pe care se aplica: lensfun il cere, Adobe il foloseste cand e dat si
+        /// ia SFF-ul profilului cand nu e (0).
         /// </summary>
         internal double Factor(double xN, double yN, double cameraCrop)
         {
@@ -113,10 +125,15 @@ namespace FlatCheck
         {
             if (Kind == VignettingModelKind.Adobe)
             {
-                double fx = FocalX ?? FocalMm * CropFactor / 36.0;
-                double fy = FocalY ?? fx;
-                double xd = (xN + 0.5 - CenterX) / fx;
-                double yd = (yN + 0.5 - CenterY) / fy;
+                // Totul in mm: cadrul tau e lat de 36 / crop (36 / SFF fara crop), focala in
+                // pixeli a profilului e in Dmax-ul aparatului de calibrare (36 / SFF mm), si
+                // descentrarea la fel. La crop == SFF se reduce la (xN + 0.5 - CenterX) / fx.
+                double calibMm = 36.0 / CropFactor;
+                double longSideMm = 36.0 / (cameraCrop > 0 ? cameraCrop : CropFactor);
+                double fxMm = FocalX.HasValue ? FocalX.Value * calibMm : FocalMm;
+                double fyMm = FocalY.HasValue ? FocalY.Value * calibMm : fxMm;
+                double xd = (xN * longSideMm - (CenterX - 0.5) * calibMm) / fxMm;
+                double yd = (yN * longSideMm - (CenterY - 0.5) * calibMm) / fyMm;
                 return Math.Sqrt(xd * xd + yd * yd);
             }
             else
@@ -127,6 +144,27 @@ namespace FlatCheck
                 double huginMm = Math.Sqrt(36.0 * 36.0 + 24.0 * 24.0) / CropFactor / 2.0;
                 return Math.Sqrt(xMm * xMm + yMm * yMm) / huginMm;
             }
+        }
+
+        /// <summary>
+        /// Raza, in unitatile modelului, a coltului senzorului pe care a fost calibrat profilul:
+        /// 1 la lensfun prin definitie, semidiagonala lui 36 x 24 / SFF peste focala la Adobe.
+        /// Dincolo de ea polinomul extrapoleaza, si un polinom de gradul sase extrapolat cu
+        /// 50 % (un full frame pe un profil DX) da valori fara sens, chiar negative.
+        /// </summary>
+        internal double CalibrationCornerRadius()
+        {
+            if (Kind != VignettingModelKind.Adobe) return 1.0;
+            double calibMm = 36.0 / CropFactor;
+            double fxMm = FocalX.HasValue ? FocalX.Value * calibMm : FocalMm;
+            return Math.Sqrt(36.0 * 36.0 + 24.0 * 24.0) / 2.0 / CropFactor / fxMm;
+        }
+
+        /// <summary>Coltul unui cadru w x h fata de coltul senzorului de calibrare; peste 1 = extrapolare.</summary>
+        internal double Extrapolation(int w, int h, double cameraCrop)
+        {
+            double dmax = Math.Max(w, h);
+            return Radius(w / 2.0 / dmax, h / 2.0 / dmax, cameraCrop) / CalibrationCornerRadius();
         }
 
         double Polynomial(double r2)
