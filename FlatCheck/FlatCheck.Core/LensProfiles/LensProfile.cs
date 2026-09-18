@@ -96,8 +96,8 @@ namespace FlatCheck
         // "f/2.8", "F2.8", "f3.5-5.6G" (se ia deschiderea la focala minima); nu "AF-S", "EF".
         static readonly Regex ApertureRx = new(@"(?<![A-Za-z])[fF]/?\s?(\d+(?:\.\d+)?)", RegexOptions.Compiled);
 
-        /// <summary>Toleranta la focala: 1 mm sau 5 %, care e mai mare - numele rotunjesc.</summary>
-        internal const double FocalToleranceMm = 1.0, FocalToleranceFraction = 0.05;
+        /// <summary>Toleranta la focala: 1 mm sau 5 %, care e mai mare - numele rotunjesc. Aceeasi cu Th.ProfileFocalTol*, o singura definitie.</summary>
+        internal const double FocalToleranceMm = Th.ProfileFocalTolMm, FocalToleranceFraction = Th.ProfileFocalTolFrac;
         /// <summary>Toleranta la deschidere, in stopuri: codurile Nikon merg in sesimi de stop.</summary>
         internal const double ApertureToleranceStops = 0.25;
 
@@ -129,7 +129,7 @@ namespace FlatCheck
             return false;
         }
 
-        static bool Close(double a, double b) => Math.Abs(a - b) <= Math.Max(FocalToleranceMm, FocalToleranceFraction * Math.Max(a, b));
+        internal static bool Close(double a, double b) => Math.Abs(a - b) <= Math.Max(FocalToleranceMm, FocalToleranceFraction * Math.Max(a, b));
 
         /// <summary>"11-20 mm f/2.8", "135 mm f/2.0", "11-20 mm", "" cand nu se stie nimic.</summary>
         internal static string Describe(double? minFocal, double? maxFocal, double? maxAperture)

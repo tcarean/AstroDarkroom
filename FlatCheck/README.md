@@ -584,7 +584,15 @@ iar vignetarea acestui obiectiv scade mult la focalizare apropiată. Focala vine
 din `FOCALLEN` sau din raw, diafragma numai din raw (un FITS Siril n-o poartă) sau din
 `--fstop`. Același obiectiv pe două monturi (Adobe are câte un fișier per montură) se
 alege după aparatul din `INSTRUME`; când tot rămân mai multe, lista lor se tipărește și
-codul de ieșire e 2. **Un obiectiv lensfun poate fi în listă de două ori**, cu același nume
+codul de ieșire e 2. **O focală sau o diafragmă pe care obiectivul n-o are în profile nu e
+refuzată**: se ia profilul cel mai apropiat (500 mm f/1.0 pe Nikkor 35 f/1.8 ajunge la
+35 mm f/1.8) și raportul o spune sub „profil folosit", cu un „ATENTIE" — ce s-a cerut, ce s-a
+luat, ce are obiectivul, și că adâncimea scrisă e a profilului, nu a valorilor cerute.
+Pragul e 1 mm sau 5 % pe focală și o jumătate de stop pe diafragmă; grila Adobe e la stopuri
+întregi, deci orice cerere din interiorul gamei trece fără vorbă și doar cele din afara ei
+sunt semnalate. Aceeași propoziție apare și în tabelul de vignetare al modului structură,
+când focala sau diafragma raw-ului cade departe de profilele unui obiectiv. **Un obiectiv
+lensfun poate fi în listă de două ori**, cu același nume
 și aceeași montură: baza îl ține o dată pentru fiecare corp pe care l-a calibrat cineva, iar
 formatul de calibrare stă lângă montură („Nikon F AF, calibrat pe APS-C 1.528" și „..., calibrat
 pe full frame 1"). Sunt două profile diferite, nu o dublare — pe Nikkor 35 f/1.8G DX
@@ -1254,6 +1262,9 @@ tastată aprinde chip-ul ei, iar una fără format (1.15) le lasă stinse și no
 alegerea unui obiectiv** apare, sub câmpuri, potrivirea profilului cu senzorul tău: pe ce
 format a fost calibrat, ce format ai, și ce urmează — același format; alt format, cu raza
 recalculată prin milimetri; colțul tău în interiorul profilului, extrapolare mică sau MARE.
+Tot acolo, în galben, **avertismentul de nepotrivire** când focala sau diafragma din câmp e
+departe de orice profil al obiectivului (vezi mai sus): se recalculează la fiecare tastă, și
+după scriere aceeași propoziție stă sub „profil folosit".
 Aceeași propoziție o tipărește consola la „format" și o arată tabul sub adâncimile scrise.
 Pentru Tokina
 alegerea nu contează: atx-i 11-20 F2.8 CF (2020) e AT-X 11-20 F2.8 PRO DX (2015) cu altă

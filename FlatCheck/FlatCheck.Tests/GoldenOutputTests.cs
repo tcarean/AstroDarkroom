@@ -864,6 +864,26 @@ public class GoldenOutputTests
         Assert.Equal(0, exit);
     }
 
+    /// <summary>
+    /// A request far from every profile (500 mm f/1.0 on a lens with 18-20 mm, f/2.8-4) is
+    /// not refused: the nearest profile is used, the file is written, exit 0 - and an
+    /// ATENTIE line under "profil folosit" says the depth is the profile's, not the request's.
+    /// </summary>
+    [Fact]
+    public void Synthetic_ARequestFarFromEveryProfileIsWrittenWithAWarning()
+    {
+        using var ws = new TempWorkspace();
+        string profiles = LensProfileTestData.ProfilesDir(ws);
+        string reference = Reference(ws);
+
+        var (output, exit) = RunCli(ws, reference, "--synthetic", ws.PathTo("s.fit"), "--lens", "Tokina AT-X 11-20mm F2.8 PRO DX",
+            "--focal", "500", "--fstop", "1.0", "--profiles", profiles);
+
+        AssertGolden("synthetic_far_request", output);
+        Assert.Equal(0, exit);
+        Assert.True(File.Exists(ws.PathTo("s.fit")));
+    }
+
     /// <summary>Two lenses match: nothing is written, the candidates are listed, exit 2 - "read this first".</summary>
     [Fact]
     public void Synthetic_AnAmbiguousLensListsTheCandidatesAndExitsTwo()

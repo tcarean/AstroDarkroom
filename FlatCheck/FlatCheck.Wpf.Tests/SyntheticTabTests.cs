@@ -335,6 +335,48 @@ public class SyntheticTabTests
         }
     }
 
+    /// <summary>
+    /// Typing a focal or f-stop the chosen lens has no profile for shows the warning under
+    /// the fields at once (recomputed with FormatNote); a value inside the tolerance clears
+    /// it; and the flat written with such a request carries the same sentence under
+    /// "profil folosit". Nothing is refused: the nearest profile is used, as the console does.
+    /// </summary>
+    [Fact]
+    public async Task AFocalOrFStopFarFromEveryProfileWarns_WhileTypingAndAfterWriting()
+    {
+        using var f = Fixture();
+        var (vm, ws) = Attached(f, confirm: _ => true);
+        using (ws)
+        {
+            await vm.Pending;
+            vm.SelectedLens = vm.Lenses.First(r => r.SourceLabel == "Adobe" && r.Where == "NIKON CORPORATION");
+            vm.FStopText = "2.8";
+            await vm.FormatPending;
+            Assert.False(vm.HasRequestNote);                                  // 20 mm from the header, f/2.8: a profile exists
+
+            vm.FocalText = "500";
+            vm.FStopText = "1";
+            await vm.FormatPending;
+            Assert.True(vm.HasRequestNote);
+            Assert.StartsWith("focala ceruta 500 mm n-are profil: s-a luat 20 mm", vm.RequestNote);
+            Assert.Contains("diafragma ceruta f/1.0", vm.RequestNote);
+
+            vm.FocalText = "20";
+            vm.FStopText = "3.5";
+            await vm.FormatPending;
+            Assert.False(vm.HasRequestNote);                                  // 0.39 stops from f/4: inside the tolerance
+
+            vm.FStopText = "1";
+            await vm.FormatPending;
+            await vm.RunAsync();
+            Assert.True(vm.HasResult, vm.ErrorText);
+            Assert.True(vm.HasWrittenRequestNote);
+            Assert.StartsWith("diafragma ceruta f/1.0 e la 3.0 stopuri", vm.WrittenRequestNote);
+            Assert.Contains("ATENTIE: diafragma ceruta f/1.0", vm.Report);
+            Assert.NotEmpty(vm.SavedTo);
+        }
+    }
+
     [Fact]
     public async Task ALensIdSharedBySeveralLensesNarrowsTheListInsteadOfPickingTheFirst()
     {

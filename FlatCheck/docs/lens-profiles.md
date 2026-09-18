@@ -229,6 +229,17 @@ is, what it compares with: the corner is the master's own "vignetare centru -> c
 half semidiagonal is mid-field where the object sits); the window shows the notes, the
 console prints label and value only (`DepthLines`).
 
+**A request far from every profile** (`SyntheticReport.ProfileMismatch`): `Nearest` never
+interpolates and never refuses, so the report warns under "profil folosit" when the focal
+is more than 1 mm / 5 % from the profile's (`Th.ProfileFocalTolMm` / `Frac`, the `LensSpec`
+tolerance) or the aperture more than 0.5 stops (`Th.ProfileStopsTol`; Adobe's grid is at
+whole stops, so only requests outside the range fire). Measured on the Nikkor 35 f/1.8G D90
+file: 500 mm f/1.0 → 35 mm f/1.8, 1.51 m, 1.02 stops at the corner, warned; f/4.7 → f/4.0
+(0.46 stops from 4, 0.51 from 5.6), not warned; f/3.5 → f/4.0 at 0.39 stops, not warned.
+The same sentence goes into the structure comparison's row note (`ProfileRows`, with
+`IsWarning`) when the raw's focal / f-stop is far from a candidate lens's profiles. Golden
+`synthetic_far_request` pins the console line; exit stays 0.
+
 `SyntheticRun.Complete` fills focal (`--focal` > `FOCALLEN` > libraw), f-stop
 (`--fstop` > libraw; a FITS from Siril carries none), crop (`--crop` > lensfun cameras by
 `INSTRUME` / libraw model; required by lensfun, used by Adobe when known and replaced by

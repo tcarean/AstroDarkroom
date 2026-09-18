@@ -152,6 +152,30 @@ public class VignettingComparisonTests
         Assert.Contains(rows, x => x.Where.EndsWith("calibrat pe APS-C Canon 1.61"));
     }
 
+    /// <summary>
+    /// The comparison takes each lens's nearest profile to the raw's focal and f-stop; when
+    /// that is far (a raw at 40 mm f/1.0 against a lens with 18-20 mm, f/2.8-4) the row
+    /// keeps its verdict but its note carries the warning and is marked, in both applications.
+    /// </summary>
+    [Fact]
+    public void ARawFarFromEveryProfileMarksTheRowWithTheMismatch()
+    {
+        using var ws = new TempWorkspace();
+        var sources = LensProfileTestData.Sources(ws);
+        var r = StructureAnalyzer.Analyze(ModelFlat(sources));
+        var near = LensIdentification.Identify(Master(), Raw(), sources, rawName: "DSC_0001.NEF");
+        var far = LensIdentification.Identify(Master(), Raw(), sources, focal: 40, fstop: 1.0, rawName: "DSC_0001.NEF");
+
+        var rowsNear = StructureReport.ProfileRows(VignettingComparer.Analyze(r, near, sources.Catalog));
+        var rowsFar = StructureReport.ProfileRows(VignettingComparer.Analyze(r, far, sources.Catalog));
+
+        Assert.DoesNotContain(rowsNear, x => x.Note.Contains("ATENTIE"));
+        Assert.All(rowsFar, x => Assert.Contains("ATENTIE: focala ceruta 40 mm n-are profil", x.Note));
+        Assert.All(rowsFar, x => Assert.Contains("diafragma ceruta f/1.0", x.Note));
+        Assert.All(rowsFar, x => Assert.True(x.IsWarning));
+        Assert.Equal(rowsNear.Select(x => x.Profile), rowsFar.Select(x => x.Profile));   // the same nearest profiles, 20 mm f/2.8
+    }
+
     [Fact]
     public void TheProfilesDepthIsMeasuredWithTheMastersOwnOperator()
     {

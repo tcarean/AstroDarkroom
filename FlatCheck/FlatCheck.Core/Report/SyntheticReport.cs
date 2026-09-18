@@ -39,6 +39,8 @@ namespace FlatCheck
             w.WriteLine($"    cadru de referinta : {referencePath}  ({r.Width} x {r.Height})");
             w.WriteLine($"    obiectiv           : {p.Lens.Name}  [{p.Lens.Where}]  sursa: {p.Lens.SourceLabel}");
             w.WriteLine($"    profil folosit     : {p.Settings}   (cerut: {Requested(req)})");
+            string mismatch = ProfileMismatch(p, req.FocalMm, req.FStop, r.LensProfiles);
+            if (mismatch != null) Indent("ATENTIE: " + mismatch, w);
             w.WriteLine($"    model              : {p.Model.Describe()}");
             w.WriteLine($"    fisier profil      : {Path.GetFileName(p.File)}");
             w.WriteLine("    crop aparat        : " + CropLine(r, req));
@@ -110,6 +112,38 @@ namespace FlatCheck
 
         internal static string Requested(SyntheticRequest req)
             => $"{Fmt(req.FocalMm, "0.#")} mm din {req.FocalSource}, f/{Fmt(req.FStop, "0.0")} din {req.FStopSource}";
+
+        /// <summary>
+        /// Cand profilul folosit e departe de ce s-a cerut: focala la mai mult de
+        /// Th.ProfileFocalTolMm / TolFrac, diafragma la mai mult de Th.ProfileStopsTol stopuri.
+        /// Nearest nu interpoleaza si nu refuza, deci 500 mm f/1.0 pe Nikkor 35 f/1.8 ajungea
+        /// tacut la 35 mm f/1.8, cu singurul semn in "cerut". Propozitia spune ce s-a cerut, ce
+        /// s-a luat, ce are obiectivul, si ca adancimea scrisa e a profilului. Null cand totul e
+        /// in toleranta. <paramref name="all"/> sunt profilele obiectivului (pentru gama).
+        /// </summary>
+        internal static string ProfileMismatch(LensProfile used, double focalMm, double fStop, IReadOnlyList<LensProfile> all)
+        {
+            all ??= new[] { used };
+            var parts = new List<string>();
+            if (!LensSpec.Close(used.FocalMm, focalMm))
+            {
+                var focals = all.Select(p => p.FocalMm).Distinct().OrderBy(f => f).Select(f => Fmt(f, "0.#")).ToList();
+                parts.Add($"focala ceruta {Fmt(focalMm, "0.#")} mm n-are profil: s-a luat {Fmt(used.FocalMm, "0.#")} mm"
+                        + $" (obiectivul are profile la {string.Join(", ", focals)} mm)");
+            }
+            double stops = Math.Abs(LensCatalog.Stops(used.FStop) - LensCatalog.Stops(fStop));
+            if (stops > Th.ProfileStopsTol)
+            {
+                double lo = all.Min(p => p.FStop), hi = all.Max(p => p.FStop);
+                string range = Math.Abs(lo - hi) < 1e-9 ? $"un singur profil, f/{Fmt(lo, "0.0")}" : $"profile de la f/{Fmt(lo, "0.0")} la f/{Fmt(hi, "0.0")}";
+                parts.Add($"diafragma ceruta f/{Fmt(fStop, "0.0")} e la {Fmt(stops, "0.0")} stopuri de cel mai apropiat profil, f/{Fmt(used.FStop, "0.0")} ({range})");
+            }
+            if (parts.Count == 0) return null;
+            return string.Join("; ", parts) + ". Adancimea scrisa e a profilului folosit, nu a valorilor cerute.";
+        }
+
+        internal static bool ProfileMismatches(LensProfile used, double focalMm, double fStop)
+            => ProfileMismatch(used, focalMm, fStop, null) != null;
 
         static string Fmt(double v, string f) => v.ToString(f, CultureInfo.InvariantCulture);
 

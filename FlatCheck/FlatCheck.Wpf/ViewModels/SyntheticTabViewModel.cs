@@ -95,6 +95,7 @@ namespace FlatCheck.Wpf
         int _formatGen;
         int _detailsGen;
         string _listNote = "";
+        string _requestNote = "", _writtenRequestNote = "";
         string _prefillNote = "";
         string _adobeWhere = "", _lensfunWhere = "", _profilesSummary = "";
         string _profileLine = "", _modelLine = "", _cornerNote = "";
@@ -246,6 +247,18 @@ namespace FlatCheck.Wpf
         /// <summary>Adevarat cand FormatNote e un avertisment (extrapolare mare): se coloreaza.</summary>
         public bool FormatWarning { get => _formatWarning; private set => Set(ref _formatWarning, value); }
 
+        /// <summary>
+        /// Cand focala sau diafragma din casute e departe de profilul care s-ar folosi
+        /// (SyntheticReport.ProfileMismatch): mereu un avertisment, gol cand nu e cazul.
+        /// Recalculat odata cu FormatNote, la fiecare tasta.
+        /// </summary>
+        public string RequestNote { get => _requestNote; private set { if (Set(ref _requestNote, value ?? "")) Raise(nameof(HasRequestNote)); } }
+        public bool HasRequestNote => _requestNote.Length > 0;
+
+        /// <summary>Acelasi avertisment pentru flatul scris, sub "profil folosit"; gol cand cererea a fost in toleranta.</summary>
+        public string WrittenRequestNote { get => _writtenRequestNote; private set { if (Set(ref _writtenRequestNote, value ?? "")) Raise(nameof(HasWrittenRequestNote)); } }
+        public bool HasWrittenRequestNote => _writtenRequestNote.Length > 0;
+
         /// <summary>Acelasi lucru pentru linia de sub adancimile scrise.</summary>
         public bool CornerWarning { get => _cornerWarning; private set => Set(ref _cornerWarning, value); }
 
@@ -265,25 +278,30 @@ namespace FlatCheck.Wpf
             int gen = ++_formatGen;
             LensRow lens = SelectedLens;
             ProfileSources sources = _sources;
-            if (lens == null || sources == null) { FormatNote = ""; FormatWarning = false; return; }
+            if (lens == null || sources == null) { FormatNote = ""; FormatWarning = false; RequestNote = ""; return; }
             double? focal = Num(FocalText), fstop = Num(FStopText), crop = Num(CropText);
             int w = _masterW > 0 ? _masterW : 3000, h = _masterH > 0 ? _masterH : 2000;
-            (string Text, bool Warning) note;
+            (string Text, bool Warning, string Request) note;
             try
             {
                 note = await Task.Run(() =>
                 {
                     var profiles = sources.Catalog.ProfilesOf(lens.Choice);
-                    if (profiles.Count == 0) return ("", false);
+                    if (profiles.Count == 0) return ("", false, "");
                     LensProfile p = LensCatalog.Nearest(profiles, focal ?? profiles[0].FocalMm, fstop ?? profiles[0].FStop);
+                    // Fara focala sau diafragma in casuta nu e nicio cerere de comparat: scrierea
+                    // le va lua din header / raw, si nota ei le va judeca atunci.
+                    string request = focal.HasValue && fstop.HasValue
+                        ? SyntheticReport.ProfileMismatch(p, focal.Value, fstop.Value, profiles) ?? "" : "";
                     return ($"{lens.Label}: " + SyntheticReport.FormatMatch(p.Model, crop ?? 0, w, h),
-                            SyntheticReport.FormatMatchIsWarning(p.Model, crop ?? 0, w, h));
+                            SyntheticReport.FormatMatchIsWarning(p.Model, crop ?? 0, w, h), request);
                 }).ConfigureAwait(true);
             }
-            catch (Exception) { note = ("", false); }   // un fisier Adobe stricat lasa nota goala; scrierea il va refuza cu motivul
+            catch (Exception) { note = ("", false, ""); }   // un fisier Adobe stricat lasa nota goala; scrierea il va refuza cu motivul
             if (gen != _formatGen) return;
             FormatNote = note.Text;
             FormatWarning = note.Warning;
+            RequestNote = note.Request;
         }
 
         /// <summary>De unde au venit valorile preumplute, sau ce n-a putut fi citit.</summary>
@@ -579,6 +597,7 @@ namespace FlatCheck.Wpf
             ModelLine = p.Model.Describe();
             CornerNote = SyntheticReport.FormatMatch(p.Model, r.CameraCrop, r.Width, r.Height);
             CornerWarning = SyntheticReport.FormatMatchIsWarning(p.Model, r.CameraCrop, r.Width, r.Height);
+            WrittenRequestNote = SyntheticReport.ProfileMismatch(p, req.FocalMm, req.FStop, r.LensProfiles) ?? "";
             Depth = SyntheticReport.DepthRows(r).Select(d => new MetricRow { Label = d.Label, Value = d.Value, Note = d.Note }).ToList();
             HasResult = true;
         }

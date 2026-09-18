@@ -88,10 +88,14 @@ namespace FlatCheck
         internal readonly double CameraCrop;
         /// <summary>Coltul masterului fata de coltul de calibrare al profilului (SyntheticFlatResult.Extrapolation).</summary>
         internal readonly double Extrapolation;
+        /// <summary>Toate profilele obiectivului, pentru avertismentul "profilul folosit e departe de ce a spus raw-ul".</summary>
+        internal readonly IReadOnlyList<LensProfile> LensProfiles;
 
-        internal ProfileDepth(LensProfile profile, double cornerStops, double masterStops, double cameraCrop, double extrapolation)
+        internal ProfileDepth(LensProfile profile, double cornerStops, double masterStops, double cameraCrop, double extrapolation,
+                              IReadOnlyList<LensProfile> lensProfiles = null)
         {
             Profile = profile;
+            LensProfiles = lensProfiles ?? new[] { profile };
             CornerStops = cornerStops;
             DiffStops = masterStops - cornerStops;
             ErrorPct = Stats.DepthErrorPct(DiffStops);
@@ -172,9 +176,10 @@ namespace FlatCheck
                 // lensfun normalizeaza raza la semidiagonala senzorului de calibrare, deci fara
                 // crop-ul aparatului nu stie unde e coltul tau; Adobe are SFF-ul ca rezerva.
                 if (lens.Source == ProfileSource.Lensfun && !(crop > 0)) { skipped.Add(lens); continue; }
-                LensProfile p = LensCatalog.Nearest(catalog.ProfilesOf(lens), shot.FocalMm.Value, shot.FStop.Value);
+                IReadOnlyList<LensProfile> all = catalog.ProfilesOf(lens);
+                LensProfile p = LensCatalog.Nearest(all, shot.FocalMm.Value, shot.FStop.Value);
                 if (p == null) continue;
-                rows.Add(Measure(p, master, crop));
+                rows.Add(Measure(p, master, crop, all));
             }
             ComparisonGap gap = rows.Count > 0 ? ComparisonGap.None : skipped.Count > 0 ? ComparisonGap.NoCrop : ComparisonGap.NoLensMatch;
             return new VignettingComparison(masterStops, shot, rows, gap, skipped);
@@ -184,12 +189,12 @@ namespace FlatCheck
         /// Adancimea unui profil in colt, cu operatorul masterului: rasterul modelului la
         /// marimea rasterului de analiza, apoi CornerStats pe el.
         /// </summary>
-        internal static ProfileDepth Measure(LensProfile p, StructureResult master, double crop)
+        internal static ProfileDepth Measure(LensProfile p, StructureResult master, double crop, IReadOnlyList<LensProfile> all = null)
         {
             SyntheticFlatResult built = SyntheticFlatBuilder.Build(p, master.Width, master.Height, crop);
             var (corners, centre) = Metrics.CornerStats(built.Flat);
             double stops = Math.Log2(centre / corners.Values.Average());
-            return new ProfileDepth(p, stops, master.VignetteStops, crop, built.Extrapolation);
+            return new ProfileDepth(p, stops, master.VignetteStops, crop, built.Extrapolation, all);
         }
     }
 }

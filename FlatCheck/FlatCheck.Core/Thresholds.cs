@@ -145,6 +145,18 @@ namespace FlatCheck
         // deci testul de corelatie se aplica numai peste intervalul asta (puncte de %).
         public const double LightSeriesSkySpanMin = 10.0;
 
+        // --- profilul de vignetare fata de ce s-a cerut (sintetic, structura cu --raw) ---
+        // Profilul se alege "cel mai apropiat", fara interpolare; peste pragurile astea
+        // raportul avertizeaza ca adancimea e a profilului, nu a valorilor cerute. Doar un
+        // avertisment: exit-ul nu se schimba. Focala: 1 mm sau 5 %, care e mai mare -
+        // aceeasi toleranta cu care LensSpec compara numele unui obiectiv cu gama din raw
+        // (numele rotunjesc). Diafragma: o jumatate de stop - grila Adobe e la stopuri
+        // intregi, deci orice cerere din interiorul gamei cade sub prag, si avertismentul
+        // prinde exact cererile din afara ei (f/1.0 pe un obiectiv cu profile de la f/1.8).
+        public const double ProfileFocalTolMm = 1.0;
+        public const double ProfileFocalTolFrac = 0.05;
+        public const double ProfileStopsTol = 0.5;
+
         // --- expunere, pe fereastra centrala 20% a canalului celui mai luminos ---
         public const double ExpoClip = 0.05;        // % pixeli saturati = clipping
         public const double ExpoTooLow = 30.0;      // sub asta masterul iese zgomotos

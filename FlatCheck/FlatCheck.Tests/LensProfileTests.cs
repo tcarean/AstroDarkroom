@@ -380,6 +380,40 @@ public class LensCatalogTests
     }
 
     /// <summary>
+    /// Nearest never interpolates and never refuses, so a request far from every profile
+    /// silently lands on the nearest one; the warning names what was asked, what was taken
+    /// and what the lens has. Inside the tolerances (1 mm / 5 % on the focal, half a stop on
+    /// the aperture - Adobe's grid is at whole stops, so any request inside the range is
+    /// under it) there is nothing to say.
+    /// </summary>
+    [Fact]
+    public void ProfileMismatch_WarnsOnlyWhenTheRequestIsFarFromTheProfileUsed()
+    {
+        var c = Catalog();
+        var adobe = c.Lenses.First(l => l.Source == ProfileSource.Adobe);
+        var all = c.ProfilesOf(adobe);                                   // 18 and 20 mm; f/2.8 and f/4
+
+        Assert.Null(SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 20, 2.8), 20, 2.8, all));
+        Assert.Null(SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 20.5, 3.5), 20.5, 3.5, all));   // 0.5 mm, 0.39 stops from f/4
+        Assert.Null(SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 19, 2.5), 19, 2.5, all));       // 1 mm, 0.33 stops from f/2.8
+
+        string far = SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 500, 1.0), 500, 1.0, all);
+        Assert.Equal("focala ceruta 500 mm n-are profil: s-a luat 20 mm (obiectivul are profile la 18, 20 mm);"
+                   + " diafragma ceruta f/1.0 e la 3.0 stopuri de cel mai apropiat profil, f/2.8 (profile de la f/2.8 la f/4.0)."
+                   + " Adancimea scrisa e a profilului folosit, nu a valorilor cerute.", far);
+
+        string focalOnly = SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 11, 2.8), 11, 2.8, all);
+        Assert.StartsWith("focala ceruta 11 mm n-are profil: s-a luat 18 mm", focalOnly);
+        Assert.DoesNotContain("diafragma", focalOnly);
+
+        string stopOnly = SyntheticReport.ProfileMismatch(LensCatalog.Nearest(all, 20, 11), 20, 11, all);
+        Assert.StartsWith("diafragma ceruta f/11.0 e la 2.9 stopuri de cel mai apropiat profil, f/4.0", stopOnly);
+        Assert.DoesNotContain("focala", stopOnly);
+        Assert.True(SyntheticReport.ProfileMismatches(LensCatalog.Nearest(all, 20, 11), 20, 11));
+        Assert.False(SyntheticReport.ProfileMismatches(LensCatalog.Nearest(all, 20, 4), 20, 4));
+    }
+
+    /// <summary>
     /// The details line under a lens - what --lenses prints and the Sintetic tab shows on the
     /// row's second line: focals, apertures, distances (metres ascending, then infinity, then
     /// unspecified), profile count. One wording for both.

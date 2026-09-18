@@ -168,6 +168,11 @@ namespace FlatCheck
                 LensProfile p = d.Profile;
                 bool warning = d.Extrapolation > SyntheticFlatResult.SmallExtrapolation;
                 string note = SyntheticReport.FormatMatch(p.Model, d.CameraCrop, d.Extrapolation);
+                // Profilul e cel mai apropiat de focala si diafragma raw-ului; cand e departe
+                // (un raw la 20 mm pe un obiectiv cu profile pana la 16), randul o spune.
+                string mismatch = c.Shot?.FocalMm != null && c.Shot.FStop != null
+                    ? SyntheticReport.ProfileMismatch(p, c.Shot.FocalMm.Value, c.Shot.FStop.Value, d.LensProfiles) : null;
+                if (mismatch != null) { note += " ATENTIE: " + mismatch; warning = true; }
                 rows.Add(new ProfileRow(p.Lens.Key, p.Lens.SourceLabel, p.Lens.Name, p.Lens.Where, p.Settings,
                     Depth(d.CornerStops), $"{d.DiffStops:+0.00;-0.00} stopuri", $"{d.ErrorPct:F1} %", d.Verdict,
                     ReferenceEquals(d, c.Nearest), note, warning));

@@ -168,8 +168,10 @@ namespace FlatCheck
                 report.WriteLine(refusal);
                 return new SyntheticRunOutcome(null, req, f, refusal, choice);
             }
-            LensProfile profile = LensCatalog.Nearest(sources.Catalog.ProfilesOf(req.Lens), req.FocalMm, req.FStop);
+            IReadOnlyList<LensProfile> all = sources.Catalog.ProfilesOf(req.Lens);
+            LensProfile profile = LensCatalog.Nearest(all, req.FocalMm, req.FStop);
             var r = SyntheticFlatBuilder.Build(profile, f.Image.W, f.Image.H, req.CameraCrop);
+            r.LensProfiles = all;
             SyntheticReport.Write(r, req, referencePath, report);
             return new SyntheticRunOutcome(r, req, f, null);
         }

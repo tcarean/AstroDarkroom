@@ -1783,7 +1783,20 @@ toward the horizon all around the zenith and fills the corners), monitor up clos
 
 **Decisions.** Nearest profile, reported, no interpolation: nearest focal, then nearest
 f-stop in stops, then the farthest distance (flats are at infinity); the report prints
-"cerut" and "profil folosit". The same lens exists per mount in Adobe, so the mount is
+"cerut" and "profil folosit". **A request far from every profile is not refused, it is
+warned about** (`SyntheticReport.ProfileMismatch`: the focal more than `Th.ProfileFocalTolMm`
+/ `Frac` from the profile's, or the aperture more than `Th.ProfileStopsTol` = 0.5 stops
+away): 500 mm f/1.0 on the Nikkor 35 f/1.8 silently became 35 mm f/1.8 with "cerut" as the
+only sign. The sentence names what was asked, what was taken and the lens's range, and
+that the written depth is the profile's; the console prints it under "profil folosit", the
+Sintetic tab shows it under the fields while typing (`RequestNote`, computed with
+`FormatNote`) and under "profil folosit" after the write (`WrittenRequestNote`), and the
+structure comparison appends it to the row's note with `IsWarning` when the raw's focal /
+f-stop is far from the lens's profiles. Half a stop because Adobe's grid is at whole
+stops: anything inside the range is under it, and only requests outside the range fire.
+Exit codes do not change. `SyntheticFlatResult.LensProfiles` and `ProfileDepth.LensProfiles`
+carry the lens's whole profile list so the sentence can state the range. The same lens
+exists per mount in Adobe, so the mount is
 chosen by the reference frame's camera maker word (`INSTRUME` / libraw) and an exact
 name match beats partial ones; what still ties is listed and the exit code is 2. Focal
 from `FOCALLEN` or libraw, f-stop from libraw only (Siril writes no f-number) or
@@ -2120,6 +2133,7 @@ Every threshold lives in `Th`. Full picture:
 | \|corr(radPct, planePct)\| | light, series | 0.70 | | `Th.LightSeriesSkyCorr` |
 | frame count | light, series | ≥ 5 | | `Th.LightSeriesMinFrames` |
 | worst tile of the removed component | smooth | 2 % = warning only, never a verdict | | `Th.SmoothKeptWarn` |
+| request vs the profile used (focal, f-stop) | synthetic, structure `--raw`/`--lens` | 1 mm or 5 % on the focal, 0.5 stops on the aperture = warning only, never a verdict | | `Th.ProfileFocalTolMm/Frac`, `Th.ProfileStopsTol` |
 | fine texture of the input | smooth, `--scale auto` | 0.20 % = "nothing to smooth" below | | `Th.SmoothTextureMin` |
 | fine texture of the output | smooth, `--scale auto` | 0.05 % = texture gone below | | `Th.SmoothTextureGone` |
 | drop in azimuthal asymmetry or tilt | smooth, `--scale auto` | 0.5 pts = scale too large above | | `Th.SmoothScaleLoss` |

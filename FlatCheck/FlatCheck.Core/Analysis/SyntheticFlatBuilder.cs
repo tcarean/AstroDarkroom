@@ -28,6 +28,7 @@
 // baze (CLAUDE.md, "Synthetic flats").
 
 using System;
+using System.Collections.Generic;
 
 namespace FlatCheck
 {
@@ -35,6 +36,8 @@ namespace FlatCheck
     {
         internal readonly Img Flat;
         internal readonly LensProfile Profile;
+        /// <summary>Toate profilele obiectivului (gama de focale si diafragme, pentru avertismentul de nepotrivire); null cand nu se stiu.</summary>
+        internal IReadOnlyList<LensProfile> LensProfiles;
         internal readonly double CameraCrop;
         internal readonly int Width, Height;
         /// <summary>Adancimea in stopuri (pozitiv = mai intunecat decat axa) in punctele de referinta.</summary>
