@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Proprietatile comune tuturor proiectelor din solutie.
+
+       De ce aici si nu in fiecare csproj: nucleul e o biblioteca separata
+       (AstroPhotoAnalyzer.Core), iar versiunea trebuie sa fie aceeasi in toate
+       assembly-urile. VersionInfo o citeste din assembly-ul in care sta el - adica din
+       Core - dar exe-ul de consola si aplicatia WPF si-o poarta si ele pe a lor, care se
+       vede in proprietatile fisierului. Doua locuri de editat inseamna, mai devreme sau
+       mai tarziu, doua valori diferite.
+
+       Deci: UN SINGUR loc de editat. Nu muta <Version> sau <Copyright> intr-un csproj.
+       VersionTests verifica fisierul asta. -->
+
+  <PropertyGroup>
+    <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix. -->
+    <Version>1.0.0</Version>
+
+    <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
+         unde il citeste VersionInfo.Copyright si il tipareste sub banner. Programul e
+         GPLv3; textul complet e in LICENSE, langa solutie. -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+
+</Project>

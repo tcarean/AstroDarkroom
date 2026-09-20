@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Nucleul: tot ce calculeaza si tot ce formateaza. Nu stie nimic despre consola sau
+       despre ferestre, si nici nu trebuie sa stie - de asta pot sta doua aplicatii peste
+       el fara sa se duplice o cifra. Granita e de compilare, nu de bunavointa: nimic de
+       aici nu POATE ajunge la Console, fiindca nu exista un punct de intrare care sa-l
+       cheme.
+
+       Versiunea si copyright-ul NU sunt aici: vin din Directory.Build.props, ca sa fie
+       aceleasi in toate assembly-urile. Vezi comentariul de acolo. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>AstroPhotoAnalyzer</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Dependentele externe. Regula e in CLAUDE.md, "The dependencies": se discuta
+       inainte si se aproba, nu se evita si nu se adauga in tacere. Licenta fiecareia si
+       DE CE e compatibila cu GPLv3 sunt scrise in THIRD-PARTY-NOTICES.md.
+
+       SixLabors.ImageSharp decodeaza TIFF si PNG (8 si 16 biti, cu profilul ICC) si
+       encodeaza/decodeaza JPEG pentru tabelul de compresie. Spre deosebire de FlatCheck,
+       aici pachetul NU e periferic: pixelii pe care se fac toate masuratorile trec prin
+       el, si cifrele din tabelul JPEG sunt ale encoderului lui. Alternativa - un cititor
+       TIFF scris de mana (LZW, Deflate, strips, tiles, predictor) plus un encoder JPEG
+       propriu - ar fi fost saptamani de munca pentru a reproduce ceva ce exista si e
+       testat. Cititorul FITS ramane scris de mana, fiindca acolo e onest: e un format
+       de 2880 de octeti pe bloc.
+
+       Versiunea e FIXATA la 3.1.x si din motive juridice (grantul vine cu versiunea
+       luata) si practice: de la 4.0.0 pachetul aduce un task MSBuild care cere o cheie
+       de licenta la compilare - avertisment pe Debug, EROARE pe Release. 3.1.x are
+       exact aceiasi termeni si niciun task. Vezi THIRD-PARTY-NOTICES.md. -->
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+  </ItemGroup>
+
+  <!-- Nucleul ramane internal in intregime: consumatorii sunt in acelasi repo si se
+       compileaza impreuna. Lista de mai jos nu e o portita, e contractul. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="AstroPhotoAnalyzer" />
+    <InternalsVisibleTo Include="AstroPhotoAnalyzer.Tests" />
+    <InternalsVisibleTo Include="AstroPhotoAnalyzer.Wpf" />
+    <InternalsVisibleTo Include="AstroPhotoAnalyzer.Wpf.Tests" />
+  </ItemGroup>
+
+</Project>
