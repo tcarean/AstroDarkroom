@@ -84,6 +84,14 @@ metadata) and encodes/decodes JPEG for the compression table. Unlike in FlatChec
 licence text and no task. 3.1.x never applies the ICC profile at decode, which is the
 behaviour we want. See the notices file for the licence reasoning.
 
+Four things about 3.1.11 were measured rather than assumed, and the code depends on
+them: its TIFF encoder cannot write 16-bit RGB, `Image.Identify` does not see a PNG's
+ICC profile but `Image.Load` does, the TIFF decoder leaves the profile on the first
+frame, and the PNG encoder does not write `iCCP`. Details and consequences in
+`docs/implementation-plan.md`, "Things measured about ImageSharp". The 16-bit TIFF and
+PNG fixtures in the tests are hand-built for exactly these reasons - don't replace them
+with ImageSharp-encoded ones.
+
 ## The two applications
 
 Neither reimplements a number. Both call `Runs/AnalysisRun.Execute`, which loads the

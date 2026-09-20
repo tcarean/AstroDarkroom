@@ -1,7 +1,7 @@
 # Implementation plan
 
-Status: **phase 0 done** (skeleton). Phases 1-7 pending. Each phase compiles and passes
-its tests before the next starts; the user commits per phase.
+Status: **phases 0-1 done** (skeleton; input layer). Phases 2-7 pending. Each phase
+compiles and passes its tests before the next starts; the user commits per phase.
 
 ## Decisions taken before the first line
 
@@ -85,13 +85,30 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 | # | deliverable | status |
 |---|---|---|
 | 0 | skeleton: sln, props, LICENSE, notices, CLAUDE.md, README, icon, Core plumbing (Version, ThirdParty, RunReport), console (Options, Cli), plumbing tests | **done** |
-| 1 | Core `Input/`: `Raster`, `RasterOps`, `FitsReader` (copied, trimmed), `ImageSharpReader`, `ImageLoader`; `Parameters`, `Thresholds`; synthetic rasters for tests | |
+| 1 | Core `Input/`: `Raster`, `RasterOps`, `ColorMath`, `Stats`, `FitsReader` (copied, trimmed, streaming), `ImageSharpReader`, `IccProfileInfo`, `ImageLoader`; `Parameters`, `Thresholds`; synthetic rasters, hand-built FITS/TIFF/PNG and ICC fixtures for tests | **done** |
 | 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | |
 | 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | |
 | 4 | Core `Report/`: `Recommendations`, `ReportWriter`; `Runs/AnalysisRun`; console wired; golden tests | |
 | 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | |
 | 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | |
 | 7 | acceptance on `de_printat.png` (numbers below), `docs/acceptance-de-printat.md`, README | |
+
+## Things measured about ImageSharp 3.1.11 while building phase 1
+
+Written down because each one cost a probe to find, and each one shapes code or tests:
+
+- **The TIFF encoder writes 8 bits per sample for `Rgb48`, even with
+  `BitsPerPixel = Bit48` requested.** 16-bit grey (`L16`) does encode. So a 16-bit RGB
+  TIFF - the file Siril writes - cannot be produced through ImageSharp; the reader tests
+  use a hand-built uncompressed TIFF (`TiffTestData`) instead, which is also the more
+  honest test: decode of a foreign file, not encoder-decoder symmetry.
+- **`Image.Identify` does not read a PNG's `iCCP` chunk** (it stops at the header) and
+  returns no frame metadata for PNG at all. `Image.Load` does populate
+  `Metadata.IccProfile`. The reader therefore takes the profile from the decoded image.
+- **The TIFF decoder puts the ICC profile on the first frame's metadata**
+  (`Frames[0].Metadata.IccProfile`), not on `Image.Metadata`. The reader checks both.
+- The PNG encoder does not write `iCCP` from `Metadata.IccProfile`; the PNG-with-profile
+  test uses a hand-built PNG (`PngTestData`, with its own CRC-32 and `ZLibStream`).
 
 ## Acceptance numbers
 
