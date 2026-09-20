@@ -91,8 +91,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Text="Dmax explicit (gol = din mediu)" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Dmax, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="Distanta de privire, m (gol = 1.5 x diagonala)" />
-            <TextBox Style="{StaticResource Field}" Text="{Binding Distance, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
+            <TextBlock Style="{StaticResource Faint}" Text="Distanta de privire, m (gol = 1.5 x diagonala)" ToolTip="{Binding DistanceHelp}" />
+            <TextBox Style="{StaticResource Field}" Text="{Binding Distance, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
+                     ToolTip="{Binding DistanceHelp}" />
 
             <TextBlock Style="{StaticResource Faint}" Text="Latimi candidate, cm" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Sizes, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />

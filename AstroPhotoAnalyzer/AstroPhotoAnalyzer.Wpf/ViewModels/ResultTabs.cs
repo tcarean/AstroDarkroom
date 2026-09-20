@@ -166,7 +166,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 rows.Add(Row("... din 8 biti", $"{q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa", q.Keep16BitMaster ? "pastreaza master-ul de 16 biti" : null));
             }
             rows.Add(q.PlateauKnown
-                ? Row("Palier pe cerul cuantizat", $"{Fmt.F1(q.PlateauPx)} px", $"pe {q.PlateauTiles} dale" + (r.Size.RecommendedRow != null ? $"; {Fmt.F2(q.PlateauMmAt(r.Size.RecommendedRow.Dpi))} mm la {Fmt.F0(r.Size.RecommendedRow.Dpi)} dpi" : ""))
+                ? Row("Palier pe cerul cuantizat", $"{Fmt.F1(q.PlateauPx)} px", $"pe {q.PlateauTiles} dale" + (r.Size.ReferenceRow != null ? $"; {Fmt.F2(q.PlateauMmAt(r.Size.ReferenceRow.Dpi))} mm la {Fmt.F0(r.Size.ReferenceRow.Dpi)} dpi" : ""))
                 : Row("Palier pe cerul cuantizat", "n/a", "fara dale de cer curat"));
             Rows = rows;
             HasResult = true;
@@ -179,9 +179,13 @@ namespace AstroPhotoAnalyzer.Wpf
     {
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
         IReadOnlyList<string> _sizes = Array.Empty<string>();
+        IReadOnlyList<string> _dpi = Array.Empty<string>();
 
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
         public IReadOnlyList<string> SizeRows { get => _sizes; private set => Set(ref _sizes, value); }
+
+        /// <summary>Scara dpi - distanta, doar in fereastra: raportul n-o repeta la fiecare imagine.</summary>
+        public IReadOnlyList<string> DpiRows { get => _dpi; private set => Set(ref _dpi, value); }
 
         internal override void Populate(AnalysisResult r)
         {
@@ -202,9 +206,12 @@ namespace AstroPhotoAnalyzer.Wpf
             Rows = rows;
 
             SizeRows = new[] { $"marimi pentru {Fmt.Dim(ps.PixelW, ps.PixelH)} px{(r.Crop.Needed ? " (dupa decupaj)" : "")}:", "latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm" }
-                .Concat(ps.Rows.Select(row =>
-                    $"{Fmt.F0(row.WidthCm),6}{(row.Recommended ? " *" : "  ")}    {Fmt.F1(row.HeightCm),8}   {Fmt.F0(row.Dpi),3}   {Fmt.F2(row.StarMm),7}   {Fmt.F2(row.MinDistanceM) + " m",11}   {Fmt.F2(row.ViewingDistanceM) + " m",14}   {Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)}{(row.Oversize ? "  (peste limita)" : "")}"))
-                .Append("* = recomandat")
+                .Concat(ps.Rows.Select(ReportWriter.SizeTableRow))
+                .Concat(ReportWriter.SizeTableFooter(ps))
+                .ToList();
+            DpiRows = new[] { "dpi   pas mm   grila dispare de la   adica" }
+                .Concat(PrintSizeAnalyzer.DpiLadder(r.Parameters.ViewingDistanceM).Select(l =>
+                    $"{Fmt.F0(l.Dpi),3}   {Fmt.F2(l.PitchMm),6}   {Fmt.F2(l.DistanceM) + " m",19}   {l.Meaning}"))
                 .ToList();
             HasResult = true;
         }

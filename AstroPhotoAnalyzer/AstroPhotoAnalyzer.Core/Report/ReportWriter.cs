@@ -22,6 +22,7 @@
 // reformulare aici se vede acolo, si asta e intentia.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -139,8 +140,34 @@ namespace AstroPhotoAnalyzer
             w.WriteLine($"  marimi pentru {Fmt.Dim(ps.PixelW, ps.PixelH)} px{(r.Crop.Needed ? " (dupa decupaj)" : "")}:");
             w.WriteLine("  latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm");
             foreach (SizeRow row in ps.Rows)
-                w.WriteLine($"  {Fmt.F0(row.WidthCm),6}{(row.Recommended ? " *" : "  ")}    {Fmt.F1(row.HeightCm),8}   {Fmt.F0(row.Dpi),3}   {Fmt.F2(row.StarMm),7}   {Fmt.F2(row.MinDistanceM) + " m",11}   {Fmt.F2(row.ViewingDistanceM) + " m",14}   {Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)}{(row.Oversize ? "  (peste limita)" : "")}");
-            w.WriteLine("  * = recomandat");
+                w.WriteLine("  " + SizeTableRow(row));
+            foreach (string line in SizeTableFooter(ps))
+                w.WriteLine("  " + line);
+        }
+
+        /// <summary>Un rand al tabelului de marimi, fara indentare - acelasi in raport si in tabul Rezolutie.</summary>
+        internal static string SizeTableRow(SizeRow row) =>
+            $"{Fmt.F0(row.WidthCm),6}{(row.Recommended ? " *" : "  ")}    {Fmt.F1(row.HeightCm),8}   {Fmt.F0(row.Dpi),3}   {Fmt.F2(row.StarMm),7}   {Fmt.F2(row.MinDistanceM) + " m",11}   {Fmt.F2(row.ViewingDistanceM) + " m",14}   {Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)}{(row.Oversize ? "  (peste limita)" : "")}";
+
+        /// <summary>
+        /// Legenda tabelului: steluta cand exista un rand recomandat; altfel de ce nu exista -
+        /// fara stele se judeca doar grila de pixeli, la distanta naturala raportul
+        /// punct/distanta e acelasi pe fiecare rand.
+        /// </summary>
+        internal static IEnumerable<string> SizeTableFooter(PrintSizeResult ps)
+        {
+            if (ps.CanRecommend)
+            {
+                yield return "* = recomandat";
+                yield break;
+            }
+            if (!ps.FwhmKnown)
+            {
+                yield return $"fara rand recomandat: fara stele nu se masoara detaliul, ci doar grila de pixeli (prag {Fmt.F0(ps.FallbackDpi)} dpi) - o limita a fisierului, nu a imaginii";
+                yield break;
+            }
+            yield return $"fara rand recomandat: \"punct de la\" si \"dist. folosita\" cresc amandoua cu latimea, deci raportul lor ({Fmt.F2(ps.NaturalRatio)}) e acelasi pe fiecare rand";
+            yield return "  si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta";
         }
 
         static void AppendixBackground(AnalysisResult r, TextWriter w)

@@ -108,6 +108,16 @@ public class ParameterFieldsTests
     }
 
     [Fact]
+    public void TheDistanceFieldExplainsTheEmptyCaseAndTheFactor()
+    {
+        var f = new ParameterFields();
+
+        Assert.Contains("Gol = 1.5 x diagonala", f.DistanceHelp);
+        Assert.Contains("nu se recomanda nicio marime", f.DistanceHelp);
+        Assert.Contains("1-2 x diagonala", f.DistanceHelp);
+    }
+
+    [Fact]
     public void TheMediaListIsTheCoreOne()
     {
         Assert.Equal(new[] { "baryta", "canvas", "acrilic" }, new ParameterFields().Media);

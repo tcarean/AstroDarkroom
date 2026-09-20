@@ -46,7 +46,7 @@ namespace AstroPhotoAnalyzer
         {
             QuantizationResult q = r.Quantization;
             JpegRow q100 = r.Jpeg.Rows.FirstOrDefault(x => x.Quality == 100);
-            SizeRow size = r.Size.RecommendedRow;
+            SizeRow size = r.Size.ReferenceRow;
 
             if (q.Applicable)
                 o.Add(new Recommendation(Topic.Format, Verdict.Ok,
@@ -182,13 +182,27 @@ namespace AstroPhotoAnalyzer
         {
             StarResult st = r.Stars;
             PrintSizeResult ps = r.Size;
-            SizeRow row = ps.RecommendedRow;
+            SizeRow row = ps.ReferenceRow;
             string dist = ps.DistanceIsExplicit ? $"distanta data {Fmt.F1(row.ViewingDistanceM)} m" : $"distanta naturala {Fmt.F2(row.NaturalDistanceM)} m (1.5 x diagonala)";
 
             if (st.Insufficient)
+            {
+                // Fara FWHM nu se masoara detaliul, ci doar grila de pixeli - o limita a
+                // fisierului. Se spune pana unde ajunge fisierul; nu se recomanda un rand.
+                string rule = ps.DistanceIsExplicit
+                    ? $"de la {Fmt.F1(row.ViewingDistanceM)} m grila dispare de la {Fmt.F0(ps.FallbackDpi)} dpi in sus"
+                    : $"fara distanta data se cere conventia de {Fmt.F0(ps.FallbackDpi)} dpi (grila invizibila de la ~0.5 m, cand te apropii)";
+                string reach = row.PointAtViewingDistance
+                    ? $"fisierul ajunge pana la {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi)"
+                    : $"nici cea mai mica latime din lista ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm, {Fmt.F0(row.Dpi)} dpi) nu atinge pragul";
+                string threshold = ps.DistanceIsExplicit
+                    ? $"prag {Fmt.F0(ps.FallbackDpi)} dpi = 25.4 / (0.29 mm/m x {Fmt.F1(row.ViewingDistanceM)} m)"
+                    : $"prag {Fmt.F0(ps.FallbackDpi)} dpi (conventie: pas {Fmt.F2(25.4 / ps.FallbackDpi)} mm, invizibil de la {Fmt.F2(25.4 / ps.FallbackDpi / Thresholds.AcuityMmAt1m)} m)";
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                    $"Prea putine stele pentru rezolutia reala; marimea e judecata dupa dpi. Recomandat: {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi).",
-                    $"{st.Count} stele masurate (minim {Thresholds.StarMinCount}); pragul de dpi fara stele: {Fmt.F0(Thresholds.FallbackMinDpi)}"));
+                    $"Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: {rule}, si {reach}. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime."
+                    + (ps.DistanceIsExplicit ? "" : " Da distanta de privire ca pragul sa fie cel fizic, nu conventia."),
+                    $"{st.Count} stele masurate (minim {Thresholds.StarMinCount}); la {Fmt.F0(row.WidthCm)} cm pasul pixelului e {Fmt.F2(row.PitchMm)} mm, invizibil de la {Fmt.F2(row.PixelDistanceM)} m; {threshold}"));
+            }
             else if (ps.DistanceIsExplicit)
             {
                 string evidence = $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m; {dist}";
@@ -209,7 +223,7 @@ namespace AstroPhotoAnalyzer
                 bool sharp = row.PointAtViewingDistance;
                 o.Add(new Recommendation(Topic.Size, sharp ? Verdict.Ok : Verdict.Attention,
                     sharp
-                        ? $"Pana la {Fmt.F0(row.WidthCm)} cm ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama) imaginea e la fel de clara de la distanta ei naturala: alege marimea dupa perete. Daca se priveste de aproape (hol, birou), da distanta - atunci marimile se despart."
+                        ? $"Fara distanta de privire nu se recomanda o marime: pana la {Fmt.F0(row.WidthCm)} cm ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama) imaginea e la fel de clara de la distanta ei naturala - alege marimea dupa perete. Daca se priveste de aproape (hol, birou), da distanta: atunci marimile se despart."
                         : $"De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.",
                     $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m fata de {dist} (toleranta {Fmt.F0((Thresholds.NaturalDistanceTolerance - 1) * 100)} %); raportul e acelasi la orice marime"));
             }
@@ -260,7 +274,7 @@ namespace AstroPhotoAnalyzer
                     because + $"; sub {Fmt.F1(Thresholds.NoiseBandingLsb)} LSB, {Fmt.Pct(n.PctTilesBelowBanding)} din dale"));
             else if (n.UnderDenoised)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Attention,
-                    "Zgomot vizibil la 100 % pe ecran; pe hartie, la marimea recomandata, nu se vede - denoise doar daca vrei si versiunea de ecran curata.",
+                    "Zgomot vizibil la 100 % pe ecran; pe hartie, la marimile din tabel, nu se vede - denoise doar daca vrei si versiunea de ecran curata.",
                     because + $"; peste {Fmt.F1(Thresholds.NoiseUnderDenoisedLsb)} LSB"));
             else if (n.GoodForPrint)
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, "Zgomotul rezidual e exact unde trebuie pentru print.", because));

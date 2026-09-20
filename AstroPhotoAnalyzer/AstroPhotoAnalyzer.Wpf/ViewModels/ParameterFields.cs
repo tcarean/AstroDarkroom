@@ -96,6 +96,18 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>Textele de ajutor ale campurilor - aceleasi in tooltip si pe eticheta.</summary>
+        public string DistanceHelp =>
+            "De la cati metri se va privi printul. Testul de marime: steaua (FWHM x pasul pixelului pe hartie) "
+            + "trebuie sa fie punct de la distanta asta - ochiul desface ~0.29 mm la 1 m. Cu o distanta data "
+            + "(hol, birou, canapea) marimile se despart si tabelul recomanda un rand; fara stele, distanta da pragul "
+            + "grilei de pixeli, 25.4 / (0.29 x d) dpi, in locul conventiei de 180. "
+            + "Gol = 1.5 x diagonala fiecarei marimi, distanta naturala de la care se priveste un tablou; atunci "
+            + "\"punct de la\" si distanta cresc amandoua cu latimea, verdictul e acelasi pe fiecare rand si nu se "
+            + "recomanda nicio marime - o alege peretele. "
+            + "1.5 vine din regula de print si inramare \"1-2 x diagonala\": 1 x e distanta cu perspectiva "
+            + "obiectivului (focala normala = diagonala cadrului), 2 x e practica de galerie; la 1.5 x tabloul "
+            + "subintinde ~37 de grade si se cuprinde intreg fara sa misti capul.";
+
         public string AspectHelp =>
             "Raportul latime:inaltime al printului, ex. 50:35 sau 50x35. Gol = raportul nativ al imaginii, fara decupaj - "
             + "asa se trimite la un laborator fine-art, care printeaza la centimetru, orice dimensiune; rama gata facuta "

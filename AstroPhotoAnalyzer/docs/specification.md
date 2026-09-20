@@ -139,7 +139,7 @@ same on every runtime and every year.
 | `DmaxOverride` | null | `--dmax n` (0 < n <= 4) | "Dmax explicit" | paper black |
 | `Dmax` (derived) | baryta 2.0 / canvas 1.5 / acrylic 2.2 | | | Tonal, Simulation |
 | `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimi candidate" | PrintSize |
-| `ViewingDistanceM` | null = 1.5 x diagonal per row | `--distance m` | "Distanta de privire" | PrintSize |
+| `ViewingDistanceM` | null = 1.5 x diagonal per row (then no row is recommended) | `--distance m` | "Distanta de privire" | PrintSize |
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
 | `FrameCm` | 3 | `--frame cm` | field | PrintSize (outer size) |
 | `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Raport de aspect" | Crop, PrintSize |
@@ -155,11 +155,17 @@ Rules between parameters are the core's: `Parameters.Validate()` returns a messa
 null, and both the console (exit 1, before any reading) and the window (the error text)
 call it. Currently one rule: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
-checked. The window's aspect and framing fields carry help text (`AspectHelp`,
-`PassepartoutHelp`, `FrameHelp`) as tooltips on the field and its label; the aspect one
-says that empty means the native ratio with no crop (what a fine-art lab needs), that a
-ready-made frame does not constrain it either (the passepartout absorbs the difference),
-and that it is for labs with fixed formats.
+checked. The window's distance, aspect and framing fields carry help text
+(`DistanceHelp`, `AspectHelp`, `PassepartoutHelp`, `FrameHelp`) as tooltips on the field
+and its label. The distance one says what the size test does with it (and that without
+stars it sets the pixel-grid floor), that empty means 1.5 x each size's own diagonal and
+then no size is recommended (the wall chooses), and
+where 1.5 comes from: the print-and-framing rule of thumb "1-2 x the diagonal", 1 x
+being the lens's own perspective (a normal focal length equals the frame diagonal) and
+2 x gallery practice; at 1.5 x the print subtends ~37 degrees. The aspect one says that
+empty means the native ratio with no crop (what a fine-art lab needs), that a ready-made
+frame does not constrain it either (the passepartout absorbs the difference), and that it
+is for labs with fixed formats.
 
 ## 5. Measurements
 
@@ -286,21 +292,47 @@ pitch; `MinDistanceM` = StarMm / `AcuityMmAt1m` (0.29) - the distance from which
 star is a point; `NaturalDistanceM` = `ViewingDistanceFactor` (1.5) x the print's
 diagonal; `ViewingDistanceM` = the parameter or the natural distance;
 `PointAtViewingDistance` = MinDistance <= ViewingDistance when the distance is explicit,
-MinDistance <= NaturalDistance x `NaturalDistanceTolerance` (1.15) when it is not (or,
-without FWHM, dpi >= `FallbackMinDpi` = 180); outer size = image + 2 x (passepartout +
-frame); `Oversize` = W > `OversizeCm` (100). **Recommended** = the largest row that
-passes and is not oversize; if none passes, the smallest. `EffectiveDetailPx` = Wpx /
-FWHM.
+MinDistance <= NaturalDistance x `NaturalDistanceTolerance` (1.15) when it is not; without
+FWHM, dpi >= `FallbackDpi`, which is 25.4 / (0.29 x d) with an explicit distance - the
+pixel grid invisible from d - and `FallbackMinDpi` = 180 without one (the lab convention:
+0.14 mm pitch, invisible from ~0.5 m); `PixelDistanceM` = pitch / 0.29 on every row;
+outer size = image + 2 x (passepartout +
+frame); `Oversize` = W > `OversizeCm` (100). **`ReferenceRow`** = the largest row that
+passes and is not oversize; if none passes, the smallest - it always exists (given one
+candidate). **`CanRecommend`** = the distance is explicit **and** FWHM is known - the
+only case where the rows separate on a measurement; only then is the reference row
+`Recommended` and `RecommendedRow` non-null. `NaturalRatio` = MinDistance / NaturalDistance, the same on
+every row (NaN without FWHM). `EffectiveDetailPx` = Wpx / FWHM.
 
 **The natural distance cannot pick a size.** MinDistance and NaturalDistance both scale
 with the width; their ratio is `fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + (H/W)^2))`, a
-constant of the image (1.018 on the reference image). So without an explicit distance
-the test answers "is the image sharp enough for its natural viewing distance" - the same
-answer at every size - and the recommendation is the largest non-oversize width when it
-is, the smallest when it is not; the report says so and asks for a distance if the print
-will be looked at from closer. The tolerance absorbs the FWHM estimator's spread; before
-it, the reference image failed every row by 2 % and was recommended 50 cm. With an
-explicit distance the rows genuinely separate and the recommendation rests on them.
+constant of the image (1.018 on the reference image) - `NaturalRatio`. So without an
+explicit distance the test answers "is the image sharp enough for its natural viewing
+distance" - the same answer at every size - and **no row is recommended**: a star would
+have landed on the largest candidate under the limit, i.e. on `--sizes`, not on the
+image. The reference row is what the recommendation text quotes ("up to X cm") and where
+the plateau (C1) is judged; the size table replaces the `*` legend with two lines saying
+why there is no recommended row, with the ratio. The report asks for a distance if the
+print will be looked at from closer. The tolerance absorbs the FWHM estimator's spread;
+before it, the reference image failed every row by 2 % and the reference row fell to 50
+cm. With an explicit distance the rows genuinely separate and the recommendation rests
+on them.
+
+**Without stars nothing about detail is measured.** The dpi floor is a fact about the
+file - enough pixels for the grid to vanish from the viewing distance - not about the
+image; a soft nebula may support far less. So no row is recommended there either: the
+recommendation states the rule (the physical floor from the given distance, else the
+180 dpi convention) and how far the file reaches, or that even the smallest width misses
+the floor; the legend under the table says why there is no star; without a distance it
+asks for one so the floor is physical rather than conventional. The Rezolutie tab
+carries a static note with both rules.
+
+`DpiLadder(viewingDistance)` is a reference scale, not a measurement: for 300 / 240 /
+180 / 100 / 60 dpi (and the given distance's own floor when there is one) the pitch
+25.4 / dpi and the distance from which the pixel grid vanishes, pitch / 0.29, each with
+what it means (reading, printer native, the no-stars convention, poster, sofa). The window
+shows it under the size table so the dpi column reads against physics rather than against
+300; the report does not repeat it.
 
 ### C1/C2/C4 - `QuantizationAnalyzer`
 
@@ -352,7 +384,7 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
 | Format | q100 row exists | Ok, or Attention when not `Acceptable` or > 5 % samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
 | Format | any q < 100 not `Acceptable` | Attention | never below q100 (the highest failing quality's max error) |
-| Format | plateau known and visible at the recommended dpi | Attention | banding risk: send 16-bit or dither |
+| Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
 | Format | plateau known and not visible | Ok | no visible banding |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
 | Background | `PrintSafe` | Ok | background print-safe |
@@ -363,10 +395,10 @@ Background, Colour, Size, Denoise, Warnings.
 | Colour | no cast | Ok | neutral background |
 | Colour | each flagged **coloured** region | Attention | warm (R > B + 3) / cool (B > R + 3) / greenish / other; fix on linear or keep as composition |
 | Colour | flagged **neutral** regions | Ok (one note) | most likely the object; check Preview |
-| Size | stars `Insufficient` | Attention | judged by dpi; recommended row |
+| Size | stars `Insufficient` | Attention | no real resolution: the pixel-grid rule (physical floor from the given distance, else the 180 dpi convention), how far the file reaches or that the smallest width misses it; a file limit, not a detail one; no size recommended; asks for a distance when none |
 | Size | explicit distance, recommended row passes | Ok | recommended size, outer size; FWHM, effective detail, star mm, point distance, the given distance |
 | Size | explicit distance, no row passes | Attention | "discs at any listed size from that distance; the smallest minimises it; try smaller widths or a larger distance" |
-| Size | natural distance, rows pass | Ok | "up to <largest> cm the image is equally sharp at its natural distance: choose by the wall; give a distance if viewed from close" |
+| Size | natural distance, rows pass | Ok | "no size is recommended without a distance: up to <largest> cm the image is equally sharp at its natural distance, choose by the wall; give a distance if viewed from close" |
 | Size | natural distance, rows fail | Attention | "slightly discs at any size; the smallest minimises it; give a distance" |
 | Size | `SoftCorners` | Attention | do not enlarge the whole frame; consider a crop |
 | Size | crop `Needed` | Attention | what the target cuts |
@@ -409,11 +441,11 @@ All empirical, most from the reference image. Change one, change its comment.
 | `StarWindow` / `StarMinAmplitude16` / `StarMaxPeak16` / `StarCandidateAboveMean16` | 25 / 3000 / 60000 / 3000 | in 16-bit units |
 | `StarFwhmMin` / `StarFwhmMax` | 0.8 / 15 | accepted widths |
 | `CornerSoftRatio` / `RegionFraction` / `CenterFraction` / `StarMinCount` / `RegionMinStars` | 1.4 / 0.2 / 0.4 / 20 / 5 | |
-| `FallbackMinDpi` | 180 | size rule without stars |
+| `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
 | `JpegQualities` | 100, 95, 90 | |
 | `BackgroundDarkestFraction` / `BackgroundExcludeBottomFraction` | 0.25 / 0.25 | |
 | `CastWarnLevels` / `CornerGradientLevels` / `CornerColourSpreadRatio` | 1.0 / 3.0 / 0.5 | |
-| `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | |
+| `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | 1.5 x the diagonal sits between the perspective-correct 1 x and the gallery 2 x (~37 degrees subtended); a presumption about the viewer, not a measurement |
 | `NaturalDistanceTolerance` | 1.15 | allowance on the natural distance (the verdict is size-independent there) |
 | `PassepartoutMinFrameRatio` | 2 | passepartout >= this x frame width, else the parameters are refused |
 
@@ -437,7 +469,7 @@ VERDICT: <OK|ATENTIE|PROBLEMA>
 Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
 Anexa B. Simularea     table: target, gamma, L*, % below black, % below 15, % above 50, print-safe
 Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
-Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row
+Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
 Anexa E. Fundal        background levels and cast; the eight regions with deltas, "!" when flagged
 Anexa F. Parametri     every parameter as used
 ```
@@ -490,8 +522,8 @@ opens no dialogs (the window does), so it is fully testable.
 |---|---|
 | `ReportTabViewModel` | `VerdictLabel`; `Sections` (number, title, verdict label, `RecommendationRow`s with mark, text, because, verdict label); `Text` = the full report; `ShowText` toggle |
 | `TonesTabViewModel` | `Rows` (metric rows), `Histogram` (101 values), `PaperBlack` (marker), `SimulationRows` (mono strings) |
-| `ExportTabViewModel` | `JpegRows` (mono strings), `Rows` (TIFF size, rounding, stress, plateau at the recommended dpi) |
-| `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, regions, corner/centre), `SizeRows` (mono strings, "*" on recommended) |
+| `ExportTabViewModel` | `JpegRows` (mono strings), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi) |
+| `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, regions, corner/centre), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
 | `BackgroundTabViewModel` | `Rows` (levels, cast metrics), `RegionRows` (mono strings, "!" when flagged) |
 | `PreviewTabViewModel` | `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed |
 

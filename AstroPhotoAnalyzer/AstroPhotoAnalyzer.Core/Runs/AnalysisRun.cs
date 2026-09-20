@@ -20,7 +20,7 @@
 // Consola si fereastra apeleaza AMANDOUA de aici si nu fac nimic in plus in afara de a
 // arata rezultatul. Ordinea analizoarelor conteaza doar unde un rezultat il hraneste pe
 // altul: tonurile inaintea simularii, stelele si decupajul inaintea tabelului de marimi,
-// tabelul inaintea recomandarilor (palierul se judeca la dpi-ul marimii recomandate).
+// tabelul inaintea recomandarilor (palierul se judeca la dpi-ul randului de referinta).
 //
 // Progresul e un IProgress<string> cu numele etapei: fereastra il arata in overlay,
 // consola il ignora. Nu e procentaj - etapele au durate prea diferite (JPEG-ul e

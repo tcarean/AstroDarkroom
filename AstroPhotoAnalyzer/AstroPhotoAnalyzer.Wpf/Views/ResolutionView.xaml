@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ResolutionView - FWHM-ul si regiunile, apoi tabelul de marimi cu randul recomandat. -->
+<!-- ResolutionView - FWHM-ul si regiunile, apoi tabelul de marimi, cu randul recomandat cand exista unul,
+     si scara dpi - distanta, ca sa se citeasca coloana "dpi" fata de fizica, nu fata de 300. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ResolutionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,8 +35,28 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="MARIMI DE PRINT" />
           <ItemsControl ItemsSource="{Binding SizeRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
-          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                     Text="Steaua e FWHM x pasul pixelului pe hartie; e punct de la distanta la care ochiul (0.29 mm la 1 m) n-o mai desface." />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap">
+            Steaua e FWHM x pasul pixelului pe hartie; e punct de la distanta la care ochiul (0.29 mm la 1 m) n-o mai desface.
+            Steluta apare doar cu distanta data si FWHM masurat - singurul caz in care testul desparte marimile pe o masuratoare;
+            fara distanta, "punct de la" si distanta naturala cresc la fel cu latimea si marimea o alege peretele.
+          </TextBlock>
+          <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" TextWrapping="Wrap">
+            Fara stele nu se masoara detaliul, ci doar grila de pixeli. Fara distanta data se cere conventia de
+            <Bold>180 dpi</Bold>: pas de 0.14 mm, invizibil de la ~0.5 m, cand te apropii sa te uiti. Cu distanta data,
+            pragul fizic 25.4 / (0.29 x distanta) - 58 dpi la 1.5 m. E o limita a fisierului, nu a detaliului:
+            o nebuloasa moale poate cere mult mai putin, deci nici acolo nu e rand recomandat.
+          </TextBlock>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="CE INSEAMNA UN DPI" />
+          <ItemsControl ItemsSource="{Binding DpiRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap">
+            Pasul pixelului e 25.4 / dpi; grila dispare de la distanta la care ochiul (0.29 mm la 1 m) n-o mai desface.
+            Coloana "dpi" a tabelului de marimi se citeste pe scara asta, nu fata de 300. Si tot ce e peste 1 / FWHM din dpi
+            nu mai aduce nimic: rezolutia reala e steaua, nu pixelul.
+          </TextBlock>
         </StackPanel>
       </Border>
     </StackPanel>

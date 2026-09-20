@@ -60,10 +60,11 @@ Anexa D. Rezolutie si marime
   regiuni: centru 3.07 px (9); colt stanga-sus n/a (4); colt dreapta-sus n/a (2); colt stanga-jos n/a (2); colt dreapta-jos n/a (1)
   marimi pentru 512 x 512 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
-      40 *        40.0    33      2.38        8.21 m           0.85 m   60 x 60
+      40          40.0    33      2.38        8.21 m           0.85 m   60 x 60
       60          60.0    22      3.57       12.32 m           1.27 m   80 x 80
       80          80.0    16      4.76       16.42 m           1.70 m   100 x 100
-  * = recomandat
+  fara rand recomandat: "punct de la" si "dist. folosita" cresc amandoua cu latimea, deci raportul lor (9.68) e acelasi pe fiecare rand
+    si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta
 
 Anexa E. Fundal
   fundal (0..255): 63.0 / 63.0 / 63.0; G - (R+B)/2 = 0.0; R - B = 0.0

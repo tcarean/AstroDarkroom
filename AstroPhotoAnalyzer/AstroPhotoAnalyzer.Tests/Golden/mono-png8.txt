@@ -22,8 +22,8 @@ VERDICT: ATENTIE
      fiindca: un singur plan
 
 4. Marimea printului  [ATENTIE]
-   ! Prea putine stele pentru rezolutia reala; marimea e judecata dupa dpi. Recomandat: 50 x 50 cm (15 dpi).
-     fiindca: 16 stele masurate (minim 20); pragul de dpi fara stele: 180
+   ! Fara stele rezolutia reala nu se masoara; se judeca doar grila de pixeli: fara distanta data se cere conventia de 180 dpi (grila invizibila de la ~0.5 m, cand te apropii), si nici cea mai mica latime din lista (50 x 50 cm, 15 dpi) nu atinge pragul. E o limita a fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci nu se recomanda o marime. Da distanta de privire ca pragul sa fie cel fizic, nu conventia.
+     fiindca: 16 stele masurate (minim 20); la 50 cm pasul pixelului e 1.67 mm, invizibil de la 5.75 m; prag 180 dpi (conventie: pas 0.14 mm, invizibil de la 0.49 m)
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
@@ -59,13 +59,13 @@ Anexa D. Rezolutie si marime
   regiuni: centru 3.09 px (6); colt stanga-sus n/a (1); colt dreapta-sus n/a (1); colt stanga-jos n/a (0); colt dreapta-jos n/a (0)
   marimi pentru 300 x 300 px:
   latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
-      50 *        50.0    15       n/a         n/a m           1.06 m   70 x 70
+      50          50.0    15       n/a         n/a m           1.06 m   70 x 70
       60          60.0    13       n/a         n/a m           1.27 m   80 x 80
       70          70.0    11       n/a         n/a m           1.48 m   90 x 90
       80          80.0    10       n/a         n/a m           1.70 m   100 x 100
       90          90.0     8       n/a         n/a m           1.91 m   110 x 110
      100         100.0     8       n/a         n/a m           2.12 m   120 x 120
-  * = recomandat
+  fara rand recomandat: fara stele nu se masoara detaliul, ci doar grila de pixeli (prag 180 dpi) - o limita a fisierului, nu a imaginii
 
 Anexa E. Fundal
   fundal (0..255): 63.0

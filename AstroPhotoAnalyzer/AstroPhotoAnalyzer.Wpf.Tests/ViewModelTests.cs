@@ -69,7 +69,11 @@ public class ViewModelTests
         Assert.Equal(4, export.JpegRows.Count);
         Assert.Contains(export.Rows, r => r.Label.StartsWith("Palier"));
         Assert.Contains(res.Rows, r => r.Label == "Stele masurate");
-        Assert.Equal(6 + 3, res.SizeRows.Count);       // 2 antete + 6 marimi + legenda
+        Assert.Equal(2 + 6 + 2, res.SizeRows.Count);   // 2 antete + 6 marimi + nota de 2 randuri: fara distanta nu e rand recomandat
+        Assert.DoesNotContain(res.SizeRows, s => s.Contains(" *"));
+        Assert.Contains(res.SizeRows, s => s.StartsWith("fara rand recomandat"));
+        Assert.Equal(1 + 5, res.DpiRows.Count);        // antet + scara de referinta; fara distanta data, fara randul ei
+        Assert.Contains(res.DpiRows, s => s.Contains("180") && s.Contains("0.49 m"));
         Assert.Equal(8, bg.RegionRows.Count);
         Assert.Contains(bg.RegionRows, r => r.EndsWith("!"));
     }

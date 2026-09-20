@@ -170,7 +170,16 @@ namespace AstroPhotoAnalyzer
         /// <summary>Cati candidati se incearca pentru dalele palierului inainte de a renunta.</summary>
         internal const int PlateauMaxAttempts = 5000;
 
-        /// <summary>Fara FWHM (prea putine stele), marimea se recomanda dupa dpi: cel putin atat.</summary>
+        /// <summary>
+        /// Fara FWHM (prea putine stele) nu se masoara detaliul, ci doar grila de pixeli:
+        /// pasul pixelului trebuie sa fie sub ce desface ochiul. Fara distanta data, pragul e
+        /// conventia laboratoarelor pentru un print mare "de calitate" (150-200 dpi): la 180
+        /// dpi pasul e 0.14 mm, invizibil de la ~0.5 m - lungimea bratului, cand te apropii
+        /// sa te uiti. Cu distanta data pragul e cel fizic, 25.4 / (0.29 x d): 300 dpi = 0.29
+        /// m (citit), 180 = 0.49 m, 100 = 0.88 m, 60 = 1.46 m (canapea). E o limita a
+        /// fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci
+        /// nu recomanda un rand.
+        /// </summary>
         internal const double FallbackMinDpi = 180;
 
         /// <summary>Calitatile JPEG din tabel. 100 e singura recomandabila; 95 si 90 arata de ce.</summary>
@@ -205,7 +214,16 @@ namespace AstroPhotoAnalyzer
         /// <summary>Acuitatea ochiului: 1 minut de arc = 0.29 mm la 1 m. Scaleaza liniar cu distanta.</summary>
         internal const double AcuityMmAt1m = 0.29;
 
-        /// <summary>Distanta implicita de privire a unui tablou: de atatea ori diagonala lui.</summary>
+        /// <summary>
+        /// Distanta implicita de privire a unui tablou: de atatea ori diagonala lui. Regula de
+        /// degetul mare a printului si a inramarii, "1-2 x diagonala", are doua repere: 1 x
+        /// diagonala e distanta de la care perspectiva e cea a obiectivului (centrul de
+        /// perspectiva al unui obiectiv normal, cu focala cat diagonala cadrului), iar 2 x e
+        /// practica de galerie, de unde tabloul se cuprinde intreg fara sa misti capul. La
+        /// 1.5 x tabloul subintinde ~37 de grade pe diagonala: intreg in campul central, dar
+        /// destul de aproape cat sa te uiti la detaliu. E o prezumtie despre om, nu o
+        /// masuratoare a imaginii; diagonala e a imaginii, nu a ramei.
+        /// </summary>
         internal const double ViewingDistanceFactor = 1.5;
 
         /// <summary>
