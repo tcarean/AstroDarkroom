@@ -122,8 +122,10 @@ namespace AstroPhotoAnalyzer
 
         static long TiffBytes<T>(Image<T> img) where T : unmanaged, IPixel<T>
         {
+            // Predictorul orizontal e ce face LZW-ul util pe fotografii: fara el, pe
+            // imaginea de referinta ImageSharp dadea 38.6 MB acolo unde ImageMagick da 20.
             using var ms = new MemoryStream();
-            img.SaveAsTiff(ms, new TiffEncoder { Compression = TiffCompression.Lzw });
+            img.SaveAsTiff(ms, new TiffEncoder { Compression = TiffCompression.Lzw, HorizontalPredictor = TiffPredictor.Horizontal });
             return ms.Length;
         }
 

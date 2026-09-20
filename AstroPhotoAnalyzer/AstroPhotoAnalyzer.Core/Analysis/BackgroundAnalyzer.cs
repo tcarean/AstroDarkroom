@@ -51,6 +51,21 @@ namespace AstroPhotoAnalyzer
 
         internal double MaxAbsDelta => Deltas.Max(d => Math.Abs(d));
         internal bool Flagged => MaxAbsDelta > Thresholds.CornerGradientLevels;
+
+        /// <summary>
+        /// Abaterea are CULOARE (canalele se misca diferit), nu doar luminozitate? Pe mono
+        /// nu exista notiunea. Vezi Thresholds.CornerColourSpreadRatio.
+        /// </summary>
+        internal bool Coloured
+        {
+            get
+            {
+                if (Deltas.Count < 3) return false;
+                double spread = Deltas.Max() - Deltas.Min();
+                double mean = Deltas.Average(d => Math.Abs(d));
+                return spread > Thresholds.CornerGradientLevels && spread > Thresholds.CornerColourSpreadRatio * mean;
+            }
+        }
     }
 
     internal sealed record BackgroundResult

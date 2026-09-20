@@ -190,6 +190,16 @@ namespace AstroPhotoAnalyzer
         /// <summary>Un colt cu atatea niveluri peste fundal e gradient rezidual sau lumina de orizont.</summary>
         internal const double CornerGradientLevels = 3.0;
 
+        /// <summary>
+        /// O abatere e COLORATA daca diferenta dintre canale (max - min din delta) trece
+        /// de CornerGradientLevels si e cel putin atata fractie din abaterea medie.
+        /// Masurat pe imaginea de referinta: coltul de orizont are R +9, B -10 (colorat,
+        /// poluare); coltul in care intra Calea Lactee are +11 / +10 / +16 (neutru - e
+        /// obiectul, nu un gradient). O regula care confunda obiectul cu defectul e
+        /// gresita mai des decat e utila, deci neutru = informativ, colorat = atentie.
+        /// </summary>
+        internal const double CornerColourSpreadRatio = 0.5;
+
         // ------------------------------------------------------------ marime
 
         /// <summary>Acuitatea ochiului: 1 minut de arc = 0.29 mm la 1 m. Scaleaza liniar cu distanta.</summary>

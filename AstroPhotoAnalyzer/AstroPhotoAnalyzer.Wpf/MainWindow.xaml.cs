@@ -1,0 +1,76 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// MainWindow.xaml.cs - fereastra: dialogele si bara de titlu intunecata. Tot ce inseamna
+// decizie sta in MainViewModel.
+
+using System.Linq;
+using System.Windows;
+
+namespace AstroPhotoAnalyzer.Wpf
+{
+    public partial class MainWindow : Window
+    {
+        readonly MainViewModel _vm = new();
+
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = _vm;
+            SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+        }
+
+        /// <summary>Pornirea: cu un fisier din linia de comanda il deschide; altfel intreaba imediat.</summary>
+        internal void Start(string file)
+        {
+            if (!string.IsNullOrEmpty(file)) { _ = _vm.OpenAsync(file); return; }
+            Dispatcher.BeginInvoke(new System.Action(() => Choose()));
+        }
+
+        void ChooseImage(object sender, RoutedEventArgs e) => Choose();
+
+        void Analyze(object sender, RoutedEventArgs e) => _ = _vm.RunAsync();
+
+        void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+            => new AboutWindow { Owner = this }.ShowDialog();
+
+        void Choose()
+        {
+            string patterns = string.Join(";", ImageLoader.Extensions.Select(x => "*" + x));
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Alege imaginea finita",
+                Filter = $"Imagini ({patterns})|{patterns}|Toate fisierele|*.*",
+                Multiselect = false,
+            };
+            if (dlg.ShowDialog(this) == true) _ = _vm.OpenAsync(dlg.FileName);
+        }
+
+        void SaveReport(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Salveaza raportul",
+                FileName = System.IO.Path.GetFileName(_vm.DefaultReportPath),
+                InitialDirectory = System.IO.Path.GetDirectoryName(_vm.DefaultReportPath),
+                Filter = "Text|*.txt",
+                DefaultExt = ".txt",
+            };
+            if (dlg.ShowDialog(this) == true) _vm.SaveReport(dlg.FileName);
+        }
+    }
+}

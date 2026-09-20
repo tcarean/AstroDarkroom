@@ -77,6 +77,23 @@ public class BackgroundAnalyzerTests
         Assert.Equal(0, flagged.Deltas[1], 1);
         Assert.Equal(-8, flagged.Deltas[2], 1);
         Assert.Equal(10, flagged.MaxAbsDelta, 1);
+        Assert.True(flagged.Coloured);
+    }
+
+    /// <summary>
+    /// Coltul in care intra Calea Lactee (imaginea de referinta: +11 / +10 / +16) e o
+    /// abatere NEUTRA - canalele urca impreuna. Se semnaleaza, dar nu ca gradient.
+    /// </summary>
+    [Fact]
+    public void ANeutralBrighteningIsFlaggedButNotColoured()
+    {
+        var r = SyntheticRasters.From(200, 200, 3, (x, y, p) =>
+            y < 30 && x < 40 ? Sky + (p == 0 ? 11f : p == 1 ? 10f : 16f) / 255 : Sky);
+        var b = BackgroundAnalyzer.Analyze(r);
+
+        var flagged = Assert.Single(b.FlaggedRegions);
+        Assert.Equal("colt stanga-sus", flagged.Name);
+        Assert.False(flagged.Coloured);
     }
 
     [Fact]
@@ -88,6 +105,7 @@ public class BackgroundAnalyzerTests
         var names = b.FlaggedRegions.Select(x => x.Name).OrderBy(n => n).ToArray();
         Assert.Equal(new[] { "colt dreapta-sus", "colt stanga-sus", "latura de sus" }, names);
         Assert.All(b.FlaggedRegions, x => Assert.Equal(5, x.MaxAbsDelta, 1));
+        Assert.All(b.FlaggedRegions, x => Assert.False(x.Coloured));
     }
 
     [Fact]

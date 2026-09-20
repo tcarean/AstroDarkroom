@@ -8,7 +8,7 @@ Fisier: <TEMP>\cer-intunecat.tif
 VERDICT: PROBLEMA
 
 1. Formatul de trimis  [ATENTIE]
-   - Trimite TIFF 8-bit LZW (0.3 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
+   - Trimite TIFF 8-bit LZW (0.2 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
      fiindca: eroare de rotunjire medie 0.26, maxima 0.50 niveluri (jumatate de nivel e maximul posibil)
    - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
      fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
@@ -23,7 +23,7 @@ VERDICT: PROBLEMA
    ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
      fiindca: fundal R 20.0 G 22.0 B 20.0; G - (R+B)/2 = +2.0, R - B = 0.0 niveluri (prag 1.0)
    ! Colt dreapta-jos: cald (lumina de orizont / poluare). Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.
-     fiindca: fata de fundal: R +10.4, G +0.4, B -7.6 niveluri (prag 3.0)
+     fiindca: fata de fundal: R +10.4, G +0.4, B -7.6 niveluri (prag 3.0); canalele se misca diferit
 
 4. Marimea printului  [ATENTIE]
    - Recomandat: 50 x 35 cm imagine, ~70 x 55 cm cu passepartout si rama.
@@ -53,7 +53,7 @@ Anexa B. Simularea fundalului (fundal masurat 0.089, curba gamma pe toate canale
   0.20           0.666        20.9       0.0 %      1.5 %        4.7 %   print-safe
 
 Anexa C. Export
-  TIFF 8-bit LZW: 0.3 MB
+  TIFF 8-bit LZW: 0.2 MB
   JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu
   q100           0.1 MB       0.579       3.5   1.76    2.34     0.4 %            28
   q95            0.0 MB       0.575       4.7   1.85    2.57     0.5 %            30

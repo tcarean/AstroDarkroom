@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Teste pentru aplicatia cu ferestre. Proiect separat de AstroPhotoAnalyzer.Tests, ca
+       sa tinteasca net8.0-windows fara sa faca si testele nucleului Windows-only.
+
+       Ce se testeaza: ViewModel-urile, parsarea parametrilor, cultura, si ca fiecare
+       fereastra si fiecare tab se INCARCA si se DESENEAZA fara erori de legare. Ce NU
+       se testeaza: cum arata. -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <!-- Un proiect WPF nu primeste System.IO in usings-urile implicite (Path s-ar bate cu
+       System.Windows.Shapes.Path); testele umbla cu fisiere, deci il aducem explicit. -->
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AstroPhotoAnalyzer.Wpf\AstroPhotoAnalyzer.Wpf.csproj" />
+    <ProjectReference Include="..\AstroPhotoAnalyzer.Core\AstroPhotoAnalyzer.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Fixturile se IMPRUMUTA din AstroPhotoAnalyzer.Tests, prin link: doua generatoare de
+       scene ar fi insemnat ca un test de aici si unul de acolo lucreaza pe imagini usor
+       diferite fara sa se stie. -->
+  <ItemGroup>
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\SyntheticRasters.cs" Link="Shared\SyntheticRasters.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\Scenes.cs" Link="Shared\Scenes.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\TiffTestData.cs" Link="Shared\TiffTestData.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\IccTestData.cs" Link="Shared\IccTestData.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Aplicatia cu ferestre. Acelasi nucleu ca AstroPhotoAnalyzer.exe, prin
+       AstroPhotoAnalyzer.Core - nu reimplementeaza nicio cifra si niciun rand de raport;
+       cheama AnalysisRun.Execute si arata rezultatul.
+
+       net8.0-windows + UseWPF face proiectul asta Windows-only, si asta face ca
+       "dotnet build AstroPhotoAnalyzer.sln" sa nu mai mearga pe Linux. Consola ramane
+       portabila daca se construieste direct proiectul ei.
+
+       Versiunea si copyright-ul vin din Directory.Build.props, ca la celelalte proiecte,
+       ca banner-ul scris in Raport.txt sa fie garantat acelasi cu al consolei. -->
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>AstroPhotoAnalyzer.Wpf</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>AstroPhotoAnalyzer.Wpf</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+
+    <!-- Icoana exe-ului. Aceeasi ca la consola, din Icon/ la radacina. Fereastra o
+         primeste separat, prin <Resource> de mai jos si Icon= in MainWindow.xaml. -->
+    <ApplicationIcon>..\Icon\AstroPhotoAnalyzer.ico</ApplicationIcon>
+
+    <!-- NU pune InvariantGlobalization aici: WPF cere date de cultura ca sa poata lega
+         ceva de o proprietate, si fara ele fereastra crapa la INCARCAREA XAML-ului.
+         Invarianta numerelor se face in cod, in App.ForceInvariantNumbers. -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AstroPhotoAnalyzer.Core\AstroPhotoAnalyzer.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\Icon\AstroPhotoAnalyzer.ico" Link="Icon\AstroPhotoAnalyzer.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AstroPhotoAnalyzer.Wpf.Tests" />
+  </ItemGroup>
+
+</Project>

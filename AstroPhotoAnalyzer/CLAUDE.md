@@ -140,8 +140,36 @@ dotnet build AstroPhotoAnalyzer.sln -c Release
 dotnet test AstroPhotoAnalyzer.sln
 ```
 
-Once the WPF project exists the solution is Windows-only; the console builds alone with
-`dotnet build AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj`.
+The solution is Windows-only because of the WPF project; the console builds alone with
+`dotnet build AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj`. Two test projects run:
+`AstroPhotoAnalyzer.Tests` (core + console, portable) and `AstroPhotoAnalyzer.Wpf.Tests`
+(window, Windows-only, one STA thread shared through `StaFixture`).
 
-Golden-output tests (phase 4) snapshot the console text; re-approve with
-`APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln` and read the diff.
+Golden-output tests snapshot the console text on deterministic synthetic scenes;
+re-approve with `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln` and read the
+diff. `APA_DUMP_SCREENS=<dir> dotnet test AstroPhotoAnalyzer.Wpf.Tests` saves the
+window renders as PNGs - a way to look at the window without running it, not a golden
+comparison.
+
+## Run
+
+```bash
+dotnet publish AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+```
+
+```bash
+dotnet publish AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj -c Release -r win-x64 --self-contained
+```
+
+The console is pure managed (ImageSharp has no native binaries), so `PublishSingleFile`
+gives one exe. The window publishes as a folder.
+
+## The window
+
+`MainViewModel` owns the file, the `ParameterFields` and six `ResultTabViewModel`s. It
+runs `AnalysisRun.Execute` on a pool thread and populates the tabs from the result; it
+opens no dialogs (the window does), so it is testable. View-models are public and cannot
+expose core types; `Rows.cs` holds what XAML binds to. Tables are shown as pre-aligned
+mono strings, the same the report writes. `WindowSmokeTests` renders every view with a
+real result and fails on any binding error; it renders a window's *content*, because an
+unshown `Window` renders transparent.

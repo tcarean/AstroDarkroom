@@ -10,8 +10,23 @@ Două aplicații peste un nucleu comun: `AstroPhotoAnalyzer.exe` (consolă) și
 `AstroPhotoAnalyzer.Wpf.exe` (fereastră, temă întunecată). Niciuna nu reimplementează o
 cifră.
 
-**Stare: în lucru.** Consola e completă (etapele 0–4 din `docs/implementation-plan.md`):
-citește fișierul, face toate măsurătorile și scrie raportul. Fereastra vine în etapele 5–6.
+**Stare: complet.** Consola și fereastra fac același lucru peste același nucleu; unealta
+a fost rulată pe imaginea de referință și cifrele sunt în `docs/acceptance-de-printat.md`.
+
+## Fereastra
+
+```bash
+AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
+```
+
+Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
+passepartout, ramă) și „Analizează". Dreapta, șase taburi: **Raport** (deciziile, cu
+pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
+(histograma L\* cu negrul hârtiei marcat, simularea de fundal), **Export** (tabelul JPEG,
+rotunjirea, stresul shadow-lift, palierul), **Rezoluție** (FWHM pe regiuni, tabelul de
+mărimi), **Fundal** (R/G/B și cele opt margini), **Preview** (decupaje la 100 % și 200 %,
+cadrul întreg, simularea de print, decupajul la raportul țintă). „Salvează raportul..."
+scrie `Raport.txt` — byte-identic cu ieșirea consolei. Temă întunecată; F1 = Despre.
 
 ## Consola
 
@@ -39,6 +54,17 @@ dotnet build AstroPhotoAnalyzer.sln -c Release
 
 ```bash
 dotnet test AstroPhotoAnalyzer.sln
+```
+
+Soluția e Windows-only din cauza ferestrei; consola singură se compilează oriunde cu
+`dotnet build AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj`. Binar de sine stătător:
+
+```bash
+dotnet publish AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true
+```
+
+```bash
+dotnet publish AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj -c Release -r win-x64 --self-contained
 ```
 
 ## Licență

@@ -1,0 +1,41 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- BackgroundView - culoarea fundalului si cele opt regiuni de margine. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.BackgroundView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,16">
+    <StackPanel MaxWidth="1100" HorizontalAlignment="Left">
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="CULOAREA FUNDALULUI" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource MetricRowTemplate}" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="COLTURI SI LATURI, FATA DE FUNDAL (R / G / B, niveluri); ! = peste prag" />
+          <ItemsControl ItemsSource="{Binding RegionRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

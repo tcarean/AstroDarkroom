@@ -1,8 +1,8 @@
 # Implementation plan
 
-Status: **phases 0-4 done** (skeleton; input layer; all analyzers; recommendations,
-report, console, golden tests). Phases 5-7 pending. Each phase compiles and passes its
-tests before the next starts; the user commits per phase.
+Status: **all phases done** (0-7). The console and the window are complete; the tool was
+run on the reference image and the numbers are in `acceptance-de-printat.md`. This file
+stays as the record of what was built and why.
 
 ## Decisions taken before the first line
 
@@ -90,9 +90,9 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 | 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | **done** |
 | 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | **done** |
 | 4 | Core `Report/`: `Recommendations`, `ReportWriter`, `Fmt`; `Runs/AnalysisRun`; console wired; golden tests on deterministic scenes | **done** |
-| 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | |
-| 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | |
-| 7 | acceptance on `de_printat.png` (numbers below), `docs/acceptance-de-printat.md`, README | |
+| 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | **done** |
+| 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | **done** |
+| 7 | acceptance on `de_printat.png` (numbers below), `docs/acceptance-de-printat.md`, README | **done** |
 
 ## Notes from phase 2
 
@@ -108,6 +108,27 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
   ties, so the acceptance numbers are unaffected.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
+
+## Notes from phases 5-7
+
+- **The window adds no number and no sentence.** `MainViewModel.RunAsync` calls
+  `AnalysisRun.Execute` on a pool thread; the six tab view-models turn the result records
+  into rows. Tables are rendered as pre-aligned mono strings - the same strings the
+  report writes - instead of one XAML template per table.
+- **View-models are public and therefore cannot expose core types**, which are internal.
+  The compiler enforces that everything shown passes through the simple rows in
+  `Rows.cs`.
+- **Parameters are text fields, parsed once at "Analizeaza"** (`ParameterFields`): a
+  TextBox bound to a double refuses to be emptied while typing. Parsing is invariant;
+  a comma decimal gets a message that says to use the point.
+- **The saved `Raport.txt` is `ReportWriter.WriteFull`** - banner plus body, the same
+  bytes the console writes with `-o`. `CultureTests` proves the body is identical under
+  `ro-RO` even without forcing the culture, because every number goes through `Fmt`.
+- **`WindowSmokeTests` renders the window's *content*, not the window**: an unshown
+  `Window` renders transparent. `APA_DUMP_SCREENS=<dir>` saves the renders.
+- **Edge-region verdicts changed after the real image** - see
+  `acceptance-de-printat.md`: neutral brightening is informative, coloured departure is
+  Attention.
 
 ## Notes from phase 4
 

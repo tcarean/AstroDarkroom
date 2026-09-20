@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroPhotoAnalyzer.Core", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroPhotoAnalyzer.Tests", "AstroPhotoAnalyzer.Tests\AstroPhotoAnalyzer.Tests.csproj", "{E7675927-9E41-42AE-81F9-F0DCCDF04A3C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroPhotoAnalyzer.Wpf", "AstroPhotoAnalyzer.Wpf\AstroPhotoAnalyzer.Wpf.csproj", "{F287B29B-FBC4-4878-8FAE-DDA491678AED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AstroPhotoAnalyzer.Wpf.Tests", "AstroPhotoAnalyzer.Wpf.Tests\AstroPhotoAnalyzer.Wpf.Tests.csproj", "{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +59,30 @@ Global
 		{E7675927-9E41-42AE-81F9-F0DCCDF04A3C}.Release|x64.Build.0 = Release|Any CPU
 		{E7675927-9E41-42AE-81F9-F0DCCDF04A3C}.Release|x86.ActiveCfg = Release|Any CPU
 		{E7675927-9E41-42AE-81F9-F0DCCDF04A3C}.Release|x86.Build.0 = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|x64.Build.0 = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Debug|x86.Build.0 = Debug|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|x64.ActiveCfg = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|x64.Build.0 = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|x86.ActiveCfg = Release|Any CPU
+		{F287B29B-FBC4-4878-8FAE-DDA491678AED}.Release|x86.Build.0 = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|x64.Build.0 = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Debug|x86.Build.0 = Debug|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|x64.ActiveCfg = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|x64.Build.0 = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|x86.ActiveCfg = Release|Any CPU
+		{9AEB7BCD-CDBE-4EB1-8CED-3409A7E8D9B8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

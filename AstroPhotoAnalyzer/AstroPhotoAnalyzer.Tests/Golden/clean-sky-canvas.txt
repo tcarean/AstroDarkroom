@@ -8,7 +8,7 @@ Fisier: <TEMP>\cer-curat.tif
 VERDICT: OK
 
 1. Formatul de trimis  [OK]
-   - Trimite TIFF 8-bit LZW (0.2 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
+   - Trimite TIFF 8-bit LZW (0.3 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
      fiindca: eroare de rotunjire medie 0.25, maxima 0.50 niveluri (jumatate de nivel e maximul posibil)
    - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.2 MB).
      fiindca: eroare medie 0.61, maxima 3.5 niveluri; 1.8 % din esantioane cu eroare > 2, la nivelul mediu 64 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
@@ -46,7 +46,7 @@ Anexa B. Simularea fundalului (fundal masurat 0.250, curba gamma pe toate canale
   0.20           1.161        21.2       3.9 %      0.0 %        0.0 %
 
 Anexa C. Export
-  TIFF 8-bit LZW: 0.2 MB
+  TIFF 8-bit LZW: 0.3 MB
   JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu
   q100           0.2 MB       0.611       3.5   2.24    2.49     1.8 %            64
   q95            0.0 MB       0.844       5.9   2.76    3.61     6.1 %            64

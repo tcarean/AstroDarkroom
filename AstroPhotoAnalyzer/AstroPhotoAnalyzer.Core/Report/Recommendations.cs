@@ -144,19 +144,33 @@ namespace AstroPhotoAnalyzer
                     $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri"));
             }
 
-            foreach (EdgeRegion e in b.FlaggedRegions)
+            // Abaterile COLORATE, fiecare cu recomandarea ei: poluare, orizont, gradient
+            // cu tenta - lucruri de corectat pe liniar.
+            foreach (EdgeRegion e in b.FlaggedRegions.Where(x => x.Coloured))
             {
-                string deltas = b.ColorApplicable
-                    ? $"R {Fmt.S1(e.Deltas[0])}, G {Fmt.S1(e.Deltas[1])}, B {Fmt.S1(e.Deltas[2])}"
-                    : $"{Fmt.S1(e.Deltas[0])}";
-                string kind = !b.ColorApplicable ? (e.Deltas[0] > 0 ? "mai luminos" : "mai intunecat")
-                    : e.Deltas[0] > 0 && e.Deltas[2] < 0 ? "cald (lumina de orizont / poluare)"
-                    : e.Deltas.All(d => d > 0) ? "mai luminos (gradient rezidual)"
-                    : e.Deltas.All(d => d < 0) ? "mai intunecat (vignetare reziduala)"
-                    : "cu alta culoare";
+                string deltas = $"R {Fmt.S1(e.Deltas[0])}, G {Fmt.S1(e.Deltas[1])}, B {Fmt.S1(e.Deltas[2])}";
+                string kind = e.Deltas[0] > e.Deltas[2] + Thresholds.CornerGradientLevels ? "cald (lumina de orizont / poluare)"
+                    : e.Deltas[2] > e.Deltas[0] + Thresholds.CornerGradientLevels ? "rece (albastrui)"
+                    : e.Deltas[1] > (e.Deltas[0] + e.Deltas[2]) / 2 ? "verzui" : "cu alta culoare decat fundalul";
                 o.Add(new Recommendation(Topic.Colour, Verdict.Attention,
                     $"{Cap(e.Name)}: {kind}. Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.",
-                    $"fata de fundal: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)})"));
+                    $"fata de fundal: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit"));
+            }
+
+            // Abaterile NEUTRE, toate intr-o singura nota: o margine mai luminoasa la fel pe
+            // toate canalele e de cele mai multe ori obiectul insusi (banda Caii Lactee
+            // intrand in colt), nu un gradient. Unealta nu poate deosebi; o spune si lasa
+            // omul sa se uite in Preview.
+            var neutral = b.FlaggedRegions.Where(x => !x.Coloured).ToList();
+            if (neutral.Count > 0)
+            {
+                string list = string.Join("; ", neutral.Select(e =>
+                    $"{e.Name} {(b.ColorApplicable ? string.Join("/", e.Deltas.Select(Fmt.S1)) : Fmt.S1(e.Deltas[0]))}"));
+                bool brighter = neutral.All(e => e.Deltas.Average() > 0);
+                o.Add(new Recommendation(Topic.Colour, Verdict.Ok,
+                    (brighter ? "Margini mai luminoase decat fundalul, fara tenta: " : "Margini care difera de fundal, fara tenta: ")
+                    + "cel mai probabil obiectul insusi, nu un gradient - verifica in Preview inainte sa corectezi ceva.",
+                    $"fata de fundal, in niveluri: {list} (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca impreuna"));
             }
         }
 
