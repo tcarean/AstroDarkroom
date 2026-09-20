@@ -1,0 +1,94 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+Fisier: <TEMP>\cer-intunecat.tif
+  TIFF 16-bit RGB, 512 x 512 (0.3 MP), necomprimat, 1.5 MB, profil ICC: sRGB test
+  Mediu: baryta (Dmax 2.0, negrul hartiei L* 9.0). Distanta de privire: 1.5 m.
+
+VERDICT: PROBLEMA
+
+1. Formatul de trimis  [ATENTIE]
+   - Trimite TIFF 8-bit LZW (0.3 MB). Conversia 16 -> 8 biti e rotunjire pura, nu pierdere.
+     fiindca: eroare de rotunjire medie 0.26, maxima 0.50 niveluri (jumatate de nivel e maximul posibil)
+   - Daca laboratorul accepta doar JPEG: q100, 4:4:4 (0.1 MB).
+     fiindca: eroare medie 0.58, maxima 3.5 niveluri; 0.4 % din esantioane cu eroare > 2, la nivelul mediu 28 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
+   ! Risc de banding pe 8 biti: trimite 16-bit daca laboratorul accepta, sau adauga dither la export.
+     fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm
+
+2. Fundalul si hartia  [PROBLEMA]
+   !! Fundalul e prea jos pentru hartie: tot ce e sub negrul ei se printeaza cu ACELASI negru. Re-stretch din liniar la fundal 0.15 (simulat: 1.1 % sub negru, L* median 14.9).
+     fiindca: 72.4 % din pixeli sub negrul hartiei (prag 20 %), 83.9 % sub L* 15 (separare slaba); fundal masurat 0.089; negrul hartiei = L* 9.0 la Dmax 2.0
+
+3. Culoarea fundalului si gradientele  [ATENTIE]
+   ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
+     fiindca: fundal R 20.0 G 22.0 B 20.0; G - (R+B)/2 = +2.0, R - B = 0.0 niveluri (prag 1.0)
+   ! Colt dreapta-jos: cald (lumina de orizont / poluare). Corecteaza pe liniar (GraXpert) sau accepta ca element de compozitie - nu cu o curba locala pe imaginea stretch-uita.
+     fiindca: fata de fundal: R +10.4, G +0.4, B -7.6 niveluri (prag 3.0)
+
+4. Marimea printului  [ATENTIE]
+   - Recomandat: 50 x 35 cm imagine, ~70 x 55 cm cu passepartout si rama.
+     fiindca: FWHM median 3.06 px (Q1 3.05, Q3 3.08, 64 stele) = detaliu real ~167 px pe latime; la 50 cm steaua are 2.99 mm si e punct de la 10.31 m; distanta data 1.5 m
+   ! Raportul tinta cere decupaj: se taie 77 px pe fiecare parte din inaltime (30.1 %); alege tu cadrul, nu laboratorul.
+     fiindca: nativ 1.000, tinta 1.429; ramane 512 x 358 px
+
+5. Denoise pentru versiunea de print  [ATENTIE]
+   ! Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe.
+     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul creste de ~1.32 x (panta curbei la fundal), la ~0.39 LSB; sub 0.5 LSB, 100.0 % din dale
+
+6. Avertismente  [ATENTIE]
+   ! Pastreaza master-ul de 16 biti: orice editare ulterioara (recadrare, retus, alt print) pleaca din el, nu din fisierul de tipar.
+     fiindca: dupa un shadow-lift (gamma 1.9) din 8 biti lipsesc 24 niveluri din umbre (52 folosite), din 16 lipsesc 0 (75 folosite); prag 20
+
+Anexa A. Tonuri
+  medii pe canal (0..255): 29.1 / 30.8 / 28.6
+  sub nivelul 32: 81.0 %   sub 64: 92.4 %
+  percentile canal referinta (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
+  L* median 7.4; sub negrul hartiei (L* 9.0): 72.4 %; sub L* 15: 83.9 %; peste L* 50: 0.4 %
+
+Anexa B. Simularea fundalului (fundal masurat 0.089, curba gamma pe toate canalele)
+  fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50
+  asa cum e      1.000         7.4      72.4 %     83.9 %        0.4 %
+  0.15           0.785        14.9       1.1 %     53.3 %        2.7 %   print-safe
+  0.19           0.687        19.7       0.0 %      2.0 %        4.3 %   print-safe
+  0.20           0.666        20.9       0.0 %      1.5 %        4.7 %   print-safe
+
+Anexa C. Export
+  TIFF 8-bit LZW: 0.3 MB
+  JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu
+  q100           0.1 MB       0.579       3.5   1.76    2.34     0.4 %            28
+  q95            0.0 MB       0.575       4.7   1.85    2.57     0.5 %            30
+  q90            0.0 MB       0.560       7.3   1.82    3.33     0.7 %            36
+  rotunjire 16 -> 8: medie 0.262, maxim 0.498, p99.9 0.498 niveluri
+  stres shadow-lift (gamma 1.9), niveluri 8..120: din 16 biti 75 folosite / 0 lipsa; din 8 biti 52 folosite / 24 lipsa
+  palier pe cerul cuantizat: 2.2 px pe 120 dale
+
+Anexa D. Rezolutie si marime
+  stele: 64 masurate; FWHM median 3.06 px, Q1 3.05, Q3 3.08; detaliu real ~167 px pe latime
+  regiuni: centru 3.11 px (9); colt stanga-sus n/a (4); colt dreapta-sus n/a (2); colt stanga-jos n/a (2); colt dreapta-jos n/a (1)
+  marimi pentru 512 x 358 px (dupa decupaj):
+  latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm
+      50 *        35.0    26      2.99       10.31 m           1.50 m   70 x 55
+      60          42.0    22      3.59       12.37 m           1.50 m   80 x 62
+      70          48.9    19      4.19       14.44 m           1.50 m   90 x 69
+      80          55.9    16      4.78       16.50 m           1.50 m   100 x 76
+      90          62.9    14      5.38       18.56 m           1.50 m   110 x 83
+     100          69.9    13      5.98       20.62 m           1.50 m   120 x 90
+  * = recomandat
+
+Anexa E. Fundal
+  fundal (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
+  colt stanga-sus    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  colt dreapta-sus   20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  colt stanga-jos    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
+  colt dreapta-jos   30.4 / 22.4 / 12.4     delta +10.4 / +0.4 / -7.6  !
+  latura de sus      19.9 / 21.9 / 19.9     delta -0.1 / -0.1 / -0.2
+  latura de jos      20.5 / 22.5 / 20.5     delta +0.5 / +0.5 / +0.5
+  latura stanga      20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+  latura dreapta     20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
+
+Anexa F. Parametri
+  mediu baryta, Dmax 2.0; latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
+  distanta 1.5 m; raport tinta 1.429; fundal-tinta 0.19 (+ 0.15, 0.20); samanta 0
+
+--- stderr ---
+--- exit 3

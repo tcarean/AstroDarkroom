@@ -1,0 +1,5 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+--- stderr ---
+EROARE: --dmax asteapta un numar intre 0 si 4, a primit 'nouă'
+--- exit 1

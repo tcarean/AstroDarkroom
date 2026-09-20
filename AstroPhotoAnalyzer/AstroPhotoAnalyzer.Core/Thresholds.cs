@@ -135,8 +135,14 @@ namespace AstroPhotoAnalyzer
         /// <summary>... si sub varful asta, ca sa nu fie saturata (profilul unei stele saturate n-are jumatate).</summary>
         internal const double StarMaxPeak16 = 60000;
 
-        /// <summary>Candidatii se cauta doar peste de atatea ori media imaginii.</summary>
-        internal const double StarCandidateFactor = 3;
+        /// <summary>
+        /// Candidatii se cauta peste media planului + amplitudinea minima a unei stele.
+        /// Scriptul de acceptanta folosea 3 x media - bine pe un cer la 0.10, dar la un
+        /// fundal de 0.25 (versiunea de print!) pragul urca la 0.75 si stelele de 0.55
+        /// nu mai trec. Conditia necesara e cea de aici; filtrul adevarat e amplitudinea
+        /// fata de fundalul local, care se aplica oricum.
+        /// </summary>
+        internal const double StarCandidateAboveMean16 = StarMinAmplitude16;
 
         /// <summary>Latimi la jumatate acceptate; in afara lor e o pata sau un pixel fierbinte.</summary>
         internal const double StarFwhmMin = 0.8;

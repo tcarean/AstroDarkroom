@@ -1,0 +1,5 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+--- stderr ---
+EROARE: imaginea pare LINIARA (mediana 0.0040, sub 0.02): unealta masoara doar imagini finite, stretch-uite. Stretch-uieste in Siril si analizeaza rezultatul.
+--- exit 1

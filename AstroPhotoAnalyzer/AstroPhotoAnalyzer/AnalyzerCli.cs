@@ -23,7 +23,7 @@
 //
 // CODURI DE IESIRE:
 //     0  OK - nicio recomandare peste "Ok"
-//     1  eroare (fisier lipsa, argument gresit, format necitit)
+//     1  eroare (fisier lipsa, argument gresit, format necitit, imagine liniara)
 //     2  ATENTIE - cel putin o recomandare de nivel "Atentie"
 //     3  PROBLEMA - cel putin una de nivel "Problema"
 // Verdictele sunt monotone, deci "orice != 0" inseamna "nu e curat, uita-te".
@@ -63,11 +63,63 @@ namespace AstroPhotoAnalyzer
                 return 1;
             }
 
-            // Etapa 0 din docs/implementation-plan.md: scheletul. Analiza propriu-zisa
-            // intra in etapele 1-4; pana atunci consola spune cinstit ca nu e gata, in
-            // loc sa tipareasca un raport gol.
-            stderr.WriteLine("EROARE: analiza nu e implementata inca (vezi docs/implementation-plan.md).");
-            return 1;
+            AnalysisResult result;
+            try
+            {
+                result = AnalysisRun.Execute(o.Image, ParametersFrom(o));
+            }
+            catch (Exception e)
+            {
+                stderr.WriteLine("EROARE: " + e.Message);
+                return 1;
+            }
+
+            stdout.Write(result.ReportBody);
+            stdout.WriteLine();
+
+            if (o.Out != null)
+            {
+                try
+                {
+                    using var f = new StreamWriter(o.Out, false);
+                    ReportWriter.WriteFull(result, f);
+                    stdout.WriteLine("    -> raport salvat: " + o.Out);
+                }
+                catch (Exception e)
+                {
+                    stderr.WriteLine("EROARE: nu s-a putut scrie raportul: " + e.Message);
+                    return 1;
+                }
+            }
+
+            return ExitFor(result.Overall);
+        }
+
+        internal static int ExitFor(Verdict v) => v switch
+        {
+            Verdict.Ok => 0,
+            Verdict.Attention => 2,
+            _ => 3,
+        };
+
+        /// <summary>
+        /// Ce a tastat omul, tradus in ce intelege nucleul. Un Options lipsa inseamna
+        /// implicitul din Parameters - consola nu-si tine copia ei de implicite.
+        /// </summary>
+        internal static Parameters ParametersFrom(Options o)
+        {
+            var d = new Parameters();
+            return new Parameters
+            {
+                Medium = o.Medium != null ? Parameters.MediumFromName(o.Medium) : d.Medium,
+                DmaxOverride = o.Dmax,
+                ViewingDistanceM = o.Distance,
+                CandidateWidthsCm = o.Sizes ?? d.CandidateWidthsCm,
+                TargetAspect = o.Aspect,
+                TargetBackground = o.TargetBg ?? d.TargetBackground,
+                PassepartoutCm = o.PassepartoutCm ?? d.PassepartoutCm,
+                FrameCm = o.FrameCm ?? d.FrameCm,
+            };
         }
 
         internal static void WriteUsage(TextWriter w)

@@ -1,8 +1,8 @@
 # Implementation plan
 
-Status: **phases 0-3 done** (skeleton; input layer; all analyzers). Phases 4-7 pending.
-Each phase compiles and passes its tests before the next starts; the user commits per
-phase.
+Status: **phases 0-4 done** (skeleton; input layer; all analyzers; recommendations,
+report, console, golden tests). Phases 5-7 pending. Each phase compiles and passes its
+tests before the next starts; the user commits per phase.
 
 ## Decisions taken before the first line
 
@@ -89,7 +89,7 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 | 1 | Core `Input/`: `Raster`, `RasterOps`, `ColorMath`, `Stats`, `FitsReader` (copied, trimmed, streaming), `ImageSharpReader`, `IccProfileInfo`, `ImageLoader`; `Parameters`, `Thresholds`; synthetic rasters, hand-built FITS/TIFF/PNG and ICC fixtures for tests | **done** |
 | 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | **done** |
 | 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | **done** |
-| 4 | Core `Report/`: `Recommendations`, `ReportWriter`; `Runs/AnalysisRun`; console wired; golden tests | |
+| 4 | Core `Report/`: `Recommendations`, `ReportWriter`, `Fmt`; `Runs/AnalysisRun`; console wired; golden tests on deterministic scenes | **done** |
 | 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | |
 | 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | |
 | 7 | acceptance on `de_printat.png` (numbers below), `docs/acceptance-de-printat.md`, README | |
@@ -108,6 +108,23 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
   ties, so the acceptance numbers are unaffected.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
+
+## Notes from phase 4
+
+- **The star candidate threshold is `mean + minimum amplitude`, not the script's
+  `3 x mean`.** Found by the golden scene with a 0.25 background: `3 x mean` put the
+  threshold at 0.75 and no star of peak 0.55 qualified - which is exactly what would
+  happen on the print version of a real image (background 0.19-0.25). The amplitude
+  test against the local border median is the real filter and is unchanged. On a dark
+  sky the new threshold admits fainter stars than the script did; the median FWHM is
+  expected to move little, and phase 7 will say by how much.
+- **Golden scenes are synthetic and deterministic** (`Scenes.cs`): a dark sky with every
+  defect the reference image had (low background, green cast, warm horizon corner,
+  over-denoised, a nebula and a dust lane for continuous tones), a clean sky, a mono
+  8-bit PNG, a linear FITS. Version banner and temp path are scrubbed. Re-approve with
+  `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln` and read the diff.
+- **JPEG mean error is not used for any verdict** - only max error and the count of
+  samples over 2 levels (see phase 3 notes).
 
 ## Notes from phase 3
 

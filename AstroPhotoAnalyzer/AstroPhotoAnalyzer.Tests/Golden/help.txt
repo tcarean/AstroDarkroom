@@ -1,0 +1,30 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+Masoara o imagine astro finita (TIFF, PNG sau FITS stretch-uit) si spune
+cum sa fie trimisa la print: format, fundal, culoare, marime, denoise.
+
+Folosire:
+  AstroPhotoAnalyzer <imagine> [optiuni]
+
+Optiuni:
+  --medium <baryta|canvas|acrilic>   mediul de print; da Dmax-ul hartiei (implicit baryta)
+  --dmax <n>                          Dmax explicit, in locul mediului (ex. 2.0)
+  --distance <m>                      distanta de privire, in metri (implicit 1.5 x diagonala)
+  --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)
+  --aspect <l:i>                      raportul de aspect tinta, ex. 50:35 (implicit cel nativ)
+  --target-bg <0..1>                  fundalul-tinta al simularii de print (implicit 0.19)
+  --passepartout <cm>                 latimea passepartout-ului, pentru marimea exterioara (implicit 7)
+  --frame <cm>                        latimea ramei (implicit 3)
+  -o, --out <fisier>                  scrie raportul si in fisier, pe langa stdout
+  -h, --help                          acest text
+
+Coduri de iesire: 0 ok, 1 eroare, 2 atentie, 3 problema.
+
+Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
+vandabilitate sau potrivire pentru un scop anume. E software liber:
+il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea
+ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,
+sau la <https://www.gnu.org/licenses/gpl-3.0.html>.
+--- stderr ---
+--- exit 0

@@ -1,0 +1,5 @@
+AstroPhotoAnalyzer <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+--- stderr ---
+EROARE: fisierul nu exista: <TEMP>\nu-exista.tif
+--- exit 1

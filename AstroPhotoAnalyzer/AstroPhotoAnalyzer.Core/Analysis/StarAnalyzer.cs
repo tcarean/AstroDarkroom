@@ -20,7 +20,8 @@
 // fin de 3 px nu exista in fisier, oricati pixeli ar avea el. De aici pleaca tabelul de
 // marimi, si de aici cade mitul "300 dpi".
 //
-// CUM: candidat = pixel peste 3x media planului, care e maximul ferestrei lui de 25x25.
+// CUM: candidat = pixel peste media planului + amplitudinea minima, care e maximul
+// ferestrei lui de 25x25.
 // Fundalul stelei = mediana marginii ferestrei; amplitudinea = varf - fundal, cu prag
 // jos (o pata slaba n-are profil) si prag sus (o stea saturata n-are jumatate). Latimea
 // la jumatate se ia pe orizontala si pe verticala, cu interpolare liniara subpixel, si
@@ -79,7 +80,7 @@ namespace AstroPhotoAnalyzer
         {
             float[] g = r.Reference;
             int W = r.W, H = r.H;
-            float thr = (float)(Stats.Mean(g) * Thresholds.StarCandidateFactor);
+            float thr = (float)(Stats.Mean(g) + Thresholds.StarCandidateAboveMean16 / 65535.0);
             float minAmp = (float)(Thresholds.StarMinAmplitude16 / 65535.0);
             float maxPeak = (float)(Thresholds.StarMaxPeak16 / 65535.0);
 

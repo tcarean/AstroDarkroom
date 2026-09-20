@@ -1,0 +1,166 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+// ReportWriter.cs - raportul ca text: intai deciziile, apoi anexele cu tabelele.
+//
+// Acelasi text pentru consola si pentru Raport.txt din fereastra - de asta scrie intr-un
+// TextWriter si nu stie cine il citeste. Formatul e fixat de testele golden: o
+// reformulare aici se vede acolo, si asta e intentia.
+
+using System;
+using System.IO;
+using System.Linq;
+
+namespace AstroPhotoAnalyzer
+{
+    internal static class ReportWriter
+    {
+        /// <summary>Banner + corp: ce salveaza fereastra si ce scrie consola cu -o.</summary>
+        internal static void WriteFull(AnalysisResult r, TextWriter w)
+        {
+            RunReport.WriteBanner(w);
+            WriteBody(r, w);
+        }
+
+        internal static void WriteBody(AnalysisResult r, TextWriter w)
+        {
+            Header(r, w);
+            Decisions(r, w);
+            AppendixTones(r, w);
+            AppendixSimulation(r, w);
+            AppendixExport(r, w);
+            AppendixResolution(r, w);
+            AppendixBackground(r, w);
+            AppendixParameters(r, w);
+        }
+
+        static void Header(AnalysisResult r, TextWriter w)
+        {
+            FileFactsResult f = r.File;
+            w.WriteLine();
+            w.WriteLine("Fisier: " + r.Path);
+            string bits = f.IsFloat ? "float" : f.BitDepth + "-bit";
+            string icc = f.HasIcc ? "profil ICC: " + (f.IccDescription ?? "(fara nume)") : "fara profil ICC";
+            w.WriteLine($"  {f.Format} {bits} {(f.IsColor ? "RGB" : "mono")}, {Fmt.Dim(f.W, f.H)} ({Fmt.F1(f.Megapixels)} MP), {f.Compression ?? "-"}, {Fmt.Mb(f.FileMegabytes)}, {icc}");
+            Parameters p = r.Parameters;
+            string dist = p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "1.5 x diagonala";
+            w.WriteLine($"  Mediu: {Parameters.NameOf(p.Medium)} (Dmax {Fmt.F1(p.Dmax)}, negrul hartiei L* {Fmt.F1(r.Tonal.PaperBlackLstar)}). Distanta de privire: {dist}.");
+            w.WriteLine();
+            w.WriteLine("VERDICT: " + VerdictText.Label(r.Overall));
+        }
+
+        static void Decisions(AnalysisResult r, TextWriter w)
+        {
+            foreach (Topic t in Enum.GetValues(typeof(Topic)))
+            {
+                var recs = r.Recommendations.Where(x => x.Topic == t).ToList();
+                Verdict v = recs.Count == 0 ? Verdict.Ok : recs.Max(x => x.Verdict);
+                w.WriteLine();
+                w.WriteLine($"{(int)t}. {VerdictText.Title(t)}  [{VerdictText.Label(v)}]");
+                if (recs.Count == 0) { w.WriteLine("   (nimic de semnalat)"); continue; }
+                foreach (Recommendation rec in recs)
+                {
+                    w.WriteLine($"   {Mark(rec.Verdict)} {rec.Text}");
+                    w.WriteLine($"     fiindca: {rec.Because}");
+                }
+            }
+        }
+
+        static string Mark(Verdict v) => v == Verdict.Ok ? "-" : v == Verdict.Attention ? "!" : "!!";
+
+        static void AppendixTones(AnalysisResult r, TextWriter w)
+        {
+            TonalResult t = r.Tonal;
+            w.WriteLine();
+            w.WriteLine("Anexa A. Tonuri");
+            w.WriteLine($"  medii pe canal (0..255): {string.Join(" / ", t.MeanLevels.Select(Fmt.F1))}");
+            w.WriteLine($"  sub nivelul {Thresholds.DarkLevelA}: {Fmt.Pct(t.PctBelowDarkA)}   sub {Thresholds.DarkLevelB}: {Fmt.Pct(t.PctBelowDarkB)}");
+            w.WriteLine("  percentile canal referinta (0..255): " + string.Join("  ", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"p{Fmt.F1(p)}={Fmt.F1(v)}")));
+            w.WriteLine($"  L* median {Fmt.F1(t.LstarMedian)}; sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(t.PctBelowLowSeparation)}; peste L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}");
+        }
+
+        static void AppendixSimulation(AnalysisResult r, TextWriter w)
+        {
+            SimulationResult s = r.Simulation;
+            w.WriteLine();
+            w.WriteLine($"Anexa B. Simularea fundalului (fundal masurat {Fmt.F3(s.BackgroundMeasured)}, curba gamma pe toate canalele)");
+            w.WriteLine("  fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50");
+            foreach (SimulationRow row in s.Rows)
+            {
+                string target = row.AsIs ? "asa cum e" : Fmt.F2(row.Target);
+                w.WriteLine($"  {target,-12}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarMedian),9}   {Fmt.Pct(row.PctBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{(row.PrintSafe ? "   print-safe" : "")}");
+            }
+        }
+
+        static void AppendixExport(AnalysisResult r, TextWriter w)
+        {
+            QuantizationResult q = r.Quantization;
+            w.WriteLine();
+            w.WriteLine("Anexa C. Export");
+            w.WriteLine($"  TIFF 8-bit LZW: {Fmt.Mb(r.Jpeg.Tiff8LzwMegabytes)}");
+            w.WriteLine("  JPEG 4:4:4   marime     err medie   err max   p99    p99.9   > 2 niv   nivel mediu");
+            foreach (JpegRow j in r.Jpeg.Rows)
+                w.WriteLine($"  q{j.Quality,-3}         {Fmt.Mb(j.Megabytes),8}   {Fmt.F3(j.MeanAbsError),9}   {Fmt.F1(j.MaxError),7}   {Fmt.F2(j.P99),4}   {Fmt.F2(j.P999),5}   {Fmt.Pct(j.PctOverThreshold),7}   {Fmt.F0(j.MeanLevelOverThreshold),11}");
+            if (q.Applicable)
+            {
+                w.WriteLine($"  rotunjire 16 -> 8: medie {Fmt.F3(q.RoundingMeanAbs)}, maxim {Fmt.F3(q.RoundingMax)}, p99.9 {Fmt.F3(q.RoundingP999)} niveluri");
+                w.WriteLine($"  stres shadow-lift (gamma {Fmt.F1(Thresholds.ShadowLiftGamma)}), niveluri {Thresholds.ShadowLiftLevelLo}..{Thresholds.ShadowLiftLevelHi}: din 16 biti {q.LevelsUsedFrom16} folosite / {q.MissingFrom16} lipsa; din 8 biti {q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa");
+            }
+            w.WriteLine(q.PlateauKnown
+                ? $"  palier pe cerul cuantizat: {Fmt.F1(q.PlateauPx)} px pe {q.PlateauTiles} dale"
+                : $"  palier: fara dale de cer curat ({q.PlateauTiles})");
+        }
+
+        static void AppendixResolution(AnalysisResult r, TextWriter w)
+        {
+            StarResult s = r.Stars;
+            PrintSizeResult ps = r.Size;
+            w.WriteLine();
+            w.WriteLine("Anexa D. Rezolutie si marime");
+            w.WriteLine(s.Insufficient
+                ? $"  stele: {s.Count} masurate - prea putine pentru FWHM"
+                : $"  stele: {s.Count} masurate; FWHM median {Fmt.F2(s.FwhmMedian)} px, Q1 {Fmt.F2(s.FwhmQ1)}, Q3 {Fmt.F2(s.FwhmQ3)}; detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime");
+            w.WriteLine("  regiuni: " + string.Join("; ", s.Regions.Select(x => $"{x.Name} {(x.Known ? Fmt.F2(x.FwhmMedian) + " px" : "n/a")} ({x.Count})"))
+                + (double.IsNaN(s.CornerToCenterRatio) ? "" : $"; colt/centru {Fmt.F2(s.CornerToCenterRatio)}"));
+            w.WriteLine($"  marimi pentru {Fmt.Dim(ps.PixelW, ps.PixelH)} px{(r.Crop.Needed ? " (dupa decupaj)" : "")}:");
+            w.WriteLine("  latime cm   inaltime   dpi   stea mm   punct de la   dist. folosita   rama ext. cm");
+            foreach (SizeRow row in ps.Rows)
+                w.WriteLine($"  {Fmt.F0(row.WidthCm),6}{(row.Recommended ? " *" : "  ")}    {Fmt.F1(row.HeightCm),8}   {Fmt.F0(row.Dpi),3}   {Fmt.F2(row.StarMm),7}   {Fmt.F2(row.MinDistanceM) + " m",11}   {Fmt.F2(row.ViewingDistanceM) + " m",14}   {Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)}{(row.Oversize ? "  (peste limita)" : "")}");
+            w.WriteLine("  * = recomandat");
+        }
+
+        static void AppendixBackground(AnalysisResult r, TextWriter w)
+        {
+            BackgroundResult b = r.Background;
+            w.WriteLine();
+            w.WriteLine("Anexa E. Fundal");
+            w.WriteLine($"  fundal (0..255): {string.Join(" / ", b.Levels.Select(Fmt.F1))}"
+                + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}" : ""));
+            foreach (EdgeRegion e in b.Regions)
+                w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{(e.Flagged ? "  !" : "")}");
+        }
+
+        static void AppendixParameters(AnalysisResult r, TextWriter w)
+        {
+            Parameters p = r.Parameters;
+            w.WriteLine();
+            w.WriteLine("Anexa F. Parametri");
+            w.WriteLine($"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.F1(p.Dmax)}{(p.DmaxOverride.HasValue ? " (explicit)" : "")}; latimi {string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0))} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm");
+            w.WriteLine($"  distanta {(p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "naturala")}; raport tinta {(p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : "nativ")}; fundal-tinta {Fmt.F2(p.TargetBackground)} (+ {string.Join(", ", p.SimulationTargets.Select(Fmt.F2))}); samanta {p.Seed}");
+        }
+    }
+}
