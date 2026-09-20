@@ -60,16 +60,38 @@ namespace AstroPhotoAnalyzer
         /// <summary>Sub procentul asta, o tinta de fundal e considerata print-safe.</summary>
         internal const double PaperBlackOkPct = 2;
 
+        // ------------------------------------------------------------ subesantionare
+
+        /// <summary>Pasul [::s, ::s] al fiecarei masuratori - cel din scripturile de acceptanta.</summary>
+        internal const int TonalStride = 4;
+        internal const int PercentileStride = 2;
+        internal const int BackgroundStride = 3;
+
         // ------------------------------------------------------------ zgomot
 
         internal const int NoiseTileSize = 64;
         internal const int NoiseTileCandidates = 400;
 
-        /// <summary>O dala e "neteda" daca max-min pe ea e sub atatea niveluri din 255 ...</summary>
-        internal const double NoiseTileMaxRangeLevels = 6;
+        /// <summary>
+        /// O dala e "neteda" pentru zgomot daca max-min pe ea e sub atatea niveluri din
+        /// 255. E 6000 din 65535 - pragul scriptului de acceptanta - si e larg dinadins:
+        /// diferenta intre pixeli vecini scoate un gradient lent, deci o dala cu putina
+        /// structura tot masoara zgomotul corect. (Palierul are alt prag, mai strict.)
+        /// </summary>
+        internal const double NoiseTileMaxRangeLevels = 6000.0 / 257;
 
-        /// <summary>... si media ei e sub atatea niveluri - adica e cer, nu nucleu.</summary>
-        internal const double NoiseTileMaxMeanLevels = 70;
+        /// <summary>Sub atatea dale netede sigma nu e de incredere si raportul o spune.</summary>
+        internal const int NoiseMinTiles = 10;
+
+        /// <summary>
+        /// Dalele PALIERULUI (etapa 3): range sub 6 niveluri si medie sub 70 - cer curat,
+        /// fara nucleu - 120 de dale din samanta 1. Sunt criteriile celuilalt script de
+        /// acceptanta, si dau 2.6 px pe imaginea de referinta.
+        /// </summary>
+        internal const double PlateauTileMaxRangeLevels = 6;
+        internal const double PlateauTileMaxMeanLevels = 70;
+        internal const int PlateauTileCount = 120;
+        internal const int PlateauSeed = 1;
 
         /// <summary>Sub sigma asta (in LSB de 8 biti) zgomotul nu mai dither-eaza cuantizarea: risc de banding.</summary>
         internal const double NoiseBandingLsb = 0.5;

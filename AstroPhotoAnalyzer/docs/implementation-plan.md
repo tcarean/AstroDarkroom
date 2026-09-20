@@ -1,7 +1,8 @@
 # Implementation plan
 
-Status: **phases 0-1 done** (skeleton; input layer). Phases 2-7 pending. Each phase
-compiles and passes its tests before the next starts; the user commits per phase.
+Status: **phases 0-2 done** (skeleton; input layer; file/tonal/noise/background
+analyzers). Phases 3-7 pending. Each phase compiles and passes its tests before the next
+starts; the user commits per phase.
 
 ## Decisions taken before the first line
 
@@ -86,12 +87,27 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 |---|---|---|
 | 0 | skeleton: sln, props, LICENSE, notices, CLAUDE.md, README, icon, Core plumbing (Version, ThirdParty, RunReport), console (Options, Cli), plumbing tests | **done** |
 | 1 | Core `Input/`: `Raster`, `RasterOps`, `ColorMath`, `Stats`, `FitsReader` (copied, trimmed, streaming), `ImageSharpReader`, `IccProfileInfo`, `ImageLoader`; `Parameters`, `Thresholds`; synthetic rasters, hand-built FITS/TIFF/PNG and ICC fixtures for tests | **done** |
-| 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | |
+| 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | **done** |
 | 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | |
 | 4 | Core `Report/`: `Recommendations`, `ReportWriter`; `Runs/AnalysisRun`; console wired; golden tests | |
 | 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | |
 | 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | |
 | 7 | acceptance on `de_printat.png` (numbers below), `docs/acceptance-de-printat.md`, README | |
+
+## Notes from phase 2
+
+- **Two different tile criteria, on purpose.** The noise sigma (B3) uses tiles with a
+  range up to 6000/65535 (~23 levels), seed 0, 400 candidates; the plateau (C1, phase 3)
+  uses range < 6 levels, mean < 70, seed 1, 120 tiles. Those are the two scripts the
+  acceptance numbers came from. `Thresholds` keeps them apart.
+- **"Background" for the simulation is the median of the reference channel.** Right
+  whenever the sky dominates the frame - every astrophoto - and wrong on a frame where
+  it does not (`WhenTheSkyDoesNotDominateTheMedianIsNotTheSky` keeps that visible).
+- **Background mask uses `<=` the percentile, not `<`.** On a flat synthetic sky every
+  pixel sits exactly at the percentile and a strict `<` selects nothing. Real data has no
+  ties, so the acceptance numbers are unaffected.
+- **Corner regions are compared per channel, not by luminance.** The reference image's
+  horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
 
 ## Things measured about ImageSharp 3.1.11 while building phase 1
 
