@@ -26,7 +26,7 @@ VERDICT: PROBLEMA
      fiindca: fata de fundal: R +10.4, G +0.4, B -7.6 niveluri (prag 3.0); canalele se misca diferit
 
 4. Marimea printului  [ATENTIE]
-   - Recomandat: 50 x 35 cm imagine, ~70 x 55 cm cu passepartout si rama.
+   ! De la 1.5 m stelele sunt discuri la orice marime din lista; cea mai mica (50 x 35 cm) minimizeaza efectul. Incearca latimi mai mici, sau o distanta mai mare daca privitorul chiar sta mai departe.
      fiindca: FWHM median 3.06 px (Q1 3.05, Q3 3.08, 64 stele) = detaliu real ~167 px pe latime; la 50 cm steaua are 2.99 mm si e punct de la 10.31 m; distanta data 1.5 m
    ! Raportul tinta cere decupaj: se taie 77 px pe fiecare parte din inaltime (30.1 %); alege tu cadrul, nu laboratorul.
      fiindca: nativ 1.000, tinta 1.429; ramane 512 x 358 px

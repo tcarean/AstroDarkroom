@@ -54,6 +54,30 @@ public class PrintSizeAnalyzerTests
         Assert.Equal(100, r.RecommendedRow.WidthCm);
     }
 
+    /// <summary>
+    /// La distanta naturala raportul punct/natural e o constanta a imaginii: pe cea de
+    /// referinta 1.018 cu FWHM 3.13. Fara toleranta toate randurile picau cu 2 % si
+    /// recomandarea cadea pe 50; cu ea, toate trec la fel si recomandarea e 100. O
+    /// imagine chiar moale (FWHM 4) pica la toate, tot deopotriva.
+    /// </summary>
+    [Fact]
+    public void TheNaturalDistanceVerdictIsTheSameAtEverySizeAndHasATolerance()
+    {
+        var real = PrintSizeAnalyzer.Analyze(W, H, 3.13, new Parameters());
+        Assert.All(real.Rows, row => Assert.True(row.MinDistanceM > row.NaturalDistanceM));   // ar pica strict
+        Assert.All(real.Rows, row => Assert.True(row.PointAtViewingDistance));                // trece cu toleranta
+        Assert.Equal(100, real.RecommendedRow.WidthCm);
+
+        var soft = PrintSizeAnalyzer.Analyze(W, H, 4.0, new Parameters());
+        Assert.All(soft.Rows, row => Assert.False(row.PointAtViewingDistance));
+        Assert.Equal(50, soft.RecommendedRow.WidthCm);
+
+        // Cu distanta data nu exista toleranta: e a omului.
+        var given = PrintSizeAnalyzer.Analyze(W, H, 3.13, new Parameters { ViewingDistanceM = 1.3 });
+        Assert.False(Row(given, 80).PointAtViewingDistance);   // 1.45 m > 1.3
+        Assert.True(Row(given, 70).PointAtViewingDistance);    // 1.27 m
+    }
+
     [Fact]
     public void AnExplicitDistanceOfOneAndAHalfMetresRecommendsEighty()
     {

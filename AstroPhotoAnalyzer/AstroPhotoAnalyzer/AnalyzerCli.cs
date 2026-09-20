@@ -63,10 +63,18 @@ namespace AstroPhotoAnalyzer
                 return 1;
             }
 
+            Parameters p = ParametersFrom(o);
+            string invalid = p.Validate();
+            if (invalid != null)
+            {
+                stderr.WriteLine("EROARE: " + invalid);
+                return 1;
+            }
+
             AnalysisResult result;
             try
             {
-                result = AnalysisRun.Execute(o.Image, ParametersFrom(o));
+                result = AnalysisRun.Execute(o.Image, p);
             }
             catch (Exception e)
             {
@@ -138,7 +146,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine("  --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)");
             w.WriteLine("  --aspect <l:i>                      raportul de aspect tinta, ex. 50:35 (implicit cel nativ)");
             w.WriteLine("  --target-bg <0..1>                  fundalul-tinta al simularii de print (implicit 0.19)");
-            w.WriteLine("  --passepartout <cm>                 latimea passepartout-ului, pentru marimea exterioara (implicit 7)");
+            w.WriteLine("  --passepartout <cm>                 latimea passepartout-ului (implicit 7; cel putin dublul ramei, 0 = fara)");
             w.WriteLine("  --frame <cm>                        latimea ramei (implicit 3)");
             w.WriteLine("  -o, --out <fisier>                  scrie raportul si in fisier, pe langa stdout");
             w.WriteLine("  -h, --help                          acest text");

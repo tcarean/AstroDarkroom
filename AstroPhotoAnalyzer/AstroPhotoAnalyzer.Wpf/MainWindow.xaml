@@ -97,8 +97,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Text="Latimi candidate, cm" />
             <TextBox Style="{StaticResource Field}" Text="{Binding Sizes, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="Raport de aspect tinta, ex. 50:35 (gol = nativ)" />
-            <TextBox Style="{StaticResource Field}" Text="{Binding Aspect, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
+            <TextBlock Style="{StaticResource Faint}" Text="Raport de aspect tinta, ex. 50:35 (gol = nativ)" ToolTip="{Binding AspectHelp}" />
+            <TextBox Style="{StaticResource Field}" Text="{Binding Aspect, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
+                     ToolTip="{Binding AspectHelp}" />
 
             <TextBlock Style="{StaticResource Faint}" Text="Fundal-tinta al simularii (0..1)" />
             <TextBox Style="{StaticResource Field}" Text="{Binding TargetBg, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
@@ -109,13 +110,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                 <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
-              <StackPanel Grid.Column="0">
+              <StackPanel Grid.Column="0" ToolTip="{Binding PassepartoutHelp}">
                 <TextBlock Style="{StaticResource Faint}" Text="Passepartout, cm" />
-                <TextBox Style="{StaticResource Field}" Text="{Binding Passepartout, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,0" />
+                <TextBox Style="{StaticResource Field}" Text="{Binding Passepartout, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,0"
+                         ToolTip="{Binding PassepartoutHelp}" />
               </StackPanel>
-              <StackPanel Grid.Column="2">
+              <StackPanel Grid.Column="2" ToolTip="{Binding FrameHelp}">
                 <TextBlock Style="{StaticResource Faint}" Text="Rama, cm" />
-                <TextBox Style="{StaticResource Field}" Text="{Binding Frame, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,0" />
+                <TextBox Style="{StaticResource Field}" Text="{Binding Frame, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,0"
+                         ToolTip="{Binding FrameHelp}" />
               </StackPanel>
             </Grid>
 

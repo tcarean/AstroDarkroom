@@ -87,6 +87,21 @@ public class CliTests
     }
 
     [Fact]
+    public void APassepartoutNarrowerThanTwiceTheFrameIsRefusedBeforeAnyWork()
+    {
+        using var ws = new TempWorkspace();
+        string tif = ws.WriteFile("x.tif", new byte[16]);   // nu se ajunge la citire
+
+        var (code, output, err) = Run(tif, "--passepartout", "4", "--frame", "3");
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: passepartout-ul", err);
+        Assert.Contains("dublul latimii ramei", err);
+        Assert.DoesNotContain("nu e o imagine", err);   // s-a oprit inainte de citire: fisierul e gol
+        Assert.StartsWith(VersionInfo.Banner, output);
+    }
+
+    [Fact]
     public void AnUnreadableFileIsAnErrorNotACrash()
     {
         using var ws = new TempWorkspace();

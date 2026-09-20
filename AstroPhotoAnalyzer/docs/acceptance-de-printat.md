@@ -62,3 +62,12 @@ missing from 8 bits after a shadow lift, none from 16.
   structure has little sky that is flat to 6 levels. The number still matches the hand
   measurement.
 - **ImageSharp's LZW needs the horizontal predictor** to be comparable to ImageMagick's.
+- **Run without `--distance`, the first version recommended 50 x 33 cm** where the
+  conversation had said "up to 100 cm at the natural distance, 70 for the hallway". At
+  the natural distance the point-or-disc test is size-independent (the ratio is 1.018 for
+  this image, a constant), so every row failed by 2 % and the rule fell back to the
+  smallest. The rule now carries a 15 % tolerance there, recommends the largest
+  non-oversize size when the image passes, and says in the report that the size is the
+  wall's choice and that a given distance is what separates the sizes. With `--distance
+  1.5` (the hallway) the recommendation is 70 cm on the 50:35 crop, as in the
+  conversation; on the full frame it is 80 (FWHM 3.13 instead of 3.00).

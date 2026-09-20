@@ -208,8 +208,27 @@ namespace AstroPhotoAnalyzer
         /// <summary>Distanta implicita de privire a unui tablou: de atatea ori diagonala lui.</summary>
         internal const double ViewingDistanceFactor = 1.5;
 
+        /// <summary>
+        /// La distanta NATURALA, "steaua e punct" nu depinde de marime: si distanta de la
+        /// care steaua devine punct, si distanta naturala cresc proportional cu latimea,
+        /// iar raportul lor e fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + r^2)) - o
+        /// constanta a imaginii. Pe imaginea de referinta e 1.018: toate marimile "picau"
+        /// cu 2 %, si regula cadea pe cea mai mica; cu FWHM 3.00 in loc de 3.13 ar fi
+        /// trecut toate. O toleranta de 15 % (cat imprastierea estimatorului de FWHM)
+        /// face testul sa raspunda la intrebarea pe care chiar o poate: e imaginea destul
+        /// de clara pentru distanta ei naturala, da sau nu. Marimea o alege peretele.
+        /// </summary>
+        internal const double NaturalDistanceTolerance = 1.15;
+
         /// <summary>Peste latimea asta (cm) intervin sticla, greutatea si transportul, nu fisierul.</summary>
         internal const double OversizeCm = 100;
+
+        /// <summary>
+        /// Passepartout-ul trebuie sa fie cel putin de atatea ori latimea ramei: sub asta
+        /// rama "strange" imaginea si albul din jur nu mai are ce sa faca. Regula
+        /// inramatorilor; 0 inseamna fara passepartout si nu e verificat.
+        /// </summary>
+        internal const double PassepartoutMinFrameRatio = 2;
 
         /// <summary>Densitatea "clasica" de referinta, doar pentru a arata ca nu e limita reala.</summary>
         internal const double ReferenceDpi = 300;

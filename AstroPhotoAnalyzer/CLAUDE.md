@@ -8,9 +8,13 @@ needs. It **exports nothing**: recommendations only, each with the number and th
 threshold behind it. Exports are made cleanly from Siril.
 
 Two applications - a console tool and a WPF window - over one core library. The core
-hand-parses FITS and takes ImageSharp for TIFF/PNG/JPEG. .NET 8. The measurement list and
-the phase plan are in `docs/implementation-plan.md`; the acceptance numbers the port must
-reproduce are in `docs/acceptance-de-printat.md` (written in phase 7).
+hand-parses FITS and takes ImageSharp for TIFF/PNG/JPEG. .NET 8.
+
+**`docs/specification.md` is the requirements document**: every measurement, rule,
+threshold, option, tab and format, at the level needed to maintain and extend the tool.
+Read it before changing behaviour. `docs/implementation-plan.md` records how it was built
+and what each phase taught; `docs/acceptance-de-printat.md` records the run on the
+reference image against the hand-made numbers.
 
 This tool is a sibling of FlatCheck (`../FlatCheck`) and follows its conventions to the
 letter. Where the two differ, this file says so.
@@ -30,9 +34,18 @@ letter. Where the two differ, this file says so.
 - `AstroPhotoAnalyzer.Tests/` - core + console, portable.
 - `AstroPhotoAnalyzer.Wpf.Tests/` - view-models, converters, `WindowSmokeTests`. Phase 5.
 - `Icon/` - `make_icon.py` generates `AstroPhotoAnalyzer.ico`, shared by both exes.
-- `docs/` - the plan, the acceptance record, and any design note that outlives a change.
+- `docs/` - `specification.md` (requirements: what and how), `implementation-plan.md`
+  (why, per phase), `acceptance-de-printat.md` (the reference run).
 
 ## Conventions
+
+- **Every change to behaviour updates `docs/specification.md` in the same change.** A
+  new or changed measurement, threshold, recommendation rule, parameter, option, report
+  line, tab, input format or dependency is not done until its section in the
+  specification says what the code now does. The spec's §15 lists, per kind of change,
+  the places to touch - the code, the tests, the goldens, and the spec section. Do not
+  leave it for "later"; that is how FlatCheck's README once described a tool that did
+  not exist.
 
 - **User-facing text (CLI messages, `--help`, window labels, code comments) is in
   Romanian**, without diacritics in code and messages, with diacritics in Markdown.
@@ -57,7 +70,8 @@ letter. Where the two differ, this file says so.
   `LicenseHeaderTests` enforces it; its project list is explicit, so adding a project is
   a decision.
 - **User-facing documentation lives in `README.md`, and only there.** Code comments explain
-  *why the code is the way it is*; the README explains *how to use the tool*.
+  *why the code is the way it is*; the README explains *how to use the tool*; the
+  specification explains *what the tool does and how*, for whoever maintains it.
 
 ## The dependencies
 

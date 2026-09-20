@@ -27,7 +27,9 @@ public class RecommendationsTests
     [Fact]
     public void ACleanImageGetsAnOverallOk()
     {
-        var a = Run(Scenes.CleanSky());
+        // O scena de 512 px are ~170 px de detaliu real: e clara pentru print doar la
+        // 10 cm privita de la 3 m. Testul e despre restul regulilor, nu despre marime.
+        var a = Run(Scenes.CleanSky(), new Parameters { ViewingDistanceM = 3.0, CandidateWidthsCm = new double[] { 10 } });
 
         Assert.Equal(Verdict.Ok, a.Overall);
         Assert.All(a.Recommendations, r => Assert.Equal(Verdict.Ok, r.Verdict));

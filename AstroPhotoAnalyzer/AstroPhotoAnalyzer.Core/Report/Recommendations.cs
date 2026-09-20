@@ -189,10 +189,30 @@ namespace AstroPhotoAnalyzer
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
                     $"Prea putine stele pentru rezolutia reala; marimea e judecata dupa dpi. Recomandat: {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm ({Fmt.F0(row.Dpi)} dpi).",
                     $"{st.Count} stele masurate (minim {Thresholds.StarMinCount}); pragul de dpi fara stele: {Fmt.F0(Thresholds.FallbackMinDpi)}"));
+            else if (ps.DistanceIsExplicit)
+            {
+                string evidence = $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m; {dist}";
+                if (row.PointAtViewingDistance)
+                    o.Add(new Recommendation(Topic.Size, Verdict.Ok,
+                        $"Recomandat: {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama.",
+                        evidence));
+                else
+                    o.Add(new Recommendation(Topic.Size, Verdict.Attention,
+                        $"De la {Fmt.F1(row.ViewingDistanceM)} m stelele sunt discuri la orice marime din lista; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizeaza efectul. Incearca latimi mai mici, sau o distanta mai mare daca privitorul chiar sta mai departe.",
+                        evidence));
+            }
             else
-                o.Add(new Recommendation(Topic.Size, Verdict.Ok,
-                    $"Recomandat: {Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama.",
-                    $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m; {dist}"));
+            {
+                // Fara distanta, claritatea relativa e aceeasi la orice marime (vezi
+                // PrintSizeAnalyzer): raspunsul e da/nu pentru toata imaginea, iar
+                // marimea o alege peretele. Se spune ca atare, nu se pretinde o alegere.
+                bool sharp = row.PointAtViewingDistance;
+                o.Add(new Recommendation(Topic.Size, sharp ? Verdict.Ok : Verdict.Attention,
+                    sharp
+                        ? $"Pana la {Fmt.F0(row.WidthCm)} cm ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm imagine, ~{Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)} cm cu passepartout si rama) imaginea e la fel de clara de la distanta ei naturala: alege marimea dupa perete. Daca se priveste de aproape (hol, birou), da distanta - atunci marimile se despart."
+                        : $"De la distanta naturala stelele sunt usor discuri la orice marime - imaginea e moale pentru rezolutia ei; cea mai mica ({Fmt.F0(row.WidthCm)} x {Fmt.F0(row.HeightCm)} cm) minimizeaza efectul. Da distanta de privire ca sa se judece pe ea.",
+                    $"FWHM median {Fmt.F2(st.FwhmMedian)} px (Q1 {Fmt.F2(st.FwhmQ1)}, Q3 {Fmt.F2(st.FwhmQ3)}, {st.Count} stele) = detaliu real ~{Fmt.F0(ps.EffectiveDetailPx)} px pe latime; la {Fmt.F0(row.WidthCm)} cm steaua are {Fmt.F2(row.StarMm)} mm si e punct de la {Fmt.F2(row.MinDistanceM)} m fata de {dist} (toleranta {Fmt.F0((Thresholds.NaturalDistanceTolerance - 1) * 100)} %); raportul e acelasi la orice marime"));
+            }
 
             if (st.SoftCorners)
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,

@@ -71,10 +71,12 @@ namespace AstroPhotoAnalyzer.Wpf
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),
                     TargetBackground = OptionalNumber(TargetBg, "fundalul-tinta", 0, 1) ?? D.TargetBackground,
-                    PassepartoutCm = OptionalNumber(Passepartout, "passepartout-ul", 0, 100) ?? D.PassepartoutCm,
-                    FrameCm = OptionalNumber(Frame, "rama", 0, 100) ?? D.FrameCm,
+                    PassepartoutCm = OptionalNumber(Passepartout, "passepartout-ul", 0, 100, allowZero: true) ?? D.PassepartoutCm,
+                    FrameCm = OptionalNumber(Frame, "rama", 0, 100, allowZero: true) ?? D.FrameCm,
                 };
-                return p;
+                // Regulile intre parametri sunt ale nucleului; aici doar se arata mesajul.
+                error = p.Validate();
+                return error == null ? p : null;
             }
             catch (FormatException e)
             {
@@ -83,14 +85,32 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        static double? OptionalNumber(string text, string what, double lo, double hi)
+        static double? OptionalNumber(string text, string what, double lo, double hi, bool allowZero = false)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
             if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
                 throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
-            if (v <= lo || v > hi) throw new FormatException($"{what}: {text} e in afara intervalului ({Fmt.F1(lo)}, {Fmt.F1(hi)}]");
+            bool tooLow = allowZero ? v < lo : v <= lo;
+            if (tooLow || v > hi) throw new FormatException($"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]");
             return v;
         }
+
+        /// <summary>Textele de ajutor ale campurilor - aceleasi in tooltip si pe eticheta.</summary>
+        public string AspectHelp =>
+            "Raportul latime:inaltime al printului, ex. 50:35 sau 50x35. Gol = raportul nativ al imaginii, fara decupaj - "
+            + "asa se trimite la un laborator fine-art, care printeaza la centimetru, orice dimensiune; rama gata facuta "
+            + "nu constrange nici ea, passepartout-ul absoarbe diferenta. Completeaza-l doar pentru un laborator cu formate "
+            + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
+
+        public string PassepartoutHelp =>
+            "Latimea benzii de carton dintre imagine si rama, pe fiecare latura. Regula inramatorilor: "
+            + "10-15 % din latimea imaginii si cel putin dublul latimii ramei - sub asta rama strange imaginea. "
+            + "0 = fara passepartout. Galeriile fac latura de jos cu ~1 cm mai lata.";
+
+        public string FrameHelp =>
+            "Latimea profilului ramei vazuta din fata, pe fiecare latura. Pentru un print de 60-80 cm: 3-4 cm, "
+            + "neagra mata; o rama mai lata cere un passepartout pe masura (cel putin dublul ei). "
+            + "Intra doar in marimea exterioara a tabloului.";
 
         static double[] SizesOf(string text)
         {

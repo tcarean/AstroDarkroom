@@ -12,6 +12,8 @@ cifră.
 
 **Stare: complet.** Consola și fereastra fac același lucru peste același nucleu; unealta
 a fost rulată pe imaginea de referință și cifrele sunt în `docs/acceptance-de-printat.md`.
+Specificația completă — fiecare măsurătoare, regulă, prag și cum funcționează — e în
+`docs/specification.md`.
 
 ## Fereastra
 

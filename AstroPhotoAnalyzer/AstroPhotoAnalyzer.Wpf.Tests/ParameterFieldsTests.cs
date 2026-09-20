@@ -39,7 +39,8 @@ public class ParameterFieldsTests
     [Fact]
     public void EveryFieldIsHonoured()
     {
-        var f = new ParameterFields { Medium = "canvas", Dmax = "1.7", Distance = "2", Sizes = "60, 70;80", Aspect = "50x35", TargetBg = "0.2", Passepartout = "6", Frame = "4" };
+        // 8 cu 4: passepartout-ul trebuie sa fie cel putin dublul ramei (Parameters.Validate).
+        var f = new ParameterFields { Medium = "canvas", Dmax = "1.7", Distance = "2", Sizes = "60, 70;80", Aspect = "50x35", TargetBg = "0.2", Passepartout = "8", Frame = "4" };
         Parameters? p = f.TryBuild(out string? error);
 
         Assert.Null(error);
@@ -49,7 +50,7 @@ public class ParameterFieldsTests
         Assert.Equal(new double[] { 60, 70, 80 }, p.CandidateWidthsCm);
         Assert.Equal(50.0 / 35.0, p.TargetAspect!.Value, 9);
         Assert.Equal(0.2, p.TargetBackground);
-        Assert.Equal(6, p.PassepartoutCm);
+        Assert.Equal(8, p.PassepartoutCm);
         Assert.Equal(4, p.FrameCm);
     }
 
@@ -71,6 +72,39 @@ public class ParameterFieldsTests
         Assert.Null(p);
         Assert.NotNull(error);
         Assert.Contains(fragment, error);
+    }
+
+    [Fact]
+    public void APassepartoutNarrowerThanTwiceTheFrameIsRefusedWithTheCoresMessage()
+    {
+        var f = new ParameterFields { Passepartout = "5", Frame = "3" };
+
+        Parameters? p = f.TryBuild(out string? error);
+
+        Assert.Null(p);
+        Assert.Equal(new Parameters { PassepartoutCm = 5, FrameCm = 3 }.Validate(), error);
+    }
+
+    [Fact]
+    public void ZeroMeansNoPassepartoutAndIsAllowed()
+    {
+        var f = new ParameterFields { Passepartout = "0", Frame = "3" };
+
+        Parameters? p = f.TryBuild(out string? error);
+
+        Assert.Null(error);
+        Assert.Equal(0, p!.PassepartoutCm);
+    }
+
+    [Fact]
+    public void TheFramingFieldsCarryHelpText()
+    {
+        var f = new ParameterFields();
+
+        Assert.Contains("dublul", f.PassepartoutHelp);
+        Assert.Contains("3-4 cm", f.FrameHelp);
+        Assert.Contains("Gol = raportul nativ", f.AspectHelp);
+        Assert.Contains("formate fixe", f.AspectHelp);
     }
 
     [Fact]

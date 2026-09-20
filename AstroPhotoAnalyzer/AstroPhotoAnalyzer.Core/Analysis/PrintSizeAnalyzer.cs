@@ -23,6 +23,13 @@
 // la distanta de privire: cea data de om, sau, fara ea, 1.5 x diagonala imaginii - de
 // unde se priveste un tablou in mod natural.
 //
+// DISTANTA NATURALA NU ALEGE O MARIME. Si distanta de la care steaua e punct, si cea
+// naturala cresc proportional cu latimea; raportul lor e o constanta a imaginii (vezi
+// Thresholds.NaturalDistanceTolerance). Deci fara distanta data testul spune doar "e
+// destul de clara pentru distanta ei naturala" - la toate marimile deopotriva - si
+// recomandarea e cea mai mare care nu e supradimensionata. Cu o distanta data (hol,
+// canapea), testul chiar desparte marimile, si acolo se sprijina recomandarea.
+//
 // Nu exista "dpi minim" aici. Rezolutia reala e FWHM-ul; dpi-ul e doar cati pixeli
 // incap intr-un inch, si peste 1/FWHM din el nu mai aduce nimic. Singura data cand
 // dpi-ul decide e fara stele - atunci cade pe un prag conservator.
@@ -86,7 +93,9 @@ namespace AstroPhotoAnalyzer
                 double minDist = known ? star / Thresholds.AcuityMmAt1m : double.NaN;
                 double natural = Thresholds.ViewingDistanceFactor * Math.Sqrt(wcm * wcm + hcm * hcm) / 100;
                 double viewing = p.ViewingDistanceM ?? natural;
-                bool point = known ? minDist <= viewing : dpi >= Thresholds.FallbackMinDpi;
+                // Toleranta doar pe distanta naturala: cea data de om e a lui, nu se largeste.
+                double allowed = p.ViewingDistanceM.HasValue ? viewing : viewing * Thresholds.NaturalDistanceTolerance;
+                bool point = known ? minDist <= allowed : dpi >= Thresholds.FallbackMinDpi;
                 rows.Add(new SizeRow
                 {
                     WidthCm = wcm, HeightCm = hcm, Dpi = dpi, PitchMm = pitch,

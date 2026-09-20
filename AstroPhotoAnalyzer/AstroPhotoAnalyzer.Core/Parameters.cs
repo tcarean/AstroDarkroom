@@ -67,6 +67,22 @@ namespace AstroPhotoAnalyzer
         /// <summary>Samanta alegerii de dale. Fixa, ca doua rulari pe acelasi fisier sa dea aceleasi cifre.</summary>
         internal int Seed { get; init; } = 0;
 
+        /// <summary>
+        /// Regulile care leaga doi parametri intre ei - ce nu poate verifica un camp
+        /// singur. Intoarce mesajul pentru om, sau null cand totul e in regula. Consola
+        /// si fereastra il cheama amandoua, ca sa refuze aceleasi lucruri cu aceleasi
+        /// cuvinte.
+        /// </summary>
+        internal string Validate()
+        {
+            double minPassepartout = Thresholds.PassepartoutMinFrameRatio * FrameCm;
+            if (PassepartoutCm > 0 && PassepartoutCm < minPassepartout)
+                return $"passepartout-ul ({Fmt.F1(PassepartoutCm)} cm) e sub dublul latimii ramei ({Fmt.F1(FrameCm)} cm): "
+                     + $"sub {Fmt.F0(Thresholds.PassepartoutMinFrameRatio)} x rama, rama strange imaginea. "
+                     + $"Mareste passepartout-ul la cel putin {Fmt.F1(minPassepartout)} cm, ia o rama mai ingusta, sau pune 0 pentru fara passepartout.";
+            return null;
+        }
+
         internal static double DmaxOf(PrintMedium m) => m switch
         {
             PrintMedium.Baryta => 2.0,

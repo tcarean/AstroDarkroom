@@ -14,7 +14,7 @@ Optiuni:
   --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)
   --aspect <l:i>                      raportul de aspect tinta, ex. 50:35 (implicit cel nativ)
   --target-bg <0..1>                  fundalul-tinta al simularii de print (implicit 0.19)
-  --passepartout <cm>                 latimea passepartout-ului, pentru marimea exterioara (implicit 7)
+  --passepartout <cm>                 latimea passepartout-ului (implicit 7; cel putin dublul ramei, 0 = fara)
   --frame <cm>                        latimea ramei (implicit 3)
   -o, --out <fisier>                  scrie raportul si in fisier, pe langa stdout
   -h, --help                          acest text

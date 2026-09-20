@@ -71,4 +71,30 @@ public class ParametersTests
     {
         Assert.Throws<ArgumentException>(() => Parameters.MediumFromName("hartie"));
     }
+
+    /// <summary>Regula inramatorilor: passepartout-ul cel putin dublul ramei; 0 = fara, si nu se verifica.</summary>
+    [Theory]
+    [InlineData(7, 3, true)]
+    [InlineData(6, 3, true)]
+    [InlineData(5, 3, false)]
+    [InlineData(4, 2, true)]
+    [InlineData(0, 3, true)]
+    [InlineData(5, 0, true)]
+    public void ThePassepartoutMustBeAtLeastTwiceTheFrame(double passepartout, double frame, bool valid)
+    {
+        string error = new Parameters { PassepartoutCm = passepartout, FrameCm = frame }.Validate();
+
+        if (valid) Assert.Null(error);
+        else
+        {
+            Assert.Contains("dublul", error);
+            Assert.Contains("6.0 cm", error);   // minimul cerut pentru rama de 3
+        }
+    }
+
+    [Fact]
+    public void TheDefaultsValidate()
+    {
+        Assert.Null(new Parameters().Validate());
+    }
 }
