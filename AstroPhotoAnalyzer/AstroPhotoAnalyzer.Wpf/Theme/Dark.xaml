@@ -107,10 +107,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ControlTemplate TargetType="ToolTip">
           <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" MaxWidth="360">
+            <!-- Textele de ajutor au ~900 de caractere si paragrafe: 420 px inseamna ~65 de
+                 caractere pe rand, iar LineHeight lasa aer intre randuri. -->
+            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" MaxWidth="420">
               <ContentPresenter.Resources>
                 <Style TargetType="TextBlock">
                   <Setter Property="TextWrapping" Value="Wrap" />
+                  <Setter Property="LineHeight" Value="17" />
+                  <Setter Property="LineStackingStrategy" Value="BlockLineHeight" />
                   <Setter Property="Foreground" Value="{StaticResource TextBr}" />
                 </Style>
               </ContentPresenter.Resources>

@@ -157,7 +157,9 @@ call it. Currently one rule: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
 checked. The window's distance, aspect and framing fields carry help text
 (`DistanceHelp`, `AspectHelp`, `PassepartoutHelp`, `FrameHelp`) as tooltips on the field
-and its label. The distance one says what the size test does with it (and that without
+and its label. Each text is two to four paragraphs separated by a blank line (`\n\n`),
+which the tooltip wraps at 420 px with a 17 px line height (`Theme/Dark.xaml`); a test
+checks the paragraphs. The distance one says what the size test does with it (and that without
 stars it sets the pixel-grid floor), that empty means 1.5 x each size's own diagonal and
 then no size is recommended (the wall chooses), and
 where 1.5 comes from: the print-and-framing rule of thumb "1-2 x the diagonal", 1 x

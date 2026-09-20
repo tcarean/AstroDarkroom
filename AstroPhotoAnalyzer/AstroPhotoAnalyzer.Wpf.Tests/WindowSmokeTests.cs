@@ -29,6 +29,7 @@ using AstroPhotoAnalyzer.Tests;
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -179,4 +180,22 @@ public class WindowSmokeTests
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
     }
+    /// <summary>
+    /// Tooltipul de ajutor, cu stilul temei si textul real. Un tooltip e un popup, nu se
+    /// vede in randarea ferestrei - de asta se randeaza controlul direct: latimea trebuie
+    /// sa fie cea din tema (nu un rand de un metru), iar textul destul de inalt pentru
+    /// paragrafele lui. APA_DUMP_SCREENS il salveaza ca "tooltip-distanta.png".
+    /// </summary>
+    [Fact]
+    public void TheHelpTooltipRendersAtTheThemeWidth()
+        => _sta.Invoke(() =>
+        {
+            var tip = new ToolTip { Content = new ParameterFields().DistanceHelp };
+            tip.Measure(new Size(1000, 1000));
+            Size s = tip.DesiredSize;
+
+            Assert.InRange(s.Width, 300, 420 + 2 * 8 + 2);   // MaxWidth + padding + bordura
+            Assert.True(s.Height > 12 * 17, "tooltipul e prea scund pentru patru paragrafe: " + s.Height);
+            Render(tip, (int)Math.Ceiling(s.Width), (int)Math.Ceiling(s.Height), "tooltip-distanta");
+        });
 }

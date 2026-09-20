@@ -95,15 +95,22 @@ namespace AstroPhotoAnalyzer.Wpf
             return v;
         }
 
-        /// <summary>Textele de ajutor ale campurilor - aceleasi in tooltip si pe eticheta.</summary>
+        /// <summary>
+        /// Textele de ajutor ale campurilor - aceleasi in tooltip si pe eticheta. Paragrafe
+        /// despartite de o linie goala: un TextBlock respecta '\n', iar un singur bloc de
+        /// 900 de caractere nu se citeste. Un test cere cel putin doua paragrafe fiecaruia.
+        /// </summary>
         public string DistanceHelp =>
             "De la cati metri se va privi printul. Testul de marime: steaua (FWHM x pasul pixelului pe hartie) "
             + "trebuie sa fie punct de la distanta asta - ochiul desface ~0.29 mm la 1 m. Cu o distanta data "
-            + "(hol, birou, canapea) marimile se despart si tabelul recomanda un rand; fara stele, distanta da pragul "
-            + "grilei de pixeli, 25.4 / (0.29 x d) dpi, in locul conventiei de 180. "
+            + "(hol, birou, canapea) marimile se despart si tabelul recomanda un rand."
+            + "\n\n"
+            + "Fara stele, distanta da pragul grilei de pixeli, 25.4 / (0.29 x d) dpi, in locul conventiei de 180."
+            + "\n\n"
             + "Gol = 1.5 x diagonala fiecarei marimi, distanta naturala de la care se priveste un tablou; atunci "
             + "\"punct de la\" si distanta cresc amandoua cu latimea, verdictul e acelasi pe fiecare rand si nu se "
-            + "recomanda nicio marime - o alege peretele. "
+            + "recomanda nicio marime - o alege peretele."
+            + "\n\n"
             + "1.5 vine din regula de print si inramare \"1-2 x diagonala\": 1 x e distanta cu perspectiva "
             + "obiectivului (focala normala = diagonala cadrului), 2 x e practica de galerie; la 1.5 x tabloul "
             + "subintinde ~37 de grade si se cuprinde intreg fara sa misti capul.";
@@ -111,17 +118,21 @@ namespace AstroPhotoAnalyzer.Wpf
         public string AspectHelp =>
             "Raportul latime:inaltime al printului, ex. 50:35 sau 50x35. Gol = raportul nativ al imaginii, fara decupaj - "
             + "asa se trimite la un laborator fine-art, care printeaza la centimetru, orice dimensiune; rama gata facuta "
-            + "nu constrange nici ea, passepartout-ul absoarbe diferenta. Completeaza-l doar pentru un laborator cu formate "
+            + "nu constrange nici ea, passepartout-ul absoarbe diferenta."
+            + "\n\n"
+            + "Completeaza-l doar pentru un laborator cu formate "
             + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
 
         public string PassepartoutHelp =>
             "Latimea benzii de carton dintre imagine si rama, pe fiecare latura. Regula inramatorilor: "
-            + "10-15 % din latimea imaginii si cel putin dublul latimii ramei - sub asta rama strange imaginea. "
+            + "10-15 % din latimea imaginii si cel putin dublul latimii ramei - sub asta rama strange imaginea."
+            + "\n\n"
             + "0 = fara passepartout. Galeriile fac latura de jos cu ~1 cm mai lata.";
 
         public string FrameHelp =>
             "Latimea profilului ramei vazuta din fata, pe fiecare latura. Pentru un print de 60-80 cm: 3-4 cm, "
-            + "neagra mata; o rama mai lata cere un passepartout pe masura (cel putin dublul ei). "
+            + "neagra mata; o rama mai lata cere un passepartout pe masura (cel putin dublul ei)."
+            + "\n\n"
             + "Intra doar in marimea exterioara a tabloului.";
 
         static double[] SizesOf(string text)

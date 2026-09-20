@@ -117,6 +117,23 @@ public class ParameterFieldsTests
         Assert.Contains("1-2 x diagonala", f.DistanceHelp);
     }
 
+    /// <summary>
+    /// Un singur bloc de 900 de caractere nu se citeste intr-un tooltip: fiecare text de
+    /// ajutor e in paragrafe despartite de o linie goala, fara spatii la capete.
+    /// </summary>
+    [Fact]
+    public void TheHelpTextsAreParagraphs()
+    {
+        var f = new ParameterFields();
+        foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.PassepartoutHelp, f.FrameHelp })
+        {
+            string[] paragraphs = help.Split("\n\n");
+            Assert.True(paragraphs.Length >= 2, "un singur paragraf: " + help);
+            Assert.All(paragraphs, p => Assert.Equal(p.Trim(), p));
+            Assert.All(paragraphs, p => Assert.DoesNotContain("\n", p));
+        }
+    }
+
     [Fact]
     public void TheMediaListIsTheCoreOne()
     {
