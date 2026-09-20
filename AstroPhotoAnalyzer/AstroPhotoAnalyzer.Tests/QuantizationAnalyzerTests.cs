@@ -1,0 +1,117 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+namespace AstroPhotoAnalyzer.Tests;
+
+public class QuantizationAnalyzerTests
+{
+    static Raster Sixteen(Raster r) { r.Source = new SourceInfo { BitDepth = 16, IsFloat = false }; return r; }
+
+    [Fact]
+    public void ANoiselessSlowRampHasLongPlateausThatWouldShowOnPaper()
+    {
+        // 0.10 -> 0.11 pe 256 px: 2.5 niveluri pe toata latimea, deci sub un pas pe dala.
+        var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
+
+        Assert.True(q.PlateauKnown);
+        Assert.True(q.PlateauTiles > 50, "dale: " + q.PlateauTiles);
+        Assert.True(q.PlateauPx > 20, "palier px: " + q.PlateauPx);
+        Assert.True(q.PlateauVisibleAt(200));
+        Assert.Equal(q.PlateauPx * 25.4 / 200, q.PlateauMmAt(200), 9);
+    }
+
+    [Fact]
+    public void ALittleNoiseDithersThePlateausAway()
+    {
+        var r = SyntheticRasters.AddNoise(SyntheticRasters.Flat(256, 256, 0.10f), 0.5 / 255, 4);
+        var q = QuantizationAnalyzer.Analyze(r);
+
+        Assert.True(q.PlateauKnown);
+        Assert.InRange(q.PlateauPx, 1.0, 6.0);
+        Assert.False(q.PlateauVisibleAt(200));
+    }
+
+    [Fact]
+    public void ABrightOrStructuredImageHasNoPlateauTiles()
+    {
+        // Media peste 70 de niveluri: nu e cer, nu se masoara.
+        var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(256, 256, 0.5f));
+
+        Assert.Equal(0, q.PlateauTiles);
+        Assert.False(q.PlateauKnown);
+        Assert.False(q.PlateauVisibleAt(200));
+    }
+
+    [Fact]
+    public void RoundingToEightBitsIsHalfALevelAtMost()
+    {
+        var rng = new SeededRandom(8);
+        var r = Sixteen(SyntheticRasters.From(64, 64, 3, (x, y, p) => rng.Next(65536) / 65535f));
+        var q = QuantizationAnalyzer.Analyze(r);
+
+        Assert.True(q.Applicable);
+        Assert.InRange(q.RoundingMeanAbs, 0.24, 0.26);
+        Assert.True(q.RoundingMax <= 0.5001, "max: " + q.RoundingMax);
+        Assert.InRange(q.RoundingP999, 0.45, 0.501);
+    }
+
+    [Fact]
+    public void TheShadowLiftStressShowsWhatEightBitsLoses()
+    {
+        // O rampa continua 0 -> 0.5: ridicata, foloseste toate nivelurile din umbre. Aceeasi
+        // rampa cuantizata intai la 8 biti lasa goluri intre ele.
+        var r = Sixteen(SyntheticRasters.Ramp(4, 4096, 0f, 0.5f));
+        var q = QuantizationAnalyzer.Analyze(r);
+
+        Assert.Equal(111, q.LevelsUsedFrom16);
+        Assert.Equal(0, q.MissingFrom16);
+        Assert.True(q.LevelsUsedFrom8 < 90, "din 8 biti: " + q.LevelsUsedFrom8);
+        Assert.True(q.MissingFrom8 > 20, "lipsa din 8 biti: " + q.MissingFrom8);
+        Assert.True(q.Keep16BitMaster);
+    }
+
+    [Fact]
+    public void OnAnEightBitSourceThereIsNothingToLose()
+    {
+        var r = SyntheticRasters.Ramp(4, 4096, 0f, 0.5f);
+        r.Source = new SourceInfo { BitDepth = 8, IsFloat = false };
+        var q = QuantizationAnalyzer.Analyze(r);
+
+        Assert.False(q.Applicable);
+        Assert.False(q.Keep16BitMaster);
+        Assert.Equal(0, q.RoundingMax);
+    }
+
+    [Fact]
+    public void ARasterSmallerThanATileHasNoPlateau()
+    {
+        var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(32, 32, 0.1f));
+
+        Assert.Equal(0, q.PlateauTiles);
+        Assert.False(q.PlateauKnown);
+    }
+
+    [Fact]
+    public void HistogramPercentileFindsTheBin()
+    {
+        var hist = new long[10];
+        hist[2] = 50; hist[7] = 50;
+
+        Assert.Equal(2, QuantizationAnalyzer.PercentileFromHistogram(hist, 100, 50));
+        Assert.Equal(7, QuantizationAnalyzer.PercentileFromHistogram(hist, 100, 99));
+    }
+}

@@ -1,8 +1,8 @@
 # Implementation plan
 
-Status: **phases 0-2 done** (skeleton; input layer; file/tonal/noise/background
-analyzers). Phases 3-7 pending. Each phase compiles and passes its tests before the next
-starts; the user commits per phase.
+Status: **phases 0-3 done** (skeleton; input layer; all analyzers). Phases 4-7 pending.
+Each phase compiles and passes its tests before the next starts; the user commits per
+phase.
 
 ## Decisions taken before the first line
 
@@ -88,7 +88,7 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 | 0 | skeleton: sln, props, LICENSE, notices, CLAUDE.md, README, icon, Core plumbing (Version, ThirdParty, RunReport), console (Options, Cli), plumbing tests | **done** |
 | 1 | Core `Input/`: `Raster`, `RasterOps`, `ColorMath`, `Stats`, `FitsReader` (copied, trimmed, streaming), `ImageSharpReader`, `IccProfileInfo`, `ImageLoader`; `Parameters`, `Thresholds`; synthetic rasters, hand-built FITS/TIFF/PNG and ICC fixtures for tests | **done** |
 | 2 | Core `Analysis/`: `FileFacts`, `BitDepthAnalyzer`, `TonalAnalyzer`, `NoiseAnalyzer`, `PrintStretchSimulator`, `BackgroundAnalyzer`, `CropAnalyzer` + tests with known answers | **done** |
-| 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | |
+| 3 | Core `Analysis/`: `StarAnalyzer`, `PrintSizeAnalyzer`, `QuantizationAnalyzer`, `JpegAnalyzer` + tests | **done** |
 | 4 | Core `Report/`: `Recommendations`, `ReportWriter`; `Runs/AnalysisRun`; console wired; golden tests | |
 | 5 | WPF skeleton: theme, title bar, MVVM, About, parameters panel, Raport tab; `WindowSmokeTests`, `CultureTests` | |
 | 6 | WPF tabs: Tonuri, Export, Rezolutie, Fundal, Preview | |
@@ -108,6 +108,25 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
   ties, so the acceptance numbers are unaffected.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
+
+## Notes from phase 3
+
+- **All star candidates are scanned, not a random 20 000.** The acceptance script drew
+  20 000 candidates at random and kept 193 stars; the analyzer keeps every pixel that
+  is the maximum of its 25x25 window. Deterministic, better sampled, same estimator.
+  Expect the same median on more stars.
+- **The half-max estimator has a known bias of ~+2.5 % on a sampled Gaussian** (linear
+  interpolation between 1 and 2 px on a convex curve). A true FWHM of 3.0 measures
+  ~3.08. Kept as is: it is the acceptance script's estimator, and the bias is far
+  smaller than the star-to-star spread.
+- **The JPEG numbers are ImageSharp's encoder's numbers.** The conversation's table was
+  produced with ImageMagick (libjpeg). Both are 4:4:4; the q100 mean error will differ
+  by tenths of a level because the two encoders' RGB<->YCbCr integer paths differ. The
+  acceptance comparison for C3 is therefore approximate. Mean error is not monotone in
+  quality at these near-lossless levels (measured); max error and the count of pixels
+  over 2 levels are, and those drive the recommendation.
+- **Percentiles over 69 million error samples come from a histogram** (0.01-level bins),
+  not a sort: exact to the bin, a hundred times cheaper.
 
 ## Things measured about ImageSharp 3.1.11 while building phase 1
 

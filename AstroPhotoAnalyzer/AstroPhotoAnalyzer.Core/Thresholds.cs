@@ -148,6 +148,28 @@ namespace AstroPhotoAnalyzer
         /// <summary>Latura unei regiuni de colt, ca fractie din latura imaginii.</summary>
         internal const double RegionFraction = 0.2;
 
+        /// <summary>
+        /// Latura regiunii centrale, ca fractie. Mai mare decat coltul, ca sa aiba destule
+        /// stele: centrul unei astrofoto e adesea nucleul, unde stelele se pierd in
+        /// nebulozitate, iar o mediana pe trei stele nu e o mediana.
+        /// </summary>
+        internal const double CenterFraction = 0.4;
+
+        /// <summary>Sub atatea stele masurate FWHM-ul global nu e de incredere.</summary>
+        internal const int StarMinCount = 20;
+
+        /// <summary>Sub atatea stele intr-o regiune, FWHM-ul ei nu se raporteaza.</summary>
+        internal const int RegionMinStars = 5;
+
+        /// <summary>Cati candidati se incearca pentru dalele palierului inainte de a renunta.</summary>
+        internal const int PlateauMaxAttempts = 5000;
+
+        /// <summary>Fara FWHM (prea putine stele), marimea se recomanda dupa dpi: cel putin atat.</summary>
+        internal const double FallbackMinDpi = 180;
+
+        /// <summary>Calitatile JPEG din tabel. 100 e singura recomandabila; 95 si 90 arata de ce.</summary>
+        internal static readonly int[] JpegQualities = { 100, 95, 90 };
+
         // ------------------------------------------------------------ fundal
 
         /// <summary>Fundalul = cei mai intunecati atatia pixeli (fractie) ...</summary>
