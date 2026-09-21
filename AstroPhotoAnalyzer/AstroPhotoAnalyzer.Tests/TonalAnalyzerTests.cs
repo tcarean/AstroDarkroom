@@ -90,6 +90,29 @@ public class TonalAnalyzerTests
         Assert.Equal(0, TonalAnalyzer.Analyze(r, new Parameters { Medium = PrintMedium.Acrylic }).PctBelowPaperBlack);
     }
 
+    /// <summary>
+    /// Tabela nivel - L*: cele trei negre, 32/64, L* 15/50 si fundalul-tinta, crescator
+    /// dupa L*; mediul ales e marcat, iar un Dmax explicit care nu e al niciunui mediu
+    /// isi aduce randul lui.
+    /// </summary>
+    [Fact]
+    public void TheLadderListsEveryReferenceInLstarOrder()
+    {
+        var ladder = TonalAnalyzer.LstarLadder(Baryta);
+
+        Assert.Equal(3 + 2 + 2 + 1, ladder.Count);
+        Assert.Equal(ladder.OrderBy(l => l.Lstar).Select(l => l.Lstar), ladder.Select(l => l.Lstar));
+        var chosen = Assert.Single(ladder, l => l.Chosen);
+        Assert.Contains("baryta", chosen.Meaning);
+        Assert.Equal(25.5, chosen.GrayLevel, 1);
+        Assert.Equal(12.3, ladder.Single(l => l.GrayLevel == Thresholds.DarkLevelA).Lstar, 1);
+        Assert.Equal(20.1, ladder.Single(l => l.Meaning.StartsWith("fundalul-tinta 0.19")).Lstar, 1);
+
+        var custom = TonalAnalyzer.LstarLadder(new Parameters { DmaxOverride = 1.8 });
+        Assert.Equal(9, custom.Count);
+        Assert.Contains("Dmax explicit 1.80", Assert.Single(custom, l => l.Chosen).Meaning);
+    }
+
     [Fact]
     public void MonoUsesItsOnlyPlaneAsReference()
     {

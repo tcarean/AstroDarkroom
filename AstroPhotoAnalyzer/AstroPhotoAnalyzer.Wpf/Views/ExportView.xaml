@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ExportView - tabelul JPEG, rotunjirea, stresul shadow-lift, palierul. -->
+<!-- ExportView - tabelul JPEG cu paragrafele care il explica sub el, apoi rotunjirea, stresul
+     shadow-lift si palierul, fiecare cu descrierea lui sub nume. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ExportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -28,14 +29,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="JPEG, ENCODAT IN MEMORIE SI COMPARAT CU FISIERUL DE 16 BITI" />
           <ItemsControl ItemsSource="{Binding JpegRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
-          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                     Text="Eroarea include rotunjirea la 8 biti. Recomandarea se sprijina pe eroarea maxima si pe pixelii cu eroare peste 2 niveluri, nu pe medie." />
+          <ItemsControl ItemsSource="{Binding JpegGuide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" Margin="0,10,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="CUANTIZARE" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource MetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
         </StackPanel>
       </Border>
     </StackPanel>

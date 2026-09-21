@@ -463,7 +463,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
   </DataTemplate>
 
-  <!-- Un rand eticheta / valoare / nota, folosit de toate anexele. -->
+  <!-- Un rand eticheta / valoare / descriere / nota, folosit de toate anexele. Eticheta si
+       descrierea stau impreuna in coloana din stanga; descrierea se rupe pe randuri acolo
+       si nu intra sub cifre. -->
   <DataTemplate x:Key="MetricRowTemplate">
     <Grid Margin="0,0,0,7">
       <Grid.ColumnDefinitions>
@@ -474,11 +476,48 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
       </Grid.RowDefinitions>
-      <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" />
-      <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Value}" Margin="12,0,0,0" VerticalAlignment="Center" />
+      <StackPanel Grid.Column="0">
+        <TextBlock Text="{Binding Label}" TextWrapping="Wrap" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,2,0,0" TextWrapping="Wrap"
+                   Text="{Binding Description}" Visibility="{Binding Description, Converter={StaticResource NotNullToVis}}" />
+      </StackPanel>
+      <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Value}" Margin="24,1,0,0" VerticalAlignment="Top" />
       <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource Faint}" Margin="0,2,0,0"
                  Text="{Binding Note}" Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
     </Grid>
+  </DataTemplate>
+
+  <!-- Acelasi rand, pentru panourile cu descrieri (Tonuri, Rezolutie): doua coloane egale
+       pe toata latimea cardului - numele si descrierea in jumatatea stanga, cifra aliniata
+       la dreapta in cealalta. Latimea fixa in procente tine toate descrierile la aceeasi
+       margine, indiferent cat de lunga e valoarea randului. Randurile stau mai rar decat
+       in MetricRowTemplate, fiindca fiecare e un paragraf, nu o linie. -->
+  <DataTemplate x:Key="DescribedMetricRowTemplate">
+    <Grid Margin="0,0,0,14">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <StackPanel Grid.Column="0" Margin="0,0,24,0">
+        <TextBlock Text="{Binding Label}" TextWrapping="Wrap" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,3,0,0" TextWrapping="Wrap" LineHeight="16"
+                   Text="{Binding Description}" Visibility="{Binding Description, Converter={StaticResource NotNullToVis}}" />
+      </StackPanel>
+      <TextBlock Grid.Column="1" Style="{StaticResource Number}" Text="{Binding Value}" Margin="0,1,0,0" VerticalAlignment="Top" />
+      <TextBlock Grid.Row="1" Grid.Column="0" TextWrapping="Wrap" Style="{StaticResource Faint}" Margin="0,2,0,0"
+                 Text="{Binding Note}" Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
+    </Grid>
+  </DataTemplate>
+
+  <!-- Un paragraf de panou explicativ: inceputul ingrosat, apoi textul, rupt pe randuri. -->
+  <DataTemplate x:Key="GuideParagraphTemplate">
+    <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8">
+      <Run Text="{Binding Lead, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource TextBr}" /><Run Text=" " /><Run Text="{Binding Text, Mode=OneWay}" />
+    </TextBlock>
   </DataTemplate>
 
   <!-- Un rand de tabel cu celule mono: coloanele le da ViewModel-ul ca un singur sir
@@ -488,15 +527,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <TextBlock Style="{StaticResource Mono}" Text="{Binding}" Margin="0,0,0,2" />
   </DataTemplate>
 
-  <!-- O previzualizare: titlu, imagine la pixel, nota. -->
+  <!-- O previzualizare: titlu, imagine la pixel, nota, apoi ce verifici in ea. Textele se rup
+       pe latimea imaginii (bitmap-urile sunt la 96 dpi, deci PixelWidth e latimea in DIU);
+       altfel ar lati cardul cat propozitia. -->
   <DataTemplate x:Key="PreviewTileTemplate">
     <Border Style="{StaticResource Card}" Margin="0,0,12,12" Padding="10">
       <StackPanel>
         <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,6" />
         <Image Source="{Binding Image}" Stretch="None" HorizontalAlignment="Left"
                RenderOptions.BitmapScalingMode="NearestNeighbor" SnapsToDevicePixels="True" />
-        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" Text="{Binding Note}"
+        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" Text="{Binding Note}" TextWrapping="Wrap"
+                   MaxWidth="{Binding Image.PixelWidth}" HorizontalAlignment="Left"
                    Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
+        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" Text="{Binding Check}" TextWrapping="Wrap" LineHeight="16"
+                   MaxWidth="{Binding Image.PixelWidth}" HorizontalAlignment="Left"
+                   Visibility="{Binding Check, Converter={StaticResource NotNullToVis}}" />
       </StackPanel>
     </Border>
   </DataTemplate>

@@ -123,6 +123,20 @@ namespace AstroPhotoAnalyzer.Wpf
             + "Completeaza-l doar pentru un laborator cu formate "
             + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
 
+        public string TargetBgHelp =>
+            $"Nivelul (0..1) la care simularea ridica cerul, ca sa vada daca printul mai are fundal peste negrul "
+            + $"hartiei. Pe ecran {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
+            + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru. Un print vrea cerul la "
+            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}."
+            + "\n\n"
+            + "Fundalul masurat = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
+            + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara L*. E o simulare, nu stretch-ul lui Siril, "
+            + "dar fundalul ajunge in acelasi loc."
+            + "\n\n"
+            + $"Implicit {Fmt.F2(D.TargetBackground)}: cea mai mica tinta care a facut imaginea de referinta print-safe pe "
+            + $"baryta (sub {Fmt.F0(Thresholds.PaperBlackOkPct)} % din pixeli sub negru). Tabelul incearca oricum si "
+            + $"{string.Join(" si ", D.SimulationTargets.Select(Fmt.F2))}.";
+
         public string PassepartoutHelp =>
             "Latimea benzii de carton dintre imagine si rama, pe fiecare latura. Regula inramatorilor: "
             + "10-15 % din latimea imaginii si cel putin dublul latimii ramei - sub asta rama strange imaginea."

@@ -49,6 +49,21 @@ namespace AstroPhotoAnalyzer
         internal static double LstarOfY(double y)
             => y > 0.008856 ? 116 * Math.Cbrt(y) - 16 : 903.3 * y;
 
+        /// <summary>Inversa lui LstarOfY: luminanta relativa Y (0..1) a unui L*.</summary>
+        internal static double YOfLstar(double l)
+            => l > 903.3 * 0.008856 ? Math.Pow((l + 16) / 116, 3) : l / 903.3;
+
+        /// <summary>
+        /// Nivelul de 8 biti (0..255, fractionar) al unui gri R = G = B cu L*-ul dat - ce
+        /// citesti pe histograma din Siril pentru un prag exprimat in L*.
+        /// </summary>
+        internal static double GrayLevelOfLstar(double l)
+            => LinearToSrgb(YOfLstar(l)) * 255;
+
+        /// <summary>L*-ul unui gri R = G = B la nivelul de 8 biti dat.</summary>
+        internal static double LstarOfGrayLevel(double level)
+            => LstarOfY(SrgbToLinear(level / 255));
+
         /// <summary>
         /// L*-ul unui pixel sRGB. Pe mono, cele trei componente sunt aceeasi valoare si
         /// ponderile se aduna la 1, deci formula e aceeasi.

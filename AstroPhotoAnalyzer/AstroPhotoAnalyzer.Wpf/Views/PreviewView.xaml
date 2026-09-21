@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- PreviewView - decupaje la pixel, cadrul intreg, simularea de print si decupajul,
-     toate din memorie. Nu se scrie niciun fisier. -->
+<!-- PreviewView - cardul cu regula ecran - hartie, apoi decupaje la pixel, cadrul intreg,
+     simularea de print si decupajul, fiecare cu ce verifici in ea, toate din memorie. Nu se
+     scrie niciun fisier. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.PreviewView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -26,12 +27,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <!-- Scroll orizontal DEZACTIVAT: cu el, WrapPanel-ul ar primi latime infinita la masurare
        si n-ar rupe niciodata randul - cardurile ar iesi in dreapta, taiate. -->
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="20,16">
-    <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource PreviewTileTemplate}">
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <WrapPanel Orientation="Horizontal" />
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-    </ItemsControl>
+    <StackPanel>
+      <Border Style="{StaticResource Card}" Margin="0,0,12,12" MaxWidth="1100" HorizontalAlignment="Left"
+              Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="CUM SE FOLOSESTE PREVIEW-UL" />
+          <ItemsControl ItemsSource="{Binding Guide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" />
+        </StackPanel>
+      </Border>
+      <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource PreviewTileTemplate}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+    </StackPanel>
   </ScrollViewer>
 </UserControl>

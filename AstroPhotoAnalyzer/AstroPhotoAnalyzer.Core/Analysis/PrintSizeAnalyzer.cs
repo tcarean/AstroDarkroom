@@ -85,6 +85,19 @@ namespace AstroPhotoAnalyzer
         internal double FwhmPx { get; init; }
         internal bool FwhmKnown => !double.IsNaN(FwhmPx);
         internal double EffectiveDetailPx => FwhmKnown ? PixelW / FwhmPx : double.NaN;
+
+        /// <summary>
+        /// Cat de lat ar fi printul cu pasul pixelului unui monitor (Thresholds.ScreenPixelMm):
+        /// ce arata o vedere la 100 % pe ecran. Doar pentru Preview.
+        /// </summary>
+        internal double ScreenEquivalentWidthCm => PixelW * Thresholds.ScreenPixelMm / 10;
+
+        /// <summary>
+        /// De cate ori distanta fata de monitor trebuie privita dala de 100 % ca sa arate ca
+        /// printul de referinta de la distanta monitorului: latimea echivalenta / latimea lui.
+        /// Sub 1 printul e mai mare decat ecranul la 100 %. NaN fara rand de referinta.
+        /// </summary>
+        internal double ScreenStepBackFactor => ReferenceRow == null ? double.NaN : ScreenEquivalentWidthCm / ReferenceRow.WidthCm;
         internal bool DistanceIsExplicit { get; init; }
 
         /// <summary>

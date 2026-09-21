@@ -17,7 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- BackgroundView - culoarea fundalului si cele opt regiuni de margine. -->
+<!-- BackgroundView - culoarea fundalului, fiecare cifra cu descrierea ei, si cele opt regiuni
+     de margine, cu paragrafele care explica tabelul sub el. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.BackgroundView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -27,13 +28,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="CULOAREA FUNDALULUI" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource MetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="COLTURI SI LATURI, FATA DE FUNDAL (R / G / B, niveluri); ! = peste prag" />
+          <TextBlock Style="{StaticResource Heading}" Text="COLTURI SI LATURI, FATA DE FUNDAL (R / G / B, niveluri); ! = peste prag, colorat sau neutru" />
           <ItemsControl ItemsSource="{Binding RegionRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Guide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" Margin="0,10,0,0" />
         </StackPanel>
       </Border>
     </StackPanel>

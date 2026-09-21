@@ -129,6 +129,20 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
 - **Edge-region verdicts changed after the real image** - see
   `acceptance-de-printat.md`: neutral brightening is informative, coloured departure is
   Attention.
+- **The explanation pass (after phase 7).** Every metric row got a `Description`, every
+  mono table its `GuideParagraph`s, every preview tile a `Check`, proposed and reviewed
+  tab by tab. The texts live in the view-models - the one sentence a view-model writes -
+  but every number in them is interpolated, and three literals had to be lifted into
+  `Thresholds` to make that possible: the edge-region fractions (analyzer), the 5 % of
+  samples over 2 levels at q100 (recommendations), the monitor pixel pitch (new). Two
+  things the pass changed beyond text: the Fundal table marks a flagged region
+  "! colorat" / "! neutru" in the window (the report keeps "!"; the distinction was only
+  in the recommendations), and the Preview tab computes the screen-versus-paper rule on
+  the image (`ScreenEquivalentWidthCm`, `ScreenStepBackFactor`, window only) with two
+  branches, since a small image prints larger than its 100 % view - the synthetic scenes
+  are 512 px and land on that branch. Layout lessons: described rows need two equal
+  columns, not label/auto, or the longest value narrows every description; a preview
+  tile's text must wrap to the image's width or it widens the card.
 
 ## Notes from phase 4
 

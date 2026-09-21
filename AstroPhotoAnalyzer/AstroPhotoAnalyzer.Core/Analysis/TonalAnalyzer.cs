@@ -20,13 +20,16 @@
 //
 // Doua scari, deliberat. B1 e in NIVELURI (0..255), limbajul histogramei si al oricarui
 // editor - "96 % din pixeli sub 64". B2 e in L*, limbajul hartiei: negrul unui mediu e
-// un L* (din Dmax), si ce e sub el se printeaza cu acelasi negru. Cele doua nu se
-// convertesc una in alta cu o formula simpla, de asta se raporteaza amandoua.
+// un L* (din Dmax), si ce e sub el se printeaza cu acelasi negru. Pe gri trecerea e o
+// curba fixa (ColorMath.GrayLevelOfLstar, tabela LstarLadder); pe culoare acelasi nivel
+// da alt L* dupa nuanta, iar B1 numara esantioane pe canale, B2 pixeli - de asta se
+// raporteaza amandoua.
 //
 // Pasii de subesantionare sunt cei ai scripturilor de acceptanta (Thresholds.*Stride).
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
@@ -61,8 +64,47 @@ namespace AstroPhotoAnalyzer
         internal bool PrintSafe => PctBelowPaperBlack < Thresholds.PaperBlackOkPct;
     }
 
+    /// <summary>
+    /// Un rand al tabelei nivel - L*: un reper al tabului, cu L*-ul lui si nivelul de 8 biti
+    /// al unui gri cu acelasi L*. Chosen = negrul mediului pe care se judeca imaginea.
+    /// </summary>
+    internal sealed record LstarLadderRow(double Lstar, double GrayLevel, string Meaning, bool Chosen = false);
+
     internal static class TonalAnalyzer
     {
+        /// <summary>
+        /// Tabela de corespondenta nivel - L* pentru reperele tabului: negrul celor trei
+        /// medii, pragurile in niveluri (32/64), pragurile in L* (15/50) si fundalul-tinta.
+        /// Nu masoara nimic din imagine - e fereastra care o arata, ca sa se poata citi un
+        /// prag in L* pe histograma din Siril. Valabila pe gri; pe culoare acelasi nivel da
+        /// alt L* dupa nuanta. Crescator dupa L*.
+        /// </summary>
+        internal static IReadOnlyList<LstarLadderRow> LstarLadder(Parameters p)
+        {
+            var rows = new List<LstarLadderRow>();
+            bool chosenIsMedium = false;
+            foreach (PrintMedium m in Enum.GetValues(typeof(PrintMedium)))
+            {
+                double dmax = Parameters.DmaxOf(m);
+                bool chosen = Math.Abs(dmax - p.Dmax) < 1e-9;
+                chosenIsMedium |= chosen;
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.F1(dmax)})", chosen));
+            }
+            if (!chosenIsMedium)
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax explicit {Fmt.F2(p.Dmax)}", true));
+            rows.Add(FromLevel(Thresholds.DarkLevelA, $"pragul \"sub nivelul {Thresholds.DarkLevelA}\""));
+            rows.Add(FromLevel(Thresholds.DarkLevelB, $"pragul \"sub nivelul {Thresholds.DarkLevelB}\""));
+            rows.Add(FromLstar(Thresholds.LowSeparationLstar, "separare slaba"));
+            rows.Add(FromLstar(Thresholds.HighlightLstar, "lumini"));
+            rows.Add(FromLevel(p.TargetBackground * 255, $"fundalul-tinta {Fmt.F2(p.TargetBackground)}"));
+            return rows.OrderBy(r => r.Lstar).ToList();
+
+            static LstarLadderRow FromLstar(double l, string meaning, bool chosen = false)
+                => new(l, ColorMath.GrayLevelOfLstar(l), meaning, chosen);
+            static LstarLadderRow FromLevel(double level, string meaning)
+                => new(ColorMath.LstarOfGrayLevel(level), level, meaning);
+        }
+
         internal static TonalResult Analyze(Raster r, Parameters p)
         {
             // B1: pe toti pixelii - medii si numaratori, o singura trecere pe plan.

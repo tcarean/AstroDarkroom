@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ResolutionView - FWHM-ul si regiunile, apoi tabelul de marimi, cu randul recomandat cand exista unul,
-     si scara dpi - distanta, ca sa se citeasca coloana "dpi" fata de fizica, nu fata de 300. -->
+<!-- ResolutionView - FWHM-ul si regiunile, fiecare cu descrierea lui sub nume (colturile fara: le
+     acopera cea de pe centru), apoi tabelul de marimi, cu randul recomandat cand exista unul, si scara
+     dpi - distanta, ca sa se citeasca coloana "dpi" fata de fizica, nu fata de 300. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ResolutionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -28,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="REZOLUTIA REALA: LATIMEA STELELOR" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource MetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}">

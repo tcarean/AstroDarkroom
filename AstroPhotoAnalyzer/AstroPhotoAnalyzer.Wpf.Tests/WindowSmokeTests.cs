@@ -147,7 +147,7 @@ public class WindowSmokeTests
             Render(new ReportView { DataContext = vm.Report }, name: "tab-raport");
             vm.Report.ShowText = true;
             Render(new ReportView { DataContext = vm.Report }, h: 2200, name: "tab-raport-text");
-            Render(new TonesView { DataContext = vm.Tones }, name: "tab-tonuri");
+            Render(new TonesView { DataContext = vm.Tones }, h: 2000, name: "tab-tonuri");
             Render(new ExportView { DataContext = vm.Export }, name: "tab-export");
             Render(new ResolutionView { DataContext = vm.Resolution }, name: "tab-rezolutie");
             Render(new BackgroundView { DataContext = vm.Background }, name: "tab-fundal");

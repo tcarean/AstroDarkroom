@@ -140,7 +140,7 @@ namespace AstroPhotoAnalyzer
         {
             // Coltul: 15 % din inaltime x 20 % din latime (regiunea din script). Latura: o
             // banda de aceeasi grosime, pe mijlocul laturii, intre colturi.
-            int ch = (int)(s.H * 0.15), cw = (int)(s.W * 0.20);
+            int ch = (int)(s.H * Thresholds.EdgeRegionHeightFraction), cw = (int)(s.W * Thresholds.EdgeRegionWidthFraction);
             var defs = new (string Name, int X0, int Y0, int W, int H)[]
             {
                 ("colt stanga-sus",    0,         0,         cw,           ch),

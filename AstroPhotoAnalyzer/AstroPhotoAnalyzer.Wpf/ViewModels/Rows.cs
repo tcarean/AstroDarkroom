@@ -45,6 +45,16 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Label { get; init; }
         public string Value { get; init; }
         public string Note { get; init; }
+
+        /// <summary>Ce masoara randul, sub eticheta; null = fara descriere.</summary>
+        public string Description { get; init; }
+    }
+
+    /// <summary>Un paragraf dintr-un panou explicativ: un inceput ingrosat, apoi textul.</summary>
+    public sealed class GuideParagraph
+    {
+        public string Lead { get; init; }
+        public string Text { get; init; }
     }
 
     public sealed class PreviewTile
@@ -52,6 +62,9 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Title { get; init; }
         public BitmapSource Image { get; init; }
         public string Note { get; init; }
+
+        /// <summary>Ce verifici in dala asta, sub ea; se rupe pe latimea imaginii.</summary>
+        public string Check { get; init; }
     }
 
     public sealed class ComponentRow

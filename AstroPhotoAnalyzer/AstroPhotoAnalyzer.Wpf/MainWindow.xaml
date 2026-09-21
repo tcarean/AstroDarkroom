@@ -102,8 +102,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBox Style="{StaticResource Field}" Text="{Binding Aspect, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding AspectHelp}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="Fundal-tinta al simularii (0..1)" />
-            <TextBox Style="{StaticResource Field}" Text="{Binding TargetBg, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10" />
+            <TextBlock Style="{StaticResource Faint}" Text="Fundal-tinta al simularii (0..1)" ToolTip="{Binding TargetBgHelp}" />
+            <TextBox Style="{StaticResource Field}" Text="{Binding TargetBg, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
+                     ToolTip="{Binding TargetBgHelp}" />
 
             <Grid Margin="0,0,0,10">
               <Grid.ColumnDefinitions>

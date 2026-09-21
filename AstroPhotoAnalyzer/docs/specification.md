@@ -124,6 +124,9 @@ frame sits at 0.001-0.01; a finished image at 0.08-0.25.
 sRGB <-> linear per IEC 61966-2-1; Y = 0.2126 R + 0.7152 G + 0.0722 B on linear values;
 L\* per CIE 1976 with the linear segment below Y = 0.008856; **paper black** =
 L\*(10^-Dmax): baryta 2.0 -> 9.0, canvas 1.5 -> 20.7, acrylic C-print 2.2 -> 5.7.
+`YOfLstar` is the exact inverse of `LstarOfY` (both segments); `GrayLevelOfLstar` /
+`LstarOfGrayLevel` go between an L\* and the 8-bit level of a grey (R = G = B) with that
+L\* - one fixed curve, used only by the window's level - L\* table and guide text.
 
 ### Statistics (`Input/Stats.cs`)
 
@@ -155,8 +158,9 @@ Rules between parameters are the core's: `Parameters.Validate()` returns a messa
 null, and both the console (exit 1, before any reading) and the window (the error text)
 call it. Currently one rule: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
-checked. The window's distance, aspect and framing fields carry help text
-(`DistanceHelp`, `AspectHelp`, `PassepartoutHelp`, `FrameHelp`) as tooltips on the field
+checked. The window's distance, aspect, target-background and framing fields carry help
+text (`DistanceHelp`, `AspectHelp`, `TargetBgHelp`, `PassepartoutHelp`, `FrameHelp`) as
+tooltips on the field
 and its label. Each text is two to four paragraphs separated by a blank line (`\n\n`),
 which the tooltip wraps at 420 px with a 17 px line height (`Theme/Dark.xaml`); a test
 checks the paragraphs. The distance one says what the size test does with it (and that without
@@ -167,7 +171,15 @@ being the lens's own perspective (a normal focal length equals the frame diagona
 2 x gallery practice; at 1.5 x the print subtends ~37 degrees. The aspect one says that
 empty means the native ratio with no crop (what a fine-art lab needs), that a ready-made
 frame does not constrain it either (the passepartout absorbs the difference), and that it
-is for labs with fixed formats.
+is for labs with fixed formats. The target-background one says what the level is for
+(the simulation lifts the sky to it, to see whether the print keeps a background above
+paper black), where a screen image's sky usually sits and where a print's should
+(`ScreenBackgroundLo`-`Hi`, `PrintBackgroundLo`-`Hi`), how the measured background is
+taken (the median of the green channel over the whole frame) and how the simulation
+uses it (gamma = ln(target) / ln(background), a simulation and not Siril's stretch),
+and where the default comes from (the lowest target that made the reference image
+print-safe on baryta, under `PaperBlackOkPct`), with the extra `SimulationTargets`
+the table tries anyway.
 
 ## 5. Measurements
 
@@ -217,6 +229,14 @@ Flags: `PrintSafe` = below paper black < `PaperBlackOkPct` (2 %);
 `BackgroundTooLowForPaper` = > `PaperBlackWarnPct` (20 %).
 
 `LstarStats(raster, dmax, stride)` is public for the simulator.
+
+`LstarLadder(parameters)` is a reference table, not a measurement (window only, like
+`DpiLadder`): one `LstarLadderRow(Lstar, GrayLevel, Meaning, Chosen)` per reference of
+the tab - the paper black of each of the three media (`Chosen` on the one whose Dmax is
+`Parameters.Dmax`; a `DmaxOverride` that matches no medium adds its own chosen row), the
+levels `DarkLevelA`/`DarkLevelB`, the L\* thresholds `LowSeparationLstar`/`HighlightLstar`,
+and `TargetBackground` - sorted by L\*. The level is that of a grey with the same L\*;
+on colour the same level gives a different L\* by hue, which the window says under the table.
 
 ### B4 - `PrintStretchSimulator` - which target background becomes print-safe
 
@@ -304,7 +324,11 @@ passes and is not oversize; if none passes, the smallest - it always exists (giv
 candidate). **`CanRecommend`** = the distance is explicit **and** FWHM is known - the
 only case where the rows separate on a measurement; only then is the reference row
 `Recommended` and `RecommendedRow` non-null. `NaturalRatio` = MinDistance / NaturalDistance, the same on
-every row (NaN without FWHM). `EffectiveDetailPx` = Wpx / FWHM.
+every row (NaN without FWHM). `EffectiveDetailPx` = Wpx / FWHM. `ScreenEquivalentWidthCm`
+= Wpx x `ScreenPixelMm` / 10 - how wide the crop would print at a monitor's pixel pitch,
+i.e. what a 100 % view on screen shows; `ScreenStepBackFactor` = that / the reference
+row's width (NaN without one): view the 100 % crop from this many times the monitor
+distance to see the reference print. Window only (the Preview tab's step-back rule).
 
 **The natural distance cannot pick a size.** MinDistance and NaturalDistance both scale
 with the width; their ratio is `fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + (H/W)^2))`, a
@@ -384,7 +408,7 @@ Background, Colour, Size, Denoise, Warnings.
 |---|---|---|---|
 | Format | source > 8 bits | Ok | send TIFF 8-bit LZW (size); 16 -> 8 is rounding (mean/max) |
 | Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
-| Format | q100 row exists | Ok, or Attention when not `Acceptable` or > 5 % samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
+| Format | q100 row exists | Ok, or Attention when not `Acceptable` or > `JpegOverThresholdWarnPct` (5 %) samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
 | Format | any q < 100 not `Acceptable` | Attention | never below q100 (the highest failing quality's max error) |
 | Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
 | Format | plateau known and not visible | Ok | no visible banding |
@@ -431,6 +455,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `LowSeparationLstar` | 15 | below: paper separates, the eye barely |
 | `HighlightLstar` | 50 | above: bright |
 | `PaperBlackWarnPct` / `PaperBlackOkPct` | 20 / 2 | % below paper black: problem / safe |
+| `ScreenBackgroundLo` / `ScreenBackgroundHi` / `PrintBackgroundLo` / `PrintBackgroundHi` | 0.05 / 0.10 / 0.15 / 0.25 | where a screen image's sky sits and where a print's should; rules of thumb for the window's help text only, no rule reads them |
 | `TonalStride` / `PercentileStride` / `BackgroundStride` | 4 / 2 / 3 | subsampling steps of the acceptance scripts |
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |
 | `NoiseTileMaxRangeLevels` | 6000/257 = 23.3 | smooth-tile range for noise |
@@ -438,7 +463,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `PlateauTileMaxRangeLevels` / `PlateauTileMaxMeanLevels` / `PlateauTileCount` / `PlateauSeed` / `PlateauMaxAttempts` | 6 / 70 / 120 / 1 / 5000 | strict tiles for the plateau |
 | `NoiseBandingLsb` / `NoisePrintLoLsb` / `NoisePrintHiLsb` / `NoiseUnderDenoisedLsb` | 0.5 / 0.8 / 1.5 / 2.0 | sigma bands |
 | `PlateauVisibleMm` | 1.0 | a plateau longer than this on paper is a contour |
-| `JpegMaxErrorReject` / `JpegErrorCountLevels` | 10 / 2 | |
+| `JpegMaxErrorReject` / `JpegErrorCountLevels` / `JpegOverThresholdWarnPct` | 10 / 2 / 5 | q100 gets Attention above this percentage of samples over `JpegErrorCountLevels` even when its max error is acceptable |
 | `ShadowLiftGamma` / `ShadowLiftLevelLo` / `ShadowLiftLevelHi` / `MissingLevelsWarn` | 1.9 / 8 / 120 / 20 | stress test |
 | `StarWindow` / `StarMinAmplitude16` / `StarMaxPeak16` / `StarCandidateAboveMean16` | 25 / 3000 / 60000 / 3000 | in 16-bit units |
 | `StarFwhmMin` / `StarFwhmMax` | 0.8 / 15 | accepted widths |
@@ -446,7 +471,9 @@ All empirical, most from the reference image. Change one, change its comment.
 | `FallbackMinDpi` | 180 | pixel-grid floor without stars and without a distance: 0.14 mm pitch, invisible from ~0.5 m (lab convention 150-200); with a distance the floor is 25.4 / (0.29 x d) |
 | `JpegQualities` | 100, 95, 90 | |
 | `BackgroundDarkestFraction` / `BackgroundExcludeBottomFraction` | 0.25 / 0.25 | |
+| `EdgeRegionHeightFraction` / `EdgeRegionWidthFraction` | 0.15 / 0.20 | corner = this much of the height x this much of the width; the edges are bands of the same thickness |
 | `CastWarnLevels` / `CornerGradientLevels` / `CornerColourSpreadRatio` | 1.0 / 3.0 / 0.5 | |
+| `ScreenPixelMm` | 0.25 | a common monitor's pixel pitch (96-110 ppi); a presumption about the screen, for the Preview tab's step-back rule |
 | `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | 1.5 x the diagonal sits between the perspective-correct 1 x and the gallery 2 x (~37 degrees subtended); a presumption about the viewer, not a measurement |
 | `NaturalDistanceTolerance` | 1.15 | allowance on the natural distance (the verdict is size-independent there) |
 | `PassepartoutMinFrameRatio` | 2 | passepartout >= this x frame width, else the parameters are refused |
@@ -523,18 +550,28 @@ opens no dialogs (the window does), so it is fully testable.
 | tab | shows |
 |---|---|
 | `ReportTabViewModel` | `VerdictLabel`; `Sections` (number, title, verdict label, `RecommendationRow`s with mark, text, because, verdict label); `Text` = the full report; `ShowText` toggle |
-| `TonesTabViewModel` | `Rows` (metric rows), `Histogram` (101 values), `PaperBlack` (marker), `SimulationRows` (mono strings) |
-| `ExportTabViewModel` | `JpegRows` (mono strings), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi) |
-| `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, regions, corner/centre), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
-| `BackgroundTabViewModel` | `Rows` (levels, cast metrics), `RegionRows` (mono strings, "!" when flagged) |
-| `PreviewTabViewModel` | `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed |
+| `TonesTabViewModel` | `Rows` (metric rows, each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `Histogram` (101 values), `PaperBlack` (marker), `SimulationRows` (mono strings), `LadderRows` (mono strings from `TonalAnalyzer.LstarLadder`, "<- mediul ales" on the chosen medium; a static note under it says the level is a grey's), `Guide` (`GuideParagraph`s of the last card, "CUM SE CITESTE TABUL": what the tab asks, the two scales and the conversion, paper black per medium, the verdict thresholds, the simulation - every number from `Thresholds`, `Parameters.DmaxOf` and `ColorMath`, none typed in) |
+| `ExportTabViewModel` | `JpegRows` (mono strings), `JpegGuide` (`GuideParagraph`s under the table: how it is measured, each column group, what is recommended - thresholds from `Thresholds`), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`) |
+| `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "FWHM median in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
+| `BackgroundTabViewModel` | `Rows` (levels, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the regions, delta, the "!" mark, coloured vs neutral with the reference image's two corners, mono) |
+| `PreviewTabViewModel` | `Guide` (`GuideParagraph`s of the card above the tiles, "CUM SE FOLOSESTE PREVIEW-UL": the screen is harsher than paper, with `ScreenEquivalentWidthCm`; the step back, with `ScreenStepBackFactor` against the reference row, or the inverse when the print is larger than the 100 % view; what to look for; what the tab is not), `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed - each with a `Check`, what to verify in it, wrapped to the image's width |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
 `MonoRowTemplate`; the alternative was a template per table for the same text.
 
 **Presentation**: `Theme/Dark.xaml` (palette, styles, converters, templates
 `VerdictChip`, `RecommendationRowTemplate`, `SectionTemplate`, `MetricRowTemplate`,
-`MonoRowTemplate`, `PreviewTileTemplate`, `ComponentRowTemplate`); `VerdictPalette`
+`MonoRowTemplate`, `PreviewTileTemplate`, `ComponentRowTemplate`,
+`DescribedMetricRowTemplate`, `GuideParagraphTemplate`); `MetricRowTemplate` puts the
+optional `Description` under the label in the label's column only, wrapped, and the `Note`
+below it across both columns. `DescribedMetricRowTemplate` (the described panels: Tonuri,
+Export's Cuantizare, Rezolutie's stars, Fundal's colour) is the same row on two equal
+columns over the card's full width: label, description and note in the left half, the
+value right-aligned in the right half, so every description stops at the middle whatever
+the value's length; its rows sit 14 px apart, each being a paragraph; the Tonuri
+percentiles are one per line. `PreviewTileTemplate` wraps the tile's `Note` and `Check`
+to the image's width (bitmaps are 96 dpi, so `PixelWidth` is the width in DIU), else a
+sentence would widen the card. `VerdictPalette`
 (colour from the core's label: OK green, ATENTIE amber, PROBLEMA red, anything else
 neutral); `RasterBitmaps` (a raster region as `BitmapSource`, stride and integer zoom,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with a marker line in
@@ -595,6 +632,9 @@ predictor to be competitive. Adding a package: discuss first, then csproj + noti
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
   level at q100.
 - Colour is measured as sRGB; other profiles are only named.
+- The Preview tab's step-back rule presumes a monitor pixel of `ScreenPixelMm` (0.25
+  mm); on a HiDPI screen (0.16 mm on a 27" 4K) the 100 % view is harsher still and the
+  factor understates the step.
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
@@ -606,8 +646,16 @@ predictor to be competitive. Adding a package: discuss first, then csproj + noti
 `Thresholds.cs` with a comment; call it from `AnalysisRun.Execute` in dependency order
 and add a progress stage; add its numbers to an appendix in `ReportWriter`; write
 synthetic tests with a known answer; re-approve the goldens and read the diff; show it in
-a tab through rows in `Rows.cs`/`ResultTabs.cs` (public view-models, no core types);
-**update §5, §7, §8 and §10 here**.
+a tab through rows in `Rows.cs`/`ResultTabs.cs` (public view-models, no core types),
+each row with a `Description`; **update §5, §7, §8 and §10 here**.
+
+**An explanatory text in the window** (a row's `Description`, a table's `GuideParagraph`s,
+a preview tile's `Check`): written in the tab's view-model, explanation rather than
+diagnosis, every number interpolated from `Thresholds` or the result - a literal the text
+needs goes into `Thresholds` first, with its comment (this is how
+`EdgeRegion*Fraction`, `JpegOverThresholdWarnPct` and `ScreenPixelMm` got there). Window
+only, so no goldens; `ViewModelTests` asserts the texts exist; **§10 here**, and §7 for
+the lifted literal.
 
 **A new recommendation**: a rule in `Recommendations.cs` under its topic, with a
 `Because` that names the metric and the threshold; a test in `RecommendationsTests` on a

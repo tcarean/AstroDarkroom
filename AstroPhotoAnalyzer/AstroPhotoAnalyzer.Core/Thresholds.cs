@@ -60,6 +60,20 @@ namespace AstroPhotoAnalyzer
         /// <summary>Sub procentul asta, o tinta de fundal e considerata print-safe.</summary>
         internal const double PaperBlackOkPct = 2;
 
+        /// <summary>
+        /// Unde sta de obicei cerul (0..1) intr-o imagine facuta pentru ecran, si unde
+        /// trebuie sa stea pentru hartie. Reguli de degetul mare din conversatia care a
+        /// nascut unealta, nu masuratori: pe ecran un cer la 0.05-0.10 arata "negru
+        /// adanc" si bine; pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru,
+        /// asa ca versiunea de print vrea cerul la 0.15-0.25, un gri inchis. Imaginea de
+        /// referinta avea 0.103 si a iesit print-safe la 0.19. Doar pentru textele de
+        /// ajutor ale ferestrei; nicio regula nu se ia dupa ele.
+        /// </summary>
+        internal const double ScreenBackgroundLo = 0.05;
+        internal const double ScreenBackgroundHi = 0.10;
+        internal const double PrintBackgroundLo = 0.15;
+        internal const double PrintBackgroundHi = 0.25;
+
         // ------------------------------------------------------------ subesantionare
 
         /// <summary>Pasul [::s, ::s] al fiecarei masuratori - cel din scripturile de acceptanta.</summary>
@@ -113,6 +127,13 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Pixelii cu eroare JPEG peste atatea niveluri se numara si se localizeaza.</summary>
         internal const double JpegErrorCountLevels = 2;
+
+        /// <summary>
+        /// Peste atat la suta din esantioane cu eroare peste JpegErrorCountLevels, q100 primeste
+        /// "Atentie" chiar daca eroarea maxima e acceptabila: compresia loveste prea larg, de
+        /// obicei in cerul intunecat. Regula de la prima imagine, ca si pragul de 2 niveluri.
+        /// </summary>
+        internal const double JpegOverThresholdWarnPct = 5;
 
         /// <summary>Gamma-ul testului de stres shadow-lift (x^(1/g)): un auto-correct tipic de laborator.</summary>
         internal const double ShadowLiftGamma = 1.9;
@@ -193,6 +214,13 @@ namespace AstroPhotoAnalyzer
         /// <summary>... fara banda de jos (fractie din inaltime), unde sta orizontul si poluarea lui.</summary>
         internal const double BackgroundExcludeBottomFraction = 0.25;
 
+        /// <summary>
+        /// Regiunile de margine: coltul e atata din inaltime x atata din latime (regiunea din
+        /// scriptul de acceptare); laturile sunt benzi de aceeasi grosime, intre colturi.
+        /// </summary>
+        internal const double EdgeRegionHeightFraction = 0.15;
+        internal const double EdgeRegionWidthFraction = 0.20;
+
         /// <summary>O tenta de peste atatea niveluri pe fundal se vede odata ce fundalul e ridicat.</summary>
         internal const double CastWarnLevels = 1.0;
 
@@ -240,6 +268,14 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Peste latimea asta (cm) intervin sticla, greutatea si transportul, nu fisierul.</summary>
         internal const double OversizeCm = 100;
+
+        /// <summary>
+        /// Pasul pixelului unui monitor obisnuit (96-110 ppi), pentru regula pasului inapoi
+        /// din Preview: la 100 % fisierul se vede ca un print de Wpx x atat. O prezumtie
+        /// despre ecran, nu o masuratoare; un 4K de 27" are 0.16 mm si vederea e cu atat
+        /// mai aspra.
+        /// </summary>
+        internal const double ScreenPixelMm = 0.25;
 
         /// <summary>
         /// Passepartout-ul trebuie sa fie cel putin de atatea ori latimea ramei: sub asta

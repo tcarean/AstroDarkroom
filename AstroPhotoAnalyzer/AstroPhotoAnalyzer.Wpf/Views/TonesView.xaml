@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- TonesView - histograma L* cu negrul hartiei marcat, cifrele tonale, si tabelul
-     simularii de fundal. -->
+<!-- TonesView - histograma L* cu negrul hartiei marcat, cifrele tonale cu descrierea lor,
+     tabelul simularii de fundal, tabela nivel - L* a reperelor si, ultimul, panoul care
+     explica tabul. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.TonesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -41,14 +42,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="TONURI" />
-          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource MetricRowTemplate}" />
+          <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource DescribedMetricRowTemplate}" />
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="SIMULAREA FUNDALULUI (curba gamma pe toate canalele)" />
+          <ItemsControl ItemsSource="{Binding SimulationRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+        </StackPanel>
+      </Border>
+
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="NIVEL SI L*: REPERELE TABULUI" />
+          <ItemsControl ItemsSource="{Binding LadderRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0">
+            Nivelul e cel al unui gri (R = G = B) cu acelasi L*: ce cauti pe histograma din Siril cand tragi de curba.
+            Pe culoare acelasi nivel da alt L* dupa nuanta - un fundal albastru are L* mai mic decat sugereaza nivelurile lui.
+          </TextBlock>
         </StackPanel>
       </Border>
 
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="SIMULAREA FUNDALULUI (curba gamma pe toate canalele)" />
-          <ItemsControl ItemsSource="{Binding SimulationRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+          <TextBlock Style="{StaticResource Heading}" Text="CUM SE CITESTE TABUL" />
+          <ItemsControl ItemsSource="{Binding Guide}" ItemTemplate="{StaticResource GuideParagraphTemplate}" />
         </StackPanel>
       </Border>
     </StackPanel>

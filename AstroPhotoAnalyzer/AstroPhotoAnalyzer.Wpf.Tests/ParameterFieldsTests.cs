@@ -118,6 +118,24 @@ public class ParameterFieldsTests
     }
 
     /// <summary>
+    /// Tinta se explica prin ce face simularea cu ea, si cifrele din text sunt cele
+    /// din nucleu, nu tastate: implicitul, pragul print-safe, tintele suplimentare.
+    /// </summary>
+    [Fact]
+    public void TheTargetBackgroundFieldExplainsTheSimulationAndTheDefault()
+    {
+        var f = new ParameterFields();
+
+        Assert.Contains("gamma = ln(tinta) / ln(fundal)", f.TargetBgHelp);
+        Assert.Contains("mediana canalului verde", f.TargetBgHelp);
+        Assert.Contains("nu stretch-ul lui Siril", f.TargetBgHelp);
+        Assert.Contains("Implicit 0.19", f.TargetBgHelp);
+        Assert.Contains("sub 2 % din pixeli sub negru", f.TargetBgHelp);
+        Assert.Contains("0.15 si 0.20", f.TargetBgHelp);
+        Assert.Contains("0.15-0.25", f.TargetBgHelp);
+    }
+
+    /// <summary>
     /// Un singur bloc de 900 de caractere nu se citeste intr-un tooltip: fiecare text de
     /// ajutor e in paragrafe despartite de o linie goala, fara spatii la capete.
     /// </summary>
@@ -125,7 +143,7 @@ public class ParameterFieldsTests
     public void TheHelpTextsAreParagraphs()
     {
         var f = new ParameterFields();
-        foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.PassepartoutHelp, f.FrameHelp })
+        foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.TargetBgHelp, f.PassepartoutHelp, f.FrameHelp })
         {
             string[] paragraphs = help.Split("\n\n");
             Assert.True(paragraphs.Length >= 2, "un singur paragraf: " + help);

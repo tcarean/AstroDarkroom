@@ -81,6 +81,39 @@ public class ColorMathTests
         Assert.Equal(fromY, fromRgb, 9);
     }
 
+    [Theory]
+    [InlineData(0.0)]
+    [InlineData(5.0)]
+    [InlineData(7.99)]
+    [InlineData(8.0)]
+    [InlineData(20.7)]
+    [InlineData(100.0)]
+    public void YOfLstarIsTheInverseOnBothSegments(double lstar)
+    {
+        Assert.Equal(lstar, ColorMath.LstarOfY(ColorMath.YOfLstar(lstar)), 9);
+    }
+
+    /// <summary>
+    /// Perechile din panoul Tonuri: negrul baryta (L* 9) e nivelul ~25 al unui gri,
+    /// nivelul 32 e L* ~12, 64 e L* ~27, L* 50 e nivelul ~119.
+    /// </summary>
+    [Theory]
+    [InlineData(8.99, 25.5)]
+    [InlineData(15.0, 37.7)]
+    [InlineData(50.0, 118.9)]
+    public void AGreyLevelAndItsLstarAreOneCurve(double lstar, double level)
+    {
+        Assert.Equal(level, ColorMath.GrayLevelOfLstar(lstar), 1);
+        Assert.Equal(lstar, ColorMath.LstarOfGrayLevel(level), 1);
+    }
+
+    [Fact]
+    public void TheDarkLevelThresholdsInLstar()
+    {
+        Assert.Equal(12.3, ColorMath.LstarOfGrayLevel(32), 1);
+        Assert.Equal(27.1, ColorMath.LstarOfGrayLevel(64), 1);
+    }
+
     [Fact]
     public void LuminanceWeightsSumToOne()
     {
