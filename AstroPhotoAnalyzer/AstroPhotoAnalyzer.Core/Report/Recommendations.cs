@@ -114,7 +114,7 @@ namespace AstroPhotoAnalyzer
                 ? $" Re-stretch din liniar la fundal {Fmt.F2(s.RecommendedTarget.Value)} (simulat: {Fmt.Pct(RowFor(s, s.RecommendedTarget.Value).PctBelowPaperBlack)} sub negru, L* median {Fmt.F1(RowFor(s, s.RecommendedTarget.Value).LstarMedian)})."
                 : $" Nicio tinta din lista ({string.Join(", ", s.Rows.Skip(1).Select(x => Fmt.F2(x.Target)))}) nu ajunge print-safe: incearca una mai sus.";
             o.Add(new Recommendation(Topic.Background, v, what + fix,
-                $"{Fmt.Pct(t.PctBelowPaperBlack)} din pixeli sub negrul hartiei (prag {Fmt.F0(Thresholds.PaperBlackWarnPct)} %), {Fmt.Pct(t.PctBelowLowSeparation)} sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (separare slaba); fundal masurat {Fmt.F3(s.BackgroundMeasured)}; {paper}"));
+                $"{Fmt.Pct(t.PctBelowPaperBlack)} din pixeli sub negrul hartiei (prag {Fmt.F0(Thresholds.PaperBlackWarnPct)} %), {Fmt.Pct(t.PctBelowLowSeparation)} sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (separare slaba); nivelul fundalului {Fmt.F3(s.BackgroundMeasured)}; {paper}"));
         }
 
         static SimulationRow RowFor(SimulationResult s, double target)

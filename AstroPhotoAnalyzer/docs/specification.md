@@ -499,7 +499,7 @@ Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
 Anexa B. Simularea     table: target, gamma, L*, % below black, % below 15, % above 50, print-safe
 Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
 Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
-Anexa E. Fundal        background levels and cast; the eight regions with deltas, "!" when flagged
+Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regions with deltas, "!" when flagged
 Anexa F. Parametri     every parameter as used
 ```
 
@@ -531,8 +531,11 @@ cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-
 **Layout** (`MainWindow.xaml`): top bar (banner, image path, "Deschide imagine...",
 "Salveaza raportul...", "Despre" = F1); left column `ParameterFields` card with
 "Analizeaza"; right: a placeholder when nothing is loaded, an error card when the run
-failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Fundal,
-Preview; `BusyOverlay` over the right side while running. Starts maximised. A file from
+failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
+Preview; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
+its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
+and appendix says which of the two it shows. Starts maximised. A file from
 the command line (`App.FileFromArgs`) is opened at once; otherwise the open dialog is
 shown.
 
@@ -553,7 +556,7 @@ opens no dialogs (the window does), so it is fully testable.
 | `TonesTabViewModel` | `Rows` (metric rows, each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `Histogram` (101 values), `PaperBlack` (marker), `SimulationRows` (mono strings), `LadderRows` (mono strings from `TonalAnalyzer.LstarLadder`, "<- mediul ales" on the chosen medium; a static note under it says the level is a grey's), `Guide` (`GuideParagraph`s of the last card, "CUM SE CITESTE TABUL": what the tab asks, the two scales and the conversion, paper black per medium, the verdict thresholds, the simulation - every number from `Thresholds`, `Parameters.DmaxOf` and `ColorMath`, none typed in) |
 | `ExportTabViewModel` | `JpegRows` (mono strings), `JpegGuide` (`GuideParagraph`s under the table: how it is measured, each column group, what is recommended - thresholds from `Thresholds`), `Rows` (TIFF size, rounding, stress, plateau at the reference row's dpi; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`) |
 | `ResolutionTabViewModel` | `Rows` (count, FWHM, effective detail, the five regions as "FWHM median in <region>", corner/centre; each with a `Description` - what it measures, thresholds interpolated from `Thresholds` - except the four corner rows, which the centre row's description covers), `SizeRows` (mono strings from `ReportWriter.SizeTableRow`/`SizeTableFooter`: "*" on the recommended row, or the note on why there is none); a static note under the table states the star rule and the pixel-grid rule (180 dpi in bold); `DpiRows` (mono strings, the dpi - distance reference scale from `DpiLadder`, window only) |
-| `BackgroundTabViewModel` | `Rows` (levels, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the regions, delta, the "!" mark, coloured vs neutral with the reference image's two corners, mono) |
+| `BackgroundTabViewModel` (the Culoare tab) | `Rows` (the background colour per channel, cast metrics; each with a `Description` - what it measures, thresholds interpolated from `Thresholds`), `RegionRows` (mono strings as in the report, except that a flagged region ends in "! colorat" or "! neutru" - "!" alone on mono), `Guide` (`GuideParagraph`s under the table: the regions, delta, the "!" mark, coloured vs neutral with the reference image's two corners, mono) |
 | `PreviewTabViewModel` | `Guide` (`GuideParagraph`s of the card above the tiles, "CUM SE FOLOSESTE PREVIEW-UL": the screen is harsher than paper, with `ScreenEquivalentWidthCm`; the step back, with `ScreenStepBackFactor` against the reference row, or the inverse when the print is larger than the 100 % view; what to look for; what the tab is not), `Tiles`: centre 100 % (480 x 320), centre 200 % (nearest-neighbour zoom), four corners 100 % (320 x 220), whole frame (max side 520), the print simulation at the primary target (gamma on a downsample), the crop when needed - each with a `Check`, what to verify in it, wrapped to the image's width |
 
 Tables are pre-aligned mono strings, the same the report writes, rendered with
@@ -565,7 +568,7 @@ Tables are pre-aligned mono strings, the same the report writes, rendered with
 `DescribedMetricRowTemplate`, `GuideParagraphTemplate`); `MetricRowTemplate` puts the
 optional `Description` under the label in the label's column only, wrapped, and the `Note`
 below it across both columns. `DescribedMetricRowTemplate` (the described panels: Tonuri,
-Export's Cuantizare, Rezolutie's stars, Fundal's colour) is the same row on two equal
+Export's Cuantizare, Rezolutie's stars, Culoare's colour) is the same row on two equal
 columns over the card's full width: label, description and note in the left half, the
 value right-aligned in the right half, so every description stops at the middle whatever
 the value's length; its rows sit 14 px apart, each being a paragraph; the Tonuri
@@ -650,12 +653,14 @@ a tab through rows in `Rows.cs`/`ResultTabs.cs` (public view-models, no core typ
 each row with a `Description`; **update §5, §7, §8 and §10 here**.
 
 **An explanatory text in the window** (a row's `Description`, a table's `GuideParagraph`s,
-a preview tile's `Check`): written in the tab's view-model, explanation rather than
-diagnosis, every number interpolated from `Thresholds` or the result - a literal the text
-needs goes into `Thresholds` first, with its comment (this is how
-`EdgeRegion*Fraction`, `JpegOverThresholdWarnPct` and `ScreenPixelMm` got there). Window
-only, so no goldens; `ViewModelTests` asserts the texts exist; **§10 here**, and §7 for
-the lifted literal.
+a preview tile's `Check`, a parameter field's `*Help` in `ParameterFields`): written in
+the view-model, explanation rather than diagnosis, every number interpolated from
+`Thresholds`, `Parameters` or the result - a literal the text needs goes into
+`Thresholds` first, with its comment (this is how `EdgeRegion*Fraction`,
+`JpegOverThresholdWarnPct`, `ScreenPixelMm` and the help-only `ScreenBackground*` /
+`PrintBackground*` got there). Window only, so no goldens; `ViewModelTests` asserts the
+tab texts exist and `ParameterFieldsTests` the help texts (key phrases, interpolated
+numbers, paragraphs); **§10 here** (§4 for a help text), and §7 for the lifted literal.
 
 **A new recommendation**: a rule in `Recommendations.cs` under its topic, with a
 `Because` that names the metric and the threshold; a test in `RecommendationsTests` on a

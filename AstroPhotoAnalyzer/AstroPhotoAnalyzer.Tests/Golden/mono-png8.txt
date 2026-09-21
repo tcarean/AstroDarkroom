@@ -39,7 +39,7 @@ Anexa A. Tonuri
   percentile canal referinta (0..255): p0.1=61.0  p1.0=61.0  p50.0=64.0  p90.0=65.0  p99.0=66.0  p99.9=106.5  p100.0=141.0
   L* median 27.1; sub negrul hartiei (L* 9.0): 0.0 %; sub L* 15: 0.0 %; peste L* 50: 0.1 %
 
-Anexa B. Simularea fundalului (fundal masurat 0.251, curba gamma pe toate canalele)
+Anexa B. Simularea fundalului (nivelul fundalului 0.251, curba gamma pe toate canalele)
   fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50
   asa cum e      1.000        27.1       0.0 %      0.0 %        0.1 %   print-safe
   0.15           1.372        15.3       0.0 %     40.0 %        0.0 %   print-safe
@@ -67,8 +67,8 @@ Anexa D. Rezolutie si marime
      100         100.0     8       n/a         n/a m           2.12 m   120 x 120
   fara rand recomandat: fara stele nu se masoara detaliul, ci doar grila de pixeli (prag 180 dpi) - o limita a fisierului, nu a imaginii
 
-Anexa E. Fundal
-  fundal (0..255): 63.0
+Anexa E. Culoarea fundalului
+  fundalul, un singur canal (0..255): 63.0
   colt stanga-sus    64.0                   delta +1.0
   colt dreapta-sus   64.0                   delta +1.0
   colt stanga-jos    64.0                   delta +1.0

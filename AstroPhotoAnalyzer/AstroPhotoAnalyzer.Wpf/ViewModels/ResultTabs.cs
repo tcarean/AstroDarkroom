@@ -132,13 +132,14 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 Row("Medii pe canal (0..255)", string.Join(" / ", t.MeanLevels.Select(Fmt.F1)),
                     description: "Media fiecarui canal pe toti pixelii, in niveluri de 8 biti. Cerul ocupa aproape tot cadrul, "
-                        + "asa ca mediile stau aproape de fundal; diferentele dintre canale sunt analizate ca dominanta in tabul Fundal."),
+                        + "asa ca mediile stau aproape de fundal; diferentele dintre canale sunt analizate ca dominanta in tabul Culoare."),
                 Row($"Sub nivelul {Thresholds.DarkLevelA} / {Thresholds.DarkLevelB}", $"{Fmt.Pct(t.PctBelowDarkA)} / {Fmt.Pct(t.PctBelowDarkB)}",
                     description: $"Cat din imagine (toate canalele la un loc) e sub {Thresholds.DarkLevelA} si sub {Thresholds.DarkLevelB} din 255, "
                         + "pragurile pe care le citesti pe histograma din Siril. Doar context: verdictul de print se da pe L*, mai jos."),
-                Row("Fundal masurat (mediana canalului de referinta)", Fmt.F3(t.BackgroundMedian),
+                Row("Nivelul fundalului (mediana canalului de referinta)", Fmt.F3(t.BackgroundMedian),
                     description: "Mediana canalului verde (a singurului canal la mono), pe scara 0..1. Cum cerul domina cadrul, "
-                        + "mediana e fundalul. De aici porneste simularea de mai jos."),
+                        + "mediana e nivelul fundalului: cat de sus sta cerul. De aici porneste simularea de mai jos. "
+                        + "Culoarea cerului e alta masuratoare, in tabul Culoare."),
                 Row("L* median", Fmt.F1(t.LstarMedian),
                     description: "Luminozitatea perceputa a pixelului median, de la 0 (negru) la 100 (alb). L* e scara hartiei: "
                         + "pasi egali de L* se vad ca pasi egali de gri. Pe o astrofoto, L* median e practic cerul."),
@@ -434,11 +435,11 @@ namespace AstroPhotoAnalyzer.Wpf
             string cast = Fmt.F1(Thresholds.CastWarnLevels);
             var rows = new List<MetricRow>
             {
-                Row("Fundal (0..255)", string.Join(" / ", b.Levels.Select(Fmt.F1)),
+                Row(b.ColorApplicable ? "Culoarea fundalului, R / G / B (0..255)" : "Fundalul, un singur canal (0..255)", string.Join(" / ", b.Levels.Select(Fmt.F1)),
                     description: $"Mediana pe fiecare canal a celui mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} din imagine, dupa luminozitate, "
                         + $"fara banda de jos de {Fmt.F0(Thresholds.BackgroundExcludeBottomFraction * 100)} % din inaltime, unde stau orizontul si poluarea lui. "
                         + "E cerul \"curat\": fata de el se judeca tenta de mai jos si marginile din tabelul urmator. "
-                        + "Nu e acelasi numar cu fundalul din tabul Tonuri, care e mediana pe tot cadrul: acela spune cat de sus e cerul, "
+                        + "Nu e acelasi numar cu nivelul fundalului din tabul Tonuri, care e mediana pe tot cadrul: acela spune cat de sus e cerul, "
                         + "acesta ce culoare are."),
             };
             if (b.ColorApplicable)
@@ -482,7 +483,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = "Delta.",
-                    Text = "Regiune minus fundalul de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat. "
+                    Text = "Regiune minus culoarea fundalului de mai sus, pe fiecare canal, in niveluri. Zero inseamna margine identica cu cerul curat. "
                         + $"E aproape intotdeauna pozitiva, fiindca fundalul e deja cel mai intunecat {Fraction(Thresholds.BackgroundDarkestFraction)} al imaginii.",
                 },
                 new GuideParagraph
@@ -530,7 +531,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
             // Ce verifici in fiecare dala: text de indrumare, nu diagnostic. Pragurile din Thresholds.
             const string corner = "Fata de centru: stele alungite spre colt = coma; intr-un singur colt = tilt; in toate patru = curbura de camp. "
-                + "Colt mai luminos sau mai cald = gradientul din Fundal; benzi la margine = cadrele stivei. Un colt rau poate iesi prin decupaj.";
+                + "Colt mai luminos sau mai cald = gradientul din tabul Culoare; benzi la margine = cadrele stivei. Un colt rau poate iesi prin decupaj.";
 
             tiles.Add(new PreviewTile
             {

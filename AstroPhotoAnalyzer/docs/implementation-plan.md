@@ -143,6 +143,19 @@ crop needed). Then the appendices with the tables. Every recommendation carries 
   are 512 px and land on that branch. Layout lessons: described rows need two equal
   columns, not label/auto, or the longest value narrows every description; a preview
   tile's text must wrap to the image's width or it widens the card.
+- **The naming pass (after the explanation pass).** Writing the tooltip for the
+  target-background field exposed that "fundal" named two numbers: the Tonuri tab's
+  `BackgroundMedian` (median of the green channel over the frame, 0..1, what the
+  simulation lifts) and the tab called Fundal's `BackgroundResult.Levels` (per-channel
+  medians of the darkest quarter, 0..255, for cast and gradients). The only place that
+  said so was a row description. Rather than a third term ("cer curat") or one
+  measurement for both (which would move the acceptance number 0.103), the labels now
+  name the *property*: the tab is Culoare, the rows are "Nivelul fundalului" and
+  "Culoarea fundalului", and Anexa B / Anexa E and the background `Because` say which
+  one they carry. The tooltip itself needed two ranges nobody had written down - where a
+  screen image's sky sits (0.05-0.10) and where a print's should (0.15-0.25) - which
+  went into `Thresholds` as help-only constants, the first literals lifted for a text
+  that no rule reads.
 
 ## Notes from phase 4
 

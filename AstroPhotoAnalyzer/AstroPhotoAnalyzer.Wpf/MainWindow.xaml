@@ -177,7 +177,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TabItem Header="Rezolutie">
             <local:ResolutionView DataContext="{Binding Resolution}" />
           </TabItem>
-          <TabItem Header="Fundal">
+          <TabItem Header="Culoare">
             <local:BackgroundView DataContext="{Binding Background}" />
           </TabItem>
           <TabItem Header="Preview">

@@ -22,13 +22,15 @@ AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 ```
 
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
-passepartout, ramă) și „Analizează". Dreapta, șase taburi: **Raport** (deciziile, cu
+passepartout, ramă) și „Analizează"; distanța, raportul de aspect, fundalul-țintă,
+passepartout-ul și rama explică la trecerea mouse-ului ce înseamnă, de unde vine
+valoarea implicită și când merită schimbată. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
 (histograma L\* cu negrul hârtiei marcat, cifrele tonale cu o explicație sub fiecare,
 simularea de fundal, tabela nivel - L\* a reperelor și un panou despre cum se citește
 tabul), **Export** (tabelul JPEG cu explicația coloanelor sub el, rotunjirea, stresul
 shadow-lift, palierul), **Rezoluție** (FWHM pe regiuni, tabelul de mărimi, scara dpi -
-distanță), **Fundal** (R/G/B și cele opt margini, cu „! colorat" / „! neutru" și
+distanță), **Culoare** (R/G/B ale fundalului și cele opt margini, cu „! colorat" / „! neutru" și
 explicația tabelului), **Preview** (decupaje la 100 % și 200 %,
 cadrul întreg, simularea de print, decupajul la raportul țintă, fiecare cu ce ai de
 verificat în ea, și regula ecran-hârtie cu pasul înapoi calculat pe imagine). În toate

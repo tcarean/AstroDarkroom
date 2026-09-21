@@ -17,7 +17,7 @@ VERDICT: PROBLEMA
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Fundalul e prea jos pentru hartie: tot ce e sub negrul ei se printeaza cu ACELASI negru. Re-stretch din liniar la fundal 0.15 (simulat: 1.1 % sub negru, L* median 14.9).
-     fiindca: 72.4 % din pixeli sub negrul hartiei (prag 20 %), 83.9 % sub L* 15 (separare slaba); fundal masurat 0.089; negrul hartiei = L* 9.0 la Dmax 2.0
+     fiindca: 72.4 % din pixeli sub negrul hartiei (prag 20 %), 83.9 % sub L* 15 (separare slaba); nivelul fundalului 0.089; negrul hartiei = L* 9.0 la Dmax 2.0
 
 3. Culoarea fundalului si gradientele  [ATENTIE]
    ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
@@ -45,7 +45,7 @@ Anexa A. Tonuri
   percentile canal referinta (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
   L* median 7.4; sub negrul hartiei (L* 9.0): 72.4 %; sub L* 15: 83.9 %; peste L* 50: 0.4 %
 
-Anexa B. Simularea fundalului (fundal masurat 0.089, curba gamma pe toate canalele)
+Anexa B. Simularea fundalului (nivelul fundalului 0.089, curba gamma pe toate canalele)
   fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50
   asa cum e      1.000         7.4      72.4 %     83.9 %        0.4 %
   0.15           0.785        14.9       1.1 %     53.3 %        2.7 %   print-safe
@@ -75,8 +75,8 @@ Anexa D. Rezolutie si marime
      100          69.9    13      5.98       20.62 m           1.50 m   120 x 90
   * = recomandat
 
-Anexa E. Fundal
-  fundal (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
+Anexa E. Culoarea fundalului
+  culoarea fundalului, R / G / B (0..255): 20.0 / 22.0 / 20.0; G - (R+B)/2 = +2.0; R - B = 0.0
   colt stanga-sus    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
   colt dreapta-sus   20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4
   colt stanga-jos    20.4 / 22.4 / 20.4     delta +0.4 / +0.4 / +0.4

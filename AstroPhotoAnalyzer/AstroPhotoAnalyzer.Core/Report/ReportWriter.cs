@@ -98,7 +98,7 @@ namespace AstroPhotoAnalyzer
         {
             SimulationResult s = r.Simulation;
             w.WriteLine();
-            w.WriteLine($"Anexa B. Simularea fundalului (fundal masurat {Fmt.F3(s.BackgroundMeasured)}, curba gamma pe toate canalele)");
+            w.WriteLine($"Anexa B. Simularea fundalului (nivelul fundalului {Fmt.F3(s.BackgroundMeasured)}, curba gamma pe toate canalele)");
             w.WriteLine("  fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50");
             foreach (SimulationRow row in s.Rows)
             {
@@ -174,8 +174,8 @@ namespace AstroPhotoAnalyzer
         {
             BackgroundResult b = r.Background;
             w.WriteLine();
-            w.WriteLine("Anexa E. Fundal");
-            w.WriteLine($"  fundal (0..255): {string.Join(" / ", b.Levels.Select(Fmt.F1))}"
+            w.WriteLine("Anexa E. Culoarea fundalului");
+            w.WriteLine($"  {(b.ColorApplicable ? "culoarea fundalului, R / G / B (0..255)" : "fundalul, un singur canal (0..255)")}: {string.Join(" / ", b.Levels.Select(Fmt.F1))}"
                 + (b.ColorApplicable ? $"; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}; R - B = {Fmt.S1(b.RedMinusBlue)}" : ""));
             foreach (EdgeRegion e in b.Regions)
                 w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{(e.Flagged ? "  !" : "")}");

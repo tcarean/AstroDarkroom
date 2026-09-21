@@ -129,7 +129,7 @@ namespace AstroPhotoAnalyzer.Wpf
             + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru. Un print vrea cerul la "
             + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}."
             + "\n\n"
-            + "Fundalul masurat = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
+            + "Nivelul fundalului = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
             + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara L*. E o simulare, nu stretch-ul lui Siril, "
             + "dar fundalul ajunge in acelasi loc."
             + "\n\n"

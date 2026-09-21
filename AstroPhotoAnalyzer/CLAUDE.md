@@ -54,10 +54,18 @@ letter. Where the two differ, this file says so.
   threshold or a new sentence of diagnosis belongs in `Analysis/`, `Thresholds.cs` or
   `Report/` - never in a view-model or in the console. A view-model formats; it does not
   decide. The window's explanatory texts - a row's `Description`, a table's
-  `GuideParagraph`s, a preview tile's `Check` - are the one kind of sentence a view-model
-  writes, and they are explanation, not diagnosis: every number in them is interpolated
-  from `Thresholds` or from the result, never typed. A literal a text needs is lifted
-  into `Thresholds` first, with its comment.
+  `GuideParagraph`s, a preview tile's `Check`, a parameter field's `*Help` tooltip - are
+  the one kind of sentence a view-model writes, and they are explanation, not diagnosis:
+  every number in them is interpolated from `Thresholds` or from the result, never
+  typed. A literal a text needs is lifted into `Thresholds` first, with its comment -
+  even a range that no rule reads (`ScreenBackground*`, `PrintBackground*` exist only
+  for a tooltip).
+- **"Fundal" names one thing, the sky, and two measurements of it.** Tonuri measures its
+  *level* (the median of the reference channel, what the target background is compared
+  to; "Nivelul fundalului"); Culoare measures its *colour* (per-channel medians of the
+  darkest quarter, for cast and gradients; "Culoarea fundalului"). They are different
+  numbers on different scales. Every label, row, appendix and `Because` that shows one
+  says which, and no tab is called just "Fundal".
 - **Every recommendation carries its evidence.** A `Recommendation` has a `Because`: the
   metric and the threshold. "Do X" without a number is not a recommendation here.
 - **Thresholds are empirical rules of thumb, not physical constants.** Each one in
