@@ -132,6 +132,8 @@ namespace FlatCheck
             w.WriteLine($"                (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)");
             w.WriteLine($"    adancimea : {DepthDetail(r)},");
             w.WriteLine($"                pe aceeasi scara ({DepthScale()})");
+            foreach (string line in StructureReport.DepthLightScaleNote(r.DepthDiffStops).Split('\n'))
+                w.WriteLine("                " + line);
             w.WriteLine("    " + WorseOfBoth());
         }
 
@@ -148,7 +150,8 @@ namespace FlatCheck
 
         /// <summary>Cele doua parti ale verdictului pe un rand, pentru fereastra, care n-are blocul consolei.</summary>
         internal static string VerdictDetail(AgainstResult r)
-            => $"forma: {ShapeDetail(r)}. Adancimea: {DepthDetail(r)} ({DepthScale()}). {WorseOfBoth()}";
+            => $"forma: {ShapeDetail(r)}. Adancimea: {DepthDetail(r)} ({DepthScale()}). "
+             + StructureReport.DepthLightScaleNote(r.DepthDiffStops).Replace('\n', ' ') + " " + WorseOfBoth();
 
         /// <summary>Benzile adancimii in stopuri, derivate din scara de reziduu prin 2^|D| - 1.</summary>
         internal static string DepthScale()

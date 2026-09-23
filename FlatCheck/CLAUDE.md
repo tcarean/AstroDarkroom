@@ -1133,6 +1133,23 @@ Decisions, all measured:
   (`2^|D| - 1`, the corner error of a light calibrated with the wrong flat) onto the
   residual scale, exactly as `--against`'s depth does: 0.03 / 0.14 / 0.26 stops. The
   arithmetic moved from `AgainstResult` into `Stats` when the second consumer appeared.
+- **Two scales for one number, and the report shows both (2026-09-23).** That corner
+  error is exactly what `--light` measures, directly in the light, against
+  `Th.LightRadOk` / `LightRadBad` = 2 / 5 %; here it is judged on the residual scale,
+  where 10 % is still BUN. The user asked which one to believe. The answer is the
+  reference: the depth verdict's reference is a published profile, and the two databases
+  differ by `Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 % in the corner on the same
+  lens, three times `--light`'s PROBLEMA line, so a finer verdict here would be invented
+  precision, while `--light` measures the light itself and can afford 5 %. Aligning the
+  bands (option B) was measured and turned down: it put most of the library - the paper
+  masters at 6-8 %, the Nikkor sky masters at 7-8 % - on REFA below the reference's own
+  resolution. Option A is what is built: `Stats.DepthOnLightScale` reads the same error
+  through the same `Verdict` and the same `Th.LightRad*` that `LightAnalyzer` uses, and
+  `StructureReport.DepthLightScaleNote` prints the corner error, the word `--light` would
+  give it and the reference's spread (from `Th`, never written out) - under the depth
+  scale in the console, under `--against`'s depth line, glued to the scale note on the
+  Structure tab and to the verdict detail on the Sintetic tab. Verdicts and exit codes
+  did not move. Pinned by `TheDepthNoteSaysWhatTheLightScaleWouldReadAndWhyItDoesNotDecide`.
 - **The verdict is the nearest profile's, not the worst.** The two databases differ by
   ~0.2 stops on the same lens (`docs/lens-profiles.md` §8); a master that coincides with
   one of them is not wrong, and "worst" would have called the good monitor masters REFA
@@ -1986,35 +2003,77 @@ there, with two lens-shaped lobes bounded by sharp arcs. Found on the Tokina 20 
 smooth synthetic with the fitted coefficients, which is what proved the arcs were the
 model's: the error of the map against the true residual was 8.9 % outside the circle.
 
-So on the partial rings the profile is now the median of `v / (1 + q_c r² cos 2θ + q_s r² sin 2θ)`,
-where `q` is the *relative* 2θ amplitude per `r²` - a ratio, like every other figure in the
-tool, since a sky term multiplies and grows with `r²`. `q` is estimated on each identifiable
-partial ring by `Metrics.RingFit` - on the medians of 15° sectors, by least median of
-squares, so a compact blotch that symmetrising turns into an antipodal pair (which *is* a 2θ
-signal on its rings) cannot enter it - then smoothed with a running median over 7 rings; in
-the corners, where the arcs can no longer separate a 2θ term from the constant (a purely
-geometric criterion, `RingFitMinDet` on the correlation determinant of the basis), `q` is
-carried from the last identifiable rings. Inside the circle nothing changed: the ring median
-is exact on a full ring and immune to anything compact. `a0` stays a pixel median
-everywhere, so the profile's noise and robustness are what they were.
+So on the partial rings the profile is now the median of
+`v / (1 + r² (q2c cos 2θ + q2s sin 2θ + q4c cos 4θ + q4s sin 4θ))`, where `q` are the
+*relative* amplitudes per `r²` - ratios, like every other figure in the tool, since a sky
+term multiplies and grows with `r²`. `q` is estimated on each identifiable partial ring by
+`Metrics.RingFit` - on the medians of 15° sectors, by weighted least squares in three rounds
+with the sectors beyond 2.5 MAD dropped between rounds, so a compact blotch that symmetrising
+turns into an antipodal pair (which *is* a 2θ signal on its rings) leaves the estimate at the
+second round - and then taken as **one median over every ring from `RingQFrom` = 0.75 of
+the inscribed radius outward, full rings included**: a single `q` per `r²`, hence a
+correction that is smooth in `r` and cannot draw rings. The full rings are in the median
+because on them the harmonics are exactly identifiable; from the arcs alone the split
+between 2θ and 4θ is ill-conditioned and extrapolates into the unobserved azimuths
+(measured: +1.3 points on the worst tile of the Nikkor ISO400 sky master for nothing in
+the data, 0.4 with the anchor). In the corners, where the arcs can no longer separate the
+terms from the constant (a purely geometric criterion, `RingFitMinDet` on the determinant
+of the basis's Gram matrix normalised to a full ring's variance - **not** a correlation
+determinant, which reads 1 on the corner arcs of a square frame however narrow they are),
+the same `q` applies. Inside the circle nothing changed: the ring median is exact on a full
+ring and immune to anything compact. `a0` stays a pixel median everywhere, so the profile's
+noise and robustness are what they were.
 
-Measured: on the sky master the sharpest step between 8-px tiles of the residual went
-3.58 → 0.23 % on the synthetic and 2.71 → 0.44 % on the master; the true-residual error
-on the synthetic 8.9 → 0.5 %; the four clean masters in the library moved by 0.0-0.3
-points and no verdict changed; the monitor master with its blotches - genuine even
-structure, -2 to -5 % on its partial rings, seen by two independent estimators - reads
-2 points more on the worst tile, which is what the median had been hiding in the profile.
-The golden files moved by 0.01-0.05 points. The header comment of `RadialModel` lists the
-four designs that were measured and rejected on the way (a0 straight from a per-ring fit,
-a global quadratic even correction, absolute amplitudes held from the last ring, a 4θ
-term) and why each failed; read it before changing the method, and read
-`docs/radial-model-even-term.md` for the full specification of `RingFit` (constants,
-sector rule, LMedS, the smoothing across rings) with every measurement behind it. Pinned by
-`RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner` (the model against the same
-scene without the saddle, under 1 % everywhere) and by
-`ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`, which is the test the rejected
-designs failed. `flatcheck.py` mirrors it in full (`radial_model`, `_ring_fit`) and all 43
-`crosscheck.py` scenarios still agree.
+**The third face (2026-09-23): the 4θ term is in the basis because without it a 4θ field
+was read as 2θ.** On arcs of ±30-60° about the x axis `cos 2θ` and `cos 4θ` are nearly
+collinear. A master built from four orientations rotated 90° has, by construction, *no* 2θ
+part of the world and *only* the 4θ family (the world's blotches smeared four-fold), so the
+2θ-only fit of version 2.2 had nothing to correct and injected `q2c` of +2..+4 % with the
+sign flipping ring to ring (the LMedS it used picked different sector triplets), stepped
+the profile by −1.7 % exactly on the inscribed circle, and drew a red annulus with a hard
+circular edge on the Tokina tablet master whose blotches are smooth - the user's words: "in
+nature there are no straight lines". Measured on synthetics with known truth (model/truth
+error, rms): a 6 % saddle - ring median 0.76 %, 2θ 0.03, 2θ+4θ 0.03; a 3 % 4θ term - median
+0.17, **2θ 1.87 (ring steps 2.6 %)**, 2θ+4θ 0.03; saddle + 4θ, gradient, compact blotch,
+blotch + saddle, blotch + 4θ: 2θ+4θ under 0.13 %. On the real masters the largest step of
+the residual's ring mean: rotated tablet master 0.73 → 0.17 %, monitor 1.01 → 0.29, sky
+0.31 → 0.31; a single-orientation stack read 17.9 % residual for 7.6 % of true non-radial
+content and reads 7.9. LMedS was dropped: the MAD clipping held the +10 % corner blotch out
+of the estimate (0.08 % error). The running median over 7 rings was dropped too: on the
+blotchy real masters it left ring-to-ring steps of 0.7-1 %; one median over all rings does
+not, at the cost of a smooth misfit where the true `q` varies with `r` (the sky master's
+residual 9.31 → 9.71 %).
+
+The earlier measurements still hold: on the sky master the sharpest step between 8-px
+tiles of the residual went 3.58 → 0.23 % on the synthetic and 2.71 → 0.44 % on the master;
+the true-residual error on the synthetic 8.9 → 0.5 %. The header comment of `RadialModel`
+lists the designs that were measured and rejected on the way (a0 straight from a per-ring
+fit, a global quadratic even correction, absolute amplitudes held from the last ring, a 4θ
+amplitude *extrapolated* into the corners, the 7-ring running median) and why each failed;
+read it before changing the method, and read `docs/radial-model-even-term.md` for the full
+specification of `RingFit` (constants, sector rule, the identifiability gate, the rounds)
+with every measurement behind it, section 7 for the 4θ face. Pinned by
+`RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner` and
+`RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner` (the model against the
+same scene without the term, under 1 % everywhere),
+`OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure` (end to end, the
+ring-step metric under 0.5 %) and by `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`,
+which is the test the rejected designs failed. `flatcheck.py` mirrors it in full
+(`radial_model`, `_ring_fit`) and all 43 `crosscheck.py` scenarios still agree.
+
+**The ring-step metric stays out of the report; don't add it.** The number that says
+whether a map carries rings of the model's making is the largest change of the residual's
+ring mean between two consecutive profile bins (`WorstRingStep` in
+`StructureAnalyzerTests`; floor 0.03-0.36 % on the library, 0.5-1.3 % was a visible ring).
+It was asked for under the map and turned down (2026-09-23): it is a property of the
+model, not of the flat, so printed beside the five tests it reads as a sixth quality
+figure that sits at the floor on every real master; and it cannot tell a model artefact
+from real fine structure - the on-monitor master's paper texture reads 0.79 % with no ring
+of the model's in it, so a warning threshold would fire exactly where `--smooth` is the
+answer. The guard is the test suite (the gradient and four-fold scenes, 0.5 % threshold)
+and, when the model is touched, the whole-library loop of `docs/radial-model-even-term.md`
+§6.1 with the maps looked at on a fixed scale. Shapes are the eye's job, by the tool's own
+rule.
 
 **A "vignetting edge" metric was prototyped on the same occasion and rejected; don't
 build it.** The rings on the Nikkor ISO800 map had been read as a hard-edged, decentred
@@ -2123,7 +2182,7 @@ Every threshold lives in `Th`. Full picture:
 | tilt (linear term) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | worst tile (`pata maxima`) | structure | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | local spot (`pete locale`) | structure | 2% = warning only, never a verdict | | `Th.LocalSpotWarn` |
-| vignetting vs the lens profile (nearest) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops | | `Th.Resid*` via `Stats.DepthVerdict` |
+| vignetting vs the lens profile (nearest) | structure, `--raw`/`--lens` | *residual scale* through `2^|D| - 1`: 0.03 / 0.14 / 0.26 stops; the report also prints what `--light`'s 2 / 5 % would say of the same corner error, and the reference's own spread (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 %) - informative, never a verdict | | `Th.Resid*` via `Stats.DepthVerdict`; `Stats.DepthOnLightScale` for the note |
 | the five structure tests on `(A+B)/2` | ratio | *residual scale* | | `Th.ResidPerfect/Usable/Check` |
 | world-fixed gradient per orientation | ratio | 1.0% | 3.0% | `Th.RatioOk/Bad` - informative label only |
 | \|radial component\| | light | 2.0% | 5.0% | `Th.LightRadOk/Bad` |

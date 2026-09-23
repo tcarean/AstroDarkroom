@@ -16,9 +16,9 @@ Copyright (C) 2026 Tudor Carean
   INAINTE / DUPA - cele cinci teste de structura
     imprastiere 4 colturi   :  0.57 % [PERFECT]  ->   0.57 % [PERFECT]
     asimetrie azimutala max :  0.29 % [PERFECT]  ->   0.29 % [PERFECT]
-    reziduu dupa model rad. :  0.30 % [PERFECT]  ->   0.29 % [PERFECT]
+    reziduu dupa model rad. :  0.29 % [PERFECT]  ->   0.29 % [PERFECT]
     inclinare (gradient)    :  0.41 % [PERFECT]  ->   0.41 % [PERFECT]
-    pata maxima (o dala)    :  0.37 % [PERFECT]  ->   0.37 % [PERFECT]
+    pata maxima (o dala)    :  0.40 % [PERFECT]  ->   0.40 % [PERFECT]
     VERDICT                 : PERFECT  ->  PERFECT
 
     INFORMATIV: fisierul netezit pastreaza TOT ce e neted in master si scoate tot ce nu e. Nu stie

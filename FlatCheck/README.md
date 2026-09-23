@@ -169,6 +169,17 @@ două baze diferă între ele cu ~0.2 stopuri pe același obiectiv, și un maste
 cu una din ele nu e greșit. Verdictul rulării e cel mai rău dintre formă (cele cinci teste)
 și adâncime, și codul de ieșire îl urmează.
 
+**Două scări pentru aceeași mărime.** Eroarea din colțul light-ului calibrat e exact ce
+măsoară și `--light`, direct în light, cu pragurile lui de 2 % OK și 5 % PROBLEMA. Aici
+aceeași eroare stă pe scara de reziduu, unde 10 % e încă BUN, pentru că referința e alta:
+profilul publicat, iar cele două baze diferă între ele cu 0.2 stopuri, adică 15 % în colț,
+de trei ori linia de PROBLEMA a lui `--light`. Un verdict mai fin decât referința lui ar fi
+o precizie inventată. De aceea raportul le arată pe amândouă: sub scara adâncimii tipărește
+eroarea din colț, ce ar citi `--light` din ea și incertitudinea referinței. La un exces de
+0.10 stopuri, cazul foilor de hârtie pe tabletă, asta înseamnă 7 % în colț, BUN pe scara de
+aici și PROBLEMA pe cea a lui `--light`; citește-le pe amândouă înainte să decizi dacă
+refaci flat-urile, și ține minte că `--light` însuși e refuzat pe un câmp mai larg de 40°.
+
 **Semnul e diagnosticul.** Plus înseamnă că masterul cade spre colț mai mult decât modelul:
 sursa cade cu unghiul — un panou prea aproape sau fără difuzor adevărat (foile mate nu
 difuzează). Minus înseamnă că sursa umple colțurile: cupola cerului, lumină ambiantă, o

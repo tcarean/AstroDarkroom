@@ -388,11 +388,12 @@ def fit_center(img):
     return cx, cy, tilt, True
 
 
-RING_FIT_MIN_DET = 0.10   # sub atat termenii 2t nu se mai pot separa de a0 pe arcele unui inel
+RING_FIT_MIN_DET = 0.02   # sub atat baza 2t+4t nu se mai poate separa pe arcele unui inel (det. Gram, la varianta unui inel intreg)
 RING_SECTORS = 24         # sectoare de 15 grade; fitul pe inel se face pe medianele lor
-RING_SMOOTH = 7           # mediana glisanta a amplitudinilor 2t, in inele
-RING_TRIPLE_MIN_DET = 1e-9   # un triplet de sectoare cu determinantul sub atat nu da candidat LMedS
-RING_FIT_TIE = 1e-9          # toleranta (relativ la nivel) la alegerea inlierilor, pt scene fara zgomot
+RING_MIN_SECTORS = 6      # sub atatea sectoare populate inelul nu se estimeaza
+RING_FIT_ROUNDS = 3       # runde de cele mai mici patrate cu taiere la 2.5 MAD
+RING_Q_FROM = 0.75        # q e mediana peste inelele de la atata din raza inscrisa in afara, intregi si partiale
+RING_FIT_TIE = 1e-9       # toleranta (relativ la nivel) la alegerea inlierilor, pt scene fara zgomot
 
 
 def radial_model(img, cx, cy, nbins=80):
@@ -402,11 +403,17 @@ def radial_model(img, cx, cy, nbins=80):
     si imuna la ce e compact. Dincolo de el un inel e doar arce partiale la azimuturi fixe,
     si mediana pe arce absorbea in profil partea PARA neradiala (o sa, x^2 - y^2), pe care
     simetrizarea la 180 de grade nu o atinge. Acolo profilul e mediana lui
-    v / (1 + q_c r^2 cos 2t + q_s r^2 sin 2t), cu amplitudinile relative q estimate pe
-    fiecare inel identificabil din medianele sectoarelor (LMedS, robust la o pata compacta)
-    si netezite cu o mediana glisanta peste RING_SMOOTH inele; in colturi, unde baza e
-    degenerata, q vine de la ultimele inele identificabile. Vezi Metrics.RadialModel din C#,
-    a carui pereche numerica e."""
+    v / (1 + r^2 (q2c cos 2t + q2s sin 2t + q4c cos 4t + q4s sin 4t)), cu amplitudinile
+    relative q estimate pe fiecare inel identificabil din medianele sectoarelor (cele mai
+    mici patrate cu taiere la 2.5 MAD) si luate ca O SINGURA mediana peste inelele de la
+    RING_Q_FROM * r_ins in afara, intregi si partiale - un q constant pe r^2, deci o corectie
+    neteda in r, care nu poate desena inele. Inelele intregi intra fiindca pe ele armonicile
+    sunt exact identificabile: numai din arce, impartirea intre 2t si 4t e prost conditionata
+    si extrapolarea spre azimuturile neobservate a pus +1.3 puncte pe dala maxima a
+    masterului Nikkor ISO400 fara motiv; ancorate, 0.4. Termenul 4t e in baza fiindca pe arce de +-30..60 de grade cos 2t si cos 4t sunt
+    aproape coliniare: fara el, un master rotit in patru pozitii (care are NUMAI familia 4t)
+    primea un 2t fals de 2-4 % si o harta cu un inel rosu si un cerc dur. Vezi
+    Metrics.RadialModel din C#, a carui pereche numerica e."""
     h, w = img.shape
     y, x = np.mgrid[0:h, 0:w]
     r = np.hypot(x - cx, y - cy)
@@ -420,96 +427,77 @@ def radial_model(img, cx, cy, nbins=80):
         m = idx == i
         if m.sum() >= 8:
             rings.append(((i + 0.5) / nbins * rmax, img[m], np.cos(2 * t[m]), np.sin(2 * t[m]), sector[m]))
-    # amplitudinile relative per r^2 pe inelele partiale identificabile
-    q = []                                       # (index in rings, q_c, q_s)
-    for n, (center, v, c, s, k) in enumerate(rings):
-        if center < r_ins:
+    # amplitudinile relative per r^2 pe inelele identificabile de la RING_Q_FROM * r_ins in
+    # afara - intregi (unde armonicile sunt exact identificabile si ancoreaza estimarea) si
+    # partiale - apoi mediana lor
+    q = []
+    for center, v, c, s, k in rings:
+        if center < RING_Q_FROM * r_ins:
             continue
         f = _ring_fit(v, c, s, k)
         if f is not None:
-            q.append((n, f[1] / f[0] / (center * center), f[2] / f[0] / (center * center)))
+            q.append([f[j] / f[0] / (center * center) for j in range(1, 5)])
+    q = np.median(np.array(q), axis=0) if q else None
     centers, prof = [], []
-    for n, (center, v, c, s, _) in enumerate(rings):
+    for center, v, c, s, _ in rings:
         centers.append(center)
-        if center < r_ins or not q:
+        if center < r_ins or q is None:
             prof.append(float(np.median(v)))
             continue
-        # mediana glisanta peste inelele identificabile din jur; in colturi, peste ultimele
-        pos = sum(1 for qq in q if qq[0] < n)
-        if pos < len(q) and q[pos][0] == n:
-            lo, hi = max(0, pos - RING_SMOOTH // 2), min(len(q), pos + RING_SMOOTH // 2 + 1)
-        else:
-            lo, hi = max(0, len(q) - RING_SMOOTH), len(q)
-        qc = float(np.median([qq[1] for qq in q[lo:hi]])) * center * center
-        qs = float(np.median([qq[2] for qq in q[lo:hi]])) * center * center
-        prof.append(float(np.median(v / (1 + qc * c + qs * s))))
+        c4, s4 = 2 * c * c - 1, 2 * s * c
+        corr = 1 + center * center * (q[0] * c + q[1] * s + q[2] * c4 + q[3] * s4)
+        prof.append(float(np.median(v / corr)))
     centers, prof = np.array(centers), np.array(prof)
     model = np.interp(r.ravel(), centers, prof).reshape(img.shape)
     return r, centers, prof, model
 
 
 def _ring_fit(v, c, s, sector):
-    """Un inel identificabil: (a0, a2, b2) peste medianele sectoarelor, prin cele mai mici
-    patrate ponderate (ponderea = pixelii sectorului) pe sectoarele pe care le accepta o
-    estimare LMedS (least median of squares: solutia exacta a fiecarui triplet de sectoare,
-    castiga cea cu mediana patratelor reziduurilor cea mai mica). Breakdown 50 %: o pata
-    compacta care, simetrizata, ocupa 2-4 sectoare din 12 nu mai intra in a0. Taierea la
-    3 MAD pe reziduurile unui fit LS nu o prindea: fitul o absorbea prin baza 2t atat de
-    bine ca reziduurile ei cadeau in zgomotul celorlalte. None cand baza nu e
-    identificabila pe arce (geometrie pura) sau cand sunt sub 4 sectoare."""
-    n = v.size
-    sc, ss = c.sum(), s.sum()
-    scc, sss, scs = (c * c).sum(), (s * s).sum(), (c * s).sum()
-    det = (n * (scc * sss - scs * scs) - sc * (sc * sss - scs * ss) + ss * (sc * scs - scc * ss)) \
-        / (n * scc * sss)
-    if not det >= RING_FIT_MIN_DET:
-        return None
-    med, mc, ms, wt = [], [], [], []
+    """Un inel identificabil: (a0, a2, b2, a4, b4) ale lui
+    a0 + a2 cos 2t + b2 sin 2t + a4 cos 4t + b4 sin 4t peste medianele sectoarelor, prin
+    cele mai mici patrate ponderate (ponderea = pixelii sectorului), RING_FIT_ROUNDS runde,
+    intre runde sectoarele cu reziduul peste 2.5 MAD fiind scoase - o pata compacta care,
+    simetrizata, ocupa 2-4 sectoare din 24, iese la a doua runda. None cand baza nu e
+    identificabila pe arce (determinantul Gram al celor patru coloane neconstante, la
+    varianta unui inel intreg, sub RING_FIT_MIN_DET - geometrie pura, in colturi) sau cand sunt sub
+    RING_MIN_SECTORS sectoare populate. Aceeasi aritmetica precum Metrics.RingFit din C#."""
+    med, rows, wt = [], [], []
     for k in range(RING_SECTORS):
         m = sector == k
         cnt = int(m.sum())
         if cnt >= 8:
+            ck, sk = c[m], s[m]
             med.append(float(np.median(v[m])))
-            mc.append(float(c[m].mean()))
-            ms.append(float(s[m].mean()))
+            rows.append([1.0, float(ck.mean()), float(sk.mean()),
+                         float((2 * ck * ck - 1).mean()), float((2 * sk * ck).mean())])
             wt.append(float(cnt))
     m = len(med)
-    if m < 4:
+    if m < RING_MIN_SECTORS:
         return None
-    med, mc, ms, wt = np.array(med), np.array(mc), np.array(ms), np.array(wt)
-    best, best_score = None, None
-    for i in range(m - 2):
-        for j in range(i + 1, m - 1):
-            for k in range(j + 1, m):
-                d3 = (mc[j] * ms[k] - ms[j] * mc[k]) - (mc[i] * ms[k] - ms[i] * mc[k]) \
-                    + (mc[i] * ms[j] - ms[i] * mc[j])
-                if abs(d3) < RING_TRIPLE_MIN_DET:
-                    continue
-                # regula lui Cramer pe [[1, mc, ms]] * cand = med, aceeasi aritmetica precum in C#
-                cand = ((med[i] * (mc[j] * ms[k] - ms[j] * mc[k]) - med[j] * (mc[i] * ms[k] - ms[i] * mc[k])
-                         + med[k] * (mc[i] * ms[j] - ms[i] * mc[j])) / d3,
-                        ((med[j] * ms[k] - ms[j] * med[k]) - (med[i] * ms[k] - ms[i] * med[k])
-                         + (med[i] * ms[j] - ms[i] * med[j])) / d3,
-                        ((mc[j] * med[k] - med[j] * mc[k]) - (mc[i] * med[k] - med[i] * mc[k])
-                         + (mc[i] * med[j] - med[i] * mc[j])) / d3)
-                res = med - (cand[0] + cand[1] * mc + cand[2] * ms)
-                score = float(np.median(res * res))
-                if best is None or score < best_score:
-                    best, best_score = cand, score
-    if best is None:
+    med, B, wt = np.array(med), np.array(rows), np.array(wt)
+    # identificabilitate: determinantul matricei Gram a coloanelor neconstante centrate,
+    # normalizata la 1/2 - varianta unei armonice pe un inel intreg - deci 1 pe un inel
+    # intreg si spre 0 pe arce inguste. NU prin corelatie: pe arcele din colturile unui
+    # cadru patrat corelatia ar da 1 oricat de inguste ar fi, cu un fit fara sens.
+    D = B[:, 1:] - B[:, 1:].mean(axis=0)
+    det = float(np.linalg.det(D.T @ D / m / 0.5))
+    if not det >= RING_FIT_MIN_DET:
         return None
-    scale = 1.4826 * np.sqrt(best_score) * (1 + 5.0 / (m - 3))
-    res = med - (best[0] + best[1] * mc + best[2] * ms)
-    inlier = np.abs(res) <= 2.5 * scale + RING_FIT_TIE * abs(float(best[0]))
-    if inlier.sum() < 4:
-        return [float(best[0]), float(best[1]), float(best[2])]
-    A = np.stack([np.ones(m), mc, ms], 1)[inlier]
-    Aw = A * wt[inlier][:, None]
-    try:
-        sol = np.linalg.solve(A.T @ Aw, Aw.T @ med[inlier])
-    except np.linalg.LinAlgError:
-        return [float(best[0]), float(best[1]), float(best[2])]
-    return [float(sol[0]), float(sol[1]), float(sol[2])]
+    inlier = np.ones(m, dtype=bool)
+    sol = None
+    for _ in range(RING_FIT_ROUNDS):
+        A = B[inlier]
+        Aw = A * wt[inlier][:, None]
+        try:
+            sol = np.linalg.solve(A.T @ Aw, Aw.T @ med[inlier])
+        except np.linalg.LinAlgError:
+            return None
+        res = med - B @ sol
+        mad = float(np.median(np.abs(res - np.median(res)))) * 1.4826
+        inlier = np.abs(res) <= 2.5 * mad + RING_FIT_TIE * abs(float(sol[0]))
+        if inlier.sum() < RING_MIN_SECTORS:
+            inlier = np.ones(m, dtype=bool)
+    return [float(x) for x in sol]
 
 
 # ---------------------------------------------------------------- metrici

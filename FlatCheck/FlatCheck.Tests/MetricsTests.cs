@@ -768,6 +768,37 @@ public class MetricsTests
     }
 
     /// <summary>
+    /// THE REGRESSION TEST for the third face of the ring artefact (2026-09-23).
+    ///
+    /// A master built from four orientations rotated 90 degrees keeps NO 2-theta part of
+    /// the world - it cancels by construction - and only the 4-theta family, the world's
+    /// blotches smeared four-fold. On the partial arcs about the x axis cos 2t and cos 4t
+    /// are nearly collinear, so a ring fit with only 2-theta in its basis read that term as
+    /// a 2-theta of +2..+4 % with the sign flipping ring to ring, stepped the profile by
+    /// -1.7 % on the inscribed circle and drew a red annulus with a hard edge on a master
+    /// whose blotches are smooth (the Tokina tablet master of that day). With 4-theta in the
+    /// basis the model recovers the radial part to a few hundredths of a percent; measured
+    /// 1.87 % rms and 2.6 % ring steps with the 2-theta-only fit, 0.03 % with this one.
+    /// Same statement as the saddle test: the model against the truth, corners included.
+    /// </summary>
+    [Fact]
+    public void RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner()
+    {
+        var fourfold = Img.Prepare(Make(2400, 1600,
+            FitsTestData.WithFourfold(FitsTestData.Radial(2400, 1600), 2400, 1600, 0.03)));
+        var truth = Img.Prepare(Make(2400, 1600, FitsTestData.Radial(2400, 1600)));
+        double cx = fourfold.W / 2.0, cy = fourfold.H / 2.0;
+
+        var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(fourfold), cx, cy);
+        var (_, _, reference) = Metrics.RadialModel(truth, cx, cy);
+
+        double worst = 0;
+        for (int i = 0; i < model.D.Length; i++)
+            worst = Math.Max(worst, Math.Abs(model.D[i] / reference.D[i] - 1) * 100);
+        Assert.True(worst < 1.0, $"modelul radial ar trebui sa ignore termenul de 4t, dar s-a abatut cu {worst:F3} %");
+    }
+
+    /// <summary>
     /// Si celalalt capat: pe un camp radial simetrizarea nu are ce sa scoata, deci
     /// profilul nu se muta mai mult decat artefactul de o jumatate de pixel al centrarii
     /// (problema cunoscuta 5) - masurat 0.20 % pe 256x256, si scade ca ~1/n.

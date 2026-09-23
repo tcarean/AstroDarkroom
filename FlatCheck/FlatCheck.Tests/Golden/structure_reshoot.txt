@@ -12,7 +12,7 @@ Copyright (C) 2026 Tudor Carean
         E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
         obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
         iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
-    pete locale (praf etc.) : +0.03 % (mai luminos) la (202, 52)
+    pete locale (praf etc.) : +0.13 % (mai luminos) la (241, 10)
         Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
         Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
         condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
@@ -25,9 +25,9 @@ Copyright (C) 2026 Tudor Carean
         stanga-jos    :  71.34 % din media colturilor
         dreapta-jos   : 128.95 % din media colturilor
     asimetrie azimutala max : 54.75 %   [REFA]
-    reziduu dupa model rad. : 52.01 %   [REFA]  <- CEL MAI IMPORTANT
+    reziduu dupa model rad. : 52.02 %   [REFA]  <- CEL MAI IMPORTANT
     inclinare (gradient)    : 62.04 %   [REFA]
-    pata maxima (o dala)    : 29.45 %   [REFA]
+    pata maxima (o dala)    : 29.43 %   [REFA]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta

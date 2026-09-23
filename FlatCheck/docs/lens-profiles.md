@@ -465,6 +465,27 @@ from the two databases. The five tests measure departure from radial symmetry; a
 excess is invisible to them and to `--ratio`. The lens profile is the only external
 reference the tool has.
 
+**The two scales of the corner error (2026-09-23).** The depth verdict turns the difference
+in stops into the corner error of a calibrated light, `2^|D| − 1`, and judges it on the
+residual scale (2 / 10 / 20 %). `--light` measures the same error directly in the light and
+judges it with `Th.LightRadOk` / `LightRadBad` = 2 / 5 %. The user asked which to believe:
+on the paper-diffused tablet masters +0.10 stops is 7 %, BUN here and PROBLEMA there. They
+are not the same measurement. `--light`'s reference is the light itself; this test's is a
+published profile, and section 8 puts the two databases 0.16-0.25 stops apart on the same
+lens at the same aperture (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 % in the
+corner), three times `--light`'s PROBLEMA line. A depth verdict finer than that would be
+precision the reference does not have. Aligning the bands to 2 / 5 was worked through and
+turned down: it put the paper masters (6-8 %), the Nikkor 35 DX sky masters (7-8 %) and
+the Samyang f/2 master on REFA, all below the reference's resolution. What is built instead
+is the note under the depth scale (`StructureReport.DepthLightScaleNote`, also under
+`--against`'s depth line and on both tabs of the window): the corner error, the word
+`--light` would give it - through `Stats.DepthOnLightScale`, the same `Verdict` and the
+same thresholds `LightAnalyzer` uses - and the reference's spread, all read from `Th`.
+Verdicts and exit codes did not move. The one measurement that would settle how much of
+the paper masters' +0.10 is the panel and how much the reference is the distance test
+(the same sheets with the lens 2-3 cm off them; the lens's vignetting does not depend on
+distance, the panel's angular excess does), which is the user's to run.
+
 **How.** For each candidate lens (`LensIdentification`: the raw's Nikon ID narrowed by the
 MakerNote range and the camera's mount, the lensfun lenses of the same makers; or, when the
 ID matches nothing, the lenses of the mount whose *name* says exactly the raw's range - the

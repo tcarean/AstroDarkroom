@@ -15,18 +15,22 @@ Copyright (C) 2026 Tudor Carean
                               A                                     B                                     A / B (diferenta)
     vignetare centru -> colt  0.76 stopuri                          0.46 stopuri                          0.30 stopuri [REFA]
     offset centru iluminare   0.19 %                                0.19 %                                0.18 %
-    pete locale (praf etc.)   -0.03 % (mai intunecat)               +0.02 % (mai luminos)                 -0.01 % (mai intunecat)
+    pete locale (praf etc.)   +0.08 % (mai luminos)                 +0.05 % (mai luminos)                 +0.04 % (mai luminos)
     imprastiere 4 colturi     0.57 % [PERFECT]                      0.31 % [PERFECT]                      0.26 %
     asimetrie azimutala max   0.29 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
-    reziduu dupa model rad.   0.30 % [PERFECT]                      0.18 % [PERFECT]                      0.11 %
+    reziduu dupa model rad.   0.29 % [PERFECT]                      0.17 % [PERFECT]                      0.11 %
     inclinare (gradient)      0.41 % [PERFECT]                      0.26 % [PERFECT]                      0.15 %
-    pata maxima (o dala)      0.37 % [PERFECT]                      0.20 % [PERFECT]                      0.17 %
+    pata maxima (o dala)      0.40 % [PERFECT]                      0.22 % [PERFECT]                      0.18 %
 
   VERDICTUL DIFERENTEI: REFA
     forma     : PERFECT: cele cinci teste pe raport, pe scara de reziduu a structurii
                 (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)
     adancimea : REFA: 0.30 stopuri = 23.0 % eroare in coltul light-ului calibrat,
                 pe aceeasi scara (sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, peste REFA)
+                In coltul unui light calibrat cu masterul: 23.0 %; pe scara modului --light (2 % OK,
+                5 % PROBLEMA), care masoara aceeasi marime direct in light, ar fi PROBLEMA.
+                Referinta insasi difera cu 0.2 stopuri = 15 % intre bazele de profile,
+                deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.
     Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.
 
     -> harta salvata: <TMP>/out.png

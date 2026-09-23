@@ -157,6 +157,15 @@ namespace FlatCheck
         public const double ProfileFocalTolFrac = 0.05;
         public const double ProfileStopsTol = 0.5;
 
+        // Cat difera cele doua baze de profile intre ele, pe acelasi obiectiv, la aceeasi
+        // diafragma, in coltul cadrului: 0.16-0.25 stopuri pe Tokina 11-20 si Nikkor 35 DX
+        // (docs/lens-profiles.md, sectiunea 8). E incertitudinea REFERINTEI verdictului de
+        // adancime, si motivul pentru care acel verdict sta pe scara de reziduu (10 % = BUN)
+        // si nu pe cea a modului --light (5 % = PROBLEMA), desi masoara aceeasi marime:
+        // 0.2 stopuri = 15 % in colt, de trei ori linia de PROBLEMA. Nu e un prag: raportul
+        // il citeaza ca sa spuna cat de fin poate fi verdictul, nu ca sa decida ceva.
+        public const double ProfileDatabaseSpreadStops = 0.2;
+
         // --- expunere, pe fereastra centrala 20% a canalului celui mai luminos ---
         public const double ExpoClip = 0.05;        // % pixeli saturati = clipping
         public const double ExpoTooLow = 30.0;      // sub asta masterul iese zgomotos

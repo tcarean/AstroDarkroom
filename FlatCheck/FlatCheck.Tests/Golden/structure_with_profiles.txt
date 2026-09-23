@@ -12,7 +12,7 @@ Copyright (C) 2026 Tudor Carean
         E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
         obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
         iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
-    pete locale (praf etc.) : +0.31 % (mai luminos) la (9, 21)
+    pete locale (praf etc.) : +0.12 % (mai luminos) la (9, 15)
         Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
         Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
         condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
@@ -25,9 +25,9 @@ Copyright (C) 2026 Tudor Carean
         stanga-jos    :  99.76 % din media colturilor
         dreapta-jos   : 101.20 % din media colturilor
     asimetrie azimutala max :  0.75 %   [PERFECT]
-    reziduu dupa model rad. :  1.31 %   [PERFECT]  <- CEL MAI IMPORTANT
+    reziduu dupa model rad. :  1.19 %   [PERFECT]  <- CEL MAI IMPORTANT
     inclinare (gradient)    :  1.41 %   [PERFECT]
-    pata maxima (o dala)    :  2.03 %   [BUN]
+    pata maxima (o dala)    :  1.68 %   [PERFECT]
 
   SCARA celor cinci teste de abatere de mai sus
     sub 2 %      calitate perfecta
@@ -55,6 +55,10 @@ Copyright (C) 2026 Tudor Carean
     Aceeasi scara de reziduu ca cele cinci teste (2 / 10 / 20 %), aplicata erorii pe care
     diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si
     tradusa in stopuri. Nu e un prag nou.
+    In coltul unui light calibrat cu masterul: 21.1 %; pe scara modului --light (2 % OK,
+    5 % PROBLEMA), care masoara aceeasi marime direct in light, ar fi PROBLEMA.
+    Referinta insasi difera cu 0.2 stopuri = 15 % intre bazele de profile,
+    deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.
     Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul
     loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e
     modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.

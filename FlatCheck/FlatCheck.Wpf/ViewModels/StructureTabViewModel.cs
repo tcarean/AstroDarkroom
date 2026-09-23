@@ -310,7 +310,8 @@ namespace FlatCheck.Wpf
                 ProfileScale = StructureReport.DepthScaleRows()
                     .Select(s => new ScaleRow { Band = s.Band, Range = s.Range, Meaning = s.Meaning, IsCurrent = s.Band == c.Verdict })
                     .ToList();
-                ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ');
+                ProfileScaleNote = StructureReport.DepthScaleNote().Replace('\n', ' ') + " "
+                                 + StructureReport.DepthLightScaleNote(c.Nearest.DiffStops).Replace('\n', ' ');
                 ProfileNote = StructureReport.ComparisonNote().Replace('\n', ' ');
             }
             else

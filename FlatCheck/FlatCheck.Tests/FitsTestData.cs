@@ -236,6 +236,25 @@ internal static class FitsTestData
     internal static Func<int, int, double> WithSaddle(Func<int, int, double> b, int w, int h, double s) =>
         (x, y) => b(x, y) * (1.0 + s * (2.0 * x / w - 1.0) * (2.0 * y / h - 1.0));
 
+    /// <summary>
+    /// Multiplies by a four-fold term <c>1 + a * rn^2 * sin(4 theta + phase)</c> (rn = 1 at the
+    /// corner): the even non-radial family a master built from four orientations rotated 90
+    /// degrees keeps - the world's blotches smeared four-fold - which has no 2-theta part at
+    /// all, so a ring fit with only 2-theta in its basis reads it as 2-theta on the partial
+    /// arcs. Amplitude <paramref name="a"/> at the corner, <paramref name="phaseDeg"/> so the
+    /// lobes do not sit on the axes.
+    /// </summary>
+    internal static Func<int, int, double> WithFourfold(Func<int, int, double> b, int w, int h, double a, double phaseDeg = 20)
+    {
+        double cx = w / 2.0, cy = h / 2.0, rmax = Math.Sqrt(cx * cx + cy * cy), phase = phaseDeg * Math.PI / 180;
+        return (x, y) =>
+        {
+            double dx = x - cx, dy = y - cy;
+            double rn2 = (dx * dx + dy * dy) / (rmax * rmax);
+            return b(x, y) * (1.0 + a * rn2 * Math.Sin(4 * Math.Atan2(dy, dx) + phase));
+        };
+    }
+
     /// <summary>Per-Bayer-position gain, so the four CFA channels separate (RGGB-like).</summary>
     internal static Func<int, int, double> WithBayerMosaic(
         Func<int, int, double> b, double rGain = 0.62, double bGain = 0.48) =>

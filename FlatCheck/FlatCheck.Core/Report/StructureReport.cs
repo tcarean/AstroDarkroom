@@ -128,7 +128,31 @@ namespace FlatCheck
             Indent(ComparisonSummary(c), w);
             w.WriteLine($"    ({AgainstReport.DepthScale()})");
             Indent(DepthScaleNote(), w);
+            Indent(DepthLightScaleNote(c.Nearest.DiffStops), w);
             Indent(ComparisonNote(), w);
+        }
+
+        /// <summary>
+        /// Ce ar citi modul --light din aceeasi diferenta, si de ce verdictul adancimii nu sta pe
+        /// scara lui: eroarea din colt, cuvantul ei pe scara 2 / 5 % a lui --light (prin
+        /// Stats.DepthOnLightScale, deci cu pragurile lui, nu copiate), si incertitudinea
+        /// referintei, Th.ProfileDatabaseSpreadStops, tradusa in aceeasi eroare din colt. Cele
+        /// doua scari judeca aceeasi marime cu incertitudini diferite; raportul le arata pe
+        /// amandoua in loc sa aleaga in locul cititorului. Tiparita de consola sub scara
+        /// adancimii si de --against sub randul lui de adancime; fereastra o lipeste de nota
+        /// scarii. Pe NaN spune ca nu se poate citi, ca restul blocului.
+        /// </summary>
+        internal static string DepthLightScaleNote(double diffStops)
+        {
+            double spread = Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops);
+            string reference = $"Referinta insasi difera cu {Th.ProfileDatabaseSpreadStops:F1} stopuri = {spread:F0} % intre bazele de profile,\n"
+                             + "deci verdictul adancimii nu poate fi mai fin de atat si ramane pe scara de reziduu.";
+            if (double.IsNaN(diffStops))
+                return "Pe scara modului --light diferenta nu se poate citi (nedeterminata). " + reference;
+            double err = Stats.DepthErrorPct(diffStops);
+            return $"In coltul unui light calibrat cu masterul: {err:F1} %; pe scara modului --light ({Th.LightRadOk:F0} % OK,\n"
+                 + $"{Th.LightRadBad:F0} % PROBLEMA), care masoara aceeasi marime direct in light, ar fi {Stats.DepthOnLightScale(diffStops)}.\n"
+                 + reference;
         }
 
         /// <summary>

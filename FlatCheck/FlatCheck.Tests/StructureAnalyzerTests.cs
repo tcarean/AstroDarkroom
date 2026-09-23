@@ -313,6 +313,26 @@ public class StructureAnalyzerTests
             $"harta nu ar trebui sa aiba inele, dar cel mai mare salt a fost {worstFixed:F3} %");
     }
 
+    /// <summary>
+    /// The third face of the same artefact, end to end (2026-09-23): a four-fold term - the
+    /// only non-radial family a master rotated through four orientations keeps - must leave
+    /// a map without rings, and the residual must read the injected structure rather than
+    /// the model's error. With the 2-theta-only ring fit this scene read 6.97 % residual
+    /// and 2.6 % ring steps for 3.05 % of injected structure; now 3.04 % and 0.14 %.
+    /// </summary>
+    [Fact]
+    public void OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure()
+    {
+        var r = StructureAnalyzer.Analyze(TestImages.From(2400, 1600,
+            FitsTestData.WithFourfold(FitsTestData.Radial(2400, 1600), 2400, 1600, 0.03)));
+
+        double worst = WorstRingStep(r.Residual);
+
+        Assert.True(worst < 0.5,
+            $"harta nu ar trebui sa aiba inele, dar cel mai mare salt a fost {worst:F3} %");
+        Assert.InRange(r.ResidualPtpPct, 2.5, 3.6);   // the injected 3 %, not the model's error
+    }
+
     /// <summary>Cel mai mare salt intre mediile a doua inele consecutive, in procente.</summary>
     static double WorstRingStep(Img resid)
     {

@@ -133,6 +133,17 @@ namespace FlatCheck
         /// <summary>Verdictul unei diferente de adancime, pe scara de reziduu aplicata erorii din colt.</summary>
         internal static string DepthVerdict(double stops) => ResidualVerdict(DepthErrorPct(stops));
 
+        /// <summary>
+        /// Aceeasi eroare din colt, citita pe scara modului --light (Th.LightRadOk / LightRadBad,
+        /// prin acelasi <see cref="Verdict"/> pe care il foloseste LightAnalyzer, ca cele doua sa nu
+        /// poata diverge). Informativ: verdictul adancimii ramane pe scara de reziduu, fiindca
+        /// referinta lui - profilul publicat - e incerta cu Th.ProfileDatabaseSpreadStops intre
+        /// baze, adica mai mult decat linia de PROBLEMA a scarii --light; --light masoara aceeasi
+        /// marime direct in light si isi permite linia de 5 %. Raportul le arata pe amandoua.
+        /// </summary>
+        internal static string DepthOnLightScale(double stops)
+            => Verdict(DepthErrorPct(stops), Th.LightRadOk, Th.LightRadBad);
+
         /// <summary>Inversul lui <see cref="DepthErrorPct"/>: stopurile la care eroarea din colt atinge un prag.</summary>
         internal static double StopsForError(double errorPct) => Math.Log2(1 + errorPct / 100);
 

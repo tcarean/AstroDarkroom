@@ -386,6 +386,39 @@ public class StructureReportTests
         Assert.Contains("Nu e un prag nou", StructureReport.DepthScaleNote());
     }
 
+    /// <summary>
+    /// The depth verdict and --light judge the same number - the corner error of a
+    /// calibrated light - on two scales: 10 % is BUN here and 5 % is PROBLEMA there. The
+    /// depth verdict stays on the residual scale because its reference, the published
+    /// profile, is uncertain by ~0.2 stops between the two databases (15 % in the corner,
+    /// three times --light's PROBLEMA line), and the report says so instead of choosing
+    /// for the reader: the corner error, the word --light would give it (through the same
+    /// Verdict and the same Th.LightRad* as LightAnalyzer, so a recalibration cannot leave
+    /// the sentence quoting old values), and the reference's own spread from Th. Decided
+    /// 2026-09-23 over aligning the bands, which would have put most of the library on
+    /// REFA below the reference's resolution.
+    /// </summary>
+    [Fact]
+    public void TheDepthNoteSaysWhatTheLightScaleWouldReadAndWhyItDoesNotDecide()
+    {
+        string tenth = StructureReport.DepthLightScaleNote(0.10);   // 7.2 % in the corner
+        Assert.Contains("7.2 %", tenth);
+        Assert.Contains("ar fi PROBLEMA", tenth);
+        Assert.Contains($"{Th.LightRadOk:F0} % OK", tenth);
+        Assert.Contains($"{Th.LightRadBad:F0} % PROBLEMA", tenth);
+        Assert.Contains($"{Th.ProfileDatabaseSpreadStops:F1} stopuri", tenth);
+        Assert.Contains($"{Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops):F0} %", tenth);
+        Assert.Contains("ramane pe scara de reziduu", tenth);
+
+        Assert.Contains("ar fi OK", StructureReport.DepthLightScaleNote(0.02));          // 1.4 %
+        Assert.Contains("ar fi SUSPECT", StructureReport.DepthLightScaleNote(-0.05));    // 3.5 %, sign irrelevant
+        Assert.Contains("nu se poate citi", StructureReport.DepthLightScaleNote(double.NaN));
+
+        // the word is --light's own, not a copy: same function, same thresholds
+        Assert.Equal(Stats.Verdict(Stats.DepthErrorPct(0.10), Th.LightRadOk, Th.LightRadBad), Stats.DepthOnLightScale(0.10));
+        Assert.Equal("BUN", Stats.DepthVerdict(0.10));                                    // the verdict itself did not move
+    }
+
     [Fact]
     public void TheDepthAdviceReadsTheSignAsTheCause()
     {
