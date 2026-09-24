@@ -1,0 +1,40 @@
+# Template for a monorepo root (copy to <git root>/.github/workflows/ci.yml). One job per
+# project, each run only when that project's files change.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CI: "true"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      kit: ${{ steps.filter.outputs.kit }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            kit:
+              - 'ClaudeCodeStarterKit/**'
+            # flatcheck:
+            #   - 'FlatCheck/**'
+
+  verify-kit:
+    needs: changes
+    if: needs.changes.outputs.kit == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: ClaudeCodeStarterKit/global.json
+      - shell: pwsh
+        run: ./ClaudeCodeStarterKit/scripts/verify.ps1

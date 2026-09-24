@@ -1,0 +1,13 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once.
+       Rule from CLAUDE.md: no new package without asking, and every package gets a one-line
+       "why" comment. Removing a package is a change worth a CHANGELOG line. -->
+  <ItemGroup>
+    <!-- Test host and runner. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <!-- Property-based tests for numeric code; finds the inputs a hand-written example misses. -->
+    <PackageVersion Include="FsCheck.Xunit" Version="3.4.0" />
+  </ItemGroup>
+</Project>

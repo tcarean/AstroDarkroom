@@ -1,0 +1,12 @@
+{
+  "$comment": "Acceptance figures, machine-readable. ValidationTests reads this file; docs/validation.md explains each entry. Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "cases": [
+    {
+      "id": "V-001",
+      "fixture": "numbers-small.txt",
+      "measuredOn": "2026-09-24",
+      "expected": { "count": 10, "median": 5.5, "robustSigma": 3.7065 },
+      "tolerance": { "median": 0.0, "robustSigma": 0.0001 }
+    }
+  ]
+}

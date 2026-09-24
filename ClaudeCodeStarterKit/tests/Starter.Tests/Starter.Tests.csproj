@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>Starter.Tests</RootNamespace>
+    <!-- CA1707: underscores in test names are the convention here, not a defect. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FsCheck.Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Starter.Core\Starter.Core.csproj" />
+    <ProjectReference Include="..\..\src\Starter.Cli\Starter.Cli.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Small fixtures and the acceptance figures travel with the test binaries, so a test
+         never depends on the working directory. -->
+    <Content Include="..\testdata\fixtures\**" LinkBase="testdata\fixtures" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\testdata\manifest.json" Link="testdata\manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\validation.json" Link="docs\validation.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\Directory.Build.props" Link="Directory.Build.props" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

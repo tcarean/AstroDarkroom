@@ -1,0 +1,53 @@
+{
+  "$comment": "Project-level Claude Code settings, versioned. Machine-specific grants go to settings.local.json (git-ignored). The PreToolUse hook runs scripts/verify.ps1 before any git commit the model attempts and blocks --no-verify.",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build*)",
+      "Bash(dotnet test*)",
+      "Bash(dotnet format*)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet run*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "PowerShell(dotnet build*)",
+      "PowerShell(dotnet test*)",
+      "PowerShell(dotnet format*)",
+      "PowerShell(dotnet restore*)",
+      "PowerShell(dotnet run*)",
+      "PowerShell(git status*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git log*)",
+      "PowerShell(git branch*)",
+      "PowerShell(git add*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-testdata.ps1)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git commit --no-verify*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git reset --hard*)",
+      "PowerShell(git commit --no-verify*)",
+      "Read(**/*.secrets.json)",
+      "Read(**/.env)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/hooks/claude-commit-gate.ps1",
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

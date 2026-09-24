@@ -1,0 +1,34 @@
+<Project>
+  <!-- Shared by every project in the solution. The single place for version, strictness and
+       analyzers. Do not move <Version> into a csproj: VersionTests checks this file. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <Authors>Tudor Carean</Authors>
+
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Strictness: warnings fail the build, style is checked at build time, analyzers at the
+         newest recommended level. The model cannot argue with these. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+
+    <!-- Reproducibility: same inputs, same bytes; package versions locked. -->
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+
+    <!-- IDE0005 (unused usings) only runs at build when the doc file is generated. CS1591
+         (missing XML comment) is muted: comments are for the "why", not for every member. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+</Project>

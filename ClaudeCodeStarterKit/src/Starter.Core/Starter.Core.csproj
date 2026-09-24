@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- All logic lives here. No Console, no UI, no entry point: the compile boundary that keeps
+       the core testable without a window or a terminal. -->
+  <PropertyGroup>
+    <RootNamespace>Starter.Core</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Starter.Tests" />
+  </ItemGroup>
+</Project>

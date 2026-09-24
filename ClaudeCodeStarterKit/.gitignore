@@ -1,0 +1,20 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.trx
+artifacts/
+
+# Local-only Claude Code settings (permissions granted on this machine)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Large test data lives outside the repo; see tests/testdata/README.md
+tests/testdata/large/
+
+# Secrets never live here
+*.secrets.json
+.env

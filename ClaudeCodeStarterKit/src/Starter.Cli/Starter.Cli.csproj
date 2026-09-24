@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Thin entry point: parses arguments, calls Core, prints. Nothing worth testing lives here
+       except Run(), which the acceptance tests drive with a TextWriter. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Starter.Cli</RootNamespace>
+    <AssemblyName>starter</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Starter.Core\Starter.Core.csproj" />
+    <InternalsVisibleTo Include="Starter.Tests" />
+  </ItemGroup>
+</Project>
