@@ -1,7 +1,7 @@
 # Process notes: conventions, versioning, licensing, build and run
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. The Committing section predates rule 13 of CLAUDE.md, which now governs; the rest stands.
+> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. The Committing section predates rule 13 of CLAUDE.md, which now governs; the rest stands. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `CrossCheckFixtures` and `SCENARIOS` in `crosscheck.py`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -252,3 +252,249 @@ flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic
 ```
 
 Remember: the flag must come *after* the file path.
+
+
+## Extending the console
+
+> Added 2026-09-25 (docs-health audit, gap 2). **Covers:** `FlatCheck/Options.cs`,
+> `FlatCheck/FlatCheckCli.cs`, `FlatCheck/Program.cs`, `FlatCheck/FlatCheck.csproj`,
+> `FlatCheck.Tests/GoldenOutputTests.cs` with `Golden/`, `FlatCheck.Tests/CrossCheckFixtures.cs`
+> with `SCENARIOS` in `crosscheck.py`, the mode lists in `FlatCheck.Tests/VersionTests.cs`, and
+> the "Opțiuni" section of `README.md`.
+
+The console is three files, and that is the point: `Program.cs` is a one-line shim (`Main`
+calls `FlatCheckCli.Run(args, Console.Out, Console.Error)`), `Options.cs` parses, and
+`FlatCheckCli.cs` dispatches and turns a verdict into an exit code. Everything else is
+`FlatCheck.Core/Runs/`. A new flag or a new mode touches those files plus a fixed list of
+tests and documents; this section is that list, in the order the work goes.
+
+### The Options contract
+
+- `Options` is an `internal sealed class` of plain `internal` fields: no properties, no
+  setters, no builder. One field per flag (`Image`, `Ratio`, `Light`, `Expo`, `Sky`, `Histeq`,
+  `Smooth`, `ScalePx`, `ScaleAuto`, `Synthetic`, `Lens`, `Source`, `Focal`, `FStop`, `Crop`,
+  `Profiles`, `Lenses`, `Against`, `Raw`, `OutPng`, `Sat`, `Black`, `Pattern`, `Fov`), plus
+  `Help` and `Error`. A flag with a value is a `string` or a nullable number (`double?`), so
+  "not given" is `null` and never a sentinel; a switch is a `bool`. Defaults are field
+  initialisers, and when the default is a number the core owns it (`ScalePx =
+  SmoothAnalyzer.DefaultScalePx`, `Pattern = SeriesFinder.DefaultPattern`): the console holds
+  no number of its own (rule 6, ADR 0011).
+- `Options.Parse(string[] args)` never throws. It returns an `Options` with `Help = true` (no
+  arguments, or `-h` / `--help` anywhere; parsing stops there), or with `Error` set (the first
+  failure wins: `Fail(message)` stores it and returns the same object), or fully parsed with
+  `Error == null`. There is no exception path and no result type; `OptionsTests` asserts on
+  the fields and on `Error` directly.
+- The error is a Romanian string that names the argument and what it expected, without the
+  `EROARE: ` prefix; `FlatCheckCli.Run` adds the prefix when it prints it to stderr and exits
+  1 (R-005). Follow the existing shape: `--fov asteapta grade intre 0 si 180, a primit {v}`.
+- Every flag is in exactly one of two static sets: `BoolFlags` (a switch, no value) or
+  `ValueFlags` (consumes the next token). A token that starts with `-` and is in neither set
+  fails with `optiune necunoscuta`, unless it parses as a number, so `-5` stays a positional.
+  A value flag with no next token, or whose next token is itself a flag, fails before the
+  value is read. The value's own validation is the `case` for that flag in the `switch`:
+  `TryNum` (`double.TryParse` with `NumberStyles.Any` and `CultureInfo.InvariantCulture`, so
+  `0.5` parses and `0,5` does not; `SatAndBlack_UseInvariantCulture...` in `OptionsTests`),
+  then the range or the enumeration inline (`--fov` in (0, 180), `--scale` in [50, 2000] or
+  `auto`, `--source` `adobe` or `lensfun`).
+- Flags come before or after the path with the same result (R-003;
+  `R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath` in `GoldenOutputTests`). The parser
+  collects every non-flag token as positional and, after the loop, wants exactly one; none
+  with `--lenses`, which is a list and needs no input. The sentence at the end of "Run" above
+  and in CLAUDE.md's Commands, "the flag comes after the path", predates phase 8; either order
+  works.
+- Cross-argument checks come after the loop, in the same method: `--smooth` and `--synthetic`
+  refuse to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
+  exceed `--black`. Mode flags are **not** mutually validated here
+  (`HisteqAndExpoTogether_BothStaySet`): `flat.fit --histeq --expo` parses cleanly with both
+  set, and dispatch decides.
+
+So a new flag is: a field with its default, an entry in `BoolFlags` or `ValueFlags`, a `case`
+with its validation and its `Fail` messages, a cross-argument check when it interacts with
+another flag, and an `OptionsTests` fact for the parsed value and for each `Fail`. A new mode
+adds its switch or value flag the same way and continues below.
+
+### Dispatch in FlatCheckCli.Run
+
+`Run(string[] args, TextWriter stdout, TextWriter stderr)` is the whole program and is what
+every test calls, with two `StringWriter`s. In order:
+
+1. `RunReport.WriteBanner(stdout)`: version on line 1, copyright on line 2, before anything
+   else, so `--help` and errors carry them too (R-001).
+2. `Options.Parse`. `Help` prints `WriteUsage` and returns 0. `Error` prints
+   `EROARE: <Error>` to stderr and returns 1.
+3. A folder as input is refused with exit 1 unless `--light` (series mode).
+4. The mode, chosen by the first match in a fixed `if / else if` chain: `--lenses`,
+   `--synthetic`, `--against`, `--smooth`, `--histeq`, `--expo`, `--ratio`, `--light`,
+   structure (the default, no flag). This chain is the mutual exclusion R-003 promises and its
+   order is the requirement. The comment at the top of `FlatCheckCli.cs` still lists the
+   pre-mode-7 order; the code is the truth. A new mode is one more `else if`, placed where its
+   precedence belongs, and R-003 is updated in the same task.
+5. Everything inside the chain runs under one `try`; any exception becomes
+   `EROARE: <message>` on stderr and exit 1. That is how a missing file, an invalid FITS or a
+   failed fit are reported; the run methods do not catch.
+6. A trailing empty line on stdout, then the exit code.
+
+Each mode has one static `RunX(Options, TextWriter[, TextWriter err])` that calls its
+`XRun.Execute(...)` in `FlatCheck.Core/Runs/`, writes the map(s) through `SaveMap` (which also
+prints the `harta salvata` line via `RunReport.WriteMapSaved`) and returns either the verdict
+string or an exit code:
+
+- A mode with a verdict returns the verdict and the chain wraps it in `ExitFor(string)`
+  (`OK` / `PERFECT` / `BUN` → 0, `Stats.NotApplicable` → 1, `SUSPECT` / `ACCEPTABIL` /
+  `NEDETERMINAT` → 2, anything else 3); `--expo` has its own `ExitFor(ExposureVerdict)`. The
+  mapping is R-002, explained in `thresholds.md`, pinned by `R002_ExitCodesFollowVerdictSeverity`.
+- A mode without a verdict (`--histeq`, `--smooth`, `--synthetic`, `--lenses`) returns its
+  `int` directly and must not invent an `OK`: 0 means "wrote the file", 1 a refusal (the first
+  line of the outcome's `Refusal` goes to stderr with the `EROARE: ` prefix), 2 "read this
+  before deciding" (`--scale auto` with nothing to propose, `--synthetic` with an ambiguous
+  lens).
+- Secondary map paths are derived from `-o` by suffix (`WorldMapPath` → `-lume`,
+  `AfterMapPath` → `-dupa`; R-006), never by a second flag.
+
+Nothing in these methods computes: a run method that needs a number or a sentence gets it from
+a `Runs/` outcome (rule 6).
+
+### Usage text
+
+`WriteUsage(TextWriter)` is a private static method at the bottom of `FlatCheckCli.cs`: one
+`WriteLine` per invocation form, then the optional flags grouped by the mode they serve, then a
+short paragraph per mode, then `RunReport.WarrantyLines` (GPLv3 §5(d); see "Licensing"). It is
+Romanian without diacritics, like every console line; `README.md` uses diacritics.
+`Golden/help.txt` pins the whole text through `Help_IsPrintedForNoArgs` and
+`Help_IsPrintedForHelpFlags` (`-h`, `--help`), and
+`R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense` in `VersionTests` pins the legal
+lines. Any edit to `WriteUsage`, a new flag included, therefore changes `help.txt` and goes
+through the golden procedure below. The default printed for `--scale` is interpolated from
+`SmoothAnalyzer.DefaultScalePx`, so the number lives once; do the same for a new default.
+
+### Adding a golden scenario
+
+The golden tests are the console's output contract; the class comment in
+`GoldenOutputTests.cs` says why they are not scaffolding. The mechanics:
+
+- `RunCli(TempWorkspace ws, params string[] args)` runs `FlatCheckCli.Run` in-process with two
+  `StringWriter`s, appends stderr after a `[stderr]` marker line when there was any, replaces
+  the workspace folder with `<TMP>` (`<TMP>/` when a separator follows), replaces the banner
+  line with `flatcheck <VERSIUNE>` (`VersionBanner`, multiline with `\r?`), and returns
+  `(Output, Exit)`. The copyright line is not scrubbed (see "Licensing"). Only paths inside
+  the workspace are scrubbed, so every fixture and every `-o` goes through `ws.PathTo` or
+  `Flat(ws, ...)`.
+- `AssertGolden(name, actual)` normalises CRLF to LF and compares with
+  `FlatCheck.Tests/Golden/<name>.txt`, found relative to the test source file
+  (`[CallerFilePath]`), not to the build output. With `FLATCHECK_UPDATE_GOLDEN=1` it writes the
+  file instead (UTF-8 without BOM, LF) and asserts nothing; **a missing file is therefore
+  created on the first run under the variable**. Without the variable a missing file fails
+  with a message that says to re-run with it.
+- Names are lowercase `mode_scenario` in snake case: `structure_clean`, `ratio_world`,
+  `light_series_undetermined`, `smooth_auto_no_texture`, `synthetic_ambiguous`, `help`. A name
+  describes the behaviour, not the fixture.
+
+The procedure:
+
+1. Write the test in the mode's section of `GoldenOutputTests.cs` (the `// ---- mode`
+   rulers). Build the fixture in a `using var ws = new TempWorkspace()` from `FitsTestData`
+   scenes (every FITS fixture is generated in the test; nothing is read from disk), call
+   `RunCli`, assert the exit code and one or two `Assert.Contains` on the lines that carry the
+   behaviour, and end with `AssertGolden("<name>", output)`. Name the test `R###_...` when it
+   implements a requirement row. Add a golden file only for a genuinely distinct behaviour;
+   when one line must appear, an `Assert.Contains` on an existing scenario is enough.
+2. Run the update once, on the golden tests only:
+
+   ```powershell
+   $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter GoldenOutputTests; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
+   ```
+
+   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln` form in CLAUDE.md is the same
+   thing from a POSIX shell. The variable rewrites **every** golden file, not only the new one.
+3. `git status`: the only change under `Golden/` must be the new untracked file. A modified
+   existing file is an output change you did not mean, or one you did mean and must now
+   account for; either way it is read line by line, never re-approved by reflex.
+4. Read the new file top to bottom, as the user reads the console: the banner placeholder, the
+   copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
+   `<TMP>/`.
+5. Run the suite without the variable; it must be green.
+6. The owner reads the diff and approves it (rule 3). The assistant proposes; it never
+   re-approves a changed golden file on its own, and never edits one by hand.
+
+### Adding a cross-check scenario
+
+When it is required: rule 16. A formula changed in C# (`FlatCheck.Core/Metrics.cs`,
+`Stats.cs`, `Analysis/`, `Report/`) is changed in `flatcheck.py` too, and
+`scripts/crosscheck.ps1` runs before the task ends. A **new** scenario is required when the
+change opens a path the existing scenarios do not exercise: a new band or branch of a metric, a
+new input shape (size, BITPIX, a header card), a new option that changes a number, or a new
+mode that has a Python counterpart. `--histeq`, `--smooth` and mode 7 have no counterpart on
+purpose (rule 16, ADR 0038) and get no scenario. `python-parity.md` lists the current coverage
+and the intentional divergences.
+
+A scenario has two halves that must agree on the file name:
+
+1. **The fixture**, in `CrossCheckFixtures.DumpsFixturesWhenAsked`. The test does nothing
+   unless `FLATCHECK_DUMP_FIXTURES` names a folder; then it writes every fixture there. Add a
+   `Write(dir, "name.fit", scene)` for a 512×512 frame, or
+   `File.WriteAllBytes(Path.Combine(dir, "name.fit"), FitsTestData.BuildFits(w, h, scene,
+   bitpix: ..., extraCards: ...))` for another size, BITPIX or header, or
+   `SeriesDir(dir, "name", scenes...)` for a `--light` folder. Reuse the golden test's
+   `FitsTestData` scene when there is one, so the golden file and the cross-check pin the same
+   bytes, and say in a comment which branch the fixture is there to reach.
+2. **The invocation**, in `SCENARIOS` in `crosscheck.py`: a tuple
+   `("<mode> <what>", ["name.fit", "--flag", "value", ...])`, grouped with its mode. The
+   script appends `-o py.png` / `-o cs.png` itself, runs `flatcheck.py` and the Release
+   `flatcheck.exe` (`FlatCheck/bin/Release/net8.0/flatcheck.exe`) in the fixture folder,
+   normalises the `harta salvata` line and the banner in `norm()`, and compares the text and
+   then every numeric token as a float (tolerance 1e-9). The name is what the report prints
+   and what `KNOWN_NUMERIC_DIVERGENCE` is keyed by; a scenario whose numbers differ **on
+   purpose** goes there with the reason, and the reason is also in `python-parity.md` (today
+   only `structure uniform`, ADR 0038). A new option must exist in `flatcheck.py`'s argparse
+   too, or the Python side fails on it.
+
+Then run `scripts/crosscheck.ps1` (it dumps with `dotnet test -c Release --filter
+DumpsFixtures`, which also builds the Release exe, then runs `crosscheck.py`) and paste its
+summary. The scenario count is quoted in the header of `scripts/crosscheck.ps1`, in
+`python-parity.md` and in "Versioning" above (43 on 2026-09-25); update all three.
+
+### The VersionTests mode lists
+
+`R001_EveryModePrintsTheBannerOnTheFirstLine` and `R001_EveryModePrintsTheCopyrightOnTheSecondLine`
+each hold an explicit list of invocations, one `Assert.Equal` per mode; the copyright one adds a
+`--smooth` refusal, `--help` and a missing file. A new mode is one more line in each, with the
+arguments it needs to reach its report. On 2026-09-25 the lists cover structure, `--ratio`,
+`--light`, `--expo`, `--histeq` and `--smooth` (fixed scale and `auto`). `--synthetic`,
+`--lenses` and `--against` are not in them, although R-001 says every mode; for those three
+only the mode 7 golden files carry the banner placeholder. Adding the three lines is a test
+change and belongs to the next task that touches mode 7 or these tests.
+
+### The README "Opțiuni" section
+
+`README.md` is the user documentation and the only place the options are described for users
+(rule 14; "Conventions" above). Its `## Opțiuni` section is a code block that mirrors
+`WriteUsage`: the invocation forms, then one line per flag with the modes it applies to and its
+default, then two paragraphs (flags on either side of the path; the banner on every run). Every
+option appears there, in Romanian with diacritics. A new flag gets its line there, a mention in
+the mode's own `### N.` section when it changes what that mode does, and a line under
+`## Coduri de ieșire` when it adds or changes an exit code. Before any of that, the behaviour
+is a row in `docs/requirements.md` (rule 1: "Console contract" for a flag, the mode's block for
+a mode), and the change gets its `CHANGELOG.md` line (rule 9).
+
+### InvariantGlobalization
+
+`FlatCheck/FlatCheck.csproj` sets `<InvariantGlobalization>true</InvariantGlobalization>`, and
+so does `FlatCheck.Core.csproj`. It is a runtime switch read from the executable's
+`runtimeconfig.json`: the console runs without ICU culture data, its `CurrentCulture` behaves
+as the invariant culture whatever the Windows locale, so `{x:F2}` prints `0.29` and never
+`0,29`, and the golden files and `crosscheck.py` compare against that. Two consequences for new
+code:
+
+- Parsing an argument still names the culture explicitly (`TryNum` passes
+  `CultureInfo.InvariantCulture`), and so should any new formatting or parsing in
+  `FlatCheck.Core`: the same core runs inside the WPF exe, which does **not** set the switch
+  (WPF cannot load XAML without culture data, ADR 0037) and pins numbers in code through
+  `App.ForceInvariantNumbers` instead. The setting in `FlatCheck.Core.csproj` has no effect on
+  a host that does not set its own. `CultureTests` in `FlatCheck.Wpf.Tests` runs the window
+  under `ro-RO` to prove the saved report matches the console.
+- `FlatCheck.Tests` does not set the switch either, so the golden tests format under the test
+  host's culture, and the report code mostly formats with the ambient culture
+  (`StructureReport` names the invariant one in a single place). They pass on the author's
+  machine, whose culture is `en-GB` with a dot. A machine with a comma culture would fail
+  them; when that happens, pin the switch in the test project rather than editing a golden
+  file.
