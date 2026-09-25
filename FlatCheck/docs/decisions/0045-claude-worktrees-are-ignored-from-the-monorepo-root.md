@@ -1,4 +1,4 @@
-# 0043. Claude Code worktrees are ignored from the monorepo root, not from FlatCheck's .gitignore
+# 0045. Claude Code worktrees are ignored from the monorepo root, not from FlatCheck's .gitignore
 
 Date: 2026-09-25
 Status: accepted 2026-09-25

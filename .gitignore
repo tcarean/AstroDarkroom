@@ -52,5 +52,5 @@ bin/
 obj/
 .vs/
 
-# Claude Code worktrees, in any project folder (FlatCheck ADR 0043, kit ADR 0015)
+# Claude Code worktrees, in any project folder (FlatCheck ADR 0045, kit ADR 0015)
 **/.claude/worktrees/

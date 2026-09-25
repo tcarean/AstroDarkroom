@@ -33,4 +33,4 @@ because a project made from the kit may be a standalone repository with no root 
 
 `monorepo/README.md` and the monorepo table of `GHID.md` list the root line beside the hooks and
 CI. The pattern is redundant with the kit's line inside the kit folder, which is harmless. In
-`photo` the decision is FlatCheck ADR 0043.
+`photo` the decision is FlatCheck ADR 0045.
