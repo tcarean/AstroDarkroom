@@ -39,6 +39,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   names a script, folder or file that does not exist; the four names absent on purpose are
   listed in the test with their reason. `/wrap-up` gains step 8: when a change touches
   `scripts/`, `.claude/`, `CLAUDE.md` or `monorepo/`, check what the guide and README say about it.
+- `AI Prompt to Generate Starter Project.md`: a stack- and model-neutral prompt that asks a future
+  agent to rebuild a setup with the same principles, gates, documentation set and acceptance
+  checklist from the best practices of its own day; it describes goals and proofs, not this
+  implementation.
 
 ### Changed
 

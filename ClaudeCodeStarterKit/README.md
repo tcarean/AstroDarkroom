@@ -64,6 +64,7 @@ a ghidului cu el.
 | `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`; un agent nou apare dupa repornirea sesiunii |
 | `scripts/mutate.ps1`, `.config/dotnet-tools.json` | mutation testing pe Core cu Stryker.NET, la cerere; minute, nu in gate |
+| `AI Prompt to Generate Starter Project.md` | prompt neutru fata de stack si model, de rulat peste luni sau ani pe un agent nou, ca sa refaca un setup cu aceleasi principii, gate-uri si documentatie dupa bunele practici de atunci; descrie scopuri si dovezi, nu implementarea de aici |
 | `.github/workflows/ci.yml`, `bitbucket-pipelines.yml` | CI, acelasi script |
 | `monorepo/` | hook si CI pentru cazul in care kit-ul e un folder intr-un repo mai mare |
 
