@@ -1,7 +1,7 @@
 # 0002. All logic lives in a library that cannot reach Console or a UI
 
 Date: 2026-09-24
-Status: accepted
+Status: accepted 2026-09-24
 
 ## Context
 

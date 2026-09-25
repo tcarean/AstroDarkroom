@@ -1,7 +1,7 @@
 # 0004. The kit works as a folder inside a monorepo, not only as a repository root
 
 Date: 2026-09-24
-Status: accepted
+Status: accepted 2026-09-24
 
 ## Context
 

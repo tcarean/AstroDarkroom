@@ -21,16 +21,18 @@ try {
     else {
         $target = Join-Path $gitRoot '.githooks'
         if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target | Out-Null }
-        $source = Join-Path $PSScriptRoot 'hooks\pre-commit'
-        $dest = Join-Path $target 'pre-commit'
-        # LF endings: git runs the hook through sh, which chokes on CR.
-        $text = [System.IO.File]::ReadAllText($source) -replace "`r`n", "`n"
-        [System.IO.File]::WriteAllText($dest, $text, (New-Object System.Text.UTF8Encoding $false))
-        # Keep it LF after a checkout on Windows too, whatever core.autocrlf says.
+        foreach ($name in @('pre-commit', 'commit-msg')) {
+            $source = Join-Path $PSScriptRoot ('hooks\' + $name)
+            $dest = Join-Path $target $name
+            # LF endings: git runs the hook through sh, which chokes on CR.
+            $text = [System.IO.File]::ReadAllText($source) -replace "`r`n", "`n"
+            [System.IO.File]::WriteAllText($dest, $text, (New-Object System.Text.UTF8Encoding $false))
+        }
+        # Keep them LF after a checkout on Windows too, whatever core.autocrlf says.
         [System.IO.File]::WriteAllText((Join-Path $target '.gitattributes'), "* text eol=lf`n", (New-Object System.Text.UTF8Encoding $false))
         Push-Location $gitRoot
         try { git config core.hooksPath .githooks } finally { Pop-Location }
-        Write-Host ("monorepo: hook copied to {0}; core.hooksPath = .githooks (repo root {1})" -f $dest, $gitRoot)
+        Write-Host ("monorepo: pre-commit and commit-msg copied to {0}; core.hooksPath = .githooks (repo root {1})" -f $target, $gitRoot)
         Write-Host 'Commit .githooks/ so every clone can run the same install.'
     }
     if ($LASTEXITCODE -ne 0) { throw 'git config failed.' }

@@ -34,6 +34,8 @@ try {
     if (-not $SkipTests) {
         Invoke-Step 'test'           { dotnet test $sln -c $Configuration --no-build --nologo -v q }
     }
+    # Success stamp, read by the Claude Code Stop hook ("did verify run after the last edit?").
+    [System.IO.File]::WriteAllText((Join-Path $root '.verify-stamp'), (Get-Date).ToString('o'))
     Write-Host ("== OK in {0:n0}s" -f $stopwatch.Elapsed.TotalSeconds) -ForegroundColor Green
     exit 0
 }

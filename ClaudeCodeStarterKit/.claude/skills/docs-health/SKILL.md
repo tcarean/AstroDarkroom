@@ -1,22 +1,21 @@
 ---
 name: docs-health
-description: Check whether docs/ alone would let a fresh model understand and change the project - the rebuild-readiness test. Use monthly, after a model change, or when the user says /docs-health.
+description: Check whether docs/ alone would let a fresh model understand and change the project - the rebuild-readiness test, run by the docs-auditor subagent with a clean context. Use monthly, after a model change, or when the user says /docs-health.
 ---
 
 # Docs health
 
-Answer the question: could a model that has never seen this code, given only `docs/`, `CLAUDE.md`,
-`CHANGELOG.md` and the test names, do the work? Do this without opening `src/`.
+The audit must run without the code in context, which your own context does not have (you
+have read `src/` by now, or will). So delegate it.
 
-1. Read `CLAUDE.md`, `docs/requirements.md`, `docs/decisions/*`, `docs/validation.md`,
-   `docs/ai-workflow.md`, `docs/design/*`, and the list of test names
-   (`dotnet test Starter.sln --list-tests`). Do not read `src/`.
-2. For each requirement: is there a test name carrying its ID? Is the example concrete enough to
-   write a test from? Is the status believable given the CHANGELOG?
-3. Pick the two most recent CHANGELOG entries. From docs alone, explain how each was implemented
-   and where. Where you would have to guess, write the guess down.
-4. Pick one plausible small change (the user may name one). Write the plan for it from docs alone.
-   List every place the plan says "probably" or "somewhere".
-5. Report: a table of gaps (what is missing, which file should hold it, how much work to add),
-   then the three gaps that most reduce rebuild-readiness. Do not fix anything in this pass.
-6. Keep CLAUDE.md under 200 lines: if it is longer, name the sections that should move to `docs/`.
+1. Launch the `docs-auditor` subagent (Agent tool, `subagent_type: docs-auditor`) with this
+   prompt: "Audit this project. Solution: `<name>.sln`. Small change to plan in step 4:
+   `<one the user named, or pick a plausible one from the CHANGELOG>`." Do not add anything
+   you know about the code; that would defeat the test.
+2. Wait for its report. Do not run the procedure yourself in parallel.
+3. Relay the report to the user in full: verdict, gaps table, top three, guesses, what is good.
+   The user does not see the subagent's output, only what you pass on.
+4. Do not fix anything in this pass. If the user picks gaps to close, that is a normal task:
+   requirement or ADR or design note first, then `/wrap-up`.
+5. If the subagent's report shows it opened `src/`, say so and discard the report; the audit is
+   invalid.

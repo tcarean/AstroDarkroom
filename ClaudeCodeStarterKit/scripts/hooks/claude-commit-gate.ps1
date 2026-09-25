@@ -1,7 +1,7 @@
 # Claude Code PreToolUse hook (see .claude/settings.json). Receives the tool call as JSON on
-# stdin. When the command is a git commit, runs scripts/verify.ps1 first and blocks the commit
-# (exit 2, message on stderr) if it fails or if --no-verify is present. Any other command
-# passes through untouched (exit 0).
+# stdin. When the command is a git commit: blocks --no-verify, runs scripts/check-staged.ps1
+# (src/ change needs a CHANGELOG line) and scripts/verify.ps1, and blocks the commit (exit 2,
+# message on stderr) if any of them fails. Any other command passes through untouched (exit 0).
 $ErrorActionPreference = 'Stop'
 $raw = [Console]::In.ReadToEnd()
 if ([string]::IsNullOrWhiteSpace($raw)) { exit 0 }
@@ -19,6 +19,17 @@ if ($command -match '(^|[;&|]\s*)git\s+commit\b[^;&|]*(\s--no-verify\b|\s-n\b)')
 }
 
 $projectDir = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }
+
+$checkStaged = Join-Path $projectDir 'scripts\check-staged.ps1'
+if (Test-Path $checkStaged) {
+    $output = & powershell -NoProfile -ExecutionPolicy Bypass -File $checkStaged 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        [Console]::Error.WriteLine('Blocked: staged changes break a rule. Output:')
+        [Console]::Error.WriteLine($output)
+        exit 2
+    }
+}
+
 $verify = Join-Path $projectDir 'scripts\verify.ps1'
 if (-not (Test-Path $verify)) { exit 0 }
 

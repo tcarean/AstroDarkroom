@@ -2,8 +2,9 @@
 # Git pre-commit hook: the deterministic gate. Works in two layouts:
 #   - standalone repo: the project is the git root, scripts/verify.ps1 is at the root;
 #   - monorepo: several project folders under one git root, each with its own scripts/verify.ps1.
-# For every staged file it walks up to the nearest folder holding scripts/verify.ps1 and runs
-# that script once per project. Folders without a verify script are not checked.
+# For every staged file it walks up to the nearest folder holding scripts/verify.ps1, then per
+# project runs scripts/check-staged.ps1 (staging rules) and scripts/verify.ps1 (the gate).
+# Folders without a verify script are not checked.
 # Installed by scripts/install-hooks.ps1. Skipping it (--no-verify) is forbidden by CLAUDE.md.
 root="$(git rev-parse --show-toplevel)" || exit 1
 cd "$root" || exit 1
@@ -28,11 +29,15 @@ done < "$staged"
 
 status=0
 for p in $(sort -u "$projects"); do
+  if [ -f "$root/$p/scripts/check-staged.ps1" ]; then
+    echo "pre-commit: check-staged $p"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/$p/scripts/check-staged.ps1" || { status=1; continue; }
+  fi
   echo "pre-commit: verify $p"
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/$p/scripts/verify.ps1" || status=1
 done
 
 if [ $status -ne 0 ]; then
-  echo "pre-commit: scripts/verify.ps1 failed; commit refused." >&2
+  echo "pre-commit: gate failed; commit refused." >&2
 fi
 exit $status

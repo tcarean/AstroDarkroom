@@ -1,11 +1,14 @@
 # NNNN. Title, as a short statement of the decision
 
 Date: YYYY-MM-DD
-Status: proposed | accepted | superseded by NNNN
+Status: proposed | accepted YYYY-MM-DD | superseded by NNNN
+Supersedes: NNNN (delete this line when the ADR replaces nothing)
 
 ## Context
 
 What situation forced a choice. Numbers, constraints, what was tried. Two to five sentences.
+When this ADR supersedes another: what changed since that decision (a new fact, a measurement,
+a failure), so a reader sees why the old reasoning no longer holds.
 
 ## Decision
 

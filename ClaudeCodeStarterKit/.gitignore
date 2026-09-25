@@ -6,11 +6,17 @@ obj/
 .vs/
 TestResults/
 *.trx
+# scripts/release.ps1 publishes here; releases are tags, not committed binaries
 artifacts/
 
 # Local-only Claude Code settings (permissions granted on this machine)
 .claude/settings.local.json
 .claude/worktrees/
+# Written by scripts/verify.ps1 on success; read by the Claude Code Stop hook
+.verify-stamp
+
+# Stryker.NET mutation reports (scripts/mutate.ps1)
+StrykerOutput/
 
 # Large test data lives outside the repo; see tests/testdata/README.md
 tests/testdata/large/

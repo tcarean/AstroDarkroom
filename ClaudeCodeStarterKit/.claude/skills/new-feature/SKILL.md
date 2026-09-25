@@ -15,7 +15,9 @@ Follow the order. Do not write implementation code before step 4 is approved.
    with `expected` left as `null` and a note in `docs/validation.md` saying it is unmeasured.
    The tests must fail now. Run them and paste the failing output.
 3. **Decision.** If the feature needs a design choice with more than one reasonable answer,
-   write `docs/decisions/NNNN-slug.md` (copy `0000-template.md`) with the alternatives and ask.
+   write `docs/decisions/NNNN-slug.md` (copy `0000-template.md`) with status `proposed` and the
+   alternatives, and ask. Only the owner's explicit yes in this session makes it `accepted`
+   (with the date); then, and not before, go on to the plan and the code.
 4. **Plan.** Enter plan mode. List the files to touch, the order, and how each step is verified.
    After approval save the plan to `docs/plans/YYYY-MM-DD-slug.md`.
 5. **Code.** Implement in `Core` first, then the entry point. Keep `scripts/verify.ps1 -SkipTests`

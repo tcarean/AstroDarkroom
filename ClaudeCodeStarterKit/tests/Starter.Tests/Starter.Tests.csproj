@@ -22,6 +22,7 @@
     <Content Include="..\testdata\fixtures\**" LinkBase="testdata\fixtures" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\testdata\manifest.json" Link="testdata\manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\docs\validation.json" Link="docs\validation.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\docs\requirements.md" Link="docs\requirements.md" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\Directory.Build.props" Link="Directory.Build.props" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
