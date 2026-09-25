@@ -2,8 +2,8 @@
 
 The kit does not need to be the root of a git repository. Claude Code takes the folder it is
 started in as the project root, so `CLAUDE.md`, `.claude/settings.json`, the hook, the skills,
-`global.json`, `Directory.Build.props` and `.editorconfig` all work per folder. Three things are
-repo-wide and are handled here.
+`global.json`, `Directory.Build.props` and `.editorconfig` all work per folder. The pieces
+below are repo-wide and are handled here.
 
 | Piece | Standalone repo | Monorepo |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ repo-wide and are handled here.
 | install | `scripts/install-hooks.ps1` | same script, the kit's copy (each copy writes its own hooks over `.githooks/`); it detects the layout. A project added later needs no install. A fresh clone needs only `git config core.hooksPath .githooks` |
 | CI | `bitbucket-pipelines.yml`, `.github/workflows/ci.yml` in the kit | `monorepo/bitbucket-pipelines.yml` or `monorepo/github-ci.yml` copied to the root, one step per project with a path filter |
 | line endings | `.gitattributes` and `.editorconfig` in the project | the project's files still apply per folder; one `<root>/.gitattributes` gives the projects without their own the same baseline: LF everywhere, CRLF for `.cmd`/`.bat`, binaries (ADR 0014) |
+| Claude Code worktrees | the line in the kit's `.gitignore` | `**/.claude/worktrees/` in the root `.gitignore`, once for every project; without `**/` it matches only the root (ADR 0015) |
 | version tags | `v1.2.0` | `flatcheck-v1.2.0` |
 | Claude Code | start it in the project folder | same; never in the git root |
 
