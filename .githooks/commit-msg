@@ -1,0 +1,25 @@
+#!/bin/sh
+# Git commit-msg hook: rule 13 of CLAUDE.md made deterministic. The message is one non-empty
+# line, with no body and no trailers (Co-Authored-By, Signed-off-by, ...). Comment lines (#)
+# are ignored, as git does. Applies to every committer, assistant or human.
+msg="$1"
+lines="$(grep -v '^#' "$msg" | sed -e 's/[[:space:]]*$//' | grep -c .)"
+first="$(grep -v '^#' "$msg" | grep -m1 .)"
+
+if [ "$lines" -eq 0 ]; then
+  echo "commit-msg: empty message." >&2
+  exit 1
+fi
+if [ "$lines" -gt 1 ]; then
+  echo "commit-msg: one line only; this message has $lines non-empty lines (no body, no trailers)." >&2
+  exit 1
+fi
+if printf '%s' "$first" | grep -qiE '^(Co-Authored-By|Signed-off-by|Reviewed-by):'; then
+  echo "commit-msg: trailers such as Co-Authored-By are not used in this repository." >&2
+  exit 1
+fi
+if [ "${#first}" -gt 72 ]; then
+  echo "commit-msg: keep the line under 72 characters (${#first})." >&2
+  exit 1
+fi
+exit 0
