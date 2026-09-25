@@ -32,7 +32,7 @@ no note.
 | The dependencies: the rule, libraw (LGPL choice, lazy loading), ImageSharp (Split License, 3.1.x pin) | `dependencies.md` | `FlatCheck.Core.csproj`, `Directory.Packages.props`, `RawReader.cs`, `PreviewReader.cs`, `ThirdParty.cs` |
 | Parity with `flatcheck.py`: the cross-check, the intentional divergences | `python-parity.md` | any formula, `flatcheck.py`, `crosscheck.py`, `CrossCheckFixtures` |
 | Known issues and gotchas, deliberate or not worth changing | `known-issues.md` | before "fixing" a CRC race, a card parser, a corner floor |
-| Conventions, versioning, licensing, build, publish | `process.md` | `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, `THIRD-PARTY-NOTICES.md` |
+| Conventions, versioning, licensing, build, publish; extending the console (the `Options` contract, the dispatch order, `WriteUsage`, how a golden file and a cross-check scenario are added, the `VersionTests` mode lists, the README "Opțiuni" section, `InvariantGlobalization`) | `process.md` | `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, `THIRD-PARTY-NOTICES.md`; `Options.cs`, `FlatCheckCli.cs`, `GoldenOutputTests`, `CrossCheckFixtures`, `SCENARIOS` in `crosscheck.py` |
 
 The decisions themselves, with the alternatives rejected, are in `../decisions/`. The
 behaviour, with IDs, is in `../requirements.md`. The figures measured on the real masters are in
