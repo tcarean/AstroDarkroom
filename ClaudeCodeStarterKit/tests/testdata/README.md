@@ -4,7 +4,9 @@ Two kinds, one manifest.
 
 - `fixtures/` is in the repo: small files, hand-checked, each listed in `manifest.json` with its
   SHA-256, where it came from and which requirement or validation case it demonstrates.
-  `RepoInvariantTests` fails if a fixture is not in the manifest.
+  `RepoInvariantTests` fails if a fixture is not in the manifest. `.gitattributes` marks them
+  `-text`: git never converts their line endings, so the hash holds in every clone and worktree,
+  and a fixture that needs CRLF keeps it (ADR 0014).
 - `large/` is git-ignored: masters, raw captures, anything over a few hundred kilobytes. The
   manifest lists them too, with `"location": "large"`. `scripts/check-testdata.ps1` reports an
   absent large file as a warning locally and as an error in CI only when `requiredInCi` is true.

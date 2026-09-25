@@ -1,0 +1,20 @@
+# Line endings for every project in the photo repository: LF in the repository and on disk,
+# on every platform, whatever core.autocrlf says, so every clone, worktree and CI run holds the
+# same bytes. A project's own .gitattributes refines this baseline. Why: ClaudeCodeStarterKit,
+# docs/decisions/0014.
+* text=auto eol=lf
+# cmd.exe misreads labels in batch files with LF endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+# Binary: never converted.
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.tif binary
+*.tiff binary
+*.fit binary
+*.fits binary
+*.fts binary
+*.nef binary
+*.NEF binary

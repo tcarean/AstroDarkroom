@@ -1,8 +1,15 @@
-# Normalise line endings in the repo; check out as CRLF on Windows (matches .editorconfig).
-* text=auto
+# LF in the repository and on disk, on every platform, whatever core.autocrlf says: every
+# clone, worktree and CI run holds the same bytes (matches .editorconfig; ADR 0014).
+* text=auto eol=lf
 *.sh text eol=lf
 scripts/hooks/pre-commit text eol=lf
 scripts/hooks/commit-msg text eol=lf
+# cmd.exe misreads labels in batch files with LF endings.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+# Fixtures are compared byte for byte (SHA-256 in manifest.json): git never converts them.
+tests/testdata/fixtures/** -text
 *.png binary
+*.ico binary
 *.fit binary
 *.fits binary

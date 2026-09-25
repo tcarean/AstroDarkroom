@@ -88,7 +88,9 @@ Every deliverable below exists to serve one of these. When in doubt, go back to 
 
 6. **Reproducibility.** Pin the toolchain version, pin every dependency version in one place, lock
    the full dependency graph, build deterministically. In two years the repository builds the
-   same bytes from the same sources, on a different machine.
+   same bytes from the same sources, on a different machine. Line endings are fixed by the
+   repository, not by each machine: every clone checks out the same bytes, and test data compared
+   byte for byte is never converted.
 
 7. **The human owns history.** The agent never commits, merges, pushes or rebases on its own
    initiative. It proposes the exact command and message and asks; an approval covers that one
@@ -377,7 +379,8 @@ agent's summary.
 - [ ] Property-based tests and mutation testing exist and ran, with output pasted.
 - [ ] The documentation audit ran with a clean context that never opened the source folder, and
       its report is in the hand-off.
-- [ ] Toolchain, dependencies and lock file are pinned; the build is deterministic.
+- [ ] Toolchain, dependencies and lock file are pinned; the build is deterministic; line endings
+      are fixed by the repository, so a fresh clone passes the gate unchanged.
 - [ ] Secrets patterns are ignored by git and denied to the harness.
 - [ ] The version lives in one place; the release script proposes commit and tag and runs neither.
 - [ ] Hooks are tracked in the repo and installable with one command; CI runs the same gate.

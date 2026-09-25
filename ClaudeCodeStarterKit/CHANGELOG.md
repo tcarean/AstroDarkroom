@@ -67,6 +67,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   codes; the less obvious lines have a short comment. Comments only, no code changed.
 - Rule 14 (ADR 0012): English in everything the model reads or writes, Romanian only in the
   guide and the READMEs; the guide no longer says comments may stay in Romanian.
+- Line endings (ADR 0014): LF in the repository and on disk on every platform (`* text=auto
+  eol=lf`, `end_of_line = lf`), `.cmd`/`.bat` CRLF, `.ico` binary, fixtures `-text` so the
+  manifest's hashes hold in every clone. A new worktree on Windows used to get CRLF fixtures and
+  fail step 1 of verify. The guide explains the order of a change of rules; `monorepo/README.md`
+  adds the root `.gitattributes`; `tests/testdata/README.md` says fixtures are never converted.
 
 ### Removed
 
