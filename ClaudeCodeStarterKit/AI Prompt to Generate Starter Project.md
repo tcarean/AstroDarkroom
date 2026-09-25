@@ -306,7 +306,8 @@ behind it, or the guide says why it stays judgement.
 
 - Non-trivial task: plan first, in whatever planning mode the harness offers; the approved plan
   is saved to the plans folder before code.
-- One task per session; a branch per task; small commits.
+- One task per session; a branch per task, named with a fixed prefix that marks the agent's
+  branches followed by the task in the model language, and deleted once merged; small commits.
 - Every session ends with the wrap-up workflow. The end-of-turn gate makes this hard to forget
   after code edits; a documentation-only change does not trigger it, so the owner asks for it.
 - Requirement IDs and statuses are kept in step with tests; the invariant test enforces it.
@@ -367,8 +368,8 @@ agent's summary.
       every rule in it points to a mechanism or to a "why" in the guide.
 - [ ] The harness cannot commit without the gate; the bypass flag is refused; the end-of-turn gate
       refuses an unverified code edit once and never loops.
-- [ ] Commit, merge, push and rebase ask the owner every time; force push, hard reset and hook
-      bypass are denied.
+- [ ] Commit, merge, push, rebase and forced branch deletion ask the owner every time; force
+      push, hard reset and hook bypass are denied.
 - [ ] Requirements have IDs, statuses and numeric examples; the invariant test ties them to test
       names in both directions and fails when they drift.
 - [ ] Validation figures are read from a file by the tests; the companion document has date,

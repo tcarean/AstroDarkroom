@@ -68,8 +68,12 @@ The sample code exists to show how a requirement, a test and a validation figure
 - New feature: `/new-feature`. Re-measure figures: `/validate`. Check docs completeness: `/docs-health`.
   Test strength of numeric code: `/mutate` (survivors become proposed tests, never config changes).
   Cut a version: `/release` (from `main`, clean tree; proposes commit and tag, owner runs them).
-- Branch per task; small commits. Merging into `main` is the owner's call, proposed and asked
-  like a commit (rule 13).
+- Branch per task, named `claude/` plus the task in English: an imperative phrase, words joined
+  by hyphens, first letter capital (`claude/Document-the-console-extension-contract-and-goldens`).
+  A generated name (an app worktree's `claude/` plus two random words and a hex suffix) is renamed
+  with `git branch -m` once the task is clear, before its first commit. Small commits. Merging into `main` is the owner's call,
+  proposed and asked like a commit (rule 13); once merged, the assistant deletes the branch with
+  `git branch -d`, and uses `-D` only when the owner asks (ADR 0013).
 - Read the whole diff back before proposing a commit; summarise it in plain language.
 
 ## Read before touching

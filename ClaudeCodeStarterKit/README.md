@@ -79,8 +79,8 @@ a ghidului cu el.
   fara CHANGELOG modificat: hook-ul Stop o refuza si trimite la `/wrap-up`.
 - Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
   `commit-msg`, pentru oricine.
-- Orice `git commit`, `merge`, `push` sau `rebase` al modelului: cere acordul omului in momentul
-  rularii, prin lista `ask` din `.claude/settings.json`.
+- Orice `git commit`, `merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului:
+  cere acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
 
 Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca
 ghidul si README-ul mai explica corect ce fac scripturile (pasul 8 din `/wrap-up`).

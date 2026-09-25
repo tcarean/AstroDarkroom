@@ -43,6 +43,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   agent to rebuild a setup with the same principles, gates, documentation set and acceptance
   checklist from the best practices of its own day; it describes goals and proofs, not this
   implementation.
+- Branch names and clean-up (ADR 0013): a branch is named `claude/` plus its task, in English,
+  as an imperative phrase with hyphens; a generated name (an app worktree's `claude/` plus random
+  words) is renamed once the task is clear, before its first commit, and `/wrap-up` checks it
+  before proposing the commit. Once merged into `main`, the assistant deletes the branch with `git branch -d`; `git branch -D`
+  joins the `ask` list. `/wrap-up` now states 72 characters for the commit line, as rule 13 and
+  the hook do, not 70. The guide's `/code-review` and `/simplify` examples use `main...<branch>`.
 
 ### Changed
 
@@ -53,7 +59,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   commit-msg, the wrap-up commit step, CHANGELOG rule as enforced, `/mutate` and `/release` in the
   start-up steps, agents in the monorepo note, layer 1 of migration.
 - Guide: `/code-review` runs in the same session (it is already a background subagent with its
-  own context), not in a second one; branch form `main...task/x`; `/wrap-up` suggests it before
+  own context), not in a second one; branch form `main...<branch>`; `/wrap-up` suggests it before
   proposing a merge. Findings by category: only correctness findings need a failing test first.
   `/simplify` documented: per-session diff, report first then `--fix`, whole project only per
   area as separate tasks.

@@ -31,9 +31,15 @@ does not apply.
    `.claude/` or `CLAUDE.md`, quote what `README.md` says about the touched piece and fix
    what no longer holds; a change to the process itself (a hook, a skill, a rule) probably
    belongs in the kit (`ClaudeCodeStarterKit`) and its guide too, so say so.
-10. Propose the commit message: one line, English, under 72 characters, saying why. No body, no
+10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
+    a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
+    English, rename the branch now with `git branch -m claude/<Task-name>` (the kit's ADR 0013).
+    Propose the commit message: one line, English, under 72 characters, saying why. No body, no
     trailers, no `Co-Authored-By`. Then ask: does the owner want you to run the commit, or will
     they do it by hand? Do nothing until they answer. If the branch is ready to merge into
     `main`, say so, suggest `/code-review main...<branch>` first if it has not run on this
-    work, and ask the same question for the merge. Never `--no-verify`.
+    work, and ask the same question for the merge. Once the merge is done, delete the branch
+    with `git branch -d`; if a worktree holds it, release it first (`git switch --detach` from
+    the session inside that worktree, `git worktree remove <path>` from outside). `-D` only when
+    the owner asks. Never `--no-verify`.
 11. If anything was left unfinished, say so in one list, with what is needed to finish it.

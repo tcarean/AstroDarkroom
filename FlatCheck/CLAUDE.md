@@ -108,8 +108,13 @@ It is not an image processor and it never decides what a shape on a map is.
   `/docs-health`. Test strength of numeric code: `/mutate` (survivors become proposed tests,
   never config changes). Cut a version: `/release` (from `main`, clean tree; proposes commit and
   tag `flatcheck-vX.Y.Z`, owner runs them).
-- Branch per task; small commits. Merging into `main` is the owner's call, proposed and asked
-  like a commit (rule 13). Read the whole diff back before proposing a commit.
+- Branch per task, named `claude/` plus the task in English: an imperative phrase, words joined
+  by hyphens, first letter capital (`claude/Document-the-console-extension-contract-and-goldens`).
+  A generated name (an app worktree's `claude/` plus two random words and a hex suffix) is renamed
+  with `git branch -m` once the task is clear, before its first commit. Small commits. Merging into `main` is the owner's call,
+  proposed and asked like a commit (rule 13); once merged, the assistant deletes the branch with
+  `git branch -d`, and uses `-D` only when the owner asks (the kit's ADR 0013). Read the whole
+  diff back before proposing a commit.
 - Discuss and measure before designing: present the measured facts and the decisions to take,
   wait for them, then implement without re-asking (the owner's standing instruction).
 

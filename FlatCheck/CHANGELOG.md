@@ -29,6 +29,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the `R###_` test names, check the ADR numbering, the design-note index and the validation
   manifest; 64 existing tests renamed with the ID of the requirement they pin.
 - Deleted `.github/copilot-instructions.md` (Azure rules Visual Studio had added).
+- Branch names and clean-up, as in the kit's ADR 0013: a branch is named `claude/` plus its task
+  in English, a generated name is renamed before the first commit, a branch merged into `main` is
+  deleted with `git branch -d`, and `git branch -D` joins the `ask` list. CLAUDE.md Workflow,
+  `/wrap-up` step 10, `.claude/settings.json`.
 
 ## [2.2.0] - 2026-09-23
 

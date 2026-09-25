@@ -27,10 +27,16 @@ does not apply.
    not explanations that no longer hold (ADR 0011). In a project made from the kit, a change to
    the process itself (a hook, a skill, a rule) is flagged: it probably belongs in the kit and its
    guide too.
-9. Propose the commit message: one line, English, under 70 characters, saying why. No body, no
+9. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
+   a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
+   English, rename the branch now with `git branch -m claude/<Task-name>` (ADR 0013). Propose
+   the commit message: one line, English, under 72 characters, saying why. No body, no
    trailers, no `Co-Authored-By` (the summary from step 2 stays in the chat, and the "what" is
    in CHANGELOG). Then ask: does the owner want you to run the commit, or will they do it by
    hand? Do nothing until they answer. If the branch is ready to merge into `main`, say so,
    suggest `/code-review main...<branch>` first if it has not run on this work, and ask the same
-   question for the merge. Never `--no-verify`.
+   question for the merge. Once the merge is done, delete the branch with `git branch -d`; if a
+   worktree holds it, release it first (`git switch --detach` from the session inside that
+   worktree, `git worktree remove <path>` from outside). `-D` only when the owner asks. Never
+   `--no-verify`.
 10. If anything was left unfinished, say so in one list, with what is needed to finish it.
