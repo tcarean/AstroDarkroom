@@ -40,7 +40,8 @@
 
 Every run prints `flatcheck <version>` as its **first line** - every mode, `--help`, and
 failed runs too, so a pasted report always says which version produced it. There is no
-`--version` flag; it would be redundant.
+`--version` flag; it would be redundant. A machine-readable output, if one is ever added, carries
+the same two strings as its first two fields instead of two lines (ADR 0042).
 
 Both applications print it from `RunReport.WriteBanner`, so the WPF app's saved
 `Rezultat testare.txt` opens on the same two lines as a console run, and a bump moves both
@@ -120,7 +121,8 @@ Five things follow, and all five are pinned by tests:
   scanners can read the file without parsing English.
 - **Every run prints the copyright on line 2**, right under the version banner, in every
   mode, at `--help`, and on failed runs. Same reason as the banner: a pasted report says
-  on its own whose tool produced it.
+  on its own whose tool produced it. A machine-readable output, if one is ever added, carries
+  both as its first two fields (ADR 0042).
 - **`--help` carries the warranty disclaimer** and points at `LICENSE` - GPLv3 §5(d),
   which wants a program that displays legal notices to display that one too. It lives
   there rather than under the banner on purpose: five lines on top of every report,
