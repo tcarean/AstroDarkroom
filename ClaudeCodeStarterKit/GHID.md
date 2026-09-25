@@ -322,6 +322,25 @@ Sase pasi, sub zece minute, si proiectul nou are gate verde la primul commit.
 
 Un folder fara `scripts/verify.ps1` nu e verificat de hook, deci proiectele existente adopta gate-ul pe rand. Testat pe doua repo-uri de proba: in monorepo, un commit care atinge doar alt folder nu ruleaza verify, iar unul care atinge kit-ul il ruleaza; in repo separat, hook-ul ruleaza verify la radacina.
 
+**Ce inseamna "instalarea" hook-urilor git.** Un hook git e un script pe care git il ruleaza singur la un anumit moment (`pre-commit` inainte de commit, `commit-msg` dupa ce mesajul e scris). Git nu versioneaza hook-urile: folderul lui implicit, `.git/hooks/`, nu intra in commit si nu se cloneaza. De aceea kit-ul le tine versionate in `scripts/hooks/`, iar instalarea inseamna doar sa-i spui lui git unde sa le caute, prin `core.hooksPath`. Setarea sta in `.git/config`, deci e locala: se face o data per clona, pe fiecare calculator, nu o data per proiect. `core.hooksPath` inlocuieste complet `.git/hooks/`; hook-urile puse acolo de alte tool-uri nu mai ruleaza.
+
+**Hook-ul e comun, gate-ul e al fiecarui proiect.** Intr-un monorepo exista doua lucruri diferite, care traiesc in locuri diferite:
+
+- hook-urile (`pre-commit`, `commit-msg`) au o singura copie activa, in `<radacina>/.githooks/`, citita de git indiferent din ce proiect vine commit-ul. Sursa lor ramane `scripts/hooks/` din kit; `install-hooks.ps1` le copiaza de acolo. Un proiect nu are nevoie de propria copie a lui `scripts/hooks/`.
+- restul lui `scripts/`, in primul rand `verify.ps1` si `check-staged.ps1`, se copiaza in fiecare proiect care vrea sa fie verificat, pentru ca e specific lui: numele solutiei, ce build si ce teste ruleaza. Hook-ul comun nu stie sa verifice nimic singur; pentru fiecare fisier din stage urca pana la cel mai apropiat `scripts/verify.ps1` si il ruleaza pe acela.
+
+```
+Code/                   <- radacina git (repo-ul photo)
+  .githooks/            <- hook-urile, o singura copie, comune tuturor
+  ClaudeCodeStarterKit/
+    scripts/hooks/      <- sursa hook-urilor
+    scripts/verify.ps1  <- gate-ul kit-ului
+  FlatCheck/
+    scripts/verify.ps1  <- gate-ul FlatCheck, cand il adopta
+```
+
+Consecintele: un proiect fara `verify.ps1` ramane neverificat la commit pana cand i se copiaza `scripts/`, si atunci gate-ul lui intra in functiune fara reinstalare. `commit-msg`, in schimb, verifica doar mesajul si se aplica din prima zi la tot repo-ul, inclusiv proiectelor care n-au adoptat inca kit-ul. `install-hooks.ps1` se ruleaza din nou in trei cazuri: dupa o modificare a unui hook in `scripts/hooks/` din kit (in `.githooks/` sunt copii, nu legaturi), pe o clona noua sau pe alt calculator (`core.hooksPath` nu se cloneaza, dar `.githooks/`, fiind comis, da), si in proiectul care devine repo separat, unde seteaza `core.hooksPath = scripts/hooks` direct, fara copii.
+
 ## Migrarea unui proiect existent
 
 Se poate, si nu e doar pentru proiecte noi. Un proiect existent are de obicei partea grea deja facuta, cod si teste; ce lipseste e procesul din jur. Migrarea se face in trei straturi, fiecare util de unul singur, fara rescrieri.
