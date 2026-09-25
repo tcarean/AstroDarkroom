@@ -48,10 +48,10 @@
        diferenta de API care ne priveste e ca 3.x nu aplica niciodata profilul ICC la decodare,
        ceea ce e chiar comportamentul dorit. Vezi THIRD-PARTY-NOTICES.md. -->
   <ItemGroup>
-    <PackageReference Include="Sdcb.LibRaw" Version="0.21.1.7" />
-    <PackageReference Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
-    <PackageReference Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="Sdcb.LibRaw" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.linux64" />
+    <PackageReference Include="SixLabors.ImageSharp" />
   </ItemGroup>
 
   <!-- Nucleul ramane internal in intregime. Nu i s-a construit o suprafata publica

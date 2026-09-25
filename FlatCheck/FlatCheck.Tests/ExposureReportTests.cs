@@ -31,7 +31,7 @@ public class ExposureReportTests
     const int N = 128;
     const double Sat = 1000;
 
-    static ExposureResult AtLevel(double pct, bool sky = false, string pattern = null)
+    static ExposureResult AtLevel(double pct, bool sky = false, string? pattern = null)
         => ExposureAnalyzer.Analyze(TestImages.FlatCfa(N, N, Sat * pct / 100.0), Sat, null, sky,
                                     null, pattern == null ? null : CfaPattern.Parse(pattern, "BAYERPAT"));
 

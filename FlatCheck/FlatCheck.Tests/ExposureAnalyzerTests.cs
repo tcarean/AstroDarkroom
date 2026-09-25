@@ -42,7 +42,7 @@ public class ExposureAnalyzerTests
     /// Follow the global median and you overexpose until the centre clips.
     /// </summary>
     [Fact]
-    public void OnAVignettedFrame_TheCentreReadsHigherThanTheGlobalMedian()
+    public void R040_OnAVignettedFrame_TheCentreReadsHigherThanTheGlobalMedian()
     {
         var vignetted = FitsTestData.WithBayerMosaic(FitsTestData.Radial(256, 256, center: 34000));
 
@@ -53,7 +53,7 @@ public class ExposureAnalyzerTests
     }
 
     [Fact]
-    public void PicksTheBrightestBayerPositionAsTheLimitingChannel()
+    public void R040_PicksTheBrightestBayerPositionAsTheLimitingChannel()
     {
         var mosaic = FitsTestData.WithBayerMosaic(FitsTestData.Radial(256, 256, center: 34000));
 
@@ -92,7 +92,7 @@ public class ExposureAnalyzerTests
     [InlineData(66, nameof(ExposureVerdict.AcceptableHigh))]
     [InlineData(80, nameof(ExposureVerdict.AcceptableHigh))]  // boundary: not > 80
     [InlineData(81, nameof(ExposureVerdict.TooHigh))]
-    public void PanelBands(double pct, string expected)
+    public void R043_PanelBands(double pct, string expected)
     {
         var r = AtLevel(pct);
 
@@ -116,7 +116,7 @@ public class ExposureAnalyzerTests
     [InlineData(51, nameof(ExposureVerdict.AcceptableHigh))]
     [InlineData(60, nameof(ExposureVerdict.AcceptableHigh))]  // boundary: not > 60
     [InlineData(61, nameof(ExposureVerdict.TooHigh))]
-    public void SkyBands(double pct, string expected)
+    public void R043_SkyBands(double pct, string expected)
     {
         var r = AtLevel(pct, sky: true);
 
@@ -158,7 +158,7 @@ public class ExposureAnalyzerTests
     }
 
     [Fact]
-    public void ClippingInTheCentre_ForcesTooHigh_EvenInsideTheTargetBand()
+    public void R043_ClippingInTheCentre_ForcesTooHigh_EvenInsideTheTargetBand()
     {
         // the centre reads a healthy 55%, but a few pixels there are already saturated
         var img = TestImages.FlatCfa(N, N, Sat * 0.55);
@@ -212,7 +212,7 @@ public class ExposureAnalyzerTests
     }
 
     [Fact]
-    public void AnAlreadyCalibratedFrame_IsRefusedBecauseTheLevelIsNearZero()
+    public void R042_AnAlreadyCalibratedFrame_IsRefusedBecauseTheLevelIsNearZero()
     {
         // CFA mosaic intact (so it is not the debayer gate firing) but the level is gone
         var r = AtLevel(0.5);
@@ -423,7 +423,7 @@ public class ExposureAnalyzerTests
     /// clothes of a measurement - the order differs between cameras.
     /// </summary>
     [Fact]
-    public void WithoutAKnownOrderTheChannelsStayPositions()
+    public void R044_WithoutAKnownOrderTheChannelsStayPositions()
     {
         var r = AtLevel(55);
 
@@ -495,7 +495,7 @@ public class ExposureAnalyzerTests
     [InlineData(17203.0, 16383.0)] // boundary: <= 16384 * 1.05 = 17203.2
     [InlineData(17204.0, 65535.0)]
     [InlineData(60000.0, 65535.0)]
-    public void AutoWhiteLadder(double max, double expected)
+    public void R041_AutoWhiteLadder(double max, double expected)
     {
         Assert.Equal(expected, ExposureAnalyzer.AutoWhite(max), 6);
     }
@@ -529,7 +529,7 @@ public class ExposureAnalyzerTests
     /// file's black in place.
     /// </summary>
     [Fact]
-    public void SatOverridesTheFileScaleButLeavesItsBlackAlone()
+    public void R041_SatOverridesTheFileScaleButLeavesItsBlackAlone()
     {
         var scale = new ExposureScale(3827, 150, "libraw (exact)");
 

@@ -38,7 +38,7 @@ public class CrossCheckFixtures
     [Fact]
     public void DumpsFixturesWhenAsked()
     {
-        string dir = Environment.GetEnvironmentVariable("FLATCHECK_DUMP_FIXTURES");
+        string? dir = Environment.GetEnvironmentVariable("FLATCHECK_DUMP_FIXTURES");
         if (string.IsNullOrEmpty(dir)) return;
 
         Directory.CreateDirectory(dir);

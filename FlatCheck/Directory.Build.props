@@ -1,28 +1,41 @@
 <Project>
 
-  <!-- Proprietatile comune tuturor proiectelor din solutie.
+  <!-- Properties shared by every project in the solution.
 
-       De ce aici si nu in fiecare csproj: din momentul in care nucleul a devenit o
-       biblioteca separata (FlatCheck.Core), versiunea trebuia sa fie aceeasi in trei
-       assembly-uri. VersionInfo o citeste din assembly-ul in care sta el - adica din
-       Core - dar exe-ul de consola si aplicatia WPF si-o poarta si ele pe a lor, care
-       se vede in proprietatile fisierului. Doua locuri de editat inseamna, mai devreme
-       sau mai tarziu, doua valori diferite.
+       Why here and not in each csproj: since the core became a separate library
+       (FlatCheck.Core), the version has to be the same in three assemblies. VersionInfo
+       reads it from the assembly it lives in, Core, but the console exe and the WPF app
+       carry their own, which is what Windows shows in file properties. Two places to edit
+       means, sooner or later, two different values.
 
-       Deci: UN SINGUR loc de editat pe partea de C#, exact ca inainte de impartire.
-       Nu muta <Version> sau <Copyright> inapoi intr-un csproj. VersionTests verifica
-       fisierul asta. -->
+       So: ONE place to edit on the C# side, exactly as before the split. Do not move
+       <Version> or <Copyright> back into a csproj; VersionTests checks this file. -->
 
   <PropertyGroup>
-    <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix.
-         Trebuie sa ramana identica cu __version__ din flatcheck.py. -->
+    <!-- The tool's version. Bumped BY HAND by the owner, per feature or fix; never by the
+         model. Must stay identical to __version__ in flatcheck.py (scripts/release.ps1
+         writes both). -->
     <Version>2.2.0</Version>
 
-    <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
-         unde il citeste VersionInfo.Copyright si il tipareste sub banner. Programul e
-         GPLv3; textul complet e in LICENSE, la radacina repo-ului. -->
+    <!-- Copyright and licence. <Copyright> becomes AssemblyCopyrightAttribute, which
+         VersionInfo.Copyright reads and prints under the banner. The program is GPLv3;
+         the full text is in LICENSE at the project root. -->
     <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <!-- Reproducibility (ADR 0003): same sources, same bytes; every package version in
+       Directory.Packages.props, once; the full graph in packages.lock.json, which CI
+       restores in locked mode. Strictness (warnings as errors) is applied by
+       scripts/verify.ps1 on the command line rather than here, so an IDE build stays
+       lenient while the gate does not. -->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
 </Project>

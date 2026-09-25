@@ -223,8 +223,14 @@ public class WindowSmokeTests
         var master = new LoadedFrame { Header = new Dictionary<string, string> { ["SIMPLE"] = "T" }, FocalMm = 20, Camera = "Nikon D3300" };
         var raw = new LoadedFrame
         {
-            Header = new Dictionary<string, string>(), FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
-            NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+            Header = new Dictionary<string, string>(),
+            FocalMm = 20,
+            FNumber = 2.8,
+            Camera = "NIKON D3300",
+            NikonLensId = 139,
+            LensMinFocalMm = 11,
+            LensMaxFocalMm = 20,
+            LensMaxAperture = 2.8,
         };
         StructureOutcome compared = StructureRun.Compare(r, master, new StructureQuery { Sources = sources, RawPath = "x.NEF", LoadInfo = _ => raw });
         StructureOutcome gap = StructureRun.Compare(r, master, new StructureQuery { Sources = sources });
@@ -277,8 +283,12 @@ public class WindowSmokeTests
             // propunerea de scara, cu tabelul treptelor
             vm.PopulateAdvice(SmoothScaleAdvisor.Decide(0.69, SmoothScaleAdvisor.Ladder.Select(s => new SmoothScaleTrial
             {
-                ScalePx = s, TextureAfterPct = s < 200 ? 0.09 : 0.02, AzimuthalDelta = s > 500 ? -0.8 : 0,
-                TextureGone = s >= 200, StructureLost = s > 500, RemovedPtpPct = 3,
+                ScalePx = s,
+                TextureAfterPct = s < 200 ? 0.09 : 0.02,
+                AzimuthalDelta = s > 500 ? -0.8 : 0,
+                TextureGone = s >= 200,
+                StructureLost = s > 500,
+                RemovedPtpPct = 3,
             }).ToList()));
             Render(new SmoothView { DataContext = vm }, h: 1800, name: "tab-netezire-propunere");
             Assert.Equal(SmoothAnalyzer.DefaultScalePx, vm.ProposedScalePx);
@@ -471,7 +481,8 @@ public class WindowSmokeTests
             using var errors = new BindingErrors();
 
             var running = new SirilRunViewModel(@"E:\sesiune", @"C:\scripturi\OSC_Preprocessing_WithoutDark.ssf",
-                                                SirilInstallTests.WithoutDark) { Warning = SessionMessages.SirilGuiRunning() };
+                                                SirilInstallTests.WithoutDark)
+            { Warning = SessionMessages.SirilGuiRunning() };
             var gate = new TaskCompletionSource<int>();
             Task run = running.RunAsync((onLine, ct) =>
             {

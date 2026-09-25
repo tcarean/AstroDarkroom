@@ -102,7 +102,7 @@ public class StructureAnalyzerTests
 
     /// <summary>The overall verdict is the worst of the four, not an average.</summary>
     [Fact]
-    public void TheOverallVerdictIsTheWorstOfTheFourTests()
+    public void R011_TheOverallVerdictIsTheWorstOfTheFourTests()
     {
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(N, N), N, 0.12);
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));

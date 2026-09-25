@@ -384,8 +384,13 @@ public class StructureTabTests
     static LoadedFrame RawFrame() => new LoadedFrame
     {
         Header = new Dictionary<string, string>(),
-        FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
-        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+        FocalMm = 20,
+        FNumber = 2.8,
+        Camera = "NIKON D3300",
+        NikonLensId = 139,
+        LensMinFocalMm = 11,
+        LensMaxFocalMm = 20,
+        LensMaxAperture = 2.8,
     };
 
     /// <summary>The tab with hand-made profile sources and a fabricated raw in place of the file in flats/.</summary>

@@ -1,0 +1,26 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once. The rule
+       (CLAUDE.md, "The dependencies"): no new package without asking, every package gets a
+       "why" here, an entry in THIRD-PARTY-NOTICES.md and, for the core, one in ThirdParty.cs.
+       ThirdPartyTests reads the PackageReference names from FlatCheck.Core.csproj; the
+       versions are here. -->
+  <ItemGroup>
+    <!-- Camera raw files: the undebayered Bayer mosaic, exact black and white levels, the
+         embedded preview. The same libraw that rawpy binds, so figures are bit-identical to
+         flatcheck.py. Native DLLs come from the two runtime packages. -->
+    <PackageVersion Include="Sdcb.LibRaw" Version="0.21.1.7" />
+    <PackageVersion Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
+    <PackageVersion Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
+    <!-- Decodes the JPEG preview a raw embeds. Pinned to 3.1.x on purpose: 4.x adds a
+         licence-key MSBuild task that errors on Release builds. -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Test host and runner (xUnit 2: no dynamic skip, which is why absent large files
+         return early with a message instead of skipping). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="xunit" Version="2.5.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+</Project>

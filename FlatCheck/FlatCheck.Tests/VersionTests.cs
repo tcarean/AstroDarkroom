@@ -47,7 +47,7 @@ public class VersionTests
     /// csproj (unde ar tine doar pentru un proiect), aici se vede.
     /// </summary>
     [Fact]
-    public void TheVersionComesFromDirectoryBuildProps()
+    public void R097_TheVersionComesFromDirectoryBuildProps()
     {
         var m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
@@ -110,7 +110,7 @@ public class VersionTests
     }
 
     [Fact]
-    public void PythonReportsTheSameVersionAsTheCSharp()
+    public void R097_PythonReportsTheSameVersionAsTheCSharp()
     {
         string py = File.ReadAllText(Path.Combine(RepoDir(), "flatcheck.py"));
 
@@ -140,7 +140,7 @@ public class VersionTests
     static string SecondLine(params string[] args) => Lines(args)[1];
 
     [Fact]
-    public void EveryModePrintsTheBannerOnTheFirstLine()
+    public void R001_EveryModePrintsTheBannerOnTheFirstLine()
     {
         using var ws = new TempWorkspace();
         string flat = ws.WriteFile("f.fit",
@@ -161,7 +161,7 @@ public class VersionTests
     /// a doua peste tot unde sta si banner-ul pe prima - inclusiv la --help si la erori.
     /// </summary>
     [Fact]
-    public void EveryModePrintsTheCopyrightOnTheSecondLine()
+    public void R001_EveryModePrintsTheCopyrightOnTheSecondLine()
     {
         using var ws = new TempWorkspace();
         string flat = ws.WriteFile("f.fit",
@@ -193,7 +193,7 @@ public class VersionTests
     /// in --help, si de acolo trimite la textul complet.
     /// </summary>
     [Fact]
-    public void HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
+    public void R005_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
     {
         string help = string.Join("\n", Lines("--help"));
 

@@ -1,0 +1,730 @@
+{
+  "$comment": "Acceptance figures on the real masters, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0004) reads this file; docs/validation.md explains each case and records every change. Kinds: structure (StructureRun on the master), profile (the sixth test with the raw beside the master, nearest profile), smooth (SmoothRun at scalePx), against (AgainstRun on the master and the synthetic written from the named lens at focalMm/fstop/crop). Paths are manifest names under FLATCHECK_TESTDATA_LARGE. tolerance applies to every numeric field of expected (percent points, or stops for the profile and against kinds). Change a figure here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "cases": [
+    {
+      "id": "V-001",
+      "kind": "structure",
+      "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 4,
+        "azimuthalMaxPct": 3.75,
+        "residualPtpPct": 4.045,
+        "tiltPct": 1.748,
+        "maxTilePct": 3.242,
+        "vignetteStops": 0.63,
+        "localSpotPct": -0.384,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-002",
+      "kind": "structure",
+      "master": "Nikkor 35mm DX/ISO800/f2.8-sky/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 10.963,
+        "azimuthalMaxPct": 5.265,
+        "residualPtpPct": 7.166,
+        "tiltPct": 7.966,
+        "maxTilePct": 5.792,
+        "vignetteStops": 0.623,
+        "localSpotPct": 0.317,
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-003",
+      "kind": "structure",
+      "master": "Samyang/ISO1600/f2.0-sky/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 10.528,
+        "azimuthalMaxPct": 6.39,
+        "residualPtpPct": 8.378,
+        "tiltPct": 11.144,
+        "maxTilePct": 5.44,
+        "vignetteStops": 0.603,
+        "localSpotPct": -0.659,
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-004",
+      "kind": "structure",
+      "master": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 3.487,
+        "azimuthalMaxPct": 2.67,
+        "residualPtpPct": 2.98,
+        "tiltPct": 4.036,
+        "maxTilePct": 2.361,
+        "vignetteStops": 0.63,
+        "localSpotPct": 0.217,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-005",
+      "kind": "structure",
+      "master": "Samyang/ISO1600/sursa_neuniforma/f2.8/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 6.085,
+        "azimuthalMaxPct": 7.114,
+        "residualPtpPct": 6.611,
+        "tiltPct": 7.817,
+        "maxTilePct": 4.151,
+        "vignetteStops": 0.176,
+        "localSpotPct": -0.289,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-006",
+      "kind": "structure",
+      "master": "Samyang/ISO400/f2.0-sky/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 7.593,
+        "azimuthalMaxPct": 6.831,
+        "residualPtpPct": 6.327,
+        "tiltPct": 8.028,
+        "maxTilePct": 4.173,
+        "vignetteStops": 0.608,
+        "localSpotPct": 0.174,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-007",
+      "kind": "structure",
+      "master": "Samyang/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 12.615,
+        "azimuthalMaxPct": 7.049,
+        "residualPtpPct": 9.992,
+        "tiltPct": 12.357,
+        "maxTilePct": 6.514,
+        "vignetteStops": 0.148,
+        "localSpotPct": -0.286,
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-008",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 6.67,
+        "azimuthalMaxPct": 8.73,
+        "residualPtpPct": 7.104,
+        "tiltPct": 6.714,
+        "maxTilePct": 6.646,
+        "vignetteStops": 0.852,
+        "localSpotPct": -0.401,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-009",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 16.408,
+        "azimuthalMaxPct": 10.735,
+        "residualPtpPct": 12.273,
+        "tiltPct": 11.769,
+        "maxTilePct": 12.602,
+        "vignetteStops": 0.779,
+        "localSpotPct": 6.192,
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-010",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 10.279,
+        "azimuthalMaxPct": 7.254,
+        "residualPtpPct": 10.062,
+        "tiltPct": 0.49,
+        "maxTilePct": 8.809,
+        "vignetteStops": 0.269,
+        "localSpotPct": -0.287,
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-011",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 2.166,
+        "azimuthalMaxPct": 1.997,
+        "residualPtpPct": 2.277,
+        "tiltPct": 2.552,
+        "maxTilePct": 1.542,
+        "vignetteStops": 1.243,
+        "localSpotPct": -0.302,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-012",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 1.575,
+        "azimuthalMaxPct": 1.599,
+        "residualPtpPct": 1.418,
+        "tiltPct": 1.643,
+        "maxTilePct": 0.954,
+        "vignetteStops": 1.257,
+        "localSpotPct": -0.306,
+        "verdict": "PERFECT"
+      }
+    },
+    {
+      "id": "V-013",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 1.176,
+        "azimuthalMaxPct": 2.033,
+        "residualPtpPct": 2.863,
+        "tiltPct": 0.584,
+        "maxTilePct": 2.651,
+        "vignetteStops": 0.763,
+        "localSpotPct": -0.601,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-014",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 4.691,
+        "azimuthalMaxPct": 3.681,
+        "residualPtpPct": 3.499,
+        "tiltPct": 3.876,
+        "maxTilePct": 2.766,
+        "vignetteStops": 0.812,
+        "localSpotPct": 0.455,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-015",
+      "kind": "structure",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "cornerSpreadPct": 2.464,
+        "azimuthalMaxPct": 5.792,
+        "residualPtpPct": 4.981,
+        "tiltPct": 3.1,
+        "maxTilePct": 3.931,
+        "vignetteStops": 0.802,
+        "localSpotPct": -0.604,
+        "verdict": "BUN"
+      }
+    },
+    {
+      "id": "V-016",
+      "kind": "profile",
+      "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "raw": "Nikkor 35mm DX/ISO400/f2.8-sky/flats/DSC_0031.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.63,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": 0.11,
+        "nearest": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-017",
+      "kind": "profile",
+      "master": "Nikkor 35mm DX/ISO800/f2.8-sky/process/pp_flat_stacked.fit",
+      "raw": "Nikkor 35mm DX/ISO800/f2.8-sky/flats/DSC_0091.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.623,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.103,
+        "nearest": "Nikon AF-S DX NIKKOR 35mm f1.8G [NIKON D90]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-018",
+      "kind": "profile",
+      "master": "Samyang/ISO1600/f2.0-sky/process/pp_flat_stacked.fit",
+      "raw": "Samyang/ISO1600/f2.0-sky/flats/DSC_0061.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.603,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.104,
+        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-019",
+      "kind": "profile",
+      "master": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/process/pp_flat_stacked.fit",
+      "raw": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.63,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": 0.131,
+        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-020",
+      "kind": "profile",
+      "master": "Samyang/ISO1600/sursa_neuniforma/f2.8/process/pp_flat_stacked.fit",
+      "raw": "Samyang/ISO1600/sursa_neuniforma/f2.8/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.176,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": 0.034,
+        "nearest": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-021",
+      "kind": "profile",
+      "master": "Samyang/ISO400/f2.0-sky/process/pp_flat_stacked.fit",
+      "raw": "Samyang/ISO400/f2.0-sky/flats/DSC_0196.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.608,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": 0.109,
+        "nearest": "Nikon AF DC-NIKKOR 135mm f2D [NIKON D3X]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-022",
+      "kind": "profile",
+      "master": "Samyang/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "raw": "Samyang/ISO400/f2.8-sky/flats/DSC_0136.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.148,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "ACCEPTABIL",
+        "diffStops": 0.006,
+        "nearest": "Samyang 135mm f/2 ED UMC [Nikon F / Canon EF / Pentax KAF / Micro 4/3 System / Sony Alpha / Sony E / Fujifilm X / Samsung NX, calibrat pe full frame 1]",
+        "depthVerdict": "PERFECT"
+      }
+    },
+    {
+      "id": "V-023",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/flats/DSC_0060.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.852,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": 0.004,
+        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "depthVerdict": "PERFECT"
+      }
+    },
+    {
+      "id": "V-024",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.779,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "ACCEPTABIL",
+        "diffStops": -0.069,
+        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-025",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-sky-no-difuser/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.269,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "REFA",
+        "diffStops": -0.395,
+        "nearest": "Tokina AT-X 11-20mm F2.8 PRO DX [NIKON CORPORATION]",
+        "depthVerdict": "REFA"
+      }
+    },
+    {
+      "id": "V-026",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/flats/DSC_0071.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 1.243,
+        "shapeVerdict": "BUN",
+        "verdict": "REFA",
+        "diffStops": 0.332,
+        "nearest": "Tokina AF 11-20mm f/2.8 AT-X Pro DX [Nikon F AF / Canon EF, calibrat pe APS-C 1.534]",
+        "depthVerdict": "REFA"
+      }
+    },
+    {
+      "id": "V-027",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 1.257,
+        "shapeVerdict": "PERFECT",
+        "verdict": "REFA",
+        "diffStops": 0.345,
+        "nearest": "Tokina AF 11-20mm f/2.8 AT-X Pro DX [Nikon F AF / Canon EF, calibrat pe APS-C 1.534]",
+        "depthVerdict": "REFA"
+      }
+    },
+    {
+      "id": "V-028",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.763,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": -0.085,
+        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-029",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/flats/DSC_0001.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.812,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": -0.036,
+        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-030",
+      "kind": "profile",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
+      "raw": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/flats/DSC_0071.NEF",
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "masterStops": 0.802,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN",
+        "diffStops": -0.046,
+        "nearest": "Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 [Canon EF / Nikon F AF, calibrat pe APS-C Canon 1.61]",
+        "depthVerdict": "BUN"
+      }
+    },
+    {
+      "id": "V-031",
+      "kind": "smooth",
+      "master": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "scalePx": 300,
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "removedPtpPct": 0.375,
+        "removedMaxTilePct": 0.404,
+        "removedSpotPct": -0.321,
+        "inputTexturePct": 0.051,
+        "outputTexturePct": 0.014,
+        "beforeVerdict": "BUN",
+        "afterVerdict": "BUN",
+        "beforeVignetteStops": 0.63,
+        "afterVignetteStops": 0.632
+      },
+      "spotAt": [
+        117,
+        225
+      ]
+    },
+    {
+      "id": "V-032",
+      "kind": "smooth",
+      "master": "Nikkor 35mm DX/ISO800/f2.8-sky/process/pp_flat_stacked.fit",
+      "scalePx": 300,
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "removedPtpPct": 0.393,
+        "removedMaxTilePct": 0.449,
+        "removedSpotPct": -0.32,
+        "inputTexturePct": 0.06,
+        "outputTexturePct": 0.014,
+        "beforeVerdict": "ACCEPTABIL",
+        "afterVerdict": "ACCEPTABIL",
+        "beforeVignetteStops": 0.623,
+        "afterVignetteStops": 0.624
+      },
+      "spotAt": [
+        1413,
+        459
+      ]
+    },
+    {
+      "id": "V-033",
+      "kind": "smooth",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
+      "scalePx": 300,
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "removedPtpPct": 0.378,
+        "removedMaxTilePct": 0.469,
+        "removedSpotPct": 0.342,
+        "inputTexturePct": 0.044,
+        "outputTexturePct": 0.02,
+        "beforeVerdict": "BUN",
+        "afterVerdict": "BUN",
+        "beforeVignetteStops": 0.852,
+        "afterVignetteStops": 0.848
+      },
+      "spotAt": [
+        657,
+        297
+      ]
+    },
+    {
+      "id": "V-034",
+      "kind": "smooth",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
+      "scalePx": 300,
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "removedPtpPct": 3.683,
+        "removedMaxTilePct": 4.208,
+        "removedSpotPct": 6.038,
+        "inputTexturePct": 0.687,
+        "outputTexturePct": 0.023,
+        "beforeVerdict": "ACCEPTABIL",
+        "afterVerdict": "ACCEPTABIL",
+        "beforeVignetteStops": 0.779,
+        "afterVignetteStops": 0.773
+      },
+      "spotAt": [
+        1071,
+        639
+      ]
+    },
+    {
+      "id": "V-035",
+      "kind": "smooth",
+      "master": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/process/pp_flat_stacked.fit",
+      "scalePx": 300,
+      "tolerance": 0.05,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "removedPtpPct": 0.121,
+        "removedMaxTilePct": 0.714,
+        "removedSpotPct": 0.4,
+        "inputTexturePct": 0.036,
+        "outputTexturePct": 0.008,
+        "beforeVerdict": "BUN",
+        "afterVerdict": "BUN",
+        "beforeVignetteStops": 0.63,
+        "afterVignetteStops": 0.626
+      },
+      "spotAt": [
+        747,
+        531
+      ]
+    },
+    {
+      "id": "V-036",
+      "kind": "against",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
+      "lens": "Tokina AT-X 11-20mm F2.8 PRO DX",
+      "source": "Adobe",
+      "focalMm": 20,
+      "fstop": 2.8,
+      "crop": 1.523,
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
+        "masterStops": 0.852,
+        "syntheticStops": 0.664,
+        "depthDiffStops": 0.186,
+        "depthErrorPct": 13.799,
+        "depthVerdict": "ACCEPTABIL",
+        "ratioResidualPtpPct": 7.136,
+        "shapeVerdict": "BUN",
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-037",
+      "kind": "against",
+      "master": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
+      "lens": "Tokina AT-X 11-20mm F2.8 PRO DX",
+      "source": "Adobe",
+      "focalMm": 20,
+      "fstop": 2.8,
+      "crop": 1.523,
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
+        "masterStops": 0.269,
+        "syntheticStops": 0.664,
+        "depthDiffStops": -0.395,
+        "depthErrorPct": 31.478,
+        "depthVerdict": "REFA",
+        "ratioResidualPtpPct": 10.067,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "REFA"
+      }
+    },
+    {
+      "id": "V-038",
+      "kind": "against",
+      "master": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
+      "lens": "Tokina AT-X 11-20mm F2.8 PRO DX",
+      "source": "Adobe",
+      "focalMm": 20,
+      "fstop": 2.8,
+      "crop": 1.523,
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
+        "masterStops": 0.779,
+        "syntheticStops": 0.664,
+        "depthDiffStops": 0.115,
+        "depthErrorPct": 8.328,
+        "depthVerdict": "BUN",
+        "ratioResidualPtpPct": 12.252,
+        "shapeVerdict": "ACCEPTABIL",
+        "verdict": "ACCEPTABIL"
+      }
+    },
+    {
+      "id": "V-039",
+      "kind": "against",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
+      "lens": "Tokina AT-X 11-20mm F2.8 PRO DX",
+      "source": "Adobe",
+      "focalMm": 20,
+      "fstop": 2.8,
+      "crop": 1.523,
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
+        "masterStops": 1.257,
+        "syntheticStops": 0.664,
+        "depthDiffStops": 0.592,
+        "depthErrorPct": 50.781,
+        "depthVerdict": "REFA",
+        "ratioResidualPtpPct": 1.495,
+        "shapeVerdict": "PERFECT",
+        "verdict": "REFA"
+      }
+    },
+    {
+      "id": "V-040",
+      "kind": "against",
+      "master": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
+      "lens": "Tokina AT-X 11-20mm F2.8 PRO DX",
+      "source": "Adobe",
+      "focalMm": 20,
+      "fstop": 2.8,
+      "crop": 1.523,
+      "tolerance": 0.02,
+      "measuredOn": "2026-09-25",
+      "expected": {
+        "profile": "Tokina AT-X 11-20mm F2.8 PRO DX 20 mm, f/2.8, infinit",
+        "masterStops": 0.763,
+        "syntheticStops": 0.664,
+        "depthDiffStops": 0.099,
+        "depthErrorPct": 7.111,
+        "depthVerdict": "BUN",
+        "ratioResidualPtpPct": 2.833,
+        "shapeVerdict": "BUN",
+        "verdict": "BUN"
+      }
+    }
+  ]
+}

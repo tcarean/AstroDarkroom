@@ -125,7 +125,11 @@ namespace FlatCheck
 
             return new LightResult
             {
-                A = a0, B = b0, C = c0, D = d0, E = e0,
+                A = a0,
+                B = b0,
+                C = c0,
+                D = d0,
+                E = e0,
                 RadPct = radPct,
                 PlanePct = planePct,
                 KeptTiles = keep.Count(x => x),

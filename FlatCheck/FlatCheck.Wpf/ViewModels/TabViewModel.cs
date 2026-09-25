@@ -34,7 +34,6 @@
 // ecran trece obligatoriu prin campuri simple, alese anume.
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf

@@ -51,7 +51,7 @@ public class RatioAnalyzerTests
     /// setup. Against itself the combined master IS the frame, so the two must agree.
     /// </summary>
     [Fact]
-    public void TheVerdictIsTheStructureVerdictOfTheCombinedMaster()
+    public void R020_TheVerdictIsTheStructureVerdictOfTheCombinedMaster()
     {
         var r = RatioAnalyzer.Analyze(Radial(), Radial());
 

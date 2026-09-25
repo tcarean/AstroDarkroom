@@ -110,7 +110,7 @@ public class SirilSessionTests
     /// sterse ca sa faca loc - ruleaza structura; seria de lights e pur si simplu goala.
     /// </summary>
     [Fact]
-    public void ProcessIsNotRequiredWhenTheMasterIsInMasters()
+    public void R080_ProcessIsNotRequiredWhenTheMasterIsInMasters()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws, process: false, masterIn: "masters");
@@ -124,7 +124,7 @@ public class SirilSessionTests
     /// produs ultima - si celalalt se numeste, ca tabul sa poata avertiza.
     /// </summary>
     [Fact]
-    public void WithAMasterInBothPlacesTheNewerWinsAndTheOtherIsNamed()
+    public void R080_WithAMasterInBothPlacesTheNewerWinsAndTheOtherIsNamed()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws, masterIn: "process");
@@ -148,7 +148,7 @@ public class SirilSessionTests
     }
 
     [Fact]
-    public void WithNoMasterAnywhereThePathIsNullAndBothPlacesAreNamed()
+    public void R080_WithNoMasterAnywhereThePathIsNullAndBothPlacesAreNamed()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws, master: false);
@@ -206,7 +206,7 @@ public class SirilSessionTests
     /// de centrul in jurul caruia se fiteaza modelul radial.
     /// </summary>
     [Fact]
-    public void RegisteredFramesAreExcludedFromTheSeries()
+    public void R083_RegisteredFramesAreExcludedFromTheSeries()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws);
@@ -290,7 +290,7 @@ public class SirilSessionTests
     [InlineData("pp_flat_00001.fit")]
     [InlineData("pp_flat_00042.fit")]
     [InlineData("pp_flat_.fit")]
-    public void AnIndividualCalibratedFlatIsNotAFlatMaster(string name)
+    public void R082_AnIndividualCalibratedFlatIsNotAFlatMaster(string name)
         => Assert.False(SirilSession.IsFlatMasterName(@"C:\sesiune\process\" + name));
 
     [Fact]
@@ -375,7 +375,7 @@ public class SirilSessionTests
     }
 
     [Fact]
-    public void TheHistEqCandidatesPutTheMasterFirst()
+    public void R085_TheHistEqCandidatesPutTheMasterFirst()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws);
@@ -433,7 +433,7 @@ public class SirilSessionTests
     /// ca al treilea fel de rand - nu master, nu cadru.
     /// </summary>
     [Fact]
-    public void ASmoothedMasterIsListedRightAfterTheMaster()
+    public void R085_ASmoothedMasterIsListedRightAfterTheMaster()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws);
@@ -454,7 +454,7 @@ public class SirilSessionTests
     /// decat cel de pe ecran, si nu apare. Doar calea exacta de langa cel ales.
     /// </summary>
     [Fact]
-    public void ASmoothedFileBesideTheOlderMasterIsNotListed()
+    public void R085_ASmoothedFileBesideTheOlderMasterIsNotListed()
     {
         using var ws = new TempWorkspace();
         var s = Session(ws, masterIn: "process");

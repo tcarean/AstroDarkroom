@@ -99,7 +99,7 @@ public class RawReaderTests
     [Fact]
     public void ARealRawDecodesToAnUndebayeredMosaicWithAScaleFromTheFile()
     {
-        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        string? path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
         if (string.IsNullOrEmpty(path)) return;
 
         LoadedFrame f = ImageLoader.Load(path);
@@ -154,7 +154,7 @@ public class RawReaderTests
     [Fact]
     public void ARealRawsPreviewSitsWellAboveItsSensorLevel()
     {
-        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        string? path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
         if (string.IsNullOrEmpty(path)) return;
 
         LoadedFrame f = ImageLoader.Load(path);
@@ -189,7 +189,7 @@ public class RawReaderTests
     [Fact]
     public void ARealRawsLoadInfoAgreesWithTheFullLoadOnTheShotFields()
     {
-        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        string? path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
         if (string.IsNullOrEmpty(path)) return;
 
         LoadedFrame full = ImageLoader.Load(path);
@@ -211,7 +211,7 @@ public class RawReaderTests
     [Fact]
     public void ARealRawAndAFitsHoldingItsPixelsGiveTheSameNumbers()
     {
-        string path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
+        string? path = Environment.GetEnvironmentVariable("FLATCHECK_NEF");
         if (string.IsNullOrEmpty(path)) return;
 
         LoadedFrame raw = ImageLoader.Load(path);

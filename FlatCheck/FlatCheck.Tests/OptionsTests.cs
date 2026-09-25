@@ -115,7 +115,7 @@ public class OptionsTests
     [Theory]
     [InlineData("-o")]
     [InlineData("--out")]
-    public void OutputFlag_OverridesTheDefaultPngPath(string flag)
+    public void R006_OutputFlag_OverridesTheDefaultPngPath(string flag)
     {
         var o = Options.Parse(new[] { "flat.fit", flag, "harta.png" });
 

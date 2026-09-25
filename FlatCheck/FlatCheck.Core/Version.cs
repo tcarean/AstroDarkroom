@@ -24,7 +24,6 @@
 // Se incrementeaza MANUAL la fiecare feature/fix, si trebuie sa ramana identica cu
 // __version__ din flatcheck.py - VersionTests verifica asta.
 
-using System;
 using System.Reflection;
 
 namespace FlatCheck

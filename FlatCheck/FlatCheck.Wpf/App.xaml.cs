@@ -22,7 +22,6 @@
 // un shortcut pe folderul sesiunii curente, si fiindca in timpul dezvoltarii scuteste
 // alegerea aceluiasi folder de cincizeci de ori.
 
-using System;
 using System.Globalization;
 using System.IO;
 using System.Windows;

@@ -142,7 +142,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void EverySourceFileStartsWithTheLicenseNotice()
+    public void R096_EverySourceFileStartsWithTheLicenseNotice()
     {
         var offenders = SourceFiles()
             .Where(f => HeaderOf(f) != Expected(KindOf(f)))

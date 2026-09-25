@@ -175,7 +175,7 @@ public class SmoothRunTests
 
     /// <summary>A raw carries no FITS cards; the run refuses before reading a pixel's worth of analysis.</summary>
     [Fact]
-    public void ARawIsRefused_WithTheRawMessage()
+    public void R060_ARawIsRefused_WithTheRawMessage()
     {
         // the extension is what dispatches to the raw reader; the file itself is not a NEF, so the
         // reader fails before the run can refuse - so the refusal wording is checked on its own

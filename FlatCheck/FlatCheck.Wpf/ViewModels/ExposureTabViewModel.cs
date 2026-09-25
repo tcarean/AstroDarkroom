@@ -311,25 +311,25 @@ namespace FlatCheck.Wpf
             string bandLabel = ExposureReport.BandLabel(b);
 
             return r.Channels.Select(c => new ChannelHistogramRow
-                {
-                    Label = c.Label,
-                    Position = r.IsCfa && r.Cfa != null ? $"CFA[{c.Position / 2},{c.Position % 2}]" : "",
-                    Colour = ChannelPalette.BrushFor(c.Colour),
-                    Median = $"{c.MedianPct:F1} % tot canalul",
-                    Centre = $"{c.CentreMedianPct:F1} %",
-                    Note = ExposureReport.ChannelNote(r, c),
-                    IsBrightest = c.IsBrightest && r.IsCfa,
-                    Whole = Normalise(c.Whole),
-                    CentreCurve = Normalise(c.Centre),
-                    Marker = c.CentreMedianPct,
-                    BandLo = b.Lo,
-                    BandHi = b.Hi,
-                    // Pe cer nu exista umar galben in stanga, deci nici zona de desenat:
-                    // NaN spune desenului "sari peste", nu "deseneaza o zona de latime 0".
-                    TooLow = b.HasLowShoulder ? b.TooLow : double.NaN,
-                    TooHigh = b.TooHigh,
-                    BandLabel = bandLabel,
-                }).ToList();
+            {
+                Label = c.Label,
+                Position = r.IsCfa && r.Cfa != null ? $"CFA[{c.Position / 2},{c.Position % 2}]" : "",
+                Colour = ChannelPalette.BrushFor(c.Colour),
+                Median = $"{c.MedianPct:F1} % tot canalul",
+                Centre = $"{c.CentreMedianPct:F1} %",
+                Note = ExposureReport.ChannelNote(r, c),
+                IsBrightest = c.IsBrightest && r.IsCfa,
+                Whole = Normalise(c.Whole),
+                CentreCurve = Normalise(c.Centre),
+                Marker = c.CentreMedianPct,
+                BandLo = b.Lo,
+                BandHi = b.Hi,
+                // Pe cer nu exista umar galben in stanga, deci nici zona de desenat:
+                // NaN spune desenului "sari peste", nu "deseneaza o zona de latime 0".
+                TooLow = b.HasLowShoulder ? b.TooLow : double.NaN,
+                TooHigh = b.TooHigh,
+                BandLabel = bandLabel,
+            }).ToList();
         }
 
         /// <summary>
@@ -342,23 +342,23 @@ namespace FlatCheck.Wpf
         /// </summary>
         static IReadOnlyList<ChannelHistogramRow> PreviewRows(ExposureResult r)
             => r.Preview.Channels.Select(c => new ChannelHistogramRow
-                {
-                    Label = c.Label,
-                    Position = "",
-                    Colour = ChannelPalette.BrushFor(c.Colour),
-                    Median = $"{c.MedianPct:F1} % tot cadrul",
-                    Centre = $"{c.CentreMedianPct:F1} %",
-                    Note = c.ClipPct > Th.ExpoClip ? $"pixeli la 255: {c.ClipPct:F2} % din cadru" : "",
-                    IsBrightest = false,
-                    Whole = Normalise(c.Whole),
-                    CentreCurve = Normalise(c.Centre),
-                    Marker = c.CentreMedianPct,
-                    BandLo = double.NaN,
-                    BandHi = double.NaN,
-                    TooLow = double.NaN,
-                    TooHigh = double.NaN,
-                    BandLabel = null,
-                }).ToList();
+            {
+                Label = c.Label,
+                Position = "",
+                Colour = ChannelPalette.BrushFor(c.Colour),
+                Median = $"{c.MedianPct:F1} % tot cadrul",
+                Centre = $"{c.CentreMedianPct:F1} %",
+                Note = c.ClipPct > Th.ExpoClip ? $"pixeli la 255: {c.ClipPct:F2} % din cadru" : "",
+                IsBrightest = false,
+                Whole = Normalise(c.Whole),
+                CentreCurve = Normalise(c.Centre),
+                Marker = c.CentreMedianPct,
+                BandLo = double.NaN,
+                BandHi = double.NaN,
+                TooLow = double.NaN,
+                TooHigh = double.NaN,
+                BandLabel = null,
+            }).ToList();
 
         /// <summary>
         /// Cosurile scalate la propriul varf. Fiecare curba pe scara ei fiindca fereastra

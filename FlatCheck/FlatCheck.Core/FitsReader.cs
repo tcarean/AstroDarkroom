@@ -114,8 +114,13 @@ namespace FlatCheck
             // ExposureAnalyzer trebuie sa cada pe AutoWhite, nu sa creada un numar fals.
             var f = new LoadedFrame
             {
-                Image = img, Header = hdr, Scale = null, Cfa = cfa,
-                Cards = cards, Planes = planes, Bitpix = bitpix,
+                Image = img,
+                Header = hdr,
+                Scale = null,
+                Cfa = cfa,
+                Cards = cards,
+                Planes = planes,
+                Bitpix = bitpix,
             };
             FillShootingInfo(f, hdr);
             return f;
@@ -133,7 +138,9 @@ namespace FlatCheck
             int h = HInt(hdr, "NAXIS2", 0);
             var f = new LoadedFrame
             {
-                Image = null, Header = hdr, Scale = null,
+                Image = null,
+                Header = hdr,
+                Scale = null,
                 Cfa = CfaPattern.Parse(HStr(hdr, "BAYERPAT", ""), "BAYERPAT")
                     ?.Shift(HInt(hdr, "YBAYROFF", 0), HInt(hdr, "XBAYROFF", 0))
                     ?.ForRowOrder(HStr(hdr, "ROWORDER", ""), h),

@@ -146,7 +146,10 @@ public class SmoothScaleAdvisorTests
 
     static SmoothScaleTrial T(double scale, double texture, double az, double tilt) => new()
     {
-        ScalePx = scale, TextureAfterPct = texture, AzimuthalDelta = az, TiltDelta = tilt,
+        ScalePx = scale,
+        TextureAfterPct = texture,
+        AzimuthalDelta = az,
+        TiltDelta = tilt,
         TextureGone = texture < Th.SmoothTextureGone,
         StructureLost = !(az > -Th.SmoothScaleLoss) || !(tilt > -Th.SmoothScaleLoss),
     };

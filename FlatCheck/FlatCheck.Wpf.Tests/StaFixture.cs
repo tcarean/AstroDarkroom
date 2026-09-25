@@ -34,7 +34,6 @@
 //      care l-a creat: al doilea fir care ar incerca sa-l foloseasca ar arunca. De aceea
 //      firul se imparte intre teste printr-o fixtura de colectie, si nu se creeaza per test.
 
-using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 

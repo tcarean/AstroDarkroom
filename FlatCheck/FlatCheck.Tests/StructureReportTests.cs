@@ -109,7 +109,10 @@ public class StructureReportTests
     {
         var r = new StructureResult
         {
-            LocalSpotPct = -4.99, LocalSpotX = 441, LocalSpotY = 297, LocalSpotFlagged = true,
+            LocalSpotPct = -4.99,
+            LocalSpotX = 441,
+            LocalSpotY = 297,
+            LocalSpotFlagged = true,
         };
 
         string warning = StructureReport.LocalSpotWarning(r)!;
@@ -290,25 +293,34 @@ public class StructureReportTests
     static LoadedFrame MasterFrame() => new LoadedFrame
     {
         Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
-        FocalMm = 20, Camera = "Nikon D3300",
+        FocalMm = 20,
+        Camera = "Nikon D3300",
     };
 
     static LoadedFrame RawFrame() => new LoadedFrame
     {
         Header = new Dictionary<string, string>(),
-        FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
-        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+        FocalMm = 20,
+        FNumber = 2.8,
+        Camera = "NIKON D3300",
+        NikonLensId = 139,
+        LensMinFocalMm = 11,
+        LensMaxFocalMm = 20,
+        LensMaxAperture = 2.8,
     };
 
     /// <summary>The fixture master (k = 0.45, 0.86 stops) against the fixture profiles, through the run's own Compare.</summary>
-    static StructureOutcome Compared(TempWorkspace ws, bool withRaw = true, string lensText = null, double? fstop = null)
+    static StructureOutcome Compared(TempWorkspace ws, bool withRaw = true, string? lensText = null, double? fstop = null)
     {
         var sources = LensProfileTestData.Sources(ws);
         var r = Result(FitsTestData.Radial(512, 512));
         var query = new StructureQuery
         {
-            Sources = sources, RawPath = withRaw ? "DSC_0001.NEF" : null, LoadInfo = _ => RawFrame(),
-            LensText = lensText, FStop = fstop,
+            Sources = sources,
+            RawPath = withRaw ? "DSC_0001.NEF" : null,
+            LoadInfo = _ => RawFrame(),
+            LensText = lensText,
+            FStop = fstop,
         };
         return StructureRun.Compare(r, MasterFrame(), query);
     }

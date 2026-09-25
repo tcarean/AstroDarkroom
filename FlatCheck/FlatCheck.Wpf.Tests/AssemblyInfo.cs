@@ -33,6 +33,4 @@
 //
 // Costul e zero in practica: suita intreaga ruleaza in vreo doua secunde.
 
-using Xunit;
-
 [assembly: CollectionBehavior(DisableTestParallelization = true)]

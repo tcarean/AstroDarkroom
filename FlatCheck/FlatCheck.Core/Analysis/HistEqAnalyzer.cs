@@ -74,7 +74,6 @@
 // mediana prin sortare (HistEqLut.Median) si micsorarea prin rastere double (Shrink).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace FlatCheck

@@ -22,7 +22,6 @@
 // ViewModel.
 
 using System.IO;
-using System.Linq;
 
 namespace FlatCheck
 {

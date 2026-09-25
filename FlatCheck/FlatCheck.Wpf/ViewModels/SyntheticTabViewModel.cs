@@ -606,8 +606,15 @@ namespace FlatCheck.Wpf
         {
             CompareTable = AgainstReport.Rows(a).Select(r => new CompareRow
             {
-                Label = r.Label, A = r.A, AVerdict = r.AVerdict, B = r.B, BVerdict = r.BVerdict,
-                Diff = r.Diff, DiffVerdict = r.DiffVerdict, Note = r.Note, IsKey = r.IsKey,
+                Label = r.Label,
+                A = r.A,
+                AVerdict = r.AVerdict,
+                B = r.B,
+                BVerdict = r.BVerdict,
+                Diff = r.Diff,
+                DiffVerdict = r.DiffVerdict,
+                Note = r.Note,
+                IsKey = r.IsKey,
             }).ToList();
             _compareResidual = a.Structure.Residual;
             _mapCache.Clear();

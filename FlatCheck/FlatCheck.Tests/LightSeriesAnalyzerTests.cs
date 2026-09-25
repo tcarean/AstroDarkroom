@@ -140,7 +140,7 @@ public class LightSeriesAnalyzerTests
     // ------------------------------------------------------ verdict nedeterminat
 
     [Fact]
-    public void TooFewFramesIsNotEnoughToAverage()
+    public void R032_TooFewFramesIsNotEnoughToAverage()
     {
         var r = LightSeriesAnalyzer.Combine(Steady(Th.LightSeriesMinFrames - 1, mean: 0.5));
 

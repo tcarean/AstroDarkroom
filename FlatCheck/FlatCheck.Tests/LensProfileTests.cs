@@ -15,13 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using FlatCheck;
-using Xunit;
-
 namespace FlatCheck.Tests;
 
 public class VignettingModelTests
@@ -87,7 +80,7 @@ public class VignettingModelTests
         // decentring is a property of the lens, in mm: the shift does not scale with the crop
         var shifted = new VignettingModel(VignettingModelKind.Adobe, new[] { -0.5, 0.0, 0.0 }, null, 20, 1.5,
             focalX: 20 * 1.5 / 36, centerX: 0.4);
-        Assert.Equal(shifted.Radius(0.0, 0, 1.0), (0.1 * 24) / 20, 9);
+        Assert.Equal((0.1 * 24) / 20, shifted.Radius(0.0, 0, 1.0), 9);
     }
 
     [Fact]
@@ -897,14 +890,20 @@ public class LensIdentificationTests
     static LoadedFrame Master() => new LoadedFrame
     {
         Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
-        FocalMm = 20, Camera = "Nikon D3300",
+        FocalMm = 20,
+        Camera = "Nikon D3300",
     };
 
     static LoadedFrame Raw() => new LoadedFrame
     {
         Header = new Dictionary<string, string>(),
-        FocalMm = 18, FNumber = 2.8, Camera = "NIKON D3300",
-        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+        FocalMm = 18,
+        FNumber = 2.8,
+        Camera = "NIKON D3300",
+        NikonLensId = 139,
+        LensMinFocalMm = 11,
+        LensMaxFocalMm = 20,
+        LensMaxAperture = 2.8,
     };
 
     [Fact]

@@ -15,13 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using FlatCheck;
-using Xunit;
-
 namespace FlatCheck.Tests;
 
 /// <summary>
@@ -38,14 +31,20 @@ public class VignettingComparisonTests
     static LoadedFrame Master() => new LoadedFrame
     {
         Header = new Dictionary<string, string> { ["SIMPLE"] = "T", ["FOCALLEN"] = "20", ["INSTRUME"] = "Nikon D3300" },
-        FocalMm = 20, Camera = "Nikon D3300",
+        FocalMm = 20,
+        Camera = "Nikon D3300",
     };
 
     static LoadedFrame Raw() => new LoadedFrame
     {
         Header = new Dictionary<string, string>(),
-        FocalMm = 20, FNumber = 2.8, Camera = "NIKON D3300",
-        NikonLensId = 139, LensMinFocalMm = 11, LensMaxFocalMm = 20, LensMaxAperture = 2.8,
+        FocalMm = 20,
+        FNumber = 2.8,
+        Camera = "NIKON D3300",
+        NikonLensId = 139,
+        LensMinFocalMm = 11,
+        LensMaxFocalMm = 20,
+        LensMaxAperture = 2.8,
     };
 
     /// <summary>The Adobe profile of the fixture, built as a flat at the fixture size, raised to a power.</summary>

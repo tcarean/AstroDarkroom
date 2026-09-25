@@ -152,7 +152,7 @@ public class SyntheticTabTests
 
             Assert.Equal("1.6", vm.CropText);
             Assert.Contains("nominal, din chip-ul APS-C Canon", vm.CropNote);
-            Assert.Equal("APS-C Canon 1.6", vm.SensorFormat.Selected.Label);
+            Assert.Equal("APS-C Canon 1.6", vm.SensorFormat.Selected!.Label);
 
             vm.CropText = "1.15";                                // no format within 5 %: every chip off, the note says so
 

@@ -15,7 +15,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -126,7 +125,7 @@ public class GoldenOutputTests
     // ---------------------------------------------------------------- structure
 
     [Fact]
-    public void Structure_OnPerfectRadialFlat_IsClean()
+    public void R011_Structure_OnPerfectRadialFlat_IsClean()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -174,7 +173,7 @@ public class GoldenOutputTests
 
     /// <summary>The scale itself is printed, so the numbers can be read without the docs.</summary>
     [Fact]
-    public void Structure_PrintsTheScaleAndNamesTheMostImportantMetric()
+    public void R012_Structure_PrintsTheScaleAndNamesTheMostImportantMetric()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -199,7 +198,7 @@ public class GoldenOutputTests
     /// the same defect as an amplitude is "inclinare", which is a test.
     /// </summary>
     [Fact]
-    public void Structure_ReportsTheCentroidOffsetAsInformativeOnly()
+    public void R013_Structure_ReportsTheCentroidOffsetAsInformativeOnly()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -255,7 +254,7 @@ public class GoldenOutputTests
 
     /// <summary>The second map, for the shape of the external component.</summary>
     [Fact]
-    public void Ratio_WritesBothMaps()
+    public void R020_Ratio_WritesBothMaps()
     {
         using var ws = new TempWorkspace();
         string a = Flat(ws, "a.fit", FitsTestData.Radial(Size, Size));
@@ -268,7 +267,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Ratio_OnMismatchedSizes_FailsWithExitCode1()
+    public void R020_Ratio_OnMismatchedSizes_FailsWithExitCode1()
     {
         using var ws = new TempWorkspace();
         string a = Flat(ws, "a.fit", FitsTestData.Radial(Size, Size), Size);
@@ -283,7 +282,7 @@ public class GoldenOutputTests
     // ---------------------------------------------------------------- light
 
     [Fact]
-    public void Light_OnUncorrectedVignetting_ReportsUnderCorrection()
+    public void R030_Light_OnUncorrectedVignetting_ReportsUnderCorrection()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "light.fit", FitsTestData.Radial(Size, Size));
@@ -301,7 +300,7 @@ public class GoldenOutputTests
     /// pe APS-C raporta increzator "SUSPECT, SUB-corectie" pe un flat fara cusur radial.
     /// </summary>
     [Fact]
-    public void Light_OnATooWideField_RefusesInsteadOfAnswering()
+    public void R031_Light_OnATooWideField_RefusesInsteadOfAnswering()
     {
         using var ws = new TempWorkspace();
         string f = ws.WriteFile("light.fit", FitsTestData.BuildFits(
@@ -323,7 +322,7 @@ public class GoldenOutputTests
     /// variaza, deci media E o masuratoare si primeste un verdict adevarat.
     /// </summary>
     [Fact]
-    public void LightSeries_OnAStableSeries_GivesARealVerdict()
+    public void R032_LightSeries_OnAStableSeries_GivesARealVerdict()
     {
         using var ws = new TempWorkspace();
         string dir = SeriesDir(ws, "stabil", Enumerable.Range(0, 6)
@@ -344,7 +343,7 @@ public class GoldenOutputTests
     /// - iar modul refuza sa dea un verdict, cu exit 2.
     /// </summary>
     [Fact]
-    public void LightSeries_OnASweepingSeries_RefusesToConclude()
+    public void R032_LightSeries_OnASweepingSeries_RefusesToConclude()
     {
         using var ws = new TempWorkspace();
         // k urca de la sub- la supra-corectie, iar planul de cer scade odata cu el: exact
@@ -405,7 +404,7 @@ public class GoldenOutputTests
     /// only if the fixture does.
     /// </summary>
     [Fact]
-    public void Histeq_OnACfaFlat_WritesThePictureAndExitsZero()
+    public void R050_Histeq_OnACfaFlat_WritesThePictureAndExitsZero()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
@@ -424,7 +423,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Histeq_OnAMonoFlat_ReportsOneChannel()
+    public void R050_Histeq_OnAMonoFlat_ReportsOneChannel()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "flat.fit", FitsTestData.Radial(Size, Size));
@@ -450,7 +449,7 @@ public class GoldenOutputTests
 
     /// <summary>--histeq wins over --expo: dispatch is first-match, and it comes first.</summary>
     [Fact]
-    public void Histeq_TakesPrecedenceOverExpo()
+    public void R003_Histeq_TakesPrecedenceOverExpo()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
@@ -507,7 +506,7 @@ public class GoldenOutputTests
     /// labels; the golden file above stays the reference for the figures.
     /// </summary>
     [Fact]
-    public void Expo_OnABottomUpFrame_NamesTheChannelsByFileRowOrder()
+    public void R044_Expo_OnABottomUpFrame_NamesTheChannelsByFileRowOrder()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
@@ -536,7 +535,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Expo_OnDebayeredFrame_RefusesToGiveAVerdict()
+    public void R042_Expo_OnDebayeredFrame_RefusesToGiveAVerdict()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "debayered.fit", FitsTestData.Radial(Size, Size));
@@ -602,7 +601,7 @@ public class GoldenOutputTests
 
     /// <summary>Phase 8: a flag before the path now behaves exactly like one after it.</summary>
     [Fact]
-    public void FlagBeforePath_GivesTheSameResultAsFlagAfterPath()
+    public void R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath()
     {
         using var ws = new TempWorkspace();
         var scene = FitsTestData.WithBayerMosaic(FitsTestData.Radial(Size, Size, center: 34000));
@@ -636,7 +635,7 @@ public class GoldenOutputTests
     [InlineData("OK", 0)]
     [InlineData("SUSPECT", 2)]
     [InlineData("PROBLEMA", 3)]
-    public void ExitCodesFollowVerdictSeverity(string verdict, int expected)
+    public void R002_ExitCodesFollowVerdictSeverity(string verdict, int expected)
     {
         Assert.Equal(expected, FlatCheckCli.ExitFor(verdict));
     }
@@ -649,7 +648,7 @@ public class GoldenOutputTests
     /// the removed component is the method's floor.
     /// </summary>
     [Fact]
-    public void Smooth_OnACleanFlat_WritesTheFileAndExitsZero()
+    public void R060_Smooth_OnACleanFlat_WritesTheFileAndExitsZero()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -673,7 +672,7 @@ public class GoldenOutputTests
     /// written, and the before/after table shows the worst tile dropping.
     /// </summary>
     [Fact]
-    public void Smooth_OnATexturedFlat_WarnsAndStillWritesTheFile()
+    public void R061_Smooth_OnATexturedFlat_WarnsAndStillWritesTheFile()
     {
         using var ws = new TempWorkspace();
         var radial = FitsTestData.Radial(Size, Size);
@@ -692,7 +691,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Smooth_RefusesAColourCube_AndWritesNothing()
+    public void R060_Smooth_RefusesAColourCube_AndWritesNothing()
     {
         using var ws = new TempWorkspace();
         string f = ws.WriteFile("cube.fit", FitsTestData.BuildFitsCube(64, 64, 3, (x, y, p) => 1000 + p));
@@ -707,7 +706,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Smooth_RefusesToOverwriteTheInput()
+    public void R060_Smooth_RefusesToOverwriteTheInput()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -727,7 +726,7 @@ public class GoldenOutputTests
     /// proposed; the golden pins the table's shape.
     /// </summary>
     [Fact]
-    public void SmoothAuto_OnATexturedFlat_ProposesAScaleAndWritesTheFile()
+    public void R062_SmoothAuto_OnATexturedFlat_ProposesAScaleAndWritesTheFile()
     {
         using var ws = new TempWorkspace();
         var radial = FitsTestData.Radial(Size, Size);
@@ -745,7 +744,7 @@ public class GoldenOutputTests
 
     /// <summary>--scale auto on a clean fixture: "nothing to smooth", no file, exit 2 - read before deciding.</summary>
     [Fact]
-    public void SmoothAuto_OnACleanFlat_WritesNothingAndExitsTwo()
+    public void R062_SmoothAuto_OnACleanFlat_WritesNothingAndExitsTwo()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -762,7 +761,7 @@ public class GoldenOutputTests
 
     /// <summary>--smooth wins over every other mode flag: dispatch is first-match, and it comes first.</summary>
     [Fact]
-    public void Smooth_TakesPrecedenceOverHisteq()
+    public void R003_Smooth_TakesPrecedenceOverHisteq()
     {
         using var ws = new TempWorkspace();
         string f = Flat(ws, "clean.fit", FitsTestData.Radial(Size, Size));
@@ -790,7 +789,7 @@ public class GoldenOutputTests
     /// reading the plus sign as a source that falls off with angle.
     /// </summary>
     [Fact]
-    public void Structure_WithALens_ComparesTheVignettingWithTheProfilesAndTheVerdictFollows()
+    public void R016_Structure_WithALens_ComparesTheVignettingWithTheProfilesAndTheVerdictFollows()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -811,7 +810,7 @@ public class GoldenOutputTests
     /// the verdict and exit code are the five tests' own.
     /// </summary>
     [Fact]
-    public void Structure_WithALensButNoFStop_ExplainsAndKeepsTheFiveTestVerdict()
+    public void R017_Structure_WithALensButNoFStop_ExplainsAndKeepsTheFiveTestVerdict()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -830,7 +829,7 @@ public class GoldenOutputTests
     /// caveat, the saved line. The lens is named exactly, the mount comes from INSTRUME.
     /// </summary>
     [Fact]
-    public void Synthetic_WritesTheFlatAndReportsTheProfileItUsed()
+    public void R071_Synthetic_WritesTheFlatAndReportsTheProfileItUsed()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -851,7 +850,7 @@ public class GoldenOutputTests
 
     /// <summary>lensfun needs the camera's crop; here it comes from the database by INSTRUME, and the corner is extrapolated.</summary>
     [Fact]
-    public void Synthetic_FromLensfun_TakesTheCropFromTheDatabase()
+    public void R072_Synthetic_FromLensfun_TakesTheCropFromTheDatabase()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -870,7 +869,7 @@ public class GoldenOutputTests
     /// ATENTIE line under "profil folosit" says the depth is the profile's, not the request's.
     /// </summary>
     [Fact]
-    public void Synthetic_ARequestFarFromEveryProfileIsWrittenWithAWarning()
+    public void R072_Synthetic_ARequestFarFromEveryProfileIsWrittenWithAWarning()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -886,7 +885,7 @@ public class GoldenOutputTests
 
     /// <summary>Two lenses match: nothing is written, the candidates are listed, exit 2 - "read this first".</summary>
     [Fact]
-    public void Synthetic_AnAmbiguousLensListsTheCandidatesAndExitsTwo()
+    public void R071_Synthetic_AnAmbiguousLensListsTheCandidatesAndExitsTwo()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -902,7 +901,7 @@ public class GoldenOutputTests
 
     /// <summary>A FITS reference carries no f-number: without --fstop the mode refuses with 1.</summary>
     [Fact]
-    public void Synthetic_WithoutAnFStopRefusesWithOne()
+    public void R071_Synthetic_WithoutAnFStopRefusesWithOne()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -915,7 +914,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Lenses_ListsBothSourcesWithTheirFocalsAndApertures()
+    public void R070_Lenses_ListsBothSourcesWithTheirFocalsAndApertures()
     {
         using var ws = new TempWorkspace();
         string profiles = LensProfileTestData.ProfilesDir(ws);
@@ -932,7 +931,7 @@ public class GoldenOutputTests
     /// calibrated light, REFA on the depth and therefore on the whole, exit 3.
     /// </summary>
     [Fact]
-    public void Against_ReadsTheDifferenceBetweenTwoFlats()
+    public void R073_Against_ReadsTheDifferenceBetweenTwoFlats()
     {
         using var ws = new TempWorkspace();
         string a = ws.WriteFile("a.fit", FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: 0.45)));

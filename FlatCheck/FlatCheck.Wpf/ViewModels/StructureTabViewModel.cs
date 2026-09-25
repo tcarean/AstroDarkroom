@@ -302,9 +302,17 @@ namespace FlatCheck.Wpf
                 ProfileMaster = StructureReport.MasterDepth(c);
                 ProfileRows = StructureReport.ProfileRows(c).Select(r => new LensProfileRow
                 {
-                    Source = r.Source, Lens = r.Lens, Where = r.Where, Profile = r.Profile, Depth = r.Depth,
-                    Diff = r.Diff, Error = r.Error, Verdict = r.Verdict, IsNearest = r.IsNearest,
-                    Note = (r.IsNearest ? "Cel mai apropiat profil - da verdictul. " : "") + r.Note, IsWarning = r.IsWarning,
+                    Source = r.Source,
+                    Lens = r.Lens,
+                    Where = r.Where,
+                    Profile = r.Profile,
+                    Depth = r.Depth,
+                    Diff = r.Diff,
+                    Error = r.Error,
+                    Verdict = r.Verdict,
+                    IsNearest = r.IsNearest,
+                    Note = (r.IsNearest ? "Cel mai apropiat profil - da verdictul. " : "") + r.Note,
+                    IsWarning = r.IsWarning,
                 }).ToList();
                 ProfileSummary = StructureReport.ComparisonSummary(c).Replace('\n', ' ');
                 ProfileScale = StructureReport.DepthScaleRows()

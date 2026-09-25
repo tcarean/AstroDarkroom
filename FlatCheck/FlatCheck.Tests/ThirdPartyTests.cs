@@ -48,7 +48,7 @@ public class ThirdPartyTests
     /// adaugata fara intrare - inainte sa ajunga pe ecran fara notita.
     /// </summary>
     [Fact]
-    public void EveryPackageTheCoreLinksIsListed()
+    public void R095_EveryPackageTheCoreLinksIsListed()
     {
         string[] linked = CorePackages();
         Assert.NotEmpty(linked);
@@ -70,7 +70,7 @@ public class ThirdPartyTests
     /// nu oriunde in text - "LibRaw" apare si in paragraful despre Sdcb.LibRaw.
     /// </summary>
     [Fact]
-    public void EveryComponentHasAnEntryInTheNoticesFile()
+    public void R095_EveryComponentHasAnEntryInTheNoticesFile()
     {
         string notices = File.ReadAllText(Path.Combine(RepoDir(), "THIRD-PARTY-NOTICES.md"));
         string[] headings = Regex.Matches(notices, @"^##\s+(.+)$", RegexOptions.Multiline)

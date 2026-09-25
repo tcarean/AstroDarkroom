@@ -1,0 +1,10 @@
+# Normalise line endings in the repo. The sources are LF and .editorconfig keeps them so.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.ico binary
+*.fit binary
+*.fits binary
+*.fts binary
+*.nef binary
+*.NEF binary

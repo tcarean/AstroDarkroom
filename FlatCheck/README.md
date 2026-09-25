@@ -1376,6 +1376,47 @@ python crosscheck.py /tmp/xc
 
 Dependințe pentru Python: `numpy`, `astropy`, `matplotlib`, opțional `rawpy` pentru NEF.
 
+Sau, într-o singură comandă, `scripts/crosscheck.ps1`: aruncă fixturile într-un folder temporar
+și rulează `crosscheck.py` pe ele.
+
+### Dezvoltare: gate-ul, documentația și Claude Code
+
+Din 2026-09-25 proiectul urmează procesul din `ClaudeCodeStarterKit` (folderul de lângă acesta în
+repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo). Pe scurt, ce e impus
+mecanic:
+
+- **`scripts/verify.ps1` e gate-ul**: manifestul datelor de test, restore, `dotnet format`
+  (doar verifică), build cu avertismentele ca erori, toate testele în afară de cele de validare.
+  Cam 3 minute. Îl rulează hook-ul git `pre-commit` de la rădăcina repo-ului la orice commit care
+  atinge FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
+  `scripts/release.ps1`. Fără el verde nu intră niciun commit; `--no-verify` e interzis.
+
+  ```bash
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+  ```
+
+- **O schimbare în cod cere o linie în `CHANGELOG.md`**, sub `[Unreleased]`;
+  `scripts/check-staged.ps1` refuză commit-ul fără ea.
+- **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor
+  (`R012_Structure_PrintsTheScale...`); `RepoInvariantTests` cere ca fiecare cerință
+  `implemented` să aibă un test cu ID-ul ei și invers.
+- **Deciziile sunt în `docs/decisions/`**, un ADR per decizie, cu alternativele respinse; cele
+  luate înainte de 2026-09-25 au fost scrise retroactiv din notele de proiectare.
+- **Cifrele de acceptanță pe masterele reale** sunt în `docs/validation.json`, citit de
+  `ValidationTests` (`--filter "Category=Validation"`, nu în gate, minute); fișierele stau în
+  `E:\Photografie\Astro\Flats and Darks`, numite în `FlatCheck.Tests/testdata/manifest.json`
+  cu hash SHA-256, iar `FLATCHECK_TESTDATA_LARGE` arată la folderul lor. `docs/validation.md`
+  spune de unde vine fiecare cifră.
+- **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
+  2026-09-25; `CLAUDE.md` ține acum doar regulile), cu indexul în `docs/design/README.md`.
+- **Versiunea** o crește omul, prin `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul,
+  scrie versiunea în `Directory.Build.props` și în `flatcheck.py`, închide secțiunea din
+  CHANGELOG și publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); commit-ul
+  și tag-ul `flatcheck-vX.Y.Z` rămân ai omului.
+- În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`,
+  din `.claude/skills/`; hook-urile din `.claude/settings.json` nu lasă o tură să se încheie cu
+  cod editat și neverificat.
+
 ---
 
 ## Diferențe față de versiunea Python

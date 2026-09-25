@@ -95,7 +95,7 @@ public class CultureTests
     /// cu cel pe care l-ar scrie consola. Nu doar separatorul - tot textul.
     /// </summary>
     [Fact]
-    public async Task TheSavedReportIsTheSameUnderARomanianCulture()
+    public async Task R090_TheSavedReportIsTheSameUnderARomanianCulture()
     {
         using var f = new SessionFixture().WithFlatMaster();
         var session = f.Session;

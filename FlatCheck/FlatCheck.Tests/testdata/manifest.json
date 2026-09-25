@@ -1,0 +1,245 @@
+{
+  "$comment": "Every test data file outside git: the real masters and the first raw of each flats/ folder under E:/Photografie/Astro/Flats and Darks, the folder named by FLATCHECK_TESTDATA_LARGE. Paths are relative to that folder. scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. FlatCheck has no repo fixtures: they are generated in the tests.",
+  "files": [
+    {
+      "name": "Nikkor 35mm DX/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "6b698658a04a7794f560dc8e50c463f875a4ef49e4948b951603c741efe1396e",
+      "source": "Siril master, Nikkor 35mm DX/ISO400/f2.8-sky",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Nikkor 35mm DX/ISO400/f2.8-sky/flats/DSC_0031.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "cfd993c5cfa6ffe8ef5efb25162d763acadb34b002342d155feddd77824579b7",
+      "source": "first raw of Nikkor 35mm DX/ISO400/f2.8-sky/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Nikkor 35mm DX/ISO800/f2.8-sky/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "0ce736e3f219882120a13bd87f69bea3b0a76589b132caa9f0d6f3bb89a744df",
+      "source": "Siril master, Nikkor 35mm DX/ISO800/f2.8-sky",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Nikkor 35mm DX/ISO800/f2.8-sky/flats/DSC_0091.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "1636c38c31f319b1db484aa7777fcec34a0b63ea55951c1f94a0e188cd5e0a55",
+      "source": "first raw of Nikkor 35mm DX/ISO800/f2.8-sky/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/f2.0-sky/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "1ef37e3b730bab2c46c31993cc39561c229b5490997b35f59d16dc956266849c",
+      "source": "Siril master, Samyang/ISO1600/f2.0-sky",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/f2.0-sky/flats/DSC_0061.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "83b7b87faf889d6b67efd0ab66a3540d3d1043ebaec73ff8fa83fa04103fb335",
+      "source": "first raw of Samyang/ISO1600/f2.0-sky/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "7e949f893cf9b126e633fad2dd770fe7a1357ce3f930e8e608a7e8446dfee28f",
+      "source": "Siril master, Samyang/ISO1600/sursa_neuniforma/f2.0-lcd",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "55a99f53988b1cf0b25ca6973c41af13a2fd3492250d2ff496a5de765acd6340",
+      "source": "first raw of Samyang/ISO1600/sursa_neuniforma/f2.0-lcd/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/sursa_neuniforma/f2.8/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "8280921f51ba4cc3bb25dfc8e32dd96c337eceaa7b95c6bede8c7c4d9f6ace24",
+      "source": "Siril master, Samyang/ISO1600/sursa_neuniforma/f2.8",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO1600/sursa_neuniforma/f2.8/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "7bc7915bf374c45bacc2c954ed55d2f373975df81a77e247e8d34dc50ea17a59",
+      "source": "first raw of Samyang/ISO1600/sursa_neuniforma/f2.8/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO400/f2.0-sky/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "2a7e6e27d6a22bb8afbda77745c9b85d3ad2aae3191466f9807d7e142315aee0",
+      "source": "Siril master, Samyang/ISO400/f2.0-sky",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO400/f2.0-sky/flats/DSC_0196.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "2110160f9c43d01ed42bb08ab6792cea085c695de6a92786cf6dd7023b7a6060",
+      "source": "first raw of Samyang/ISO400/f2.0-sky/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO400/f2.8-sky/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "80ec60bfef35da423beca9892ba39e2bc351823a88b5bcbbe5e6a039907e9e19",
+      "source": "Siril master, Samyang/ISO400/f2.8-sky",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Samyang/ISO400/f2.8-sky/flats/DSC_0136.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "6f21d905cf41af0d3e39e45d6cd34ac27c3ca95c958bf74d515d10c4d8766ce7",
+      "source": "first raw of Samyang/ISO400/f2.8-sky/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "67f3c6cefd72c66e10c05cd98ef457748193b8945d3d8ce1eb2f92afda149e8e",
+      "source": "Siril master, Tokina/ISO400/f2.8-monitor-difuzor-aproape",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-monitor-difuzor-aproape/flats/DSC_0060.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "a6259e95c1f92e13f1da9848636c4bc0166471b35ae32f38ae1db7aca7354605",
+      "source": "first raw of Tokina/ISO400/f2.8-monitor-difuzor-aproape/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "41edab4ddfbcbcf199424fb6159af9fa5f9ed647104b7c2b5db24e2df2dd0681",
+      "source": "Siril master, Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "41566cfb638da30f0391a8329de3b38f781ff8c2410c029773f3fd32d05c85b5",
+      "source": "first raw of Tokina/ISO400/f2.8-monitor-difuzor-pe-monitor/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-sky-no-difuser/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "7568ada29eadf329774ebe62caf37125a914d61438abc929739491fede89b908",
+      "source": "Siril master, Tokina/ISO400/f2.8-sky-no-difuser",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-sky-no-difuser/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "3f32ff67aea541aed8536411bfc61e94de9ee7d257401203583764b2f818b843",
+      "source": "first raw of Tokina/ISO400/f2.8-sky-no-difuser/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "fd1729bb9b39dcb68ba7f9122e58c3430cf3cf82cfe35c5ef0dcbffd1f6174a6",
+      "source": "Siril master, Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/flats/DSC_0071.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "4b8803765193512df9c6616cf8d615659627b2a5f7dc95a3f328f7b8eb402544",
+      "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-coperti-15-foi/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "af9ea67327cd983cd9e7d8e8b67017c6554cd62db82fc41e4edbd060b881cdac",
+      "source": "Siril master, Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "d7711946dfc86394644aac1b13d609d9987109949d0e646af00dba4e42bc290b",
+      "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-coperti-7-foi/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "130a075ab9e09c85dd8945c4e1fbd8efb6e0baa0301c4bcaaeab2aedc65b66cd",
+      "source": "Siril master, Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "f77456c1e5344c64b6cb5b0facc9b07204ad9b153aff79340b735834e87fba28",
+      "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "a8ccb99eb6524ab96648c3fd9ef1f15b99cf9c62a8ebc20abb497dff6405b772",
+      "source": "Siril master, Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/flats/DSC_0001.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "ec04558d52bd05eef954df66b95a2feaa9e43c00ee06c45876610411b912aaf9",
+      "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-hartie-3-foi/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/process/pp_flat_stacked.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "7e78f4f6147136d3edd535fae5cf9afeb09f85f04bd2ba348e5eef753aa563a1",
+      "source": "Siril master, Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi",
+      "demonstrates": "docs/validation.json cases on this session"
+    },
+    {
+      "name": "Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/flats/DSC_0071.NEF",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "28c8a193ab0e9e697b7e26153e83f707fde8a682a564e4156085e05fc21eab73",
+      "source": "first raw of Tokina/ISO400/f2.8-tableta-lipita-hartie-4-foi/flats",
+      "demonstrates": "docs/validation.json cases on this session"
+    }
+  ]
+}

@@ -238,7 +238,7 @@ public class LightSuitabilityTests
     [InlineData(nameof(FovLevel.Marginal), true)]
     [InlineData(nameof(FovLevel.Unknown), true)]
     [InlineData(nameof(FovLevel.TooWide), false)]
-    public void OnlyTooWideStopsTheRun(string level, bool canRun)
+    public void R031_OnlyTooWideStopsTheRun(string level, bool canRun)
     {
         var parsed = Enum.Parse<FovLevel>(level);
 
