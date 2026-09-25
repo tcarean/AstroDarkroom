@@ -68,8 +68,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `/simplify` documented: per-session diff, report first then `--fix`, whole project only per
   area as separate tasks.
 - Guide and READMEs on git hooks: installing means setting `core.hooksPath`, once per clone; the
-  hook is shared, the gate (`verify.ps1`) is per project; a fresh clone of the monorepo needs only
-  `git config core.hooksPath .githooks`; `install-hooks.ps1` runs from the kit; a project inside
+  hook is shared, the gate (`verify.ps1`) is per project; a fresh clone of the monorepo runs the
+  kit's `install-hooks.ps1` once (ADR 0016); `install-hooks.ps1` runs from the kit; a project inside
   `photo` needs neither `git init` nor an install. Guide: who checks the documentation, and what
   nothing checks.
 - Every script in `scripts/` and `scripts/hooks/` opens with a plain-English header: what it
@@ -91,6 +91,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- Git hooks never ran in the Claude desktop app's worktrees of a monorepo (ADR 0016): the app
+  copies `core.hooksPath` into each worktree, resolving the relative `.githooks` against the
+  project folder, where no hook exists; git said nothing and commits skipped check-staged, verify
+  and commit-msg. `install-hooks.ps1` now writes the absolute path of the main checkout's
+  `.githooks/` and warns when a `config.worktree` hides it. Guide, README and `monorepo/README.md`
+  say a fresh clone runs the script once.
 - `check-staged.ps1` from a linked worktree: git runs the hook with `GIT_DIR` set, and
   `git rev-parse --show-toplevel` then named the project folder as the repository root, so in a
   monorepo the check never matched `src/` and passed every commit. The script now finds the root

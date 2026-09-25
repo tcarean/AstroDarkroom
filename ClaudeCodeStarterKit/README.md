@@ -27,9 +27,10 @@ a ghidului cu el.
 4. Hook-urile git (`pre-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
    ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
-   radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului. Pe o clona
-   noua a unui monorepo ajunge `git config core.hooksPath .githooks`. Scriptul se ruleaza acolo
-   doar din kit, dupa ce schimbi un hook, pentru ca fiecare copie a lui scrie peste
+   radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului. Intr-un
+   monorepo scriptul se ruleaza doar din kit: o data pe o clona noua, pentru ca seteaza calea
+   absoluta a `.githooks/`, singura pe care worktree-urile aplicatiei Claude o copiaza corect
+   (ADR 0016), si dupa ce schimbi un hook, pentru ca fiecare copie a lui scrie peste
    `.githooks/` hook-urile de langa ea.
 
    ```bash

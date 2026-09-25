@@ -9,7 +9,7 @@ below are repo-wide and are handled here.
 | --- | --- | --- |
 | pre-commit hook | `core.hooksPath = scripts/hooks` | one copy at `<root>/.githooks/pre-commit`, runs `verify.ps1` only in the project folders touched by the staged files |
 | commit-msg hook | same | one copy at `<root>/.githooks/commit-msg`; the one-line rule then applies to every commit in the repository |
-| install | `scripts/install-hooks.ps1` | same script, the kit's copy (each copy writes its own hooks over `.githooks/`); it detects the layout. A project added later needs no install. A fresh clone needs only `git config core.hooksPath .githooks` |
+| install | `scripts/install-hooks.ps1` | same script, the kit's copy (each copy writes its own hooks over `.githooks/`); it detects the layout. A project added later needs no install. A fresh clone runs it once: `core.hooksPath` is the absolute path of the main checkout's `.githooks/`, because the Claude desktop app copies a relative one into its worktrees resolved against the project folder, where no hook exists (ADR 0016) |
 | CI | `bitbucket-pipelines.yml`, `.github/workflows/ci.yml` in the kit | `monorepo/bitbucket-pipelines.yml` or `monorepo/github-ci.yml` copied to the root, one step per project with a path filter |
 | line endings | `.gitattributes` and `.editorconfig` in the project | the project's files still apply per folder; one `<root>/.gitattributes` gives the projects without their own the same baseline: LF everywhere, CRLF for `.cmd`/`.bat`, binaries (ADR 0014) |
 | Claude Code worktrees | the line in the kit's `.gitignore` | `**/.claude/worktrees/` in the root `.gitignore`, once for every project; without `**/` it matches only the root (ADR 0015) |

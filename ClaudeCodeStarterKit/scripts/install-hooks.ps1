@@ -8,21 +8,26 @@
 #     - standalone repository (this folder is the git root): core.hooksPath = scripts/hooks,
 #       so git runs the files in scripts/hooks/ directly;
 #     - folder inside a monorepo (a bigger repository, like photo): it copies both hooks to
-#       <git root>/.githooks/, with Unix (LF) line endings, and sets core.hooksPath =
-#       .githooks for the whole repository. That one copy serves every project folder: the
-#       pre-commit hook finds each project's own scripts/verify.ps1 by itself.
-#   It changes only the git setting and the .githooks/ copy; it runs no check.
+#       <git root>/.githooks/, with Unix (LF) line endings, and sets core.hooksPath for the
+#       whole repository to the absolute path of the main checkout's .githooks/ (for photo,
+#       E:/Photografie/Code/.githooks). That one copy serves every project folder and every
+#       worktree: the pre-commit hook finds each project's own scripts/verify.ps1 by itself.
+#       The path is absolute because the Claude desktop app copies it into each worktree it
+#       creates and resolves a relative one against the project folder, not the git root
+#       (ADR 0016).
+#   It changes only the git setting and the .githooks/ copy; it runs no check. It warns when a
+#   per-worktree setting (config.worktree) hides the one it wrote.
 #
 # WHO CALLS IT
 #   Nobody automatically. You run it by hand:
 #       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-hooks.ps1
 #   - standalone: once after git init, and once in every new clone (git settings are not
 #     cloned);
-#   - monorepo: only the kit's copy, and only after a hook in scripts/hooks/ changed, to
-#     refresh .githooks/ (then commit .githooks/). A project's own copy would overwrite
-#     .githooks/ with that project's hooks, which may be older. A new project folder needs
-#     no install; a fresh clone of the monorepo needs only:
-#       git config core.hooksPath .githooks
+#   - monorepo: only the kit's copy, once in every new clone, and after a hook in
+#     scripts/hooks/ changed, to refresh .githooks/ (then commit .githooks/). A project's own
+#     copy would overwrite .githooks/ with that project's hooks, which may be older. A new
+#     project folder needs no install. Run from a worktree, it writes the copy in that
+#     worktree, but git keeps running the main checkout's copy until the change is merged.
 #
 # RESULT
 #   exit 0  hooks installed; it prints what it set
@@ -57,12 +62,21 @@ try {
         }
         # Keep them LF after a checkout on Windows too, whatever core.autocrlf says.
         [System.IO.File]::WriteAllText((Join-Path $target '.gitattributes'), "* text eol=lf`n", (New-Object System.Text.UTF8Encoding $false))
-        Push-Location $gitRoot
-        try { git config core.hooksPath .githooks } finally { Pop-Location }
-        Write-Host ("monorepo: pre-commit and commit-msg copied to {0}; core.hooksPath = .githooks (repo root {1})" -f $target, $gitRoot)
+        # The main checkout is the first entry of git worktree list, also when this runs in a
+        # linked worktree. Its .githooks/ is the one every worktree runs, by absolute path.
+        $main = ((git worktree list --porcelain) | Select-Object -First 1) -replace '^worktree ', ''
+        $hooksPath = ($main.TrimEnd('\', '/') -replace '\\', '/') + '/.githooks'
+        git config core.hooksPath $hooksPath
+        if ($LASTEXITCODE -ne 0) { throw 'git config failed.' }
+        Write-Host ("monorepo: pre-commit and commit-msg copied to {0}; core.hooksPath = {1}" -f $target, $hooksPath)
         Write-Host 'Commit .githooks/ so every clone can run the same install.'
+        # A per-worktree value (config.worktree) wins over the one just written.
+        $effective = (git config --get core.hooksPath)
+        if ($effective -ne $hooksPath) {
+            Write-Warning ("this worktree overrides core.hooksPath with {0}; git config --worktree core.hooksPath {1} fixes it" -f $effective, $hooksPath)
+        }
     }
-    # $LASTEXITCODE is the exit code of the git config above.
+    # $LASTEXITCODE is the exit code of the last git command above.
     if ($LASTEXITCODE -ne 0) { throw 'git config failed.' }
 }
 finally {
