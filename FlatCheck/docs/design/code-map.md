@@ -221,6 +221,9 @@ not a copy.
     because the caller has already prepared its input. `Prepare` is only block means,
     hence linear, so the mean of the prepared rasters equals the prepared mean, at a
     thirtieth of the memory.
+    The members of every `XxxResult`, with their units, which of them vote and which are
+    informative, and the `docs/validation.json` keys that read them, are tabulated under
+    "Result records (Analysis/)" at the end of this note.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
     function. All the Romanian output lives here and nowhere else. `SyntheticReport` also
     carries the `--lenses` list, the refusals, and the two texts the window's sources panel
@@ -307,6 +310,8 @@ not a copy.
     comes back as **PNG bytes** rather than being written to disk (the window wants to
     show it, not save it). `RunOutcome.SecondaryPng` was added for the attribution mode,
     the only one that produces two maps, and is null everywhere else.
+    Every outcome type of this folder, member by member with its unit, and the `TextWriter`
+    rule stated as a fact, are tabulated under "Run outcomes (Runs/)" at the end of this note.
   - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
@@ -553,3 +558,319 @@ not a copy.
 The test refactoring that produced the current suite (eight phases, 2026) and the seven
 feature plans since were run to completion and removed, per the rule above.
 
+
+## Result records (Analysis/)
+
+> Added 2026-09-25 (docs-health audit, gap 1): the member names and shapes of every result,
+> read from the code, so a console or window change that emits a number does not need the
+> source open. Units are stated once per table. "Votes" means the member feeds a verdict word;
+> "informative" means it is printed or shown and nothing decides on it. The verdict words come
+> from `Stats.cs`, the thresholds from `Th` (values in `thresholds.md`, never repeated here).
+
+**Two verdict scales, one severity.** The *residual scale* is the four words of
+`Stats.ResidualBands`, `PERFECT` / `BUN` / `ACCEPTABIL` / `REFA`, given by
+`Stats.ResidualVerdict(pct)` on `Th.ResidPerfect` / `Th.ResidUsable` / `Th.ResidCheck`; every
+structure test, the depth verdicts and `--against` speak it. The *light scale* is `OK` /
+`SUSPECT` / `PROBLEMA`, given by `Stats.Verdict(val, ok, bad)`; `--light` uses it on
+`Th.LightRadOk` / `Th.LightRadBad`, the ratio mode's world label on `Th.RatioOk` / `Th.RatioBad`.
+`NEDETERMINAT` is the series mode's "ran, cannot conclude". `Stats.Severity(word)` maps all of
+them onto 0..3 so a "worst of" can be taken across the two scales; an unknown word counts as
+the worst. A depth in stops becomes a residual-scale percentage through
+`Stats.DepthErrorPct(stops) = (2^|stops| - 1) * 100`, and `Stats.DepthVerdict(stops)` is
+`ResidualVerdict` of that.
+
+**"Pixels of the analysis raster"** below means the raster after `Img.Prepare` (2x2 CFA mean,
+then the downsample), the one every structure figure is measured on; `Width` / `Height` of the
+result say its size. Sensor pixels are named as such where they appear.
+
+### `StructureResult` (`StructureAnalyzer.cs`)
+
+| Member | Unit | Meaning | Role | `validation.json` key (kind `structure`) |
+| --- | --- | --- | --- | --- |
+| `Width`, `Height` | pixels of the analysis raster | size of the raster the figures are measured on | informative | |
+| `RawMedian`, `RawMax` | levels of the input file (ADU on a raw stack, float on a normalised master) | median and maximum of the original raster; on `AnalyzePrepared` they come from the prepared, normalised raster, mean nothing and are not printed | informative | |
+| `FitCx`, `FitCy` | pixels of the analysis raster | fitted illumination peak (`Metrics.FitCenter`) | informative | |
+| `SensorCx`, `SensorCy` | pixels of the analysis raster | sensor centre, `w/2`, `h/2`; the radial model and the asymmetry are taken around this point, never the peak | informative | |
+| `CentroidOffsetPct` | percent of the half-diagonal | distance of the fitted peak from the sensor centre | informative, never a verdict (not scale-invariant) | |
+| `CentroidValid` | bool | false = the fitted peak is not usable and the offset prints as "nedeterminat" | informative | |
+| `TiltPct` | percent | amplitude of the linear term of the fit, the gradient across the frame | votes: `TiltVerdict` | `tiltPct` |
+| `Corners` | levels of the analysis raster, dictionary keyed `stanga-sus`, `dreapta-sus`, `stanga-jos`, `dreapta-jos` | median of each corner box (`Metrics.CornerStats`) | informative; feeds the three below | |
+| `CornerMean`, `CentreMedian` | levels of the analysis raster | mean of the four corner medians, and the centre box median | informative; feed `VignetteStops` | |
+| `VignetteStops` | stops, `log2(CentreMedian / CornerMean)` | the master's vignetting depth, centre to corner | informative, **not a test**; it is what the sixth test compares against the lens profile | `vignetteStops` |
+| `CornerSpreadPct` | percent of `CornerMean` | `(max - min)` of the four corner medians | votes: `CornerVerdict` | `cornerSpreadPct` |
+| `AzimuthalMaxPct` | percent | worst ring's peak-to-peak over its 12 sectors, inside the inscribed circle (`Metrics.AzimuthalAsymmetry`); `NaN` when no ring could be measured | votes: `AzimuthalVerdict` | `azimuthalMaxPct` |
+| `ResidualPtpPct` | percent | large-scale peak-to-peak of `Residual` over the whole frame (`Metrics.LargeScalePtp`, tiles trimmed 5 % at each end) | votes: `ResidualVerdict`; the most important of the five | `residualPtpPct` |
+| `MaxTilePct` | percent | the most deviating tile of `Residual` (`Metrics.MaxTileDeviation`); catches the compact defect the trimmed ptp lets through | votes: `MaxTileVerdict` | `maxTilePct` |
+| `LocalSpotPct` | percent, **signed** (minus = darker than its surroundings) | deepest compact spot in `Residual` after the large-scale structure is removed (`Metrics.LocalSpots`) | does not vote; `LocalSpotFlagged` when the magnitude reaches `Th.LocalSpotWarn` gives a warning line | `localSpotPct` |
+| `LocalSpotX`, `LocalSpotY` | pixels of the analysis raster | where that spot is | informative | |
+| `LocalSpotFlagged` | bool | `!(abs(LocalSpotPct) < Th.LocalSpotWarn)`, so `NaN` lands on the warned side | drives the warning, not the verdict | |
+| `Residual` | `Img`, analysis raster, dimensionless (`img / radial model`, 1 = on the model) | the residual map's source; the model is fitted on the 180-degree symmetrised raster, the residual is of the unsymmetrised one | the map | |
+| `CornerVerdict`, `AzimuthalVerdict`, `ResidualVerdict`, `TiltVerdict`, `MaxTileVerdict` | residual-scale word | one per test, `Stats.ResidualVerdict` of the percentage beside it | the five votes | |
+| `Verdict` | residual-scale word | the worst of the five by `Stats.Severity` | **the mode's verdict** (without a `StructureQuery`) | `verdict` |
+
+`StructureReport.TestKeys` names the five voting members by these exact member names
+(`CornerSpreadPct`, `AzimuthalMaxPct`, `ResidualPtpPct`, `TiltPct`, `MaxTilePct`), and
+`StructureReport.Test(result, key)` returns the value and its verdict for one key; that is how
+the smooth and against reports print the battery without renaming a test.
+
+### `StructureQuery`, `StructureOutcome` (`Runs/StructureRun.cs`)
+
+`StructureQuery` is what the caller adds to ask for the sixth test; `null` means the five tests
+alone, byte-identical output to before the sixth existed.
+
+| Member | Unit | Meaning |
+| --- | --- | --- |
+| `Sources` | `ProfileSources` | the Adobe and lensfun catalog the comparison reads |
+| `RawPath` | path or null | a raw beside the master, for the aperture and the lens ID |
+| `LoadInfo` | `Func<string, LoadedFrame>`, default `ImageLoader.LoadInfo` | the metadata reader; tests hand in a fabricated frame instead of a raw |
+| `LensText` | string or null | the `--lens` text; null = the lenses the raw points at |
+| `Source` | `ProfileSource?` | keep only Adobe or only lensfun candidates; null = both |
+| `Focal`, `FStop`, `Crop` | mm, f-number, crop factor; each nullable | overrides for what the raw or the header would have said |
+
+| Member | Unit | Meaning | `validation.json` key (kind `profile`) |
+| --- | --- | --- | --- |
+| `Structure` | `StructureResult` | the five tests, exactly as without a query | `masterStops` reads `Structure.VignetteStops`; `shapeVerdict` reads `Structure.Verdict` |
+| `Profiles` | `VignettingComparison` or null | null without a query; with one, **always present**, even when nothing could be compared (`Gap` says why) | `diffStops` reads `Profiles.Nearest.DiffStops`; `nearest` is `Nearest.Profile.Lens.Name` followed by `Lens.Where` in square brackets; `depthVerdict` reads `Profiles.Verdict` |
+| `Shot` | `ShotIdentity` | what was identified from the master, the raw and the overrides (focal, f-stop, crop, camera, candidate lenses) | |
+| `RawError` | string or null | the raw beside the master could not be read: the message | |
+| `Verdict` | residual-scale word | the worse (by `Stats.Severity`) of `Structure.Verdict` and `Profiles.Verdict`, the latter only when `Compared`; otherwise `Structure.Verdict` | `verdict` |
+| `Compared` | bool | `Profiles != null && Profiles.Compared` | |
+| `DepthCarriesTheVerdict` | bool | `Compared` and the depth verdict is strictly worse than the shape's: the advice is then the depth's, not the shape's | |
+
+### `ProfileDepth`, `VignettingComparison`, `ComparisonGap` (`Analysis/VignettingComparison.cs`)
+
+One `ProfileDepth` per candidate lens, its nearest profile in focal and f-stop put against the
+master. The model's corner depth is measured with the master's own operator: the profile's
+raster is built at the analysis size (`SyntheticFlatBuilder.Build`) and `Metrics.CornerStats`
+is run on it, so the two sides share the half-pixel artefact and the 5 % box.
+
+| `ProfileDepth` member | Unit | Meaning |
+| --- | --- | --- |
+| `Profile` | `LensProfile` | the profile used (lens, settings, model) |
+| `LensProfiles` | list of `LensProfile` | every profile of that lens, for the "used profile is far from what the raw said" warning; defaults to the one used |
+| `CornerStops` | stops | the model's corner depth, `log2(centre / mean of corners)` on its raster |
+| `DiffStops` | stops, signed: master minus model | **plus** = the master falls more toward the corner than the model (source falls off with angle: panel without a real diffuser, too close); **minus** = less (source fills the corners: sky dome, ambient, a reflection) |
+| `ErrorPct` | percent, `Stats.DepthErrorPct(DiffStops)` | the error left in the corner of a light calibrated with this master, if the model is the truth |
+| `Verdict` | residual-scale word, `Stats.DepthVerdict(DiffStops)` | the depth verdict of this one profile |
+| `CameraCrop` | crop factor; 0 = the profile's own calibration sensor | the crop the model raster was built with |
+| `Extrapolation` | ratio; over 1 = the master's corner lies outside the profile's calibration corner, over `SyntheticFlatResult.SmallExtrapolation` (1.1) = a large one | how far the profile was extrapolated to reach this corner |
+
+| `VignettingComparison` member | Unit | Meaning |
+| --- | --- | --- |
+| `MasterStops` | stops | `StructureResult.VignetteStops`, copied |
+| `Shot` | `ShotIdentity` | as in the outcome |
+| `Profiles` | list of `ProfileDepth`, catalog order; empty when not compared | one row per candidate lens |
+| `Nearest` | `ProfileDepth` or null | the row with the smallest magnitude of `DiffStops`; a `NaN` row never wins; null when not compared |
+| `Verdict` | residual-scale word or null | `Nearest.Verdict`: **the verdict of the nearest profile, not the worst**, because the two profile bases differ by about 0.2 stops between themselves; null when not compared |
+| `SpreadStops` | stops, `max - min` of `CornerStops` across the rows | how far the candidates disagree in the corner; 0 with one row, `NaN` with none |
+| `Gap` | `ComparisonGap` | why nothing was compared; `None` when it was |
+| `SkippedForCrop` | list of `LensChoice` | lensfun lenses left out because the camera's crop is unknown; usually empty |
+| `Compared` | bool | `Verdict != null` |
+
+| `ComparisonGap` | Meaning |
+| --- | --- |
+| `None` | compared |
+| `NoProfiles` | no profile on the machine: neither Adobe nor `lensfun/`; or the catalog was never given |
+| `NoRaw` | no raw beside the master (and no `--lens`), so no lens ID |
+| `NoLensMatch` | the raw carries a lens ID, but no catalog lens matches it (or none of the matches had a usable profile) |
+| `NoFocal` | the focal length is unknown: no `FOCALLEN`, no raw, no `--focal` |
+| `NoFStop` | the aperture is unknown: Siril does not write it, and there was no raw and no `--fstop` |
+| `NoCrop` | only lensfun profiles, and the camera's crop factor is unknown |
+
+The gap order is the order of `VignettingComparer.Analyze`: an empty catalog is reported before
+a missing raw, because it is the deeper cause; an unknown catalog (`null`) is not a cause, so
+without a raw the answer is "no raw", which is what a person can fix.
+
+### The other analyzers' results, briefly
+
+**`RatioResult`** (`RatioAnalyzer.cs`, mode `--ratio`; the run fills the four metadata members
+from the FITS headers).
+
+| Member | Unit | Meaning | Role |
+| --- | --- | --- | --- |
+| `Sensor` | `StructureResult` on `(A + B) / 2`, prepared (its `RawMedian` / `RawMax` are not ADU) | the camera-fixed part | **the mode's verdict is `Sensor.Verdict`** |
+| `WorldPtpPct` | percent, per orientation (odd part / 2) | the external gradient | informative |
+| `WorldErrPct` | percent | its error bar (even part / 2) | informative |
+| `WorldCornerPct` | percent, per orientation | corner spread of the world map | informative |
+| `WorldLabel` | light-scale word on `Th.RatioOk` / `Th.RatioBad` | coloured label of the world figure | **does not vote** |
+| `World` | `Img`, `A / B` normalised to median 1 | the second map's source | the map |
+| `StackCountA`, `StackCountB` | count, `STACKCNT`, 0 = unknown | how many frames each stack has | informative |
+| `DateObsA`, `DateObsB` | string, `DATE-OBS`, null = unknown | when each was shot | informative |
+| `Verdict` | residual-scale word | `Sensor.Verdict` | the vote |
+
+**`SuitabilityResult`** (`LightSuitability.cs`, before any pixel of `--light` is read).
+
+| Member | Unit | Meaning |
+| --- | --- | --- |
+| `Level` | `FovLevel`: `Ok`, `Marginal` (runs with a warning), `TooWide` (refuses: above `Th.LightFovMax`), `Unknown` (runs with a note) | whether the plane/radial separation is valid for this field of view |
+| `FovDeg` | degrees, diagonal; `NaN` = not computed | the field of view the decision was taken on |
+| `FocalMm` | mm; `NaN` unless the decision was taken on the focal length | |
+| `Source` | string | where the figure came from (`--fov`, header cards, ...), for the report |
+| `CanRun` | bool | `Level != TooWide` |
+
+**`LightResult`** (`LightAnalyzer.cs`, one light frame).
+
+| Member | Unit | Meaning | Role |
+| --- | --- | --- | --- |
+| `A`, `B`, `C`, `D`, `E` | levels of the analysis raster | coefficients of the plane + radial fit of the tile background | informative |
+| `RadPct` | percent, **signed**: `-(D + E) / A * 100` | the radial part of the background; **plus** = the background falls toward the edges = under-correction (the flat misses vignetting); **minus** = it rises = over-correction (offset left in the flat) | votes on its magnitude: `OK` / `SUSPECT` / `PROBLEMA` on `Th.LightRadOk` / `Th.LightRadBad` |
+| `PlanePct` | percent | the sky gradient across the frame, to ignore | informative |
+| `KeptTiles`, `TotalTiles` | count | tiles kept by the sigma clip, and all tiles | informative |
+| `TileRows`, `TileCols` | count | the tile grid | informative |
+| `RadialMap` | `Img`, `1 + (D * R2 + E * R2^2) / A` | the map's source | the map |
+| `Verdict` | light-scale word | | the vote |
+
+**`LightSeriesResult`** (`LightSeriesAnalyzer.cs`, `[LightResult] -> series`).
+
+| Member | Unit | Meaning | Role |
+| --- | --- | --- | --- |
+| `Names`, `Frames` | file names and the per-frame `LightResult`s | | informative |
+| `MeanRad`, `MinRad`, `MaxRad` | percent | of `RadPct` over the frames | `MeanRad` votes |
+| `StdDev` | percent, sample (ddof = 1) | spread of `RadPct` | feeds `Reasons` |
+| `Sem` | percent | standard error of the mean | feeds `Reasons` (`Th.LightSeriesSemMax`) |
+| `SkyCorr` | correlation coefficient, -1..1; `NaN` when it cannot be computed | correlation of `RadPct` with `PlanePct` across the frames | feeds `Reasons` when `CorrApplies` |
+| `SkySpan` | percent points | range of `PlanePct` over the frames | decides `CorrApplies` |
+| `CorrApplies` | bool | the sky gradient varies enough for the correlation to mean something | |
+| `RadialMap` | `Img` | mean radial map over the frames | the map |
+| `Reasons` | string[]; empty = conclusive | why the series is `NEDETERMINAT` | |
+| `Verdict` | `NEDETERMINAT` when `Reasons` is not empty, else light-scale word on the magnitude of `MeanRad` | | the vote |
+| `Count`, `Conclusive` | count; `Reasons.Length == 0` | | |
+
+**`ExposureResult`** (`ExposureAnalyzer.cs`, mode `--expo`). Every percentage is of `Range`.
+
+| Member | Unit | Meaning | Role |
+| --- | --- | --- | --- |
+| `White`, `Black`, `Range` | ADU; `Range = White - Black` | the scale the percentages are on | |
+| `ScaleSource` | string | `--sat=...`, the raw's metadata, or "auto-detected from max=..." | informative |
+| `ChannelMedians` | ADU, 4 Bayer positions | | informative |
+| `CfaSpread` | ratio, max / min over the four | | decides `LooksDebayered` |
+| `IsCfa` | bool | | |
+| `BrightestChannel` | index 0..3 | | |
+| `CentreMedianPct` | percent of `Range` | median of the central 20 % window, brightest channel | **this decides the exposure** |
+| `GlobalMedianPct` | percent of `Range` | median of the whole frame | informative |
+| `CentreClipPct` | percent of the centre pixels | already saturated | feeds the verdict |
+| `LevelTooLow` | bool | the level says calibrated / normalised, not raw | gates the verdict (`NotRaw`) |
+| `LooksDebayered` | bool | `CfaSpread` too small for a mosaic | gates the verdict (`NotRaw`) |
+| `IsSky` | bool | the sky-flat ladder was used (no low shoulder) | |
+| `Verdict` | `ExposureVerdict` enum: `NotRaw`, `TooLow`, `AcceptableLow` (panel only), `Ok`, `AcceptableHigh`, `TooHigh` | | the vote |
+| `Cfa` | `CfaPattern` or null | the colour order read from the file; null = the file did not say | |
+| `Channels` | `ChannelLevels[]`, 4 on CFA, 1 on mono, never null | per channel: `Position`, `Label`, `Colour`, `MedianPct`, `P99Pct`, `ClipPct`, `CentreMedianPct`, `CentreP1Pct`, `CentreP99Pct` (all percent of `Range`), `IsBrightest`, and `Whole` / `Centre` `LevelHistogram`s (200 bins of 0.5 %, `Counts` and `Total`) | informative, the window's histograms |
+| `Bands` | `ExposureBands` (`Sky`, `TooLow`, `Lo`, `Hi`, `TooHigh`, `Target`, percent of `Range`) | the ladder that voted, kept in the result so the window draws the band that decided | |
+| `Preview` | `PreviewLevels` (`Channels`: exactly R, G, B; `Source`) or null | the camera's own rendering, only when asked for | never votes |
+| `IsRaw` | bool | `!(LevelTooLow || LooksDebayered)` | |
+
+**`HistEqResult`** (`HistEqAnalyzer.cs`, mode `--histeq`). No verdict, no vote: a picture.
+
+| Member | Unit | Meaning |
+| --- | --- | --- |
+| `IsCfa`, `CfaSpread`, `Cfa` | as in `ExposureResult` | |
+| `SourceH`, `SourceW` | sensor pixels | the input frame |
+| `Shrink` | factor; 1 = not shrunk | how much each channel was reduced for the console's PNG |
+| `Channels` | `HistEqChannel[]`, 4 on CFA, 1 on mono | per channel: `Position`, `Label`, `Colour`; `H`, `W` and `Equalised` (shrunk grey raster, bytes); `FullH`, `FullW` and `Full` (full-resolution grey raster the window shows); `Min`, `Max` (input range of the non-zero pixels, file units); `NonZero` (pixel count in the histogram); `LevelsUsed` (of the 256 output levels) |
+| `H`, `W` | shrunk pixels | common size of every shrunk view |
+| `CompositeRgb` | bytes, `H * W * 3` | RGB on a CFA with known order, triplicated grey otherwise |
+| `Mosaic` | bytes, `H * W`, or null on mono | the equalised mosaic as one layer |
+| `FullH`, `FullW`, `CompositeFullRgb`, `MosaicFull` | full-resolution counterparts (`MosaicFull` is `SourceH * SourceW`) | what the window shows at 100 % |
+| `ChannelCount` | count | |
+
+**`SmoothResult`** (`SmoothAnalyzer.cs`, mode `--smooth`). No verdict of its own: the words
+come from the structure battery run before and after.
+
+| Member | Unit | Meaning | `validation.json` key (kind `smooth`) |
+| --- | --- | --- | --- |
+| `Smoothed` | `Img`, full resolution, the input's shape; never null | the product that `SmoothRun.WriteFits` writes | |
+| `IsCfa`, `CfaSpread`, `SourceH`, `SourceW` | as above | | |
+| `ScalePx` | sensor pixels, the kernel's sigma | the smoothing scale used | the case's `scalePx` is the input, not a figure |
+| `TilePx`, `SigmaTiles` | sensor pixels; tiles | tile side, and the sigma in tiles | |
+| `Positions` | `SmoothPositionFit[]`, 4 on CFA, 1 on mono | per Bayer position: `Tiles`, `Rejected`, `FitFailed` (counts), `TileRms` (fraction of the level) | |
+| `Removed` | `Img`, analysis raster, `Prepare(input) / Prepare(smoothed)` | what was taken out; the first map | |
+| `Width`, `Height` | pixels of the analysis raster | | |
+| `RemovedP1Pct`, `RemovedP99Pct` | percent | tails of `Removed` | |
+| `RemovedPtpPct` | percent, p95 - p5 over tiles | | `removedPtpPct` |
+| `RemovedMaxTilePct` | percent | the most deviating tile of `Removed` | `removedMaxTilePct` |
+| `RemovedSpotPct`, `RemovedSpotX`, `RemovedSpotY` | signed percent; pixels of the analysis raster | deepest compact spot removed, and where | `removedSpotPct`; the case-level `spotAt` records X, Y and is not compared by the test |
+| `RemovedFlagged` | bool, `RemovedMaxTilePct >= Th.SmoothKeptWarn` | more than texture was removed | |
+| `InputTexturePct`, `OutputTexturePct` | percent (`Metrics.FineTexture`) | was there texture, and did it go | `inputTexturePct`, `outputTexturePct` |
+| `Before`, `After` | `StructureResult` on the analysis rasters of input and output | the battery both sides | `beforeVerdict` / `afterVerdict` read `.Verdict`; `beforeVignetteStops` / `afterVignetteStops` read `.VignetteStops` |
+
+**`SmoothScaleAdvice`** (`SmoothScaleAdvisor.cs`, the proposed scale): `Kind`
+(`SmoothAdviceKind`: `NoTexture`, `Proposed`, `Undetermined`), `InputTexturePct` (percent),
+`ScalePx` (sensor pixels; `NaN` unless `Proposed`), `Trials` (one `SmoothScaleTrial` per rung:
+`ScalePx`, `TextureAfterPct` in percent, `AzimuthalDelta` / `TiltDelta` / `CornerDelta` in
+percent points after minus before, `RemovedPtpPct`, `RemovedMaxTilePct`, `TextureGone`,
+`StructureLost`, `Acceptable = TextureGone && !StructureLost`).
+
+**`SyntheticFlatResult`** (`SyntheticFlatBuilder.cs`, mode `--synthetic`). No verdict.
+
+| Member | Unit | Meaning |
+| --- | --- | --- |
+| `Flat` | `Img`, the reference frame's full size | the product that `SyntheticRun.WriteFits` writes |
+| `Profile` | `LensProfile` | the profile used (nearest in focal and f-stop) |
+| `LensProfiles` | list of `LensProfile` or null | every profile of the lens, for the mismatch warning |
+| `CameraCrop` | crop factor; 0 = the profile's calibration sensor | |
+| `Width`, `Height` | pixels of the reference frame | |
+| `CornerStops`, `LongEdgeStops`, `ShortEdgeStops`, `HalfDiagonalStops` | stops, plus = darker than the axis | the model's depth at the four reference points |
+| `CornerRadius` | model units (over 1 on lensfun = extrapolation) | the corner's radius in the model's own coordinate |
+| `Extrapolation` | ratio, `CornerRadius / calibration corner radius`; over 1 = extrapolating, over `SmallExtrapolation` (1.1) = a large one | |
+
+**`AgainstResult`** (`Runs/AgainstRun.cs`, `--against`: two flats, prepared and each
+normalised to median 1, then their ratio through the structure battery).
+
+| Member | Unit | Meaning | Role | `validation.json` key (kind `against`) |
+| --- | --- | --- | --- | --- |
+| `A`, `B` | `StructureResult` of each flat (prepared, normalised: `RawMedian` / `RawMax` are not ADU) | each side's own battery and depth | informative | `masterStops` reads `A.VignetteStops`, `syntheticStops` reads `B.VignetteStops` |
+| `Structure` | `StructureResult` of `A / B` | the five tests **on the difference**: is it radial or does it have a shape | `Structure.Verdict` votes (the shape) | `ratioResidualPtpPct` reads `Structure.ResidualPtpPct`; `shapeVerdict` reads `Structure.Verdict` |
+| `Ratio` | `Img`, analysis raster | the ratio itself | the map is `Structure.Residual` | |
+| `Width`, `Height` | pixels of the original A | | | |
+| `DepthDiffStops` | stops, signed, `= Structure.VignetteStops`; plus = A falls more toward the corner than B | the depth difference | | `depthDiffStops` |
+| `DepthErrorPct` | percent, `Stats.DepthErrorPct` | the corner error of a light calibrated with the wrong one | | `depthErrorPct` |
+| `DepthVerdict` | residual-scale word, `Stats.DepthVerdict` | | votes (the depth) | `depthVerdict` |
+| `Verdict` | residual-scale word | the worse of `DepthVerdict` and `Structure.Verdict` | **the mode's verdict** | `verdict` |
+
+The `profile` key of the `against` kind is not a member: the test builds it from the synthetic
+run's `Result.Profile.Lens.Name` and `Profile.Settings`.
+
+## Run outcomes (Runs/)
+
+> Added 2026-09-25 with the section above. What each `XxxRun.Execute` returns, and the one rule
+> they all share about the text.
+
+**The text is always written; there is no way to ask for silence except a null writer.** Every
+`Execute` in this folder takes a `TextWriter report` and writes the mode's whole report into it
+before returning: `StructureRun.Execute` calls `StructureReport.Write(outcome, path, report)`
+unconditionally, and the same holds for `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`,
+`HistEqRun`, `SmoothRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
+`LightSeriesRun`, `SmoothRun`, `SyntheticRun`) write the refusal text into the same writer. No
+flag suppresses it, and nothing returns the text as a string. So the console passes its stdout
+and streams; the window passes a `StringWriter` and saves what came back as
+"Rezultat testare.txt", the same text by construction; and **a caller who wants the figures and
+no text passes `TextWriter.Null`**, which is exactly what `ValidationTests` does for the
+structure, profile, smooth and against cases. Verified against the code on 2026-09-25: this is
+true today for all nine runs.
+
+**`RunOutcome<TResult>`** (`RunOutcome.cs`), for the modes that always answer.
+
+| Member | Meaning |
+| --- | --- |
+| `Result` | the analyzer's record, never null |
+| `Png` | the residual map, already encoded; null when the mode has no map (`--expo`) |
+| `SecondaryPng` | a second map when the mode has two; only `--ratio` (the world map), null everywhere else |
+
+| Run and signature | Returns | `Png` | `SecondaryPng` |
+| --- | --- | --- | --- |
+| `StructureRun.Execute(path, report, query = null)`; `StructureRun.Compare(result, reference, query)` for the second half alone | `RunOutcome<StructureOutcome>`; `StructureOutcome` | `Structure.Residual` map | null |
+| `RatioRun.Execute(pathA, pathB, report)` | `RunOutcome<RatioResult>` | `Sensor.Residual` map (camera-fixed part) | `World` map (`A / B`) |
+| `ExposureRun.Execute(path, sat?, black?, sky, report, withPreview = false)` | `RunOutcome<ExposureResult>` | null | null |
+| `HistEqRun.Execute(path, report)`; `EncodeChannel(result, i)` and `EncodeMosaic(result)` on demand | `RunOutcome<HistEqResult>` | `CompositeRgb` as PNG | null |
+| `AgainstRun.Execute(pathA, pathB, report)` | `RunOutcome<AgainstResult>` | `Structure.Residual` map (the ratio's residual) | null |
+
+The runs that can refuse have their own outcome type, each with `Refused => Result == null`
+(or `Advice == null`):
+
+| Outcome | Members | Meaning |
+| --- | --- | --- |
+| `LightRunOutcome` from `LightRun.Execute(path, fov?, report)` | `Suitability` (`SuitabilityResult`, always set), `Result` (`LightResult` or null), `Png` (`RadialMap`, or null), `Refused` | refused when the field of view is `TooWide`; the refusal text is `LightReport.WriteTooWide` |
+| `LightSeriesRunOutcome` from `LightSeriesRun.Execute(dir, pattern, fov?, report, onFrame = null, ct = default)` | `Suitability`, `Result` (`LightSeriesResult` or null), `Png` (mean `RadialMap`), `Files` (the series, always set), `Refused` | refused on the first frame's field of view; an empty series throws instead of refusing; `onFrame(i, n, name, result)` fires per frame as the table streams |
+| `SmoothRunOutcome` from `SmoothRun.Execute(path, scalePx, report)` (or the overload on a loaded frame) | `Result` (`SmoothResult` or null), `Frame` (`LoadedFrame`, for the cards and `Bitpix` the writer copies), `Png` (`Removed` map), `SecondaryPng` (`After.Residual` map), `Refusal` (text or null), `Refused` | refused on a raw (no FITS cards) or a colour cube (`Planes > 1`); the file is written by the caller through `SmoothRun.WriteFits(outcome, sourcePath, Stream)`, `OutputBitpix` keeps 16 and turns everything else into -32 |
+| `SmoothAdviceOutcome` from `SmoothRun.Advise(path, report)` | `Advice` (`SmoothScaleAdvice` or null), `Frame`, `Refusal`, `Refused` | the same two refusals |
+| `SyntheticRunOutcome` from `SyntheticRun.Execute(referencePath, request, sources, focal?, fstop?, crop?, report)` (or the overload on a loaded frame) | `Result` (`SyntheticFlatResult` or null), `Request` (`SyntheticRequest`: `LensText`, `Source`, `Lens`, `FocalMm` + `FocalSource`, `FStop` + `FStopSource`, `CameraCrop` + `CropSource`, each value with where it came from), `Frame`, `Refusal`, `RefusedChoice` (true when the refusal was the lens choice: none given, no match, ambiguous), `Refused` | refused on a colour cube, on an unresolvable lens, or on a missing focal, f-stop or (lensfun only) crop; the file is written by the caller through `SyntheticRun.WriteFits(outcome, referencePath, Stream)`, always -32 |
