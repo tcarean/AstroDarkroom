@@ -52,6 +52,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- ADR 0013 and the CLAUDE.md workflow: a task branch lives in its own worktree; the main checkout
+  stays on `main`, where the owner merges and which parallel sessions share. The guide says why.
 - ADRs 0001 to 0005 carry the date of acceptance in their status, as the template requires.
 - CLAUDE.md rule 13 states the 72-character limit; the mutate command lists `-BreakAt`.
 - Guide brought in step with the kit on 2026-09-25: structure table (check-staged, hooks,

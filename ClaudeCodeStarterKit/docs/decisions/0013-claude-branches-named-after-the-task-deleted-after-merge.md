@@ -13,7 +13,10 @@ which task it held; the same day a merge left one of them in `main`'s history fo
 message `Merge branch 'claude/wizardly-fermat-1c8ce0'`. The owner asked, in chat, for branch
 names that reflect the task, always in English, and allowed the assistant to delete a branch once
 it has been merged into `main`. In a second message the same day, the owner asked that the name
-always start with `claude/`.
+always start with `claude/`. Also that day, a session created its task branch with
+`git switch -c` in the main checkout of `photo`, the folder the owner and the other sessions merge
+into `main` from; any merge run there while it was on that branch would have landed on the task
+branch instead. The owner then asked for the worktree rule below to be written down too.
 
 ## Decision
 
@@ -24,6 +27,9 @@ always start with `claude/`.
   as soon as the task is clear, and at the latest before its first commit; `/wrap-up` checks the
   name before it proposes the commit. A generated name is told apart by its shape, not by its
   prefix: two random words and a hex suffix after `claude/`.
+- A task branch lives in its own worktree (`git worktree add` under the project's
+  `.claude/worktrees/`, or the one the app opened for the session). The main checkout stays on
+  `main`: the owner merges there, and the sessions running in parallel share it.
 - The merge into `main` is still proposed and asked (rule 13). Once it is done, the assistant
   deletes the branch without asking, with `git branch -d`, which refuses a branch that is not
   fully merged. A branch held by a worktree is released first: `git switch --detach` from the
@@ -44,6 +50,9 @@ always start with `claude/`.
   a second prefix is one more choice per branch, for no reader.
 - **A short slug** (`claude/branch-names`). Clear the day it is made, cryptic a week later; the
   full phrase reads like the commit it becomes.
+- **Switch branches in the main checkout (`git switch -c`).** One folder, one checked-out branch:
+  a merge meant for `main` lands on whatever branch a session left there, and the owner's editors
+  and builds see files change under them.
 - **Keep merged branches.** Their commits are already in `main`; left in the list, they hide the
   branches that are still open.
 - **Delete with `-D`.** Would drop unmerged work without a word when a merge failed or never
@@ -58,7 +67,10 @@ always start with `claude/`.
 `git branch` lists only work in progress, and each line says what it is. CLAUDE.md states the
 rule in its Workflow section; `/wrap-up` step 9 renames a generated name before the commit and
 deletes the branch after the merge; `permissions.ask` lists `git branch -D`. FlatCheck, which
-follows the kit, carries the same Workflow line, wrap-up step and `ask` entry. Nothing deletes
+follows the kit, carries the same Workflow lines, wrap-up step and `ask` entry, and records the
+worktree rule for itself in its ADR 0043. A commit from a worktree needs hooks that find the
+repository root without trusting `GIT_DIR`, which git sets for a hook there; `check-staged.ps1`
+was fixed for that the same day. Nothing deletes
 old branches retroactively: a branch another session left is that session's, and its worktree
 may still hold uncommitted work. The app may no longer find a renamed branch by its old name when
 it cleans up an archived session (not observed yet); the deletion after the merge covers the

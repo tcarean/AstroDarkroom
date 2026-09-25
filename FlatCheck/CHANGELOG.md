@@ -8,6 +8,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- ADR 0043 and the CLAUDE.md workflow: a task branch lives in its own worktree; the shared
+  checkout `E:\Photografie\Code` stays on `main` for the owner's merges.
 - `FlatCheck.Tests` now runs under `<InvariantGlobalization>`, like `flatcheck.exe` (ADR 0043,
   R-007). The switch is per executable and did not reach the test host, so the golden files and
   the report tests formatted with the machine's culture: they passed on `en-GB` and 63 of them
