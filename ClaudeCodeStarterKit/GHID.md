@@ -320,13 +320,14 @@ Sase pasi, sub zece minute, si proiectul nou are gate verde la primul commit.
 
 **Ce merita adaugat cand proiectul creste:** hook PostToolUse cu build rapid dupa fiecare editare de `.cs`, prag de coverage, un job de CI saptamanal cu `mutate.ps1 -BreakAt 80`, si un pas de semnare sau de impachetare (MSIX, zip cu checksum) in `release.ps1`, cand exista utilizatori in afara masinii tale.
 
-**Standalone sau folder intr-un monorepo.** Ambele merg, si repo-ul `photo` poate ramane asa cum e. Claude Code ia ca radacina folderul in care e pornit, deci CLAUDE.md, `.claude/settings.json`, hook-urile Claude Code, skills si agentii sunt per folder; MSBuild gaseste `global.json`, `Directory.Build.props` si `.editorconfig` urcand din proiect. Doar git hooks si CI sunt pe tot repo-ul.
+**Standalone sau folder intr-un monorepo.** Ambele merg, si repo-ul `photo` poate ramane asa cum e. Claude Code ia ca radacina folderul in care e pornit, deci CLAUDE.md, `.claude/settings.json`, hook-urile Claude Code, skills si agentii sunt per folder; MSBuild gaseste `global.json`, `Directory.Build.props` si `.editorconfig` urcand din proiect. Doar git hooks, CI si fisierele `.gitattributes` si `.gitignore` din radacina sunt pe tot repo-ul.
 
 | Piesa | Repo separat | Folder in monorepo |
 | --- | --- | --- |
 | pre-commit si commit-msg | `core.hooksPath = scripts/hooks` | cate o copie in `<radacina>/.githooks/`; pre-commit ruleaza `verify.ps1` doar in proiectele atinse, commit-msg se aplica la tot repo-ul |
 | instalare | `install-hooks.ps1` | acelasi script, copia din kit, detecteaza layout-ul; un proiect adaugat ulterior nu cere instalare, o clona noua cere doar `git config core.hooksPath .githooks` |
 | CI | fisierele din kit | `monorepo/bitbucket-pipelines.yml` sau `monorepo/github-ci.yml` la radacina, un step per proiect cu filtru pe cale |
+| worktree-urile Claude | linia din `.gitignore`-ul kitului | `**/.claude/worktrees/` in `.gitignore`-ul din radacina, o data pentru toate proiectele; fara `**/` ar prinde doar radacina (ADR 0015) |
 | tag-uri | `v1.2.0` | `flatcheck-v1.2.0` |
 | Claude Code | pornit in folderul proiectului | la fel; niciodata in radacina git |
 

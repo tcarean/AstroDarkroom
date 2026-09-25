@@ -27,6 +27,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (installed beside pre-commit) and by `permissions.ask` for commit, merge, push and rebase.
 - Monorepo support: the pre-commit hook verifies only the project folders touched by the staged
   files; `install-hooks.ps1` detects the layout; root CI templates under `monorepo/`.
+- Monorepo: the root `.gitignore` carries `**/.claude/worktrees/`, so worktrees of every project
+  stay out of `git status`; the kit keeps its own line for standalone use (ADR 0015).
 - `/docs-health` now launches the `docs-auditor` subagent (`.claude/agents/`, ADR 0009): clean
   context, never opens `src/`, fixed report format ending with the files it opened. First run on
   the kit: 17 findings, none from `src/`.
