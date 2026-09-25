@@ -68,7 +68,7 @@ branch instead. The owner then asked for the worktree rule below to be written d
 rule in its Workflow section; `/wrap-up` step 9 renames a generated name before the commit and
 deletes the branch after the merge; `permissions.ask` lists `git branch -D`. FlatCheck, which
 follows the kit, carries the same Workflow lines, wrap-up step and `ask` entry, and records the
-worktree rule for itself in its ADR 0043. A commit from a worktree needs hooks that find the
+worktree rule for itself in its ADR 0044. A commit from a worktree needs hooks that find the
 repository root without trusting `GIT_DIR`, which git sets for a hook there; `check-staged.ps1`
 was fixed for that the same day. Nothing deletes
 old branches retroactively: a branch another session left is that session's, and its worktree

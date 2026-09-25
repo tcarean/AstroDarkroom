@@ -117,7 +117,7 @@ It is not an image processor and it never decides what a shape on a map is.
   (the kit's ADR 0013). Read the whole diff back before proposing a commit.
 - A task branch lives in its own worktree (`git worktree add` under `.claude/worktrees/`), never
   in the shared checkout `E:\Photografie\Code`, which stays on `main`: the owner merges there,
-  and other sessions share it (ADR 0043).
+  and other sessions share it (ADR 0044).
 - Discuss and measure before designing: present the measured facts and the decisions to take,
   wait for them, then implement without re-asking (the owner's standing instruction).
 

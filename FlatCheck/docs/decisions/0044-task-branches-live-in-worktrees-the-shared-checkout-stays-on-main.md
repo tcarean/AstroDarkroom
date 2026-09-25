@@ -1,4 +1,4 @@
-# 0043. Task branches live in worktrees; the shared checkout stays on main
+# 0044. Task branches live in worktrees; the shared checkout stays on main
 
 Date: 2026-09-25
 Status: accepted 2026-09-25
