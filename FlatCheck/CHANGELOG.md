@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `scripts/check-staged.ps1` refused every commit made from a linked worktree that touched a
+  FlatCheck file: git runs the hook with `GIT_DIR` set, `git rev-parse --show-toplevel` then
+  named the FlatCheck folder as the repository root, and every staged file looked like console
+  code. The script now finds the root by walking up to the nearest `.git`; `CheckStagedTests`
+  runs it in a throwaway repository with and without `GIT_DIR`.
+
 - Adopted the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1` as the one
   gate (manifest, restore, format, build with warnings as errors, tests), `check-staged.ps1`,
   Claude Code hooks and skills, `docs/requirements.md` with IDs, ADRs under `docs/decisions/`,

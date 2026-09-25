@@ -81,6 +81,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `check-staged.ps1` from a linked worktree: git runs the hook with `GIT_DIR` set, and
+  `git rev-parse --show-toplevel` then named the project folder as the repository root, so in a
+  monorepo the check never matched `src/` and passed every commit. The script now finds the root
+  by walking up to the nearest `.git`. `CheckStagedTests` runs it in a throwaway repository with
+  and without `GIT_DIR`.
 - `verify.ps1 -SkipTests` wrote `.verify-stamp` too, so the Stop hook let a turn that edited code
   end with the tests never run. Only a run with tests writes the stamp now; the hook's message
   says that `-SkipTests` does not count.

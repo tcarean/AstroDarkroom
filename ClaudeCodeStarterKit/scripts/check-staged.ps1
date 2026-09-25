@@ -23,10 +23,16 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
-    # Where is the root of the git repository? Outside a repository there is nothing to
-    # check (2>$null hides git's error message).
-    $gitRoot = (git rev-parse --show-toplevel 2>$null)
-    if ($LASTEXITCODE -ne 0) { exit 0 }
+    # Where is the root of the git repository? The nearest folder upwards that holds .git (a
+    # folder in a clone, a file in a linked worktree). Not asked from git: in a hook run from a
+    # linked worktree git sets GIT_DIR, and `git rev-parse --show-toplevel` then answers with
+    # the current folder, this project, instead of the root. Outside a repository there is
+    # nothing to check.
+    $gitRoot = [System.IO.Path]::GetFullPath($root)
+    while ($gitRoot -and -not (Test-Path -LiteralPath (Join-Path $gitRoot '.git'))) {
+        $gitRoot = Split-Path -Parent $gitRoot
+    }
+    if (-not $gitRoot) { exit 0 }
     # git names staged files relative to the repository root. In a monorepo this project is
     # a subfolder, so its files show up as "<folder>/src/...". $prefix is that "<folder>/"
     # part; it stays empty when the project is the repository root.

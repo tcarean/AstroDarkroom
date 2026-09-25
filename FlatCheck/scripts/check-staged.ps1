@@ -26,8 +26,15 @@ $codeFolders = @('FlatCheck.Core/', 'FlatCheck/', 'FlatCheck.Wpf/')
 $codeFiles = @('flatcheck.py')
 Push-Location $root
 try {
-    $gitRoot = (git rev-parse --show-toplevel 2>$null)
-    if ($LASTEXITCODE -ne 0) { exit 0 }
+    # The repository root is the nearest folder upwards that holds .git (a folder in a clone,
+    # a file in a linked worktree). Not asked from git: in a hook run from a linked worktree
+    # git sets GIT_DIR, and `git rev-parse --show-toplevel` then answers with the current
+    # folder, FlatCheck, instead of the root. Outside a repository there is nothing to check.
+    $gitRoot = [System.IO.Path]::GetFullPath($root)
+    while ($gitRoot -and -not (Test-Path -LiteralPath (Join-Path $gitRoot '.git'))) {
+        $gitRoot = Split-Path -Parent $gitRoot
+    }
+    if (-not $gitRoot) { exit 0 }
     # git names staged files relative to the repository root; in the photo monorepo this
     # project is a subfolder, so its files show up as "FlatCheck/...". $prefix is that part.
     $gitRoot = [System.IO.Path]::GetFullPath($gitRoot).TrimEnd('\', '/')
