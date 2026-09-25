@@ -24,7 +24,7 @@ Acest fisier e sursa principala a ghidului. Se editeaza direct aici; documentul 
 
 ## Structura repo-ului din starter kit
 
-Kit-ul sta in `E:\Photografie\Code\ClaudeCodeStarterKit` si e o solutie .NET 9 functionala, cu trei proiecte, teste care trec si toate fisierele de proces. Numele placeholder este `Starter`; `scripts/rename.ps1` il inlocuieste peste tot.
+Kit-ul sta in `E:\Photografie\Code\ClaudeCodeStarterKit` si e o solutie .NET 9 functionala, cu trei proiecte, teste care trec si toate fisierele de proces. Numele placeholder este `Starter`; `scripts/rename.ps1` il inlocuieste peste tot, cu o singura exceptie: numele kit-ului, `ClaudeCodeStarterKit`, ramane neatins, ca trimiterea din CLAUDE.md la ghid sa functioneze si dupa redenumire.
 
 | Cale | Rol | Cine il modifica |
 | --- | --- | --- |
@@ -45,7 +45,7 @@ Kit-ul sta in `E:\Photografie\Code\ClaudeCodeStarterKit` si e o solutie .NET 9 f
 | `docs/validation.md` + `validation.json` | cifrele de acceptanta, cu toleranta; JSON-ul e citit de teste | omul + Claude |
 | `docs/plans/` | planurile aprobate, un fisier per task | Claude, dupa aprobare |
 | `docs/design/` | note de design per zona, citite la nevoie | Claude |
-| `scripts/verify.ps1` | gate-ul: manifest, restore, format, build, test; scrie `.verify-stamp` la succes | omul |
+| `scripts/verify.ps1` | gate-ul: manifest, restore, format, build, test; scrie `.verify-stamp` la succes, doar daca au rulat si testele | omul |
 | `scripts/check-staged.ps1` | regula de staging: `src/` atins cere `CHANGELOG.md` atins | omul |
 | `scripts/hooks/` | git `pre-commit` si `commit-msg`; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop | omul |
 | `scripts/install-hooks.ps1`, `rename.ps1`, `check-testdata.ps1` | instalare hook-uri (detecteaza layout-ul), redenumirea placeholder-ului, hash-uri pentru date de test | omul |
@@ -62,14 +62,14 @@ Codul de exemplu (mediana, sigma robusta, fisier de numere) exista doar ca sa ar
 
 ## CLAUDE.md: ce contine de la inceput
 
-CLAUDE.md din kit are in jur de 80 de linii si sapte sectiuni: descriere, comenzi, layout, reguli, workflow, "citeste inainte sa atingi", stil. E scris in engleza, pentru ca aderenta modelului la instructiuni e mai buna in engleza; comentariile pentru oameni pot ramane in romana.
+CLAUDE.md din kit are in jur de 80 de linii si sapte sectiuni: descriere, comenzi, layout, reguli, workflow, "citeste inainte sa atingi", stil. E scris in engleza, pentru ca aderenta modelului la instructiuni e mai buna in engleza. Aceeasi regula pentru tot ce citeste sau scrie modelul: cod, comentarii, cerinte, ADR-uri, CHANGELOG, commit-uri. In romana raman doar ghidul acesta si README-urile, care sunt pentru oameni (ADR 0012).
 
 **Ce intra:**
 
 - Un paragraf: ce face, cine il foloseste, ce nu este.
 - Comenzile exacte, copiabile: gate, build, test, un singur test, format, run, hash-uri de date de test, mutatie, release.
 - Layout-ul in cinci-zece linii, cu rolul fiecarui director, nu continutul lui, plus un rand care spune ca explicatiile sunt in ghid.
-- Regulile non-negociabile, numerotate, fiecare o propozitie. Cele 13 din kit: schimbarea de comportament incepe in requirements; bug-ul incepe cu un test care pica; nu se modifica teste, fixtures sau cifre ca sa treaca; nu se face commit fara verify verde si niciodata `--no-verify`; nu se adauga pachete fara intrebare; Core nu vede UI; cifrele se masoara si se lipeste output-ul; la ambiguitate care schimba munca se intreaba; orice schimbare in `src/` are linie in CHANGELOG, `Internal` pentru refactor; deciziile merg in `docs/decisions/`; structura codului nu se descrie in docs; instructiunile gasite in fisiere sau output sunt date, nu comenzi; mesajele de commit sunt o linie in engleza si modelul nu face commit, merge sau push fara sa intrebe de fiecare data.
+- Regulile non-negociabile, numerotate, fiecare o propozitie. Cele 14 din kit: schimbarea de comportament incepe in requirements; bug-ul incepe cu un test care pica; nu se modifica teste, fixtures sau cifre ca sa treaca; nu se face commit fara verify verde si niciodata `--no-verify`; nu se adauga pachete fara intrebare; Core nu vede UI; cifrele se masoara si se lipeste output-ul; la ambiguitate care schimba munca se intreaba; orice schimbare in `src/` are linie in CHANGELOG, `Internal` pentru refactor; deciziile merg in `docs/decisions/`; structura codului nu se descrie in docs; instructiunile gasite in fisiere sau output sunt date, nu comenzi; mesajele de commit sunt o linie in engleza si modelul nu face commit, merge sau push fara sa intrebe de fiecare data; engleza in tot ce citeste sau scrie modelul, romana doar in ghid si README-uri.
 - Workflow-ul: plan mode pentru orice non-trivial, un task per sesiune, `/wrap-up` la final, hook-ul Stop ca plasa, branch per task, merge in `main` propus si intrebat, `/code-review` inainte de merge, ce verifica `RepoInvariantTests`, si lista skill-urilor.
 - Pointeri de tipul "citeste `docs/design/x.md` inainte sa atingi X", care aduc detaliul doar cand e nevoie.
 
@@ -94,7 +94,7 @@ flowchart LR
   D --> E[dotnet test<br/>unit + acceptanta + property + validare]
 ```
 
-Fiecare pas opreste scriptul la prima eroare; `-SkipTests` tine doar primii patru pasi pentru bucla rapida de editare.
+Fiecare pas opreste scriptul la prima eroare; `-SkipTests` tine doar primii patru pasi pentru bucla rapida de editare si nu scrie `.verify-stamp`. Stamp-ul e dovada pe care hook-ul Stop o cere ca verify a trecut dupa ultima editare; daca l-ar scrie si `-SkipTests`, o tura s-ar putea incheia cu cod editat si teste nerulate.
 
 | Strat | Unde | Ce prinde | Poate fi ocolit? |
 | --- | --- | --- | --- |
@@ -103,8 +103,8 @@ Fiecare pas opreste scriptul la prima eroare; `-SkipTests` tine doar primii patr
 | Teste | verify | comportament, cifre, invarianti de repo | doar editand testul, interzis prin regula 3 |
 | Hook Claude Code PreToolUse | `.claude/settings.json` | orice `git commit` al modelului ruleaza check-staged si verify intai; `--no-verify` e blocat | de om, nu de model |
 | `check-staged.ps1` | pre-commit + hook Claude Code | commit care atinge `src/` fara linie in `CHANGELOG.md` | `--no-verify`, constient |
-| `RepoInvariantTests` | verify | cerinta `implemented` fara test `R###_`, test cu ID inexistent, versiune duplicata, fixture lipsa din manifest | doar editand testul, interzis prin regula 3 |
-| Hook Claude Code Stop | `.claude/settings.json` | tura care a editat `src/` sau `tests/` fara verify verde dupa ultima editare sau fara CHANGELOG modificat; trimite la `/wrap-up` | a doua incercare trece (`stop_hook_active`), deci nu blocheaza la infinit |
+| `RepoInvariantTests` | verify | cerinta `implemented` fara test `R###_`, test cu ID inexistent, versiune duplicata, fixture lipsa din manifest; doar in kit, o cale numita in `GHID.md` sau in README care nu exista | doar editand testul, interzis prin regula 3 |
+| Hook Claude Code Stop | `.claude/settings.json` | tura care a editat `src/` sau `tests/` fara verify verde dupa ultima editare, sau cu editari inca necomise in `src/` fara CHANGELOG modificat (dupa commit, CHANGELOG-ul curat e normal); trimite la `/wrap-up` | a doua incercare trece (`stop_hook_active`), deci nu blocheaza la infinit |
 | Git pre-commit | `scripts/hooks/pre-commit` | orice commit, de la oricine; intr-un monorepo ruleaza check-staged si verify doar in proiectele atinse de fisierele din staging | `--no-verify`, constient |
 | Git commit-msg | `scripts/hooks/commit-msg` | mesaj pe mai multe linii, trailere (`Co-Authored-By`), linie peste 72 de caractere | `--no-verify`, constient |
 | `permissions.ask` (Claude Code) | `.claude/settings.json` | orice `git commit`, `merge`, `push`, `rebase` al modelului cere acordul omului in momentul rularii | de om, la fiecare comanda |
@@ -112,7 +112,13 @@ Fiecare pas opreste scriptul la prima eroare; `-SkipTests` tine doar primii patr
 | `/code-review` | skill incorporat Claude Code, subagent de fundal cu context propriu | bug-uri de logica pe care testele nu le acopera; pe branch: `main...task/x` | judecata omului |
 | `/mutate` (Stryker.NET) | `scripts/mutate.ps1`, la cerere, nu in gate | teste care executa codul fara sa il verifice; scor de mutatie pe Core | judecata omului; minute, nu secunde |
 
-**Ce e garantat si ce nu.** CLAUDE.md e in fata modelului la fiecare sesiune, dar o regula in proza se respecta probabilistic, mai ales in sesiuni lungi. De aceea regulile care conteaza au un mecanism in spate (ADR 0005): CHANGELOG la commit prin `check-staged.ps1`, cerinte legate de teste prin `RepoInvariantTests`, si tura care nu se poate incheia cu cod editat si neverificat prin hook-ul Stop. Un hook PostToolUse noteaza ce fisiere a editat sesiunea, ca hook-ul Stop sa nu se planga de munca necomisa a omului. Ce ramane pe judecata: daca o schimbare merita ADR si daca o cerinta e bine formulata.
+**Ce e garantat si ce nu.** CLAUDE.md e in fata modelului la fiecare sesiune, dar o regula in proza se respecta probabilistic, mai ales in sesiuni lungi. De aceea regulile care conteaza au un mecanism in spate (ADR 0005): CHANGELOG la commit prin `check-staged.ps1`, cerinte legate de teste prin `RepoInvariantTests`, si tura care nu se poate incheia cu cod editat si neverificat prin hook-ul Stop. Un hook PostToolUse noteaza ce fisiere a editat sesiunea, ca hook-ul Stop sa nu se planga de munca necomisa a omului. Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca ghidul si README-ul mai explica corect ce fac scripturile.
+
+**Cine verifica documentatia.** Nimic nu o verifica ca intreg; verificarile sunt pe trei niveluri (ADR 0011).
+
+- **Automat, la fiecare verify sau commit:** legaturi precise, nu continut. `RepoInvariantTests` leaga cerintele `implemented` de testele `R###_`, in ambele sensuri, si, doar in kit, cere ca fiecare cale numita in ghid si in README sa existe. `ValidationTests` citeste chiar `validation.json`, deci cifrele si testul nu pot ajunge sa difere. `check-staged.ps1` si hook-ul Stop cer ca `CHANGELOG.md` sa fie modificat cand se modifica `src/`, dar nu verifica ce scrie in linie.
+- **Modelul, doar cand rulezi un skill:** `/wrap-up` judeca CHANGELOG-ul, statusurile, ADR-urile, planul si, cand schimbarea a atins `scripts/`, `.claude/`, `CLAUDE.md` sau `monorepo/`, ce spun ghidul si README-ul despre piesa atinsa (pasul 8). O schimbare doar in documentatie nu porneste hook-ul Stop, deci atunci `/wrap-up` il cere omul. `/docs-health` masoara daca `docs/` ajunge unui model nou; nu deschide `src/`, deci gaseste ce lipseste, nu ce e gresit, si nu citeste ghidul.
+- **Omul:** daca o explicatie din ghid mai e adevarata, si daca documentatia descrie acelasi comportament ca si codul, dincolo de ID-uri si cifre. Testul de cai prinde un script redenumit, nu un sfat invechit: instructiunea gresita din stratul 1 al migrarii, gasita pe 2026-09-25, ar fi trecut de el.
 
 **Gate versus hook.** Gate-ul e verificarea in sine, cea care spune verde sau rosu: `verify.ps1`, `check-staged.ps1`, testele. Hook-ul e declansatorul, momentul in care cineva ruleaza gate-ul fara sa fie intrebat. Acelasi gate e pornit de mai multe hook-uri, si de aceea e scris o singura data.
 
@@ -224,10 +230,11 @@ flowchart TD
 5. Verifica daca orice alegere din sesiune despre care cineva ar putea intreba "de ce?" are ADR; daca nu e sigur, listeaza candidatii si intreaba.
 6. Daca s-a urmat un plan din `docs/plans/`, noteaza la finalul lui ce a deviat.
 7. Daca s-au re-masurat cifre, `validation.md` are data si output-ul.
-8. Propune mesajul de commit, o linie in engleza, si intreaba cine ruleaza commit-ul, omul sau modelul. Daca branch-ul e gata de merge, sugereaza `/code-review` intai si pune aceeasi intrebare pentru merge. Nu face nimic pana nu primeste raspuns.
-9. Listeaza ce a ramas neterminat si ce lipseste ca sa se termine.
+8. Daca schimbarea a atins `scripts/`, `.claude/`, `CLAUDE.md` sau `monorepo/`, citeaza ce spun README-ul si, in kit, ghidul despre piesa atinsa, si repara in acelasi task ce nu mai e adevarat. Intr-un proiect facut din kit, o schimbare a procesului insusi (un hook, un skill, o regula) e semnalata, pentru ca probabil trebuie facuta si in kit si in ghid.
+9. Propune mesajul de commit, o linie in engleza, si intreaba cine ruleaza commit-ul, omul sau modelul. Daca branch-ul e gata de merge, sugereaza `/code-review` intai si pune aceeasi intrebare pentru merge. Nu face nimic pana nu primeste raspuns.
+10. Listeaza ce a ramas neterminat si ce lipseste ca sa se termine.
 
-Se foloseste la sfarsitul oricarei sesiuni in care s-a schimbat ceva in repo: cand task-ul pare gata, `/wrap-up` e ultimul mesaj. Nu e nevoie in sesiunile in care doar s-a discutat sau s-a citit cod. Hook-ul Stop e plasa de siguranta pentru cand uita toata lumea: verifica doar cele doua conditii mecanice, verify si CHANGELOG, si trimite la `/wrap-up`. Partea de judecata, ADR, statusuri, plan, rezumat, o face numai skill-ul, deci ideal il cere omul.
+Se foloseste la sfarsitul oricarei sesiuni in care s-a schimbat ceva in repo: cand task-ul pare gata, `/wrap-up` e ultimul mesaj. Nu e nevoie in sesiunile in care doar s-a discutat sau s-a citit cod. Hook-ul Stop e plasa de siguranta pentru cand uita toata lumea: verifica doar cele doua conditii mecanice, verify si CHANGELOG, si trimite la `/wrap-up`. Partea de judecata, ADR, statusuri, plan, ghid, rezumat, o face numai skill-ul, deci ideal il cere omul.
 
 **Sesiunea.** Un task per sesiune, apoi `/wrap-up`, apoi sesiune noua; asa fiecare wrap-up acopera un singur lucru, iar CHANGELOG-ul si ADR-urile raman lizibile. Sesiunile lungi degradeaza: cand contextul e mai mult istoric decat cod, se face wrap-up si se porneste una noua. Explorarea si research-ul se dau unui subagent, ca sa nu polueze contextul principal.
 
@@ -302,8 +309,8 @@ Sase pasi, sub zece minute, si proiectul nou are gate verde la primul commit.
 1. Copiaza folderul `ClaudeCodeStarterKit` sub numele noului proiect.
 2. Redenumeste placeholder-ul: `scripts/rename.ps1 -Name MyTool` inlocuieste `Starter` in continut, nume de fisiere si directoare. Testat: copia redenumita `FlatCheck` compileaza si trece toate testele.
 3. Rescrie primul paragraf din `CLAUDE.md`; sterge din copie `GHID.md` si `monorepo/`, care raman in kit. Codul de exemplu (`Stats`, `NumberFile`, R-001..R-004, V-001) ramane pana la primul feature real, ca model de legatura cerinta-test-cifra, apoi se sterge.
-4. `git init`, apoi `scripts/install-hooks.ps1`, care seteaza `core.hooksPath` la `scripts/hooks`, unde stau `pre-commit` si `commit-msg`. Intr-un monorepo scriptul detecteaza singur layout-ul si pune cate o copie a celor doua hook-uri in `.githooks/` la radacina repo-ului.
-5. `scripts/verify.ps1` o data, ca sa vezi ca e verde. Pe kit ruleaza in 15 secunde: manifest, restore, format, build, 18 teste.
+4. Hook-urile git. Intr-un repo separat: `git init`, apoi `scripts/install-hooks.ps1`, care seteaza `core.hooksPath` la `scripts/hooks`, unde stau `pre-commit` si `commit-msg`. Intr-un folder din repo-ul `photo`: nici `git init`, nici instalare. Hook-urile sunt deja la radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului nou (vezi mai jos, "Hook-ul e comun, gate-ul e al fiecarui proiect").
+5. `scripts/verify.ps1` o data, ca sa vezi ca e verde. Pe kit ruleaza in 15 secunde: manifest, restore, format, build, 19 teste.
 6. Primul commit, cu `packages.lock.json` si `.config/dotnet-tools.json` incluse. De aici, in Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`. Subagentul `docs-auditor` e disponibil din a doua sesiune.
 
 **Ce se adapteaza per proiect:** target framework (kit-ul e pe net9.0, SDK 9.0.318 fixat in `global.json`), CI-ul care nu se foloseste se sterge, allowlist-ul din `.claude/settings.json` creste pe masura ce apar comenzi noi, si `docs/design/` primeste o nota la prima zona de cod care nu se explica singura.
@@ -315,7 +322,7 @@ Sase pasi, sub zece minute, si proiectul nou are gate verde la primul commit.
 | Piesa | Repo separat | Folder in monorepo |
 | --- | --- | --- |
 | pre-commit si commit-msg | `core.hooksPath = scripts/hooks` | cate o copie in `<radacina>/.githooks/`; pre-commit ruleaza `verify.ps1` doar in proiectele atinse, commit-msg se aplica la tot repo-ul |
-| instalare | `install-hooks.ps1` | acelasi script, detecteaza layout-ul |
+| instalare | `install-hooks.ps1` | acelasi script, copia din kit, detecteaza layout-ul; un proiect adaugat ulterior nu cere instalare, o clona noua cere doar `git config core.hooksPath .githooks` |
 | CI | fisierele din kit | `monorepo/bitbucket-pipelines.yml` sau `monorepo/github-ci.yml` la radacina, un step per proiect cu filtru pe cale |
 | tag-uri | `v1.2.0` | `flatcheck-v1.2.0` |
 | Claude Code | pornit in folderul proiectului | la fel; niciodata in radacina git |
@@ -326,7 +333,7 @@ Un folder fara `scripts/verify.ps1` nu e verificat de hook, deci proiectele exis
 
 **Hook-ul e comun, gate-ul e al fiecarui proiect.** Intr-un monorepo exista doua lucruri diferite, care traiesc in locuri diferite:
 
-- hook-urile (`pre-commit`, `commit-msg`) au o singura copie activa, in `<radacina>/.githooks/`, citita de git indiferent din ce proiect vine commit-ul. Sursa lor ramane `scripts/hooks/` din kit; `install-hooks.ps1` le copiaza de acolo. Un proiect nu are nevoie de propria copie a lui `scripts/hooks/`.
+- hook-urile (`pre-commit`, `commit-msg`) au o singura copie activa, in `<radacina>/.githooks/`, citita de git indiferent din ce proiect vine commit-ul. Sursa lor ramane `scripts/hooks/` din kit; `install-hooks.ps1` le copiaza de acolo. Din `scripts/hooks/` al unui proiect, git nu foloseste nimic intr-un monorepo. Folderul ramane totusi in proiect, pentru ca acolo stau si hook-urile Claude Code (`claude-commit-gate.ps1`, `claude-track-edits.ps1`, `claude-stop-gate.ps1`), pe care `.claude/settings.json` le apeleaza din folderul proiectului.
 - restul lui `scripts/`, in primul rand `verify.ps1` si `check-staged.ps1`, se copiaza in fiecare proiect care vrea sa fie verificat, pentru ca e specific lui: numele solutiei, ce build si ce teste ruleaza. Hook-ul comun nu stie sa verifice nimic singur; pentru fiecare fisier din stage urca pana la cel mai apropiat `scripts/verify.ps1` si il ruleaza pe acela.
 
 ```
@@ -339,13 +346,13 @@ Code/                   <- radacina git (repo-ul photo)
     scripts/verify.ps1  <- gate-ul FlatCheck, cand il adopta
 ```
 
-Consecintele: un proiect fara `verify.ps1` ramane neverificat la commit pana cand i se copiaza `scripts/`, si atunci gate-ul lui intra in functiune fara reinstalare. `commit-msg`, in schimb, verifica doar mesajul si se aplica din prima zi la tot repo-ul, inclusiv proiectelor care n-au adoptat inca kit-ul. `install-hooks.ps1` se ruleaza din nou in trei cazuri: dupa o modificare a unui hook in `scripts/hooks/` din kit (in `.githooks/` sunt copii, nu legaturi), pe o clona noua sau pe alt calculator (`core.hooksPath` nu se cloneaza, dar `.githooks/`, fiind comis, da), si in proiectul care devine repo separat, unde seteaza `core.hooksPath = scripts/hooks` direct, fara copii.
+Consecintele: un proiect fara `verify.ps1` ramane neverificat la commit pana cand i se copiaza `scripts/`, si atunci gate-ul lui intra in functiune fara reinstalare. `commit-msg`, in schimb, verifica doar mesajul si se aplica din prima zi la tot repo-ul, inclusiv proiectelor care n-au adoptat inca kit-ul. `install-hooks.ps1` se ruleaza din nou in doua cazuri: dupa o modificare a unui hook in `scripts/hooks/` din kit (in `.githooks/` sunt copii, nu legaturi), si in proiectul care devine repo separat, unde seteaza `core.hooksPath = scripts/hooks` direct, fara copii. Intr-un monorepo se ruleaza copia din kit, nu cea dintr-un proiect: fiecare copie a scriptului scrie peste `.githooks/` hook-urile din `scripts/hooks/` de langa ea, iar copia unui proiect poate fi mai veche. Pe o clona noua sau pe alt calculator nu e nevoie de script. `.githooks/` vine cu clona, pentru ca e comis, dar `core.hooksPath` nu vine, asa ca ajunge `git config core.hooksPath .githooks`, rulat din orice folder al repo-ului.
 
 ## Migrarea unui proiect existent
 
 Se poate, si nu e doar pentru proiecte noi. Un proiect existent are de obicei partea grea deja facuta, cod si teste; ce lipseste e procesul din jur. Migrarea se face in trei straturi, fiecare util de unul singur, fara rescrieri.
 
-**Stratul 1: gate-ul, o ora, fara sa atingi codul.** Se copiaza `scripts/`, `.claude/settings.json`, `.claude/skills/` si `.claude/agents/`, se adauga `CHANGELOG.md`, se adapteaza numele solutiei si al proiectului de publicat in `verify.ps1`, `mutate.ps1` si `release.ps1`, se ruleaza `install-hooks.ps1`. `.config/dotnet-tools.json` si `stryker-config.json` se copiaza doar daca vrei mutation testing. Singura decizie: warnings-urile existente se repara acum, sau verify porneste fara `-warnaserror` si se activeaza dupa. Din momentul asta niciun commit nu mai intra fara build si teste verzi, iar hook-urile Claude Code functioneaza ca in kit.
+**Stratul 1: gate-ul, o ora, fara sa atingi codul.** Se copiaza `scripts/`, `.claude/settings.json`, `.claude/skills/` si `.claude/agents/`, se adauga `CHANGELOG.md`, se adapteaza numele solutiei si al proiectului de publicat in `verify.ps1`, `mutate.ps1` si `release.ps1`. Hook-urile git: intr-un repo separat se ruleaza `install-hooks.ps1`; in repo-ul `photo` nu se ruleaza nimic, pentru ca hook-urile comune sunt deja instalate la radacina si gasesc singure `verify.ps1` al proiectului, iar copia din proiect a scriptului ar scrie peste ele hook-urile ei. `.config/dotnet-tools.json` si `stryker-config.json` se copiaza doar daca vrei mutation testing. Singura decizie: warnings-urile existente se repara acum, sau verify porneste fara `-warnaserror` si se activeaza dupa. Din momentul asta niciun commit nu mai intra fara build si teste verzi, iar hook-urile Claude Code functioneaza ca in kit.
 
 **Stratul 2: documentatia, cateva sesiuni, fara cod.** `docs/requirements.md` se extrage din ce descrie azi CLAUDE.md sau README-ul, cu ID-uri si status `accepted`. ADR-urile se scriu pentru deciziile care exista doar in memorie sau in chat. `validation.json` si un `ValidationTests` preiau cifrele de acceptanta din note. CLAUDE.md se scurteaza pe masura ce continutul se muta in `docs/design/`; nu se sterge nimic, se muta.
 

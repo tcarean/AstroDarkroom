@@ -21,10 +21,16 @@ does not apply.
    on it is about to be committed is a question for the owner: accept it, or change the code.
 6. `docs/plans/`: if a plan was followed, note at its end what deviated and why.
 7. `docs/validation.md`: if figures were re-measured, the date and the output are recorded.
-8. Propose the commit message: one line, English, under 70 characters, saying why. No body, no
+8. Guide and README: if the change touched `scripts/`, `.claude/`, `CLAUDE.md` or `monorepo/`,
+   quote what `README.md` and, in the kit, `GHID.md` say about the touched piece, and fix what
+   no longer holds, in this task. `RepoInvariantTests` only catches paths that no longer exist,
+   not explanations that no longer hold (ADR 0011). In a project made from the kit, a change to
+   the process itself (a hook, a skill, a rule) is flagged: it probably belongs in the kit and its
+   guide too.
+9. Propose the commit message: one line, English, under 70 characters, saying why. No body, no
    trailers, no `Co-Authored-By` (the summary from step 2 stays in the chat, and the "what" is
    in CHANGELOG). Then ask: does the owner want you to run the commit, or will they do it by
    hand? Do nothing until they answer. If the branch is ready to merge into `main`, say so,
    suggest `/code-review main...<branch>` first if it has not run on this work, and ask the same
    question for the merge. Never `--no-verify`.
-9. If anything was left unfinished, say so in one list, with what is needed to finish it.
+10. If anything was left unfinished, say so in one list, with what is needed to finish it.

@@ -53,6 +53,9 @@ The sample code exists to show how a requirement, a test and a validation figure
     `Co-Authored-By`. The assistant never commits, merges or pushes on its own: it proposes the
     message (or the merge) and asks; the owner decides each time whether the assistant runs it
     or does it by hand. An approval covers that one command, not the session.
+14. English in everything the model reads or writes: code, comments, docs, tests, commits. Romanian
+    only in `GHID.md` and the READMEs, which are for people. Translate when moving content across
+    that line; never leave a file in two languages (ADR 0012).
 
 ## Workflow
 

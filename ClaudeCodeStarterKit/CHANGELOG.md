@@ -35,6 +35,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   proposed from the `[Unreleased]` sections, verify, version bump, dated CHANGELOG section,
   publish to `artifacts/<version>/`; commit and tag proposed, never run by the script. Tag is
   `vX.Y.Z` standalone, `<folder>-vX.Y.Z` in a monorepo.
+- Doc path check (ADR 0011): in the kit, `RepoInvariantTests` fails when `GHID.md` or `README.md`
+  names a script, folder or file that does not exist; the four names absent on purpose are
+  listed in the test with their reason. `/wrap-up` gains step 8: when a change touches
+  `scripts/`, `.claude/`, `CLAUDE.md` or `monorepo/`, check what the guide and README say about it.
 
 ### Changed
 
@@ -42,19 +46,49 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - CLAUDE.md rule 13 states the 72-character limit; the mutate command lists `-BreakAt`.
 - Guide brought in step with the kit on 2026-09-25: structure table (check-staged, hooks,
   install/rename, monorepo/, GHID.md, `ask` list), all 13 rules, trigger table with `ask` and
-  commit-msg, wrap-up step 8, CHANGELOG rule as enforced, `/mutate` and `/release` in the
+  commit-msg, the wrap-up commit step, CHANGELOG rule as enforced, `/mutate` and `/release` in the
   start-up steps, agents in the monorepo note, layer 1 of migration.
 - Guide: `/code-review` runs in the same session (it is already a background subagent with its
   own context), not in a second one; branch form `main...task/x`; `/wrap-up` suggests it before
   proposing a merge. Findings by category: only correctness findings need a failing test first.
   `/simplify` documented: per-session diff, report first then `--fix`, whole project only per
   area as separate tasks.
+- Guide and READMEs on git hooks: installing means setting `core.hooksPath`, once per clone; the
+  hook is shared, the gate (`verify.ps1`) is per project; a fresh clone of the monorepo needs only
+  `git config core.hooksPath .githooks`; `install-hooks.ps1` runs from the kit; a project inside
+  `photo` needs neither `git init` nor an install. Guide: who checks the documentation, and what
+  nothing checks.
+- Every script in `scripts/` and `scripts/hooks/` opens with a plain-English header: what it
+  does, who calls it (you, git, Claude Code, CI, skills, other scripts), its options and its exit
+  codes; the less obvious lines have a short comment. Comments only, no code changed.
+- Rule 14 (ADR 0012): English in everything the model reads or writes, Romanian only in the
+  guide and the READMEs; the guide no longer says comments may stay in Romanian.
 
 ### Removed
 
 - `docs/ai-workflow.md` (ADR 0006): it duplicated CLAUDE.md and `GHID.md` and nothing read it in
   the working loop. CLAUDE.md holds the rules, `GHID.md` the explanations, kept once in the kit;
   each project points to it instead of carrying a copy.
+
+### Fixed
+
+- `verify.ps1 -SkipTests` wrote `.verify-stamp` too, so the Stop hook let a turn that edited code
+  end with the tests never run. Only a run with tests writes the stamp now; the hook's message
+  says that `-SkipTests` does not count.
+- Guide: layer 1 of the migration told a project inside the monorepo to run its own copy of
+  `install-hooks.ps1`, which would overwrite the shared hooks with the project's; and it said a
+  project does not need `scripts/hooks/`, where the Claude Code hooks live.
+- README: a blank line split the "Ce e unde" table before the `monorepo/` row.
+- `rename.ps1` also rewrote the kit's own name, so a new project's CLAUDE.md pointed the guide at
+  `ClaudeCode<Name>Kit`, a folder that does not exist. `ClaudeCodeStarterKit` now survives the
+  rename.
+- Stop hook: once a session's `src/` edits and their CHANGELOG line were committed, every later
+  turn was refused with "CHANGELOG.md is unchanged". The CHANGELOG check now applies only while
+  an edited `src/` file is still uncommitted.
+- Claude commit gate failed open: when a check printed to stderr (dotnet format does), Windows
+  PowerShell turned that into an error, the hook ended with exit 1 and Claude Code let the
+  commit run. The checks now run through `cmd`, which merges stderr itself, and any error inside
+  the hook blocks the commit (exit 2).
 
 ## [0.1.0] - 2026-09-24
 

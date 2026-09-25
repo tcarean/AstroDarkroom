@@ -1,8 +1,25 @@
 #!/bin/sh
-# Git commit-msg hook: rule 13 of CLAUDE.md made deterministic. The message is one non-empty
-# line, with no body and no trailers (Co-Authored-By, Signed-off-by, ...). Comment lines (#)
-# are ignored, as git does. Applies to every committer, assistant or human.
+# commit-msg - checks the commit message before git records the commit.
+#
+# WHAT IT DOES
+#   Accepts only a message that is one non-empty line, at most 72 characters long, and not
+#   a trailer such as "Co-Authored-By: ..." (CLAUDE.md rule 13: one line, no body, no
+#   trailers). Lines that start with # are ignored; git's editor template uses them for
+#   its own comments.
+#
+# WHO CALLS IT
+#   git itself, on every git commit, yours or Claude's, after the pre-commit hook passed.
+#   git passes the path of a file that holds the message as $1. Installed with pre-commit
+#   by scripts/install-hooks.ps1; in a monorepo git runs the copy in <git root>/.githooks/,
+#   so after editing this file run the kit's install-hooks.ps1 to refresh the copy.
+#
+# RESULT
+#   exit 0  message accepted; git records the commit
+#   exit 1  message refused; the reason is printed and no commit is made
+#
+# A POSIX sh script with Unix (LF) line endings, like pre-commit.
 msg="$1"
+# Count the non-empty lines (ignoring # lines and trailing spaces) and keep the first one.
 lines="$(grep -v '^#' "$msg" | sed -e 's/[[:space:]]*$//' | grep -c .)"
 first="$(grep -v '^#' "$msg" | grep -m1 .)"
 
@@ -18,6 +35,7 @@ if printf '%s' "$first" | grep -qiE '^(Co-Authored-By|Signed-off-by|Reviewed-by)
   echo "commit-msg: trailers such as Co-Authored-By are not used in this repository." >&2
   exit 1
 fi
+# ${#first} is the length of the line in characters.
 if [ "${#first}" -gt 72 ]; then
   echo "commit-msg: keep the line under 72 characters (${#first})." >&2
   exit 1

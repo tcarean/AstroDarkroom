@@ -24,8 +24,13 @@ a ghidului cu el.
    kit, iar `CLAUDE.md` deja trimite la ele acolo) si sterge codul de exemplu (`Stats`, `NumberFile`,
    fixtures, R-001..R-004, V-001) cand apare primul feature real. Pana atunci, ele arata cum se
    leaga o cerinta de un test si de o cifra de validare.
-4. Instaleaza hook-ul de pre-commit (dupa `git init` daca e repo nou; intr-un monorepo
-   detecteaza singur si pune o copie in `<radacina>/.githooks/`):
+4. Hook-urile git (`pre-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
+   ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
+   din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
+   radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului. Pe o clona
+   noua a unui monorepo ajunge `git config core.hooksPath .githooks`. Scriptul se ruleaza acolo
+   doar din kit, dupa ce schimbi un hook, pentru ca fiecare copie a lui scrie peste
+   `.githooks/` hook-urile de langa ea.
 
    ```bash
    powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-hooks.ps1
@@ -60,7 +65,6 @@ a ghidului cu el.
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`; un agent nou apare dupa repornirea sesiunii |
 | `scripts/mutate.ps1`, `.config/dotnet-tools.json` | mutation testing pe Core cu Stryker.NET, la cerere; minute, nu in gate |
 | `.github/workflows/ci.yml`, `bitbucket-pipelines.yml` | CI, acelasi script |
-
 | `monorepo/` | hook si CI pentru cazul in care kit-ul e un folder intr-un repo mai mare |
 
 ## Ce e impus mecanic, nu doar scris in CLAUDE.md
@@ -68,6 +72,8 @@ a ghidului cu el.
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
 - Commit care atinge `src/` fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
+- Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
+  `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.
 - Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare si
   fara CHANGELOG modificat: hook-ul Stop o refuza si trimite la `/wrap-up`.
 - Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
@@ -75,7 +81,8 @@ a ghidului cu el.
 - Orice `git commit`, `merge`, `push` sau `rebase` al modelului: cere acordul omului in momentul
   rularii, prin lista `ask` din `.claude/settings.json`.
 
-Ce ramane pe judecata: daca o schimbare merita ADR si daca o cerinta e bine formulata.
+Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca
+ghidul si README-ul mai explica corect ce fac scripturile (pasul 8 din `/wrap-up`).
 
 ## Standalone sau folder intr-un monorepo
 

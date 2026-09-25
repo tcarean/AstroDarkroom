@@ -65,6 +65,40 @@ public partial class RepoInvariantTests
             $"Tests named after requirement IDs that are not in docs/requirements.md: {string.Join(", ", unknown)}");
     }
 
+    /// <summary>
+    /// The guide and the README name scripts, folders and files; a rename leaves them pointing at
+    /// nothing, and no other check notices (ADR 0011). Kit only: a project made from the kit
+    /// deletes GHID.md, and its README still points at the kit's guide.
+    /// </summary>
+    [Fact]
+    public void KitGuideAndReadme_NameOnlyPathsThatExist()
+    {
+        string root = TestData.FindRepoRoot();
+        if (!File.Exists(Path.Combine(root, "GHID.md")))
+        {
+            return;
+        }
+
+        HashSet<string> fileNames = FileNamesOutsideBuildOutput(root);
+        List<string> missing = [];
+        foreach (string doc in KitDocs)
+        {
+            foreach (string path in PathReferences(File.ReadAllText(Path.Combine(root, doc))))
+            {
+                bool exists = IsUnderTopLevelFolder(path)
+                    ? File.Exists(Path.Combine(root, path)) || Directory.Exists(Path.Combine(root, path))
+                    : fileNames.Contains(path);
+                if (!exists && !AbsentOnPurpose.Contains(path))
+                {
+                    missing.Add($"{doc}: {path}");
+                }
+            }
+        }
+
+        Assert.True(missing.Count == 0,
+            $"Paths named in the kit's docs that do not exist in the kit: {string.Join(", ", missing)}");
+    }
+
     /// <summary>Table rows of docs/requirements.md: "| R-001 | implemented | ..." => R001 => implemented.</summary>
     private static Dictionary<string, string> ReadRequirements()
     {
@@ -94,6 +128,71 @@ public partial class RepoInvariantTests
             .ToHashSet(StringComparer.Ordinal);
     }
 
+    private static readonly string[] KitDocs = ["GHID.md", "README.md"];
+
+    /// <summary>First segments that make a code span a path relative to the kit root.</summary>
+    private static readonly string[] TopLevelFolders =
+        ["scripts/", "docs/", "tests/", "src/", ".claude/", ".github/", ".config/", "monorepo/"];
+
+    /// <summary>Folders holding build output or local copies: bin/ has copies of docs that would hide a rename.</summary>
+    private static readonly HashSet<string> NotKitFiles = new(StringComparer.Ordinal)
+    {
+        "bin", "obj", "StrykerOutput", "artifacts", "TestResults", ".vs", ".git", "worktrees",
+    };
+
+    /// <summary>Named in the docs on purpose although absent. A new entry is the owner's decision (ADR 0011).</summary>
+    private static readonly HashSet<string> AbsentOnPurpose = new(StringComparer.Ordinal)
+    {
+        "docs/ai-workflow.md",   // deleted on 2026-09-25 (ADR 0006); the guide tells why
+        "docs/design/x.md",      // an example name
+        "settings.local.json",   // machine-local, git-ignored
+        "tests/testdata/large/", // git-ignored; exists only where the large data is
+    };
+
+    /// <summary>
+    /// Inline code spans without spaces or placeholders, plus the script after each -File, kept
+    /// when they look like a path: under a top-level folder of the kit, or a bare file name.
+    /// </summary>
+    private static IEnumerable<string> PathReferences(string markdown)
+    {
+        string text = markdown.ReplaceLineEndings("\n");
+        string prose = FencedBlock().Replace(text, string.Empty);
+        IEnumerable<string> spans = InlineCode().Matches(prose).Select(m => m.Groups[1].Value);
+        IEnumerable<string> scripts = FileArgument().Matches(text).Select(m => m.Groups[1].Value);
+        return spans.Concat(scripts)
+            .Where(s => !NotAPath().IsMatch(s))
+            .Where(s => IsUnderTopLevelFolder(s) || BareFileName().IsMatch(s))
+            .Distinct(StringComparer.Ordinal);
+    }
+
+    private static bool IsUnderTopLevelFolder(string path) =>
+        TopLevelFolders.Any(folder => path.StartsWith(folder, StringComparison.Ordinal));
+
+    private static HashSet<string> FileNamesOutsideBuildOutput(string root)
+    {
+        HashSet<string> names = new(StringComparer.Ordinal);
+        Stack<string> folders = new();
+        folders.Push(root);
+        while (folders.Count > 0)
+        {
+            string folder = folders.Pop();
+            foreach (string file in Directory.EnumerateFiles(folder))
+            {
+                names.Add(Path.GetFileName(file));
+            }
+
+            foreach (string sub in Directory.EnumerateDirectories(folder))
+            {
+                if (!NotKitFiles.Contains(Path.GetFileName(sub)))
+                {
+                    folders.Push(sub);
+                }
+            }
+        }
+
+        return names;
+    }
+
     [GeneratedRegex(@"<Version>([^<]+)</Version>")]
     private static partial Regex VersionElement();
 
@@ -102,4 +201,19 @@ public partial class RepoInvariantTests
 
     [GeneratedRegex(@"^R(\d{3})_")]
     private static partial Regex TestName();
+
+    [GeneratedRegex(@"^[ \t]*```.*?^[ \t]*```[ \t]*$", RegexOptions.Multiline | RegexOptions.Singleline)]
+    private static partial Regex FencedBlock();
+
+    [GeneratedRegex(@"(?<!`)`([^`\n]+)`(?!`)")]
+    private static partial Regex InlineCode();
+
+    [GeneratedRegex(@"-File\s+([^\s`]+)")]
+    private static partial Regex FileArgument();
+
+    [GeneratedRegex(@"[\s<>*\[\]|]")]
+    private static partial Regex NotAPath();
+
+    [GeneratedRegex(@"^[A-Za-z0-9_][A-Za-z0-9_.-]*\.(md|ps1|json|props|yml|sln|csproj|cs)$")]
+    private static partial Regex BareFileName();
 }

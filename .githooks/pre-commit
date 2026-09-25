@@ -1,19 +1,43 @@
 #!/bin/sh
-# Git pre-commit hook: the deterministic gate. Works in two layouts:
-#   - standalone repo: the project is the git root, scripts/verify.ps1 is at the root;
-#   - monorepo: several project folders under one git root, each with its own scripts/verify.ps1.
-# For every staged file it walks up to the nearest folder holding scripts/verify.ps1, then per
-# project runs scripts/check-staged.ps1 (staging rules) and scripts/verify.ps1 (the gate).
-# Folders without a verify script are not checked.
-# Installed by scripts/install-hooks.ps1. Skipping it (--no-verify) is forbidden by CLAUDE.md.
+# pre-commit - git's last check before it records a commit: runs the gate of every project
+# the commit touches.
+#
+# WHAT IT DOES
+#   1. Lists the files staged for the commit.
+#   2. For each file, walks up its folders to the nearest one that has scripts/verify.ps1:
+#      that folder is the project the file belongs to. A file with no such folder above it
+#      (for example in a project that has not adopted the kit) is not checked.
+#   3. For each project found, once: runs scripts/check-staged.ps1 (a src/ change needs a
+#      CHANGELOG line), then scripts/verify.ps1 (the gate). If check-staged fails, that
+#      project's verify is skipped; the commit is refused either way.
+#   Works in both layouts: a standalone repository (the project is the git root, found as
+#   ".") and a monorepo (several project folders under one git root).
+#
+# WHO CALLS IT
+#   git itself, on every git commit, yours or Claude's, because core.hooksPath points at this
+#   file's folder (set by scripts/install-hooks.ps1). In a monorepo git runs the copy in
+#   <git root>/.githooks/: edit this file, then run the kit's install-hooks.ps1 to refresh
+#   the copy. git commit --no-verify skips it; CLAUDE.md forbids that (rule 4).
+#
+# RESULT
+#   exit 0  every touched project is green; git records the commit
+#   exit 1  something failed; git refuses the commit, and the output names the project
+#
+# A POSIX sh script (Git for Windows runs it with its own sh). It must keep Unix (LF) line
+# endings; .gitattributes makes sure of that.
+
+# Work from the root of the repository: staged file paths are relative to it.
 root="$(git rev-parse --show-toplevel)" || exit 1
 cd "$root" || exit 1
 
+# Two temporary files, deleted automatically when the script ends (trap ... EXIT).
 staged="$(mktemp)"
 projects="$(mktemp)"
 trap 'rm -f "$staged" "$projects"' EXIT
+# Staged files: A = added, C = copied, M = modified, R = renamed (deleted files are left out).
 git diff --cached --name-only --diff-filter=ACMR > "$staged"
 
+# Step 2: the project of each staged file, one line per file in $projects.
 while IFS= read -r f; do
   [ -n "$f" ] || continue
   d="$(dirname "$f")"
@@ -27,6 +51,7 @@ while IFS= read -r f; do
   done
 done < "$staged"
 
+# Step 3: each project once (sort -u drops the duplicates); any failure sets status=1.
 status=0
 for p in $(sort -u "$projects"); do
   if [ -f "$root/$p/scripts/check-staged.ps1" ]; then

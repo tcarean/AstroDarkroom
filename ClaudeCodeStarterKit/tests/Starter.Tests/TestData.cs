@@ -19,7 +19,8 @@ internal static class TestData
         return File.Exists(path) ? path : null;
     }
 
-    private static string FindRepoRoot()
+    /// <summary>The folder holding Starter.sln; the build output folder when there is none.</summary>
+    public static string FindRepoRoot()
     {
         DirectoryInfo? dir = new(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Starter.sln")))
