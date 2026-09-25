@@ -7,6 +7,12 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+
+    <!-- Acelasi comutator ca la consola. E citit din runtimeconfig.json-ul executabilului,
+         iar aici executabilul e gazda testelor, nu flatcheck.exe: fara el, golden-urile si
+         testele de raport formateaza cu cultura masinii, trec pe en-GB si pica pe un
+         Windows romanesc ("0,24"). InvariantGlobalizationTests il tine. ADR 0043. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
   <ItemGroup>

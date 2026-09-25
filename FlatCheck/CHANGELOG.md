@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `FlatCheck.Tests` now runs under `<InvariantGlobalization>`, like `flatcheck.exe` (ADR 0043,
+  R-007). The switch is per executable and did not reach the test host, so the golden files and
+  the report tests formatted with the machine's culture: they passed on `en-GB` and 63 of them
+  failed under `ro-RO`. `InvariantGlobalizationTests` checks the console's runtimeconfig and the
+  test host. No golden file changed.
+
 - `scripts/check-staged.ps1` refused every commit made from a linked worktree that touched a
   FlatCheck file: git runs the hook with `GIT_DIR` set, `git rev-parse --show-toplevel` then
   named the FlatCheck folder as the repository root, and every staged file looked like console

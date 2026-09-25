@@ -494,9 +494,10 @@ code:
   `App.ForceInvariantNumbers` instead. The setting in `FlatCheck.Core.csproj` has no effect on
   a host that does not set its own. `CultureTests` in `FlatCheck.Wpf.Tests` runs the window
   under `ro-RO` to prove the saved report matches the console.
-- `FlatCheck.Tests` does not set the switch either, so the golden tests format under the test
-  host's culture, and the report code mostly formats with the ambient culture
-  (`StructureReport` names the invariant one in a single place). They pass on the author's
-  machine, whose culture is `en-GB` with a dot. A machine with a comma culture would fail
-  them; when that happens, pin the switch in the test project rather than editing a golden
-  file.
+- `FlatCheck.Tests` sets the same switch (ADR 0043). The test host is its own executable and
+  does not inherit the console's `runtimeconfig.json`; without the switch the golden tests
+  formatted under the machine's culture, because the report code mostly formats with the
+  ambient culture (`StructureReport` names the invariant one in a single place), and 63
+  tests failed under `ro-RO`. `InvariantGlobalizationTests` (R-007) checks the console's
+  `runtimeconfig.json` and the test host. A consequence: a test there cannot construct a named
+  culture; one that needs `ro-RO` goes in `FlatCheck.Wpf.Tests`.
