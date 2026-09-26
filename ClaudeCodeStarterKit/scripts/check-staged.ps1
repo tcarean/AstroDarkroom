@@ -1,10 +1,12 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # check-staged.ps1 - refuses a commit that changes code without a CHANGELOG line.
 #
 # WHAT IT DOES
-#   Looks at the files staged for the commit (what `git add` put in). If any of them is
-#   under src/ and CHANGELOG.md is not staged with them, it stops the commit and lists the
-#   src/ files. Rule 9 of CLAUDE.md, checked by a machine. A change with nothing visible to
-#   users still gets one line, under "### Internal".
+#   Looks at the files staged for the commit (what `git add` put in). If any of them is code
+#   (under one of kit.json's codeFolders, or one of its codeFiles) and CHANGELOG.md is not
+#   staged with them, it stops the commit and lists those files. Rule 9 of CLAUDE.md, checked
+#   by a machine. A change with nothing visible to users still gets one line, under
+#   "### Internal". Test-only changes are not checked.
 #
 # WHO CALLS IT
 #   - git, through scripts/hooks/pre-commit, on every commit (yours or Claude's), before
@@ -15,12 +17,14 @@
 #
 # RESULT
 #   exit 0  fine, or nothing to check (not inside a git repository)
-#   exit 1  src/ is staged without CHANGELOG.md
+#   exit 1  code is staged without CHANGELOG.md
 #
 # Works both when this project is the git root and when it is a folder inside a monorepo.
 $ErrorActionPreference = 'Stop'
 # The project folder is the parent of scripts/.
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'kit-config.ps1')
+$kit = Read-KitConfig $root
 Push-Location $root
 try {
     # Where is the root of the git repository? The nearest folder upwards that holds .git (a
@@ -44,16 +48,20 @@ try {
     }
 
     # Which files are staged? A = added, C = copied, M = modified, R = renamed. D (deleted)
-    # is not in the list, so a commit that only deletes files under src/ is not checked.
+    # is not in the list, so a commit that only deletes code files is not checked.
     # @( ) makes the result a list even when git prints one line or none.
     $staged = @(git diff --cached --name-only --diff-filter=ACMR)
-    $srcTouched = @($staged | Where-Object { $_.StartsWith($prefix + 'src/') })
+    $codeTouched = @($staged | Where-Object {
+        $f = $_
+        (@($kit.codeFolders | Where-Object { $f.StartsWith($prefix + $_) })).Count -gt 0 -or
+        (@($kit.codeFiles | Where-Object { $f -eq ($prefix + $_) })).Count -gt 0
+    })
     $changelogTouched = $staged -contains ($prefix + 'CHANGELOG.md')
 
-    if ($srcTouched.Count -gt 0 -and -not $changelogTouched) {
-        Write-Host 'check-staged: src/ changed but CHANGELOG.md is not staged.' -ForegroundColor Red
+    if ($codeTouched.Count -gt 0 -and -not $changelogTouched) {
+        Write-Host 'check-staged: code changed but CHANGELOG.md is not staged.' -ForegroundColor Red
         Write-Host '  Add a line under [Unreleased] (Added/Changed/Fixed/Removed, or Internal for a pure refactor) and stage it.'
-        $srcTouched | ForEach-Object { Write-Host ("  " + $_) }
+        $codeTouched | ForEach-Object { Write-Host ("  " + $_) }
         exit 1
     }
     exit 0

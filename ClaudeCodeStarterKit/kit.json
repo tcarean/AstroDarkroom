@@ -1,0 +1,21 @@
+{
+  "$comment": "What the shared scripts in scripts/ need to know about this project. It is the only file a project edits to adopt the kit's scripts; the scripts themselves stay byte-identical with the kit's (scripts/sync.ps1 keeps them so). Folders are relative to this folder, with forward slashes and a trailing slash. 'kit' is the kit folder, relative to this one; '.' means this project is the kit. See scripts/kit-config.ps1 for every key.",
+  "solution": "Starter.sln",
+  "testFilter": "",
+  "codeFolders": ["src/"],
+  "codeFiles": [],
+  "testFolders": ["tests/"],
+  "testData": {
+    "folder": "tests/testdata/",
+    "largeEnv": "STARTER_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "tests/Starter.Tests/"
+  },
+  "release": {
+    "publish": [
+      { "project": "src/Starter.Cli/Starter.Cli.csproj", "output": "", "args": [] }
+    ]
+  },
+  "kit": "."
+}

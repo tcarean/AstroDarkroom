@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # claude-track-edits.ps1 - remembers which files this Claude session edited.
 #
 # WHAT IT DOES
