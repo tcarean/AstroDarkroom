@@ -425,8 +425,9 @@ A scenario has two halves that must agree on the file name:
    test's `FitsTestData` scene when there is one, so the two goldens pin the same bytes, and say
    in a comment which branch the fixture is there to reach.
 2. **The invocation**, in `ParityGoldenTests.Scenarios`: a row `{ "<mode> <what>", new[] {
-   "name.fit", "--flag", "value", ... } }`, grouped with its mode. The first argument is the
-   input and is made absolute by the test; the rest pass through unchanged. The test appends
+   "name.fit", "--flag", "value", ... } }`, grouped with its mode. Every argument that names a
+   fixture file or folder is made absolute by the test; the rest pass through unchanged (a
+   `--pattern` stays a pattern because no such file exists). The test appends
    `-o <slug>.png` itself. The name becomes the golden file, `Golden/parity_<slug>.txt`
    (lower case, runs of non-alphanumerics to `_`), with the exit code as its last line.
 

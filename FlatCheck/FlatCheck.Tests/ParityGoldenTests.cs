@@ -58,8 +58,9 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
 
     /// <summary>
     /// The scenario table, name and arguments exactly as SCENARIOS in crosscheck.py had them.
-    /// The first argument is always the input (a file or a series folder) and is made absolute;
-    /// the rest are passed as they are, so "--pattern pp_light_0000?.fit" stays a pattern.
+    /// Every argument that names a fixture file or folder in the workspace (the input, the
+    /// B side of a --ratio, a series folder) is made absolute by the test; the rest pass
+    /// through, so "--pattern pp_light_0000?.fit" stays a pattern - no such file exists.
     /// </summary>
     public static TheoryData<string, string[]> Scenarios => new()
     {
@@ -122,15 +123,23 @@ public class ParityGoldenTests : IClassFixture<ParityGoldenTests.Fixtures>
     public void R098_EveryScenarioPrintsWhatThePrototypeConfirmed(string name, string[] args)
     {
         string slug = Slug(name);
-        var full = new List<string> { fx.Ws.PathTo(args[0]) };
-        full.AddRange(args.Skip(1));
+        var full = args.Select(a => IsFixture(a) ? fx.Ws.PathTo(a) : a).ToList();
         full.Add("-o");
         full.Add(fx.Ws.PathTo(slug + ".png"));
 
         var (output, exit) = GoldenOutputTests.RunCli(fx.Ws, full.ToArray());
 
+        // A fixture left relative is resolved against the test host's folder: the console
+        // then reports a missing file with that machine's path in it, and the golden pins an
+        // error nobody meant. The first capture did exactly that on the four --ratio rows.
+        Assert.DoesNotContain(Environment.CurrentDirectory, output);
+        Assert.DoesNotContain("Could not find file", output);
+
         GoldenOutputTests.AssertGolden("parity_" + slug, output + "[exit " + exit + "]\n");
     }
+
+    bool IsFixture(string arg)
+        => File.Exists(fx.Ws.PathTo(arg)) || Directory.Exists(fx.Ws.PathTo(arg));
 
     [Fact]
     public void TheTableHasTheFortyThreeScenariosOfTheCrossCheckAndNoTwoShareAGolden()

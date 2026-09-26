@@ -1,5 +1,75 @@
 flatcheck <VERSIUNE>
 Copyright (C) 2026 Tudor Carean
-[stderr]
-EROARE: Could not find file 'E:\Photografie\Code\FlatCheck\.claude\worktrees\retire-cross-check\FlatCheck\FlatCheck.Tests\bin\Release\net8.0\wide.fit'.
-[exit 1]
+
+=== ATRIBUIRE PRIN ROTATIE 180 ===
+    A : <TMP>/wide.fit
+        numar de cadre necunoscut, data necunoscuta
+    B : <TMP>/wide.fit
+        numar de cadre necunoscut, data necunoscuta
+    Cele doua stive trebuie sa fie din DOUA orientari la 180 de grade, cu
+    aparatul rotit in jurul axei optice si nimic altceva schimbat. Tool-ul NU
+    poate verifica asta din pixeli - verifica randurile de mai sus. Doua stive
+    din aceeasi orientare dau un rezultat increzator si fara sens.
+
+  COMPONENTA FIXA IN LUME  (informativ - nu e un verdict)
+    gradient extern / orientare :  0.00 % +/- 0.00 %   [OK]
+    imprastiere colturi         :  0.00 %
+    Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de
+    eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul
+    masuratorii: cand cifra si eroarea ei sunt comparabile, nu s-a detectat
+    nimic peste zgomot.
+
+  STRUCTURA MASTERULUI COMBINAT (A+B)/2 - partea fixa pe aparat
+    dimensiune analiza : 384 x 256 (dupa 2x2 + downsample)
+    Ce urmeaza e ce a ramas dupa ce s-a scos tot ce putea scoate rotatia. Fiind
+    fix pe aparat, se imparte corect din lights - DAR numai daca era la fel si
+    cand ai fotografiat lights-urile. Vignetarea obiectivului era. O curea
+    cazuta pe lentila, condensul sau o parasolara stramba se rotesc si ele cu
+    aparatul, arata identic aici, si la lights nu mai sunt acolo.
+
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 0.75 stopuri (colt = 59% din centru)
+    offset centru iluminare :  0.15 %
+        varf iluminare = (192, 128)  vs  centru senzor = (192, 128)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+    pete locale (praf etc.) : -0.02 % (mai intunecat) la (22, 38)
+        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
+        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
+        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
+
+  TESTE
+    imprastiere 4 colturi   :  0.43 %   [PERFECT]
+        stanga-sus    :  99.78 % din media colturilor
+        dreapta-sus   : 100.05 % din media colturilor
+        stanga-jos    :  99.96 % din media colturilor
+        dreapta-jos   : 100.22 % din media colturilor
+    asimetrie azimutala max :  0.16 %   [PERFECT]
+    reziduu dupa model rad. :  0.23 %   [PERFECT]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    :  0.31 %   [PERFECT]
+    pata maxima (o dala)    :  0.29 %   [PERFECT]
+
+  SCARA celor cinci teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
+    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
+    mica, o pata de condens - pe care reziduul il taie ca extrema.
+
+  VERDICT: PERFECT
+    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.
+
+    -> harta salvata: <TMP>/ratio_wide_wide.png
+
+    -> harta salvata: <TMP>/ratio_wide_wide-lume.png
+
+[exit 0]

@@ -137,3 +137,10 @@ is saved as `docs/plans/2026-09-26-retire-the-cross-check.md`.
   Python read/write it used to do is gone. The preview itself runs at the next `/release`.
 - `README.md` keeps the sentence "Spre deosebire de versiunea Python nu există figură cu 4
   panouri" in the `--ratio` section: still true of the frozen file.
+- The first capture of the four `--ratio` parity goldens pinned a "Could not find file" error
+  with the worktree's path in it: the test made only the first argument absolute, so the B side
+  was resolved against the test host's folder. Caught by the pre-commit gate on the merge into
+  `main` (the goldens passed only from the worktree they were captured in). Fixed by making
+  every argument that names a fixture absolute, guarded by two assertions (no current-directory
+  path, no missing-file error in the output), and the four files recaptured; the other 39 did
+  not change.
