@@ -40,8 +40,8 @@ behaviour that is either deliberate or not worth changing.
    harmless in practice - but it is a systematic floor, not noise, and it would swamp
    the threshold on a small enough frame. Pinned by
    `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.
-   **Not a bug to fix**: changing the centre convention would break parity with
-   `flatcheck.py`.
+   **Not a bug to fix**: changing the centre convention would move every parity golden for
+   nothing.
 6. **`RadialModel`'s `centers`/`prof` return values are discarded** by
    `StructureAnalyzer` - they fed the Python profile panel, which this port dropped.
 7. **Memory is still heavy**, though phase 8 halved the worst of it: `Percentile` now

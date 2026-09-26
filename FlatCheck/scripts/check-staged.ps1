@@ -3,7 +3,7 @@
 #
 # WHAT IT DOES
 #   Looks at the files staged for the commit. If any of them is code (under one of the
-#   three application folders, or flatcheck.py, the numeric twin) and CHANGELOG.md is not
+#   three application folders) and CHANGELOG.md is not
 #   staged with them, it stops the commit and lists the files. Rule 9 of CLAUDE.md, checked
 #   by a machine. A change with nothing visible to users still gets one line, under
 #   "### Internal". Test-only changes are not checked.
@@ -23,7 +23,7 @@
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $codeFolders = @('FlatCheck.Core/', 'FlatCheck/', 'FlatCheck.Wpf/')
-$codeFiles = @('flatcheck.py')
+$codeFiles = @()
 Push-Location $root
 try {
     # The repository root is the nearest folder upwards that holds .git (a folder in a clone,

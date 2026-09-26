@@ -1,0 +1,19 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPUNERE: <TMP>/expo65.fit ===
+    saturatie (white) : 4095   black : 0   sursa: --sat=4095
+    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):
+        CFA[0,0]:  40.3%
+        CFA[0,1]:  65.0%  <- cel mai luminos
+        CFA[1,0]:  65.0%
+        CFA[1,1]:  31.2%
+    canal cel mai luminos, mediana GLOBALA :  65.0%  (trasa in jos de colturi)
+    canal cel mai luminos, CENTRU 20%      :  65.0%  <- ASTA decide expunerea
+    clipping in centru (>=98% white)       : 0.000%
+
+    [mod --sky: praguri pt flats pe cer, nu pe panou]
+    VERDICT: PREA SUS (risc stele in cadru)
+    Scade expunerea.
+
+[exit 3]

@@ -1,7 +1,7 @@
 # 0038. flatcheck.py is the numeric oracle; the one divergence, the FitCenter singularity guard, is kept
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0047
 
 ## Context
 

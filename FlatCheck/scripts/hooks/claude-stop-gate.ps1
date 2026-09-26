@@ -3,8 +3,8 @@
 #
 # WHAT IT DOES
 #   Claude Code calls it each time Claude is about to finish an answer (a "turn"). If this
-#   session edited no code (the three application folders, the two test folders, or
-#   flatcheck.py), the turn ends at once. Otherwise the turn may end only when:
+#   session edited no code (the three application folders or the two test folders),
+#   the turn ends at once. Otherwise the turn may end only when:
 #     1. scripts/verify.ps1 ran green with tests after the last such edit: .verify-stamp,
 #        which only such a run writes (-SkipTests does not), is newer than the newest
 #        edited file; and
@@ -40,7 +40,7 @@ $projectDir = [System.IO.Path]::GetFullPath($projectDir).TrimEnd('\', '/')
 # FlatCheck keeps its projects at the folder root (ADR 0002): the code folders are listed.
 $srcDirs = @('FlatCheck.Core', 'FlatCheck', 'FlatCheck.Wpf') | ForEach-Object { (Join-Path $projectDir $_) + '\' }
 $testDirs = @('FlatCheck.Tests', 'FlatCheck.Wpf.Tests') | ForEach-Object { (Join-Path $projectDir $_) + '\' }
-$srcFiles = @(Join-Path $projectDir 'flatcheck.py')
+$srcFiles = @()
 
 function Test-Under([string]$path, [string[]]$dirs) {
     foreach ($d in $dirs) { if ($path.StartsWith($d, [System.StringComparison]::OrdinalIgnoreCase)) { return $true } }

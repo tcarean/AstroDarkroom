@@ -1,0 +1,22 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== TEST END-TO-END: <TMP>/widefield.fit ===
+    Astept un stack CALIBRAT cu flat, dar FARA background extraction.
+    camp diagonal           :  10.0 grade  (--fov)
+
+    tile-uri folosite       : 1701 / 1764 (restul = nebulozitate/stele, respinse)
+    gradient de cer (plan)  :  0.18 %  <- poluare luminoasa, IGNORA
+    componenta radiala      : +45.74 %   [PROBLEMA]  <- ASTA e flat-ul
+
+  INTERPRETARE
+    Fondul CADE spre margini => SUB-corectie. Flat-ul nu prinde toata
+    vignetarea: alta diafragma decat la lights, sau flat contaminat.
+
+    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
+    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:
+        flatcheck process/ --light
+
+    -> harta salvata: <TMP>/light_fov_override.png
+
+[exit 3]

@@ -87,6 +87,5 @@ The console's PNG on that master: 150-380 ms and 3.6 MB for the shrunk RGB compo
 equalised noise compresses badly, so the file is several times the residual map's. The
 window encodes nothing (see `RasterBitmaps`).
 
-No Python counterpart and no `crosscheck.py` scenario, by decision: there is no number to
-compare.
+No parity golden scenario, by decision: there is no number to compare, only a picture.
 

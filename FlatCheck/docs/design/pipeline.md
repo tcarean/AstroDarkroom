@@ -195,8 +195,9 @@ with every measurement behind it, section 7 for the 4θ face. Pinned by
 same scene without the term, under 1 % everywhere),
 `OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure` (end to end, the
 ring-step metric under 0.5 %) and by `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`,
-which is the test the rejected designs failed. `flatcheck.py` mirrors it in full
-(`radial_model`, `_ring_fit`) and all 43 `crosscheck.py` scenarios still agree.
+which is the test the rejected designs failed. The frozen `flatcheck.py` mirrored it in full
+(`radial_model`, `_ring_fit`) and agreed on all 43 cross-check scenarios; those are now the
+parity goldens (ADR 0047).
 
 **The ring-step metric stays out of the report; don't add it.** The number that says
 whether a map carries rings of the model's making is the largest change of the residual's
@@ -274,8 +275,9 @@ golden fixture, -0.76% in the corner on a *clean* field and -1.61% under a 60% g
 one step from a false dust warning. A spot right on the edge is caught by the worst tile
 anyway. Ties within 1e-12 keep the first tile in row-major order, in both
 implementations: on a symmetric scene two tiles come out equal to the last bit and C# and
-numpy sum in different orders, which is how `crosscheck.py` caught a position flip on the
-diagonal fixture. Not a test; the warning threshold is `Th.LocalSpotWarn`.
+numpy sum in different orders, which is how the Python cross-check caught a position flip
+on the diagonal fixture (now `parity_structure_diagonal.txt`). Not a test; the warning
+threshold is `Th.LocalSpotWarn`.
 
 **The sign is kept, and the report names it in words.** Negative means darker than the
 surroundings (dust, dew, an obstruction), positive means brighter (a light leak, a

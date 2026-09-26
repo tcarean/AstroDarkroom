@@ -1,0 +1,23 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== TEST END-TO-END: <TMP>/skyplane.fit ===
+    Astept un stack CALIBRAT cu flat, dar FARA background extraction.
+    camp acoperit           : necunoscut (headerul nu da nici focala, nici scara)
+    (nu pot verifica daca testul se aplica; vezi --fov si README)
+
+    tile-uri folosite       : 1764 / 1764 (restul = nebulozitate/stele, respinse)
+    gradient de cer (plan)  : 21.28 %  <- poluare luminoasa, IGNORA
+    componenta radiala      :  -0.00 %   [OK]  <- ASTA e flat-ul
+
+  INTERPRETARE
+    Fondul n-are componenta radiala. Flat-ul face treaba.
+    Asta e testul care conteaza - toate celelalte sunt proxy pentru el.
+
+    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.
+    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:
+        flatcheck process/ --light
+
+    -> harta salvata: <TMP>/light_pure_sky_plane.png
+
+[exit 0]

@@ -141,10 +141,10 @@ The correlation is a good diagnostic and a useless estimator; do not turn it int
 **File selection.** `SeriesFinder.Find` enumerates the directory and matches the pattern
 **in-process**, rather than `Directory.GetFiles(dir, pattern)`: Win32 matching still
 carries the 8.3 legacy where `*.fit` also catches `.fits`. Sorting is ordinal on the file
-name (`StringComparer.Ordinal` / Python `sorted()`) - if the two implementations listed
-frames in different orders, `crosscheck.py` would report differences that do not exist.
-The glob supports `*` and `?` only; character classes are literal in both, so `fnmatch`
-is deliberately not used on the Python side. The WPF app reuses the same matcher for the
+name (`StringComparer.Ordinal`, the same as Python `sorted()`), chosen so the cross-check
+of the day could not report a difference that did not exist; `parity_light_series_*.txt` pin
+the order now. The glob supports `*` and `?` only; character classes are literal. The WPF
+app reuses the same matcher for the
 names it accepts, so `pp_flat_stacked*.fit` there means exactly what `--pattern` means
 here.
 

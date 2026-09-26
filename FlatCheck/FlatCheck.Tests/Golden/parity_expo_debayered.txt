@@ -1,0 +1,22 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPUNERE: <TMP>/clean.fit ===
+    saturatie (white) : 65535   black : 0   sursa: auto-detectat din max=30000 (foloseste --sat/--black daca e gresit)
+    imagine mono/procesata (fara CFA)
+    canal cel mai luminos, mediana GLOBALA :  39.2%  (trasa in jos de colturi)
+    canal cel mai luminos, CENTRU 20%      :  45.5%  <- ASTA decide expunerea
+    clipping in centru (>=98% white)       : 0.000%
+
+    !! FISIERUL NU PARE UN FLAT BRUT !!
+    Cele 4 canale CFA sunt quasi-identice (spread 1.000) -> fisierul
+    e DEBAYERIZAT. --expo are nevoie de mozaicul Bayer intact.
+
+    Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).
+    SOLUTII:
+      - ruleaza direct pe NEF (flatcheck citeste brutul exact):
+          flatcheck flat.NEF --expo
+      - SAU produ un FITS brut cu tab-ul Conversion din Siril (NU Open+Save),
+        care pastreaza mozaicul CFA nedebayerizat.
+
+[exit 1]

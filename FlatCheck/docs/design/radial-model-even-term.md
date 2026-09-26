@@ -2,7 +2,7 @@
 
 Covers `Metrics.RadialModel` and `Metrics.RingFit` in `FlatCheck.Core/Metrics.cs`, their
 constants (`RingFitMinDet`, `RingSectors`, `RingMinSectors`, `RingFitRounds`, `RingQFrom`,
-`RingFitTie`), their mirror `radial_model` / `_ring_fit` in `flatcheck.py`, and the tests
+`RingFitTie`), their mirror `radial_model` / `_ring_fit` in the frozen `flatcheck.py`, and the tests
 `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,
 `RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner`,
 `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`,
@@ -138,8 +138,8 @@ with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged ru
    is `img / model` (the un-symmetrised raster), as before.
 
 Cost: under 0.2 s extra on a 1504×1004 raster (~30 rings × 3 solves of 5×5). Both
-implementations use the same arithmetic (normal equations, sequential sums); C# and Python
-agree on all 43 `crosscheck.py` scenarios.
+implementations used the same arithmetic (normal equations, sequential sums); C# and Python
+agreed on all 43 cross-check scenarios before the prototype froze (ADR 0047).
 
 The 2θ-only design this replaced (2026-09-17 to 2026-09-23) estimated `(a0, a2, b2)` per
 partial ring by LMedS over sector triples, smoothed `q` with a running median over 7 rings
@@ -181,8 +181,7 @@ median had partly hidden in the profile. No verdict changed. Golden files moved 
 
 ```bash
 flatcheck "E:\Photografie\Astro\Flats and Darks\Tokina\ISO400\f2.8-sky-no-difuser\process\pp_flat_stacked.fit" -o sky.png
-python flatcheck.py "<same file>" -o sky_py.png     # same figures to the printed digit
-FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures && python crosscheck.py /tmp/xc
+dotnet test FlatCheck.sln --filter ParityGoldenTests   # the 43 parity goldens, in the gate
 ```
 
 Expected on the sky master: corners 10.28 %, azimuthal 7.25 %, residual 10.06 %, tilt 0.49 %,

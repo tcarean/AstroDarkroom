@@ -1,0 +1,19 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPUNERE: <TMP>/raw_cfa.fit ===
+    saturatie (white) : 65535   black : 0   sursa: auto-detectat din max=34000 (foloseste --sat/--black daca e gresit)
+    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):
+        CFA[0,0]:  27.6%
+        CFA[0,1]:  44.4%  <- cel mai luminos
+        CFA[1,0]:  44.4%
+        CFA[1,1]:  21.3%
+    canal cel mai luminos, mediana GLOBALA :  44.4%  (trasa in jos de colturi)
+    canal cel mai luminos, CENTRU 20%      :  51.6%  <- ASTA decide expunerea
+    clipping in centru (>=98% white)       : 0.000%
+
+    [mod --sky: praguri pt flats pe cer, nu pe panou]
+    VERDICT: cam sus, dar acceptabil
+    Sub 60% e ok; peste, risti stele. Nu urca mai mult.
+
+[exit 2]

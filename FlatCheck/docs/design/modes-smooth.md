@@ -78,7 +78,7 @@ record; the short version:
   window's button waits for the opening chain like the other one, selects the chip, and
   writes nothing.
 
-No Python counterpart and no `crosscheck.py` scenario: the product is a file. The method
+No parity golden scenario: the product is a file. The method
 was chosen and validated with a numpy prototype that reproduced these figures; the C#
 port matches it to the second decimal on the five masters, and the prototype was not
 kept.

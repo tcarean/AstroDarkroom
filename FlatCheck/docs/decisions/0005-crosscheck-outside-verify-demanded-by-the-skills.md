@@ -1,7 +1,7 @@
 # 0005. The Python cross-check stays outside verify; the skills demand it when a formula changed
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0047
 
 ## Context
 

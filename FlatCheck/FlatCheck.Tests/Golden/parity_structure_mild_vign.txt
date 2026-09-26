@@ -1,0 +1,51 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== STRUCTURA: <TMP>/vign_mild.fit ===
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    median / max ADU   : 28567 / 30000
+
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 0.21 stopuri (colt = 86% din centru)
+    offset centru iluminare :  0.19 %
+        varf iluminare = (128, 128)  vs  centru senzor = (128, 128)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+    pete locale (praf etc.) : +0.02 % (mai luminos) la (244, 241)
+        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
+        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
+        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
+
+  TESTE
+    imprastiere 4 colturi   :  0.13 %   [PERFECT]
+        stanga-sus    :  99.93 % din media colturilor
+        dreapta-sus   : 100.00 % din media colturilor
+        stanga-jos    : 100.00 % din media colturilor
+        dreapta-jos   : 100.06 % din media colturilor
+    asimetrie azimutala max :  0.08 %   [PERFECT]
+    reziduu dupa model rad. :  0.08 %   [PERFECT]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    :  0.12 %   [PERFECT]
+    pata maxima (o dala)    :  0.09 %   [PERFECT]
+
+  SCARA celor cinci teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
+    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
+    mica, o pata de condens - pe care reziduul il taie ca extrema.
+
+  VERDICT: PERFECT
+    Abaterea de la simetria radiala e sub zgomot. Flat-ul e curat.
+
+    -> harta salvata: <TMP>/structure_mild_vign.png
+
+[exit 0]

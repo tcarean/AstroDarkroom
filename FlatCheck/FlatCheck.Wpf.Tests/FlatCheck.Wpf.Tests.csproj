@@ -4,7 +4,7 @@
 
        Proiect separat de FlatCheck.Tests, si nu un folder in el, dintr-un motiv anume:
        ca sa tinteasca net8.0-windows trebuie sa fie Windows-only, iar FlatCheck.Tests -
-       care verifica nucleul si paritatea cu flatcheck.py - merita sa ramana portabil.
+       care verifica nucleul si golden-urile - merita sa ramana portabil.
 
        Ce se testeaza aici: deducerea structurii de foldere, mesajele de explicatie,
        maparea verdict -> culoare, convertoarele si ViewModel-urile. Adica tot ce are
