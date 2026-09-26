@@ -1,4 +1,5 @@
-"""Count code files and lines in the current folder, recursively.
+"""Count code files and lines recursively, in the script's own folder
+or in the folder given as the first argument.
 
 Folders whose name starts with "." (.git, .claude, .vs, ...) are skipped.
 """
@@ -31,8 +32,8 @@ def count_lines(path):
 
 
 def main():
-    root = os.getcwd()
     this_script = os.path.abspath(__file__)
+    root = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.dirname(this_script)
     per_ext = defaultdict(lambda: [0, 0])  # extension -> [files, lines]
 
     for dirpath, dirnames, filenames in os.walk(root):
@@ -65,7 +66,7 @@ def main():
 
 
 def wait_for_key():
-    if not sys.stdin.isatty():
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
         return
     print("\nApasa o tasta pentru a iesi...", flush=True)
     try:
