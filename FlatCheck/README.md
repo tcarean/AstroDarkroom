@@ -1436,8 +1436,8 @@ se mai mișcă. Diferențele erau intenționate, nu scăpări:
 - **`--synthetic`, `--lenses` și `--against` există doar în C#.** Primele două produc un
   fișier și o listă; `--against` e bateria de structură, deja verificată, pe un raport.
 - **Structura cu `--raw` / `--lens` există doar în C#**: comparația cu profilele citește
-  cataloagele Adobe și lensfun, pe care Python nu le are. Fără cele două flaguri ieșirea e
-  identică, și cele 15 scenarii de structură din `crosscheck.py` o verifică.
+  cataloagele Adobe și lensfun, pe care prototipul nu le avea. Fără cele două flaguri ieșirea e
+  identică, și cele 15 golden-uri de paritate de structură (`parity_structure_*.txt`) o fixează.
 - **Fără figură cu 4 panouri** — doar harta reziduală PNG.
 - Fără citire EXIF, deci fără sugestii de timp de expunere. (Raw-ul se citește, dar din el
   se iau doar pixelii și scala ADU, nu și timpul de expunere.)
