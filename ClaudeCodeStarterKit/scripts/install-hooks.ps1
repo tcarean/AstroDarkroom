@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # install-hooks.ps1 - tells git to run this project's git hooks at every commit.
 #
 # WHAT IT DOES

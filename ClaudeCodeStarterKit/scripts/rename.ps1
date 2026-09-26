@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # rename.ps1 - gives a fresh copy of the kit its project name.
 #
 # WHAT IT DOES

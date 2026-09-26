@@ -7,6 +7,27 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- One `scripts/` for every project (ADR 0017): the scripts read `kit.json` at the project root
+  (solution, test filter, code and test folders, test data folder and its environment variable,
+  Stryker's test project, the list of what a release publishes, where the kit is) through
+  `scripts/kit-config.ps1`, so a project changes no script to adopt them. `scripts/sync.ps1`
+  copies the kit's `scripts/` into a project, or from the kit into every project whose `kit.json`
+  points at it, leaving `rename.ps1`, `install-hooks.ps1` and the two git hooks in the kit;
+  `-Check` reports drift and is step 0 of `verify.ps1`, red on any difference. The Stop hook
+  refuses a turn that edited `scripts/` outside the kit. Rule 15 says so; `SyncTests` and
+  `CheckStagedTests` cover it. `release.ps1` publishes a list (`release.publish`), each entry with
+  its own output subfolder and `dotnet publish` arguments, so a project with two applications
+  needs no script of its own.
+- `LICENSE`: the kit is GPL-3.0-or-later; every script opens with the SPDX line, so a project's
+  copy is byte-identical whatever its own header rules say.
+
+### Fixed
+
+- `check-testdata.ps1 -Update` writes the manifest without a byte order mark and with LF (Windows
+  PowerShell 5.1's `Set-Content -Encoding utf8` writes a mark, which `System.Text.Json` refuses),
+  and an entry's `name` may be a path with forward slashes. Both fixes had been made in FlatCheck's
+  copy only, on 2026-09-25.
+
 - Kit: solution with Core, Cli and Tests; verify gate; requirements, decisions, validation, plans
   and design scaffolding; Claude Code settings, hooks and skills; CI for GitHub and Bitbucket.
 - Deterministic backstops for three prose rules (ADR 0005): `check-staged.ps1` refuses a commit

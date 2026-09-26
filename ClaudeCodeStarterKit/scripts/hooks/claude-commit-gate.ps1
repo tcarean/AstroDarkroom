@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # claude-commit-gate.ps1 - stops a git commit by Claude unless the gate is green.
 #
 # WHAT IT DOES

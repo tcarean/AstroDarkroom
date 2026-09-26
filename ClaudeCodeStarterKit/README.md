@@ -9,7 +9,8 @@ direct; documentul de pe claude.ai din care a pornit e doar istoric.
 Impartirea e simpla: `CLAUDE.md` tine regulile, `GHID.md` tine explicatiile. Ghidul exista o
 singura data, aici in kit, nu se copiaza in proiecte; fiecare proiect trimite la el din
 `CLAUDE.md` si din README. Daca un proiect paraseste vreodata repo-ul `photo`, ia atunci o copie
-a ghidului cu el.
+a ghidului cu el. Licenta kit-ului, si a scripturilor pe care le copiaza in proiecte, e
+GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 
 ## Pornirea unui proiect nou
 
@@ -23,7 +24,11 @@ a ghidului cu el.
 3. Rescrie primul paragraf din `CLAUDE.md`, sterge `GHID.md` si `monorepo/` din copie (raman in
    kit, iar `CLAUDE.md` deja trimite la ele acolo) si sterge codul de exemplu (`Stats`, `NumberFile`,
    fixtures, R-001..R-004, V-001) cand apare primul feature real. Pana atunci, ele arata cum se
-   leaga o cerinta de un test si de o cifra de validare.
+   leaga o cerinta de un test si de o cifra de validare. In `kit.json`, pune `"kit"` pe calea
+   relativa catre kit (`../ClaudeCodeStarterKit` in repo-ul `photo`; sterge cheia intr-un repo
+   separat, fara kit alaturi). `rename.ps1` a schimbat deja numele solutiei acolo. Din `scripts/`
+   sterge `rename.ps1`, `install-hooks.ps1`, `hooks/pre-commit` si `hooks/commit-msg`, care raman
+   doar in kit; restul folderului nu se editeaza niciodata in proiect (vezi "Ce e impus mecanic").
 4. Hook-urile git (`pre-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
    ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
@@ -57,8 +62,11 @@ a ghidului cu el.
 | `docs/validation.md` + `.json` | cifre de acceptanta; JSON-ul e citit de `ValidationTests` |
 | `docs/plans/`, `docs/design/` | planuri aprobate; note de design citite la nevoie |
 | `tests/testdata/` | fixtures in repo + manifest cu hash; fisierele mari in `large/` (ignorat de git) |
-| `scripts/verify.ps1` | gate-ul unic: manifest, restore, format, build strict, teste |
-| `scripts/check-staged.ps1` | refuza commit-ul care atinge `src/` fara linie in CHANGELOG |
+| `kit.json` | singurul fisier pe care un proiect il editeaza ca sa foloseasca `scripts/`: solutia, folderele de cod si de teste, datele de test, ce publica un release, unde e kit-ul |
+| `scripts/verify.ps1` | gate-ul unic: scripturi identice cu kit-ul, manifest, restore, format, build strict, teste |
+| `scripts/sync.ps1` | copiaza `scripts/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
+| `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi |
+| `scripts/check-staged.ps1` | refuza commit-ul care atinge codul (folderele din `kit.json`) fara linie in CHANGELOG |
 | `scripts/hooks/` | git pre-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni si hooks, versionate; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release` |
@@ -72,7 +80,10 @@ a ghidului cu el.
 ## Ce e impus mecanic, nu doar scris in CLAUDE.md
 
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
-- Commit care atinge `src/` fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
+- Commit care atinge codul fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
+- `scripts/` modificat intr-un proiect, nu in kit: gate-ul e rosu la pasul 0 (`sync.ps1 -Check`),
+  deci commit-ul e refuzat, iar hook-ul Stop nu inchide tura. Sursa e kit-ul; `sync.ps1` copiaza.
+  Dupa o schimbare in kit, primul commit din fiecare proiect cere intai `sync.ps1` (ADR 0017).
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
 - Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.
@@ -96,9 +107,9 @@ nu e verificat, deci proiectele existente pot adopta gate-ul pe rand. Detalii in
 
 ## Adoptare intr-un proiect existent
 
-In trei straturi, fiecare util singur: gate-ul (o ora, fara cod), documentatia (cateva sesiuni,
-fara cod), legatura cerinte-teste (gradual). Detalii si exemplul FlatCheck in `GHID.md`,
-sectiunea "Migrarea unui proiect existent".
+In trei straturi, fiecare util singur: gate-ul (o ora, fara cod: `scripts/` copiat din kit si un
+`kit.json` scris pentru proiect), documentatia (cateva sesiuni, fara cod), legatura cerinte-teste
+(gradual). Detalii si exemplul FlatCheck in `GHID.md`, sectiunea "Migrarea unui proiect existent".
 
 ## Cerinte de masina
 

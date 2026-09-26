@@ -17,5 +17,8 @@ below are repo-wide and are handled here.
 | Claude Code | start it in the project folder | same; never in the git root |
 
 A project folder without `scripts/verify.ps1` is left alone by the hook, so existing projects
-can adopt the gate one at a time: copy `scripts/verify.ps1` and `scripts/check-testdata.ps1`,
-adjust the solution name, done.
+can adopt the gate one at a time: copy `scripts/` from the kit (without `rename.ps1`,
+`install-hooks.ps1` and the two git hooks), write a `kit.json` with the project's values and
+`"kit": "../ClaudeCodeStarterKit"`, done. From then on `scripts/` is not edited in the project:
+step 0 of `verify.ps1` compares it with the kit's, and `scripts/sync.ps1` copies the kit's
+version after a change there (ADR 0017).

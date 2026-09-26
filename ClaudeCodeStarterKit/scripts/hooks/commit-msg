@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 # commit-msg - checks the commit message before git records the commit.
 #
 # WHAT IT DOES

@@ -1,4 +1,5 @@
 #!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
 # pre-commit - git's last check before it records a commit: runs the gate of every project
 # the commit touches.
 #
