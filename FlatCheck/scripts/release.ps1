@@ -4,24 +4,23 @@
 # WHAT IT DOES
 #   1. Checks, and stops without changing anything if one fails: this project's working tree
 #      is clean; -Version is MAJOR.MINOR.PATCH and greater than the current <Version> in
-#      Directory.Build.props; CHANGELOG.md has something under [Unreleased]; the git tag
-#      flatcheck-vX.Y.Z does not exist yet.
+#      Directory.Build.props; CHANGELOG.md has something under [Unreleased]; the git tag for
+#      this version does not exist yet.
 #   2. Runs scripts/verify.ps1. If it is red, it stops; still nothing changed.
-#   3. Writes the new version into <Version> in Directory.Build.props, the one place it lives
-#      (ADR 0039; the frozen flatcheck.py keeps its 2.2.0, ADR 0047).
+#   3. Writes the new version into <Version> in Directory.Build.props.
 #   4. In CHANGELOG.md, turns "## [Unreleased]" into "## [X.Y.Z] - <today>" and puts a new,
 #      empty "## [Unreleased]" above it.
-#   5. Publishes to artifacts/<version>/: the console as the single copyable flatcheck.exe
-#      (self-contained, single file, native libraw DLLs extracted from it) under console/,
-#      and the window app under wpf/. Both carry the lensfun/ folder beside them.
+#   5. Publishes what kit.json lists under release.publish, each entry to
+#      artifacts/<version>/<output>/ with its own extra `dotnet publish` arguments (in the
+#      kit: src/Starter.Cli to artifacts/<version>/ itself), unless -NoPublish.
 #   It commits nothing and tags nothing. At the end it prints the commit and the tag to
-#   propose. The tag is flatcheck-vX.Y.Z because the photo repository holds several projects.
+#   propose: vX.Y.Z in a standalone repository, <folder>-vX.Y.Z inside a monorepo.
 #
 # WHO CALLS IT
 #   - Claude, in the /release skill: first with -WhatIf, then for real; the skill then
-#     proposes the commit and the tag and asks who runs them (CLAUDE.md rule 13)
+#     proposes the commit and the tag and asks who runs them (CLAUDE.md rule 13, ADR 0010)
 #   - you, by hand:
-#       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 2.3.0
+#       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 0.2.0
 #
 # OPTIONS
 #   -Version X.Y.Z   the new version; required
@@ -29,9 +28,10 @@
 #   -NoPublish       skip step 5
 #
 # RESULT
-#   exit 0  done, or the -WhatIf preview finished
-#   exit 1  a check failed or verify was red (nothing changed), or publish failed (steps 3
-#           and 4 are already done at that point)
+#   exit 0  done, or the -WhatIf preview finished; it prints the files changed and the tag
+#   exit 1  a check failed or verify was red (nothing changed), or publish failed. A failed
+#           publish comes after steps 3 and 4: Directory.Build.props and CHANGELOG.md are
+#           already changed at that point.
 [CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [Parameter(Mandatory = $true)][string]$Version,
@@ -39,18 +39,24 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# The project folder is the parent of scripts/.
 $root = Split-Path -Parent $PSScriptRoot
+. (Join-Path $PSScriptRoot 'kit-config.ps1')
+$kit = Read-KitConfig $root
 Push-Location $root
 try {
     if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Version must be MAJOR.MINOR.PATCH, got '$Version'." }
+    # [version] compares numerically: 0.10.0 is greater than 0.9.0.
     $new = [version]$Version
 
     # --- preconditions -----------------------------------------------------------------
+    # 'git status --porcelain -- .' lists the uncommitted changes in this folder, one per line.
     $dirty = @(git status --porcelain -- . 2>$null | Where-Object { $_ })
     if ($dirty.Count -gt 0) {
         throw ("Working tree is not clean; commit or stash first:`n" + ($dirty -join "`n"))
     }
 
+    # The current version is the text between <Version> and </Version>.
     $propsPath = Join-Path $root 'Directory.Build.props'
     $props = [System.IO.File]::ReadAllText($propsPath)
     $m = [regex]::Match($props, '<Version>([^<]+)</Version>')
@@ -58,6 +64,7 @@ try {
     $current = [version]$m.Groups[1].Value
     if ($new -le $current) { throw "New version $new must be greater than current $current." }
 
+    # The [Unreleased] section: from its heading to the next "## [" heading or the end of file.
     $changelogPath = Join-Path $root 'CHANGELOG.md'
     $changelog = [System.IO.File]::ReadAllText($changelogPath)
     $unreleased = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)')
@@ -65,14 +72,18 @@ try {
     if ($unreleased.Groups[1].Value.Trim().Length -eq 0) { throw '[Unreleased] is empty; nothing to release.' }
 
     # --- tag name ---------------------------------------------------------------------
+    # Standalone repository: v1.2.3. Folder inside a monorepo: <folder>-v1.2.3, so the tags
+    # of different projects in one repository do not collide.
     $gitRoot = [System.IO.Path]::GetFullPath((git rev-parse --show-toplevel)).TrimEnd('\', '/')
     $here = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/')
     $tag = if ($gitRoot -eq $here) { "v$Version" } else { (Split-Path $here -Leaf).ToLowerInvariant() + "-v$Version" }
     if (git tag --list $tag) { throw "Tag $tag already exists." }
 
+    # -WhatIf stops here: the checks passed, nothing was changed.
     Write-Host ("== release {0} -> {1}, tag {2}" -f $current, $new, $tag) -ForegroundColor Cyan
     if ($WhatIfPreference) {
-        Write-Host 'WhatIf: would run verify, set <Version>, close [Unreleased] in CHANGELOG, publish console and wpf.'
+        $targets = ($kit.release.publish | ForEach-Object { $_.project }) -join ', '
+        Write-Host ("WhatIf: would run verify, set <Version>, close [Unreleased] in CHANGELOG, publish {0}." -f $targets)
         Write-Host ("Unreleased content ({0} lines):" -f ($unreleased.Groups[1].Value.Trim() -split "`n").Count)
         Write-Host $unreleased.Groups[1].Value.Trim()
         exit 0
@@ -83,10 +94,14 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'verify.ps1 failed; release aborted, nothing changed.' }
 
     # --- files --------------------------------------------------------------------------
+    # From here on, files change. Only the number inside <Version>...</Version> is replaced;
+    # the rest of Directory.Build.props stays as it is.
     $utf8 = New-Object System.Text.UTF8Encoding $false
     $props = $props.Substring(0, $m.Groups[1].Index) + $Version + $props.Substring($m.Groups[1].Index + $m.Groups[1].Length)
     [System.IO.File]::WriteAllText($propsPath, $props, $utf8)
 
+    # CHANGELOG: a new, empty [Unreleased] on top; the old one becomes "[X.Y.Z] - date".
+    # The file keeps its own line endings (CRLF or LF).
     $date = (Get-Date).ToString('yyyy-MM-dd')
     $nl = if ($changelog.Contains("`r`n")) { "`r`n" } else { "`n" }
     $header = "## [Unreleased]$nl$nl## [$Version] - $date"
@@ -95,12 +110,16 @@ try {
     Write-Host ("changed  Directory.Build.props ({0} -> {1}), CHANGELOG.md ([{1}] - {2})" -f $current, $Version, $date)
 
     # --- artifacts ----------------------------------------------------------------------
+    # dotnet publish puts each entry of release.publish in artifacts/<version>/<output>
+    # (git-ignored); the script then prints the total size of what was published.
     if (-not $NoPublish) {
         $out = Join-Path $root ("artifacts\" + $Version)
-        dotnet publish (Join-Path $root 'FlatCheck\FlatCheck.csproj') -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o (Join-Path $out 'console') --nologo -v q
-        if ($LASTEXITCODE -ne 0) { throw 'dotnet publish (console) failed; version files are already changed, fix and re-run with -NoPublish.' }
-        dotnet publish (Join-Path $root 'FlatCheck.Wpf\FlatCheck.Wpf.csproj') -c Release -r win-x64 --self-contained -o (Join-Path $out 'wpf') --nologo -v q
-        if ($LASTEXITCODE -ne 0) { throw 'dotnet publish (wpf) failed; version files are already changed, fix and re-run with -NoPublish.' }
+        foreach ($p in $kit.release.publish) {
+            $target = if ($p.output) { Join-Path $out ($p.output -replace '/', '\') } else { $out }
+            $extra = @($p.args)
+            dotnet publish (Join-Path $root ($p.project -replace '/', '\')) -c Release -o $target --nologo -v q @extra
+            if ($LASTEXITCODE -ne 0) { throw ("dotnet publish ({0}) failed; version files are already changed, fix and re-run with -NoPublish." -f $p.project) }
+        }
         $size = (Get-ChildItem $out -Recurse -File | Measure-Object Length -Sum).Sum
         Write-Host ("published {0} ({1:n1} MB)" -f $out, ($size / 1MB))
     }

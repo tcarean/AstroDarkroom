@@ -1,0 +1,30 @@
+{
+  "$comment": "What the shared scripts in scripts/ need to know about FlatCheck. The only file edited here to use the kit's scripts; scripts/ itself is byte-identical with ../ClaudeCodeStarterKit/scripts/ (scripts/sync.ps1 keeps it so; kit ADR 0017, FlatCheck ADR 0048). The projects sit at the folder root, not under src/ and tests/ (ADR 0002), so the folders are listed. The validation cases on the real masters stay out of the gate (ADR 0004). See scripts/kit-config.ps1 for every key.",
+  "solution": "FlatCheck.sln",
+  "testFilter": "Category!=Validation",
+  "codeFolders": ["FlatCheck.Core/", "FlatCheck/", "FlatCheck.Wpf/"],
+  "codeFiles": [],
+  "testFolders": ["FlatCheck.Tests/", "FlatCheck.Wpf.Tests/"],
+  "testData": {
+    "folder": "FlatCheck.Tests/testdata/",
+    "largeEnv": "FLATCHECK_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "FlatCheck.Tests/"
+  },
+  "release": {
+    "publish": [
+      {
+        "project": "FlatCheck/FlatCheck.csproj",
+        "output": "console",
+        "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
+      },
+      {
+        "project": "FlatCheck.Wpf/FlatCheck.Wpf.csproj",
+        "output": "wpf",
+        "args": ["-r", "win-x64", "--self-contained"]
+      }
+    ]
+  },
+  "kit": "../ClaudeCodeStarterKit"
+}

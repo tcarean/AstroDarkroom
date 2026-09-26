@@ -28,6 +28,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `scripts/` is now the kit's copy, byte for byte, taken with `scripts/sync.ps1` (ADR 0048,
+  supersedes 0002; kit ADR 0017). FlatCheck's values (solution, `Category!=Validation`, the
+  code and test folders, the test data folder and `FLATCHECK_TESTDATA_LARGE`, the two publish
+  targets, the kit's path) live in `kit.json`; rule 19 says the scripts are never edited here.
+  Step 0 of `verify.ps1` is red on any drift. `release.ps1 -PublishProject` is gone.
+  `CheckStagedTests` copies the real `kit.json` beside the script.
 - ADR 0044 and the CLAUDE.md workflow: a task branch lives in its own worktree; the shared
   checkout `E:\Photografie\Code` stays on `main` for the owner's merges.
 - `FlatCheck.Tests` now runs under `<InvariantGlobalization>`, like `flatcheck.exe` (ADR 0043,

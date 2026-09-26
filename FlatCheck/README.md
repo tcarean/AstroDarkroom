@@ -1389,8 +1389,9 @@ Din 2026-09-25 proiectul urmează procesul din `ClaudeCodeStarterKit` (folderul 
 repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo). Pe scurt, ce e impus
 mecanic:
 
-- **`scripts/verify.ps1` e gate-ul**: manifestul datelor de test, restore, `dotnet format`
-  (doar verifică), build cu avertismentele ca erori, toate testele în afară de cele de validare.
+- **`scripts/verify.ps1` e gate-ul**: scripturile identice cu ale kit-ului, manifestul datelor
+  de test, restore, `dotnet format` (doar verifică), build cu avertismentele ca erori, toate
+  testele în afară de cele de validare.
   Cam 3 minute. Îl rulează hook-ul git `pre-commit` de la rădăcina repo-ului la orice commit care
   atinge FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
   `scripts/release.ps1`. Fără el verde nu intră niciun commit; `--no-verify` e interzis.
@@ -1401,6 +1402,10 @@ mecanic:
 
 - **O schimbare în cod cere o linie în `CHANGELOG.md`**, sub `[Unreleased]`;
   `scripts/check-staged.ps1` refuză commit-ul fără ea.
+- **`scripts/` e al kit-ului**, byte cu byte, și nu se editează aici: un bug sau o funcție nouă
+  se face în kit și `scripts/sync.ps1` o copiază în fiecare proiect. Ce e specific FlatCheck
+  (soluția, folderele de cod și de teste, filtrul de teste, datele de test, cele două ținte de
+  publish) e în `kit.json`. Pasul 0 al gate-ului e roșu la orice diferență față de kit.
 - **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor
   (`R012_Structure_PrintsTheScale...`); `RepoInvariantTests` cere ca fiecare cerință
   `implemented` să aibă un test cu ID-ul ei și invers.

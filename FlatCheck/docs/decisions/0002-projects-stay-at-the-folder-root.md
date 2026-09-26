@@ -1,7 +1,7 @@
 # 0002. The projects stay at the folder root; the kit scripts take a list of code folders
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0048
 
 ## Context
 
