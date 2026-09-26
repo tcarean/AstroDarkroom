@@ -25,7 +25,9 @@ namespace FlatCheck.Tests;
 /// for the top of the work tree, so a script that asks git for the repository root gets the
 /// FlatCheck folder instead, and every staged FlatCheck file looks like console code. These
 /// tests build a throwaway repository with a FlatCheck folder in it, as in the photo monorepo,
-/// stage files and run the script with and without GIT_DIR.
+/// stage files and run the script with and without GIT_DIR. The script reads the code folders
+/// from kit.json (ADR 0048), so the real kit.json of FlatCheck is copied beside it: these tests
+/// check FlatCheck's own configuration, not the script, which the kit tests.
 /// </summary>
 public sealed class CheckStagedTests : IDisposable
 {
@@ -36,8 +38,9 @@ public sealed class CheckStagedTests : IDisposable
     {
         _project = Path.Combine(_ws.Dir, "FlatCheck");
         Directory.CreateDirectory(Path.Combine(_project, "scripts"));
-        File.Copy(Path.Combine(TestData.RepoDir(), "scripts", "check-staged.ps1"),
-            Path.Combine(_project, "scripts", "check-staged.ps1"));
+        foreach (string script in new[] { "check-staged.ps1", "kit-config.ps1" })
+            File.Copy(Path.Combine(TestData.RepoDir(), "scripts", script), Path.Combine(_project, "scripts", script));
+        File.Copy(Path.Combine(TestData.RepoDir(), "kit.json"), Path.Combine(_project, "kit.json"));
         Git("init", "-q");
     }
 

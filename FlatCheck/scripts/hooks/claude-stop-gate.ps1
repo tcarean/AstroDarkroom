@@ -2,78 +2,116 @@
 # claude-stop-gate.ps1 - keeps Claude from ending its answer with unverified code.
 #
 # WHAT IT DOES
-#   Claude Code calls it each time Claude is about to finish an answer (a "turn"). If this
-#   session edited no code (the three application folders or the two test folders),
-#   the turn ends at once. Otherwise the turn may end only when:
-#     1. scripts/verify.ps1 ran green with tests after the last such edit: .verify-stamp,
-#        which only such a run writes (-SkipTests does not), is newer than the newest
-#        edited file; and
-#     2. if an application file edited by this session still has uncommitted changes,
-#        CHANGELOG.md has uncommitted changes too. Edits already committed passed
-#        check-staged.ps1 at commit time, so after that a clean CHANGELOG is right.
+#   Claude Code calls it each time Claude is about to finish an answer (a "turn"). Two
+#   checks, both from the list of files this session edited:
+#     A. scripts/ is the kit's: in a project that is not the kit (kit.json's "kit" is not
+#        "."), an edit under scripts/ ends no turn; the change is made in the kit and copied
+#        with scripts/sync.ps1.
+#     B. code was edited (kit.json's codeFolders, codeFiles or testFolders): the turn may end
+#        only when
+#        1. scripts/verify.ps1 ran green with tests after the last such edit: .verify-stamp,
+#           which only such a run writes (-SkipTests does not), is newer than the newest
+#           edited file; and
+#        2. if a code file edited by this session still has uncommitted changes, CHANGELOG.md
+#           has uncommitted changes too. Edits that are already committed passed
+#           check-staged.ps1 at commit time, so after that commit a clean CHANGELOG is right,
+#           not a problem.
 #   If not, it answers exit 2 with the reasons, and Claude Code sends Claude back to work
-#   (the message points to /wrap-up). It never runs verify itself. When Claude is already
-#   continuing because of this hook (stop_hook_active), it lets the turn end.
+#   (the message points to /wrap-up). It never runs verify itself, so it takes under a
+#   second. When Claude is already continuing because of this hook (stop_hook_active), it
+#   lets the turn end, so a session can never be trapped in a loop.
 #
 # WHO CALLS IT
 #   Claude Code, as the Stop hook in .claude/settings.json, at the end of every turn; only
-#   when Claude Code runs in this project folder. It reads two files written by others:
-#     - %TEMP%\claude-edits-<session id>.txt, written by scripts/hooks/claude-track-edits.ps1;
+#   when Claude Code runs in this project folder. Nobody calls it by hand. It reads two
+#   files written by others:
+#     - %TEMP%\claude-edits-<session id>.txt, the files this session edited, written by
+#       scripts/hooks/claude-track-edits.ps1;
 #     - .verify-stamp in the project folder, written by scripts/verify.ps1.
 #
 # RESULT (as Claude Code reads it)
 #   exit 0  the turn may end
 #   exit 2  the turn goes on; the text on stderr tells Claude what is missing
+#
+# Errors inside this script are not shown and do not stop it (SilentlyContinue): it carries
+# on with the next line.
 $ErrorActionPreference = 'SilentlyContinue'
+# Claude Code sends JSON on standard input: session_id, stop_hook_active, ...
 $raw = [Console]::In.ReadToEnd()
 if ([string]::IsNullOrWhiteSpace($raw)) { exit 0 }
 try { $payload = $raw | ConvertFrom-Json } catch { exit 0 }
 if ($payload.stop_hook_active -eq $true) { exit 0 }
 
+# No list of edited files for this session means nothing was edited: nothing to check.
 $session = $payload.session_id
 if (-not $session) { exit 0 }
 $list = Join-Path $env:TEMP ("claude-edits-" + $session + ".txt")
 if (-not (Test-Path $list)) { exit 0 }
 
+# The project folder: Claude Code gives it to hooks in CLAUDE_PROJECT_DIR; otherwise the
+# current folder.
 $projectDir = if ($env:CLAUDE_PROJECT_DIR) { $env:CLAUDE_PROJECT_DIR } else { (Get-Location).Path }
 $projectDir = [System.IO.Path]::GetFullPath($projectDir).TrimEnd('\', '/')
-# FlatCheck keeps its projects at the folder root (ADR 0002): the code folders are listed.
-$srcDirs = @('FlatCheck.Core', 'FlatCheck', 'FlatCheck.Wpf') | ForEach-Object { (Join-Path $projectDir $_) + '\' }
-$testDirs = @('FlatCheck.Tests', 'FlatCheck.Wpf.Tests') | ForEach-Object { (Join-Path $projectDir $_) + '\' }
-$srcFiles = @()
+
+# kit.json says where the code is. Without a readable one this hook has nothing to judge
+# by, so it lets the turn end; verify.ps1 will refuse the same file at commit time.
+. (Join-Path $PSScriptRoot '..\kit-config.ps1')
+try { $kit = Read-KitConfig $projectDir } catch { exit 0 }
+$srcDirs = @($kit.codeFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
+$testDirs = @($kit.testFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
+$srcFiles = @($kit.codeFiles | ForEach-Object { Join-Path $projectDir ($_ -replace '/', '\') })
+$scriptsDir = Join-Path $projectDir 'scripts\'
 
 function Test-Under([string]$path, [string[]]$dirs) {
     foreach ($d in $dirs) { if ($path.StartsWith($d, [System.StringComparison]::OrdinalIgnoreCase)) { return $true } }
     return $false
 }
 
+# Each edited path once, as a full path.
 $edited = Get-Content $list | ForEach-Object { [System.IO.Path]::GetFullPath($_) } | Sort-Object -Unique
-$srcEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or ($srcFiles -contains $_) })
-$codeEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or (Test-Under $_ $testDirs) -or ($srcFiles -contains $_) })
-if ($codeEdits.Count -eq 0) { exit 0 }
 
 $problems = @()
 
-$stamp = Join-Path $projectDir '.verify-stamp'
-$lastEdit = ($codeEdits | Where-Object { Test-Path $_ } | ForEach-Object { (Get-Item $_).LastWriteTimeUtc } | Sort-Object -Descending | Select-Object -First 1)
-if (-not (Test-Path $stamp)) {
-    $problems += 'scripts/verify.ps1 has not run green with tests in this project (no .verify-stamp; -SkipTests does not write it).'
-}
-elseif ($lastEdit -and (Get-Item $stamp).LastWriteTimeUtc -lt $lastEdit) {
-    $problems += 'scripts/verify.ps1 has not run green with tests since the last code edit (-SkipTests does not count).'
+# A. scripts/ edited in a project that is not the kit.
+$kitPath = Get-KitPath $kit $projectDir
+$isKit = $kitPath -and ($kitPath -eq $projectDir)
+$scriptEdits = @($edited | Where-Object { Test-Under $_ @($scriptsDir) })
+if (-not $isKit -and $scriptEdits.Count -gt 0) {
+    $problems += 'scripts/ was edited here, but scripts/ is the kit''s (byte-identical in every project). Make the change in the kit, then run scripts/sync.ps1 here; project-specific values go in kit.json. Edited: ' + (($scriptEdits | ForEach-Object { $_.Substring($projectDir.Length + 1) }) -join ', ')
 }
 
-Push-Location $projectDir
-$changelogDirty = (git status --porcelain -- CHANGELOG.md 2>$null)
-$srcDirty = if ($srcEdits.Count -gt 0) { @(git status --porcelain -- $srcEdits 2>$null) } else { @() }
-Pop-Location
-if ($srcDirty.Count -gt 0 -and -not $changelogDirty) {
-    $problems += 'application code was edited but CHANGELOG.md is unchanged; add a line under [Unreleased] (or under Internal for a pure refactor).'
+# B. Code edits: those under a code folder, a test folder, or named as a code file.
+$srcEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or ($srcFiles -contains $_) })
+$codeEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or (Test-Under $_ $testDirs) -or ($srcFiles -contains $_) })
+if ($codeEdits.Count -gt 0) {
+    # 1. verify ran green, with tests, after the last code edit: compare the stamp's time with
+    #    the newest modification time among the edited files that still exist.
+    $stamp = Join-Path $projectDir '.verify-stamp'
+    $lastEdit = ($codeEdits | Where-Object { Test-Path $_ } | ForEach-Object { (Get-Item $_).LastWriteTimeUtc } | Sort-Object -Descending | Select-Object -First 1)
+    if (-not (Test-Path $stamp)) {
+        $problems += 'scripts/verify.ps1 has not run green with tests in this project (no .verify-stamp; -SkipTests does not write it).'
+    }
+    elseif ($lastEdit -and (Get-Item $stamp).LastWriteTimeUtc -lt $lastEdit) {
+        $problems += 'scripts/verify.ps1 has not run green with tests since the last code edit (-SkipTests does not count).'
+    }
+
+    # 2. CHANGELOG touched: git status lists a file when it has changes not yet committed (in
+    #    the working tree or staged). Required only while some code file this session edited
+    #    is itself still uncommitted; once those edits are committed (check-staged.ps1
+    #    demanded the CHANGELOG line then), a clean CHANGELOG is the normal state.
+    Push-Location $projectDir
+    $changelogDirty = (git status --porcelain -- CHANGELOG.md 2>$null)
+    $srcDirty = if ($srcEdits.Count -gt 0) { @(git status --porcelain -- $srcEdits 2>$null) } else { @() }
+    Pop-Location
+    if ($srcDirty.Count -gt 0 -and -not $changelogDirty) {
+        $problems += 'code was edited but CHANGELOG.md is unchanged; add a line under [Unreleased] (or under Internal for a pure refactor).'
+    }
 }
 
 if ($problems.Count -eq 0) { exit 0 }
 
-[Console]::Error.WriteLine('Stop gate: this session edited code, so before ending:')
+# Refuse: the reasons go to stderr, which Claude Code shows to Claude.
+[Console]::Error.WriteLine('Stop gate: before ending this turn:')
 $problems | ForEach-Object { [Console]::Error.WriteLine('  - ' + $_) }
 [Console]::Error.WriteLine('Run /wrap-up (verify, CHANGELOG, requirements, decisions), then end the turn.')
 exit 2
