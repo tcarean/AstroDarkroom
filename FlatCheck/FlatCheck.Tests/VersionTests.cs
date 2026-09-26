@@ -21,10 +21,10 @@ using System.Text.RegularExpressions;
 namespace FlatCheck.Tests;
 
 /// <summary>
-/// Versiunea se incrementeaza manual. Pe partea de C# sursa de adevar e <c>&lt;Version&gt;</c>
-/// din Directory.Build.props - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza - dar
-/// flatcheck.py isi tine propria copie, si aia poate ramane in urma. Testele astea le
-/// leaga, si verifica si ca banner-ul chiar apare pe prima linie a fiecarei rulari.
+/// Versiunea se incrementeaza manual. Sursa de adevar e <c>&lt;Version&gt;</c> din
+/// Directory.Build.props - <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza.
+/// Testele astea verifica plumbing-ul, si ca banner-ul chiar apare pe prima linie a fiecarei
+/// rulari. (Prototipul flatcheck.py e inghetat la 2.2.0 si nu se mai sincronizeaza; ADR 0047.)
 /// </summary>
 public class VersionTests
 {
@@ -95,29 +95,6 @@ public class VersionTests
 
         Assert.True(m.Success, "Directory.Build.props nu are <Copyright>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
-    }
-
-    /// <summary>Python-ul tipareste aceeasi notita - crosscheck.py compara linie cu linie.</summary>
-    [Fact]
-    public void PythonReportsTheSameCopyrightAsTheCSharp()
-    {
-        string py = File.ReadAllText(Path.Combine(RepoDir(), "flatcheck.py"));
-
-        var m = Regex.Match(py, @"^__copyright__\s*=\s*""([^""]+)""", RegexOptions.Multiline);
-
-        Assert.True(m.Success, "flatcheck.py nu are __copyright__");
-        Assert.Equal(VersionInfo.Copyright, m.Groups[1].Value);
-    }
-
-    [Fact]
-    public void R097_PythonReportsTheSameVersionAsTheCSharp()
-    {
-        string py = File.ReadAllText(Path.Combine(RepoDir(), "flatcheck.py"));
-
-        var m = Regex.Match(py, @"^__version__\s*=\s*""([^""]+)""", RegexOptions.Multiline);
-
-        Assert.True(m.Success, "flatcheck.py nu are __version__");
-        Assert.Equal(VersionInfo.Value, m.Groups[1].Value);
     }
 
     // ------------------------------------------------------------ banner-ul

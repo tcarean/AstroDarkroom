@@ -23,16 +23,16 @@ It is not an image processor and it never decides what a shape on a map is.
 - Format: `dotnet format FlatCheck.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project FlatCheck -- <file.fit> [--ratio B.fit | --light | --expo | ...]`;
   the flag comes after the path. Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
-- Parity with the Python oracle after any formula change: `scripts/crosscheck.ps1`
 - Golden console texts, re-approved only after the owner read the diff:
-  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln`
+  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln` (`Golden/parity_*.txt` are the 43
+  scenarios the Python prototype confirmed on 2026-09-26; re-approving one is a C#-only call)
 - Window renders as PNGs without running it: `FLATCHECK_DUMP_SCREENS=<dir> dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the real masters (minutes, not in the gate): `/validate`, or
   `dotnet test FlatCheck.sln -c Release --filter "Category=Validation"` with
   `FLATCHECK_TESTDATA_LARGE` pointing at the masters
 - Test data hashes after an intentional change: `scripts/check-testdata.ps1 -Update`
 - Mutation score of one core file: `scripts/mutate.ps1 -Mutate "**/Metrics.cs"`
-- Release (verify, version in props and `flatcheck.py`, CHANGELOG, publish; no commit, no tag):
+- Release (verify, version in `Directory.Build.props`, CHANGELOG, publish; no commit, no tag):
   `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
 
 ## Layout
@@ -45,7 +45,8 @@ It is not an image processor and it never decides what a shape on a map is.
 - `FlatCheck.Tests/` (core + console, portable) and `FlatCheck.Wpf.Tests/` (window, Windows-only).
   `Golden/` holds the console snapshots; `testdata/manifest.json` hashes the real masters, which
   stay outside git. Every FITS fixture is generated in the test.
-- `flatcheck.py` - the Python prototype and the numeric oracle; `crosscheck.py` compares the two.
+- `flatcheck.py` - the Python prototype, frozen at 2.2.0, and `crosscheck.py`, its comparison
+  tool: neither is maintained or run (ADR 0047). Prior art, not a reference.
 - `lensfun/` - the lensfun database, committed whole, copied beside the exe. `Icon/` - the icon.
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real masters. `docs/design/` - the explanations, per area, read on
@@ -71,7 +72,7 @@ It is not an image processor and it never decides what a shape on a map is.
    is chosen after a measurement on the real masters (`docs/validation.md` lists them).
 8. Two readings of a task that lead to different work: ask. Otherwise decide, and state the
    assumption.
-9. Every change under `FlatCheck.Core/`, `FlatCheck/`, `FlatCheck.Wpf/` or in `flatcheck.py`
+9. Every change under `FlatCheck.Core/`, `FlatCheck/` or `FlatCheck.Wpf/`
    adds a line under `[Unreleased]` in `CHANGELOG.md` (Added, Changed, Fixed, Removed;
    `Internal` for a pure refactor). Pre-commit refuses a commit without it.
 10. A decision with a "why" goes in `docs/decisions/`, in the same task, not in chat. A choice
@@ -87,8 +88,9 @@ It is not an image processor and it never decides what a shape on a map is.
     Never leave a file in two languages.
 15. Every metric is a ratio, so ISO and gain cancel. A metric that is not scale-invariant is a
     design smell. Thresholds are empirical rules of thumb in `Th`, never literals in code or text.
-16. A formula changed in C# is changed in `flatcheck.py` too, and `scripts/crosscheck.ps1` runs
-    before the task ends. `--histeq`, `--smooth` and mode 7 have no Python counterpart on purpose.
+16. A formula change (`Metrics.cs`, `Stats.cs`, `Analysis/`, `Report/`) re-runs `/validate` on
+    the real masters before the task ends, with the drift table pasted; a new numeric branch
+    gets a `ParityGoldenTests` scenario. There is no second implementation to compare against.
 17. Never bump the version and never roll the copyright year; both are the owner's call. Say
     when a change seems to warrant a bump.
 18. Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice; `LicenseHeaderTests`
@@ -97,7 +99,7 @@ It is not an image processor and it never decides what a shape on a map is.
 ## Workflow
 
 - Non-trivial task: plan mode first. The approved plan is saved to `docs/plans/YYYY-MM-DD-slug.md`.
-- One task per session. Finish with `/wrap-up` (verify, crosscheck when a formula moved,
+- One task per session. Finish with `/wrap-up` (verify, `/validate` when a formula moved,
   CHANGELOG, docs, README, commit proposal). A Stop hook refuses to end a turn that edited code
   until verify ran green after the last edit and `CHANGELOG.md` changed; when it fires, run
   `/wrap-up`.

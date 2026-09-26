@@ -58,8 +58,8 @@ Three details that are load-bearing:
   regardless of signal. And `Img.BlockMean` drops partial blocks only at the *end*, so its
   grid is anchored top-left and a 180° rotation lands up to one tile off - measured, that
   moves the even/odd ratio by ~20%. `Img.CropCentred` exists for this and **is not used by
-  `LargeScalePtp`**, where the top-left anchoring is what `flatcheck.py` does and parity is
-  tested.
+  `LargeScalePtp`**, where the top-left anchoring is what `flatcheck.py` did and the parity
+  goldens pin.
 - **`StructureAnalyzer.AnalyzePrepared`** takes an already-prepared raster, so `S` is built
   at analysis resolution rather than full resolution. `Prepare` is only block means, hence
   linear, so the mean of the prepared rasters equals the prepared mean - at a thirtieth of

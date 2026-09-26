@@ -1,0 +1,18 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPUNERE: <TMP>/expo81.fit ===
+    saturatie (white) : 4095   black : 0   sursa: --sat=4095
+    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):
+        CFA[0,0]:  50.2%
+        CFA[0,1]:  81.0%  <- cel mai luminos
+        CFA[1,0]:  81.0%
+        CFA[1,1]:  38.9%
+    canal cel mai luminos, mediana GLOBALA :  81.0%  (trasa in jos de colturi)
+    canal cel mai luminos, CENTRU 20%      :  81.0%  <- ASTA decide expunerea
+    clipping in centru (>=98% white)       : 0.000%
+
+    VERDICT: PREA SUS
+    Scade expunerea cu ~0.5 stopuri.
+
+[exit 3]

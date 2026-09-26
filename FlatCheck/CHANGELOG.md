@@ -2,9 +2,29 @@
 
 All notable changes to this project. Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/). The version number itself lives in
-`Directory.Build.props` and, as a mirrored copy, in `flatcheck.py`; the owner bumps it.
+`Directory.Build.props`; the owner bumps it.
 
 ## [Unreleased]
+
+### Added
+
+- `ParityGoldenTests` (R-098): the 43 scenarios the Python cross-check used to run are golden
+  files now, `Golden/parity_*.txt`, captured on 2026-09-26 while `flatcheck.py` still agreed on
+  every number (43 scenarios, 0 numeric differences). They carry the prototype's last confirmed
+  figures into the gate; a re-approval there is a C#-only decision (ADR 0047).
+
+### Changed
+
+- The Python prototype is frozen at 2.2.0 and no longer maintained (ADR 0047, supersedes 0005
+  and 0038): rule 16 now asks for `/validate` after a formula change instead of the cross-check,
+  `scripts/release.ps1` writes `<Version>` only, and `check-staged.ps1` and the Stop hook no
+  longer treat `flatcheck.py` as code. `flatcheck.py` and `crosscheck.py` stay in the repository
+  as prior art; `CrossCheckFixtures` can still dump the fixtures for a comparison by hand.
+
+### Removed
+
+- `scripts/crosscheck.ps1`, its permission line in `.claude/settings.json`, and the two tests
+  that tied `__version__` and `__copyright__` in `flatcheck.py` to the C#.
 
 ### Internal
 

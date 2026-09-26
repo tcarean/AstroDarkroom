@@ -21,8 +21,8 @@
 // transforma <Version> in AssemblyInformationalVersion, iar de acolo o citim. Asa exista
 // un singur loc de schimbat pe partea de C#.
 //
-// Se incrementeaza MANUAL la fiecare feature/fix, si trebuie sa ramana identica cu
-// __version__ din flatcheck.py - VersionTests verifica asta.
+// Se incrementeaza MANUAL la fiecare feature/fix. Prototipul flatcheck.py e inghetat la
+// 2.2.0 si nu se mai sincronizeaza (ADR 0047); VersionTests verifica doar plumbing-ul.
 
 using System.Reflection;
 

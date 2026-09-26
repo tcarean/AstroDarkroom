@@ -11,8 +11,8 @@ does not apply.
 1. Run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`. Paste the last
    ten lines. If it is red, fix it or stop and report; never continue with a red gate.
 2. If the session touched a formula (`FlatCheck.Core/Metrics.cs`, `Stats.cs`, `Analysis/`,
-   `Report/`) or `flatcheck.py`, run `scripts/crosscheck.ps1` and paste its summary. A
-   scenario that no longer agrees is a finding, not something to silence.
+   `Report/`), run `/validate` and paste its drift table (rule 16). A figure that moved is a
+   finding, not something to re-measure into place; so is a `Golden/parity_*.txt` that changed.
 3. `git diff` the whole change. Read it back. Write a three-sentence plain-language summary:
    what changed for the user, what changed inside, what did not change that someone might expect.
 4. `CHANGELOG.md`: every user-visible change has a line under `[Unreleased]`, in the right

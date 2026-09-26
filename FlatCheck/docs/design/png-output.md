@@ -34,8 +34,8 @@ the map's p1/p99 sit at -4.9/+4.8%. There is no cap that is exact for both, so t
 explains it under "Scara culorilor" and the numbers stay as they are.
 
 **The console was deliberately left alone**, and so was every file written to disk. A
-legend line in the console would move every golden file *and* break `crosscheck.py`'s text
-parity with `flatcheck.py` unless mirrored there - for a line a console user cannot act on.
+legend line in the console would move every golden file, the parity ones included - for a
+line a console user cannot act on.
 The pieces are shaped so a `--scala` flag would need no new number: the caps are in the
 core and the wording is in `RunReport` (`MapScaleLabel`, `MapLegend`), which is also why
 those two functions have no console caller today.

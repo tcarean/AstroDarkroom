@@ -110,7 +110,7 @@ Decisions, all measured:
   Siril writes none - or lensfun-only profiles without a crop). Unknown is not a refusal,
   the `--light` rule.
 - **Without `--raw`/`--lens` nothing changes**: same text, same golden files, the 15
-  `crosscheck.py` structure scenarios untouched. `--help` moved, and was re-approved.
+  structure parity scenarios untouched. `--help` moved, and was re-approved.
 
 Measured on the library (2026-09-18, `--raw` on the first raw of each `flats/`; the
 figures are in the README's table): tablet 7 and 15 sheets +0.34 / +0.33 against the

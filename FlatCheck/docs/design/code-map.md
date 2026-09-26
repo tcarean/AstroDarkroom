@@ -288,7 +288,7 @@ not a copy.
     `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
     query; with one, present even when it could not compare - `Gap` says why) and the
     combined verdict. Without a query the output is byte-identical to before, which is
-    what keeps the golden files and `crosscheck.py` still. `Compare` is the second half
+    what keeps the golden files, the parity ones included, still. `Compare` is the second half
     on its own, so the window can explain a missing raw without reloading the master. `SyntheticRun` is the third run that can refuse and the second whose
     product is a file (`WriteFits` on the caller's stream, like `SmoothRun`); its
     `SyntheticRequest` carries every value with the source it came from, so the report
@@ -505,11 +505,10 @@ not a copy.
   camera preview in the test so the Exposure tab can be exercised with the source switch
   on without a real raw anywhere in the suite.
 - `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
-  ported from. Prior art only for *features*; **not maintained in parallel** - don't
-  feel obliged to mirror C#-side changes into it, except where parity is tested (see
-  "Parity with Python"), which now includes the `--light` guard, series mode and the
-  rewritten attribution mode. It is, however, the reference for
-  *numeric* behaviour: see "Parity with Python" below.
+  ported from, **frozen at 2.2.0 on 2026-09-26 and not maintained** (ADR 0047). Prior art
+  only; nothing is mirrored into it any more. The numbers it confirmed live on as
+  `Golden/parity_*.txt` (`ParityGoldenTests`); `crosscheck.py` beside it is the retired
+  comparison tool. See `python-parity.md`.
 - `Icon/` - `flatcheck.ico`, the one icon of both applications: `<ApplicationIcon>` in both
   csproj files (the exe, hence Explorer and a pinned taskbar entry) and, for the WPF app
   only, a linked `<Resource>` plus `Icon=` on `MainWindow` (title bar and the running

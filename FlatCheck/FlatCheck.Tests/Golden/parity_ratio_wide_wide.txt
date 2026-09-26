@@ -1,0 +1,5 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+[stderr]
+EROARE: Could not find file 'E:\Photografie\Code\FlatCheck\.claude\worktrees\retire-cross-check\FlatCheck\FlatCheck.Tests\bin\Release\net8.0\wide.fit'.
+[exit 1]

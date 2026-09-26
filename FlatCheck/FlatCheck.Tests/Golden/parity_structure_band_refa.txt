@@ -1,0 +1,54 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== STRUCTURA: <TMP>/grad_refa.fit ===
+    dimensiune analiza : 256 x 256 (dupa 2x2 + downsample)
+    median / max ADU   : 26369 / 32573
+
+  INFORMATIV (nu sunt teste)
+    vignetare centru->colt  : 0.76 stopuri (colt = 59% din centru)
+    offset centru iluminare : 33.48 %
+        varf iluminare = (189, 128)  vs  centru senzor = (128, 128)
+        E raportul dintre gradient si curbura, deci nu e scale-invariant: pe un
+        obiectiv aproape fara vignetare creste mult fara ca eroarea sa creasca,
+        iar peste un prag cade inapoi spre 0. Amplitudinea o da "inclinare".
+    pete locale (praf etc.) : +0.13 % (mai luminos) la (241, 10)
+        Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.
+        Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,
+        condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).
+        Peste 2 % urmeaza o atentionare; sub atat cifra e doar informativa.
+
+  TESTE
+    imprastiere 4 colturi   : 57.82 %   [REFA]
+        stanga-sus    :  71.13 % din media colturilor
+        dreapta-sus   : 128.58 % din media colturilor
+        stanga-jos    :  71.34 % din media colturilor
+        dreapta-jos   : 128.95 % din media colturilor
+    asimetrie azimutala max : 54.75 %   [REFA]
+    reziduu dupa model rad. : 52.02 %   [REFA]  <- CEL MAI IMPORTANT
+    inclinare (gradient)    : 62.04 %   [REFA]
+    pata maxima (o dala)    : 29.43 %   [REFA]
+
+  SCARA celor cinci teste de abatere de mai sus
+    sub 2 %      calitate perfecta
+    2 - 10 %     utilizabil; background extraction scoate ce ramane
+    10 - 20 %    utilizabil, dar confirma cu --light inainte de un stretch dur
+    peste 20 %   refa flat-urile
+    Cel mai important e "reziduu dupa model rad.": masoara direct cat din
+    cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a
+    erorii de flat, nu eroarea insasi - cuprinde si partea fixa pe aparat
+    (optica; se imparte corect din lights) si partea fixa in lume (iluminarea;
+    nu se reproduce). Modul --ratio le desparte. Imprastierea colturilor,
+    asimetria azimutala si inclinarea sunt vederi partiale ale aceleiasi abateri.
+    "Pata maxima" prinde ce le scapa celorlalte: un defect compact - o scurgere
+    mica, o pata de condens - pe care reziduul il taie ca extrema.
+
+  VERDICT: REFA
+    Abatere prea mare de la simetria radiala => sursa neuniforma, light
+    leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,
+    ruleaza --ratio pe doua stive rotite: daca abaterea e fixa pe aparat,
+    flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.
+
+    -> harta salvata: <TMP>/structure_band_refa.png
+
+[exit 3]

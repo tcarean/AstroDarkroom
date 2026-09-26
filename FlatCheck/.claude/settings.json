@@ -25,7 +25,6 @@
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-testdata.ps1)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-staged.ps1)",
-      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/crosscheck.ps1*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mutate.ps1*)",
       "PowerShell(dotnet tool restore*)"
     ],

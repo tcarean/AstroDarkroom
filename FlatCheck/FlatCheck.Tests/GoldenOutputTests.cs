@@ -61,7 +61,7 @@ public class GoldenOutputTests
     static string GoldenDir([CallerFilePath] string thisFile = "") =>
         Path.Combine(Path.GetDirectoryName(thisFile)!, "Golden");
 
-    static void AssertGolden(string name, string actual)
+    internal static void AssertGolden(string name, string actual)
     {
         string path = Path.Combine(GoldenDir(), name + ".txt");
         actual = actual.Replace("\r\n", "\n");
@@ -93,7 +93,7 @@ public class GoldenOutputTests
     /// would still fail, because the golden files carry a placeholder line that the output
     /// would no longer produce.
     /// </summary>
-    static (string Output, int Exit) RunCli(TempWorkspace ws, params string[] args)
+    internal static (string Output, int Exit) RunCli(TempWorkspace ws, params string[] args)
     {
         var stdout = new StringWriter();
         var stderr = new StringWriter();

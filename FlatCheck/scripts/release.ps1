@@ -4,12 +4,11 @@
 # WHAT IT DOES
 #   1. Checks, and stops without changing anything if one fails: this project's working tree
 #      is clean; -Version is MAJOR.MINOR.PATCH and greater than the current <Version> in
-#      Directory.Build.props; flatcheck.py agrees with that current version; CHANGELOG.md
-#      has something under [Unreleased]; the git tag flatcheck-vX.Y.Z does not exist yet.
+#      Directory.Build.props; CHANGELOG.md has something under [Unreleased]; the git tag
+#      flatcheck-vX.Y.Z does not exist yet.
 #   2. Runs scripts/verify.ps1. If it is red, it stops; still nothing changed.
-#   3. Writes the new version into <Version> in Directory.Build.props AND into __version__
-#      in flatcheck.py: the two must agree (VersionTests.R097_PythonReportsTheSameVersionAsTheCSharp
-#      and crosscheck.py both check it).
+#   3. Writes the new version into <Version> in Directory.Build.props, the one place it lives
+#      (ADR 0039; the frozen flatcheck.py keeps its 2.2.0, ADR 0047).
 #   4. In CHANGELOG.md, turns "## [Unreleased]" into "## [X.Y.Z] - <today>" and puts a new,
 #      empty "## [Unreleased]" above it.
 #   5. Publishes to artifacts/<version>/: the console as the single copyable flatcheck.exe
@@ -59,14 +58,6 @@ try {
     $current = [version]$m.Groups[1].Value
     if ($new -le $current) { throw "New version $new must be greater than current $current." }
 
-    $pyPath = Join-Path $root 'flatcheck.py'
-    $py = [System.IO.File]::ReadAllText($pyPath)
-    $pm = [regex]::Match($py, '(?m)^__version__\s*=\s*"([^"]+)"')
-    if (-not $pm.Success) { throw 'No __version__ in flatcheck.py.' }
-    if ($pm.Groups[1].Value -ne $m.Groups[1].Value) {
-        throw ("flatcheck.py says {0} but Directory.Build.props says {1}; fix that first." -f $pm.Groups[1].Value, $m.Groups[1].Value)
-    }
-
     $changelogPath = Join-Path $root 'CHANGELOG.md'
     $changelog = [System.IO.File]::ReadAllText($changelogPath)
     $unreleased = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)')
@@ -81,7 +72,7 @@ try {
 
     Write-Host ("== release {0} -> {1}, tag {2}" -f $current, $new, $tag) -ForegroundColor Cyan
     if ($WhatIfPreference) {
-        Write-Host 'WhatIf: would run verify, set <Version> and __version__, close [Unreleased] in CHANGELOG, publish console and wpf.'
+        Write-Host 'WhatIf: would run verify, set <Version>, close [Unreleased] in CHANGELOG, publish console and wpf.'
         Write-Host ("Unreleased content ({0} lines):" -f ($unreleased.Groups[1].Value.Trim() -split "`n").Count)
         Write-Host $unreleased.Groups[1].Value.Trim()
         exit 0
@@ -95,15 +86,13 @@ try {
     $utf8 = New-Object System.Text.UTF8Encoding $false
     $props = $props.Substring(0, $m.Groups[1].Index) + $Version + $props.Substring($m.Groups[1].Index + $m.Groups[1].Length)
     [System.IO.File]::WriteAllText($propsPath, $props, $utf8)
-    $py = $py.Substring(0, $pm.Groups[1].Index) + $Version + $py.Substring($pm.Groups[1].Index + $pm.Groups[1].Length)
-    [System.IO.File]::WriteAllText($pyPath, $py, $utf8)
 
     $date = (Get-Date).ToString('yyyy-MM-dd')
     $nl = if ($changelog.Contains("`r`n")) { "`r`n" } else { "`n" }
     $header = "## [Unreleased]$nl$nl## [$Version] - $date"
     $changelog = $changelog.Substring(0, $unreleased.Index) + $header + $changelog.Substring($unreleased.Index + '## [Unreleased]'.Length)
     [System.IO.File]::WriteAllText($changelogPath, $changelog, $utf8)
-    Write-Host ("changed  Directory.Build.props and flatcheck.py ({0} -> {1}), CHANGELOG.md ([{1}] - {2})" -f $current, $Version, $date)
+    Write-Host ("changed  Directory.Build.props ({0} -> {1}), CHANGELOG.md ([{1}] - {2})" -f $current, $Version, $date)
 
     # --- artifacts ----------------------------------------------------------------------
     if (-not $NoPublish) {

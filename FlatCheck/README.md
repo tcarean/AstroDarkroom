@@ -18,9 +18,9 @@ moduri pe un folder de sesiune Siril, în cinci taburi. Nu e o a doua implementa
 peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
 Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
 
-`flatcheck.py` este prototipul Python din care a fost portat. Nu se menține în paralel,
-dar rămâne **oracolul numeric**: `crosscheck.py` rulează amândouă implementările pe
-aceiași octeți și compară fiecare cifră.
+`flatcheck.py` este prototipul Python din care a fost portat, **înghețat la 2.2.0** din
+2026-09-26 și neîntreținut. Cifrele pe care le-a confirmat sunt fixate ca golden-uri de
+paritate (vezi [„Golden-urile de paritate"](#golden-urile-de-paritate)).
 
 > **Documentația de utilizator stă aici, în acest fișier.** Nu o duplica în docstring-uri
 > sau comentarii — au divergat deja o dată.
@@ -1360,11 +1360,18 @@ reaprobă-le și **citește diff-ul** — toată valoarea lor e acolo:
 FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
 ```
 
-### Verificarea față de Python
+### Golden-urile de paritate
 
-`flatcheck.py` e oracolul numeric. Fișierele golden sunt capturate din C# însuși, deci
-fixează comportamentul fără să-l confirme; `crosscheck.py` închide gaura, rulând amândouă
-implementările pe aceiași octeți:
+Până pe 2026-09-26 `flatcheck.py` a fost oracolul numeric: `crosscheck.py` rula amândouă
+implementările pe aceiași octeți, în 43 de scenarii, și compara fiecare cifră. În acea zi cele
+două erau de acord pe toate cele 43 (0 diferențe numerice), prototipul a fost înghețat la 2.2.0
+și cele 43 de scenarii au devenit `FlatCheck.Tests/Golden/parity_*.txt`, rulate de
+`ParityGoldenTests` în gate. Spre deosebire de celelalte golden-uri, acestea poartă cifre
+confirmate de o implementare independentă; o re-aprobare acolo e o decizie luată doar pe C#,
+și se citește ca atare. După o schimbare de formulă se rulează `/validate` pe masterele reale.
+
+Cele două fișiere Python rămân în repo ca istorie și nu se mai întrețin. Cine vrea totuși
+comparația de mână, cât timp ieșirea prototipului înghețat mai spune ceva:
 
 ```bash
 FLATCHECK_DUMP_FIXTURES=/tmp/xc dotnet test FlatCheck.sln --filter DumpsFixtures
@@ -1375,9 +1382,6 @@ python crosscheck.py /tmp/xc
 ```
 
 Dependințe pentru Python: `numpy`, `astropy`, `matplotlib`, opțional `rawpy` pentru NEF.
-
-Sau, într-o singură comandă, `scripts/crosscheck.ps1`: aruncă fixturile într-un folder temporar
-și rulează `crosscheck.py` pe ele.
 
 ### Dezvoltare: gate-ul, documentația și Claude Code
 
@@ -1410,7 +1414,7 @@ mecanic:
 - **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
   2026-09-25; `CLAUDE.md` ține acum doar regulile), cu indexul în `docs/design/README.md`.
 - **Versiunea** o crește omul, prin `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul,
-  scrie versiunea în `Directory.Build.props` și în `flatcheck.py`, închide secțiunea din
+  scrie versiunea în `Directory.Build.props`, închide secțiunea din
   CHANGELOG și publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); commit-ul
   și tag-ul `flatcheck-vX.Y.Z` rămân ai omului.
 - În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`,
@@ -1421,7 +1425,8 @@ mecanic:
 
 ## Diferențe față de versiunea Python
 
-Sunt intenționate, nu scăpări:
+Prototipul e înghețat la 2.2.0 (vezi mai sus), deci lista de mai jos descrie un fișier care nu
+se mai mișcă. Diferențele erau intenționate, nu scăpări:
 
 - **`--histeq` există doar în C#.** N-are paritate în `flatcheck.py` și niciun scenariu în
   `crosscheck.py`, prin decizie: nu produce nicio cifră de comparat.

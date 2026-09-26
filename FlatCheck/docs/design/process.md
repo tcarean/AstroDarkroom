@@ -1,7 +1,7 @@
 # Process notes: conventions, versioning, licensing, build and run
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. The Committing section predates rule 13 of CLAUDE.md, which now governs; the rest stands. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `CrossCheckFixtures` and `SCENARIOS` in `crosscheck.py`.
+> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. The Committing section predates rule 13 of CLAUDE.md, which now governs; the rest stands. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -47,12 +47,9 @@ Both applications print it from `RunReport.WriteBanner`, so the WPF app's saved
 `Rezultat testare.txt` opens on the same two lines as a console run, and a bump moves both
 at once.
 
-The version lives in **two** places:
-
-| where | what |
-|---|---|
-| `Directory.Build.props` | `<Version>` - the single source of truth for C# |
-| `flatcheck.py` | `__version__` |
+The version lives in **one** place, `<Version>` in `Directory.Build.props`. (Until 2026-09-26
+`flatcheck.py` carried a mirrored `__version__`; the prototype is frozen at 2.2.0 and no longer
+synchronised, ADR 0047.)
 
 `Directory.Build.props`, not a csproj, and that changed in 2.0.0 for a concrete reason:
 there are now three assemblies. `VersionInfo` reads the one it lives in - Core - but the
@@ -71,22 +68,16 @@ themselves. **Never bump it on your own initiative** - not as part of a change, 
 "while you're in there". If a change seems to warrant a bump, say so and let them decide.
 
 **Bumping the version breaks nothing.** That is deliberate, and worth preserving: the
-banner is scrubbed to `flatcheck <VERSIUNE>` before any comparison, in both places that
-compare whole output.
-
-- `GoldenOutputTests.RunCli` scrubs it, the same way it already scrubs absolute paths -
-  both change without the *behaviour* changing. So `Golden/*.txt` carry the placeholder
-  and survive a bump untouched.
-- `crosscheck.py` scrubs it in `norm()`, and checks version agreement once up front in
-  `check_versions()`. Without that, a desync would turn all 43 scenarios into diffs -
-  42 diffs to learn one thing.
+banner is scrubbed to `flatcheck <VERSIUNE>` before any comparison of whole output:
+`GoldenOutputTests.RunCli` scrubs it, the same way it already scrubs absolute paths - both
+change without the *behaviour* changing. So `Golden/*.txt`, the parity goldens included, carry
+the placeholder and survive a bump untouched.
 
 What *does* fail, and should:
 
 | situation | what fails |
 |---|---|
-| both places bumped | nothing |
-| only one place bumped | exactly one test, `R097_PythonReportsTheSameVersionAsTheCSharp`; `crosscheck.py` prints one `[VERSIUNE]` line and exits 1 |
+| the version bumped | nothing |
 | `<Version>` removed from `Directory.Build.props`, or re-added to a csproj | the plumbing tests in `VersionTests` |
 | the banner stops being printed | the golden files, because they carry a placeholder line the output no longer produces |
 
@@ -140,15 +131,13 @@ Five things follow, and all five are pinned by tests:
   licence choice and the notice.
 - **One source of truth per language for the copyright string**: `<Copyright>` in
   `Directory.Build.props` (read back through `AssemblyCopyrightAttribute` by
-  `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback), and
-  `__copyright__` in `flatcheck.py`. `VersionTests` binds all three together.
+  `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback).
+  `VersionTests` binds the two together. (The frozen `flatcheck.py` keeps its own
+  `__copyright__`; nothing checks it any more.)
 
 Unlike the version banner, the copyright line is **not** scrubbed anywhere: it is
-constant, so the golden files carry it verbatim and `crosscheck.py` compares it as
-ordinary text. That is deliberate - if the line ever stops being printed, the golden
-files fail. `--help` is not one of `crosscheck.py`'s 43 scenarios (argparse and
-`WriteUsage` produce entirely different text), so the two warranty notices are worded
-the same by choice, not by test.
+constant, so the golden files carry it verbatim. That is deliberate - if the line ever
+stops being printed, the golden files fail.
 
 The year and the author are the user's call, exactly like the version. Don't roll the
 year forward on your own initiative.
@@ -260,8 +249,8 @@ Remember: the flag must come *after* the file path.
 
 > Added 2026-09-25 (docs-health audit, gap 2). **Covers:** `FlatCheck/Options.cs`,
 > `FlatCheck/FlatCheckCli.cs`, `FlatCheck/Program.cs`, `FlatCheck/FlatCheck.csproj`,
-> `FlatCheck.Tests/GoldenOutputTests.cs` with `Golden/`, `FlatCheck.Tests/CrossCheckFixtures.cs`
-> with `SCENARIOS` in `crosscheck.py`, the mode lists in `FlatCheck.Tests/VersionTests.cs`, and
+> `FlatCheck.Tests/GoldenOutputTests.cs` with `Golden/`, `FlatCheck.Tests/ParityGoldenTests.cs`
+> with `ParityFixtures.cs`, the mode lists in `FlatCheck.Tests/VersionTests.cs`, and
 > the "Opțiuni" section of `README.md`.
 
 The console is three files, and that is the point: `Program.cs` is a one-line shim (`Main`
@@ -418,42 +407,36 @@ The procedure:
 6. The owner reads the diff and approves it (rule 3). The assistant proposes; it never
    re-approves a changed golden file on its own, and never edits one by hand.
 
-### Adding a cross-check scenario
+### Adding a parity golden scenario
 
-When it is required: rule 16. A formula changed in C# (`FlatCheck.Core/Metrics.cs`,
-`Stats.cs`, `Analysis/`, `Report/`) is changed in `flatcheck.py` too, and
-`scripts/crosscheck.ps1` runs before the task ends. A **new** scenario is required when the
-change opens a path the existing scenarios do not exercise: a new band or branch of a metric, a
-new input shape (size, BITPIX, a header card), a new option that changes a number, or a new
-mode that has a Python counterpart. `--histeq`, `--smooth` and mode 7 have no counterpart on
-purpose (rule 16, ADR 0038) and get no scenario. `python-parity.md` lists the current coverage
-and the intentional divergences.
+When it is required: rule 16 and `/new-feature` step 2. A **new** scenario is required when a
+change opens a numeric path the 43 existing scenarios do not exercise: a new band or branch of a
+metric, a new input shape (size, BITPIX, a header card), a new option that changes a number.
+`--histeq`, `--smooth` and mode 7 produce a picture, a file or a list and get no scenario; their
+goldens are in `GoldenOutputTests`. `python-parity.md` lists the current coverage and where the
+set came from (the retired Python cross-check, ADR 0047).
 
 A scenario has two halves that must agree on the file name:
 
-1. **The fixture**, in `CrossCheckFixtures.DumpsFixturesWhenAsked`. The test does nothing
-   unless `FLATCHECK_DUMP_FIXTURES` names a folder; then it writes every fixture there. Add a
-   `Write(dir, "name.fit", scene)` for a 512×512 frame, or
-   `File.WriteAllBytes(Path.Combine(dir, "name.fit"), FitsTestData.BuildFits(w, h, scene,
-   bitpix: ..., extraCards: ...))` for another size, BITPIX or header, or
-   `SeriesDir(dir, "name", scenes...)` for a `--light` folder. Reuse the golden test's
-   `FitsTestData` scene when there is one, so the golden file and the cross-check pin the same
-   bytes, and say in a comment which branch the fixture is there to reach.
-2. **The invocation**, in `SCENARIOS` in `crosscheck.py`: a tuple
-   `("<mode> <what>", ["name.fit", "--flag", "value", ...])`, grouped with its mode. The
-   script appends `-o py.png` / `-o cs.png` itself, runs `flatcheck.py` and the Release
-   `flatcheck.exe` (`FlatCheck/bin/Release/net8.0/flatcheck.exe`) in the fixture folder,
-   normalises the `harta salvata` line and the banner in `norm()`, and compares the text and
-   then every numeric token as a float (tolerance 1e-9). The name is what the report prints
-   and what `KNOWN_NUMERIC_DIVERGENCE` is keyed by; a scenario whose numbers differ **on
-   purpose** goes there with the reason, and the reason is also in `python-parity.md` (today
-   only `structure uniform`, ADR 0038). A new option must exist in `flatcheck.py`'s argparse
-   too, or the Python side fails on it.
+1. **The fixture**, in `ParityFixtures.WriteAll`. Add a `Write(dir, "name.fit", scene)` for a
+   512×512 frame, or `File.WriteAllBytes(Path.Combine(dir, "name.fit"),
+   FitsTestData.BuildFits(w, h, scene, bitpix: ..., extraCards: ...))` for another size, BITPIX
+   or header, or `SeriesDir(dir, "name", scenes...)` for a `--light` folder. Reuse the golden
+   test's `FitsTestData` scene when there is one, so the two goldens pin the same bytes, and say
+   in a comment which branch the fixture is there to reach.
+2. **The invocation**, in `ParityGoldenTests.Scenarios`: a row `{ "<mode> <what>", new[] {
+   "name.fit", "--flag", "value", ... } }`, grouped with its mode. The first argument is the
+   input and is made absolute by the test; the rest pass through unchanged. The test appends
+   `-o <slug>.png` itself. The name becomes the golden file, `Golden/parity_<slug>.txt`
+   (lower case, runs of non-alphanumerics to `_`), with the exit code as its last line.
 
-Then run `scripts/crosscheck.ps1` (it dumps with `dotnet test -c Release --filter
-DumpsFixtures`, which also builds the Release exe, then runs `crosscheck.py`) and paste its
-summary. The scenario count is quoted in the header of `scripts/crosscheck.ps1`, in
-`python-parity.md` and in "Versioning" above (43 on 2026-09-25); update all three.
+Then capture the one new file with `FLATCHECK_UPDATE_GOLDEN=1 dotnet test --filter
+ParityGoldenTests`, read it, and check `git status` shows only the new `parity_*.txt`: a capture
+that rewrote an existing one is a behaviour change to explain. Bump the count in
+`TheTableHasTheFortyThreeScenariosOfTheCrossCheckAndNoTwoShareAGolden`, in R-098 and in
+`python-parity.md`. Unlike the 43 originals, a new scenario's numbers were never confirmed by a
+second implementation; its comment says what confirms them (a unit test, a hand calculation, a
+figure on a real master).
 
 ### The VersionTests mode lists
 
@@ -484,7 +467,7 @@ a mode), and the change gets its `CHANGELOG.md` line (rule 9).
 so does `FlatCheck.Core.csproj`. It is a runtime switch read from the executable's
 `runtimeconfig.json`: the console runs without ICU culture data, its `CurrentCulture` behaves
 as the invariant culture whatever the Windows locale, so `{x:F2}` prints `0.29` and never
-`0,29`, and the golden files and `crosscheck.py` compare against that. Two consequences for new
+`0,29`, and the golden files compare against that. Two consequences for new
 code:
 
 - Parsing an argument still names the culture explicitly (`TryNum` passes
