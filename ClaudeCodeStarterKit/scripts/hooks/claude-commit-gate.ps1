@@ -11,7 +11,7 @@
 #        names a folder it cannot find (a variable, a folder that does not exist);
 #     3. blocks the commit unless that folder is on a branch named claude/..., the branches the
 #        assistant creates: main, any other branch and a detached HEAD are the owner's, who
-#        commits there by hand (ADR 0021);
+#        commits there by hand (the kit's ADR 0021);
 #     4. asks git, in that folder, which files the commit takes (the staged ones, plus the
 #        changed tracked ones with -a) and finds the project of each: the nearest folder above
 #        it holding scripts/verify.ps1, as the git pre-commit hook does. With no such file, the
@@ -205,7 +205,7 @@ function Test-Commit {
         $branch = @(Invoke-Git -C $folder branch --show-current) -join ''
         if (-not $branch.StartsWith('claude/')) {
             $where = if ($branch) { "on $branch" } else { 'on a detached HEAD' }
-            [Console]::Error.WriteLine("Blocked: $folder is $where. A commit there is the owner's, made by hand (CLAUDE.md rule 13, ADR 0021); the assistant commits only on the claude/ branch of its task.")
+            [Console]::Error.WriteLine("Blocked: $folder is $where. A commit there is the owner's, made by hand (CLAUDE.md rule 13, the kit's ADR 0021); the assistant commits only on the claude/ branch of its task.")
             return 2
         }
 
