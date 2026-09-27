@@ -1,62 +1,47 @@
 # Code map: what each file is for and why it is shaped that way
 
-> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** every project and file; the per-file rationale the code comments do not repeat.
+> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
+> CLAUDE.md nor a decision record says (ADR 0051): the layout is in CLAUDE.md ("Layout"), the
+> decisions with their reasons in `docs/decisions/`, and this note keeps the per-file mechanics
+> the code comments do not repeat, plus the result and outcome tables. **Covers:** in full, every
+> file under `FlatCheck.Core/` except, by pointer, `Version.cs`, `ThirdParty.cs` and
+> `PreviewReader.cs`; the console's three files; every file under `FlatCheck.Wpf/` except, by
+> pointer, `Theme/Dark.xaml` and `Views/AboutWindow.xaml`; the two test projects and `Icon/` in
+> full; by pointer, `Directory.Build.props`, `lensfun/`, `flatcheck.py`, `README.md`, `LICENSE`
+> and `docs/`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
-Quantitative diagnostic for astrophotography flat frames. Answers four questions:
-is the master flat radially symmetric, is the flat *setup* clean, does the flat
-actually correct a real light, and is a raw flat exposed correctly. A fifth mode answers
-nothing and shows: the frame through histogram equalisation, Siril's "Histogram" display
-mode, where every grey level holds the same number of pixels and any non-uniformity is
-at full contrast. See "5. Histogram equalisation" in `modes-histeq.md`. A sixth mode
-*produces* something: a second master flat with everything smooth kept and everything
-else - diffuser texture, dust, blotches - removed. See "6. Smoothed flat". A seventh
-*produces* one too, from nothing: a radial flat written from the lens's published
-vignetting profile (Adobe LCP read from the machine, or the lensfun database shipped beside
-the exe), plus `--against`, which reads how much and in what shape two flats differ. See
-"7. Synthetic flat".
-
-Two applications - a console tool and a WPF window - over one core library. The core
-hand-parses FITS and hand-writes PNG (via `ZLibStream` from the BCL), and reaches for a
-package where hand-rolling would be dishonest work: libraw (`Sdcb.LibRaw`) for camera raw
-files, ImageSharp for the JPEG preview the camera embeds in them. .NET 8. See
-"The dependencies" below before adding another, and "The two applications" for what each
-one owns.
+What the tool is and what its seven modes answer is the first paragraph of CLAUDE.md; each
+mode has its own note (`modes-*.md`, mapped by the index). The dependency rule, the hand-rolled
+FITS and PNG and the two packages are ADR 0008, 0009 and 0010 with `dependencies.md`; what each
+of the two applications owns is ADR 0011 with `two-applications.md`. The target is .NET 8.
 
 
 ## Structure
 
 Five projects (`FlatCheck.Core`, `FlatCheck`, `FlatCheck.Wpf`, `FlatCheck.Tests`,
-`FlatCheck.Wpf.Tests`). The split happened in 2.0.0, when a second application appeared over the
-same numbers - see "The two applications" below for why it was a library extraction and
-not a copy.
+`FlatCheck.Wpf.Tests`). What each folder owns is CLAUDE.md ("Layout"); why the 2.0.0 split was
+a library extraction and not a copy is ADR 0011.
 
-- `Directory.Build.props` - `<Version>` and `<Copyright>`, shared by every project. The
-  **single** place to edit either on the C# side. See "Versioning".
-- `FlatCheck.Core/` - everything that computes and everything that formats. Knows nothing
-  about consoles or windows, and has no entry point, so it *cannot* reach `Console` even
-  by accident. Before the split, "Analysis/ and Report/ are pure" was a convention held by
-  goodwill; now it is a compile boundary.
-  - `FitsReader.cs` - the hand-rolled FITS reader. `Load(byte[])` is the real
-    entry point; `Load(string)` is a thin file wrapper, which is what lets the
-    reader be tested without touching disk. `HInt`/`HDbl`/`HStr` read single cards out of
-    a header dictionary with a default, so a missing card is never an error - which is
-    what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
+- `Directory.Build.props` - `<Version>` and `<Copyright>`, shared by every project: ADR 0039
+  and ADR 0040.
+- `FlatCheck.Core/` - the compile boundary of ADR 0011.
+  - `FitsReader.cs` - the hand-rolled FITS reader (ADR 0008). `HInt`/`HDbl`/`HStr` read single
+    cards out of a header dictionary with a default, so a missing card is never an error - which
+    is what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
     FITS header at all. `LoadHeader(path)` reads the header blocks alone, for the window's
     Sintetic tab, which wants `FOCALLEN` and `INSTRUME` out of a 96 MB master at open.
-  - `FitsWriter.cs` - the hand-rolled FITS writer, the reader's pair, with one consumer:
-    `--smooth`. One primary 2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the
-    input's raw cards copied minus the structural ones it rewrites, `HISTORY` at the end.
-    Writes into a `Stream` for the same reason the report is a `TextWriter` - 96 MB of
-    float need not sit in memory twice; `Encode` over a `MemoryStream` is for tests. It
-    copies the **raw 80-character cards** (`LoadedFrame.Cards`, kept by `FitsReader.LoadFull`
-    alongside the dictionary), not the parsed dictionary, which loses comments and
-    truncates strings at `/` (known issue 1). `LoadedFrame` also carries `Planes`
-    (`NAXIS3`) and `Bitpix`, both so `SmoothRun` can refuse a cube and write the input's
-    type back.
+  - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--smooth`. One primary
+    2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the input's raw cards copied minus the
+    structural ones it rewrites, `HISTORY` at the end. Writes into a `Stream` for the same
+    reason the report is a `TextWriter` - 96 MB of float need not sit in memory twice; `Encode`
+    over a `MemoryStream` is for tests. It copies the **raw 80-character cards**
+    (`LoadedFrame.Cards`, kept by `FitsReader.LoadFull` alongside the dictionary), not the
+    parsed dictionary, which loses comments and truncates strings at `/` (known issue 1).
+    `LoadedFrame` also carries `Planes` (`NAXIS3`) and `Bitpix`, both so `SmoothRun` can refuse
+    a cube and write the input's type back.
   - `IFrameReader.cs` - the contract each input format implements: `Handles(path)` and
     `Load(path) -> LoadedFrame`. The only interface in the codebase, and the reason
     `ImageLoader` knows no reader's API.
@@ -70,25 +55,20 @@ not a copy.
     synthetic flat it also carries what the file knows about the shot - `FocalMm`,
     `FNumber`, `Camera`, `NikonLensId` - null where the format is silent (a Siril FITS has
     no f-number; a D3300 raw with third-party glass has no lens name but has the Nikon
-    lens ID). Nothing below it knows where the
-    pixels came from, and that is what keeps the two formats from growing separate
-    behaviour. Mirrors `load_image_with_header` in `flatcheck.py`. `LoadInfo(path)` is the
-    same dispatch **without pixels**: `Image` null, the shot fields filled - on a FITS from
-    the header alone, on a raw from libraw's metadata at `OpenFile`, before `Unpack`
-    (measured: tens of milliseconds, not seconds). It is what the lens identification and
-    the Sintetic tab's prefill read, so neither decodes 24 MP for an f-number.
-  - `RawReader.cs` - the only file that touches a third-party library. Wraps libraw to
-    get the undebayered Bayer mosaic, the exact white/black levels, and the CFA colour
-    order out of a camera raw. `IsRawPath` is the extension gate; `RawExtensions` exposes
-    the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
-    camera the list offers. `ShootingInfo` reads focal length, f-number, make/model and
-    the Nikon lens ID out of `ImageOtherParams` / `IParams` / `LensInfo` - locals only, for
-    the lazy-loading reason above.
+    lens ID). Nothing below it knows where the pixels came from, and that is what keeps the
+    two formats from growing separate behaviour. `LoadInfo(path)` is the same dispatch
+    **without pixels**: `Image` null, the shot fields filled - on a FITS from the header
+    alone, on a raw from libraw's metadata at `OpenFile`, before `Unpack` (measured: tens of
+    milliseconds, not seconds). It is what the lens identification (ADR 0030) and the
+    Sintetic tab's prefill read, so neither decodes 24 MP for an f-number.
+  - `RawReader.cs` - the only file that names a libraw type, loaded lazily, `ShootingInfo`
+    reading its fields as locals: ADR 0009. `IsRawPath` is the extension gate; `RawExtensions`
+    exposes the same list to the WPF app's `flats/` filter, so a camera the reader learns is a
+    camera the list offers.
   - `CfaPattern.cs` - which colour each of the four Bayer positions is, or `null` when the
-    file does not say. Decoded from libraw's `filters` + `cdesc`, or from a FITS
-    `BAYERPAT` (+ `XBAYROFF`/`YBAYROFF`, and `ROWORDER`, which on a bottom-up file of
-    even height moves the phase by one row). Never guessed - see "The channel order"
-    under mode 4. Used only for *naming*; no figure depends on it.
+    file does not say: what it reads (libraw's `filters` + `cdesc`, or `BAYERPAT` with
+    `XBAYROFF`/`YBAYROFF` and `ROWORDER`), why it is never guessed and why no figure depends on
+    it are ADR 0023.
   - `Mosaic.cs` - the CFA rule shared by `--expo`, `--histeq` and `--smooth`:
     `PositionOf(y, x)`, `CfaSpreadMin` (1.15) with `LooksCfa`, `Split` into the four
     position rasters, `Extract` (one position, for the mode that works them one at a time
@@ -101,26 +81,21 @@ not a copy.
     the same pass it reads the pixels, and a second copy of the data would cost memory.
   - `PreviewImage.cs` - the camera's own rendering of the frame, in two forms:
     `EmbeddedPreview` (the bytes as they sit in the raw, captured while the file is open)
-    and `PreviewImage` (decoded RGB, made only on request). Neither may decide anything -
-    see "The camera's preview" under mode 4.
-  - `PreviewReader.cs` - the only file that names a `SixLabors.ImageSharp` type, exactly as
-    `RawReader.cs` is the only one that names libraw. `Decode(EmbeddedPreview)` returns
-    null on any failure, including a missing assembly; it is also the swap point if the
-    package ever has to change.
+    and `PreviewImage` (decoded RGB, made only on request). Neither may decide anything
+    (ADR 0024).
+  - `PreviewReader.cs` - the only file that names a `SixLabors.ImageSharp` type, the null on
+    any failure and the swap point: ADR 0010.
   - `Thresholds.cs` - `Th`. Note it does **not** hold every threshold; see below.
   - `Img.cs` - the 2-D raster plus its pure transforms: `BlockMean`, `Prepare`,
     `Divide`, `Symmetrise` (the mean of a raster and its 180° rotation, which is what the
-    radial model is fed - see `RadialModel` under "Shared pipeline"), and for the
-    attribution mode `CropCentred` + `Rotate180`. Those last two
-    exist because that mode is the only one that compares a raster with its own 180°
-    rotation, and `BlockMean` drops partial blocks only at the *end* - so its grid is
-    anchored top-left and a rotation lands up to one tile off. Deliberately **not** used
-    by `LargeScalePtp`: there the top-left anchoring is what `flatcheck.py` does, and the
-    numeric parity is tested. `TileMedians` is the third grid, for `--smooth` only: tile
-    *medians*, **partial last row and column kept**, and the real centre of every tile
-    returned - a partial 8-px tile fitted one full tile from its neighbour put a 0.8 %
-    error band along the edge of the synthetic; with real centres the whole-frame error
-    is 0.19 %.
+    radial model is fed - see `RadialModel` under "Shared pipeline" in `pipeline.md`), and
+    for the attribution mode `CropCentred` + `Rotate180`, which exist because that mode is
+    the only one that compares a raster with its own 180° rotation; why `LargeScalePtp`
+    deliberately does not use them is ADR 0016. `TileMedians` is the third grid, for
+    `--smooth` only: tile *medians*, **partial last row and column kept**, and the real
+    centre of every tile returned - a partial 8-px tile fitted one full tile from its
+    neighbour put a 0.8 % error band along the edge of the synthetic; with real centres the
+    whole-frame error is 0.19 %.
   - `Stats.cs` - numeric primitives: `Percentile`, `Interp`, `Solve`,
     `Verdict`, `Rank`, `Severity`, and the verdict vocabulary (`ResidualBands`,
     `NotApplicable`).
@@ -128,19 +103,13 @@ not a copy.
     `CornerStats`, `AzimuthalAsymmetry`, `LargeScalePtp`, `MaxTileDeviation` (the worst
     tile - the fifth structure test), `LocalSpots` (the deepest compact spot after the
     large-scale structure is subtracted - informative, with a warning), `TileBackground`,
-    plus `TileSize` - the tile side the large-scale metrics use, pulled out because
-    `LargeScalePtp`, `MaxTileDeviation`, `LocalSpots` and the attribution mode all need
-    it and two copies of the formula would have diverged at the first adjustment of
-    `ntiles`.
-  - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly. See
-    "Versioning".
-  - `ThirdParty.cs` - the third-party components as a *value*: name, role, licence,
-    copyright notice, URL and the NuGet packages that bring each one in. It is what the
-    window's "Despre" shows, and it exists because LGPL-2.1 §6 wants LibRaw's notice
-    displayed wherever the program displays its own - see "Licensing". `ThirdPartyTests`
-    binds it to the `PackageReference`s in the Core csproj in both directions and to the
-    headings of `THIRD-PARTY-NOTICES.md`, so **a new package needs an entry here too**;
-    see "The dependencies".
+    plus `TileSize` - the one tile side the large-scale metrics and the attribution mode
+    share (ADR 0016).
+  - `Version.cs` - `VersionInfo.Value`/`Banner`/`Copyright`, read from the assembly:
+    ADR 0039.
+  - `ThirdParty.cs` - the third-party components as a *value*, what the window's "Despre"
+    shows, bound to the csproj and the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040
+    and rule 5.
   - `LensProfiles/` - the lens vignetting profiles behind the synthetic flat.
     `VignettingModel` is the factor `V(x, y)` as a value, with the two coordinate
     conventions verified from sources (its header quotes them): Adobe's r in units of the
@@ -148,46 +117,29 @@ not a copy.
     calibration crop. `LcpReader` (Adobe XMP, both the attribute and the element form,
     with the piecewise tables) and `LensfunReader` (`<lens>` + `<camera>` for crop
     factors) are pure over text; `ProfileLocator` is the only file that looks at the
-    machine. `LensProfile` / `LensCatalog` hold the list: **lensfun parsed up front,
-    Adobe lazily** - 3531 `.lcp` files and 36 s to parse them all on the author's
-    machine, against 2 s for the list from file names (`AdobeProfileFile.FromName`: the
-    `<Camera> (<Lens>) - RAW.lcp` convention, with the fixed-lens phones and compacts as
-    camera-named stubs). A file is parsed when its lens is chosen, or when a Nikon lens
-    ID is looked up, and then only the files of the camera's mount, in parallel.
-    **A lensfun lens's identity includes its calibration crop** (`LensChoice.Calibration`,
-    "APS-C 1.528" / "full frame 1"; `Where` = mount + calibration is what every list, table,
-    report and FITS `HISTORY` shows, `Title` = name + calibration what the verdict sentences
-    say): the database holds 20 lenses twice, same name and mount, calibrated on two
-    formats, and with the crop outside the key the two collapsed and `Nearest` took the
-    first in file order - on the Nikkor 35/1.8G DX the poor one (0.19 stops at the DX
-    corner against 0.51 from the hidden D780 entry and 0.61 from Adobe; `docs/design/lens-profiles.md`
-    §5 and §8). The label is on every lensfun lens, not only the duplicated ones, so a name
-    cannot change when the database gains an entry; Adobe stubs carry none (the body is the
-    mount, the SFF is not in the file name). Pinned by
-    `Lensfun_TheSameLensCalibratedOnTwoFormatsIsTwoLenses`,
+    machine. `LensProfile` / `LensCatalog` hold the list: lensfun parsed up front, Adobe
+    lazily from file-name stubs (`AdobeProfileFile.FromName`), for the measured reason in
+    ADR 0028. A lensfun lens's identity includes its calibration crop (ADR 0029):
+    `LensChoice.Calibration` is "APS-C 1.528" / "full frame 1"; `Where` = mount +
+    calibration is what every list, table, report and FITS `HISTORY` shows, `Title` = name +
+    calibration what the verdict sentences say. The label is on every lensfun lens, not only
+    the duplicated ones, so a name cannot change when the database gains an entry; Adobe
+    stubs carry none. Pinned by `Lensfun_TheSameLensCalibratedOnTwoFormatsIsTwoLenses`,
     `ALensfunLensCalibratedOnTwoFormatsIsTwoRows` and the two tab tests of the same name.
-    **A lensfun pair at 10 and 1000 m with identical coefficients is one profile with an
-    unknown distance** (`LensfunReader.CollapseCopiedDistances`, `DistanceM = NaN`, printed
-    "distanta nespecificata"): that is how lensfun marks "measured once, distance not
-    recorded", and the old "infinit" was a copied value presented as a fact - the same
-    Nikkor entry has the floor of Adobe's 0.36 m profile, not the 1.5 m one. A single entry
-    at a stated distance keeps it; a pair with different coefficients keeps both.
+    A lensfun pair at 10 and 1000 m with identical coefficients is one profile with an
+    unknown distance (ADR 0029): `LensfunReader.CollapseCopiedDistances` sets `DistanceM =
+    NaN`, and the old "infinit" was a copied value presented as a fact - the same Nikkor
+    entry has the floor of Adobe's 0.36 m profile, not the 1.5 m one. A single entry at a
+    stated distance keeps it; a pair with different coefficients keeps both.
     `SensorFormats` is the six nominal crops (full frame 1.0 ... 1" 2.7) with the sensor
     sizes as notes - the fallback for a body the lensfun camera table (1053 entries, the
     one list of cameras, maintained upstream) does not have; the refusal text lists them
     and the window offers them as chips.
     `LensIdentification` is the **one** identification of the shot - focal, f-stop, crop,
     camera, each with its source, and the lens candidates - from a reference frame (the
-    master, or the console's raw) and a raw beside it, both through `LoadInfo`. It used to
-    live half in `SyntheticRun.Complete` and half in the Sintetic tab's prefill, and the
-    Structure tab's comparison needed exactly the same rule; two copies would have chosen
-    two lenses for one folder. Candidates: the Nikon lens ID narrowed by the MakerNote
-    range, the lensfun lenses of the same makers, the camera's mount, `PreferCamera`; and,
-    when the ID matches nothing but the raw gives a full range, **the lenses of the mount
-    whose name says exactly that range** (`CandidatesByRangeOnly`) - a manual Samyang 135
-    f/2 on a D3300 carries the "non-CPU lens" ID 74, which no profile has, and the range
-    135 mm f/2.0 from the camera's menu; the report says the list may hold another lens
-    of the same range. `FirstRaw` is the "raw beside the master" rule both tabs share.
+    master, or the console's raw) and a raw beside it, both through `LoadInfo`; where it
+    came from, how the candidates are chosen (`CandidatesByRangeOnly` for a manual lens) and
+    `FirstRaw` are ADR 0030, `PreferCamera` ADR 0029.
   - `Analysis/` - one analyzer per mode, each a pure function into an `XxxResult`:
     `StructureAnalyzer`, `RatioAnalyzer`, `LightAnalyzer`, `ExposureAnalyzer`,
     `HistEqAnalyzer` (with `HistEqLut`, the Siril transfer table - see mode 5),
@@ -199,89 +151,74 @@ not a copy.
     built at analysis size - see "The sixth test" under mode 1),
     `SmoothAnalyzer` (mode 6; its header comment carries the two rejected designs and the
     measurements - read it before touching the method) and `SmoothScaleAdvisor` (proposes
-    the smoothing scale from the master - `Metrics.FineTexture` on the input, then one
-    smoothing per rung of the three-chip ladder, with the azimuthal asymmetry and the tilt
-    as the "too large" guards; pure, and `Decide` is separately pure over hand-made
-    trials). Beside
-    them, `ExposureBands` - the verdict ladder as a *value*, because two places need it
-    (`Classify`, and the window's histogram) and a second selection among the `Th.Expo*`
-    constants would have been a second definition of the verdict. `ExposureAnalyzer` also
-    carries `LevelHistogram` and `ChannelLevels`, the per-channel distributions; they are
-    filled in the loop the analyzer already ran and change no existing figure. Beside them
-    `PreviewLevels` and `AnalyzePreview`, the same two types over the camera's own
-    rendering - three channels, no bands, no verdict, and `Analyze` fills
-    `ExposureResult.Preview` only when handed one.
-    No I/O, no printing - this is where every number is decided. Two of them are not
-    `Img -> Result`, deliberately: `LightSuitability` is `header -> SuitabilityResult`
-    (it decides whether `--light` applies at all, before any pixel is read), and
-    `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it combines
-    per-frame results; the file loading stays in `Runs/`, like every other mode).
+    the smoothing scale from the master, ADR 0027; pure, and `Decide` is separately pure
+    over hand-made trials). Beside them, `ExposureBands` - the verdict ladder as a *value*
+    (ADR 0022). `ExposureAnalyzer` also carries `LevelHistogram` and `ChannelLevels`, the
+    per-channel distributions; they are filled in the loop the analyzer already ran and
+    change no existing figure. Beside them `PreviewLevels` and `AnalyzePreview`, the same
+    two types over the camera's own rendering - three channels, no bands, no verdict, and
+    `Analyze` fills `ExposureResult.Preview` only when handed one.
+    Two of them are not `Img -> Result`, deliberately: `LightSuitability` is
+    `header -> SuitabilityResult` (it decides whether `--light` applies at all, before any
+    pixel is read), and `LightSeriesAnalyzer` is `[LightResult] -> LightSeriesResult` (it
+    combines per-frame results; the file loading stays in `Runs/`, like every other mode).
     `RatioAnalyzer` is `Img × Img -> RatioResult` and is the one analyzer that *calls*
     another: the verdict of the attribution mode is `StructureAnalyzer` run on the
     combined master, through `AnalyzePrepared` - the overload that skips `Img.Prepare`
-    because the caller has already prepared its input. `Prepare` is only block means,
-    hence linear, so the mean of the prepared rasters equals the prepared mean, at a
-    thirtieth of the memory.
+    because the caller has already prepared its input (ADR 0019).
     The members of every `XxxResult`, with their units, which of them vote and which are
     informative, and the `docs/validation.json` keys that read them, are tabulated under
     "Result records (Analysis/)" at the end of this note.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
-    function. All the Romanian output lives here and nowhere else. `SyntheticReport` also
-    carries the `--lenses` list, the refusals, and the two texts the window's sources panel
-    shows (`AdobeWhere`, `LensfunWhere`), so console and window say the same about where
-    profiles come from. `LightSeriesReport`
+    function. `SyntheticReport` also carries the `--lenses` list, the refusals, and the two
+    texts the window's sources panel shows (`AdobeWhere`, `LensfunWhere`). `LightSeriesReport`
     is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
-    its table instead of sitting silent for two minutes. `StructureReport.WriteBody` is
-    split off for the same reason in the other direction: the attribution mode prints its
-    own header and then wants that exact body - minus the ADU line, which means nothing on
-    a raster normalised to a median of 1. `RunReport` holds the two lines
-    that frame every mode - the version banner and the "harta salvata" line - because
-    both applications write them and two copies would have diverged. It also holds
-    `MapScaleLabel` and `MapLegend`, the two bits of wording that go with the map; they
-    have no console caller today, and live here anyway so a future `--scala` reuses them
-    instead of rewriting them. And `WarrantyLines` + `LicenseUrl`: the GPLv3 §5(d)
-    notice, which the console prints at `--help` and the window shows in "Despre" -
-    one text, so the two cannot describe the same licence differently.
-    Several pieces are exposed as values rather than only written: `StructureReport.Scale()`,
+    its table (ADR 0011). `StructureReport.WriteBody` is split off for the same reason in
+    the other direction: the attribution mode prints its own header and then wants that
+    exact body - minus the ADU line, which means nothing on a raster normalised to a median
+    of 1. `RunReport` holds the two lines that frame every mode - the version banner and the
+    "harta salvata" line. It also holds `MapScaleLabel` and `MapLegend`, the two bits of
+    wording that go with the map; they have no console caller today, and live here anyway so
+    a future `--scala` reuses them instead of rewriting them. And `WarrantyLines` +
+    `LicenseUrl`, the GPLv3 §5(d) notice (ADR 0040).
+    Several pieces are exposed as values rather than only written, so that one definition
+    serves both applications (ADR 0011): `StructureReport.Scale()`,
     `StructureReport.Advice()`, `StructureReport.TestNote()` (one sentence per deviation
     test, keyed by the `StructureResult` field name so reordering the rows cannot unpair a
     note from its metric), `StructureReport.Levels()` (the median / max line, formatted
     for a float master as well as an ADU one - both applications print it), the three
     `LocalSpot*` pieces (`LocalSpotValue` with the sign named in words, `LocalSpotNote`
     with the warning threshold read from `Th.LocalSpotWarn`, `LocalSpotWarning` or null -
-    all three printed by the console too, see "1. Structure"), `LightReport.Diagnosis()`, `ExposureReport`'s
-    `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around the exposure
-    histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason` (the raw-vs-screen
-    table and its explanation) - all window-only, like `MapScaleLabel`, and for the same
-    reason, and from
-    `StructureReport` also owns the profile block: `ProfileRows`, `MasterDepth`,
-    `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` / `DepthScaleNote` (the depth
-    scale as four bands in stops, `Th.Resid*` through `Stats.StopsForError`, and the sentence
-    that it is the residual scale translated, not a new threshold - the user asked whether it
-    was a second scale), `GapText` / `GapMeaning` (one sentence per
-    `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of the verdict; the
-    console pads them into `VerdictDetail`, the window labels them itself) and
-    `DepthAdvice`, which replaces `Advice` when the depth carried the verdict and reads the
-    sign as the cause. From
-    `RatioReport` the seven that the Ratio tab shows verbatim - `Provenance`, `WorldValue`,
-    `Precondition`, `WorldMeaning`, `SensorCaveat`, and the two window-only notes under the
-    world-fixed rows, `WorldNote` (what "per orientation" means, and that the coloured
-    label does not vote, with its thresholds read from `Th.RatioOk`/`Th.RatioBad`) and
-    `WorldCornerNote`. Those two rows were the last on the Ratio screen without a
-    description; `EveryRowOnTheScreenCarriesADescription` now covers every row on it. The console formats them into columns, the WPF app puts
-    them in cards and under a coloured chip; the wording has one definition either way.
-    `WorldValue` and `WorldLine` are split for exactly that reason: the console wants the
-    figure with its label glued on, the window shows the label as a separate chip, and
-    without the split the verdict appeared twice on one row. `HistEqReport` has no verdict
-    to write; what it exposes as values is `Caveat()` (what the picture cannot show),
-    `MasterVersusFrame()` and `ViewCaption()` - window-only, like the others. `SmoothReport`
-    prints "what was removed" and the structure battery before/after; it reuses the
-    structure report's own labels through `StructureReport.TestLabel`/`TestKeys`/`Test`
-    (added for it, so the two reports cannot name a test differently) and
-    `LocalSpotValue(pct, x, y)`, the overload that formats a spot measured on another
-    raster. That overload also rounds to zero *before* formatting: .NET keeps the sign of
-    a negative zero, and `-0.00001` printed as `-+0.00`.
-  - `Runs/` - the whole chain of one mode: load -> analyze -> report -> encode the map.
+    all three printed by the console too, see "1. Structure"), `LightReport.Diagnosis()`,
+    `ExposureReport`'s `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around
+    the exposure histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason`
+    (the raw-vs-screen table and its explanation) - all window-only, like `MapScaleLabel`,
+    and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
+    `MasterDepth`, `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` /
+    `DepthScaleNote` (the depth scale as four bands in stops, `Th.Resid*` through
+    `Stats.StopsForError`, and the sentence that it is the residual scale translated, not a
+    new threshold - the user asked whether it was a second scale), `GapText` / `GapMeaning`
+    (one sentence per `ComparisonGap`), `ShapeDetail` / `DepthDetail` (the two halves of
+    the verdict; the console pads them into `VerdictDetail`, the window labels them itself)
+    and `DepthAdvice`, which replaces `Advice` when the depth carried the verdict
+    (ADR 0031). From `RatioReport` the seven that the Ratio tab shows verbatim -
+    `Provenance`, `WorldValue`, `Precondition`, `WorldMeaning`, `SensorCaveat`, and the two
+    window-only notes under the world-fixed rows, `WorldNote` (what "per orientation"
+    means, and that the coloured label does not vote, with its thresholds read from
+    `Th.RatioOk`/`Th.RatioBad`) and `WorldCornerNote`. Those two rows were the last on the
+    Ratio screen without a description; `EveryRowOnTheScreenCarriesADescription` now covers
+    every row on it. The console formats them into columns, the WPF app puts them in cards
+    and under a coloured chip; the wording has one definition either way. `WorldValue` and
+    `WorldLine` are split for exactly that reason: the console wants the figure with its
+    label glued on, the window shows the label as a separate chip, and without the split
+    the verdict appeared twice on one row. `HistEqReport` has no verdict to write; what it
+    exposes as values is `Caveat()` (what the picture cannot show), `MasterVersusFrame()`
+    and `ViewCaption()` - window-only, like the others. `SmoothReport` prints "what was
+    removed" and the structure battery before/after; it reuses the structure report's own
+    labels through `StructureReport.TestLabel`/`TestKeys`/`Test` (added for it, so the two
+    reports cannot name a test differently) and `LocalSpotValue(pct, x, y)`, the overload
+    that formats a spot measured on another raster (its negative-zero rounding is ADR 0041).
+  - `Runs/` - the chain of one mode, the layer both applications call (ADR 0011):
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
     `SmoothRun`, `SyntheticRun`, `AgainstRun`, plus `SeriesFinder` (which files a series
     run covers). `StructureRun.Execute` takes an optional `StructureQuery` (profile
@@ -289,71 +226,52 @@ not a copy.
     `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
     query; with one, present even when it could not compare - `Gap` says why) and the
     combined verdict. Without a query the output is byte-identical to before, which is
-    what keeps the golden files, the parity ones included, still. `Compare` is the second half
-    on its own, so the window can explain a missing raw without reloading the master. `SyntheticRun` is the third run that can refuse and the second whose
-    product is a file (`WriteFits` on the caller's stream, like `SmoothRun`); its
-    `SyntheticRequest` carries every value with the source it came from, so the report
-    can print "cerut" beside "profil folosit". `SmoothRun` is the
-    second run that can refuse (a raw, a colour cube - `LightRun`'s shape) and the first
-    whose product is a file: `WriteFits(outcome, sourcePath, Stream)` is called by the
-    console on a `FileStream` and by the window after the overwrite question, never by
-    the run itself, for the reason `RunOutcome.cs` gives for the map. `OutputBitpix` is
-    "same type in, same type out" (16 stays 16, everything else becomes -32), and nothing
-    is renormalised. `HistEqRun` also carries the
-    per-view encoders (`EncodeChannel`, `EncodeMosaic`) the window calls on demand; the
-    console only ever writes the composite. This is the layer both applications
-    call, and the reason neither of them re-derives a number. `ExposureRun` is the only one
-    with an opt-in: `withPreview` decodes the camera preview, and defaults to false because
-    only the window shows it. Two shape decisions are
-    load-bearing and explained at length in `Runs/RunOutcome.cs`: the report is **written
-    into a `TextWriter` the caller supplies** (so the console keeps streaming a 32-frame
-    table, and anyone who wants the string passes a `StringWriter`), and the residual map
-    comes back as **PNG bytes** rather than being written to disk (the window wants to
-    show it, not save it). `RunOutcome.SecondaryPng` was added for the attribution mode,
-    the only one that produces two maps, and is null everywhere else.
+    what keeps the golden files, the parity ones included, still. `Compare` is the second
+    half on its own, so the window can explain a missing raw without reloading the master.
+    `SmoothRun` and `SyntheticRun` can refuse (a raw, a colour cube - `LightRun`'s shape;
+    for `SyntheticRun` also the lens choice) and produce a file: `WriteFits(outcome,
+    sourcePath, Stream)` is called by the console on a `FileStream` and by the window after
+    the overwrite question, never by the run itself (ADR 0011). `SyntheticRequest` carries
+    every value with the source it came from, so the report can print "cerut" beside
+    "profil folosit". `SmoothRun.OutputBitpix` is "same type in, same type out" (16 stays
+    16, everything else becomes -32), and nothing is renormalised. `HistEqRun` also carries
+    the per-view encoders (`EncodeChannel`, `EncodeMosaic`) the window calls on demand; the
+    console only ever writes the composite. `ExposureRun` is the only one with an opt-in,
+    `withPreview` (ADR 0024). The `TextWriter` and PNG-bytes shape of every outcome is
+    explained in `Runs/RunOutcome.cs` and decided in ADR 0011.
     Every outcome type of this folder, member by member with its unit, and the `TextWriter`
     rule stated as a fact, are tabulated under "Run outcomes (Runs/)" at the end of this note.
-  - `PngWriter.cs` - the hand-rolled PNG encoder and the residual colour map.
+  - `PngWriter.cs` - the hand-rolled PNG encoder (ADR 0008) and the residual colour map.
     `Encode(rgb, w, h)` is the real entry point; `EncodeResidualMap` is what both
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
     nothing - the "harta salvata" line comes from `RunReport`. `EncodeGrey` writes a grey
     raster as RGB with equal components; the encoder keeps its single colour type.
 - `FlatCheck/` - the console app. `AssemblyName` is `flatcheck`, so the binary is
-  `flatcheck.exe`, not `FlatCheck.exe`. Three files, and that is the point: what is left
-  here is what belongs to a command line and to nothing else.
+  `flatcheck.exe`, not `FlatCheck.exe`. Three files; their contract and how a flag or a mode
+  is added are `process.md` ("Extending the console").
   - `Program.cs` - a one-line `Main` shim, plus a header that points at `README.md`
-    rather than restating it. It used to carry a full copy of the user documentation;
-    it drifted, and the copy was the wrong one - see the convention below.
+    rather than restating it (the convention, and the drift that made it, are `process.md`,
+    "Conventions").
   - `FlatCheckCli.cs` - `Run(args, stdout, stderr)`: mode dispatch, writing the map(s) to
     disk, and the exit code. All output goes through the injected `TextWriter`, never
-    `Console` directly. `WorldMapPath` lives here rather than in the core because naming a
-    second output file is a console concern: the window never writes either map to a path
-    of its own choosing.
+    `Console` directly. `WorldMapPath` lives here rather than in the core (ADR 0011).
   - `Options.cs` - CLI parsing.
-- `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See "The two applications".
+- `FlatCheck.Wpf/` - the window app, `net8.0-windows`. See `two-applications.md`.
   - `Session/` - `SirilSession` (what a session folder means on disk: which file is the
-    master, which are raw flats, what counts as a flat master by name - and **where the
-    master may be**: `masters/` or `process/`, see "Two places for the master" under "What
-    the window adds"; also `SmoothedMasterPath` and `SyntheticMasterPath`, the two files
-    the writing tabs put beside the master, neither ever the session's master) and
-    `SessionMessages` (the explanations shown when the input is not usable, the
-    Ratio tab's in-UI documentation, and the residual map's shape guide), plus the four
-    files behind the "run the script from here" button - see "Running the Siril script"
-    under "What the window adds": `SirilInstall` (where `siril-cli.exe` and the `.ssf`
-    scripts are; the config parsing is pure, `Locate()` is the only thing that touches the
-    machine), `SirilScript` (commands and input folders read out of a `.ssf`),
-    `SirilLogLine` (one stdout line, sorted into log / progress / other) and
-    `SirilScriptRun` (the `Process` wrapper, plus the `SirilRunner` delegate the tests
-    replace). `FlatFrames()`
-    lists raws *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and
-    `HistEqCandidates()` puts the flat master in front of them for the Histogram tab, and
-    between the two the smoothed master **when the file exists** - by the exact path
-    `SmoothedMasterPath` names, never by pattern, so a `_netezit` beside the *older* of
-    two masters is not listed (it is another master's smoothing). Three kinds of row,
-    `HistEqKind`. The only part
-    of the app with real rules, and the part with the most tests. It has no `RatioCandidates`: the Ratio tab deliberately
-    proposes nothing, because the two masters it needs live in two *different* session
-    folders - see "The two applications".
+    master and where it may be, ADR 0034; which are raw flats; what counts as a flat master
+    by name, ADR 0033; `SmoothedMasterPath` and `SyntheticMasterPath`, the two files the
+    writing tabs put beside the master, ADR 0036) and `SessionMessages` (the explanations
+    shown when the input is not usable, the Ratio tab's in-UI documentation, and the
+    residual map's shape guide), plus the four files behind the "run the script from here"
+    button of ADR 0035: `SirilInstall` (where `siril-cli.exe` and the `.ssf` scripts are;
+    the config parsing is pure, `Locate()` is the only thing that touches the machine),
+    `SirilScript` (commands and input folders read out of a `.ssf`), `SirilLogLine` (one
+    stdout line, sorted into log / progress / other) and `SirilScriptRun` (the `Process`
+    wrapper, plus the `SirilRunner` delegate the tests replace). `FlatFrames()` lists raws
+    *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and `HistEqCandidates()` builds
+    the Histogram tab's list in the order and by the exact-path rule of ADR 0033; three
+    kinds of row, `HistEqKind`. The only part of the app with real rules, and the part with
+    the most tests. It has no `RatioCandidates` (ADR 0033).
     `ProfileCatalog` is the lens-profile catalog loaded once for the whole window (in the
     background, on first request, retried after a failure) - it was the Sintetic tab's
     until the Structure tab needed the same list; `MainViewModel` builds it and hands it
@@ -366,9 +284,7 @@ not a copy.
     warning - decides nothing about flats) and `SirilRunViewModel` (one script run as the
     run window sees it: log text, progress, current command, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
-    properties only - `VersionInfo`, `RunReport.WarrantyLines`, `ThirdParty.Components`
-    copied into public `ComponentRow`s, headings from `SessionMessages`; it formulates
-    nothing), and two small companions of the residual map shared by
+    properties only, ADR 0040), and two small companions of the residual map shared by
     the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
     choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
@@ -382,19 +298,17 @@ not a copy.
     from and what format it is; `FormatNote` (recomputed on every lens, crop, focal or
     f-stop change, in the background with a generation counter; the selected lens's Adobe
     file is parsed there, one file) says what the chosen profile was calibrated on and
-    whether that is the user's sensor - `SyntheticReport.FormatMatch`, the sentence the
-    console prints at "format" and the tab repeats under the written depths.
+    whether that is the user's sensor - `SyntheticReport.FormatMatch` (ADR 0029).
     `HistEqViewViewModel` is the fourth, on the Histogram tab, and the only one
     whose option list depends on the result (six chips on a CFA frame, `Mozaic` first and
     default, one on mono). `ImageZoomViewModel` beside it holds the zoom *state* - fit or
     a factor, plus the effective factor the control writes back - so a test can drive it
-    and the tab can reset it on a new file (and deliberately not on a chip change). `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
+    and the tab can reset it on a new file (and deliberately not on a chip change).
+    `StructureRows` is not a view-model but a builder: the five `MetricRow`s of the
     deviation battery, built once for **both** the Structure and the Ratio tab, since Ratio
     runs the same analyzer on the combined master. They are `public` because WPF binding
-    reads public properties by reflection - and that has a useful consequence: a public
-    view-model **cannot** expose an internal core type, so the compiler itself stops a
-    `StructureResult` from leaking into XAML. `MapScaleOption.CapPct` is `internal` for
-    exactly that reason, while `Label` and `IsSelected` are what XAML binds.
+    reads public properties by reflection (the consequence for internal core types is
+    ADR 0037).
     `TestNote` earns its place the hard way: two of the five rows - the azimuthal
     asymmetry and the tilt - sat in the window showing a number, a verdict and no word
     about what they measured, for a whole version. The two notes that did exist were
@@ -439,21 +353,14 @@ not a copy.
     median of 1 - it would mean nothing, and the console does not print it there either.
   - `Views/SirilRunWindow.xaml` - the live log of a script run, modal over the main
     window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
-    Siril), scrolls the log to the end. Rendered by `WindowSmokeTests` in three states.
+    Siril), scrolls the log to the end.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
     inherited `TabViewModel`, so the same three controls serve every tab; `SyntheticView`
     is the one with text boxes (`Style x:Key="Field"` in `Dark.xaml`, keyed like `LogBox`
     because a TextBox is not an ordinary control of this app);
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
-    Headings that COUNT something are literals in XAML and no test reads them: the
-    Structure tab said "SCARA CELOR PATRU TESTE" for a whole version after the tests
-    became five, and it was caught by looking at a `FLATCHECK_DUMP_SCREENS` render, not by
-    the suite. `TheScaleHasFourBandsAndMarksTheCurrentOne` now also asserts the test count,
-    which is the number that heading quotes.
-    Every set of radio chips needs its own `GroupName` (`StructureMapScale`,
-    `RatioMapScale`, `ExposureHistogramSource`, `HistEqView`): WPF groups radio buttons by
-    name across the whole window, so a shared name makes one tab's chips uncheck
-    another's. `HistEqView` is the one tab whose `BusyOverlay` sits inside the right-hand
+    Headings that count something, radio `GroupName`s and the smoke renders are ADR 0037.
+    `HistEqView` is the one tab whose `BusyOverlay` sits inside the right-hand
     column rather than over the whole tab - the list stays clickable while a frame is
     computing, and a new click supersedes the run (see "What the window adds"). Its
     picture sits in `ZoomableImage`, a `UserControl` that owns the pointer interaction
@@ -466,16 +373,9 @@ not a copy.
     `NearestNeighbor` at factor >= 1 so magnified pixels are crisp squares; "fit" is
     capped at 1.0, so a picture smaller than the viewport is shown at its size rather
     than blown up (found on the 128 px test fixtures, where fit came out at 4x).
-  - `Views/AboutWindow.xaml` - the "Despre" window: icon, banner, copyright, the GPLv3
-    warranty notice and the third-party list. Opened from the `Despre` button in the top
-    bar and from **F1**, both through `ApplicationCommands.Help` (whose default gesture is
-    F1), so no view-model has to open a window. Modal, centred on its owner, `IsCancel`
-    on the close button. Hyperlinks are handled once, on the window, through the routed
-    `Hyperlink.RequestNavigate` - the component rows live in a `DataTemplate` in
-    `Dark.xaml`, and a resource dictionary has no code-behind to put a handler in.
-    `WindowSmokeTests` renders the window's *content*, not the window: an unshown
-    `Window` renders transparent (the existing `fereastra` dump is blank for the same
-    reason), while the root panel inherits the DataContext and walks the same bindings.
+  - `Views/AboutWindow.xaml` - the "Despre" window (ADR 0040: what it shows and how it is
+    opened; ADR 0037: the hyperlink handler and why the smoke test renders its content, not
+    the window). Modal, centred on its owner, `IsCancel` on the close button.
   - `Presentation/AppIcon.cs` - the largest frame of `flatcheck.ico`, chosen through
     `BitmapDecoder`: an `<Image>` handed the `.ico` directly takes whichever frame comes
     first, which at 72 px on screen can be the 16 px one scaled up.
@@ -487,29 +387,20 @@ not a copy.
   - `Presentation/` - `VerdictPalette` (colour derived from `Stats.Severity`, never from
     its own list of verdict names), `ChannelPalette` (R/G/B hues for the exposure
     histograms - deliberately **not** routed through `Stats.Severity`: a red channel is
-    not a worse channel, and an unknown mosaic order paints all four the neutral accent so
-    the screen cannot imply a measurement that was never made), `HistogramCanvas` (the
-    hand-drawn chart) and the value converters.
+    not a worse channel; the neutral accent on an unknown order is ADR 0023),
+    `HistogramCanvas` (the hand-drawn chart) and the value converters.
   - `Theme/Dark.xaml` - the palette, the control styles, the converters and the row
-    templates. The converters live there rather than in `App.xaml` because a
-    `StaticResource` inside a dictionary resolves in *that* dictionary. It also styles
-    `ToolTip`: WPF's default tooltip is light, the implicit `TextBlock` style paints text
-    light, and the two met as white on white on the Sintetic tab's sensor chips - the
-    only tooltips in the app so far. Any new tooltip gets the dark one for free.
+    templates; why the converters and the `ToolTip` style live there is ADR 0037.
   - `Interop/DarkTitleBar.cs` - the one P/Invoke: Windows draws the title bar, not WPF.
 - `FlatCheck.Tests/` - xUnit tests for the core and the console, reaching them via
-  `InternalsVisibleTo`. `Golden/` holds the characterization snapshots.
+  `InternalsVisibleTo`.
 - `FlatCheck.Wpf.Tests/` - xUnit tests for the window app, `net8.0-windows`. Separate
   project rather than a folder, so `FlatCheck.Tests` - which carries the parity story -
   stays portable. Borrows `FitsTestData`, `TempWorkspace` and `TestImages` from it by
   `<Compile Link>` rather than copying them - the last one for `JpegOf`, which encodes a
   camera preview in the test so the Exposure tab can be exercised with the source switch
   on without a real raw anywhere in the suite.
-- `flatcheck.py` - the original Python/numpy/astropy prototype the C# tool was
-  ported from, **frozen at 2.2.0 on 2026-09-26 and not maintained** (ADR 0047). Prior art
-  only; nothing is mirrored into it any more. The numbers it confirmed live on as
-  `Golden/parity_*.txt` (`ParityGoldenTests`); `crosscheck.py` beside it is the retired
-  comparison tool. See `python-parity.md`.
+- `flatcheck.py` and `crosscheck.py` - frozen, ADR 0047; see `python-parity.md`.
 - `Icon/` - `flatcheck.ico`, the one icon of both applications: `<ApplicationIcon>` in both
   csproj files (the exe, hence Explorer and a pinned taskbar entry) and, for the WPF app
   only, a linked `<Resource>` plus `Icon=` on `MainWindow` (title bar and the running
@@ -523,42 +414,13 @@ not a copy.
   the drawing changes. `IconTests` pins that both projects point at this one file and
   that the window's icon loads with all eight sizes; `LicenseHeaderTests` also scans
   `Icon/*.py`.
-- `lensfun/` - a verbatim copy of the lensfun database (`data/db`, 59 XML files,
-  5.2 MB, CC BY-SA 3.0), committed, with `LENSFUN-VERSION.txt` (upstream commit and date),
-  `LICENSE.txt` and `update-lensfun.py` (dev-time refresh; GPL header, scanned by
-  `LicenseHeaderTests`). Both application csproj files copy it next to the exe at build
-  and publish; the tool reads `lensfun/*.xml` beside its own exe and nothing is embedded.
-  Not git-ignored: a fresh clone must build, and the user's decision (2026-09-17) was
-  "whole database, not embedded, folder beside the exe". Updating is replacing the files.
-- `README.md` - **the** user-facing documentation, in Romanian, and the single source
-  for it. See the note in "Conventions".
-- `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
-
-- `docs/` - measurements that outlived the plans they were made for. Until 2026-09-25 the
-  plans were deleted once done, because their step lists went stale at the first later
-  change; since ADR 0001 an approved plan is kept in `docs/plans/`, with a "What deviated"
-  section added at wrap-up, and is history, never updated to match the code later. What
-  does not go stale - a measurement made on a date on named files, a design tried and
-  rejected - is folded into this file or into the header comment of the code it explains,
-  and the long form, when there is one, lands here: `siril-histeq-source.md` (the Siril 1.4.4 code the
-  `--histeq` mode mirrors), `smooth-validation.md` (the five real masters, the three
-  designs and the acceptance tables behind `--smooth`), `radial-model-even-term.md` (the
-  second face of the ring artefact: the sky session that exposed it, the five designs
-  measured and rejected, the exact algorithm of `RadialModel` / `RingFit` and its
-  before/after figures) and `lens-profiles.md` (the synthetic flat: the Adobe and lensfun
-  model definitions quoted from their sources, the catalog and reader rules, the output
-  format, `--against`, and the acceptance figures). **`docs/` is maintained, in one
-  precise sense**: each file is the evidence behind a decision that is still in force, and
-  each says at the top which code it covers and what it was measured on. A change to that
-  code means the evidence is re-run and the file updated - or, if the decision goes, the
-  file goes with it. A measurement left standing next to code it no longer describes is
-  the same trap as a stale plan, only better hidden. (The one file that needs no re-run on
-  our side is the Siril source excerpt: it stays true for the Siril tag it quotes, and
-  changes only if the mode starts mirroring another version.)
-
-The test refactoring that produced the current suite (eight phases, 2026) and the seven
-feature plans since were run to completion and removed, under the rule in force then; the
-plans since 2026-09-25 are in `docs/plans/`.
+- `lensfun/` - the lensfun database, committed whole and shipped beside the exe: ADR 0028.
+- `README.md` - the user documentation and its single-source rule: `process.md`,
+  "Conventions".
+- `LICENSE` - the verbatim GNU GPL v3 text (ADR 0040).
+- `docs/` - what each folder holds is CLAUDE.md ("Layout"); the rule that a plan is kept
+  and a design note is updated or deleted with its code is ADR 0001; the index of the
+  notes is `README.md` in this folder.
 
 
 ## Result records (Analysis/)
@@ -843,12 +705,12 @@ before returning: `StructureRun.Execute` calls `StructureReport.Write(outcome, p
 unconditionally, and the same holds for `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`,
 `HistEqRun`, `SmoothRun`, `SyntheticRun` and `AgainstRun`. The runs that can refuse (`LightRun`,
 `LightSeriesRun`, `SmoothRun`, `SyntheticRun`) write the refusal text into the same writer. No
-flag suppresses it, and nothing returns the text as a string. So the console passes its stdout
-and streams; the window passes a `StringWriter` and saves what came back as
-"Rezultat testare.txt", the same text by construction; and **a caller who wants the figures and
-no text passes `TextWriter.Null`**, which is exactly what `ValidationTests` does for the
-structure, profile, smooth and against cases. Verified against the code on 2026-09-25: this is
-true today for all nine runs.
+flag suppresses it, and nothing returns the text as a string (why the writer is the caller's is
+ADR 0011). The window saves what its `StringWriter` got back as "Rezultat testare.txt", the same
+text by construction; and **a caller who wants the figures and no text passes
+`TextWriter.Null`**, which is exactly what `ValidationTests` does for the structure, profile,
+smooth and against cases. Verified against the code on 2026-09-25: this is true today for all
+nine runs.
 
 **`RunOutcome<TResult>`** (`RunOutcome.cs`), for the modes that always answer.
 

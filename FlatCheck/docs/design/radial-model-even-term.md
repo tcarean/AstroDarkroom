@@ -1,21 +1,28 @@
 # The radial model on partial rings: the even 2θ and 4θ terms
 
-Covers `Metrics.RadialModel` and `Metrics.RingFit` in `FlatCheck.Core/Metrics.cs`, their
-constants (`RingFitMinDet`, `RingSectors`, `RingMinSectors`, `RingFitRounds`, `RingQFrom`,
-`RingFitTie`), their mirror `radial_model` / `_ring_fit` in the frozen `flatcheck.py`, and the tests
-`RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,
-`RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner`,
-`RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`,
-`OnAGradient_TheResidualHasNoRingsOutToTheCorner`,
-`OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`,
-`ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`. Sections 1-5 were measured
-2026-09-17 on the six real masters under `E:\Photografie\Astro\Flats and Darks\` (the Tokina
-sky master `Tokina\ISO400\f2.8-sky-no-difuser`, the two Tokina monitor masters, the two
-Nikkor 35 DX sky masters, the Samyang LCD master) and on synthetics at the analysis size;
-section 7, which replaced the 2θ-only ring fit of sections 3-5 with the 2θ+4θ fit now in
-the code, was measured 2026-09-23 on all fifteen masters of the library. Section 4 is the
-current specification; sections 3 and 5 are kept as the record of the 2θ-only design and
-its figures. If the ring model changes, re-run section 6 and update the tables.
+> Cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): the
+> decision, the headline figures of each rejected design and the accepted cost are ADR 0017; the
+> ring-step metric's definition, floors and why it is not printed are ADR 0018. This note keeps
+> the full specification of `RingFit`, the measurements behind every design, the tables and the
+> re-check procedure. **Covers:** `Metrics.RadialModel` and `Metrics.RingFit` in
+> `FlatCheck.Core/Metrics.cs`, their constants (`RingFitMinDet`, `RingSectors`,
+> `RingMinSectors`, `RingFitRounds`, `RingQFrom`, `RingFitTie`), their mirror `radial_model` /
+> `_ring_fit` in the frozen `flatcheck.py`, and the tests
+> `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,
+> `RadialModel_OnAFourfoldTerm_RecoversTheRadialPartOutToTheCorner`,
+> `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised`,
+> `OnAGradient_TheResidualHasNoRingsOutToTheCorner`,
+> `OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure`,
+> `ACompactBlotchInACorner_IsNoLongerReportedAsPerfect`.
+
+Sections 1-5 were measured 2026-09-17 on the six real masters under
+`E:\Photografie\Astro\Flats and Darks\` (the Tokina sky master
+`Tokina\ISO400\f2.8-sky-no-difuser`, the two Tokina monitor masters, the two Nikkor 35 DX sky
+masters, the Samyang LCD master) and on synthetics at the analysis size; section 7, which
+replaced the 2θ-only ring fit of sections 3-5 with the 2θ+4θ fit now in the code, was measured
+2026-09-23 on all fifteen masters of the library. Section 4 is the current specification;
+sections 3 and 5 are kept as the record of the 2θ-only design and its figures. If the ring
+model changes, re-run section 6 and update the tables.
 
 ## 1. The problem, as it was found
 
@@ -115,9 +122,7 @@ with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged ru
      to the variance of a harmonic on a full ring, so it reads 1 on a full ring and falls
      toward 0 as the arcs narrow (0.11 at ±60°, 0.04 at ±55°, 0.012 at ±50°: the gate falls
      at ±52°, r ≈ 1.3·rIns, bins 44-56 of 80 on a 3:2 frame). **Not** a correlation
-     determinant: on the corner arcs of a square frame that reads 1.0 however narrow the arcs
-     are, and the square 256-px test fixtures got a meaningless fit and a REFA on a perfectly
-     radial field;
+     determinant (ADR 0017 records why that gate failed on the square fixtures);
    - weighted least squares (weights = pixel counts) in `RingFitRounds = 3` rounds; between
      rounds the residuals of all sectors are taken, `MAD · 1.4826` about their median, and a
      sector stays in when `|res| ≤ 2.5·MAD + RingFitTie·|a0|` (`RingFitTie = 1e-9`, for
@@ -138,8 +143,8 @@ with `RingSectors = 24`. A bin with fewer than 8 pixels is skipped (unchanged ru
    is `img / model` (the un-symmetrised raster), as before.
 
 Cost: under 0.2 s extra on a 1504×1004 raster (~30 rings × 3 solves of 5×5). Both
-implementations used the same arithmetic (normal equations, sequential sums); C# and Python
-agreed on all 43 cross-check scenarios before the prototype froze (ADR 0047).
+implementations used the same arithmetic (normal equations, sequential sums), which is why
+the parity goldens of ADR 0047 pin the numbers to the last printed digit.
 
 The 2θ-only design this replaced (2026-09-17 to 2026-09-23) estimated `(a0, a2, b2)` per
 partial ring by LMedS over sector triples, smoothed `q` with a running median over 7 rings
@@ -195,43 +200,23 @@ first NEF of each `flats/`.
 
 ### 6.1 The ring-step metric, and why it is not in the report
 
-The number that says whether the map carries rings of the model's making is the **ring
-step**: take the residual (`img / model`, the raster the map is drawn from), cut it into the
-same 80 concentric bins the profile is built on, average the residual over each bin, and
-take the largest change between two consecutive bins, in percent; bins under 5000 pixels
-(the last two or three at the corner tips) are left out because their mean is sampling
-noise. A real structure in a flat - a blotch, a saddle, a gradient - is smooth over hundreds
-of pixels and cannot move the ring mean by half a percent between two bins 11 px apart; a
-step is, by construction, the profile jumping. The floor from the 80-bin discretisation, the
-linear interpolation and the master's noise is 0.03-0.36 % on the fifteen library masters;
-0.5-1.3 % was a ring visible on the ±2 % and ±5 % map scales; the single-orientation stack
-that started section 7 read 8.5 %. What it cannot see is a *smooth* bias of the model (the
-constant `q` misfitting the sky's falling saddle by 1-2 % in the corners), which is why the
-synthetics with known truth sit beside it in every table here.
+ADR 0018 holds the metric (the largest change of the residual's ring mean between two
+consecutive profile bins, bins under 5000 px excluded), its floors on the library, why it is
+not printed and where its guard lives (`WorstRingStep` in `StructureAnalyzerTests`, 0.5 % on
+the gradient and four-fold scenes). Two things the ADR does not say:
 
-It is a property of the model, not of the flat, and that is why it **stays out of the
-report** (decided 2026-09-23, on the question whether to print it under the map):
-
-- Every figure in the report says something about the master; this one says whether the
-  tool drew its own rings. Printed under the map it would be read as a third quality
-  figure, and one that sits at the floor on every master anyone will run.
-- It cannot tell a model artefact from real fine structure with sharp radial content: the
-  on-monitor master with its paper texture reads 0.79 % with the new model and no ring of
-  the model's in it. A warning threshold at 0.5 % would fire exactly on the textured
-  masters, where the right answer is `--smooth`, not "the model has rings".
-- The guard belongs in the suite, and is there: `WorstRingStep` in
-  `StructureAnalyzerTests` computes this metric on the gradient scene and on the four-fold
-  scene, with the 0.5 % threshold. A regression of the model fails the build before it
-  reaches a user.
-- The detector for shapes is the eye, by the tool's own rule (the numbers vote, the map
-  shows the shape). The artefact of section 7 was caught at a glance on a master reading
-  3.76 % and BUN everywhere; no figure in the report would have caught it, and the ring
+- Why a step is the model's by construction: a real structure in a flat - a blotch, a saddle,
+  a gradient - is smooth over hundreds of pixels and cannot move the ring mean by half a
+  percent between two bins 11 px apart; a step is the profile jumping. The artefact of
+  section 7 was caught at a glance on a master reading 3.76 % and BUN everywhere; the ring
   step alone would not have said what it was without the analysis behind it.
+- What it cannot see: a *smooth* bias of the model (the constant `q` misfitting the sky's
+  falling saddle by 1-2 % in the corners), which is why the synthetics with known truth sit
+  beside it in every table here.
 
 When the ring model is touched: run the section 7 loop over the library, compute the ring
-step on each residual (the snippet is the `steps` function in the session bench, ten lines
-of numpy over `radial_model`), and look at every map on a fixed scale. A step above ~0.4 %
-on a master that is not textured is the model's.
+step on each residual (`WorstRingStep` is the implementation), and look at every map on a
+fixed scale. A step above ~0.4 % on a master that is not textured is the model's.
 
 ## 7. The third face: a 4θ field read as 2θ (2026-09-23)
 
@@ -287,20 +272,15 @@ excluded, i.e. the corner tips):
 | blotch + saddle | 0.69 | 0.15 | 0.07 | 0.07 |
 | blotch + 4θ | 0.15 | 1.45 | 0.08 | 0.08 |
 
-The MAD clipping in three rounds held the compact blotch out of the estimate as well as the
-LMedS did (the blotch rows), so LMedS was dropped.
-
-Why `q` is anchored on full rings (`RingQFrom = 0.75`) rather than taken from the partial
-rings alone: on the Nikkor 35 DX ISO400 sky master the harmonic content is not constant in
-`r` - `a2` per r² runs +1.16 → +0.44 on the full rings and then climbs +0.65 → +1.30 on the
-partial ones, with `a4` moving the opposite way, which is the degenerate direction of the
-fit on x-axis arcs - and the partial-only median put +2.3 % on the arcs and 1.3 points on
-the worst tile (2.75 → 4.22) for no reason visible in the data. With the full rings from
-0.75·rIns in the median the split is anchored where it is exactly identifiable: 3.24. Other
-anchorings were measured and rejected: from 0.5·rIns (worse on the sky, 10.30 %), a running
-median over 15 rings (a 1.3 % step on the monitor master), a linear trend in r² (unstable:
-worst tile 9.86 on the Nikkor ISO800), and 4θ taken from the full rings with only 2θ fitted
-on the arcs (the leftover 4θ aliased again: 4.31 on the rotated master).
+The measurement behind anchoring `q` on the full rings (`RingQFrom = 0.75`) rather than
+taking it from the partial rings alone: on the Nikkor 35 DX ISO400 sky master the harmonic
+content is not constant in `r` - `a2` per r² runs +1.16 → +0.44 on the full rings and then
+climbs +0.65 → +1.30 on the partial ones, with `a4` moving the opposite way, which is the
+degenerate direction of the fit on x-axis arcs - and the partial-only median put +2.3 % on
+the arcs and 1.3 points on the worst tile (2.75 → 4.22) for no reason visible in the data.
+With the full rings from 0.75·rIns in the median the split is anchored where it is exactly
+identifiable: 3.24. The other anchorings measured and rejected, and why LMedS went, are in
+ADR 0017.
 
 The whole library, old (2.2.0) → new, ring steps as above and the two verdict figures:
 
@@ -322,14 +302,12 @@ The whole library, old (2.2.0) → new, ring steps as above and the two verdict 
 | Tokina ISO400 f2.8-tableta-lipita-hartie-3-foi | 0.82 % | 0.20 % | 3.76 -> 3.50 | 2.77 -> 2.77 |
 | Tokina ISO400 f2.8-tableta-lipita-hartie-4-foi | 0.54 % | 0.24 % | 5.11 -> 4.98 | 3.93 -> 3.93 |
 
-No verdict changed. The maps of all fifteen were looked at side by side (old `flatcheck.png`
-in each folder against the new one, both on the automatic scale): the annulus and the hard
-circle are gone from the three paper masters and the monitor master, and nothing else
-changed shape. The 0.79 % step left on the on-monitor master is its paper texture (0.69 %
-fine texture, `--smooth` territory), not the model. The single-orientation stack of the
-rotated master reads 7.82 % instead of 17.85 %. The sky master moves up (9.31 → 10.06, worst
-tile 7.87 → 8.81) because its `q` falls with `r` and one constant `q` misfits smoothly in the
-corners - a bias without a shape, accepted against the alternatives above. Golden files
-moved by 0.01-0.2 points; `structure_clean` reads 0.29 % again and its worst tile 0.57 %
-(0.37 before, the correction's cost on a 256-px square fixture where only the corner arcs
-are partial); the k = 0.6 profile fixture's worst tile crossed from 2.03 BUN to 1.90 PERFECT.
+The maps of all fifteen were looked at side by side (old `flatcheck.png` in each folder
+against the new one, both on the automatic scale): the annulus and the hard circle are gone
+from the three paper masters and the monitor master, and nothing else changed shape. The
+0.79 % step left on the on-monitor master is its paper texture (0.69 % fine texture,
+`--smooth` territory), not the model. The verdicts, the single-orientation stack, the sky
+master's accepted cost and the golden drift are in ADR 0017; on the fixtures,
+`structure_clean` reads 0.29 % again and its worst tile 0.57 % (0.37 before, the correction's
+cost on a 256-px square fixture where only the corner arcs are partial), and the k = 0.6
+profile fixture's worst tile crossed from 2.03 BUN to 1.90 PERFECT.

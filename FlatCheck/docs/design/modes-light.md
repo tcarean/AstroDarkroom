@@ -1,7 +1,11 @@
 # Mode 3: end-to-end on a calibrated light (--light), the validity limit and series mode
 
-> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** `Analysis/LightAnalyzer.cs`, `Analysis/LightSuitability.cs`, `Analysis/LightSeriesAnalyzer.cs`, `Runs/LightRun.cs`, `Runs/LightSeriesRun.cs`, `Runs/SeriesFinder.cs`.
+> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
+> CLAUDE.md nor a decision record says (ADR 0051): the field-of-view guard is ADR 0020 and the
+> series verdict ADR 0021; this note keeps the fit and the sign of its figure. **Covers:** in
+> full, `Analysis/LightAnalyzer.cs` and `Runs/LightRun.cs`; by pointer,
+> `Analysis/LightSuitability.cs`, `Analysis/LightSeriesAnalyzer.cs`, `Runs/LightSeriesRun.cs`,
+> `Runs/SeriesFinder.cs`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -10,12 +14,9 @@
 
 The only mode that closes the loop; 1 and 2 are proxies. Input is a light frame
 or stack **calibrated with the flat but with no background extraction**, or a
-**directory**, which runs the whole series (see "Series mode" below).
-
-**But it does not apply to every dataset, and the mode now refuses rather than
-guessing.** Read "The validity limit" below before touching anything here - it is the
-single most important thing about this mode, and it was missing until a real session
-made the tool report a confident false positive.
+**directory**, which runs the whole series (see "Series mode" below). It does not apply to
+every dataset, and the mode refuses rather than guessing: read "The validity limit" below
+before touching anything here.
 
 `TileBackground` takes the 15th percentile inside each tile (a low percentile is
 robust to stars and nebulosity, which only add signal), giving a local background
@@ -47,113 +48,26 @@ sign is the diagnosis:**
 
 #### The validity limit
 
-The plane/radial split works **only while the light-pollution dome is quasi-linear
-across the frame**. Over a wide field the dome *curves inside the frame*, and the
-radially symmetric part of that curvature has exactly the shape of vignetting. Two
-things with the same shape cannot be separated by a fit, however well written. This is
-a geometric degeneracy, not an implementation limit - do not try to fix it with a
-better fit.
-
-It was measured, not assumed. On `Milkyway-Core/2026-08-12-Smida` (Tokina 20 mm f/2.8
-on a D3300, ~70° diagonal, Milky Way core low in the sky), a single frame reported
-`+3.13 % SUSPECT, under-correction`. Across all 32 calibrated subs of that session the
-same figure swept smoothly from `+3.13 %` through `-19.20 %` to `+35.73 %` in 81
-minutes, with only 1.36 points between consecutive frames. Correlation between the
-reported radial component and the sky gradient: **-0.94**, R² = 0.88. Eighty-eight
-percent of what the tool called "flat" was sky.
-
-`LightSuitability.Check` therefore gates the mode, deriving the diagonal field of view
-in layers, most trusted first:
-
-| source | when |
-|---|---|
-| `--fov <deg>` | stated by the user; beats everything |
-| WCS `CDELT1` / `CD1_1` | a plate solve is present; measured, not deduced |
-| `XPIXSZ` + `FOCALLEN` (+ binning) | astro cameras; the exact field |
-| `FOCALLEN` alone | DSLRs - Siril does **not** write `XPIXSZ` for them |
-| nothing | **runs anyway**, with a note |
-
-Levels: `< Th.LightFovOk` (20°) `Ok`, up to `Th.LightFovMax` (40°) `Marginal` (runs, with
-a warning), above that `TooWide` - **refused**, exit 1, no figure produced at all.
-
-Two decisions here are load-bearing and easy to break:
-
-- **Unknown is not a refusal.** If a missing header meant "too wide", every synthetic
-  fixture in the test suite - and every minimal FITS - would become unanalysable, and the
-  guard would do more harm than the problem it fixes. Pinned by
-  `AnEmptyHeaderRunsInsteadOfRefusing`.
-- **The focal-only fallback reports no field figure.** The field depends on the sensor,
-  which is unknown at that point, so printing a number would be inventing one. It grades
-  the focal length directly against thresholds computed for the largest plausible sensor
-  (full frame, 43.27 mm diagonal), which is conservative: on a smaller sensor a good frame
-  can come out `Marginal`. That is what `--fov` is for. Pinned by
-  `TheFocalOnlyFallbackIsGradedOnTheFocalLength`.
-
-`--fov` is not a force flag. It tells the tool the truth; it does not ask it to ignore
-the physics, and a wide field declared by hand is refused exactly like a deduced one.
+ADR 0020 holds the whole of it: why the plane/radial split is a geometric degeneracy over a wide
+field and not an implementation limit (the Smida session, 32 subs, correlation -0.94 with the
+sky gradient), the layers `LightSuitability.Check` derives the field of view from, the `Ok` /
+`Marginal` / `TooWide` levels on `Th.LightFovOk/Max`, why an unknown field runs with a note, why
+the focal-only fallback prints no field figure, and why `--fov` is not a force flag. Guards:
+`AnEmptyHeaderRunsInsteadOfRefusing`, `TheFocalOnlyFallbackIsGradedOnTheFocalLength`.
 
 #### Series mode - `flatcheck process/ --light`
 
-A single frame's `radPct` is the sum of two things: the flat error, which is **the same
-in every frame by construction** (the same master flat was divided out of each), and a
-sky radial term, which changes through the session. So the series carries a discriminator
-the single frame does not.
+ADR 0021 holds the whole of it: why a series carries a discriminator a single frame does not,
+`LightSeriesRun.Execute`'s one-frame-at-a-time loop (the one run of the five with state and
+progress) with its two outputs, the caller's `TextWriter` and the `onFrame` callback, and where
+cancellation is checked; the three conditions for a verdict (`Th.LightSeriesMinFrames`,
+`Th.LightSeriesSemMax`, `Th.LightSeriesSkyCorr`, the last skipped below
+`Th.LightSeriesSkySpanMin`), why `NaN` fails a condition, why `planePct` is never a gate, the
+rejected extrapolation to zero sky, and `SeriesFinder.Find` (in-process glob, ordinal sort, the
+default pattern that excludes registered frames). Two mechanics it does not spell out:
 
-`LightSeriesRun.Execute` loads each matching file in turn - never more than one full
-frame in memory, since a 24 MP frame runs to hundreds of MB - runs the unchanged
-`LightAnalyzer.Analyze` on it, streams a table row, and hands the results to
-`LightSeriesAnalyzer.Combine`, which is pure.
-
-Of the five runs it is the only one that had anything worth duplicating - a loop, with
-state, progress and a memory trick that is not visible from the signature. It therefore
-has two outputs rather than one: rows go into the caller's `TextWriter` as frames finish
-(so the console does not sit silent for two minutes), and the same frame goes out through
-an optional `onFrame` callback (so the window fills its table live). Cancellation is
-checked *between* frames; a frame already started runs to the end, which at ~0.5 s each
-is a fine response time.
-
-The verdict is given **only if all three conditions hold**:
-
-| condition | threshold |
-|---|---|
-| frame count | ≥ `Th.LightSeriesMinFrames` (5) |
-| standard error of the mean (`σ/√n`, ddof=1) | < `Th.LightSeriesSemMax` (2.0) |
-| \|Pearson(radPct, planePct)\| | < `Th.LightSeriesSkyCorr` (0.70) |
-
-Otherwise the verdict is **`NEDETERMINAT`** and the report says which condition failed
-and why. Three details that are not obvious:
-
-- The correlation test is **skipped** unless the sky gradient actually varies across the
-  series (`Th.LightSeriesSkySpanMin`, 10 points). On a clean session where it sits
-  constant, the correlation is noise and would reject good data.
-- The comparisons are written `!(x < threshold)`, not `(x >= threshold)`, so **NaN falls
-  on the bad side** - same convention as `Stats.Verdict`. A one-frame series has no
-  spread, `sem` is NaN, and it must not pass silently.
-- `planePct` being large is **informative only**, never a gate. The plane is an indirect
-  proxy - the real cause of non-separation is curvature - and a badly calibrated threshold
-  there would reject good data. The field-of-view guard covers the cause.
-
-**What was tried and rejected:** extrapolating to zero sky gradient. Regressing
-`radPct ~ planePct` over the real session gives an intercept of `+122 %` - an
-extrapolation far outside the data, whose gradient never goes near zero (it spans 49-88 %).
-The correlation is a good diagnostic and a useless estimator; do not turn it into one.
-
-**File selection.** `SeriesFinder.Find` enumerates the directory and matches the pattern
-**in-process**, rather than `Directory.GetFiles(dir, pattern)`: Win32 matching still
-carries the 8.3 legacy where `*.fit` also catches `.fits`. Sorting is ordinal on the file
-name (`StringComparer.Ordinal`, the same as Python `sorted()`), chosen so the cross-check
-of the day could not report a difference that did not exist; `parity_light_series_*.txt` pin
-the order now. The glob supports `*` and `?` only; character classes are literal. The WPF
-app reuses the same matcher for the
-names it accepts, so `pp_flat_stacked*.fit` there means exactly what `--pattern` means
-here.
-
-The default pattern `pp_light_*.fit` excludes `r_pp_light_*` because the glob is anchored
-at the start, and that is correct rather than incidental: registered frames are
-geometrically transformed, so the sensor-fixed flat error is shifted relative to the
-centre the radial model is fitted around. Including them would corrupt the measurement
-silently.
-
-Thresholds are all in `Th` (`LightRadOk`/`LightRadBad`, the `LightFov*`/`LightFocal*`
-guard, and the `LightSeries*` family).
-
+- The comparisons are written `!(x < threshold)`, not `(x >= threshold)`, the same convention as
+  `Stats.Verdict`; that is what puts `NaN` on the bad side.
+- The ordinal sort (`StringComparer.Ordinal`, what Python `sorted()` did) was chosen so the
+  cross-check of the day could not report a difference that did not exist;
+  `parity_light_series_*.txt` pin the order now (ADR 0047).

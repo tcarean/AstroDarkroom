@@ -1,7 +1,9 @@
 # Known issues and gotchas
 
-> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** behaviour that is deliberate or not worth changing; read before "fixing" any of it.
+> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
+> CLAUDE.md nor a decision record says (ADR 0051): items 5 and 8 are ADR 0013 and ADR 0024 and
+> stay here as numbered pointers, since other notes and tests cite them by number. **Covers:**
+> behaviour that is deliberate or not worth changing; read before "fixing" any of it.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -9,8 +11,7 @@
 ## Known issues and gotchas
 
 Verified by running the current build unless marked otherwise. The CLI-contract and
-correctness bugs that used to live here were fixed in phase 8; what remains is
-behaviour that is either deliberate or not worth changing.
+correctness bugs that used to live here were fixed in phase 8.
 
 1. **Card parsing is naive.** It splits the value at the first `/`, which corrupts any
    string value containing a slash (e.g. a path or date in a `COMMENT`-adjacent card).
@@ -30,18 +31,11 @@ behaviour that is either deliberate or not worth changing.
    running. It is now a `static readonly` built by a static method, which the CLR
    publishes only when complete; `EncodingOnManyThreadsGivesTheSameBytesAsSerially` pins
    the determinism. Kept in this list so nobody reintroduces the lazy form.
-5. **The corner-spread metric has a non-zero floor.** The analysis centre is
-   `(w/2, h/2)`, but pixel indices run `0..w-1`, whose true middle is `(w-1)/2`. That
-   half-pixel offset puts the top-left corner fractionally farther from the centre than
-   the bottom-right, so even a *perfectly* radial field reports a spread. It scales as
-   ~1/n: measured 2.88% at 100 px, 1.44% at 200, 0.56% at 512, 0.28% at 1024
-   (cross-checked against a numpy reimplementation). At the ~1500x1000 analysis raster
-   the tool actually uses it is ~0.2%, far below the 2% PERFECT band, so it is
-   harmless in practice - but it is a systematic floor, not noise, and it would swamp
-   the threshold on a small enough frame. Pinned by
-   `CornerStats_HasAHalfPixelCentringArtifact_ThatHalvesAsTheFrameDoubles`.
-   **Not a bug to fix**: changing the centre convention would move every parity golden for
-   nothing.
+5. **The corner-spread metric has a non-zero floor.** ADR 0013 holds it: the analysis centre
+   is `(w/2, h/2)` while the true middle of pixel indices `0..w-1` is `(w-1)/2`, so even a
+   perfectly radial field reports a spread, fading as ~1/n and harmless at the analysis
+   raster; why it is not a bug to fix; and the test that pins it. The parity goldens pin the
+   convention now, so changing it would move every one of them for nothing.
 6. **`RadialModel`'s `centers`/`prof` return values are discarded** by
    `StructureAnalyzer` - they fed the Python profile panel, which this port dropped.
 7. **Memory is still heavy**, though phase 8 halved the worst of it: `Percentile` now
@@ -49,10 +43,8 @@ behaviour that is either deliberate or not worth changing.
    twice. Measured peak was ~330 MB on a 3000x2000 frame before that change; a 24 MP
    D3300 frame still runs into the high hundreds of MB. Runtime is fine
    (1.3 s structure / 0.6 s expo / 0.5 s light on 3000x2000).
-8. **A raw whose only preview is full-size costs a decode of it.** The window's exposure
-   tab decodes the camera preview; when a camera offers no mid-size one, the largest is
-   decoded with `TargetSize`, which was measured at ~9 MB and ~0.5 s on a 6000x4000
-   preview - the time is spent in entropy decoding regardless of the target. Every raw
-   load also copies the chosen preview's bytes (a few MB at most), including modes that
-   never look at them; that is the price of opening the file once.
-
+8. **A raw whose only preview is full-size costs a decode of it.** ADR 0024 holds the figures
+   (~9 MB and ~0.5 s with `TargetSize` on a 6000x4000 preview, because the time is spent in
+   entropy decoding whatever the target) and the copy of the chosen preview's bytes that every
+   raw load makes, in modes that never look at them; that is the price of opening the file
+   once.

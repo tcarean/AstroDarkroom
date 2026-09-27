@@ -6,10 +6,11 @@ per-layer rule), which mirrors the code quoted below. The excerpt is from Siril 
 Siril version**, in which case re-read the two source files at the new tag, update the
 quotes, and re-check `HistEqLut` against them.
 
-Moved here from the implementation plan of the `--histeq` mode when that plan was deleted; the
-plan was a to-do list, this is the measurement it rested on. `HistEqAnalyzer.cs` and
-`CLAUDE.md` ("5. Histogram equalisation") state the consequences; this file keeps the quoted
-code so the claim can be checked against the tag it was read from.
+Moved here from the implementation plan of the `--histeq` mode when that plan was deleted, then
+cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): the plan was
+a to-do list, this is the measurement it rested on. ADR 0025 and `modes-histeq.md` ("5.
+Histogram equalisation") state the consequences; this file keeps the quoted code so the claim
+can be checked against the tag it was read from.
 
 ## What Siril actually does (measured in the source, tag `1.4.4`)
 
@@ -58,30 +59,25 @@ if (gfit.type == DATA_USHORT)      dst = index[src[src_i]];
 else if (gfit.type == DATA_FLOAT)  dst = index[roundf_to_WORD(fsrc[src_i] * USHRT_MAX_SINGLE)];
 ```
 
-So, in full:
+ADR 0025 states the rule this code amounts to (one histogram per layer, 65536 bins, zeros
+skipped but counted, the inclusive CDF times 255 with `index[0] = 0`, float quantised as
+`round(v * 65535)`). What the code adds to that sentence:
 
 1. **Per layer.** `remap(vport)` runs once per layer with that layer's own histogram; the
-   RGB view is composited afterwards (`remaprgb`) from the three 8-bit buffers. On a
-   debayered image each colour is equalised **independently**. On an undebayered file (a
-   raw opened as CFA, or a FITS from the Conversion tab - the default in Siril 1.x) there is
-   one layer: the mosaic is equalised as a single grey image, R/G/B populations and all.
-2. **65536 bins.** 16-bit data bins on the ADU value itself; float data is first quantised
-   as `round(v * 65535)`. A 12-bit NEF therefore uses bins 0..4095 and the rest stay empty;
-   the mapping is the same as binning on the data's own range.
-3. **LUT = CDF x 255**, cumulative *including* the bin itself, rounded to a byte;
-   `index[0]` forced to 0. Pixels equal to zero are left out of the histogram but still
-   count in the denominator - so an image with many dead pixels never reaches 255. On a
-   flat there are no zeros and this is moot; we mirror it anyway because it is free.
+   RGB view is composited afterwards (`remaprgb`) from the three 8-bit buffers. On an
+   undebayered file (a raw opened as CFA, or a FITS from the Conversion tab - the default in
+   Siril 1.x) there is one layer: the mosaic is equalised as a single grey image, R/G/B
+   populations and all.
+2. **65536 bins** on the ADU value itself. A 12-bit NEF therefore uses bins 0..4095 and the
+   rest stay empty; the mapping is the same as binning on the data's own range.
+3. **Zeros.** Left out of the histogram but counted in the denominator, so an image with many
+   dead pixels never reaches 255. On a flat there are no zeros and this is moot; we mirror it
+   anyway because it is free.
 4. **The cutoff sliders do nothing** in this mode, and the negative / rainbow toggles
    are applied after the LUT. Neither is in scope.
 
-Why it shows what the linear view hides: a flat is a smooth, narrow distribution. The CDF
-climbs from 0 to 1 across the vignetting range only, so the LUT is extremely steep there,
-and a 0.3 % ripple in the illumination is spread over dozens of grey levels. The price is
-that **amplitude information is destroyed by construction**: a 0.5 % pattern and a 10 %
-pattern of the same shape render identically, and a perfectly clean flat shows its own
-noise at full contrast. That is exactly the split the tool already makes for the residual
-map - *the picture shows the shape, the numbers decide* - and the mode has to say so on
-screen. **It can never vote.**
-
 ## Decisions (taken here; reopen only with a measurement)
+
+Recorded as ADR 0025: per layer, the LUT, the two resolutions, the composite, no verdict, and
+why the picture shows what the linear view hides while destroying amplitude by construction, so
+it can never vote. `modes-histeq.md` keeps the reading of the picture.
