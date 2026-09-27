@@ -301,7 +301,7 @@ namespace FlatCheck
             w.WriteLine("  flatcheck <referinta.fit> --synthetic <sintetic.fit> --lens <text>   # flat sintetic din profilul obiectivului");
             w.WriteLine("  flatcheck --lenses [--lens <text>]      # obiectivele cu profil de vignetare (Adobe de pe disc, lensfun/ de langa exe)");
             w.WriteLine("  flatcheck <A.fit> --against <B.fit>     # cat si cum difera doua flaturi (ex. real fata de sintetic)");
-            w.WriteLine("  optional: -o <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
+            w.WriteLine("  optional: -o, --out <iesire.png> | --sat <white> --black <lvl> (pt --expo)");
             w.WriteLine("            --pattern <tipar> (pt --light pe folder; implicit pp_light_*.fit)");
             w.WriteLine("            --fov <grade> (diagonala campului, daca headerul n-o da)");
             w.WriteLine($"            --scale <px>|auto (pt --smooth: scara de netezire pe senzor, implicit {SmoothAnalyzer.DefaultScalePx:F0};");

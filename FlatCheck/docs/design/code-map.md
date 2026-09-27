@@ -11,7 +11,7 @@ is the master flat radially symmetric, is the flat *setup* clean, does the flat
 actually correct a real light, and is a raw flat exposed correctly. A fifth mode answers
 nothing and shows: the frame through histogram equalisation, Siril's "Histogram" display
 mode, where every grey level holds the same number of pixels and any non-uniformity is
-at full contrast. See "5. Histogram equalisation" under "The six modes". A sixth mode
+at full contrast. See "5. Histogram equalisation" in `modes-histeq.md`. A sixth mode
 *produces* something: a second master flat with everything smooth kept and everything
 else - diffuser texture, dust, blotches - removed. See "6. Smoothed flat". A seventh
 *produces* one too, from nothing: a radial flat written from the lens's published
@@ -29,7 +29,8 @@ one owns.
 
 ## Structure
 
-Four projects. The split happened in 2.0.0, when a second application appeared over the
+Five projects (`FlatCheck.Core`, `FlatCheck`, `FlatCheck.Wpf`, `FlatCheck.Tests`,
+`FlatCheck.Wpf.Tests`). The split happened in 2.0.0, when a second application appeared over the
 same numbers - see "The two applications" below for why it was a library extraction and
 not a copy.
 
@@ -159,7 +160,7 @@ not a copy.
     say): the database holds 20 lenses twice, same name and mount, calibrated on two
     formats, and with the crop outside the key the two collapsed and `Nearest` took the
     first in file order - on the Nikkor 35/1.8G DX the poor one (0.19 stops at the DX
-    corner against 0.51 from the hidden D780 entry and 0.61 from Adobe; `docs/lens-profiles.md`
+    corner against 0.51 from the hidden D780 entry and 0.61 from Adobe; `docs/design/lens-profiles.md`
     §5 and §8). The label is on every lensfun lens, not only the duplicated ones, so a name
     cannot change when the database gains an entry; Adobe stubs carry none (the body is the
     mount, the SFF is not in the file name). Pinned by
@@ -533,12 +534,13 @@ not a copy.
   for it. See the note in "Conventions".
 - `LICENSE` - the verbatim GNU GPL v3 text. See "Licensing" below.
 
-- `docs/` - measurements that outlived the plans they were made for. **Implementation
-  plans are deleted once done**: their step lists go stale at the first later change and
-  git history keeps them anyway (`git log --all -- PLAN-HISTEQ.md`). What does not go
-  stale - a measurement made on a date on named files, a design tried and rejected - is
-  folded into this file or into the header comment of the code it explains, and the long
-  form, when there is one, lands here: `siril-histeq-source.md` (the Siril 1.4.4 code the
+- `docs/` - measurements that outlived the plans they were made for. Until 2026-09-25 the
+  plans were deleted once done, because their step lists went stale at the first later
+  change; since ADR 0001 an approved plan is kept in `docs/plans/`, with a "What deviated"
+  section added at wrap-up, and is history, never updated to match the code later. What
+  does not go stale - a measurement made on a date on named files, a design tried and
+  rejected - is folded into this file or into the header comment of the code it explains,
+  and the long form, when there is one, lands here: `siril-histeq-source.md` (the Siril 1.4.4 code the
   `--histeq` mode mirrors), `smooth-validation.md` (the five real masters, the three
   designs and the acceptance tables behind `--smooth`), `radial-model-even-term.md` (the
   second face of the ring artefact: the sky session that exposed it, the five designs
@@ -555,7 +557,8 @@ not a copy.
   changes only if the mode starts mirroring another version.)
 
 The test refactoring that produced the current suite (eight phases, 2026) and the seven
-feature plans since were run to completion and removed, per the rule above.
+feature plans since were run to completion and removed, under the rule in force then; the
+plans since 2026-09-25 are in `docs/plans/`.
 
 
 ## Result records (Analysis/)

@@ -1,40 +1,29 @@
 # Process notes: conventions, versioning, licensing, build and run
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. The Committing section predates rule 13 of CLAUDE.md, which now governs; the rest stands. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
+> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. Committing is rule 13 of CLAUDE.md and has no section here since 2026-09-27. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
 ## Conventions
 
-- **User-facing text (CLI messages, `--help`, window labels, code comments) is in
-  Romanian** - keep new text consistent with this. Documentation *about* the code
-  (this file, `docs/`, an implementation plan while it lives) is in English.
-- **Nothing is computed outside `FlatCheck.Core`.** If a change needs a new number, a new
-  threshold or a new sentence of diagnosis, it belongs in `Analysis/`, `Thresholds.cs` or
-  `Report/` - never in a view-model. Both applications then get it, and get the same one.
-  A view-model formats; it does not decide.
-- **One external dependency, and it took a measured argument to earn it.** The FITS
-  reader and PNG encoder stay hand-rolled. Don't add a NuGet package to replace them,
-  and don't add a second one without the same standard of evidence; the point of this
-  tool is that it is a single copyable binary. See "The one dependency".
-- **Every metric is a ratio**, so ISO/gain cancels out. Don't add gain-dependent
-  corrections - if a new metric isn't scale-invariant, that's a design smell.
-- **Thresholds are empirical rules of thumb, not physical constants.** They are a
-  starting point to be calibrated against a known-good setup.
-- **Never bump the version and never commit** - both are the user's call. See
-  "Versioning" and "Committing" below.
-- **Every source file starts with the GPL notice.** New files included. See
-  "Licensing" below.
-- **User-facing documentation lives in `README.md`, and only there.** Do not restate the
-  modes, the thresholds, the workflow traps or the `--light` validity limit in a
-  docstring or a file header. It was duplicated between `README.md` and `flatcheck.py`'s
-  docstring once, the two diverged, and the README was the wrong one - it still described
-  a single-file `FlatCheck.cs`, a `csharp/` directory, three modes, and a port that had
-  never been compiled. Code comments explain *why the code is the way it is*; the README
-  explains *how to use the tool*.
+The rules are in `CLAUDE.md` (Romanian for users and English for the process, rule 14; nothing
+computed outside the core, rule 6; ratios and rules of thumb, rule 15; the version and the
+commit are the owner's, rules 13 and 17; the GPL notice, rule 18; no package without a case,
+rule 5). This note keeps only the reasons that would otherwise be lost:
 
+- **Two external dependencies, each earned by a measured argument** (`dependencies.md`:
+  `Sdcb.LibRaw` for the raw files, `SixLabors.ImageSharp` for the window's bitmaps). The FITS
+  reader and the PNG encoder stay hand-rolled: the point of the console is that it is a single
+  copyable binary, and a third package needs the same standard of evidence as the first two.
+- **User-facing documentation lives in `README.md`, and only there.** Do not restate the
+  modes, the thresholds, the workflow traps or the `--light` validity limit in a docstring or
+  a file header. It was duplicated between `README.md` and `flatcheck.py`'s docstring once,
+  the two diverged, and the README was the wrong one - it still described a single-file
+  `FlatCheck.cs`, a `csharp/` directory, three modes, and a port that had never been
+  compiled. Code comments explain *why the code is the way it is*; the README explains *how
+  to use the tool*.
 
 ## Versioning
 
@@ -105,7 +94,7 @@ Five things follow, and all five are pinned by tests:
   shebang), and for XAML a single `<!-- ... -->` block wrapping the unprefixed text -
   `--` cannot repeat inside an XML comment. XAML counts as source: it is written by hand
   and it describes the interface. New files get the notice too - it is the first thing to
-  write, not an afterthought. `LicenseHeaderTests` walks all four projects plus the two
+  write, not an afterthought. `LicenseHeaderTests` walks all five projects plus the two
   `.py` files and fails on any file missing it, which is the only thing keeping the
   convention alive as files get added; its `Projects` list is explicit rather than
   discovered, so adding a project is a decision. The SPDX line is there so licence
@@ -141,20 +130,6 @@ stops being printed, the golden files fail.
 
 The year and the author are the user's call, exactly like the version. Don't roll the
 year forward on your own initiative.
-
-
-## Committing
-
-**Do not commit.** Make the changes, run the tests, and hand over a commit message for
-the user to use. They commit themselves.
-
-This also means: don't `git add`, don't stage, don't amend. Leave the working tree as it
-is so they can review the diff before deciding.
-
-A good commit message here follows the existing log: a short lowercase subject line, then
-a body that explains *why* rather than restating the diff - what the change is for, what
-was deliberately left alone and why, and anything a future reader would otherwise have to
-rediscover. No `Co-Authored-By` trailer.
 
 
 ## Build & test
@@ -290,9 +265,9 @@ tests and documents; this section is that list, in the order the work goes.
 - Flags come before or after the path with the same result (R-003;
   `R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath` in `GoldenOutputTests`). The parser
   collects every non-flag token as positional and, after the loop, wants exactly one; none
-  with `--lenses`, which is a list and needs no input. The sentence at the end of "Run" above
-  and in CLAUDE.md's Commands, "the flag comes after the path", predates phase 8; either order
-  works.
+  with `--lenses`, which is a list and needs no input. The sentence at the end of "Run" above,
+  "the flag comes after the path", predates phase 8; either order works (CLAUDE.md's Commands
+  say so since 2026-09-27).
 - Cross-argument checks come after the loop, in the same method: `--smooth` and `--synthetic`
   refuse to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
   exceed `--black`. Mode flags are **not** mutually validated here
@@ -310,7 +285,9 @@ adds its switch or value flag the same way and continues below.
 every test calls, with two `StringWriter`s. In order:
 
 1. `RunReport.WriteBanner(stdout)`: version on line 1, copyright on line 2, before anything
-   else, so `--help` and errors carry them too (R-001).
+   else, so `--help` and errors carry them too (R-001). The order is the invariant R-001 states:
+   the banner is written before the options are parsed, so no option can suppress or move it;
+   a machine-readable output would be the only exception (ADR 0042), and none exists.
 2. `Options.Parse`. `Help` prints `WriteUsage` and returns 0. `Error` prints
    `EROARE: <Error>` to stderr and returns 1.
 3. A folder as input is refused with exit 1 unless `--light` (series mode).
@@ -444,11 +421,10 @@ figure on a real master).
 `R001_EveryModePrintsTheBannerOnTheFirstLine` and `R001_EveryModePrintsTheCopyrightOnTheSecondLine`
 each hold an explicit list of invocations, one `Assert.Equal` per mode; the copyright one adds a
 `--smooth` refusal, `--help` and a missing file. A new mode is one more line in each, with the
-arguments it needs to reach its report. On 2026-09-25 the lists cover structure, `--ratio`,
-`--light`, `--expo`, `--histeq` and `--smooth` (fixed scale and `auto`). `--synthetic`,
-`--lenses` and `--against` are not in them, although R-001 says every mode; for those three
-only the mode 7 golden files carry the banner placeholder. Adding the three lines is a test
-change and belongs to the next task that touches mode 7 or these tests.
+arguments it needs to reach its report. Since 2026-09-27 the lists cover all nine modes:
+structure, `--ratio`, `--light`, `--expo`, `--histeq`, `--smooth` (fixed scale and `auto`),
+`--synthetic`, `--lenses` and `--against` (the last three with an empty `--profiles` folder,
+which is enough for the banner: it is written before the options are parsed).
 
 ### The README "Opțiuni" section
 
