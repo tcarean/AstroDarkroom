@@ -6,8 +6,9 @@
 #   differs per project (the solution name, where the code and the tests are, what a release
 #   publishes) lives in kit.json at the project root, never in a script. This file is
 #   dot-sourced by the scripts (". (Join-Path $PSScriptRoot 'kit-config.ps1')") and gives them
-#   one function, Read-KitConfig, which reads <project folder>/kit.json and returns its values
-#   with the paths already normalised (forward slashes, one trailing slash on folders).
+#   Read-KitConfig, which reads <project folder>/kit.json and returns its values with the paths
+#   already normalised (forward slashes, one trailing slash on folders), and Find-KitProject,
+#   which finds the project a file or folder belongs to (the Claude Code hooks use it, ADR 0020).
 #   A missing kit.json, or a missing required key, is an error with the key named: a project
 #   that has scripts/ must say what it is; nothing is guessed from the folder layout.
 #
@@ -38,6 +39,7 @@
 #
 # RESULT
 #   Read-KitConfig returns the object; it throws when kit.json or a required key is missing.
+#   Find-KitProject returns a full path, or $null.
 
 # Reads and checks kit.json in $ProjectDir. Throws with the file or key named.
 function Read-KitConfig([string]$ProjectDir) {
@@ -90,6 +92,24 @@ function ConvertTo-KitFolder([string]$Folder) {
 function Get-KitPath($Config, [string]$ProjectDir) {
     if (-not $Config.kit) { return $null }
     return [System.IO.Path]::GetFullPath((Join-Path $ProjectDir $Config.kit)).TrimEnd('\', '/')
+}
+
+# The project $Path (a file or a folder, existing or not) belongs to: the nearest folder at or
+# above it that holds $Marker (kit.json unless told otherwise; the commit gate asks for
+# scripts\verify.ps1, the git pre-commit hook's rule), as a full path without a trailing
+# separator; $null when there is none. The walk stops at the top of the repository or worktree
+# the path is in (a folder holding .git), as pre-commit does, so a path in a worktree made under
+# a project's .claude/worktrees/ is never taken for a path of that project.
+function Find-KitProject([string]$Path, [string]$Marker = 'kit.json') {
+    if (-not $Path) { return $null }
+    $dir = [System.IO.Path]::GetFullPath($Path)
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { $dir = [System.IO.Path]::GetDirectoryName($dir) }
+    while ($dir) {
+        if (Test-Path -LiteralPath (Join-Path $dir $Marker) -PathType Leaf) { return $dir.TrimEnd('\', '/') }
+        if (Test-Path -LiteralPath (Join-Path $dir '.git')) { return $null }
+        $dir = [System.IO.Path]::GetDirectoryName($dir)
+    }
+    return $null
 }
 
 # Full path of a project folder from a kit.json value ("src/" -> <project>\src\).
