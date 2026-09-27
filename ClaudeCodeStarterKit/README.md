@@ -100,8 +100,11 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   e blocat; la fel `-n` in orice forma si `-c core.hooksPath`.
 - Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
   `commit-msg`, pentru oricine.
-- Orice `git commit`, `merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului:
-  cere acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
+- Un `git commit` al modelului pe `main`, pe alt branch decat unul `claude/` sau pe un HEAD
+  detasat: refuzat de hook-ul Claude Code de commit. Pe branch-ul `claude/` al task-ului sau,
+  modelul face commit fara sa intrebe; pe `main` commit-urile le face omul (ADR 0021).
+- Orice `git merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului: cere
+  acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
 
 Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca
 ghidul si README-ul mai explica corect ce fac scripturile (pasul 8 din `/wrap-up`).
