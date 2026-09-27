@@ -41,6 +41,8 @@ the kit, 2 for FlatCheck); a red result is not recorded, git keeps the merged fi
 `git merge --continue` or `git commit`, which run `pre-commit`. The hook's messages say
 "pre-commit", since it is that script that runs. `git merge --no-verify` skips it, as
 `--no-verify` skips pre-commit; rule 4 forbids both. A hook change takes effect in every
-worktree only after it is merged into the main checkout's `.githooks/` (ADR 0016), so this very
-merge is still checked by hand. `GitHookTests` guards it: a clean merge runs A's check-staged and
-verify, and a red verify leaves `HEAD` where it was.
+worktree only after it is merged into the main checkout's `.githooks/` (ADR 0016). The merge
+that adds this hook already runs it: git writes the merged tree, `.githooks/pre-merge-commit`
+included, before it calls the hook (seen on 2026-09-27, merge `425a4ee`, gated in both
+projects). `GitHookTests` guards it: a clean merge runs A's check-staged and verify, and a red
+verify leaves `HEAD` where it was.
