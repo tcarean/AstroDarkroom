@@ -93,6 +93,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.
 - Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare si
   fara CHANGELOG modificat: hook-ul Stop o refuza si trimite la `/wrap-up`.
+- Hook-urile Claude Code judeca proiectul in care se lucreaza, si intr-un worktree: hook-ul de
+  commit ruleaza verify-ul proiectului in care se face commit-ul, hook-ul Stop cere stamp-ul si
+  CHANGELOG-ul proiectului fiecarui fisier editat, nu ale folderului in care a pornit sesiunea
+  (ADR 0020).
 - Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
   `commit-msg`, pentru oricine.
 - Orice `git commit`, `merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului:
