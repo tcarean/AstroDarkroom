@@ -94,9 +94,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare si
   fara CHANGELOG modificat: hook-ul Stop o refuza si trimite la `/wrap-up`.
 - Hook-urile Claude Code judeca proiectul in care se lucreaza, si intr-un worktree: hook-ul de
-  commit ruleaza verify-ul proiectului in care se face commit-ul, hook-ul Stop cere stamp-ul si
-  CHANGELOG-ul proiectului fiecarui fisier editat, nu ale folderului in care a pornit sesiunea
-  (ADR 0020).
+  commit ruleaza verify-ul proiectelor atinse de fisierele commit-ului, hook-ul Stop cere
+  stamp-ul si CHANGELOG-ul proiectului fiecarui fisier editat, nu ale folderului in care a
+  pornit sesiunea (ADR 0020). Un commit cu o cale pe care hook-ul nu o poate citi (o variabila)
+  e blocat; la fel `-n` in orice forma si `-c core.hooksPath`.
 - Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
   `commit-msg`, pentru oricine.
 - Orice `git commit`, `merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului:

@@ -65,6 +65,10 @@ internal static class ScriptRunner
         }
 
         using Process process = Process.Start(start) ?? throw new InvalidOperationException($"Could not start {file}.");
+        // Both outputs are read before stdin is written: a child that prints more than a pipe
+        // holds before it reads its input would otherwise wait for us while we wait for it.
+        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
+        Task<string> stderr = process.StandardError.ReadToEndAsync();
         if (stdin is not null)
         {
             // Without a byte order mark, as Claude Code writes it.
@@ -72,8 +76,6 @@ internal static class ScriptRunner
             input.Write(stdin);
         }
 
-        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderr = process.StandardError.ReadToEndAsync();
         process.WaitForExit();
         Task.WaitAll(stdout, stderr);
         return (process.ExitCode, stdout.Result + stderr.Result);

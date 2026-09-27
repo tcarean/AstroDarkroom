@@ -42,13 +42,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The Claude Code hooks judge the worktree the work is in, not the folder the session started in
   (ADR 0020). `CLAUDE_PROJECT_DIR` stays at that folder, so in a session that made its worktree
   by hand the Stop hook judged none of the edits and the commit gate ran the shared checkout's
-  `verify.ps1`. The commit gate now takes the commit's folder from `git -C`, a `cd` before the
-  commit, the hook's `cwd`, then the variable, runs the scripts of the project there (the nearest
-  folder with `kit.json`, `Find-KitProject` in `kit-config.ps1`), and lets a commit outside every
-  project through to the git hook; `git -C <path> commit` was not recognised as a commit before.
-  The Stop hook groups the edited files by project and judges each with its own `kit.json`,
-  stamp and CHANGELOG, naming it in the message. `HookTests` covers both hooks with two stub
-  projects; `ScriptRunner` pipes a hook's JSON on stdin.
+  `verify.ps1`. The commit gate now follows the command to the commit's folder (`cd`,
+  `pushd`/`popd`, `git -C`, then the hook's `cwd`), asks git there which files the commit takes,
+  and runs check-staged and verify of every project they touch, found as the git `pre-commit`
+  hook finds them; a folder it cannot read, such as a shell variable, blocks the commit. It now
+  also blocks `-n` inside a group of short options (`-anm`), abbreviations of `--no-verify` and
+  `-c core.hooksPath`, and sees `git -C <path> commit`, which passed unchecked before. The Stop
+  hook groups the edited files by project and judges each with its own `kit.json`, stamp and
+  CHANGELOG, naming it in the message. `HookTests` (Windows only, like the hooks) covers both
+  with stub projects; `ScriptRunner` pipes a hook's JSON on stdin.
 - `check-testdata.ps1 -Update` writes the manifest without a byte order mark and with LF (Windows
   PowerShell 5.1's `Set-Content -Encoding utf8` writes a mark, which `System.Text.Json` refuses),
   and an entry's `name` may be a path with forward slashes. Both fixes had been made in FlatCheck's

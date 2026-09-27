@@ -109,6 +109,20 @@ Session 1 (kit), 2026-09-27:
 - More cases than planned in `HookTests` (18): every `cd`/`-C` form above, `-n` after `git -C`,
   a command that only mentions `git commit`, and a committed, clean CHANGELOG in the edited
   file's project (proves `git status` runs there). Run against the old hooks, 10 of the 18 fail.
-- Verify green, 48 tests. `sync.ps1 -Check` from the kit: FlatCheck differs in exactly
+- After the first commit (96ae322), `/code-review main...<branch>` at high effort reported 9
+  findings; the owner asked for all of them fixed as recommended, in a second commit. The
+  commit gate now takes the projects from the files the commit takes (staged, plus tracked
+  changes with `-a`), found by `scripts/verify.ps1` as in `pre-commit`, instead of the folder's
+  one `kit.json` project; blocks a folder it cannot read (a variable) instead of walking up from
+  it; follows `pushd`/`popd` as a stack; ignores heredoc and here-string bodies; reads Bash's
+  escaped space; blocks `-n` in a group (`-anm`), `--no-veri...` prefixes and
+  `-c core.hooksPath`, while an `-n` inside a quoted message no longer blocks. `HookTests` is
+  Windows only (the Linux Bitbucket CI would fail it: the hooks call `cmd`), has 32 cases, and
+  `ScriptRunner` reads the outputs before writing stdin. ADR 0020 and the CHANGELOG describe
+  behaviour, not the helper's name (rule 11). A heredoc in this session's own Bash command,
+  holding test text with `&& git commit --amend -n`, was blocked by the new gate: a commit line
+  inside a heredoc still counts as a commit (the heredoc may be piped to a shell), which is the
+  safe side.
+- Verify green, 48 tests (first commit). `sync.ps1 -Check` from the kit: FlatCheck differs in exactly
   `scripts/hooks/claude-commit-gate.ps1`, `scripts/hooks/claude-stop-gate.ps1` and
   `scripts/kit-config.ps1`, as planned.

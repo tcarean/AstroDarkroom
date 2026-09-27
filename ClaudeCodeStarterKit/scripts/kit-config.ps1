@@ -95,17 +95,17 @@ function Get-KitPath($Config, [string]$ProjectDir) {
 }
 
 # The project $Path (a file or a folder, existing or not) belongs to: the nearest folder at or
-# above it that holds kit.json, as a full path without a trailing separator; $null when there is
-# none. The walk stops at the top of the repository or worktree the path is in (a folder holding
-# .git), so a path in a worktree made under a project's .claude/worktrees/ is never taken for a
-# path of that project. The same rule as the git pre-commit hook, which walks up to the nearest
-# scripts/verify.ps1 without leaving the repository.
-function Find-KitProject([string]$Path) {
+# above it that holds $Marker (kit.json unless told otherwise; the commit gate asks for
+# scripts\verify.ps1, the git pre-commit hook's rule), as a full path without a trailing
+# separator; $null when there is none. The walk stops at the top of the repository or worktree
+# the path is in (a folder holding .git), as pre-commit does, so a path in a worktree made under
+# a project's .claude/worktrees/ is never taken for a path of that project.
+function Find-KitProject([string]$Path, [string]$Marker = 'kit.json') {
     if (-not $Path) { return $null }
     $dir = [System.IO.Path]::GetFullPath($Path)
     if (-not (Test-Path -LiteralPath $dir -PathType Container)) { $dir = [System.IO.Path]::GetDirectoryName($dir) }
     while ($dir) {
-        if (Test-Path -LiteralPath (Join-Path $dir 'kit.json') -PathType Leaf) { return $dir.TrimEnd('\', '/') }
+        if (Test-Path -LiteralPath (Join-Path $dir $Marker) -PathType Leaf) { return $dir.TrimEnd('\', '/') }
         if (Test-Path -LiteralPath (Join-Path $dir '.git')) { return $null }
         $dir = [System.IO.Path]::GetDirectoryName($dir)
     }
