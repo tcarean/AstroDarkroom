@@ -1,22 +1,22 @@
 # Process notes: conventions, versioning, licensing, build and run
 
-> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001): this is the explanation behind the code,
-> read on demand; CLAUDE.md keeps only the rules. **Covers:** the rules CLAUDE.md states in one line each, with their reasons; `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests`, the publish commands. Committing is rule 13 of CLAUDE.md and has no section here since 2026-09-27. The section "Extending the console", added 2026-09-25, also covers `Options.cs`, `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
+> Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
+> CLAUDE.md nor a decision record says (ADR 0051): the rules are in CLAUDE.md, the decisions with
+> their reasons in `docs/decisions/`, and this note keeps the mechanics of the console and the few
+> reasons that have no other home. **Covers:** by pointer, `Directory.Build.props`, `Version.cs`,
+> `LicenseHeaderTests`, `VersionTests` and the publish commands; in full, the section "Extending
+> the console", added 2026-09-25: `Options.cs`, `FlatCheckCli.cs`, `Program.cs`,
+> `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
 
 ## Conventions
 
-The rules are in `CLAUDE.md` (Romanian for users and English for the process, rule 14; nothing
-computed outside the core, rule 6; ratios and rules of thumb, rule 15; the version and the
-commit are the owner's, rules 13 and 17; the GPL notice, rule 18; no package without a case,
-rule 5). This note keeps only the reasons that would otherwise be lost:
+The rules are in `CLAUDE.md`; the two packages, the hand-rolled FITS and PNG and the standard of
+evidence a third package would have to meet are ADR 0008 and `dependencies.md`. One reason with
+no other home:
 
-- **Two external dependencies, each earned by a measured argument** (`dependencies.md`:
-  `Sdcb.LibRaw` for the raw files, `SixLabors.ImageSharp` for the window's bitmaps). The FITS
-  reader and the PNG encoder stay hand-rolled: the point of the console is that it is a single
-  copyable binary, and a third package needs the same standard of evidence as the first two.
 - **User-facing documentation lives in `README.md`, and only there.** Do not restate the
   modes, the thresholds, the workflow traps or the `--light` validity limit in a docstring or
   a file header. It was duplicated between `README.md` and `flatcheck.py`'s docstring once,
@@ -27,197 +27,38 @@ rule 5). This note keeps only the reasons that would otherwise be lost:
 
 ## Versioning
 
-Every run prints `flatcheck <version>` as its **first line** - every mode, `--help`, and
-failed runs too, so a pasted report always says which version produced it. There is no
-`--version` flag; it would be redundant. A machine-readable output, if one is ever added, carries
-the same two strings as its first two fields instead of two lines (ADR 0042).
-
-Both applications print it from `RunReport.WriteBanner`, so the WPF app's saved
-`Rezultat testare.txt` opens on the same two lines as a console run, and a bump moves both
-at once.
-
-The version lives in **one** place, `<Version>` in `Directory.Build.props`. (Until 2026-09-26
-`flatcheck.py` carried a mirrored `__version__`; the prototype is frozen at 2.2.0 and no longer
-synchronised, ADR 0047.)
-
-`Directory.Build.props`, not a csproj, and that changed in 2.0.0 for a concrete reason:
-there are now three assemblies. `VersionInfo` reads the one it lives in - Core - but the
-console exe and the WPF exe carry their own, which is what Windows shows in file
-properties. Two places to edit means, sooner or later, two different values. So the
-property sits above all of them and every project inherits it.
-**Don't move `<Version>` or `<Copyright>` back into a csproj**; `VersionTests` checks that
-no project overrides either.
-
-`FlatCheck.Core/Version.cs` does **not** hardcode it. `VersionInfo.Value` reads the
-assembly's `AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and
-trims any `+sourcerevision` suffix. Don't reintroduce a literal there.
-
-**The user bumps the version manually**, per feature or fix, choosing the increment
-themselves. **Never bump it on your own initiative** - not as part of a change, not
-"while you're in there". If a change seems to warrant a bump, say so and let them decide.
-
-**Bumping the version breaks nothing.** That is deliberate, and worth preserving: the
-banner is scrubbed to `flatcheck <VERSIUNE>` before any comparison of whole output:
-`GoldenOutputTests.RunCli` scrubs it, the same way it already scrubs absolute paths - both
-change without the *behaviour* changing. So `Golden/*.txt`, the parity goldens included, carry
-the placeholder and survive a bump untouched.
-
-What *does* fail, and should:
-
-| situation | what fails |
-|---|---|
-| the version bumped | nothing |
-| `<Version>` removed from `Directory.Build.props`, or re-added to a csproj | the plumbing tests in `VersionTests` |
-| the banner stops being printed | the golden files, because they carry a placeholder line the output no longer produces |
-
-The scrubbing does not weaken coverage: `VersionTests` asserts the banner's exact content
-and its position on line 1, for every mode, for `--help`, and for failed runs.
-
+ADR 0039 holds the whole of it, amended by ADR 0047 (the version is declared once, in
+`Directory.Build.props`; the frozen `flatcheck.py` is no longer synchronised): the banner on
+line 1 of every run and why there is no `--version` flag, `VersionInfo` reading
+`AssemblyInformationalVersion` with no literal, the scrub to `flatcheck <VERSIUNE>` in
+`GoldenOutputTests.RunCli`, and what fails when the plumbing moves. ADR 0042 settles the
+machine-readable case. The owner bumps, never the assistant (rule 17). Guards: `VersionTests`,
+the golden files.
 
 ## Licensing
 
-The tool is **GPLv3-or-later**. The full text is in `LICENSE` at the repo root (the
-verbatim FSF `gpl-3.0.txt` - don't reword it, and don't reflow it).
+ADR 0040 records the five things pinned by tests (the notice on every source file, the copyright
+on line 2, the warranty in `--help`, the window's "Despre", one source of truth for the copyright
+string), their guards, and why the copyright line is not scrubbed like the banner; ADR 0047
+amends the Python half. A new file follows rule 18, a new package rule 5 and ADR 0008. Three
+mechanics the ADR does not spell out:
 
-**Third-party code has its own file.** `THIRD-PARTY-NOTICES.md` lists every package linked
-in, its licence, and - the part that matters - *why* that licence is compatible with
-GPLv3. Two of the current entries take a real decision rather than inheriting one: LibRaw
-is dual-licensed and only one of its two options is GPL-compatible, and ImageSharp's
-licence is conditional and has to be shown to apply. A package added without an entry there
-is a package whose compatibility nobody checked. See "The dependencies" above for the rule.
+- XAML gets one `<!-- ... -->` block wrapping the unprefixed notice because `--` cannot repeat
+  inside an XML comment.
+- The SPDX line is there so licence scanners can read the file without parsing English.
+- `VersionInfo.Copyright` reads `AssemblyCopyrightAttribute`; the literal in `ReadCopyright` is
+  only a fallback, and `VersionTests` binds the two.
 
-Five things follow, and all five are pinned by tests:
+## Build, test and publish
 
-- **Every source file starts with the notice**, above the file's own header comment:
-  the SPDX line, the copyright, and all three paragraphs of the standard GNU notice
-  (permission, no-warranty, where-to-get-a-copy). `//` for C#, `#` for Python (below the
-  shebang), and for XAML a single `<!-- ... -->` block wrapping the unprefixed text -
-  `--` cannot repeat inside an XML comment. XAML counts as source: it is written by hand
-  and it describes the interface. New files get the notice too - it is the first thing to
-  write, not an afterthought. `LicenseHeaderTests` walks all five projects plus the two
-  `.py` files and fails on any file missing it, which is the only thing keeping the
-  convention alive as files get added; its `Projects` list is explicit rather than
-  discovered, so adding a project is a decision. The SPDX line is there so licence
-  scanners can read the file without parsing English.
-- **Every run prints the copyright on line 2**, right under the version banner, in every
-  mode, at `--help`, and on failed runs. Same reason as the banner: a pasted report says
-  on its own whose tool produced it. A machine-readable output, if one is ever added, carries
-  both as its first two fields (ADR 0042).
-- **`--help` carries the warranty disclaimer** and points at `LICENSE` - GPLv3 §5(d),
-  which wants a program that displays legal notices to display that one too. It lives
-  there rather than under the banner on purpose: five lines on top of every report,
-  every run, would drown the numbers. The text is `RunReport.WarrantyLines` in C#, which
-  `WriteUsage` prints line by line and the window's "Despre" shows as one paragraph -
-  `Golden/help.txt` pins the console side, `AboutTests` the window side; the argparse
-  `epilog` (`__warranty__`) in Python.
-- **The window's "Despre" is its §5(d) notice**, and it also carries the third-party
-  list with each component's copyright line. That second part is LGPL-2.1 §6: when a
-  program displays copyright notices at runtime - and this one does, on line 2 of every
-  report and in the window's top bar - it must include the library's notice among them,
-  with a reference to the LGPL. The list comes from `ThirdParty.Components`; LibRaw's
-  copyright line there is the one from LibRaw 0.21.1's `COPYRIGHT` file, the version the
-  runtime packages ship. `LibRawIsTakenUnderTheLgplAndCarriesItsCopyright` pins both the
-  licence choice and the notice.
-- **One source of truth per language for the copyright string**: `<Copyright>` in
-  `Directory.Build.props` (read back through `AssemblyCopyrightAttribute` by
-  `VersionInfo.Copyright` - the literal in `ReadCopyright` is only a fallback).
-  `VersionTests` binds the two together. (The frozen `flatcheck.py` keeps its own
-  `__copyright__`; nothing checks it any more.)
-
-Unlike the version banner, the copyright line is **not** scrubbed anywhere: it is
-constant, so the golden files carry it verbatim. That is deliberate - if the line ever
-stops being printed, the golden files fail.
-
-The year and the author are the user's call, exactly like the version. Don't roll the
-year forward on your own initiative.
-
-
-## Build & test
-
-```bash
-dotnet build FlatCheck.sln -c Release
-```
-
-**The solution no longer builds on Linux**, because `FlatCheck.Wpf` targets
-`net8.0-windows`. That is a deliberate cost, not an oversight: the console stays portable
-if you build its project directly, and there is no CI workflow in the repo, so nothing
-else notices.
-
-```bash
-dotnet build FlatCheck/FlatCheck.csproj -c Release
-```
-
-```bash
-dotnet test FlatCheck.sln
-```
-
-Two test projects run: `FlatCheck.Tests` (core + console, portable) and
-`FlatCheck.Wpf.Tests` (window, Windows-only).
-
-The golden-output tests snapshot every mode's console text. When you change output
-*on purpose*, re-approve them and read the resulting diff:
-
-```bash
-FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
-```
-
-To look at the window without running it - handy when the Windows session is locked and a
-screen capture would catch the lock screen:
-
-```bash
-FLATCHECK_DUMP_SCREENS=/tmp/ecrane dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests
-```
-
-
-## Run
-
-Self-contained binary:
-
-```bash
-dotnet publish FlatCheck/FlatCheck.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-```
-
-The last two flags are what keep the "single copyable binary" promise now that libraw is
-in: without them its four native DLLs sit next to the exe as separate files. With them
-the whole thing is one ~67 MB `flatcheck.exe` again. `linux-x64` works the same; other
-RIDs (arm64, macOS) have no libraw binary in these packages, so FITS-only there.
-
-Note the explicit project path: `dotnet publish` on the solution would now also try the
-WPF project, which cannot be single-filed the same way.
-
-**The `lensfun/` folder rides beside the exe**, in the build output and in the publish
-folder (both csproj files copy it): the single copyable binary is now "the exe, plus the
-`lensfun` folder if you want the lensfun half of the lens list". Without the folder every
-mode still runs; `--lenses` says which folder it looked at, and the window's panel too.
-The Adobe half needs nothing shipped: it is read from where Lightroom / Camera Raw / DNG
-Converter installed it.
-
-The window app publishes without `PublishSingleFile`:
-
-```bash
-dotnet publish FlatCheck.Wpf/FlatCheck.Wpf.csproj -c Release -r win-x64 --self-contained
-```
-
-```bash
-FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"   # optional: the session folder
-```
-
-```bash
-flatcheck process/pp_flat_stacked.fit                  # 1. structure (or masters/pp_flat_stacked.fit, Siril 1.4 stock scripts)
-flatcheck s_0deg/process/pp_flat_stacked.fit --ratio s_180deg/process/pp_flat_stacked.fit   # 2. attribution
-flatcheck process/pp_light_00001.fit --light           # 3. end-to-end
-flatcheck flat_brut.fit --expo                         # 4. exposure
-flatcheck DSC_0060.NEF --expo                          # 4. exposure, straight off the raw
-flatcheck sky_flat.fit --expo --sky                    # 4b. sky flat
-flatcheck flat_brut.fit --expo --sat 4095 --black 150  # override, mostly for FITS
-flatcheck flat.fit -o harta.png                        # custom PNG path
-flatcheck process/pp_flat_stacked.fit --raw flats/DSC_0001.NEF   # 1 + the sixth test: vignetting vs the lens profiles, lens and f-stop from the raw
-flatcheck --lenses --lens "Tokina 11-20"               # 7. which lenses have a vignetting profile
-flatcheck process/pp_flat_stacked.fit --synthetic process/pp_flat_stacked_sintetic.fit --lens "Tokina AT-X 11-20mm F2.8 PRO DX" --fstop 2.8
-flatcheck process/pp_flat_stacked.fit --against process/pp_flat_stacked_sintetic.fit   # how much the master differs from the model
-```
-
-Remember: the flag must come *after* the file path.
+The build, test, golden and screen-dump commands are in CLAUDE.md ("Commands"). The two publish
+targets are in `kit.json` (`scripts/release.ps1` runs them), and `README.md` ("Build, rulare,
+teste") explains them for the user: the two flags that keep `flatcheck.exe` a single copyable
+file now that libraw is in, the RIDs that have a libraw binary, the `lensfun/` folder that rides
+beside both executables (ADR 0028), why the window publishes without `PublishSingleFile`, and
+why the whole solution no longer builds on Linux. One reason kept here: `FLATCHECK_DUMP_SCREENS`
+exists for the locked Windows session, where a screen capture would catch the lock screen and
+the render does not (ADR 0037: the PNGs are for eyes, never a golden).
 
 
 ## Extending the console
@@ -265,9 +106,7 @@ tests and documents; this section is that list, in the order the work goes.
 - Flags come before or after the path with the same result (R-003;
   `R003_FlagBeforePath_GivesTheSameResultAsFlagAfterPath` in `GoldenOutputTests`). The parser
   collects every non-flag token as positional and, after the loop, wants exactly one; none
-  with `--lenses`, which is a list and needs no input. The sentence at the end of "Run" above,
-  "the flag comes after the path", predates phase 8; either order works (CLAUDE.md's Commands
-  say so since 2026-09-27).
+  with `--lenses`, which is a list and needs no input.
 - Cross-argument checks come after the loop, in the same method: `--smooth` and `--synthetic`
   refuse to write over the input (`SamePath`, case-insensitive on Windows), and `--sat` must
   exceed `--black`. Mode flags are **not** mutually validated here
@@ -381,8 +220,7 @@ The procedure:
    copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
    `<TMP>/`.
 5. Run the suite without the variable; it must be green.
-6. The owner reads the diff and approves it (rule 3). The assistant proposes; it never
-   re-approves a changed golden file on its own, and never edits one by hand.
+6. The owner reads the diff and approves it (rule 3).
 
 ### Adding a parity golden scenario
 
@@ -434,9 +272,8 @@ which is enough for the banner: it is written before the options are parsed).
 default, then two paragraphs (flags on either side of the path; the banner on every run). Every
 option appears there, in Romanian with diacritics. A new flag gets its line there, a mention in
 the mode's own `### N.` section when it changes what that mode does, and a line under
-`## Coduri de ieșire` when it adds or changes an exit code. Before any of that, the behaviour
-is a row in `docs/requirements.md` (rule 1: "Console contract" for a flag, the mode's block for
-a mode), and the change gets its `CHANGELOG.md` line (rule 9).
+`## Coduri de ieșire` when it adds or changes an exit code. The requirement row of rule 1
+goes under "Console contract" for a flag and in the mode's block for a mode.
 
 ### InvariantGlobalization
 
@@ -454,10 +291,8 @@ code:
   `App.ForceInvariantNumbers` instead. The setting in `FlatCheck.Core.csproj` has no effect on
   a host that does not set its own. `CultureTests` in `FlatCheck.Wpf.Tests` runs the window
   under `ro-RO` to prove the saved report matches the console.
-- `FlatCheck.Tests` sets the same switch (ADR 0043). The test host is its own executable and
-  does not inherit the console's `runtimeconfig.json`; without the switch the golden tests
-  formatted under the machine's culture, because the report code mostly formats with the
-  ambient culture (`StructureReport` names the invariant one in a single place), and 63
-  tests failed under `ro-RO`. `InvariantGlobalizationTests` (R-007) checks the console's
-  `runtimeconfig.json` and the test host. A consequence: a test there cannot construct a named
-  culture; one that needs `ro-RO` goes in `FlatCheck.Wpf.Tests`.
+- `FlatCheck.Tests` sets the same switch, for the reason and with the consequence ADR 0043
+  records: the test host is its own executable, and a test that needs a named culture such as
+  `ro-RO` goes in `FlatCheck.Wpf.Tests`. `InvariantGlobalizationTests` (R-007) checks the
+  console's `runtimeconfig.json` and the test host. The report code mostly formats with the
+  ambient culture; `StructureReport` names the invariant one in a single place.
