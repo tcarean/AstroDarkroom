@@ -3,14 +3,22 @@ using Xunit;
 namespace Starter.Tests;
 
 /// <summary>
-/// scripts/sync.ps1 keeps a project's scripts/ byte-identical with the kit's, except the
-/// kit-only files, and with -Check it is step 0 of verify.ps1. These tests build a throwaway
-/// "repository" (a folder with .git) holding a kit (the real scripts/) and a project whose
-/// kit.json points at it, then break the project's copy in the three possible ways.
+/// scripts/sync.ps1 keeps a project's shared folders (scripts/, .claude/skills/,
+/// .claude/agents/) byte-identical with the kit's, except the kit-only files under scripts/,
+/// and with -Check it is step 0 of verify.ps1. These tests build a throwaway "repository" (a
+/// folder with .git) holding a kit (the real shared folders) and a project whose kit.json points
+/// at it, then break the project's copy in the three possible ways.
 /// </summary>
 public sealed class SyncTests : IDisposable
 {
-    private static readonly string[] KitOnly = ["rename.ps1", "install-hooks.ps1", Path.Combine("hooks", "pre-commit"), Path.Combine("hooks", "commit-msg")];
+    private static readonly string[] Shared = ["scripts", Path.Combine(".claude", "skills"), Path.Combine(".claude", "agents")];
+    private static readonly string[] KitOnly =
+    [
+        Path.Combine("scripts", "rename.ps1"),
+        Path.Combine("scripts", "install-hooks.ps1"),
+        Path.Combine("scripts", "hooks", "pre-commit"),
+        Path.Combine("scripts", "hooks", "commit-msg"),
+    ];
 
     private readonly string _repo = Path.Combine(Path.GetTempPath(), "starter-sync", Guid.NewGuid().ToString("N"));
     private readonly string _kit;
@@ -21,12 +29,16 @@ public sealed class SyncTests : IDisposable
         _kit = Path.Combine(_repo, "Kit");
         _project = Path.Combine(_repo, "Proj");
         Directory.CreateDirectory(Path.Combine(_repo, ".git"));
-        string real = Path.Combine(TestData.FindRepoRoot(), "scripts");
-        ScriptRunner.CopyTree(real, Path.Combine(_kit, "scripts"));
-        ScriptRunner.CopyTree(real, Path.Combine(_project, "scripts"));
+        string real = TestData.FindRepoRoot();
+        foreach (string folder in Shared)
+        {
+            ScriptRunner.CopyTree(Path.Combine(real, folder), Path.Combine(_kit, folder));
+            ScriptRunner.CopyTree(Path.Combine(real, folder), Path.Combine(_project, folder));
+        }
+
         foreach (string file in KitOnly)
         {
-            File.Delete(Path.Combine(_project, "scripts", file));
+            File.Delete(Path.Combine(_project, file));
         }
 
         File.WriteAllText(Path.Combine(_kit, "kit.json"), KitJson("."));
@@ -56,6 +68,25 @@ public sealed class SyncTests : IDisposable
         Assert.Contains("3 difference(s)", output);
     }
 
+    /// <summary>A skill edited in a project, and an agent the project added, are drift like a script.</summary>
+    [Fact]
+    public void SkillsAndAgents_AreMirroredToo()
+    {
+        File.AppendAllText(Path.Combine(_project, ".claude", "skills", "wrap-up", "SKILL.md"), "\n12. A project-only step.\n");
+        File.WriteAllText(Path.Combine(_project, ".claude", "agents", "extra.md"), "---\nname: extra\n---\n");
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("differs  .claude/skills/wrap-up/SKILL.md", output);
+        Assert.Contains("extra    .claude/agents/extra.md", output);
+
+        Assert.Equal(0, RunSync(_project).ExitCode);
+        Assert.Equal(
+            File.ReadAllBytes(Path.Combine(_kit, ".claude", "skills", "wrap-up", "SKILL.md")),
+            File.ReadAllBytes(Path.Combine(_project, ".claude", "skills", "wrap-up", "SKILL.md")));
+        Assert.False(File.Exists(Path.Combine(_project, ".claude", "agents", "extra.md")));
+    }
+
     [Fact]
     public void Sync_TakesTheKitCopy_DeletesExtras_AndLeavesKitOnlyFilesOut()
     {
@@ -68,7 +99,7 @@ public sealed class SyncTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_project, "scripts", "stray.ps1")));
         foreach (string file in KitOnly)
         {
-            Assert.False(File.Exists(Path.Combine(_project, "scripts", file)), file);
+            Assert.False(File.Exists(Path.Combine(_project, file)), file);
         }
 
         Assert.Equal(0, RunSync(_project, "-Check").ExitCode);

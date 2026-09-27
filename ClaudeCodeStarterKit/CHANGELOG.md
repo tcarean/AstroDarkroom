@@ -7,6 +7,22 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The six skills and the `docs-auditor` agent are shared like `scripts/` (ADR 0018):
+  `scripts/sync.ps1` mirrors `.claude/skills/` and `.claude/agents/` too, step 0 of `verify.ps1`
+  and the Stop hook cover them, rule 15 names them. A skill takes its values from `kit.json` by
+  reference (the solution, the folders, the publish list) and reads `docs/skills.md`, the
+  project's additions with one section per skill, before its first step; the kit ships that file
+  with empty sections. The agent reads `kit.json` first, never opens `codeFolders` or
+  `codeFiles`, may read the optional `audit.alsoRead` list, and reports in English with the
+  files it opened. `ValidationTests` carries `Category=Validation`, the trait `/validate` selects
+  in every project. Improvements FlatCheck had made to its copies are in the kit's now: a
+  `/validate` step after numeric code and `Internal` in the CHANGELOG step of `/wrap-up`, a new
+  `R###` test moves its requirement, ADRs for choices settled in chat, README as user
+  documentation, `git status -- .` and the owner's version in `/release`, a fallback when the
+  agent type is not registered yet, the exit code in a requirement and a "Figures" step in
+  `/new-feature`, "on a large suite pass a filter" in `/mutate`. `SyncTests` covers a skill
+  edited and an agent added in a project.
+
 - One `scripts/` for every project (ADR 0017): the scripts read `kit.json` at the project root
   (solution, test filter, code and test folders, test data folder and its environment variable,
   Stryker's test project, the list of what a release publishes, where the kit is) through

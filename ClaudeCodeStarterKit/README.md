@@ -29,6 +29,8 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
    separat, fara kit alaturi). `rename.ps1` a schimbat deja numele solutiei acolo. Din `scripts/`
    sterge `rename.ps1`, `install-hooks.ps1`, `hooks/pre-commit` si `hooks/commit-msg`, care raman
    doar in kit; restul folderului nu se editeaza niciodata in proiect (vezi "Ce e impus mecanic").
+   La fel `.claude/skills/` si `.claude/agents/`: ce are proiectul de adaugat la un skill se
+   scrie in `docs/skills.md`, in sectiunea skill-ului.
 4. Hook-urile git (`pre-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
    ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
@@ -62,14 +64,15 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `docs/validation.md` + `.json` | cifre de acceptanta; JSON-ul e citit de `ValidationTests` |
 | `docs/plans/`, `docs/design/` | planuri aprobate; note de design citite la nevoie |
 | `tests/testdata/` | fixtures in repo + manifest cu hash; fisierele mari in `large/` (ignorat de git) |
-| `kit.json` | singurul fisier pe care un proiect il editeaza ca sa foloseasca `scripts/`: solutia, folderele de cod si de teste, datele de test, ce publica un release, unde e kit-ul |
+| `kit.json` | valorile proiectului pentru scripturile, skill-urile si agentul comune: solutia, folderele de cod si de teste, datele de test, ce publica un release, ce mai poate citi auditorul, unde e kit-ul |
+| `docs/skills.md` | adaugirile proiectului la skill-urile kit-ului, o sectiune per skill; fiecare skill il citeste inainte de primul pas |
 | `scripts/verify.ps1` | gate-ul unic: scripturi identice cu kit-ul, manifest, restore, format, build strict, teste |
-| `scripts/sync.ps1` | copiaza `scripts/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
+| `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/` si `.claude/agents/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
 | `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi |
 | `scripts/check-staged.ps1` | refuza commit-ul care atinge codul (folderele din `kit.json`) fara linie in CHANGELOG |
 | `scripts/hooks/` | git pre-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni si hooks, versionate; `settings.local.json` ramane local |
-| `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release` |
+| `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
 | `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`; un agent nou apare dupa repornirea sesiunii |
 | `scripts/mutate.ps1`, `.config/dotnet-tools.json` | mutation testing pe Core cu Stryker.NET, la cerere; minute, nu in gate |
@@ -81,9 +84,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
 - Commit care atinge codul fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
-- `scripts/` modificat intr-un proiect, nu in kit: gate-ul e rosu la pasul 0 (`sync.ps1 -Check`),
-  deci commit-ul e refuzat, iar hook-ul Stop nu inchide tura. Sursa e kit-ul; `sync.ps1` copiaza.
-  Dupa o schimbare in kit, primul commit din fiecare proiect cere intai `sync.ps1` (ADR 0017).
+- `scripts/`, `.claude/skills/` sau `.claude/agents/` modificat intr-un proiect, nu in kit:
+  gate-ul e rosu la pasul 0 (`sync.ps1 -Check`), deci commit-ul e refuzat, iar hook-ul Stop nu
+  inchide tura. Sursa e kit-ul; `sync.ps1` copiaza. Dupa o schimbare in kit, primul commit din
+  fiecare proiect cere intai `sync.ps1` (ADR 0017, ADR 0018).
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
 - Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.

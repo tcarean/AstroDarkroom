@@ -19,6 +19,7 @@ below are repo-wide and are handled here.
 A project folder without `scripts/verify.ps1` is left alone by the hook, so existing projects
 can adopt the gate one at a time: copy `scripts/` from the kit (without `rename.ps1`,
 `install-hooks.ps1` and the two git hooks), write a `kit.json` with the project's values and
-`"kit": "../ClaudeCodeStarterKit"`, done. From then on `scripts/` is not edited in the project:
-step 0 of `verify.ps1` compares it with the kit's, and `scripts/sync.ps1` copies the kit's
-version after a change there (ADR 0017).
+`"kit": "../ClaudeCodeStarterKit"`, done; the same copy brings `.claude/skills/` and
+`.claude/agents/`, with the project's own skill steps in `docs/skills.md`. From then on those
+folders are not edited in the project: step 0 of `verify.ps1` compares them with the kit's, and
+`scripts/sync.ps1` copies the kit's version after a change there (ADR 0017, ADR 0018).

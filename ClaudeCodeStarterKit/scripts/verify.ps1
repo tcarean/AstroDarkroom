@@ -3,9 +3,10 @@
 #
 # WHAT IT DOES
 #   Runs six checks in order and stops at the first one that fails:
-#     0. kit scripts         scripts/ is byte-identical with the kit's (sync.ps1 -Check); only
-#                            when kit.json names a kit folder that exists and is not this
-#                            project, else the step is skipped with a yellow line
+#     0. kit files           scripts/, .claude/skills/ and .claude/agents/ are byte-identical
+#                            with the kit's (sync.ps1 -Check); only when kit.json names a kit
+#                            folder that exists and is not this project, else the step is
+#                            skipped with a yellow line
 #     1. test data manifest  every file listed in <testData.folder>/manifest.json is there,
 #                            with the SHA-256 hash written in the manifest (check-testdata.ps1)
 #     2. restore             downloads the NuGet packages; in CI (locked mode) it also fails
@@ -78,16 +79,16 @@ try {
     $kitPath = Get-KitPath $kit $root
     $here = [System.IO.Path]::GetFullPath($root).TrimEnd('\', '/')
     if (-not $kitPath) {
-        Write-Host '== kit scripts: skipped (kit.json names no kit folder)' -ForegroundColor Yellow
+        Write-Host '== kit files: skipped (kit.json names no kit folder)' -ForegroundColor Yellow
     }
     elseif ($kitPath -eq $here) {
-        Write-Host '== kit scripts: skipped (this project is the kit)' -ForegroundColor Yellow
+        Write-Host '== kit files: skipped (this project is the kit)' -ForegroundColor Yellow
     }
     elseif (-not (Test-Path -LiteralPath $kitPath)) {
-        Write-Host ("== kit scripts: skipped (kit not found at {0})" -f $kitPath) -ForegroundColor Yellow
+        Write-Host ("== kit files: skipped (kit not found at {0})" -f $kitPath) -ForegroundColor Yellow
     }
     else {
-        Invoke-Step 'kit scripts'    { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'sync.ps1') -Check }
+        Invoke-Step 'kit files'      { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'sync.ps1') -Check }
     }
     # -v q (quiet) keeps each tool's output short. --no-restore and --no-build reuse what the
     # previous step produced instead of doing it again.
