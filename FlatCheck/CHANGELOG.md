@@ -42,6 +42,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `CheckStagedTests` copies the real `kit.json` beside the script.
 - ADR 0044 and the CLAUDE.md workflow: a task branch lives in its own worktree; the shared
   checkout `E:\Photografie\Code` stays on `main` for the owner's merges.
+- ADR 0050 and the CLAUDE.md workflow: a worktree the assistant makes is named after its branch
+  without `claude/`, so the owner finds it to review before the commit (the kit's ADR 0019).
 - `FlatCheck.Tests` now runs under `<InvariantGlobalization>`, like `flatcheck.exe` (ADR 0043,
   R-007). The switch is per executable and did not reach the test host, so the golden files and
   the report tests formatted with the machine's culture: they passed on `en-GB` and 63 of them
