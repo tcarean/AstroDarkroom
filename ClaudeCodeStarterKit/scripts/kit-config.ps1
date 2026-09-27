@@ -25,9 +25,13 @@
 #     release.publish     what release.ps1 publishes: a list of { project, output, args };
 #                         output is a subfolder of artifacts/<version>/ ("" is that folder
 #                         itself), args are extra `dotnet publish` arguments
+#     audit.alsoRead      optional; files or folders, besides docs/ and the test data README
+#                         and manifest, that the docs-auditor agent may read: expected outputs,
+#                         notices. Never code.
 #     kit                 optional; the kit folder, relative to the project ("." in the kit
-#                         itself). sync.ps1 copies scripts/ from there, and verify.ps1 checks
-#                         that they are identical. Absent: no check, sync by hand.
+#                         itself). sync.ps1 copies scripts/, .claude/skills/ and
+#                         .claude/agents/ from there, and verify.ps1 checks that they are
+#                         identical. Absent: no check, sync by hand.
 #
 # WHO CALLS IT
 #   Every script in scripts/ and scripts/hooks/ that needs a project value. Nobody runs it.
@@ -56,6 +60,9 @@ function Read-KitConfig([string]$ProjectDir) {
     if ($null -eq $cfg.PSObject.Properties['testFilter']) { $cfg | Add-Member -NotePropertyName testFilter -NotePropertyValue '' }
     if ($null -eq $cfg.PSObject.Properties['codeFiles']) { $cfg | Add-Member -NotePropertyName codeFiles -NotePropertyValue @() }
     if ($null -eq $cfg.PSObject.Properties['kit']) { $cfg | Add-Member -NotePropertyName kit -NotePropertyValue '' }
+    if ($null -eq $cfg.PSObject.Properties['audit']) { $cfg | Add-Member -NotePropertyName audit -NotePropertyValue ([pscustomobject]@{ alsoRead = @() }) }
+    if ($null -eq $cfg.audit.PSObject.Properties['alsoRead']) { $cfg.audit | Add-Member -NotePropertyName alsoRead -NotePropertyValue @() }
+    $cfg.audit.alsoRead = @($cfg.audit.alsoRead | ForEach-Object { $_.Replace('\', '/') })
 
     # Folders: forward slashes and exactly one trailing slash, whatever the file says. @( )
     # keeps a one-element list a list; ConvertFrom-Json would hand a single string back.

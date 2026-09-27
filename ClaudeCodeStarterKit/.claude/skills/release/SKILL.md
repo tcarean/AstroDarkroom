@@ -1,16 +1,18 @@
 ---
 name: release
-description: Cut a release - pick the version from the CHANGELOG, run scripts/release.ps1 (verify, version bump, CHANGELOG section, publish), then propose the commit and the tag and ask who runs them. Use when the user says /release or asks to release, tag or publish a version.
+description: Cut a release - pick the version from the CHANGELOG, run scripts/release.ps1 (verify, version bump in Directory.Build.props, CHANGELOG section, publish what kit.json lists), then propose the commit and the tag and ask who runs them. Use when the user says /release or asks to release, tag or publish a version.
 ---
 
 # Release
 
 The script does the mechanical part; you do the judgement and the asking. Nothing here commits,
-tags or pushes without the owner's answer (rule 13).
+tags or pushes without the owner's answer (rule 13). The owner chooses the version number; you
+propose one. Before step 1, read `docs/skills.md` if it exists: its `## /release` section adds
+project-specific steps and says where they go.
 
-1. **Where we are.** `git branch --show-current` and `git status --porcelain`. A release is cut
-   from `main` (or the branch the owner names) with a clean tree. If the tree is dirty, stop:
-   that work is a task of its own, `/wrap-up` first.
+1. **Where we are.** `git branch --show-current` and `git status --porcelain -- .`. A release
+   is cut from `main` (or the branch the owner names) with a clean tree. If the tree is dirty,
+   stop: that work is a task of its own, `/wrap-up` first.
 2. **What is being released.** Read `[Unreleased]` in `CHANGELOG.md` and the current
    `<Version>` in `Directory.Build.props`. Propose the next version by SemVer: a `Removed` or a
    behaviour-breaking `Changed` entry means major; anything under `Added` means minor; only
@@ -21,8 +23,9 @@ tags or pushes without the owner's answer (rule 13).
 4. **Dry run.** `scripts/release.ps1 -Version X.Y.Z -WhatIf` and paste its output: tag name,
    Unreleased content, what would change.
 5. **Run it.** `scripts/release.ps1 -Version X.Y.Z`. It runs verify, edits
-   `Directory.Build.props` and `CHANGELOG.md`, publishes to `artifacts/X.Y.Z/`. Paste the last
-   lines. If it fails, report and stop; it changes nothing before verify passes.
+   `Directory.Build.props` and `CHANGELOG.md`, publishes what `kit.json` lists under
+   `release.publish` to `artifacts/X.Y.Z/`. Paste the last lines. If it fails, report and stop;
+   it changes nothing before verify passes.
 6. **Propose, then ask.** Show `git diff --stat`, then propose, on separate lines:
    the commit message `Release X.Y.Z`, and the tag command
    `git tag -a <tag> -m "Release X.Y.Z"` with the tag name the script printed. Ask: does the

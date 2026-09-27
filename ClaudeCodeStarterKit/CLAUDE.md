@@ -16,7 +16,8 @@ The sample code exists to show how a requirement, a test and a validation figure
 - Test data hashes after an intentional fixture change: `scripts/check-testdata.ps1 -Update`
 - Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"] [-BreakAt 80]`
 - Release (verify, version, CHANGELOG, publish; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
-- Take the kit's `scripts/` (or, in the kit, push it to every project): `scripts/sync.ps1 [-Check]`
+- Take the kit's `scripts/`, skills and agent (or, in the kit, push them to every project):
+  `scripts/sync.ps1 [-Check]`
 
 ## Layout
 
@@ -29,9 +30,11 @@ The sample code exists to show how a requirement, a test and a validation figure
 - `docs/decisions/` - ADRs. Why things are the way they are, and what was rejected.
 - `docs/validation.md` + `validation.json` - acceptance figures; the JSON is read by tests.
 - `docs/plans/` - approved plans, one per task. `docs/design/` - per-area notes, read on demand.
-- `kit.json` - what the shared scripts need to know about this project (solution, code and test
-  folders, test data, what a release publishes, where the kit is). `scripts/` itself is the
-  kit's, byte-identical here.
+- `kit.json` - what the shared scripts, skills and agent need to know about this project
+  (solution, code and test folders, test data, what a release publishes, what the auditor may
+  also read, where the kit is). `docs/skills.md` - this project's additions to the kit's skills,
+  one section per skill. `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's,
+  byte-identical here.
 - This file holds the rules. The explanations behind them (why, alternatives, how to adopt) are
   in `GHID.md`, kept once, in the kit folder `ClaudeCodeStarterKit` beside this project in the
   `photo` repository. For humans; not needed in a session. A rule added here that needs a "why"
@@ -60,12 +63,13 @@ The sample code exists to show how a requirement, a test and a validation figure
 14. English in everything the model reads or writes: code, comments, docs, tests, commits. Romanian
     only in `GHID.md` and the READMEs, which are for people. Translate when moving content across
     that line; never leave a file in two languages (ADR 0012).
-15. `scripts/` is the kit's (ADR 0017): the same bytes in the kit and in every project made from
-    it, except `rename.ps1`, `install-hooks.ps1` and the two git hooks, which stay in the kit. A
-    bug or a feature in a script is fixed in the kit, then `scripts/sync.ps1` copies it to every
-    project, one commit each, proposed like any commit (rule 13). Never edit `scripts/` in a
-    project; what differs per project goes in `kit.json`. `verify.ps1` is red on any drift and
-    the Stop hook refuses a turn that edited `scripts/` outside the kit.
+15. `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's (ADR 0017, ADR 0018): the
+    same bytes in the kit and in every project made from it, except `rename.ps1`,
+    `install-hooks.ps1` and the two git hooks, which stay in the kit. A bug or a feature there
+    is fixed in the kit, then `scripts/sync.ps1` copies it to every project, one commit each,
+    proposed like any commit (rule 13). Never edit those folders in a project; what differs per
+    project goes in `kit.json` (values) and `docs/skills.md` (skill steps). `verify.ps1` is red
+    on any drift and the Stop hook refuses a turn that edited them outside the kit.
 
 ## Workflow
 

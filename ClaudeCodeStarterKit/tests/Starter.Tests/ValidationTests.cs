@@ -8,7 +8,10 @@ namespace Starter.Tests;
 /// Reads docs/validation.json and checks every case against the current code. The document
 /// and the test cannot drift apart because they read the same file. When a number changes
 /// on purpose, the change is made in validation.json with a note in validation.md, never here.
+/// The trait is what /validate selects (`--filter "Category=Validation"`) in every project; a
+/// project whose cases read large files keeps them out of the gate with kit.json's testFilter.
 /// </summary>
+[Trait("Category", "Validation")]
 public class ValidationTests
 {
     [Theory]
