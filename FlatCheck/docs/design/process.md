@@ -10,8 +10,8 @@
 
 The rules are in `CLAUDE.md` (Romanian for users and English for the process, rule 14; nothing
 computed outside the core, rule 6; ratios and rules of thumb, rule 15; the version and the
-commit are the owner's, rules 13 and 17; the GPL notice, rule 18; no package without a case,
-rule 5). This note keeps only the reasons that would otherwise be lost:
+commits on `main` are the owner's, rules 13 and 17; the GPL notice, rule 18; no package
+without a case, rule 5). This note keeps only the reasons that would otherwise be lost:
 
 - **Two external dependencies, each earned by a measured argument** (`dependencies.md`:
   `Sdcb.LibRaw` for the raw files, `SixLabors.ImageSharp` for the window's bitmaps). The FITS
