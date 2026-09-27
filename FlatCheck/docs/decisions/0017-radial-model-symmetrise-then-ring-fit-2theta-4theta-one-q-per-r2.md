@@ -45,11 +45,17 @@ over those rings is the single `q` (smooth in `r`, so it cannot draw rings); par
 
 ## Consequences
 
-- Ring steps on the real masters: rotated tablet 0.73 → 0.17 %, monitor 1.01 → 0.29, sky
+- Ring steps on the real masters: rotated tablet 0.73 → 0.18 %, monitor 1.01 → 0.25, sky
   0.31 → 0.36; a single-orientation stack reads 7.82 % instead of 17.85; the sky master's
   true-residual error 8.9 → 0.5 %. Accepted cost: a constant `q` misfits smoothly where the true
   `q` varies with `r` (sky residual 9.31 → 10.06). No library verdict changed; golden files moved
   0.01-0.2 points. `flatcheck.py` mirrors it, all 43 `crosscheck.py` scenarios agree; touching the model means re-running §6 of the note (ADR 0018).
+- Corrected 2026-09-27: this record said 0.17 and 0.29 for the rotated tablet and the monitor
+  master; the whole-library table of `radial-model-even-term.md` (§7.3) says 0.18 and 0.25, and
+  the metric re-run that day on the eight Tokina masters with the definition of ADR 0018 (80
+  profile bins, bins under 5000 px excluded) reproduced every row of that table to the rounding
+  (0.182, 0.247, 0.363, 0.030, 0.026, 0.197, 0.241, 0.791). The 0.29 was `structure_clean`'s
+  residual, quoted twice in the same note.
 - Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised` and
   `OnAGradient_TheResidualHasNoRingsOutToTheCorner` (both also assert the unfixed behaviour),
   `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,

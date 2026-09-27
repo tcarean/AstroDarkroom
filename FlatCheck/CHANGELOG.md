@@ -30,6 +30,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `WorstRingStep` in `StructureAnalyzerTests` implements the ring-step definition of ADR 0018
+  (80 profile bins, bins under 5000 px excluded) and reproduces the whole-library table of
+  `radial-model-even-term.md`; ADR 0017 and ADR 0031 carry dated corrections of three figures
+  copied wrongly from the notes, and the comment of `VignettingComparison.cs` says what the
+  "worst profile" rule would really have given (ACCEPTABIL / BUN, not REFA).
 - The six skills and the `docs-auditor` agent are the kit's copies now, byte for byte, taken
   with `scripts/sync.ps1` (ADR 0049; kit ADR 0018). FlatCheck's own steps (test projects, golden
   and parity scenarios, the numeric paths, the masters' folder, the two publish targets, the

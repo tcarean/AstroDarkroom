@@ -41,6 +41,11 @@ eye's job: the numbers vote, the map shows the shape.
 
 ## Consequences
 
+- Since 2026-09-27 `WorstRingStep` implements the definition above (80 profile bins out to the
+  corner, bins under 5000 px excluded) and reproduces the whole-library table of
+  `radial-model-even-term.md` §7.3 on the real masters. Until then it stepped by 2 % of the
+  inscribed radius from 0.6 of it with a 2000 px floor: the same on smooth masters (sky 0.364
+  vs 0.363 %), different on the textured ones (diffuser-close monitor 0.317 vs 0.247 %).
 - The guard against model-made rings is the suite: `OnAGradient_TheResidualHasNoRingsOutToTheCorner`
   and `OnAFourfoldTerm_TheResidualHasNoRingsAndReadsTheInjectedStructure` compute the ring step
   on the gradient and four-fold scenes with a 0.5 % threshold; a regression fails the build

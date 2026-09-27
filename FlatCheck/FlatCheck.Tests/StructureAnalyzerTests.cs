@@ -283,14 +283,15 @@ public class StructureAnalyzerTests
     ///
     /// Read as ring MEANS: the mean over each ring collapses the gradient (the two halves
     /// cancel), so what is left is the radial behaviour of the model, and it has to be
-    /// smooth from one ring to the next. Rings are sampled from 0.6x the inscribed radius
-    /// out to the corner, which spans the whole region where the artefact lived, and only
-    /// rings holding at least 2000 pixels are used - the last sliver before the corner tip
-    /// is four arcs of some 90 pixels each, whose mean is sampling noise and jumps 0.5 %
-    /// on its own.
+    /// smooth from one ring to the next. Rings are the 80 profile bins of the radial model,
+    /// centre to corner, and only bins holding at least 5000 pixels are used (ADR 0018): the
+    /// innermost bins and the last slivers before the corner tip are a few arcs whose mean is
+    /// sampling noise. Same definition as the whole-library table of
+    /// `radial-model-even-term.md` §7.3, which it reproduces.
     ///
-    /// Measured on this scene: 2.47 % worst step from the raw profile, 0.11 % from the
-    /// symmetrised one, over 57 rings. Both are asserted, so the test states what it
+    /// Measured on this scene: 3.08 % worst step from the raw profile, 0.08 % from the
+    /// symmetrised one (2026-09-27, with the 80-bin definition; 2.47 % and 0.11 % with the
+    /// earlier 2 %-of-radius steps). Both are asserted, so the test states what it
     /// protects against.
     /// </summary>
     [Fact]
@@ -337,23 +338,25 @@ public class StructureAnalyzerTests
     static double WorstRingStep(Img resid)
     {
         double cx = resid.W / 2.0, cy = resid.H / 2.0;
-        double rIns = Math.Min(cx, cy), rMax = Math.Sqrt(cx * cx + cy * cy);
-        double step = 0.02 * rIns;
+        double rMax = Math.Sqrt(cx * cx + cy * cy);
+        const int bins = 80, minPixels = 5000;
+        var sum = new double[bins];
+        var count = new int[bins];
+        for (int y = 0; y < resid.H; y++)
+            for (int x = 0; x < resid.W; x++)
+            {
+                double d = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                int b = Math.Min(bins - 1, (int)(d / rMax * bins));
+                sum[b] += resid.At(y, x);
+                count[b]++;
+            }
 
         double worst = 0, prev = double.NaN;
         int rings = 0;
-        for (double rad = 0.6 * rIns; rad < rMax; rad += step)
+        for (int b = 0; b < bins; b++)
         {
-            double sum = 0; int n = 0;
-            for (int y = 0; y < resid.H; y++)
-                for (int x = 0; x < resid.W; x++)
-                {
-                    double d = Math.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-                    if (d >= rad && d < rad + step) { sum += resid.At(y, x); n++; }
-                }
-            if (n < 2000) continue;
-
-            double mean = sum / n;
+            if (count[b] < minPixels) continue;
+            double mean = sum[b] / count[b];
             if (!double.IsNaN(prev)) worst = Math.Max(worst, Math.Abs(mean - prev) * 100);
             prev = mean;
             rings++;
