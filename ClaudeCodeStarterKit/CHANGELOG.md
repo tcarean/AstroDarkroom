@@ -111,7 +111,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   worktree. `/wrap-up` commits on the task branch and asks only for the merge; `/release`
   leaves the release commit and the tag to the owner. Rule 13, the guide, the README and the
   generator prompt say so; `HookTests` covers `main`, `master`, `feature/...`, a detached HEAD
-  and a `claude/` worktree beside a checkout on `main`.
+  and a `claude/` worktree beside a checkout on `main`. `/wrap-up` says how to end a merge that
+  stops on conflicts (`git merge --continue`, since the hook refuses `git commit` on `main`) and
+  that a gate failing only on the merged result is fixed on the task branch.
 - A worktree the assistant makes is named after its branch without `claude/`, created with it in
   one command (`git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main`), so
   the owner finds it to review before the commit (ADR 0019). CLAUDE.md and the guide say so; an
