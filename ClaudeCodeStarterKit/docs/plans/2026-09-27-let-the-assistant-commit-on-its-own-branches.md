@@ -30,7 +30,7 @@ proposed and asked". The change is made in the kit first, then synced to FlatChe
 6. **Kit-to-project sync commits** (`scripts/sync.ps1`, one commit per project) are made on the
    task's `claude/` branch like any other commit.
 7. ADR: kit **0021** (supersedes the "never commits" part of 0007; 0007's status says so), and
-   FlatCheck **0051** adopting it in a few lines, pointing at kit 0021, as 0050 does for 0019.
+   FlatCheck **0052** adopting it in a few lines, pointing at kit 0021, as 0050 does for 0019.
 
 ## Work
 
@@ -61,7 +61,7 @@ spanning both starts from the kit, FlatCheck ADR 0044/0050).
 ### Commit 2 - FlatCheck (`FlatCheck/`)
 - `scripts/sync.ps1` from the kit: the hook and the two skills arrive byte-identical.
 - `.claude/settings.json` as in the kit; `CLAUDE.md` rule 13 and Workflow lines;
-  `docs/design/process.md` line on "the commit is the owner's"; `docs/decisions/0051-...md`.
+  `docs/design/process.md` line on "the commit is the owner's"; `docs/decisions/0052-...md`.
 - No FlatCheck CHANGELOG line (nothing under Core/console/Wpf, rule 9).
 - `scripts/verify.ps1` green in FlatCheck.
 
@@ -78,3 +78,11 @@ spanning both starts from the kit, FlatCheck ADR 0044/0050).
 - `scripts/verify.ps1` green in the kit and in FlatCheck; `scripts/sync.ps1 -Check` clean.
 - By hand, piping a payload into the hook: `git commit` in the shared checkout (on `main`) is
   refused with the rule-13 message; in the task worktree it runs the gate.
+
+## Deviations
+
+- FlatCheck's ADR is 0052, not 0051: the branch `claude/Cut-what-process-md-repeats-from-CLAUDE-md-and-the-ADRs`,
+  merged into `main` meanwhile, took 0051, and `RepoInvariantTests` refused the duplicate at the
+  merge. Its cut of `process.md` also removed the sentence this task had edited there; the merge
+  keeps `main`'s version.
+- The hook's message names "the kit's ADR 0021", since a project's ADR 0021 is another decision.

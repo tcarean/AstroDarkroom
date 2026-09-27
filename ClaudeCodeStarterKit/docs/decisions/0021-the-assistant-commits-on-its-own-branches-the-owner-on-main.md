@@ -55,4 +55,4 @@ The sync commits of `scripts/sync.ps1`, one per project, are made on the task br
 `HookTests` guards the hook: a commit on `main`, `master`, `feature/...` or a detached HEAD is
 refused, and a worktree on a `claude/` branch commits while the main checkout is on `main`.
 A session started before this change keeps the old `ask` list until it restarts. FlatCheck
-records the same rule in its ADR 0051.
+records the same rule in its ADR 0052.
