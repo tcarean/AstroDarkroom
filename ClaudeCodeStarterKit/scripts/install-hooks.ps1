@@ -2,13 +2,14 @@
 # install-hooks.ps1 - tells git to run this project's git hooks at every commit.
 #
 # WHAT IT DOES
-#   git can run small scripts, called hooks, at fixed moments. The kit has two, both run at
-#   every commit: scripts/hooks/pre-commit (the gate) and scripts/hooks/commit-msg (the
+#   git can run small scripts, called hooks, at fixed moments. The kit has three:
+#   scripts/hooks/pre-commit (the gate, at every commit), scripts/hooks/pre-merge-commit (the
+#   same gate, at a merge git records without conflicts) and scripts/hooks/commit-msg (the
 #   one-line message rule). git looks for hooks in the folder named by its setting
 #   core.hooksPath; this script sets it, depending on where the project sits:
 #     - standalone repository (this folder is the git root): core.hooksPath = scripts/hooks,
 #       so git runs the files in scripts/hooks/ directly;
-#     - folder inside a monorepo (a bigger repository, like photo): it copies both hooks to
+#     - folder inside a monorepo (a bigger repository, like photo): it copies the three hooks to
 #       <git root>/.githooks/, with Unix (LF) line endings, and sets core.hooksPath for the
 #       whole repository to the absolute path of the main checkout's .githooks/ (for photo,
 #       E:/Photografie/Code/.githooks). That one copy serves every project folder and every
@@ -50,10 +51,10 @@ try {
         Write-Host 'standalone repo: core.hooksPath = scripts/hooks'
     }
     else {
-        # Monorepo: copy the two hooks to <git root>/.githooks/ and point git there.
+        # Monorepo: copy the three hooks to <git root>/.githooks/ and point git there.
         $target = Join-Path $gitRoot '.githooks'
         if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target | Out-Null }
-        foreach ($name in @('pre-commit', 'commit-msg')) {
+        foreach ($name in @('pre-commit', 'pre-merge-commit', 'commit-msg')) {
             $source = Join-Path $PSScriptRoot ('hooks\' + $name)
             $dest = Join-Path $target $name
             # LF endings: git runs the hook through sh, which chokes on CR (Windows line
@@ -69,7 +70,7 @@ try {
         $hooksPath = ($main.TrimEnd('\', '/') -replace '\\', '/') + '/.githooks'
         git config core.hooksPath $hooksPath
         if ($LASTEXITCODE -ne 0) { throw 'git config failed.' }
-        Write-Host ("monorepo: pre-commit and commit-msg copied to {0}; core.hooksPath = {1}" -f $target, $hooksPath)
+        Write-Host ("monorepo: pre-commit, pre-merge-commit and commit-msg copied to {0}; core.hooksPath = {1}" -f $target, $hooksPath)
         Write-Host 'Commit .githooks/ so every clone can run the same install.'
         # A per-worktree value (config.worktree) wins over the one just written.
         $effective = (git config --get core.hooksPath)

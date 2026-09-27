@@ -13,7 +13,7 @@ It is not an image processor and it never decides what a shape on a map is.
 
 ## Commands
 
-- Gate (what pre-commit and the Claude commit hook run, about 3 min):
+- Gate (what pre-commit, pre-merge-commit and the Claude commit hook run, about 3 min):
   `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
 - Fast loop, no tests: `... scripts/verify.ps1 -SkipTests`
 - Build: `dotnet build FlatCheck.sln -c Release --nologo` (Windows only: the WPF project;

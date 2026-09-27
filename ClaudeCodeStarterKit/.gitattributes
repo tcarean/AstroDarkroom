@@ -4,6 +4,7 @@
 *.sh text eol=lf
 scripts/hooks/pre-commit text eol=lf
 scripts/hooks/commit-msg text eol=lf
+scripts/hooks/pre-merge-commit text eol=lf
 # cmd.exe misreads labels in batch files with LF endings.
 *.cmd text eol=crlf
 *.bat text eol=crlf

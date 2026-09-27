@@ -1393,8 +1393,10 @@ mecanic:
   de test, restore, `dotnet format` (doar verifică), build cu avertismentele ca erori, toate
   testele în afară de cele de validare.
   Cam 3 minute. Îl rulează hook-ul git `pre-commit` de la rădăcina repo-ului la orice commit care
-  atinge FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
-  `scripts/release.ps1`. Fără el verde nu intră niciun commit; `--no-verify` e interzis.
+  atinge FlatCheck, hook-ul git `pre-merge-commit` la orice merge fără conflicte care aduce
+  schimbări în FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
+  `scripts/release.ps1`. Fără el verde nu intră niciun commit și niciun merge; `--no-verify`
+  e interzis.
 
   ```bash
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1

@@ -6,7 +6,7 @@ The sample code exists to show how a requirement, a test and a validation figure
 
 ## Commands
 
-- Gate (what pre-commit and CI run): `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
+- Gate (what pre-commit, pre-merge-commit and CI run): `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
 - Fast loop, no tests: `... scripts/verify.ps1 -SkipTests`
 - Build: `dotnet build Starter.sln -c Release --nologo`
 - Test: `dotnet test Starter.sln -c Release --nologo`
@@ -67,7 +67,7 @@ The sample code exists to show how a requirement, a test and a validation figure
     that line; never leave a file in two languages (ADR 0012).
 15. `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's (ADR 0017, ADR 0018): the
     same bytes in the kit and in every project made from it, except `rename.ps1`,
-    `install-hooks.ps1` and the two git hooks, which stay in the kit. A bug or a feature there
+    `install-hooks.ps1` and the three git hooks, which stay in the kit. A bug or a feature there
     is fixed in the kit, then `scripts/sync.ps1` copies it to every project, one commit each on
     the task's branch (rule 13). Never edit those folders in a project; what differs per
     project goes in `kit.json` (values) and `docs/skills.md` (skill steps). `verify.ps1` is red

@@ -17,6 +17,7 @@ public sealed class SyncTests : IDisposable
         Path.Combine("scripts", "rename.ps1"),
         Path.Combine("scripts", "install-hooks.ps1"),
         Path.Combine("scripts", "hooks", "pre-commit"),
+        Path.Combine("scripts", "hooks", "pre-merge-commit"),
         Path.Combine("scripts", "hooks", "commit-msg"),
     ];
 

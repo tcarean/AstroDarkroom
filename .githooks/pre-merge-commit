@@ -1,0 +1,27 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# pre-merge-commit - the commit gate for a merge git records by itself.
+#
+# WHAT IT DOES
+#   git calls it when a merge completes without conflicts, just before it records the merge
+#   commit. Such a merge runs neither pre-commit nor the Claude commit hook, so without this
+#   file a clean merge into main entered the history with no gate at all (ADR 0022). The index
+#   already holds the merged result, and git diff --cached lists what the merge brings in over
+#   HEAD; so it simply runs the pre-commit hook beside it, which gates every project those files
+#   touch: check-staged, then verify, on the merged tree.
+#   A merge that stops on conflicts is recorded later by git merge --continue or git commit,
+#   which run pre-commit themselves; this hook does not run then.
+#
+# WHO CALLS IT
+#   git itself, on every git merge that creates a merge commit, yours or Claude's, because
+#   core.hooksPath points at this file's folder (set by scripts/install-hooks.ps1, which copies
+#   it to <git root>/.githooks/ in a monorepo). git merge --no-verify skips it; CLAUDE.md
+#   forbids that (rule 4).
+#
+# RESULT
+#   the result of pre-commit: exit 0 records the merge; exit 1 refuses it, the working tree
+#   keeps the merged files and the index, and git merge --abort goes back.
+#
+# A POSIX sh script, with Unix (LF) line endings; .gitattributes makes sure of that.
+
+exec "$(dirname "$0")/pre-commit"

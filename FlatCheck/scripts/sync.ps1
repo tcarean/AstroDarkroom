@@ -15,8 +15,8 @@
 #   Kit-only files are left out of the mirror in both directions, neither copied to a project
 #   nor deleted from it: scripts/rename.ps1 (renames a fresh copy once),
 #   scripts/install-hooks.ps1 (runs from the kit; a project's copy could overwrite the shared
-#   .githooks/) and the two git hooks scripts/hooks/pre-commit and scripts/hooks/commit-msg
-#   (one active copy, in .githooks/, installed from the kit). See $KitOnly below.
+#   .githooks/) and the three git hooks scripts/hooks/pre-commit, scripts/hooks/pre-merge-commit
+#   and scripts/hooks/commit-msg (one active copy, in .githooks/, installed from the kit). See $KitOnly below.
 #   With -Check it changes nothing: it lists every path that differs (differs / missing /
 #   extra) and exits 1 when there is one. That is step 0 of scripts/verify.ps1, which makes
 #   an isolated edit in a project's shared folders impossible to commit, and asks every
@@ -47,7 +47,7 @@ $kit = Read-KitConfig $root
 # The folders mirrored from the kit, relative to the project root, with forward slashes.
 $Shared = @('scripts', '.claude/skills', '.claude/agents')
 # Files that exist only in the kit, relative to the project root, with forward slashes.
-$KitOnly = @('scripts/rename.ps1', 'scripts/install-hooks.ps1', 'scripts/hooks/pre-commit', 'scripts/hooks/commit-msg')
+$KitOnly = @('scripts/rename.ps1', 'scripts/install-hooks.ps1', 'scripts/hooks/pre-commit', 'scripts/hooks/pre-merge-commit', 'scripts/hooks/commit-msg')
 
 # Every file under the shared folders of one project root, relative with forward slashes,
 # minus the kit-only ones.
