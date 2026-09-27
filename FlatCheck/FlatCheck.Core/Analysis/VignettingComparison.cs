@@ -36,8 +36,9 @@
 // intre ele cu ~0.2 stopuri pe acelasi obiectiv (docs/lens-profiles.md, sectiunea 8), si
 // unealta nu poate acuza un master cu mai multa precizie decat au bazele intre ele: un
 // master care coincide cu una din ele nu e gresit. "Cel mai rau" ar fi coborat masterele de
-// monitor bune la ACCEPTABIL si BUN in loc de PERFECT si BUN (+0.19 stopuri fata de Adobe,
-// -0.13 fata de lensfun AF; masurat 2026-09-27, V-036 si V-038). Pragurile nu sunt
+// monitor bune la ACCEPTABIL si BUN in loc de PERFECT si BUN (monitor-difuzor-aproape +0.19
+// stopuri fata de Adobe, monitor-difuzor-pe-monitor -0.13 fata de lensfun AF; masurat
+// 2026-09-27, V-036 si V-038). Pragurile nu sunt
 // noi: diferenta in stopuri trece prin Stats.DepthErrorPct (2^|D| - 1) pe scara de reziduu,
 // exact ca adancimea din --against. Semnul e diagnosticul: plus = masterul cade mai mult
 // decat modelul (sursa cade cu unghiul: panou fara difuzor real, prea aproape), minus =

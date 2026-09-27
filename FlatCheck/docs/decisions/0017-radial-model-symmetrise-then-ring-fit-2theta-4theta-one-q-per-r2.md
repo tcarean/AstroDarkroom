@@ -50,12 +50,16 @@ over those rings is the single `q` (smooth in `r`, so it cannot draw rings); par
   true-residual error 8.9 → 0.5 %. Accepted cost: a constant `q` misfits smoothly where the true
   `q` varies with `r` (sky residual 9.31 → 10.06). No library verdict changed; golden files moved
   0.01-0.2 points. `flatcheck.py` mirrors it, all 43 `crosscheck.py` scenarios agree; touching the model means re-running §6 of the note (ADR 0018).
-- Corrected 2026-09-27: this record said 0.17 and 0.29 for the rotated tablet and the monitor
-  master; the whole-library table of `radial-model-even-term.md` (§7.3) says 0.18 and 0.25, and
-  the metric re-run that day on the eight Tokina masters with the definition of ADR 0018 (80
-  profile bins, bins under 5000 px excluded) reproduced every row of that table to the rounding
-  (0.182, 0.247, 0.363, 0.030, 0.026, 0.197, 0.241, 0.791). The 0.29 was `structure_clean`'s
-  residual, quoted twice in the same note.
+- Corrected 2026-09-27: this record said 0.17 for `Tokina ISO400
+  f2.8-tableta-lipita-hartie-3-foi-rotiri-perfecte` and 0.29 for `Tokina ISO400
+  f2.8-monitor-difuzor-aproape`; the whole-library table of `radial-model-even-term.md` (§7.3)
+  says 0.18 and 0.25. The metric re-run that day on the eight Tokina ISO400 masters, with the
+  definition of ADR 0018 (80 profile bins, bins under 5000 px excluded), reproduced every row of
+  that table to the rounding (note / measured, in %): monitor-difuzor-aproape 0.25 / 0.247,
+  monitor-difuzor-pe-monitor 0.79 / 0.791, sky-no-difuser 0.36 / 0.363, tableta-lipita-coperti-
+  15-foi 0.03 / 0.030, tableta-lipita-coperti-7-foi 0.03 / 0.026, tableta-lipita-hartie-3-foi
+  0.20 / 0.197, tableta-lipita-hartie-3-foi-rotiri-perfecte 0.18 / 0.182, tableta-lipita-hartie-
+  4-foi 0.24 / 0.241. The 0.29 was `structure_clean`'s residual, quoted twice in the same note.
 - Pinned by `RadialModel_OnAGradient_TheProfileJumpsUnlessTheRasterIsSymmetrised` and
   `OnAGradient_TheResidualHasNoRingsOutToTheCorner` (both also assert the unfixed behaviour),
   `RadialModel_OnASaddle_RecoversTheRadialPartOutToTheCorner`,
