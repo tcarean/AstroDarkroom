@@ -71,6 +71,8 @@ wide/wide, `--fov` override, a series with `--pattern`).
 - ADR 0039 is amended: the version is declared once, in `Directory.Build.props`; `flatcheck.py`
   keeps `__version__ = "2.2.0"` as the mark of where it froze. The FitCenter guard of ADR 0038
   stays as it was, and its reason is kept in `docs/design/python-parity.md`.
+- ADR 0042 is amended too: the `crosscheck.py` guards it names (`norm()`, `check_versions()`)
+  went with the cross-check; `ScrubVersion` in `GoldenOutputTests` is the only scrub left.
 - Guards: `ParityGoldenTests` (43 scenarios plus a count and uniqueness check), the 43
   `Golden/parity_*.txt`, `R097_TheVersionComesFromDirectoryBuildProps`, `ValidationTests`.
 - Source notes: `docs/design/python-parity.md` (the frozen prototype, the last result, the

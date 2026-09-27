@@ -100,9 +100,9 @@ public class StructureAnalyzerTests
         Assert.NotEqual("PERFECT", r.ResidualVerdict);
     }
 
-    /// <summary>The overall verdict is the worst of the four, not an average.</summary>
+    /// <summary>The overall verdict is the worst of the five, not an average.</summary>
     [Fact]
-    public void R011_TheOverallVerdictIsTheWorstOfTheFourTests()
+    public void R011_TheOverallVerdictIsTheWorstOfTheFiveTests()
     {
         var scene = FitsTestData.WithLinearGradient(FitsTestData.Radial(N, N), N, 0.12);
         var r = StructureAnalyzer.Analyze(TestImages.From(N, N, scene));

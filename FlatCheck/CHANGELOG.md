@@ -15,6 +15,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `--help` names `--out` beside `-o` for the output map, as the README and R-006 do; the
+  golden `help.txt` was re-approved for that one line.
 - The Python prototype is frozen at 2.2.0 and no longer maintained (ADR 0047, supersedes 0005
   and 0038): rule 16 now asks for `/validate` after a formula change instead of the cross-check,
   `scripts/release.ps1` writes `<Version>` only, and `check-staged.ps1` and the Stop hook no

@@ -22,7 +22,7 @@ It is not an image processor and it never decides what a shape on a map is.
 - One test: `dotnet test FlatCheck.sln --filter "FullyQualifiedName~R012"`
 - Format: `dotnet format FlatCheck.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project FlatCheck -- <file.fit> [--ratio B.fit | --light | --expo | ...]`;
-  the flag comes after the path. Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
+  the flag may come before or after the path (R-003). Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
 - Golden console texts, re-approved only after the owner read the diff:
   `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln` (`Golden/parity_*.txt` are the 43
   scenarios the Python prototype confirmed on 2026-09-26; re-approving one is a C#-only call)

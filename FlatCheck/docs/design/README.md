@@ -6,7 +6,8 @@ before touching"; nothing in this folder is loaded into a session unless the tas
 
 Most of these notes were CLAUDE.md itself until 2026-09-25 (ADR 0001): 2709 lines that loaded
 into every session. They were moved here unchanged, so the prose still says "see X below" where
-X is now a sibling file; this table maps the areas. The four evidence files that already lived
+X is now a sibling file, and a heading it names may have been renamed since; this table maps
+the areas. The four evidence files that already lived
 in `docs/` moved into this folder with them. **Every note is maintained in one precise sense**:
 it is the evidence behind a decision still in force, it says at the top which code it covers,
 and a change to that code means the note is updated in the same task, or deleted with the
