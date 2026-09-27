@@ -129,9 +129,11 @@ It is not an image processor and it never decides what a shape on a map is.
   into `main` is the owner's call, proposed and asked like a commit (rule 13); once merged, the
   assistant deletes the branch with `git branch -d`, and uses `-D` only when the owner asks
   (the kit's ADR 0013). Read the whole diff back before proposing a commit.
-- A task branch lives in its own worktree (`git worktree add` under `.claude/worktrees/`), never
-  in the shared checkout `E:\Photografie\Code`, which stays on `main`: the owner merges there,
-  and other sessions share it (ADR 0044).
+- A task branch lives in its own worktree, never in the shared checkout `E:\Photografie\Code`,
+  which stays on `main`: the owner merges there, and other sessions share it (ADR 0044). A
+  worktree the assistant makes is named after its branch without `claude/`, so the owner finds
+  it to review before the commit:
+  `git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main` (ADR 0050).
 - Discuss and measure before designing: present the measured facts and the decisions to take,
   wait for them, then implement without re-asking (the owner's standing instruction).
 
