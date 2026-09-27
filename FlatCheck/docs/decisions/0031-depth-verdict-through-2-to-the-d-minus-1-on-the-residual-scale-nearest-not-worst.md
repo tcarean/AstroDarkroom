@@ -35,8 +35,13 @@ would call it (`Stats.DepthOnLightScale`, the same `Verdict` and `Th.LightRad*` 
 - **The polynomial evaluated at the corner point.** The box median and the half-pixel artefact
   would differ between master and model; on a master that is the model the raster method reads
   0.00, the residual under 0.001 stops.
-- **The worst profile's verdict.** It would have called the good monitor masters REFA (0.15 off
-  Adobe, 0.03 off lensfun); a master that coincides with one database is not wrong.
+- **The worst profile's verdict.** It would have called the good monitor masters ACCEPTABIL and
+  BUN instead of PERFECT and BUN (`Tokina ISO400 f2.8-monitor-difuzor-aproape` +0.19 stops off
+  Adobe, 13.9 %; `Tokina ISO400 f2.8-monitor-difuzor-pe-monitor` −0.13 off the lensfun AF
+  entry, 9.7 %); a master that coincides with one database is not wrong. (Corrected
+  2026-09-27: this line said "REFA (0.15 off Adobe, 0.03 off lensfun)", copied from the comment
+  of `VignettingComparison.cs`; the console run with `--raw` on both masters, V-036 and V-038
+  give the figures above, and 0.15 stops is 11 %, ACCEPTABIL on the residual scale.)
 - **Option B, aligning the depth bands to `--light`'s 2 / 5 %.** Measured and turned down: it put
   the paper masters (6-8 %), the Nikkor 35 DX sky masters (7-8 %) and the Samyang f/2 master on
   REFA, all below the reference's own resolution (15 % in the corner).
