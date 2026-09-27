@@ -54,5 +54,7 @@ asks only for the merge; `/release` proposes the release commit and the tag for 
 The sync commits of `scripts/sync.ps1`, one per project, are made on the task branch.
 `HookTests` guards the hook: a commit on `main`, `master`, `feature/...` or a detached HEAD is
 refused, and a worktree on a `claude/` branch commits while the main checkout is on `main`.
-A session started before this change keeps the old `ask` list until it restarts. FlatCheck
-records the same rule in its ADR 0052.
+A merge the assistant runs that stops on conflicts is concluded with `git merge --continue`,
+which goes through the git hooks but is not a `git commit`, so the hook does not refuse it on
+`main` (found at this ADR's own merge, 2026-09-27). A session started before this change keeps
+the old `ask` list until it restarts. FlatCheck records the same rule in its ADR 0052.
