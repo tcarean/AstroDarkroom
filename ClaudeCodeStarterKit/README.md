@@ -27,11 +27,11 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
    leaga o cerinta de un test si de o cifra de validare. In `kit.json`, pune `"kit"` pe calea
    relativa catre kit (`../ClaudeCodeStarterKit` in repo-ul `photo`; sterge cheia intr-un repo
    separat, fara kit alaturi). `rename.ps1` a schimbat deja numele solutiei acolo. Din `scripts/`
-   sterge `rename.ps1`, `install-hooks.ps1`, `hooks/pre-commit` si `hooks/commit-msg`, care raman
-   doar in kit; restul folderului nu se editeaza niciodata in proiect (vezi "Ce e impus mecanic").
+   sterge `rename.ps1`, `install-hooks.ps1`, `hooks/pre-commit`, `hooks/pre-merge-commit` si
+   `hooks/commit-msg`, care raman doar in kit; restul folderului nu se editeaza niciodata in proiect (vezi "Ce e impus mecanic").
    La fel `.claude/skills/` si `.claude/agents/`: ce are proiectul de adaugat la un skill se
    scrie in `docs/skills.md`, in sectiunea skill-ului.
-4. Hook-urile git (`pre-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
+4. Hook-urile git (`pre-commit`, `pre-merge-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
    ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
    radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului. Intr-un
@@ -70,7 +70,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/` si `.claude/agents/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
 | `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi |
 | `scripts/check-staged.ps1` | refuza commit-ul care atinge codul (folderele din `kit.json`) fara linie in CHANGELOG |
-| `scripts/hooks/` | git pre-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
+| `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni si hooks, versionate; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
 | `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
@@ -83,6 +83,8 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 ## Ce e impus mecanic, nu doar scris in CLAUDE.md
 
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
+- Merge fara conflicte al carui rezultat nu trece `verify.ps1`: refuzat de git pre-merge-commit,
+  care ruleaza acelasi gate ca pre-commit (ADR 0022).
 - Commit care atinge codul fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
 - `scripts/`, `.claude/skills/` sau `.claude/agents/` modificat intr-un proiect, nu in kit:
   gate-ul e rosu la pasul 0 (`sync.ps1 -Check`), deci commit-ul e refuzat, iar hook-ul Stop nu

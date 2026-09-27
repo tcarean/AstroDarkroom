@@ -39,6 +39,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A merge that completes without conflicts runs the gate (ADR 0022): git calls
+  `pre-merge-commit`, not `pre-commit`, for such a merge, so until now it entered `main` with no
+  check at all. The new `scripts/hooks/pre-merge-commit` runs the `pre-commit` beside it, on the
+  merged result, for the projects the merge touches; a red gate leaves the merge unrecorded.
+  `install-hooks.ps1` copies it to `.githooks/`, `sync.ps1` keeps it kit-only, `.gitattributes`
+  keeps it LF. `GitHookTests` covers a green and a red merge.
 - The Claude Code hooks judge the worktree the work is in, not the folder the session started in
   (ADR 0020). `CLAUDE_PROJECT_DIR` stays at that folder, so in a session that made its worktree
   by hand the Stop hook judged none of the edits and the commit gate ran the shared checkout's

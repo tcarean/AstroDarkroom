@@ -8,6 +8,7 @@ below are repo-wide and are handled here.
 | Piece | Standalone repo | Monorepo |
 | --- | --- | --- |
 | pre-commit hook | `core.hooksPath = scripts/hooks` | one copy at `<root>/.githooks/pre-commit`, runs `verify.ps1` only in the project folders touched by the staged files |
+| pre-merge-commit hook | same | one copy at `<root>/.githooks/pre-merge-commit`; runs the pre-commit copy beside it, so a merge git records without conflicts gets the same gate on the merged result (ADR 0022) |
 | commit-msg hook | same | one copy at `<root>/.githooks/commit-msg`; the one-line rule then applies to every commit in the repository |
 | install | `scripts/install-hooks.ps1` | same script, the kit's copy (each copy writes its own hooks over `.githooks/`); it detects the layout. A project added later needs no install. A fresh clone runs it once: `core.hooksPath` is the absolute path of the main checkout's `.githooks/`, because the Claude desktop app copies a relative one into its worktrees resolved against the project folder, where no hook exists (ADR 0016) |
 | CI | `bitbucket-pipelines.yml`, `.github/workflows/ci.yml` in the kit | `monorepo/bitbucket-pipelines.yml` or `monorepo/github-ci.yml` copied to the root, one step per project with a path filter |
