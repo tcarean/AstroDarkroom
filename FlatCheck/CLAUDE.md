@@ -34,7 +34,8 @@ It is not an image processor and it never decides what a shape on a map is.
 - Mutation score of one core file: `scripts/mutate.ps1 -Mutate "**/Metrics.cs"`
 - Release (verify, version in `Directory.Build.props`, CHANGELOG, publish; no commit, no tag):
   `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
-- Take the kit's `scripts/` after a change there: `scripts/sync.ps1` (`-Check` only compares)
+- Take the kit's `scripts/`, skills and agent after a change there: `scripts/sync.ps1` (`-Check`
+  only compares)
 
 ## Layout
 
@@ -49,9 +50,11 @@ It is not an image processor and it never decides what a shape on a map is.
 - `flatcheck.py` - the Python prototype, frozen at 2.2.0, and `crosscheck.py`, its comparison
   tool: neither is maintained or run (ADR 0047). Prior art, not a reference.
 - `lensfun/` - the lensfun database, committed whole, copied beside the exe. `Icon/` - the icon.
-- `kit.json` - what the kit's scripts need to know about FlatCheck (solution, test filter, code
-  and test folders, test data, the two publish targets, where the kit is). `scripts/` itself is
-  the kit's, byte-identical here (ADR 0048).
+- `kit.json` - what the kit's scripts, skills and agent need to know about FlatCheck (solution,
+  test filter, code and test folders, test data, the two publish targets, what the auditor may
+  also read, where the kit is). `docs/skills.md` - FlatCheck's additions to the kit's skills, one
+  section per skill. `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's,
+  byte-identical here (ADR 0048, ADR 0049).
 - `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
   + `.json` - figures on the real masters. `docs/design/` - the explanations, per area, read on
   demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
@@ -99,10 +102,11 @@ It is not an image processor and it never decides what a shape on a map is.
     when a change seems to warrant a bump.
 18. Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice; `LicenseHeaderTests`
     fails otherwise. Scripts carry the SPDX line.
-19. `scripts/` is the kit's (ADR 0048, kit ADR 0017): never edit it here. A bug or a feature in
-    a script is made in `ClaudeCodeStarterKit`, then `scripts/sync.ps1` copies it to every
-    project, one commit each. What differs per project goes in `kit.json`. `verify.ps1` is red
-    on any drift and the Stop hook refuses a turn that edited `scripts/`.
+19. `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's (ADR 0048, ADR 0049; kit
+    ADR 0017, 0018): never edit them here. A bug or a feature there is made in
+    `ClaudeCodeStarterKit`, then `scripts/sync.ps1` copies it to every project, one commit each.
+    What differs per project goes in `kit.json` (values) and `docs/skills.md` (skill steps).
+    `verify.ps1` is red on any drift and the Stop hook refuses a turn that edited them.
 
 ## Workflow
 
