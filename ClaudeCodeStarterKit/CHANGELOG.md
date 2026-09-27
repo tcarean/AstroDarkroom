@@ -91,6 +91,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A worktree the assistant makes is named after its branch without `claude/`, created with it in
+  one command (`git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main`), so
+  the owner finds it to review before the commit (ADR 0019). CLAUDE.md and the guide say so; an
+  app worktree keeps its generated folder.
 - ADR 0013 and the CLAUDE.md workflow: a task branch lives in its own worktree; the main checkout
   stays on `main`, where the owner merges and which parallel sessions share. The guide says why.
 - ADRs 0001 to 0005 carry the date of acceptance in their status, as the template requires.
