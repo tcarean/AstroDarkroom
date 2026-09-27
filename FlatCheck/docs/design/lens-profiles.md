@@ -1,19 +1,27 @@
 # Synthetic flats from lens vignetting profiles: specification and evidence
 
-Covers also, since 2026-09-18, the structure mode's sixth test - the master's vignetting
-against the lens profiles (section 11).
-
-Covers `FlatCheck.Core/LensProfiles/` (`VignettingModel`, `LensProfile` / `LensCatalog` /
-`AdobeProfileFile`, `LcpReader`, `LensfunReader`, `ProfileLocator`),
-`Analysis/SyntheticFlatBuilder.cs`, `Report/SyntheticReport.cs`, `Runs/SyntheticRun.cs`,
-`Runs/AgainstRun.cs`, the `--synthetic` / `--lenses` / `--against` modes in
-`FlatCheck/Options.cs` and `FlatCheckCli.cs`, the window's `SyntheticTabViewModel` /
-`SyntheticView`, the `lensfun/` folder, and the shooting metadata added to `LoadedFrame`.
-Measured 2026-09-17 on the author's machine (Windows 10, Lightroom Classic installed,
-lensfun `data/db` at upstream commit `e34596cb52`, 2026-09-16) and on the masters under
-`E:\Photografie\Astro\Flats and Darks\`; sections 7-9 re-run 2026-09-18 after the Adobe
-model started using the camera's crop (section 4). If the model code changes, re-run
-section 9 and update the numbers.
+> Cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): the
+> decisions of the mode with their reasons are ADR 0028 (the two sources), ADR 0029 (nearest
+> profile, the camera's crop, the calibration crop in the lens key), ADR 0030 (lens
+> identification), ADR 0031 (the depth verdict inside the structure mode) and ADR 0032
+> (`--against`); this note keeps the two models quoted from their sources, the mechanics of the
+> code and the measurements. **Covers:** in full, `FlatCheck.Core/LensProfiles/`
+> (`VignettingModel`, `LensProfile` / `LensCatalog` / `AdobeProfileFile`, `LcpReader`,
+> `LensfunReader`, `ProfileLocator`, `LensIdentification`), `Analysis/SyntheticFlatBuilder.cs`,
+> `Analysis/VignettingComparison.cs`, `Report/SyntheticReport.cs`, `Report/AgainstReport.cs`,
+> the profile block of `Report/StructureReport.cs`, `Runs/SyntheticRun.cs`, `Runs/AgainstRun.cs`,
+> `Runs/StructureRun.cs`, the shooting metadata on `LoadedFrame`, the `lensfun/` folder and the
+> fixtures `LensProfileTestData`; by pointer, the `--synthetic` / `--lenses` / `--against` modes
+> in `FlatCheck/Options.cs` and `FlatCheckCli.cs` (`process.md`), the window's
+> `SyntheticTabViewModel` / `SyntheticView` and `Session/ProfileCatalog.cs`
+> (`modes-synthetic.md`). Since 2026-09-18 it covers also the structure mode's sixth test, the
+> master's vignetting against the lens profiles (section 11). Measured 2026-09-17 on the
+> author's machine (Windows 10, Lightroom Classic installed, lensfun `data/db` at upstream
+> commit `e34596cb52`, 2026-09-16) and on the masters under
+> `E:\Photografie\Astro\Flats and Darks\`; sections 7-9 re-run 2026-09-18 after the Adobe model
+> started using the camera's crop (section 4). If the model code changes, re-run section 9 and
+> update the numbers. The section numbers are cited by the ADRs, by `modes-structure.md`,
+> `VignettingComparison.cs` and `Thresholds.cs`; they do not move.
 
 ## 1. Why the mode exists
 
@@ -22,12 +30,11 @@ rotated 180°, twilight sky near the zenith) the master's vignetting came out at
 in the corner box, while the two monitor-lit masters of the same lens read 0.82 and 0.77.
 Same lens, same aperture (EXIF checked). The sky brightens toward the horizon all around
 the zenith and fills the corners; a monitor up close falls off with viewing angle and
-deepens them. Neither is the lens, and nothing in the tool can tell which one is closer:
-an isotropic contamination of the radial term is the blind spot of every test, `--ratio`
-included. The only source-free number for the lens is a published profile. The user's
-decisions (2026-09-17): Adobe profiles read from disk, never copied; the whole lensfun
-database in the repo, not embedded, copied next to the exe; `--against` in the same
-version; the sources panel in the window collapsed by default.
+deepens them. Neither is the lens. Why no test in the tool can tell which one is closer, and
+why a published profile is the only source-free number for the lens, is ADR 0031's context;
+the owner's decisions of 2026-09-17 on the two sources (Adobe read in place, lensfun
+committed whole, the sources panel collapsed) are ADR 0028. `--against` was built in the same
+version, not deferred.
 
 ## 2. The Adobe model, from the source document
 
@@ -37,7 +44,8 @@ fetched 2026-09-17; the PDF's text was extracted with a script, formulas transcr
 
 - Vignette Model (p. 8): "The vignette function can be expressed as a polynomial radial
   loss function: L(x_d, y_d) = 1 + α1 r_d² + α2 r_d⁴ + α3 r_d⁶, I(x_d, y_d) = L(x_d, y_d) ·
-  I_ideal(x_d, y_d), where r_d² = x_d² + y_d² and x_d = (u_d − u0)/f_x, y_d = (v_d − v0)/f_y."
+  I_ideal(x_d, y_d), where r_d² = x_d² + y_d² and x_d = (u_d − u0)/f_x,
+  y_d = (v_d − v0)/f_y."
 - p. 9: "Note that these model parameters are identical for all color channels."
 - Vignette Model Descriptors (p. 18): "Let Dmax be the maximum of the reference image width
   or height in the number of pixels. stCamera:FocalLengthX: fx / Dmax. If absent, default to
@@ -102,28 +110,23 @@ Common input: `(xN, yN)` = the pixel's offset from the **image centre** in units
   calibMm) / fxMm`, likewise `yd`, `r = hypot(xd, yd)`, `V = 1 + a1 r² + a2 r⁴ + a3 r⁶`;
   with a table instead of coefficients, linear interpolation in r, clamped at both ends.
   At `cameraCrop = SFF` this is exactly `(xN + 0.5 − CenterX) / (FocalX ?? FocalMm · SFF /
-  36)`, the first version's formula. **The first version used the profile's SFF for every
-  camera**: right on a D3300 with the DX file to 1.5 % (1.523 vs 1.5), wrong by the whole
-  corner on a full frame with a DX-calibrated file or the reverse, with no warning. The
-  decentring (`ImageXCenter`) is the lens's, in mm, so it does not scale with the crop.
-  Evidence that the real crop is what Adobe used too: the piecewise table in the Tokina
-  file ends at r = 0.7094, i.e. 14.19 mm at 20 mm, the half-diagonal of a 36 / 1.523 =
-  23.64 mm sensor - not of the 24 mm one SFF 1.5 implies (14.42 mm, r = 0.721).
+  36)`, the first version's formula. Why that version (the profile's SFF for every camera)
+  was replaced, and the evidence in Adobe's own piecewise table that the real crop is what
+  Adobe used, are ADR 0029; the SFF-1.5 reading would have put the Tokina table's last point
+  at 14.42 mm, r = 0.721, instead of the 14.19 mm it ends at. The decentring (`ImageXCenter`)
+  is the lens's, in mm, so it does not scale with the crop.
   `CalibrationCornerRadius()` = `hypot(36, 24) / 2 / SFF / fxMm` (1 for lensfun), and
   `Extrapolation(w, h, crop)` = the frame's corner r over it (`SyntheticFlatResult.
   Extrapolation` is the same for the written flat). `SyntheticReport.FormatMatch(model,
-  crop, w, h)` turns both into the one sentence the console prints at "format" and the tab
-  shows when a lens is picked and under the written depths: the calibration format
+  crop, w, h)` turns both into the one "format" sentence of ADR 0029: the calibration format
   (`SensorFormats.LabelOf` of the profile's crop / SFF), the user's format, "acelasi
   format" when the crops are within `SameFormatTolerance` (3 %) or "alt format, raza se
   recalculeaza prin mm" otherwise, then the corner: inside the profile (below 0.97, "in
-  interiorul profilului"), nothing (0.97-1.0), "extrapolare mica" up to 1.1 (the D3300 on
-  the lensfun entry calibrated at crop 1.61: 1.06), "extrapolare MARE" beyond - a
-  sixth-order polynomial 50 % past its data (a full frame on a DX profile) goes negative on
-  the fixture. `SensorFormats.Nearest` lights the tab's chip within 5 % of a nominal crop
+  interiorul profilului"), nothing (0.97-1.0), "extrapolare mica" up to 1.1, "extrapolare
+  MARE" beyond. `SensorFormats.Nearest` lights the tab's chip within 5 % of a nominal crop
   (1.523 → APS-C, 1.61 → APS-C Canon, 1.15 → none). `FormatMatchIsWarning` is true only for
-the large extrapolation; the tab colours the sentence amber on that alone, so "acelasi
-format" never looks like a warning.
+  the large extrapolation; the tab colours the sentence amber on that alone, so "acelasi
+  format" never looks like a warning.
 - **lensfun**: `longSideMm = 36 / cameraCrop`, `xMm = xN · longSideMm`,
   `yMm = yN · longSideMm`, `huginMm = hypot(36, 24) / CropFactor / 2`,
   `r = hypot(xMm, yMm) / huginMm`, same polynomial. Throws without a camera crop.
@@ -145,52 +148,44 @@ format" never looks like a warning.
   lenses without vignetting are dropped. `LensfunData.CropOf(name)` matches the camera
   model or an alias by containment on letters and digits only, longest match wins
   ("NIKON D3300" → 1.523).
-- **The calibration crop is part of a lensfun lens's identity** (`LensChoice.Calibration`,
-  "APS-C 1.528" / "full frame 1": the nominal format from `SensorFormats.LabelOf` plus the
-  exact `<cropfactor>`). The database holds the same lens, on the same mount, twice when
-  two contributors calibrated it on bodies of different format - 20 of the 692 lenses with
-  vignetting in the shipped copy (Canon EF 50/1.4 and 50/1.8, Nikkor 35/1.8G DX, 60/2.8G
-  Micro, 70-200/2.8 VR, Sigma 50/1.4, Pentax FA 50/1.4 ...). With the key
-  (source, maker, name, mount) the two collapsed into one lens, `Nearest` broke the tie on
-  focal, f-stop and distance by file order, and the second calibration was unreachable
-  from either application. Found on the Nikkor 35 f/1.8G DX (section 8): the entry that
-  won, "average crop of Nikon APS-C cameras", reads 0.19 stops at the DX corner at f/2.8;
-  the hidden D780 entry reads 0.51, beside Adobe's 0.61. The label is shown on **every**
-  lensfun lens, not only the duplicated ones (`LensChoice.Where`: "Nikon F AF, calibrat pe
-  full frame 1", in the lists, the tables, the reports and the FITS `HISTORY`): a name that
-  changed when the database gained a second entry would break `--lens` text and a saved
-  choice. It is searchable ("Nikkor 35mm full"); the bare name matches both, which is the
-  ordinary ambiguity refusal with the list, exit 2. Adobe entries carry no label: the
-  calibration body is already the mount ("NIKON D90"), and the SFF sits in the file, not in
-  its name, so it could not enter the lazily built list.
-- **Laziness** (`LensCatalog`): 3531 `.lcp` files (455 MB) on this machine take 36 s to
-  parse; listing them takes 2 s. So Adobe entries are `AdobeProfileFile` stubs from the
-  file name: `<Camera> (<Lens>) - RAW.lcp` in `<Maker>/<Mount>/` → name = the text between
-  the first " (" and its matching ")", mount = the camera text (plus ", JPEG" when the
-  suffix is not RAW), maker = the lens's first word. Names without parentheses (638 files:
-  phones and compacts, `Apple/iPhone 6.lcp`, `Canon/Canon PowerShot G12 - RAW.lcp`)
-  become camera-named stubs with the folder as maker and no mount. A file is parsed on
-  `ProfilesOf(lens)` (cached, re-keyed to the stub's identity) and on `ByLensId(id, hint)`,
-  which parses in parallel only the stubs whose mount or maker contains the hint (the
-  camera's first word). Aliases therefore enter `Search` only after a file was parsed.
+- **The calibration crop is part of a lensfun lens's identity** (ADR 0029, the owner's
+  decision of 2026-09-18; the Nikkor 35/1.8G DX case that found it is section 8).
+  `LensChoice.Calibration` is the nominal format from `SensorFormats.LabelOf` plus the exact
+  `<cropfactor>` ("APS-C 1.528" / "full frame 1"). The shipped copy holds 20 of its 692
+  lenses with vignetting twice on the same mount, calibrated on bodies of different format
+  (Canon EF 50/1.4 and 50/1.8, Nikkor 35/1.8G DX, 60/2.8G Micro, 70-200/2.8 VR, Sigma 50/1.4,
+  Pentax FA 50/1.4 ...); with the key (source, maker, name, mount) the two collapsed. The
+  label is shown on **every** lensfun lens (`LensChoice.Where`: "Nikon F AF, calibrat pe
+  full frame 1", in the lists, the tables, the reports and the FITS `HISTORY`) and is
+  searchable ("Nikkor 35mm full"); the bare name matches both entries, which is the ordinary
+  ambiguity refusal with the list, exit 2. Adobe entries carry no label: the calibration body
+  is already the mount ("NIKON D90"), and the SFF sits in the file, not in its name, so it
+  could not enter the lazily built list.
+- **Laziness** (`LensCatalog`; the parse and list timings behind it are ADR 0028): Adobe
+  entries are `AdobeProfileFile` stubs from the file name: `<Camera> (<Lens>) - RAW.lcp` in
+  `<Maker>/<Mount>/` → name = the text between the first " (" and its matching ")", mount =
+  the camera text (plus ", JPEG" when the suffix is not RAW), maker = the lens's first word.
+  Names without parentheses (phones and compacts, `Apple/iPhone 6.lcp`, `Canon/Canon
+  PowerShot G12 - RAW.lcp`) become camera-named stubs with the folder as maker and no mount.
+  A file is parsed on `ProfilesOf(lens)` (cached, re-keyed to the stub's identity) and on
+  `ByLensId(id, hint)`, which parses in parallel only the stubs whose mount or maker contains
+  the hint (the camera's first word). Aliases therefore enter `Search` only after a file was
+  parsed.
 - **Search**: every word of the text must appear in name + maker + mount (+ known
   aliases), case-insensitive; empty text lists everything; `--source` restricts.
-- **Nearest** profile: nearest focal length, then nearest f-stop in stops
-  (`2·log2 f`), then the farthest distance. Reported as "profil folosit" beside "cerut".
+- **Nearest** profile (ADR 0029: nearest focal, then f-stop, then the farthest distance): the
+  f-stop distance is measured in stops, `2·log2 f`. Reported as "profil folosit" beside
+  "cerut".
 - **A lensfun pair at 10 and 1000 m with identical coefficients is one profile, distance
-  unknown** (`LensfunReader.CollapseCopiedDistances`, `DistanceM = NaN`, printed
-  "distanta nespecificata"). That is the lensfun convention for "measured at one distance,
-  not recorded": the calibration script copies the values to both ends, and two real
-  measurements never agree to four decimals. Before, the tool took the 1000 m copy and
-  printed "infinit" for it - on the Nikkor 35/1.8G DX the "APS-C" entry said "infinit" while
-  its floor of 0.16-0.17 stops from f/4 to f/22 is the floor of Adobe's 0.36 m profile
-  (0.17-0.19), not of the 1.51 m one (0.23): most likely a wall shot up close, and the label
-  was claiming the opposite (section 8). A single entry at a stated distance keeps it, and a
-  pair with different coefficients is two measurements and keeps both.
+  unknown** (ADR 0029): `LensfunReader.CollapseCopiedDistances` sets `DistanceM = NaN`,
+  printed "distanta nespecificata". That is the lensfun convention for "measured at one
+  distance, not recorded": the calibration script copies the values to both ends, and two
+  real measurements never agree to four decimals. The Nikkor 35/1.8G DX entry that was
+  printed "infinit" while its floor is Adobe's close-focus one is section 8.
 - **Lens choice from text** (`SyntheticRun.ChooseLens`): search hits; an exact name match
   narrows to those; when several remain and the reference frame names a camera, the ones
-  whose mount or maker contains the camera's first word win; then `PreferCamera`: the
-  files named for the body itself ("NIKON D750 (lens)", letters and digits compared) beat
+  whose mount or maker contains the camera's first word win; then `PreferCamera` (ADR 0029):
+  the files named for the body itself ("NIKON D750 (lens)", letters and digits compared) beat
   the generic mount file ("NIKON CORPORATION (lens)"), because Adobe keeps per-body files
   with the body's SFF and Lightroom takes those; still several → refusal with the list,
   exit 2. No text + a Nikon lens ID from a raw → `SyntheticRun.CandidatesFromRaw`:
@@ -198,23 +193,17 @@ format" never looks like a warning.
   range libraw reads out of the MakerNote (`LensMinFocalMm`, `LensMaxFocalMm`,
   `LensMaxAperture` on `LoadedFrame`). The window passes the chosen `LensChoice` directly
   and skips this, but its prefill starts from the same `CandidatesFromRaw`.
-- **Narrowing by name** (`LensSpec`): the Nikon lens ID is not unique - on this machine's
-  Adobe folder 139 is carried by the Tokina AT-X 11-20 F2.8, the Tokina atx-i 11-20 f2.8,
-  the Nikkor 18-200 f3.5-5.6G VR II, the Nikon DX 18-200 and the Sigma 18-35 F1.8 - and the
-  first cut preselected the alphabetically first hit, the Nikkor, for a raw shot with the
-  Tokina. `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
-  maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so
-  `AF-S` and `EF` do not match; a prime is `min = max`; "Zeiss Batis 2/25" parses to
-  nothing). `Contradicts` is true only when both sides say something and disagree: focal
-  ends within 1 mm or 5 % (names round), aperture within 0.25 stops (Nikon's codes step in
-  sixths). A name that does not parse is kept, so the narrowing can only remove wrong
-  lenses, never lose the right one for a strange name; when every hit contradicts the raw,
-  the list is empty and the console asks for `--lens`. lensfun entries carry no Nikon IDs,
-  so `CandidatesFromRaw` adds the lensfun lenses whose maker matches a surviving Adobe hit
-  and whose name does not contradict the range: on this machine the raw yields the two
-  Adobe generations (AT-X PRO DX, atx-i CF) and the two lensfun entries below. `LensSpec.Describe` is the
-  "11-20 mm f/2.8" in `SyntheticReport.RawLensLabel`, printed in the refusal and in the
-  window's prefill note.
+- **Narrowing by name** (`LensSpec`; why, and the Tokina raw that preselected a Nikkor, are
+  ADR 0030): `LensSpec.Parse(name)` reads the focal range (first `<n>[-<m>]mm`) and the
+  maximum aperture (first `f/<n>`, `F<n>` or `f<n>-<m>` not preceded by a letter, so `AF-S`
+  and `EF` do not match; a prime is `min = max`). `Contradicts` is true only when both sides
+  say something and disagree: focal ends within 1 mm or 5 % (names round), aperture within
+  0.25 stops (Nikon's codes step in sixths). On this machine's Adobe folder ID 139 is carried
+  by the Tokina AT-X 11-20 F2.8, the Tokina atx-i 11-20 f2.8, the Nikkor 18-200 f3.5-5.6G VR
+  II, the Nikon DX 18-200 and the Sigma 18-35 F1.8; the author's raw yields the two Adobe
+  generations (AT-X PRO DX, atx-i CF) and the two lensfun entries of section 7.
+  `LensSpec.Describe` is the "11-20 mm f/2.8" in `SyntheticReport.RawLensLabel`, printed in
+  the refusal and in the window's prefill note.
 
 ## 6. The flat, the report, the file
 
@@ -229,16 +218,13 @@ is, what it compares with: the corner is the master's own "vignetare centru -> c
 half semidiagonal is mid-field where the object sits); the window shows the notes, the
 console prints label and value only (`DepthLines`).
 
-**A request far from every profile** (`SyntheticReport.ProfileMismatch`): `Nearest` never
-interpolates and never refuses, so the report warns under "profil folosit" when the focal
-is more than 1 mm / 5 % from the profile's (`Th.ProfileFocalTolMm` / `Frac`, the `LensSpec`
-tolerance) or the aperture more than 0.5 stops (`Th.ProfileStopsTol`; Adobe's grid is at
-whole stops, so only requests outside the range fire). Measured on the Nikkor 35 f/1.8G D90
-file: 500 mm f/1.0 → 35 mm f/1.8, 1.51 m, 1.02 stops at the corner, warned; f/4.7 → f/4.0
-(0.46 stops from 4, 0.51 from 5.6), not warned; f/3.5 → f/4.0 at 0.39 stops, not warned.
-The same sentence goes into the structure comparison's row note (`ProfileRows`, with
-`IsWarning`) when the raw's focal / f-stop is far from a candidate lens's profiles. Golden
-`synthetic_far_request` pins the console line; exit stays 0.
+**A request far from every profile is warned about, not refused** (ADR 0029:
+`SyntheticReport.ProfileMismatch`, `Th.ProfileFocalTolMm` / `Frac`, `Th.ProfileStopsTol`).
+Measured on the Nikkor 35 f/1.8G D90 file: 500 mm f/1.0 → 35 mm f/1.8, 1.51 m, 1.02 stops
+at the corner, warned; f/4.7 → f/4.0 (0.46 stops from 4, 0.51 from 5.6), not warned; f/3.5 →
+f/4.0 at 0.39 stops, not warned. The same sentence goes into the structure comparison's row
+note (`ProfileRows`, with `IsWarning`) when the raw's focal / f-stop is far from a candidate
+lens's profiles.
 
 `SyntheticRun.Complete` fills focal (`--focal` > `FOCALLEN` > libraw), f-stop
 (`--fstop` > libraw; a FITS from Siril carries none), crop (`--crop` > lensfun cameras by
@@ -250,7 +236,8 @@ string for the report. The report prints the crop line for both sources
 database) is the one list of cameras; `SensorFormats` (six nominal crops: full frame 1.0,
 APS-C 1.5, APS-C Canon 1.6, APS-H 1.3, Micro 4/3 2.0, 1" 2.7, with the sensor sizes as
 notes) is the fallback the refusal text lists and the window offers as chips - a list of
-our own would age at the first new body, six numbers do not. Refusals: a colour cube, no lens chosen (exit 2), no focal / f-stop / crop (exit 1).
+our own would age at the first new body, six numbers do not. Refusals: a colour cube, no
+lens chosen (exit 2), no focal / f-stop / crop (exit 1).
 `LoadedFrame` carries `FocalMm`, `FNumber`, `Camera`, `NikonLensId`, `LensMinFocalMm`,
 `LensMaxFocalMm`, `LensMaxAperture`: `FitsReader` from `FOCALLEN` / `INSTRUME`,
 `RawReader.ShootingInfo` from libraw's `ImageOtherParams` (`FocalLength`, `Aperture`),
@@ -263,54 +250,29 @@ Output: `FitsWriter.Write(stream, flat, -32, referenceCards, history)` - float, 
 reference frame's cards minus the structural ones (`BAYERPAT` included, so Siril treats
 the file as a CFA master), four `HISTORY` lines (banner + mode, lens + profile + request,
 model, reference file name). The console writes to `--synthetic <path>` (never over the
-reference); the window to `SirilSession.SyntheticMasterPath` =
-`pp_flat_stacked_sintetic.fit` beside the master, after the overwrite question, and it
-never becomes the session's master.
+reference); the window to `SirilSession.SyntheticMasterPath` beside the master (ADR 0036:
+after the overwrite question, and never the session's master).
 
 ## 7. `--against`
 
-`AgainstAnalyzer.Analyze(a, b)`: both through `Img.Prepare`, each divided by its own
-median (exception when the median is not positive), `ratio = a / b`, then
-`StructureAnalyzer.AnalyzePrepared` on **all three** (A, B, ratio). `AgainstReport.Rows`
-builds eight rows, each with a value for A, B and A / B and a note written about the
-difference: vignetting centre→corner in stops (the ratio's is the depth difference,
-positive = A falls more toward the corner), illumination-centre offset, the local spot
-(value without position; the three positions are in the note), then the five tests with
-their verdicts on A and B (none on the difference: the shape verdict at the top already
-says whether the ratio is radial). The console prints them as a fixed-width table (label
-26, columns 38) under `AgainstReport.Meaning()`, then "VERDICTUL DIFERENTEI" with its two
-parts; the window shows them as `CompareRow`s: label and note in one elastic column on the
-left, the three values in shared-size columns packed on the right. The map is the ratio's
-residual on the automatic scale.
+The design (three columns, the eight rows with notes about the difference, the verdict as the
+worse of shape and depth, the window's `CompareRow` layout) and the acceptance figures of
+2026-09-18 on the Tokina masters are ADR 0032. Mechanics the ADR does not spell out:
 
-**The verdict** (`AgainstResult.Verdict`) is the worse of two: the *shape*, the five tests
-on the ratio (`Structure.Verdict`), and the *depth*, `DepthVerdict`. The depth difference
-`D = Structure.VignetteStops` (stops) is turned into the error it leaves in the corner of a
-light calibrated with the wrong flat, `DepthErrorOf(D) = 2^|D| - 1` in percent - the light's
-corner comes out `2^D` times too bright or too dark relative to its centre - and that goes
-through the unchanged residual scale `Stats.ResidualVerdict`: PERFECT under 2 % (0.029
-stops), BUN under 10 % (0.138), ACCEPTABIL under 20 % (0.263), REFA above. `StopsFor` is the
-inverse (`log2(1 + e/100)`), used to print the scale in stops from `Th.Resid*`. Before this
-the verdict was the shape alone, and the sky master (0.42 stops shallower than the model,
-34 % in the corner) read ACCEPTABIL. The row's note also states the model's own
-uncertainty: the two databases differ by ~0.2 stops on the same lens (section 8), so a
-BUN/ACCEPTABIL depth is within what the profiles themselves disagree by. Exit code: the
-combined verdict. Two correct flats of one lens give PERFECT and 0.00 stops; a flat
-against `flat²` gives PERFECT on shape, REFA on depth (0.7 stops = 62 %) and REFA overall
-(`SyntheticFlatTests`); the golden `against_radial` pair (0.45 vs 0.30 fixtures, 0.30 stops)
-is REFA, exit 3.
+- `AgainstAnalyzer.Analyze(a, b)` throws when a frame's median is not positive. In the ratio
+  column the vignetting is the depth difference (positive = A falls more toward the corner)
+  and the local spot is a value without position (the three positions are in the note); the
+  five tests carry their verdicts on A and B only. The console prints the rows as a
+  fixed-width table (label 26, columns 38) under `AgainstReport.Meaning()`, then "VERDICTUL
+  DIFERENTEI" with its two parts. The map is the ratio's residual on the automatic scale.
+- `DepthErrorOf(D) = 2^|D| - 1` in percent goes through the unchanged `Stats.ResidualVerdict`:
+  PERFECT under 2 % (0.029 stops), BUN under 10 % (0.138), ACCEPTABIL under 20 % (0.263),
+  REFA above. `StopsFor` is the inverse (`log2(1 + e/100)`), used to print the scale in stops
+  from `Th.Resid*`. A flat against `flat²` is 0.7 stops = 62 % (`SyntheticFlatTests`).
 
-| master vs Adobe synthetic (2026-09-18, camera crop 1.523) | stops | corner error | depth verdict |
-|---|---|---|---|
-| sky, no diffuser | −0.39 | 31.5 % | REFA |
-| monitor close | +0.19 | 13.8 % | ACCEPTABIL |
-| on monitor | +0.12 | 8.3 % | BUN |
-| Adobe vs lensfun 7D2 entry | −0.18 | 13.6 % | ACCEPTABIL |
-| Adobe vs lensfun D7100 entry | −0.25 | 18.9 % | ACCEPTABIL |
-
-(With the profile's SFF 1.5 standing for the sensor, the 2026-09-17 figures were −0.42 /
-+0.16 / +0.09 / −0.16: the 24 mm long side put the corner 1.5 % further out and the Adobe
-synthetic 0.03 stops deeper.)
+With the profile's SFF 1.5 standing for the sensor, the 2026-09-17 figures were −0.42 /
++0.16 / +0.09 / −0.16 (sky, monitor close, on monitor, Adobe vs the lensfun 7D2 entry): the
+24 mm long side put the corner 1.5 % further out and the Adobe synthetic 0.03 stops deeper.
 
 **lensfun has two entries for this lens**, and the figures above use the first:
 `Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8` (`slr-tokina.xml`, crop 1.61,
@@ -373,20 +335,20 @@ stops, 2026-09-18:
 Two independent calibrations on different bodies agree within 0.1 stops at every aperture;
 the third gives half the wide-open falloff and a floor that does not move from f/4 to
 f/22, and it was the only one the tool showed until the calibration crop entered the lens
-key (section 5). Adobe's own file says where that floor comes from: at 0.36 m focus the
-D90 profile reads 0.76 / 0.54 / 0.18 / 0.17-0.19 stops at f/1.8 / 2.8 / 4 / 5.6-11, against
-1.21 / 0.61 / 0.39 / 0.23 at 1.51 m - this lens loses most of its mechanical vignetting when
-focused close, and the "APS-C" entry's floor is the close-focus one. Its `distance` is the
-copied 10 / 1000 pair, i.e. not recorded, and the tool now says so instead of "infinit".
+key (ADR 0029, section 5). Adobe's own file says where that floor comes from: at 0.36 m
+focus the D90 profile reads 0.76 / 0.54 / 0.18 / 0.17-0.19 stops at f/1.8 / 2.8 / 4 /
+5.6-11, against 1.21 / 0.61 / 0.39 / 0.23 at 1.51 m - this lens loses most of its mechanical
+vignetting when focused close, and the "APS-C" entry's floor is the close-focus one. Its
+`distance` is the copied 10 / 1000 pair, i.e. not recorded (the collapsed pair of ADR 0029).
 The D780 entry has the same copied pair but matches Adobe at 1.51 m, so that contributor
 shot from afar. What close focus does not explain (f/2.8 at 0.19 against 0.54) points at a
 source that fills the corners or at in-camera vignette control left on; the two cannot be
-told apart from the coefficients. The sky master of that lens (`Nikkor 35mm DX/f2.8-sky/ISO400`) reads 0.63
-with the 5 % box operator; with the box the tool reports Adobe 0.52, D780 0.42, APS-C 0.16,
-so Adobe stays nearest (+0.11, BUN) and the D780 entry lands at +0.21 (ACCEPTABIL). Since a
-sky source fills the corners, the true depth is at least the master's, which rules the
-0.16 entry out on its own. A single sky flat at f/1.8 would separate the two readings by
-0.7 stops, far beyond any source bias.
+told apart from the coefficients. The sky master of that lens
+(`Nikkor 35mm DX/f2.8-sky/ISO400`) reads 0.63 with the 5 % box operator; with the box the
+tool reports Adobe 0.52, D780 0.42, APS-C 0.16, so Adobe stays nearest (+0.11, BUN) and the
+D780 entry lands at +0.21 (ACCEPTABIL). Since a sky source fills the corners, the true depth
+is at least the master's, which rules the 0.16 entry out on its own. A single sky flat at
+f/1.8 would separate the two readings by 0.7 stops, far beyond any source bias.
 
 ## 9. Acceptance, with the tool itself
 
@@ -419,12 +381,10 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
 
 ## 10. Costs and facts measured
 
-- Adobe profiles on this machine: 3531 `.lcp` files, 455 MB; parsing all: 36 s; listing
-  from names + lensfun: `--lenses` in 2.2 s. 801 files lack the ` - RAW` suffix, 638 carry
-  no parentheses.
-- lensfun `data/db`: 59 files, 5.19 MB, 0.58 MB gzipped; committed whole, since lens and
-  camera entries share files. `lensfun/update-lensfun.py` refreshes it and rewrites
-  `LENSFUN-VERSION.txt`.
+- The sizes of the two databases and the parse and list timings that justify the lazy
+  catalog are ADR 0028's context. Beyond them: 801 of the Adobe files lack the ` - RAW`
+  suffix and 638 carry no parentheses; `lensfun/update-lensfun.py` refreshes `data/db` and
+  rewrites `LENSFUN-VERSION.txt`.
 - libraw on a D3300 NEF with the Tokina (`DSC_0001.NEF` of the 2026-09-16 sky session,
   dumped by reflection over `RawContext.LensInfo`): `Lens` and `LensMake` empty,
   `ImageOtherParams.FocalLength` 20, `Aperture` 2.8, `LensInfo.Nikon.LensIDNumber` 139,
@@ -432,16 +392,15 @@ Expected: the depth lines above and the four ratio figures within ±0.02 stops.
   `MaxAperture4MinFocal` **0**; `LensInfo.MakerNotes.MinFocal` 11, `MaxFocal` 20,
   `MaxAperture4MinFocal` 2.8, `MaxAperture4MaxFocal` 2.8, `CurrentFocal` 20, `LensMount`
   27, `LensFeaturesPre` "AF", `LensFeaturesSuffix` "G", `LensID` 10036302762685531398 (the
-  8-byte Nikon composite; not used - Adobe carries the 1-byte number). The Adobe profile
-  lists 139 in `AlternateLensIDs`, and so do the two Nikkor 18-200 files and the Sigma
-  18-35 (`grep -l` over the folder). The Samyang (manual) and the Nikkor 35 DX give IDs 74
-  and 159.
-- **The two Adobe Tokina 11-20 files are one optic.** `NIKON CORPORATION (Tokina AT-X
-  11-20mm F2.8 PRO DX) - RAW.lcp` and `... (Tokina atx-i 11-20mm f2.8 CF) - RAW.lcp`
-  (both dated 2026-04-06) differ only in the names and the IDs: every `VignetteModelParam`,
-  `FocalLength` and `ApertureValue` hashes identically (`md5sum` over the extracted
-  attributes), and a `diff` with the names masked shows nothing else. The AT-X file has
-  `LensID` 122 with 139 in `AlternateLensIDs`; the atx-i file has `LensID` 139. The
+  8-byte Nikon composite; not used - Adobe carries the 1-byte number). The other Adobe files
+  carrying 139 are ADR 0030 (`grep -l` over the folder). The Samyang (manual) and the Nikkor
+  35 DX give IDs 74 and 159.
+- **The two Adobe Tokina 11-20 files are one optic**, the "(checked)" of ADR 0030. `NIKON
+  CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp` and `... (Tokina atx-i 11-20mm
+  f2.8 CF) - RAW.lcp` (both dated 2026-04-06) differ only in the names and the IDs: every
+  `VignetteModelParam`, `FocalLength` and `ApertureValue` hashes identically (`md5sum` over
+  the extracted attributes), and a `diff` with the names masked shows nothing else. The AT-X
+  file has `LensID` 122 with 139 in `AlternateLensIDs`; the atx-i file has `LensID` 139. The
   author's raw reports 139, so the copy is the atx-i (Tokina's 2020 rebadge of the 2015
   AT-X, same optical formula). The lensfun entries are named for the AT-X and apply to it.
 - The test fixtures (`LensProfileTestData`) are a hand-written LCP in the attribute form
@@ -458,49 +417,25 @@ Code: `Analysis/VignettingComparison.cs`, `LensProfiles/LensIdentification.cs`,
 Measured 2026-09-18 on the library below with the Debug build, `--raw` on the first raw of
 each session's `flats/`.
 
-**Why.** The tablet masters (section 8 of `tokina-tablet-flats` in the author's notes:
-Tokina 20 mm f/2.8, four orientations at 90°, 7 or 15 frosted binder covers on a tablet)
-read PERFECT on all five structure tests with 1.26 stops of vignetting, against 0.66-0.92
-from the two databases. The five tests measure departure from radial symmetry; a radial
-excess is invisible to them and to `--ratio`. The lens profile is the only external
-reference the tool has.
+**Why, and how.** ADR 0031 holds both: the tablet masters that read PERFECT on all five tests
+with 1.26 stops of vignetting, the profile's depth measured with the master's own operator
+(`Metrics.CornerStats` on a raster of the model at the analysis size), `Stats.DepthErrorPct`
+onto the residual scale, the verdict of the nearest profile, the run's verdict as the worse
+of shape and depth, and the note of 2026-09-23 that reads the same corner error on
+`--light`'s scale (`StructureReport.DepthLightScaleNote`, `Stats.DepthOnLightScale`,
+`Th.ProfileDatabaseSpreadStops`) instead of aligning the bands. The candidates come from
+`LensIdentification` (ADR 0030). Mechanics the ADR does not spell out:
 
-**The two scales of the corner error (2026-09-23).** The depth verdict turns the difference
-in stops into the corner error of a calibrated light, `2^|D| − 1`, and judges it on the
-residual scale (2 / 10 / 20 %). `--light` measures the same error directly in the light and
-judges it with `Th.LightRadOk` / `LightRadBad` = 2 / 5 %. The user asked which to believe:
-on the paper-diffused tablet masters +0.10 stops is 7 %, BUN here and PROBLEMA there. They
-are not the same measurement. `--light`'s reference is the light itself; this test's is a
-published profile, and section 8 puts the two databases 0.16-0.25 stops apart on the same
-lens at the same aperture (`Th.ProfileDatabaseSpreadStops` = 0.2 stops = 15 % in the
-corner), three times `--light`'s PROBLEMA line. A depth verdict finer than that would be
-precision the reference does not have. Aligning the bands to 2 / 5 was worked through and
-turned down: it put the paper masters (6-8 %), the Nikkor 35 DX sky masters (7-8 %) and
-the Samyang f/2 master on REFA, all below the reference's resolution. What is built instead
-is the note under the depth scale (`StructureReport.DepthLightScaleNote`, also under
-`--against`'s depth line and on both tabs of the window): the corner error, the word
-`--light` would give it - through `Stats.DepthOnLightScale`, the same `Verdict` and the
-same thresholds `LightAnalyzer` uses - and the reference's spread, all read from `Th`.
-Verdicts and exit codes did not move. The one measurement that would settle how much of
-the paper masters' +0.10 is the panel and how much the reference is the distance test
-(the same sheets with the lens 2-3 cm off them; the lens's vignetting does not depend on
-distance, the panel's angular excess does), which is the user's to run.
-
-**How.** For each candidate lens (`LensIdentification`: the raw's Nikon ID narrowed by the
-MakerNote range and the camera's mount, the lensfun lenses of the same makers; or, when the
-ID matches nothing, the lenses of the mount whose *name* says exactly the raw's range - the
-manual-lens case), the nearest profile (`LensCatalog.Nearest`) is built as a raster at the
-analysis size and measured with `Metrics.CornerStats`, the master's own operator. On a
-master that is the model the difference is 0.00; the residual is the master's 2x2 block
-mean, under 0.001 stops (`TheProfilesDepthIsMeasuredWithTheMastersOwnOperator`). The
-difference `master - profile` in stops goes through `Stats.DepthErrorPct` onto the residual
-scale (section 7's arithmetic, moved into `Stats`). The verdict is the nearest profile's;
-the run's verdict is the worse of shape and depth. The scale is printed both ways - the
-one-line form in stops (`AgainstReport.DepthScale`) and, in the window, four bands with the
-verdict's marked (`StructureReport.DepthScaleRows`) - each followed by the sentence that it
-is the residual scale translated into stops, not a new threshold: the first screen showed
-the stops line right above the five tests' 2 / 10 / 20 % table and the user asked whether
-they were two different scales.
+- The scale is printed both ways: the one-line form in stops (`AgainstReport.DepthScale`)
+  and, in the window, four bands with the verdict's marked (`StructureReport.DepthScaleRows`),
+  each followed by the sentence that it is the residual scale translated into stops.
+- The `--light` note is printed under the depth scale in the console, under `--against`'s
+  depth line and on both tabs of the window. The example that raised the question: on the
+  paper-diffused tablet masters +0.10 stops is 7 %, BUN here and PROBLEMA there.
+- The measurement that would settle how much of the paper masters' +0.10 is the panel and
+  how much the reference is the distance test (the same sheets with the lens 2-3 cm off them;
+  the lens's vignetting does not depend on distance, the panel's angular excess does), which
+  is the owner's to run.
 
 **Measured** (corner, stops; "nearest" is the profile that gives the verdict):
 
@@ -530,41 +465,33 @@ Readings:
 - The Nikkor 35 f/1.8G's Adobe file has only a 1.51 m profile at f/2.8 (`Nearest` prefers
   the farthest distance among equal focal and f-stop, and there is only one); the two
   lensfun entries for it disagree with each other by 0.14 stops and with Adobe by 0.2-0.4.
-- The Samyang is a manual lens: the D3300 writes the "non-CPU lens" ID 74 and the range set
-  in its menu (135 mm f/2.0), so the candidates come by range and include the Nikkor 135 f/2
-  DC's Adobe file, which happens to be nearest on the two f/2 masters. The block says the
-  list is by range and to read one's own lens's row (+0.15 / +0.14 against the lensfun
-  Samyang: ACCEPTABIL). At f/2.8 both agree within 0.03 stops.
+- The Samyang is a manual lens compared by range (ADR 0030: the "non-CPU lens" ID 74 and the
+  range from the menu, so the Nikkor 135 f/2 DC's Adobe file is among the candidates and
+  nearest on the two f/2 masters). Against the lensfun Samyang those masters read +0.15 /
+  +0.14 (ACCEPTABIL); at f/2.8 both profiles agree within 0.03 stops.
 - Shape and depth are independent: the tablet master is PERFECT on shape and REFA on
   depth, the on-monitor one the reverse.
 
-**What was left out, and why.** A mid-field point (half semidiagonal) as a second
-informative column would show the panel's 0.1-stop mid-field excess of section 8; it needs
-a new box measurement on the master and was deferred (user's decision). A "worst profile"
-rule, for the reason above. A lens picker in the window for a folder without a raw: the
-raws are always in `flats/` (user's decision); the card explains, the console takes
-`--lens`.
+**What was left out** (a mid-field column, the worst-profile rule, a lens picker for a folder
+without a raw) and why is ADR 0031. The mid-field column would show the panel's 0.1-stop
+mid-field excess of section 8; it needs a new box measurement on the master.
 
 ## 12. Known limits, for the next change
 
 - Achromatic by construction; the real falloff is chromatic (R deeper than B by ~25 % of
   the falloff on the sky master). A per-channel synthetic would need per-channel data no
   database has.
-- No interpolation between profiles; "nearest" may sit a focal length off, and the report
-  says so. If interpolation is ever wanted, do it in stops for the aperture and linearly
-  in focal length, and keep reporting both neighbours.
+- No interpolation between profiles (ADR 0029, with the shape an interpolation would take if
+  ever wanted).
 - The camera's crop, not the pixel pitch, sets the frame's physical size (36 / crop for
-  the long side); a body whose sensor is not 3:2 of that width is off by the ratio. A
-  profile calibrated on another format is rescaled through mm and works inside its
-  calibration corner; past it the polynomial extrapolates, and past 1.1x the report says
-  it is not to be trusted - the fix there is a profile calibrated on the right format
-  (Adobe's per-body files, which `PreferCamera` picks when one exists).
+  the long side); a body whose sensor is not 3:2 of that width is off by the ratio. What
+  happens past the calibration corner, and the per-body file as the fix, are ADR 0029.
 - A camera missing from the lensfun table gets its crop from a sensor-format chip or by
   hand; the nominal crops are within 1-2 % of the real ones. The chips otherwise only show
   the format of the crop in the box; the exact value stays the table's.
-- Aliases of unparsed Adobe stubs are not searchable; the name from the file is.
-- The window prefill reads the first raw in `flats/` in full (libraw) once per session,
-  after the opening chain; a raw libraw cannot open leaves the f-stop empty and says so.
+- The window prefill reads the first raw in `flats/` once per session, after the opening
+  chain, through `ImageLoader.LoadInfo` (metadata only, no pixel decoded, ADR 0030); a raw
+  libraw cannot open leaves the f-stop empty and says so.
 - The window's comparison follows the write by itself (`SyntheticTabViewModel.RunAsync`
   chains `CompareAsync(Report)` after a real write; the report is one text with one
   banner). "Compara cu masterul" runs it alone, for a file written earlier.

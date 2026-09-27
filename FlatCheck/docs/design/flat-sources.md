@@ -1,17 +1,21 @@
 # Flat sources: what each illumination does to the master
 
-**Covers:** the README's advice on how to shoot flats, the vignetting-depth reference used by
-the sixth structure test and by `--against`, and the reading of a depth verdict's sign.
-**Measured** on the sessions under `E:\Photografie\Astro\Flats and Darks` - `Tokina\ISO400\
-f2.8-sky-no-difuser` (2026-09-16), `Tokina\ISO400\f2.8-tableta-lipita-coperti-7-foi` and
-`...-15-foi` (2026-09-18), `Tokina\ISO400\f2.8-tableta-lipita-hartie-3-foi`, `...-4-foi` and
-`...-3-foi-rotiri-perfecte` (2026-09-23), plus the older `Tokina\ISO400\f2.8-monitor-difuzor-aproape`,
-`...\f2.8-monitor-difuzor-pe-monitor`, `Nikkor 35mm DX\f2.8-sky\ISO400`, `...\ISO800` and
-`Samyang\ISO1600\sursa_neuniforma\f2.0-lcd` (shot before 2026-09-16; dates not in the notes) -
-with flatcheck 2.1.0 to 2.2.0 and numpy on the calibrated `pp_flat_*.fit` frames. If a session
-is re-shot or the model changes, re-run the figures and update this note.
+> Written on 2026-09-25 from the owner's session notes of 2026-09-16, 2026-09-18 and 2026-09-23,
+> then cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): the
+> depth verdicts of these sessions are also the acceptance figures of ADR 0030, 0031 and 0032,
+> the printed reading of the sign is ADR 0031, and the two tool caveats point at ADR 0017 and
+> ADR 0041. **Covers:** the README's advice on how to shoot flats, the vignetting-depth
+> reference used by the sixth structure test and by `--against`, and the reading of a depth
+> verdict's sign. **Measured** on the sessions under `E:\Photografie\Astro\Flats and Darks` -
+> `Tokina\ISO400\f2.8-sky-no-difuser` (2026-09-16),
+> `Tokina\ISO400\f2.8-tableta-lipita-coperti-7-foi` and `...-15-foi` (2026-09-18),
+> `Tokina\ISO400\f2.8-tableta-lipita-hartie-3-foi`, `...-4-foi` and `...-3-foi-rotiri-perfecte`
+> (2026-09-23), plus the older `Tokina\ISO400\f2.8-monitor-difuzor-aproape`,
+> `...\f2.8-monitor-difuzor-pe-monitor`, `Nikkor 35mm DX\f2.8-sky\ISO400`, `...\ISO800` and
+> `Samyang\ISO1600\sursa_neuniforma\f2.0-lcd` (shot before 2026-09-16; dates not in the notes) -
+> with flatcheck 2.1.0 to 2.2.0 and numpy on the calibrated `pp_flat_*.fit` frames. If a session
+> is re-shot or the model changes, re-run the figures and update this note.
 
-Written on 2026-09-25 from the owner's session notes of 2026-09-16, 2026-09-18 and 2026-09-23.
 The reference depths quoted throughout, for the Tokina 11-20 at 20 mm f/2.8: Adobe 0.66-0.69
 stops, lensfun 0.85-0.92 (the D7100 and 7D2 entries). The two databases disagree by ~0.2 stops
 on the same lens, which is the resolution of everything below.
@@ -132,12 +136,12 @@ nici perfect" in the owner's words; better needs a Lambertian diffuser.
 
 ## 5. The other lenses (Nikkor 35 DX sky, Samyang 135 LCD)
 
-Nikkor 35 DX, twilight sky, ISO 400 and ISO 800 (30 frames each): sixth test +0.11 / +0.10 ->
-BUN (the Adobe file has only a 1.51 m profile at f/2.8). Samyang 135 f/2 on an LCD, ISO 1600
-(`sursa_neuniforma`): a manual lens, ID 74 ("non-CPU") matches no profile, so the candidates
-come by range (Nikkor 135 f/2 DC in Adobe, Samyang in lensfun) -> +0.11 / +0.10 BUN at f/2,
-+0.01 PERFECT at f/2.8. On these narrow fields the sky's curvature stays under the reference's
-resolution; n was not measured.
+The depth verdicts of the Nikkor 35 DX sky masters (ISO 400 and 800) and of the Samyang 135 f/2
+on an LCD (`sursa_neuniforma`) are ADR 0031's acceptance figures and sit in the summary table
+below; how the Samyang, a manual lens whose "non-CPU" ID 74 matches no profile, gets its
+candidates by range is ADR 0030. What the sessions add: the Adobe file for the Nikkor has only
+a 1.51 m profile at f/2.8, and on these narrow fields the sky's curvature stays under the
+reference's resolution; n was not measured.
 
 ## What the rotation schemes can and cannot cancel
 
@@ -162,9 +166,9 @@ resolution; n was not measured.
   The fix is a Lambertian diffuser (opal acrylic, a thick white paper stack) or a Lambertian
   reflector (a white wall lit from the side), and a camera that is not re-seated during a
   group: a spacer ring or the hood as a stand, shot with a timer, never touched.
-- A plus of +0.10 stops is 7 % in the corner: BUN on the residual scale, PROBLEMA on
-  `--light`'s; the report prints both, and the reference's 0.2-stop spread is why the first
-  decides (see `modes-structure.md`, "The sixth test").
+- What the report prints for a plus of +0.10 stops (7 % in the corner: BUN on the residual
+  scale, PROBLEMA on `--light`'s, both printed, the first deciding because of the reference's
+  0.2-stop spread) is ADR 0031; the mechanics are in `modes-structure.md`, "The sixth test".
 
 ## Summary table
 
@@ -183,16 +187,13 @@ resolution; n was not measured.
 
 ## Two tool caveats seen on these sessions
 
-- **The partial-ring model on a single-orientation stack.** With the paper session's even
-  blotch structure, one orientation read 17-18 % residual and a red-corner / blue-ring map for
-  7.6 % of true non-radial content - the partial-ring artefact inflating ~2x. The masters were
-  fine. Fixed on 2026-09-23 by the 2θ+4θ ring correction (`radial-model-even-term.md` §7): the
-  same stack now reads 7.9 %. The earlier face of the same artefact - the sharp arcs and the
-  crease on the inscribed circle of the sky master's map - was the ring median on an even
-  field, reproduced arc for arc by a smooth synthetic, and fixed on 2026-09-17.
-- **The local-spot metric on a frame edge.** It finds the deepest *compact* departure, but a
-  large-scale feature with a ridge steeper than its 7x7 neighbourhood survives too: on the
-  Nikkor ISO400 sky master the extreme is -0.44 % with the five deepest tiles all at x = 117 -
-  the edge of the frame's dark region, a stripe, not a spot; on ISO800 +0.36 % in the top-right
-  corner, the same kind of thing. Both a fifth of the 2 % warning. If it ever warns on a master
-  with a harder edge, check whether the extreme is round before trusting it as dust.
+- **The partial-ring model on a single-orientation stack.** ADR 0017 records it: one
+  orientation of the paper session read 17-18 % residual and a red-corner / blue-ring map for
+  7.6 % of true non-radial content until the 2θ+4θ ring correction of 2026-09-23 (7.9 % after),
+  and the sharp arcs and the crease on the inscribed circle of the sky master's map were the
+  earlier face of the same artefact, fixed on 2026-09-17. The masters were fine; the
+  measurements are in `radial-model-even-term.md` (§7).
+- **The local-spot metric on a frame edge.** ADR 0041 records it, with the two Nikkor sky
+  masters of this note as the measured cases (a stripe on an edge read as the extreme, a fifth
+  of the warning): on a master with a harder edge, check whether the extreme is round before
+  trusting it as dust.

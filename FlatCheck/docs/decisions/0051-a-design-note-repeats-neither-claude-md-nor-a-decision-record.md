@@ -20,8 +20,9 @@ for a review of the note and the deletion of everything duplicated in CLAUDE.md 
 A design note keeps only what neither CLAUDE.md nor an ADR says: the mechanics of the code it
 covers and the reasons that have no other home. Where an ADR was written from a section of the
 note, the section becomes a pointer to that ADR, naming what the ADR holds and keeping the
-headings other documents cite. `process.md` is cut to that on this date; the other notes are
-cut the same way when a task touches them, not in a sweep.
+headings other documents cite. `process.md` is cut to that first; the same day the owner asked for
+the other twenty notes, so the sweep is one task, note by note against the ADRs written from it
+(the "Source notes" line of each retroactive ADR maps them).
 
 ## Alternatives rejected
 
@@ -43,5 +44,8 @@ cut the same way when a task touches them, not in a sweep.
   ADR 0043, or the deleted "Run" sentence.
 - A reason found in a design note and in an ADR is deleted from the note when next seen; a
   reason found only in a note and worth guarding gets an ADR, as ADRs 0039 and 0040 did.
-- The row for `process.md` in `docs/design/README.md` says what is pointer and what is full.
+- The sweep of 2026-09-27 took the folder from 4705 lines to 3499. Every note keeps its
+  headings (ADRs, sibling notes, tests and two code comments cite them by name or by section
+  number) and a "Covers:" line that says which files it now describes only by pointer.
+- The rows of `docs/design/README.md` say what is pointer and what is full.
 - Guards: none by test; `/docs-health` reads the notes against the code and the ADRs.

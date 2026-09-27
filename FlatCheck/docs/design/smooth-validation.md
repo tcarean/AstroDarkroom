@@ -1,21 +1,19 @@
 # The smoothed-flat mode: what was measured before and while building it
 
-**Covers:** `FlatCheck.Core/Analysis/SmoothAnalyzer.cs` (and `Img.TileMedians`,
-`Mosaic.Merge`), as of 2026-09-16. **If that code changes, re-run the acceptance figures
-below on the five masters and update this file**; the tables are the evidence that the
-method does what `CLAUDE.md` says it does, and a table that no longer matches the code
-must not be left standing. The quickest re-run is `flatcheck <master> --smooth out.fit`
-on each of the five, compared with the "removed component" table to the second decimal;
-the same-lens pair ratio, the fine-component measurement and the synthetic with known
-truth need a few dozen lines of numpy each (the synthetic also lives, at small scale, in
-`SmoothAnalyzerTests`).
-
-Moved here from `PLAN-SMOOTH.md` when that plan was deleted after implementation. The
-steps are gone; this is the record of the measurements, the two designs that failed on the
-real masters, and the acceptance figures the C# port was checked against - to the second
-decimal, on the five masters named below. `CLAUDE.md` ("6. Smoothed flat") and the header
-of `SmoothAnalyzer.cs` carry the summary; the numpy prototype that produced these figures
-was not kept.
+> Moved here from `PLAN-SMOOTH.md` when that plan was deleted after implementation (2026-09-16),
+> then cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): ADR
+> 0026 carries the design, the rejected alternatives and the acceptance figures in summary, ADR
+> 0027 the scale rule and its limits, `modes-smooth.md` the mechanics; this note keeps the
+> measurements behind them, to the second decimal, on the five masters named below.
+> **Covers:** `FlatCheck.Core/Analysis/SmoothAnalyzer.cs` (and `Img.TileMedians`,
+> `Mosaic.Merge`) and, under "Choosing the scale", `SmoothScaleAdvisor.cs` and
+> `Metrics.FineTexture`, as of 2026-09-16. **If that code changes, re-run the acceptance figures
+> below on the five masters and update this file**; the tables are the evidence that the method
+> does what ADR 0026 says it does, and a table that no longer matches the code must not be left
+> standing. The quickest re-run is `flatcheck <master> --smooth out.fit` on each of the five,
+> compared with the "removed component" table to the second decimal; the same-lens pair ratio,
+> the fine-component measurement and the synthetic with known truth need a few dozen lines of
+> numpy each.
 
 Two details differ from the plan as it was written: the scale is the kernel's **sigma** in
 sensor pixels (300 px), not a "diameter", and the window shows the two structure batteries
@@ -60,8 +58,8 @@ defocused fabric at monitor distance. With the diffuser at the lens it is under 
 2. **Ring-median radial model x local-linear field (LOESS-1) on the tile grid.** Good
    figures, but the **radial model puts rings into the file**: beyond the inscribed
    circle a ring is partial arcs, any even non-radial structure makes the ring
-   distribution bimodal and the median jumps bin to bin - the artefact `CLAUDE.md`
-   documents for the map. (At the time the symmetrisation cured it only for the odd
+   distribution bimodal and the median jumps bin to bin - the artefact ADR 0017 and
+   `radial-model-even-term.md` record. (At the time the symmetrisation cured it only for the odd
    part; since 2026-09-17 `Metrics.RadialModel` also takes the even 2θ term off the
    partial rings, and the figures below were measured with the plain ring median. The
    rejection does not rest on the artefact alone - see the next sentence but one.) The
@@ -177,11 +175,10 @@ unchanged. The removed component, `Prepare(input) / Prepare(smoothed)`:
 
 ### What the mode keeps that may not be the lens, stated in the report
 
-The monitor's blotches (±3 % at 1000-1500 px on tokina_aproape), the sky gradient of a
-sky flat, the corner inequality of a non-uniform source - everything smooth stays,
-because the pixels do not say whether it is the lens or the source. This is the same
-limit the structure mode has, and `--ratio` is still the only thing that separates the
-two. The mode removes texture, dust and blotches; it does not remove illumination.
+ADR 0026 records the limit: everything smooth stays, the lens's or the source's (the monitor's
+blotches, a sky flat's gradient, a non-uniform source's corner inequality), because the pixels
+do not say which it is, and only `--ratio` separates the two. The mode removes texture, dust
+and blotches; it does not remove illumination.
 
 
 ## Choosing the scale (measured 2026-09-16, behind `--scale auto`)
@@ -215,25 +212,9 @@ analysis raster).
 | tokina_pemonitor | **0.69 %** | **0.09** | 0.02 | 0.01 |
 | samyang_lcd | 0.04 % | 0.01 | 0.01 | 0.01 |
 
-What it decided:
-
-- The input alone says whether there is texture: 0.69 % against 0.04-0.06 % in C# (12-17x;
-  8x in numpy). `Th.SmoothTextureMin = 0.20` leaves ~3x either way.
-- "Texture gone" is the output under `Th.SmoothTextureGone = 0.05`: 0.09 at 150 (not gone),
-  0.02 at 300 (gone) on the textured master; clean masters' outputs sit at 0.01-0.02.
-- "Too large" is read off the azimuthal asymmetry and the tilt, not off the removed
-  component's large-scale figure: L2 caught the monitor blotches on tokina_aproape at 600
-  (1.71) but missed the Nikkor's ring at 600 (0.24) where the azimuthal drop was -0.79.
-  Corners, residual and worst tile respond to the texture leaving (worst tile -1.47 at
-  300 on the textured master) and cannot be guards. `Th.SmoothScaleLoss = 0.5` points.
-- Picks: tokina_pemonitor 300 (150 leaves texture; 300 clears it with the guards at 0.00 /
-  -0.01); the other four "nothing to smooth". No undetermined case among the five.
-
-Known limits: the Samyang's LCD hot spot is the source, not the lens, and the rule cannot
-know that - it proposes nothing there only because there is no texture. The two guards are
-blind to a real feature that sits only in the corners, outside the inscribed circle and
-not a plane. The texture threshold rests on five masters; one with faint texture of
-0.15-0.25 % sits near it. And the metric's box is a fraction of the frame width (`W/47`),
-so on small test fixtures a texture coarser than a few percent of the width no longer
-averages out inside the azimuthal sectors and the guard reads it as structure - the
-golden fixture for `--scale auto` uses a 13-px weave for that reason.
+What it decided, the three thresholds (`Th.SmoothTextureMin`, `Th.SmoothTextureGone`,
+`Th.SmoothScaleLoss`), the guards tried and rejected (corners, residual and worst tile, which
+drop when the texture leaves; the removed component's own large-scale figure, which missed the
+Nikkor's ring), the picks on the five masters and the known limits (lens versus source, a
+corner-only feature, the five-master basis of the texture threshold, the `W/47` box on small
+fixtures and the 13-px weave of the golden fixture) are ADR 0027.
