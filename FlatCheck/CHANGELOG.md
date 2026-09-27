@@ -28,6 +28,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The six skills and the `docs-auditor` agent are the kit's copies now, byte for byte, taken
+  with `scripts/sync.ps1` (ADR 0049; kit ADR 0018). FlatCheck's own steps (test projects, golden
+  and parity scenarios, the numeric paths, the masters' folder, the two publish targets, the
+  always-filter for Stryker) are in `docs/skills.md`, one section per skill; `kit.json` gains
+  `audit.alsoRead` so the auditor may read `THIRD-PARTY-NOTICES.md` and `Golden/`. Rule 19
+  names the three folders.
 - `scripts/` is now the kit's copy, byte for byte, taken with `scripts/sync.ps1` (ADR 0048,
   supersedes 0002; kit ADR 0017). FlatCheck's values (solution, `Category!=Validation`, the
   code and test folders, the test data folder and `FLATCHECK_TESTDATA_LARGE`, the two publish

@@ -4,9 +4,9 @@
 # WHAT IT DOES
 #   Claude Code calls it each time Claude is about to finish an answer (a "turn"). Two
 #   checks, both from the list of files this session edited:
-#     A. scripts/ is the kit's: in a project that is not the kit (kit.json's "kit" is not
-#        "."), an edit under scripts/ ends no turn; the change is made in the kit and copied
-#        with scripts/sync.ps1.
+#     A. scripts/, .claude/skills/ and .claude/agents/ are the kit's: in a project that is not
+#        the kit (kit.json's "kit" is not "."), an edit under one of them ends no turn; the
+#        change is made in the kit and copied with scripts/sync.ps1.
 #     B. code was edited (kit.json's codeFolders, codeFiles or testFolders): the turn may end
 #        only when
 #        1. scripts/verify.ps1 ran green with tests after the last such edit: .verify-stamp,
@@ -60,7 +60,8 @@ try { $kit = Read-KitConfig $projectDir } catch { exit 0 }
 $srcDirs = @($kit.codeFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
 $testDirs = @($kit.testFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
 $srcFiles = @($kit.codeFiles | ForEach-Object { Join-Path $projectDir ($_ -replace '/', '\') })
-$scriptsDir = Join-Path $projectDir 'scripts\'
+# The folders that are the kit's, mirrored by scripts/sync.ps1.
+$sharedDirs = @('scripts\', '.claude\skills\', '.claude\agents\') | ForEach-Object { Join-Path $projectDir $_ }
 
 function Test-Under([string]$path, [string[]]$dirs) {
     foreach ($d in $dirs) { if ($path.StartsWith($d, [System.StringComparison]::OrdinalIgnoreCase)) { return $true } }
@@ -72,12 +73,12 @@ $edited = Get-Content $list | ForEach-Object { [System.IO.Path]::GetFullPath($_)
 
 $problems = @()
 
-# A. scripts/ edited in a project that is not the kit.
+# A. A shared folder edited in a project that is not the kit.
 $kitPath = Get-KitPath $kit $projectDir
 $isKit = $kitPath -and ($kitPath -eq $projectDir)
-$scriptEdits = @($edited | Where-Object { Test-Under $_ @($scriptsDir) })
-if (-not $isKit -and $scriptEdits.Count -gt 0) {
-    $problems += 'scripts/ was edited here, but scripts/ is the kit''s (byte-identical in every project). Make the change in the kit, then run scripts/sync.ps1 here; project-specific values go in kit.json. Edited: ' + (($scriptEdits | ForEach-Object { $_.Substring($projectDir.Length + 1) }) -join ', ')
+$sharedEdits = @($edited | Where-Object { Test-Under $_ $sharedDirs })
+if (-not $isKit -and $sharedEdits.Count -gt 0) {
+    $problems += 'scripts/, .claude/skills/ or .claude/agents/ was edited here, but those folders are the kit''s (byte-identical in every project). Make the change in the kit, then run scripts/sync.ps1 here; project-specific values go in kit.json, project-specific skill steps in docs/skills.md. Edited: ' + (($sharedEdits | ForEach-Object { $_.Substring($projectDir.Length + 1) }) -join ', ')
 }
 
 # B. Code edits: those under a code folder, a test folder, or named as a code file.

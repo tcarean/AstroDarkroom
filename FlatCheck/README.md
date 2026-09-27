@@ -1402,10 +1402,12 @@ mecanic:
 
 - **O schimbare în cod cere o linie în `CHANGELOG.md`**, sub `[Unreleased]`;
   `scripts/check-staged.ps1` refuză commit-ul fără ea.
-- **`scripts/` e al kit-ului**, byte cu byte, și nu se editează aici: un bug sau o funcție nouă
-  se face în kit și `scripts/sync.ps1` o copiază în fiecare proiect. Ce e specific FlatCheck
-  (soluția, folderele de cod și de teste, filtrul de teste, datele de test, cele două ținte de
-  publish) e în `kit.json`. Pasul 0 al gate-ului e roșu la orice diferență față de kit.
+- **`scripts/`, `.claude/skills/` și `.claude/agents/` sunt ale kit-ului**, byte cu byte, și nu
+  se editează aici: un bug sau o funcție nouă se face în kit și `scripts/sync.ps1` o copiază în
+  fiecare proiect. Ce e specific FlatCheck ca valori (soluția, folderele de cod și de teste,
+  filtrul de teste, datele de test, cele două ținte de publish, ce mai poate citi auditorul) e în
+  `kit.json`; pașii pe care FlatCheck îi adaugă la skill-uri sunt în `docs/skills.md`. Pasul 0 al
+  gate-ului e roșu la orice diferență față de kit.
 - **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor
   (`R012_Structure_PrintsTheScale...`); `RepoInvariantTests` cere ca fiecare cerință
   `implemented` să aibă un test cu ID-ul ei și invers.
