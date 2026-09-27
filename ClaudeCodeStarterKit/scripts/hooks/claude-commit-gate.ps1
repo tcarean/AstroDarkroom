@@ -9,11 +9,14 @@
 #        short options (-anm), or git -c core.hooksPath=...;
 #     2. finds the folder the commit runs in (ADR 0020), and blocks the commit when the command
 #        names a folder it cannot find (a variable, a folder that does not exist);
-#     3. asks git, in that folder, which files the commit takes (the staged ones, plus the
+#     3. blocks the commit unless that folder is on a branch named claude/..., the branches the
+#        assistant creates: main, any other branch and a detached HEAD are the owner's, who
+#        commits there by hand (ADR 0021);
+#     4. asks git, in that folder, which files the commit takes (the staged ones, plus the
 #        changed tracked ones with -a) and finds the project of each: the nearest folder above
 #        it holding scripts/verify.ps1, as the git pre-commit hook does. With no such file, the
 #        project of the folder itself;
-#     4. runs, for each project once, scripts/check-staged.ps1 (a code change needs a
+#     5. runs, for each project once, scripts/check-staged.ps1 (a code change needs a
 #        CHANGELOG line), then scripts/verify.ps1, the full gate.
 #   If one of them fails, the commit does not run, and Claude gets the reason and the output.
 #   It fails closed: an error inside this hook itself also blocks the commit (exit 2), it
@@ -156,7 +159,7 @@ function Get-CommitFolder {
     return $folder
 }
 
-# The projects the commit touches, as full paths (see WHAT IT DOES, step 3).
+# The projects the commit touches, as full paths (see WHAT IT DOES, step 4).
 function Get-CommitProjects([string]$folder) {
     $top = @(Invoke-Git -C $folder rev-parse --show-toplevel)
     if ($top.Count -eq 0) { return @() }
@@ -197,7 +200,16 @@ function Test-Commit {
             return 2
         }
 
-        # 3 and 4. Each project the commit touches: check-staged, then verify.
+        # 3. Only on a branch the assistant created. git names the branch of the folder's own
+        #    worktree, so a task worktree commits while the main checkout stays on main.
+        $branch = @(Invoke-Git -C $folder branch --show-current) -join ''
+        if (-not $branch.StartsWith('claude/')) {
+            $where = if ($branch) { "on $branch" } else { 'on a detached HEAD' }
+            [Console]::Error.WriteLine("Blocked: $folder is $where. A commit there is the owner's, made by hand (CLAUDE.md rule 13, ADR 0021); the assistant commits only on the claude/ branch of its task.")
+            return 2
+        }
+
+        # 4 and 5. Each project the commit touches: check-staged, then verify.
         foreach ($projectDir in (Get-CommitProjects $folder)) {
             $checkStaged = Join-Path $projectDir 'scripts\check-staged.ps1'
             if ((Test-Path $checkStaged) -and (Invoke-Check $checkStaged) -ne 0) {

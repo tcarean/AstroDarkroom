@@ -103,6 +103,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The assistant commits without asking on the `claude/` branch it created for its task; commits
+  on `main`, any other branch or a detached HEAD are the owner's, and only the merge (with push,
+  rebase and `branch -D`) is still asked (ADR 0021, superseding ADR 0007). `git commit` moves
+  from `permissions.ask` to `allow`; `claude-commit-gate.ps1` refuses a model commit off a
+  `claude/` branch before check-staged and verify run, judging the branch of the commit's own
+  worktree. `/wrap-up` commits on the task branch and asks only for the merge; `/release`
+  leaves the release commit and the tag to the owner. Rule 13, the guide, the README and the
+  generator prompt say so; `HookTests` covers `main`, `master`, `feature/...`, a detached HEAD
+  and a `claude/` worktree beside a checkout on `main`.
 - A worktree the assistant makes is named after its branch without `claude/`, created with it in
   one command (`git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main`), so
   the owner finds it to review before the commit (ADR 0019). CLAUDE.md and the guide say so; an

@@ -9,7 +9,8 @@ namespace Starter.Tests;
 /// commit gate follows the commit's own folder, the Stop hook the folder of each edited file.
 /// These tests build a throwaway repository holding two projects, A and B, each with a kit.json
 /// and stub check-staged.ps1 and verify.ps1 that record that they ran and exit with a chosen
-/// code. The hooks are the real ones, copied into B, the project the session "started" in.
+/// code. The hooks are the real ones, copied into B, the project the session "started" in. The
+/// repository starts on a claude/ branch, the only kind the assistant may commit on (ADR 0021).
 /// Windows only: the hooks are Windows PowerShell scripts that call cmd, and the settings that
 /// run them name powershell; on the Linux CI these tests are skipped.
 /// </summary>
@@ -28,6 +29,7 @@ public sealed class HookTests : IDisposable
         _temp = Path.Combine(_repo, "tmp");
         Directory.CreateDirectory(_temp);
         Git("init", "-q");
+        Git("symbolic-ref", "HEAD", "refs/heads/claude/Test-the-hooks");
         MakeProject(_a);
         MakeProject(_b);
 
@@ -189,6 +191,54 @@ public sealed class HookTests : IDisposable
         (int exitCode, string output) = RunCommitGate(cwd: _repo, "git commit -am \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
         Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_b));
+    }
+
+    /// <summary>A commit on a branch the assistant did not create is the owner's (ADR 0021), before any gate runs.</summary>
+    [WindowsTheory]
+    [InlineData("main")]
+    [InlineData("master")]
+    [InlineData("feature/claude-x")]
+    public void CommitGate_OnABranchNotNamedClaude_IsBlocked(string branch)
+    {
+        Git("symbolic-ref", "HEAD", "refs/heads/" + branch);
+        (int exitCode, string output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
+        Assert.Equal(2, exitCode);
+        Assert.Contains("the owner's", output);
+        Assert.Contains(branch, output);
+        Assert.Empty(Ran(_a));
+    }
+
+    [WindowsFact]
+    public void CommitGate_OnADetachedHead_IsBlocked()
+    {
+        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "tmp/\n");
+        Git("add", ".gitignore");
+        GitCommit("First");
+        Git("checkout", "-q", "--detach");
+        (int exitCode, string output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
+        Assert.Equal(2, exitCode);
+        Assert.Contains("detached HEAD", output);
+        Assert.Empty(Ran(_a));
+    }
+
+    /// <summary>The branch is the one of the commit's folder: a worktree on claude/ commits while the main checkout is on main.</summary>
+    [WindowsFact]
+    public void CommitGate_JudgesTheBranchOfTheCommitsWorktree()
+    {
+        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "tmp/\nwt/\n");
+        Git("add", ".gitignore");
+        GitCommit("First");
+        Git("worktree", "add", "-q", "-b", "claude/Other-task", "wt");
+        Git("switch", "-q", "-c", "main");
+        string worktreeA = Path.Combine(_repo, "wt", "A");
+        MakeProject(worktreeA);
+        (int exitCode, string output) = RunCommitGate(cwd: worktreeA, "git commit -m \"Fix a thing\"");
+        Assert.True(exitCode == 0, output);
+        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(worktreeA));
+
+        (exitCode, output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
+        Assert.Equal(2, exitCode);
+        Assert.Contains("main", output);
     }
 
     [WindowsFact]

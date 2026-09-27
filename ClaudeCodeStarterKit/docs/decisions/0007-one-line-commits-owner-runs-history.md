@@ -1,7 +1,7 @@
 # 0007. One-line English commit messages; the owner decides every commit and merge
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: superseded by 0021
 
 ## Context
 
