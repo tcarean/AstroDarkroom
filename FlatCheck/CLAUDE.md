@@ -89,7 +89,7 @@ It is not an image processor and it never decides what a shape on a map is.
 13. Commit messages are one line, in English, under 72 characters, saying why. No body, no
     trailers, no `Co-Authored-By`. The assistant commits, without asking, only on the `claude/`
     branch it created for its task, with the gate green; commits on `main` or any other branch
-    are the owner's, and the commit hook refuses the assistant's there (ADR 0051). It never
+    are the owner's, and the commit hook refuses the assistant's there (ADR 0052). It never
     merges, pushes or rebases on its own: it proposes the merge and asks; the owner decides each
     time who runs it. An approval covers one command.
 14. English in everything the model reads or writes about the process: docs, tests of invariants,

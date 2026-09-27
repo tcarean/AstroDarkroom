@@ -1,4 +1,4 @@
-# 0051. The assistant commits on its own claude/ branches; the owner commits on main
+# 0052. The assistant commits on its own claude/ branches; the owner commits on main
 
 Date: 2026-09-27
 Status: accepted 2026-09-27
