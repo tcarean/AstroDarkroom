@@ -47,7 +47,11 @@ adds project-specific steps and says where they go.
     the owner (the commit hook refuses it anyway). If the branch is ready to merge into `main`,
     say so, suggest `/code-review main...<branch>` first if it has not run on this work, then
     ask: does the owner want you to run the merge, or will they do it by hand? Do nothing until
-    they answer. Once the merge is done, delete the branch with `git branch -d`; if a worktree
+    they answer. If a merge you run stops on conflicts, resolve them, `git add` the files and
+    conclude with `git merge --continue`, never `git commit`, which the hook refuses on `main`;
+    a conflict where the two sides meant different things is a question for the owner. If the
+    gate fails only on the merged result (two ADRs with the same number), `git merge --abort`,
+    fix it on the task branch with a commit there, and merge again. Once the merge is done, delete the branch with `git branch -d`; if a worktree
     holds it, release it first (`git switch --detach` from the session inside that worktree,
     `git worktree remove <path>` from outside). `-D` only when the owner asks. Never
     `--no-verify`.
