@@ -38,19 +38,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <!-- o celula: valoarea si, pe acelasi rand, pastila verdictului; latime fixa, ca
          celulele unui rand sa cada sub antetele lor -->
     <DataTemplate x:Key="SplitCellTemplate">
-      <Grid Width="230" Margin="0,0,6,0" VerticalAlignment="Center">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" Style="{StaticResource Number}" Text="{Binding Value}"
+      <StackPanel Orientation="Horizontal" Width="230" Margin="0,0,6,0" VerticalAlignment="Center">
+        <TextBlock Style="{StaticResource Number}" Text="{Binding Value}"
                    TextAlignment="Left" HorizontalAlignment="Left"
                    TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
-        <ContentControl Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
+        <!-- pastila imediat dupa valoare, la un spatiu, nu la marginea celulei -->
+        <ContentControl Margin="5,0,0,0" VerticalAlignment="Center"
                         Content="{Binding Verdict}"
                         ContentTemplate="{StaticResource VerdictChip}"
                         Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
-      </Grid>
+      </StackPanel>
     </DataTemplate>
 
     <DataTemplate x:Key="SplitHeaderTemplate">

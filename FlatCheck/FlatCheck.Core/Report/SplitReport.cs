@@ -66,7 +66,7 @@ namespace FlatCheck
             return h;
         }
 
-        internal const string ProfileHeader = "profil";
+        internal const string ProfileHeader = "profil vignetare";
 
         /// <summary>Cat loc cere impartirea: copiile exact, process/ estimat, si cat e liber pe discul temporar cand se stie.</summary>
         internal static string CostLine(SplitCostEstimate e, long? freeBytes)

@@ -1309,10 +1309,10 @@ apoi masterele părților și masterul întreg trec prin aceeași analiză de st
 Structura, cu raw-ul din `flats/` pentru profil.
 
 Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profil**:
-cele cinci teste, fiecare celulă cu valoarea și pastila verdictului lângă ea; vignetarea
+cele cinci teste, fiecare celulă cu valoarea și pastila verdictului imediat după ea; vignetarea
 în stopuri; **câte un rând pe profil** — toate profilele pe care le arată și tabul
 Structura, Adobe și lensfun — cu diferența fiecărei coloane față de el și verdictul ei, și
-în coloana profilului adâncimea lui; rândul profilului de referință e marcat; și pe ultimul
+în coloana `profil vignetare` adâncimea pe care o prezice el; rândul profilului de referință e marcat; și pe ultimul
 rând verdictul fiecărei coloane, cel mai rău dintre formă și adâncimea față de profilul de
 referință (nu față de profilul propriu al coloanei, ca rândurile să vorbească despre același
 profil). Profilul de referință e **cel mai apropiat profil al întregului,
