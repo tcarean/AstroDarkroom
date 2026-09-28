@@ -30,6 +30,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- ADR 0053 and rules 9 and 13 (the kit's ADR 0023): a commit message may be one line of up to
+  100 characters, and a CHANGELOG line is a judgment made at `/wrap-up`, not a gate.
+  `scripts/check-staged.ps1` and `CheckStagedTests` are gone; `pre-commit`, `pre-merge-commit`
+  and the Claude commit gate run `verify.ps1` alone, and the Stop hook no longer asks for a
+  changed `CHANGELOG.md`.
 - Seven code comments pointed at `docs/lens-profiles.md`, `docs/smooth-validation.md` and
   `docs/radial-model-even-term.md`, where the notes lived before ADR 0001 moved them; they now
   name `docs/design/`. Comments only; no figure or test changed.

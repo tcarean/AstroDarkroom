@@ -1402,8 +1402,11 @@ mecanic:
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
   ```
 
-- **O schimbare în cod cere o linie în `CHANGELOG.md`**, sub `[Unreleased]`;
-  `scripts/check-staged.ps1` refuză commit-ul fără ea.
+- **O linie în `CHANGELOG.md`**, sub `[Unreleased]`, doar pentru o schimbare care contează
+  pentru cine citește istoricul versiunilor; un follow-up de code review sau o schimbare doar în
+  teste nu primește. E judecată, nu gate: niciun hook nu o verifică la commit (ADR 0053).
+- **Mesajul de commit** e o singură linie, în engleză, de cel mult 100 de caractere; hook-ul git
+  `commit-msg` refuză altceva.
 - **`scripts/`, `.claude/skills/` și `.claude/agents/` sunt ale kit-ului**, byte cu byte, și nu
   se editează aici: un bug sau o funcție nouă se face în kit și `scripts/sync.ps1` o copiază în
   fiecare proiect. Ce e specific FlatCheck ca valori (soluția, folderele de cod și de teste,
