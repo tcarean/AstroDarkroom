@@ -109,6 +109,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A commit message may be one line of up to 100 characters (was 72), and a CHANGELOG line is a
+  judgment made at `/wrap-up`, not a gate (ADR 0023): a line for what a reader of the version
+  history cares about, none for a review follow-up or a test-only change. Rules 9 and 13, the
+  wrap-up and mutate skills, GHID and README say so; `GitHookTests` checks the 100-character
+  limit.
+
 - The assistant commits without asking on the `claude/` branch it created for its task; commits
   on `main`, any other branch or a detached HEAD are the owner's, and only the merge (with push,
   rebase and `branch -D`) is still asked (ADR 0021, superseding ADR 0007). `git commit` moves
@@ -154,6 +160,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   adds the root `.gitattributes`; `tests/testdata/README.md` says fixtures are never converted.
 
 ### Removed
+
+- `scripts/check-staged.ps1` and its tests: `pre-commit`, `pre-merge-commit` and the Claude
+  commit gate run `verify.ps1` alone, and the Stop hook no longer demands a changed
+  `CHANGELOG.md` (ADR 0023).
 
 - `docs/ai-workflow.md` (ADR 0006): it duplicated CLAUDE.md and `GHID.md` and nothing read it in
   the working loop. CLAUDE.md holds the rules, `GHID.md` the explanations, kept once in the kit;

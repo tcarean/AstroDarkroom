@@ -8,7 +8,7 @@
 #   file a clean merge into main entered the history with no gate at all (ADR 0022). The index
 #   already holds the merged result, and git diff --cached lists what the merge brings in over
 #   HEAD; so it simply runs the pre-commit hook beside it, which gates every project those files
-#   touch: check-staged, then verify, on the merged tree.
+#   touch: verify, on the merged tree.
 #   A merge that stops on conflicts is recorded later by git merge --continue or git commit,
 #   which run pre-commit themselves; this hook does not run then.
 #

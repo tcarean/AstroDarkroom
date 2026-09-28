@@ -1,7 +1,7 @@
 # 0005. Rules the model must remember become mechanisms the model cannot skip
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; item 1 and the CHANGELOG half of item 3 superseded by 0023
 
 ## Context
 

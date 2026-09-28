@@ -7,8 +7,8 @@ namespace Starter.Tests;
 /// that completes without conflicts runs neither pre-commit nor the Claude commit hook, only
 /// pre-merge-commit; before that hook existed, a clean merge into main was recorded with no gate
 /// at all. These tests build a throwaway repository whose core.hooksPath is a copy of the kit's
-/// scripts/hooks/, holding one project, A, with stub check-staged.ps1 and verify.ps1 that record
-/// that they ran and exit with a chosen code. Windows only: the hooks call powershell.exe.
+/// scripts/hooks/, holding one project, A, with a stub verify.ps1 that records that it ran and
+/// exits with a chosen code. Windows only: the hooks call powershell.exe.
 /// </summary>
 public sealed class GitHookTests : IDisposable
 {
@@ -25,7 +25,6 @@ public sealed class GitHookTests : IDisposable
         Git("config", "user.email", "test@example.com");
         ScriptRunner.CopyTree(Path.Combine(TestData.FindRepoRoot(), "scripts", "hooks"), Path.Combine(_repo, "hooks"));
         File.WriteAllText(Path.Combine(_repo, ".gitignore"), "hooks/\nran.txt\n");
-        WriteStub("check-staged.ps1", 0);
         WriteStub("verify.ps1", 0);
         File.WriteAllText(Path.Combine(_a, "src", "X.cs"), "// first\n");
         Git("add", ".");
@@ -49,7 +48,7 @@ public sealed class GitHookTests : IDisposable
     {
         (int exitCode, string output) = Merge();
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran());
+        Assert.Equal(["verify.ps1"], Ran());
         Assert.Equal("Merge claude/Task", GitOutput("log", "-1", "--format=%s"));
     }
 
@@ -65,6 +64,22 @@ public sealed class GitHookTests : IDisposable
         Assert.True(File.Exists(Path.Combine(_repo, ".git", "MERGE_HEAD")), "git merge --abort needs the merge still in progress");
     }
 
+    /// <summary>commit-msg takes one line of at most 100 characters (the kit's ADR 0023).</summary>
+    [WindowsTheory]
+    [InlineData(100, true)]
+    [InlineData(101, false)]
+    public void CommitMsg_LimitsTheLineTo100Characters(int length, bool accepted)
+    {
+        File.WriteAllText(Path.Combine(_repo, "notes.txt"), "more\n");
+        Git("add", ".");
+        (int exitCode, string output) = ScriptRunner.Run(_repo, gitDir: null, "git", "commit", "-q", "-m", new string('x', length));
+        Assert.True((exitCode == 0) == accepted, output);
+        if (!accepted)
+        {
+            Assert.Contains("100 characters", output);
+        }
+    }
+
     public void Dispose()
     {
         ScriptRunner.DeleteTree(_repo);
@@ -75,7 +90,7 @@ public sealed class GitHookTests : IDisposable
         return ScriptRunner.Run(_repo, gitDir: null, "git", "merge", "--no-ff", "claude/Task", "-m", "Merge claude/Task");
     }
 
-    /// <summary>A stand-in for one of A's check scripts: appends its name to ran.txt, then exits.</summary>
+    /// <summary>A stand-in for A's verify.ps1: appends its name to ran.txt, then exits.</summary>
     private void WriteStub(string name, int exitCode)
     {
         File.WriteAllText(Path.Combine(_a, "scripts", name),

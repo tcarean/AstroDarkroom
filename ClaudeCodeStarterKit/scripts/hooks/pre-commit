@@ -8,9 +8,8 @@
 #   2. For each file, walks up its folders to the nearest one that has scripts/verify.ps1:
 #      that folder is the project the file belongs to. A file with no such folder above it
 #      (for example in a project that has not adopted the kit) is not checked.
-#   3. For each project found, once: runs scripts/check-staged.ps1 (a src/ change needs a
-#      CHANGELOG line), then scripts/verify.ps1 (the gate). If check-staged fails, that
-#      project's verify is skipped; the commit is refused either way.
+#   3. For each project found, once: runs scripts/verify.ps1 (the gate). Whether the commit
+#      needs a CHANGELOG line is a judgment, not checked here (the kit's ADR 0023).
 #   Works in both layouts: a standalone repository (the project is the git root, found as
 #   ".") and a monorepo (several project folders under one git root).
 #
@@ -55,10 +54,6 @@ done < "$staged"
 # Step 3: each project once (sort -u drops the duplicates); any failure sets status=1.
 status=0
 for p in $(sort -u "$projects"); do
-  if [ -f "$root/$p/scripts/check-staged.ps1" ]; then
-    echo "pre-commit: check-staged $p"
-    powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/$p/scripts/check-staged.ps1" || { status=1; continue; }
-  fi
   echo "pre-commit: verify $p"
   powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/$p/scripts/verify.ps1" || status=1
 done

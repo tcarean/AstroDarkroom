@@ -69,7 +69,6 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `scripts/verify.ps1` | gate-ul unic: scripturi identice cu kit-ul, manifest, restore, format, build strict, teste |
 | `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/` si `.claude/agents/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
 | `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi |
-| `scripts/check-staged.ps1` | refuza commit-ul care atinge codul (folderele din `kit.json`) fara linie in CHANGELOG |
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni si hooks, versionate; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
@@ -85,7 +84,6 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
 - Merge fara conflicte al carui rezultat nu trece `verify.ps1`: refuzat de git pre-merge-commit,
   care ruleaza acelasi gate ca pre-commit (ADR 0022).
-- Commit care atinge codul fara linie in `CHANGELOG.md`: refuzat de `check-staged.ps1`.
 - `scripts/`, `.claude/skills/` sau `.claude/agents/` modificat intr-un proiect, nu in kit:
   gate-ul e rosu la pasul 0 (`sync.ps1 -Check`), deci commit-ul e refuzat, iar hook-ul Stop nu
   inchide tura. Sursa e kit-ul; `sync.ps1` copiaza. Dupa o schimbare in kit, primul commit din
@@ -93,14 +91,14 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
 - Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.
-- Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare si
-  fara CHANGELOG modificat: hook-ul Stop o refuza si trimite la `/wrap-up`.
+- Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare:
+  hook-ul Stop o refuza si trimite la `/wrap-up`.
 - Hook-urile Claude Code judeca proiectul in care se lucreaza, si intr-un worktree: hook-ul de
   commit ruleaza verify-ul proiectelor atinse de fisierele commit-ului, hook-ul Stop cere
-  stamp-ul si CHANGELOG-ul proiectului fiecarui fisier editat, nu ale folderului in care a
+  stamp-ul proiectului fiecarui fisier editat, nu ale folderului in care a
   pornit sesiunea (ADR 0020). Un commit cu o cale pe care hook-ul nu o poate citi (o variabila)
   e blocat; la fel `-n` in orice forma si `-c core.hooksPath`.
-- Mesaj de commit pe mai multe linii, cu trailere sau peste 72 de caractere: refuzat de hook-ul
+- Mesaj de commit pe mai multe linii, cu trailere sau peste 100 de caractere: refuzat de hook-ul
   `commit-msg`, pentru oricine.
 - Un `git commit` al modelului pe `main`, pe alt branch decat unul `claude/` sau pe un HEAD
   detasat: refuzat de hook-ul Claude Code de commit. Pe branch-ul `claude/` al task-ului sau,

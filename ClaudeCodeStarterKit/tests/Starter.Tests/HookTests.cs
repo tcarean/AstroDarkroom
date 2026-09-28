@@ -8,7 +8,7 @@ namespace Starter.Tests;
 /// (ADR 0020). CLAUDE_PROJECT_DIR stays at that folder when the session works in a worktree; the
 /// commit gate follows the commit's own folder, the Stop hook the folder of each edited file.
 /// These tests build a throwaway repository holding two projects, A and B, each with a kit.json
-/// and stub check-staged.ps1 and verify.ps1 that record that they ran and exit with a chosen
+/// and a stub verify.ps1 that records that it ran and exits with a chosen
 /// code. The hooks are the real ones, copied into B, the project the session "started" in. The
 /// repository starts on a claude/ branch, the only kind the assistant may commit on (ADR 0021).
 /// Windows only: the hooks are Windows PowerShell scripts that call cmd, and the settings that
@@ -46,7 +46,7 @@ public sealed class HookTests : IDisposable
     {
         (int exitCode, string output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_a));
+        Assert.Equal(["verify.ps1"], Ran(_a));
         Assert.Empty(Ran(_b));
     }
 
@@ -76,7 +76,7 @@ public sealed class HookTests : IDisposable
 
         (int exitCode, string output) = RunCommitGate(cwd: _a, command);
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_b));
+        Assert.Equal(["verify.ps1"], Ran(_b));
         Assert.Empty(Ran(_a));
     }
 
@@ -116,7 +116,7 @@ public sealed class HookTests : IDisposable
     {
         (int exitCode, string output) = RunCommitGate(cwd: _a, command);
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_a));
+        Assert.Equal(["verify.ps1"], Ran(_a));
     }
 
     /// <summary>Text in a heredoc is written, not run: its "cd" moves nothing.</summary>
@@ -125,7 +125,7 @@ public sealed class HookTests : IDisposable
     {
         (int exitCode, string output) = RunCommitGate(cwd: _a, "cat > note.sh <<'EOF'\ncd ../B\nEOF\ngit commit -m \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_a));
+        Assert.Equal(["verify.ps1"], Ran(_a));
         Assert.Empty(Ran(_b));
     }
 
@@ -137,7 +137,7 @@ public sealed class HookTests : IDisposable
         MakeProject(spaced);
         (int exitCode, string output) = RunCommitGate(cwd: _a, "cd ../C\\ D && git commit -m \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(spaced));
+        Assert.Equal(["verify.ps1"], Ran(spaced));
         Assert.Empty(Ran(_a));
     }
 
@@ -163,8 +163,8 @@ public sealed class HookTests : IDisposable
         Git("add", "A/src/X.cs", "B/src/Y.cs");
         (int exitCode, string output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_a));
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_b));
+        Assert.Equal(["verify.ps1"], Ran(_a));
+        Assert.Equal(["verify.ps1"], Ran(_b));
     }
 
     /// <summary>From the repository root, where no project is, the staged files still name theirs.</summary>
@@ -190,7 +190,7 @@ public sealed class HookTests : IDisposable
         File.AppendAllText(Path.Combine(_b, "src", "Y.cs"), "// changed\n");
         (int exitCode, string output) = RunCommitGate(cwd: _repo, "git commit -am \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(_b));
+        Assert.Equal(["verify.ps1"], Ran(_b));
     }
 
     /// <summary>A commit on a branch the assistant did not create is the owner's (ADR 0021), before any gate runs.</summary>
@@ -234,7 +234,7 @@ public sealed class HookTests : IDisposable
         MakeProject(worktreeA);
         (int exitCode, string output) = RunCommitGate(cwd: worktreeA, "git commit -m \"Fix a thing\"");
         Assert.True(exitCode == 0, output);
-        Assert.Equal(["check-staged.ps1", "verify.ps1"], Ran(worktreeA));
+        Assert.Equal(["verify.ps1"], Ran(worktreeA));
 
         (exitCode, output) = RunCommitGate(cwd: _a, "git commit -m \"Fix a thing\"");
         Assert.Equal(2, exitCode);
@@ -261,7 +261,7 @@ public sealed class HookTests : IDisposable
     }
 
     [WindowsFact]
-    public void StopGate_FreshStampAndDirtyChangelogInThatProject_Pass()
+    public void StopGate_FreshStampInThatProject_Passes()
     {
         Edit(_a, "src", "X.cs");
         Green(_a);
@@ -269,17 +269,17 @@ public sealed class HookTests : IDisposable
         Assert.True(exitCode == 0, output);
     }
 
-    /// <summary>git status runs in the edited file's project: a committed, clean CHANGELOG there is caught.</summary>
+    /// <summary>A CHANGELOG line is a judgment, not a gate (the kit's ADR 0023): uncommitted code with a clean CHANGELOG passes.</summary>
     [WindowsFact]
-    public void StopGate_CleanChangelogInThatProject_IsRefused()
+    public void StopGate_UncommittedCodeWithCleanChangelog_Passes()
     {
-        Edit(_a, "src", "X.cs");
-        Green(_a);
+        File.WriteAllText(Path.Combine(_a, "CHANGELOG.md"), "# Changelog\n");
         Git("add", "A/CHANGELOG.md");
         GitCommit("Changelog");
+        Edit(_a, "src", "X.cs");
+        Green(_a);
         (int exitCode, string output) = RunStopGate(sessionDir: _b);
-        Assert.Equal(2, exitCode);
-        Assert.Contains("CHANGELOG.md is unchanged", output);
+        Assert.True(exitCode == 0, output);
     }
 
     /// <summary>A shared folder may be edited only in the kit: that project's kit.json decides.</summary>
@@ -311,13 +311,12 @@ public sealed class HookTests : IDisposable
         ScriptRunner.DeleteTree(_repo);
     }
 
-    /// <summary>A project folder: kit.json and the two stub check scripts, both green.</summary>
+    /// <summary>A project folder: kit.json and a stub verify.ps1, green.</summary>
     private static void MakeProject(string project)
     {
         Directory.CreateDirectory(Path.Combine(project, "scripts", "hooks"));
         Directory.CreateDirectory(Path.Combine(project, "src"));
         WriteKitJson(project, "../Kit");
-        WriteStub(project, "check-staged.ps1", 0);
         WriteStub(project, "verify.ps1", 0);
     }
 
@@ -333,7 +332,7 @@ public sealed class HookTests : IDisposable
             """);
     }
 
-    /// <summary>A stand-in for one of the project's check scripts: appends its name to ran.txt, then exits.</summary>
+    /// <summary>A stand-in for the project's verify.ps1: appends its name to ran.txt, then exits.</summary>
     private static void WriteStub(string project, string name, int exitCode)
     {
         File.WriteAllText(Path.Combine(project, "scripts", name),
@@ -356,10 +355,9 @@ public sealed class HookTests : IDisposable
         File.AppendAllText(Path.Combine(_temp, $"claude-edits-{_session}.txt"), path + "\n");
     }
 
-    /// <summary>A project after a green verify and a CHANGELOG line: a stamp newer than every edit, a changed CHANGELOG.</summary>
+    /// <summary>A project after a green verify: a stamp newer than every edit.</summary>
     private static void Green(string project)
     {
-        File.WriteAllText(Path.Combine(project, "CHANGELOG.md"), "# Changelog\n");
         string stamp = Path.Combine(project, ".verify-stamp");
         File.WriteAllText(stamp, "green\n");
         File.SetLastWriteTimeUtc(stamp, DateTime.UtcNow.AddMinutes(1));
