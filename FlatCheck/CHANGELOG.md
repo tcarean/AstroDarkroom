@@ -35,6 +35,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `scripts/check-staged.ps1` and `CheckStagedTests` are gone; `pre-commit`, `pre-merge-commit`
   and the Claude commit gate run `verify.ps1` alone, and the Stop hook no longer asks for a
   changed `CHANGELOG.md`.
+- ADR 0013 and ADR 0021 restate, in dated lines, the two reasons that still pointed at
+  `crosscheck.py` (the centre convention, the ordinal sort of a `--light` series); the comments
+  of `SeriesFinder.Find` and `FilesComeBackSortedOrdinallyByName` say why the sort is ordinal
+  now that the cross-check is retired. No behaviour changed.
 - Seven code comments pointed at `docs/lens-profiles.md`, `docs/smooth-validation.md` and
   `docs/radial-model-even-term.md`, where the notes lived before ADR 0001 moved them; they now
   name `docs/design/`. Comments only; no figure or test changed.

@@ -26,7 +26,12 @@ ADR 0014).
   detect, and the test would silently cancel itself out.
 - **Moving the centre to `(w-1)/2, (h-1)/2`, the true middle of pixel indices `0..w-1`.** It
   would remove the half-pixel floor below, but changing the centre convention breaks numeric
-  parity with `flatcheck.py`, which is tested across 43 `crosscheck.py` scenarios.
+  parity with `flatcheck.py`, which is tested across 43 `crosscheck.py` scenarios. (Restated
+  2026-09-28: ADR 0047 retired the cross-check, so this reason no longer holds as written. What
+  holds: moving the centre is a formula change under rule 16, judged only by `/validate` and by
+  the 43 parity goldens, whose figures an independent implementation confirmed once and cannot
+  confirm again; and it would buy about 0.2 % at analysis size, below every band. Whether it
+  would move the parity goldens was not measured.)
 
 ## Consequences
 

@@ -50,8 +50,14 @@ by default takes `pp_light_*.fit`, which excludes `r_pp_light_*`.
   callback; cancellation is checked between frames, and a started frame runs to the end
   (~0.5 s each).
 - Never more than one full frame in memory; keep it that way.
-- Ordinal sorting must stay identical to Python `sorted()`, or `crosscheck.py` reports
-  differences that do not exist.
+- Ordinal sorting (`string.CompareOrdinal` on the file name) keeps the order of the rows
+  independent of the machine's culture, so the console, which runs without culture data, and
+  the window, which runs with it (ADR 0037), list a series the same way. The verdict does not
+  depend on the order: the mean, the SEM and the Pearson correlation come out the same in any
+  order. (Restated 2026-09-28: this line said the order had to match Python's `sorted()` for
+  `crosscheck.py`, which ADR 0047 retired. `FilesComeBackSortedOrdinallyByName` uses
+  zero-padded digits only, so a culture sort would pass it too: it pins the order, not the
+  ordinal comparison.)
 - The WPF app reuses the same matcher, so `pp_flat_stacked*.fit` there means what `--pattern`
   means on the console.
 - All thresholds live in `Th` (`LightSeries*` family).
