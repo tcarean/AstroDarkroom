@@ -702,6 +702,10 @@ namespace FlatCheck.Wpf
         internal static string SplitTempNotDeleted(string tempRoot) =>
             $"Folderul temporar nu s-a putut sterge: {tempRoot}. Sterge-l de mana.";
 
+        internal static string SplitCloseQuestion() =>
+            "Impartirea inca ruleaza. O opresc? Siril e oprit la mijloc, folderul temporar se "
+            + "sterge, si fereastra se inchide dupa aceea. Sesiunea originala nu e atinsa.";
+
         internal static string SplitSaved(string reportPath, string pngPath) =>
             $"Raport salvat: {reportPath}\nMozaic salvat: {pngPath}";
 

@@ -20,9 +20,15 @@
 // Regulile de forma ale tabului Split (ADR 0054), fara nicio rulare si fara fereastra,
 // ca sa se poata testa singure: care fisiere din flats/ sunt cadre (raw sau FITS, in
 // ordinea numelor; un readme.txt nu e cadru), daca numarul lor se imparte exact, ce
-// primeste fiecare sesiune temporara - toate fisierele din biases/, cel mult MaxLights
-// din lights/ (primele dupa nume: destule ca scriptul sa ajunga la capat, nu o suta de
-// lights copiate de patru ori), si felia ei de flats/ - si unde sta in TEMP.
+// primeste fiecare sesiune temporara si unde sta in TEMP.
+//
+// CE SE COPIAZA decide scriptul, nu o lista fixa: folderele in care scriptul intra cu
+// "cd" (SirilScript.RequiredFolders - biases/, darks/, ce-o fi) se copiaza intregi,
+// lights/ primeste cel mult MaxLights cadre (primele dupa nume: destule ca scriptul sa
+// ajunga la capat, nu o suta de lights copiate de patru ori), iar flats/ primeste felia
+// partii. O lista fixa lasa scriptul OSC_Preprocessing.ssf sa moara la "cd darks" pe
+// partea 1, dupa ce s-au copiat gigaocteti - exact ce verificarea de dinainte de
+// pornire exista sa previna (ADR 0035).
 //
 // Din sesiunea originala se citeste doar: aici nu exista nicio mutare si nicio stergere,
 // iar Delete() sterge doar radacina temporara pe care a construit-o clasa asta.
@@ -44,19 +50,36 @@ namespace FlatCheck.Wpf
 
         internal const string PartPrefix = "parte-";
 
+        internal const string FlatsFolder = "flats";
+        internal const string LightsFolder = "lights";
+
         readonly SirilSession _session;
 
-        internal SplitPlan(SirilSession session, int parts, string tempRoot)
+        /// <param name="requiredFolders">Folderele in care intra scriptul (SirilScript.RequiredFolders); flats/ se copiaza oricum.</param>
+        internal SplitPlan(SirilSession session, int parts, string tempRoot, IEnumerable<string> requiredFolders)
         {
             _session = session ?? throw new ArgumentNullException(nameof(session));
             if (!Choices.Contains(parts)) throw new ArgumentOutOfRangeException(nameof(parts));
             Parts = parts;
             TempRoot = tempRoot ?? throw new ArgumentNullException(nameof(tempRoot));
             Frames = session.FlatFrames();
+            WholeFolders = (requiredFolders ?? Array.Empty<string>())
+                .Where(f => !Is(f, FlatsFolder) && !Is(f, LightsFolder))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            CopiesLights = (requiredFolders ?? Array.Empty<string>()).Any(f => Is(f, LightsFolder));
         }
+
+        static bool Is(string folder, string name) => string.Equals(folder, name, StringComparison.OrdinalIgnoreCase);
 
         internal int Parts { get; }
         internal string TempRoot { get; }
+
+        /// <summary>Folderele copiate intregi in fiecare parte: cele in care scriptul intra, in afara de flats/ si lights/.</summary>
+        internal IReadOnlyList<string> WholeFolders { get; }
+
+        /// <summary>Adevarat cand scriptul intra in lights/, deci fiecare parte primeste cel mult MaxLights cadre de acolo.</summary>
+        internal bool CopiesLights { get; }
 
         /// <summary>Cadrele din flats/, in ordinea numelor: raw sau FITS, nimic altceva.</summary>
         internal IReadOnlyList<string> Frames { get; }
@@ -80,21 +103,24 @@ namespace FlatCheck.Wpf
             return Frames.Skip((part - 1) * n).Take(n).ToList();
         }
 
-        /// <summary>Fisierele din lights/ care merg in fiecare parte: primele MaxLights dupa nume.</summary>
+        /// <summary>Cadrele din lights/ care merg in fiecare parte: primele MaxLights cadre (raw sau FITS) dupa nume.</summary>
         internal IReadOnlyList<string> LightsToCopy()
-            => AllFiles(Path.Combine(_session.Root, "lights")).Take(MaxLights).ToList();
+            => CopiesLights
+                ? AllFiles(Path.Combine(_session.Root, LightsFolder)).Where(IsFrame).Take(MaxLights).ToList()
+                : Array.Empty<string>();
 
-        internal IReadOnlyList<string> BiasesToCopy()
-            => AllFiles(Path.Combine(_session.Root, "biases"));
+        static bool IsFrame(string path) => RawReader.IsRawPath(path) || FitsReader.IsFitsPath(path);
 
         /// <summary>Tot ce se copiaza pentru o parte, ca perechi (sursa, destinatie), in ordinea copierii.</summary>
         internal IReadOnlyList<(string From, string To)> CopyList(int part)
         {
             string root = PartRoot(part);
             var list = new List<(string, string)>();
-            foreach (string f in BiasesToCopy()) list.Add((f, Path.Combine(root, "biases", Path.GetFileName(f))));
-            foreach (string f in LightsToCopy()) list.Add((f, Path.Combine(root, "lights", Path.GetFileName(f))));
-            foreach (string f in PartFrames(part)) list.Add((f, Path.Combine(root, "flats", Path.GetFileName(f))));
+            foreach (string folder in WholeFolders)
+                foreach (string f in AllFiles(Path.Combine(_session.Root, folder)))
+                    list.Add((f, Path.Combine(root, folder, Path.GetFileName(f))));
+            foreach (string f in LightsToCopy()) list.Add((f, Path.Combine(root, LightsFolder, Path.GetFileName(f))));
+            foreach (string f in PartFrames(part)) list.Add((f, Path.Combine(root, FlatsFolder, Path.GetFileName(f))));
             return list;
         }
 
@@ -106,12 +132,19 @@ namespace FlatCheck.Wpf
                 ? Directory.EnumerateFiles(dir).OrderBy(Path.GetFileName, StringComparer.Ordinal).ToList()
                 : Array.Empty<string>();
 
-        /// <summary>Sterge radacina temporara, cu tot ce e in ea. O eroare de disc nu e o eroare a rularii: intoarce false.</summary>
+        /// <summary>
+        /// Sterge radacina temporara, cu tot ce e in ea. Un raw copiat de pe card e adesea
+        /// read-only si File.Copy pastreaza atributul, deci intai se ridica pe tot ce e
+        /// acolo. O eroare de disc nu e o eroare a rularii: intoarce false.
+        /// </summary>
         internal bool Delete()
         {
             try
             {
-                if (Directory.Exists(TempRoot)) Directory.Delete(TempRoot, recursive: true);
+                if (!Directory.Exists(TempRoot)) return true;
+                foreach (string f in Directory.EnumerateFiles(TempRoot, "*", SearchOption.AllDirectories))
+                    File.SetAttributes(f, FileAttributes.Normal);
+                Directory.Delete(TempRoot, recursive: true);
                 return true;
             }
             catch (IOException) { return false; }

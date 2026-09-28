@@ -100,6 +100,9 @@ namespace FlatCheck.Wpf
         internal string SelectedPath => _selected?.Path;
         internal string SelectedName => _selected?.Name;
 
+        /// <summary>Folderele in care intra scriptul ales, citite la ultimul Refresh; goale cand scriptul nu s-a putut citi.</summary>
+        internal IReadOnlyList<string> RequiredFolders { get; private set; } = Array.Empty<string>();
+
         /// <summary>Se ridica dupa fiecare Refresh, ca un consumator sa-si recalculeze propriul blocaj peste al alegerii.</summary>
         internal event Action Refreshed;
 
@@ -141,6 +144,7 @@ namespace FlatCheck.Wpf
             if (!_offered || _session == null) return;
 
             Warning = _guiRunning() ? SessionMessages.SirilGuiRunning() : null;
+            RequiredFolders = Array.Empty<string>();
             Blocker = FindBlocker();
             Raise(nameof(CanRun));
             Refreshed?.Invoke();
@@ -158,6 +162,7 @@ namespace FlatCheck.Wpf
             catch (UnauthorizedAccessException e) { return SessionMessages.ScriptUnreadable(_selected.Path, e.Message); }
 
             var required = SirilScript.RequiredFolders(text);
+            RequiredFolders = required;
             var missing = _session.MissingInputFolders(required);
             return missing.Count == 0 ? null : SessionMessages.MissingScriptInputs(_selected.Name, required, missing);
         }

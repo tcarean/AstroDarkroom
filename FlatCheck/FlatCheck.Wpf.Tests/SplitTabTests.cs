@@ -32,12 +32,12 @@ public class SplitTabTests
 
     // ------------------------------------------------------------------ fixtures
 
-    static SirilInstall FakeInstall(TempWorkspace ws, bool cli = true)
+    static SirilInstall FakeInstall(TempWorkspace ws, bool cli = true, string? scriptText = null)
     {
         string cliPath = Path.Combine(ws.Dir, "siril-cli.exe");
         File.WriteAllText(cliPath, "nu conteaza");
         string script = Path.Combine(ws.Dir, "OSC_Preprocessing_WithoutDark.ssf");
-        File.WriteAllText(script, SirilInstallTests.WithoutDark);
+        File.WriteAllText(script, scriptText ?? SirilInstallTests.WithoutDark);
         return new SirilInstall(cli ? cliPath : null, new[] { script }, Path.Combine(ws.Dir, "config.ini"));
     }
 
@@ -58,7 +58,7 @@ public class SplitTabTests
     }
 
     /// <summary>What the fake Siril saw in a part folder when it was started.</summary>
-    sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats);
+    sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats, string[] Darks);
 
     static string[] Names(string dir) => Directory.Exists(dir)
         ? Directory.EnumerateFiles(dir).Select(p => Path.GetFileName(p)!).OrderBy(n => n, StringComparer.Ordinal).ToArray()
@@ -73,7 +73,8 @@ public class SplitTabTests
         => (folder, script) => (onLine, ct) =>
         {
             seen.Add(new Seen(folder,
-                Names(Path.Combine(folder, "biases")), Names(Path.Combine(folder, "lights")), Names(Path.Combine(folder, "flats"))));
+                Names(Path.Combine(folder, "biases")), Names(Path.Combine(folder, "lights")), Names(Path.Combine(folder, "flats")),
+                Names(Path.Combine(folder, "darks"))));
             int part = seen.Count;
             int code = exitCodeFor?.Invoke(part) ?? 0;
             onLine("log: Running command: cd");
@@ -90,9 +91,9 @@ public class SplitTabTests
         };
 
     static SplitTabViewModel Vm(SessionFixture f, TempWorkspace ws, Func<string, string, SirilRunner> runner,
-                                bool cli = true, Func<bool>? gui = null)
+                                bool cli = true, Func<bool>? gui = null, string? scriptText = null)
     {
-        var vm = new SplitTabViewModel(() => FakeInstall(ws, cli), gui ?? (() => false), runner,
+        var vm = new SplitTabViewModel(() => FakeInstall(ws, cli, scriptText), gui ?? (() => false), runner,
                                        clock: () => When, tempRootFor: _ => Path.Combine(ws.Dir, "temp"));
         vm.Attach(f.Session, CancellationToken.None, () => Task.CompletedTask);
         return vm;
@@ -284,6 +285,8 @@ public class SplitTabTests
         Task run = vm.StartAsync();
         await started.Task;
         Assert.True(vm.IsRunning);
+        Assert.False(vm.CanStart);                        // R-091: blocked while a split is running
+        Assert.False(vm.Start.CanExecute(null));
         vm.StopRun();
         await run;
 
@@ -310,6 +313,114 @@ public class SplitTabTests
         Assert.Contains(phases, p => p.Contains("2 din 2"));
         Assert.Equal(1.0, vm.Progress, 6);
         Assert.True(vm.ProgressKnown);
+    }
+
+    /// <summary>A script that enters darks/ (the stock OSC_Preprocessing.ssf) gets darks/ copied whole, like biases/.</summary>
+    [Fact]
+    public async Task R092_TheFoldersTheScriptEntersAreCopiedWhole_DarksIncluded()
+    {
+        using var f = Session(flats: 4);
+        Inputs(f.Root, "darks", "dark", 2);
+        using var ws = new TempWorkspace();
+        var seen = new List<Seen>();
+        string withDarks = SirilInstallTests.WithoutDark.Replace("cd biases\n", "cd darks\nconvert dark -out=../process\ncd ..\ncd biases\n");
+        var vm = Vm(f, ws, FakeSiril(seen), scriptText: withDarks);
+
+        Assert.True(vm.CanStart, vm.Blocker);
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.All(seen, s => Assert.Equal(new[] { "dark_01.NEF", "dark_02.NEF" }, s.Darks));
+        Assert.All(seen, s => Assert.Equal(3, s.Biases.Length));
+    }
+
+    /// <summary>A required folder the original lacks blocks the button, as on the problem card - not a failure on part 1.</summary>
+    [Fact]
+    public void R091_ARequiredFolderMissingFromTheSessionBlocksTheButton()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        string withDarks = SirilInstallTests.WithoutDark.Replace("cd biases\n", "cd darks\nconvert dark -out=../process\ncd ..\ncd biases\n");
+        var vm = Vm(f, ws, FakeSiril(new List<Seen>()), scriptText: withDarks);
+
+        Assert.False(vm.CanStart);
+        Assert.Contains("darks/", vm.Blocker);
+    }
+
+    /// <summary>A raw copied from a card is often read-only; the copy must still be deletable at the end.</summary>
+    [Fact]
+    public async Task R092_ReadOnlySourcesDoNotKeepTheTempFolder()
+    {
+        using var f = Session(flats: 4);
+        foreach (string p in Directory.EnumerateFiles(Path.Combine(f.Root, "biases")))
+            File.SetAttributes(p, FileAttributes.ReadOnly);
+        using var ws = new TempWorkspace();
+        var vm = Vm(f, ws, FakeSiril(new List<Seen>()));
+
+        try
+        {
+            await vm.StartAsync();
+
+            Assert.True(vm.HasResult, vm.ErrorText);
+            Assert.Equal("", vm.TempNote);
+            Assert.False(Directory.Exists(Path.Combine(ws.Dir, "temp")));
+        }
+        finally
+        {
+            foreach (string p in Directory.EnumerateFiles(Path.Combine(f.Root, "biases")))
+                File.SetAttributes(p, FileAttributes.Normal);
+        }
+    }
+
+    /// <summary>flats/ can change between opening the folder and pressing the button: the count is re-read then.</summary>
+    [Fact]
+    public async Task R092_FramesAddedAfterOpeningAreCountedWhenTheButtonIsPressed()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var seen = new List<Seen>();
+        var vm = Vm(f, ws, FakeSiril(seen));
+        vm.SelectParts(4);
+        Assert.True(vm.CanStart);
+        File.WriteAllText(Path.Combine(f.FlatsDir, "DSC_0005.NEF"), "x");
+
+        await vm.StartAsync();
+
+        Assert.Empty(seen);                              // nothing was copied or run
+        Assert.Equal(5, vm.FrameCount);
+        Assert.False(vm.CanStart);
+        Assert.Contains("5", vm.Blocker);
+        Assert.False(vm.HasError);
+    }
+
+    /// <summary>Choosing another folder mid-split kills Siril and deletes the temp folder, like Opreste.</summary>
+    [Fact]
+    public async Task R092_OpeningAnotherFolderMidSplitStopsItAndDeletesTheTemp()
+    {
+        using var f = Session(flats: 4);
+        using var other = new SessionFixture().WithFlatMaster();
+        using var ws = new TempWorkspace();
+        var started = new TaskCompletionSource();
+        SirilRunner blocking = async (onLine, ct) =>
+        {
+            started.TrySetResult();
+            await Task.Delay(Timeout.Infinite, ct);
+            return 1;
+        };
+        var vm = new MainViewModel(() => FakeInstall(ws), () => false, runScript: (_, _) => blocking,
+                                   splitTempRootFor: _ => Path.Combine(ws.Dir, "temp"));
+        await vm.OpenAsync(f.Root);
+        vm.Split.Start.Execute(null);
+        await started.Task;
+        Assert.True(vm.Split.IsRunning);
+
+        await vm.OpenAsync(other.Root);
+        await vm.Split.Pending;
+
+        Assert.False(vm.Split.IsRunning);
+        Assert.False(vm.Split.HasError);
+        Assert.False(Directory.Exists(Path.Combine(ws.Dir, "temp")));
+        Assert.Equal(0, vm.Split.FrameCount);            // the other folder has no flats/
     }
 
     // ------------------------------------------------------------------ R-093
@@ -343,7 +454,7 @@ public class SplitTabTests
         Assert.Contains("2026-09-28 10:31", vm.Report);
         byte[] png = File.ReadAllBytes(f.Session.SplitPngPath);
         int width = (png[16] << 24) | (png[17] << 16) | (png[18] << 8) | png[19];   // IHDR, big-endian
-        Assert.True(width > 3 * 32, $"latimea mozaicului: {width}");                 // three tiles side by side
+        Assert.Equal(3 * vm.Maps[0].Raster.W + 2 * PngWriter.MosaicGap, width);      // three tiles side by side
     }
 
     [Fact]
@@ -355,11 +466,13 @@ public class SplitTabTests
         var vm = Vm(f, ws, FakeSiril(seen));
         await vm.StartAsync();
         byte[] before = vm.Maps[0].Png;
+        Assert.Equal(RunReport.MapLegend(PngWriter.FixedRange(PngWriter.DefaultCapPct)), vm.MapLegend);
 
-        vm.MapScale.Options[0].IsSelected = true;        // auto
+        vm.MapScale.Options[0].IsSelected = true;        // auto: the file's shared range, not each map's own
 
         Assert.Equal(2, seen.Count);
         Assert.NotEqual(before, vm.Maps[0].Png);
-        Assert.Contains("albastru", vm.MapLegend);
+        Assert.NotEqual(RunReport.MapLegend(PngWriter.FixedRange(PngWriter.DefaultCapPct)), vm.MapLegend);
+        Assert.NotEqual(RunReport.MapLegend(PngWriter.AutoRange(vm.Maps[0].Raster)), vm.MapLegend);
     }
 }

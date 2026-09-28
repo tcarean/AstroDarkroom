@@ -306,7 +306,15 @@ namespace FlatCheck.Wpf
             SirilSession session = _session;
             int parts = Parts;
             DateTime when = _clock();
-            var plan = new SplitPlan(session, parts, _tempRootFor(when));
+            var plan = new SplitPlan(session, parts, _tempRootFor(when), Script.RequiredFolders);
+            // flats/ se poate schimba intre deschidere si apasare: numarul de la deschidere
+            // a trecut de verificare, dar planul se face pe ce e pe disc acum.
+            if (plan.Frames.Count != FrameCount)
+            {
+                FrameCount = plan.Frames.Count;
+                Refresh();
+                if (!CanStart) return;
+            }
             string script = Script.SelectedPath;
             string scriptName = Script.SelectedName;
             Func<Task> waitIdle = _waitIdle;
@@ -433,6 +441,9 @@ namespace FlatCheck.Wpf
                 var (from, to) = list[k];
                 Directory.CreateDirectory(Path.GetDirectoryName(to));
                 File.Copy(from, to, overwrite: true);
+                // un raw de pe card e adesea read-only, si File.Copy pastreaza atributul;
+                // copia e a noastra si trebuie sa se poata sterge la sfarsit.
+                File.SetAttributes(to, FileAttributes.Normal);
                 progress.Report((k + 1.0) / list.Count);
             }
         }

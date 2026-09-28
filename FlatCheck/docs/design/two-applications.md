@@ -184,7 +184,15 @@ kept only after a failure). Mechanics the ADR does not spell out:
 - The script's `RunAsync` cancels only through its own token, so the tab registers
   `Run.Cancel()` on its linked token: `Opreste`, a folder change and the window closing all
   kill Siril the same way, and the temp folder is deleted in the `finally` unless a failure
-  said to keep it.
+  said to keep it. The window closing is the one that needs care: `MainWindow.OnClosing`
+  asks, stops the split and closes itself only after `Split.Pending` completed, because the
+  `finally` is a dispatcher continuation and a dispatcher that is shutting down never runs
+  it (the review of 2026-09-28 found 17 GB would stay behind).
+- What is copied is what the script enters (`SirilScript.RequiredFolders`, exposed by
+  `ScriptChoiceViewModel.RequiredFolders`): every such folder whole, except `lights/` (at
+  most `SplitPlan.MaxLights` frames) and `flats/` (the part's slice). The frame count is
+  re-read when the button is pressed, and every copy loses the read-only attribute a raw
+  from a card carries, so `Delete()` can remove it.
 - On screen "auto" is the file's shared range, not each map's own, so the chips never show a
   picture the file could not; the fixed caps behave as on every other tab. The maps are
   re-encoded per (map, cap) and cached, the Structure tab's rule.

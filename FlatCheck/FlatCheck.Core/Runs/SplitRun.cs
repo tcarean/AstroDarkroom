@@ -44,6 +44,14 @@ namespace FlatCheck
         internal readonly StructureOutcome Outcome;
         /// <summary>Adancimea acestui master fata de profilul de referinta; null fara referinta.</summary>
         internal readonly ProfileDepth Reference;
+        /// <summary>
+        /// Verdictul coloanei: cel mai rau dintre cele cinci teste si adancimea fata de
+        /// PROFILUL DE REFERINTA - nu verdictul rularii (Outcome.Verdict), care ia adancimea
+        /// fata de profilul cel mai apropiat al coloanei insesi; in tabel randul de mai sus e
+        /// fata de referinta, si cele doua randuri trebuie sa vorbeasca despre acelasi profil.
+        /// Fara referinta, verdictul celor cinci teste.
+        /// </summary>
+        internal readonly string Verdict;
 
         internal SplitColumn(string path, string label, StructureOutcome outcome, ProfileDepth reference)
         {
@@ -51,6 +59,8 @@ namespace FlatCheck
             Label = label;
             Outcome = outcome;
             Reference = reference;
+            Verdict = reference != null && Stats.Severity(reference.Verdict) > Stats.Severity(outcome.Structure.Verdict)
+                ? reference.Verdict : outcome.Structure.Verdict;
         }
     }
 

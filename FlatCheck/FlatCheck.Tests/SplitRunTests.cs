@@ -42,13 +42,17 @@ public class SplitRunTests
         LensMaxAperture = 2.8,
     };
 
-    /// <summary>The whole at k = 0.45 and two parts either side of it; the query is the fixture profiles with a fabricated raw.</summary>
+    /// <summary>
+    /// The whole at k = 0.45 and two parts either side of it, with the fixture profiles on two formats and a
+    /// fabricated raw: the whole's nearest is the full-frame lensfun entry (0.905 stops), the deeper part's own
+    /// nearest is the Adobe one (1.248), so the reference rule has something to pin.
+    /// </summary>
     static (string Whole, string[] Parts, StructureQuery? Query) Fixture(TempWorkspace ws, bool withRaw = true)
     {
         string whole = WriteFlat(ws, "intreg.fit", 0.45);
-        string[] parts = { WriteFlat(ws, "parte-1.fit", 0.40), WriteFlat(ws, "parte-2.fit", 0.50) };
+        string[] parts = { WriteFlat(ws, "parte-1.fit", 0.30), WriteFlat(ws, "parte-2.fit", 0.60) };
         StructureQuery? query = withRaw
-            ? new StructureQuery { Sources = LensProfileTestData.Sources(ws), RawPath = "DSC_0001.NEF", LoadInfo = _ => RawFrame() }
+            ? new StructureQuery { Sources = LensProfileTestData.Sources(ws, tokinaOnTwoFormats: true), RawPath = "DSC_0001.NEF", LoadInfo = _ => RawFrame() }
             : null;
         return (whole, parts, query);
     }
@@ -67,8 +71,10 @@ public class SplitRunTests
         Assert.Equal(new[] { "partea 1 din 2", "partea 2 din 2", "intreg" }, r.Columns.Select(c => c.Label));
         Assert.Equal(4, SplitReport.Headers(r).Count);
 
-        // the reference is the whole's nearest profile, and every column is measured against that same one
+        // the reference is the whole's nearest profile, and every column is measured against that same one -
+        // which only means something when a part's own nearest is a different profile (ADR 0054's measurement)
         Assert.Same(r.Whole.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile);
+        Assert.Contains(r.Parts, p => !ReferenceEquals(p.Outcome.Profiles.Nearest.Profile, r.ReferenceProfile));
         Assert.All(r.Columns, c => Assert.Equal(r.ReferenceProfile.File, c.Reference.Profile.File));
         Assert.All(r.Columns, c => Assert.Equal(c.Outcome.Structure.VignetteStops - c.Reference.CornerStops, c.Reference.DiffStops, 9));
     }
@@ -99,7 +105,17 @@ public class SplitRunTests
         Assert.All(diff.Cells.Take(3), cell => Assert.Contains(cell.Verdict, Stats.ResidualBands));
         SplitRow verdict = rows[7];
         Assert.Equal("Verdict", verdict.Key);
-        Assert.Equal(r.Columns.Select(c => c.Outcome.Verdict), verdict.Cells.Take(3).Select(c => c.Verdict));
+        Assert.Equal(r.Columns.Select(c => c.Verdict), verdict.Cells.Take(3).Select(c => c.Verdict));
+
+        // the column verdict is the worse of shape and the depth AGAINST THE REFERENCE - the row above it -
+        // not the run's own verdict, whose depth is against the column's own nearest profile
+        foreach (SplitColumn c in r.Columns)
+        {
+            string worse = Stats.Severity(c.Reference.Verdict) > Stats.Severity(c.Outcome.Structure.Verdict)
+                ? c.Reference.Verdict : c.Outcome.Structure.Verdict;
+            Assert.Equal(worse, c.Verdict);
+        }
+        Assert.Contains(r.Columns, c => c.Verdict != c.Outcome.Verdict);
     }
 
     [Fact]
@@ -116,7 +132,7 @@ public class SplitRunTests
         Assert.Equal(7, rows.Count);
         Assert.DoesNotContain(rows, row => row.Key == "DiffStops");
         Assert.All(rows, row => Assert.Equal(3, row.Cells.Count));
-        Assert.All(r.Columns, c => Assert.Equal(c.Outcome.Structure.Verdict, c.Outcome.Verdict));
+        Assert.All(r.Columns, c => Assert.Equal(c.Outcome.Structure.Verdict, c.Verdict));
     }
 
     [Fact]

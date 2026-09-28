@@ -22,8 +22,8 @@
 // Coloanele: partile in ordine, intregul, si - cand intregul s-a putut compara - profilul
 // de referinta, cu adancimea lui pe randul de vignetare si liniute in rest: un profil
 // n-are forma de testat. Fiecare celula de test poarta verdictul ei; ultimul rand e
-// verdictul rularii fiecarei coloane, cel mai rau dintre forma si adancime, ca pe tabul
-// Structura.
+// verdictul fiecarei coloane, cel mai rau dintre forma si adancimea fata de profilul de
+// referinta (SplitColumn.Verdict) - acelasi profil ca randul de deasupra lui.
 
 using System;
 using System.Collections.Generic;
@@ -103,7 +103,7 @@ namespace FlatCheck
                 rows.Add(new SplitRow("DiffStops", "diferenta fata de profil", diff, RowNote("DiffStops"), false));
             }
 
-            var verdict = columns.Select(c => new SplitCell(c.Outcome.Verdict, c.Outcome.Verdict)).ToList();
+            var verdict = columns.Select(c => new SplitCell(c.Verdict, c.Verdict)).ToList();
             if (r.HasReference) verdict.Add(new SplitCell(Dash, null));
             rows.Add(new SplitRow("Verdict", "verdict", verdict, RowNote("Verdict"), false));
 
@@ -119,7 +119,7 @@ namespace FlatCheck
             "MaxTilePct" => "dala cea mai abatuta; pe o parte cu putine cadre, zgomotul singur o ridica",
             "VignetteStops" => "adancimea fiecarui master; in coloana profilului, adancimea modelului obiectivului la aceleasi setari",
             "DiffStops" => "cat cade fiecare master fata de profilul de referinta (pozitiv = mai mult spre colt), ca eroare in coltul unui light calibrat cu el",
-            "Verdict" => "verdictul rularii fiecarei coloane: cel mai rau dintre cele cinci teste si adancime, ca pe tabul Structura",
+            "Verdict" => "cel mai rau dintre cele cinci teste si adancimea fata de profilul de referinta (randul de mai sus), pe fiecare coloana",
             _ => "",
         };
 

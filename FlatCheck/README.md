@@ -1298,9 +1298,10 @@ aceeași comparație separat, pentru un fișier sintetic scris altă dată. Fiș
 cadre din `flats/` trebuie să se împartă exact, altfel butonul spune de ce nu), alegi
 scriptul Siril din aceeași listă ca pe cardul de problemă (`OSC_Preprocessing_WithoutDark.ssf`
 propus) și apeși „Start Split". Pentru fiecare parte se construiește o sesiune temporară în
-`%TEMP%\FlatCheck\split-<data-ora>\parte-<i>\`: tot `biases/`, **cel mult două** fișiere din
-`lights/` (primele după nume — atât cât să meargă scriptul până la capăt; lights-urile nu
-contează pentru masterul de flat) și felia ei de `flats/`, blocuri consecutive în ordinea
+`%TEMP%\FlatCheck\split-<data-ora>\parte-<i>\`: fiecare folder în care intră scriptul
+(`biases/`, `darks/`) întreg, **cel mult două** cadre din `lights/` (primele după nume — atât
+cât să meargă scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și
+felia ei de `flats/`, blocuri consecutive în ordinea
 numelor de fișier (un `readme.txt` din `flats/` nu e cadru). Scriptul rulează în fiecare, una
 după alta, cu faza, o bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
 apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
@@ -1309,8 +1310,9 @@ Structura, cu raw-ul din `flats/` pentru profil.
 Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profilul de
 referință**: cele cinci teste, fiecare celulă cu valoarea și verdictul ei; vignetarea în
 stopuri (în coloana profilului, adâncimea modelului); diferența față de profil, cu
-verdictul adâncimii; și pe ultimul rând verdictul rulării fiecărei coloane, cel mai rău
-dintre formă și adâncime. Profilul de referință e **cel mai apropiat profil al întregului,
+verdictul adâncimii; și pe ultimul rând verdictul fiecărei coloane, cel mai rău dintre
+formă și adâncimea față de profilul de referință (nu față de profilul propriu al coloanei,
+ca ultimele două rânduri să vorbească despre același profil). Profilul de referință e **cel mai apropiat profil al întregului,
 același pe toate coloanele** — „cel mai apropiat" se alege pe fiecare master în parte, iar pe
 prima sesiune reală partea 1 și întregul aleseseră profile diferite; un tabel cu altă
 referință pe coloană n-ar compara nimic. Sub tabel, hărțile reziduale una lângă alta, pe
@@ -1322,8 +1324,10 @@ de titlu, desenate cu un font bitmap propriu, fără vreo dependență.
 
 Sesiunea originală e **doar citită**: nimic din ea nu se mută sau se șterge; se scriu doar
 cele două fișiere de mai sus, suprascrise fără întrebare, ca `Rezultat testare.txt`.
-Folderul temporar se șterge după analiză și la „Oprește"; după un eșec (Siril iese cu cod
-nenul, sau scriptul nu lasă master) rămâne, cu calea pe ecran, ca să vezi de ce. Masterele
+Folderul temporar se șterge după analiză și la „Oprește" (și când alegi alt folder, sau
+închizi fereastra în timpul rulării — te întreabă, oprește Siril, șterge, apoi se închide);
+după un eșec (Siril iese cu cod nenul, sau scriptul nu lasă master) rămâne, cu calea pe
+ecran, ca să vezi de ce. Masterele
 părților nu se păstrează: masterul întreg e cel bun, iar raportul ține toate cifrele lor.
 Costul, măsurat pe 2026-09-28 pe o sesiune de 40 de flats în 4 părți: ~3 GB copiate, ~17 GB
 de `process/` temporar și ~3 minute de Siril; folderul temporar e pe discul lui `%TEMP%`.

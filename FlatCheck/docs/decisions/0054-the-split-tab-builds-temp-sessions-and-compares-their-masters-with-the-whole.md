@@ -21,8 +21,9 @@ hold a hundred. The PNG writer is hand-rolled (ADR 0008) and draws no text.
 
 The window gets a `Split` tab (R-091 to R-093). It divides the flat frames (raw or FITS files
 of `flats/`, ordinal name order, consecutive blocks) into 2 or 4 temp sessions under
-`%TEMP%\FlatCheck\split-<date-time>\parte-<i>\`, each with every file of `biases/`, at most the
-first 2 files of `lights/` by name, and its share of the flats; runs the chosen script (the
+`%TEMP%\FlatCheck\split-<date-time>\parte-<i>\`, each with every file of each folder the
+script enters other than `flats/` and `lights/` (`biases/`, `darks/`), at most the first 2
+frames of `lights/` by name, and its share of the flats; runs the chosen script (the
 problem card's list, `OSC_Preprocessing_WithoutDark.ssf` preselected) in each, one after another,
 through the same `SirilScriptRun` and `SirilRunViewModel` as the problem card; then compares the
 part masters with the whole session's master in the core (`SplitRun`, one `StructureRun.Analyze`
@@ -36,8 +37,11 @@ re-opens them:
   "Nearest" is chosen per master and differed between part 1 and the whole on the first real
   run; a table with a different reference per column compares nothing. The profile gets a column
   of its own with its depth, so the comparison is visible, not implied.
-- **Every value in the table carries its verdict**, and the last row is each column's run
-  verdict (the worse of shape and depth, as on the Structure tab).
+- **Every value in the table carries its verdict**, and the last row is each column's
+  verdict: the worse of its five tests and its depth against the reference profile. The
+  review of 2026-09-28 found the first cut used the run verdict, whose depth part is against
+  the column's own nearest profile: a part could read `BUN` under a `REFA` cell against the
+  reference. One profile for both rows, in `SplitColumn.Verdict`.
 - **The mosaic is labelled with a built-in 5x7 bitmap font** (`BitmapFont`: digits, `A`-`Z`,
   a few signs), no package (rule 5). The title row carries the version, the date and time of the
   run and the ends of the colour scale; the report file carries the banner and the same date.
@@ -60,6 +64,10 @@ re-opens them:
 - **Copying `lights/` whole.** Asked for at first; dropped for the cost above once measured.
 - **A trimmed script that stops after the flat master.** ADR 0035 runs the user's own script
   unchanged; two lights make the whole script succeed.
+- **A fixed copy list (`biases/`, `lights/`, `flats/`).** The first cut; the review found
+  `OSC_Preprocessing.ssf` `cd darks`, which the pre-check would pass on the original and
+  Siril would fail on part 1 after copying gigabytes. What is copied is what the script
+  enters.
 - **A mosaic without labels, order stated in the report.** A PNG opened alone would not say
   which map is which; the font is 80 lines of glyphs.
 - **Each map on its own automatic scale in the file.** Full red would mean 8 % on one tile and

@@ -224,8 +224,8 @@ a library extraction and not a copy is ADR 0011.
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
     `SmoothRun`, `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
     series run covers). `StructureRun.Analyze` is the first half of `Execute` (load, analyze,
-    compare, no text, no map); `SplitRun` calls it once per master - the parts, then the
-    whole - picks the whole's nearest profile as the reference for every column, computes
+    compare, no text, no map); `SplitRun` calls it once per master - the whole, then the
+    parts - picks the whole's nearest profile as the reference for every column, computes
     one automatic colour range over all the residuals, and returns `SplitResult` with the
     mosaic as its `Png` (ADR 0054). `StructureRun.Execute` takes an optional `StructureQuery` (profile
     sources, a raw beside the master, or `--lens` text, plus the overrides) and returns a

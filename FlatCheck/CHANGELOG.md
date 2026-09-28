@@ -9,10 +9,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Added
 
 - The window's `Split` tab (R-091 to R-093, ADR 0054): divides the flats of a session into 2
-  or 4 consecutive groups, builds a temp session per group (every bias, at most 2 lights, the
-  group's flats), runs the chosen Siril script in each, and compares the part masters with the
-  whole session's master: the five tests with a verdict per cell, the vignetting depth, the
-  difference from one reference profile (the whole's nearest), and the run verdict per column.
+  or 4 consecutive groups, builds a temp session per group (every folder the script enters,
+  at most 2 lights, the group's flats), runs the chosen Siril script in each, and compares the
+  part masters with the whole session's master: the five tests with a verdict per cell, the
+  vignetting depth, the difference from one reference profile (the whole's nearest), and a
+  verdict per column, the worse of shape and depth against that reference.
   Saves `Rezultat split.txt` and `flatcheck-split.png` (the residual maps side by side on one
   scale, labelled with a built-in bitmap font, version and date in the title) in the session
   root; the original session is only read. Version 2.3.0 at the owner's request.
