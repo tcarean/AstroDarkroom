@@ -88,8 +88,9 @@ public class SplitRunTests
         SplitResult r = SplitRun.Execute(whole, parts, query, When, 10, new StringWriter()).Result;
         var rows = SplitReport.Rows(r);
 
-        // five tests, the depth, the difference from the profile, the verdict
-        Assert.Equal(8, rows.Count);
+        // five tests, the depth, one row per profile of the whole's comparison (as on the Structure tab), the verdict
+        Assert.True(r.Profiles.Count >= 2, "the fixture must offer more than one profile");
+        Assert.Equal(6 + r.Profiles.Count + 1, rows.Count);
         Assert.Equal(StructureReport.TestKeys, rows.Take(5).Select(x => x.Key));
         Assert.All(rows, row => Assert.Equal(4, row.Cells.Count));
         foreach (SplitRow test in rows.Take(5))
@@ -99,11 +100,24 @@ public class SplitRunTests
         }
         SplitRow depth = rows[5];
         Assert.Equal("VignetteStops", depth.Key);
-        Assert.Contains("stopuri", depth.Cells[3].Value);         // the profile's own depth
-        SplitRow diff = rows[6];
-        Assert.Equal("DiffStops", diff.Key);
-        Assert.All(diff.Cells.Take(3), cell => Assert.Contains(cell.Verdict, Stats.ResidualBands));
-        SplitRow verdict = rows[7];
+        Assert.Equal(SplitReport.Dash, depth.Cells[3].Value);
+
+        var diffs = rows.Where(x => x.Key == SplitReport.DiffKey).ToList();
+        Assert.Equal(r.Profiles.Count, diffs.Count);
+        Assert.Equal(r.Profiles.Select(p => SplitReport.ProfileLabel(p.Profile)), diffs.Select(d => d.Label));
+        foreach (SplitRow diff in diffs)
+        {
+            Assert.All(diff.Cells.Take(3), cell => Assert.Contains(cell.Verdict, Stats.ResidualBands));
+            Assert.Contains("stopuri", diff.Cells[3].Value);     // that profile's own depth
+            Assert.Null(diff.Cells[3].Verdict);
+        }
+        SplitRow reference = Assert.Single(diffs, d => d.IsReference);
+        Assert.Equal(SplitReport.ProfileLabel(r.ReferenceProfile), reference.Label);
+        Assert.Contains("REFERINTA", reference.Note);
+        Assert.Equal(r.ReferenceDepth.Verdict, reference.Cells[2].Verdict);   // the whole against the reference
+        Assert.Equal(r.Whole.Reference.Verdict, reference.Cells[2].Verdict);
+
+        SplitRow verdict = rows[^1];
         Assert.Equal("Verdict", verdict.Key);
         Assert.Equal(r.Columns.Select(c => c.Verdict), verdict.Cells.Take(3).Select(c => c.Verdict));
 
@@ -130,7 +144,8 @@ public class SplitRunTests
         Assert.False(r.HasReference);
         Assert.Equal(3, SplitReport.Headers(r).Count);
         Assert.Equal(7, rows.Count);
-        Assert.DoesNotContain(rows, row => row.Key == "DiffStops");
+        Assert.Empty(r.Profiles);
+        Assert.DoesNotContain(rows, row => row.Key == SplitReport.DiffKey);
         Assert.All(rows, row => Assert.Equal(3, row.Cells.Count));
         Assert.All(r.Columns, c => Assert.Equal(c.Outcome.Structure.Verdict, c.Verdict));
     }
@@ -209,6 +224,36 @@ public class SplitRunTests
         Assert.All(title, c => Assert.True(BitmapFont.Has(c), $"'{c}' has no glyph"));
         Assert.All(SplitReport.PngLabel(3, 4), c => Assert.True(BitmapFont.Has(c)));
         Assert.All(SplitReport.PngLabelWhole, c => Assert.True(BitmapFont.Has(c)));
+    }
+
+    /// <summary>
+    /// The disk estimate shown before a split: the copies exact, Siril's process/ from a bytes-per-pixel
+    /// model measured on 2026-09-28 (a 30-bias, 10-flat, 2-light quarter of a 24.2 Mpx session wrote 4148 MiB).
+    /// </summary>
+    [Fact]
+    public void R091_SplitCost_EstimatesSirilsProcessFolderWithinTenPercentOfTheMeasuredQuarter()
+    {
+        const long pixels = 6016L * 4016;
+        const long measuredQuarter = 4148L * 1024 * 1024;
+
+        SplitCostEstimate one = SplitCost.Estimate(pixels, 1, wholeFrames: 30, wholeFolders: 1, flatsPerPart: 10, lightsPerPart: 2, copiedBytes: 673_000_000);
+        SplitCostEstimate four = SplitCost.Estimate(pixels, 4, wholeFrames: 30, wholeFolders: 1, flatsPerPart: 10, lightsPerPart: 2, copiedBytes: 4 * 673_000_000L);
+
+        Assert.Equal(673_000_000, one.CopiedBytes);
+        Assert.InRange(one.ProcessBytes, measuredQuarter * 0.9, measuredQuarter * 1.1);
+        Assert.Equal(4 * one.ProcessBytes, four.ProcessBytes);
+        Assert.Equal(one.CopiedBytes + one.ProcessBytes, one.TotalBytes);
+
+        // no sensor size: the copies are still exact, process/ is unknown, and the line says so
+        SplitCostEstimate unknown = SplitCost.Estimate(0, 4, 30, 1, 10, 2, 100_000_000);
+        Assert.Equal(0, unknown.ProcessBytes);
+        Assert.Contains("nu se stie", SplitReport.CostLine(unknown, null));
+
+        string line = SplitReport.CostLine(four, 187_000_000_000);
+        Assert.Contains("2.7 GB copiate", line);
+        Assert.Contains("GB scrise de Siril", line);
+        Assert.Contains("187.0 GB", line);
+        Assert.DoesNotContain("minut", line);                // the time is not estimated (owner's decision)
     }
 
     [Fact]

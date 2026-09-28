@@ -72,6 +72,8 @@ namespace FlatCheck
         internal readonly LensProfile ReferenceProfile;
         /// <summary>Adancimea profilului de referinta, masurata cu operatorul masterului; null fara referinta.</summary>
         internal readonly ProfileDepth ReferenceDepth;
+        /// <summary>Toate profilele cu care s-a comparat intregul, in ordinea tabului Structura; gol fara comparatie.</summary>
+        internal readonly IReadOnlyList<ProfileDepth> Profiles;
         internal readonly int FramesPerPart;
         internal readonly DateTime When;
         /// <summary>Scara comuna a mozaicului: cea automata peste toate hartile deodata.</summary>
@@ -84,6 +86,7 @@ namespace FlatCheck
             Whole = whole;
             ReferenceProfile = referenceProfile;
             ReferenceDepth = referenceDepth;
+            Profiles = whole.Outcome.Compared ? whole.Outcome.Profiles.Profiles : Array.Empty<ProfileDepth>();
             FramesPerPart = framesPerPart;
             When = when;
             MapRange = mapRange;
@@ -137,12 +140,12 @@ namespace FlatCheck
                                    SharedRange(columns.Append(wholeColumn)));
         }
 
-        /// <summary>Adancimea unei parti fata de profilul de referinta: randul aceluiasi obiectiv din comparatia ei.</summary>
-        static ProfileDepth Against(StructureOutcome o, LensProfile reference)
+        /// <summary>Adancimea unui master fata de un profil dat: randul aceluiasi obiectiv din comparatia lui; null cand nu e.</summary>
+        internal static ProfileDepth Against(StructureOutcome o, LensProfile profile)
         {
-            if (reference == null || o.Profiles == null) return null;
-            return o.Profiles.Profiles.FirstOrDefault(d => d.Profile.Lens.Key == reference.Lens.Key && d.Profile.File == reference.File)
-                ?? o.Profiles.Profiles.FirstOrDefault(d => d.Profile.Lens.Key == reference.Lens.Key);
+            if (profile == null || o.Profiles == null) return null;
+            return o.Profiles.Profiles.FirstOrDefault(d => d.Profile.Lens.Key == profile.Lens.Key && d.Profile.File == profile.File)
+                ?? o.Profiles.Profiles.FirstOrDefault(d => d.Profile.Lens.Key == profile.Lens.Key);
         }
 
         /// <summary>Scara automata (percentilele 1/99 plus padding, R-006) peste toate reziduurile deodata.</summary>

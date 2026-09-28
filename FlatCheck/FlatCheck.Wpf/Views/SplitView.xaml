@@ -35,18 +35,26 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
              xmlns:local="clr-namespace:FlatCheck.Wpf">
 
   <UserControl.Resources>
+    <!-- o celula: valoarea si, pe acelasi rand, pastila verdictului; latime fixa, ca
+         celulele unui rand sa cada sub antetele lor -->
     <DataTemplate x:Key="SplitCellTemplate">
-      <StackPanel Width="164" Margin="0,0,6,0">
-        <TextBlock Style="{StaticResource Number}" Text="{Binding Value}" TextTrimming="CharacterEllipsis" />
-        <ContentControl Margin="0,3,0,0" HorizontalAlignment="Left"
+      <Grid Width="230" Margin="0,0,6,0" VerticalAlignment="Center">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" Style="{StaticResource Number}" Text="{Binding Value}"
+                   TextAlignment="Left" HorizontalAlignment="Left"
+                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <ContentControl Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center"
                         Content="{Binding Verdict}"
                         ContentTemplate="{StaticResource VerdictChip}"
                         Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
-      </StackPanel>
+      </Grid>
     </DataTemplate>
 
     <DataTemplate x:Key="SplitHeaderTemplate">
-      <TextBlock Width="164" Margin="0,0,6,0" Style="{StaticResource Faint}" FontWeight="SemiBold"
+      <TextBlock Width="230" Margin="0,0,6,0" Style="{StaticResource Faint}" FontWeight="SemiBold"
                  Text="{Binding}" TextTrimming="CharacterEllipsis" />
     </DataTemplate>
 
@@ -54,7 +62,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="0,8,0,8">
         <StackPanel>
           <StackPanel Orientation="Horizontal">
-            <TextBlock Width="190" Text="{Binding Label}" VerticalAlignment="Top" TextWrapping="Wrap" />
+            <TextBlock Width="190" Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,6,0">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsReference}" Value="True">
+                      <Setter Property="FontWeight" Value="SemiBold" />
+                      <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
             <ItemsControl ItemsSource="{Binding Cells}" ItemTemplate="{StaticResource SplitCellTemplate}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -93,12 +112,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel>
 
       <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding Intro}" />
-      <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding Cost}" />
 
       <!-- ================================================== alegerea -->
       <Border Style="{StaticResource Card}" Margin="0,14,0,0" IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}">
         <StackPanel>
           <TextBlock Text="{Binding FramesLine}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding EstimateLine}"
+                     Visibility="{Binding EstimateLine, Converter={StaticResource NotNullToVis}}" />
 
           <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
             <TextBlock Style="{StaticResource Faint}" Text="parti:" Margin="0,0,10,0" VerticalAlignment="Center" />
@@ -194,7 +214,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,0,0,8">
               <Run Text="profil de referinta: " /><Run Text="{Binding ReferenceLine, Mode=OneWay}" />
             </TextBlock>
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <!-- doar orizontal; rotita merge mai departe la pagina, altfel tabelul o inghite
+                 si pagina nu se mai deruleaza cu mausul peste el -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                          PreviewMouseWheel="ForwardWheel">
               <StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Width="190" Style="{StaticResource Faint}" Text="" />

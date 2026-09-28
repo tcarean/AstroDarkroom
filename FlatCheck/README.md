@@ -1307,12 +1307,14 @@ după alta, cu faza, o bară pe tot fluxul, log-ul lui Siril și butonul „Opre
 apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
 Structura, cu raw-ul din `flats/` pentru profil.
 
-Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profilul de
-referință**: cele cinci teste, fiecare celulă cu valoarea și verdictul ei; vignetarea în
-stopuri (în coloana profilului, adâncimea modelului); diferența față de profil, cu
-verdictul adâncimii; și pe ultimul rând verdictul fiecărei coloane, cel mai rău dintre
-formă și adâncimea față de profilul de referință (nu față de profilul propriu al coloanei,
-ca ultimele două rânduri să vorbească despre același profil). Profilul de referință e **cel mai apropiat profil al întregului,
+Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profil**:
+cele cinci teste, fiecare celulă cu valoarea și pastila verdictului lângă ea; vignetarea
+în stopuri; **câte un rând pe profil** — toate profilele pe care le arată și tabul
+Structura, Adobe și lensfun — cu diferența fiecărei coloane față de el și verdictul ei, și
+în coloana profilului adâncimea lui; rândul profilului de referință e marcat; și pe ultimul
+rând verdictul fiecărei coloane, cel mai rău dintre formă și adâncimea față de profilul de
+referință (nu față de profilul propriu al coloanei, ca rândurile să vorbească despre același
+profil). Profilul de referință e **cel mai apropiat profil al întregului,
 același pe toate coloanele** — „cel mai apropiat" se alege pe fiecare master în parte, iar pe
 prima sesiune reală partea 1 și întregul aleseseră profile diferite; un tabel cu altă
 referință pe coloană n-ar compara nimic. Sub tabel, hărțile reziduale una lângă alta, pe
@@ -1329,8 +1331,13 @@ Folderul temporar se șterge după analiză și la „Oprește" (și când alegi
 după un eșec (Siril iese cu cod nenul, sau scriptul nu lasă master) rămâne, cu calea pe
 ecran, ca să vezi de ce. Masterele
 părților nu se păstrează: masterul întreg e cel bun, iar raportul ține toate cifrele lor.
-Costul, măsurat pe 2026-09-28 pe o sesiune de 40 de flats în 4 părți: ~3 GB copiate, ~17 GB
-de `process/` temporar și ~3 minute de Siril; folderul temporar e pe discul lui `%TEMP%`.
+Sub numărul de cadre, tabul spune **cât loc pe disc** cere împărțirea aleasă: copiile
+exact, din mărimile fișierelor, și ce va scrie Siril în `process/`, estimat dintr-un model
+pe octeți per pixel măsurat pe 2026-09-28 (un cadru convertit 2 B/px, unul calibrat sau
+stivuit 4 B/px, un light calibrat sau înregistrat 12 B/px; pe un sfert de sesiune modelul
+dă 4.6 GB față de 4.35 GB măsurați), plus cât e liber pe discul lui `%TEMP%`. Timpul nu se
+estimează: depinde de Siril și de mașină. Ca ordin de mărime, 40 de flats în 4 părți au
+însemnat ~3 GB copiate, ~17 GB de `process/` temporar și ~3 minute de Siril.
 Ce e mare pe părți și mic pe întreg e ce a anulat rotația — la 180° partea impară
 (gradientul), la 90° și șaua; ce au părțile în comun cu întregul e fix pe aparat sau radial,
 și nicio rotație nu-l scoate. O parte are mai puține cadre, deci mai mult zgomot: cifrele

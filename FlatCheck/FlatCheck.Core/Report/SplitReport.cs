@@ -37,7 +37,7 @@ namespace FlatCheck
     internal sealed record SplitCell(string Value, string Verdict);
 
     /// <summary>Un rand al tabelului: cheia metricii, eticheta, o celula pe coloana, nota de sub rand.</summary>
-    internal sealed record SplitRow(string Key, string Label, IReadOnlyList<SplitCell> Cells, string Note, bool IsKey);
+    internal sealed record SplitRow(string Key, string Label, IReadOnlyList<SplitCell> Cells, string Note, bool IsKey, bool IsReference);
 
     internal static class SplitReport
     {
@@ -62,11 +62,24 @@ namespace FlatCheck
         internal static IReadOnlyList<string> Headers(SplitResult r)
         {
             var h = r.Columns.Select(c => c.Label).ToList();
-            if (r.HasReference) h.Add(ProfileHeader(r));
+            if (r.HasReference) h.Add(ProfileHeader);
             return h;
         }
 
-        internal static string ProfileHeader(SplitResult r) => $"profil {r.ReferenceProfile.Lens.SourceLabel}";
+        internal const string ProfileHeader = "profil";
+
+        /// <summary>Cat loc cere impartirea: copiile exact, process/ estimat, si cat e liber pe discul temporar cand se stie.</summary>
+        internal static string CostLine(SplitCostEstimate e, long? freeBytes)
+        {
+            string line = e.ProcessBytes > 0
+                ? $"Loc pe disc: {Gb(e.CopiedBytes)} copiate + ~{Gb(e.ProcessBytes)} scrise de Siril in process/ temporar = ~{Gb(e.TotalBytes)}"
+                : $"Loc pe disc: {Gb(e.CopiedBytes)} copiate, plus ce scrie Siril in process/ temporar (marimea senzorului nu se stie)";
+            if (freeBytes.HasValue) line += $"; liber pe discul temporar: {Gb(freeBytes.Value)}";
+            return line + ". Timpul depinde de Siril si de masina.";
+        }
+
+        internal static string Gb(long bytes)
+            => bytes >= 1_000_000_000 ? $"{bytes / 1e9:F1} GB" : $"{bytes / 1e6:F0} MB";
 
         /// <summary>Profilul de referinta, intreg: sursa, obiectiv, setarile profilului.</summary>
         internal static string ReferenceLine(SplitResult r)
@@ -87,28 +100,43 @@ namespace FlatCheck
                     return new SplitCell(Pct(v), verdict);
                 }).ToList();
                 if (r.HasReference) cells.Add(new SplitCell(Dash, null));
-                rows.Add(new SplitRow(key, StructureReport.TestLabel(key), cells, RowNote(key), key == "ResidualPtpPct"));
+                rows.Add(new SplitRow(key, StructureReport.TestLabel(key), cells, RowNote(key), key == "ResidualPtpPct", false));
             }
 
             var depth = columns.Select(c => new SplitCell(Stops(c.Outcome.Structure.VignetteStops), null)).ToList();
-            if (r.HasReference) depth.Add(new SplitCell(Stops(r.ReferenceDepth.CornerStops), null));
-            rows.Add(new SplitRow("VignetteStops", "vignetare centru -> colt", depth, RowNote("VignetteStops"), false));
+            if (r.HasReference) depth.Add(new SplitCell(Dash, null));
+            rows.Add(new SplitRow("VignetteStops", "vignetare centru -> colt", depth, RowNote("VignetteStops"), false, false));
 
-            if (r.HasReference)
+            // un rand pe profil, ca pe tabul Structura: diferenta fiecarei coloane fata de el, si in
+            // coloana profilului adancimea lui; cel de referinta (cel mai apropiat de intreg) e marcat
+            foreach (ProfileDepth p in r.Profiles)
             {
-                var diff = columns.Select(c => c.Reference == null
-                    ? new SplitCell(Dash, null)
-                    : new SplitCell($"{c.Reference.DiffStops:+0.00;-0.00} stopuri = {c.Reference.ErrorPct:F1} %", c.Reference.Verdict)).ToList();
-                diff.Add(new SplitCell(Dash, null));
-                rows.Add(new SplitRow("DiffStops", "diferenta fata de profil", diff, RowNote("DiffStops"), false));
+                bool isReference = ReferenceEquals(p, r.ReferenceDepth);
+                var diff = columns.Select(c =>
+                {
+                    ProfileDepth d = SplitRun.Against(c.Outcome, p.Profile);
+                    return d == null ? new SplitCell(Dash, null)
+                        : new SplitCell($"{d.DiffStops:+0.00;-0.00} stopuri = {d.ErrorPct:F1} %", d.Verdict);
+                }).ToList();
+                diff.Add(new SplitCell(Stops(p.CornerStops), null));
+                rows.Add(new SplitRow(DiffKey, ProfileLabel(p.Profile), diff, ProfileNote(p, isReference), false, isReference));
             }
 
             var verdict = columns.Select(c => new SplitCell(c.Verdict, c.Verdict)).ToList();
             if (r.HasReference) verdict.Add(new SplitCell(Dash, null));
-            rows.Add(new SplitRow("Verdict", "verdict", verdict, RowNote("Verdict"), false));
+            rows.Add(new SplitRow("Verdict", "verdict", verdict, RowNote("Verdict"), false, false));
 
             return rows;
         }
+
+        internal const string DiffKey = "DiffStops";
+
+        internal static string ProfileLabel(LensProfile p) => $"fata de {p.Lens.SourceLabel} {p.Lens.Title}";
+
+        internal static string ProfileNote(ProfileDepth p, bool isReference)
+            => $"profil {p.Profile.Settings} [{p.Profile.Lens.Where}]: "
+             + (isReference ? "cel mai apropiat de intreg - REFERINTA, da verdictul adancimii pe fiecare coloana. " : "")
+             + RowNote(DiffKey);
 
         internal static string RowNote(string key) => key switch
         {
@@ -117,8 +145,8 @@ namespace FlatCheck
             "ResidualPtpPct" => "cat NU se explica printr-un model radial; cel mai important. O parte are mai putine cadre, deci si mai mult zgomot",
             "TiltPct" => "gradientul liniar; la 180 de grade partile il au cu semne opuse si intregul nu-l mai are",
             "MaxTilePct" => "dala cea mai abatuta; pe o parte cu putine cadre, zgomotul singur o ridica",
-            "VignetteStops" => "adancimea fiecarui master; in coloana profilului, adancimea modelului obiectivului la aceleasi setari",
-            "DiffStops" => "cat cade fiecare master fata de profilul de referinta (pozitiv = mai mult spre colt), ca eroare in coltul unui light calibrat cu el",
+            "VignetteStops" => "adancimea fiecarui master, in stopuri",
+            "DiffStops" => "cat cade fiecare master fata de profil (pozitiv = mai mult spre colt), ca eroare in coltul unui light calibrat cu el; in coloana profilului, adancimea lui",
             "Verdict" => "cel mai rau dintre cele cinci teste si adancimea fata de profilul de referinta (randul de mai sus), pe fiecare coloana",
             _ => "",
         };

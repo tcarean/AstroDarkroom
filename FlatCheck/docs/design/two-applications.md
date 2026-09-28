@@ -198,6 +198,15 @@ kept only after a failure). Mechanics the ADR does not spell out:
   re-encoded per (map, cap) and cached, the Structure tab's rule.
 - `Populate` is `internal` for the smoke test, which renders the tab from `SplitRun.Analyze`
   on generated masters.
+- The table's horizontal `ScrollViewer` swallowed the wheel even with nothing to scroll
+  vertically, so the page stood still with the mouse over the table; `SplitView.ForwardWheel`
+  re-raises the wheel event on the parent. Each cell is a fixed-width grid with the value and
+  the verdict chip on one line, so the cells of a row sit under their headers.
+- The estimate line is recomputed on every `Refresh` (chips, script): `SplitPlan.CopiedBytes`
+  sums the file sizes of the copy lists, the sensor size comes from the master's header
+  through the same `loadInfo` seam as the profile prefill, and the free space from
+  `DriveInfo` of the temp root; the words and the model are the core's (`SplitCost`,
+  `SplitReport.CostLine`).
 
 ### Three things about the WPF project that were learned the hard way
 

@@ -84,6 +84,8 @@ namespace FlatCheck.Wpf
         public IReadOnlyList<SplitTableCell> Cells { get; init; }
         public string Note { get; init; }
         public bool IsKey { get; init; }
+        /// <summary>Randul profilului de referinta - cel care da verdictul adancimii.</summary>
+        public bool IsReference { get; init; }
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
@@ -133,6 +135,8 @@ namespace FlatCheck.Wpf
         string _saveError = "";
         string _tempNote = "";
         string _referenceLine = "";
+        string _estimateLine = "";
+        long _pixels;
 
         PngWriter.MapRange _sharedRange;
         readonly Dictionary<(int Index, MapScaleOption Scale), byte[]> _mapCache = new();
@@ -169,7 +173,9 @@ namespace FlatCheck.Wpf
         // ------------------------------------------------------------------ alegerea
 
         public string Intro => SessionMessages.SplitIntro();
-        public string Cost => SessionMessages.SplitCost();
+
+        /// <summary>Cat loc pe disc cere impartirea aleasa: copiile exact, process/ estimat (SplitCost), discul temporar.</summary>
+        public string EstimateLine { get => _estimateLine; private set => Set(ref _estimateLine, value); }
 
         public IReadOnlyList<SplitPartsOption> PartOptions { get; }
 
@@ -276,8 +282,22 @@ namespace FlatCheck.Wpf
             HasResult = false;
             ClearError();
             FrameCount = session.FlatFrames().Count;
+            _pixels = SensorPixels(session);
             Script.Attach(session, _locate(), _guiRunning);
             Refresh();
+        }
+
+        /// <summary>Pixelii masterului, din headerul lui (doar headerul); 0 cand nu se poate citi.</summary>
+        long SensorPixels(SirilSession session)
+        {
+            string master = session.FlatMasterPath;
+            if (master == null) return 0;
+            try
+            {
+                LoadedFrame f = _loadInfo(master);
+                return (long)FitsReader.HInt(f.Header, "NAXIS1", 0) * FitsReader.HInt(f.Header, "NAXIS2", 0);
+            }
+            catch (Exception) { return 0; }
         }
 
         /// <summary>Recalculeaza linia cadrelor si blocajul; la atasare, la schimbarea partilor sau a scriptului, si inainte de rulare.</summary>
@@ -290,8 +310,28 @@ namespace FlatCheck.Wpf
             Blocker = FrameCount == 0 ? SessionMessages.SplitNoFrames(_session)
                     : !divides ? SessionMessages.SplitNotDivisible(FrameCount, Parts)
                     : Script.Blocker;
+            EstimateLine = divides ? Estimate() : "";
             Raise(nameof(CanStart));
             Start.RaiseCanExecuteChanged();
+        }
+
+        string Estimate()
+        {
+            string tempRoot = _tempRootFor(_clock());
+            var plan = new SplitPlan(_session, Parts, tempRoot, Script.RequiredFolders);
+            SplitCostEstimate e = SplitCost.Estimate(_pixels, Parts, plan.WholeFrameCount(), plan.WholeFolders.Count,
+                                                     plan.FramesPerPart, plan.LightsToCopy().Count, plan.CopiedBytes());
+            return SplitReport.CostLine(e, FreeBytes(tempRoot));
+        }
+
+        static long? FreeBytes(string path)
+        {
+            try
+            {
+                string root = Path.GetPathRoot(Path.GetFullPath(path));
+                return string.IsNullOrEmpty(root) ? null : new DriveInfo(root).AvailableFreeSpace;
+            }
+            catch (Exception) { return null; }
         }
 
         // ------------------------------------------------------------------ rularea
@@ -462,9 +502,11 @@ namespace FlatCheck.Wpf
             Rows = SplitReport.Rows(r).Select(row => new SplitTableRow
             {
                 Label = row.Label,
-                Cells = row.Cells.Select(c => new SplitTableCell { Value = c.Value, Verdict = c.Verdict }).ToList(),
+                // pe randul de verdict valoarea E verdictul: doar pastila, nu cuvantul de doua ori
+                Cells = row.Cells.Select(c => new SplitTableCell { Value = c.Verdict != null && c.Value == c.Verdict ? "" : c.Value, Verdict = c.Verdict }).ToList(),
                 Note = row.Note,
                 IsKey = row.IsKey,
+                IsReference = row.IsReference,
             }).ToList();
             ReferenceLine = SplitReport.ReferenceLine(r);
 
@@ -521,6 +563,8 @@ namespace FlatCheck.Wpf
             FrameCount = 0;
             FramesLine = "";
             Blocker = null;
+            EstimateLine = "";
+            _pixels = 0;
             Phase = "";
             Run = null;
             Headers = Array.Empty<string>();

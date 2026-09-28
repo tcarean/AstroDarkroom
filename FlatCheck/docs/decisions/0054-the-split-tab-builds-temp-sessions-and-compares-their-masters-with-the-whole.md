@@ -35,8 +35,16 @@ re-opens them:
   four times would be the slow part of the run for no flat.
 - **The reference profile is the whole session's nearest profile, the same for every column.**
   "Nearest" is chosen per master and differed between part 1 and the whole on the first real
-  run; a table with a different reference per column compares nothing. The profile gets a column
-  of its own with its depth, so the comparison is visible, not implied.
+  run; a table with a different reference per column compares nothing. Every profile the
+  Structure tab lists gets a row (the owner asked for all of them on 2026-09-28), with each
+  column's difference from it and, in the profile column, its own depth; the reference row is
+  marked and is the one the verdict row uses.
+- **A disk estimate before the run, no time estimate** (owner's decision, 2026-09-28): the
+  copies are exact from the file sizes; Siril's `process/` comes from `SplitCost`, a
+  bytes-per-pixel model measured that day (converted 2 B/px, calibrated or stacked 4 B/px, a
+  calibrated or registered light and `result.fit` 12 B/px), 4.6 GB modelled against 4.35 GB
+  measured on the quarter session; the free space of the temp drive is read and shown. The
+  measured sentence that stood on the screen before is documentation now (README).
 - **Every value in the table carries its verdict**, and the last row is each column's
   verdict: the worse of its five tests and its depth against the reference profile. The
   review of 2026-09-28 found the first cut used the run verdict, whose depth part is against

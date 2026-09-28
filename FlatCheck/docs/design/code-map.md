@@ -227,7 +227,9 @@ a library extraction and not a copy is ADR 0011.
     compare, no text, no map); `SplitRun` calls it once per master - the whole, then the
     parts - picks the whole's nearest profile as the reference for every column, computes
     one automatic colour range over all the residuals, and returns `SplitResult` with the
-    mosaic as its `Png` (ADR 0054). `StructureRun.Execute` takes an optional `StructureQuery` (profile
+    mosaic as its `Png` (ADR 0054). `SplitCost` is the disk estimate shown before a split:
+    the copies exact, Siril's `process/` from bytes-per-pixel constants measured on
+    2026-09-28, no time. `StructureRun.Execute` takes an optional `StructureQuery` (profile
     sources, a raw beside the master, or `--lens` text, plus the overrides) and returns a
     `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
     query; with one, present even when it could not compare - `Gap` says why) and the

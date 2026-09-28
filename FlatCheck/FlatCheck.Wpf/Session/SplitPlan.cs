@@ -124,6 +124,26 @@ namespace FlatCheck.Wpf
             return list;
         }
 
+        /// <summary>Cati octeti se copiaza in total, pe toate partile: marimile fisierelor din listele de copiere.</summary>
+        internal long CopiedBytes()
+        {
+            long total = 0;
+            for (int part = 1; part <= Parts; part++)
+                foreach (var (from, _) in CopyList(part))
+                    total += SizeOf(from);
+            return total;
+        }
+
+        static long SizeOf(string path)
+        {
+            try { return new FileInfo(path).Length; }
+            catch (IOException) { return 0; }
+            catch (UnauthorizedAccessException) { return 0; }
+        }
+
+        /// <summary>Cate fisiere are fiecare parte in folderele copiate intregi.</summary>
+        internal int WholeFrameCount() => WholeFolders.Sum(f => AllFiles(Path.Combine(_session.Root, f)).Count);
+
         /// <summary>Sesiunea temporara a partii, prin aceleasi reguli ca a originalului (unde e masterul).</summary>
         internal SirilSession PartSession(int part) => new(PartRoot(part));
 

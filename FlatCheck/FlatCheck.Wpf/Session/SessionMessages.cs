@@ -657,11 +657,6 @@ namespace FlatCheck.Wpf
             + "hartile reziduale, una langa alta. Sesiunea originala e doar citita; raportul si "
             + "mozaicul se salveaza in ea, iar folderele temporare se sterg la sfarsit.";
 
-        internal static string SplitCost() =>
-            "Costul, masurat pe 2026-09-28 pe o sesiune de 40 de flats in 4 parti: ~3 GB copiate, "
-            + "~17 GB de process/ temporar si ~3 minute de Siril. Folderul temporar e pe discul "
-            + "lui %TEMP%.";
-
         internal static string SplitFramesLine(int count, int parts, int perPart) =>
             perPart > 0 ? $"{count} cadre in flats/  ->  {parts} x {perPart}" : $"{count} cadre in flats/";
 

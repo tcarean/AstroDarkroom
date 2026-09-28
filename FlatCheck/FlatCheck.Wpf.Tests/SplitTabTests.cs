@@ -114,6 +114,9 @@ public class SplitTabTests
         Assert.Equal(2, vm.Parts);
         Assert.Contains("8", vm.FramesLine);
         Assert.Contains("2 x 4", vm.FramesLine);
+        Assert.Contains("copiate", vm.EstimateLine);              // the disk estimate, from the plan and the master's header
+        Assert.Contains("scrise de Siril", vm.EstimateLine);
+        Assert.Contains("liber pe discul temporar", vm.EstimateLine);
         Assert.Equal("OSC_Preprocessing_WithoutDark.ssf", vm.Script.Selected?.Name);
         Assert.Null(vm.Blocker);
         Assert.True(vm.CanStart);
@@ -121,10 +124,12 @@ public class SplitTabTests
         Assert.False(vm.IsRunning);
         Assert.False(vm.HasResult);
 
+        string twoParts = vm.EstimateLine;
         vm.SelectParts(4);
         Assert.Equal(4, vm.Parts);
         Assert.Contains("4 x 2", vm.FramesLine);
         Assert.True(vm.CanStart);
+        Assert.NotEqual(twoParts, vm.EstimateLine);              // four parts copy the biases four times
     }
 
     [Fact]
