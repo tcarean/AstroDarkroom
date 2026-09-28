@@ -30,6 +30,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- Seven code comments pointed at `docs/lens-profiles.md`, `docs/smooth-validation.md` and
+  `docs/radial-model-even-term.md`, where the notes lived before ADR 0001 moved them; they now
+  name `docs/design/`. Comments only; no figure or test changed.
 - `WorstRingStep` in `StructureAnalyzerTests` implements the ring-step definition of ADR 0018
   (80 profile bins, bins under 5000 px excluded) and reproduces the whole-library table of
   `radial-model-even-term.md`; ADR 0017 and ADR 0031 carry dated corrections of three figures

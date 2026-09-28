@@ -577,7 +577,7 @@ public class SyntheticFlatTests
 
     /// <summary>
     /// The depth verdict is the residual scale on 2^|stops| - 1, the error the wrong flat
-    /// leaves in the corner of a calibrated light. The figures are the Tokina masters' (docs/lens-profiles.md).
+    /// leaves in the corner of a calibrated light. The figures are the Tokina masters' (docs/design/lens-profiles.md).
     /// </summary>
     [Theory]
     [InlineData(0.00, 0.0, "PERFECT")]

@@ -144,7 +144,7 @@ namespace FlatCheck
         // monitor 1.01 -> 0.29, cer 0.31 -> 0.31; un singur stack de orientare citea 17.9 %
         // reziduu (continut neradial adevarat 7.6 %) si citeste 7.9. LMedS nu mai e necesar:
         // taierea la 2.5 MAD in trei runde a tinut pata compacta de +10 % afara din estimare
-        // (0.08 % eroare). Vezi docs/radial-model-even-term.md, sectiunea 7.
+        // (0.08 % eroare). Vezi docs/design/radial-model-even-term.md, sectiunea 7.
         //
         // Ce a fost incercat si respins, in ordine:
         //  - a0 direct din fitul pe inel (LS cu taiere la 3 MAD, apoi L1): o pata compacta de
