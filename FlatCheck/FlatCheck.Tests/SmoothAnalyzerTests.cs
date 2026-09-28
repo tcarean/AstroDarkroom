@@ -19,7 +19,7 @@ namespace FlatCheck.Tests;
 
 /// <summary>
 /// The smoothing analyzer against synthetics with a KNOWN truth - the same scenes the
-/// numpy prototype was validated on (docs/smooth-validation.md), scaled from the D3300's
+/// numpy prototype was validated on (docs/design/smooth-validation.md), scaled from the D3300's
 /// 3008 x 2008 position raster to 1024 x 683 so the suite stays fast. The tile grid is
 /// then 41 x 28 of 25 px, the same geometry, and the kernel is passed as the scale that
 /// gives sigma = 2 tiles, as on the real masters.

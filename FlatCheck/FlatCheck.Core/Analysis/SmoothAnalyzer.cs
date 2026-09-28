@@ -33,7 +33,7 @@
 //      evaluata la offsetul real al pixelului fata de centrul acelei dale.
 //
 // DE CE ASA, si nu altfel - masurat pe cinci mastere reale (2026-09-16, vezi
-// docs/smooth-validation.md pentru cifre), fiindca doua variante mai evidente au picat:
+// docs/design/smooth-validation.md pentru cifre), fiindca doua variante mai evidente au picat:
 //
 //   - Un polinom global peste reziduul unui model radial NU urmareste structura de scara
 //     medie pe care o are orice master real (petele monitorului la 1000-1500 px si +-3 %,

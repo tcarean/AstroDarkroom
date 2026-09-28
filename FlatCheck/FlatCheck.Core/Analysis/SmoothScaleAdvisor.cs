@@ -36,7 +36,7 @@
 //      NEDETERMINAT - textura si structura reala au aceeasi marime - cum raspunde seria
 //      --light cand cerul si flat-ul nu se despart.
 //
-// Masurat (2026-09-16, docs/smooth-validation.md): pe masterul cu difuzorul pe monitor
+// Masurat (2026-09-16, docs/design/smooth-validation.md): pe masterul cu difuzorul pe monitor
 // propune 300 px (la 150 raman 0.09 % textura, la 300 raman 0.02 % si garda e la 0.00 /
 // -0.01); pe celelalte patru "nimic de netezit". La 600 px garda prinde inelul real al
 // Nikkor-ului (asimetria -0.79) si petele monitorului pe Tokina (-0.80), pe care cifra

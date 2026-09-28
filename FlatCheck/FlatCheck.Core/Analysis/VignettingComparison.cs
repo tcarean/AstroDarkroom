@@ -33,7 +33,7 @@
 // (known issue 5) e acelasi pe amandoua partile. Costul e ~1.5 M evaluari, zeci de ms.
 //
 // VERDICTUL E AL CELUI MAI APROPIAT PROFIL, nu al celui mai rau. Cele doua baze difera
-// intre ele cu ~0.2 stopuri pe acelasi obiectiv (docs/lens-profiles.md, sectiunea 8), si
+// intre ele cu ~0.2 stopuri pe acelasi obiectiv (docs/design/lens-profiles.md, sectiunea 8), si
 // unealta nu poate acuza un master cu mai multa precizie decat au bazele intre ele: un
 // master care coincide cu una din ele nu e gresit. "Cel mai rau" ar fi coborat masterele de
 // monitor bune la ACCEPTABIL si BUN in loc de PERFECT si BUN (monitor-difuzor-aproape +0.19
