@@ -109,9 +109,10 @@ public class SeriesDiscoveryTests
     }
 
     /// <summary>
-    /// Ordinea trebuie sa fie ordinala pe numele fisierului, identica cu sorted() din
-    /// Python. Daca cele doua implementari ar lista cadrele in ordini diferite, tabelele
-    /// ar iesi diferite si crosscheck-ul ar raporta o diferenta care nu exista.
+    /// Ordinea e ordinala pe numele fisierului, ca fereastra (cu date de cultura) si
+    /// consola (fara) sa listeze seria la fel. Numele de aici au doar cifre, deci testul
+    /// fixeaza ordinea, nu comparatia ordinala: sub InvariantGlobalization (ADR 0043) o
+    /// sortare culturala ar da acelasi rezultat.
     /// </summary>
     [Fact]
     public void FilesComeBackSortedOrdinallyByName()

@@ -46,9 +46,10 @@ namespace FlatCheck
         /// "pp_light_*.fit" ar inghiti si ".fits". Aici tiparul inseamna acelasi lucru pe
         /// orice sistem, si acelasi lucru ca in flatcheck.py.
         ///
-        /// Sortarea e ordinala pe numele fisierului, identica cu sorted() din Python -
-        /// altfel tabelul ar iesi in ordini diferite intre implementari si crosscheck-ul
-        /// ar raporta diferente care nu exista.
+        /// Sortarea e ordinala pe numele fisierului, deci nu depinde de cultura masinii:
+        /// consola ruleaza fara date de cultura, fereastra cu ele, si amandoua listeaza
+        /// seria in aceeasi ordine. Verdictul nu depinde de ordine, doar randurile tabelului
+        /// (ADR 0021).
         /// </summary>
         internal static List<string> Find(string dir, string pattern)
         {
