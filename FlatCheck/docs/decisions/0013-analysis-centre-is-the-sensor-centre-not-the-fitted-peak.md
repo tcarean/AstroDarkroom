@@ -30,8 +30,14 @@ ADR 0014).
   2026-09-28: ADR 0047 retired the cross-check, so this reason no longer holds as written. What
   holds: moving the centre is a formula change under rule 16, judged only by `/validate` and by
   the 43 parity goldens, whose figures an independent implementation confirmed once and cannot
-  confirm again; and it would buy about 0.2 % at analysis size, below every band. Whether it
-  would move the parity goldens was not measured.)
+  confirm again; and it would buy about 0.2 % at analysis size, below every band. Measured
+  2026-09-28 by moving the centre in `StructureAnalyzer` and `LightAnalyzer` and re-capturing
+  the goldens in a throwaway worktree: 28 of the 43 parity goldens and 14 of the other golden
+  files change (202 lines), every exit code stays, and one test verdict moves, the worst tile of
+  `structure_with_profiles` from 1.68 % PERFECT to 2.02 % BUN (the run stays REFA). Typical
+  moves: `structure_clean` residual 0.29 to 0.32 %, a linear-gradient fixture 5.11 to 5.53 %,
+  a `--light` radial component +45.74 to +45.39 %. `R012` and `R013` in `GoldenOutputTests`
+  pin 0.29 % and 0.19 % and would fail.)
 
 ## Consequences
 
