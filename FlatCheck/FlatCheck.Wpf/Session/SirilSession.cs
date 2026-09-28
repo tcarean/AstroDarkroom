@@ -106,8 +106,13 @@ namespace FlatCheck.Wpf
             Root = root ?? throw new ArgumentNullException(nameof(root));
         }
 
-        internal string ProcessDir => Path.Combine(Root, "process");
-        internal string MastersDir => Path.Combine(Root, "masters");
+        internal const string ProcessFolder = "process";
+        internal const string MastersFolder = "masters";
+        /// <summary>Folderele pe care le SCRIE Siril; un split nu le copiaza niciodata din original (ADR 0054).</summary>
+        internal static readonly IReadOnlyList<string> OutputFolders = new[] { ProcessFolder, MastersFolder };
+
+        internal string ProcessDir => Path.Combine(Root, ProcessFolder);
+        internal string MastersDir => Path.Combine(Root, MastersFolder);
         internal string FlatsDir => Path.Combine(Root, "flats");
 
         /// <summary>

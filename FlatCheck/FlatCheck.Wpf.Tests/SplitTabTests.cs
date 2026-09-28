@@ -41,10 +41,13 @@ public class SplitTabTests
         return new SirilInstall(cli ? cliPath : null, new[] { script }, Path.Combine(ws.Dir, "config.ini"));
     }
 
+    /// <summary>Every input frame is one MiB of nothing, so the copied figure of the estimate can be pinned.</summary>
+    static readonly byte[] OneMiB = new byte[1 << 20];
+
     static SessionFixture Session(int flats, int biases = 3, int lights = 3, bool readme = true)
     {
         var f = new SessionFixture().WithFlatMaster().WithFlats();
-        for (int i = 1; i <= flats; i++) File.WriteAllText(Path.Combine(f.FlatsDir, $"DSC_{i:D4}.NEF"), "x");
+        for (int i = 1; i <= flats; i++) File.WriteAllBytes(Path.Combine(f.FlatsDir, $"DSC_{i:D4}.NEF"), OneMiB);
         if (readme) File.WriteAllText(Path.Combine(f.FlatsDir, "readme.txt"), "nu e cadru");
         Inputs(f.Root, "biases", "bias", biases);
         Inputs(f.Root, "lights", "light", lights);
@@ -54,11 +57,11 @@ public class SplitTabTests
     static void Inputs(string root, string folder, string stem, int count)
     {
         Directory.CreateDirectory(Path.Combine(root, folder));
-        for (int i = 1; i <= count; i++) File.WriteAllText(Path.Combine(root, folder, $"{stem}_{i:D2}.NEF"), "x");
+        for (int i = 1; i <= count; i++) File.WriteAllBytes(Path.Combine(root, folder, $"{stem}_{i:D2}.NEF"), OneMiB);
     }
 
     /// <summary>What the fake Siril saw in a part folder when it was started.</summary>
-    sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats, string[] Darks);
+    sealed record Seen(string Folder, string[] Biases, string[] Lights, string[] Flats, string[] Darks, bool HadProcess);
 
     static string[] Names(string dir) => Directory.Exists(dir)
         ? Directory.EnumerateFiles(dir).Select(p => Path.GetFileName(p)!).OrderBy(n => n, StringComparer.Ordinal).ToArray()
@@ -74,7 +77,7 @@ public class SplitTabTests
         {
             seen.Add(new Seen(folder,
                 Names(Path.Combine(folder, "biases")), Names(Path.Combine(folder, "lights")), Names(Path.Combine(folder, "flats")),
-                Names(Path.Combine(folder, "darks"))));
+                Names(Path.Combine(folder, "darks")), Directory.Exists(Path.Combine(folder, "process"))));
             int part = seen.Count;
             int code = exitCodeFor?.Invoke(part) ?? 0;
             onLine("log: Running command: cd");
@@ -84,6 +87,10 @@ public class SplitTabTests
                 Directory.CreateDirectory(Path.Combine(folder, "process"));
                 File.WriteAllBytes(Path.Combine(folder, "process", SirilSession.FlatMasterName),
                     FitsTestData.BuildFits(Size, Size, FitsTestData.Radial(Size, Size, k: 0.40 + 0.05 * part)));
+                // a read-only file left by the script itself: Delete() must still remove the folder
+                string locked = Path.Combine(folder, "process", "flat_.seq");
+                File.WriteAllText(locked, "x");
+                File.SetAttributes(locked, FileAttributes.ReadOnly);
                 onLine("log: Script execution finished successfully.");
             }
             else onLine("log: Error: nu conteaza");
@@ -114,7 +121,8 @@ public class SplitTabTests
         Assert.Equal(2, vm.Parts);
         Assert.Contains("8", vm.FramesLine);
         Assert.Contains("2 x 4", vm.FramesLine);
-        Assert.Contains("copiate", vm.EstimateLine);              // the disk estimate, from the plan and the master's header
+        // the disk estimate: 2 parts x (3 biases + 2 lights) + 8 flats, one MiB each
+        Assert.Contains("18 MB copiate", vm.EstimateLine);
         Assert.Contains("scrise de Siril", vm.EstimateLine);
         Assert.Contains("liber pe discul temporar", vm.EstimateLine);
         Assert.Equal("OSC_Preprocessing_WithoutDark.ssf", vm.Script.Selected?.Name);
@@ -124,12 +132,43 @@ public class SplitTabTests
         Assert.False(vm.IsRunning);
         Assert.False(vm.HasResult);
 
-        string twoParts = vm.EstimateLine;
         vm.SelectParts(4);
         Assert.Equal(4, vm.Parts);
         Assert.Contains("4 x 2", vm.FramesLine);
         Assert.True(vm.CanStart);
-        Assert.NotEqual(twoParts, vm.EstimateLine);              // four parts copy the biases four times
+        Assert.Contains("28 MB copiate", vm.EstimateLine);       // 4 x (3 + 2) + 8: the biases and lights four times, the flats once
+    }
+
+    /// <summary>process/ and masters/ are what Siril writes; a script that enters one never gets the original's copied.</summary>
+    [Fact]
+    public async Task R092_TheSessionsOutputFoldersAreNeverCopied()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var seen = new List<Seen>();
+        string intoProcess = SirilInstallTests.WithoutDark.Replace("cd biases\n", "cd process\ncd ..\ncd biases\n");
+        var vm = Vm(f, ws, FakeSiril(seen), scriptText: intoProcess);
+
+        Assert.True(vm.CanStart, vm.Blocker);
+        await vm.StartAsync();
+
+        Assert.True(vm.HasResult, vm.ErrorText);
+        Assert.Equal(2, seen.Count);
+        Assert.All(seen, s => Assert.False(s.HadProcess));      // the original's process/ (with its master) was not copied
+        Assert.All(seen, s => Assert.Equal(3, s.Biases.Length));
+        var plan = new SplitPlan(f.Session, 2, Path.Combine(ws.Dir, "plan"), new[] { "process", "Masters", "biases", "flats", "lights" });
+        Assert.Equal(new[] { "biases" }, plan.WholeFolders);
+    }
+
+    [Fact]
+    public void R091_NoEstimateBesideABlocker()
+    {
+        using var f = Session(flats: 4);
+        using var ws = new TempWorkspace();
+        var vm = Vm(f, ws, FakeSiril(new List<Seen>()), cli: false);
+
+        Assert.NotNull(vm.Blocker);
+        Assert.Equal("", vm.EstimateLine);
     }
 
     [Fact]

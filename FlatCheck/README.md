@@ -1299,9 +1299,10 @@ cadre din `flats/` trebuie să se împartă exact, altfel butonul spune de ce nu
 scriptul Siril din aceeași listă ca pe cardul de problemă (`OSC_Preprocessing_WithoutDark.ssf`
 propus) și apeși „Start Split". Pentru fiecare parte se construiește o sesiune temporară în
 `%TEMP%\FlatCheck\split-<data-ora>\parte-<i>\`: fiecare folder în care intră scriptul
-(`biases/`, `darks/`) întreg, **cel mult două** cadre din `lights/` (primele după nume — atât
-cât să meargă scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și
-felia ei de `flats/`, blocuri consecutive în ordinea
+(`biases/`, `darks/`) întreg — niciodată `process/` sau `masters/`, care sunt ce scrie
+Siril — **cel mult două** cadre din `lights/` (primele după nume — atât cât să meargă
+scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și felia ei de
+`flats/`, blocuri consecutive în ordinea
 numelor de fișier (un `readme.txt` din `flats/` nu e cadru). Scriptul rulează în fiecare, una
 după alta, cu faza, o bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
 apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
@@ -1335,8 +1336,9 @@ Sub numărul de cadre, tabul spune **cât loc pe disc** cere împărțirea aleas
 exact, din mărimile fișierelor, și ce va scrie Siril în `process/`, estimat dintr-un model
 pe octeți per pixel măsurat pe 2026-09-28 (un cadru convertit 2 B/px, unul calibrat sau
 stivuit 4 B/px, un light calibrat sau înregistrat 12 B/px; pe un sfert de sesiune modelul
-dă 4.6 GB față de 4.35 GB măsurați), plus cât e liber pe discul lui `%TEMP%`. Timpul nu se
-estimează: depinde de Siril și de mașină. Ca ordin de mărime, 40 de flats în 4 părți au
+dă 4.6 GB față de 4.35 GB măsurați), plus cât e liber pe discul lui `%TEMP%`, în unitățile
+lui Explorer (1 GB = 1024³), ca cifra să fie cea de acolo. Timpul nu se estimează: depinde de
+Siril și de mașină. Ca ordin de mărime, 40 de flats în 4 părți au
 însemnat ~3 GB copiate, ~17 GB de `process/` temporar și ~3 minute de Siril.
 Ce e mare pe părți și mic pe întreg e ce a anulat rotația — la 180° partea impară
 (gradientul), la 90° și șaua; ce au părțile în comun cu întregul e fix pe aparat sau radial,

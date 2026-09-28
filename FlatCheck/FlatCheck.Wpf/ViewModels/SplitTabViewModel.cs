@@ -283,8 +283,7 @@ namespace FlatCheck.Wpf
             ClearError();
             FrameCount = session.FlatFrames().Count;
             _pixels = SensorPixels(session);
-            Script.Attach(session, _locate(), _guiRunning);
-            Refresh();
+            Script.Attach(session, _locate(), _guiRunning);   // Refreshed -> Refresh(), o singura data
         }
 
         /// <summary>Pixelii masterului, din headerul lui (doar headerul); 0 cand nu se poate citi.</summary>
@@ -292,11 +291,7 @@ namespace FlatCheck.Wpf
         {
             string master = session.FlatMasterPath;
             if (master == null) return 0;
-            try
-            {
-                LoadedFrame f = _loadInfo(master);
-                return (long)FitsReader.HInt(f.Header, "NAXIS1", 0) * FitsReader.HInt(f.Header, "NAXIS2", 0);
-            }
+            try { return SplitCost.Pixels(_loadInfo(master).Header); }
             catch (Exception) { return 0; }
         }
 
@@ -310,7 +305,8 @@ namespace FlatCheck.Wpf
             Blocker = FrameCount == 0 ? SessionMessages.SplitNoFrames(_session)
                     : !divides ? SessionMessages.SplitNotDivisible(FrameCount, Parts)
                     : Script.Blocker;
-            EstimateLine = divides ? Estimate() : "";
+            // fara siril-cli sau fara script nu se stie ce foldere intra in joc: nicio cifra langa un blocaj
+            EstimateLine = Blocker == null ? Estimate() : "";
             Raise(nameof(CanStart));
             Start.RaiseCanExecuteChanged();
         }
@@ -339,8 +335,7 @@ namespace FlatCheck.Wpf
         internal async Task StartAsync()
         {
             if (_session == null || _running) return;
-            Script.Refresh();
-            Refresh();
+            Script.Refresh();   // Refreshed -> Refresh()
             if (!CanStart) return;
 
             SirilSession session = _session;

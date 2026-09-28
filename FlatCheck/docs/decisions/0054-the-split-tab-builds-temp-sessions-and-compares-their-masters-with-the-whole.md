@@ -22,7 +22,9 @@ hold a hundred. The PNG writer is hand-rolled (ADR 0008) and draws no text.
 The window gets a `Split` tab (R-091 to R-093). It divides the flat frames (raw or FITS files
 of `flats/`, ordinal name order, consecutive blocks) into 2 or 4 temp sessions under
 `%TEMP%\FlatCheck\split-<date-time>\parte-<i>\`, each with every file of each folder the
-script enters other than `flats/` and `lights/` (`biases/`, `darks/`), at most the first 2
+script enters other than `flats/`, `lights/` and the session's output folders `process/` and
+`masters/` (which are never copied: a script with `cd process` would otherwise bring the
+original's 17 GB and its master into every part), so `biases/` and `darks/`, at most the first 2
 frames of `lights/` by name, and its share of the flats; runs the chosen script (the
 problem card's list, `OSC_Preprocessing_WithoutDark.ssf` preselected) in each, one after another,
 through the same `SirilScriptRun` and `SirilRunViewModel` as the problem card; then compares the
@@ -43,7 +45,8 @@ re-opens them:
   copies are exact from the file sizes; Siril's `process/` comes from `SplitCost`, a
   bytes-per-pixel model measured that day (converted 2 B/px, calibrated or stacked 4 B/px, a
   calibrated or registered light and `result.fit` 12 B/px), 4.6 GB modelled against 4.35 GB
-  measured on the quarter session; the free space of the temp drive is read and shown. The
+  measured on the quarter session; the free space of the temp drive is read and shown, in
+  Explorer's units (1 GB = 1024^3) so the figure matches the one the user sees there. The
   measured sentence that stood on the screen before is documentation now (README).
 - **Every value in the table carries its verdict**, and the last row is each column's
   verdict: the worse of its five tests and its depth against the reference profile. The

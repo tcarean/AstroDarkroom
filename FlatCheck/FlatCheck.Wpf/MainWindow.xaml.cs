@@ -69,16 +69,24 @@ namespace FlatCheck.Wpf
         void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             SplitTabViewModel split = _vm.Split;
-            if (!split.IsRunning || _closeAfterSplit) return;
+            if (!split.IsRunning) return;
+
+            // deja oprit si asteptam stergerea: un al doilea click pe X nu inchide nimic
+            // mai devreme - exact asa s-ar pierde folderul temporar
+            e.Cancel = true;
+            if (_closeAfterSplit) return;
 
             var answer = MessageBox.Show(this, SessionMessages.SplitCloseQuestion(), "FlatCheck",
                 MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
-            e.Cancel = true;
             if (answer != MessageBoxResult.Yes) return;
 
             _closeAfterSplit = true;
             split.StopRun();
-            _ = split.Pending.ContinueWith(_ => Dispatcher.BeginInvoke(new System.Action(Close)));
+            _ = split.Pending.ContinueWith(_ => Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                _closeAfterSplit = false;
+                if (!split.IsRunning) Close();   // altfel s-a pornit alta intre timp: ramanem, si X intreaba iar
+            })));
         }
 
         /// <summary>Butonul "Despre" si F1, prin ApplicationCommands.Help - vezi MainWindow.xaml.</summary>

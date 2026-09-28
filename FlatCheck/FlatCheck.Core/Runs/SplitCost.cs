@@ -52,6 +52,10 @@ namespace FlatCheck
         internal const int MasterBytesPerPx = 4;
         internal const int ResultBytesPerPx = 12;
 
+        /// <summary>Pixelii unui cadru din headerul lui FITS (NAXIS1 x NAXIS2); 0 cand headerul nu-i are.</summary>
+        internal static long Pixels(System.Collections.Generic.IReadOnlyDictionary<string, string> header)
+            => header == null ? 0 : (long)FitsReader.HInt(header, "NAXIS1", 0) * FitsReader.HInt(header, "NAXIS2", 0);
+
         /// <param name="pixels">Pixelii unui cadru (senzorul), 0 cand nu se stiu.</param>
         /// <param name="parts">Cate parti.</param>
         /// <param name="wholeFrames">Cate cadre are fiecare parte in folderele copiate intregi (biases, darks); fiecare folder da si un master.</param>

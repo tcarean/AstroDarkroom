@@ -78,8 +78,9 @@ namespace FlatCheck
             return line + ". Timpul depinde de Siril si de masina.";
         }
 
+        /// <summary>In unitatile pe care le arata Explorer (1 GB = 1024^3), ca cifra de aici sa fie cea de acolo.</summary>
         internal static string Gb(long bytes)
-            => bytes >= 1_000_000_000 ? $"{bytes / 1e9:F1} GB" : $"{bytes / 1e6:F0} MB";
+            => bytes >= 1L << 30 ? $"{bytes / (double)(1L << 30):F1} GB" : $"{bytes / (double)(1L << 20):F0} MB";
 
         /// <summary>Profilul de referinta, intreg: sursa, obiectiv, setarile profilului.</summary>
         internal static string ReferenceLine(SplitResult r)

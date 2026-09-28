@@ -650,9 +650,10 @@ namespace FlatCheck.Wpf
         internal static string SplitIntro() =>
             "Imparte flat-urile sesiunii in 2 sau 4 grupuri consecutive, in ordinea numelor de "
             + "fisier - cate unul pe orientare, daca ai rotit aparatul intre grupuri - si "
-            + "construieste pentru fiecare o sesiune temporara: biases/ intreg, cel mult "
-            + $"{SplitPlan.MaxLights} cadre din lights/ (cat sa mearga scriptul pana la capat) si felia lui "
-            + "de flats/. Ruleaza scriptul Siril ales in fiecare, apoi pune masterele partilor "
+            + "construieste pentru fiecare o sesiune temporara: fiecare folder in care intra "
+            + $"scriptul (biases/, darks/) intreg, cel mult {SplitPlan.MaxLights} cadre din lights/ (cat sa "
+            + "mearga scriptul pana la capat) si felia lui de flats/; process/ si masters/ nu se "
+            + "copiaza niciodata. Ruleaza scriptul Siril ales in fiecare, apoi pune masterele partilor "
             + "langa masterul intreg: cele cinci teste, vignetarea fata de profilul obiectivului si "
             + "hartile reziduale, una langa alta. Sesiunea originala e doar citita; raportul si "
             + "mozaicul se salveaza in ea, iar folderele temporare se sterg la sfarsit.";

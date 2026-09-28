@@ -80,7 +80,7 @@ public class SplitRunTests
     }
 
     [Fact]
-    public void R093_SplitRun_EveryTestCellCarriesItsVerdict_AndTheLastRowIsTheRunVerdict()
+    public void R093_SplitRun_EveryTestCellCarriesItsVerdict_AndTheLastRowIsTheColumnVerdictAgainstTheReference()
     {
         using var ws = new TempWorkspace();
         var (whole, parts, query) = Fixture(ws);
@@ -250,9 +250,15 @@ public class SplitRunTests
         Assert.Contains("nu se stie", SplitReport.CostLine(unknown, null));
 
         string line = SplitReport.CostLine(four, 187_000_000_000);
-        Assert.Contains("2.7 GB copiate", line);
+        Assert.Contains("2.5 GB copiate", line);            // Explorer's units: 2 692 000 000 B = 2.5 GiB
         Assert.Contains("GB scrise de Siril", line);
-        Assert.Contains("187.0 GB", line);
+        Assert.Contains("174.2 GB", line);
+        Assert.Equal("512 MB", SplitReport.Gb(512L << 20));
+
+        // the pixel count comes from the FITS header, in the core
+        Assert.Equal(6016L * 4016, SplitCost.Pixels(new Dictionary<string, string> { ["NAXIS1"] = "6016", ["NAXIS2"] = "4016" }));
+        Assert.Equal(0, SplitCost.Pixels(new Dictionary<string, string>()));
+        Assert.Equal(0, SplitCost.Pixels(null));
         Assert.DoesNotContain("minut", line);                // the time is not estimated (owner's decision)
     }
 

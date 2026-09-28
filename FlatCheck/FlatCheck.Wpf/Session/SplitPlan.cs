@@ -63,8 +63,11 @@ namespace FlatCheck.Wpf
             Parts = parts;
             TempRoot = tempRoot ?? throw new ArgumentNullException(nameof(tempRoot));
             Frames = session.FlatFrames();
+            // process/ si masters/ sunt ce scrie Siril, nu intrari: un script care intra in ele
+            // cu "cd process" nu primeste cei 17 GB ai originalului, si nici masterul lui
             WholeFolders = (requiredFolders ?? Array.Empty<string>())
-                .Where(f => !Is(f, FlatsFolder) && !Is(f, LightsFolder))
+                .Where(f => !Is(f, FlatsFolder) && !Is(f, LightsFolder)
+                            && !SirilSession.OutputFolders.Any(o => Is(f, o)))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
             CopiesLights = (requiredFolders ?? Array.Empty<string>()).Any(f => Is(f, LightsFolder));
@@ -124,14 +127,21 @@ namespace FlatCheck.Wpf
             return list;
         }
 
-        /// <summary>Cati octeti se copiaza in total, pe toate partile: marimile fisierelor din listele de copiere.</summary>
+        /// <summary>
+        /// Cati octeti se copiaza in total, pe toate partile: folderele intregi si lights-urile
+        /// de Parts ori, fiecare flat o data. Fiecare folder e enumerat o singura data - se
+        /// cheama la fiecare schimbare de chip sau de script, pe firul de interfata.
+        /// </summary>
         internal long CopiedBytes()
         {
-            long total = 0;
-            for (int part = 1; part <= Parts; part++)
-                foreach (var (from, _) in CopyList(part))
-                    total += SizeOf(from);
-            return total;
+            long perPart = 0;
+            foreach (string folder in WholeFolders)
+                foreach (string f in AllFiles(Path.Combine(_session.Root, folder)))
+                    perPart += SizeOf(f);
+            foreach (string f in LightsToCopy()) perPart += SizeOf(f);
+            long flats = 0;
+            foreach (string f in Frames) flats += SizeOf(f);
+            return perPart * Parts + flats;
         }
 
         static long SizeOf(string path)
@@ -141,8 +151,8 @@ namespace FlatCheck.Wpf
             catch (UnauthorizedAccessException) { return 0; }
         }
 
-        /// <summary>Cate fisiere are fiecare parte in folderele copiate intregi.</summary>
-        internal int WholeFrameCount() => WholeFolders.Sum(f => AllFiles(Path.Combine(_session.Root, f)).Count);
+        /// <summary>Cate cadre (raw sau FITS) are fiecare parte in folderele copiate intregi; un readme sau un .xmp nu e cadru.</summary>
+        internal int WholeFrameCount() => WholeFolders.Sum(f => AllFiles(Path.Combine(_session.Root, f)).Count(IsFrame));
 
         /// <summary>Sesiunea temporara a partii, prin aceleasi reguli ca a originalului (unde e masterul).</summary>
         internal SirilSession PartSession(int part) => new(PartRoot(part));

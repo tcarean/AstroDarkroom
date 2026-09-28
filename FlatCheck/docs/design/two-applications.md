@@ -190,7 +190,8 @@ kept only after a failure). Mechanics the ADR does not spell out:
   it (the review of 2026-09-28 found 17 GB would stay behind).
 - What is copied is what the script enters (`SirilScript.RequiredFolders`, exposed by
   `ScriptChoiceViewModel.RequiredFolders`): every such folder whole, except `lights/` (at
-  most `SplitPlan.MaxLights` frames) and `flats/` (the part's slice). The frame count is
+  most `SplitPlan.MaxLights` frames), `flats/` (the part's slice) and the session's output
+  folders `SirilSession.OutputFolders` (`process/`, `masters/`), never copied. The frame count is
   re-read when the button is pressed, and every copy loses the read-only attribute a raw
   from a card carries, so `Delete()` can remove it.
 - On screen "auto" is the file's shared range, not each map's own, so the chips never show a
@@ -202,11 +203,16 @@ kept only after a failure). Mechanics the ADR does not spell out:
   vertically, so the page stood still with the mouse over the table; `SplitView.ForwardWheel`
   re-raises the wheel event on the parent. Each cell is a fixed-width grid with the value and
   the verdict chip on one line, so the cells of a row sit under their headers.
-- The estimate line is recomputed on every `Refresh` (chips, script): `SplitPlan.CopiedBytes`
-  sums the file sizes of the copy lists, the sensor size comes from the master's header
-  through the same `loadInfo` seam as the profile prefill, and the free space from
-  `DriveInfo` of the temp root; the words and the model are the core's (`SplitCost`,
-  `SplitReport.CostLine`).
+- The estimate line is recomputed on every `Refresh` (chips, script), and only when nothing
+  blocks the button: `SplitPlan.CopiedBytes` enumerates each folder once (whole folders and
+  lights times the parts, every flat once), the sensor size comes from the master's header
+  through the same `loadInfo` seam as the profile prefill (`SplitCost.Pixels`), and the free
+  space from `DriveInfo` of the temp root; the words, the units (Explorer's, 1024^3) and the
+  model are the core's (`SplitCost`, `SplitReport.CostLine`). `Attach` and `StartAsync` refresh
+  through `Script.Refreshed` alone, so the estimate runs once per change, not twice.
+- `MainWindow.OnClosing` keeps cancelling the close while a stopped split is still deleting
+  its folder (a second click on X must not win), and the continuation closes the window only
+  if no new split started meanwhile.
 
 ### Three things about the WPF project that were learned the hard way
 
