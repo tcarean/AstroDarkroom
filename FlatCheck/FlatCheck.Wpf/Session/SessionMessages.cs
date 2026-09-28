@@ -27,6 +27,7 @@
 // e acelasi fel de text: documentatie aratata in fereastra, scrisa o data si bine.
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 
 namespace FlatCheck.Wpf
@@ -639,6 +640,70 @@ namespace FlatCheck.Wpf
 
         internal static string RunStartFailed(string why) =>
             $"Nu am putut porni siril-cli:\n{why}";
+
+        // ------------------------------------------------------------------ Split
+        //
+        // Tabul Split (ADR 0054): impartirea flat-urilor in sesiuni temporare, scriptul
+        // rulat in fiecare, masterele partilor langa intreg. Textele de mai jos sunt ale
+        // ecranului; tabelul, raportul si etichetele mozaicului le scrie nucleul (SplitReport).
+
+        internal static string SplitIntro() =>
+            "Imparte flat-urile sesiunii in 2 sau 4 grupuri consecutive, in ordinea numelor de "
+            + "fisier - cate unul pe orientare, daca ai rotit aparatul intre grupuri - si "
+            + "construieste pentru fiecare o sesiune temporara: biases/ intreg, cel mult "
+            + $"{SplitPlan.MaxLights} cadre din lights/ (cat sa mearga scriptul pana la capat) si felia lui "
+            + "de flats/. Ruleaza scriptul Siril ales in fiecare, apoi pune masterele partilor "
+            + "langa masterul intreg: cele cinci teste, vignetarea fata de profilul obiectivului si "
+            + "hartile reziduale, una langa alta. Sesiunea originala e doar citita; raportul si "
+            + "mozaicul se salveaza in ea, iar folderele temporare se sterg la sfarsit.";
+
+        internal static string SplitCost() =>
+            "Costul, masurat pe 2026-09-28 pe o sesiune de 40 de flats in 4 parti: ~3 GB copiate, "
+            + "~17 GB de process/ temporar si ~3 minute de Siril. Folderul temporar e pe discul "
+            + "lui %TEMP%.";
+
+        internal static string SplitFramesLine(int count, int parts, int perPart) =>
+            perPart > 0 ? $"{count} cadre in flats/  ->  {parts} x {perPart}" : $"{count} cadre in flats/";
+
+        internal static string SplitNoFrames(SirilSession s) =>
+            $"Niciun cadru (raw sau FITS) in {s.FlatsDir}. Impartirea are nevoie de cadrele de la aparat.";
+
+        internal static string SplitNotDivisible(int count, int parts) =>
+            $"{count} cadre nu se impart exact la {parts}. Alege alt numar de parti sau verifica flats/: "
+            + "fiecare grup de rotatie trebuie sa aiba acelasi numar de cadre.";
+
+        internal static string SplitStartLabel() => "Start Split";
+        internal static string SplitStopLabel() => "Opreste";
+
+        internal static string SplitPartsLabel(int parts) => $"{parts} parti";
+
+        internal static string SplitPhaseCopy(int part, int parts, int files) =>
+            $"partea {part} din {parts}: copiez {files} fisiere in folderul temporar";
+
+        internal static string SplitPhaseSiril(int part, int parts, string script) =>
+            $"partea {part} din {parts}: ruleaza {script}";
+
+        internal static string SplitPhaseAnalyse(int parts) =>
+            $"analizez cele {parts} parti si intregul";
+
+        internal static string SplitFailedTitle() => "Impartirea s-a oprit";
+
+        internal static string SplitFailed(int part, int parts, string outcome, string tempRoot) =>
+            $"La partea {part} din {parts}: {outcome}\n\n{SplitTempKept(tempRoot)}";
+
+        internal static string SplitNoMaster(int part, int parts, string partRoot, string script) =>
+            $"La partea {part} din {parts}: {script} s-a terminat, dar n-a lasat {SirilSession.FlatMasterName} "
+            + $"nici in masters/, nici in process/ din\n{partRoot}\n\n{SplitTempKept(Path.GetDirectoryName(partRoot))}";
+
+        internal static string SplitTempKept(string tempRoot) =>
+            $"Folderul temporar a ramas, ca sa poti vedea ce s-a intamplat:\n{tempRoot}\n"
+            + "Sterge-l cand nu-ti mai trebuie. Sesiunea originala nu a fost atinsa.";
+
+        internal static string SplitTempNotDeleted(string tempRoot) =>
+            $"Folderul temporar nu s-a putut sterge: {tempRoot}. Sterge-l de mana.";
+
+        internal static string SplitSaved(string reportPath, string pngPath) =>
+            $"Raport salvat: {reportPath}\nMozaic salvat: {pngPath}";
 
         // ------------------------------------------------------------------ Despre
         //

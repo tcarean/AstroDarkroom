@@ -186,6 +186,9 @@ public class WindowSmokeTests
             Render(new SmoothView { DataContext = vm.Smooth }, name: "tab-netezire-gol");
             await vm.Synthetic.Pending;
             Render(new SyntheticView { DataContext = vm.Synthetic }, name: "tab-sintetic-gol");
+            // Split porneste gol, cu cadrele numarate, chipurile si scriptul - starea de la
+            // deschidere; rezultatul lui se randeaza in testul dedicat.
+            Render(new SplitView { DataContext = vm.Split }, name: "tab-split-gol");
 
             // Ghidul hartii, desfasurat. Pliat, legarile lui din interiorul cardului nu
             // sunt niciodata evaluate - si tocmai o legare care cade abia la afisare e
@@ -207,6 +210,33 @@ public class WindowSmokeTests
         Assert.Equal(4, vm.HistEq.Files.Count);    // master, netezit, doua cadre
         Assert.True(vm.Smooth.CanRun);
         Assert.False(vm.Smooth.HasResult);
+    }
+
+    /// <summary>
+    /// Tabul Split cu un rezultat: antetul cu numar variabil de coloane, celulele cu pastile,
+    /// hartile una langa alta. Rezultatul vine prin Populate, din SplitRun pe mastere
+    /// generate, fara Siril.
+    /// </summary>
+    [Fact]
+    public void TheSplitTabRendersTheTableAndTheMaps()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMaster()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        SplitResult r = SplitRun.Analyze(f.Session.FlatMasterPath,
+            new[] { f.MasterPath("pp_flat_stacked_A.fit"), f.MasterPath("pp_flat_stacked_B.fit") },
+            null, new DateTime(2026, 9, 28, 10, 31, 0), 10);
+
+        _sta.Invoke(() =>
+        {
+            using var errors = new BindingErrors();
+            var vm = new SplitTabViewModel();
+            vm.Populate(r);
+            Assert.True(vm.HasResult);
+            Assert.Equal(3, vm.Maps.Count);
+            Render(new SplitView { DataContext = vm }, name: "tab-split");
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
     }
 
     /// <summary>

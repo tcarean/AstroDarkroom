@@ -170,7 +170,9 @@ a library extraction and not a copy is ADR 0011.
     informative, and the `docs/validation.json` keys that read them, are tabulated under
     "Result records (Analysis/)" at the end of this note.
   - `Report/` - one report per mode, each a pure `XxxResult + TextWriter -> text`
-    function. `SyntheticReport` also carries the `--lenses` list, the refusals, and the two
+    function. `SplitReport` is the one with a variable number of columns: `Headers`,
+    `Rows` of `SplitCell` (value + verdict), the report text with the date line, the map
+    order line, the PNG title and labels (uppercase, glyphs only). `SyntheticReport` also carries the `--lenses` list, the refusals, and the two
     texts the window's sources panel shows (`AdobeWhere`, `LensfunWhere`). `LightSeriesReport`
     is split into `WriteHeader`/`WriteRow`/`WriteSummary` so a 32-frame run can stream
     its table (ADR 0011). `StructureReport.WriteBody` is split off for the same reason in
@@ -220,8 +222,12 @@ a library extraction and not a copy is ADR 0011.
     that formats a spot measured on another raster (its negative-zero rounding is ADR 0041).
   - `Runs/` - the chain of one mode, the layer both applications call (ADR 0011):
     `StructureRun`, `RatioRun`, `ExposureRun`, `LightRun`, `LightSeriesRun`, `HistEqRun`,
-    `SmoothRun`, `SyntheticRun`, `AgainstRun`, plus `SeriesFinder` (which files a series
-    run covers). `StructureRun.Execute` takes an optional `StructureQuery` (profile
+    `SmoothRun`, `SyntheticRun`, `AgainstRun`, `SplitRun`, plus `SeriesFinder` (which files a
+    series run covers). `StructureRun.Analyze` is the first half of `Execute` (load, analyze,
+    compare, no text, no map); `SplitRun` calls it once per master - the parts, then the
+    whole - picks the whole's nearest profile as the reference for every column, computes
+    one automatic colour range over all the residuals, and returns `SplitResult` with the
+    mosaic as its `Png` (ADR 0054). `StructureRun.Execute` takes an optional `StructureQuery` (profile
     sources, a raw beside the master, or `--lens` text, plus the overrides) and returns a
     `StructureOutcome`: the `StructureResult`, the `VignettingComparison` (null without a
     query; with one, present even when it could not compare - `Gap` says why) and the
@@ -246,6 +252,11 @@ a library extraction and not a copy is ADR 0011.
     applications use, and `WriteResidualMap` is a thin file wrapper over it. It prints
     nothing - the "harta salvata" line comes from `RunReport`. `EncodeGrey` writes a grey
     raster as RGB with equal components; the encoder keeps its single colour type.
+    `EncodeMosaic` lays several maps in one row on one `MapRange`, under a title band and a
+    label band drawn with `BitmapFont`; the text scale follows the tile width.
+  - `BitmapFont.cs` - a 5x7 bitmap font (digits, `A`-`Z`, a few signs; lowercase drawn as
+    capitals, unknown characters blank but advancing, clipped at the canvas), the only text
+    the PNG writer can draw (ADR 0054).
 - `FlatCheck/` - the console app. `AssemblyName` is `flatcheck`, so the binary is
   `flatcheck.exe`, not `FlatCheck.exe`. Three files; their contract and how a flag or a mode
   is added are `process.md` ("Extending the console").
@@ -267,7 +278,10 @@ a library extraction and not a copy is ADR 0011.
     the config parsing is pure, `Locate()` is the only thing that touches the machine),
     `SirilScript` (commands and input folders read out of a `.ssf`), `SirilLogLine` (one
     stdout line, sorted into log / progress / other) and `SirilScriptRun` (the `Process`
-    wrapper, plus the `SirilRunner` delegate the tests replace). `FlatFrames()` lists raws
+    wrapper, plus the `SirilRunner` delegate the tests replace). `SplitPlan` is the disk
+    rule of the Split tab (ADR 0054): the frames, whether the count divides, each part's copy
+    list (every bias, at most `MaxLights` lights, the part's flats), the temp root under
+    `%TEMP%\FlatCheck`, and `Delete()`. `FlatFrames()` lists raws
     *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and `HistEqCandidates()` builds
     the Histogram tab's list in the order and by the exact-path rule of ADR 0033; three
     kinds of row, `HistEqKind`. The only part of the app with real rules, and the part with
@@ -280,9 +294,13 @@ a library extraction and not a copy is ADR 0011.
   - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error) -
     `SyntheticTabViewModel` being the seventh, with `LensRow` (a public row over an internal
     `LensChoice`) and `SyntheticGuideViewModel` (the sources panel, collapsed by default) -
-    plus `PreprocessViewModel` (the script block on the problem card: list, default, blocker,
-    warning - decides nothing about flats) and `SirilRunViewModel` (one script run as the
-    run window sees it: log text, progress, current command, outcome), plus
+    plus `ScriptChoiceViewModel` (a Siril script chosen from Siril's list: default, blocker,
+    warning - decides nothing about flats), `PreprocessViewModel` (that block on the problem
+    card, plus its lead text), `SplitTabViewModel` (the eighth tab: chips, script, the
+    copy-run-analyse loop with one bar, the table rows `SplitTableRow` / `SplitTableCell`,
+    the `SplitMap` list on a shared `MapScaleViewModel`; ADR 0054) and `SirilRunViewModel`
+    (one script run as the run window - and the Split tab - sees it: log text, progress,
+    current command and its index, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
     properties only, ADR 0040), and two small companions of the residual map shared by
     the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
@@ -355,7 +373,10 @@ a library extraction and not a copy is ADR 0011.
     window; starts the run on `Loaded`, confirms before closing mid-run (closing kills
     Siril), scrolls the log to the end.
   - `Views/` - the XAML. `BusyOverlay`, `MessagePanel` and `ReportPanel` bind to the
-    inherited `TabViewModel`, so the same three controls serve every tab; `SyntheticView`
+    inherited `TabViewModel`, so the same three controls serve every tab; `SplitView` is the
+    one without the overlay (its running card has the bar, the log and the stop button) and
+    the one whose table has a variable number of columns (an `ItemsControl` of rows, each a
+    horizontal `ItemsControl` of fixed-width cells, the header built the same way); `SyntheticView`
     is the one with text boxes (`Style x:Key="Field"` in `Dark.xaml`, keyed like `LogBox`
     because a TextBox is not an ordinary control of this app);
     `MapGuidePanel` binds to `MapGuide.*` and serves the two tabs that have a map guide.
@@ -710,7 +731,8 @@ ADR 0011). The window saves what its `StringWriter` got back as "Rezultat testar
 text by construction; and **a caller who wants the figures and no text passes
 `TextWriter.Null`**, which is exactly what `ValidationTests` does for the structure, profile,
 smooth and against cases. Verified against the code on 2026-09-25: this is true today for all
-nine runs.
+nine runs; `SplitRun`, added on 2026-09-28, follows the same rule (`SplitReport.Write`,
+unconditionally).
 
 **`RunOutcome<TResult>`** (`RunOutcome.cs`), for the modes that always answer.
 

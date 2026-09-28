@@ -973,7 +973,7 @@ acum pe același master; cifra veche subestima.
 ## Aplicația cu ferestre
 
 Pe lângă `flatcheck.exe` există `FlatCheck.Wpf.exe`, care face **exact aceleași măsurători**
-pe un folder întreg, cu patru taburi în loc de patru rulări.
+pe un folder întreg, cu taburi în loc de rulări.
 
 Nu e o reimplementare: amândouă aplicațiile stau peste aceeași bibliotecă, `FlatCheck.Core`,
 și trec prin același lanț (`Runs/`). Cifrele sunt aceleași prin construcție, nu prin grijă —
@@ -1045,7 +1045,7 @@ lângă a noastră. Un `.exe` copiat singur n-are fișierele `LICENSE` și
 `THIRD-PARTY-NOTICES.md` lângă el, deci fereastra e singurul loc în care notițele
 călătoresc garantat cu programul.
 
-### Cele șapte taburi
+### Cele opt taburi
 
 | tab | ce face | când rulează |
 |---|---|---|
@@ -1056,6 +1056,7 @@ călătoresc garantat cu programul.
 | **Histogram** | modul 5 pe masterul sesiunii, pe flat-ul netezit de lângă el (când există) sau pe un cadru din `flats/`, raw sau FITS | la alegere; comutarea vederii nu recalculează |
 | **Netezire** | modul 6 pe masterul sesiunii; scrie `pp_flat_stacked_netezit.fit` lângă el | la buton, niciodată singur — scrie un fișier |
 | **Sintetic** | modul 7: alege obiectivul din profilele Adobe de pe disc și din baza lensfun de lângă program, scrie `pp_flat_stacked_sintetic.fit` lângă master și îl compară cu masterul (`--against`) | la buton; doar preumplerea rulează singură |
+| **Split** | împarte flat-urile în 2 sau 4 grupuri, rulează scriptul Siril pe fiecare într-o sesiune temporară și pune masterele grupurilor lângă masterul întreg: cele cinci teste, vignetarea față de profil, hărțile una lângă alta; scrie `Rezultat split.txt` și `flatcheck-split.png` în folderul sesiunii | la buton, niciodată singur — copiază gigaocteți și rulează Siril de N ori |
 
 **Structura** arată aceleași cifre ca în consolă — cele cinci teste de abatere cu verdictul
 fiecăruia, scara de reziduu cu banda curentă marcată, mărimile informative fără verdict,
@@ -1291,6 +1292,45 @@ offset, pata locală și cele cinci teste, fiecare rând cu eticheta și nota lu
 cele trei valori strânse în dreapta, plus harta, pe scară comutabilă. Cele patru adâncimi
 scrise poartă și ele câte o notă: ce punct e și cu ce se compară. „Compară cu masterul" rulează
 aceeași comparație separat, pentru un fișier sintetic scris altă dată. Fișierul nu devine masterul sesiunii, ca și cel netezit.
+
+**Split** e pentru flat-urile trase în grupuri rotite — 15 + 15 la 180°, sau 4 x 10 la
+90° — ca să vezi ce a anulat rotația și ce nu. Alegi în câte părți (2 sau 4; numărul de
+cadre din `flats/` trebuie să se împartă exact, altfel butonul spune de ce nu), alegi
+scriptul Siril din aceeași listă ca pe cardul de problemă (`OSC_Preprocessing_WithoutDark.ssf`
+propus) și apeși „Start Split". Pentru fiecare parte se construiește o sesiune temporară în
+`%TEMP%\FlatCheck\split-<data-ora>\parte-<i>\`: tot `biases/`, **cel mult două** fișiere din
+`lights/` (primele după nume — atât cât să meargă scriptul până la capăt; lights-urile nu
+contează pentru masterul de flat) și felia ei de `flats/`, blocuri consecutive în ordinea
+numelor de fișier (un `readme.txt` din `flats/` nu e cadru). Scriptul rulează în fiecare, una
+după alta, cu faza, o bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
+apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
+Structura, cu raw-ul din `flats/` pentru profil.
+
+Rezultatul e un **tabel cu o coloană pe parte, una pentru întreg și una pentru profilul de
+referință**: cele cinci teste, fiecare celulă cu valoarea și verdictul ei; vignetarea în
+stopuri (în coloana profilului, adâncimea modelului); diferența față de profil, cu
+verdictul adâncimii; și pe ultimul rând verdictul rulării fiecărei coloane, cel mai rău
+dintre formă și adâncime. Profilul de referință e **cel mai apropiat profil al întregului,
+același pe toate coloanele** — „cel mai apropiat" se alege pe fiecare master în parte, iar pe
+prima sesiune reală partea 1 și întregul aleseseră profile diferite; un tabel cu altă
+referință pe coloană n-ar compara nimic. Sub tabel, hărțile reziduale una lângă alta, pe
+scară comutabilă. Se salvează în folderul sesiunii `Rezultat split.txt` (bannerul de versiune,
+data și ora, tabelul, ce înseamnă) și `flatcheck-split.png` — părțile de la stânga la
+dreapta, apoi întregul, **pe o singură scară de culoare** (cea automată peste toate
+hărțile deodată), fiecare cu eticheta ei și cu versiunea, data și capetele scării pe rândul
+de titlu, desenate cu un font bitmap propriu, fără vreo dependență.
+
+Sesiunea originală e **doar citită**: nimic din ea nu se mută sau se șterge; se scriu doar
+cele două fișiere de mai sus, suprascrise fără întrebare, ca `Rezultat testare.txt`.
+Folderul temporar se șterge după analiză și la „Oprește"; după un eșec (Siril iese cu cod
+nenul, sau scriptul nu lasă master) rămâne, cu calea pe ecran, ca să vezi de ce. Masterele
+părților nu se păstrează: masterul întreg e cel bun, iar raportul ține toate cifrele lor.
+Costul, măsurat pe 2026-09-28 pe o sesiune de 40 de flats în 4 părți: ~3 GB copiate, ~17 GB
+de `process/` temporar și ~3 minute de Siril; folderul temporar e pe discul lui `%TEMP%`.
+Ce e mare pe părți și mic pe întreg e ce a anulat rotația — la 180° partea impară
+(gradientul), la 90° și șaua; ce au părțile în comun cu întregul e fix pe aparat sau radial,
+și nicio rotație nu-l scoate. O parte are mai puține cadre, deci mai mult zgomot: cifrele
+fine (pata maximă) ies mai mari pe părți și fără să însemne un defect.
 
 ### Ce nu face
 

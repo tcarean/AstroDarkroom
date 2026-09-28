@@ -85,6 +85,9 @@ namespace FlatCheck.Wpf
         /// <summary>Cate comenzi are scriptul - numitorul din "comanda 7 din 20".</summary>
         public int CommandCount => _commands.Count;
 
+        /// <summary>A cata comanda ruleaza (de la 1); 0 inainte de prima. Tabul Split isi face bara din ea.</summary>
+        public int CommandIndex { get => _commandIndex; private set => Set(ref _commandIndex, value); }
+
         /// <summary>Liniile de log, asa cum le-ar arata Siril, cu linie noua intre ele.</summary>
         public string Log { get => _logText; private set => Set(ref _logText, value); }
 
@@ -194,7 +197,7 @@ namespace FlatCheck.Wpf
 
             if (line.IsCommandStart(out string verb))
             {
-                _commandIndex++;
+                CommandIndex = _commandIndex + 1;
                 string full = _commandIndex <= _commands.Count ? _commands[_commandIndex - 1] : verb;
                 Step = SessionMessages.RunStep(_commandIndex, _commands.Count, full);
                 ProgressKnown = false;

@@ -164,6 +164,33 @@ session's master: ADR 0036, with ADR 0033 for why the smoothed stack still match
   through `SmoothScaleViewModel.SelectScale`, and writes nothing; `PopulateAdvice` is
   `internal` for the smoke test.
 
+**The Split tab is a workflow over the other pieces** (ADR 0054 holds the decisions: the copy
+list, the two lights, the reference profile, the labelled mosaic on one scale, the temp folder
+kept only after a failure). Mechanics the ADR does not spell out:
+
+- `SplitPlan` (`Session/`) is the whole of the disk rule - which files are frames, whether the
+  count divides, what each part gets, where the temp root is - and is tested without Siril.
+  The tab copies file by file on a background thread with an `IProgress<double>`, then runs
+  `SirilRunViewModel` per part exactly as the problem card does, only shown inline: the run
+  view-model got a public `CommandIndex` so the tab can turn "command 7 of 20" into a share
+  of the bar. Copy and script are one step each per part, the analysis one more; the phases
+  are equal in the bar, not in time.
+- It does not use `TabViewModel.RunGuardedAsync` or the busy overlay: that overlay covers the
+  tab, and the user must see the phase, the bar, Siril's log and `Opreste`. Its running state
+  is `IsRunning`; the chips and the script box are disabled through it.
+- `ScriptChoiceViewModel` is the script block of the problem card lifted out of
+  `PreprocessViewModel`, which is now a subclass adding the card's lead text; the tab owns a
+  second instance. `IsOffered` there means "attached to a session".
+- The script's `RunAsync` cancels only through its own token, so the tab registers
+  `Run.Cancel()` on its linked token: `Opreste`, a folder change and the window closing all
+  kill Siril the same way, and the temp folder is deleted in the `finally` unless a failure
+  said to keep it.
+- On screen "auto" is the file's shared range, not each map's own, so the chips never show a
+  picture the file could not; the fixed caps behave as on every other tab. The maps are
+  re-encoded per (map, cap) and cached, the Structure tab's rule.
+- `Populate` is `internal` for the smoke test, which renders the tab from `SplitRun.Analyze`
+  on generated masters.
+
 ### Three things about the WPF project that were learned the hard way
 
 ADR 0037 holds all three - no `<InvariantGlobalization>` and `App.ForceInvariantNumbers` in

@@ -195,6 +195,11 @@ namespace FlatCheck.Wpf
         /// <summary>Harta reziduala, langa raport si cu acelasi nume ca la consola.</summary>
         internal string ResidualPngPath => Path.Combine(Root, "flatcheck.png");
 
+        /// <summary>Raportul si mozaicul tabului Split, in radacina sesiunii, langa cele ale structurii (ADR 0054).</summary>
+        internal const string SplitResultFileName = "Rezultat split.txt";
+        internal string SplitResultTextPath => Path.Combine(Root, SplitResultFileName);
+        internal string SplitPngPath => Path.Combine(Root, "flatcheck-split.png");
+
         /// <summary>
         /// Prima verificare, inainte de orice calcul. Ordinea conteaza: un folder gresit
         /// ales, unul pe care nu s-a rulat inca niciun script si unul pe care scriptul a
