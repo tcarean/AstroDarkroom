@@ -16,8 +16,8 @@
 #     solution            the .sln file verify.ps1 restores, formats, builds and tests
 #     testFilter          optional; a `dotnet test --filter` expression the gate applies
 #                         ("" runs everything)
-#     codeFolders         folders whose change needs a CHANGELOG line (check-staged.ps1) and
-#                         a green verify before a Claude turn ends (claude-stop-gate.ps1)
+#     codeFolders         folders whose change needs a green verify before a Claude turn
+#                         ends (claude-stop-gate.ps1)
 #     codeFiles           optional; single files that count as code, the same way
 #     testFolders         folders whose change needs a green verify before a turn ends
 #     testData.folder     the folder holding manifest.json, fixtures/ and large/

@@ -16,9 +16,9 @@
 #        changed tracked ones with -a) and finds the project of each: the nearest folder above
 #        it holding scripts/verify.ps1, as the git pre-commit hook does. With no such file, the
 #        project of the folder itself;
-#     5. runs, for each project once, scripts/check-staged.ps1 (a code change needs a
-#        CHANGELOG line), then scripts/verify.ps1, the full gate.
-#   If one of them fails, the commit does not run, and Claude gets the reason and the output.
+#     5. runs, for each project once, scripts/verify.ps1, the full gate. Whether the commit
+#        needs a CHANGELOG line is a judgment, not checked here (the kit's ADR 0023).
+#   If it fails, the commit does not run, and Claude gets the reason and the output.
 #   It fails closed: an error inside this hook itself also blocks the commit (exit 2), it
 #   never lets one through by accident. Next to the git pre-commit hook it is a second check
 #   that does not depend on the git hooks being installed, and it catches --no-verify, which
@@ -64,7 +64,7 @@ $commits = [regex]::Matches($command, $commitPattern)
 if ($commits.Count -eq 0) { exit 0 }
 $commit = $commits[0]
 
-# Runs one of the check scripts in its own PowerShell and returns its exit code; what it
+# Runs a check script in its own PowerShell and returns its exit code; what it
 # printed (stdout and stderr together) is left in $script:checkOutput. cmd does the 2>&1
 # merge, at the operating-system level. If PowerShell did it here, under 'Stop' the child's
 # first stderr line (dotnet format prints its errors there) would become a terminating error,
@@ -209,14 +209,8 @@ function Test-Commit {
             return 2
         }
 
-        # 4 and 5. Each project the commit touches: check-staged, then verify.
+        # 4 and 5. Each project the commit touches: verify.
         foreach ($projectDir in (Get-CommitProjects $folder)) {
-            $checkStaged = Join-Path $projectDir 'scripts\check-staged.ps1'
-            if ((Test-Path $checkStaged) -and (Invoke-Check $checkStaged) -ne 0) {
-                [Console]::Error.WriteLine("Blocked: staged changes break a rule in $projectDir. Output:")
-                [Console]::Error.WriteLine($script:checkOutput)
-                return 2
-            }
             if ((Invoke-Check (Join-Path $projectDir 'scripts\verify.ps1')) -ne 0) {
                 [Console]::Error.WriteLine("Blocked: scripts/verify.ps1 failed in $projectDir before commit. Output:")
                 [Console]::Error.WriteLine($script:checkOutput)

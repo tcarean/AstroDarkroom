@@ -22,6 +22,7 @@ where they go.
 4. For each non-equivalent survivor, propose the test that would kill it: name (with the R-ID),
    input, expected value. Do not write the tests yet; the user picks which ones are worth it.
 5. If the user accepts, write the tests, run `scripts/verify.ps1`, then re-run `mutate.ps1` on the
-   same filter and paste the new score. Add a CHANGELOG line under `Internal`.
+   same filter and paste the new score. New tests alone get no CHANGELOG line; a bug they
+   expose, once fixed, gets one under `Fixed`.
 6. Never "fix" a survivor by weakening the mutation config or ignoring the file. The score is a
    measurement, not a target; 80 to 90 % on numeric code is realistic, 100 % is not.

@@ -17,8 +17,11 @@ adds project-specific steps and says where they go.
    them.
 3. `git diff` the whole change. Read it back. Write a three-sentence plain-language summary:
    what changed for the user, what changed inside, what did not change that someone might expect.
-4. `CHANGELOG.md`: every user-visible change has a line under `[Unreleased]`, in the right
-   subsection (Added, Changed, Fixed, Removed; Internal for a pure refactor).
+4. `CHANGELOG.md`: a change a reader of the version history cares about (behaviour added,
+   changed or removed, a fix, a figure that moved, a refactor worth knowing about) has a line
+   under `[Unreleased]`, in the right subsection (Added, Changed, Fixed, Removed; Internal). A
+   review follow-up, a test-only change, a comment or doc fix gets none; nothing checks this at
+   commit, so it is decided here (the kit's ADR 0023). Say which way you decided.
 5. `docs/requirements.md`: statuses match reality. A requirement touched by this task that is
    still `draft` is a question for the user, not something to leave. A new `R###_` test moves
    its requirement to `implemented`.
@@ -40,11 +43,12 @@ adds project-specific steps and says where they go.
 10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
     a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
     English, rename the branch now with `git branch -m claude/<Task-name>` (ADR 0013). On that
-    `claude/` branch, commit without asking (ADR 0021): one line, English, under 72 characters,
-    saying why. No body, no trailers, no `Co-Authored-By` (the summary from step 3 stays in the
-    chat, and the "what" is in CHANGELOG). Report the message and the short hash. On `main` or
-    any branch not named `claude/`, do not commit: propose the message and leave the commit to
-    the owner (the commit hook refuses it anyway). If the branch is ready to merge into `main`,
+    `claude/` branch, commit without asking (ADR 0021): one line, English, at most 100
+    characters, saying why. No body, no trailers, no `Co-Authored-By` (the summary from step 3
+    stays in the chat; the "what" is in the diff and, when it warrants one, the CHANGELOG).
+    Report the message and the short hash. On `main` or any branch not named `claude/`, do not
+    commit: propose the message and leave the commit to the owner (the commit hook refuses it
+    anyway). If the branch is ready to merge into `main`,
     say so, suggest `/code-review main...<branch>` first if it has not run on this work, then
     ask: does the owner want you to run the merge, or will they do it by hand? Do nothing until
     they answer. If a merge you run stops on conflicts, resolve them, `git add` the files and

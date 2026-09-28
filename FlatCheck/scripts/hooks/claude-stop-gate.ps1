@@ -12,14 +12,10 @@
 #        the kit (kit.json's "kit" is not "."), an edit under one of them ends no turn; the
 #        change is made in the kit and copied with scripts/sync.ps1.
 #     B. code was edited (kit.json's codeFolders, codeFiles or testFolders): the turn may end
-#        only when
-#        1. scripts/verify.ps1 ran green with tests after the last such edit: .verify-stamp,
-#           which only such a run writes (-SkipTests does not), is newer than the newest
-#           edited file; and
-#        2. if a code file edited by this session still has uncommitted changes, CHANGELOG.md
-#           has uncommitted changes too. Edits that are already committed passed
-#           check-staged.ps1 at commit time, so after that commit a clean CHANGELOG is right,
-#           not a problem.
+#        only when scripts/verify.ps1 ran green with tests after the last such edit:
+#        .verify-stamp, which only such a run writes (-SkipTests does not), is newer than the
+#        newest edited file. Whether the change needs a CHANGELOG line is a judgment, not
+#        checked here (the kit's ADR 0023).
 #   If not, it answers exit 2 with the reasons under each project's full path, and Claude Code sends Claude back to work
 #   (the message points to /wrap-up). It never runs verify itself, so it takes under a
 #   second. When Claude is already continuing because of this hook (stop_hook_active), it
@@ -82,11 +78,10 @@ function Get-ProjectProblems([string]$projectDir, [string[]]$edited) {
     }
 
     # B. Code edits: those under a code folder, a test folder, or named as a code file.
-    $srcEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or ($srcFiles -contains $_) })
     $codeEdits = @($edited | Where-Object { (Test-Under $_ $srcDirs) -or (Test-Under $_ $testDirs) -or ($srcFiles -contains $_) })
     if ($codeEdits.Count -gt 0) {
-        # 1. verify ran green, with tests, after the last code edit: compare the stamp's time
-        #    with the newest modification time among the edited files that still exist.
+        # verify ran green, with tests, after the last code edit: compare the stamp's time
+        # with the newest modification time among the edited files that still exist.
         $stamp = Join-Path $projectDir '.verify-stamp'
         $lastEdit = ($codeEdits | Where-Object { Test-Path $_ } | ForEach-Object { (Get-Item $_).LastWriteTimeUtc } | Sort-Object -Descending | Select-Object -First 1)
         if (-not (Test-Path $stamp)) {
@@ -94,18 +89,6 @@ function Get-ProjectProblems([string]$projectDir, [string[]]$edited) {
         }
         elseif ($lastEdit -and (Get-Item $stamp).LastWriteTimeUtc -lt $lastEdit) {
             $problems += 'scripts/verify.ps1 has not run green with tests since the last code edit (-SkipTests does not count).'
-        }
-
-        # 2. CHANGELOG touched: git status lists a file when it has changes not yet committed
-        #    (in the working tree or staged). Required only while some code file this session
-        #    edited is itself still uncommitted; once those edits are committed (check-staged.ps1
-        #    demanded the CHANGELOG line then), a clean CHANGELOG is the normal state.
-        Push-Location $projectDir
-        $changelogDirty = (git status --porcelain -- CHANGELOG.md 2>$null)
-        $srcDirty = if ($srcEdits.Count -gt 0) { @(git status --porcelain -- $srcEdits 2>$null) } else { @() }
-        Pop-Location
-        if ($srcDirty.Count -gt 0 -and -not $changelogDirty) {
-            $problems += 'code was edited but CHANGELOG.md is unchanged; add a line under [Unreleased] (or under Internal for a pure refactor).'
         }
     }
     return $problems
@@ -138,5 +121,5 @@ if ($problems.Count -eq 0) { exit 0 }
 # Refuse: the reasons go to stderr, which Claude Code shows to Claude.
 [Console]::Error.WriteLine('Stop gate: before ending this turn:')
 $problems | ForEach-Object { [Console]::Error.WriteLine('  ' + $_) }
-[Console]::Error.WriteLine('Run /wrap-up (verify, CHANGELOG, requirements, decisions), then end the turn.')
+[Console]::Error.WriteLine('Run /wrap-up (verify, requirements, decisions, CHANGELOG when the change warrants it), then end the turn.')
 exit 2

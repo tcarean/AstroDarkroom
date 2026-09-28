@@ -110,7 +110,8 @@ if (-not $kitPath) {
 # Which projects: this one, from the kit beside it; or, in the kit, every adopter.
 $pairs = @()
 if ($kitPath -eq $root) {
-    # The git root: the nearest folder upwards with .git, as check-staged.ps1 finds it.
+    # The git root: the nearest folder upwards with .git (a folder in a clone, a file in a
+    # linked worktree).
     $gitRoot = $root
     while ($gitRoot -and -not (Test-Path -LiteralPath (Join-Path $gitRoot '.git'))) {
         $gitRoot = Split-Path -Parent $gitRoot

@@ -169,13 +169,13 @@ with isolated context. Then build:
   leaves the machine); deny (force push, hard reset, bypassing hooks, reading
   secret files). Machine-specific grants go in an ignored local file.
 - **A pre-command hook** that intercepts any commit the agent attempts, refuses any form of
-  hook-bypass flag, refuses a commit off the agent's own task branches, and runs the staged-changes check and the full gate first. It fails closed: an
+  hook-bypass flag, refuses a commit off the agent's own task branches, and runs the full gate first. It fails closed: an
   error inside the hook itself blocks the commit. It costs nothing for commands that are not
   commits.
 - **An edit tracker** (post-edit hook) that records which files this session changed, so the
   end-of-turn gate judges only the agent's work, never the owner's uncommitted work.
 - **An end-of-turn gate** that refuses to end a turn which edited source or tests until the full
-  gate ran green after the last such edit and the changelog was updated. It must not run the gate
+  gate ran green after the last such edit. It must not run the gate
   itself (it should take under a second) and it must let the second attempt through, so a
   session can never be trapped in a loop. Its refusal message tells the agent which workflow to
   run.
@@ -227,8 +227,10 @@ never images. Nothing in a wiki, a word processor or a chat.
 - **Design notes**: one per area whose code does not explain itself, saying what it does and why
   the obvious simpler version is wrong; with an index the instruction file points to. Not a list
   of classes.
-- **Changelog** in a standard format with an unreleased section; every change under the source
-  folder adds a line, and a pure refactor gets a line too under an "internal" heading.
+- **Changelog** in a standard format with an unreleased section; a change a reader of the version
+  history cares about adds a line (a refactor worth knowing about under an "internal" heading),
+  and a review follow-up or a test-only change adds none. The agent judges it at wrap-up; no hook
+  checks it, because a mechanical check fills the file with lines written to satisfy a script.
 - **Test data**: small fixtures in the repo with a manifest of hashes checked by the gate; a
   README saying where large data lives outside the repo and how to regenerate the manifest after
   an intentional change.
@@ -294,7 +296,7 @@ behind it, or the guide says why it stays judgement.
 7. Numbers are measured, not guessed. A validation claim comes with the pasted output.
 8. Two readings of a task that lead to different work: ask. Otherwise decide and state the
    assumption.
-9. Every change under the source folder adds a changelog line in the same commit.
+9. A change a reader of the version history cares about adds a changelog line; judgment, not a gate.
 10. A decision with a "why" gets a decision record in the same task, not in chat.
 11. Do not describe code structure in the instruction file or in docs. Describe behaviour and
     decisions.
@@ -343,7 +345,7 @@ behind it, or the guide says why it stays judgement.
 
 5. **Prove it.** Run and paste the output of: the full gate (green); the fast mode; a deliberate
    failing test (gate red, then restored); an attempted commit with the bypass flag (blocked by
-   the harness hook); an attempted commit touching source without a changelog line (blocked); an
+   the harness hook); an
    edit to a source file followed by an attempt to end the turn without running the gate
    (refused once, then allowed after the gate); the invariant tests failing when a requirement is
    marked implemented without a test (then restored); the documentation audit; the mutation run
@@ -411,8 +413,8 @@ Learned from earlier attempts; each one has cost real time.
 - Letting the agent commit on its own because it was allowed once. Approval is per command.
 - Mutation testing or any minutes-long check inside the commit gate. It gets disabled.
 - Deleting or "cleaning up" documentation the agent finds redundant instead of moving it.
-- A changelog rule, a requirements-to-tests rule or a "verify before you finish" rule enforced
-  by prose alone.
+- A requirements-to-tests rule or a "verify before you finish" rule enforced by prose alone. The
+  changelog line is the exception on purpose: whether a change deserves one is a judgment.
 - Assuming the harness of today has the same hook points as the one this prompt was written
   for. Check, then adapt, then record.
 

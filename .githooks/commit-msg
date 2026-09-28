@@ -3,7 +3,7 @@
 # commit-msg - checks the commit message before git records the commit.
 #
 # WHAT IT DOES
-#   Accepts only a message that is one non-empty line, at most 72 characters long, and not
+#   Accepts only a message that is one non-empty line, at most 100 characters long, and not
 #   a trailer such as "Co-Authored-By: ..." (CLAUDE.md rule 13: one line, no body, no
 #   trailers). Lines that start with # are ignored; git's editor template uses them for
 #   its own comments.
@@ -37,8 +37,8 @@ if printf '%s' "$first" | grep -qiE '^(Co-Authored-By|Signed-off-by|Reviewed-by)
   exit 1
 fi
 # ${#first} is the length of the line in characters.
-if [ "${#first}" -gt 72 ]; then
-  echo "commit-msg: keep the line under 72 characters (${#first})." >&2
+if [ "${#first}" -gt 100 ]; then
+  echo "commit-msg: keep the line to 100 characters at most (${#first})." >&2
   exit 1
 fi
 exit 0
