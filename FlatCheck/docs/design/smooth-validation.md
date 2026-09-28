@@ -47,48 +47,41 @@ defocused fabric at monitor distance. With the diffuser at the lens it is under 
 
 ### Three designs were tried; two failed on the real masters
 
-1. **Global polynomial over the residual of a ring-median radial model** (degree 2-10).
-   Failed: every master carries mid-scale structure - the monitor's own blotches at
-   ~1000-1500 px and ±3 % on tokina_aproape, a decentred ring on the Nikkor, LCD blobs at
-   ±0.7 % on the Samyang - that a degree-3 polynomial cannot follow (tile RMS after the
-   fit 0.5-1.7 %, decreasing to degree 10 with no floor) and that a degree-6+ polynomial
-   follows by oscillating in the corners (kept non-radial ptp jumping to 22 %, worst tile
-   10 %). "Large-scale structure is low-order" was wrong, and a polynomial basis has no
+ADR 0026 holds the three designs, why the first two were rejected and their headline figures on
+the five masters: what the global polynomial left and how it oscillated, the ring amplitude the
+radial model put into the file, the clip floor's effect on the Samyang and tokina_pemonitor
+tiles, and the edge band the partial tiles caused. What it does not record:
+
+1. **Global polynomial over the residual of a ring-median radial model** (degree 2-10). The
+   mid-scale structure it could not follow was different on every master: the monitor's own
+   blotches at ~1000-1500 px and ±3 % on tokina_aproape, a decentred ring on the Nikkor, LCD
+   blobs at ±0.7 % on the Samyang. The tile RMS after the fit kept falling up to degree 10 with
+   no floor. "Large-scale structure is low-order" was wrong, and a polynomial basis has no
    scale knob.
-2. **Ring-median radial model x local-linear field (LOESS-1) on the tile grid.** Good
-   figures, but the **radial model puts rings into the file**: beyond the inscribed
-   circle a ring is partial arcs, any even non-radial structure makes the ring
-   distribution bimodal and the median jumps bin to bin - the artefact ADR 0017 and
-   `radial-model-even-term.md` record. (At the time the symmetrisation cured it only for the odd
-   part; since 2026-09-17 `Metrics.RadialModel` also takes the even 2θ term off the
-   partial rings, and the figures below were measured with the plain ring median. The
-   rejection does not rest on the artefact alone - see the next sentence but one.) The
-   field, at a kernel of 150 px, cannot absorb 22 px rings, so they survive into the
-   output. Measured: ring-profile amplitude of the removed component ±0.11-0.13 % on
-   tokina_pemonitor, visible as concentric circles in the ratio of two smoothed masters;
-   smoothing the 1-D profile did not remove them (the jumps are below the profile
-   smoother's scale and above the field's). A radial model of any kind is the wrong
-   tool here: **the split between "radial" and "the rest" is arbitrary, and the only
-   requirement is that the output be smooth and follow the data.**
-3. **No radial model. Tile medians, local quadratic (LOESS-2), robust, evaluated per
-   pixel.** This is the design. It has no rings by construction (nothing in it knows
-   about a centre), follows the vignetting's curvature to the corner (a quadratic over a
-   ±450 px window of a profile whose scale is ~1800 px is exact to third order), and
-   its one knob is a length scale. Two details cost a round each and are recorded so
-   they are not rediscovered:
-   - **The clipping needs an absolute floor.** Relative to the MAD alone, a very clean
-     master (Samyang, tile RMS 0.06 %) had 8 % of its tiles rejected, because anything
-     the local quadratic does not follow at 0.15 % became an "outlier" and was then not
-     followed at all. With `max(2.5 MAD, 2 % of the level)` nothing is rejected on the
-     four clean masters and 57-69 tiles per position on tokina_pemonitor - the two dust
-     spots, the bright spot, and the deepest cells, which are exactly the things that
-     should go.
-   - **Partial tiles must sit where they are.** The grid keeps the partial last row and
-     column (58 rows and 8 columns on this sensor) so nothing is extrapolated; but the
-     first cut fitted them one full tile from their neighbour, and the synthetic
-     showed a 0.8 % error band along the right edge and 0.2 % along the bottom. With
-     the real centre offsets in the fit the whole-frame maximum error on the clean
-     synthetic went from 1.05 % to 0.19 %.
+2. **Ring-median radial model x local-linear field (LOESS-1) on the tile grid.** The mechanism
+   of the rings: beyond the inscribed circle a ring is partial arcs, any even non-radial
+   structure makes the ring distribution bimodal and the median jumps bin to bin, the artefact
+   ADR 0017 and `radial-model-even-term.md` record. The figures were measured with the plain
+   ring median; since 2026-09-17 `Metrics.RadialModel` also takes the even 2θ term off the
+   partial rings, but the rejection does not rest on the artefact alone. The rings showed as
+   concentric circles in the ratio of two smoothed masters, and smoothing the 1-D profile did
+   not remove them: the jumps are below the profile smoother's scale and above the field's. A
+   radial model of any kind is the wrong tool here: **the split between "radial" and "the
+   rest" is arbitrary, and the only requirement is that the output be smooth and follow the
+   data.**
+3. **No radial model. Tile medians, local quadratic (LOESS-2), robust, evaluated per pixel.**
+   This is the design. It has no rings by construction, since nothing in it knows about a
+   centre; it follows the vignetting's curvature to the corner, because a quadratic over a
+   ±450 px window of a profile whose scale is ~1800 px is exact to third order; its one knob is
+   a length scale. Two details cost a round each and are recorded so they are not rediscovered:
+   - **The clipping needs an absolute floor.** Relative to the MAD alone, anything the local
+     quadratic did not follow at 0.15 % became an "outlier" and was then not followed at all.
+     With the floor, the tiles rejected on tokina_pemonitor are the two dust spots, the bright
+     spot and the deepest cells, which are exactly the things that should go.
+   - **Partial tiles must sit where they are.** The grid keeps the partial last row and column
+     (58 rows and 8 columns on this sensor) so nothing is extrapolated. The first cut fitted
+     them one full tile from their neighbour; besides the band along the right edge, the
+     synthetic showed a 0.2 % band along the bottom.
 
 ### The chosen pipeline, per Bayer position (mono: the whole frame)
 
