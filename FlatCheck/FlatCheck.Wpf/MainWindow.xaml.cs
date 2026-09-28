@@ -39,6 +39,7 @@ namespace FlatCheck.Wpf
 
             // Fara asta, inchiderea ferestrei in mijlocul unei serii de 32 de cadre ar
             // lasa firul de calcul sa duca treaba pana la capat degeaba.
+            Closing += OnClosing;
             Closed += (_, _) => _vm.CancelPending();
         }
 
@@ -55,6 +56,38 @@ namespace FlatCheck.Wpf
         }
 
         void ChooseFolder(object sender, RoutedEventArgs e) => Choose();
+
+        bool _closeAfterSplit;
+
+        /// <summary>
+        /// Un split in mers: Siril ruleaza si folderul temporar e pe disc. Inchisa direct,
+        /// fereastra ar omori Siril prin CancelPending, dar stergerea folderului e o
+        /// continuare pe dispecerul care tocmai se inchide, si n-ar mai rula: ~17 GB ar
+        /// ramane in %TEMP% fara nicio nota. Deci se intreaba, se opreste, si fereastra se
+        /// inchide singura dupa ce rularea a apucat sa stearga.
+        /// </summary>
+        void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            SplitTabViewModel split = _vm.Split;
+            if (!split.IsRunning) return;
+
+            // deja oprit si asteptam stergerea: un al doilea click pe X nu inchide nimic
+            // mai devreme - exact asa s-ar pierde folderul temporar
+            e.Cancel = true;
+            if (_closeAfterSplit) return;
+
+            var answer = MessageBox.Show(this, SessionMessages.SplitCloseQuestion(), "FlatCheck",
+                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (answer != MessageBoxResult.Yes) return;
+
+            _closeAfterSplit = true;
+            split.StopRun();
+            _ = split.Pending.ContinueWith(_ => Dispatcher.BeginInvoke(new System.Action(() =>
+            {
+                _closeAfterSplit = false;
+                if (!split.IsRunning) Close();   // altfel s-a pornit alta intre timp: ramanem, si X intreaba iar
+            })));
+        }
 
         /// <summary>Butonul "Despre" si F1, prin ApplicationCommands.Help - vezi MainWindow.xaml.</summary>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)

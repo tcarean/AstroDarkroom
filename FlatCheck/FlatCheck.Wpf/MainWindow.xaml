@@ -201,6 +201,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="Sintetic">
           <local:SyntheticView DataContext="{Binding Synthetic}" />
         </TabItem>
+        <TabItem Header="Split">
+          <local:SplitView DataContext="{Binding Split}" />
+        </TabItem>
       </TabControl>
     </Grid>
   </Grid>

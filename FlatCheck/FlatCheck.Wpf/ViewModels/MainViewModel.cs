@@ -60,7 +60,9 @@ namespace FlatCheck.Wpf
         /// de netezire: implicit un MessageBox, in teste un raspuns dat dinainte.
         /// </summary>
         internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null,
-                               Func<ProfileSources> locateProfiles = null, Func<string, LoadedFrame> loadInfo = null)
+                               Func<ProfileSources> locateProfiles = null, Func<string, LoadedFrame> loadInfo = null,
+                               Func<string, string, SirilRunner> runScript = null, Func<DateTime> clock = null,
+                               Func<DateTime, string> splitTempRootFor = null)
         {
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
@@ -76,6 +78,10 @@ namespace FlatCheck.Wpf
             HistEq = new HistEqTabViewModel();
             Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
             Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, catalog, loadInfo);
+            // Tabul Split ruleaza scriptul Siril ca butonul de pe card, deci primeste aceleasi
+            // doua intrebari despre masina, plus fabrica de rulari (in teste, un Siril fals),
+            // ceasul si radacina temporara (in teste, folderul testului).
+            Split = new SplitTabViewModel(_locate, _sirilGuiRunning, runScript, catalog, loadInfo, clock, splitTempRootFor);
             Preprocess = new PreprocessViewModel();
 
             // Singura legatura intre doua taburi: flat-ul netezit pe care il scrie Netezire
@@ -97,6 +103,7 @@ namespace FlatCheck.Wpf
         public HistEqTabViewModel HistEq { get; }
         public SmoothTabViewModel Smooth { get; }
         public SyntheticTabViewModel Synthetic { get; }
+        public SplitTabViewModel Split { get; }
 
         /// <summary>
         /// Se termina cand lantul de la deschidere s-a terminat. Tabul de netezire ruleaza
@@ -187,6 +194,8 @@ namespace FlatCheck.Wpf
             // nu se produce fiindca s-a deschis un folder. Asteapta un click.
             Smooth.Attach(session, ct, WhenIdleAsync);
             Synthetic.Attach(session, ct, WhenIdleAsync);
+            // Nici Split: copiaza si ruleaza Siril de N ori, deci numai la buton, si dupa lant.
+            Split.Attach(session, ct, WhenIdleAsync);
 
             IsRunning = true;
             _chain = RunChainAsync(session, ct);
@@ -237,6 +246,7 @@ namespace FlatCheck.Wpf
             HistEq.Reset();
             Smooth.Reset();
             Synthetic.Reset();
+            Split.Reset();
         }
 
         void ClearProblem()

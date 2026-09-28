@@ -53,6 +53,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Collections.Generic;
 
 namespace FlatCheck
 {
@@ -139,6 +140,59 @@ namespace FlatCheck
         /// <summary>Scrie harta reziduala pe disc. Mesajul pentru utilizator e treaba apelantului.</summary>
         internal static void WriteResidualMap(string path, Img resid)
             => File.WriteAllBytes(path, EncodeResidualMap(resid));
+
+        // ------------------------------------------------------------------ mozaicul
+        //
+        // Mai multe harti reziduale una langa alta, pe O SINGURA scara (data de apelant,
+        // de obicei AutoRange peste toate deodata), cu o banda de titlu deasupra si o
+        // banda de eticheta deasupra fiecarei dale. Textul e BitmapFont; scara textului
+        // se ia dupa latimea dalei, ca o eticheta sa incapa si pe o dala de test de 128 px.
+        // Nu decide nimic: apelantul da hartile, etichetele, scara si titlul (ADR 0054).
+
+        internal const int MosaicGap = 8;
+        internal const int MosaicTextScale = 3;
+        internal const int MosaicPad = 8;
+        /// <summary>Inaltimea unei benzi de text (titlu, eticheta), fixa: la scara maxima a textului plus margini.</summary>
+        internal static readonly int MosaicBandHeight = BitmapFont.Height(MosaicTextScale) + 2 * MosaicPad;
+        internal static readonly (byte R, byte G, byte B) MosaicText = (255, 255, 255);
+        internal static readonly (byte R, byte G, byte B) MosaicBand = (40, 40, 44);
+
+        internal static byte[] EncodeMosaic(IReadOnlyList<(Img Map, string Label)> tiles, MapRange range, string title)
+        {
+            if (tiles == null || tiles.Count == 0) throw new ArgumentException("mozaic fara dale", nameof(tiles));
+
+            int w = 0, tileH = 0, minTileW = int.MaxValue;
+            foreach (var (map, _) in tiles)
+            {
+                w += map.W;
+                tileH = Math.Max(tileH, map.H);
+                minTileW = Math.Min(minTileW, map.W);
+            }
+            w += MosaicGap * (tiles.Count - 1);
+            int band = MosaicBandHeight;
+            int h = 2 * band + tileH;
+            int scale = Math.Clamp(minTileW / 400, 1, MosaicTextScale);
+
+            var rgb = new byte[w * h * 3];
+            for (int i = 0; i < w * h; i++)
+            {
+                rgb[i * 3] = MosaicBand.R; rgb[i * 3 + 1] = MosaicBand.G; rgb[i * 3 + 2] = MosaicBand.B;
+            }
+
+            BitmapFont.Draw(rgb, w, h, MosaicPad, MosaicPad, title, scale, MosaicText.R, MosaicText.G, MosaicText.B);
+
+            int x0 = 0;
+            foreach (var (map, label) in tiles)
+            {
+                BitmapFont.Draw(rgb, w, h, x0 + MosaicPad, band + MosaicPad, label, scale, MosaicText.R, MosaicText.G, MosaicText.B);
+                var (tile, _, _) = MapResidual(map, range);
+                for (int y = 0; y < map.H; y++)
+                    Array.Copy(tile, y * map.W * 3, rgb, ((2 * band + y) * w + x0) * 3, map.W * 3);
+                x0 += map.W + MosaicGap;
+            }
+
+            return Encode(rgb, w, h);
+        }
 
         internal static (byte r, byte g, byte b) Colormap(double v, double lo, double mid, double hi)
         {

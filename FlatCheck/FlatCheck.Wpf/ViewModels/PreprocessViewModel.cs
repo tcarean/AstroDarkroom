@@ -15,14 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PreprocessViewModel.cs - blocul "ruleaza scriptul de aici" de pe ecranul de problema.
+// PreprocessViewModel.cs - alegerea unui script Siril, si blocul "ruleaza scriptul de
+// aici" de pe ecranul de problema, care e cel mai mic consumator al ei.
 //
-// Apare doar cand problema folderului e una pe care un script Siril o rezolva: lipseste
-// process/, sau lipseste masterul din el. Alegerea scriptului se face AICI, pe card, nu
-// in fereastra care se deschide: fereastra aia e log-ul unei rulari deja pornite, si un
-// ecran care intai intreaba si apoi ruleaza ar fi doua ecrane in unul. Pe card se vede
-// dinainte si de ce nu se poate rula - siril-cli negasit, niciun script, un subfolder de
-// intrare gol - si avertismentul ca Siril e deschis.
+// ScriptChoiceViewModel e partea comuna: lista de scripturi din meniul Siril, scriptul
+// propus, blocajul (siril-cli negasit, niciun script, un subfolder de intrare gol) si
+// avertismentul ca Siril e deschis. O folosesc cardul de problema (PreprocessViewModel,
+// care adauga doar textul de deasupra listei) si tabul Split, care ruleaza acelasi script
+// pe fiecare sesiune temporara (ADR 0054). Alegerea se face pe card sau pe tab, nu in
+// fereastra de rulare: fereastra aia e log-ul unei rulari deja pornite, si un ecran care
+// intai intreaba si apoi ruleaza ar fi doua ecrane in unul.
 //
 // Nu decide nimic despre flat-uri. Traduce trei intrebari de mediu - exista Siril, ce
 // scripturi stie, are folderul ce cere scriptul - in text si intr-un buton activ sau nu.
@@ -49,7 +51,7 @@ namespace FlatCheck.Wpf
         public override string ToString() => Name;
     }
 
-    public sealed class PreprocessViewModel : ObservableObject
+    public class ScriptChoiceViewModel : ObservableObject
     {
         SirilSession _session;
         SirilInstall _install;
@@ -61,10 +63,8 @@ namespace FlatCheck.Wpf
         string _warning;
         bool _offered;
 
-        /// <summary>true cand folderul are o problema pe care un script o poate rezolva.</summary>
+        /// <summary>true cat timp e atasata unei sesiuni: pe card, cand folderul are o problema pe care un script o rezolva.</summary>
         public bool IsOffered { get => _offered; private set => Set(ref _offered, value); }
-
-        public string Lead => SessionMessages.PreprocessLead();
 
         /// <summary>Scripturile din meniul Siril, in ordinea de acolo.</summary>
         public IReadOnlyList<ScriptOption> Scripts { get => _scripts; private set => Set(ref _scripts, value); }
@@ -98,6 +98,13 @@ namespace FlatCheck.Wpf
 
         internal string CliPath => _install?.CliPath;
         internal string SelectedPath => _selected?.Path;
+        internal string SelectedName => _selected?.Name;
+
+        /// <summary>Folderele in care intra scriptul ales, citite la ultimul Refresh; goale cand scriptul nu s-a putut citi.</summary>
+        internal IReadOnlyList<string> RequiredFolders { get; private set; } = Array.Empty<string>();
+
+        /// <summary>Se ridica dupa fiecare Refresh, ca un consumator sa-si recalculeze propriul blocaj peste al alegerii.</summary>
+        internal event Action Refreshed;
 
         /// <summary>Pregateste blocul pentru un folder. Lista si alegerea implicita se fac o data, aici.</summary>
         internal void Attach(SirilSession session, SirilInstall install, Func<bool> guiRunning)
@@ -137,8 +144,10 @@ namespace FlatCheck.Wpf
             if (!_offered || _session == null) return;
 
             Warning = _guiRunning() ? SessionMessages.SirilGuiRunning() : null;
+            RequiredFolders = Array.Empty<string>();
             Blocker = FindBlocker();
             Raise(nameof(CanRun));
+            Refreshed?.Invoke();
         }
 
         string FindBlocker()
@@ -153,8 +162,15 @@ namespace FlatCheck.Wpf
             catch (UnauthorizedAccessException e) { return SessionMessages.ScriptUnreadable(_selected.Path, e.Message); }
 
             var required = SirilScript.RequiredFolders(text);
+            RequiredFolders = required;
             var missing = _session.MissingInputFolders(required);
             return missing.Count == 0 ? null : SessionMessages.MissingScriptInputs(_selected.Name, required, missing);
         }
+    }
+
+    /// <summary>Blocul de pe cardul de problema: alegerea scriptului plus textul de deasupra ei.</summary>
+    public sealed class PreprocessViewModel : ScriptChoiceViewModel
+    {
+        public string Lead => SessionMessages.PreprocessLead();
     }
 }

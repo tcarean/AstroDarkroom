@@ -95,6 +95,46 @@ corner.
 | V-039 | Tokina tablet, 7 covers | +0.592 | 50.8 | REFA | PERFECT (ratio residual 1.5 %) | REFA | +0.57 (before the crop correction of 2026-09-18) |
 | V-040 | Tokina paper, rotated in place | +0.099 | 7.1 | BUN | BUN | BUN | +0.14 vs Adobe in the 2026-09-23 note (its figure was on the bench, "not bad but not perfect") |
 
+### The Split tab on two real sessions (measured by hand, 2026-09-28)
+
+The part masters exist only while the tab runs (the temp sessions are deleted after the
+analysis, ADR 0054), so there is no `validation.json` case: these are the tables the tab
+saved as `Rezultat split.txt`, driven headless through `MainViewModel` on the build of that
+day (banner 2.2.0, before the bump). Five tests as corners / azimuthal / residual / tilt /
+worst tile, in %; the reference profile is the whole's nearest, the same for every column.
+
+`Tokina tablet, 3 sheets of paper, rotated in place` (V-013), 4 x 10 frames at 90°, 185 s
+end to end (copy, four Siril runs, analysis); reference lensfun AT-X 11-20 Aspherical (7D2),
+20 mm f/2.8, 0.85 stops:
+
+| column | five tests (%) | verdict | depth (stops) | vs profile |
+| --- | --- | --- | --- | --- |
+| part 1 (0°) | 7.58 / 6.95 / 7.79 / 5.48 / 7.16 | BUN | 0.73 | -0.12 = 8.4 % BUN |
+| part 2 (90°) | 4.25 / 7.57 / 8.27 / 2.85 / 6.95 | BUN | 0.79 | -0.06 = 3.9 % BUN |
+| part 3 (180°) | 8.02 / 6.75 / 7.84 / 5.79 / 6.51 | BUN | 0.73 | -0.11 = 8.2 % BUN |
+| part 4 (270°) | 4.19 / 7.97 / 8.23 / 3.72 / 7.57 | BUN | 0.80 | -0.05 = 3.7 % BUN |
+| whole (40) | 1.18 / 2.03 / 2.86 / 0.58 / 2.65 | BUN | 0.76 | -0.08 = 6.1 % BUN |
+
+The shared colour scale of the mosaic came out at -6.4 / +6.5 %. In the picture parts 1 and 3
+share one blotch field and parts 2 and 4 the same field turned by 90°, and the whole is the
+average of both: the world-fixed blotches of `flat-sources.md` §4, seen four times and once
+cancelled. The whole's five tests agree with V-013 to the second decimal.
+
+`Tokina sky, no diffuser` (V-010), 15 + 15 frames at 180°, 108 s end to end; reference Adobe
+AT-X 11-20, 20 mm f/2.8, 0.66 stops:
+
+| column | five tests (%) | verdict | depth (stops) | vs profile |
+| --- | --- | --- | --- | --- |
+| part 1 (0°) | 22.55 / 13.63 / 16.05 / 17.49 / 12.01 | REFA | 0.27 | -0.39 = 31.0 % REFA |
+| part 2 (180°) | 22.97 / 13.81 / 17.15 / 18.44 / 12.44 | REFA | 0.26 | -0.40 = 31.9 % REFA |
+| whole (30) | 10.28 / 7.25 / 10.06 / 0.49 / 8.81 | REFA (depth) | 0.27 | -0.39 = 31.5 % REFA |
+
+The tilt of 17-18 % on each orientation and 0.49 % on the whole is the 180° cancellation of
+`flat-sources.md` §1 seen through the tool; the corner spread halves but stays, the even
+saddle; and the -0.39 stops against the profile are identical on every column, the radial
+excess no rotation touches. The whole's row agrees with V-010 and V-025. Shared colour scale
+-11.4 / +12.7 %.
+
 ## Not automated
 
 Figures that exist in the design notes but have no case here, and why:
@@ -120,6 +160,10 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 `FLATCHECK_VALIDATION_DUMP` when that is set; that is how the expected values were first filled.
 
 ## History
+
+- 2026-09-28: the Split tab's two real runs recorded above as dated measurements (no JSON
+  case; the part masters are transient). No formula moved; the 40 cases were re-measured at
+  wrap-up after the `StructureRun.Analyze` refactor: 40 passed, no drift, 2 min 10 s.
 
 - 2026-09-25: all 40 cases recorded from the current build (the process migration, ADR 0001;
   no formula changed). Earlier figures from the session notes are quoted in the tables above

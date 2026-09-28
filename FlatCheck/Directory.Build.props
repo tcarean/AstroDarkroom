@@ -15,7 +15,7 @@
     <!-- The tool's version. Bumped BY HAND by the owner, per feature or fix; never by the
          model. The one place it lives (scripts/release.ps1 writes it); the frozen
          flatcheck.py keeps its own 2.2.0 and is not synchronised (ADR 0047). -->
-    <Version>2.2.0</Version>
+    <Version>2.3.0</Version>
 
     <!-- Copyright and licence. <Copyright> becomes AssemblyCopyrightAttribute, which
          VersionInfo.Copyright reads and prints under the banner. The program is GPLv3;

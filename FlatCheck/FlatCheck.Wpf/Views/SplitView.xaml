@@ -1,0 +1,268 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- SplitView - tabul Split (ADR 0054).
+
+     Sus, alegerea: in cate parti, ce script, si butonul. Nimic nu ruleaza singur - se
+     copiaza gigaocteti si se ruleaza Siril de N ori. In timpul rularii, in locul
+     ecranului de asteptare al celorlalte taburi, un card cu faza, bara pe tot fluxul,
+     log-ul lui Siril si Opreste. Dupa, tabelul cu o coloana pe parte, intregul si
+     profilul de referinta, si sub el hartile una langa alta pe scara aleasa.
+
+     Tabelul are un numar variabil de coloane, deci nu e un Grid cu coloane fixe: un
+     ItemsControl de randuri, fiecare rand un ItemsControl orizontal de celule de latime
+     fixa, cu antetul facut la fel. -->
+
+<UserControl x:Class="FlatCheck.Wpf.SplitView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FlatCheck.Wpf">
+
+  <UserControl.Resources>
+    <!-- o celula: valoarea si, pe acelasi rand, pastila verdictului; latime fixa, ca
+         celulele unui rand sa cada sub antetele lor -->
+    <DataTemplate x:Key="SplitCellTemplate">
+      <StackPanel Orientation="Horizontal" Width="230" Margin="0,0,6,0" VerticalAlignment="Center">
+        <TextBlock Style="{StaticResource Number}" Text="{Binding Value}"
+                   TextAlignment="Left" HorizontalAlignment="Left"
+                   TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+        <!-- pastila imediat dupa valoare, la un spatiu, nu la marginea celulei -->
+        <ContentControl Margin="5,0,0,0" VerticalAlignment="Center"
+                        Content="{Binding Verdict}"
+                        ContentTemplate="{StaticResource VerdictChip}"
+                        Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="SplitHeaderTemplate">
+      <TextBlock Width="230" Margin="0,0,6,0" Style="{StaticResource Faint}" FontWeight="SemiBold"
+                 Text="{Binding}" TextTrimming="CharacterEllipsis" />
+    </DataTemplate>
+
+    <DataTemplate x:Key="SplitRowTemplate">
+      <Border BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="0,8,0,8">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Width="190" Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,6,0">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsReference}" Value="True">
+                      <Setter Property="FontWeight" Value="SemiBold" />
+                      <Setter Property="Foreground" Value="{StaticResource AccentBr}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+            <ItemsControl ItemsSource="{Binding Cells}" ItemTemplate="{StaticResource SplitCellTemplate}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </StackPanel>
+          <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding Note}"
+                     Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}" />
+          <StackPanel.Style>
+            <Style TargetType="StackPanel">
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding IsKey}" Value="True">
+                  <Setter Property="TextElement.FontWeight" Value="SemiBold" />
+                </DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </StackPanel.Style>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+
+    <DataTemplate x:Key="SplitMapTemplate">
+      <Border Style="{StaticResource Card}" Margin="0,0,10,10" Padding="8" Width="330">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Faint}" FontWeight="SemiBold" Text="{Binding Label}" Margin="0,0,0,6" />
+          <Image Source="{Binding Png, Converter={StaticResource PngToImage}}"
+                 Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality" />
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18,20,18">
+    <StackPanel>
+
+      <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Text="{Binding Intro}" />
+
+      <!-- ================================================== alegerea -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0" IsEnabled="{Binding IsRunning, Converter={StaticResource Not}}">
+        <StackPanel>
+          <TextBlock Text="{Binding FramesLine}" />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding EstimateLine}"
+                     Visibility="{Binding EstimateLine, Converter={StaticResource NotNullToVis}}" />
+
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Style="{StaticResource Faint}" Text="parti:" Margin="0,0,10,0" VerticalAlignment="Center" />
+            <ItemsControl ItemsSource="{Binding PartOptions}" VerticalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <RadioButton GroupName="SplitParts" Margin="0,0,14,0"
+                               Content="{Binding Label}"
+                               IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <Grid Margin="0,10,0,0" DataContext="{Binding Script}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="script:" Margin="0,0,10,0" VerticalAlignment="Center" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding Scripts}"
+                      SelectedItem="{Binding Selected, Mode=TwoWay}"
+                      DisplayMemberPath="Name" VerticalAlignment="Center" MaxWidth="520" HorizontalAlignment="Left" />
+          </Grid>
+
+          <TextBlock Margin="0,10,0,0" Foreground="#F0C674" TextWrapping="Wrap"
+                     Text="{Binding Script.Warning}"
+                     Visibility="{Binding Script.HasWarning, Converter={StaticResource BoolToVis}}" />
+          <TextBlock Margin="0,10,0,0" Foreground="#F0857E" TextWrapping="Wrap"
+                     Text="{Binding Blocker}"
+                     Visibility="{Binding HasBlocker, Converter={StaticResource BoolToVis}}" />
+
+          <Button Margin="0,12,0,0" Padding="16,7" HorizontalAlignment="Left"
+                  Content="{Binding StartLabel}" Command="{Binding StartCommand}" />
+        </StackPanel>
+      </Border>
+
+      <!-- ================================================== rularea -->
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0"
+              Visibility="{Binding IsRunning, Converter={StaticResource BoolToVis}}">
+        <StackPanel>
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Phase}" />
+            <Button Grid.Column="1" MinWidth="96" Margin="12,0,0,0" VerticalAlignment="Top"
+                    Content="{Binding StopLabel}" Command="{Binding StopCommand}" />
+          </Grid>
+          <ProgressBar Margin="0,10,0,0" Minimum="0" Maximum="1" Value="{Binding Progress, Mode=OneWay}" />
+
+          <StackPanel DataContext="{Binding Run}" Visibility="{Binding Converter={StaticResource NotNullToVis}}">
+            <Grid Margin="0,10,0,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" FontFamily="{StaticResource MonoFont}" Style="{StaticResource Muted}"
+                         TextTrimming="CharacterEllipsis" Text="{Binding Step}" />
+              <TextBlock Grid.Column="1" Style="{StaticResource Muted}" Margin="12,0,0,0" Text="{Binding ProgressLabel}" />
+            </Grid>
+            <TextBox Margin="0,8,0,0" Style="{StaticResource LogBox}" Height="180"
+                     Text="{Binding Log, Mode=OneWay}" TextChanged="ScrollToEnd" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <local:MessagePanel Margin="0,14,0,0" />
+
+      <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="2,12,0,0" TextWrapping="Wrap"
+                 Text="{Binding TempNote}"
+                 Visibility="{Binding TempNote, Converter={StaticResource NotNullToVis}}" />
+
+      <!-- ================================================== rezultatul -->
+      <StackPanel Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+
+        <TextBlock Style="{StaticResource Muted}" Margin="2,12,0,0" TextWrapping="Wrap"
+                   Text="{Binding SavedLine}"
+                   Visibility="{Binding SavedTo, Converter={StaticResource NotNullToVis}}" />
+        <TextBlock Style="{StaticResource Muted}" Foreground="#E3B341" Margin="2,12,0,0"
+                   TextWrapping="Wrap" Text="{Binding SaveError}"
+                   Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
+
+        <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="PARTILE FATA DE INTREG" />
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,0,0,8">
+              <Run Text="profil de referinta: " /><Run Text="{Binding ReferenceLine, Mode=OneWay}" />
+            </TextBlock>
+            <!-- doar orizontal; rotita merge mai departe la pagina, altfel tabelul o inghite
+                 si pagina nu se mai deruleaza cu mausul peste el -->
+            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+                          PreviewMouseWheel="ForwardWheel">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Width="190" Style="{StaticResource Faint}" Text="" />
+                  <ItemsControl ItemsSource="{Binding Headers}" ItemTemplate="{StaticResource SplitHeaderTemplate}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                  </ItemsControl>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Rows}" ItemTemplate="{StaticResource SplitRowTemplate}" />
+              </StackPanel>
+            </ScrollViewer>
+            <TextBlock Style="{StaticResource Faint}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding Meaning}" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock Style="{StaticResource Heading}" Margin="2,22,0,8" Text="HARTILE REZIDUALE" />
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+          <TextBlock Style="{StaticResource Faint}" Text="scara:" Margin="0,0,10,0" VerticalAlignment="Center" />
+          <ItemsControl ItemsSource="{Binding MapScale.Options}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <RadioButton GroupName="SplitMapScale" Margin="0,0,14,0"
+                             Content="{Binding Label}"
+                             IsChecked="{Binding IsSelected, Mode=TwoWay}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Maps}" ItemTemplate="{StaticResource SplitMapTemplate}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+        <TextBlock Style="{StaticResource Muted}" Margin="2,0,0,0" Text="{Binding MapLegend}" />
+
+        <local:ReportPanel Margin="0,14,0,0" />
+      </StackPanel>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -84,11 +84,21 @@ namespace FlatCheck
         /// <param name="query">Null = doar structura; altfel si comparatia cu profilele.</param>
         internal static RunOutcome<StructureOutcome> Execute(string path, TextWriter report, StructureQuery query = null)
         {
+            StructureOutcome o = Analyze(path, query);
+            StructureReport.Write(o, path, report);
+            return new RunOutcome<StructureOutcome>(o, PngWriter.EncodeResidualMap(o.Structure.Residual));
+        }
+
+        /// <summary>
+        /// Prima jumatate a lui Execute, fara raport si fara harta: incarca, analizeaza si,
+        /// cu query, compara. SplitRun o cheama o data pe master, ca cifrele unei parti sa
+        /// fie exact cele pe care le-ar da rularea de structura pe fisierul ei.
+        /// </summary>
+        internal static StructureOutcome Analyze(string path, StructureQuery query = null)
+        {
             LoadedFrame f = ImageLoader.Load(path);
             var r = StructureAnalyzer.Analyze(f.Image);
-            StructureOutcome o = query == null ? new StructureOutcome(r, null, null, null) : Compare(r, f, query);
-            StructureReport.Write(o, path, report);
-            return new RunOutcome<StructureOutcome>(o, PngWriter.EncodeResidualMap(r.Residual));
+            return query == null ? new StructureOutcome(r, null, null, null) : Compare(r, f, query);
         }
 
         /// <summary>

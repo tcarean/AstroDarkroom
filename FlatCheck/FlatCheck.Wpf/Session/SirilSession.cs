@@ -106,8 +106,13 @@ namespace FlatCheck.Wpf
             Root = root ?? throw new ArgumentNullException(nameof(root));
         }
 
-        internal string ProcessDir => Path.Combine(Root, "process");
-        internal string MastersDir => Path.Combine(Root, "masters");
+        internal const string ProcessFolder = "process";
+        internal const string MastersFolder = "masters";
+        /// <summary>Folderele pe care le SCRIE Siril; un split nu le copiaza niciodata din original (ADR 0054).</summary>
+        internal static readonly IReadOnlyList<string> OutputFolders = new[] { ProcessFolder, MastersFolder };
+
+        internal string ProcessDir => Path.Combine(Root, ProcessFolder);
+        internal string MastersDir => Path.Combine(Root, MastersFolder);
         internal string FlatsDir => Path.Combine(Root, "flats");
 
         /// <summary>
@@ -194,6 +199,11 @@ namespace FlatCheck.Wpf
 
         /// <summary>Harta reziduala, langa raport si cu acelasi nume ca la consola.</summary>
         internal string ResidualPngPath => Path.Combine(Root, "flatcheck.png");
+
+        /// <summary>Raportul si mozaicul tabului Split, in radacina sesiunii, langa cele ale structurii (ADR 0054).</summary>
+        internal const string SplitResultFileName = "Rezultat split.txt";
+        internal string SplitResultTextPath => Path.Combine(Root, SplitResultFileName);
+        internal string SplitPngPath => Path.Combine(Root, "flatcheck-split.png");
 
         /// <summary>
         /// Prima verificare, inainte de orice calcul. Ordinea conteaza: un folder gresit
