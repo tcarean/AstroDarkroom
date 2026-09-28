@@ -162,7 +162,8 @@ Every case also prints its measured figures as a JSON line, and appends it to th
 ## History
 
 - 2026-09-28: the Split tab's two real runs recorded above as dated measurements (no JSON
-  case; the part masters are transient). No formula moved; the 40 cases were not re-measured.
+  case; the part masters are transient). No formula moved; the 40 cases were re-measured at
+  wrap-up after the `StructureRun.Analyze` refactor: 40 passed, no drift, 2 min 10 s.
 
 - 2026-09-25: all 40 cases recorded from the current build (the process migration, ADR 0001;
   no formula changed). Earlier figures from the session notes are quoted in the tables above

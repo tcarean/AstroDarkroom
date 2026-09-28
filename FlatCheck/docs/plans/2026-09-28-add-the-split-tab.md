@@ -71,3 +71,21 @@ from `main` (ADR 0050).
 
 Verify green; the R-091..R-093 tests green; the golden files untouched; the tab rendered by
 `WindowSmokeTests`; the two real runs pasted in the session and in `validation.md`.
+
+## What deviated, and why (2026-09-28, at wrap-up)
+
+- Two subagent code reviews ran on the branch, at the owner's request, and their findings were
+  fixed in three follow-up commits: the copy list follows the script's `cd` folders instead
+  of a fixed `biases/lights/flats` (the stock `OSC_Preprocessing.ssf` enters `darks/`),
+  `process/` and `masters/` are never copied, the column verdict is against the reference
+  profile (one profile for the whole table), the temp folder survives neither a read-only raw
+  nor the window closing, and the frame count is re-read on the button.
+- The owner asked for four more things after seeing the tab: the verdict chip beside the
+  value, one row per lens profile (as on the Structure tab) instead of one reference row, the
+  mouse wheel over the table, and a disk estimate (`SplitCost`, no time) in place of the
+  measured-cost sentence. ADR 0054 records them.
+- Step 5 ran headless through `MainViewModel` from a scratch console, not from the window,
+  so the reports carry the 2.2.0 banner (the bump came after); the figures are in
+  `validation.md`.
+- Not done, on purpose: a cap on `darks/` like the one on `lights/` (a reviewer's note; the
+  script needs them and the estimate makes the cost visible), a console `--split`.
