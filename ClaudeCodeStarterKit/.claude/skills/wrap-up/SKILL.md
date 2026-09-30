@@ -28,7 +28,14 @@ adds project-specific steps and says where they go.
 6. `docs/decisions/`: any choice made in this session that someone could later ask "why?" about
    has an ADR, including a choice settled in chat that happened to match convention. If unsure,
    list the candidates and ask. An ADR still `proposed` while code built on it is about to be
-   committed is a question for the owner: accept it, or change the code.
+   committed is a question for the owner: accept it, or change the code. An ADR already merged
+   into `main` changes three ways only (the kit's ADR 0024): a typo, an unclear phrase or a
+   renamed path is fixed in place; a wrong figure, or a reason that no longer holds while the
+   decision stands, gets a dated `(Corrected|Restated YYYY-MM-DD: ...)` note outside
+   `## Decision`; anything that changes what is done is a new ADR that supersedes it, in part
+   or whole, and the old one changes only its Status. In a project, a decision the kit made
+   is cited as "the kit's ADR NNNN", never written again as a project ADR; a project ADR
+   records a deviation or a value of its own (the kit's ADR 0025).
 7. `docs/plans/`: if a plan was followed, note at its end what deviated and why.
 8. `docs/validation.md`: if figures were re-measured, the date and the output are recorded.
 9. `README.md` is the user documentation: if the change is user-visible (a mode, an option, a
@@ -39,7 +46,9 @@ adds project-specific steps and says where they go.
    hold (the kit's ADR 0011). `scripts/`, `.claude/skills/` and `.claude/agents/` belong to the
    kit (the kit's ADRs 0017 and 0018): in the kit, a change there ends with `scripts/sync.ps1`
    and one commit per project; in a project, such a change is made in the kit instead, and an
-   edit here is refused by verify and by the Stop hook.
+   edit here is refused by verify and by the Stop hook. When a new kit ADR supersedes part of
+   what a project ADR says, that project's sync commit adds
+   `; <part> superseded by the kit's ADR NNNN` to that ADR's Status.
 10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
     a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
     English, rename the branch now with `git branch -m claude/<Task-name>` (the kit's ADR 0013).

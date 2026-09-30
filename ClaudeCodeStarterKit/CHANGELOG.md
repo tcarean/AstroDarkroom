@@ -7,6 +7,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- `verify.ps1` checks the decision records (ADR 0024): a new step, `decisions`, runs
+  `scripts/check-decisions.ps1`, synced to every project, which checks the header lines of each
+  ADR (title with its number, `Date`, `Status`, optional `Supersedes`), unique numbers, one
+  `## Decision` with no dated correction note inside it, and that every supersession, whole or
+  in part, is written in both ADRs. An accepted ADR merged into `main` changes three ways only: in
+  place for a typo or a renamed path, a dated `Corrected`/`Restated` note for a wrong figure or a
+  retired reason, a superseding ADR for anything that changes what is done. The back-pointers
+  missing so far are filled in.
 - The six skills and the `docs-auditor` agent are shared like `scripts/` (ADR 0018):
   `scripts/sync.ps1` mirrors `.claude/skills/` and `.claude/agents/` too, step 0 of `verify.ps1`
   and the Stop hook cover them, rule 15 names them. A skill takes its values from `kit.json` by
@@ -109,6 +117,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A project cites the kit's process decisions and records only its own (ADR 0025): no project
+  ADR for a kit decision, only for a deviation or a project value. The synced files and the git
+  hooks cite "the kit's ADR NNNN" and never a rule by its number, which in a project named
+  another rule (`/wrap-up` called the shared folders "rule 15"); a kit test guards it. The
+  `docs-auditor` also reads the kit's `docs/decisions/`.
 - A commit message may be one line of up to 100 characters (was 72), and a CHANGELOG line is a
   judgment made at `/wrap-up`, not a gate (ADR 0023): a line for what a reader of the version
   history cares about, none for a review follow-up or a test-only change. Rules 9 and 13, the
