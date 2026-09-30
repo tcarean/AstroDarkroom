@@ -2,8 +2,9 @@
 # check-decisions.ps1 - checks the headers of the decision records (ADRs) in docs/decisions/.
 #
 # WHAT IT DOES
-#   Reads every docs/decisions/NNNN-slug.md except 0000-template.md and checks the first
-#   lines of each, as the kit's ADR 0024 fixes them:
+#   Reads every .md in docs/decisions/. Each is named NNNN-slug.md, lowercase words joined by
+#   hyphens; 0000-template.md is skipped, and no other file may use 0000. Then it checks the
+#   first lines of each ADR, as the kit's ADR 0024 fixes them (letter case counts):
 #     1  # NNNN. <title>              NNNN is the number in the file name
 #     2  (blank)
 #     3  Date: YYYY-MM-DD
@@ -15,14 +16,15 @@
 #   be "the kit's ADR NNNN".
 #   Then, across the files:
 #     - no number is used twice, and every ADR has exactly one "## Decision" section;
-#     - no dated correction note ("Corrected|Restated|Amended YYYY-MM-DD") sits inside
-#       "## Decision": a note goes next to the text it corrects, elsewhere;
+#     - no dated correction note ("Corrected|Restated|Amended YYYY-MM-DD", in any letter case)
+#       sits inside "## Decision": a note goes next to the text it corrects, or right after
+#       the section when that text is inside it;
 #     - every number named on a Status or Supersedes line exists and is older than the ADR
 #       that supersedes it;
 #     - both sides of a supersession agree: "Supersedes: X" in N goes with "Status: superseded
 #       by N" in X, and "X in part (...)" in N with a "; <part> superseded by N" clause in X;
-#     - "the kit's ADR NNNN" names a file in the kit's docs/decisions/, checked only when
-#       kit.json's "kit" names a folder that exists and is not this project.
+#     - "the kit's ADR NNNN" names an ADR in the kit's docs/decisions/, checked only when
+#       kit.json's "kit" names a folder, other than this project, that has docs/decisions/.
 #   Whether an edit to an accepted ADR should have been a new ADR is not checked here: that is
 #   a judgment made at /wrap-up.
 #
@@ -65,7 +67,7 @@ $clause = "; (?<part>[^;]+?) superseded by (?<ref>$ref)(?: \([^();]+\))?"
 $statusRx = "^Status: (?:proposed|(?:accepted \d{4}-\d{2}-\d{2}|superseded by (?<head>$ref))(?<clauses>(?:$clause)*))$"
 $item = '(?<num>\d{4})(?<part> in part \([^()]+\))?'
 $supersedesRx = "^Supersedes: $item(?:(?:; |, )$item)*$"
-$noteRx = '\b(?:Corrected|Restated|Amended) \d{4}-\d{2}-\d{2}'
+$noteRx = '(?i)\b(?:Corrected|Restated|Amended) \d{4}-\d{2}-\d{2}'
 
 $problems = New-Object System.Collections.Generic.List[string]
 function Add-Problem([string]$Kind, [string]$File, [string]$Text) {
@@ -81,15 +83,16 @@ foreach ($f in $files) {
     $m = [regex]::Match($name, '^(\d{4})-[a-z0-9]+(?:-[a-z0-9]+)*\.md$')
     if (-not $m.Success) { Add-Problem 'NAME' $name 'not NNNN-slug.md (lowercase words joined by hyphens)'; continue }
     $number = $m.Groups[1].Value
-    if ($number -eq '0000') { continue }   # the template
+    if ($name -ceq '0000-template.md') { continue }
+    if ($number -eq '0000') { Add-Problem 'NAME' $name '0000 is the number of 0000-template.md only'; continue }
 
     # UTF-8 on purpose: Windows PowerShell 5.1 would read a file without a BOM in the ANSI code page.
     $lines = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8) -split "`r?`n"
     while ($lines.Count -lt 6) { $lines += '' }
 
     if (-not $lines[0].StartsWith("# $number. ")) { Add-Problem 'TITLE' $name "line 1 must start with '# $number. '" }
-    if ($lines[1] -ne '') { Add-Problem 'HEADER' $name 'line 2 must be blank' }
-    if ($lines[2] -notmatch '^Date: \d{4}-\d{2}-\d{2}$') { Add-Problem 'DATE' $name "line 3 must be 'Date: YYYY-MM-DD'" }
+    if ($lines[1] -ne '') { Add-Problem 'HEADER' $name ("line 2 '{0}' must be blank" -f $lines[1]) }
+    if ($lines[2] -cnotmatch '^Date: \d{4}-\d{2}-\d{2}$') { Add-Problem 'DATE' $name ("line 3 '{0}' is not 'Date: YYYY-MM-DD'" -f $lines[2]) }
 
     $entry = @{ File = $name; Head = $null; Clauses = @(); Supersedes = @() }
     $sm = [regex]::Match($lines[3], $statusRx)
@@ -98,7 +101,9 @@ foreach ($f in $files) {
     }
     else {
         if ($sm.Groups['head'].Success) { $entry.Head = $sm.Groups['head'].Value }
-        foreach ($c in [regex]::Matches($sm.Groups['clauses'].Value, "\G$clause")) { $entry.Clauses += $c.Groups['ref'].Value }
+        # The refs of the match that validated the line: one capture per clause. Matching the
+        # clauses again could split a part that itself contains "superseded by" differently.
+        foreach ($c in $sm.Groups['ref'].Captures) { $entry.Clauses += $c.Value }
     }
 
     if ($lines[4].StartsWith('Supersedes:')) {
@@ -116,13 +121,13 @@ foreach ($f in $files) {
                 $entry.Supersedes += @{ Num = $n.Value; Part = $isPart }
             }
         }
-        if ($lines[5] -ne '') { Add-Problem 'HEADER' $name 'line 6 must be blank after the Supersedes line' }
+        if ($lines[5] -ne '') { Add-Problem 'HEADER' $name ("line 6 '{0}' must be blank after the Supersedes line" -f $lines[5]) }
     }
-    elseif ($lines[4] -ne '') { Add-Problem 'HEADER' $name "line 5 must be blank or 'Supersedes: ...'" }
+    elseif ($lines[4] -ne '') { Add-Problem 'HEADER' $name ("line 5 '{0}' must be blank or 'Supersedes: ...'" -f $lines[4]) }
 
     # Exactly one "## Decision", and no dated correction note inside it. Lines are joined first:
     # a note may wrap, as in "(Restated" at the end of one line and the date on the next.
-    $starts = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -eq '## Decision') { $i } })
+    $starts = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -ceq '## Decision') { $i } })
     if ($starts.Count -ne 1) { Add-Problem 'DECISION' $name ("has {0} '## Decision' sections, not one" -f $starts.Count) }
     else {
         $section = @()
@@ -130,7 +135,7 @@ foreach ($f in $files) {
         $joined = (($section -join ' ') -replace '\s+', ' ')
         $note = [regex]::Match($joined, $noteRx)
         if ($note.Success) {
-            Add-Problem 'NOTE' $name ("'{0}' inside '## Decision': a correction note goes next to the text it corrects, outside the decision; a changed decision is a new ADR" -f $note.Value)
+            Add-Problem 'NOTE' $name ("'{0}' inside '## Decision': a correction note goes right after the section when the text it corrects is inside it; a changed decision is a new ADR" -f $note.Value)
         }
     }
 
@@ -144,7 +149,8 @@ function Test-KitRef([string]$File, [string]$Ref) {
     $n = $Ref.Substring($Ref.Length - 4)
     if (-not $kitPath) { return }
     if ($isKit) { Add-Problem 'LINK' $File "'$Ref': the kit names its own ADRs by number"; return }
-    if ($kitDecisions -and -not (Get-ChildItem -LiteralPath $kitDecisions -Filter "$n-*.md" -File)) {
+    # 0000 is the kit's template, not an ADR.
+    if ($kitDecisions -and ($n -eq '0000' -or -not (Get-ChildItem -LiteralPath $kitDecisions -Filter "$n-*.md" -File))) {
         Add-Problem 'LINK' $File "'$Ref' does not exist in the kit's docs/decisions/"
     }
 }

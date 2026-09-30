@@ -31,9 +31,12 @@ adds project-specific steps and says where they go.
    committed is a question for the owner: accept it, or change the code. An ADR already merged
    into `main` changes three ways only (the kit's ADR 0024): a typo, an unclear phrase or a
    renamed path is fixed in place; a wrong figure, or a reason that no longer holds while the
-   decision stands, gets a dated `(Corrected|Restated YYYY-MM-DD: ...)` note outside
-   `## Decision`; anything that changes what is done is a new ADR that supersedes it, in part
-   or whole, and the old one changes only its Status. In a project, a decision the kit made
+   decision stands, gets a dated `(Corrected|Restated YYYY-MM-DD: ...)` note next to it, or
+   right after `## Decision` when the text is inside it; anything that changes what is done is
+   a new ADR that supersedes it, in part or whole, and the old one changes only its Status.
+   The Status and Supersedes lines may always be completed so both sides agree. Look at
+   `git diff main...HEAD -- docs/decisions/` and say which of these each edit to an ADR
+   already on `main` is. In a project, a decision the kit made
    is cited as "the kit's ADR NNNN", never written again as a project ADR; a project ADR
    records a deviation or a value of its own (the kit's ADR 0025).
 7. `docs/plans/`: if a plan was followed, note at its end what deviated and why.
@@ -47,8 +50,9 @@ adds project-specific steps and says where they go.
    kit (the kit's ADRs 0017 and 0018): in the kit, a change there ends with `scripts/sync.ps1`
    and one commit per project; in a project, such a change is made in the kit instead, and an
    edit here is refused by verify and by the Stop hook. When a new kit ADR supersedes part of
-   what a project ADR says, that project's sync commit adds
-   `; <part> superseded by the kit's ADR NNNN` to that ADR's Status.
+   what a project ADR says, look for it in each project's `docs/decisions/` and add
+   `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on the task branch, in
+   the project's sync commit when there is one.
 10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
     a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
     English, rename the branch now with `git branch -m claude/<Task-name>` (the kit's ADR 0013).

@@ -2,6 +2,7 @@
 
 Date: 2026-09-26
 Status: accepted 2026-09-26; the kit-only file list superseded by 0022; CheckStagedTests superseded by 0023
+Supersedes: 0003 in part (the list of steps)
 
 ## Context
 

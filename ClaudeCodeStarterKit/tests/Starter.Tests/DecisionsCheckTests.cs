@@ -1,3 +1,4 @@
+using System.Text;
 using Xunit;
 
 namespace Starter.Tests;
@@ -54,9 +55,20 @@ public sealed class DecisionsCheckTests : IDisposable
         Write(_project, "0005-fifth.md", Adr(5, "Status: accepted 2026-09-04", "Supersedes: 0002 in part (the name); 0004 in part (the order)"));
         Write(_project, "0006-sixth.md", Adr(6, "Status: proposed"));
 
+        // A part may itself contain "superseded by NNNN": only the last one names the newer ADR.
+        Write(_project, "0007-seventh.md", Adr(7, "Status: accepted 2026-09-05; the rule superseded by 0002 in March superseded by 0008"));
+        Write(_project, "0008-eighth.md", Adr(8, "Status: accepted 2026-09-06", "Supersedes: 0007 in part (the rule)"));
+
+        // Windows line endings, a byte order mark, and a head that names a kit ADR.
+        Write(_project, "0009-crlf.md", Adr(9, "Status: accepted 2026-09-07").ReplaceLineEndings("\r\n"));
+        File.WriteAllText(
+            Path.Combine(_project, "docs", "decisions", "0010-bom.md"),
+            Adr(10, "Status: superseded by the kit's ADR 0007"),
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+
         (int exitCode, string output) = RunCheck(_project);
         Assert.True(exitCode == 0, output);
-        Assert.Contains("ok       6 decisions", output);
+        Assert.Contains("ok       10 decisions", output);
     }
 
     [Fact]
@@ -85,6 +97,21 @@ public sealed class DecisionsCheckTests : IDisposable
         Write(_project, "0017-backwards.md", Adr(17, "Status: accepted 2026-09-01", "Supersedes: 0018"));
         Write(_project, "0018-newer.md", Adr(18, "Status: superseded by 0017"));
 
+        // The other header lines, a second Decision, a lowercase note, a Status naming a missing ADR.
+        Write(_project, "0019-line-two.md", Adr(19, "Status: accepted 2026-09-01").Replace("\n\nDate:", "\nnot blank\nDate:", StringComparison.Ordinal));
+        Write(_project, "0020-line-five.md", Adr(20, "Status: accepted 2026-09-01", "Junk: here"));
+        Write(_project, "0021-target.md", Adr(21, "Status: superseded by 0022"));
+        Write(_project, "0022-line-six.md", Adr(22, "Status: accepted 2026-09-02", "Supersedes: 0021\nnot blank"));
+        Write(_project, "0023-two-decisions.md", Adr(23, "Status: accepted 2026-09-01") + "\n## Decision\n\nAgain.\n");
+        Write(_project, "0024-lowercase.md", Adr(24, "Status: accepted 2026-09-01", decision: "Use A. (corrected 2026-09-20: B.)").Replace("Date:", "date:", StringComparison.Ordinal));
+        Write(_project, "0025-missing-newer.md", Adr(25, "Status: superseded by 0099"));
+        Write(_project, "0000-other.md", Adr(0, "Status: accepted 2026-09-01"));
+
+        // Two clauses joined by ", " read as one clause naming the last ADR: the other side is one-sided.
+        Write(_project, "0026-joined.md", Adr(26, "Status: accepted 2026-09-01; the limit superseded by 0027, check-staged superseded by 0028"));
+        Write(_project, "0027-names-it.md", Adr(27, "Status: accepted 2026-09-02", "Supersedes: 0026 in part (the limit)"));
+        Write(_project, "0028-names-nothing.md", Adr(28, "Status: accepted 2026-09-03"));
+
         (int exitCode, string output) = RunCheck(_project);
         Assert.Equal(1, exitCode);
         Assert.Contains("NAME       0001-Bad Name.md", output);
@@ -102,6 +129,16 @@ public sealed class DecisionsCheckTests : IDisposable
         Assert.Contains("LINK       0016-missing.md: supersedes 0099, which does not exist", output);
         Assert.Contains("LINK       0017-backwards.md: supersedes 0018, which is not older", output);
         Assert.Contains("LINK       0018-newer.md: is superseded by 0017, which is not newer", output);
+        Assert.Contains("HEADER     0019-line-two.md: line 2 'not blank' must be blank", output);
+        Assert.Contains("HEADER     0020-line-five.md: line 5 'Junk: here' must be blank or 'Supersedes: ...'", output);
+        Assert.Contains("HEADER     0022-line-six.md: line 6 'not blank' must be blank after the Supersedes line", output);
+        Assert.Contains("DECISION   0023-two-decisions.md: has 2 '## Decision' sections", output);
+        Assert.Contains("DATE       0024-lowercase.md: line 3 'date: 2026-09-01' is not 'Date: YYYY-MM-DD'", output);
+        Assert.Contains("NOTE       0024-lowercase.md: 'corrected 2026-09-20' inside '## Decision'", output);
+        Assert.Contains("LINK       0025-missing-newer.md: is superseded by 0099, which does not exist", output);
+        Assert.Contains("NAME       0000-other.md: 0000 is the number of 0000-template.md only", output);
+        Assert.Contains("LINK       0026-joined.md: is superseded in part by 0027, but its Status has no", output);
+        Assert.Contains("LINK       0028-names-nothing.md: supersedes 0026 according to 0026-joined.md", output);
     }
 
     [Fact]
@@ -111,9 +148,25 @@ public sealed class DecisionsCheckTests : IDisposable
         Assert.Equal(0, RunCheck(_project).ExitCode);
 
         Write(_project, "0001-follows-the-kit.md", Adr(1, "Status: accepted 2026-09-01; the naming superseded by the kit's ADR 0008"));
+        Write(_project, "0002-names-the-template.md", Adr(2, "Status: superseded by the kit's ADR 0000"));
         (int exitCode, string output) = RunCheck(_project);
         Assert.Equal(1, exitCode);
         Assert.Contains("'the kit's ADR 0008' does not exist in the kit's docs/decisions/", output);
+        Assert.Contains("'the kit's ADR 0000' does not exist in the kit's docs/decisions/", output);
+    }
+
+    /// <summary>With no kit beside the project, or none named, a kit reference cannot be checked and passes.</summary>
+    [Fact]
+    public void KitReference_WithoutTheKitBeside_IsNotChecked()
+    {
+        Write(_project, "0001-follows-the-kit.md", Adr(1, "Status: accepted 2026-09-01; the naming superseded by the kit's ADR 0999"));
+
+        File.WriteAllText(Path.Combine(_project, "kit.json"), KitJson("../Nowhere"));
+        Assert.Equal(0, RunCheck(_project).ExitCode);
+
+        File.WriteAllText(Path.Combine(_project, "kit.json"), KitJson(null));
+        (int exitCode, string output) = RunCheck(_project);
+        Assert.True(exitCode == 0, output);
     }
 
     [Fact]
@@ -155,14 +208,15 @@ public sealed class DecisionsCheckTests : IDisposable
             + $"## Consequences\n\n{consequences}\n";
     }
 
-    private static string KitJson(string kit)
+    /// <summary>A minimal kit.json; a null kit leaves the key out, as a standalone repository does.</summary>
+    private static string KitJson(string? kit)
     {
+        string kitKey = kit is null ? string.Empty : $$""", "kit": "{{kit}}" """;
         return $$"""
             { "solution": "X.sln", "codeFolders": ["src/"], "testFolders": ["tests/"],
               "testData": { "folder": "tests/testdata/", "largeEnv": "X_TESTDATA_LARGE" },
               "mutate": { "testProject": "tests/X.Tests/" },
-              "release": { "publish": [] },
-              "kit": "{{kit}}" }
+              "release": { "publish": [] }{{kitKey}} }
             """;
     }
 }

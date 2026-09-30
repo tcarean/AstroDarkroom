@@ -26,7 +26,8 @@ grammar.
   - a wrong figure, or a supporting reason that no longer holds while the decision stands, gets a
     dated note next to the text it corrects, outside `## Decision`: `(Corrected YYYY-MM-DD: ...)`
     or `(Restated YYYY-MM-DD: ...)`, saying what was wrong and what holds, and pointing at where
-    a measurement is recorded rather than copying it;
+    a measurement is recorded rather than copying it. When the text it corrects is inside
+    `## Decision`, the note goes right after that section and quotes what it corrects;
   - anything that changes what is done is a superseding ADR. A later ADR that replaces, removes or
     makes false part of an earlier one supersedes that part ("amends" is a partial supersession).
     The old ADR changes only its Status line, the new one names it on its Supersedes line. A
@@ -46,8 +47,8 @@ grammar.
   no dated note inside it, that every number named exists and is older, that both sides of a
   supersession agree (a whole `X` against `superseded by N`, `X in part` against a
   `; <part> superseded by N` clause), and in a project that each `the kit's ADR NNNN` exists in
-  the kit when the kit is beside it. The steps of the gate are listed once, in the header of
-  `verify.ps1`.
+  the kit when the kit is beside it. No ADR lists the steps of the gate any more: the header
+  of `verify.ps1` is the reference, which the guide and the README summarise.
 
 ## Alternatives rejected
 
@@ -66,9 +67,12 @@ grammar.
 
 ## Consequences
 
-The gate has seven checks; a red `decisions` step names the file and the rule. The back-pointers
-missing so far are added in the same task: Status lines of 0001, 0003, 0009, 0010, 0017, 0020 and
-0021, Supersedes lines of 0021, 0022 and 0023. `0000-template.md` shows the grammar, and the
+The gate has seven checks; a red `decisions` step names the file and the rule. In the same task
+the headers are completed on both sides: the parts this ADR and 0025 supersede (of 0001, 0003,
+0009 and 0018), and the parts earlier ADRs superseded without recording it (0017 of 0003, 0018
+of 0009, 0021 of 0010, 0022 and 0023 of 0017, 0023 of 0020 and 0021). Only what a later ADR says
+it replaces, or what contradicts an earlier Decision, was recorded; a stale sentence in the
+Context or Consequences of an older ADR is history and stays as it is. `0000-template.md` shows the grammar, and the
 guide's section on decisions says the same in Romanian. A project gets the check by sync and
 retires any ADR format test of its own. The check cannot tell whether an in-place edit changed a
 decision; `/wrap-up` step 6 asks.

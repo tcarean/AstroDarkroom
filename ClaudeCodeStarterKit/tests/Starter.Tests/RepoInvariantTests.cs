@@ -126,6 +126,20 @@ public partial class RepoInvariantTests
             $"Bare ADR or rule numbers in the kit's shared files: {string.Join(", ", bare)}");
     }
 
+    [Theory]
+    [InlineData("see ADR 0013", true)]
+    [InlineData("see ADR-0013", true)]
+    [InlineData("see adr 0013", true)]
+    [InlineData("the kit's ADR 0013", false)]
+    [InlineData("The kit's ADR 0013 says", false)]
+    [InlineData("the kit’s ADR 0013", false)]
+    [InlineData("the kit''s ADR 0013", false)]
+    [InlineData("the kit's ADRs 0017 and 0018", false)]
+    public void BareAdr_FlagsOnlyNumbersNotQualifiedAsTheKits(string text, bool flagged)
+    {
+        Assert.Equal(flagged, BareAdr().IsMatch(text));
+    }
+
     /// <summary>Table rows of docs/requirements.md: "| R-001 | implemented | ..." => R001 => implemented.</summary>
     private static Dictionary<string, string> ReadRequirements()
     {
@@ -252,7 +266,11 @@ public partial class RepoInvariantTests
     [GeneratedRegex(@"\n[ \t]*(?:#[ \t]*)?")]
     private static partial Regex LineBreak();
 
-    [GeneratedRegex(@"(?<!the kit's )\bADRs? \d{4}")]
+    /// <summary>
+    /// "ADR 0013", "ADR-0013" or "adr 0013" not preceded by "the kit's", whatever its case or
+    /// apostrophe, including the doubled one of a PowerShell single-quoted string.
+    /// </summary>
+    [GeneratedRegex(@"(?i)(?<!the kit(?:'|’|'')s )\bADRs?[- ]\d{4}")]
     private static partial Regex BareAdr();
 
     [GeneratedRegex(@"\b[Rr]ules? \d+\b")]

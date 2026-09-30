@@ -1,7 +1,7 @@
 # 0003. One verify script is the gate, run from pre-commit, the Claude Code hook and CI
 
 Date: 2026-09-24
-Status: accepted 2026-09-24; the list of steps superseded by 0024
+Status: accepted 2026-09-24; the list of steps superseded by 0017; the list of steps superseded by 0024
 
 ## Context
 
