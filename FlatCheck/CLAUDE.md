@@ -128,13 +128,13 @@ It is not an image processor and it never decides what a shape on a map is.
   tag `flatcheck-vX.Y.Z`, owner runs them).
 - Branch per task, named `claude/` plus the task in English: an imperative phrase, words joined
   by hyphens, first letter capital (`claude/Document-the-console-extension-contract-and-goldens`).
-  A generated name (an app worktree's `claude/` plus two random words and a hex suffix) is renamed
-  with `git branch -m` once the task is clear, before its first commit. Small commits. Merging
-  into `main` is the owner's call, proposed and asked (rule 13); once merged, the
-  assistant deletes the branch with `git branch -d`, and uses `-D` only when the owner asks
-  (the kit's ADR 0013). Read the whole diff back before committing.
+  Small commits. Merging into `main` is the owner's call, proposed and asked (rule 13); once
+  merged, the assistant deletes the branch with `git branch -d`, and uses `-D` only when the
+  owner asks (the kit's ADR 0013). Read the whole diff back before committing.
 - A task branch lives in its own worktree, never in the shared checkout `E:\Photografie\Code`,
-  which stays on `main`: the owner merges there, and other sessions share it (ADR 0044). A
+  which stays on `main`: the owner merges there, and other sessions share it (ADR 0044); the
+  git pre-commit hook refuses a session's commit on a `claude/` branch there
+  (the kit's ADR 0026). A
   worktree the assistant makes is named after its branch without `claude/`, so the owner finds
   it to review before the merge:
   `git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main` (ADR 0050).

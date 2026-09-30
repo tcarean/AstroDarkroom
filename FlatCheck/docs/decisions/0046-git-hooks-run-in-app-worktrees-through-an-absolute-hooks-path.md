@@ -23,6 +23,10 @@ in the last paragraph of ADR 0007: a fresh clone runs the kit's `install-hooks.p
 
 ## Alternatives rejected
 
+(Restated 2026-09-30: the app's worktrees, the reason given above, are no longer used in
+`photo` (the kit's ADR 0027); the path stays absolute for the reason the kit's ADR 0016 now
+gives: every worktree runs the main checkout's hooks, which only a merge changes.)
+
 - **A SessionStart hook in FlatCheck's `.claude/settings.json`.** It races the app, which writes
   the override as the session starts, and fixes FlatCheck only.
 - **Open the monorepo root in the app.** FlatCheck's CLAUDE.md and settings would not load.
