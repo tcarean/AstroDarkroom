@@ -1,7 +1,7 @@
 # 0001. Record decisions as ADRs in the repository
 
 Date: 2026-09-24
-Status: accepted 2026-09-24
+Status: accepted 2026-09-24; "not edited after acceptance" superseded by 0024
 
 ## Context
 

@@ -1,8 +1,8 @@
 # 0021. The assistant commits on its own claude/ branches; the owner commits on main and decides every merge
 
 Date: 2026-09-27
-Status: accepted 2026-09-27; the 72-character limit superseded by 0023 (100 characters)
-Supersedes: 0007
+Status: accepted 2026-09-27; the 72-character limit and check-staged superseded by 0023 (100 characters)
+Supersedes: 0007; 0010 in part (who runs the release commit and tag)
 
 ## Context
 
