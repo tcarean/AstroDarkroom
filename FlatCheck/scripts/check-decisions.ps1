@@ -63,8 +63,8 @@ if ($kitPath -and -not $isKit) {
 
 # REF: a number of this project, or "the kit's ADR NNNN". The kit itself may not use the second.
 $ref = '(?:\d{4}|the kit''s ADR \d{4})'
-$clause = "; (?<part>[^;]+?) superseded by (?<ref>$ref)(?: \([^();]+\))?"
-$statusRx = "^Status: (?:proposed|(?:accepted \d{4}-\d{2}-\d{2}|superseded by (?<head>$ref))(?<clauses>(?:$clause)*))$"
+$clause = "; [^;]+? superseded by (?<ref>$ref)(?: \([^();]+\))?"
+$statusRx = "^Status: (?:proposed|(?:accepted \d{4}-\d{2}-\d{2}|superseded by (?<head>$ref))(?:$clause)*)$"
 $item = '(?<num>\d{4})(?<part> in part \([^()]+\))?'
 $supersedesRx = "^Supersedes: $item(?:(?:; |, )$item)*$"
 $noteRx = '(?i)\b(?:Corrected|Restated|Amended) \d{4}-\d{2}-\d{2}'
@@ -90,7 +90,7 @@ foreach ($f in $files) {
     $lines = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8) -split "`r?`n"
     while ($lines.Count -lt 6) { $lines += '' }
 
-    if (-not $lines[0].StartsWith("# $number. ")) { Add-Problem 'TITLE' $name "line 1 must start with '# $number. '" }
+    if ($lines[0] -cnotmatch "^# $number\. \S") { Add-Problem 'TITLE' $name ("line 1 '{0}' is not '# $number. <title>'" -f $lines[0]) }
     if ($lines[1] -ne '') { Add-Problem 'HEADER' $name ("line 2 '{0}' must be blank" -f $lines[1]) }
     if ($lines[2] -cnotmatch '^Date: \d{4}-\d{2}-\d{2}$') { Add-Problem 'DATE' $name ("line 3 '{0}' is not 'Date: YYYY-MM-DD'" -f $lines[2]) }
 
@@ -101,8 +101,9 @@ foreach ($f in $files) {
     }
     else {
         if ($sm.Groups['head'].Success) { $entry.Head = $sm.Groups['head'].Value }
-        # The refs of the match that validated the line: one capture per clause. Matching the
-        # clauses again could split a part that itself contains "superseded by" differently.
+        # The refs of the match that validated the line, one capture per clause. Do not match the
+        # clauses again on their own: a part that itself contains "superseded by NNNN" would be
+        # split differently from the validated line.
         foreach ($c in $sm.Groups['ref'].Captures) { $entry.Clauses += $c.Value }
     }
 

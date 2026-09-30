@@ -58,6 +58,8 @@ $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'kit-config.ps1')
 $kit = Read-KitConfig $root
 $sln = Join-Path $root $kit.solution
+# Child scripts run in the same PowerShell as this one (Windows PowerShell here, pwsh in CI).
+$shell = Get-KitShell
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 # Runs one step: prints its name, runs it, and if the program it ran returned a non-zero
@@ -90,12 +92,12 @@ try {
         Write-Host ("== kit files: skipped (kit not found at {0})" -f $kitPath) -ForegroundColor Yellow
     }
     else {
-        Invoke-Step 'kit files'      { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'sync.ps1') -Check }
+        Invoke-Step 'kit files'      { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'sync.ps1') -Check }
     }
     # -v q (quiet) keeps each tool's output short. --no-restore and --no-build reuse what the
     # previous step produced instead of doing it again.
-    Invoke-Step 'test data manifest' { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-testdata.ps1') }
-    Invoke-Step 'decisions'          { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-decisions.ps1') }
+    Invoke-Step 'test data manifest' { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-testdata.ps1') }
+    Invoke-Step 'decisions'          { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-decisions.ps1') }
     Invoke-Step 'restore'          { dotnet restore $sln --nologo -v q }
     Invoke-Step 'format'             { dotnet format $sln --verify-no-changes --no-restore -v q }
     Invoke-Step 'build'              { dotnet build $sln -c $Configuration --no-restore --nologo -v q -warnaserror }
