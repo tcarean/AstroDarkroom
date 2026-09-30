@@ -2,18 +2,20 @@
 # verify.ps1 - the gate: the one definition of "green" for this project.
 #
 # WHAT IT DOES
-#   Runs six checks in order and stops at the first one that fails:
+#   Runs seven checks in order and stops at the first one that fails:
 #     0. kit files           scripts/, .claude/skills/ and .claude/agents/ are byte-identical
 #                            with the kit's (sync.ps1 -Check); only when kit.json names a kit
 #                            folder that exists and is not this project, else the step is
 #                            skipped with a yellow line
 #     1. test data manifest  every file listed in <testData.folder>/manifest.json is there,
 #                            with the SHA-256 hash written in the manifest (check-testdata.ps1)
-#     2. restore             downloads the NuGet packages; in CI (locked mode) it also fails
+#     2. decisions           the headers of docs/decisions/ are well formed and every
+#                            supersession is recorded on both sides (check-decisions.ps1)
+#     3. restore             downloads the NuGet packages; in CI (locked mode) it also fails
 #                            when a packages.lock.json does not match
-#     3. format              fails if dotnet format would change any file (it only checks)
-#     4. build               builds the solution; every warning counts as an error
-#     5. test                runs the tests, on exactly what step 4 built; kit.json's
+#     4. format              fails if dotnet format would change any file (it only checks)
+#     5. build               builds the solution; every warning counts as an error
+#     6. test                runs the tests, on exactly what step 5 built; kit.json's
 #                            testFilter, when set, is passed to `dotnet test --filter`
 #   It does not touch the code. Locally, restore may update a packages.lock.json after a
 #   package change; commit it with that change. After a green run with tests it writes
@@ -33,8 +35,8 @@
 #   The Stop hook (scripts/hooks/claude-stop-gate.ps1) never runs it; it only reads the stamp.
 #
 # OPTIONS
-#   -SkipTests             steps 0-4 only, for a fast loop while editing; writes no stamp,
-#                          so it does not count as "verify ran" for the Stop hook
+#   -SkipTests             every step but the tests, a fast loop while editing; writes no
+#                          stamp, so it does not count as "verify ran" for the Stop hook
 #   -Configuration Debug   build and test in Debug instead of Release
 #
 # RESULT
@@ -93,7 +95,8 @@ try {
     # -v q (quiet) keeps each tool's output short. --no-restore and --no-build reuse what the
     # previous step produced instead of doing it again.
     Invoke-Step 'test data manifest' { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-testdata.ps1') }
-    Invoke-Step 'restore'            { dotnet restore $sln --nologo -v q }
+    Invoke-Step 'decisions'          { & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-decisions.ps1') }
+    Invoke-Step 'restore'          { dotnet restore $sln --nologo -v q }
     Invoke-Step 'format'             { dotnet format $sln --verify-no-changes --no-restore -v q }
     Invoke-Step 'build'              { dotnet build $sln -c $Configuration --no-restore --nologo -v q -warnaserror }
     if (-not $SkipTests) {
