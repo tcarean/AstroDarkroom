@@ -1,7 +1,7 @@
 # 0048. scripts/ is the kit's, byte for byte; FlatCheck describes itself in kit.json
 
 Date: 2026-09-26
-Status: accepted 2026-09-26
+Status: accepted 2026-09-26; FlatCheck's CheckStagedTests superseded by 0053
 Supersedes: 0002
 
 ## Context

@@ -2,7 +2,7 @@
 
 Date: 2026-09-28
 Status: accepted 2026-09-28
-Supersedes: 0001 in part (the CHANGELOG a commit cannot skip)
+Supersedes: 0001 in part (the CHANGELOG a commit cannot skip); 0048 in part (FlatCheck's CheckStagedTests)
 
 ## Context
 
