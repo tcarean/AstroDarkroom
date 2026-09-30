@@ -7,6 +7,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The git `pre-commit` hook refuses, before any gate, a commit a Claude Code session makes on a
+  `claude/` branch in the main checkout, which stays on `main` (ADR 0026); through
+  `pre-merge-commit`, a session's merge onto such a branch too. It tells a session by the
+  `CLAUDECODE` variable Claude Code sets, so the owner's own commits are never refused, and it
+  prints how to move the work to the branch's own worktree.
 - `verify.ps1` checks the decision records (ADR 0024): a new step, `decisions`, runs
   `scripts/check-decisions.ps1`, synced to every project, which checks the header lines of each
   ADR (title with its number, `Date`, `Status`, optional `Supersedes`), unique numbers, one

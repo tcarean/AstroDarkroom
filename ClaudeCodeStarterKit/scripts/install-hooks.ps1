@@ -14,9 +14,9 @@
 #       whole repository to the absolute path of the main checkout's .githooks/ (for photo,
 #       E:/Photografie/Code/.githooks). That one copy serves every project folder and every
 #       worktree: the pre-commit hook finds each project's own scripts/verify.ps1 by itself.
-#       The path is absolute because the Claude desktop app copies it into each worktree it
-#       creates and resolves a relative one against the project folder, not the git root
-#       (the kit's ADR 0016).
+#       The path is absolute so that every worktree, a hand-made one included, runs the main
+#       checkout's copy, which only a merge into main changes; a relative one would run each
+#       branch's own copy (the kit's ADR 0016).
 #   It changes only the git setting and the .githooks/ copy; it runs no check. It warns when a
 #   per-worktree setting (config.worktree) hides the one it wrote.
 #

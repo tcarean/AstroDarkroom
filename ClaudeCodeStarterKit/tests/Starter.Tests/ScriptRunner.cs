@@ -4,10 +4,12 @@ namespace Starter.Tests;
 
 /// <summary>
 /// Runs a PowerShell script or git the way the tests of scripts/ need it: from a given folder,
-/// with the output captured, and with every GIT_* variable removed first; a hook also gets its
-/// standard input and extra environment variables. The tests also run inside the real
-/// pre-commit hook, and an inherited GIT_DIR would point git at the real repository instead of
-/// the throwaway one a test builds.
+/// with the output captured, and with every GIT_* variable and CLAUDECODE removed first; a hook
+/// also gets its standard input and extra environment variables. The tests also run inside the
+/// real pre-commit hook, and an inherited GIT_DIR would point git at the real repository instead
+/// of the throwaway one a test builds. CLAUDECODE is set when Claude Code runs the suite and not
+/// when the owner does, and the git hooks read it (the kit's ADR 0026): a test that wants it
+/// passes it explicitly, so the results do not depend on who runs the suite.
 /// </summary>
 internal static class ScriptRunner
 {
@@ -37,6 +39,12 @@ internal static class ScriptRunner
         return Run(workDir, gitDir, stdin: null, environment: null, file, args);
     }
 
+    /// <summary>Runs a program with <paramref name="environment"/> set on top of the cleaned variables.</summary>
+    public static (int ExitCode, string Output) RunWith(string workDir, IReadOnlyDictionary<string, string> environment, string file, params string[] args)
+    {
+        return Run(workDir, gitDir: null, stdin: null, environment, file, args);
+    }
+
     /// <summary>
     /// Runs a script the way Claude Code runs a hook: <paramref name="stdin"/> (the JSON payload)
     /// piped in and closed, <paramref name="environment"/> set on top of the inherited variables.
@@ -61,7 +69,7 @@ internal static class ScriptRunner
             start.ArgumentList.Add(arg);
         }
 
-        foreach (string name in start.Environment.Keys.Where(k => k.StartsWith("GIT_", StringComparison.OrdinalIgnoreCase)).ToList())
+        foreach (string name in start.Environment.Keys.Where(k => k.StartsWith("GIT_", StringComparison.OrdinalIgnoreCase) || k.Equals("CLAUDECODE", StringComparison.OrdinalIgnoreCase)).ToList())
         {
             start.Environment.Remove(name);
         }

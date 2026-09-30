@@ -4,6 +4,8 @@
 # the commit touches.
 #
 # WHAT IT DOES
+#   0. Refuses, before anything else, a commit a Claude Code session makes on a claude/
+#      branch in the main checkout (the kit's ADR 0026); the owner's commits are not refused.
 #   1. Lists the files staged for the commit.
 #   2. For each file, walks up its folders to the nearest one that has scripts/verify.ps1:
 #      that folder is the project the file belongs to. A file with no such folder above it
@@ -21,7 +23,8 @@
 #
 # RESULT
 #   exit 0  every touched project is green; git records the commit
-#   exit 1  something failed; git refuses the commit, and the output names the project
+#   exit 1  step 0 refused the commit, or a gate failed; git refuses the commit, and the output
+#           says why
 #
 # A POSIX sh script (Git for Windows runs it with its own sh). It must keep Unix (LF) line
 # endings; .gitattributes makes sure of that.
@@ -29,6 +32,34 @@
 # Work from the root of the repository: staged file paths are relative to it.
 root="$(git rev-parse --show-toplevel)" || exit 1
 cd "$root" || exit 1
+
+# Step 0 (the kit's ADR 0026): a Claude Code session (CLAUDECODE set in its shells) never commits
+# on a claude/ branch in the main checkout, which stays on main for the owner; its task branch
+# lives in a worktree of its own. The main worktree is the one whose git folder is the common
+# one. Absolute forms on purpose: git may export a relative GIT_DIR to hooks. Needs git 2.31+.
+if [ -n "${CLAUDECODE:-}" ]; then
+  branch="$(git branch --show-current)" || exit 1
+  case "$branch" in
+    claude/*)
+      gitdir="$(git rev-parse --absolute-git-dir)" || exit 1
+      common="$(git rev-parse --path-format=absolute --git-common-dir)" || exit 1
+      if [ "$gitdir" = "$common" ]; then
+        name="${branch#claude/}"
+        {
+          echo "pre-commit: refused (the kit's ADR 0026). CLAUDECODE is set and $branch is checked out"
+          echo "in the main checkout, $root, which stays on main: a Claude Code session commits only in"
+          echo "a worktree of its own. The gate did not run. To move the work, from the project folder:"
+          echo "  git merge --abort                    (only after a refused merge)"
+          echo "  git stash push -m \"$branch\" && git rev-parse stash@{0}    (note the hash)"
+          echo "  git switch main"
+          echo "  git worktree add .claude/worktrees/$name $branch"
+          echo "  git -C .claude/worktrees/$name stash apply --index <hash>, then drop that stash entry"
+          echo "Untracked files are not stashed; git status lists them."
+        } >&2
+        exit 1
+      fi ;;
+  esac
+fi
 
 # Two temporary files, deleted automatically when the script ends (trap ... EXIT).
 staged="$(mktemp)"
