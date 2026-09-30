@@ -4,6 +4,10 @@
 # the commit touches.
 #
 # WHAT IT DOES
+#   0. Refuses, before anything else, a commit a Claude Code session makes on a claude/
+#      branch in the main checkout (the kit's ADR 0026); the owner's commits, from shells
+#      that do not set CLAUDECODE, are not refused. git runs no pre-commit for a
+#      fast-forward merge, a cherry-pick, a revert, git am or a rebase's commits.
 #   1. Lists the files staged for the commit.
 #   2. For each file, walks up its folders to the nearest one that has scripts/verify.ps1:
 #      that folder is the project the file belongs to. A file with no such folder above it
@@ -21,7 +25,8 @@
 #
 # RESULT
 #   exit 0  every touched project is green; git records the commit
-#   exit 1  something failed; git refuses the commit, and the output names the project
+#   exit 1  step 0 refused the commit, or a gate failed; git refuses the commit, and the output
+#           says why
 #
 # A POSIX sh script (Git for Windows runs it with its own sh). It must keep Unix (LF) line
 # endings; .gitattributes makes sure of that.
@@ -29,6 +34,38 @@
 # Work from the root of the repository: staged file paths are relative to it.
 root="$(git rev-parse --show-toplevel)" || exit 1
 cd "$root" || exit 1
+
+# Step 0 (the kit's ADR 0026): a Claude Code session (CLAUDECODE set in its shells) never commits
+# on a claude/ branch in the main checkout, which stays on main for the owner; its task branch
+# lives in a worktree of its own. The main worktree is the one whose git folder is the common
+# one. Absolute forms on purpose: git may export a relative GIT_DIR to hooks. Needs git 2.31+.
+if [ -n "${CLAUDECODE:-}" ]; then
+  branch="$(git branch --show-current)" || exit 1
+  case "$branch" in
+    claude/*)
+      gitdir="$(git rev-parse --absolute-git-dir)" || exit 1
+      common="$(git rev-parse --path-format=absolute --git-common-dir)" || exit 1
+      if [ "$gitdir" = "$common" ]; then
+        name="${branch#claude/}"
+        {
+          echo "pre-commit: refused (the kit's ADR 0026). CLAUDECODE is set and $branch is checked out"
+          echo "in the main checkout, $root, which stays on main: a Claude Code session commits only in"
+          echo "a worktree of its own. git's gate did not run here (the Claude commit gate may already"
+          echo "have run verify). To move the work, from the project folder, one command at a time; the"
+          echo "stash list is shared with every other session, so touch only your own entry:"
+          echo "  1. After a refused merge only: git merge --abort (and redo the merge in step 5)."
+          echo "  2. After a refused commit only, stash your own changes, not anyone else's (git status"
+          echo "     lists them): git stash push -m 'move $branch' -- <your files>"
+          echo "  3. git switch main"
+          echo "  4. git worktree add '.claude/worktrees/$name' '$branch'"
+          echo "  5. In that worktree: redo the merge; or run git stash list, find 'move $branch' at"
+          echo "     stash@{N}, then git stash apply --index 'stash@{N}' and git stash drop 'stash@{N}'."
+          echo "Untracked files are not stashed; move them by hand."
+        } >&2
+        exit 1
+      fi ;;
+  esac
+fi
 
 # Two temporary files, deleted automatically when the script ends (trap ... EXIT).
 staged="$(mktemp)"

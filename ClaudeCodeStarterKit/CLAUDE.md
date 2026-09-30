@@ -88,13 +88,12 @@ The sample code exists to show how a requirement, a test and a validation figure
   Cut a version: `/release` (from `main`, clean tree; proposes commit and tag, owner runs them).
 - Branch per task, named `claude/` plus the task in English: an imperative phrase, words joined
   by hyphens, first letter capital (`claude/Document-the-console-extension-contract-and-goldens`).
-  A generated name (an app worktree's `claude/` plus two random words and a hex suffix) is renamed
-  with `git branch -m` once the task is clear, before its first commit. Small commits. Merging
-  into `main` is the owner's call, proposed and asked (rule 13); once merged, the
-  assistant deletes the branch with `git branch -d`, and uses `-D` only when the owner asks
-  (ADR 0013).
+  Small commits. Merging into `main` is the owner's call, proposed and asked (rule 13); once
+  merged, the assistant deletes the branch with `git branch -d`, and uses `-D` only when the
+  owner asks (ADR 0013).
 - A task branch lives in its own worktree, never in the main checkout, which stays on `main`:
-  the owner merges there, and other sessions share it (ADR 0013). A worktree the assistant makes
+  the owner merges there, and other sessions share it (ADR 0013); the git pre-commit hook refuses
+  a session's commit on a `claude/` branch there (ADR 0026). A worktree the assistant makes
   is named after its branch without `claude/`, so the owner finds it to review before the
   merge: `git worktree add .claude/worktrees/<Task-name> -b claude/<Task-name> main` (ADR 0019).
 - Read the whole diff back before committing; summarise it in plain language.

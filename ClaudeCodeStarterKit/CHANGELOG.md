@@ -7,6 +7,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The git `pre-commit` hook refuses, before its own gate, a commit a Claude Code session makes
+  on a `claude/` branch in the main checkout, which stays on `main` (ADR 0026); through
+  `pre-merge-commit`, a session's merge commit onto such a branch too. It tells a session by
+  the `CLAUDECODE` variable Claude Code sets, so the owner's commits, from shells that do not
+  set it, are not refused, and it prints how to move the work to the branch's own worktree.
+  `/wrap-up` merges into `main` with `--no-ff`, since a fast-forward runs no git hook.
 - `verify.ps1` checks the decision records (ADR 0024): a new step, `decisions`, runs
   `scripts/check-decisions.ps1`, synced to every project, which checks the header lines of each
   ADR (title with its number, `Date`, `Status`, optional `Supersedes`), unique numbers, one
@@ -120,6 +126,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The desktop app's worktree option is not used in `photo` (ADR 0027): its sessions started at
+  the root of a whole-repository checkout, where no project `CLAUDE.md`, settings or Claude
+  hooks load. Task worktrees are made by hand, so the rename of generated branch names is gone
+  from `CLAUDE.md`, `/wrap-up` and the guide; `/wrap-up` checks instead that it is not about to
+  commit on a `claude/` branch in the main checkout.
 - A project cites the kit's process decisions and records only its own (ADR 0025): no project
   ADR for a kit decision, only for a deviation or a project value. The synced files and the git
   hooks cite "the kit's ADR NNNN" and never a rule by its number, which in a project named

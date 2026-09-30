@@ -16,6 +16,9 @@ none under the shared checkout, so the Stop hook judged nothing in three tasks; 
 from a green FlatCheck worktree was blocked because the gate ran `verify.ps1` in the shared
 checkout, red at step 0. A `git -C <path> commit` was not recognised as a commit at all. In a
 worktree the app opens the variable is the worktree, so these sessions were not affected.
+(Corrected 2026-09-30: in `photo` those sessions started at the root of a whole-repository
+checkout, where no project settings load, so none of these hooks ran there at all; the same
+holds for "Right for the app's own worktrees" below. ADR 0027.)
 
 ## Decision
 

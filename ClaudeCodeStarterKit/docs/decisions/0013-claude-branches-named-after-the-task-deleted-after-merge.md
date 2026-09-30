@@ -1,7 +1,7 @@
 # 0013. Branches are named claude/ plus their task and deleted once merged
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the rename of generated names and "or the one the app opened for the session" superseded by 0027
 
 ## Context
 
