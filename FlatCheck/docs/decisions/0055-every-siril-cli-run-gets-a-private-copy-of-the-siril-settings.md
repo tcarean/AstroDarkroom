@@ -2,6 +2,7 @@
 
 Date: 2026-09-30
 Status: accepted 2026-09-30
+Supersedes: 0035 in part (the siril-cli command line)
 
 ## Context
 

@@ -2,6 +2,7 @@
 
 Date: 2026-09-25
 Status: accepted 2026-09-25
+Supersedes: 0007 in part (the fresh-clone hooks command)
 
 ## Context
 

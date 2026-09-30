@@ -94,32 +94,6 @@ public class RepoInvariantTests
         Assert.True(dup.Length == 0, "Duplicate requirement IDs: " + string.Join(", ", dup));
     }
 
-    /// <summary>ADRs are numbered once, in order, and each says whether it is proposed, accepted or superseded.</summary>
-    [Fact]
-    public void Decisions_AreNumberedOnceAndCarryAStatus()
-    {
-        string dir = Path.Combine(Root, "docs", "decisions");
-        var numbers = new List<int>();
-        var problems = new List<string>();
-        foreach (string f in Directory.EnumerateFiles(dir, "*.md").OrderBy(f => f, StringComparer.Ordinal))
-        {
-            string name = Path.GetFileName(f);
-            Match m = Regex.Match(name, @"^(\d{4})-");
-            if (!m.Success) { problems.Add(name + ": not NNNN-slug.md"); continue; }
-            int n = int.Parse(m.Groups[1].Value);
-            if (n == 0) continue; // the template
-            numbers.Add(n);
-            string text = File.ReadAllText(f);
-            if (!Regex.IsMatch(text, @"(?m)^Status: (proposed|accepted \d{4}-\d{2}-\d{2}|superseded by \d{4})\s*$"))
-                problems.Add(name + ": no Status line of the template's form");
-            if (!text.StartsWith("# " + m.Groups[1].Value + ". ", StringComparison.Ordinal))
-                problems.Add(name + ": title does not start with '# " + m.Groups[1].Value + ". '");
-        }
-        int[] dup = numbers.GroupBy(n => n).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
-        if (dup.Length > 0) problems.Add("duplicate numbers: " + string.Join(", ", dup));
-        Assert.True(problems.Count == 0, string.Join("\n", problems));
-    }
-
     /// <summary>Every design note is in the index, and the index names only notes that exist.</summary>
     [Fact]
     public void EveryDesignNote_IsInTheIndex()

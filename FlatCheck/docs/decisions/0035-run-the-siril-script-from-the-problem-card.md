@@ -1,7 +1,7 @@
 # 0035. The Siril preprocessing script is run from the problem card, through the user's own siril-cli, chosen from Siril's list
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the siril-cli command line superseded by 0055
 
 ## Context
 

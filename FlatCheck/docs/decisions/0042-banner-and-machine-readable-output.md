@@ -1,7 +1,7 @@
 # 0042. A machine-readable output carries the version and the copyright as its first two fields, not as banner lines
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the crosscheck.py guards superseded by 0047
 
 ## Context
 

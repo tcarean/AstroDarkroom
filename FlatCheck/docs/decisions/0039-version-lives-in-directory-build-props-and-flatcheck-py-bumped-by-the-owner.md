@@ -1,7 +1,7 @@
 # 0039. The version lives in Directory.Build.props and flatcheck.py, is bumped only by the owner, and is scrubbed before every whole-output comparison
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the version in flatcheck.py superseded by 0047
 
 ## Context
 
