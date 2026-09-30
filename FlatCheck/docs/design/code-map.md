@@ -280,8 +280,11 @@ a library extraction and not a copy is ADR 0011.
     the config parsing is pure, `Locate()` is the only thing that touches the machine),
     `SirilScript` (commands and input folders read out of a `.ssf`), `SirilLogLine` (one
     stdout line, sorted into log / progress / other) and `SirilScriptRun` (the `Process`
-    wrapper, plus the `SirilRunner` delegate the tests replace). `SplitPlan` is the disk
-    rule of the Split tab (ADR 0054): the frames, whether the count divides, each part's copy
+    wrapper, the only place a process is started besides the About link: every run gets a
+    private copy of Siril's settings with `-i`, in `%TEMP%\FlatCheck\siril-<guid>`, deleted
+    after the exit (ADR 0055); plus the `SirilRunner` delegate the tests replace).
+    `SplitPlan` is the disk rule of the Split tab (ADR 0054): the frames, whether the count
+    divides, each part's copy
     list (every bias, at most `MaxLights` lights, the part's flats), the temp root under
     `%TEMP%\FlatCheck`, and `Delete()`. `FlatFrames()` lists raws
     *and* FITS from `flats/` (via `FitsReader.IsFitsPath`), and `HistEqCandidates()` builds

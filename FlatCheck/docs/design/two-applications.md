@@ -6,8 +6,8 @@
 > ADR 0037, and this note keeps the mechanics of the window's tabs and the few reasons that have
 > no other home. **Covers:** in full, the table of what each application does with the core's
 > outputs (`FlatCheck/`) and `FlatCheck.Wpf/` `ViewModels` and `Views` (the tab mechanics below);
-> by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035), `Presentation` and `Theme` (ADR 0036,
-> 0037) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
+> by pointer, `FlatCheck.Wpf/Session` (ADR 0033 to 0035, 0055), `Presentation` and `Theme`
+> (ADR 0036, 0037) and `Runs/RunOutcome.cs` (ADR 0011, 0036).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.
@@ -102,8 +102,9 @@ ADR 0035 holds the whole of it: the "Ruleaza in Siril" button on the problem car
 `SirilRunWindow`, what was measured on Siril 1.4.4 before it was built (live stdout through a
 pipe, the share of progress lines, clean re-runs, the verb-only command echo), the owner's
 five decisions, the alternatives rejected, and the test seams (`Func<SirilInstall>` and
-`Func<bool>` on `MainViewModel`, `SirilCliIntegrationTests`). Three mechanics the ADR does
-not spell out:
+`Func<bool>` on `MainViewModel`, `SirilCliIntegrationTests`). ADR 0055 holds the private
+settings file every run gets with `-i`, and the measurements behind it. Four mechanics the
+ADRs do not spell out:
 
 - `SirilSession.PreprocessingScript` is the script name the messages quote. The parameterless
   `MainViewModel` constructor uses `SirilInstall.Locate` and `SirilInstall.IsGuiRunning`, which
@@ -111,7 +112,12 @@ not spell out:
 - `SirilScript.RequiredFolders` takes the `cd <name>` commands with a plain name only:
   `cd ../process` and `cd ..` are not inputs. Without the pre-check Siril dies at line three
   with a failed `cd` and the user reads the log to learn why.
-- stderr stayed empty in every measured run and is read anyway.
+- stderr is read on the same channel as stdout; it stayed empty in every measured run whose
+  settings loaded.
+- The private settings folder is deleted on a thread-pool continuation
+  (`ConfigureAwait(false)` after the wait), so it goes even when `SirilRunWindow` closes without
+  waiting. The Split's temp folder is different: its delete needs the dispatcher, hence the
+  `MainWindow.OnClosing` wait below.
 
 **The Ratio tab is the one exception to "one folder in".** ADR 0033 holds why it proposes
 nothing, starts empty and documents itself before it can be used, the `pp_flat*.fit` trap at

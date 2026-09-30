@@ -36,6 +36,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   longer treat `flatcheck.py` as code. `flatcheck.py` and `crosscheck.py` stay in the repository
   as prior art; `CrossCheckFixtures` can still dump the fixtures for a comparison by hand.
 
+### Fixed
+
+- Siril's settings are no longer put at risk by FlatCheck (R-094, ADR 0055): every `siril-cli`
+  run the window starts (`Ruleaza in Siril`, each Split part) gets its own byte copy of Siril's
+  config (`config.1.4.ini` here), passed with `-i` in `%TEMP%\FlatCheck\siril-<guid>` and
+  deleted after the exit; the Siril integration tests run on an empty private copy in their
+  own workspace. Without it siril-cli rewrote that file at the end of every script, setting
+  `wd` to the session or to a Split temp folder, and a failed save deletes it: measured on
+  2026-09-30, 5-10 % of saves on the owner's machine, after which the next run saves Siril's
+  defaults. That is how the gate's integration tests lost the owner's selected scripts, StarNet
+  and GraXpert paths and focal length on 2026-09-26. When the config exists but cannot be read,
+  the run does not start and the message names the file.
+
 ### Removed
 
 - `scripts/crosscheck.ps1`, its permission line in `.claude/settings.json`, and the two tests
