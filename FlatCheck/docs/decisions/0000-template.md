@@ -1,8 +1,8 @@
 # NNNN. Title, as a short statement of the decision
 
 Date: YYYY-MM-DD
-Status: proposed | accepted YYYY-MM-DD | superseded by NNNN
-Supersedes: NNNN (delete this line when the ADR replaces nothing)
+Status: proposed | accepted YYYY-MM-DD | superseded by NNNN (after the last two, for each part another ADR replaced: "; <part> superseded by NNNN"; in a project, "the kit's ADR NNNN" for a kit ADR)
+Supersedes: NNNN | NNNN in part (<part>), several separated by "; " (delete this line when the ADR replaces nothing)
 
 ## Context
 

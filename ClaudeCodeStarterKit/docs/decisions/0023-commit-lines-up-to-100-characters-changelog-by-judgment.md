@@ -2,7 +2,7 @@
 
 Date: 2026-09-28
 Status: accepted 2026-09-28
-Supersedes: 0005 in part (item 1, and the CHANGELOG half of item 3); 0021 in part (the 72-character limit)
+Supersedes: 0005 in part (item 1, and the CHANGELOG half of item 3); 0017 in part (CheckStagedTests); 0020 in part (check-staged and the CHANGELOG check); 0021 in part (the 72-character limit, check-staged)
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 0007. The changelog starts at 2.2.0; the git hooks are not copied; root CI is a separate task
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the fresh-clone hooks command superseded by 0046
 
 ## Context
 

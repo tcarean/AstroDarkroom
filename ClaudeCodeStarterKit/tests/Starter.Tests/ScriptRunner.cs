@@ -14,6 +14,18 @@ internal static class ScriptRunner
     /// <summary>The shell the scripts are written for: Windows PowerShell 5.1 where it exists, pwsh elsewhere.</summary>
     public static string Shell => OperatingSystem.IsWindows() ? "powershell" : "pwsh";
 
+    /// <summary>A minimal valid kit.json for a throwaway project; a null kit leaves the key out, as a standalone repository does.</summary>
+    public static string KitJson(string? kit)
+    {
+        string kitKey = kit is null ? string.Empty : $$""", "kit": "{{kit}}" """;
+        return $$"""
+            { "solution": "X.sln", "codeFolders": ["src/"], "testFolders": ["tests/"],
+              "testData": { "folder": "tests/testdata/", "largeEnv": "X_TESTDATA_LARGE" },
+              "mutate": { "testProject": "tests/X.Tests/" },
+              "release": { "publish": [] }{{kitKey}} }
+            """;
+    }
+
     public static (int ExitCode, string Output) RunScript(string workDir, string scriptPath, params string[] args)
     {
         string[] all = ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, .. args];

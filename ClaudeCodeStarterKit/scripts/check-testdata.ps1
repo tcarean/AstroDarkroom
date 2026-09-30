@@ -17,13 +17,13 @@
 #   With -Update it writes the current hashes into the manifest instead of comparing them.
 #
 # WHO CALLS IT
-#   - scripts/verify.ps1, as its first step; so the git pre-commit hook, Claude's commit
+#   - scripts/verify.ps1, before the build; so the git pre-commit hook, Claude's commit
 #     hook and CI all run it
 #   - you, with -Update, after you changed a fixture on purpose:
 #       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-testdata.ps1 -Update
 #   - Claude, in the /validate skill, to list which large files are available
-#   Never use -Update to make a failing check pass (CLAUDE.md rule 3): first find out why
-#   the file changed.
+#   Never use -Update to make a failing check pass: a hash changes only with a deliberate
+#   change to its fixture. First find out why the file changed.
 #
 # RESULT
 #   exit 0  every required file is there with the right hash (yellow warnings allowed)

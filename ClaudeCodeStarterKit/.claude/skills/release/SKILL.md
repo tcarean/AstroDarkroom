@@ -6,8 +6,8 @@ description: Cut a release - pick the version from the CHANGELOG, run scripts/re
 # Release
 
 The script does the mechanical part; you do the judgement and the asking. A release is cut on
-`main`, where commits and tags are the owner's (rule 13, ADR 0021): nothing here commits, tags
-or pushes. The owner chooses the version number; you propose one. Before step 1, read
+`main`, where commits and tags are the owner's (the kit's ADR 0021): nothing here commits,
+tags or pushes. The owner chooses the version number; you propose one. Before step 1, read
 `docs/skills.md` if it exists: its `## /release` section adds project-specific steps and says
 where they go.
 

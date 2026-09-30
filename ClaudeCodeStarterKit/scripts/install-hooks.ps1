@@ -16,7 +16,7 @@
 #       worktree: the pre-commit hook finds each project's own scripts/verify.ps1 by itself.
 #       The path is absolute because the Claude desktop app copies it into each worktree it
 #       creates and resolves a relative one against the project folder, not the git root
-#       (ADR 0016).
+#       (the kit's ADR 0016).
 #   It changes only the git setting and the .githooks/ copy; it runs no check. It warns when a
 #   per-worktree setting (config.worktree) hides the one it wrote.
 #

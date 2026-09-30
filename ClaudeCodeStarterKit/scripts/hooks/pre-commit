@@ -17,7 +17,7 @@
 #   git itself, on every git commit, yours or Claude's, because core.hooksPath points at this
 #   file's folder (set by scripts/install-hooks.ps1). In a monorepo git runs the copy in
 #   <git root>/.githooks/: edit this file, then run the kit's install-hooks.ps1 to refresh
-#   the copy. git commit --no-verify skips it; CLAUDE.md forbids that (rule 4).
+#   the copy. git commit --no-verify skips it; CLAUDE.md forbids that.
 #
 # RESULT
 #   exit 0  every touched project is green; git records the commit

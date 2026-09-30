@@ -99,6 +99,60 @@ public partial class RepoInvariantTests
             $"Paths named in the kit's docs that do not exist in the kit: {string.Join(", ", missing)}");
     }
 
+    /// <summary>
+    /// The shared folders and the git hooks are read and run in every project, where "ADR 0013" or
+    /// "rule 15" names the project's own, unrelated decision or rule. They cite "the kit's ADR
+    /// NNNN" and name a rule by its ADR or its words (the kit's ADR 0025). Lines are joined first,
+    /// comment markers dropped, so a citation that wraps is read whole.
+    /// </summary>
+    [Fact]
+    public void SyncedFiles_CiteTheKitsAdrsAndNoRuleNumbers()
+    {
+        string root = TestData.FindRepoRoot();
+        List<string> bare = [];
+        foreach (string folder in SyncTests.Shared)
+        {
+            foreach (string file in Directory.EnumerateFiles(Path.Combine(root, folder), "*", SearchOption.AllDirectories))
+            {
+                string text = LineBreak().Replace(File.ReadAllText(file).ReplaceLineEndings("\n"), " ");
+                foreach (Match m in BareAdr().Matches(text).Concat(RuleNumber().Matches(text)))
+                {
+                    bare.Add($"{Path.GetRelativePath(root, file)}: '{m.Value}'");
+                }
+            }
+        }
+
+        Assert.True(bare.Count == 0,
+            $"Bare ADR or rule numbers in the kit's shared files: {string.Join(", ", bare)}");
+    }
+
+    [Theory]
+    [InlineData("see ADR 0013", true)]
+    [InlineData("see ADR-0013", true)]
+    [InlineData("see adr 0013", true)]
+    [InlineData("the kit's ADR 0013", false)]
+    [InlineData("The kit's ADR 0013 says", false)]
+    [InlineData("the kit\u2019s ADR 0013", false)]
+    [InlineData("the kit''s ADR 0013", false)]
+    [InlineData("the kit's ADRs 0017 and 0018", false)]
+    public void BareAdr_FlagsOnlyNumbersNotQualifiedAsTheKits(string text, bool flagged)
+    {
+        Assert.Equal(flagged, BareAdr().IsMatch(text));
+    }
+
+    [Theory]
+    [InlineData("(rule 15)", true)]
+    [InlineData("RULE 4", true)]
+    [InlineData("rule-15", true)]
+    [InlineData("rule #15", true)]
+    [InlineData("rules 3 and 4", true)]
+    [InlineData("the rules of the kit", false)]
+    [InlineData("overrule 5", false)]
+    public void RuleNumber_FlagsARuleCitedByItsNumber(string text, bool flagged)
+    {
+        Assert.Equal(flagged, RuleNumber().IsMatch(text));
+    }
+
     /// <summary>Table rows of docs/requirements.md: "| R-001 | implemented | ..." => R001 => implemented.</summary>
     private static Dictionary<string, string> ReadRequirements()
     {
@@ -216,4 +270,19 @@ public partial class RepoInvariantTests
 
     [GeneratedRegex(@"^[A-Za-z0-9_][A-Za-z0-9_.-]*\.(md|ps1|json|props|yml|sln|csproj|cs)$")]
     private static partial Regex BareFileName();
+
+    /// <summary>A line break with the next line's indentation and comment marker.</summary>
+    [GeneratedRegex(@"\n[ \t]*(?:#[ \t]*)?")]
+    private static partial Regex LineBreak();
+
+    /// <summary>
+    /// "ADR 0013", "ADR-0013" or "adr 0013" not preceded by "the kit's", whatever its case or
+    /// apostrophe, including the doubled one of a PowerShell single-quoted string.
+    /// </summary>
+    [GeneratedRegex(@"(?i)(?<!the kit(?:'|\u2019|'')s )\bADRs?[-\s#]{1,2}\d{4}")]
+    private static partial Regex BareAdr();
+
+    /// <summary>"rule 15", "RULE 15", "rule-15", "rule #15", "rules 3 and 4": a rule cited by its number.</summary>
+    [GeneratedRegex(@"(?i)\brules?[-\s#]{0,2}\d+\b")]
+    private static partial Regex RuleNumber();
 }

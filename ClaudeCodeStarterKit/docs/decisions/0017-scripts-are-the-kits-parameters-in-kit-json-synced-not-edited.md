@@ -1,7 +1,8 @@
 # 0017. scripts/ is the kit's: parameters in kit.json, copied by sync.ps1, never edited in a project
 
 Date: 2026-09-26
-Status: accepted 2026-09-26
+Status: accepted 2026-09-26; the kit-only file list superseded by 0022; CheckStagedTests superseded by 0023
+Supersedes: 0003 in part (the list of steps)
 
 ## Context
 
@@ -62,4 +63,5 @@ repository without the kit beside it skips step 0 and syncs by hand. `release.ps
 project folder in FlatCheck goes into `kit.json`, not into three scripts. The skills and the
 `docs-auditor` agent still differ per project; that is a separate task. Supersedes nothing in
 the kit; FlatCheck ADR 0002 and the second point of ADR 0007 are superseded on its side when
-it adopts this.
+it adopts this. (Restated 2026-09-30: step 0 made ADR 0003's list of steps incomplete, so this
+ADR supersedes that list in part; both headers say so since ADR 0024.)

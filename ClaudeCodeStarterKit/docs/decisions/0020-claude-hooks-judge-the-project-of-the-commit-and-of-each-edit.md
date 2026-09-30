@@ -1,7 +1,7 @@
 # 0020. The Claude Code hooks judge the project of the commit and of each edited file
 
 Date: 2026-09-27
-Status: accepted 2026-09-27
+Status: accepted 2026-09-27; check-staged and the CHANGELOG check superseded by 0023
 
 ## Context
 

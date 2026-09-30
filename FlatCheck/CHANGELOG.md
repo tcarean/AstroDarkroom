@@ -56,6 +56,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- ADR headers are checked by the kit's `check-decisions.ps1`, a step of `verify.ps1` (the kit's
+  ADR 0024), which replaces `Decisions_AreNumberedOnceAndCarryAStatus`: title, date, status,
+  unique numbers, and every supersession written on both ADRs. The parts that 0046, 0047, 0053
+  and 0055 replaced without saying so on the headers are now on both (0001, 0007, 0035, 0039,
+  0040, 0042, 0048). Kit decisions are cited as "the kit's ADR NNNN" and get no FlatCheck ADR
+  (the kit's ADR 0025).
 - ADR 0053 and rules 9 and 13 (the kit's ADR 0023): a commit message may be one line of up to
   100 characters, and a CHANGELOG line is a judgment made at `/wrap-up`, not a gate.
   `scripts/check-staged.ps1` and `CheckStagedTests` are gone; `pre-commit`, `pre-merge-commit`

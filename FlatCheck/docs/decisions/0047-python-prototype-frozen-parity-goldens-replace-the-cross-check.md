@@ -2,7 +2,7 @@
 
 Date: 2026-09-26
 Status: accepted 2026-09-26
-Supersedes: 0005, 0038
+Supersedes: 0005, 0038, 0039 in part (the version in flatcheck.py), 0040 in part (the copyright in flatcheck.py), 0042 in part (the crosscheck.py guards)
 
 ## Context
 

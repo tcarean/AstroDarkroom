@@ -2,6 +2,7 @@
 
 Date: 2026-09-27
 Status: accepted 2026-09-27
+Supersedes: 0017 in part (the kit-only file list)
 
 ## Context
 

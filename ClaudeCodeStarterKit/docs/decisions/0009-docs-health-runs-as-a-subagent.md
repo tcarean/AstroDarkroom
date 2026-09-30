@@ -1,7 +1,7 @@
 # 0009. The documentation audit runs in a subagent with a clean context
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the list of inputs superseded by 0018; the list of inputs superseded by 0025
 
 ## Context
 

@@ -8,7 +8,8 @@
 #   dot-sourced by the scripts (". (Join-Path $PSScriptRoot 'kit-config.ps1')") and gives them
 #   Read-KitConfig, which reads <project folder>/kit.json and returns its values with the paths
 #   already normalised (forward slashes, one trailing slash on folders), and Find-KitProject,
-#   which finds the project a file or folder belongs to (the Claude Code hooks use it, ADR 0020).
+#   which finds the project a file or folder belongs to (the Claude Code hooks use it, the
+#   kit's ADR 0020), and Get-KitShell, the PowerShell to start another script with.
 #   A missing kit.json, or a missing required key, is an error with the key named: a project
 #   that has scripts/ must say what it is; nothing is guessed from the folder layout.
 #
@@ -110,6 +111,12 @@ function Find-KitProject([string]$Path, [string]$Marker = 'kit.json') {
         $dir = [System.IO.Path]::GetDirectoryName($dir)
     }
     return $null
+}
+
+# The PowerShell running this script (powershell.exe 5.1 or pwsh), to start another script
+# with: "powershell" does not exist on Linux, where CI runs the scripts under pwsh.
+function Get-KitShell {
+    return (Get-Process -Id $PID).Path
 }
 
 # Full path of a project folder from a kit.json value ("src/" -> <project>\src\).

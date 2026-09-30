@@ -1,7 +1,7 @@
 # 0040. Every source file starts with the GPL notice, and the "Despre" window is the program's legal notice
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the copyright in flatcheck.py superseded by 0047
 
 ## Context
 
