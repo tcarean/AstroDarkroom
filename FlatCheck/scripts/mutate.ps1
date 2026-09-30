@@ -17,7 +17,7 @@
 #       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mutate.ps1
 #   - Claude, in the /mutate skill, which turns the survivors into proposed tests
 #   Not part of scripts/verify.ps1: it runs the whole test suite once per mutant, so it takes
-#   minutes, not seconds (ADR 0008). On a large suite always pass -Mutate.
+#   minutes, not seconds (the kit's ADR 0008). On a large suite always pass -Mutate.
 #
 # OPTIONS
 #   -Mutate "**/Stats.cs"   only mutate matching files (faster, focused)

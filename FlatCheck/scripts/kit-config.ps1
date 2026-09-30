@@ -8,7 +8,8 @@
 #   dot-sourced by the scripts (". (Join-Path $PSScriptRoot 'kit-config.ps1')") and gives them
 #   Read-KitConfig, which reads <project folder>/kit.json and returns its values with the paths
 #   already normalised (forward slashes, one trailing slash on folders), and Find-KitProject,
-#   which finds the project a file or folder belongs to (the Claude Code hooks use it, ADR 0020).
+#   which finds the project a file or folder belongs to (the Claude Code hooks use it, the
+#   kit's ADR 0020).
 #   A missing kit.json, or a missing required key, is an error with the key named: a project
 #   that has scripts/ must say what it is; nothing is guessed from the folder layout.
 #

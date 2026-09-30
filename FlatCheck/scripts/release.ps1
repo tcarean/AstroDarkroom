@@ -18,7 +18,7 @@
 #
 # WHO CALLS IT
 #   - Claude, in the /release skill: first with -WhatIf, then for real; the skill then
-#     proposes the commit and the tag and asks who runs them (CLAUDE.md rule 13, ADR 0010)
+#     proposes the commit and the tag, which the owner runs (the kit's ADRs 0010 and 0021)
 #   - you, by hand:
 #       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 0.2.0
 #
