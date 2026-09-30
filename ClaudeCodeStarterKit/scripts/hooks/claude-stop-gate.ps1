@@ -6,8 +6,8 @@
 #   the list of files this session edited and groups them by project: the nearest folder above
 #   each file that holds kit.json (Find-KitProject in kit-config.ps1), so an edit in a worktree
 #   is judged by that worktree's copy of the project, not by the folder the session started in
-#   (ADR 0020). A file in no project is not judged. Each project gets two checks, on its own
-#   files, with its own kit.json:
+#   (the kit's ADR 0020). A file in no project is not judged. Each project gets two checks,
+#   on its own files, with its own kit.json:
 #     A. scripts/, .claude/skills/ and .claude/agents/ are the kit's: in a project that is not
 #        the kit (kit.json's "kit" is not "."), an edit under one of them ends no turn; the
 #        change is made in the kit and copied with scripts/sync.ps1.

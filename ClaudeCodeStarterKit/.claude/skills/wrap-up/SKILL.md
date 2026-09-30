@@ -36,16 +36,17 @@ adds project-specific steps and says where they go.
    `docs/skills.md`, `.claude/settings.json` or `monorepo/`, quote what `README.md` and, in the
    kit, `GHID.md` say about the touched piece and fix what no longer holds, in this task;
    `RepoInvariantTests` only catches paths that no longer exist, not explanations that no longer
-   hold (ADR 0011). `scripts/`, `.claude/skills/` and `.claude/agents/` are the kit's (rule 15):
-   in the kit, a change there ends with `scripts/sync.ps1` and one commit per project; in a
-   project, such a change is made in the kit instead, and an edit here is refused by verify and
-   by the Stop hook.
+   hold (the kit's ADR 0011). `scripts/`, `.claude/skills/` and `.claude/agents/` belong to the
+   kit (the kit's ADRs 0017 and 0018): in the kit, a change there ends with `scripts/sync.ps1`
+   and one commit per project; in a project, such a change is made in the kit instead, and an
+   edit here is refused by verify and by the Stop hook.
 10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
     a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
-    English, rename the branch now with `git branch -m claude/<Task-name>` (ADR 0013). On that
-    `claude/` branch, commit without asking (ADR 0021): one line, English, at most 100
-    characters, saying why. No body, no trailers, no `Co-Authored-By` (the summary from step 3
-    stays in the chat; the "what" is in the diff and, when it warrants one, the CHANGELOG).
+    English, rename the branch now with `git branch -m claude/<Task-name>` (the kit's ADR 0013).
+    On that `claude/` branch, commit without asking (the kit's ADR 0021): one line, English, at
+    most 100 characters, saying why. No body, no trailers, no `Co-Authored-By` (the summary
+    from step 3 stays in the chat; the "what" is in the diff and, when it warrants one, the
+    CHANGELOG).
     Report the message and the short hash. On `main` or any branch not named `claude/`, do not
     commit: propose the message and leave the commit to the owner (the commit hook refuses it
     anyway). If the branch is ready to merge into `main`,

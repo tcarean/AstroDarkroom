@@ -4,8 +4,8 @@
 #
 # WHAT IT DOES
 #   Accepts only a message that is one non-empty line, at most 100 characters long, and not
-#   a trailer such as "Co-Authored-By: ..." (CLAUDE.md rule 13: one line, no body, no
-#   trailers). Lines that start with # are ignored; git's editor template uses them for
+#   a trailer such as "Co-Authored-By: ..." (the kit's ADRs 0021 and 0023: one line, no
+#   body, no trailers). Lines that start with # are ignored; git's editor template uses them for
 #   its own comments.
 #
 # WHO CALLS IT

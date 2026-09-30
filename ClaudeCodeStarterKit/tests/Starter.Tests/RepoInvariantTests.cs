@@ -99,6 +99,33 @@ public partial class RepoInvariantTests
             $"Paths named in the kit's docs that do not exist in the kit: {string.Join(", ", missing)}");
     }
 
+    /// <summary>
+    /// The shared folders and the git hooks are read and run in every project, where "ADR 0013" or
+    /// "rule 15" names the project's own, unrelated decision or rule. They cite "the kit's ADR
+    /// NNNN" and name a rule by its ADR or its words (the kit's ADR 0025). Lines are joined first,
+    /// comment markers dropped, so a citation that wraps is read whole.
+    /// </summary>
+    [Fact]
+    public void SyncedFiles_CiteTheKitsAdrsAndNoRuleNumbers()
+    {
+        string root = TestData.FindRepoRoot();
+        List<string> bare = [];
+        foreach (string folder in SharedFolders)
+        {
+            foreach (string file in Directory.EnumerateFiles(Path.Combine(root, folder), "*", SearchOption.AllDirectories))
+            {
+                string text = LineBreak().Replace(File.ReadAllText(file).ReplaceLineEndings("\n"), " ");
+                foreach (Match m in BareAdr().Matches(text).Concat(RuleNumber().Matches(text)))
+                {
+                    bare.Add($"{Path.GetRelativePath(root, file)}: '{m.Value}'");
+                }
+            }
+        }
+
+        Assert.True(bare.Count == 0,
+            $"Bare ADR or rule numbers in the kit's shared files: {string.Join(", ", bare)}");
+    }
+
     /// <summary>Table rows of docs/requirements.md: "| R-001 | implemented | ..." => R001 => implemented.</summary>
     private static Dictionary<string, string> ReadRequirements()
     {
@@ -129,6 +156,10 @@ public partial class RepoInvariantTests
     }
 
     private static readonly string[] KitDocs = ["GHID.md", "README.md"];
+
+    /// <summary>What scripts/sync.ps1 copies into every project; scripts/ also holds the git hooks.</summary>
+    private static readonly string[] SharedFolders =
+        ["scripts", Path.Combine(".claude", "skills"), Path.Combine(".claude", "agents")];
 
     /// <summary>First segments that make a code span a path relative to the kit root.</summary>
     private static readonly string[] TopLevelFolders =
@@ -216,4 +247,14 @@ public partial class RepoInvariantTests
 
     [GeneratedRegex(@"^[A-Za-z0-9_][A-Za-z0-9_.-]*\.(md|ps1|json|props|yml|sln|csproj|cs)$")]
     private static partial Regex BareFileName();
+
+    /// <summary>A line break with the next line's indentation and comment marker.</summary>
+    [GeneratedRegex(@"\n[ \t]*(?:#[ \t]*)?")]
+    private static partial Regex LineBreak();
+
+    [GeneratedRegex(@"(?<!the kit's )\bADRs? \d{4}")]
+    private static partial Regex BareAdr();
+
+    [GeneratedRegex(@"\b[Rr]ules? \d+\b")]
+    private static partial Regex RuleNumber();
 }

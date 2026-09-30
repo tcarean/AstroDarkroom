@@ -2,8 +2,8 @@
 # check-decisions.ps1 - checks the headers of the decision records (ADRs) in docs/decisions/.
 #
 # WHAT IT DOES
-#   Reads every docs/decisions/NNNN-slug.md except 0000-template.md and checks what the kit's
-#   ADR 0024 fixes for the first lines of an ADR:
+#   Reads every docs/decisions/NNNN-slug.md except 0000-template.md and checks the first
+#   lines of each, as the kit's ADR 0024 fixes them:
 #     1  # NNNN. <title>              NNNN is the number in the file name
 #     2  (blank)
 #     3  Date: YYYY-MM-DD

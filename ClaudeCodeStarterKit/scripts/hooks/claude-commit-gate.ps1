@@ -7,8 +7,8 @@
 #   (exit 0), so ordinary commands cost almost nothing. For a git commit it:
 #     1. blocks a commit that would skip the git hooks: --no-verify, -n alone or in a group of
 #        short options (-anm), or git -c core.hooksPath=...;
-#     2. finds the folder the commit runs in (ADR 0020), and blocks the commit when the command
-#        names a folder it cannot find (a variable, a folder that does not exist);
+#     2. finds the folder the commit runs in (the kit's ADR 0020), and blocks the commit when
+#        the command names a folder it cannot find (a variable, a folder that does not exist);
 #     3. blocks the commit unless that folder is on a branch named claude/..., the branches the
 #        assistant creates: main, any other branch and a detached HEAD are the owner's, who
 #        commits there by hand (the kit's ADR 0021);
@@ -186,7 +186,7 @@ function Test-Commit {
                 return 2
             }
             if (@($m.Groups['config'].Captures | Where-Object { $_.Value -match '^[''"]?core\.hooksPath' }).Count -gt 0) {
-                [Console]::Error.WriteLine('Blocked: git -c core.hooksPath=... would skip the git hooks (CLAUDE.md rule 4).')
+                [Console]::Error.WriteLine("Blocked: git -c core.hooksPath=... would skip the git hooks (the kit's ADR 0020).")
                 return 2
             }
         }
@@ -205,7 +205,7 @@ function Test-Commit {
         $branch = @(Invoke-Git -C $folder branch --show-current) -join ''
         if (-not $branch.StartsWith('claude/')) {
             $where = if ($branch) { "on $branch" } else { 'on a detached HEAD' }
-            [Console]::Error.WriteLine("Blocked: $folder is $where. A commit there is the owner's, made by hand (CLAUDE.md rule 13, the kit's ADR 0021); the assistant commits only on the claude/ branch of its task.")
+            [Console]::Error.WriteLine("Blocked: $folder is $where. A commit there is the owner's, made by hand (the kit's ADR 0021); the assistant commits only on the claude/ branch of its task.")
             return 2
         }
 
