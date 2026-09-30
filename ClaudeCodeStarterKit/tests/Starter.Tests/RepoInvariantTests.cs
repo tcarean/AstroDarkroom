@@ -110,7 +110,7 @@ public partial class RepoInvariantTests
     {
         string root = TestData.FindRepoRoot();
         List<string> bare = [];
-        foreach (string folder in SharedFolders)
+        foreach (string folder in SyncTests.Shared)
         {
             foreach (string file in Directory.EnumerateFiles(Path.Combine(root, folder), "*", SearchOption.AllDirectories))
             {
@@ -132,12 +132,25 @@ public partial class RepoInvariantTests
     [InlineData("see adr 0013", true)]
     [InlineData("the kit's ADR 0013", false)]
     [InlineData("The kit's ADR 0013 says", false)]
-    [InlineData("the kit’s ADR 0013", false)]
+    [InlineData("the kit\u2019s ADR 0013", false)]
     [InlineData("the kit''s ADR 0013", false)]
     [InlineData("the kit's ADRs 0017 and 0018", false)]
     public void BareAdr_FlagsOnlyNumbersNotQualifiedAsTheKits(string text, bool flagged)
     {
         Assert.Equal(flagged, BareAdr().IsMatch(text));
+    }
+
+    [Theory]
+    [InlineData("(rule 15)", true)]
+    [InlineData("RULE 4", true)]
+    [InlineData("rule-15", true)]
+    [InlineData("rule #15", true)]
+    [InlineData("rules 3 and 4", true)]
+    [InlineData("the rules of the kit", false)]
+    [InlineData("overrule 5", false)]
+    public void RuleNumber_FlagsARuleCitedByItsNumber(string text, bool flagged)
+    {
+        Assert.Equal(flagged, RuleNumber().IsMatch(text));
     }
 
     /// <summary>Table rows of docs/requirements.md: "| R-001 | implemented | ..." => R001 => implemented.</summary>
@@ -170,10 +183,6 @@ public partial class RepoInvariantTests
     }
 
     private static readonly string[] KitDocs = ["GHID.md", "README.md"];
-
-    /// <summary>What scripts/sync.ps1 copies into every project; scripts/ also holds the git hooks.</summary>
-    private static readonly string[] SharedFolders =
-        ["scripts", Path.Combine(".claude", "skills"), Path.Combine(".claude", "agents")];
 
     /// <summary>First segments that make a code span a path relative to the kit root.</summary>
     private static readonly string[] TopLevelFolders =
@@ -270,9 +279,10 @@ public partial class RepoInvariantTests
     /// "ADR 0013", "ADR-0013" or "adr 0013" not preceded by "the kit's", whatever its case or
     /// apostrophe, including the doubled one of a PowerShell single-quoted string.
     /// </summary>
-    [GeneratedRegex(@"(?i)(?<!the kit(?:'|’|'')s )\bADRs?[- ]\d{4}")]
+    [GeneratedRegex(@"(?i)(?<!the kit(?:'|\u2019|'')s )\bADRs?[-\s#]{1,2}\d{4}")]
     private static partial Regex BareAdr();
 
-    [GeneratedRegex(@"\b[Rr]ules? \d+\b")]
+    /// <summary>"rule 15", "RULE 15", "rule-15", "rule #15", "rules 3 and 4": a rule cited by its number.</summary>
+    [GeneratedRegex(@"(?i)\brules?[-\s#]{0,2}\d+\b")]
     private static partial Regex RuleNumber();
 }

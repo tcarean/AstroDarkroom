@@ -47,6 +47,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- `verify.ps1` and `release.ps1` start their child scripts with the PowerShell that runs them
+  (`Get-KitShell` in `kit-config.ps1`), not with `powershell` by name, which does not exist
+  under `pwsh` on Linux CI: the `bitbucket-pipelines.yml` run failed at the test data step.
 - A merge that completes without conflicts runs the gate (ADR 0022): git calls
   `pre-merge-commit`, not `pre-commit`, for such a merge, so until now it entered `main` with no
   check at all. The new `scripts/hooks/pre-merge-commit` runs the `pre-commit` beside it, on the

@@ -90,7 +90,7 @@ try {
     }
 
     # --- gate ---------------------------------------------------------------------------
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify.ps1')
+    & (Get-KitShell) -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'verify.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'verify.ps1 failed; release aborted, nothing changed.' }
 
     # --- files --------------------------------------------------------------------------

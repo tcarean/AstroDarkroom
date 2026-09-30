@@ -47,8 +47,9 @@ grammar.
   no dated note inside it, that every number named exists and is older, that both sides of a
   supersession agree (a whole `X` against `superseded by N`, `X in part` against a
   `; <part> superseded by N` clause), and in a project that each `the kit's ADR NNNN` exists in
-  the kit when the kit is beside it. No ADR lists the steps of the gate any more: the header
-  of `verify.ps1` is the reference, which the guide and the README summarise.
+  the kit when the kit is beside it. The list of steps in ADR 0003 is superseded: the header
+  of `verify.ps1` is the reference for the steps of the gate, which the guide and the README
+  summarise.
 
 ## Alternatives rejected
 

@@ -7,8 +7,9 @@ process reaches projects well where it is synced (scripts/, skills, agent) and d
 copied by hand (process rules in each CLAUDE.md, settings.json, mirror ADRs). The worst concrete
 defect: synced files cite bare "rule 15", "ADR 0013", "ADR 0021", which in FlatCheck are other
 rules and decisions (FlatCheck rule 15 = "Every metric is a ratio"; FlatCheck ADR 0013 = analysis
-centre). Nine questions were answered by the owner in chat on 2026-09-30: "La Q2 faci doar
-varianta C. Pt Q8 nu ma conditiona si pe mine. In rest merg pe recomandarile tale."
+centre). Nine questions were answered by the owner in chat on 2026-09-30 (translated from
+Romanian): "For Q2 do only variant C. For Q8, do not bind me too. For the rest, I go with
+your recommendations."
 
 This plan (1) records the nine decisions in the repo so later sessions find them, (2) splits the
 work into six tasks, one per session, each writing its own ADR, and (3) details task 1.
@@ -150,7 +151,7 @@ approves this plan; he reads the diff before the merge.
    - `wrap-up` step 6: the three ways an ADR changes, and citing a kit decision, never mirroring it (the kit's ADRs 0024 and 0025).
    - `wrap-up` step 9: a project ADR superseded by a kit ADR gets its Status updated in the sync commit.
    - Kit `0000-template.md`: shows the grammar.
-   - `GHID.md` (Romanian): :49, :91-99 (also the stale "-SkipTests ... patru pasi"), a gate-table row at :101-115, :165-182 (the boundary becomes "merged into main", the three classes, :182), :292 (auditor inputs), :321, and one paragraph on citing kit decisions near :346.
+   - `GHID.md` (Romanian): :49, :91-99 (also the stale sentence that -SkipTests keeps only the first four steps), a gate-table row at :101-115, :165-182 (the boundary becomes "merged into main", the three classes, :182), :292 (auditor inputs), :321, and one paragraph on citing kit decisions near :346.
    - `README.md`: :69, :76, and a bullet under "Ce e impus mecanic".
    - `CHANGELOG.md`: an Added line (the decisions check) and a Changed line (the auditor reads the kit's decisions; synced files cite the kit's ADRs).
    - CLAUDE.md is not touched; task 3 puts the rule text into the synced rules file.
@@ -178,7 +179,7 @@ Between K3 and F1, the worktree's FlatCheck is red at step 0. No FlatCheck commi
 
 ## Known and left out
 
-- `verify.ps1` calls `powershell` by name, which fails on Linux CI. This is pre-existing, and the new step inherits it.
+- `verify.ps1` calls `powershell` by name, which fails on Linux CI. This is pre-existing, and the new step inherits it. (Fixed in the end, after the code review: see "What deviated".)
 - Stale Consequences sentences in accepted ADRs (history) are not touched.
 - The three non-adopting projects' commit sentences stay as they are, since Q2 was narrowed to C.
 
@@ -188,5 +189,6 @@ Between K3 and F1, the worktree's FlatCheck is red at step 0. No FlatCheck commi
 - The back-pointer criterion is now explicit in ADR 0024: only what a later ADR says it replaces, or what contradicts an earlier Decision, is recorded; a stale sentence in Context or Consequences is history. By that criterion more pairs were recorded than the plan listed: kit 0017 of 0003, 0018 of 0009, 0025 of 0018, FlatCheck 0047 of 0040. FlatCheck 0048 by 0053 was skipped at first and recorded after the review. Kit 0021's Status clause is split so its "(100 characters)" note stays on its own part.
 - The plan's reading of ADR 0011 ("the guide only explains") was wrong: 0011 kept the guide out of the audit because it is not part of a project. ADR 0025 quotes that reason and answers it.
 - A read-only review of the branch (six agents) found a real bug in `check-decisions.ps1`: the refs of a Status line were matched again without the end anchor, so a part containing "superseded by NNNN", or two clauses joined by ", ", were read differently from the grammar, passing a one-sided supersession. The refs now come from the match that validated the line, with tests for both cases. Also from the review: the header is case-sensitive, messages quote the line, 0000 is reserved for the template and a kit reference to 0000 fails, every rule in the script's header has a test, the citation test accepts "The kit's", a typographic apostrophe and "kit''s" and flags "ADR-0013" and lowercase forms, a correction note for text inside `## Decision` goes right after the section, and the Status update for a project ADR superseded by a kit ADR is the kit task's, on its branch.
-- `pre-commit` and `pre-merge-commit` say "CLAUDE.md forbids that." rather than "the rules forbid that". The stale "(pasul 8)" in `GHID.md` and `README.md` went while those lines were edited. ADR 0024's file name is shorter than first written.
+- `pre-commit` and `pre-merge-commit` say "CLAUDE.md forbids that." rather than "the rules forbid that". The stale references to wrap-up "step 8" in `GHID.md` and `README.md` went while those lines were edited. ADR 0024's file name is shorter than first written.
 - Left as found (review, low): FlatCheck 0002 and 0038 are marked wholly superseded although their successors keep a part of them; `GHID.md` says `/wrap-up` reviews the guide after a change to `scripts/` or `.claude/`, which wrap-up step 9 does not list (a finding of the analysis, for a later task).
+- After `/code-review` (nine findings, all fixed on the branch): ADR 0017 gets a dated note beside "Supersedes nothing in the kit", which its new header contradicted; ADR 0024 no longer claims that no ADR lists the gate's steps; the owner's words in this plan are translated; the check requires a title after "# NNNN. " and keeps no unused regex groups; the rule-number guard catches "RULE 4", "rule-15" and "rule #15" like the ADR guard; the shared-folder list lives in `SyncTests.Shared`, which a test compares with `sync.ps1` and the Stop hook; one `KitJson` helper in `ScriptRunner`; and `verify.ps1` and `release.ps1` start child scripts with `Get-KitShell` (the running PowerShell), which also fixes the pre-existing Linux CI failure listed below.

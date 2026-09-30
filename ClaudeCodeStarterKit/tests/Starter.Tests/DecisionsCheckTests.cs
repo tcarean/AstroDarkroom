@@ -35,8 +35,8 @@ public sealed class DecisionsCheckTests : IDisposable
                 Path.Combine(dir, "docs", "decisions", "0000-template.md"));
         }
 
-        File.WriteAllText(Path.Combine(_kit, "kit.json"), KitJson("."));
-        File.WriteAllText(Path.Combine(_project, "kit.json"), KitJson("../Kit"));
+        File.WriteAllText(Path.Combine(_kit, "kit.json"), ScriptRunner.KitJson("."));
+        File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson("../Kit"));
         Write(_kit, "0007-a-kit-decision.md", Adr(7, "Status: accepted 2026-09-01"));
     }
 
@@ -111,11 +111,13 @@ public sealed class DecisionsCheckTests : IDisposable
         Write(_project, "0026-joined.md", Adr(26, "Status: accepted 2026-09-01; the limit superseded by 0027, check-staged superseded by 0028"));
         Write(_project, "0027-names-it.md", Adr(27, "Status: accepted 2026-09-02", "Supersedes: 0026 in part (the limit)"));
         Write(_project, "0028-names-nothing.md", Adr(28, "Status: accepted 2026-09-03"));
+        Write(_project, "0029-empty-title.md", Adr(29, "Status: accepted 2026-09-01", title: string.Empty));
 
         (int exitCode, string output) = RunCheck(_project);
         Assert.Equal(1, exitCode);
         Assert.Contains("NAME       0001-Bad Name.md", output);
-        Assert.Contains("TITLE      0002-title.md: line 1 must start with '# 0002. '", output);
+        Assert.Contains("TITLE      0002-title.md: line 1 '# 0003. A decision' is not '# 0002. <title>'", output);
+        Assert.Contains("TITLE      0029-empty-title.md: line 1 '# 0029. ' is not '# 0029. <title>'", output);
         Assert.Contains("DUPLICATE  0004-second.md: number 0004 is also used by 0004-first.md", output);
         Assert.Contains("DATE       0005-date.md", output);
         Assert.Contains("STATUS     0006-status.md", output);
@@ -161,10 +163,10 @@ public sealed class DecisionsCheckTests : IDisposable
     {
         Write(_project, "0001-follows-the-kit.md", Adr(1, "Status: accepted 2026-09-01; the naming superseded by the kit's ADR 0999"));
 
-        File.WriteAllText(Path.Combine(_project, "kit.json"), KitJson("../Nowhere"));
+        File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson("../Nowhere"));
         Assert.Equal(0, RunCheck(_project).ExitCode);
 
-        File.WriteAllText(Path.Combine(_project, "kit.json"), KitJson(null));
+        File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson(null));
         (int exitCode, string output) = RunCheck(_project);
         Assert.True(exitCode == 0, output);
     }
@@ -206,17 +208,5 @@ public sealed class DecisionsCheckTests : IDisposable
         return $"# {number:D4}. {title}\n\nDate: 2026-09-01\n{header}\n## Context\n\nWhy.\n\n"
             + $"## Decision\n\n{decision}\n\n## Alternatives rejected\n\n- **Another.** No.\n\n"
             + $"## Consequences\n\n{consequences}\n";
-    }
-
-    /// <summary>A minimal kit.json; a null kit leaves the key out, as a standalone repository does.</summary>
-    private static string KitJson(string? kit)
-    {
-        string kitKey = kit is null ? string.Empty : $$""", "kit": "{{kit}}" """;
-        return $$"""
-            { "solution": "X.sln", "codeFolders": ["src/"], "testFolders": ["tests/"],
-              "testData": { "folder": "tests/testdata/", "largeEnv": "X_TESTDATA_LARGE" },
-              "mutate": { "testProject": "tests/X.Tests/" },
-              "release": { "publish": [] }{{kitKey}} }
-            """;
     }
 }
