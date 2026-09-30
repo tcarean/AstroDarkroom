@@ -155,3 +155,11 @@ Then `/wrap-up`, the plan's "What deviated", `/code-review`, and the merge propo
 - The refusal's recovery uses `git stash apply --index <hash>` and dropping that entry, not `git stash pop --index`: the stash stack is shared by every worktree and session, so a pop could take another session's entry.
 - The worktree bullet of both `CLAUDE.md` files also names the guard, beside dropping the rename sentence.
 - The guide's copy of the wrap-up steps keeps its old "9." numbering (a pre-existing drift the analysis listed for a later task).
+- A read-only review of the branch (four agents, fifteen findings, none refuted) changed:
+  - the refusal's recovery: after a refused merge nothing is stashed (a push with nothing to save left `stash@{0}` pointing at another session's entry), a commit's changes are stashed by path and found again by their message, and the commands are one per line and quoted, so PowerShell 5.1 runs them too;
+  - ADR 0026's limits: no pre-commit runs for a fast-forward merge, a cherry-pick, a revert, `git am` or a rebase's commits, so `/wrap-up` merges into `main` with `--no-ff`; the guard is only as present as the `.githooks/` the main checkout has checked out; where the Claude commit gate runs, verify has already run;
+  - "which only a merge changes" became "the hooks the main checkout has checked out, normally main's" in ADR 0016's note, FlatCheck 0046's note, `install-hooks.ps1`, `monorepo/README.md` and the guide, and both notes now quote what they correct (ADR 0024);
+  - the claim that the owner is never refused is limited to shells that do not set `CLAUDECODE`;
+  - the merge test's main commit touches A, so its "no gate ran" assertion means something;
+  - the wrap-up check states the hook's git-dir test instead of "the first entry of git worktree list";
+  - the guide's "two git hooks" and "four kit-only files" became three and five.
