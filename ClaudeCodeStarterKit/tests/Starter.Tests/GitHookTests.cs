@@ -41,7 +41,9 @@ public sealed class GitHookTests : IDisposable
         Git("add", ".");
         GitWithoutHooks("commit", "-q", "-m", "Task");
         Git("switch", "-q", "main");
+        // main also touches A, in another file, so a merge of main runs A's gate unless refused.
         File.WriteAllText(Path.Combine(_repo, "notes.txt"), "main\n");
+        File.WriteAllText(Path.Combine(_a, "src", "Y.cs"), "// main\n");
         Git("add", ".");
         GitWithoutHooks("commit", "-q", "-m", "Main");
         File.Delete(Path.Combine(_a, "ran.txt"));

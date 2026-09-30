@@ -14,8 +14,8 @@
 #       whole repository to the absolute path of the main checkout's .githooks/ (for photo,
 #       E:/Photografie/Code/.githooks). That one copy serves every project folder and every
 #       worktree: the pre-commit hook finds each project's own scripts/verify.ps1 by itself.
-#       The path is absolute so that every worktree, a hand-made one included, runs the main
-#       checkout's copy, which only a merge into main changes; a relative one would run each
+#       The path is absolute so that every worktree, a hand-made one included, runs the copy
+#       the main checkout has checked out, normally main's; a relative one would run each
 #       branch's own copy (the kit's ADR 0016).
 #   It changes only the git setting and the .githooks/ copy; it runs no check. It warns when a
 #   per-worktree setting (config.worktree) hides the one it wrote.

@@ -16,7 +16,7 @@ owner decided, in chat, that the guard binds the assistant and never him.
 ## Decision
 
 The kit's `scripts/hooks/pre-commit`, installed for the whole repository in `.githooks/`, refuses a
-commit, before it runs any gate, when all three hold:
+commit, before it runs its own gate, when all three hold:
 
 - `CLAUDECODE` is set, as Claude Code sets it in the shells of its tools;
 - the current branch starts with `claude/`;
@@ -25,9 +25,10 @@ commit, before it runs any gate, when all three hold:
   its own).
 
 The refusal says how to move the work to the branch's own worktree. `pre-merge-commit` runs
-`pre-commit`, so a session's merge onto a `claude/` branch left in the main checkout is refused
-the same way. The owner's commits and merges do not meet the first condition, and a session's
-merge into `main` does not meet the second.
+`pre-commit`, so a session's merge that records a merge commit onto a `claude/` branch left in
+the main checkout is refused the same way. The owner's commits and merges, from shells that do
+not set `CLAUDECODE`, do not meet the first condition, and a session's merge into `main` does
+not meet the second.
 
 ## Alternatives rejected
 
@@ -51,8 +52,13 @@ before the gate; the owner's runs the gate; a session's commit in a linked workt
 session's merge onto `claude/` in the main checkout is refused, with the merge left to abort; a
 session's merge into `main` runs the gate. `ScriptRunner` removes `CLAUDECODE` from what it
 starts, so the suite gives the same results under Claude Code and by hand. The limits: the check
-trusts `CLAUDECODE`, so a session that clears it passes; it stops the commit, not the switch; a
-session's commit on `main` in a folder where no Claude hook runs is outside it; it needs git 2.31
-or later. Whether the desktop app's own terminal panel sets `CLAUDECODE` is not measured; if it
-does, the owner is refused there only on a `claude/` branch in the main checkout. In `photo` the
-check takes effect when the refreshed `.githooks/` is merged into `main`.
+trusts `CLAUDECODE`, so a session that clears it passes; it stops the commit, not the switch; git
+runs no pre-commit for a fast-forward merge, a cherry-pick, a revert, `git am` or the commits of
+a rebase, so those pass it (`/wrap-up` makes the merge into `main` with `--no-ff`); it is only as
+present as the `.githooks/` of the branch the main checkout has checked out, so a switch to a
+branch cut before it removes it; a session's commit on `main` in a folder where no Claude hook
+runs is outside it; it needs git 2.31 or later. Where the Claude commit gate runs, it has run
+verify before the refusal; `/wrap-up` step 10 checks first to save that run. Whether the desktop
+app's own terminal panel sets `CLAUDECODE` is not measured; if it does, the owner is refused
+there only on a `claude/` branch in the main checkout. In `photo` the check takes effect when
+the refreshed `.githooks/` is merged into `main`.

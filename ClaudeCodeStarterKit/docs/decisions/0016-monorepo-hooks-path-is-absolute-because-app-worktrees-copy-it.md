@@ -31,12 +31,14 @@ relative `scripts/hooks`: there the app's folder is the git root, so its resolut
 
 ## Alternatives rejected
 
-(Restated 2026-09-30: the desktop app's worktrees, the reason given above, are no longer used
+(Restated 2026-09-30: "so the app copies a right path into each new worktree" and "there the
+app's folder is the git root" no longer apply, since the desktop app's worktrees are not used
 in `photo` (ADR 0027). The path stays absolute because every worktree, a hand-made one
-included, then runs the main checkout's `.githooks/`, which only a merge into `main` changes;
-a relative `.githooks` would make each worktree run its own branch's copy, so a branch could
-change the gate its own commits pass. A standalone repository keeps the relative
-`scripts/hooks`, whose worktrees do run their branch's copy.)
+included, then runs the hooks the main checkout has checked out, normally `main`'s, so a hook
+change made on a task branch takes effect when it is merged; a relative `.githooks` would make
+each worktree run its own branch's copy, so a branch could change the gate its own commits
+pass. A standalone repository keeps the relative `scripts/hooks`, whose worktrees do run their
+branch's copy.)
 
 - **A SessionStart hook in `.claude/settings.json` that removes the override.** The app writes
   `config.worktree` in the same second the session starts, so the hook races it; and only the

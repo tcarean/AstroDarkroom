@@ -148,3 +148,10 @@ Then `/wrap-up`, the plan's "What deviated", `/code-review`, and the merge propo
   worktree with `CLAUDECODE=1` is refused, with the message shown.
 - FlatCheck's `verify.ps1` is green, and `check-decisions` passes on both projects.
 - `git worktree list` and `sync -Check` are clean before the merge.
+
+## What deviated
+
+- Two ADRs, 0026 and 0027, one decision each, where the programme plan said "one ADR". ADR 0020 got a Corrected note, not a supersession: its Decision has no app clause (the kit's ADR 0024 criterion).
+- The refusal's recovery uses `git stash apply --index <hash>` and dropping that entry, not `git stash pop --index`: the stash stack is shared by every worktree and session, so a pop could take another session's entry.
+- The worktree bullet of both `CLAUDE.md` files also names the guard, beside dropping the rename sentence.
+- The guide's copy of the wrap-up steps keeps its old "9." numbering (a pre-existing drift the analysis listed for a later task).

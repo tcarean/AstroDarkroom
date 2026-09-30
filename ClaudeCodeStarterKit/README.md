@@ -110,9 +110,9 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   detasat: refuzat de hook-ul Claude Code de commit. Pe branch-ul `claude/` al task-ului sau,
   modelul face commit fara sa intrebe; pe `main` commit-urile le face omul (ADR 0021).
 - Un commit al unei sesiuni Claude Code pe un branch `claude/` in checkout-ul principal:
-  refuzat de hook-ul git `pre-commit`, inainte de gate, oricare ar fi folderul sesiunii; la fel
-  un merge al sesiunii pe un asemenea branch. Commit-urile omului nu sunt atinse: hook-ul
-  recunoaste sesiunea dupa variabila `CLAUDECODE` (ADR 0026).
+  refuzat de hook-ul git `pre-commit`, inainte de gate-ul lui, oricare ar fi folderul sesiunii;
+  la fel un merge al sesiunii, cu commit de merge, pe un asemenea branch. Commit-urile omului,
+  din shell-uri care nu seteaza variabila `CLAUDECODE`, nu sunt atinse (ADR 0026).
 - Orice `git merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului: cere
   acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
 

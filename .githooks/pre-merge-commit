@@ -4,7 +4,8 @@
 #
 # WHAT IT DOES
 #   Everything pre-commit does, step 0 included: a Claude Code session's merge onto a claude/
-#   branch left in the main checkout is refused (the kit's ADR 0026).
+#   branch left in the main checkout is refused (the kit's ADR 0026). A fast-forward merge
+#   records no merge commit and runs no hook.
 #   git calls it when a merge completes without conflicts, just before it records the merge
 #   commit. Such a merge runs neither pre-commit nor the Claude commit hook, so without this
 #   file a clean merge into main entered the history with no gate at all (the kit's ADR
