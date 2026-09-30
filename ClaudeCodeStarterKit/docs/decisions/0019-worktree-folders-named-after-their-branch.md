@@ -1,7 +1,7 @@
 # 0019. A worktree folder the assistant makes is named after its branch
 
 Date: 2026-09-27
-Status: accepted 2026-09-27
+Status: accepted 2026-09-27; the desktop app's worktree superseded by 0027
 
 ## Context
 
