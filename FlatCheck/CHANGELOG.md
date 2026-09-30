@@ -56,10 +56,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
-- The kit's ADR 0026 and 0027, taken through `sync.ps1`: the git `pre-commit` hook refuses a
-  Claude Code session's commit on a `claude/` branch in the shared checkout, and the desktop
-  app's worktree option is not used any more, so the rename of generated branch names is gone
-  from `CLAUDE.md` and `/wrap-up`. ADR 0044 and 0050 record the part the kit's ADR 0027
+- The kit's ADR 0026 and 0027: the repository's git `pre-commit` hook (`.githooks/`, from the
+  kit) refuses a Claude Code session's commit on a `claude/` branch in the shared checkout,
+  and the desktop app's worktree option is not used any more, so the rename of generated
+  branch names is gone from `CLAUDE.md` and, through `sync.ps1`, from `/wrap-up`. ADR 0044 and 0050 record the part the kit's ADR 0027
   retires; ADR 0046 notes why the hooks path stays absolute.
 - ADR headers are checked by the kit's `check-decisions.ps1`, a step of `verify.ps1` (the kit's
   ADR 0024), which replaces `Decisions_AreNumberedOnceAndCarryAStatus`: title, date, status,

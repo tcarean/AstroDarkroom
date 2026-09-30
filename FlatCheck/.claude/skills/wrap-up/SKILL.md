@@ -53,10 +53,12 @@ adds project-specific steps and says where they go.
    what a project ADR says, look for it in each project's `docs/decisions/` and add
    `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on the task branch, in
    the project's sync commit when there is one.
-10. If the commit's folder is the main checkout (the first entry of `git worktree list`) on a
-    `claude/` branch, move the work to the branch's own worktree first: the git hook refuses a
-    session's commit there (the kit's ADR 0026). On a `claude/` branch in its own worktree,
-    commit without asking (the kit's ADR 0021): one line, English, at
+10. If the commit's folder is the main checkout on a `claude/` branch, move the work to the
+    branch's own worktree first: the git hook refuses a session's commit there (the kit's ADR
+    0026). The main checkout is where the two lines of
+    `git rev-parse --absolute-git-dir --path-format=absolute --git-common-dir` are equal. On a
+    `claude/` branch in its own worktree, commit without asking (the kit's ADR 0021): one line,
+    English, at
     most 100 characters, saying why. No body, no trailers, no `Co-Authored-By` (the summary
     from step 3 stays in the chat; the "what" is in the diff and, when it warrants one, the
     CHANGELOG).
@@ -65,7 +67,8 @@ adds project-specific steps and says where they go.
     anyway). If the branch is ready to merge into `main`,
     say so, suggest `/code-review main...<branch>` first if it has not run on this work, then
     ask: does the owner want you to run the merge, or will they do it by hand? Do nothing until
-    they answer. If a merge you run stops on conflicts, resolve them, `git add` the files and
+    they answer. The merge is `git merge --no-ff <branch>` in the main checkout, so that the git
+    hooks see it: a fast-forward runs none (the kit's ADR 0022, 0026). If a merge you run stops on conflicts, resolve them, `git add` the files and
     conclude with `git merge --continue`, never `git commit`, which the hook refuses on `main`;
     a conflict where the two sides meant different things is a question for the owner. If the
     gate fails only on the merged result (two ADRs with the same number), `git merge --abort`,
