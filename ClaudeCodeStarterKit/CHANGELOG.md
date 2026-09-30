@@ -125,6 +125,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The desktop app's worktree option is not used in `photo` (ADR 0027): its sessions started at
+  the root of a whole-repository checkout, where no project `CLAUDE.md`, settings or Claude
+  hooks load. Task worktrees are made by hand, so the rename of generated branch names is gone
+  from `CLAUDE.md`, `/wrap-up` and the guide; `/wrap-up` checks instead that it is not about to
+  commit on a `claude/` branch in the main checkout.
 - A project cites the kit's process decisions and records only its own (ADR 0025): no project
   ADR for a kit decision, only for a deviation or a project value. The synced files and the git
   hooks cite "the kit's ADR NNNN" and never a rule by its number, which in a project named

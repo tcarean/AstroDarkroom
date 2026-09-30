@@ -53,10 +53,10 @@ adds project-specific steps and says where they go.
    what a project ADR says, look for it in each project's `docs/decisions/` and add
    `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on the task branch, in
    the project's sync commit when there is one.
-10. If `git branch --show-current` is still a generated name (`claude/` plus two random words and
-    a hex suffix, like `claude/wonderful-yalow-f0ea0e`) rather than `claude/` plus the task in
-    English, rename the branch now with `git branch -m claude/<Task-name>` (the kit's ADR 0013).
-    On that `claude/` branch, commit without asking (the kit's ADR 0021): one line, English, at
+10. If the commit's folder is the main checkout (the first entry of `git worktree list`) on a
+    `claude/` branch, move the work to the branch's own worktree first: the git hook refuses a
+    session's commit there (the kit's ADR 0026). On a `claude/` branch in its own worktree,
+    commit without asking (the kit's ADR 0021): one line, English, at
     most 100 characters, saying why. No body, no trailers, no `Co-Authored-By` (the summary
     from step 3 stays in the chat; the "what" is in the diff and, when it warrants one, the
     CHANGELOG).

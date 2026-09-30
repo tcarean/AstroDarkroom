@@ -36,7 +36,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
    radacina, in `.githooks/`, si gasesc singure `scripts/verify.ps1` al proiectului. Intr-un
    monorepo scriptul se ruleaza doar din kit: o data pe o clona noua, pentru ca seteaza calea
-   absoluta a `.githooks/`, singura pe care worktree-urile aplicatiei Claude o copiaza corect
+   absoluta a `.githooks/`, prin care orice worktree ruleaza hook-urile checkout-ului principal
    (ADR 0016), si dupa ce schimbi un hook, pentru ca fiecare copie a lui scrie peste
    `.githooks/` hook-urile de langa ea.
 
@@ -109,6 +109,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Un `git commit` al modelului pe `main`, pe alt branch decat unul `claude/` sau pe un HEAD
   detasat: refuzat de hook-ul Claude Code de commit. Pe branch-ul `claude/` al task-ului sau,
   modelul face commit fara sa intrebe; pe `main` commit-urile le face omul (ADR 0021).
+- Un commit al unei sesiuni Claude Code pe un branch `claude/` in checkout-ul principal:
+  refuzat de hook-ul git `pre-commit`, inainte de gate, oricare ar fi folderul sesiunii; la fel
+  un merge al sesiunii pe un asemenea branch. Commit-urile omului nu sunt atinse: hook-ul
+  recunoaste sesiunea dupa variabila `CLAUDECODE` (ADR 0026).
 - Orice `git merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului: cere
   acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
 
