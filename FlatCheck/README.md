@@ -1019,6 +1019,17 @@ scripturi pe care Siril îl descarcă — scriptul autorului, pentru un aparat f
 `masters/`, unde aplicația îl caută și ea. Aplicația nu aduce niciun script cu ea și nu
 modifică niciunul; ce rulează e exact fișierul pe care l-ar rula Siril.
 
+Setările tale de Siril (`config.1.4.ini`) rămân neatinse: `siril-cli` își rescrie fișierul de
+setări la sfârșitul fiecărui script, iar o salvare eșuată îl poate șterge — măsurat, între 5 și
+10 la sută din rulări pe calculatorul autorului, și așa s-au pierdut odată toate setările lui
+Siril. De aceea aplicația îi dă lui `siril-cli`, cu `-i`, o copie a lor într-un folder
+temporar al rulării (`%TEMP%\FlatCheck\siril-…`), șters la sfârșit; pe ale tale doar le
+citește. Siril lucrează deci cu aceleași setări, dar nimic din rulare nu se întoarce în ele.
+Două urmări vizibile: Siril nu mai pornește în ultimul folder rulat din aplicație, iar în log
+poate apărea uneori „Could not save the settings in …\siril.ini" — e despre copie și nu
+schimbă nimic. Dacă setările nu se pot citi (de exemplu chiar când Siril le salvează), rularea
+nu pornește, mesajul spune ce fișier, și apeși din nou.
+
 Se deschide o fereastră cu ieșirea lui Siril în timp real, ca panoul lui de log: comanda
 curentă (*comanda 7 din 20*, cu textul ei întreg, fiindcă Siril tipărește doar verbul), bara
 de progres a operației în curs, și liniile de log. Liniile de progres — trei sferturi din ce
@@ -1304,7 +1315,8 @@ Siril — **cel mult două** cadre din `lights/` (primele după nume — atât c
 scriptul până la capăt; lights-urile nu contează pentru masterul de flat) și felia ei de
 `flats/`, blocuri consecutive în ordinea
 numelor de fișier (un `readme.txt` din `flats/` nu e cadru). Scriptul rulează în fiecare, una
-după alta, cu faza, o bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
+după alta — fiecare pe copia ei a setărilor lui Siril, ca pe cardul de problemă — cu faza, o
+bară pe tot fluxul, log-ul lui Siril și butonul „Oprește" pe tab;
 apoi masterele părților și masterul întreg trec prin aceeași analiză de structură ca tabul
 Structura, cu raw-ul din `flats/` pentru profil.
 

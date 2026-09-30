@@ -641,6 +641,14 @@ namespace FlatCheck.Wpf
         internal static string RunStartFailed(string why) =>
             $"Nu am putut porni siril-cli:\n{why}";
 
+        /// <summary>
+        /// siril-cli lucreaza pe o copie a setarilor lui Siril, deci fara ea nu porneste -
+        /// altfel ar lucra cu valorile implicite fara ca omul sa stie.
+        /// </summary>
+        internal static string SirilSettingsUnreadable(string path, string why) =>
+            $"Nu pot citi setarile lui Siril (siril-cli lucreaza pe o copie a lor):\n{path}\n\n{why}\n\n"
+            + "Siril nu a pornit. Daca Siril e deschis si tocmai isi salveaza setarile, apasa din nou peste cateva secunde.";
+
         // ------------------------------------------------------------------ Split
         //
         // Tabul Split (ADR 0054): impartirea flat-urilor in sesiuni temporare, scriptul

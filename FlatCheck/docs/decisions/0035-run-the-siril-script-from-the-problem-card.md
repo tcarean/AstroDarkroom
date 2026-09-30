@@ -57,4 +57,8 @@ launching: `SirilScript.RequiredFolders` reads the plain-name `cd <name>` comman
   present (a probe script on the fixture master, one that fails on `cd nu-exista`) and pass
   without checking otherwise, since xunit 2 has no dynamic skip. The `SirilLogLine` parser is
   pinned on recorded lines; `WindowSmokeTests` renders the run window in three states.
+- Amended 2026-09-30 by ADR 0055: the command line is `siril-cli.exe -d <session> -s <script>
+  -i <private copy of Siril's settings>`. Without `-i`, siril-cli rewrote the user's
+  `config.<ver>.ini` at the end of every script, and a failed save deleted it. The
+  `SirilCliIntegrationTests` now run on an empty private copy in their workspace.
 - Source note: docs/design/two-applications.md; memory notes flatcheck-siril-preprocess-button, siril-install-layout.
