@@ -76,7 +76,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni, hooks si `attribution`, versionate; `hooks`, `ask`, `deny`, intrarile git din `allow`, `attribution`, `disableAllHooks` si `permissions.defaultMode` sunt ale kit-ului, restul lui `allow` al proiectului; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
-| `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
+| `scripts/release.ps1` | partea mecanica a unui release, doar pe `main`: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`, care citeste si ADR-urile kit-ului; un agent nou apare dupa repornirea sesiunii |
 | `scripts/mutate.ps1`, `.config/dotnet-tools.json` | mutation testing pe Core cu Stryker.NET, la cerere; minute, nu in gate |
 | `AI Prompt to Generate Starter Project.md` | prompt neutru fata de stack si model, de rulat peste luni sau ani pe un agent nou, ca sa refaca un setup cu aceleasi principii, gate-uri si documentatie dupa bunele practici de atunci; descrie scopuri si dovezi, nu implementarea de aici |
@@ -122,8 +122,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   refuzat de hook-ul git `pre-commit`, inainte de gate-ul lui, oricare ar fi folderul sesiunii;
   la fel un merge al sesiunii, cu commit de merge, pe un asemenea branch. Commit-urile omului,
   din shell-uri care nu seteaza variabila `CLAUDECODE`, nu sunt atinse (ADR 0026).
-- Orice `git merge`, `push`, `rebase` sau `branch -D` (stergere fortata) al modelului: cere
-  acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
+- Orice `git merge`, `push`, `rebase`, `tag` sau `branch -D` (stergere fortata) al modelului:
+  cere acordul omului in momentul rularii, prin lista `ask` din `.claude/settings.json`.
+- Un release in afara lui `main`, cu o versiune deja publicata, nu peste cel mai nou titlu din
+  CHANGELOG sau sub `<Version>`: `release.ps1` il refuza inainte sa schimbe ceva (ADR 0029).
 
 Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca
 ghidul si README-ul mai explica corect ce fac scripturile (un pas din `/wrap-up`).
