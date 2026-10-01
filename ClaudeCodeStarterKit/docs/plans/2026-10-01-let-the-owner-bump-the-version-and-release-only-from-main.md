@@ -143,3 +143,12 @@ The owner opens a session in `E:\Photografie\Code\FlatCheck`, the main checkout 
   comments (tag), and the rules file's "Skills" bullet ("from `main` in the main checkout").
 - Checked on real data: `release.ps1 -Version 2.3.0 -WhatIf` in the worktree's FlatCheck is
   refused ("this checkout is on branch 'claude/Let-the-owner-bump-...'").
+- After `/code-review` (six findings, all fixed on the branch, the owner's choice for the second):
+  - `release.ps1` also refuses a linked worktree on `main`, by the git-dir test of the commit hook;
+  - an optional `release.branch` in `kit.json` (default `main`) names the release branch of a
+    standalone repository;
+  - a version with a leading zero is refused;
+  - `-WhatIf` says whether it would set or leave `<Version>`;
+  - the guide's list of rule names gains the new rule;
+  - `ReleaseTests` (15 cases) adds a detached HEAD, a linked worktree, `release.branch`, leading
+    zeros and a CHANGELOG with no released heading; six fail against the previous scripts.
