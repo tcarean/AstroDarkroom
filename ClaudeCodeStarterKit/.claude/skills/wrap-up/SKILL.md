@@ -54,13 +54,14 @@ adds project-specific steps and says where they go.
    new kit ADR supersedes part of what a project ADR says, look for it in each project's
    `docs/decisions/` and add `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on
    the task branch, in the project's sync commit when there is one.
-10. `docs/design/`: run
+10. `docs/design/`: in the project folder of the task's worktree, not the main checkout, run
     `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-design.ps1 -Since main`.
-    It lists the notes whose `Covers:` sentence names a file this branch changed. Read each one
-    against the change and update or delete what no longer holds, in this task (the kit's rule
-    "Design notes"). Code whose workings a reader needs and that no note covers gets a note with
-    a `Covers:` sentence and a row in `docs/design/README.md`. The gate checks the index and the
-    paths, not the text.
+    It lists the notes whose `Covers:` sentences name a code or test file this branch changed
+    (the folders and files `kit.json` lists). Read each one against the change and update or
+    delete what no longer holds, in this task (the kit's rule "Design notes"). Code whose
+    workings a reader needs and that no note covers gets a note with a `Covers:` sentence that
+    names its files as paths, and a row in `docs/design/README.md`. The gate checks the index and
+    the paths, not the text.
 11. If the commit's folder is the main checkout on a `claude/` branch, move the work to the
     branch's own worktree first: the git hook refuses a session's commit there (the kit's ADR
     0026). The main checkout is where the two lines of

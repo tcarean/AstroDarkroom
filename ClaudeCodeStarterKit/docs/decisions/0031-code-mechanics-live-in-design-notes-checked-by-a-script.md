@@ -33,17 +33,21 @@ script lists the notes a branch touched; a project retires an index test of its 
   ADR; one note may map the whole project." The kit's `CLAUDE.md` drops its own rule "No code
   structure in docs". The guide and the READMEs keep explaining what the kit's own scripts do:
   they are not the project's code (ADR 0011).
-- A Covers sentence is a "Covers:" marker, bold or plain, in a quote block or not, above the
-  note's first heading of level 2 or more, and runs to the first full stop followed by a space or
-  a line end. A code span in it that looks like a path (a "/" or a known file extension) must name
-  a file or folder of the project, with its letter case: from the project root, from a code or test
-  folder, from `docs/design/`, or as a file name found in the project. Other spans are not checked.
+- A Covers sentence starts at a "Covers:" marker, plain or emphasised, in a quote block or not;
+  every note has one above its first heading of level 2 or more, and a section may have its own.
+  Every Covers sentence names the files it describes as paths in backticks, at least one: a
+  path must name a file or folder git has in the project, with its letter case, from the project
+  root, from a code or test folder, from `docs/design/`, or as a file name found in the project.
+  Spans that are no path (a class, a method, a flag) are not checked. Where a sentence ends,
+  what looks like a path and which wildcards count are the script's grammar, written in its
+  header and, for authors, in `docs/design/README.md`.
 - `scripts/check-design.ps1`, synced like every script, is the step "design notes" of
   `scripts/verify.ps1`, after "decisions". It checks that the index `docs/design/README.md` names
-  every note and only notes, that every note has its Covers sentence, and that every path in it
-  exists. With `-Since <ref>` it checks nothing and lists the notes whose Covers sentence names a
-  file changed since `<ref>`; a new `/wrap-up` step runs it with `main`, and each listed note is
-  read against the change.
+  every note, that a note name in its table is a note, that every note has its Covers
+  sentences, and that every path in them exists. With `-Since <ref>` it checks nothing and lists
+  the notes whose Covers sentences name a code or test file (the scope of the rule) changed since
+  `<ref>`; a new `/wrap-up` step runs it with `main` in the task's worktree, and each listed note
+  is read against the change. Where HEAD is on `<ref>` itself it is an error, not an empty list.
 - A project that takes the check retires any test of its own that checks the same index.
 
 ## Alternatives rejected
@@ -59,15 +63,27 @@ script lists the notes a branch touched; a project retires an index test of its 
 - **List the touched notes by hand at `/wrap-up`.** Paths that start at a code folder, and bare
   file names, make a diff hard to match by eye; the script uses the same rules as the check.
 - **Check the text of a note.** No script can tell whether a sentence still describes the code;
-  `/wrap-up` and `/docs-health` judge that.
+  the `/wrap-up` step sends the task to the notes it touched, and the reader judges. `/docs-health`
+  cannot: its auditor never opens the code.
+- **Walk the file system for the paths.** A file git ignores, or a folder kept on disk only by its
+  build output, passed on the author's checkout and failed on the same commit in a fresh
+  worktree; git's list of files is the same everywhere.
+- **Let a Covers sentence name its code by class.** `-Since` matches changed files against
+  paths; on the first adopter, notes that named a test class or a view model without its file
+  were never listed when that file changed.
 
 ## Consequences
 
-The gate has eight checks. A file renamed or deleted while a Covers sentence still names it turns
-the gate red until the note is fixed, and so does a note added without a Covers sentence or an
-index row. The first adopter's two stale spans are fixed in its sync commit, and its index test is
-removed there. Both projects allow `scripts/check-design.ps1` in their own `allow` list of
+The gate has eight checks, and the check needs the project in a git repository. A file renamed
+or deleted while a Covers sentence still names it turns the gate red until the note is fixed,
+and so does a note added without a Covers sentence, a path or an index row. The first adopter's
+two stale spans are fixed in its sync commit, its notes that named code only by class or in
+prose name their files, and its index test is removed there; a test of its own keeps
+`docs/design/` from disappearing, which the check, passing a project without notes, would not
+see. Both projects allow `scripts/check-design.ps1` in their own `allow` list of
 `.claude/settings.json`, so the `/wrap-up` step does not ask each time; the owner chose that on
 2026-10-01, and it is not a process key. `DesignCheckTests` covers each rule of the check, the
-forms of note it reads, and the listing on a git repository. The check never judges whether a note still says what its code
-does; the `/wrap-up` step points at the notes to read.
+forms of note it reads, and the listing on a git repository; on 2026-10-01, 22 of 23 single
+changes to the script made a test fail, and the one left changes no output. The check never
+judges whether a note still says what its code does; the `/wrap-up` step points at the notes to
+read.

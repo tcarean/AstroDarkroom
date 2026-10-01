@@ -103,9 +103,11 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   ori, sau o inlocuire scrisa doar in unul din cele doua ADR-uri: `check-decisions.ps1`, pas
   in `verify.ps1`, e rosu (ADR 0024).
 - O nota din `docs/design/` lipsa din index, fara propozitie `Covers:` deasupra primei sectiuni,
-  sau cu o cale in `Covers:` care nu mai exista (un fisier redenumit sau sters):
+  cu o propozitie `Covers:` care nu numeste nicio cale, sau cu o cale in `Covers:` care nu mai
+  exista in git (un fisier redenumit, sters sau ignorat):
   `check-design.ps1`, pas in `verify.ps1`, e rosu (ADR 0031). Daca textul notei mai descrie
-  codul nu verifica; pentru asta `/wrap-up` listeaza notele atinse, cu `-Since main`.
+  codul nu verifica; pentru asta `/wrap-up` listeaza notele atinse, cu `-Since main` in
+  worktree-ul task-ului.
 - Un ADR sau o regula citate dupa numar gol in `scripts/`, `.claude/skills/`,
   `.claude/agents/` sau `.claude/rules/kit/`, unde intr-un proiect numarul ar insemna altceva:
   `RepoInvariantTests` pica, doar in kit. Forma ceruta e "the kit's ADR NNNN", iar o regula se

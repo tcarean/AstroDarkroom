@@ -11,9 +11,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   test or a check enforces; how the code works and how its parts fit go only in the design note
   of its area, which names the files it covers in a `Covers:` sentence and changes with them.
   `scripts/check-design.ps1`, synced, is a new step of `verify.ps1`: every note is in the index of
-  `docs/design/README.md`, has its Covers sentence, and names only files and folders that exist.
-  `check-design.ps1 -Since main` lists the notes that cover a file the branch changed, and a new
-  `/wrap-up` step runs it so those notes are read again.
+  `docs/design/README.md`, has its Covers sentence, names its files there as paths, and names
+  only files and folders git has. `check-design.ps1 -Since main`, in the task's worktree, lists
+  the notes that cover a code or test file the branch changed, and a new `/wrap-up` step runs it
+  so those notes are read again.
 - The kit's rule "Questions to the owner" (ADR 0030), for every question, not only a design
   choice: a new fact that contradicts an answer the owner gave goes back to the owner as a new
   question, and options put to the owner always come with a recommendation.

@@ -21,7 +21,7 @@ On 2026-10-01 the owner answered six further questions:
 - **What a check enforces:** any file may say what a test or a check enforces. This answers a new fact found while planning: the rules file, GHID, the READMEs and CLAUDE.md all say what `RepoInvariantTests` and `ThirdPartyTests` check.
 - **Allow entry:** both `settings.json` files get one for the script.
 
-This task runs in the session of task 5, at the owner's request ("Da-i drumul la taskul 6"). The kit's rule "One task per session" would start a new session, so this is recorded as a deviation, as task 4 was.
+This task runs in the session of task 5, at the owner's request ("go ahead with task 6", in Romanian). The kit's rule "One task per session" would start a new session, so this is recorded as a deviation, as task 4 was.
 
 ## Facts measured (2026-10-01, main at d09b1a4)
 
@@ -243,7 +243,7 @@ The kit's CLAUDE.md drops "No code structure in docs" and keeps "Core has no UI"
 
 - **Stale code comments in FlatCheck.** Some comments cite CLAUDE.md sections that moved to `docs/design/` on 2026-09-25, for example `MetricsTests.cs:76` ("Parity with Python") and `ObservableObject.cs:25`. They predate this task; I will offer them as a separate task.
 - **FlatCheck's CLAUDE.md Layout keeps each folder's role.** A role is an address with its responsibility (GHID :75), and it states FlatCheck ADR 0011's decision.
-- **Two notes may both claim a file "in full",** for example the code map and an area note. The check does not judge that, nor a note's text; `/wrap-up` and `/docs-health` do.
+- **Two notes may both claim a file "in full",** for example the code map and an area note. The check does not judge that, nor a note's text; the `/wrap-up` step sends the reader to the notes.
 - **The generator prompt's rule 11** is covered by the separate task already offered.
 
 ## What deviated
@@ -270,3 +270,18 @@ The kit's CLAUDE.md drops "No code structure in docs" and keeps "Core has no UI"
 - FlatCheck's `README.md` gate list also gained the decisions step, which it had lacked.
 - Left as found: the kit CHANGELOG's earlier `[Unreleased]` line that lists the kit's two own
   rules, history now that this task's line says one of them went.
+- `/code-review` at max effort reported 15 findings; the owner answered "fix them", with the four
+  design choices recommended there: every Covers sentence names its files as paths (six
+  FlatCheck notes now do), the file list comes from git instead of the disk, `-Since` is an
+  error where HEAD is on the ref itself and the wrap-up step names the worktree, and the index
+  takes any note name while reading the reverse direction from its table only. The rest were
+  parser fixes: code spans as CommonMark pairs them, fences of either kind and quoted, HTML
+  comments, emphasised markers, abbreviations and non-heading "#" lines inside a sentence,
+  lower-case extensions, one-name globs, exact case, and the `-Since` scope named in its "ok"
+  line. The script now starts git itself, so no console code page is touched. FlatCheck gains
+  `DesignNotes_HaveTheirIndex`, since the check passes a project without notes. On FlatCheck's
+  real notes the new rule first named the two notes without a path and two index rows that name
+  project files; a row may now name any file of the project. Scratch edits to the five files the
+  review found unlisted (`LensProfileTestData.cs`, `PngWriterTests.cs`,
+  `SyntheticTabViewModel.cs`, `StructureAnalyzer.cs`, `Options.cs`) then listed every note that
+  covers them.
