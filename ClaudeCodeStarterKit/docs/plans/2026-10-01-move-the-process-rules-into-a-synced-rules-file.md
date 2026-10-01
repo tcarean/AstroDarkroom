@@ -286,3 +286,25 @@ the loading rule, and the kit's rules file has the same bytes.
   `permissions.ask`.
 - The `/context` outputs are pasted: (a) and (b) list the rules file.
 - The whole `git diff main...` is read before each commit.
+
+## What deviated
+
+- The plan was approved on 2026-10-01, so the plan file and ADR 0028 carry that date; the owner's
+  decision Q2 is of 2026-09-30, as the ADR says.
+- The measurement could not use `/context` output: in the desktop app it shows "Memory files" as a
+  total, without file names. The session transcripts record each loaded instruction file with
+  its path, so they were read instead ("Measurement" above). Case (b) was not run separately.
+- Kit ADR 0009 got a Status clause too (the auditor's inputs now include `.claude/rules/`), found
+  by the grep the plan asked for. FlatCheck ADR 0048 got none: its Decision only cites a rule
+  number ("Rule 18 is unchanged"), which the table above maps.
+- The rules file says a little more than the old rules: "Decisions" points at the three ways the
+  kit's ADR 0024 allows an accepted ADR to change, and "Shared folders" names `CLAUDE.md` and
+  the other `allow` entries as what a project owns. FlatCheck's CHANGELOG wording ("or a process
+  change") and its "a choice settled in chat is a decision" sentence went into the kit's text,
+  as planned.
+- FlatCheck's `CLAUDE.md` no longer cites its mirror ADRs 0044, 0050 and 0052 for the workflow and
+  commit rules: the kit's rules file cites the kit's ADRs (the kit's ADR 0025). Its `kit.json`
+  `$comment` and the paragraphs of two design notes around the edited citations were rewrapped
+  or updated as well.
+- The guide gained a section on the rules file under "CLAUDE.md: ce contine de la inceput",
+  rather than a separate chapter.
