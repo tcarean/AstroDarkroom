@@ -14,6 +14,8 @@ The sample code exists to show how a requirement, a test and a validation figure
 - Format: `dotnet format Starter.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project src/Starter.Cli -- <numbers-file>`
 - Test data hashes after an intentional fixture change: `scripts/check-testdata.ps1 -Update`
+- Design notes a branch touched (the index and Covers paths are a gate step):
+  `scripts/check-design.ps1 -Since main`
 - Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"] [-BreakAt 80]`
 - Release (verify, version, CHANGELOG, publish; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
 - Take the kit's shared folders and settings keys (or, in the kit, push them to every project):
@@ -48,8 +50,6 @@ loaded with this file (the kit's ADR 0028). These are this project's own:
 
 - **Core has no UI.** `Starter.Core` never references Console, WPF, file dialogs or anything with
   a UI.
-- **No code structure in docs.** Do not describe code structure in this file or in docs; it goes
-  stale. Describe behaviour and decisions.
 
 ## Read before touching
 
