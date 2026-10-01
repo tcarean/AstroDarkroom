@@ -8,9 +8,12 @@
 #   is judged by that worktree's copy of the project, not by the folder the session started in
 #   (the kit's ADR 0020). A file in no project is not judged. Each project gets two checks,
 #   on its own files, with its own kit.json:
-#     A. scripts/, .claude/skills/ and .claude/agents/ are the kit's: in a project that is not
-#        the kit (kit.json's "kit" is not "."), an edit under one of them ends no turn; the
-#        change is made in the kit and copied with scripts/sync.ps1.
+#     A. the shared folders (Get-KitSharedFolders in kit-config.ps1: scripts/, .claude/skills/,
+#        .claude/agents/, .claude/rules/kit/) are the kit's: in a project that is not the kit
+#        (kit.json's "kit" is not "."), an edit under one of them ends no turn; the change is
+#        made in the kit and copied with scripts/sync.ps1. The process keys of
+#        .claude/settings.json are the kit's too, but a project edits its own allow entries in
+#        the same file, so they are checked at commit time, by step 0 of verify.ps1, not here.
 #     B. code was edited (kit.json's codeFolders, codeFiles or testFolders): the turn may end
 #        only when scripts/verify.ps1 ran green with tests after the last such edit:
 #        .verify-stamp, which only such a run writes (-SkipTests does not), is newer than the
@@ -64,8 +67,10 @@ function Get-ProjectProblems([string]$projectDir, [string[]]$edited) {
     $srcDirs = @($kit.codeFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
     $testDirs = @($kit.testFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
     $srcFiles = @($kit.codeFiles | ForEach-Object { Join-Path $projectDir ($_ -replace '/', '\') })
-    # The folders that are the kit's, mirrored by scripts/sync.ps1.
-    $sharedDirs = @('scripts\', '.claude\skills\', '.claude\agents\') | ForEach-Object { Join-Path $projectDir $_ }
+    # The folders that are the kit's, mirrored by scripts/sync.ps1 (one list, in kit-config.ps1).
+    $shared = @(Get-KitSharedFolders)
+    $sharedDirs = $shared | ForEach-Object { Get-KitFolderPath $projectDir $_ }
+    $sharedNames = ($shared | ForEach-Object { $_ + '/' }) -join ', '
 
     $problems = @()
 
@@ -74,7 +79,7 @@ function Get-ProjectProblems([string]$projectDir, [string[]]$edited) {
     $isKit = $kitPath -and ($kitPath -eq $projectDir)
     $sharedEdits = @($edited | Where-Object { Test-Under $_ $sharedDirs })
     if (-not $isKit -and $sharedEdits.Count -gt 0) {
-        $problems += 'scripts/, .claude/skills/ or .claude/agents/ was edited here, but those folders are the kit''s (byte-identical in every project). Make the change in the kit, then run scripts/sync.ps1 here; project-specific values go in kit.json, project-specific skill steps in docs/skills.md. Edited: ' + (($sharedEdits | ForEach-Object { $_.Substring($projectDir.Length + 1) }) -join ', ')
+        $problems += 'One of ' + $sharedNames + ' was edited here, but those folders are the kit''s (byte-identical in every project). Make the change in the kit, then run scripts/sync.ps1 here; project-specific values go in kit.json, project-specific skill steps in docs/skills.md. Edited: ' + (($sharedEdits | ForEach-Object { $_.Substring($projectDir.Length + 1) }) -join ', ')
     }
 
     # B. Code edits: those under a code folder, a test folder, or named as a code file.

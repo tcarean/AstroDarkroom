@@ -9,7 +9,9 @@
 #   Read-KitConfig, which reads <project folder>/kit.json and returns its values with the paths
 #   already normalised (forward slashes, one trailing slash on folders), and Find-KitProject,
 #   which finds the project a file or folder belongs to (the Claude Code hooks use it, the
-#   kit's ADR 0020), and Get-KitShell, the PowerShell to start another script with.
+#   kit's ADR 0020), Get-KitShell, the PowerShell to start another script with, and
+#   Get-KitSharedFolders, the one list of the folders that are the kit's in every project
+#   (sync.ps1 mirrors them, the Stop hook guards them; the kit's ADR 0028).
 #   A missing kit.json, or a missing required key, is an error with the key named: a project
 #   that has scripts/ must say what it is; nothing is guessed from the folder layout.
 #
@@ -31,9 +33,10 @@
 #                         and manifest, that the docs-auditor agent may read: expected outputs,
 #                         notices. Never code.
 #     kit                 optional; the kit folder, relative to the project ("." in the kit
-#                         itself). sync.ps1 copies scripts/, .claude/skills/ and
-#                         .claude/agents/ from there, and verify.ps1 checks that they are
-#                         identical. Absent: no check, sync by hand.
+#                         itself). sync.ps1 copies the shared folders (Get-KitSharedFolders)
+#                         and the process keys of .claude/settings.json from there, and
+#                         verify.ps1 checks that they are identical. Absent: no check, sync by
+#                         hand.
 #
 # WHO CALLS IT
 #   Every script in scripts/ and scripts/hooks/ that needs a project value. Nobody runs it.
@@ -111,6 +114,14 @@ function Find-KitProject([string]$Path, [string]$Marker = 'kit.json') {
         $dir = [System.IO.Path]::GetDirectoryName($dir)
     }
     return $null
+}
+
+# The folders that are the kit's: the same bytes in the kit and in every project, mirrored by
+# sync.ps1 and guarded by the Stop hook. Relative to the project root, with forward slashes and
+# no trailing one. Only rules/kit/ under .claude/rules/: a project may keep rules files of its
+# own beside it.
+function Get-KitSharedFolders {
+    return @('scripts', '.claude/skills', '.claude/agents', '.claude/rules/kit')
 }
 
 # The PowerShell running this script (powershell.exe 5.1 or pwsh), to start another script
