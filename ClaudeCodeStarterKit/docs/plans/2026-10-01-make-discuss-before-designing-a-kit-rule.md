@@ -131,3 +131,16 @@ Q5 moves the practice into the kit's synced rules file and the `/new-feature` sk
 - `AI Prompt to Generate Starter Project.md` still lists the rules by number with their old substance. Tasks 3 and 4 left it too: it lacks "Version and year". Bringing it in step is a task of its own, and I will offer it as a separate task at the end.
 - In the kit's `CHANGELOG.md`, a `### Fixed` heading inserted on 2026-09-26 (d1b3062) leaves the older Added items of `[Unreleased]` under Fixed. This is pre-existing, and I will offer it as a separate task.
 - If FlatCheck 2.3.0 is released before this merge, the FlatCheck CHANGELOG line moves to the new `[Unreleased]` during the merge.
+
+## What deviated
+
+- Nothing of substance. The texts are the plan's, and so is assumption 1: the scope of "without
+  asking again" is in ADR 0030's Decision, not in the rule.
+- The kit's CHANGELOG line also says that the practice was FlatCheck's own rule until now. ADR
+  0030 names no adopter's ADR numbers or rule names.
+- Measured on 2026-10-01, on the branch:
+  - the kit: `ok 30 decisions in docs/decisions/`; `verify.ps1` `== OK in 140s`, 123 tests;
+  - FlatCheck: `sync.ps1 -Check` identical with the kit after the sync, which copied exactly
+    `.claude/rules/kit/process.md` and `.claude/skills/new-feature/SKILL.md`;
+    `ok 55 decisions in docs/decisions/`; `verify.ps1` `== OK in 132s`, 946 + 331 tests;
+    `CLAUDE.md` 129 lines, 132 before.
