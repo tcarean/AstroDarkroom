@@ -128,3 +128,18 @@ The owner opens a session in `E:\Photografie\Code\FlatCheck`, the main checkout 
 - FlatCheck's `verify.ps1` is green after the sync, and `sync -Check` is clean.
 - A `-WhatIf` in the worktree's FlatCheck folder is refused (the branch is not `main`), which shows the guard on real data.
 - `git diff main...` is read in full before each commit.
+
+## What deviated
+
+- Task 4 ran in the same session as task 3, at the owner's request ("apucate de restul pasilor"),
+  although the kit's rule "One task per session" would start a new one.
+- With the floor taken as the highest released heading, "already a heading" can only coincide
+  with "not above the floor"; it is kept as its own check so the message says "already
+  released".
+- `ReleaseTests` has eight cases; seven fail against the previous `release.ps1` (the old
+  messages and the old floor), the `-WhatIf` case passes on both.
+- Beyond the plan's list: FlatCheck's `README.md` version paragraph (the owner bumps per feature,
+  a release keeps that version and runs on `main`), the `ask` sentence of both `settings.json`
+  comments (tag), and the rules file's "Skills" bullet ("from `main` in the main checkout").
+- Checked on real data: `release.ps1 -Version 2.3.0 -WhatIf` in the worktree's FlatCheck is
+  refused ("this checkout is on branch 'claude/Let-the-owner-bump-...'").
