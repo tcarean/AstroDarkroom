@@ -17,10 +17,12 @@ public sealed class ReleaseTests : IDisposable
 
     private readonly string _repo = Path.Combine(Path.GetTempPath(), "starter-release", Guid.NewGuid().ToString("N"));
     private readonly string _project;
+    private readonly string _worktree;
 
     public ReleaseTests()
     {
         _project = Path.Combine(_repo, "Proj");
+        _worktree = _repo + "-wt";
         Directory.CreateDirectory(Path.Combine(_project, "scripts"));
         Git("init", "-q", "-b", "main");
         Git("config", "user.name", "Test");
@@ -50,6 +52,71 @@ public sealed class ReleaseTests : IDisposable
         Assert.Contains("A release is cut on main", output);
         Assert.Contains("branch 'claude/Task'", output);
         AssertNothingChanged();
+    }
+
+    [Fact]
+    public void ADetachedHead_IsRefused()
+    {
+        Git("switch", "-q", "--detach");
+
+        (int exitCode, string output) = Release("2.3.0", "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("a detached HEAD", output);
+        Assert.False(File.Exists(Path.Combine(_project, "ran.txt")), "verify ran");
+    }
+
+    /// <summary>A linked worktree may hold main when the main checkout was switched away; it is still not the main checkout.</summary>
+    [Fact]
+    public void ALinkedWorktreeOnMain_IsRefused()
+    {
+        Git("switch", "-q", "-c", "parked");
+        Git("worktree", "add", "-q", _worktree, "main");
+
+        (int exitCode, string output) = ScriptRunner.RunScript(
+            Path.Combine(_worktree, "Proj"), Path.Combine(_worktree, "Proj", "scripts", "release.ps1"), "-Version", "2.3.0", "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("this is a linked worktree", output);
+        Assert.False(File.Exists(Path.Combine(_worktree, "Proj", "ran.txt")), "verify ran");
+    }
+
+    /// <summary>A standalone repository whose main branch has another name says so in kit.json.</summary>
+    [Fact]
+    public void TheReleaseBranch_ComesFromKitJson()
+    {
+        Git("branch", "-m", "master");
+        (int exitCode, string output) = Release("2.3.0", "-WhatIf");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("A release is cut on main", output);
+
+        File.WriteAllText(Path.Combine(_project, "kit.json"),
+            ScriptRunner.KitJson(null).Replace("\"publish\": []", "\"publish\": [], \"branch\": \"master\"", StringComparison.Ordinal));
+        Commit("Release from master");
+        (exitCode, output) = Release("2.3.0", "-WhatIf");
+        Assert.True(exitCode == 0, output);
+    }
+
+    [Theory]
+    [InlineData("2.03.0")]
+    [InlineData("02.3.0")]
+    [InlineData("2.3.00")]
+    public void AVersionWithALeadingZero_IsRefused(string version)
+    {
+        (int exitCode, string output) = Release(version, "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("without leading zeros", output);
+        AssertNothingChanged();
+    }
+
+    /// <summary>A project that never released has no floor: the owner's version goes out as it is.</summary>
+    [Fact]
+    public void ACHANGELOGWithNoReleasedHeading_HasNoFloor()
+    {
+        File.WriteAllText(Path.Combine(_project, "CHANGELOG.md"), "# Changelog\n\n## [Unreleased]\n\n- First.\n");
+        Commit("No release yet");
+
+        (int exitCode, string output) = Release("2.3.0", "-WhatIf");
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("newest released none", output);
     }
 
     [Fact]
@@ -102,6 +169,7 @@ public sealed class ReleaseTests : IDisposable
         (int exitCode, string output) = Release("2.3.0", "-WhatIf");
         Assert.True(exitCode == 0, output);
         Assert.Contains("newest released 2.2.0", output);
+        Assert.Contains("leave <Version> at 2.3.0", output);
         AssertNothingChanged();
     }
 
@@ -134,6 +202,7 @@ public sealed class ReleaseTests : IDisposable
 
     public void Dispose()
     {
+        ScriptRunner.DeleteTree(_worktree);
         ScriptRunner.DeleteTree(_repo);
     }
 

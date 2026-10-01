@@ -24,7 +24,11 @@ release is cut in a session opened in the project folder of the main checkout, o
 - The version and the copyright year change only at the owner's word: a rule of the kit,
   "Version and year are the owner's". The owner may bump `<Version>` at any time, per feature.
 - `release.ps1` refuses, before it changes anything:
-  - a checkout that is not on `main` (a task branch or a detached HEAD);
+  - a checkout that is not the main checkout (a linked worktree, by the git-dir test of
+    ADR 0026) or is not on `main` (a task branch or a detached HEAD); a standalone
+    repository whose main branch has another name sets `release.branch` in `kit.json`;
+  - a version with a leading zero (`2.03.0`), which would compare as 2.3.0 but be written as
+    `2.03.0` in the heading and the tag;
   - a version that is already a released heading of `CHANGELOG.md` (`## [X.Y.Z] - date`), or
     is not above the highest of them, the floor; with no released heading there is no floor;
   - a version below `<Version>`;
@@ -54,9 +58,11 @@ release is cut in a session opened in the project folder of the main checkout, o
 
 ## Consequences
 
-`ReleaseTests` covers the refusals (off `main`, already released, not above the floor, below
-`<Version>`, an existing tag), a `-WhatIf` that changes nothing, the owner's version released as
-it is, and a higher version written to the props file; the cases build a repository on `main`
-whose `<Version>` is above its newest heading. The first adopter's 2.3.0 can be released as set.
+`ReleaseTests` covers the refusals (a task branch, a detached HEAD, a linked worktree on `main`,
+a leading zero, already released, not above the floor, below `<Version>`, an existing tag), a
+`-WhatIf` that changes nothing, a CHANGELOG with no released heading, `release.branch`, the
+owner's version released as it is, and a higher version written to the props file; the cases
+build a repository on `main` whose `<Version>` is above its newest heading. The first adopter's
+2.3.0 can be released as set.
 A `git tag --list` by the model now asks the owner too, a small cost for a list the release
 script reads itself.

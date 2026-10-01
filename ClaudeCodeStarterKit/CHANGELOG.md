@@ -136,7 +136,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
-- `release.ps1` runs only on `main`, and its floor is the newest released CHANGELOG heading, not
+- `release.ps1` runs only on `main` in the main checkout (`release.branch` in `kit.json` names
+  another branch for a standalone repository), and its floor is the newest released CHANGELOG heading, not
   `<Version>` (ADR 0029): the owner may bump `<Version>` per feature, and a release of that same
   version leaves `Directory.Build.props` as it is. It refuses a version already released, not
   above the newest heading or below `<Version>`. `/release` runs in a session opened in the
