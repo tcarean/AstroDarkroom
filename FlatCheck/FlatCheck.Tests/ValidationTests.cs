@@ -34,7 +34,7 @@ namespace FlatCheck.Tests;
 /// with <c>expected</c> null is unmeasured and only prints what it found. Every case prints
 /// its measured figures as one JSON line (test output, and the file named by
 /// FLATCHECK_VALIDATION_DUMP when set), which is how validation.json gets filled: never by
-/// editing the expected values to match (rule 3).
+/// editing the expected values to match (the kit's rule "No test edited to pass").
 /// </summary>
 [Trait("Category", "Validation")]
 public class ValidationTests

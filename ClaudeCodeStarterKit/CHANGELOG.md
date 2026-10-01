@@ -7,6 +7,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- `.claude/rules/kit/process.md`, the process rules every project follows, kept once in the kit
+  and synced like `scripts/` (ADR 0028): Claude Code loads it beside `CLAUDE.md`. The list of
+  shared folders is written once, in `kit-config.ps1`, for `sync.ps1` and the Stop hook. Step 0
+  of `verify.ps1` also compares the process keys of `.claude/settings.json` with the kit's
+  (`hooks`, `ask`, `deny`, the git `allow` entries, the new empty `attribution`, which keeps
+  Claude Code from adding a `Co-Authored-By` line, and `disableAllHooks` and
+  `permissions.defaultMode`, which stay unset), and `sync.ps1` copies them, leaving a project's
+  other `allow` entries alone. The `docs-auditor` reads `.claude/rules/`.
 - The git `pre-commit` hook refuses, before its own gate, a commit a Claude Code session makes
   on a `claude/` branch in the main checkout, which stays on `main` (ADR 0026); through
   `pre-merge-commit`, a session's merge commit onto such a branch too. It tells a session by
@@ -126,6 +134,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `CLAUDE.md` keeps only the project's own content: the process rules and the workflow moved to
+  the synced `.claude/rules/kit/process.md` (ADR 0028). Every rule has a name and is cited by it
+  in quotes, never by a number; the kit's own two rules are "Core has no UI" and "No code
+  structure in docs". The task's plan maps the old numbers, which older ADRs and CHANGELOG lines
+  still use, to the names. The guide and the READMEs say where each rule lives.
 - The desktop app's worktree option is not used in `photo` (ADR 0027): its sessions started at
   the root of a whole-repository checkout, where no project `CLAUDE.md`, settings or Claude
   hooks load. Task worktrees are made by hand, so the rename of generated branch names is gone

@@ -14,13 +14,14 @@ on purpose; keep it that way.
 - First read `kit.json` at the project root. Its `codeFolders` and `codeFiles` are the code:
   never read, grep or list anything under or among them. Not "just to check". If a question
   can only be answered from the code, the answer is "the docs do not say", and that is a finding.
-- Read only: `kit.json`, `CLAUDE.md`, `README.md`, `CHANGELOG.md`, everything under `docs/`,
-  `README.md` and `manifest.json` under `kit.json`'s `testData.folder`, the files or folders
-  `kit.json` lists under `audit.alsoRead` (expected outputs and notices a project keeps outside
-  `docs/`; never code), the kit's `docs/decisions/` when `kit.json`'s `kit` names a folder
-  other than `.` (the kit's process decisions, which this project follows unless one of its
-  own ADRs deviates; read titles and Status lines first, a body when a question needs it),
-  and the list of test names from
+- Read only: `kit.json`, `CLAUDE.md`, everything under `.claude/rules/` (the process rules every
+  session loads beside `CLAUDE.md`; `kit/` holds the kit's), `README.md`, `CHANGELOG.md`,
+  everything under `docs/`, `README.md` and `manifest.json` under `kit.json`'s
+  `testData.folder`, the files or folders `kit.json` lists under `audit.alsoRead` (expected
+  outputs and notices a project keeps outside `docs/`; never code), the kit's `docs/decisions/`
+  when `kit.json`'s `kit` names a folder other than `.` (the kit's process decisions, which this
+  project follows unless one of its own ADRs deviates; read titles and Status lines first, a
+  body when a question needs it), and the list of test names from
   `dotnet test <solution from kit.json> --list-tests --nologo -v q` (names only; do not open
   test source).
 - Change nothing. You report; the main session and the owner decide.
@@ -37,8 +38,11 @@ on purpose; keep it that way.
 4. Pick one plausible small change to the project (the launching prompt may name one). Write
    the plan for it from the docs alone: files to touch, order, how to verify. Mark every
    "probably" and "somewhere".
-5. Check `CLAUDE.md` length: over 200 lines is a finding, naming the sections that should move
-   to `docs/`.
+5. Check the length of the project's own rules, `CLAUDE.md` plus any file of its own under
+   `.claude/rules/` outside `kit/`: over 200 lines together is a finding, naming the sections
+   that should move to `docs/`. The kit's `.claude/rules/kit/` is the same in every project and
+   does not count. A rule in `CLAUDE.md` that repeats one in `.claude/rules/kit/` instead of
+   naming the kit rule it extends is a finding too.
 6. Check `docs/decisions/`: does every decision the CHANGELOG implies have an ADR, here or,
    for a process decision the kit made, in the kit's `docs/decisions/`? Is any ADR still
    `proposed` while the CHANGELOG says the work shipped?

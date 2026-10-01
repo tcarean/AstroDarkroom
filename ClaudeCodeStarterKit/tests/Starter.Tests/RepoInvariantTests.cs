@@ -39,7 +39,7 @@ public partial class RepoInvariantTests
         }
     }
 
-    /// <summary>Rule 1 made checkable: an implemented requirement has at least one test named after it.</summary>
+    /// <summary>The kit's rule "Requirements first" made checkable: an implemented requirement has at least one test named after it.</summary>
     [Fact]
     public void EveryImplementedRequirement_HasATestCarryingItsId()
     {
@@ -101,8 +101,9 @@ public partial class RepoInvariantTests
 
     /// <summary>
     /// The shared folders and the git hooks are read and run in every project, where "ADR 0013" or
-    /// "rule 15" names the project's own, unrelated decision or rule. They cite "the kit's ADR
-    /// NNNN" and name a rule by its ADR or its words (the kit's ADR 0025). Lines are joined first,
+    /// "rule 15" names the project's own, unrelated decision or rule; the rules file under
+    /// .claude/rules/kit/ is one of them. They cite "the kit's ADR NNNN" and name a rule by its name
+    /// in quotes, its ADR or its words (the kit's ADRs 0025 and 0028). Lines are joined first,
     /// comment markers dropped, so a citation that wraps is read whole.
     /// </summary>
     [Fact]

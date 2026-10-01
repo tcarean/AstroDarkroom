@@ -45,7 +45,7 @@ public class RepoInvariantTests
         + @"|\bProcess\.Start\s*\(",
         RegexOptions.Compiled);
 
-    /// <summary>Rule 1 made checkable: an implemented requirement has at least one test named after it.</summary>
+    /// <summary>The kit's rule "Requirements first" made checkable: an implemented requirement has at least one test named after it.</summary>
     [Fact]
     public void EveryImplementedRequirement_HasATestCarryingItsId()
     {

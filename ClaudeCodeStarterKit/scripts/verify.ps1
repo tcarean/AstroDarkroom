@@ -3,10 +3,12 @@
 #
 # WHAT IT DOES
 #   Runs seven checks in order and stops at the first one that fails:
-#     0. kit files           scripts/, .claude/skills/ and .claude/agents/ are byte-identical
-#                            with the kit's (sync.ps1 -Check); only when kit.json names a kit
-#                            folder that exists and is not this project, else the step is
-#                            skipped with a yellow line
+#     0. kit files           the shared folders (scripts/, .claude/skills/, .claude/agents/,
+#                            .claude/rules/kit/) are byte-identical with the kit's, and the
+#                            process keys of .claude/settings.json say what the kit's say
+#                            (sync.ps1 -Check); only when kit.json names a kit folder that
+#                            exists and is not this project, else the step is skipped with a
+#                            yellow line
 #     1. test data manifest  every file listed in <testData.folder>/manifest.json is there,
 #                            with the SHA-256 hash written in the manifest (check-testdata.ps1)
 #     2. decisions           the headers of docs/decisions/ are well formed and every

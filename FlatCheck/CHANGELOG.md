@@ -56,6 +56,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0028: the process rules FlatCheck shares with the kit come from the kit's
+  `.claude/rules/kit/process.md`, synced like `scripts/`, and `CLAUDE.md` keeps FlatCheck's own,
+  each with a name instead of a number ("Ratios", "Golden files", ...), saying which kit rule it
+  extends or varies. Step 0 of the gate also compares the process keys of `.claude/settings.json`
+  with the kit's, and `attribution` is empty. Design notes, `docs/skills.md` and the notices cite
+  rules by name; ADR 0001 and 0049 record the part the kit's ADR 0028 supersedes.
 - The kit's ADR 0026 and 0027: the repository's git `pre-commit` hook (`.githooks/`, from the
   kit) refuses a Claude Code session's commit on a `claude/` branch in the shared checkout,
   and the desktop app's worktree option is not used any more, so the rename of generated

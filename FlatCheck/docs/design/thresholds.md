@@ -2,7 +2,7 @@
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): the rule that every metric is a ratio and every
-> threshold lives in `Th` is CLAUDE.md rule 15 and ADR 0012; the residual scale, the fifth test
+> threshold lives in `Th` is CLAUDE.md's rule "Ratios" and ADR 0012; the residual scale, the fifth test
 > and the `--ratio` verdict are ADR 0015 and ADR 0019; the illumination offset and the tilt are
 > ADR 0014. This note keeps the table of every threshold, the wording each band carries, the
 > mechanics of the verdict ladders and the exit codes. **Covers:** `Thresholds.cs` (`Th`),
@@ -13,7 +13,7 @@
 
 ## Thresholds
 
-Every threshold lives in `Th` (rule 15; ADR 0012 holds the reason, the phase-8 clean-up that put
+Every threshold lives in `Th` (the rule "Ratios"; ADR 0012 holds the reason, the phase-8 clean-up that put
 the last inline ones there and the `--expo` midpoints). Full picture:
 
 | metric | mode | OK < | PROBLEMA ≥ | defined in |

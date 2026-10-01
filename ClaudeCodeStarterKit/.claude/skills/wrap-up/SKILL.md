@@ -42,17 +42,18 @@ adds project-specific steps and says where they go.
 7. `docs/plans/`: if a plan was followed, note at its end what deviated and why.
 8. `docs/validation.md`: if figures were re-measured, the date and the output are recorded.
 9. `README.md` is the user documentation: if the change is user-visible (a mode, an option, a
-   verdict, a tab), the text there describes it. If the change touched `CLAUDE.md`, `kit.json`,
-   `docs/skills.md`, `.claude/settings.json` or `monorepo/`, quote what `README.md` and, in the
-   kit, `GHID.md` say about the touched piece and fix what no longer holds, in this task;
-   `RepoInvariantTests` only catches paths that no longer exist, not explanations that no longer
-   hold (the kit's ADR 0011). `scripts/`, `.claude/skills/` and `.claude/agents/` belong to the
-   kit (the kit's ADRs 0017 and 0018): in the kit, a change there ends with `scripts/sync.ps1`
-   and one commit per project; in a project, such a change is made in the kit instead, and an
-   edit here is refused by verify and by the Stop hook. When a new kit ADR supersedes part of
-   what a project ADR says, look for it in each project's `docs/decisions/` and add
-   `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on the task branch, in
-   the project's sync commit when there is one.
+   verdict, a tab), the text there describes it. If the change touched `CLAUDE.md`,
+   `.claude/rules/`, `kit.json`, `docs/skills.md`, `.claude/settings.json` or `monorepo/`, quote
+   what `README.md` and, in the kit, `GHID.md` say about the touched piece and fix what no
+   longer holds, in this task; `RepoInvariantTests` only catches paths that no longer exist, not
+   explanations that no longer hold (the kit's ADR 0011). `scripts/`, `.claude/skills/`,
+   `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json`
+   belong to the kit (the kit's ADRs 0017, 0018 and 0028): in the kit, a change there ends with
+   `scripts/sync.ps1` and one commit per project; in a project, such a change is made in the kit
+   instead, and an edit here is refused by verify and, in the folders, by the Stop hook. When a
+   new kit ADR supersedes part of what a project ADR says, look for it in each project's
+   `docs/decisions/` and add `; <part> superseded by the kit's ADR NNNN` to that ADR's Status on
+   the task branch, in the project's sync commit when there is one.
 10. If the commit's folder is the main checkout on a `claude/` branch, move the work to the
     branch's own worktree first: the git hook refuses a session's commit there (the kit's ADR
     0026). The main checkout is where the two lines of
