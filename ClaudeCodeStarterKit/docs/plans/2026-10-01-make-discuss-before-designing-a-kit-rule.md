@@ -148,10 +148,12 @@ Q5 moves the practice into the kit's synced rules file and the `/new-feature` sk
     design, not only a choice with more than one reasonable answer. This plan's "the kit's "Two
     readings" now says all of it" was wrong, since the old rule had no such condition. ADR 0030's
     bullet "keeps only what the kit's rules do not say" covers it, so FlatCheck writes no ADR.
-  - Options always come with a recommendation: in "Two readings", step 3, ADR 0030 and GHID.
-  - "Two readings" carries the exception for a new fact that contradicts the answer, which
-    assumption 1 had left in the ADR; that assumption's reason covered only the approval of the
-    plan and the merge.
+  - A new general kit rule, "Questions to the owner": a new fact that contradicts an answer goes
+    back to the owner as a new question, and options always come with a recommendation. The
+    exception for a new fact had been left in the ADR by assumption 1, whose reason covered only
+    the approval of the plan and the merge. A first fix put both sentences inside "Two
+    readings"; the owner then asked for them as a general rule, for every question, not only a
+    design choice. Step 3, ADR 0030, GHID (and its list of rule names) and both CHANGELOGs follow.
   - Step 3: a choice answered in an earlier session is accepted by the approval of the plan that
     names its ADR.
   - ADR 0030 no longer says that projects inherited neither sentence: `/new-feature` step 3

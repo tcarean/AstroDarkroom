@@ -17,19 +17,21 @@ again. On 2026-09-30 the owner decided, in chat, decision Q5 of the programme: t
 the kit's, one sentence in each of the rules "Two readings" and "Measured numbers", and
 `/new-feature` goes on without re-asking; the assistant's memory keeps a pointer, applied by
 hand in the projects without the kit. On 2026-10-01, reviewing this decision's branch, the owner
-added that options always come with a recommendation, that the exception for a new fact belongs
-in the rule, that the approval of a plan accepts a choice answered in an earlier session, and
-that the first adopter keeps its wider rule.
+added three things. First, a new fact against an answer goes back to the owner and options
+always come with a recommendation, as a general rule of the kit for every question. Second, the
+approval of a plan accepts a choice answered in an earlier session. Third, the first adopter
+keeps its wider rule.
 
 ## Decision
 
 - The kit's rule "Two readings" gains: "A design choice with more than one reasonable answer:
   measure, present the facts and the options, and wait; once answered, implement without asking
-  again; a new fact that contradicts the answer goes back to the owner as a new question. Options
-  put to the owner always come with a recommendation." Not asking again means that the answered
-  choice is not put to the owner a second time and that no permission to start is asked; the
-  approval of the plan in plan mode (the rule "Plan first") and the merge (the rule "Commits and
-  merges") are other questions and stay.
+  again." Not asking again means that the answered choice is not put to the owner a second time
+  and that no permission to start is asked; the approval of the plan in plan mode (the rule
+  "Plan first") and the merge (the rule "Commits and merges") are other questions and stay.
+- A new kit rule, "Questions to the owner", holds for every question put to the owner, not only
+  a design choice: "A new fact that contradicts an answer the owner gave goes back to the owner
+  as a new question. Options put to the owner always come with a recommendation."
 - The kit's rule "Measured numbers" gains: "A design is chosen after a measurement on real data."
   A project whose real data are not obvious names them in its `CLAUDE.md`, in a rule that
   extends "Measured numbers".
@@ -47,9 +49,11 @@ that the first adopter keeps its wider rule.
   project is the drift ADR 0028 removed.
 - **Keep it in the assistant's memory.** Per machine and not versioned (ADR 0001), and the note
   was already out of date. Memory keeps only the pointer, for the projects without the kit.
-- **A rule of its own.** The practice is a case of two rules already there, asking when the
-  answer changes the work and measuring instead of guessing; a third name in a file loaded at
-  every session would say the same thing again.
+- **A rule of its own for designs.** Measuring and asking on a design are cases of two rules
+  already there, "Measured numbers" and "Two readings"; a third name for designs would say the
+  same thing again. What holds for every question has its own rule, "Questions to the owner".
+- **The new fact and the recommendation inside "Two readings".** There they read as part of a
+  design choice; the owner wants them for every question.
 - **A sharper test than "more than one reasonable answer",** such as "a choice that would get an
   ADR". Circular: under the rule "Decisions" every choice settled in chat gets an ADR. The test
   is the one `/new-feature` already used.
@@ -65,10 +69,10 @@ that the first adopter keeps its wider rule.
 
 ## Consequences
 
-Every project gets the sentences and the skill's words through `scripts/sync.ps1`. The first
-adopter's `CLAUDE.md` keeps what is its own: its rule on designs still covers every design, not
-only a choice with more than one reasonable answer, and its rule on numbers names its real data.
-The assistant's memory points at the two rules, to be applied by hand in a project without
-`.claude/rules/kit/`. Nothing checks the practice mechanically: whether a choice had more than
-one reasonable answer, and whether a question repeats one already answered, are judgments the
-owner sees in the session. The guide gives the reasons, for people.
+Every project gets the sentences, the new rule and the skill's words through `scripts/sync.ps1`.
+The first adopter's `CLAUDE.md` keeps what is its own: its rule on designs still covers every
+design, not only a choice with more than one reasonable answer, and its rule on numbers names
+its real data. The assistant's memory points at these rules, to be applied by hand in a project
+without `.claude/rules/kit/`. Nothing checks the practice mechanically: whether a choice had more
+than one reasonable answer, and whether a question repeats one already answered, are judgments
+the owner sees in the session. The guide gives the reasons, for people.

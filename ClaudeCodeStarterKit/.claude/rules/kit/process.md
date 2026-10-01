@@ -30,9 +30,11 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
   bump (the kit's ADR 0029).
 - **Two readings.** Two readings of a task that lead to different work: ask. Otherwise decide,
   and state the assumption. A design choice with more than one reasonable answer: measure,
-  present the facts and the options, and wait; once answered, implement without asking again;
-  a new fact that contradicts the answer goes back to the owner as a new question. Options put
-  to the owner always come with a recommendation (the kit's ADR 0030).
+  present the facts and the options, and wait; once answered, implement without asking again
+  (the kit's ADR 0030).
+- **Questions to the owner.** A new fact that contradicts an answer the owner gave goes back to
+  the owner as a new question. Options put to the owner always come with a recommendation
+  (the kit's ADR 0030).
 - **CHANGELOG.** A change a reader of the version history cares about adds a line under
   `[Unreleased]` in `CHANGELOG.md` (Added, Changed, Fixed, Removed; `Internal` for a refactor or
   a process change worth knowing about). A review follow-up, a test-only change, a comment or

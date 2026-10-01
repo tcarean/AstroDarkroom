@@ -7,6 +7,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The kit's rule "Questions to the owner" (ADR 0030), for every question, not only a design
+  choice: a new fact that contradicts an answer the owner gave goes back to the owner as a new
+  question, and options put to the owner always come with a recommendation.
 - The kit's rule "Version and year are the owner's": the version and the copyright year change
   only at the owner's word (ADR 0029). `git tag` joins the `ask` list.
 - `.claude/rules/kit/process.md`, the process rules every project follows, kept once in the kit
@@ -138,11 +141,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The kit's rules "Measured numbers" and "Two readings" (ADR 0030): a design is chosen after a
   measurement on real data, and a design choice with more than one reasonable answer goes to the
-  owner with the facts and the options, then is implemented without asking again; a new fact
-  that contradicts the answer is a new question. Options put to the owner always come with a
-  recommendation. `/new-feature` step 3 puts the recommendation in the ADR, and the approval of
-  the plan accepts a choice answered in an earlier session. Until now only `/new-feature` asked
-  on such a choice and said to measure first.
+  owner with the facts and the options, then is implemented without asking again.
+  `/new-feature` step 3 puts a recommendation in the ADR, and the approval of the plan accepts a
+  choice answered in an earlier session. Until now only `/new-feature` asked on such a choice
+  and said to measure first.
 - `release.ps1` runs only on `main` in the main checkout (`release.branch` in `kit.json` names
   another branch for a standalone repository), and its floor is the newest released CHANGELOG heading, not
   `<Version>` (ADR 0029): the owner may bump `<Version>` per feature, and a release of that same
