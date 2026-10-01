@@ -7,6 +7,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The kit's rule "Version and year are the owner's": the version and the copyright year change
+  only at the owner's word (ADR 0029). `git tag` joins the `ask` list.
 - `.claude/rules/kit/process.md`, the process rules every project follows, kept once in the kit
   and synced like `scripts/` (ADR 0028): Claude Code loads it beside `CLAUDE.md`. The list of
   shared folders is written once, in `kit-config.ps1`, for `sync.ps1` and the Stop hook. Step 0
@@ -134,6 +136,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `release.ps1` runs only on `main` in the main checkout (`release.branch` in `kit.json` names
+  another branch for a standalone repository), and its floor is the newest released CHANGELOG heading, not
+  `<Version>` (ADR 0029): the owner may bump `<Version>` per feature, and a release of that same
+  version leaves `Directory.Build.props` as it is. It refuses a version already released, not
+  above the newest heading or below `<Version>`. `/release` runs in a session opened in the
+  project folder of the main checkout, proposes `<Version>` when the owner already bumped it,
+  checks that HEAD did not move, and proposes a commit limited to the two files it changed.
 - `CLAUDE.md` keeps only the project's own content: the process rules and the workflow moved to
   the synced `.claude/rules/kit/process.md` (ADR 0028). Every rule has a name and is cited by it
   in quotes, never by a number; the kit's own two rules are "Core has no UI" and "No code

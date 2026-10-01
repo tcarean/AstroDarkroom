@@ -2,23 +2,36 @@
 # release.ps1 - the mechanical part of a release: checks, version number, CHANGELOG, build.
 #
 # WHAT IT DOES
-#   1. Checks, and stops without changing anything if one fails: this project's working tree
-#      is clean; -Version is MAJOR.MINOR.PATCH and greater than the current <Version> in
-#      Directory.Build.props; CHANGELOG.md has something under [Unreleased]; the git tag for
-#      this version does not exist yet.
+#   1. Checks, and stops without changing anything if one fails (the kit's ADR 0029):
+#        - the checkout is the main checkout (not a linked worktree) and is on main, or on
+#          the branch kit.json names as release.branch: a release is cut there, where the
+#          owner commits and tags; a task branch, a detached HEAD or a worktree is refused;
+#        - this project's working tree is clean;
+#        - -Version is MAJOR.MINOR.PATCH without leading zeros (2.3.0, not 2.03.0, which
+#          would compare as 2.3.0 but be written as 2.03.0), is not already a released
+#          heading of CHANGELOG.md ("## [X.Y.Z] - date"), and is above the highest of them:
+#          that is the floor, since a release always closes [Unreleased] under such a
+#          heading (with none, no floor);
+#        - -Version is not below <Version> in Directory.Build.props. It may equal it: the
+#          owner may bump <Version> per feature, and the release then uses it;
+#        - CHANGELOG.md has something under [Unreleased];
+#        - the git tag for this version does not exist yet.
 #   2. Runs scripts/verify.ps1. If it is red, it stops; still nothing changed.
-#   3. Writes the new version into <Version> in Directory.Build.props.
+#   3. Writes the new version into <Version> in Directory.Build.props, unless it is already
+#      there.
 #   4. In CHANGELOG.md, turns "## [Unreleased]" into "## [X.Y.Z] - <today>" and puts a new,
 #      empty "## [Unreleased]" above it.
 #   5. Publishes what kit.json lists under release.publish, each entry to
 #      artifacts/<version>/<output>/ with its own extra `dotnet publish` arguments (in the
 #      kit: src/Starter.Cli to artifacts/<version>/ itself), unless -NoPublish.
 #   It commits nothing and tags nothing. At the end it prints the commit and the tag to
-#   propose: vX.Y.Z in a standalone repository, <folder>-vX.Y.Z inside a monorepo.
+#   propose: the commit limited to Directory.Build.props and CHANGELOG.md, the tag vX.Y.Z in a
+#   standalone repository, <folder>-vX.Y.Z inside a monorepo.
 #
 # WHO CALLS IT
-#   - Claude, in the /release skill: first with -WhatIf, then for real; the skill then
-#     proposes the commit and the tag, which the owner runs (the kit's ADRs 0010 and 0021)
+#   - Claude, in the /release skill, in a session the owner opened in the project folder of
+#     the main checkout: first with -WhatIf, then for real; the skill then proposes the commit
+#     and the tag, which the owner runs (the kit's ADRs 0010, 0021 and 0029)
 #   - you, by hand:
 #       powershell -NoProfile -ExecutionPolicy Bypass -File scripts/release.ps1 -Version 0.2.0
 #
@@ -45,11 +58,28 @@ $root = Split-Path -Parent $PSScriptRoot
 $kit = Read-KitConfig $root
 Push-Location $root
 try {
-    if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Version must be MAJOR.MINOR.PATCH, got '$Version'." }
+    # No leading zeros: the text goes into the heading and the tag, the number into comparisons.
+    if ($Version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { throw "Version must be MAJOR.MINOR.PATCH without leading zeros, got '$Version'." }
     # [version] compares numerically: 0.10.0 is greater than 0.9.0.
     $new = [version]$Version
 
     # --- preconditions -----------------------------------------------------------------
+    # A release is cut on main (or kit.json's release.branch), in the main checkout (the kit's
+    # ADR 0029). An empty name is a detached HEAD. The main checkout is the worktree whose git
+    # folder is the common one, the test the git pre-commit hook makes (the kit's ADR 0026);
+    # absolute forms, since git may report either side relative to a subfolder.
+    $releaseBranch = $kit.release.branch
+    $gitDir = [System.IO.Path]::GetFullPath((git rev-parse --absolute-git-dir)).TrimEnd('\', '/')
+    $commonDir = [System.IO.Path]::GetFullPath((git rev-parse --path-format=absolute --git-common-dir)).TrimEnd('\', '/')
+    if ($gitDir -ne $commonDir) {
+        throw "A release is cut on $releaseBranch, in the main checkout; this is a linked worktree ($root)."
+    }
+    $branch = (git branch --show-current 2>$null)
+    if ($branch -ne $releaseBranch) {
+        $where = if ($branch) { "branch '$branch'" } else { 'a detached HEAD' }
+        throw "A release is cut on $releaseBranch, in the main checkout; this checkout is on $where."
+    }
+
     # 'git status --porcelain -- .' lists the uncommitted changes in this folder, one per line.
     $dirty = @(git status --porcelain -- . 2>$null | Where-Object { $_ })
     if ($dirty.Count -gt 0) {
@@ -62,11 +92,17 @@ try {
     $m = [regex]::Match($props, '<Version>([^<]+)</Version>')
     if (-not $m.Success) { throw 'No <Version> element in Directory.Build.props.' }
     $current = [version]$m.Groups[1].Value
-    if ($new -le $current) { throw "New version $new must be greater than current $current." }
+    if ($new -lt $current) { throw "Version $new is below <Version> $current in Directory.Build.props, which the owner already set; release $current or above." }
 
-    # The [Unreleased] section: from its heading to the next "## [" heading or the end of file.
+    # The released versions: every "## [X.Y.Z] - date" heading. The highest is the floor.
     $changelogPath = Join-Path $root 'CHANGELOG.md'
     $changelog = [System.IO.File]::ReadAllText($changelogPath)
+    $released = @([regex]::Matches($changelog, '(?m)^## \[(\d+\.\d+\.\d+)\]') | ForEach-Object { [version]$_.Groups[1].Value })
+    if ($released -contains $new) { throw "Version $new is already released: CHANGELOG.md has a [$new] heading." }
+    $floor = $released | Sort-Object -Descending | Select-Object -First 1
+    if ($floor -and $new -le $floor) { throw "Version $new is not above $floor, the newest released heading in CHANGELOG.md." }
+
+    # The [Unreleased] section: from its heading to the next "## [" heading or the end of file.
     $unreleased = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)')
     if (-not $unreleased.Success) { throw 'CHANGELOG.md has no [Unreleased] section.' }
     if ($unreleased.Groups[1].Value.Trim().Length -eq 0) { throw '[Unreleased] is empty; nothing to release.' }
@@ -80,10 +116,12 @@ try {
     if (git tag --list $tag) { throw "Tag $tag already exists." }
 
     # -WhatIf stops here: the checks passed, nothing was changed.
-    Write-Host ("== release {0} -> {1}, tag {2}" -f $current, $new, $tag) -ForegroundColor Cyan
+    $floorText = if ($floor) { $floor } else { 'none' }
+    Write-Host ("== release {0} (<Version> {1}, newest released {2}), tag {3}" -f $new, $current, $floorText, $tag) -ForegroundColor Cyan
     if ($WhatIfPreference) {
         $targets = ($kit.release.publish | ForEach-Object { $_.project }) -join ', '
-        Write-Host ("WhatIf: would run verify, set <Version>, close [Unreleased] in CHANGELOG, publish {0}." -f $targets)
+        $propsPlan = if ($new -eq $current) { "leave <Version> at $current" } else { "set <Version> to $new" }
+        Write-Host ("WhatIf: would run verify, {0}, close [Unreleased] in CHANGELOG, publish {1}." -f $propsPlan, $targets)
         Write-Host ("Unreleased content ({0} lines):" -f ($unreleased.Groups[1].Value.Trim() -split "`n").Count)
         Write-Host $unreleased.Groups[1].Value.Trim()
         exit 0
@@ -95,10 +133,14 @@ try {
 
     # --- files --------------------------------------------------------------------------
     # From here on, files change. Only the number inside <Version>...</Version> is replaced;
-    # the rest of Directory.Build.props stays as it is.
+    # the rest of Directory.Build.props stays as it is. When the owner already set it, the file
+    # is left alone.
     $utf8 = New-Object System.Text.UTF8Encoding $false
-    $props = $props.Substring(0, $m.Groups[1].Index) + $Version + $props.Substring($m.Groups[1].Index + $m.Groups[1].Length)
-    [System.IO.File]::WriteAllText($propsPath, $props, $utf8)
+    $propsChange = if ($new -eq $current) { 'unchanged, already {0}' -f $Version } else { '{0} -> {1}' -f $current, $Version }
+    if ($new -ne $current) {
+        $props = $props.Substring(0, $m.Groups[1].Index) + $Version + $props.Substring($m.Groups[1].Index + $m.Groups[1].Length)
+        [System.IO.File]::WriteAllText($propsPath, $props, $utf8)
+    }
 
     # CHANGELOG: a new, empty [Unreleased] on top; the old one becomes "[X.Y.Z] - date".
     # The file keeps its own line endings (CRLF or LF).
@@ -107,7 +149,7 @@ try {
     $header = "## [Unreleased]$nl$nl## [$Version] - $date"
     $changelog = $changelog.Substring(0, $unreleased.Index) + $header + $changelog.Substring($unreleased.Index + '## [Unreleased]'.Length)
     [System.IO.File]::WriteAllText($changelogPath, $changelog, $utf8)
-    Write-Host ("changed  Directory.Build.props ({0} -> {1}), CHANGELOG.md ([{1}] - {2})" -f $current, $Version, $date)
+    Write-Host ("changed  Directory.Build.props ({0}), CHANGELOG.md ([{1}] - {2})" -f $propsChange, $Version, $date)
 
     # --- artifacts ----------------------------------------------------------------------
     # dotnet publish puts each entry of release.publish in artifacts/<version>/<output>
@@ -124,7 +166,7 @@ try {
         Write-Host ("published {0} ({1:n1} MB)" -f $out, ($size / 1MB))
     }
 
-    Write-Host ("== ready. Propose: commit 'Release {0}' and tag {1}. Nothing is committed or tagged by this script." -f $Version, $tag) -ForegroundColor Green
+    Write-Host ("== ready. Propose: git commit -m ""Release {0}"" -- Directory.Build.props CHANGELOG.md, then git tag -a {1} -m ""Release {0}"". Nothing is committed or tagged by this script." -f $Version, $tag) -ForegroundColor Green
     exit 0
 }
 finally {

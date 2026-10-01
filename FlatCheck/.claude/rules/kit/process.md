@@ -24,6 +24,9 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
   `Directory.Packages.props` has a "why".
 - **Measured numbers.** Numbers are measured, not guessed. A validation claim comes with the
   pasted output that shows it.
+- **Version and year are the owner's.** Never bump the version and never roll the copyright
+  year on your own; both change only at the owner's word. Say when a change seems to warrant a
+  bump (the kit's ADR 0029).
 - **Two readings.** Two readings of a task that lead to different work: ask. Otherwise decide,
   and state the assumption.
 - **CHANGELOG.** A change a reader of the version history cares about adds a line under
@@ -68,9 +71,9 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
   until verify ran green after the last edit; when it fires, run `/wrap-up`.
 - **Skills.** New feature: `/new-feature`. Re-measure figures: `/validate`. Check docs
   completeness: `/docs-health`. Test strength of numeric code: `/mutate` (survivors become
-  proposed tests, never config changes). Cut a version: `/release` (from `main`, clean tree;
-  proposes the commit and the tag, the owner runs them). A project's own steps for a skill are
-  in its `docs/skills.md`.
+  proposed tests, never config changes). Cut a version: `/release` (from `main` in the main
+  checkout, clean tree; proposes the commit and the tag, the owner runs them). A project's own
+  steps for a skill are in its `docs/skills.md`.
 - **Branches.** Branch per task, named `claude/` plus the task in English: an imperative phrase,
   words joined by hyphens, first letter capital
   (`claude/Document-the-console-extension-contract-and-goldens`). Small commits. Merging into

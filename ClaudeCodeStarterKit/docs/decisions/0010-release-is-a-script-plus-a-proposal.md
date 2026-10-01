@@ -1,7 +1,7 @@
 # 0010. A release is a deterministic script plus a proposed commit and tag
 
 Date: 2026-09-25
-Status: accepted 2026-09-25; who runs the release commit and tag superseded by 0021
+Status: accepted 2026-09-25; who runs the release commit and tag superseded by 0021; the version precondition and where a release runs superseded by 0029
 
 ## Context
 

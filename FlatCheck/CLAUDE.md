@@ -96,8 +96,6 @@ a kit rule names it.
   `Report/`) re-runs `/validate` on the real masters before the task ends, with the drift table
   pasted; a new numeric branch gets a `ParityGoldenTests` scenario. There is no second
   implementation to compare against.
-- **Version and year are the owner's.** Never bump the version and never roll the copyright
-  year; both are the owner's call. Say when a change seems to warrant a bump.
 - **License headers.** Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice;
   `LicenseHeaderTests` fails otherwise. Scripts carry the SPDX line.
 
