@@ -38,10 +38,11 @@ on purpose; keep it that way.
 4. Pick one plausible small change to the project (the launching prompt may name one). Write
    the plan for it from the docs alone: files to touch, order, how to verify. Mark every
    "probably" and "somewhere".
-5. Check the length of what every session loads, `CLAUDE.md` plus `.claude/rules/`: over 200
-   lines together is a finding, naming the sections that should move to `docs/`. A rule in
-   `CLAUDE.md` that repeats one in `.claude/rules/kit/` instead of naming the kit rule it
-   extends is a finding too.
+5. Check the length of the project's own rules, `CLAUDE.md` plus any file of its own under
+   `.claude/rules/` outside `kit/`: over 200 lines together is a finding, naming the sections
+   that should move to `docs/`. The kit's `.claude/rules/kit/` is the same in every project and
+   does not count. A rule in `CLAUDE.md` that repeats one in `.claude/rules/kit/` instead of
+   naming the kit rule it extends is a finding too.
 6. Check `docs/decisions/`: does every decision the CHANGELOG implies have an ADR, here or,
    for a process decision the kit made, in the kit's `docs/decisions/`? Is any ADR still
    `proposed` while the CHANGELOG says the work shipped?

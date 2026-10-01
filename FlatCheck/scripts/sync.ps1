@@ -21,14 +21,18 @@
 #   and scripts/hooks/commit-msg (one active copy, in .githooks/, installed from the kit). See $KitOnly below.
 #   .claude/settings.json is shared in part (the kit's ADR 0028). Its process keys are the
 #   kit's: "hooks", "permissions.ask", "permissions.deny", the "permissions.allow" entries for
-#   git commands, and "attribution". They are compared parsed, the three lists as sets, so the
-#   layout of the file does not count. The other allow entries (the commands a project uses),
-#   "$comment" and any other key are the project's. A sync rewrites only the process keys that
-#   differ, keeping the rest; a project without the file gets the kit's copy.
+#   git commands, "attribution", and the two keys that switch the rest off, "disableAllHooks"
+#   and "permissions.defaultMode" (absent in the kit, so a project may not set them). They are
+#   compared parsed: the three lists as sets, the objects with their properties in any order,
+#   so the layout of the file does not count. The other allow entries (the commands a project
+#   uses), "$comment" and any other key are the project's. A sync rewrites only the process
+#   keys that differ, keeping the rest with their values; a project without the file gets the
+#   kit's copy. A settings file that is not valid JSON is named ("invalid") and left alone:
+#   sync cannot merge into it, so it exits 1 and the file is fixed by hand.
 #   With -Check it changes nothing: it lists every path or key that differs (differs / missing
-#   / extra) and exits 1 when there is one. That is step 0 of scripts/verify.ps1, which makes
-#   an isolated edit in a project's shared folders or process keys impossible to commit, and
-#   asks every project for the sync after a kit change.
+#   / extra / invalid) and exits 1 when there is one. That is step 0 of scripts/verify.ps1,
+#   which makes an isolated edit in a project's shared folders or process keys impossible to
+#   commit, and asks every project for the sync after a kit change.
 #
 # WHO CALLS IT
 #   - scripts/verify.ps1, with -Check, in a project that has the kit beside it
@@ -42,7 +46,8 @@
 #
 # RESULT
 #   exit 0  identical (after the copy, or already with -Check)
-#   exit 1  -Check found a difference, or the kit folder is missing
+#   exit 1  -Check found a difference, a settings file is not valid JSON, or the kit folder
+#           is missing
 [CmdletBinding()]
 param([switch]$Check)
 
@@ -54,7 +59,9 @@ $kit = Read-KitConfig $root
 
 # The folders mirrored from the kit, relative to the project root, with forward slashes.
 $Shared = @(Get-KitSharedFolders)
-$SharedNames = ($Shared | ForEach-Object { $_ + '/' }) -join ', '
+$SharedNames = Get-KitSharedFolderNames
+# Set when a settings file cannot be read: no sync can fix that, so the script exits 1.
+$script:Unreadable = $false
 # Files that exist only in the kit, relative to the project root, with forward slashes.
 $KitOnly = @('scripts/rename.ps1', 'scripts/install-hooks.ps1', 'scripts/hooks/pre-commit', 'scripts/hooks/pre-merge-commit', 'scripts/hooks/commit-msg')
 
@@ -73,23 +80,39 @@ function Get-SharedFiles([string]$projectRoot) {
 
 function Get-Hash([string]$path) { return (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash }
 
-# An allow entry that is a git command, "Bash(git status*)" or "PowerShell(git commit*)": the
-# kit's, like "ask" and "deny"; the others are the project's.
-function Test-GitAllow([string]$entry) { return $entry -match '^(Bash|PowerShell)\(git[ *)]' }
+# An allow entry that is a git command, "Bash(git status*)", "Bash(git:*)" or
+# "PowerShell(git commit*)": the kit's, like "ask" and "deny"; the others are the project's.
+function Test-GitAllow([string]$entry) { return $entry -match '^(Bash|PowerShell)\(git([ *:)]|$)' }
 
 # A list as a set: sorted, one per line, so order and layout do not count.
 function Get-SetText($list) { return (@($list | Where-Object { $null -ne $_ }) | Sort-Object) -join "`n" }
+
+# A value as compact JSON with the properties of every object sorted by name, so two objects
+# that say the same compare equal whatever order their file lists the properties in. Arrays
+# keep their order: the order of hooks is the order they run in.
+function ConvertTo-CanonicalJson($Value) {
+    if ($null -eq $Value) { return 'null' }
+    if ($Value -is [string]) { return ConvertTo-KitJsonString $Value }
+    if ($Value -is [ValueType]) { return Format-KitJsonScalar $Value }
+    if ($Value -is [System.Collections.IEnumerable]) {
+        return '[' + ((@($Value) | ForEach-Object { ConvertTo-CanonicalJson $_ }) -join ',') + ']'
+    }
+    $properties = @($Value.PSObject.Properties | Sort-Object -Property Name -CaseSensitive)
+    return '{' + (($properties | ForEach-Object { (ConvertTo-KitJsonString $_.Name) + ':' + (ConvertTo-CanonicalJson $_.Value) }) -join ',') + '}'
+}
 
 # The process keys of parsed settings, each as text that compares equal when the kit's and
 # the project's say the same.
 function Get-ProcessKeys($settings) {
     $permissions = $settings.permissions
     return [ordered]@{
-        'hooks'             = ConvertTo-Json -InputObject $settings.hooks -Depth 32 -Compress
-        'permissions.ask'   = Get-SetText $permissions.ask
-        'permissions.deny'  = Get-SetText $permissions.deny
-        'permissions.allow' = Get-SetText (@($permissions.allow) | Where-Object { Test-GitAllow $_ })
-        'attribution'       = ConvertTo-Json -InputObject $settings.attribution -Depth 32 -Compress
+        'hooks'                   = ConvertTo-CanonicalJson $settings.hooks
+        'disableAllHooks'         = ConvertTo-CanonicalJson $settings.disableAllHooks
+        'permissions.defaultMode' = ConvertTo-CanonicalJson $permissions.defaultMode
+        'permissions.ask'         = Get-SetText $permissions.ask
+        'permissions.deny'        = Get-SetText $permissions.deny
+        'permissions.allow'       = Get-SetText (@($permissions.allow) | Where-Object { Test-GitAllow $_ })
+        'attribution'             = ConvertTo-CanonicalJson $settings.attribution
     }
 }
 
@@ -108,6 +131,7 @@ function Set-Key($object, [string]$name, $value) {
 # are git commands or that the project already has, in the kit's order, then the project's own.
 function Merge-ProcessKeys($kitSettings, $projectSettings) {
     Set-Key $projectSettings 'hooks' $kitSettings.hooks
+    Set-Key $projectSettings 'disableAllHooks' $kitSettings.disableAllHooks
     Set-Key $projectSettings 'attribution' $kitSettings.attribution
     if ($null -eq $projectSettings.permissions) { Set-Key $projectSettings 'permissions' ([pscustomobject]@{}) }
     $kitPermissions = $kitSettings.permissions
@@ -119,7 +143,18 @@ function Merge-ProcessKeys($kitSettings, $projectSettings) {
     Set-Key $permissions 'allow' $(if ($allow.Count -gt 0) { , $allow } else { $null })
     Set-Key $permissions 'ask' $(if ($null -ne $kitPermissions.ask) { , @($kitPermissions.ask) } else { $null })
     Set-Key $permissions 'deny' $(if ($null -ne $kitPermissions.deny) { , @($kitPermissions.deny) } else { $null })
+    Set-Key $permissions 'defaultMode' $kitPermissions.defaultMode
     return $projectSettings
+}
+
+# A number, a boolean or a date as JSON. A double keeps every digit ("R"); a date, which only
+# an older pwsh makes out of an ISO string (Read-Settings), goes back out as a quoted string.
+function Format-KitJsonScalar($Value) {
+    $invariant = [System.Globalization.CultureInfo]::InvariantCulture
+    if ($Value -is [bool]) { return $Value.ToString().ToLowerInvariant() }
+    if ($Value -is [datetime]) { return ConvertTo-KitJsonString ($Value.ToString('o', $invariant)) }
+    if ($Value -is [double] -or $Value -is [single]) { return $Value.ToString('R', $invariant) }
+    return [string]::Format($invariant, '{0}', $Value)
 }
 
 # JSON as the settings files are written: two spaces per level, one item per line, non-ASCII
@@ -129,8 +164,7 @@ function ConvertTo-KitJson($Value, [string]$Indent = '') {
     $inner = $Indent + '  '
     if ($null -eq $Value) { return 'null' }
     if ($Value -is [string]) { return ConvertTo-KitJsonString $Value }
-    if ($Value -is [bool]) { return $Value.ToString().ToLowerInvariant() }
-    if ($Value -is [ValueType]) { return [string]::Format([System.Globalization.CultureInfo]::InvariantCulture, '{0}', $Value) }
+    if ($Value -is [ValueType]) { return Format-KitJsonScalar $Value }
     if ($Value -is [System.Collections.IEnumerable]) {
         $items = @($Value)
         if ($items.Count -eq 0) { return '[]' }
@@ -160,10 +194,17 @@ function ConvertTo-KitJsonString([string]$Text) {
     return $sb.ToString()
 }
 
-function Read-Settings([string]$path) { return Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json }
+# Parsed settings. pwsh 7.5 and later would turn an ISO-date string into a date; -DateKind
+# String keeps it the string it was, so a rewrite does not change it. Throws on invalid JSON.
+function Read-Settings([string]$path) {
+    $text = Get-Content -LiteralPath $path -Raw -Encoding UTF8
+    if ((Get-Command ConvertFrom-Json).Parameters.ContainsKey('DateKind')) { return $text | ConvertFrom-Json -DateKind String }
+    return $text | ConvertFrom-Json
+}
 
 # Compares (and, without -Check, copies) the process keys of the kit's .claude/settings.json
-# into one project's. Returns the number of keys that differ (1 for a missing file).
+# into one project's. Returns the number of keys that differ (1 for a missing or unreadable
+# file).
 function Sync-Settings([string]$kitDir, [string]$projectDir) {
     $name = '.claude/settings.json'
     $src = Join-Path $kitDir '.claude\settings.json'
@@ -179,17 +220,24 @@ function Sync-Settings([string]$kitDir, [string]$projectDir) {
         }
         return 1
     }
-    $kitSettings = Read-Settings $src
-    $projectSettings = Read-Settings $dst
-    $kitKeys = Get-ProcessKeys $kitSettings
-    $projectKeys = Get-ProcessKeys $projectSettings
+    $parsed = @{}
+    foreach ($side in @(@('kit', $src), @('project', $dst))) {
+        try { $parsed[$side[0]] = Read-Settings $side[1] }
+        catch {
+            Write-Host ("  invalid  {0} ({1}'s copy is not valid JSON: {2}); fix it by hand" -f $name, $side[0], $_.Exception.Message) -ForegroundColor Red
+            $script:Unreadable = $true
+            return 1
+        }
+    }
+    $kitKeys = Get-ProcessKeys $parsed['kit']
+    $projectKeys = Get-ProcessKeys $parsed['project']
     $differing = @($kitKeys.Keys | Where-Object { $kitKeys[$_] -cne $projectKeys[$_] })
     if ($differing.Count -eq 0) { return 0 }
     if ($Check) {
         foreach ($key in $differing) { Write-Host ("  differs  {0}: {1}" -f $name, $key) -ForegroundColor Red }
     }
     else {
-        $merged = Merge-ProcessKeys $kitSettings $projectSettings
+        $merged = Merge-ProcessKeys $parsed['kit'] $parsed['project']
         $utf8 = New-Object System.Text.UTF8Encoding $false
         [System.IO.File]::WriteAllText($dst, (ConvertTo-KitJson $merged) + "`n", $utf8)
         Write-Host ("  updated  {0}: {1}" -f $name, ($differing -join ', '))
@@ -279,6 +327,10 @@ foreach ($pair in $pairs) {
     $total += Sync-Settings $pair[0] $pair[1]
 }
 
+if ($script:Unreadable) {
+    Write-Host 'sync: a .claude/settings.json is not valid JSON (named above); fix it by hand, then run sync again.' -ForegroundColor Red
+    exit 1
+}
 if ($Check) {
     if ($total -gt 0) {
         Write-Host ("sync: {0} difference(s). {1} and the process keys of .claude/settings.json are the kit's: run scripts/sync.ps1 here to take the kit's copy, and make changes in the kit." -f $total, $SharedNames) -ForegroundColor Red

@@ -68,9 +68,8 @@ function Get-ProjectProblems([string]$projectDir, [string[]]$edited) {
     $testDirs = @($kit.testFolders | ForEach-Object { Get-KitFolderPath $projectDir $_ })
     $srcFiles = @($kit.codeFiles | ForEach-Object { Join-Path $projectDir ($_ -replace '/', '\') })
     # The folders that are the kit's, mirrored by scripts/sync.ps1 (one list, in kit-config.ps1).
-    $shared = @(Get-KitSharedFolders)
-    $sharedDirs = $shared | ForEach-Object { Get-KitFolderPath $projectDir $_ }
-    $sharedNames = ($shared | ForEach-Object { $_ + '/' }) -join ', '
+    $sharedDirs = @(Get-KitSharedFolders) | ForEach-Object { Get-KitFolderPath $projectDir $_ }
+    $sharedNames = Get-KitSharedFolderNames
 
     $problems = @()
 
