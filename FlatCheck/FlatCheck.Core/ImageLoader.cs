@@ -25,7 +25,7 @@
 //
 // Oglindeste load_image_with_header din flatcheck.py, inclusiv alegerea de a NU valida
 // extensia: orice altceva decat cele sase extensii raw merge la cititorul FITS si esueaza
-// acolo ca eroare de parsare (vezi "Known issues" in CLAUDE.md).
+// acolo ca eroare de parsare (vezi docs/design/known-issues.md, punctul 2).
 
 using System.Collections.Generic;
 
@@ -112,9 +112,9 @@ namespace FlatCheck
 
             // Ce nu revendica nimeni merge tot la FITS. E o decizie, nu o scapare: un .jpg
             // dat din greseala esueaza cu o eroare de parsare FITS, care arata tot spre
-            // fisierul vinovat, in loc de "format nerecunoscut" (vezi Known issues in
-            // CLAUDE.md). Sta explicit aici, nu ca ultim element din lista, ca o
-            // reordonare a listei sa nu-l poata rupe tacut.
+            // fisierul vinovat, in loc de "format nerecunoscut" (vezi
+            // docs/design/known-issues.md, punctul 2). Sta explicit aici, nu ca ultim
+            // element din lista, ca o reordonare a listei sa nu-l poata rupe tacut.
             return Fits.Load(path);
         }
 

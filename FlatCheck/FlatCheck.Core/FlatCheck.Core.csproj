@@ -18,7 +18,7 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
-  <!-- Dependentele externe. Regula e in CLAUDE.md, "The dependencies": se discuta
+  <!-- Dependentele externe. Regula e in docs/design/dependencies.md, "The rule": se discuta
        inainte si se aproba, nu se evita si nu se adauga in tacere. Licenta fiecareia si
        DE CE e compatibila cu GPLv3 sunt scrise in THIRD-PARTY-NOTICES.md. Ce ramane scris
        de mana - FITS, PNG, toate calculele - ramane asa fiindca acolo e onest.

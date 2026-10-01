@@ -19,8 +19,9 @@
 // deterministica a rasterului; niciuna nu scrie nimic si niciuna nu are stare.
 //
 // ATENTIE la centrul folosit de apelanti: modelul radial si asimetria se calculeaza
-// in jurul centrului SENZORULUI, nu al varfului fitat de FitCenter. Vezi CLAUDE.md -
-// centrarea pe varf ar absorbi exact gradientul cautat.
+// in jurul centrului SENZORULUI, nu al varfului fitat de FitCenter. Vezi
+// docs/design/pipeline.md, "The core idea" (ADR 0013) - centrarea pe varf ar absorbi
+// exact gradientul cautat.
 
 using System;
 using System.Collections.Generic;

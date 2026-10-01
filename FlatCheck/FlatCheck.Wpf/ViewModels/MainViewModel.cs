@@ -21,7 +21,7 @@
 //
 // SECVENTIAL, NU PARALEL. Structura si testul end-to-end pornesc amandoua la deschiderea
 // unui folder, dar unul dupa altul. Un cadru de 24 MP ajunge la sute de MB in analiza
-// (vezi "Known issues" din CLAUDE.md), iar seria mai tine si un cadru incarcat pe langa;
+// (vezi docs/design/known-issues.md, punctul 7), iar seria mai tine si un cadru incarcat pe langa;
 // doua lanturi simultane ar putea trece de un gigaoctet pe o masina obisnuita. Timpul
 // castigat n-ar merita riscul.
 //

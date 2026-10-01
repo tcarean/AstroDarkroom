@@ -1,7 +1,8 @@
 <Project>
   <!-- Central Package Management: every package version lives here, once. The rule
-       (CLAUDE.md, "The dependencies"): no new package without asking, every package gets a
-       "why" here, an entry in THIRD-PARTY-NOTICES.md and, for the core, one in ThirdParty.cs.
+       (docs/design/dependencies.md, "The rule"): no new package without asking, every package
+       gets a "why" here, an entry in THIRD-PARTY-NOTICES.md and, for the core, one in
+       ThirdParty.cs.
        ThirdPartyTests reads the PackageReference names from FlatCheck.Core.csproj; the
        versions are here. -->
   <ItemGroup>

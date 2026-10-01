@@ -30,7 +30,7 @@
 // cvasi-liniara peste cadru. Pe camp larg ea se curbeaza in interiorul cadrului, iar
 // partea radial simetrica a curburii are exact forma vignetarii - si atunci nimic din
 // ce e scris aici nu le mai poate deosebi. Vezi LightSuitability, care opreste modul
-// inainte sa ajunga aici, si sectiunea "The validity limit" din CLAUDE.md.
+// inainte sa ajunga aici, si sectiunea "The validity limit" din docs/design/modes-light.md.
 //
 // ATENTIE: NU inlocui cu percentile pe inele circulare - p20 pe un inel prinde partea
 // intunecata a gradientului de cer si o raporteaza ca falsa vignetare.

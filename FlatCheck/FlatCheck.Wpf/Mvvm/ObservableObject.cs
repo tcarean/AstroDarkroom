@@ -20,10 +20,10 @@
 // Publica, nu internal, fiindca o mostenesc ViewModel-urile, care trebuie sa fie
 // publice ca sa le vada legarea WPF. Vezi nota din TabViewModel.
 //
-// Nu s-a adus un framework MVVM pentru douazeci de linii. Unealta asta are exact O
-// dependenta externa (libraw, pentru raw-uri de aparat), si aia a trebuit sa isi
-// argumenteze existenta - vezi "The one dependency" din CLAUDE.md. Un pachet care
-// genereaza proprietati nu trece acelasi prag.
+// Nu s-a adus un framework MVVM pentru douazeci de linii. Unealta asta are exact doua
+// dependente externe (libraw, pentru raw-uri de aparat, si ImageSharp, pentru previzualizarea
+// JPEG din raw), si fiecare a trebuit sa isi argumenteze existenta - vezi "The rule" din
+// docs/design/dependencies.md. Un pachet care genereaza proprietati nu trece acelasi prag.
 
 using System.Collections.Generic;
 using System.ComponentModel;
