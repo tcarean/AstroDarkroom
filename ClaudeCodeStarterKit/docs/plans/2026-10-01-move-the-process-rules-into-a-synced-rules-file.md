@@ -308,3 +308,13 @@ the loading rule, and the kit's rules file has the same bytes.
   or updated as well.
 - The guide gained a section on the rules file under "CLAUDE.md: ce contine de la inceput",
   rather than a separate chapter.
+- After `/code-review` (nine findings, all fixed on the branch):
+  - the auditor's 200-line limit counts only the project's own rules (`CLAUDE.md` and its own files under `.claude/rules/` outside `kit/`), as the owner chose; with the kit's file counted, FlatCheck was at 220;
+  - `disableAllHooks` and `permissions.defaultMode` are process keys too, left unset by the kit, since either one switches the gate off;
+  - `Bash(git:*)` counts as a git entry;
+  - objects are compared with their properties in any order;
+  - a settings file that is not valid JSON is named and left alone, and sync exits 1;
+  - the writer keeps the values of the project's own keys (round-trip doubles, date strings kept as strings under pwsh);
+  - the folder names come from `Get-KitSharedFolderNames`;
+  - ADR 0017's and 0018's Status parts use the words of 0028's Supersedes line;
+  - a test shows that a project's own rules file beside `kit/` is left alone.
