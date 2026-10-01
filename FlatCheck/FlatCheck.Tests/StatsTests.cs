@@ -75,7 +75,8 @@ public class StatsTests
 
     /// <summary>
     /// Deliberate divergence from numpy, which raises on an empty input. Documented in
-    /// CLAUDE.md: a degenerate input yields a silent 0 rather than an error.
+    /// docs/design/python-parity.md, "Intentional divergences of the frozen file" (ADR 0038):
+    /// a degenerate input yields a silent 0 rather than an error.
     /// </summary>
     [Fact]
     public void Percentile_OnAnEmptyList_Returns0_DivergingFromNumpy()

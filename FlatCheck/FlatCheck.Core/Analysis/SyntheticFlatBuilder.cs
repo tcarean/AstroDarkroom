@@ -25,7 +25,7 @@
 // (centrul cutiei de 5 % pe care o foloseste CornerStats), marginea lunga, marginea scurta,
 // jumatatea semidiagonalei - ca raportul sa spuna cat de adanca e vignetarea pe care o
 // scrie, in stopuri, in aceleasi puncte in care s-au comparat masterele reale cu cele doua
-// baze (CLAUDE.md, "Synthetic flats").
+// baze (docs/design/lens-profiles.md, "6. The flat, the report, the file").
 
 using System;
 using System.Collections.Generic;

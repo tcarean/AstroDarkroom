@@ -73,7 +73,8 @@ public class MetricsTests
     /// SUSPECT verdict on a perfectly uniform frame.
     ///
     /// Do not "fix" this to match the oracle - the guard is what makes the degenerate
-    /// case behave. See CLAUDE.md, "Parity with Python".
+    /// case behave. See docs/design/python-parity.md, "Intentional divergences of the frozen
+    /// file" (ADR 0014, ADR 0038).
     /// </summary>
     [Fact]
     public void FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre()
