@@ -134,13 +134,35 @@ Q5 moves the practice into the kit's synced rules file and the `/new-feature` sk
 
 ## What deviated
 
-- Nothing of substance. The texts are the plan's, and so is assumption 1: the scope of "without
-  asking again" is in ADR 0030's Decision, not in the rule.
-- The kit's CHANGELOG line also says that the practice was FlatCheck's own rule until now. ADR
-  0030 names no adopter's ADR numbers or rule names.
-- Measured on 2026-10-01, on the branch:
+- Before the review, nothing of substance: the texts were the plan's. Measured then, on
+  2026-10-01:
   - the kit: `ok 30 decisions in docs/decisions/`; `verify.ps1` `== OK in 140s`, 123 tests;
   - FlatCheck: `sync.ps1 -Check` identical with the kit after the sync, which copied exactly
     `.claude/rules/kit/process.md` and `.claude/skills/new-feature/SKILL.md`;
     `ok 55 decisions in docs/decisions/`; `verify.ps1` `== OK in 132s`, 946 + 331 tests;
     `CLAUDE.md` 129 lines, 132 before.
+- After `/code-review`, fifteen findings. The owner chose, in chat, to keep FlatCheck's wider
+  rule, took the recommended answer on two more, and added that options always come with a
+  recommendation. All fixed on the branch except the last item:
+  - FlatCheck keeps "Discuss before designing", cut to what the kit's rule does not say: every
+    design, not only a choice with more than one reasonable answer. This plan's "the kit's "Two
+    readings" now says all of it" was wrong, since the old rule had no such condition. ADR 0030's
+    bullet "keeps only what the kit's rules do not say" covers it, so FlatCheck writes no ADR.
+  - Options always come with a recommendation: in "Two readings", step 3, ADR 0030 and GHID.
+  - "Two readings" carries the exception for a new fact that contradicts the answer, which
+    assumption 1 had left in the ADR; that assumption's reason covered only the approval of the
+    plan and the merge.
+  - Step 3: a choice answered in an earlier session is accepted by the approval of the plan that
+    names its ADR.
+  - ADR 0030 no longer says that projects inherited neither sentence: `/new-feature` step 3
+    already asked on such a choice and said to measure first. It now records the sharper test
+    the 2026-09-30 session rejected as circular ("a choice that would get an ADR"), and that
+    memory keeps a pointer applied by hand in the projects without the kit, which the first
+    memory rewrite of this task had dropped.
+  - The kit's CHANGELOG and GHID say that the measurement holds for every design; GHID's review
+    table gains it for a design finding; GHID line 180 is back as on `main`.
+  - FlatCheck's real data are the masters and raws listed in `docs/validation.md`, and a
+    calibrated light for `--light`.
+  - Line 7 of this plan is half right: at 7fb607c only "Discuss and measure" sat in the Workflow
+    section; "A design is chosen after a measurement on the real masters" was rule 7, in Rules.
+  - Left as found: lines 73 and 78 quote Romanian GHID text, as a merged plan does.
