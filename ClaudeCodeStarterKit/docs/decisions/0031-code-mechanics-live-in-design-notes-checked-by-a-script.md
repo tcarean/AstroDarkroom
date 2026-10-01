@@ -66,6 +66,8 @@ script lists the notes a branch touched; a project retires an index test of its 
 The gate has eight checks. A file renamed or deleted while a Covers sentence still names it turns
 the gate red until the note is fixed, and so does a note added without a Covers sentence or an
 index row. The first adopter's two stale spans are fixed in its sync commit, and its index test is
-removed there. `DesignCheckTests` covers each rule of the check, the forms of note it reads, and
-the listing on a git repository. The check never judges whether a note still says what its code
+removed there. Both projects allow `scripts/check-design.ps1` in their own `allow` list of
+`.claude/settings.json`, so the `/wrap-up` step does not ask each time; the owner chose that on
+2026-10-01, and it is not a process key. `DesignCheckTests` covers each rule of the check, the
+forms of note it reads, and the listing on a git repository. The check never judges whether a note still says what its code
 does; the `/wrap-up` step points at the notes to read.

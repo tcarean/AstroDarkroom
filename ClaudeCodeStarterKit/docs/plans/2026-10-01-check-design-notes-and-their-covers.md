@@ -245,3 +245,28 @@ The kit's CLAUDE.md drops "No code structure in docs" and keeps "Core has no UI"
 - **FlatCheck's CLAUDE.md Layout keeps each folder's role.** A role is an address with its responsibility (GHID :75), and it states FlatCheck ADR 0011's decision.
 - **Two notes may both claim a file "in full",** for example the code map and an area note. The check does not judge that, nor a note's text; `/wrap-up` and `/docs-health` do.
 - **The generator prompt's rule 11** is covered by the separate task already offered.
+
+## What deviated
+
+- As planned, the task ran in the session of task 5, at the owner's request; the kit's rule
+  "One task per session" would have started a new one.
+- Before K2 the new script ran on FlatCheck's real notes from a copy in the worktree's
+  FlatCheck; the sync then found that copy identical. Measured on 2026-10-01, on the branch:
+  - kit: `ok       0 design notes in docs/design/` (0.8 s);
+  - FlatCheck before the fix, red on exactly the two expected spans (1.1 s):
+    `MISSING    docs/design/lens-profiles.md: Covers names` `` `Report/AgainstReport.cs` ``
+    and the same line for modes-synthetic.md; no commit ever held that file;
+  - FlatCheck after the fix: `ok       21 design notes in docs/design/`;
+  - `-Since HEAD` with a scratch edit to `FlatCheck.Core/Analysis/SmoothAnalyzer.cs`, then
+    restored: code-map.md, modes-smooth.md and smooth-validation.md; `-Since nosuchref`: the
+    red `GIT` line, exit 1;
+  - gates: kit 129 tests, FlatCheck 945 + 331 (one test fewer: the index test retired);
+    `/wrap-up` step 10 on this branch: no note covers a changed file, in either project.
+- The tests group the cases a little differently from the list above: the missing README and
+  the unknown ref have tests of their own.
+- ADR 0031's title reads "How code works lives in the design note of its area; a synced script
+  checks the notes". Its Consequences also record the `settings.json` allow entry, a choice
+  the owner settled in chat.
+- FlatCheck's `README.md` gate list also gained the decisions step, which it had lacked.
+- Left as found: the kit CHANGELOG's earlier `[Unreleased]` line that lists the kit's two own
+  rules, history now that this task's line says one of them went.
