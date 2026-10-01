@@ -136,6 +136,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The kit's rules "Two readings" and "Measured numbers" (ADR 0030): a design choice with more
+  than one reasonable answer is measured on real data, put to the owner with the facts and the
+  options, and, once answered, implemented without asking it again. `/new-feature` goes on to
+  the plan and the code without re-asking after the owner's yes. The practice was FlatCheck's
+  own rule until now.
 - `release.ps1` runs only on `main` in the main checkout (`release.branch` in `kit.json` names
   another branch for a standalone repository), and its floor is the newest released CHANGELOG heading, not
   `<Version>` (ADR 0029): the owner may bump `<Version>` per feature, and a release of that same

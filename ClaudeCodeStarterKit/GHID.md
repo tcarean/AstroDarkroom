@@ -177,7 +177,9 @@ Trei fisiere poarta cunoasterea care nu e in cod, si fiecare are un singur rol.
 - **Dupa merge.** Codul care il urmeaza e in `main`, deci o schimbare a deciziei trece prin inlocuire, ca mai jos.
 - **ADR scris retroactiv**, pentru o decizie care exista deja in cod, cum ar fi la migrarea unui proiect existent. E `accepted` din prima, cu data de azi, dupa ce omul confirma ca textul descrie corect ce s-a hotarat atunci.
 
-`/new-feature` cere acordul la pasul de decizie, iar `/wrap-up` intreaba daca vreun ADR a ramas `proposed` in timp ce codul construit pe el urmeaza sa fie comis.
+`/new-feature` cere acordul la pasul de decizie si, dupa raspuns, merge mai departe fara sa reintrebe, iar `/wrap-up` intreaba daca vreun ADR a ramas `proposed` in timp ce codul construit pe el urmeaza sa fie comis.
+
+**Intai masurat si intrebat, apoi construit** (ADR 0030). O alegere de design cu mai multe raspunsuri rezonabile nu o face modelul singur si nici pe ghicite: masoara pe date reale, pune in fata omului faptele si variantele, si asteapta (regulile "Two readings" si "Measured numbers" ale kit-ului). Dupa raspuns implementeaza fara sa mai puna aceeasi intrebare si fara sa ceara voie sa inceapa. Raman intrebate aprobarea planului in plan mode, merge-ul si un fapt nou care contrazice raspunsul, pus ca intrebare noua, cu faptul care s-a schimbat. De ce: in FlatCheck, un design ales fara masuratoare a fost gresit de trei ori, iar o intrebare repetata dupa ce omul a raspuns il costa o tura si redeschide ce era hotarat. Practica a fost a lui FlatCheck din 2026-09-25, ca instructiune permanenta a omului; pe 2026-09-30 omul a hotarat ca e a tuturor proiectelor. Ce inseamna "date reale" spune proiectul, cand nu e evident, intr-o regula din `CLAUDE.md` care o extinde pe "Measured numbers": in FlatCheck, masterele listate in `docs/validation.md`.
 
 **Cand o decizie se schimba**, ADR-ul vechi nu se rescrie; se scrie unul nou care il inlocuieste. Istoricul ramane citibil: de ce s-a crezut una, ce s-a aflat intre timp, de ce acum alta. Si o schimbare partiala e o inlocuire: un ADR nou care inlocuieste, scoate sau face falsa o parte dintr-unul vechi il inlocuieste in parte, chiar daca textul lui spune doar "amends" (ADR 0024). La fel o decizie abandonata fara inlocuitor: primeste un ADR scurt care o inlocuieste si spune de ce; nu exista un status separat pentru asta.
 
@@ -224,7 +226,7 @@ O schimbare parcurge acelasi drum de fiecare data, si skill-urile din kit il fac
 ```mermaid
 flowchart TD
   A[cerinta noua in requirements.md<br/>status draft, acceptata de om] --> B[test de acceptanta care pica]
-  B --> C[ADR daca exista o alegere reala]
+  B --> C[masuratoare pe date reale, apoi ADR<br/>daca exista o alegere reala]
   C --> D[plan mode, plan salvat in docs/plans/]
   D --> E[cod in Core, apoi entry point<br/>verify -SkipTests in bucla]
   E --> F[verify complet verde]
