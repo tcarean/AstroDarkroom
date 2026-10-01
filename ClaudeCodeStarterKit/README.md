@@ -66,11 +66,11 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `docs/requirements.md` | cerinte cu ID si status; sursa adevarului pentru comportament |
 | `docs/decisions/` | un ADR per decizie |
 | `docs/validation.md` + `.json` | cifre de acceptanta; JSON-ul e citit de `ValidationTests` |
-| `docs/plans/`, `docs/design/` | planuri aprobate; note de design citite la nevoie |
+| `docs/plans/`, `docs/design/` | planuri aprobate; note de design citite la nevoie, singurul loc unde se scrie cum lucreaza codul, fiecare cu o propozitie `Covers:` |
 | `tests/testdata/` | fixtures in repo + manifest cu hash; fisierele mari in `large/` (ignorat de git) |
 | `kit.json` | valorile proiectului pentru scripturile, skill-urile si agentul comune: solutia, folderele de cod si de teste, datele de test, ce publica un release, ce mai poate citi auditorul, unde e kit-ul |
 | `docs/skills.md` | adaugirile proiectului la skill-urile kit-ului, o sectiune per skill; fiecare skill il citeste inainte de primul pas |
-| `scripts/verify.ps1` | gate-ul unic: fisiere comune si chei de proces identice cu ale kit-ului, manifest, antetele ADR-urilor (`check-decisions.ps1`), restore, format, build strict, teste |
+| `scripts/verify.ps1` | gate-ul unic: fisiere comune si chei de proces identice cu ale kit-ului, manifest, antetele ADR-urilor (`check-decisions.ps1`), notele de design (`check-design.ps1`), restore, format, build strict, teste |
 | `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` si cheile de proces din `.claude/settings.json` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
 | `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi; tine singura lista a folderelor comune |
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
@@ -102,6 +102,12 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Antet de ADR in afara formatului (titlu, data, status, `Supersedes`), numar folosit de doua
   ori, sau o inlocuire scrisa doar in unul din cele doua ADR-uri: `check-decisions.ps1`, pas
   in `verify.ps1`, e rosu (ADR 0024).
+- O nota din `docs/design/` lipsa din index, fara propozitie `Covers:` deasupra primei sectiuni,
+  cu o propozitie `Covers:` care nu numeste nicio cale, sau cu o cale in `Covers:` care nu mai
+  exista in git (un fisier redenumit, sters sau ignorat):
+  `check-design.ps1`, pas in `verify.ps1`, e rosu (ADR 0031). Daca textul notei mai descrie
+  codul nu verifica; pentru asta `/wrap-up` listeaza notele atinse, cu `-Since main` in
+  worktree-ul task-ului.
 - Un ADR sau o regula citate dupa numar gol in `scripts/`, `.claude/skills/`,
   `.claude/agents/` sau `.claude/rules/kit/`, unde intr-un proiect numarul ar insemna altceva:
   `RepoInvariantTests` pica, doar in kit. Forma ceruta e "the kit's ADR NNNN", iar o regula se
@@ -127,8 +133,9 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Un release in afara lui `main`, cu o versiune deja publicata, nu peste cel mai nou titlu din
   CHANGELOG sau sub `<Version>`: `release.ps1` il refuza inainte sa schimbe ceva (ADR 0029).
 
-Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata si daca
-ghidul si README-ul mai explica corect ce fac scripturile (un pas din `/wrap-up`).
+Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata, daca o
+nota de design mai descrie codul pe care il acopera si daca ghidul si README-ul mai explica
+corect ce fac scripturile (pasi din `/wrap-up`).
 
 ## Standalone sau folder intr-un monorepo
 

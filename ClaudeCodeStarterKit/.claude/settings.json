@@ -26,6 +26,7 @@
       "PowerShell(git commit*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-testdata.ps1)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-design.ps1*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mutate.ps1*)",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync.ps1*)",
       "PowerShell(dotnet tool restore*)"

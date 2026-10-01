@@ -7,6 +7,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The kit's rule "Design notes" (ADR 0031): any file may name the project's code and say what a
+  test or a check enforces; how the code works and how its parts fit go only in the design note
+  of its area, which names the files it covers in a `Covers:` sentence and changes with them.
+  `scripts/check-design.ps1`, synced, is a new step of `verify.ps1`: every note is in the index of
+  `docs/design/README.md`, has its Covers sentence, names its files there as paths, and names
+  only files and folders git has. `check-design.ps1 -Since main`, in the task's worktree, lists
+  the notes that cover a code or test file the branch changed, and a new `/wrap-up` step runs it
+  so those notes are read again.
 - The kit's rule "Questions to the owner" (ADR 0030), for every question, not only a design
   choice: a new fact that contradicts an answer the owner gave goes back to the owner as a new
   question, and options put to the owner always come with a recommendation.
@@ -139,6 +147,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `CLAUDE.md` drops its rule "No code structure in docs", which the kit's "Design notes" replaces
+  (ADR 0031), and `docs/design/README.md` says what a note holds, the Covers sentence and the
+  index the check reads, instead of forbidding a note to list classes or methods.
 - The kit's rules "Measured numbers" and "Two readings" (ADR 0030): a design is chosen after a
   measurement on real data, and a design choice with more than one reasonable answer goes to the
   owner with the facts and the options, then is implemented without asking again.

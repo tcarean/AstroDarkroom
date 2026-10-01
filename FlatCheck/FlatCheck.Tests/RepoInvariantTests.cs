@@ -94,19 +94,17 @@ public class RepoInvariantTests
         Assert.True(dup.Length == 0, "Duplicate requirement IDs: " + string.Join(", ", dup));
     }
 
-    /// <summary>Every design note is in the index, and the index names only notes that exist.</summary>
+    /// <summary>
+    /// The design notes and their index exist. The kit's check-design.ps1 checks the index and the
+    /// Covers paths but passes a project without docs/design/; FlatCheck has notes, and CLAUDE.md
+    /// sends every session to them.
+    /// </summary>
     [Fact]
-    public void EveryDesignNote_IsInTheIndex()
+    public void DesignNotes_HaveTheirIndex()
     {
         string dir = Path.Combine(Root, "docs", "design");
-        string index = File.ReadAllText(Path.Combine(dir, "README.md"));
-        string[] notes = Directory.EnumerateFiles(dir, "*.md").Select(Path.GetFileName)
-            .Where(n => n != "README.md").ToArray()!;
-        string[] unlisted = notes.Where(n => !index.Contains("`" + n + "`", StringComparison.Ordinal)).ToArray();
-        Assert.True(unlisted.Length == 0, "Design notes missing from docs/design/README.md: " + string.Join(", ", unlisted));
-        string[] listed = Regex.Matches(index, @"`([a-z0-9-]+\.md)`").Select(m => m.Groups[1].Value).Distinct().ToArray();
-        string[] dangling = listed.Where(n => n != "README.md" && !File.Exists(Path.Combine(dir, n))).ToArray();
-        Assert.True(dangling.Length == 0, "docs/design/README.md names notes that do not exist: " + string.Join(", ", dangling));
+        Assert.True(File.Exists(Path.Combine(dir, "README.md")), "docs/design/README.md is missing");
+        Assert.True(Directory.EnumerateFiles(dir, "*.md").Count() > 1, "docs/design/ holds no design note");
     }
 
     /// <summary>Every validation case names a file the manifest knows, and the IDs are unique.</summary>

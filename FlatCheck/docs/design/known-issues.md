@@ -3,7 +3,9 @@
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): items 5 and 8 are ADR 0013 and ADR 0024 and
 > stay here as numbered pointers, since other notes and tests cite them by number. **Covers:**
-> behaviour that is deliberate or not worth changing; read before "fixing" any of it.
+> behaviour that is deliberate or not worth changing, by pointer in the files its items name:
+> `FitsReader.cs`, `ImageLoader.cs`, `RawReader.cs`, `PreviewReader.cs`, `Metrics.cs`,
+> `Stats.cs`, `Analysis/StructureAnalyzer.cs` and `PngWriter.cs`; read before "fixing" any of it.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

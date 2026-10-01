@@ -5,10 +5,11 @@
 > decisions with their reasons in `docs/decisions/`, and this note keeps the per-file mechanics
 > the code comments do not repeat, plus the result and outcome tables. **Covers:** in full, every
 > file under `FlatCheck.Core/` except, by pointer, `Version.cs`, `ThirdParty.cs` and
-> `PreviewReader.cs`; the console's three files; every file under `FlatCheck.Wpf/` except, by
-> pointer, `Theme/Dark.xaml` and `Views/AboutWindow.xaml`; the two test projects and `Icon/` in
-> full; by pointer, `Directory.Build.props`, `lensfun/`, `flatcheck.py`, `README.md`, `LICENSE`
-> and `docs/`.
+> `PreviewReader.cs`; the console's three files, `FlatCheck/Options.cs`, `FlatCheckCli.cs` and
+> `Program.cs`; every file under `FlatCheck.Wpf/` except, by pointer, `Theme/Dark.xaml` and
+> `Views/AboutWindow.xaml`; the two test projects, `FlatCheck.Tests/` and `FlatCheck.Wpf.Tests/`,
+> and `Icon/` in full; by pointer, `Directory.Build.props`, `lensfun/`, `flatcheck.py`,
+> `README.md`, `LICENSE` and `docs/`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

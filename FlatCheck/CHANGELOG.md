@@ -56,6 +56,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0031: how the code works lives only in the design notes, and the kit's
+  `check-design.ps1`, a new step of the gate, checks that every note is in the index and that
+  every `Covers:` sentence names its files as paths that exist. It found `Report/AgainstReport.cs`
+  in lens-profiles.md and modes-synthetic.md, a file that never existed (the class is in
+  `Runs/AgainstRun.cs`); both now say so. code-map.md, known-issues.md, flat-sources.md,
+  lens-profiles.md, modes-synthetic.md and png-output.md now name as paths the files they named
+  by class or in prose, so `/wrap-up` finds them; `DesignNotes_HaveTheirIndex` keeps the folder. `CLAUDE.md` drops "Code structure in design notes",
+  now the kit's rule "Design notes", and `RepoInvariantTests.EveryDesignNote_IsInTheIndex`,
+  which the check replaces, is removed.
 - The kit's ADR 0030: the kit's rules "Two readings" and "Measured numbers" now hold the
   practice for a design choice with more than one reasonable answer, the kit's new rule
   "Questions to the owner" makes options come with a recommendation and sends a new fact against
@@ -149,7 +158,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - Branch names and clean-up, as in the kit's ADR 0013: a branch is named `claude/` plus its task
   in English, a generated name is renamed before the first commit, a branch merged into `main` is
   deleted with `git branch -d`, and `git branch -D` joins the `ask` list. CLAUDE.md Workflow,
-  `/wrap-up` step 10, `.claude/settings.json`.
+  `/wrap-up` step 11, `.claude/settings.json`.
 
 ## [2.2.0] - 2026-09-23
 

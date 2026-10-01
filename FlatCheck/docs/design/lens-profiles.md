@@ -8,12 +8,13 @@
 > code and the measurements. **Covers:** in full, `FlatCheck.Core/LensProfiles/`
 > (`VignettingModel`, `LensProfile` / `LensCatalog` / `AdobeProfileFile`, `LcpReader`,
 > `LensfunReader`, `ProfileLocator`, `LensIdentification`), `Analysis/SyntheticFlatBuilder.cs`,
-> `Analysis/VignettingComparison.cs`, `Report/SyntheticReport.cs`, `Report/AgainstReport.cs`,
-> the profile block of `Report/StructureReport.cs`, `Runs/SyntheticRun.cs`, `Runs/AgainstRun.cs`,
-> `Runs/StructureRun.cs`, the shooting metadata on `LoadedFrame`, the `lensfun/` folder and the
-> fixtures `LensProfileTestData`; by pointer, the `--synthetic` / `--lenses` / `--against` modes
-> in `FlatCheck/Options.cs` and `FlatCheckCli.cs` (`process.md`), the window's
-> `SyntheticTabViewModel` / `SyntheticView` and `Session/ProfileCatalog.cs`
+> `Analysis/VignettingComparison.cs`, `Report/SyntheticReport.cs`, the profile block of
+> `Report/StructureReport.cs`, `Runs/SyntheticRun.cs`, `Runs/AgainstRun.cs` (with `AgainstReport`),
+> `Runs/StructureRun.cs`, the shooting metadata on `LoadedFrame` (`ImageLoader.cs`), the
+> `lensfun/` folder and the fixtures `LensProfileTestData.cs`; by pointer, the `--synthetic` /
+> `--lenses` / `--against` modes in `FlatCheck/Options.cs` and `FlatCheckCli.cs` (`process.md`),
+> the window's `ViewModels/SyntheticTabViewModel.cs` / `Views/SyntheticView.xaml` and
+> `Session/ProfileCatalog.cs`
 > (`modes-synthetic.md`). Since 2026-09-18 it covers also the structure mode's sixth test, the
 > master's vignetting against the lens profiles (section 11). Measured 2026-09-17 on the
 > author's machine (Windows 10, Lightroom Classic installed, lensfun `data/db` at upstream
