@@ -3,13 +3,14 @@
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
 > CLAUDE.md nor a decision record says (ADR 0051): the layout is in CLAUDE.md ("Layout"), the
 > decisions with their reasons in `docs/decisions/`, and this note keeps the per-file mechanics
-> the code comments do not repeat, plus the result and outcome tables. **Covers:** in full, every
-> file under `FlatCheck.Core/` except, by pointer, `Version.cs`, `ThirdParty.cs` and
-> `PreviewReader.cs`; the console's three files, `FlatCheck/Options.cs`, `FlatCheckCli.cs` and
-> `Program.cs`; every file under `FlatCheck.Wpf/` except, by pointer, `Theme/Dark.xaml` and
-> `Views/AboutWindow.xaml`; the two test projects, `FlatCheck.Tests/` and `FlatCheck.Wpf.Tests/`,
-> and `Icon/` in full; by pointer, `Directory.Build.props`, `lensfun/`, `flatcheck.py`,
-> `README.md`, `LICENSE` and `docs/`.
+> the code comments do not repeat, plus the result and outcome tables. **Covers:** every file
+> under `FlatCheck.Core/` (`Version.cs`, `ThirdParty.cs` and `PreviewReader.cs` only by pointer);
+> the console's three files, `FlatCheck/Options.cs`, `FlatCheckCli.cs` and `Program.cs`; the
+> window's `Interop/`, `Presentation/`, `Session/`, `ViewModels/` and `Views/`; of the two test
+> projects, what their project files set up, `FlatCheck.Tests/FlatCheck.Tests.csproj` and
+> `FlatCheck.Wpf.Tests/FlatCheck.Wpf.Tests.csproj`; and `Icon/`. It only points elsewhere for
+> `Directory.Build.props`, `Theme/Dark.xaml`, `lensfun/`, `flatcheck.py`, `README.md`, `LICENSE`
+> and `docs/`, and describes neither the tests themselves nor the window's `Mvvm/` and `App`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

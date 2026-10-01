@@ -20,6 +20,10 @@ have a Covers sentence of its own; it is checked the same way.
 
 - Every Covers sentence names its files as paths in backticks. A class or a method alone names
   no file: `/wrap-up` finds the notes a change touches through the paths only.
+- It names what the note describes, and no more: a folder only when the note describes its
+  files, a file only when the note says how it works. A file the note merely points at, or a
+  folder it mentions in one line, stays out of the sentence (name it after it), since every
+  path there sends the note to be read again whenever that path changes (the kit's ADR 0032).
 - A path may start at the project root, at a code or test folder of `kit.json`, or at this
   folder (another note); a file name alone is enough when the file is found somewhere in the
   project. `*` and `?` match within one name, and nothing else is a wildcard. Letter case

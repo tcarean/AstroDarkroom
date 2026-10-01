@@ -150,6 +150,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - `CLAUDE.md` drops its rule "No code structure in docs", which the kit's "Design notes" replaces
   (ADR 0031), and `docs/design/README.md` says what a note holds, the Covers sentence and the
   index the check reads, instead of forbidding a note to list classes or methods.
+- `docs/design/README.md`: a Covers sentence names what its note describes, not the folders
+  around it, since every path there has `/wrap-up` list the note again (ADR 0032).
 - The kit's rules "Measured numbers" and "Two readings" (ADR 0030): a design is chosen after a
   measurement on real data, and a design choice with more than one reasonable answer goes to the
   owner with the facts and the options, then is implemented without asking again.
