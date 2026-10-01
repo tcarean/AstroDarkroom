@@ -1,7 +1,7 @@
 # 0006. Rules live in CLAUDE.md, explanations live once in the kit's guide
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; the rules in each project's CLAUDE.md superseded by 0028
 
 ## Context
 

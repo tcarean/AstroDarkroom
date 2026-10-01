@@ -1,7 +1,7 @@
 # 0018. The skills and the agent are the kit's too: values from kit.json, project steps in docs/skills.md
 
 Date: 2026-09-27
-Status: accepted 2026-09-27; the auditor's extra inputs superseded by 0025
+Status: accepted 2026-09-27; the auditor's extra inputs superseded by 0025; settings.json per project superseded by 0028
 Supersedes: 0009 in part (the list of inputs)
 
 ## Context

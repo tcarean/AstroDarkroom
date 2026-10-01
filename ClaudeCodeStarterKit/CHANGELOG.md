@@ -133,6 +133,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- `CLAUDE.md` keeps only the project's own content: the process rules and the workflow moved to
+  the synced `.claude/rules/kit/process.md` (ADR 0028). Every rule has a name and is cited by it
+  in quotes, never by a number; the kit's own two rules are "Core has no UI" and "No code
+  structure in docs". The task's plan maps the old numbers, which older ADRs and CHANGELOG lines
+  still use, to the names. The guide and the READMEs say where each rule lives.
 - The desktop app's worktree option is not used in `photo` (ADR 0027): its sessions started at
   the root of a whole-repository checkout, where no project `CLAUDE.md`, settings or Claude
   hooks load. Task worktrees are made by hand, so the rename of generated branch names is gone

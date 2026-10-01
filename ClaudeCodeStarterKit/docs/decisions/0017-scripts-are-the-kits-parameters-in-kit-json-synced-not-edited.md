@@ -1,7 +1,7 @@
 # 0017. scripts/ is the kit's: parameters in kit.json, copied by sync.ps1, never edited in a project
 
 Date: 2026-09-26
-Status: accepted 2026-09-26; the kit-only file list superseded by 0022; CheckStagedTests superseded by 0023
+Status: accepted 2026-09-26; the kit-only file list superseded by 0022; CheckStagedTests superseded by 0023; the rule's place in CLAUDE.md superseded by 0028
 Supersedes: 0003 in part (the list of steps)
 
 ## Context

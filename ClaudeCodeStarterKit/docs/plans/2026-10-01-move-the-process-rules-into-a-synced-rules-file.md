@@ -252,6 +252,30 @@ The worktree's FlatCheck is red at step 0 from K2 until F1. No FlatCheck commit 
 - Memory: `process-decisions-2026-09-30.md` marks task 3 as merged, and adds a pointer to the rules
   file.
 
+## Measurement (2026-10-01, before the old copies were deleted)
+
+`/context` in the desktop app shows "Memory files" only as a total (4.5k tokens in this session),
+without file names, so the owner had nothing to paste. The session transcripts
+(`~/.claude/projects/<folder>/<session>.jsonl`) record each instruction file loaded, with its
+path: at start as an `instructions` attachment, later as `nested_memory`. Claude Code 2.1.284.
+
+- (c) This session, started in `E:\Photografie\Code\ClaudeCodeStarterKit` (main checkout):
+  - at start: `Project ...\ClaudeCodeStarterKit\CLAUDE.md` (7950 chars) and
+    `AutoMem ...\memory\MEMORY.md`;
+  - after the first read of a file in `<wt>\FlatCheck`: `nested_memory <wt>\FlatCheck\CLAUDE.md`
+    and `nested_memory <wt>\FlatCheck\.claude\rules\kit\process.md`.
+- Baseline, a new session started in `E:\Photografie\Code\FlatCheck` (main checkout, no rules
+  file yet): `Project E:\Photografie\Code\FlatCheck\CLAUDE.md` (12123 chars) and
+  `AutoMem ...\MEMORY.md`.
+- (a) A new session started in `<wt>\FlatCheck`, session `3e5dc1ad`, cwd
+  `E:\Photografie\Code\ClaudeCodeStarterKit\.claude\worktrees\Move-the-process-rules-into-a-synced-rules-file\FlatCheck`:
+  - `Project <wt>\FlatCheck\CLAUDE.md` (12123 chars)
+  - `Project <wt>\FlatCheck\.claude\rules\kit\process.md` (6253 chars)
+  - `AutoMem ...\MEMORY.md` (3406 chars)
+
+(b), a session started in `<wt>\ClaudeCodeStarterKit`, was not run separately: (a) already shows
+the loading rule, and the kit's rules file has the same bytes.
+
 ## Verification
 
 - The kit's `verify.ps1` is green in the worktree. It covers the new SyncTests and HookTests and the

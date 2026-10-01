@@ -6,7 +6,9 @@ gate de verificare, cerinte cu ID, ADR-uri, cifre de validare citite de teste, h
 
 Ghidul de referinta cu motivatia fiecarei piese e `GHID.md`. E sursa principala si se editeaza
 direct; documentul de pe claude.ai din care a pornit e doar istoric.
-Impartirea e simpla: `CLAUDE.md` tine regulile, `GHID.md` tine explicatiile. Ghidul exista o
+Impartirea e simpla: regulile stau in `.claude/rules/kit/process.md` (cele de proces, ale
+kit-ului, aceleasi in fiecare proiect) si in `CLAUDE.md` (ale proiectului), `GHID.md` tine
+explicatiile. Ghidul exista o
 singura data, aici in kit, nu se copiaza in proiecte; fiecare proiect trimite la el din
 `CLAUDE.md` si din README. Daca un proiect paraseste vreodata repo-ul `photo`, ia atunci o copie
 a ghidului cu el. Licenta kit-ului, si a scripturilor pe care le copiaza in proiecte, e
@@ -29,8 +31,9 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
    separat, fara kit alaturi). `rename.ps1` a schimbat deja numele solutiei acolo. Din `scripts/`
    sterge `rename.ps1`, `install-hooks.ps1`, `hooks/pre-commit`, `hooks/pre-merge-commit` si
    `hooks/commit-msg`, care raman doar in kit; restul folderului nu se editeaza niciodata in proiect (vezi "Ce e impus mecanic").
-   La fel `.claude/skills/` si `.claude/agents/`: ce are proiectul de adaugat la un skill se
-   scrie in `docs/skills.md`, in sectiunea skill-ului.
+   La fel `.claude/skills/`, `.claude/agents/` si `.claude/rules/kit/`: ce are proiectul de
+   adaugat la un skill se scrie in `docs/skills.md`, in sectiunea skill-ului, iar regulile lui
+   proprii in `CLAUDE.md`, fiecare cu un nume.
 4. Hook-urile git (`pre-commit`, `pre-merge-commit` si `commit-msg`). Intr-un repo separat, dupa `git init`,
    ruleaza scriptul de mai jos; el seteaza `core.hooksPath` la `scripts/hooks`. Intr-un folder
    din repo-ul `photo` nu rulezi nimic, nici `git init`: hook-urile sunt deja instalate la
@@ -58,7 +61,8 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 
 | Cale | Rol |
 | --- | --- |
-| `CLAUDE.md` | comenzi, reguli, pointeri; sub 200 de linii, in engleza |
+| `CLAUDE.md` | comenzi, regulile proiectului, pointeri; impreuna cu fisierul de reguli sub 200 de linii, in engleza |
+| `.claude/rules/kit/process.md` | regulile de proces ale kit-ului, cu nume; Claude Code il incarca odata cu `CLAUDE.md`; identic in fiecare proiect |
 | `docs/requirements.md` | cerinte cu ID si status; sursa adevarului pentru comportament |
 | `docs/decisions/` | un ADR per decizie |
 | `docs/validation.md` + `.json` | cifre de acceptanta; JSON-ul e citit de `ValidationTests` |
@@ -66,11 +70,11 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `tests/testdata/` | fixtures in repo + manifest cu hash; fisierele mari in `large/` (ignorat de git) |
 | `kit.json` | valorile proiectului pentru scripturile, skill-urile si agentul comune: solutia, folderele de cod si de teste, datele de test, ce publica un release, ce mai poate citi auditorul, unde e kit-ul |
 | `docs/skills.md` | adaugirile proiectului la skill-urile kit-ului, o sectiune per skill; fiecare skill il citeste inainte de primul pas |
-| `scripts/verify.ps1` | gate-ul unic: scripturi identice cu kit-ul, manifest, antetele ADR-urilor (`check-decisions.ps1`), restore, format, build strict, teste |
-| `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/` si `.claude/agents/` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
-| `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi |
+| `scripts/verify.ps1` | gate-ul unic: fisiere comune si chei de proces identice cu ale kit-ului, manifest, antetele ADR-urilor (`check-decisions.ps1`), restore, format, build strict, teste |
+| `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` si cheile de proces din `.claude/settings.json` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
+| `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi; tine singura lista a folderelor comune |
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
-| `.claude/settings.json` | permisiuni si hooks, versionate; `settings.local.json` ramane local |
+| `.claude/settings.json` | permisiuni, hooks si `attribution`, versionate; `hooks`, `ask`, `deny`, intrarile git din `allow` si `attribution` sunt ale kit-ului, restul lui `allow` al proiectului; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
 | `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`, care citeste si ADR-urile kit-ului; un agent nou apare dupa repornirea sesiunii |
@@ -79,24 +83,28 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `.github/workflows/ci.yml`, `bitbucket-pipelines.yml` | CI, acelasi script |
 | `monorepo/` | hook si CI pentru cazul in care kit-ul e un folder intr-un repo mai mare |
 
-## Ce e impus mecanic, nu doar scris in CLAUDE.md
+## Ce e impus mecanic, nu doar scris in reguli
 
 - Commit fara `verify.ps1` verde: refuzat de git pre-commit si de hook-ul Claude Code; `--no-verify` blocat.
 - Merge fara conflicte al carui rezultat nu trece `verify.ps1`: refuzat de git pre-merge-commit,
   care ruleaza acelasi gate ca pre-commit (ADR 0022).
-- `scripts/`, `.claude/skills/` sau `.claude/agents/` modificat intr-un proiect, nu in kit:
-  gate-ul e rosu la pasul 0 (`sync.ps1 -Check`), deci commit-ul e refuzat, iar hook-ul Stop nu
-  inchide tura. Sursa e kit-ul; `sync.ps1` copiaza. Dupa o schimbare in kit, primul commit din
-  fiecare proiect cere intai `sync.ps1` (ADR 0017, ADR 0018).
+- `scripts/`, `.claude/skills/`, `.claude/agents/` sau `.claude/rules/kit/` modificat intr-un
+  proiect, nu in kit: gate-ul e rosu la pasul 0 (`sync.ps1 -Check`), deci commit-ul e refuzat,
+  iar hook-ul Stop nu inchide tura. Sursa e kit-ul; `sync.ps1` copiaza. Dupa o schimbare in kit,
+  primul commit din fiecare proiect cere intai `sync.ps1` (ADR 0017, ADR 0018, ADR 0028).
+- O cheie de proces din `.claude/settings.json` (`hooks`, `ask`, `deny`, intrarile git din
+  `allow`, `attribution`) diferita de a kit-ului: gate-ul e rosu la pasul 0 si numeste cheia;
+  `sync.ps1` o rescrie, fara sa atinga restul fisierului (ADR 0028).
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
 - Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.
 - Antet de ADR in afara formatului (titlu, data, status, `Supersedes`), numar folosit de doua
   ori, sau o inlocuire scrisa doar in unul din cele doua ADR-uri: `check-decisions.ps1`, pas
   in `verify.ps1`, e rosu (ADR 0024).
-- Un ADR sau o regula citate dupa numar gol in `scripts/`, `.claude/skills/` sau
-  `.claude/agents/`, unde intr-un proiect numarul ar insemna altceva: `RepoInvariantTests`
-  pica, doar in kit. Forma ceruta e "the kit's ADR NNNN" (ADR 0025).
+- Un ADR sau o regula citate dupa numar gol in `scripts/`, `.claude/skills/`,
+  `.claude/agents/` sau `.claude/rules/kit/`, unde intr-un proiect numarul ar insemna altceva:
+  `RepoInvariantTests` pica, doar in kit. Forma ceruta e "the kit's ADR NNNN", iar o regula se
+  citeaza pe nume, intre ghilimele (ADR 0025, ADR 0028).
 - Tura Claude Code care a editat `src/` sau `tests/` fara verify verde dupa ultima editare:
   hook-ul Stop o refuza si trimite la `/wrap-up`.
 - Hook-urile Claude Code judeca proiectul in care se lucreaza, si intr-un worktree: hook-ul de
@@ -121,8 +129,8 @@ ghidul si README-ul mai explica corect ce fac scripturile (un pas din `/wrap-up`
 
 ## Standalone sau folder intr-un monorepo
 
-Ambele merg. Claude Code ia ca radacina folderul in care e pornit, deci CLAUDE.md, settings,
-hooks si skills sunt per folder. Intr-un monorepo, hook-ul de pre-commit ruleaza `verify.ps1`
+Ambele merg. Claude Code ia ca radacina folderul in care e pornit, deci CLAUDE.md,
+`.claude/rules/`, settings, hooks si skills sunt per folder. Intr-un monorepo, hook-ul de pre-commit ruleaza `verify.ps1`
 doar in proiectele atinse de fisierele din staging, iar un proiect fara `scripts/verify.ps1`
 nu e verificat, deci proiectele existente pot adopta gate-ul pe rand. Detalii in
 `monorepo/README.md`.
