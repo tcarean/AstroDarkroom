@@ -50,11 +50,12 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
 - **Shared folders.** `scripts/`, `.claude/skills/`, `.claude/agents/` and `.claude/rules/kit/`
   are the kit's, and so are the process keys of `.claude/settings.json`: `hooks`, the `ask` and
   `deny` lists, the `allow` entries for git, `attribution`, and `disableAllHooks` and
-  `permissions.defaultMode`, which stay unset (the kit's ADRs 0017, 0018 and 0028). They are the same in the kit and in every project made from it, except `rename.ps1`,
-  `install-hooks.ps1` and the three git hooks, which stay in the kit. A bug or a feature there
-  is fixed in the kit, then `scripts/sync.ps1` copies it to every project, one commit each on
-  the task's branch. Never edit them in a project; what differs per project goes in `kit.json`
-  (values), `docs/skills.md` (skill steps), `CLAUDE.md` (rules) and the other `allow` entries.
+  `permissions.defaultMode`, which stay unset (the kit's ADRs 0017, 0018 and 0028). They are the
+  same in the kit and in every project made from it, except `rename.ps1`, `install-hooks.ps1`
+  and the three git hooks, which stay in the kit. A bug or a feature there is fixed in the kit,
+  then `scripts/sync.ps1` copies it to every project, one commit each on the task's branch.
+  Never edit them in a project; what differs per project goes in `kit.json` (values),
+  `docs/skills.md` (skill steps), `CLAUDE.md` (rules) and the other `allow` entries.
   `verify.ps1` is red on any drift, and the Stop hook refuses a turn that edited the folders
   outside the kit.
 
