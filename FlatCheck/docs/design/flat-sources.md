@@ -4,9 +4,11 @@
 > then cut on 2026-09-27 to what neither CLAUDE.md nor a decision record says (ADR 0051): the
 > depth verdicts of these sessions are also the acceptance figures of ADR 0030, 0031 and 0032,
 > the printed reading of the sign is ADR 0031, and the two tool caveats point at ADR 0017 and
-> ADR 0041. **Covers:** the README's advice on how to shoot flats, the vignetting-depth
-> reference used by the sixth structure test and by `--against`, and the reading of a depth
-> verdict's sign. **Measured** on the sessions under `E:\Photografie\Astro\Flats and Darks` -
+> ADR 0041. **Covers:** the README's advice on how to shoot flats (`README.md`), the
+> vignetting-depth reference used by the sixth structure test and by `--against`
+> (`Analysis/VignettingComparison.cs` and `Runs/AgainstRun.cs`, by pointer), and the reading of
+> a depth verdict's sign (`Stats.DepthVerdict` in `Stats.cs`).
+> **Measured** on the sessions under `E:\Photografie\Astro\Flats and Darks` -
 > `Tokina\ISO400\f2.8-sky-no-difuser` (2026-09-16),
 > `Tokina\ISO400\f2.8-tableta-lipita-coperti-7-foi` and `...-15-foi` (2026-09-18),
 > `Tokina\ISO400\f2.8-tableta-lipita-hartie-3-foi`, `...-4-foi` and `...-3-foi-rotiri-perfecte`

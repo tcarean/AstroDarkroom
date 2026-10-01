@@ -5,7 +5,7 @@
 > verification are ADR 0008, the fixed caps ADR 0012, why files stay on the automatic scale ADR
 > 0036, the two maps of `--ratio` ADR 0019. **Covers:** `PngWriter.cs` (`EncodeResidualMap`,
 > `MapRange`, `FixedCapsPct`), `Report/RunReport.cs` (`MapScaleLabel`, `MapLegend`); the
-> encoder's bytes and `PngWriterTests` by pointer.
+> encoder's bytes and `PngWriterTests.cs` by pointer.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

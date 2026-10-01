@@ -6,7 +6,8 @@
 > `lens-profiles.md`, and this note keeps the mechanics of the report sentences, the lens list
 > and the Sintetic tab. **Covers:** in full, `Report/SyntheticReport.cs` (the format and request
 > notes, `LensDetails`), `Runs/SyntheticRun.cs` (the mount choice, the shooting data), the
-> Sintetic tab (`SyntheticTabViewModel`, `SyntheticView`); by pointer, `LensProfiles/`,
+> Sintetic tab (`ViewModels/SyntheticTabViewModel.cs`, `Views/SyntheticView.xaml`); by pointer,
+> `LensProfiles/`,
 > `Analysis/SyntheticFlatBuilder.cs`, `Runs/AgainstRun.cs` (with `AgainstReport`).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in

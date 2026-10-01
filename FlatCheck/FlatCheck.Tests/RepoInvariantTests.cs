@@ -94,6 +94,19 @@ public class RepoInvariantTests
         Assert.True(dup.Length == 0, "Duplicate requirement IDs: " + string.Join(", ", dup));
     }
 
+    /// <summary>
+    /// The design notes and their index exist. The kit's check-design.ps1 checks the index and the
+    /// Covers paths but passes a project without docs/design/; FlatCheck has notes, and CLAUDE.md
+    /// sends every session to them.
+    /// </summary>
+    [Fact]
+    public void DesignNotes_HaveTheirIndex()
+    {
+        string dir = Path.Combine(Root, "docs", "design");
+        Assert.True(File.Exists(Path.Combine(dir, "README.md")), "docs/design/README.md is missing");
+        Assert.True(Directory.EnumerateFiles(dir, "*.md").Count() > 1, "docs/design/ holds no design note");
+    }
+
     /// <summary>Every validation case names a file the manifest knows, and the IDs are unique.</summary>
     [Fact]
     public void EveryValidationCase_NamesAManifestFile()
