@@ -7,7 +7,7 @@
 > and the Sintetic tab. **Covers:** in full, `Report/SyntheticReport.cs` (the format and request
 > notes, `LensDetails`), `Runs/SyntheticRun.cs` (the mount choice, the shooting data), the
 > Sintetic tab (`SyntheticTabViewModel`, `SyntheticView`); by pointer, `LensProfiles/`,
-> `Analysis/SyntheticFlatBuilder.cs`, `Report/AgainstReport.cs`, `Runs/AgainstRun.cs`.
+> `Analysis/SyntheticFlatBuilder.cs`, `Runs/AgainstRun.cs` (with `AgainstReport`).
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
 > `README.md` here maps them. A change to the code this describes means this note is updated in
 > the same task, or deleted with the decision it explains.

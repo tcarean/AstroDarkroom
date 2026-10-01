@@ -8,8 +8,8 @@
 > code and the measurements. **Covers:** in full, `FlatCheck.Core/LensProfiles/`
 > (`VignettingModel`, `LensProfile` / `LensCatalog` / `AdobeProfileFile`, `LcpReader`,
 > `LensfunReader`, `ProfileLocator`, `LensIdentification`), `Analysis/SyntheticFlatBuilder.cs`,
-> `Analysis/VignettingComparison.cs`, `Report/SyntheticReport.cs`, `Report/AgainstReport.cs`,
-> the profile block of `Report/StructureReport.cs`, `Runs/SyntheticRun.cs`, `Runs/AgainstRun.cs`,
+> `Analysis/VignettingComparison.cs`, `Report/SyntheticReport.cs`, the profile block of
+> `Report/StructureReport.cs`, `Runs/SyntheticRun.cs`, `Runs/AgainstRun.cs` (with `AgainstReport`),
 > `Runs/StructureRun.cs`, the shooting metadata on `LoadedFrame`, the `lensfun/` folder and the
 > fixtures `LensProfileTestData`; by pointer, the `--synthetic` / `--lenses` / `--against` modes
 > in `FlatCheck/Options.cs` and `FlatCheckCli.cs` (`process.md`), the window's

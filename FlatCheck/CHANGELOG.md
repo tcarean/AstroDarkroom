@@ -56,6 +56,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0031: how the code works lives only in the design notes, and the kit's
+  `check-design.ps1`, a new step of the gate, checks that every note is in the index and that
+  every path its `Covers:` sentence names exists. It found `Report/AgainstReport.cs` in
+  lens-profiles.md and modes-synthetic.md, a file that never existed (the class is in
+  `Runs/AgainstRun.cs`); both now say so. `CLAUDE.md` drops "Code structure in design notes",
+  now the kit's rule "Design notes", and `RepoInvariantTests.EveryDesignNote_IsInTheIndex`,
+  which the check replaces, is removed.
 - The kit's ADR 0030: the kit's rules "Two readings" and "Measured numbers" now hold the
   practice for a design choice with more than one reasonable answer, the kit's new rule
   "Questions to the owner" makes options come with a recommendation and sends a new fact against

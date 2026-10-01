@@ -2,7 +2,7 @@
 # verify.ps1 - the gate: the one definition of "green" for this project.
 #
 # WHAT IT DOES
-#   Runs seven checks in order and stops at the first one that fails:
+#   Runs eight checks in order and stops at the first one that fails:
 #     0. kit files           the shared folders (scripts/, .claude/skills/, .claude/agents/,
 #                            .claude/rules/kit/) are byte-identical with the kit's, and the
 #                            process keys of .claude/settings.json say what the kit's say
@@ -13,11 +13,14 @@
 #                            with the SHA-256 hash written in the manifest (check-testdata.ps1)
 #     2. decisions           the headers of docs/decisions/ are well formed and every
 #                            supersession is recorded on both sides (check-decisions.ps1)
-#     3. restore             downloads the NuGet packages; in CI (locked mode) it also fails
+#     3. design notes        every note in docs/design/ is in its index and has a Covers
+#                            sentence whose paths name files or folders that exist
+#                            (check-design.ps1)
+#     4. restore             downloads the NuGet packages; in CI (locked mode) it also fails
 #                            when a packages.lock.json does not match
-#     4. format              fails if dotnet format would change any file (it only checks)
-#     5. build               builds the solution; every warning counts as an error
-#     6. test                runs the tests, on exactly what step 5 built; kit.json's
+#     5. format              fails if dotnet format would change any file (it only checks)
+#     6. build               builds the solution; every warning counts as an error
+#     7. test                runs the tests, on exactly what step 6 built; kit.json's
 #                            testFilter, when set, is passed to `dotnet test --filter`
 #   It does not touch the code. Locally, restore may update a packages.lock.json after a
 #   package change; commit it with that change. After a green run with tests it writes
@@ -100,6 +103,7 @@ try {
     # previous step produced instead of doing it again.
     Invoke-Step 'test data manifest' { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-testdata.ps1') }
     Invoke-Step 'decisions'          { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-decisions.ps1') }
+    Invoke-Step 'design notes'       { & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'check-design.ps1') }
     Invoke-Step 'restore'          { dotnet restore $sln --nologo -v q }
     Invoke-Step 'format'             { dotnet format $sln --verify-no-changes --no-restore -v q }
     Invoke-Step 'build'              { dotnet build $sln -c $Configuration --no-restore --nologo -v q -warnaserror }

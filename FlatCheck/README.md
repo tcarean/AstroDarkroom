@@ -1455,8 +1455,10 @@ repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo). Pe scu
 mecanic:
 
 - **`scripts/verify.ps1` e gate-ul**: scripturile identice cu ale kit-ului, manifestul datelor
-  de test, restore, `dotnet format` (doar verifică), build cu avertismentele ca erori, toate
-  testele în afară de cele de validare.
+  de test, antetele ADR-urilor (`check-decisions.ps1`), notele de design (`check-design.ps1`:
+  fiecare e în index și fiecare cale din propoziția ei `Covers:` există), restore,
+  `dotnet format` (doar verifică), build cu avertismentele ca erori, toate testele în afară de
+  cele de validare.
   Cam 3 minute. Îl rulează hook-ul git `pre-commit` de la rădăcina repo-ului la orice commit care
   atinge FlatCheck, hook-ul git `pre-merge-commit` la orice merge fără conflicte care aduce
   schimbări în FlatCheck, hook-ul Claude Code înainte de orice `git commit` al modelului, și
@@ -1491,7 +1493,9 @@ mecanic:
   spune de unde vine fiecare cifră.
 - **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
   2026-09-25; `CLAUDE.md` ține acum doar regulile proiectului; cele de proces sunt ale kit-ului, în
-  `.claude/rules/kit/process.md`), cu indexul în `docs/design/README.md`.
+  `.claude/rules/kit/process.md`), cu indexul în `docs/design/README.md`. Fiecare notă spune
+  într-o propoziție `Covers:` ce fișiere descrie și se schimbă odată cu ele; la `/wrap-up`,
+  `scripts/check-design.ps1 -Since main` arată notele atinse de branch, ca să fie recitite.
 - **Versiunea** o crește omul, în `Directory.Build.props`, oricând, și per feature. Un release se
   face pe `main`, cu `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul, păstrează
   versiunea pusă deja de om (sau o scrie, dacă e mai mare), închide secțiunea din CHANGELOG și

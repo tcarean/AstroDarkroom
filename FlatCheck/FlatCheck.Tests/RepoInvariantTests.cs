@@ -94,21 +94,6 @@ public class RepoInvariantTests
         Assert.True(dup.Length == 0, "Duplicate requirement IDs: " + string.Join(", ", dup));
     }
 
-    /// <summary>Every design note is in the index, and the index names only notes that exist.</summary>
-    [Fact]
-    public void EveryDesignNote_IsInTheIndex()
-    {
-        string dir = Path.Combine(Root, "docs", "design");
-        string index = File.ReadAllText(Path.Combine(dir, "README.md"));
-        string[] notes = Directory.EnumerateFiles(dir, "*.md").Select(Path.GetFileName)
-            .Where(n => n != "README.md").ToArray()!;
-        string[] unlisted = notes.Where(n => !index.Contains("`" + n + "`", StringComparison.Ordinal)).ToArray();
-        Assert.True(unlisted.Length == 0, "Design notes missing from docs/design/README.md: " + string.Join(", ", unlisted));
-        string[] listed = Regex.Matches(index, @"`([a-z0-9-]+\.md)`").Select(m => m.Groups[1].Value).Distinct().ToArray();
-        string[] dangling = listed.Where(n => n != "README.md" && !File.Exists(Path.Combine(dir, n))).ToArray();
-        Assert.True(dangling.Length == 0, "docs/design/README.md names notes that do not exist: " + string.Join(", ", dangling));
-    }
-
     /// <summary>Every validation case names a file the manifest knows, and the IDs are unique.</summary>
     [Fact]
     public void EveryValidationCase_NamesAManifestFile()

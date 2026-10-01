@@ -31,6 +31,8 @@ It is not an image processor and it never decides what a shape on a map is.
   `dotnet test FlatCheck.sln -c Release --filter "Category=Validation"` with
   `FLATCHECK_TESTDATA_LARGE` pointing at the masters
 - Test data hashes after an intentional change: `scripts/check-testdata.ps1 -Update`
+- Design notes a branch touched (the index and Covers paths are a gate step):
+  `scripts/check-design.ps1 -Since main`
 - Mutation score of one core file: `scripts/mutate.ps1 -Mutate "**/Metrics.cs"`
 - Release (verify, version in `Directory.Build.props`, CHANGELOG, publish; no commit, no tag):
   `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
@@ -87,8 +89,6 @@ a kit rule names it.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.
-- **Code structure in design notes.** Do not describe code structure in this file; it goes
-  stale. It goes in `docs/design/`.
 - **Ratios.** Every metric is a ratio, so ISO and gain cancel. A metric that is not
   scale-invariant is a design smell. Thresholds are empirical rules of thumb in `Th`, never
   literals in code or text.
