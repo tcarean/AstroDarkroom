@@ -28,12 +28,12 @@ FITS and PNG and the standard of evidence a third package would have to meet are
 ## Versioning
 
 ADR 0039 holds the whole of it, amended by ADR 0047 (the version is declared once, in
-`Directory.Build.props`; the frozen `flatcheck.py` is no longer synchronised): the banner on
-line 1 of every run and why there is no `--version` flag, `VersionInfo` reading
+`Directory.Build.props`; the frozen `flatcheck.py` is no longer synchronised): the banner on line 1
+of every run and why there is no `--version` flag, `VersionInfo` reading
 `AssemblyInformationalVersion` with no literal, the scrub to `flatcheck <VERSIUNE>` in
 `GoldenOutputTests.RunCli`, and what fails when the plumbing moves. ADR 0042 settles the
-machine-readable case. The owner bumps, never the assistant (the rule "Version and year are the owner's"). Guards: `VersionTests`,
-the golden files.
+machine-readable case. The owner bumps, never the assistant (the kit's rule "Version and year are
+the owner's"). Guards: `VersionTests`, the golden files.
 
 ## Licensing
 

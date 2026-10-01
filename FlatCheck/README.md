@@ -1492,10 +1492,12 @@ mecanic:
 - **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
   2026-09-25; `CLAUDE.md` ține acum doar regulile proiectului; cele de proces sunt ale kit-ului, în
   `.claude/rules/kit/process.md`), cu indexul în `docs/design/README.md`.
-- **Versiunea** o crește omul, prin `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul,
-  scrie versiunea în `Directory.Build.props`, închide secțiunea din
-  CHANGELOG și publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); commit-ul
-  și tag-ul `flatcheck-vX.Y.Z` rămân ai omului.
+- **Versiunea** o crește omul, în `Directory.Build.props`, oricând, și per feature. Un release se
+  face pe `main`, cu `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul, păstrează
+  versiunea pusă deja de om (sau o scrie, dacă e mai mare), închide secțiunea din CHANGELOG și
+  publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); refuză o versiune
+  deja publicată sau sub cea din `Directory.Build.props`. Commit-ul și tag-ul `flatcheck-vX.Y.Z`
+  rămân ai omului.
 - În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`,
   din `.claude/skills/`; hook-urile din `.claude/settings.json` nu lasă o tură să se încheie cu
   cod editat și neverificat.

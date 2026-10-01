@@ -56,6 +56,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0029: the rule "Version and year are the owner's" is the kit's now, so it left
+  `CLAUDE.md`. `release.ps1` runs only on `main` and releases the version the owner already set
+  in `Directory.Build.props` (2.3.0, above the newest heading, 2.2.0) instead of refusing it;
+  `/release` checks that HEAD did not move and proposes a commit limited to the two files it
+  changed. `git tag` asks the owner first.
 - The kit's ADR 0028: the process rules FlatCheck shares with the kit come from the kit's
   `.claude/rules/kit/process.md`, synced like `scripts/`, and `CLAUDE.md` keeps FlatCheck's own,
   each with a name instead of a number ("Ratios", "Golden files", ...), saying which kit rule it

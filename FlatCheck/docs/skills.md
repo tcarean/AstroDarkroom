@@ -42,8 +42,6 @@ are in `kit.json`, not here.
 
 ## /release
 
-- At step 2: the rule "Version and year are the owner's": the owner chooses the version;
-  propose, never bump on your own.
 - At step 3: ask for `/validate` whether or not a formula moved; a release is the moment a
   stale figure on the real masters gets noticed.
 - At step 5: the console is published as the single copyable `flatcheck.exe` under `console/`
