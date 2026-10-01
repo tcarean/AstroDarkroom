@@ -56,6 +56,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0030: the kit's rules "Two readings" and "Measured numbers" now say what
+  FlatCheck's "Discuss before designing" said (a design choice with more than one reasonable
+  answer is measured, put to the owner with the facts and the options, and not asked again once
+  answered), so that rule left `CLAUDE.md`, and "Measured on the masters" keeps only which data
+  are real here. `/new-feature` goes on without re-asking after the owner's yes.
 - The kit's ADR 0029: the rule "Version and year are the owner's" is the kit's now, so it left
   `CLAUDE.md`. `release.ps1` runs only on `main` and releases the version the owner already set
   in `Directory.Build.props` (2.3.0, above the newest heading, 2.2.0) instead of refusing it;

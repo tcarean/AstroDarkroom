@@ -75,11 +75,8 @@ a kit rule names it.
 - **Package notices** (extends the kit's rule "Packages"). A package also needs an entry in
   `THIRD-PARTY-NOTICES.md` with its GPLv3 compatibility argued, and one in `ThirdParty.cs`
   (`ThirdPartyTests` enforces both). The FITS reader and the PNG encoder stay hand-rolled.
-- **Measured on the masters** (extends the kit's rule "Measured numbers"). A design is chosen
-  after a measurement on the real masters (`docs/validation.md` lists them).
-- **Discuss before designing** (extends the kit's rule "Two readings"). Present the measured facts
-  and the decisions to take, wait for them, then implement without re-asking (the owner's
-  standing instruction).
+- **Measured on the masters** (extends the kit's rule "Measured numbers"). Here the real data are
+  the masters `docs/validation.md` lists.
 - **Languages** (varies the kit's rule "Languages", ADR 0006). English in everything the model
   reads or writes about the process: docs, tests of invariants, scripts, commits, CHANGELOG.
   Romanian in everything the user sees: CLI text, `--help`, window labels, `README.md`, and in

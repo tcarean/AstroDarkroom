@@ -23,12 +23,15 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
 - **Packages.** No new NuGet package without asking. Every package in
   `Directory.Packages.props` has a "why".
 - **Measured numbers.** Numbers are measured, not guessed. A validation claim comes with the
-  pasted output that shows it.
+  pasted output that shows it. A design is chosen after a measurement on real data (the kit's
+  ADR 0030).
 - **Version and year are the owner's.** Never bump the version and never roll the copyright
   year on your own; both change only at the owner's word. Say when a change seems to warrant a
   bump (the kit's ADR 0029).
 - **Two readings.** Two readings of a task that lead to different work: ask. Otherwise decide,
-  and state the assumption.
+  and state the assumption. A design choice with more than one reasonable answer: measure,
+  present the facts and the options, and wait; once answered, implement without asking again
+  (the kit's ADR 0030).
 - **CHANGELOG.** A change a reader of the version history cares about adds a line under
   `[Unreleased]` in `CHANGELOG.md` (Added, Changed, Fixed, Removed; `Internal` for a refactor or
   a process change worth knowing about). A review follow-up, a test-only change, a comment or
