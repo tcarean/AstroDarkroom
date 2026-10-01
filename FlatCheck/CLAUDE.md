@@ -76,7 +76,10 @@ a kit rule names it.
   `THIRD-PARTY-NOTICES.md` with its GPLv3 compatibility argued, and one in `ThirdParty.cs`
   (`ThirdPartyTests` enforces both). The FITS reader and the PNG encoder stay hand-rolled.
 - **Measured on the masters** (extends the kit's rule "Measured numbers"). Here the real data are
-  the masters `docs/validation.md` lists.
+  the masters and raws listed in `docs/validation.md`, and for `--light` a calibrated light.
+- **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
+  choice with more than one reasonable answer, goes to the owner first: the measured facts, the
+  decisions to take and a recommendation; then wait (the owner's standing instruction).
 - **Languages** (varies the kit's rule "Languages", ADR 0006). English in everything the model
   reads or writes about the process: docs, tests of invariants, scripts, commits, CHANGELOG.
   Romanian in everything the user sees: CLI text, `--help`, window labels, `README.md`, and in
