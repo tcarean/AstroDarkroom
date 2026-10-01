@@ -11,7 +11,8 @@
 #   which finds the project a file or folder belongs to (the Claude Code hooks use it, the
 #   kit's ADR 0020), Get-KitShell, the PowerShell to start another script with, and
 #   Get-KitSharedFolders, the one list of the folders that are the kit's in every project
-#   (sync.ps1 mirrors them, the Stop hook guards them; the kit's ADR 0028).
+#   (sync.ps1 mirrors them, the Stop hook guards them; the kit's ADR 0028), with
+#   Get-KitSharedFolderNames, the same list as both scripts' messages print it.
 #   A missing kit.json, or a missing required key, is an error with the key named: a project
 #   that has scripts/ must say what it is; nothing is guessed from the folder layout.
 #
@@ -122,6 +123,11 @@ function Find-KitProject([string]$Path, [string]$Marker = 'kit.json') {
 # own beside it.
 function Get-KitSharedFolders {
     return @('scripts', '.claude/skills', '.claude/agents', '.claude/rules/kit')
+}
+
+# The shared folders as messages name them: "scripts/, .claude/skills/, ...".
+function Get-KitSharedFolderNames {
+    return (@(Get-KitSharedFolders) | ForEach-Object { $_ + '/' }) -join ', '
 }
 
 # The PowerShell running this script (powershell.exe 5.1 or pwsh), to start another script

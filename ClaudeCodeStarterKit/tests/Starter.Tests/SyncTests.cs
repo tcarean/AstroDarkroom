@@ -227,6 +227,114 @@ public sealed class SyncTests : IDisposable
         Assert.Equal(0, RunSync(_project, "-Check").ExitCode);
     }
 
+    /// <summary>The keys that switch the hooks or the prompts off are the kit's too, and the kit leaves them unset.</summary>
+    [Fact]
+    public void Settings_KeysThatSwitchTheGateOff_AreNamedAndRemoved()
+    {
+        EditSettings(s =>
+        {
+            s["disableAllHooks"] = true;
+            s["permissions"]!["defaultMode"] = "bypassPermissions";
+        });
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("differs  .claude/settings.json: disableAllHooks", output);
+        Assert.Contains("differs  .claude/settings.json: permissions.defaultMode", output);
+
+        Assert.Equal(0, RunSync(_project).ExitCode);
+        JsonObject settings = ReadSettings(_project);
+        Assert.False(settings.ContainsKey("disableAllHooks"));
+        Assert.False(settings["permissions"]!.AsObject().ContainsKey("defaultMode"));
+    }
+
+    /// <summary>Claude Code's colon form, "Bash(git:*)", is a git entry like "Bash(git status*)".</summary>
+    [Theory]
+    [InlineData("Bash(git:*)")]
+    [InlineData("PowerShell(git:*)")]
+    [InlineData("Bash(git switch:*)")]
+    public void Settings_GitAllowEntryInAnyForm_IsTheKits(string entry)
+    {
+        EditSettings(s => s["permissions"]!["allow"]!.AsArray().Add(entry));
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("differs  .claude/settings.json: permissions.allow", output);
+    }
+
+    /// <summary>Objects compare by what they hold: a hook written with its properties in another order is the same hook.</summary>
+    [Fact]
+    public void Settings_PropertyOrderInsideTheHooks_DoesNotCount()
+    {
+        EditSettings(s =>
+        {
+            JsonObject hook = s["hooks"]!["Stop"]![0]!["hooks"]![0]!.AsObject();
+            JsonNode command = hook["command"]!.DeepClone();
+            hook.Remove("command");
+            hook["command"] = command;
+        });
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.True(exitCode == 0, output);
+    }
+
+    /// <summary>A settings file that is not JSON is named, never overwritten, and fails the sync too.</summary>
+    [Fact]
+    public void Settings_NotValidJson_IsNamedAndLeftAlone()
+    {
+        string path = Path.Combine(_project, SettingsPath);
+        File.WriteAllText(path, "{ \"permissions\": { \"allow\": [ ] }, }\n");
+        byte[] before = File.ReadAllBytes(path);
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("invalid  .claude/settings.json (project's copy is not valid JSON", output);
+
+        (exitCode, output) = RunSync(_project);
+        Assert.Equal(1, exitCode);
+        Assert.Contains("fix it by hand", output);
+        Assert.Equal(before, File.ReadAllBytes(path));
+    }
+
+    /// <summary>A rewrite keeps the values of the project's own keys: a fraction, a long number, a date-like string.</summary>
+    [Fact]
+    public void Sync_KeepsTheValuesOfTheProjectsOwnKeys()
+    {
+        EditSettings(s =>
+        {
+            s["env"] = new JsonObject { ["SINCE"] = "2026-10-01T06:05:07Z", ["DAY"] = "2026-10-01" };
+            s["ratio"] = 1.25;
+            s["big"] = 12345678901;
+            s["permissions"]!["ask"]!.AsArray().RemoveAt(0);
+        });
+
+        (int exitCode, string output) = RunSync(_project);
+        Assert.True(exitCode == 0, output);
+
+        JsonObject settings = ReadSettings(_project);
+        Assert.Equal("2026-10-01T06:05:07Z", (string?)settings["env"]!["SINCE"]);
+        Assert.Equal("2026-10-01", (string?)settings["env"]!["DAY"]);
+        Assert.Equal(1.25, (double)settings["ratio"]!);
+        Assert.Equal(12345678901, (long)settings["big"]!);
+        Assert.Equal(0, RunSync(_project, "-Check").ExitCode);
+    }
+
+    /// <summary>Only .claude/rules/kit/ is the kit's: a rules file of the project's own beside it is neither drift nor deleted.</summary>
+    [Fact]
+    public void OwnRulesFile_BesideTheKitsFolder_IsLeftAlone()
+    {
+        string own = Path.Combine(_project, ".claude", "rules", "own.md");
+        File.WriteAllText(own, "# This project's own rules\n");
+
+        (int exitCode, string output) = RunSync(_project, "-Check");
+        Assert.True(exitCode == 0, output);
+
+        File.AppendAllText(Path.Combine(_project, ".claude", "rules", "kit", "process.md"), "An isolated edit.\n");
+        Assert.Equal(0, RunSync(_project).ExitCode);
+        Assert.True(File.Exists(own));
+        Assert.Equal(0, RunSync(_project, "-Check").ExitCode);
+    }
+
     [Fact]
     public void Settings_MissingInTheProject_IsNamedAndCopied()
     {

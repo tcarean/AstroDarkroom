@@ -61,7 +61,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 
 | Cale | Rol |
 | --- | --- |
-| `CLAUDE.md` | comenzi, regulile proiectului, pointeri; impreuna cu fisierul de reguli sub 200 de linii, in engleza |
+| `CLAUDE.md` | comenzi, regulile proiectului, pointeri; cu regulile proprii din `.claude/rules/` (fara `kit/`) sub 200 de linii, in engleza |
 | `.claude/rules/kit/process.md` | regulile de proces ale kit-ului, cu nume; Claude Code il incarca odata cu `CLAUDE.md`; identic in fiecare proiect |
 | `docs/requirements.md` | cerinte cu ID si status; sursa adevarului pentru comportament |
 | `docs/decisions/` | un ADR per decizie |
@@ -74,7 +74,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` si cheile de proces din `.claude/settings.json` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
 | `scripts/kit-config.ps1` | citeste `kit.json` pentru celelalte scripturi; tine singura lista a folderelor comune |
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
-| `.claude/settings.json` | permisiuni, hooks si `attribution`, versionate; `hooks`, `ask`, `deny`, intrarile git din `allow` si `attribution` sunt ale kit-ului, restul lui `allow` al proiectului; `settings.local.json` ramane local |
+| `.claude/settings.json` | permisiuni, hooks si `attribution`, versionate; `hooks`, `ask`, `deny`, intrarile git din `allow`, `attribution`, `disableAllHooks` si `permissions.defaultMode` sunt ale kit-ului, restul lui `allow` al proiectului; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
 | `scripts/release.ps1` | partea mecanica a unui release: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`, care citeste si ADR-urile kit-ului; un agent nou apare dupa repornirea sesiunii |
@@ -93,8 +93,9 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
   iar hook-ul Stop nu inchide tura. Sursa e kit-ul; `sync.ps1` copiaza. Dupa o schimbare in kit,
   primul commit din fiecare proiect cere intai `sync.ps1` (ADR 0017, ADR 0018, ADR 0028).
 - O cheie de proces din `.claude/settings.json` (`hooks`, `ask`, `deny`, intrarile git din
-  `allow`, `attribution`) diferita de a kit-ului: gate-ul e rosu la pasul 0 si numeste cheia;
-  `sync.ps1` o rescrie, fara sa atinga restul fisierului (ADR 0028).
+  `allow`, `attribution`, `disableAllHooks`, `permissions.defaultMode`) diferita de a kit-ului:
+  gate-ul e rosu la pasul 0 si numeste cheia; `sync.ps1` o rescrie, fara sa atinga restul
+  fisierului. Un `settings.json` care nu e JSON valid e numit, iar sync iese cu 1 (ADR 0028).
 - Cerinta `implemented` fara test `R###_...`, sau test cu ID inexistent: `RepoInvariantTests` pica.
 - Cale numita in `GHID.md` sau in acest README (script, folder, fisier) care nu exista in kit:
   `RepoInvariantTests` pica. Doar in kit; explicatiile invechite nu le prinde.

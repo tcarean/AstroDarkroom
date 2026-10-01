@@ -2,7 +2,7 @@
 
 Date: 2026-10-01
 Status: accepted 2026-10-01
-Supersedes: 0006 in part (the rules in each project's CLAUDE.md); 0009 in part (the list of inputs); 0017 in part ("Rule 15 of CLAUDE.md states it"); 0018 in part (".claude/settings.json stays per project")
+Supersedes: 0006 in part (the rules in each project's CLAUDE.md); 0009 in part (the list of inputs); 0017 in part (the shared folders and the rule's place in CLAUDE.md); 0018 in part (settings.json per project)
 
 ## Context
 
@@ -45,12 +45,19 @@ the three readings.
 - The shared-folder list is written once, `Get-KitSharedFolders` in `scripts/kit-config.ps1`,
   and `sync.ps1` and the Stop hook take it from there.
 - Some keys of `.claude/settings.json` are the kit's: `hooks`, `permissions.ask`,
-  `permissions.deny`, the `permissions.allow` entries for git commands, and `attribution`, which
-  is `{"commit": "", "pr": ""}` so Claude Code adds no attribution line the commit rule forbids.
-  `sync.ps1 -Check`, step 0 of `verify.ps1`, compares them parsed, the lists as sets. `sync.ps1`
-  rewrites only those keys. The other `allow` entries and `$comment` are the project's.
-- The `docs-auditor` reads `.claude/rules/` beside `CLAUDE.md`, and counts both toward the
-  200-line limit.
+  `permissions.deny`, the `permissions.allow` entries for git commands (`Bash(git ...)`,
+  `Bash(git:*)` and the same for `PowerShell`), `attribution`, which is
+  `{"commit": "", "pr": ""}` so Claude Code adds no attribution line the commit rule forbids,
+  and the two keys that switch the hooks or the prompts off, `disableAllHooks` and
+  `permissions.defaultMode`, which the kit leaves unset and so a project may not set.
+  `sync.ps1 -Check`, step 0 of `verify.ps1`, compares them parsed: the lists as sets, the
+  objects with their properties in any order. `sync.ps1` rewrites only those keys and keeps the
+  values of the rest; a settings file that is not valid JSON is named and left for a fix by
+  hand. The other `allow` entries and `$comment` are the project's.
+- The `docs-auditor` reads `.claude/rules/` beside `CLAUDE.md`. Its 200-line limit counts the
+  project's own rules, `CLAUDE.md` and any file of its own under `.claude/rules/` outside
+  `kit/`; the kit's rules file is the same everywhere and does not count, or every adopter would
+  pass the limit only by cutting its own rules to make room for the kit's.
 
 ## Alternatives rejected
 

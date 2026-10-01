@@ -11,9 +11,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   and synced like `scripts/` (ADR 0028): Claude Code loads it beside `CLAUDE.md`. The list of
   shared folders is written once, in `kit-config.ps1`, for `sync.ps1` and the Stop hook. Step 0
   of `verify.ps1` also compares the process keys of `.claude/settings.json` with the kit's
-  (`hooks`, `ask`, `deny`, the git `allow` entries and the new empty `attribution`, which keeps
-  Claude Code from adding a `Co-Authored-By` line), and `sync.ps1` copies them, leaving a
-  project's other `allow` entries alone. The `docs-auditor` reads `.claude/rules/`.
+  (`hooks`, `ask`, `deny`, the git `allow` entries, the new empty `attribution`, which keeps
+  Claude Code from adding a `Co-Authored-By` line, and `disableAllHooks` and
+  `permissions.defaultMode`, which stay unset), and `sync.ps1` copies them, leaving a project's
+  other `allow` entries alone. The `docs-auditor` reads `.claude/rules/`.
 - The git `pre-commit` hook refuses, before its own gate, a commit a Claude Code session makes
   on a `claude/` branch in the main checkout, which stays on `main` (ADR 0026); through
   `pre-merge-commit`, a session's merge commit onto such a branch too. It tells a session by
