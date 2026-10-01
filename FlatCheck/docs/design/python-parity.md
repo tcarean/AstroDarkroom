@@ -20,7 +20,7 @@ differences).
 ## What replaced it
 
 ADR 0047 holds the decision (the two files frozen at 2.2.0 and unmaintained, the 43 scenarios
-as golden files carrying the oracle's last word, a re-approval there as a C#-only call, rule 16
+as golden files carrying the oracle's last word, a re-approval there as a C#-only call, the rule now named "Formula changes re-validate"
 pointed at `/validate`); CLAUDE.md "Layout" says the same in one line. The mechanics:
 
 - `ParityFixtures.WriteAll` writes the same synthetic FITS the cross-check used, with the same

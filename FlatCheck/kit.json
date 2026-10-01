@@ -1,5 +1,5 @@
 {
-  "$comment": "What the shared scripts, skills and agent need to know about FlatCheck. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/ and .claude/agents/ are byte-identical with ../ClaudeCodeStarterKit/scripts/ (scripts/sync.ps1 keeps them so; kit ADR 0017 and 0018, FlatCheck ADR 0048 and 0049). The projects sit at the folder root, not under src/ and tests/ (ADR 0002), so the folders are listed. The validation cases on the real masters stay out of the gate (ADR 0004). See scripts/kit-config.ps1 for every key.",
+  "$comment": "What the shared scripts, skills and agent need to know about FlatCheck. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028, FlatCheck ADR 0048 and 0049). The projects sit at the folder root, not under src/ and tests/ (ADR 0002), so the folders are listed. The validation cases on the real masters stay out of the gate (ADR 0004). See scripts/kit-config.ps1 for every key.",
   "solution": "FlatCheck.sln",
   "testFilter": "Category!=Validation",
   "codeFolders": ["FlatCheck.Core/", "FlatCheck/", "FlatCheck.Wpf/"],

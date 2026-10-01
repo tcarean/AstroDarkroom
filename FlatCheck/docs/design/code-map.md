@@ -109,7 +109,7 @@ a library extraction and not a copy is ADR 0011.
     ADR 0039.
   - `ThirdParty.cs` - the third-party components as a *value*, what the window's "Despre"
     shows, bound to the csproj and the notices file by `ThirdPartyTests`: ADR 0008, ADR 0040
-    and rule 5.
+    and the rule "Package notices".
   - `LensProfiles/` - the lens vignetting profiles behind the synthetic flat.
     `VignettingModel` is the factor `V(x, y)` as a value, with the two coordinate
     conventions verified from sources (its header quotes them): Adobe's r in units of the

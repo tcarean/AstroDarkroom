@@ -1472,12 +1472,13 @@ mecanic:
   teste nu primește. E judecată, nu gate: niciun hook nu o verifică la commit (ADR 0053).
 - **Mesajul de commit** e o singură linie, în engleză, de cel mult 100 de caractere; hook-ul git
   `commit-msg` refuză altceva.
-- **`scripts/`, `.claude/skills/` și `.claude/agents/` sunt ale kit-ului**, byte cu byte, și nu
-  se editează aici: un bug sau o funcție nouă se face în kit și `scripts/sync.ps1` o copiază în
+- **`scripts/`, `.claude/skills/`, `.claude/agents/` și `.claude/rules/kit/` sunt ale
+  kit-ului**, byte cu byte, la fel cheile de proces din `.claude/settings.json`, și nu se
+  editează aici: un bug sau o funcție nouă se face în kit și `scripts/sync.ps1` o copiază în
   fiecare proiect. Ce e specific FlatCheck ca valori (soluția, folderele de cod și de teste,
-  filtrul de teste, datele de test, cele două ținte de publish, ce mai poate citi auditorul) e în
-  `kit.json`; pașii pe care FlatCheck îi adaugă la skill-uri sunt în `docs/skills.md`. Pasul 0 al
-  gate-ului e roșu la orice diferență față de kit.
+  filtrul de teste, datele de test, cele două ținte de publish, ce mai poate citi auditorul) e
+  în `kit.json`; pașii pe care FlatCheck îi adaugă la skill-uri sunt în `docs/skills.md`. Pasul
+  0 al gate-ului e roșu la orice diferență față de kit.
 - **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor
   (`R012_Structure_PrintsTheScale...`); `RepoInvariantTests` cere ca fiecare cerință
   `implemented` să aibă un test cu ID-ul ei și invers.
@@ -1489,7 +1490,8 @@ mecanic:
   cu hash SHA-256, iar `FLATCHECK_TESTDATA_LARGE` arată la folderul lor. `docs/validation.md`
   spune de unde vine fiecare cifră.
 - **Explicațiile din spatele codului** sunt în `docs/design/` (au fost `CLAUDE.md` până în
-  2026-09-25; `CLAUDE.md` ține acum doar regulile), cu indexul în `docs/design/README.md`.
+  2026-09-25; `CLAUDE.md` ține acum doar regulile proiectului; cele de proces sunt ale kit-ului, în
+  `.claude/rules/kit/process.md`), cu indexul în `docs/design/README.md`.
 - **Versiunea** o crește omul, prin `scripts/release.ps1 -Version X.Y.Z`, care rulează gate-ul,
   scrie versiunea în `Directory.Build.props`, închide secțiunea din
   CHANGELOG și publică în `artifacts/X.Y.Z/` (consola ca fișier unic, fereastra separat); commit-ul

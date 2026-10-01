@@ -1,21 +1,21 @@
 # Process notes: conventions, versioning, licensing, build and run
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
-> CLAUDE.md nor a decision record says (ADR 0051): the rules are in CLAUDE.md, the decisions with
-> their reasons in `docs/decisions/`, and this note keeps the mechanics of the console and the few
-> reasons that have no other home. **Covers:** by pointer, `Directory.Build.props`, `Version.cs`,
-> `LicenseHeaderTests`, `VersionTests` and the publish commands; in full, the section "Extending
-> the console", added 2026-09-25: `Options.cs`, `FlatCheckCli.cs`, `Program.cs`,
-> `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
+> CLAUDE.md nor a decision record says (ADR 0051): the rules are in CLAUDE.md and the kit's
+> `.claude/rules/kit/process.md`, the decisions with their reasons in `docs/decisions/`, and this
+> note keeps the mechanics of the console and the few reasons that have no other home. **Covers:**
+> by pointer, `Directory.Build.props`, `Version.cs`, `LicenseHeaderTests`, `VersionTests` and the
+> publish commands; in full, the section "Extending the console", added 2026-09-25: `Options.cs`,
+> `FlatCheckCli.cs`, `Program.cs`, `GoldenOutputTests`, `ParityGoldenTests` and `ParityFixtures`.
 > Cross-references such as "see X below" point at the sibling notes in this folder; the index in
-> `README.md` here maps them. A change to the code this describes means this note is updated in
-> the same task, or deleted with the decision it explains.
+> `README.md` here maps them. A change to the code this describes means this note is updated in the
+> same task, or deleted with the decision it explains.
 
 ## Conventions
 
-The rules are in `CLAUDE.md`; the two packages, the hand-rolled FITS and PNG and the standard of
-evidence a third package would have to meet are ADR 0008 and `dependencies.md`. One reason with
-no other home:
+The rules are in `CLAUDE.md` and `.claude/rules/kit/process.md`; the two packages, the hand-rolled
+FITS and PNG and the standard of evidence a third package would have to meet are ADR 0008 and
+`dependencies.md`. One reason with no other home:
 
 - **User-facing documentation lives in `README.md`, and only there.** Do not restate the
   modes, the thresholds, the workflow traps or the `--light` validity limit in a docstring or
@@ -32,7 +32,7 @@ ADR 0039 holds the whole of it, amended by ADR 0047 (the version is declared onc
 line 1 of every run and why there is no `--version` flag, `VersionInfo` reading
 `AssemblyInformationalVersion` with no literal, the scrub to `flatcheck <VERSIUNE>` in
 `GoldenOutputTests.RunCli`, and what fails when the plumbing moves. ADR 0042 settles the
-machine-readable case. The owner bumps, never the assistant (rule 17). Guards: `VersionTests`,
+machine-readable case. The owner bumps, never the assistant (the rule "Version and year are the owner's"). Guards: `VersionTests`,
 the golden files.
 
 ## Licensing
@@ -40,7 +40,7 @@ the golden files.
 ADR 0040 records the five things pinned by tests (the notice on every source file, the copyright
 on line 2, the warranty in `--help`, the window's "Despre", one source of truth for the copyright
 string), their guards, and why the copyright line is not scrubbed like the banner; ADR 0047
-amends the Python half. A new file follows rule 18, a new package rule 5 and ADR 0008. Three
+amends the Python half. A new file follows the rule "License headers", a new package the rule "Package notices" and ADR 0008. Three
 mechanics the ADR does not spell out:
 
 - XAML gets one `<!-- ... -->` block wrapping the unprefixed notice because `--` cannot repeat
@@ -85,7 +85,7 @@ tests and documents; this section is that list, in the order the work goes.
   "not given" is `null` and never a sentinel; a switch is a `bool`. Defaults are field
   initialisers, and when the default is a number the core owns it (`ScalePx =
   SmoothAnalyzer.DefaultScalePx`, `Pattern = SeriesFinder.DefaultPattern`): the console holds
-  no number of its own (rule 6, ADR 0011).
+  no number of its own (the rule "Computed only in the core", ADR 0011).
 - `Options.Parse(string[] args)` never throws. It returns an `Options` with `Help = true` (no
   arguments, or `-h` / `--help` anywhere; parsing stops there), or with `Error` set (the first
   failure wins: `Fail(message)` stores it and returns the same object), or fully parsed with
@@ -159,7 +159,7 @@ string or an exit code:
   `AfterMapPath` → `-dupa`; R-006), never by a second flag.
 
 Nothing in these methods computes: a run method that needs a number or a sentence gets it from
-a `Runs/` outcome (rule 6).
+a `Runs/` outcome (the rule "Computed only in the core").
 
 ### Usage text
 
@@ -220,11 +220,11 @@ The procedure:
    copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
    `<TMP>/`.
 5. Run the suite without the variable; it must be green.
-6. The owner reads the diff and approves it (rule 3).
+6. The owner reads the diff and approves it (the rule "Golden files").
 
 ### Adding a parity golden scenario
 
-When it is required: rule 16 and `/new-feature` step 2. A **new** scenario is required when a
+When it is required: the rule "Formula changes re-validate" and `/new-feature` step 2. A **new** scenario is required when a
 change opens a numeric path the 43 existing scenarios do not exercise: a new band or branch of a
 metric, a new input shape (size, BITPIX, a header card), a new option that changes a number.
 `--histeq`, `--smooth` and mode 7 produce a picture, a file or a list and get no scenario; their
@@ -267,12 +267,12 @@ which is enough for the banner: it is written before the options are parsed).
 ### The README "Opțiuni" section
 
 `README.md` is the user documentation and the only place the options are described for users
-(rule 14; "Conventions" above). Its `## Opțiuni` section is a code block that mirrors
+(the rule "Languages"; "Conventions" above). Its `## Opțiuni` section is a code block that mirrors
 `WriteUsage`: the invocation forms, then one line per flag with the modes it applies to and its
 default, then two paragraphs (flags on either side of the path; the banner on every run). Every
 option appears there, in Romanian with diacritics. A new flag gets its line there, a mention in
 the mode's own `### N.` section when it changes what that mode does, and a line under
-`## Coduri de ieșire` when it adds or changes an exit code. The requirement row of rule 1
+`## Coduri de ieșire` when it adds or changes an exit code. The requirement row of the kit's rule "Requirements first"
 goes under "Console contract" for a flag and in the mode's block for a mode.
 
 ### InvariantGlobalization

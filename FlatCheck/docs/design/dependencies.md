@@ -1,28 +1,27 @@
 # The dependencies: the rule, libraw and ImageSharp
 
 > Moved unchanged from CLAUDE.md on 2026-09-25 (ADR 0001), then cut on 2026-09-27 to what neither
-> CLAUDE.md nor a decision record says (ADR 0051): rule 5 and ADR 0008 hold the rule, ADR 0009
-> and ADR 0010 the two packages, ADR 0028 and ADR 0040 the data component and the displayed
-> list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
+> CLAUDE.md nor a decision record says (ADR 0051): the rule "Package notices" and ADR 0008 hold the
+> rule, ADR 0009 and ADR 0010 the two packages, ADR 0028 and ADR 0040 the data component and the
+> displayed list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
 > `RawReader.cs`, `PreviewReader.cs`, `ThirdParty.cs`, `THIRD-PARTY-NOTICES.md`; in full, one
-> mechanic of the lazy loading of libraw.
-> Cross-references such as "see X below" point at the sibling notes in this folder; the index in
-> `README.md` here maps them. A change to the code this describes means this note is updated in
-> the same task, or deleted with the decision it explains.
+> mechanic of the lazy loading of libraw. Cross-references such as "see X below" point at the
+> sibling notes in this folder; the index in `README.md` here maps them. A change to the code this
+> describes means this note is updated in the same task, or deleted with the decision it explains.
 
 ## The dependencies
 
 ### The rule
 
-CLAUDE.md rule 5 states it; ADR 0008 holds the reasons: hand-rolled where hand-rolled is honest
-(the FITS reader and writer, the PNG encoder), a package only after its candidate, licence, size
-and alternatives were brought to the author and measured, GPLv3 compatibility argued in
-`THIRD-PARTY-NOTICES.md`, per-RID native binaries a point against and not a veto, the three
-places a package touches and the two of them `ThirdPartyTests` enforces (the README table under
-"Componente terțe" is the fourth copy, kept by hand), and the one data component the tests
-allow. ADR 0028 holds why the lensfun database is that component and the Adobe profiles
-deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather than shipped
-as a file (LGPL-2.1 §6 asks for it, and nothing rides beside a single-file exe).
+The kit's rule "Packages" and CLAUDE.md's rule "Package notices" state it; ADR 0008 holds the
+reasons: hand-rolled where hand-rolled is honest (the FITS reader and writer, the PNG encoder), a
+package only after its candidate, licence, size and alternatives were brought to the author and
+measured, GPLv3 compatibility argued in `THIRD-PARTY-NOTICES.md`, per-RID native binaries a point
+against and not a veto, the three places a package touches and the two of them `ThirdPartyTests`
+enforces (the README table under "Componente terțe" is the fourth copy, kept by hand), and the one
+data component the tests allow. ADR 0028 holds why the lensfun database is that component and the
+Adobe profiles deliberately are not; ADR 0040 holds why the list is displayed in "Despre" rather
+than shipped as a file (LGPL-2.1 §6 asks for it, and nothing rides beside a single-file exe).
 
 ### `Sdcb.LibRaw`
 

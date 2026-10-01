@@ -1,7 +1,7 @@
 # 0049. The skills and the agent are the kit's too; FlatCheck's steps live in docs/skills.md
 
 Date: 2026-09-27
-Status: accepted 2026-09-27
+Status: accepted 2026-09-27; rule 19 naming the three shared folders superseded by the kit's ADR 0028
 
 ## Context
 

@@ -160,6 +160,6 @@ Folosite numai la compilarea și rularea testelor, deci nu sunt distribuite cu u
 
 ## Cum se adaugă o intrare
 
-Vezi regula 5 din [CLAUDE.md](CLAUDE.md) și nota [docs/design/dependencies.md](docs/design/dependencies.md). Pe scurt: pachetul se discută înainte,
+Vezi regula "Packages" a kit-ului (`.claude/rules/kit/process.md`), regula "Package notices" din [CLAUDE.md](CLAUDE.md) și nota [docs/design/dependencies.md](docs/design/dependencies.md). Pe scurt: pachetul se discută înainte,
 nu după; compatibilitatea cu GPLv3 se demonstrează, nu se presupune; iar motivul se scrie
 aici, ca următorul cititor să nu fie nevoit să-l redescopere.

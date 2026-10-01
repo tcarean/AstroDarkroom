@@ -20,8 +20,8 @@ are in `kit.json`, not here.
   `docs/validation.md` lists the masters).
 - At step 5: `FlatCheck.Core` first (`Analysis/` decides numbers, `Report/` decides words,
   `Runs/` chains them), then the console and the window, which only call `Runs/`. Nothing is
-  computed outside the core (rule 6).
-- At step 6: numeric code is `Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/` (rule 16). The
+  computed outside the core (the rule "Computed only in the core").
+- At step 6: numeric code is `Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/` (the rule "Formula changes re-validate"). The
   golden files, the parity ones included, are re-approved with `FLATCHECK_UPDATE_GOLDEN=1` only
   after the owner has read the diff and said yes.
 - At step 8: `README.md` is in Romanian; the "Opțiuni" section lists every console flag
@@ -30,7 +30,7 @@ are in `kit.json`, not here.
 ## /wrap-up
 
 - At step 2: numeric code is `FlatCheck.Core/Metrics.cs`, `Stats.cs`, `Analysis/` and
-  `Report/` (rule 16); a `Golden/parity_*.txt` that changed is a finding like a moved figure,
+  `Report/` (the rule "Formula changes re-validate"); a `Golden/parity_*.txt` that changed is a finding like a moved figure,
   and a re-approval there is a C#-only decision (ADR 0047).
 
 ## /validate
@@ -42,7 +42,7 @@ are in `kit.json`, not here.
 
 ## /release
 
-- At step 2: rule 17, the owner chooses the version; propose, never bump on your own.
+- At step 2: the rule "Version and year are the owner's": the owner chooses the version; propose, never bump on your own.
 - At step 3: ask for `/validate` whether or not a formula moved; a release is the moment a
   stale figure on the real masters gets noticed.
 - At step 5: the console is published as the single copyable `flatcheck.exe` under `console/`

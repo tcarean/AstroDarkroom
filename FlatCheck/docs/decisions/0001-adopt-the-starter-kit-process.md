@@ -1,7 +1,7 @@
 # 0001. Adopt the ClaudeCodeStarterKit process; rules in CLAUDE.md, explanations in docs/design
 
 Date: 2026-09-25
-Status: accepted 2026-09-25; the CHANGELOG a commit cannot skip superseded by 0053
+Status: accepted 2026-09-25; the CHANGELOG a commit cannot skip superseded by 0053; the process rules in CLAUDE.md superseded by the kit's ADR 0028
 
 ## Context
 
