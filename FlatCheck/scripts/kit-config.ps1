@@ -30,6 +30,8 @@
 #     release.publish     what release.ps1 publishes: a list of { project, output, args };
 #                         output is a subfolder of artifacts/<version>/ ("" is that folder
 #                         itself), args are extra `dotnet publish` arguments
+#     release.branch      optional; the branch a release is cut on ("main" when absent;
+#                         release.ps1 refuses any other, the kit's ADR 0029)
 #     audit.alsoRead      optional; files or folders, besides docs/ and the test data README
 #                         and manifest, that the docs-auditor agent may read: expected outputs,
 #                         notices. Never code.
@@ -79,6 +81,10 @@ function Read-KitConfig([string]$ProjectDir) {
     $cfg.testData.folder = ConvertTo-KitFolder $cfg.testData.folder
     $cfg.mutate.testProject = ConvertTo-KitFolder $cfg.mutate.testProject
     $cfg.release.publish = @($cfg.release.publish)
+    if (-not $cfg.release.PSObject.Properties['branch'] -or -not $cfg.release.branch) {
+        if ($cfg.release.PSObject.Properties['branch']) { $cfg.release.PSObject.Properties.Remove('branch') }
+        $cfg.release | Add-Member -NotePropertyName branch -NotePropertyValue 'main'
+    }
     foreach ($p in $cfg.release.publish) {
         if (-not $p.project) { throw "kit.json: every release.publish entry needs 'project'." }
         if ($null -eq $p.PSObject.Properties['output']) { $p | Add-Member -NotePropertyName output -NotePropertyValue '' }

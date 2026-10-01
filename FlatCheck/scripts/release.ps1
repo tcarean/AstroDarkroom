@@ -3,12 +3,15 @@
 #
 # WHAT IT DOES
 #   1. Checks, and stops without changing anything if one fails (the kit's ADR 0029):
-#        - the checkout is on main: a release is cut there, in the main checkout, where the
-#          owner commits and tags; a task branch or a detached HEAD is refused;
+#        - the checkout is the main checkout (not a linked worktree) and is on main, or on
+#          the branch kit.json names as release.branch: a release is cut there, where the
+#          owner commits and tags; a task branch, a detached HEAD or a worktree is refused;
 #        - this project's working tree is clean;
-#        - -Version is MAJOR.MINOR.PATCH, is not already a released heading of CHANGELOG.md
-#          ("## [X.Y.Z] - date"), and is above the highest of them: that is the floor, since
-#          a release always closes [Unreleased] under such a heading (with none, no floor);
+#        - -Version is MAJOR.MINOR.PATCH without leading zeros (2.3.0, not 2.03.0, which
+#          would compare as 2.3.0 but be written as 2.03.0), is not already a released
+#          heading of CHANGELOG.md ("## [X.Y.Z] - date"), and is above the highest of them:
+#          that is the floor, since a release always closes [Unreleased] under such a
+#          heading (with none, no floor);
 #        - -Version is not below <Version> in Directory.Build.props. It may equal it: the
 #          owner may bump <Version> per feature, and the release then uses it;
 #        - CHANGELOG.md has something under [Unreleased];
@@ -55,16 +58,26 @@ $root = Split-Path -Parent $PSScriptRoot
 $kit = Read-KitConfig $root
 Push-Location $root
 try {
-    if ($Version -notmatch '^\d+\.\d+\.\d+$') { throw "Version must be MAJOR.MINOR.PATCH, got '$Version'." }
+    # No leading zeros: the text goes into the heading and the tag, the number into comparisons.
+    if ($Version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$') { throw "Version must be MAJOR.MINOR.PATCH without leading zeros, got '$Version'." }
     # [version] compares numerically: 0.10.0 is greater than 0.9.0.
     $new = [version]$Version
 
     # --- preconditions -----------------------------------------------------------------
-    # A release is cut on main (the kit's ADR 0029). An empty name is a detached HEAD.
+    # A release is cut on main (or kit.json's release.branch), in the main checkout (the kit's
+    # ADR 0029). An empty name is a detached HEAD. The main checkout is the worktree whose git
+    # folder is the common one, the test the git pre-commit hook makes (the kit's ADR 0026);
+    # absolute forms, since git may report either side relative to a subfolder.
+    $releaseBranch = $kit.release.branch
+    $gitDir = [System.IO.Path]::GetFullPath((git rev-parse --absolute-git-dir)).TrimEnd('\', '/')
+    $commonDir = [System.IO.Path]::GetFullPath((git rev-parse --path-format=absolute --git-common-dir)).TrimEnd('\', '/')
+    if ($gitDir -ne $commonDir) {
+        throw "A release is cut on $releaseBranch, in the main checkout; this is a linked worktree ($root)."
+    }
     $branch = (git branch --show-current 2>$null)
-    if ($branch -ne 'main') {
+    if ($branch -ne $releaseBranch) {
         $where = if ($branch) { "branch '$branch'" } else { 'a detached HEAD' }
-        throw "A release is cut on main, in the main checkout; this checkout is on $where."
+        throw "A release is cut on $releaseBranch, in the main checkout; this checkout is on $where."
     }
 
     # 'git status --porcelain -- .' lists the uncommitted changes in this folder, one per line.
@@ -107,7 +120,8 @@ try {
     Write-Host ("== release {0} (<Version> {1}, newest released {2}), tag {3}" -f $new, $current, $floorText, $tag) -ForegroundColor Cyan
     if ($WhatIfPreference) {
         $targets = ($kit.release.publish | ForEach-Object { $_.project }) -join ', '
-        Write-Host ("WhatIf: would run verify, set <Version>, close [Unreleased] in CHANGELOG, publish {0}." -f $targets)
+        $propsPlan = if ($new -eq $current) { "leave <Version> at $current" } else { "set <Version> to $new" }
+        Write-Host ("WhatIf: would run verify, {0}, close [Unreleased] in CHANGELOG, publish {1}." -f $propsPlan, $targets)
         Write-Host ("Unreleased content ({0} lines):" -f ($unreleased.Groups[1].Value.Trim() -split "`n").Count)
         Write-Host $unreleased.Groups[1].Value.Trim()
         exit 0
