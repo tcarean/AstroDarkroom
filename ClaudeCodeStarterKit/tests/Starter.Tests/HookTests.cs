@@ -294,6 +294,21 @@ public sealed class HookTests : IDisposable
         Assert.True(exitCode == expected, output);
     }
 
+    /// <summary>.claude/rules/kit/ is a shared folder (the kit's ADR 0028); a rules file of the project's own beside it is not.</summary>
+    [WindowsTheory]
+    [InlineData("kit", 2)]
+    [InlineData("", 0)]
+    public void StopGate_RulesEdit_IsRefusedOnlyUnderKit(string subfolder, int expected)
+    {
+        Edit(_a, Path.Combine(".claude", "rules", subfolder), "process.md");
+        (int exitCode, string output) = RunStopGate(sessionDir: _b);
+        Assert.True(exitCode == expected, output);
+        if (expected == 2)
+        {
+            Assert.Contains(".claude/rules/kit/ was edited here", output);
+        }
+    }
+
     [WindowsFact]
     public void StopGate_JudgesEachProjectSeparately()
     {
