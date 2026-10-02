@@ -19,7 +19,7 @@
 // cu samanta fixa.
 //
 // PERCENTILA E CEA A LUI NUMPY (interpolare liniara intre ranguri, metoda implicita
-// 'linear'). Cifrele de acceptanta din docs/implementation-plan.md au fost masurate cu
+// 'linear'). Cifrele de acceptanta din docs/validation.md au fost masurate cu
 // numpy, si o percentila definita altfel (nearest, lower) ar fi dat diferente mici pe
 // care nimeni nu le-ar fi putut explica.
 //

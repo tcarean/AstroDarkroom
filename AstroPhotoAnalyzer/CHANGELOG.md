@@ -12,12 +12,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in
   `Directory.Packages.props` with lock files, and the reference image is a git-ignored copy in
-  `AstroPhotoAnalyzer.Tests/testdata/large/`. No behaviour changed; one `dotnet format` pass.
+  `AstroPhotoAnalyzer.Tests/testdata/large/`. `docs/specification.md` was split into
+  `docs/requirements.md` (65 rows with IDs), `docs/decisions/` (24 ADRs, 18 of them retroactive)
+  and `docs/design/` (12 notes, moved unchanged); the acceptance record became
+  `docs/validation.md`, and `CLAUDE.md` holds only the project's rules. No behaviour changed;
+  one `dotnet format` pass over 10 files.
 
 ## [1.0.0] - 2026-09-21
 
 The state of the tool when the changelog was started, built on 2026-09-20 and 2026-09-21 in
-seven phases (`docs/implementation-plan.md`):
+seven phases (`docs/plans/2026-09-20-implementation-plan.md`):
 
 - The core: readers (hand-written FITS; TIFF, PNG and JPEG through ImageSharp 3.1.11), the
   raster, colour maths, eleven analyzers (file facts, bit depth, crop, tonal distribution, the

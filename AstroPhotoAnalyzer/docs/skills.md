@@ -1,0 +1,66 @@
+# Project additions to the kit's skills
+
+The skills under `.claude/skills/` are the kit's, byte-identical in every project (the kit's
+ADR 0018; ADR 0002). What AstroPhotoAnalyzer needs on top of them is here, one section per
+skill; each skill reads this file before its first step, and each section says at which step it
+applies. Values (the solution, the folders, the publish list, what the auditor may also read)
+are in `kit.json`, not here.
+
+## /new-feature
+
+- At step 1: a console requirement also states the exit code (`docs/requirements.md` has the
+  console contract block); a window requirement names the tab and the rows it adds.
+- At step 2: the core and the console are tested in `AstroPhotoAnalyzer.Tests`, the window in
+  `AstroPhotoAnalyzer.Wpf.Tests`. A change to the report or to an option also gets a golden
+  scenario in `GoldenOutputTests` on a scene of `Scenes.cs` (`docs/design/console.md`); a new tab
+  a line in `WindowSmokeTests`; a figure measured on the reference image a field in a case of
+  `docs/validation.json`, as the skill says.
+- At step 3: measure on the reference image before you design (`docs/validation.md` says where
+  it is). On this project the first size rule, the first edge-region rule and the first star
+  threshold were all wrong until the real image was run (ADR 0016, ADR 0017, ADR 0018).
+- At step 5: `AstroPhotoAnalyzer.Core` first (`Analysis/` decides numbers, `Report/` decides
+  words, `Runs/` chains them), then the console and the window, which only call `Runs/` (the rule
+  "Computed only in the core"). `docs/design/extending.md` is the checklist per kind of change: a
+  measurement, a window text, a recommendation, a parameter, a medium, an input format, a tab, a
+  dependency.
+- At step 6: numeric code is `Input/`, `Analysis/`, `Report/`, `Parameters.cs` and
+  `Thresholds.cs` (the rule "Formula changes re-validate"). The golden files are re-approved with
+  `APA_UPDATE_GOLDEN=1` only after the owner has read the diff and said yes.
+- At step 8: `README.md` is in Romanian, with diacritics; its "Consola" section lists every
+  console flag and its "Fereastra" section every tab.
+
+## /wrap-up
+
+- At step 2: numeric code is `AstroPhotoAnalyzer.Core/Input/`, `Analysis/`, `Report/`,
+  `Parameters.cs` and `Thresholds.cs` (the rule "Formula changes re-validate"); a
+  `Golden/*.txt` that changed is a finding like a moved figure.
+
+## /validate
+
+- At step 1: the reference image is `de_printat.png`, a git-ignored copy in
+  `AstroPhotoAnalyzer.Tests/testdata/large/` of the owner's file in `E:\Photografie\Claude`
+  (ADR 0004); `AstroPhotoAnalyzer.Tests/testdata/manifest.json` holds its hash. A worktree has no
+  copy: copy the image into the worktree's `testdata/large/` first, or every case prints
+  `NOT MEASURED`. A case runs the whole analysis on the 23 MP image, about 11 s.
+- At step 3: the table's second column is the case's parameters, not a fixture; the figures are
+  the ones `ValidationTests` prints on its `MEASURED` line.
+
+## /release
+
+- At step 3: ask for `/validate` whether or not a formula moved; a release is the moment a stale
+  figure on the reference image gets noticed.
+- At step 5: the console is published as the single copyable `AstroPhotoAnalyzer.exe` under
+  `console/` and the window under `wpf/`; the tag is `astrophotoanalyzer-vX.Y.Z`.
+- At step 7: the README's "Compilare" section names the publish commands; `artifacts/` is what
+  they produce.
+
+## /mutate
+
+- At step 1: pass a file filter on this project; `scripts/mutate.ps1 -Mutate "**/StarAnalyzer.cs"`
+  is the shape. Stryker runs the whole suite of 236 core tests once per mutant, so a whole-core
+  run is long; no run has been measured yet, so write the first one's time here.
+
+## /docs-health
+
+(none; `audit.alsoRead` in `kit.json` lets the auditor read `THIRD-PARTY-NOTICES.md` and the
+golden texts under `AstroPhotoAnalyzer.Tests/Golden/`, the console's expected output, not code)

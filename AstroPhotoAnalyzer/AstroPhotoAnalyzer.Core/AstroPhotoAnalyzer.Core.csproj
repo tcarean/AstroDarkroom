@@ -17,7 +17,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
-  <!-- Dependentele externe. Regula e in CLAUDE.md, "The dependencies": se discuta
+  <!-- Dependentele externe. Regula e a kit-ului ("Packages", in .claude/rules/kit/process.md)
+       si a proiectului ("Package notices", in CLAUDE.md), cu motivele in ADR 0009 si in
+       docs/design/dependencies.md: se discuta
        inainte si se aproba, nu se evita si nu se adauga in tacere. Licenta fiecareia si
        DE CE e compatibila cu GPLv3 sunt scrise in THIRD-PARTY-NOTICES.md.
 
