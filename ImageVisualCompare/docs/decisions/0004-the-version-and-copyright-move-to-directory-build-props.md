@@ -19,8 +19,9 @@ The three elements move, with their comments in English (ADR 0006), into the fir
 `PropertyGroup` of `Directory.Build.props`. The Wpf csproj keeps the project reference,
 `OutputType`, `TargetFramework`, `UseWPF` and the `InternalsVisibleTo` item. `VersionTests`
 reads `Directory.Build.props`: `AppCsproj()` became `BuildProps()`, and three tests were renamed
-(`TheVersionComesFromTheBuildProps`, `TheCopyrightComesFromTheBuildProps`,
-`TheBuildPropsDeclareTheLicence`) with the same assertions. The header comment of
+with the same assertions (`R070_TheVersionComesFromTheBuildProps`,
+`R071_TheCopyrightComesFromTheBuildProps` and `R073_TheBuildPropsDeclareTheLicence`, with the
+requirement IDs the tests carry since the same day). The header comment of
 `src/ImageVisualCompare.Wpf/Version.cs` names the new file. The number stays 1.1.1: the owner
 bumps it (the kit's rule "Version and year are the owner's", ADR 0023).
 

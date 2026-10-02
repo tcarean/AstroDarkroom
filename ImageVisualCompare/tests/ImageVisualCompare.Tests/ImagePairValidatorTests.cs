@@ -25,7 +25,7 @@ public class ImagePairValidatorTests
         new(path, width, height, 16, ColorChannels.Rgb);
 
     [Fact]
-    public void MatchingDimensionsNeedNoPadding()
+    public void R004_MatchingDimensionsNeedNoPadding()
     {
         PadPlan plan = ImagePairValidator.Inspect(
             Info(@"C:\before.png", 5794, 3637),
@@ -41,7 +41,7 @@ public class ImagePairValidatorTests
     [InlineData(5794, 3637, 5794, 4000, 5794, 4000)]
     [InlineData(5794, 3637, 3637, 5794, 5794, 5794)]
     [InlineData(2000, 1000, 1800, 1200, 2000, 1200)]
-    public void TheCanvasIsTheLargerExtentOnEachAxis(
+    public void R004_TheCanvasIsTheLargerExtentOnEachAxis(
         int widthA, int heightA, int widthB, int heightB, int expectedWidth, int expectedHeight)
     {
         PadPlan plan = ImagePairValidator.Inspect(
@@ -54,7 +54,7 @@ public class ImagePairValidatorTests
     }
 
     [Fact]
-    public void TheCanvasIsBigEnoughForEitherImageWhicheverWayRoundTheyAreGiven()
+    public void R004_TheCanvasIsBigEnoughForEitherImageWhicheverWayRoundTheyAreGiven()
     {
         ImageInfo small = Info(@"C:\a.png", 1800, 1200);
         ImageInfo large = Info(@"C:\b.png", 2000, 1000);
@@ -63,7 +63,7 @@ public class ImagePairValidatorTests
     }
 
     [Fact]
-    public void TheQuestionNamesBothFilesBothResolutionsAndTheResult()
+    public void R003_TheQuestionNamesBothFilesBothResolutionsAndTheResult()
     {
         // Sized so that the padded canvas matches neither original outright, which is the case
         // where a message echoing only one of them would mislead.
@@ -82,7 +82,7 @@ public class ImagePairValidatorTests
     }
 
     [Fact]
-    public void APadRequestCarriesItsOwnWording()
+    public void R003_APadRequestCarriesItsOwnWording()
     {
         ImageInfo before = Info(@"C:\a.png", 100, 100);
         ImageInfo after = Info(@"C:\b.png", 120, 100);
@@ -93,7 +93,7 @@ public class ImagePairValidatorTests
     }
 
     [Fact]
-    public void BitDepthAndChannelLayoutDoNotHaveToMatch()
+    public void R012_BitDepthAndChannelLayoutDoNotHaveToMatch()
     {
         PadPlan plan = ImagePairValidator.Inspect(
             new ImageInfo(@"C:\a.png", 100, 100, 16, ColorChannels.Rgb),

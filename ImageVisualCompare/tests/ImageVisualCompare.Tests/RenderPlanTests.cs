@@ -30,7 +30,7 @@ public class RenderPlanTests
     }
 
     [Fact]
-    public void TheTranslationIsTheNegatedOffset()
+    public void R022_TheTranslationIsTheNegatedOffset()
     {
         Viewport viewport = Create();
         viewport.SetOffset(120, 240);
@@ -45,7 +45,7 @@ public class RenderPlanTests
     [InlineData(1.0, 2.0)]
     [InlineData(1.25, 1.6)]
     [InlineData(1.5, 4.0 / 3)]
-    public void TheRenderScaleDividesOutTheDisplayScaling(double deviceScale, double expected)
+    public void R022_TheRenderScaleDividesOutTheDisplayScaling(double deviceScale, double expected)
     {
         Viewport viewport = Create();
         viewport.ZoomTo(2.0, 200, 200);
@@ -56,7 +56,7 @@ public class RenderPlanTests
     }
 
     [Fact]
-    public void OnAScaledDisplayOneHundredPercentStillMeansOneImagePixelPerScreenPixel()
+    public void R022_OnAScaledDisplayOneHundredPercentStillMeansOneImagePixelPerScreenPixel()
     {
         Viewport viewport = Create();
         viewport.ZoomToActualSize();
@@ -74,7 +74,7 @@ public class RenderPlanTests
     [InlineData(3.99, ImageScalingMode.Smooth)]
     [InlineData(4.0, ImageScalingMode.Pixelated)]
     [InlineData(8.0, ImageScalingMode.Pixelated)]
-    public void DeepZoomSwitchesToShowingThePixelsThemselves(double scale, ImageScalingMode expected)
+    public void R025_DeepZoomSwitchesToShowingThePixelsThemselves(double scale, ImageScalingMode expected)
     {
         Viewport viewport = Create();
         viewport.ZoomTo(scale, 200, 200);
@@ -87,7 +87,7 @@ public class RenderPlanTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void ANonPositiveDeviceScaleIsRejected(double deviceScale)
+    public void R022_ANonPositiveDeviceScaleIsRejected(double deviceScale)
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => RenderPlanner.For(Create(), deviceScale));
     }

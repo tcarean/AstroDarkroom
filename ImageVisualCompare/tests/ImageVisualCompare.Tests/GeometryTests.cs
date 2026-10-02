@@ -22,7 +22,7 @@ namespace ImageVisualCompare.Tests;
 public class AspectFitTests
 {
     [Fact]
-    public void WideContentIsLimitedByTheWidth()
+    public void R040_WideContentIsLimitedByTheWidth()
     {
         SizeD box = AspectFit.Fit(2000, 1000, 190, 150);
 
@@ -31,7 +31,7 @@ public class AspectFitTests
     }
 
     [Fact]
-    public void TallContentIsLimitedByTheHeight()
+    public void R040_TallContentIsLimitedByTheHeight()
     {
         SizeD box = AspectFit.Fit(1000, 2000, 190, 150);
 
@@ -40,7 +40,7 @@ public class AspectFitTests
     }
 
     [Fact]
-    public void TheAspectRatioIsPreserved()
+    public void R040_TheAspectRatioIsPreserved()
     {
         SizeD box = AspectFit.Fit(5794, 3637, 190, 150);
 
@@ -48,7 +48,7 @@ public class AspectFitTests
     }
 
     [Fact]
-    public void ContentSmallerThanTheBoxIsEnlargedToFillIt()
+    public void R040_ContentSmallerThanTheBoxIsEnlargedToFillIt()
     {
         SizeD box = AspectFit.Fit(50, 50, 190, 150);
 
@@ -61,7 +61,7 @@ public class AspectFitTests
     [InlineData(100, 0, 190, 150)]
     [InlineData(100, 100, 0, 150)]
     [InlineData(100, 100, 190, 0)]
-    public void DegenerateInputsGiveAnEmptyBoxRatherThanInfinity(
+    public void R040_DegenerateInputsGiveAnEmptyBoxRatherThanInfinity(
         double contentWidth, double contentHeight, double maxWidth, double maxHeight)
     {
         SizeD box = AspectFit.Fit(contentWidth, contentHeight, maxWidth, maxHeight);
@@ -74,7 +74,7 @@ public class AspectFitTests
 public class RectDTests
 {
     [Fact]
-    public void RightAndBottomAreDerivedFromTheOrigin()
+    public void R040_RightAndBottomAreDerivedFromTheOrigin()
     {
         var rect = new RectD(10, 20, 30, 40);
 

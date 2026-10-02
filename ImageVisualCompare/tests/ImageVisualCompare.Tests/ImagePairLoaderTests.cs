@@ -31,7 +31,7 @@ public class ImagePairLoaderTests : IDisposable
     private static ImagePairLoader Real() => new(new WicImageLoader());
 
     [Fact]
-    public async Task LoadsAMatchingPair()
+    public async Task R007_LoadsAMatchingPair()
     {
         string before = _images.WritePng("before.png", PixelFormats.Rgb48, 64, 48);
         string after = _images.WritePng("after.png", PixelFormats.Bgr24, 64, 48);
@@ -46,7 +46,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task WithNoOneToAskAMismatchedPairIsStillRefused()
+    public async Task R003_WithNoOneToAskAMismatchedPairIsStillRefused()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 64, 48);
         string after = _images.WritePng("after.png", PixelFormats.Bgr24, 65, 48);
@@ -60,7 +60,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task AMismatchedPairIsRejectedBeforeAnyPixelsAreDecoded()
+    public async Task R003_AMismatchedPairIsRejectedBeforeAnyPixelsAreDecoded()
     {
         var loader = new RecordingLoader(
             new ImageInfo("a.png", 100, 100, 8, ColorChannels.Rgb),
@@ -74,7 +74,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task DecliningThePaddingCostsNothingAndIsNotAnError()
+    public async Task R003_DecliningThePaddingCostsNothingAndIsNotAnError()
     {
         var loader = new RecordingLoader(
             new ImageInfo("a.png", 100, 100, 8, ColorChannels.Rgb),
@@ -90,7 +90,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task AcceptingThePaddingGivesACanvasBigEnoughForBothImages()
+    public async Task R004_AcceptingThePaddingGivesACanvasBigEnoughForBothImages()
     {
         var loader = new RecordingLoader(
             new ImageInfo("a.png", 100, 200, 8, ColorChannels.Rgb),
@@ -111,7 +111,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task TheQuestionCarriesBothFilesAndTheResultingCanvas()
+    public async Task R003_TheQuestionCarriesBothFilesAndTheResultingCanvas()
     {
         var loader = new RecordingLoader(
             new ImageInfo(@"C:\astro\a.png", 100, 200, 8, ColorChannels.Rgb),
@@ -131,7 +131,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task AMatchingPairIsNeverQuestioned()
+    public async Task R003_AMatchingPairIsNeverQuestioned()
     {
         var info = new ImageInfo("x.png", 10, 10, 8, ColorChannels.Rgb);
         var loader = new RecordingLoader(info, info);
@@ -150,7 +150,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task AMissingFileBecomesAMessageNamingIt()
+    public async Task R005_AMissingFileBecomesAMessageNamingIt()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);
         string missing = _images.PathFor("not-here.png");
@@ -162,7 +162,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ACorruptFileBecomesAMessageRatherThanACrash()
+    public async Task R005_ACorruptFileBecomesAMessageRatherThanACrash()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);
         string corrupt = _images.WriteCorrupt("broken.png");
@@ -174,7 +174,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ReportsProgressAsEachImageStarts()
+    public async Task R006_ReportsProgressAsEachImageStarts()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);
         string after = _images.WritePng("after.png", PixelFormats.Bgr24, 32, 32);
@@ -191,7 +191,7 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task ImagesAreDecodedOneAfterTheOtherSoThePeakStaysLow()
+    public async Task R006_ImagesAreDecodedOneAfterTheOtherSoThePeakStaysLow()
     {
         var info = new ImageInfo("x.png", 10, 10, 8, ColorChannels.Rgb);
         var loader = new RecordingLoader(info, info);

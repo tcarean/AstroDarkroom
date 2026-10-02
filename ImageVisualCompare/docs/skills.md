@@ -35,8 +35,8 @@ are in `kit.json`, not here.
 - At step 1: the files are `de_printat.png`, `de_printat_PRINT_preview_16bit.tif` and
   `de_printat_50x35_TIFF8.tif`, git-ignored copies in `tests/testdata/large/` of the owner's
   files in `E:\Photografie\Claude` (ADR 0005); `tests/testdata/manifest.json` holds their
-  hashes. A worktree has no copy: copy the three files into the worktree's `testdata/large/`
-  first, or every case prints `NOT MEASURED`. A case probes and decodes a 23 MP pair, a few
+  hashes. A worktree has no copy: copy the three files into the worktree's
+  `tests/testdata/large/` first, or every case prints `NOT MEASURED`. A case probes and decodes a 23 MP pair, a few
   seconds.
 - At step 3: the table's second column is the case's two files, not a fixture; `decode.seconds`
   is printed and never guarded; the memory figures are megabytes with a 60 MB tolerance, so a
@@ -51,8 +51,8 @@ are in `kit.json`, not here.
 
 ## /mutate
 
-- At step 1: Core is small (eleven files, 142 tests on 2026-10-02), so a whole-core run is
-  reasonable; `scripts/mutate.ps1 -Mutate "**/Viewport.cs"` is the shape for one file. No run
+- At step 1: Core is small (eleven files; 149 tests in the gate and the two validation cases on
+  2026-10-02), so a whole-core run is reasonable; `scripts/mutate.ps1 -Mutate "**/Viewport.cs"` is the shape for one file. No run
   has been measured yet; write the first one's time and score here.
 
 ## /docs-health

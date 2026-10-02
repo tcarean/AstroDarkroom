@@ -95,7 +95,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void EverySourceFileStartsWithTheLicenseNotice()
+    public void R073_EverySourceFileStartsWithTheLicenseNotice()
     {
         List<string> offenders = SourceFiles()
             .Where(f => HeaderOf(f) != Expected())
@@ -109,7 +109,7 @@ public class LicenseHeaderTests
 
     /// <summary>If the enumeration went wrong, the test above would pass on zero files.</summary>
     [Fact]
-    public void TheScanSeesAllThreeProjects()
+    public void R073_TheScanSeesAllThreeProjects()
     {
         List<string> names = SourceFiles().Select(Path.GetFileName).ToList()!;
 
@@ -121,7 +121,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void TheRepoShipsTheFullGplText()
+    public void R073_TheRepoShipsTheFullGplText()
     {
         string license = File.ReadAllText(Path.Combine(RepoDir(), "LICENSE"));
 

@@ -25,7 +25,7 @@ public class DividerModelTests
     private const double ViewportHeight = 600;
 
     [Fact]
-    public void StartsCentred()
+    public void R030_StartsCentred()
     {
         Assert.Equal(0.5, new DividerModel().Position, 6);
     }
@@ -36,7 +36,7 @@ public class DividerModelTests
     [InlineData(0.25, 0.25)]
     [InlineData(1.0, 1.0)]
     [InlineData(3.0, 1.0)]
-    public void Position_IsClampedToTheViewport(double assigned, double expected)
+    public void R030_Position_IsClampedToTheViewport(double assigned, double expected)
     {
         var divider = new DividerModel { Position = assigned };
 
@@ -44,7 +44,7 @@ public class DividerModelTests
     }
 
     [Fact]
-    public void MoveTo_ConvertsScreenPositionToAFraction()
+    public void R030_MoveTo_ConvertsScreenPositionToAFraction()
     {
         var divider = new DividerModel();
 
@@ -55,7 +55,7 @@ public class DividerModelTests
     }
 
     [Fact]
-    public void MoveTo_BeyondTheEdgeClampsInsteadOfEscaping()
+    public void R030_MoveTo_BeyondTheEdgeClampsInsteadOfEscaping()
     {
         var divider = new DividerModel();
 
@@ -67,7 +67,7 @@ public class DividerModelTests
     }
 
     [Fact]
-    public void NudgeBy_ShiftsByAScreenAmount()
+    public void R031_NudgeBy_ShiftsByAScreenAmount()
     {
         var divider = new DividerModel();
 
@@ -77,7 +77,7 @@ public class DividerModelTests
     }
 
     [Fact]
-    public void Reset_ReturnsToTheCentre()
+    public void R030_Reset_ReturnsToTheCentre()
     {
         var divider = new DividerModel { Position = 0.9 };
 
@@ -90,7 +90,7 @@ public class DividerModelTests
     [InlineData(400, 50)]    // on the line, far from the handle
     [InlineData(407, 500)]   // within grab tolerance, near the bottom
     [InlineData(393, 10)]    // within grab tolerance, near the top
-    public void HitTest_GrabsTheLineAnywhereAlongItsLength(double x, double y)
+    public void R032_HitTest_GrabsTheLineAnywhereAlongItsLength(double x, double y)
     {
         Assert.True(new DividerModel().HitTest(x, y, ViewportWidth, ViewportHeight));
     }
@@ -98,13 +98,13 @@ public class DividerModelTests
     [Theory]
     [InlineData(410, 50)]    // past the tolerance, and away from the handle
     [InlineData(300, 300)]   // well clear of the line
-    public void HitTest_IgnoresPressesThatShouldPanInstead(double x, double y)
+    public void R032_HitTest_IgnoresPressesThatShouldPanInstead(double x, double y)
     {
         Assert.False(new DividerModel().HitTest(x, y, ViewportWidth, ViewportHeight));
     }
 
     [Fact]
-    public void HitTest_AcceptsTheWiderHandleTargetAtTheCentre()
+    public void R032_HitTest_AcceptsTheWiderHandleTargetAtTheCentre()
     {
         var divider = new DividerModel();
 

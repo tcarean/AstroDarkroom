@@ -36,7 +36,7 @@ public class VersionTests
     private static string BuildProps() => File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
 
     [Fact]
-    public void VersionIsAThreePartNumber()
+    public void R070_VersionIsAThreePartNumber()
     {
         Assert.Matches(@"^\d+\.\d+\.\d+$", VersionInfo.Value);
     }
@@ -46,7 +46,7 @@ public class VersionTests
     /// &lt;Version&gt; or MSBuild stops propagating InformationalVersion, this is where it shows.
     /// </summary>
     [Fact]
-    public void TheVersionComesFromTheBuildProps()
+    public void R070_TheVersionComesFromTheBuildProps()
     {
         Match m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
@@ -56,7 +56,7 @@ public class VersionTests
 
     /// <summary>Neither "1.0.0.0" nor "1.0.0+abc123" from the assembly may remain.</summary>
     [Fact]
-    public void TheVersionIsNotTheFourPartOrSourceTaggedForm()
+    public void R070_TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
         Assert.DoesNotContain("+", VersionInfo.Value);
         Assert.Equal(3, VersionInfo.Value.Split('.').Length);
@@ -68,7 +68,7 @@ public class VersionTests
     /// shows.
     /// </summary>
     [Fact]
-    public void TheCopyrightComesFromTheBuildProps()
+    public void R071_TheCopyrightComesFromTheBuildProps()
     {
         Match m = Regex.Match(BuildProps(), @"<Copyright>([^<]+)</Copyright>");
 
@@ -77,25 +77,25 @@ public class VersionTests
     }
 
     [Fact]
-    public void TheCopyrightNamesTheAuthorAndTheYear()
+    public void R071_TheCopyrightNamesTheAuthorAndTheYear()
     {
         Assert.Equal("Copyright (C) 2026 Tudor Carean", VersionInfo.Copyright);
     }
 
     [Fact]
-    public void TheBuildPropsDeclareTheLicence()
+    public void R073_TheBuildPropsDeclareTheLicence()
     {
         Assert.Contains("<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>", BuildProps());
     }
 
     [Fact]
-    public void TheBannerIsTheNameAndTheVersion()
+    public void R070_TheBannerIsTheNameAndTheVersion()
     {
         Assert.Equal($"Image Visual Compare {VersionInfo.Value}", VersionInfo.Banner);
     }
 
     [Fact]
-    public void AboutStartsWithTheBannerAndTheCopyright()
+    public void R072_AboutStartsWithTheBannerAndTheCopyright()
     {
         string[] lines = VersionInfo.About.Replace("\r\n", "\n").Split('\n');
 
@@ -108,7 +108,7 @@ public class VersionTests
     /// absence of warranty, not just the copyright, and say where the full licence is.
     /// </summary>
     [Fact]
-    public void AboutCarriesTheWarrantyDisclaimerAndPointsAtTheLicence()
+    public void R072_AboutCarriesTheWarrantyDisclaimerAndPointsAtTheLicence()
     {
         Assert.Contains("ABSOLUTELY NO WARRANTY", VersionInfo.About);
         Assert.Contains("GNU General Public License", VersionInfo.About);

@@ -56,8 +56,20 @@ stops on a drift instead of editing them.
 
 ## The figures of 2026-10-02
 
-Not measured yet: the cases are measured when `ValidationTests` exists, in layer 3 of
-`docs/plans/2026-10-02-adopt-the-starter-kit.md`.
+Measured twice on the build of 2026-10-02 (layer 3 of
+`docs/plans/2026-10-02-adopt-the-starter-kit.md`), Release, in one test host where V-002 ran
+before V-001 both times. `validation.json` holds the first run. Every exact figure (sizes,
+formats, the canvas, the load) was the same in both runs.
+
+| Case | Decode, s | Private memory the load adds, MB | Left after the release, MB | The two Bgra32 buffers, MB |
+| --- | --- | --- | --- | --- |
+| V-001 | 2.74, 2.82 | 180.2, 181 | 2.4, 3.1 | 176.1 |
+| V-002 | 1.91, 2.04 | 169, 169 | -2, -2.2 | 170.4 |
+
+A load costs its two Bgra32 buffers and about 4 MB more, and the release gives all of it back,
+as the 2026-09-08 figures below found: there, 173 MB private after the load and 12 MB after the
+release, about 161 MB for two buffers of 80.4 MB each. The decode of V-001, two files of 103 and
+130 MB, matches the README's "~2,7 secunde" for two files of about 108 MB.
 
 ## The figures of 2026-09-08
 
@@ -86,4 +98,5 @@ files above. They are kept here as they were written, as the history of the figu
 
 ## History
 
-- 2026-10-02: the file created (ADR 0001, ADR 0005), with V-001 and V-002 unmeasured.
+- 2026-10-02: the file created (ADR 0001, ADR 0005); V-001 and V-002 measured the same day and
+  recorded as `expected`, the decode time left out.

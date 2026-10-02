@@ -30,7 +30,7 @@ public class WicImageLoaderTests : IDisposable
     public void Dispose() => _images.Dispose();
 
     [Fact]
-    public void Loads16BitRgbPng_TheFormatSirilProduces()
+    public void R010_Loads16BitRgbPng_TheFormatSirilProduces()
     {
         string path = _images.WritePng("rgb48.png", PixelFormats.Rgb48, 64, 48);
 
@@ -49,7 +49,7 @@ public class WicImageLoaderTests : IDisposable
     [InlineData("gray16.png", 16, ColorChannels.Gray)]
     [InlineData("bgra32.png", 8, ColorChannels.Rgba)]
     [InlineData("indexed8.png", 8, ColorChannels.Indexed)]
-    public void ReportsWhateverFormatTheFileTurnsOutToHave(string name, int bits, ColorChannels channels)
+    public void R011_ReportsWhateverFormatTheFileTurnsOutToHave(string name, int bits, ColorChannels channels)
     {
         PixelFormat format = name switch
         {
@@ -68,7 +68,7 @@ public class WicImageLoaderTests : IDisposable
     }
 
     [Fact]
-    public void EveryFormatIsNormalisedToFrozenBgra32()
+    public void R010_EveryFormatIsNormalisedToFrozenBgra32()
     {
         string sixteenBit = _images.WritePng("a.png", PixelFormats.Rgb48, 32, 32);
         string eightBit = _images.WritePng("b.png", PixelFormats.Bgr24, 32, 32);
@@ -83,7 +83,7 @@ public class WicImageLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ReadsTiffToo()
+    public void R010_ReadsTiffToo()
     {
         string path = _images.WriteTiff("stack.tiff", PixelFormats.Rgb48, 40, 30);
 
@@ -94,7 +94,7 @@ public class WicImageLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Probe_ReportsTheSameThingAsAFullLoad()
+    public void R011_Probe_ReportsTheSameThingAsAFullLoad()
     {
         string path = _images.WritePng("probe.png", PixelFormats.Rgb48, 128, 64);
 
@@ -105,7 +105,7 @@ public class WicImageLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadingLeavesTheFileUnlocked()
+    public void R010_LoadingLeavesTheFileUnlocked()
     {
         string path = _images.WritePng("unlocked.png", PixelFormats.Bgr24, 32, 32);
 
@@ -117,7 +117,7 @@ public class WicImageLoaderTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAsync_ProducesTheSameResultOffTheCallingThread()
+    public async Task R010_LoadAsync_ProducesTheSameResultOffTheCallingThread()
     {
         string path = _images.WritePng("async.png", PixelFormats.Rgb48, 32, 32);
 

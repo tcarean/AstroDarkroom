@@ -856,7 +856,28 @@ commits, one per layer, each with the gate green.
   under "Ce nu face (încă)".
 - **`CLAUDE.md` says the gate takes about 20 s**, as measured, not "under a minute", and its
   style section names the documentation file. It is 140 lines.
+- **`ValidationTests` is synchronous.** The load runs in a helper that is not inlined and returns
+  no reference to the pair, waiting on `ImagePairLoader.LoadAsync` (which awaits with
+  `ConfigureAwait(false)` throughout, so the wait cannot deadlock). Awaited in the test method,
+  the pair could stay reachable through the async state machine and the reading after the
+  release would measure nothing.
+- **Validation figures, measured twice**: the load adds 180.2 and 181 MB on V-001, 169 MB both
+  times on V-002, and leaves 2.4 or 3.1 MB and -2 or -2.2 MB after the release; the decode takes
+  2.74 to 2.82 s and 1.91 to 2.04 s. `validation.json` holds the first run; xUnit ran V-002
+  first both times. They agree with the 2026-09-08 table (about two Bgra32 buffers, all given
+  back), so there was no finding to report.
+- **102 tests renamed for 31 rows; 14 rows stay `accepted`**: the WPF layer, untested by design
+  (R-001, R-002, R-008, R-050 to R-054, R-060 to R-063), and the memory figures (R-080, R-081).
+  The header of `docs/requirements.md` says so. `GeometryTests.cs` holds two classes,
+  `AspectFitTests` and `RectDTests`, not one called `GeometryTests`; the renames went by file and
+  method, so the table above still applied. ADR 0004 now names its three renamed tests by their
+  `R###_` names. `RepoInvariantTests` has seven tests: the kit's fixture-manifest test has no
+  fixtures to check here, and FlatCheck's process-start test has nothing to guard.
 - **Findings, left for tasks of their own** (the ADRs state what the code does, and say so):
+  - `scripts/mutate.ps1` gives Stryker no test filter, so a mutation run will also run the two
+    validation cases wherever they cover a mutant, seconds each with the real pair present. Not
+    measured: no mutation run was made. A kit question, since every adopter has its validation
+    cases in its test project;
   - the summary of `Viewport.cs` says screen space is device-independent pixels; the code and
     ADR 0011 say physical;
   - the README and the comment in `MainWindow.ShowPair` say two pairs are never in memory at
@@ -883,6 +904,90 @@ commits, one per layer, each with the gate green.
     tests use six PNG formats and one TIFF, and `Classify`'s fall-through for an unknown format
     has no test (ADR 0022); `ColorChannels.GrayAlpha` has a description and a test, and
     `Classify` never returns it.
+- **The audit corrected three statements of this task's own text**: the `$comment` of
+  `docs/validation.json` said the tolerance applies to "every numeric field that is not an
+  integer", while V-002's memory figures are written as integers and compared within it (the
+  measured kind decides); `docs/skills.md` named the worktree's `testdata/large/` for
+  `tests/testdata/large/`; R-041 gave the minimap rectangle's floor in pixels, where the code
+  works in the minimap's DIPs. Everything else the audit found is below, for the owner to pick.
+- **The commit of layer 3 was amended once**, after the audit, to carry its report and these
+  three corrections, so the branch keeps the three commits the owner asked for.
+
+## The docs-health report of 2026-10-02
+
+Run once at the end, through `general-purpose` with the text of `.claude/agents/docs-auditor.md`
+(the agent type registers at the next session start). Its list of files opened holds nothing
+under `src/`; the audit is valid. The small change it planned from the docs alone: the A/B toggle
+the README lists under "Ce nu face (încă)", a key that switches the surface between image A
+alone, image B alone and the split view.
+
+Verdict: **mostly**. From the docs alone a fresh model can follow the process and change Core
+with a test; a change in the WPF layer, such as the toggle, depends on how `CompareView` and
+`MainWindow` work and talk to each other, which no design note describes, and the auditor had to
+piece it together from ADRs 0009 to 0014 and 0019 to 0021 and still guess the control's members.
+
+Gaps (what is missing, where it should go, effort):
+
+1. How the WPF layer works: `CompareView`'s handlers, `Viewport` and `DividerModel`, then
+   `Sync`, `UpdateOverlay`, `UpdateScrollBars` and the minimap; the control's public members;
+   how the zoom percentage (R-053) and the cursor pixel (R-051) reach `MainWindow`; `MainWindow`'s
+   open, confirm, decode and retry loop and how it builds the status bar. Today these are
+   fragments in ADRs that change only in the kit's ADR 0024's three ways.
+   `docs/design/rendering.md` and `shell.md`, with Covers naming those files. A session.
+2. `implemented` rows with parts no test guards: R-023 (the wheel factor and pan step), R-031
+   (the nudge sizes), R-003 and R-005 (dialog titles, the dialogs reopening), R-006 (the overlay
+   texts), R-032 (the cursors), R-040 (the thumbnail from A, 380 x 300), R-073 ("verbatim",
+   where `LicenseHeaderTests` checks four markers). Split each into a Core row and a window row.
+   `docs/requirements.md`. An hour.
+3. The notes moved unchanged are stale or correct themselves in brackets: `testing.md`'s "142
+   cases", the csproj sentences of `versioning-and-licence.md`, "exactly two places" in
+   `rendering.md`; `imaging.md` never names `ImagePairLoader` although the index sends
+   `Imaging/` there; `code-map.md` has no line for `Version.cs`, `AssemblyInfo.cs` or a test
+   file, and the types the rows name (`ImagePair`, `ImageLoadProgress`, `ImagePairLoadResult`,
+   `MemorySnapshot`, `MinimapLayout`, `ScrollBarStates`) are mapped to no file. `docs/design/`.
+   An hour, a session with the de-duplication against ADRs that `docs/design/README.md` defers.
+4. Covers sentences wider than the kit's ADR 0032: `code-map.md` covers
+   `src/ImageVisualCompare.Wpf/` and skips files in it; `testing.md` covers five `src/` files it
+   only says are untested. Minutes.
+5. The test infrastructure is described only in this plan: the patterns `RepoInvariantTests`
+   reads rows and tests with, `ClaudeMd_StaysShort`'s 200 lines, what `DesignNotes_HaveTheirIndex`
+   checks (and whether the kit's ADR 0031 retires it now that `check-design.ps1` checks the
+   index), why `ValidationTests` is synchronous. `docs/design/testing.md`, with Covers naming
+   `RepoInvariantTests.cs`, `ValidationTests.cs` and `TestData.cs`. An hour.
+6. A home for the open findings, which live only under "What deviated" above: `draft` rows (for
+   example `LICENSE` beside the executable) and a pointer from `CLAUDE.md`. Minutes.
+7. Rows without a numeric example: R-027, R-028, R-029, R-033, R-041, R-042; R-010 gives no
+   size; the offsets of R-026 and R-043 are content pixels, and every example is at 100 %, where
+   the units coincide. `docs/requirements.md`. Minutes.
+8. The toolbar's `Navigation` (R-060) is a label, and nothing says so; the README's "Controale"
+   does not list it. R-060, `README.md`. Minutes.
+9. Choices stated without a recorded reason: the minimap thumbnail drawn from image A only
+   (R-040, which matters for any A/B mode), the shortcuts working only while the surface has the
+   focus and `Ctrl+O` window-wide (R-063), x64 only, the window starting maximised (the README
+   gives the reason). `docs/decisions/0027` on. An hour.
+10. Kit rules restated instead of named: `CLAUDE.md` "Layout" names the shared folders by the
+    kit's ADR numbers instead of its rule "Shared folders"; the rule "User documentation lives in
+    `README.md`" overlaps the kit's rule "Languages" without naming it. Minutes.
+11. Which `CLAUDE.md` wins in a worktree: from `ImageVisualCompare/.claude/worktrees/...` Claude
+    Code loaded both the worktree's `CLAUDE.md` and the main checkout's, which until the merge is
+    the old one ("Do not commit", the version in the Wpf csproj). `CLAUDE.md` "Workflow" names
+    only `E:\Photografie\Code`. Minutes here; a session in the kit, since every adopter's
+    worktrees live under its own folder.
+12. "Overlay" names two things: `CompareView.UpdateOverlay`'s divider overlay and R-006's
+    loading overlay over the whole window, whose file no document gives. `code-map.md`. Minutes.
+
+Top three, in the auditor's words: no design note for how the WPF layer works; `implemented`
+rows with unguarded parts, where a dialog title or the wheel factor can change with the gate
+green; the moved notes, whose every fact has to be checked against a row and an ADR before it
+can be trusted.
+
+What is good: the rows can be tested as written (exact strings, constants with their values,
+worked numbers that check out: R-021's 28 px, R-024's 152 % to 200 % and 150 %, R-007's 184 695 552
+bytes), all 31 `implemented` IDs appear in the test list and no test carries an unknown one; the
+ADRs are honest about their guards and record the stale comments instead of hiding them;
+`CLAUDE.md` is short, cites an ADR per rule and routes each area to its note.
+
+None of the gaps is closed in this task; each is a task of its own (`/docs-health` step 4).
 
 ---
 
