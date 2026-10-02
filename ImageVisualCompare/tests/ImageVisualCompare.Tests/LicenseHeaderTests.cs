@@ -21,20 +21,21 @@ using System.Runtime.CompilerServices;
 namespace ImageVisualCompare.Tests;
 
 /// <summary>
-/// GPLv3 cere ca fiecare copie sa poarte notita, deci fiecare fisier sursa incepe cu ea:
-/// linia SPDX (varianta citibila de scanere de licente), copyright-ul, si cele trei
-/// paragrafe standard. Testul asta e singurul lucru care tine conventia in viata cand se
-/// adauga un fisier nou - altfel headerul se pierde tacut in primul fisier scris in graba,
-/// si abia la un audit de licenta afli.
+/// GPLv3 wants every copy to carry the notice, so every source file starts with it: the SPDX
+/// line (the form licence scanners can read), the copyright, and the three standard
+/// paragraphs. This test is the only thing that keeps the convention alive when a file is
+/// added - otherwise the header is lost silently in the first file written in a hurry, and
+/// only a licence audit finds out.
 ///
-/// Se verifica si LICENSE: sa existe, si sa fie chiar textul GPL v3, nu o parafrazare.
+/// LICENSE is checked too: that it exists, and that it really is the GPL v3 text, not a
+/// paraphrase.
 /// </summary>
 public class LicenseHeaderTests
 {
     private static string RepoDir([CallerFilePath] string thisFile = "") =>
         Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(thisFile)))!;
 
-    /// <summary>Notita, fara prefixul de comentariu.</summary>
+    /// <summary>The notice, without the comment prefix.</summary>
     private static readonly string[] Notice =
     [
         "SPDX-License-Identifier: GPL-3.0-or-later",
@@ -71,8 +72,8 @@ public class LicenseHeaderTests
             foreach (string file in Directory.EnumerateFiles(
                          Path.Combine(root, project), "*.cs", SearchOption.AllDirectories))
             {
-                // bin/ si obj/ contin fisiere generate de MSBuild (AssemblyInfo, .g.cs din
-                // XAML) - nu sunt sursa noastra si nu au de ce sa poarte notita.
+                // bin/ and obj/ hold files MSBuild generates (AssemblyInfo, .g.cs from XAML)
+                // - they are not our source and have no reason to carry the notice.
                 string relative = Path.GetRelativePath(root, file).Replace('\\', '/');
                 if (relative.Contains("/bin/") || relative.Contains("/obj/"))
                 {
@@ -103,10 +104,10 @@ public class LicenseHeaderTests
 
         Assert.True(
             offenders.Count == 0,
-            "Fisiere fara notita de licenta la inceput:\n  " + string.Join("\n  ", offenders));
+            "Files whose first lines are not the licence notice:\n  " + string.Join("\n  ", offenders));
     }
 
-    /// <summary>Daca enumerarea da gres, testul de mai sus ar trece pe zero fisiere.</summary>
+    /// <summary>If the enumeration went wrong, the test above would pass on zero files.</summary>
     [Fact]
     public void TheScanSeesAllThreeProjects()
     {
@@ -116,7 +117,7 @@ public class LicenseHeaderTests
         Assert.Contains("Version.cs", names);
         Assert.Contains("CompareView.xaml.cs", names);
         Assert.Contains("LicenseHeaderTests.cs", names);
-        Assert.True(names.Count > 25, "prea putine fisiere scanate: " + names.Count);
+        Assert.True(names.Count > 25, "too few files scanned: " + names.Count);
     }
 
     [Fact]

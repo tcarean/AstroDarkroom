@@ -1,0 +1,8 @@
+# In addition to the repository root's .gitignore (bin/, obj/, .vs/, **/.claude/worktrees/).
+.verify-stamp
+artifacts/
+TestResults/
+StrykerOutput/
+# The real pair, copied here by hand; it never enters the repository (ADR 0005).
+tests/testdata/large/
+.claude/settings.local.json

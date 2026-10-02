@@ -1,0 +1,98 @@
+{
+  "$comment": "Project-level Claude Code settings, versioned. Machine-specific grants go to settings.local.json (git-ignored). 'hooks', 'ask', 'deny', the git entries of 'allow', 'attribution', and 'disableAllHooks' and 'permissions.defaultMode', which stay unset, are the kit's, the same in every project: scripts/sync.ps1 copies them and step 0 of verify.ps1 compares them; the other 'allow' entries and this comment are ImageVisualCompare's (the kit's ADR 0028). 'allow' covers git commit, which the PreToolUse hook lets through only on a claude/ branch (the kit's rule \"Commits and merges\", the kit's ADR 0021); 'ask' makes every merge, push, rebase, tag and forced branch delete (branch -D) prompt the owner, whatever was approved earlier (the same rule, the kit's ADR 0013); a merged branch is deleted with branch -d, which 'allow' covers. 'attribution' is empty so Claude Code adds no Co-Authored-By or PR line, which the same rule forbids. Hooks: PreToolUse refuses a git commit the model attempts off a claude/ branch, runs verify before the others and blocks --no-verify; PostToolUse records which files this session edited; Stop refuses to end a turn that edited code (the folders kit.json names) until verify ran green, and a turn that edited a shared folder (scripts/, .claude/skills/, .claude/agents/, .claude/rules/kit/), which are the kit's (ADR 0002; the kit's ADRs 0017, 0018 and 0028).",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build*)",
+      "Bash(dotnet test*)",
+      "Bash(dotnet format*)",
+      "Bash(dotnet restore*)",
+      "Bash(dotnet run*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "PowerShell(dotnet build*)",
+      "PowerShell(dotnet test*)",
+      "PowerShell(dotnet format*)",
+      "PowerShell(dotnet restore*)",
+      "PowerShell(dotnet run*)",
+      "PowerShell(git status*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git log*)",
+      "PowerShell(git branch*)",
+      "PowerShell(git add*)",
+      "PowerShell(git commit*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-testdata.ps1)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-design.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mutate.ps1*)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File scripts/sync.ps1*)",
+      "PowerShell(dotnet tool restore*)"
+    ],
+    "ask": [
+      "Bash(git merge*)",
+      "Bash(git push*)",
+      "Bash(git rebase*)",
+      "Bash(git branch -D*)",
+      "Bash(git tag*)",
+      "PowerShell(git merge*)",
+      "PowerShell(git push*)",
+      "PowerShell(git rebase*)",
+      "PowerShell(git branch -D*)",
+      "PowerShell(git tag*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git commit --no-verify*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git reset --hard*)",
+      "PowerShell(git commit --no-verify*)",
+      "Read(**/*.secrets.json)",
+      "Read(**/.env)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/hooks/claude-commit-gate.ps1",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/hooks/claude-track-edits.ps1",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/hooks/claude-stop-gate.ps1",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  },
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}
