@@ -43,12 +43,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A target at the ends of the simulation's ladder is written as a bound: `<= 0.05` when even the
+  lowest step already puts the dust or a cloud on paper black (it read `0.05`, as if measured),
+  `> 0.60` when no step does, in the cloud table, the exact-target line and the map (R-043).
 - A NaN sample in a float FITS is clipped to 0 and counted like an out-of-range value (R-013);
   it used to reach the raster and, with the simulation's lookup table, would have stopped the
   run.
 
 ### Internal
 
+- The golden console texts are re-approved after the assistant has read their whole diff and
+  tied every changed line to its cause; a line that moved without one is a finding (ADR 0027).
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1`
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in

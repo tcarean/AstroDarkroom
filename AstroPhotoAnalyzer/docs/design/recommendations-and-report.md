@@ -72,7 +72,9 @@ VERDICT: <OK|ATENTIE|PROBLEMA>
 Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
 Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma, L* praf, L* cer, negru pur (% patches), % below 15, % above 50, print-safe;
                        the footer, the definition line (dust, sky, method), the exact-target line (at Dmax, Dmax -/+ 0.1, the Dmax from which it passes as is),
-                       the cloud table (name, patches, L*, target), the darkest DustCloudReportRows of them
+                       the cloud table (name, patches, L*, target), the darkest DustCloudReportRows of them;
+                       every target goes through ReportWriter.TargetText: the value, or a bound at the ladder's
+                       ends, "<= 0.05" (even the lowest step already reaches paper black) and "> 0.60" (none does)
 Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
 Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
 Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regions with deltas, "!" when flagged

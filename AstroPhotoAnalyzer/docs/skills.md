@@ -25,15 +25,17 @@ are in `kit.json`, not here.
   dependency.
 - At step 6: numeric code is `Input/`, `Analysis/`, `Report/`, `Parameters.cs` and
   `Thresholds.cs` (the rule "Formula changes re-validate"). The golden files are re-approved with
-  `APA_UPDATE_GOLDEN=1` only after the owner has read the diff and said yes.
+  `APA_UPDATE_GOLDEN=1` after reading their whole diff and tying every changed line to its cause
+  (the rule "Golden files", ADR 0027).
 - At step 8: `README.md` is in Romanian, with diacritics; its "Consola" section lists every
   console flag and its "Fereastra" section every tab.
 
 ## /wrap-up
 
 - At step 2: numeric code is `AstroPhotoAnalyzer.Core/Input/`, `Analysis/`, `Report/`,
-  `Parameters.cs` and `Thresholds.cs` (the rule "Formula changes re-validate"); a
-  `Golden/*.txt` that changed is a finding like a moved figure.
+  `Parameters.cs` and `Thresholds.cs` (the rule "Formula changes re-validate"). A
+  `Golden/*.txt` that changed is read line by line: report which lines changed and the cause of
+  each; a line without a cause in the change is a finding like a moved figure (ADR 0027).
 
 ## /validate
 

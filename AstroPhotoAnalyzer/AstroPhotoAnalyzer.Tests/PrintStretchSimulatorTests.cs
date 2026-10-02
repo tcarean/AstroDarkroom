@@ -98,6 +98,28 @@ public class PrintStretchSimulatorTests
         Assert.InRange(s.DmaxToPassAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
     }
 
+    /// <summary>
+    /// A target at either end of the ladder is a bound, not a value: `<= 0.05` when even the
+    /// lowest step already puts the dust (or a cloud) on paper black, `> 0.60` when the highest
+    /// does not. Written the same way in the cloud table, the exact-target line and the map.
+    /// </summary>
+    [Fact]
+    public void R043_ATargetAtTheLadderEndsIsWrittenAsABound()
+    {
+        Assert.Equal("<= 0.05", ReportWriter.TargetText(Thresholds.ExactTargetLo));
+        Assert.Equal("> 0.60", ReportWriter.TargetText(null));
+        Assert.Equal("0.187", ReportWriter.TargetText(0.187));
+        Assert.Equal("0.10", ReportWriter.TargetText(0.10));
+
+        string cloud = ReportWriter.CloudLine(new CloudRow { Name = "LDN 42 (B78)", Patches = 12, Lstar = 38.5, ExactTarget = Thresholds.ExactTargetLo });
+        Assert.EndsWith("   <= 0.05", cloud);
+
+        var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxToPassAsIs = 1.3 };
+        Assert.StartsWith("tinta exacta a prafului pe negru: <= 0.05 la Dmax 2.0 (0.06 la Dmax 1.9, <= 0.05 la Dmax 2.1); ", ReportWriter.ExactLine(s));
+        var none = s with { ExactTarget = null, ExactTargetDmaxLower = null, ExactTargetDmaxHigher = null };
+        Assert.StartsWith("tinta exacta a prafului pe negru: > 0.60 la Dmax 2.0 (> 0.60 la Dmax 1.9, > 0.60 la Dmax 2.1); ", ReportWriter.ExactLine(none));
+    }
+
     [Fact]
     public void R043_CrossingInterpolatesBetweenTwoStepsAndHandlesTheEnds()
     {
