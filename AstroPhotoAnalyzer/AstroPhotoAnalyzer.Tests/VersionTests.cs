@@ -35,13 +35,13 @@ public class VersionTests
         => File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
 
     [Fact]
-    public void VersionIsAThreePartNumber()
+    public void R120_VersionIsAThreePartNumber()
     {
         Assert.Matches(@"^\d+\.\d+\.\d+$", VersionInfo.Value);
     }
 
     [Fact]
-    public void TheVersionComesFromDirectoryBuildProps()
+    public void R120_TheVersionComesFromDirectoryBuildProps()
     {
         var m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
@@ -58,7 +58,7 @@ public class VersionTests
     [InlineData("AstroPhotoAnalyzer")]
     [InlineData("AstroPhotoAnalyzer.Core")]
     [InlineData("AstroPhotoAnalyzer.Wpf")]
-    public void NoProjectOverridesTheSharedVersionOrCopyright(string project)
+    public void R120_NoProjectOverridesTheSharedVersionOrCopyright(string project)
     {
         string path = Path.Combine(RepoDir(), project, project + ".csproj");
         if (!File.Exists(path)) return;   // proiectul WPF apare abia in etapa 5
@@ -71,14 +71,14 @@ public class VersionTests
 
     /// <summary>Nu trebuie sa ramana "1.0.0.0" sau "1.0.0+abc123" din assembly.</summary>
     [Fact]
-    public void TheVersionIsNotTheFourPartOrSourceTaggedForm()
+    public void R120_TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
         Assert.DoesNotContain("+", VersionInfo.Value);
         Assert.Equal(3, VersionInfo.Value.Split('.').Length);
     }
 
     [Fact]
-    public void TheCopyrightComesFromDirectoryBuildProps()
+    public void R120_TheCopyrightComesFromDirectoryBuildProps()
     {
         var m = Regex.Match(BuildProps(), @"<Copyright>([^<]+)</Copyright>");
 
@@ -87,7 +87,7 @@ public class VersionTests
     }
 
     [Fact]
-    public void TheCopyrightNamesTheAuthorAndTheYear()
+    public void R120_TheCopyrightNamesTheAuthorAndTheYear()
     {
         Assert.Equal("Copyright (C) 2026 Tudor Carean", VersionInfo.Copyright);
     }
@@ -95,7 +95,7 @@ public class VersionTests
     // ------------------------------------------------------------ banner-ul
 
     [Fact]
-    public void TheBannerIsTheNameAndTheVersion()
+    public void R001_TheBannerIsTheNameAndTheVersion()
     {
         Assert.Equal($"AstroPhotoAnalyzer {VersionInfo.Value}", VersionInfo.Banner);
     }
@@ -112,7 +112,7 @@ public class VersionTests
     static string SecondLine(params string[] args) => Lines(args)[1];
 
     [Fact]
-    public void HelpStartsWithTheBanner()
+    public void R001_HelpStartsWithTheBanner()
     {
         Assert.Equal(VersionInfo.Banner, FirstLine("--help"));
         Assert.Equal(VersionInfo.Banner, FirstLine());
@@ -123,7 +123,7 @@ public class VersionTests
     /// a doua peste tot unde sta si banner-ul pe prima - inclusiv la --help si la erori.
     /// </summary>
     [Fact]
-    public void EveryRunPrintsTheCopyrightOnTheSecondLine()
+    public void R001_EveryRunPrintsTheCopyrightOnTheSecondLine()
     {
         using var ws = new TempWorkspace();
 
@@ -134,7 +134,7 @@ public class VersionTests
 
     /// <summary>Si o rulare care esueaza spune ce versiune a esuat.</summary>
     [Fact]
-    public void AFailedRunStillPrintsTheBanner()
+    public void R001_AFailedRunStillPrintsTheBanner()
     {
         using var ws = new TempWorkspace();
 
@@ -148,7 +148,7 @@ public class VersionTests
     /// in --help, si de acolo trimite la textul complet.
     /// </summary>
     [Fact]
-    public void HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
+    public void R004_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()
     {
         string help = string.Join("\n", Lines("--help"));
 
@@ -159,7 +159,7 @@ public class VersionTests
     }
 
     [Fact]
-    public void TheBannerIsPrintedExactlyOnce()
+    public void R001_TheBannerIsPrintedExactlyOnce()
     {
         var stdout = new StringWriter();
         AnalyzerCli.Run(new[] { "--help" }, stdout, new StringWriter());

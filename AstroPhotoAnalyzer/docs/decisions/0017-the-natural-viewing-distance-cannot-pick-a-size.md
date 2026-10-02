@@ -12,7 +12,8 @@ acceptance run, phase 7, 2026-09-21. Run without `--distance`, the first version
 50 x 33 cm where the conversation had said "up to 100 cm at the natural distance, 70 for the
 hallway". At the natural distance, 1.5 x the print's diagonal, the distance from which a star is a
 point and the natural distance both scale with the width; their ratio is a constant of the image,
-1.018 on the reference image. Every row failed by 2 %, and the rule fell back to the smallest.
+1.018 on the reference image by the record of that day (1.015 measured on 2026-10-02, see
+`docs/validation.md`). Every row failed by 2 %, and the rule fell back to the smallest.
 
 ## Decision
 

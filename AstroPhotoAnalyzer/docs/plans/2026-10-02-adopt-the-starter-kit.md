@@ -680,7 +680,116 @@ worktree once, to see it list nothing (no code changed) and exit 0. Commit 2.
 
 ## What deviated
 
-(filled at wrap-up by the implementing session)
+Implemented on 2026-10-02 in one session, on `claude/Adopt-the-starter-kit-process`, in three
+commits, one per layer, each with the gate green (a3320a0, 695dee6 and the third).
+
+- **The reference image is a copy, not reached through a variable** (the owner's instruction at
+  approval). It sits in `AstroPhotoAnalyzer.Tests/testdata/large/` of the main checkout, where the
+  owner asked for it, and of the task's worktree, where the cases were measured; the main
+  checkout's copy shows as untracked until the merge brings the project's `.gitignore`.
+  `kit.json` keeps `APA_TESTDATA_LARGE` because `kit-config.ps1` requires a name for the override;
+  ADR 0004 says so. The manifest was written by hand with the SHA-256 and checked with
+  `check-testdata.ps1`, instead of `-Update`.
+- **ADRs 0001 to 0006 went into the first commit**, with the gate, not into layer 2: `kit.json`,
+  `.editorconfig`, `Directory.Packages.props` and the CHANGELOG cite them.
+- **The format pass touched 10 files**, not about 12: initialisers one member per line, the two
+  `case` blocks of `IccProfileInfo` re-indented, four unused usings removed.
+- **ADR 0003's counts were measured**: 129 warnings at `AnalysisLevel` latest-recommended, and 139
+  with `Nullable` in the three application projects (85, 5, 49). The `Nullable` probe left a core
+  built with annotations in `obj/`, and the first gate run failed on four CS8625 in the tests; a
+  full rebuild gave 0 warnings again. Nothing in the code changed.
+- **The design notes.** Twelve, as the table listed. Three moves differ from the table: the
+  specification's §4 (the parameters) moved whole into `console.md`, instead of only into
+  requirement rows; §15 lives only in `extending.md`, and the notes of the areas point at it
+  instead of repeating "A new parameter" or "A new tab"; the acceptance record's lessons stay in
+  `validation.md` and `measurements.md` points at them. `pipeline.md` covers `Runs/AnalysisRun.cs`
+  and the solution; `Input/` is `input.md`'s, as §3 describes it. The header of each note says
+  "moved unchanged" and does not claim that sections became pointers: the table's header text
+  said so, against the ground rule not to de-duplicate in this task. `dependencies.md` was
+  written by hand from §13 and the first `CLAUDE.md`.
+- **The specification was checked line by line** before its removal: every line of it is in a
+  note, except the numbered headings, the section-number references (replaced by note names),
+  §1 and §12 (in `CLAUDE.md`, ADRs 0007, 0008, 0022, 0023 and R-015, R-123), the file map's three
+  lines about the old documents, and §15's references; §15 was compared word by word.
+- **Requirements**: 65 rows. R-006 states the console's and the core's invariant formatting
+  without the test-host clause of the plan: the test project does not set
+  `InvariantGlobalization`. `NumbersAreParsedWithTheInvariantCulture` carries R-006, not R-024.
+- **Tests renamed**: 82 for 28 rows, more than the table's: `VersionTests` split between R-001
+  (the banner), R-120 (the version) and R-004 (the warranty in `--help`); `ThirdPartyTests`' help
+  test carries R-004; `WindowSmokeTests`' error card R-015 and its tooltip R-026;
+  `CultureTests`' premise test R-118. `ViewModelTests.TonesExportResolutionAndBackgroundCarryTheirRows`
+  and the two presentation tests keep their names (four rows, one name).
+- **Validation**: one kind of case, `analysis`, with a fixed set of figures named after the
+  result's records; V-001 guards all 168, V-002 36, V-003 9. Tolerance 0.01, not 0.05: the
+  analysis is deterministic. The figures reproduce the acceptance record's "tool" column except
+  the natural ratio, 1.0147 against the record's 1.018, left open for the owner
+  (`docs/validation.md`, "The figures of 2026-10-02"); R-073 and ADR 0017 quote both. The
+  acceptance table is kept unchanged, and the figures of 2026-10-02 have a section of their own
+  instead of a third column.
+- **`CLAUDE.md` is 162 lines**, not 120 to 140: the rules of the first `CLAUDE.md` that are this
+  project's own were kept, each citing its ADR.
+- **The audit corrected four statements of this task's own text** that were false: R-096's
+  example (the mono PNG also gets an Attention for its size), R-002's example wording, ADR 0007's
+  list of the core's friend assemblies (the window is one) and the test count in
+  `docs/skills.md`. Everything else the audit found is below, for the owner to pick.
+
+## The docs-health report of 2026-10-02
+
+Run once at the end, through `general-purpose` with the text of `.claude/agents/docs-auditor.md`
+(the agent type registers at the next session start). Its list of files opened holds nothing
+under the code folders; the audit is valid. The small change it planned from the docs alone: a
+fourth medium, a matte fine-art paper at Dmax 1.7, as `--medium mat`.
+
+Verdict: **mostly**. The docs explain what the tool does, and why, well enough to understand it
+and to make most changes; the planned change took ten guesses, most about which files list the
+media.
+
+Gaps (what is missing, where it should go, effort):
+
+1. "A new print medium" in `docs/design/extending.md` names five places of about twenty: R-003
+   and `Golden/help.txt`, R-016 with `ColorMathTests` and `input.md`'s paper-black list, R-042
+   and the ladder, the Tonuri guide, `ParameterFieldsTests`, README "Consola", the Run line of
+   `CLAUDE.md`, a golden scenario and `/validate` are missing. Minutes.
+2. Where the window's combo, the ladder and the Tonuri guide take the media from, and whether
+   `--help` and the medium error are built from `Options.Media` or typed. `console.md`,
+   "Parameters", and `window.md`. Minutes.
+3. The Dmax of each medium (2.0, 1.5, 2.2) has no recorded source, although baryta's 2.0 decides
+   the reference image's verdict (V-001 PROBLEMA, V-003 at 2.35 ATENTIE). A new ADR, plus
+   `console.md` or `thresholds.md`. An hour.
+4. No procedure for changing an `implemented` row: the header says a change starts `draft`, and
+   `RepoInvariantTests` then fails while its `R###_` tests exist. `docs/requirements.md` header.
+   Minutes.
+5. Seven rows without a numeric example: R-014, R-017, R-042, R-075, R-091, R-094, R-101; R-007's
+   example is a timing, and no test carries R-007. `docs/requirements.md`. An hour.
+6. The contract of `AnalysisRun.Execute` (arguments, the optional progress, the result, the
+   exceptions) is not written down; `pipeline.md`'s moved text names the console and the two test
+   projects as the core's friends and leaves out the window. `pipeline.md`. Minutes.
+7. The golden mechanics: how a new scenario and file are made, the `--- stderr ---` / `--- exit N`
+   framing, the `<VERSIUNE>` and `<TEMP>` substitutions. `console.md`, "Golden scenes". Minutes.
+8. The naming scheme of the validation figures (`size.row70.dpi`, the region slugs, `"none"`, the
+   values of `crop.axis`, how `medium` is written in a case). `docs/validation.md`, "How a case
+   runs". An hour.
+9. ADR 0007 records what the kit's ADR 0002 already decided for a project made from the kit
+   (the core library has no UI) without citing it (the kit's rule "Decisions"). A citation in
+   ADR 0007. Minutes.
+10. No ADR records the golden tests on synthetic scenes (scrubbed, re-approved by the owner); the
+    reason is only in `console.md`. `docs/decisions/`. Minutes.
+11. `measurements.md` still says the natural ratio is 1.018; V-001 measures 1.0147. After the
+    owner's answer. Minutes.
+12. A row, a note and an ADR often state the same paragraph (ADR 0001 defers the cut, as
+    FlatCheck's ADR 0051 did); R-073 and `measurements.md` already disagree on the natural ratio.
+    `docs/design/`. A session.
+
+Top three, in the auditor's words: the medium checklist with the open question of where the media
+list comes from; the Dmax values without a source; R-096's wrong example (corrected above) and
+the seven rows without examples.
+
+What is good: the numbers in `requirements.md` match `validation.json` and the golden files to the
+printed decimal (eleven rows spot-checked), and the 28 `implemented` rows map onto exactly 82
+`R###_` tests; each risky area points to the ADR with its lesson; discrepancies are recorded, not
+hidden.
+
+None of the gaps is closed in this task; each is a task of its own (`/docs-health` step 4).
 
 ---
 

@@ -47,7 +47,7 @@ public class ThirdPartyTests
     /// adaugata fara intrare - inainte sa ajunga pe ecran fara notita.
     /// </summary>
     [Fact]
-    public void EveryPackageTheCoreLinksIsListed()
+    public void R122_EveryPackageTheCoreLinksIsListed()
     {
         string[] linked = CorePackages();
         Assert.NotEmpty(linked);
@@ -68,7 +68,7 @@ public class ThirdPartyTests
     /// componenta afisata trebuie sa aiba un heading acolo.
     /// </summary>
     [Fact]
-    public void EveryComponentHasAnEntryInTheNoticesFile()
+    public void R122_EveryComponentHasAnEntryInTheNoticesFile()
     {
         string notices = File.ReadAllText(Path.Combine(RepoDir(), "THIRD-PARTY-NOTICES.md"));
         string[] headings = Regex.Matches(notices, @"^##\s+(.+)$", RegexOptions.Multiline)
@@ -82,7 +82,7 @@ public class ThirdPartyTests
 
     /// <summary>Ce arata ecranul nu poate fi gol: nume, rol, licenta, copyright, si un link https.</summary>
     [Fact]
-    public void EveryComponentNamesItsLicenceAndUrl()
+    public void R122_EveryComponentNamesItsLicenceAndUrl()
     {
         Assert.Single(ThirdParty.Components);
 
@@ -103,7 +103,7 @@ public class ThirdPartyTests
     /// urmatorul cititor sa nu presupuna ca e o licenta permisiva simpla.
     /// </summary>
     [Fact]
-    public void ImageSharpIsTakenUnderTheOpenSourceTermsAndCarriesItsCopyright()
+    public void R122_ImageSharpIsTakenUnderTheOpenSourceTermsAndCarriesItsCopyright()
     {
         var sharp = Assert.Single(ThirdParty.Components, c => c.Name == "SixLabors.ImageSharp");
 
@@ -116,7 +116,7 @@ public class ThirdPartyTests
     /// spune direct ce s-a rupt daca cineva desface bucla.
     /// </summary>
     [Fact]
-    public void HelpPrintsTheSharedWarrantyLines()
+    public void R004_HelpPrintsTheSharedWarrantyLines()
     {
         var sw = new StringWriter();
         AnalyzerCli.Run(new[] { "--help" }, sw, sw);

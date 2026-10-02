@@ -54,7 +54,7 @@ encoder at hand cannot produce the real thing; **its row in `../requirements.md`
 
 **A new tab**: a `ResultTabViewModel` in `ResultTabs.cs`, a `UserControl` in `Views/`
 (partial class in `ResultViews.xaml.cs`), a `TabItem` in `MainWindow.xaml`, a `Render`
-line in `WindowSmokeTests.EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**.
+line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**.
 
 **A new dependency**: the kit's rule "Packages" and the rule "Package notices" in `CLAUDE.md` -
 discuss first; four places, two enforced by tests; **`dependencies.md`, and ADR 0009 if the

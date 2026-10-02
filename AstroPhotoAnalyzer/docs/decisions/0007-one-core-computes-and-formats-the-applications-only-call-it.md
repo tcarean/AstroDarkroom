@@ -21,7 +21,7 @@ readers, the analyzers, the thresholds, the recommendations, the report. It has 
 so nothing in it can reach `Console` or a window: the boundary is the compiler's, not a matter of
 discipline. Both applications call `Runs/AnalysisRun.Execute`, which loads the file, runs every
 analyzer, builds the recommendations and writes the report body, and show what it returns. The
-core's types are `internal`, visible to the console and the two test projects through
+core's types are `internal`, visible to the console, the window and the two test projects through
 `InternalsVisibleTo`; the window's view-models are `public`, because binding needs it, and
 therefore cannot expose a core type: everything the window shows passes through the simple rows
 of `Rows.cs`. A view-model formats; it does not decide. The one kind of sentence it writes,

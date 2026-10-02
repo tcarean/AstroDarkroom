@@ -57,8 +57,9 @@ are in `kit.json`, not here.
 ## /mutate
 
 - At step 1: pass a file filter on this project; `scripts/mutate.ps1 -Mutate "**/StarAnalyzer.cs"`
-  is the shape. Stryker runs the whole suite of 236 core tests once per mutant, so a whole-core
-  run is long; no run has been measured yet, so write the first one's time here.
+  is the shape. Stryker runs the whole suite of the core's test project (243 tests on 2026-10-02)
+  once per mutant, so a whole-core run is long; no run has been measured yet, so write the first
+  one's time here.
 
 ## /docs-health
 

@@ -119,7 +119,31 @@ missing from 8 bits after a shadow lift, none from 16.
   1.5` (the hallway) the recommendation is 70 cm on the 50:35 crop, as in the
   conversation; on the full frame it is 80 (FWHM 3.13 instead of 3.00).
 
+## The figures of 2026-10-02
+
+`validation.json` holds every figure the build of 2026-10-02 (version 1.0.0 plus the process
+migration, no formula changed) measured on the image: 168 for V-001, 36 for V-002 and 9 for
+V-003, in 27 s for the three cases. They reproduce, to the last decimal the record printed, the
+"tool" column of the table above: the means and the shares below 32 and 64, the percentiles, the
+L\* figures, the simulation at 0.19 (gamma 0.730 from 0.1028), the noise (128 smooth tiles,
+median 0.45 LSB), the plateau (2.68 px from 20 tiles), the rounding, the stress test, the JPEG
+and TIFF sizes and errors, the stars (7166, median 3.133 px, centre 4.27 px), the background
+colour and the bottom-right corner, the crop and the 70 cm row on 50:35, and the 70 cm
+recommended at 1.5 m.
+
+One figure does not. The natural ratio, the distance from which a star is a point over the
+natural viewing distance, is given as 1.018 for this image by the record and by
+`design/measurements.md`; the build of 2026-10-02 measures 1.0147 on the full frame and 1.0623 on
+the 50:35 crop. With the median FWHM of 3.133 px, the formula in `design/measurements.md` gives
+1.0147 on the full frame, so the recorded figures follow the code; how the record's 1.018 was
+obtained is not written down. Left open for the owner on 2026-10-02.
+
+V-003 adds a figure the record does not have: at Dmax 2.35, paper black is L\* 4.03 and 1.34 % of
+the image falls below it, so the image is print-safe as it is, no target is recommended, and the
+overall verdict drops from PROBLEMA to ATENTIE.
+
 ## History
 
-- 2026-10-02: the acceptance record became this file (ADR 0001); V-001 to V-003 created
-  unmeasured, to be filled from the build of the same day.
+- 2026-10-02: the acceptance record became this file (ADR 0001); V-001 to V-003 recorded from
+  the build of the same day, by `ValidationTests`' `MEASURED` lines; the natural ratio differs
+  from the record (above).

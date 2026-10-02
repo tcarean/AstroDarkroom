@@ -15,8 +15,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `AstroPhotoAnalyzer.Tests/testdata/large/`. `docs/specification.md` was split into
   `docs/requirements.md` (65 rows with IDs), `docs/decisions/` (24 ADRs, 18 of them retroactive)
   and `docs/design/` (12 notes, moved unchanged); the acceptance record became
-  `docs/validation.md`, and `CLAUDE.md` holds only the project's rules. No behaviour changed;
-  one `dotnet format` pass over 10 files.
+  `docs/validation.md`, and `CLAUDE.md` holds only the project's rules. `RepoInvariantTests`
+  ties `implemented` rows to tests named `R###_...` (82 tests renamed for 28 rows), and
+  `ValidationTests` checks three cases on the reference image outside the gate. No behaviour
+  changed; one `dotnet format` pass over 10 files.
 
 ## [1.0.0] - 2026-09-21
 

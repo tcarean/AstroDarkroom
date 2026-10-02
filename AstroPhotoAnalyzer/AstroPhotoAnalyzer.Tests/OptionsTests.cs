@@ -24,7 +24,7 @@ namespace AstroPhotoAnalyzer.Tests;
 public class OptionsTests
 {
     [Fact]
-    public void TheImageIsTheOnlyPositionalArgument()
+    public void R003_TheImageIsTheOnlyPositionalArgument()
     {
         var o = Options.Parse(new[] { "poza.tif" });
 
@@ -35,7 +35,7 @@ public class OptionsTests
     }
 
     [Fact]
-    public void FlagsMayComeBeforeOrAfterTheImage()
+    public void R003_FlagsMayComeBeforeOrAfterTheImage()
     {
         var before = Options.Parse(new[] { "--medium", "canvas", "poza.tif" });
         var after = Options.Parse(new[] { "poza.tif", "--medium", "canvas" });
@@ -47,7 +47,7 @@ public class OptionsTests
     }
 
     [Fact]
-    public void NumbersAreParsedWithTheInvariantCulture()
+    public void R006_NumbersAreParsedWithTheInvariantCulture()
     {
         var o = Options.Parse(new[] { "poza.tif", "--distance", "1.5", "--target-bg", "0.19", "--dmax", "2.2" });
 
@@ -58,7 +58,7 @@ public class OptionsTests
     }
 
     [Fact]
-    public void SizesAreACommaSeparatedListOfWidths()
+    public void R021_SizesAreACommaSeparatedListOfWidths()
     {
         var o = Options.Parse(new[] { "poza.tif", "--sizes", "60,70, 80" });
 
@@ -69,7 +69,7 @@ public class OptionsTests
     [Theory]
     [InlineData("50:35")]
     [InlineData("50x35")]
-    public void AspectAcceptsColonAndX(string text)
+    public void R022_AspectAcceptsColonAndX(string text)
     {
         var o = Options.Parse(new[] { "poza.tif", "--aspect", text });
 
@@ -85,7 +85,7 @@ public class OptionsTests
     [InlineData("--sizes", "a,b")]
     [InlineData("--aspect", "50")]
     [InlineData("--target-bg", "1.5")]
-    public void ABadValueIsAnErrorNotAnException(string flag, string value)
+    public void R003_ABadValueIsAnErrorNotAnException(string flag, string value)
     {
         var o = Options.Parse(new[] { "poza.tif", flag, value });
 
@@ -94,27 +94,27 @@ public class OptionsTests
     }
 
     [Fact]
-    public void AMissingValueIsReported()
+    public void R003_AMissingValueIsReported()
     {
         Assert.Contains("lipseste valoarea", Options.Parse(new[] { "poza.tif", "--distance" }).Error);
         Assert.Contains("asteapta o valoare", Options.Parse(new[] { "poza.tif", "--distance", "--dmax", "2" }).Error);
     }
 
     [Fact]
-    public void AnUnknownOptionIsReported()
+    public void R003_AnUnknownOptionIsReported()
     {
         Assert.Contains("optiune necunoscuta", Options.Parse(new[] { "poza.tif", "--version" }).Error);
     }
 
     [Fact]
-    public void NoImageOrTwoImagesIsAnError()
+    public void R003_NoImageOrTwoImagesIsAnError()
     {
         Assert.Contains("lipseste fisierul", Options.Parse(new[] { "--medium", "baryta" }).Error);
         Assert.Contains("un singur fisier", Options.Parse(new[] { "a.tif", "b.tif" }).Error);
     }
 
     [Fact]
-    public void NoArgumentsOrHelpAsksForUsage()
+    public void R004_NoArgumentsOrHelpAsksForUsage()
     {
         Assert.True(Options.Parse(Array.Empty<string>()).Help);
         Assert.True(Options.Parse(new[] { "poza.tif", "-h" }).Help);
