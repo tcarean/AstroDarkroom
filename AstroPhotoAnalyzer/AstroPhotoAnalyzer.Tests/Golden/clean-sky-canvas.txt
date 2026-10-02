@@ -14,8 +14,8 @@ VERDICT: ATENTIE
      fiindca: eroare medie 0.61, maxima 3.5 niveluri; 1.8 % din esantioane cu eroare > 2, la nivelul mediu 64 (in cerul intunecat, unde JPEG-ul lucreaza cel mai prost)
 
 2. Fundalul si hartia  [OK]
-   - Fundalul e print-safe: se poate trimite asa cum e.
-     fiindca: 0.0 % din pixeli sub negrul hartiei (prag 2 %), L* median 27.0; negrul hartiei = L* 20.7 la Dmax 1.5
+   - Fundalul e print-safe asa cum e; poti cobori pana la 0.20 (praful la L* 21.2, cerul la L* 21.3).
+     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 26.9; negrul hartiei L* 20.7 la Dmax 1.5; cerul (mediana dalelor) la L* 27.0; nivelul fundalului 0.25; trece asa cum e de la Dmax 1.3
 
 3. Culoarea fundalului si gradientele  [OK]
    - Fundalul e neutru.
@@ -27,7 +27,7 @@ VERDICT: ATENTIE
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.00 LSB pe 37 dale netede (10 % 0.99, minim 0.97); tinta pentru versiunea de print: 0.8-1.5 LSB
+     fiindca: sigma median 1.00 LSB pe 37 dale netede (10 % 0.99, minim 0.97); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.20 zgomotul scade de ~0.93 x (panta curbei la fundal), la ~0.93 LSB
 
 6. Avertismente  [OK]
    (nimic de semnalat)
@@ -38,12 +38,23 @@ Anexa A. Tonuri
   percentile canal referinta (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
   L* median 27.0; sub negrul hartiei (L* 20.7): 0.0 %; sub L* 15: 0.0 %; peste L* 50: 0.1 %
 
-Anexa B. Simularea fundalului (nivelul fundalului 0.250, curba gamma pe toate canalele)
-  fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50
-  asa cum e      1.000        27.0       0.0 %      0.0 %        0.1 %   print-safe
-  0.15           1.369        15.3      99.5 %     17.0 %        0.0 %
-  0.19           1.198        20.1      96.2 %      0.0 %        0.0 %
-  0.20           1.161        21.2       3.9 %      0.0 %        0.0 %
+Anexa B. Simularea fundalului (de la nivelul 0.25; curba gamma pe toate canalele)
+  fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
+  0.10                 1.661       9.0      9.0     100.0 %     99.6 %        0.0 %
+  0.11                 1.592      10.2     10.3     100.0 %     99.5 %        0.0 %
+  0.12                 1.530      11.5     11.6     100.0 %     99.5 %        0.0 %
+  0.13                 1.472      12.8     12.8     100.0 %     99.4 %        0.0 %
+  0.14                 1.418      14.0     14.1     100.0 %     99.0 %        0.0 %
+  0.15                 1.369      15.2     15.3     100.0 %     17.0 %        0.0 %
+  0.16                 1.322      16.4     16.5     100.0 %      0.0 %        0.0 %
+  0.17                 1.278      17.6     17.7     100.0 %      0.0 %        0.0 %
+  0.18                 1.237      18.8     18.9     100.0 %      0.0 %        0.0 %
+  0.19                 1.198      20.0     20.1      92.2 %      0.0 %        0.0 %
+  0.20 *               1.161      21.2     21.3       0.0 %      0.0 %        0.0 %   print-safe
+  0.25 asa cum e       1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
+  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei
+  praful = cele mai intunecate 1 % din dalele de 32 px (fara WCS); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei (L* 20.7 la Dmax 1.5)
+  tinta exacta a prafului pe negru: 0.196 la Dmax 1.5 (0.221 la Dmax 1.4, 0.173 la Dmax 1.6); trece asa cum e de la Dmax 1.3
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.3 MB
@@ -79,7 +90,7 @@ Anexa E. Culoarea fundalului
 
 Anexa F. Parametri
   mediu canvas, Dmax 1.5; latimi 40, 60, 80 cm; passepartout 7 cm, rama 3 cm
-  distanta naturala; raport tinta nativ; fundal-tinta 0.19 (+ 0.15, 0.20); samanta 0
+  distanta naturala; raport tinta nativ; fundal-tinta niciunul (grila 0.10..0.20); WCS fara; samanta 0
 
 --- stderr ---
 --- exit 2

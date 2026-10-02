@@ -59,3 +59,9 @@ line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirement
 **A new dependency**: the kit's rule "Packages" and the rule "Package notices" in `CLAUDE.md` -
 discuss first; four places, two enforced by tests; **`dependencies.md`, and ADR 0009 if the
 reasoning changes**.
+
+**An embedded data set** (a catalogue, a table written by others): the same four places as a
+package, with `Resources` instead of `Packages` on its `ThirdPartyComponent` and an
+`EmbeddedResource` with a `LogicalName` in the core's csproj (`ThirdPartyTests` ties the two);
+its origin and licence argued in `THIRD-PARTY-NOTICES.md`; the file's first lines say where it
+came from and when; **`input.md` and `dependencies.md`**.

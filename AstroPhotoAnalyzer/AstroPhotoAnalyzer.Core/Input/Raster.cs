@@ -96,6 +96,12 @@ namespace AstroPhotoAnalyzer
         internal long FileBytes { get; init; }
 
         /// <summary>
+        /// WCS-ul din antetul FITS (R-018), sau cel imprumutat prin Parameters.WcsPath (R-027);
+        /// null cand fisierul n-are unul: atunci praful si cerul se masoara fara catalog.
+        /// </summary>
+        internal Wcs Wcs { get; init; }
+
+        /// <summary>
         /// O observatie a cititorului pe care raportul o arata ca atare: de exemplu ca
         /// valorile float au fost taiate la [0, 1], sau ca randurile au fost rasturnate
         /// dupa ROWORDER. Null cand n-a fost nimic de spus.

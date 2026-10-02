@@ -23,7 +23,8 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - Format: `dotnet format AstroPhotoAnalyzer.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project AstroPhotoAnalyzer -- <image> [--medium baryta|canvas|acrilic]
   [--dmax n] [--distance m] [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
-  [--passepartout cm] [--frame cm] [-o file]`; flags before or after the image (R-003).
+  [--passepartout cm] [--frame cm] [--wcs file.fit] [-o file]`; flags before or after the image
+  (R-003).
   Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- <image>`
 - Golden console texts, re-approved only after the owner read the diff:
   `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln`
@@ -86,8 +87,10 @@ or varies a kit rule names it.
   console stays one copyable file, so pure-managed packages only. ImageSharp stays pinned to
   3.1.11 (ADR 0009); the FITS reader stays hand-written.
 - **Measured on the reference image** (extends the kit's rule "Measured numbers"). The real data
-  is `de_printat.png` (ADR 0004); a claim about a measurement on a real image comes with the
-  pasted output, and the synthetic scenes of `Scenes.cs` are no substitute for it.
+  is `de_printat.png` (ADR 0004) and, for anything that reads a WCS or the catalogue, the
+  plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement
+  on a real image comes with the pasted output, and the synthetic scenes of `Scenes.cs` are no
+  substitute for it.
 - **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
   reads or writes about the process: docs, tests of invariants, scripts, commits, CHANGELOG.
   Romanian in everything the user sees (CLI text, `--help`, window labels, the report,
@@ -146,6 +149,9 @@ edit:
   candidate threshold is not the script's; the natural distance cannot pick a size).
 - `BackgroundAnalyzer`: ADR 0014, ADR 0018 (`<=` on the percentile; coloured versus neutral
   regions).
+- `DustAnalyzer`, `PrintStretchSimulator`, `Wcs`, `DarkNebulaCatalogue`: ADR 0025 (the dust is the
+  catalogued clouds' 10 % percentile, the disc is the catalogue's, SIP is ignored, the fallback
+  is the 1 % rule, the simulation is a gamma curve that a real stretch undercuts).
 - `NoiseAnalyzer`, `QuantizationAnalyzer`: ADR 0015 (two tile criteria on purpose).
 - `JpegAnalyzer`: ADR 0019 (the mean error votes nothing).
 - Any text in a view-model: `docs/design/window.md` and ADR 0020.

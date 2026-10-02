@@ -22,7 +22,7 @@ public class TonalAnalyzerTests
     static readonly Parameters Baryta = new();
 
     [Fact]
-    public void MidGreyIsBrightNeutralAndPrintSafe()
+    public void R041_MidGreyIsBrightAndNeutral()
     {
         var t = TonalAnalyzer.Analyze(SyntheticRasters.Flat(64, 64, 0.5f), Baryta);
 
@@ -37,8 +37,6 @@ public class TonalAnalyzerTests
         Assert.Equal(0, t.PctBelowPaperBlack);
         Assert.Equal(0, t.PctBelowLowSeparation);
         Assert.Equal(100, t.PctAboveHighlight);
-        Assert.True(t.PrintSafe);
-        Assert.False(t.BackgroundTooLowForPaper);
     }
 
     [Fact]
@@ -60,8 +58,6 @@ public class TonalAnalyzerTests
         Assert.Equal(100, t.PctBelowDarkA);
         Assert.Equal(100, t.PctBelowPaperBlack);
         Assert.Equal(100, t.PctBelowLowSeparation);
-        Assert.True(t.BackgroundTooLowForPaper);
-        Assert.False(t.PrintSafe);
     }
 
     [Fact]
@@ -75,8 +71,6 @@ public class TonalAnalyzerTests
         Assert.Equal(50, t.PctAboveHighlight, 6);
         Assert.Equal(50, t.PctBelowDarkB, 6);
         Assert.Equal(50, t.PctBelowDarkA, 6);
-        Assert.False(t.PrintSafe);
-        Assert.True(t.BackgroundTooLowForPaper);
     }
 
     [Fact]
@@ -98,7 +92,7 @@ public class TonalAnalyzerTests
     [Fact]
     public void TheLadderListsEveryReferenceInLstarOrder()
     {
-        var ladder = TonalAnalyzer.LstarLadder(Baryta);
+        var ladder = TonalAnalyzer.LstarLadder(new Parameters { TargetBackground = 0.19 });
 
         Assert.Equal(3 + 2 + 2 + 1, ladder.Count);
         Assert.Equal(ladder.OrderBy(l => l.Lstar).Select(l => l.Lstar), ladder.Select(l => l.Lstar));
@@ -106,10 +100,11 @@ public class TonalAnalyzerTests
         Assert.Contains("baryta", chosen.Meaning);
         Assert.Equal(25.5, chosen.GrayLevel, 1);
         Assert.Equal(12.3, ladder.Single(l => l.GrayLevel == Thresholds.DarkLevelA).Lstar, 1);
-        Assert.Equal(20.1, ladder.Single(l => l.Meaning.StartsWith("fundalul-tinta 0.19")).Lstar, 1);
+        Assert.Equal(20.1, ladder.Single(l => l.Meaning.StartsWith("fundalul-tinta dat 0.19")).Lstar, 1);
+        Assert.Equal(3 + 2 + 2, TonalAnalyzer.LstarLadder(Baryta).Count);   // no target given, no simulation: no target row
 
         var custom = TonalAnalyzer.LstarLadder(new Parameters { DmaxOverride = 1.8 });
-        Assert.Equal(9, custom.Count);
+        Assert.Equal(8, custom.Count);
         Assert.Contains("Dmax explicit 1.80", Assert.Single(custom, l => l.Chosen).Meaning);
     }
 

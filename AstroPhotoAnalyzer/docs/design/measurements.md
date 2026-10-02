@@ -52,32 +52,93 @@ luminance of the linearised channels): `LstarMedian`, `PaperBlackLstar` (from
 `Parameters.Dmax`), `PctBelowPaperBlack`, `PctBelowLowSeparation` (< 15),
 `PctAboveHighlight` (> 50), `LstarHistogramPct` (101 bins, 0..100, percent).
 
-Flags: `PrintSafe` = below paper black < `PaperBlackOkPct` (2 %);
-`BackgroundTooLowForPaper` = > `PaperBlackWarnPct` (20 %).
+These are facts of the image, not the verdict (since ADR 0025 the two pixel-share flags
+are gone; the verdict is B5's).
 
 `LstarStats(raster, dmax, stride)` is public for the simulator.
 
-`LstarLadder(parameters)` is a reference table, not a measurement (window only, like
+`LstarLadder(parameters, simulation)` is a reference table, not a measurement (window only, like
 `DpiLadder`): one `LstarLadderRow(Lstar, GrayLevel, Meaning, Chosen)` per reference of
 the tab - the paper black of each of the three media (`Chosen` on the one whose Dmax is
 `Parameters.Dmax`; a `DmaxOverride` that matches no medium adds its own chosen row), the
 levels `DarkLevelA`/`DarkLevelB`, the L\* thresholds `LowSeparationLstar`/`HighlightLstar`,
-and `TargetBackground` - sorted by L\*. The level is that of a grey with the same L\*;
-on colour the same level gives a different L\* by hue, which the window says under the table.
+and the simulation's primary row (`fundalul-tinta dat` when the owner gave one, `fundalul
+recomandat` otherwise, no row when the as-is row is primary) - sorted by L\*. The level is
+that of a grey with the same L\*; on colour the same level gives a different L\* by hue,
+which the window says under the table.
 
-### B4 - `PrintStretchSimulator` - which target background becomes print-safe
+### B5 - `DustAnalyzer` - where the dust and the sky sit (ADR 0025, ADR 0026)
 
-For each target in `SimulationTargets ∪ {TargetBackground}` (ascending): gamma =
-`ln(target) / ln(BackgroundMedian)`, applied identically to all channels of the stride-4
-subsample (`RasterOps.Gamma`), then B2 recomputed at stride 1. Rows: "as is" first (gamma
-1, the tonal numbers), then one per target with `Target`, `Gamma`, `LstarMedian`,
-`PctBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `PrintSafe`.
-`AlreadyPrintSafe` = the as-is row is safe. `RecommendedTarget` = the lowest safe target
-above the measured background, null when already safe or none qualifies. `Primary` = the
-row of `TargetBackground` (the one the report and the preview use). A background of 0 or
-1 yields only the as-is row.
+The dust is the darkest *extended* structure, measured on patches of `DustPatchPx` (32) x 32
+image pixels on the stride-4 subsample (8 x 8 samples, partial edge patches dropped), each
+patch's value the L\* of its **mean linear luminance**, so that noise and isolated pixels
+cannot move it (`PatchLstars(sub)`). Three parts:
 
-Known limit: the median is not the sky when the sky does not dominate the frame.
+- `DustMap` (`Build(w, h, wcs, asIsPatchLstars, catalogue)`) is the geometry and the classes,
+  built once per image on its as-is patch L\*s: the patch grid (`Cols`, `Rows`, `Side`,
+  `Stride`, `PatchCentre`); with a `Wcs`, the galactic latitude of every patch centre
+  (`Astrometry.GalacticLatitude` on `Wcs.PixelToSky`), the catalogued clouds whose discs hold
+  patches (`FindClouds`: `Wcs.SkyToPixel` for the centre, the radius in pixels from
+  `ScaleDegPerPx`, the patches within the angular radius by dot product, tested inside the
+  disc's bounding box), and the five classes (`Classify`): the band is |b| <
+  `BandGalacticLatitudeDeg`; `SkyModel` is the median of the outside-band patches per cell of
+  `SkyModelCellPatches`, empty cells from the nearest, bilinear to patch resolution, then
+  `Smooth`; `BandLevel` is `MedianFilter` over `BandLocalWindowPatches` then `Smooth`; a patch
+  is `Dust` when `DustDepthLstar` under the local level in the band or under the sky model
+  anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the local level, `Peak`
+  when over the `PeakFraction` percentile, `Band` otherwise in the band (or outside it when
+  `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Classes`; `NoDust` when the
+  classes exist but none is dust (the map keeps them, `HasClasses`, the verdict takes the frame
+  rule, `UsesClasses` false); or `NoWcs`, `NoBand` (the band under `BandMinFraction` of the
+  patches) or `AllBand` (the outside sky under it), when no classes are made.
+- `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample: with
+  classes, `LstarDust` is the `DustClassFraction` (25 %) percentile of the dust patches and
+  `LstarSky` the median of the sky patches (the darkest patch and the median of all when a class
+  is empty); otherwise `LstarDust` is the `DustAreaFraction` (1 %) percentile of all patches and
+  `LstarSky` their median. Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`,
+  the `DustCloudFraction` (10 %) percentile of each cloud's own patches, for the rows.
+- `Classes(map, asIs)` is what the map window paints: the map's classes; without them, the
+  patches at or under the dust's L\* as `Dust` and those at or under the sky's as `Sky`.
+
+The first form (ADR 0025: every cloud-disc patch as dust, every outside patch as sky; the
+owner rejected it on the map on 2026-10-02) and the second (the patches at or under the two
+levels) are gone; what the Great Rift is on the plate-solved FITS, and what the plain edges
+are, is now what the classes say.
+
+### B4 - `PrintStretchSimulator` - the lowest level that puts the dust on paper black
+
+Builds the `DustMap`, measures the as-is row (B5 on the subsample; the pixel shares of B2),
+then, when the background is strictly inside (0, 1), lifts the subsample once per step of a
+**ladder**: every `ExactTargetStep` (0.01) from `ExactTargetLo` (0.05) to `ExactTargetHi`
+(0.60), plus the grid `SimulationTargets` (0.10..0.20) and the explicit `TargetBackground`;
+gamma = `ln(target) / ln(BackgroundMedian)` on every channel (`RasterOps.Gamma`, a 16-bit
+lookup table with linear interpolation, exact on 16-bit sources). The grid steps become
+`SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,
+`PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `PrintSafe` = dust
+at or above paper black), sorted by target with the as-is row among them; every step feeds
+the ladder of dust values and of per-cloud values. `Recommended` is the first print-safe
+row, the as-is row included and whether below or above the measured level. `Crossing`
+reads the ladder: the first step at or above a level, interpolated linearly with the step
+before (the first step when it already passes, null when the last does not), which gives
+`ExactTarget` at the Dmax in use, `ExactTargetDmaxLower`/`Higher` at Dmax -/+
+`DmaxSensitivityStep` (0.1), and each `CloudRow`'s own `ExactTarget`. `CloudRow`s exist for
+the clouds with at least `DustCloudMinPatches` (9) patches, darkest first. `DmaxToPassAsIs`
+is the Dmax whose paper black equals the as-is dust's L\* (NaN at L\* 0). `Primary` = the
+explicit row, else the recommended one, else the as-is row. `DustDescription`,
+`SkyDescription` and `MethodNote` are the words the report and the window use for the method.
+
+Known limits: the median is not the sky when the sky does not dominate the frame; the gamma
+curve keeps the shadows higher than a real stretch to the same background (the owner's VeraLux
+stretch to 0.17 measured the dust at L\* 7.6, under paper black, where the curve from 0.103
+predicted it above from 0.14); a disc is not the cloud's contour.
+
+### B6 - `PrintPreview` - a simulation row as an image (window only)
+
+`Render(img, gamma, dmax)`: the image subsampled under `PreviewMaxSide` (1600), lifted with
+the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel from
+`RasterOps.LstarPlane`: `UnderPaperBlack`, `UnderLowSeparation` (under 15 but not under paper
+black) or `None`, with the two shares. The preview window paints the classes; it decides
+nothing.
 
 ### B3 - `NoiseAnalyzer` - residual noise in the sky, in 8-bit LSB
 

@@ -33,7 +33,8 @@ namespace AstroPhotoAnalyzer
 {
     /// <summary>
     /// O componenta terta: cum se cheama, ce face aici, sub ce licenta e luata, a cui e,
-    /// unde e proiectul ei, si care pachete NuGet din csproj o aduc.
+    /// unde e proiectul ei, si care pachete NuGet din csproj o aduc - sau, pentru date
+    /// imbarcate, care resurse incorporate (EmbeddedResource) o aduc.
     /// </summary>
     internal sealed record ThirdPartyComponent(
         string Name,
@@ -41,7 +42,11 @@ namespace AstroPhotoAnalyzer
         string Licence,
         string Copyright,
         string Url,
-        string[] Packages);
+        string[] Packages,
+        string[] Resources = null)
+    {
+        internal string[] Resources { get; init; } = Resources ?? System.Array.Empty<string>();
+    }
 
     internal static class ThirdParty
     {
@@ -54,6 +59,14 @@ namespace AstroPhotoAnalyzer
                 Copyright: "Copyright (c) Six Labors",
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
+            new ThirdPartyComponent(
+                Name: "Lynds' Catalogue of Dark Nebulae",
+                Role: "catalogul norilor de praf (LDN, 1962), dupa care se recunosc norii dintr-un FITS plate-solved",
+                Licence: "date publicate (Lynds 1962, ApJS 7, 1), versiunea ADC/NASA din 1979 distribuita de CDS/VizieR ca VII/7A; citarea sursei e singura conditie",
+                Copyright: "Lynds B.T., 1962; versiunea citibila: NASA/ADC, 1979; distribuita de CDS, Strasbourg",
+                Url: "https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A",
+                Packages: System.Array.Empty<string>(),
+                Resources: new[] { DarkNebulaCatalogue.ResourceName }),
         };
     }
 }

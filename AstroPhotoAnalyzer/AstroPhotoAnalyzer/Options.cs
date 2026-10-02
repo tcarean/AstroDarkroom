@@ -57,6 +57,9 @@ namespace AstroPhotoAnalyzer
         internal double? PassepartoutCm;
         internal double? FrameCm;
 
+        /// <summary>FITS-ul al carui WCS se imprumuta imaginii (R-027). Null = WCS-ul fisierului, daca are.</summary>
+        internal string Wcs;
+
         /// <summary>Unde se scrie si raportul, pe langa stdout. Null = doar stdout.</summary>
         internal string Out;
 
@@ -67,7 +70,7 @@ namespace AstroPhotoAnalyzer
 
         static readonly HashSet<string> ValueFlags = new()
         { "--medium", "--dmax", "--distance", "--sizes", "--aspect", "--target-bg",
-          "--passepartout", "--frame", "-o", "--out" };
+          "--passepartout", "--frame", "--wcs", "-o", "--out" };
 
         internal static readonly string[] Media = { "baryta", "canvas", "acrilic" };
 
@@ -137,6 +140,9 @@ namespace AstroPhotoAnalyzer
                             if (!TryNum(v, out var fr) || fr < 0)
                                 return o.Fail($"--frame asteapta cm, un numar >= 0, a primit '{v}'");
                             o.FrameCm = fr; break;
+                        case "--wcs":
+                            if (v.Length == 0) return o.Fail("--wcs asteapta calea unui FITS plate-solved");
+                            o.Wcs = v; break;
                         case "-o":
                         case "--out":
                             if (v.Length == 0) return o.Fail("-o asteapta calea fisierului de raport");

@@ -1,0 +1,125 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- MapWindow - harta praf / cer (R-130): imaginea intreaga, maximizata, cu cele cinci clase
+     ale dalelor vopsite diferit si norii catalogati incercuiti, fiecare strat si fiecare
+     nor cu bifa lui. Nicio cifra nu se calculeaza aici: totul vine din MapViewModel. -->
+
+<Window x:Class="AstroPhotoAnalyzer.Wpf.MapWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
+        Title="{Binding Title}"
+        Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
+        WindowState="Maximized" MinWidth="800" MinHeight="500"
+        Background="{StaticResource WindowBg}"
+        TextOptions.TextFormattingMode="Display">
+
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="300" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <!-- straturile si norii -->
+    <Border Grid.Column="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0" Padding="16">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+          <TextBlock Style="{StaticResource Heading}" Text="STRATURI" />
+          <ItemsControl ItemsSource="{Binding Layers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <CheckBox IsChecked="{Binding IsVisible}" Foreground="{StaticResource TextBr}" Margin="0,4,0,4">
+                  <StackPanel Orientation="Horizontal">
+                    <Border Width="12" Height="12" Background="{Binding Swatch}" CornerRadius="2" Margin="0,2,6,0" VerticalAlignment="Top" />
+                    <TextBlock Text="{Binding Legend}" TextWrapping="Wrap" MaxWidth="225" />
+                  </StackPanel>
+                </CheckBox>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <CheckBox IsChecked="{Binding ShowClouds}" IsEnabled="{Binding HasWcs}" Foreground="{StaticResource TextBr}" Margin="0,0,0,8"
+                    Content="norii catalogati: cercuri si etichete (eticheta pe cei mai intunecati)" />
+          <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Text="{Binding Definition}" />
+          <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
+                     Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
+          <TextBlock Style="{StaticResource Heading}" Text="NORI CATALOGATI" Margin="0,16,0,0" />
+          <StackPanel Orientation="Horizontal" Margin="0,4,0,6" IsEnabled="{Binding ShowClouds}">
+            <Button Content="Toti" Command="{Binding SelectAllClouds}" Padding="8,1" FontSize="11" />
+            <Button Content="Niciunul" Command="{Binding DeselectAllClouds}" Padding="8,1" FontSize="11" Margin="8,0,0,0" />
+          </StackPanel>
+        </StackPanel>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" IsEnabled="{Binding ShowClouds}">
+          <ItemsControl ItemsSource="{Binding Clouds}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <CheckBox IsChecked="{Binding IsVisible}" Foreground="{StaticResource TextBr}" Margin="0,2,0,2">
+                  <TextBlock Text="{Binding Caption}" FontFamily="{StaticResource MonoFont}" FontSize="11" />
+                </CheckBox>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+
+    <!-- imaginea la marimea ferestrei, cu straturile peste ea, toate pe aceeasi panza -->
+    <Viewbox Grid.Column="1" Stretch="Uniform" Margin="8">
+      <Grid Width="{Binding Width}" Height="{Binding Height}">
+        <Image Source="{Binding Image}" Stretch="None" />
+        <ItemsControl ItemsSource="{Binding Layers}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <Grid />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Image Source="{Binding Layer}" Stretch="None" Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <ItemsControl ItemsSource="{Binding Clouds}" Visibility="{Binding ShowClouds, Converter={StaticResource BoolToVis}}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <Canvas />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemContainerStyle>
+            <Style TargetType="ContentPresenter">
+              <Setter Property="Canvas.Left" Value="{Binding Left}" />
+              <Setter Property="Canvas.Top" Value="{Binding Top}" />
+              <Setter Property="Visibility" Value="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
+            </Style>
+          </ItemsControl.ItemContainerStyle>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Width="{Binding Diameter}" Height="{Binding Diameter}">
+                <Ellipse Stroke="{StaticResource WarnBr}" StrokeThickness="2" />
+                <TextBlock Text="{Binding Name}" Foreground="{StaticResource WarnBr}" FontWeight="SemiBold" FontSize="14"
+                           HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,2,0,0"
+                           Visibility="{Binding Labelled, Converter={StaticResource BoolToVis}}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </Viewbox>
+  </Grid>
+</Window>

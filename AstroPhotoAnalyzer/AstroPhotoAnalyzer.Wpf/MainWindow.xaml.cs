@@ -32,6 +32,10 @@ namespace AstroPhotoAnalyzer.Wpf
             InitializeComponent();
             DataContext = _vm;
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+            // Ferestrele de vizualizare ale tabului Tonuri (R-130, R-131): view-model-ul cere,
+            // fereastra deschide. Nemodale, maximizate, cate vrea omul.
+            _vm.Tones.MapRequested += m => new MapWindow { Owner = this, DataContext = m }.Show();
+            _vm.Tones.PreviewRequested += p => new PreviewWindow { Owner = this, DataContext = p }.Show();
         }
 
         /// <summary>Pornirea: cu un fisier din linia de comanda il deschide; altfel intreaba imediat.</summary>

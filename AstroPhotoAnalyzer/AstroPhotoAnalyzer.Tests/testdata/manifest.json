@@ -1,5 +1,5 @@
 {
-  "$comment": "Every test data file outside git: the reference image, copied by hand from E:/Photografie/Claude into large/ beside this file, which git ignores (ADR 0004). Names are relative to large/ (or to the folder APA_TESTDATA_LARGE names, which nobody sets). scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name this file. AstroPhotoAnalyzer has no repo fixtures: they are generated or hand-built in the tests.",
+  "$comment": "Every test data file outside git: the reference images, copied by hand into large/ beside this file, which git ignores (ADR 0004). Names are relative to large/ (or to the folder APA_TESTDATA_LARGE names, which nobody sets). scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. AstroPhotoAnalyzer has no repo fixtures: they are generated or hand-built in the tests.",
   "files": [
     {
       "name": "de_printat.png",
@@ -8,6 +8,14 @@
       "sha256": "490774dc90d723c831dff4a0b5e36e51b3579f602a1483b5b13560c29b21e9d4",
       "source": "the owner's finished Milky Way core (E:/Photografie/Claude/de_printat.png, 103 387 067 bytes), exported from Siril; the image the tool was built to measure",
       "demonstrates": "docs/validation.json V-001 to V-003"
+    },
+    {
+      "name": "starless_rbf0.5_stretch0.17.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "c155924d95acf8725e0f4c729820e09b905462c2dd787831005442bdcb86bf2a",
+      "source": "the owner's plate-solved, starless, VeraLux-stretched FITS of the same Milky Way core (E:/Photografie/Astro/Milkyway-Core/2026-08-12-Smida/Processed_With_1mmPTFE_Flats/CropAndPlateSolve/RBF0.5/preview/, 270 869 760 bytes, 5837 x 3867, Siril 1.4.4 with a TAN-SIP WCS); the image ADR 0025 was measured on",
+      "demonstrates": "docs/validation.json V-004: the dust and the sky from the WCS and the LDN catalogue"
     }
   ]
 }

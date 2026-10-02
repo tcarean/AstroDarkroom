@@ -17,6 +17,11 @@
 
 namespace AstroPhotoAnalyzer.Tests;
 
+/// <summary>
+/// R-043: the grid 0.10..0.20 with the as-is row among it, the dust and the sky per row, the
+/// lowest print-safe row recommended in either direction, the exact target from the ladder,
+/// the Dmax figures, and the cloud rows with a WCS.
+/// </summary>
 public class PrintStretchSimulatorTests
 {
     static readonly Parameters P = new();
@@ -27,83 +32,148 @@ public class PrintStretchSimulatorTests
         return PrintStretchSimulator.Simulate(r, TonalAnalyzer.Analyze(r, p), p);
     }
 
+    static double Lstar(double v) => ColorMath.LstarOfSrgb(v, v, v);
+
     [Fact]
-    public void ADarkBackgroundGetsTheLowestSafeTarget()
+    public void R043_ADarkBackgroundGetsTheLowestSafeRowAbove()
     {
-        // 0.08: L* ~6, sub negrul baryta-ului. Tintele implicite sunt 0.15, 0.19, 0.20;
-        // deja 0.15 (L* ~16) e print-safe, deci e cea recomandata.
+        // Flat 0.08: L* ~6, under paper black (9.0). The grid row that first puts it at or
+        // above 9.0 is 0.10 (L* 9.03, by a hair); the rows are the as-is row and 0.10..0.20.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
         Assert.False(s.AlreadyPrintSafe);
-        Assert.Equal(4, s.Rows.Count);
+        Assert.True(s.DustBelowPaperBlack);
+        Assert.True(s.SkyBelowPaperBlack);
+        Assert.Equal(12, s.Rows.Count);
         Assert.True(s.Rows[0].AsIs);
-        Assert.Equal(new[] { 0.15, 0.19, 0.20 }, s.Rows.Skip(1).Select(x => x.Target));
-        Assert.Equal(0.15, s.RecommendedTarget);
-        Assert.Equal(Math.Log(0.15) / Math.Log(0.08), s.Rows[1].Gamma, 6);
+        Assert.Equal(P.SimulationTargets, s.Rows.Skip(1).Select(x => x.Target));
+        Assert.Equal(0.10, s.RecommendedTarget);
+        Assert.True(s.Rows[1].Recommended);
+        Assert.Equal(Math.Log(0.10) / Math.Log(0.08), s.Rows[1].Gamma, 6);
         Assert.All(s.Rows.Skip(1), x => Assert.True(x.PrintSafe));
+        Assert.Equal(DustMethod.NoWcs, s.Method);
+        Assert.Empty(s.Clouds);
+        Assert.Equal(Lstar(0.08), s.AsIs.LstarDust, 1);
+        Assert.Equal(Lstar(0.08), s.AsIs.LstarSky, 1);
+        Assert.Equal(100, s.AsIs.PctPatchesBelowPaperBlack);
     }
 
     [Fact]
-    public void ThePrimaryRowIsTheParametersTargetAndLandsWhereTheMathSays()
+    public void R043_ABrightImageIsToldHowFarDownItCanGo()
     {
-        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
-
-        Assert.Equal(0.19, s.Primary.Target);
-        // 0.19 sRGB -> Y 0.0301 -> L* 20.07
-        Assert.Equal(20.1, s.Primary.LstarMedian, 1);
-        Assert.Equal(0, s.Primary.PctBelowPaperBlack);
-    }
-
-    [Fact]
-    public void AnAlreadySafeImageRecommendsNothing()
-    {
+        // Flat 0.30 (L* ~31): print-safe as is; the lowest grid row that keeps the dust on
+        // paper black is 0.10 (L* 9.03), so that is recommended, below the measured level.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));
 
         Assert.True(s.AlreadyPrintSafe);
-        Assert.Null(s.RecommendedTarget);
+        Assert.NotNull(s.Recommended);
+        Assert.False(s.RecommendedIsAsIs);
+        Assert.Equal(0.10, s.RecommendedTarget);
+        Assert.True(s.Rows[0].Target < s.AsIs.Target);
+        Assert.Equal(s.Rows.Last(), s.AsIs);   // 0.30 sorts after 0.20
+        // The exact target of a flat image is the level whose L* is paper black, ~0.0999.
+        Assert.Equal(0.0999, s.ExactTarget!.Value, 3);
     }
 
     [Fact]
-    public void ACustomTargetListIsHonoured()
+    public void R043_TheExactTargetIsInterpolatedOnTheLadderAndMovesWithDmax()
     {
-        var p = new Parameters { TargetBackground = 0.25, SimulationTargets = new[] { 0.12 } };
+        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
+
+        // A flat image lifted to t has L* = L*(t); the exact target is the t whose L* is 9.0:
+        // sRGB of Y = 0.01, i.e. 0.0999.
+        double exact = ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(2.0)));
+        Assert.NotNull(s.ExactTarget);
+        Assert.Equal(exact, s.ExactTarget!.Value, 3);
+        Assert.Equal(2.0, s.Dmax);
+
+        // Dmax 1.9: paper black L* 11.0, a higher target; Dmax 2.1: L* 7.2, a lower one.
+        Assert.True(s.ExactTargetDmaxLower > s.ExactTarget);
+        Assert.True(s.ExactTargetDmaxHigher < s.ExactTarget);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(1.9))), s.ExactTargetDmaxLower!.Value, 3);
+
+        // The Dmax from which the as-is image passes: the one whose paper black is the dust's L*.
+        Assert.Equal(-Math.Log10(ColorMath.YOfLstar(s.AsIs.LstarDust)), s.DmaxToPassAsIs, 6);
+        Assert.InRange(s.DmaxToPassAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
+    }
+
+    [Fact]
+    public void R043_CrossingInterpolatesBetweenTwoStepsAndHandlesTheEnds()
+    {
+        double[] t = { 0.10, 0.11, 0.12 };
+        Assert.Equal(0.105, PrintStretchSimulator.Crossing(t, new double[] { 8, 10, 12 }, 9)!.Value, 9);
+        Assert.Equal(0.10, PrintStretchSimulator.Crossing(t, new double[] { 9, 10, 12 }, 9));
+        Assert.Null(PrintStretchSimulator.Crossing(t, new double[] { 1, 2, 3 }, 9));
+        Assert.Equal(0.12, PrintStretchSimulator.Crossing(t, new double[] { 1, 2, 9 }, 9)!.Value, 9);
+    }
+
+    [Fact]
+    public void R023_AnExplicitTargetJoinsTheGridAndIsThePrimaryRow()
+    {
+        var p = new Parameters { TargetBackground = 0.135 };
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), p);
 
-        Assert.Equal(new[] { 0.12, 0.25 }, s.Rows.Skip(1).Select(x => x.Target));
-        Assert.Equal(0.25, s.Primary.Target);
-        // 0.12 -> Y 0.0137 -> L* 11.9: peste negrul hartiei, deci print-safe si recomandat.
+        Assert.Equal(13, s.Rows.Count);
+        SimulationRow given = Assert.Single(s.Rows, x => x.Explicit);
+        Assert.Equal(0.135, given.Target);
+        Assert.Same(given, s.Primary);
+        Assert.Equal(Lstar(0.135), given.LstarSky, 1);
+
+        // On the grid: no extra row, but the row is marked explicit.
+        var onGrid = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.15 });
+        Assert.Equal(12, onGrid.Rows.Count);
+        Assert.True(onGrid.Rows.Single(x => Math.Abs(x.Target - 0.15) < 1e-9).Explicit);
+        Assert.Equal(0.15, onGrid.Primary.Target);
+
+        // Without one, the primary row is the recommended one.
+        var none = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
+        Assert.Same(none.Recommended, none.Primary);
+    }
+
+    [Fact]
+    public void R043_ACustomGridIsHonoured()
+    {
+        var p = new Parameters { SimulationTargets = new[] { 0.12 } };
+        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), p);
+
+        Assert.Equal(new[] { 0.08, 0.12 }, s.Rows.Select(x => Math.Round(x.Target, 2)));
         Assert.Equal(0.12, s.RecommendedTarget);
     }
 
     [Fact]
-    public void ABlackImageDoesNotThrow()
+    public void R043_ABlackImageDoesNotThrow()
     {
         var s = Simulate(SyntheticRasters.Flat(16, 16, 0f));
 
         Assert.Single(s.Rows);
         Assert.Null(s.RecommendedTarget);
+        Assert.Null(s.ExactTarget);
+        Assert.True(double.IsNaN(s.DmaxToPassAsIs));
+        Assert.Same(s.AsIs, s.Primary);
     }
 
     [Fact]
-    public void TheSimulationLiftsTheSkyIntoTheTargetWithoutBurningTheCore()
+    public void R043_TheSimulationLiftsTheSkyWithoutBurningTheCore()
     {
-        // Trei sferturi cer la 0.08, un sfert nucleu la 0.6 - cerul domina, deci mediana
-        // E cerul, cum e pe orice astrofoto. Ridicarea la 0.19 duce cerul exact in tinta
-        // si nucleul putin mai sus (0.6^0.66 ~ 0.71), fara sa-l arda.
+        // Three quarters sky at 0.08, a quarter core at 0.6: the sky dominates, so the median
+        // IS the sky. Lifted to 0.19 the sky lands on the target and the core a little higher
+        // (0.6^0.66 ~ 0.71), unburnt.
         var r = SyntheticRasters.From(64, 64, 3, (x, y, p) => x < 48 ? 0.08f : 0.6f);
-        var s = Simulate(r);
+        var s = Simulate(r, new Parameters { TargetBackground = 0.19 });
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
-        Assert.Equal(75, s.Rows[0].PctBelowPaperBlack, 6);
-        Assert.Equal(0, s.Primary.PctBelowPaperBlack, 6);
+        // 64 px = 2 x 2 patches of 32 px: the left patches are sky, the right ones half sky,
+        // half core, whose MEAN linear luminance is above paper black: 50 % of the patches.
+        Assert.Equal(50, s.AsIs.PctPatchesBelowPaperBlack, 6);
+        Assert.Equal(0, s.Primary.PctPatchesBelowPaperBlack, 6);
         Assert.Equal(25, s.Primary.PctAboveHighlight, 6);
     }
 
     /// <summary>
-    /// Limita cunoscuta a "fundal = mediana": pe o imagine in care cerul NU domina,
-    /// mediana cade in structura si simularea ridica de la un fundal gresit. Nu se
-    /// intampla pe astrofoto; testul doar pastreaza faptul vizibil.
+    /// Known limit of "background = median": on an image where the sky does NOT dominate,
+    /// the median falls in the structure and the simulation lifts from a wrong level. It
+    /// does not happen on an astrophoto; the test only keeps the fact visible.
     /// </summary>
     [Fact]
     public void WhenTheSkyDoesNotDominateTheMedianIsNotTheSky()
@@ -112,5 +182,67 @@ public class PrintStretchSimulatorTests
         var s = Simulate(r);
 
         Assert.Equal(0.34, s.BackgroundMeasured, 2);
+    }
+
+    [Fact]
+    public void R044_WithABandTheDustAndTheSkyAreTheClassesAndTheCloudsHaveRows()
+    {
+        // The wide band scene across the plane in Scutum: the classes apply, and the Rift's
+        // largest cloud, in the frame, gets its row from the catalogue.
+        Raster r = WcsFixtures.BandScene();
+        var s = Simulate(r);
+
+        Assert.Equal(DustMethod.Classes, s.Method);
+        Assert.InRange(s.AsIs.LstarDust, 3, 8);           // the blob at 0.05 (L* 3.6) dominates the dust class
+        Assert.Equal(Lstar(0.25), s.AsIs.LstarSky, 0);    // the plain sky outside the band
+        Assert.True(s.DustBelowPaperBlack);
+        Assert.False(s.SkyBelowPaperBlack);
+        Assert.NotEmpty(s.Clouds);
+        Assert.Contains(s.Clouds, c => c.Name.StartsWith("LDN "));
+        Assert.Equal(s.Clouds.OrderBy(c => c.Lstar).Select(c => c.Name), s.Clouds.Select(c => c.Name));
+        Assert.StartsWith("percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; ", s.DustDescription);
+        Assert.StartsWith("mediana dalelor de cer, in afara benzii", s.SkyDescription);
+        Assert.Null(s.MethodNote);
+        Assert.StartsWith("praf ", s.ClassFractions);
+        Assert.Contains("varfuri ", s.ClassFractions);
+        Assert.NotNull(s.ExactTarget);
+    }
+
+    [Fact]
+    public void R044_ABandWithoutDustSaysSoAndStillListsItsClasses()
+    {
+        var s = Simulate(WcsFixtures.BandScene(withDust: false));
+
+        Assert.Equal(DustMethod.NoDust, s.Method);
+        Assert.Equal("nicio dala de praf sub nivelul local al benzii", s.MethodNote);
+        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
+        Assert.Equal("mediana dalelor", s.SkyDescription);
+        Assert.NotNull(s.ClassFractions);
+        Assert.StartsWith("praf 0.0 %", s.ClassFractions);
+    }
+
+    [Fact]
+    public void R044_AFrameWhollyInsideTheBandFallsBackAndStillNamesItsClouds()
+    {
+        var s = Simulate(WcsFixtures.Ldn42Scene());
+
+        Assert.Equal(DustMethod.AllBand, s.Method);
+        Assert.Equal("cadrul e in intregime in banda", s.MethodNote);
+        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
+        Assert.Null(s.ClassFractions);
+        CloudRow ldn42 = s.Clouds.Single(c => c.Name == "LDN 42 (B78)");
+        Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
+        Assert.NotNull(ldn42.ExactTarget);
+        Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);   // the darkest 1 % of the frame is the cloud
+    }
+
+    [Fact]
+    public void R044_WithoutAWcsTheDescriptionSaysSo()
+    {
+        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
+
+        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
+        Assert.Equal("mediana dalelor", s.SkyDescription);
+        Assert.Equal("fara WCS", s.MethodNote);
     }
 }

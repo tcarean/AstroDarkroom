@@ -23,7 +23,10 @@ bits per sample for `Rgb48` even when asked for 48; `Image.Identify` does not re
 PNG's `iCCP` (`Image.Load` does); the TIFF decoder puts the ICC profile on
 `Frames[0].Metadata`; the PNG encoder does not write `iCCP`; LZW needs the horizontal
 predictor to be competitive. Adding a package: discuss first, then csproj + notices +
-`ThirdParty.cs` + README table (`CLAUDE.md`, the rule "Package notices"). Since 2026-10-02
+`ThirdParty.cs` + README table (`CLAUDE.md`, the rule "Package notices"). Embedded data is a
+component too: the Lynds catalogue (`Input/ldn.txt`, an `EmbeddedResource` with a
+`LogicalName`) has a `ThirdPartyComponent` with `Resources` instead of `Packages`, and
+`ThirdPartyTests` ties the csproj's resources to the components the same way (ADR 0025). Since 2026-10-02
 the version is in `Directory.Packages.props` and the csproj names the package only (ADR 0003).
 
 ## The rule, as the first CLAUDE.md wrote it

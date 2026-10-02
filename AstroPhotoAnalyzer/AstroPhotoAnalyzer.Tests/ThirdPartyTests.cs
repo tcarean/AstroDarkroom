@@ -32,14 +32,19 @@ public class ThirdPartyTests
     static string RepoDir([CallerFilePath] string thisFile = "")
         => Path.GetDirectoryName(Path.GetDirectoryName(thisFile))!;
 
+    static string CoreCsproj => File.ReadAllText(Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Core", "AstroPhotoAnalyzer.Core.csproj"));
+
     /// <summary>Pachetele NuGet pe care le leaga nucleul, citite din csproj-ul lui.</summary>
     static string[] CorePackages()
-    {
-        string csproj = File.ReadAllText(Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Core", "AstroPhotoAnalyzer.Core.csproj"));
-        return Regex.Matches(csproj, @"<PackageReference\s+Include=""([^""]+)""")
+        => Regex.Matches(CoreCsproj, @"<PackageReference\s+Include=""([^""]+)""")
             .Select(m => m.Groups[1].Value)
             .ToArray();
-    }
+
+    /// <summary>Resursele incorporate ale nucleului (datele imbarcate), dupa LogicalName.</summary>
+    static string[] CoreResources()
+        => Regex.Matches(CoreCsproj, @"<EmbeddedResource\s+Include=""[^""]+""\s+LogicalName=""([^""]+)""")
+            .Select(m => m.Groups[1].Value)
+            .ToArray();
 
     /// <summary>
     /// Fiecare pachet din csproj e revendicat de exact o componenta, si fiecare pachet
@@ -64,6 +69,33 @@ public class ThirdPartyTests
     }
 
     /// <summary>
+    /// Datele imbarcate (catalogul LDN, ADR 0025) sunt scrise de altii la fel ca un pachet:
+    /// fiecare resursa din csproj e revendicata de exact o componenta, si invers.
+    /// </summary>
+    [Fact]
+    public void R122_EveryEmbeddedDataSetIsListed()
+    {
+        string[] embedded = CoreResources();
+        Assert.Contains(DarkNebulaCatalogue.ResourceName, embedded);
+
+        string[] claimed = ThirdParty.Components.SelectMany(c => c.Resources).ToArray();
+
+        foreach (string r in embedded)
+            Assert.True(claimed.Count(c => c == r) == 1,
+                $"resursa {r} din AstroPhotoAnalyzer.Core.csproj nu e revendicata de exact o componenta din ThirdParty.Components");
+
+        foreach (string r in claimed)
+            Assert.True(embedded.Contains(r),
+                $"ThirdParty.Components revendica resursa {r}, care nu e in AstroPhotoAnalyzer.Core.csproj");
+
+        var ldn = Assert.Single(ThirdParty.Components, c => c.Resources.Contains(DarkNebulaCatalogue.ResourceName));
+        Assert.Contains("Lynds", ldn.Name);
+        Assert.Contains("1962", ldn.Licence);
+        Assert.Contains("VII/7A", ldn.Url);
+        Assert.Empty(ldn.Packages);
+    }
+
+    /// <summary>
     /// Motivele de compatibilitate cu GPLv3 stau in THIRD-PARTY-NOTICES.md, deci fiecare
     /// componenta afisata trebuie sa aiba un heading acolo.
     /// </summary>
@@ -84,7 +116,7 @@ public class ThirdPartyTests
     [Fact]
     public void R122_EveryComponentNamesItsLicenceAndUrl()
     {
-        Assert.Single(ThirdParty.Components);
+        Assert.Equal(2, ThirdParty.Components.Count);
 
         foreach (var c in ThirdParty.Components)
         {
@@ -93,7 +125,7 @@ public class ThirdPartyTests
             Assert.False(string.IsNullOrWhiteSpace(c.Licence));
             Assert.False(string.IsNullOrWhiteSpace(c.Copyright));
             Assert.StartsWith("https://", c.Url);
-            Assert.NotEmpty(c.Packages);
+            Assert.True(c.Packages.Length + c.Resources.Length > 0, c.Name + " nu aduce nici pachet, nici resursa");
         }
     }
 

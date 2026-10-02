@@ -17,7 +17,22 @@ All empirical, most from the reference image. Change one, change its comment.
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
 | `LowSeparationLstar` | 15 | below: paper separates, the eye barely |
 | `HighlightLstar` | 50 | above: bright |
-| `PaperBlackWarnPct` / `PaperBlackOkPct` | 20 / 2 | % below paper black: problem / safe |
+| `DustPatchPx` | 32 | the patch side (image px) the dust and the sky are measured on: 4 mm at 200 dpi; 16/32/64 barely move the verdict |
+| `DustCloudFraction` | 0.10 | a catalogued cloud's L\* for its row: this percentile of its patches |
+| `BandGalacticLatitudeDeg` | 10 | the galactic band: patches with \|b\| under it (ADR 0026) |
+| `BandMinFraction` | 0.10 | the classes need the band and the outside sky each at or above this share of the patches; else the frame rule |
+| `DustDepthLstar` | 5 | a dust patch is this many L\* under the band's local level or under the sky model |
+| `BrightCloudLstar` | 10 | a bright-cloud patch is this many L\* over the band's local level |
+| `PeakFraction` | 0.001 | the peaks: the brightest patches by this fraction |
+| `BandLocalWindowPatches` / `BandLocalSmoothPatches` | 15 / 2 | the band's local level: median window, then smoothing radius |
+| `SkyModelCellPatches` / `SkyModelCellMinPatches` / `SkyModelSmoothPatches` | 20 / 20 / 3 | the sky model: cell size, patches a cell needs, smoothing radius |
+| `DustClassFraction` | 0.25 | the dust's L\* for the verdict: this percentile of the dust patches (the owner's choice, ADR 0026) |
+| `DustCloudMinPatches` | 9 | a cloud with this many patches gets its own row and circle |
+| `DustAreaFraction` | 0.01 | the dust without a WCS or without a cloud: this percentile of all patches |
+| `DustCloudReportRows` | 15 | clouds named in Anexa B and in the Because; the window lists all |
+| `ExactTargetLo` / `ExactTargetHi` / `ExactTargetStep` | 0.05 / 0.60 / 0.01 | the ladder of lifts the exact targets are interpolated on |
+| `DmaxSensitivityStep` | 0.1 | the two neighbouring Dmax values Anexa B gives the exact target at (about 0.02 of target per 0.1) |
+| `PreviewMaxSide` | 1600 | longest side of the map and preview windows' image |
 | `ScreenBackgroundLo` / `ScreenBackgroundHi` / `PrintBackgroundLo` / `PrintBackgroundHi` | 0.05 / 0.10 / 0.15 / 0.25 | where a screen image's sky sits and where a print's should; rules of thumb for the window's help text only, no rule reads them |
 | `TonalStride` / `PercentileStride` / `BackgroundStride` | 4 / 2 / 3 | subsampling steps of the acceptance scripts |
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |

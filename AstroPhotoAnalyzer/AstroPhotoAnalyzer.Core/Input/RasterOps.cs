@@ -69,12 +69,28 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal static Raster Gamma(Raster r, double gamma)
         {
+            // Printr-o tabela pe cele 65536 de niveluri de 16 biti, nu prin Math.Pow pe fiecare
+            // esantion: simularea ridica subesantionul de ~60 de ori (scara tintei exacte,
+            // ADR 0025), si 60 x 4 milioane de Pow ar fi secunde. Pe o sursa de 16 biti
+            // valoarea cade exact pe un nivel al tabelei si rezultatul e cel al lui Pow; pe
+            // float (FITS) se interpoleaza liniar intre cele doua niveluri vecine, cu o eroare
+            // sub 1e-6 pe orice gamma dintre 0.3 si 3.
+            var lut = new double[65537];
+            for (int k = 0; k < lut.Length; k++) lut[k] = Math.Pow(k / 65535.0, gamma);
             var o = new Raster(r.H, r.W, r.Planes.Length) { Source = r.Source };
             for (int p = 0; p < r.Planes.Length; p++)
             {
                 float[] src = r.Planes[p], dst = o.Planes[p];
                 for (int i = 0; i < src.Length; i++)
-                    dst[i] = (float)Math.Pow(Math.Clamp(src[i], 0f, 1f), gamma);
+                {
+                    // Un NaN ar da (int)NaN = int.MinValue, un indice imposibil; cititorii nu lasa
+                    // NaN sa treaca, dar un raster facut in memorie poate.
+                    float s = src[i];
+                    double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
+                    int k = (int)v;
+                    double f = v - k;
+                    dst[i] = (float)(f == 0 ? lut[k] : lut[k] + f * (lut[k + 1] - lut[k]));
+                }
             }
             return o;
         }

@@ -68,10 +68,38 @@ namespace AstroPhotoAnalyzer
                 Icc = null,
                 IccDescription = null,
                 FileBytes = fs.Length,
+                Wcs = Wcs.TryFrom(hdr, raster.W, raster.H, IsBottomUp(hdr)),
                 Note = note,
             };
             return raster;
         }
+
+        /// <summary>
+        /// Doar antetul primului HDU cu imagine, fara date: pentru un FITS al carui WCS se
+        /// imprumuta altui fisier (R-027). Intoarce si latimea, inaltimea si rasturnarea,
+        /// ca sa se verifice geometria.
+        /// </summary>
+        internal static (IReadOnlyDictionary<string, string> Header, int W, int H, bool BottomUp) ReadImageHeader(string path)
+        {
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
+            var block = new byte[2880];
+            while (true)
+            {
+                var hdr = ReadHeader(fs, block);
+                if (hdr == null) throw new Exception("FITS: niciun HDU cu imagine gasit.");
+                int naxis = HInt(hdr, "NAXIS", 0);
+                int n1 = HInt(hdr, "NAXIS1", 0), n2 = HInt(hdr, "NAXIS2", 0);
+                if (naxis >= 2 && n1 > 0 && n2 > 0) return (hdr, n1, n2, IsBottomUp(hdr));
+
+                long npix = naxis == 0 ? 0 : 1;
+                for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
+                long dataBytes = npix * (Math.Abs(HInt(hdr, "BITPIX", 0)) / 8);
+                if (!SkipExact(fs, (dataBytes + 2879) / 2880 * 2880)) throw new Exception("FITS: fisier trunchiat.");
+            }
+        }
+
+        static bool IsBottomUp(IReadOnlyDictionary<string, string> hdr)
+            => string.Equals(HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// Primul HDU cu o imagine 2D sau 3D. Intoarce si headerul lui, BITPIX-ul,
@@ -200,7 +228,11 @@ namespace AstroPhotoAnalyzer
                 for (int k = 0; k < want; k++, i++)
                 {
                     double v = (bzero + bscale * ReadSample(buf, k * bytesPer, bitpix)) / scale;
-                    if (v < 0) { v = 0; clipped++; }
+                    // Un NaN (Siril il lasa dupa unele operatii pe float) nu e nici sub 0, nici
+                    // peste 1: fara randul asta ar trece in raster si ar rupe orice tabela indexata
+                    // pe nivel (RasterOps.Gamma). Se trateaza ca valoare taiata, la 0.
+                    if (double.IsNaN(v)) { v = 0; clipped++; }
+                    else if (v < 0) { v = 0; clipped++; }
                     else if (v > 1) { v = 1; clipped++; }
                     int p = (int)(i / plane);
                     long idx = i % plane;

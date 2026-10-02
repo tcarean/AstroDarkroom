@@ -98,14 +98,61 @@ namespace AstroPhotoAnalyzer
         {
             SimulationResult s = r.Simulation;
             w.WriteLine();
-            w.WriteLine($"Anexa B. Simularea fundalului (nivelul fundalului {Fmt.F3(s.BackgroundMeasured)}, curba gamma pe toate canalele)");
-            w.WriteLine("  fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50");
+            w.WriteLine($"Anexa B. Simularea fundalului (de la nivelul {Fmt.Level(s.BackgroundMeasured)}; curba gamma pe toate canalele)");
+            w.WriteLine("  " + SimulationHeader);
             foreach (SimulationRow row in s.Rows)
+                w.WriteLine("  " + SimulationLine(row));
+            w.WriteLine("  " + SimulationFooter(s));
+            w.WriteLine("  " + DustDefinition(s));
+            if (s.ClassFractions != null) w.WriteLine("  clase: " + s.ClassFractions);
+            w.WriteLine("  " + ExactLine(s));
+            if (s.Clouds.Count > 0)
             {
-                string target = row.AsIs ? "asa cum e" : Fmt.F2(row.Target);
-                w.WriteLine($"  {target,-12}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarMedian),9}   {Fmt.Pct(row.PctBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{(row.PrintSafe ? "   print-safe" : "")}");
+                w.WriteLine($"  norii catalogati cu cel putin {Thresholds.DustCloudMinPatches} dale ({Fmt.Int(s.Clouds.Count)}), de la cel mai intunecat; L* = {Fmt.F0(Thresholds.DustCloudFraction * 100)} % din dalele norului; tinta = unde ajunge pe negrul hartiei:");
+                w.WriteLine("  " + CloudHeader);
+                foreach (CloudRow c in s.Clouds.Take(Thresholds.DustCloudReportRows))
+                    w.WriteLine("  " + CloudLine(c));
+                if (s.Clouds.Count > Thresholds.DustCloudReportRows)
+                    w.WriteLine($"  ... si inca {Fmt.Int(s.Clouds.Count - Thresholds.DustCloudReportRows)} (fereastra ii arata pe toti)");
             }
         }
+
+        // Tabelul simularii, acelasi text in raport si in tabul Tonuri: antetul, randurile, nota
+        // de sub el, definitia prafului si a cerului, tinta exacta si norii.
+
+        internal const string SimulationHeader = "fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50";
+
+        internal static string SimulationLine(SimulationRow row)
+        {
+            string target = Fmt.Level(row.Target) + (row.AsIs ? " asa cum e" : row.Explicit ? " (dat)" : "") + (row.Recommended ? " *" : "");
+            return $"{target,-18}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarDust),7}   {Fmt.F1(row.LstarSky),6}   {Fmt.Pct(row.PctPatchesBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{(row.PrintSafe ? "   print-safe" : "")}";
+        }
+
+        internal static string SimulationFooter(SimulationResult s)
+            => s.Recommended != null
+                ? "* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei"
+                : s.ExactTarget.HasValue
+                    ? $"nicio tinta din grila nu aduce praful pe negrul hartiei (ar trebui ~{Fmt.Level(s.ExactTarget.Value)})"
+                    : $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}";
+
+        /// <summary>"praful = 10 % din dalele norilor catalogati (406 nori, 4078 dale); cerul = mediana dalelor din afara norilor; negru pur = dale de 32 px sub negrul hartiei (L* 9.0)".</summary>
+        internal static string DustDefinition(SimulationResult s)
+            => $"praful = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; cerul = {s.SkyDescription}; "
+             + $"negru pur = dale de {Thresholds.DustPatchPx} px sub negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})";
+
+        /// <summary>Tinta exacta, cele doua la Dmax vecin, si Dmax-ul de la care trece asa cum e.</summary>
+        internal static string ExactLine(SimulationResult s)
+        {
+            string pass = double.IsNaN(s.DmaxToPassAsIs) ? "nu trece asa cum e la niciun Dmax" : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
+            static string T(double? t) => t.HasValue ? Fmt.Level(t.Value) : "peste " + Fmt.Level(Thresholds.ExactTargetHi);
+            double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
+            return $"tinta exacta a prafului pe negru: {T(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({T(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {T(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}";
+        }
+
+        internal const string CloudHeader = "nor                          dale   L*     tinta";
+
+        internal static string CloudLine(CloudRow c)
+            => $"{c.Name,-28} {Fmt.Int(c.Patches),4}   {Fmt.F1(c.Lstar),4}   {(c.ExactTarget.HasValue ? Fmt.Level(c.ExactTarget.Value) : "> " + Fmt.Level(Thresholds.ExactTargetHi))}";
 
         static void AppendixExport(AnalysisResult r, TextWriter w)
         {
@@ -187,7 +234,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine("Anexa F. Parametri");
             w.WriteLine($"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.F1(p.Dmax)}{(p.DmaxOverride.HasValue ? " (explicit)" : "")}; latimi {string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0))} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm");
-            w.WriteLine($"  distanta {(p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "naturala")}; raport tinta {(p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : "nativ")}; fundal-tinta {Fmt.F2(p.TargetBackground)} (+ {string.Join(", ", p.SimulationTargets.Select(Fmt.F2))}); samanta {p.Seed}");
+            w.WriteLine($"  distanta {(p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "naturala")}; raport tinta {(p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : "nativ")}; fundal-tinta {(p.TargetBackground.HasValue ? Fmt.Level(p.TargetBackground.Value) : "niciunul")} (grila {Fmt.Level(p.SimulationTargets.Min())}..{Fmt.Level(p.SimulationTargets.Max())}); WCS {(p.WcsPath ?? (r.Raster.Source?.Wcs != null ? "din fisier" : "fara"))}; samanta {p.Seed}");
         }
     }
 }

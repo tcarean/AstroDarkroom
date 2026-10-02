@@ -19,6 +19,20 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class FitsReaderTests
 {
+    /// <summary>R-013: a NaN in a float FITS is a clipped value, 0, and counted; it never reaches the raster.</summary>
+    [Fact]
+    public void R013_ANaNSampleIsClippedToZeroAndCounted()
+    {
+        byte[] fits = FitsTestData.Build(8, 4, 1, (x, y, p) => x == 3 && y == 1 ? double.NaN : 0.25, bitpix: -32);
+
+        var (raster, _, _, _, note) = FitsReader.LoadFrom(new MemoryStream(fits));
+
+        Assert.Equal(0f, raster.At(0, 1, 3));
+        Assert.Equal(0.25f, raster.At(0, 0, 0));
+        Assert.All(raster.Planes[0], v => Assert.False(float.IsNaN(v)));
+        Assert.Contains("1 valori in afara [0, 1] au fost taiate", note);
+    }
+
     static Raster Load(byte[] fits, string name = "t.fit")
     {
         using var ws = new TempWorkspace();

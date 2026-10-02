@@ -1,0 +1,63 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- PreviewWindow - preview-ul unui rand al simularii (R-131): imaginea ridicata la tinta
+     randului, maximizata, cu pixelii de sub negrul hartiei si cei de sub L* 15 vopsiti,
+     fiecare strat cu bifa lui. Nicio cifra nu se calculeaza aici. -->
+
+<Window x:Class="AstroPhotoAnalyzer.Wpf.PreviewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{Binding Title}"
+        Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
+        WindowState="Maximized" MinWidth="800" MinHeight="500"
+        Background="{StaticResource WindowBg}"
+        TextOptions.TextFormattingMode="Display">
+
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <Border Grid.Row="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="16,10">
+      <StackPanel>
+        <TextBlock Text="{Binding Caption}" TextWrapping="Wrap" />
+        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+          <CheckBox IsChecked="{Binding ShowBlack}" Foreground="{StaticResource TextBr}" Margin="0,0,24,0">
+            <TextBlock Text="{Binding BlackLegend}" />
+          </CheckBox>
+          <CheckBox IsChecked="{Binding ShowLow}" Foreground="{StaticResource TextBr}">
+            <TextBlock Text="{Binding LowLegend}" />
+          </CheckBox>
+        </StackPanel>
+        <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
+                   Text="Curba gamma pe o copie redusa, nu stretch-ul lui Siril; pe ecran pare plata, hartia o aduce inapoi. Pixelii sunt presupusi sRGB." />
+      </StackPanel>
+    </Border>
+
+    <Viewbox Grid.Row="1" Stretch="Uniform" Margin="8">
+      <Grid Width="{Binding Width}" Height="{Binding Height}">
+        <Image Source="{Binding Image}" Stretch="None" />
+        <Image Source="{Binding LowLayer}" Stretch="None" Visibility="{Binding ShowLow, Converter={StaticResource BoolToVis}}" />
+        <Image Source="{Binding BlackLayer}" Stretch="None" Visibility="{Binding ShowBlack, Converter={StaticResource BoolToVis}}" />
+      </Grid>
+    </Viewbox>
+  </Grid>
+</Window>

@@ -92,33 +92,70 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ 2. fundal
 
+        // Verdictul: praful (percentila dalelor norilor catalogati, sau a cadrului fara WCS)
+        // fata de negrul hartiei, si cerul fata de el (ADR 0025). "Fiindca" spune ce e praful,
+        // care sunt norii cei mai intunecati, unde e negrul si de la ce Dmax ar trece asa cum e.
         static void Background(AnalysisResult r, List<Recommendation> o)
         {
-            TonalResult t = r.Tonal;
             SimulationResult s = r.Simulation;
-            string paper = $"negrul hartiei = L* {Fmt.F1(t.PaperBlackLstar)} la Dmax {Fmt.F1(t.Dmax)}";
+            SimulationRow asIs = s.AsIs;
+            string pass = double.IsNaN(s.DmaxToPassAsIs)
+                ? "nu trece asa cum e la niciun Dmax (praful e la L* 0)"
+                : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
+            string clouds = s.Clouds.Count == 0 ? "" : "; cei mai intunecati: " + CloudList(s);
+            string because = $"praful ({s.DustDescription}{(s.MethodNote == null ? "" : "; " + s.MethodNote)}) la L* {Fmt.F1(asIs.LstarDust)}{clouds}; "
+                + $"negrul hartiei L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)}; "
+                + $"cerul ({s.SkyDescription}) la L* {Fmt.F1(asIs.LstarSky)}; nivelul fundalului {Fmt.Level(s.BackgroundMeasured)}; {pass}";
 
-            if (t.PrintSafe)
+            if (!s.DustBelowPaperBlack)
             {
-                o.Add(new Recommendation(Topic.Background, Verdict.Ok,
-                    "Fundalul e print-safe: se poate trimite asa cum e.",
-                    $"{Fmt.Pct(t.PctBelowPaperBlack)} din pixeli sub negrul hartiei (prag {Fmt.F0(Thresholds.PaperBlackOkPct)} %), L* median {Fmt.F1(t.LstarMedian)}; {paper}"));
+                SimulationRow rec = s.Recommended;
+                string text;
+                if (s.RecommendedIsAsIs)
+                {
+                    // Tinta imediat sub nivelul masurat e cea care pica; e ce ii spune omului
+                    // cat de aproape e de muchie.
+                    SimulationRow lower = s.Rows.LastOrDefault(x => x.Target < asIs.Target);
+                    text = lower == null
+                        ? "Fundalul e print-safe asa cum e; grila nu coboara sub nivelul lui."
+                        : $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} praful ar cobori la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei.";
+                }
+                else
+                {
+                    bool floor = ReferenceEquals(rec, s.Rows[0]);
+                    text = $"Fundalul e print-safe asa cum e; poti cobori pana la {Fmt.Level(rec.Target)} (praful la L* {Fmt.F1(rec.LstarDust)}, cerul la L* {Fmt.F1(rec.LstarSky)})"
+                        + (floor ? "; grila nu coboara mai jos." : ".");
+                }
+                o.Add(new Recommendation(Topic.Background, Verdict.Ok, text, because));
                 return;
             }
 
-            Verdict v = t.BackgroundTooLowForPaper ? Verdict.Problem : Verdict.Attention;
-            string what = t.BackgroundTooLowForPaper
-                ? "Fundalul e prea jos pentru hartie: tot ce e sub negrul ei se printeaza cu ACELASI negru."
-                : "Fundalul e la limita pentru hartie.";
-            string fix = s.RecommendedTarget.HasValue
-                ? $" Re-stretch din liniar la fundal {Fmt.F2(s.RecommendedTarget.Value)} (simulat: {Fmt.Pct(RowFor(s, s.RecommendedTarget.Value).PctBelowPaperBlack)} sub negru, L* median {Fmt.F1(RowFor(s, s.RecommendedTarget.Value).LstarMedian)})."
-                : $" Nicio tinta din lista ({string.Join(", ", s.Rows.Skip(1).Select(x => Fmt.F2(x.Target)))}) nu ajunge print-safe: incearca una mai sus.";
-            o.Add(new Recommendation(Topic.Background, v, what + fix,
-                $"{Fmt.Pct(t.PctBelowPaperBlack)} din pixeli sub negrul hartiei (prag {Fmt.F0(Thresholds.PaperBlackWarnPct)} %), {Fmt.Pct(t.PctBelowLowSeparation)} sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (separare slaba); nivelul fundalului {Fmt.F3(s.BackgroundMeasured)}; {paper}"));
+            Verdict v = s.SkyBelowPaperBlack ? Verdict.Problem : Verdict.Attention;
+            string what = s.SkyBelowPaperBlack
+                ? "Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru."
+                : "Praful e sub negrul hartiei: norii de praf s-ar tipari negru pur.";
+            string fix;
+            if (s.Recommended != null)
+            {
+                string exact = s.ExactTarget.HasValue ? $"; exact pe negru la {Fmt.Level(s.ExactTarget.Value)}" : "";
+                fix = $" Re-stretch din liniar la fundal {Fmt.Level(s.Recommended.Target)} (simulat: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).";
+            }
+            else
+            {
+                string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
+                fix = s.ExactTarget.HasValue
+                    ? $" Nicio tinta pana la {top} nu aduce praful pe negrul hartiei; ar trebui ~{Fmt.Level(s.ExactTarget.Value)}, prea sus pentru un cer de noapte: accepta norii cei mai intunecati negri (Anexa B) sau alege alt mediu."
+                    : $" Nicio tinta pana la {top} nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}: praful e practic negru; accepta norii cei mai intunecati negri (Anexa B) sau alege alt mediu.";
+            }
+            o.Add(new Recommendation(Topic.Background, v, what + fix, because));
         }
 
-        static SimulationRow RowFor(SimulationResult s, double target)
-            => s.Rows.First(x => !x.AsIs && Math.Abs(x.Target - target) < 1e-9);
+        /// <summary>"LDN 42 (B78) L* 0.9, LDN 1769 (B275, B278) L* 3.1, ..." - cel mult DustCloudReportRows nori, de la cel mai intunecat.</summary>
+        internal static string CloudList(SimulationResult s)
+        {
+            var rows = s.Clouds.Take(Thresholds.DustCloudReportRows).Select(c => $"{c.Name} L* {Fmt.F1(c.Lstar)}");
+            return string.Join(", ", rows) + (s.Clouds.Count > Thresholds.DustCloudReportRows ? ", ..." : "");
+        }
 
         // ------------------------------------------------------------ 3. culoare
 
@@ -259,12 +296,14 @@ namespace AstroPhotoAnalyzer
 
             string target = $"tinta pentru versiunea de print: {Fmt.F1(Thresholds.NoisePrintLoLsb)}-{Fmt.F1(Thresholds.NoisePrintHiLsb)} LSB";
             string after = "";
-            if (r.Simulation.RecommendedTarget.HasValue)
+            SimulationRow row = r.Simulation.Recommended;
+            if (row != null && !row.AsIs)
             {
-                SimulationRow row = RowFor(r.Simulation, r.Simulation.RecommendedTarget.Value);
+                // Panta curbei gamma la fundal: cu cat se inmulteste zgomotul cand fundalul
+                // urca (sau coboara: recomandarea merge in ambele sensuri, ADR 0025).
                 double bg = r.Simulation.BackgroundMeasured;
                 double slope = row.Gamma * Math.Pow(bg, row.Gamma - 1);
-                after = $"; dupa re-stretch la {Fmt.F2(row.Target)} zgomotul creste de ~{Fmt.F2(slope)} x (panta curbei la fundal), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB";
+                after = $"; dupa re-stretch la {Fmt.Level(row.Target)} zgomotul {(slope >= 1 ? "creste" : "scade")} de ~{Fmt.F2(slope)} x (panta curbei la fundal), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB";
             }
             string because = $"sigma median {Fmt.F2(n.SigmaMedianLsb)} LSB pe {n.SmoothTiles} dale netede (10 % {Fmt.F2(n.Sigma10thLsb)}, minim {Fmt.F2(n.SigmaMinLsb)}); {target}{after}";
 

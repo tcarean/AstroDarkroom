@@ -27,8 +27,14 @@ AstroPhotoAnalyzer.Core/
   Input/ColorMath.cs                   sRGB, luminance, L*, paper black
   Input/Stats.cs                       percentiles (numpy), SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, ImageLoader.cs
+  Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
+  Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000
+  Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader
   Analysis/FileFacts.cs, BitDepthAnalyzer.cs, CropAnalyzer.cs, TonalAnalyzer.cs,
-           PrintStretchSimulator.cs, NoiseAnalyzer.cs, BackgroundAnalyzer.cs,
+           DustAnalyzer.cs (the dust and the sky on patches, with or without the catalogue),
+           PrintStretchSimulator.cs (the grid, the ladder, the recommendation, the cloud rows),
+           PrintPreview.cs (a row as an image, for the preview window),
+           NoiseAnalyzer.cs, BackgroundAnalyzer.cs,
            StarAnalyzer.cs, PrintSizeAnalyzer.cs, QuantizationAnalyzer.cs, JpegAnalyzer.cs
   Report/Recommendation.cs             Verdict, Topic, Recommendation, VerdictText
   Report/Recommendations.cs            the rules
@@ -44,10 +50,12 @@ AstroPhotoAnalyzer.Wpf/
   App.xaml(.cs), MainWindow.xaml(.cs), Theme/Dark.xaml
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs
-  ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs
+  ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
+             MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView (.xaml),
-        ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs)
+        ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
+        MapWindow.xaml, PreviewWindow.xaml, OverlayWindows.xaml.cs
 
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt; testdata/ (manifest, large/)
-AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests
+AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests
 ```
