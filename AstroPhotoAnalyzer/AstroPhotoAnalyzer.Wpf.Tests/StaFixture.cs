@@ -24,7 +24,6 @@
 //      de mesaje, continuarea se pune in coada si nu se executa niciodata - deadlock.
 //   3. Unul singur pe proces: Application e unic si legat de firul care l-a creat.
 
-using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 

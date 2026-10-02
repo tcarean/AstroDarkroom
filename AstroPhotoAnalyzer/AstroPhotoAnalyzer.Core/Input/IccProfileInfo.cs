@@ -65,26 +65,26 @@ namespace AstroPhotoAnalyzer
             switch (type)
             {
                 case "desc":
-                {
-                    // textDescriptionType (v2): sig, rezervat, lungime ASCII (cu NUL), sir.
-                    int len = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
-                    if (len <= 0 || off + 12 + len > icc.Length) return null;
-                    return Encoding.ASCII.GetString(icc, off + 12, len);
-                }
+                    {
+                        // textDescriptionType (v2): sig, rezervat, lungime ASCII (cu NUL), sir.
+                        int len = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
+                        if (len <= 0 || off + 12 + len > icc.Length) return null;
+                        return Encoding.ASCII.GetString(icc, off + 12, len);
+                    }
                 case "mluc":
-                {
-                    // multiLocalizedUnicodeType (v4): sig, rezervat, nr. inregistrari,
-                    // marimea unei inregistrari (12), apoi inregistrari: limba, tara,
-                    // lungime in octeti, offset fata de inceputul tagului. UTF-16BE.
-                    uint n = BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
-                    if (n == 0) return null;
-                    int recLen = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 16, 4));
-                    if (recLen < 12) return null;
-                    int len = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 20, 4));
-                    int rel = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 24, 4));
-                    if (len <= 0 || off + rel + len > icc.Length) return null;
-                    return Encoding.BigEndianUnicode.GetString(icc, off + rel, len);
-                }
+                    {
+                        // multiLocalizedUnicodeType (v4): sig, rezervat, nr. inregistrari,
+                        // marimea unei inregistrari (12), apoi inregistrari: limba, tara,
+                        // lungime in octeti, offset fata de inceputul tagului. UTF-16BE.
+                        uint n = BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
+                        if (n == 0) return null;
+                        int recLen = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 16, 4));
+                        if (recLen < 12) return null;
+                        int len = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 20, 4));
+                        int rel = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 24, 4));
+                        if (len <= 0 || off + rel + len > icc.Length) return null;
+                        return Encoding.BigEndianUnicode.GetString(icc, off + rel, len);
+                    }
                 default:
                     return null;
             }

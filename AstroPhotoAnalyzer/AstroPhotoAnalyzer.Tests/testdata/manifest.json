@@ -1,0 +1,13 @@
+{
+  "$comment": "Every test data file outside git: the reference image, copied by hand from E:/Photografie/Claude into large/ beside this file, which git ignores (ADR 0004). Names are relative to large/ (or to the folder APA_TESTDATA_LARGE names, which nobody sets). scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name this file. AstroPhotoAnalyzer has no repo fixtures: they are generated or hand-built in the tests.",
+  "files": [
+    {
+      "name": "de_printat.png",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "490774dc90d723c831dff4a0b5e36e51b3579f602a1483b5b13560c29b21e9d4",
+      "source": "the owner's finished Milky Way core (E:/Photografie/Claude/de_printat.png, 103 387 067 bytes), exported from Siril; the image the tool was built to measure",
+      "demonstrates": "docs/validation.json V-001 to V-003"
+    }
+  ]
+}

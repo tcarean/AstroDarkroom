@@ -92,9 +92,12 @@ namespace AstroPhotoAnalyzer
                 var (median, black, low, high, _) = TonalAnalyzer.LstarStats(RasterOps.Gamma(sub, gamma), p.Dmax, stride: 1);
                 rows.Add(new SimulationRow
                 {
-                    Target = target, Gamma = gamma,
-                    LstarMedian = median, PctBelowPaperBlack = black,
-                    PctBelowLowSeparation = low, PctAboveHighlight = high,
+                    Target = target,
+                    Gamma = gamma,
+                    LstarMedian = median,
+                    PctBelowPaperBlack = black,
+                    PctBelowLowSeparation = low,
+                    PctAboveHighlight = high,
                 });
             }
 

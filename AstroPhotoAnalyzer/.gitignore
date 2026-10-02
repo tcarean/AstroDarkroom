@@ -1,0 +1,8 @@
+# In addition to the repository root's .gitignore (bin/, obj/, .vs/, *.py[cod]).
+.verify-stamp
+artifacts/
+TestResults/
+StrykerOutput/
+# The reference image, copied here by hand; it never enters the repository (ADR 0004).
+AstroPhotoAnalyzer.Tests/testdata/large/
+.claude/settings.local.json

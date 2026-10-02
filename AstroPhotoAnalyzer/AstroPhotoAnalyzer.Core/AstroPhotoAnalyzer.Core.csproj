@@ -33,9 +33,13 @@
        Versiunea e FIXATA la 3.1.x si din motive juridice (grantul vine cu versiunea
        luata) si practice: de la 4.0.0 pachetul aduce un task MSBuild care cere o cheie
        de licenta la compilare - avertisment pe Debug, EROARE pe Release. 3.1.x are
-       exact aceiasi termeni si niciun task. Vezi THIRD-PARTY-NOTICES.md. -->
+       exact aceiasi termeni si niciun task. Vezi THIRD-PARTY-NOTICES.md.
+
+       Numarul versiunii nu mai sta aici: e in Directory.Packages.props, langa solutie,
+       o singura data pentru toate proiectele (gestiunea centrala a pachetelor, ADR 0003).
+       Aici ramane doar numele pachetului, pe care il citeste ThirdPartyTests. -->
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <PackageReference Include="SixLabors.ImageSharp" />
   </ItemGroup>
 
   <!-- Nucleul ramane internal in intregime: consumatorii sunt in acelasi repo si se

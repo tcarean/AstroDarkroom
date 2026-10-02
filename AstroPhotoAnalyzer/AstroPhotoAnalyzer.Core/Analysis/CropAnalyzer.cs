@@ -58,9 +58,16 @@ namespace AstroPhotoAnalyzer
                 int cut = (w - newW) / 2;
                 return new CropResult
                 {
-                    Needed = true, NativeAspect = native, TargetAspect = t,
-                    X0 = cut, Y0 = 0, W = newW, H = h,
-                    Axis = "latime", CutPerSidePx = cut, CutPct = 100.0 * (w - newW) / w,
+                    Needed = true,
+                    NativeAspect = native,
+                    TargetAspect = t,
+                    X0 = cut,
+                    Y0 = 0,
+                    W = newW,
+                    H = h,
+                    Axis = "latime",
+                    CutPerSidePx = cut,
+                    CutPct = 100.0 * (w - newW) / w,
                 };
             }
             else
@@ -69,9 +76,16 @@ namespace AstroPhotoAnalyzer
                 int cut = (h - newH) / 2;
                 return new CropResult
                 {
-                    Needed = true, NativeAspect = native, TargetAspect = t,
-                    X0 = 0, Y0 = cut, W = w, H = newH,
-                    Axis = "inaltime", CutPerSidePx = cut, CutPct = 100.0 * (h - newH) / h,
+                    Needed = true,
+                    NativeAspect = native,
+                    TargetAspect = t,
+                    X0 = 0,
+                    Y0 = cut,
+                    W = w,
+                    H = newH,
+                    Axis = "inaltime",
+                    CutPerSidePx = cut,
+                    CutPct = 100.0 * (h - newH) / h,
                 };
             }
         }

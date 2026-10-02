@@ -76,8 +76,15 @@ namespace AstroPhotoAnalyzer
             }
 
             if (tiles.Count == 0)
-                return new NoiseResult { Candidates = candidates, SmoothTiles = 0, Tiles = tiles,
-                    SigmaMedianLsb = double.NaN, Sigma10thLsb = double.NaN, SigmaMinLsb = double.NaN };
+                return new NoiseResult
+                {
+                    Candidates = candidates,
+                    SmoothTiles = 0,
+                    Tiles = tiles,
+                    SigmaMedianLsb = double.NaN,
+                    Sigma10thLsb = double.NaN,
+                    SigmaMinLsb = double.NaN
+                };
 
             float[] sigmas = Stats.Sorted(tiles.Select(t => (float)t.SigmaLsb).ToArray());
             return new NoiseResult

@@ -23,4 +23,18 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
+  <!-- Reproductibilitate (ADR 0003): aceleasi surse, aceiasi octeti; versiunea fiecarui
+       pachet o singura data, in Directory.Packages.props; graful complet in
+       packages.lock.json, pe care CI-ul il restaureaza in modul blocat. Strictetea
+       (avertismentele ca erori) o aplica scripts/verify.ps1 din linia de comanda, nu
+       fisierul asta, ca un build din IDE sa ramana ingaduitor, iar gate-ul nu. -->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
 </Project>

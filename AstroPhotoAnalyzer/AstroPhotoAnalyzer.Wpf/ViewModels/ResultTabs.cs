@@ -25,7 +25,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -535,13 +534,15 @@ namespace AstroPhotoAnalyzer.Wpf
 
             tiles.Add(new PreviewTile
             {
-                Title = "Centru, 100 %", Image = RasterBitmaps.Region(img, cx, cy, cw, ch),
+                Title = "Centru, 100 %",
+                Image = RasterBitmaps.Region(img, cx, cy, cw, ch),
                 Check = "Textura, nu detaliul. Granulatia cerului - recomandarea de denoise pentru ecran se judeca aici, cu pasul inapoi "
                     + "din cardul de sus - forma stelelor, rotunde si moi, fara halo de sharpening, si trepte in cer.",
             });
             tiles.Add(new PreviewTile
             {
-                Title = "Centru, 200 %", Image = RasterBitmaps.Region(img, cx + cw / 4, cy + ch / 4, cw / 2, ch / 2, zoom: 2),
+                Title = "Centru, 200 %",
+                Image = RasterBitmaps.Region(img, cx + cw / 4, cy + ch / 4, cw / 2, ch / 2, zoom: 2),
                 Note = "pixelii din fisier, mariti de doua ori",
                 Check = "Lupa, nu printul: artefacte de fisier. Cerul trebuie sa fie granulatie fina, nu petice de aceeasi valoare (palierul din "
                     + "Export); stelele discuri moi, nu patrate sau cruci. Blocuri de 8 x 8 inseamna ca fisierul a trecut prin JPEG; trepte "
@@ -556,7 +557,8 @@ namespace AstroPhotoAnalyzer.Wpf
             const int side = 520;
             tiles.Add(new PreviewTile
             {
-                Title = "Cadru intreg, asa cum e", Image = RasterBitmaps.Whole(img, side),
+                Title = "Cadru intreg, asa cum e",
+                Image = RasterBitmaps.Whole(img, side),
                 Check = "Compozitia si gradientul global, privit de la distanta sau mijind ochii: o parte mai luminoasa, banda orizontului, "
                     + "o dominanta. Aici raspunzi intrebarii de la marginile neutre: coltul marcat e Calea Lactee care intra in cadru, sau o lumina?",
             });

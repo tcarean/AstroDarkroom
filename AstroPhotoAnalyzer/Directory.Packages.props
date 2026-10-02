@@ -1,0 +1,21 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once (ADR 0003). The
+       rule: no new package without asking (the kit's rule "Packages"), and every package
+       gets a "why" here, an entry in THIRD-PARTY-NOTICES.md and, for the core, one in
+       ThirdParty.cs (the rule "Package notices", ADR 0023). ThirdPartyTests reads the
+       PackageReference names from AstroPhotoAnalyzer.Core.csproj; the versions are here. -->
+  <ItemGroup>
+    <!-- Decodes TIFF, PNG and JPEG (the pixels every measurement runs on) and encodes JPEG
+         and TIFF for the export table. Pinned to 3.1.x on purpose: 4.x adds a licence-key
+         MSBuild task that errors on Release builds (ADR 0009, docs/design/dependencies.md). -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Test host and runner (xUnit 2: no dynamic skip, which is why an absent reference
+         image returns early with a message instead of skipping). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageVersion Include="xunit" Version="2.5.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+</Project>
