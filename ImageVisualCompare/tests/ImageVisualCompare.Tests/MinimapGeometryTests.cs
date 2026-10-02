@@ -34,7 +34,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void TheRectangleIsTheVisibleRegionScaledOntoTheThumbnail()
+    public void R041_TheRectangleIsTheVisibleRegionScaledOntoTheThumbnail()
     {
         Viewport viewport = Create();
         viewport.SetOffset(400, 200);
@@ -49,7 +49,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void TheTwoAxesAreScaledIndependently()
+    public void R041_TheTwoAxesAreScaledIndependently()
     {
         // A non-square image would hide an x/y mix-up if both scales were equal.
         Viewport viewport = Create(contentWidth: 2000, contentHeight: 1000, viewportWidth: 400, viewportHeight: 200);
@@ -64,7 +64,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void AtFitTheRectangleCoversTheThumbnailAndIsHidden()
+    public void R041_AtFitTheRectangleCoversTheThumbnailAndIsHidden()
     {
         Viewport viewport = Create();
         viewport.ZoomToFit();
@@ -77,7 +77,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void TheRectangleIsClampedWhereTheViewportOverhangsTheImage()
+    public void R041_TheRectangleIsClampedWhereTheViewportOverhangsTheImage()
     {
         // A viewport larger than the image leaves a negative offset, which would otherwise
         // draw the rectangle off the edge of the thumbnail.
@@ -92,7 +92,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void DeepZoomStillLeavesAVisibleRectangle()
+    public void R041_DeepZoomStillLeavesAVisibleRectangle()
     {
         Viewport viewport = Create(contentWidth: 20000, contentHeight: 20000);
         viewport.ZoomTo(16, 100, 100);
@@ -104,7 +104,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void WithoutContentThereIsNothingToDraw()
+    public void R041_WithoutContentThereIsNothingToDraw()
     {
         MinimapLayout layout = MinimapGeometry.Layout(new Viewport(), 100, 100);
 
@@ -116,7 +116,7 @@ public class MinimapGeometryTests
     [InlineData(0, 0, 0, 0)]
     [InlineData(100, 50, 1000, 500)]
     [InlineData(200, 100, 2000, 1000)]
-    public void AClickMapsToTheContentPointUnderIt(
+    public void R042_AClickMapsToTheContentPointUnderIt(
         double thumbnailX, double thumbnailY, double expectedX, double expectedY)
     {
         Viewport viewport = Create(contentWidth: 2000, contentHeight: 1000);
@@ -128,7 +128,7 @@ public class MinimapGeometryTests
     }
 
     [Fact]
-    public void CentringOnAClickPutsThatPointInTheMiddleOfTheView()
+    public void R042_CentringOnAClickPutsThatPointInTheMiddleOfTheView()
     {
         Viewport viewport = Create(contentWidth: 2000, contentHeight: 1000, viewportWidth: 400, viewportHeight: 200);
 

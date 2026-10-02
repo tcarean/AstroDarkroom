@@ -1,0 +1,69 @@
+# Code map
+
+> Moved unchanged on 2026-10-02 (ADR 0001) from `CLAUDE.md`, "Structure". Where a paragraph became
+> a decision record, its number is given beside it.
+> **Covers:** `src/ImageVisualCompare.Core/` and `src/ImageVisualCompare.Wpf/`, what each
+> file is for, and the test project,
+> `tests/ImageVisualCompare.Tests/ImageVisualCompare.Tests.csproj`.
+> A change to the code this describes means this note is updated in the same task, or
+> deleted with the decision it explains.
+
+## Structure
+
+- `src/ImageVisualCompare.Core/` — `net9.0`, no UI framework reference at all. Everything
+  here is pure and unit tested.
+  - `Viewport.cs` — the single source of truth for zoom and pan. Screen space is **physical
+    pixels**, content space is image pixels. Holds `Scale`, `OffsetX/Y`, the clamping rules,
+    and anchored zoom.
+  - `DividerModel.cs` — the split line as a fraction of viewport width, plus hit testing.
+  - `ZoomLadder.cs` — the discrete stops the `+`/`−` buttons step through. The wheel zooms
+    continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
+    therefore search rather than index. See ADR 0020.
+  - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on. See ADR 0022.
+  - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
+    larger extent on each axis, plus whether that meant padding and the question to put to
+    the user if it did.
+  - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
+    so Core needs no `WindowsBase` reference. See ADR 0009.
+  - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
+    the translation, scale and resampling mode the view puts on its transform. This is where
+    the physical-pixel to device-independent-pixel conversion lives. See ADR 0011.
+  - `DividerLayout.cs` — the record `DividerModel.Layout` returns: line position, the clip
+    region for image A, and the handle rectangle.
+  - `MinimapGeometry.cs` — the viewport rectangle on the thumbnail, and the content point a
+    click maps to.
+  - `ScrollBarState.cs` — range, thumb proportion, value and visibility per axis.
+
+  The last four exist so that the controls do no arithmetic of their own. A control reads a
+  layout record and assigns properties; if a number looks wrong on screen, the test for it
+  is in Core. See ADR 0009.
+- `src/ImageVisualCompare.Wpf/` — `net9.0-windows`, the application.
+  - `Imaging/IImageLoader.cs` — the decoder seam. Typed on `BitmapSource` deliberately: any
+    replacement decoder still has to produce one for the `Image` control, so a generic
+    parameter would buy nothing. That is also why it lives here and not in Core. See ADR 0008.
+  - `Imaging/WicImageLoader.cs` — decodes via WIC. `Probe` reads the header only;
+    `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
+    words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
+    anything it does not recognise. See ADR 0022.
+  - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before
+    decoding either, so a pair that needs a decision costs nothing until it is made. A
+    mismatch is put to the caller through `confirmPadding`; with no delegate it is refused,
+    which is what anything headless wants. Decodes sequentially, never in parallel, to keep
+    the peak down. Turns every expected file failure into a message rather than a crash. See ADR 0015.
+  - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
+    process memory readout.
+  - `Services/FileDialogService.cs` — the two open dialogs and the file filter. These are
+    the Windows common dialogs and follow the *system* theme, which is the one place the
+    palette is not ours to choose. See ADR 0018.
+  - `Interop/DarkTitleBar.cs` — the DWM opt-in that makes a window's caption dark. Every
+    `Window` in the application calls `Apply` in its constructor. See ADR 0018.
+  - `Controls/CompareView.xaml(.cs)` — the comparison surface. All input handling, the
+    shared transform, the clip, the overlay, the scrollbars.
+  - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
+  - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
+  - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
+    `Confirm` to ask yes or no.
+  - `App.xaml.cs` — command line pair, handed over once via `TakeStartupSelection`.
+  - `Theme.xaml` — the dark palette and every control style.
+- `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
+  tests drive the real WIC codecs. References both other projects.

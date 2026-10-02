@@ -34,7 +34,7 @@ public class ScrollBarStateTests
     }
 
     [Fact]
-    public void TheRangeIsTheScrollableOffsetAndTheThumbIsTheVisibleExtent()
+    public void R043_TheRangeIsTheScrollableOffsetAndTheThumbIsTheVisibleExtent()
     {
         Viewport viewport = Create();
         viewport.SetOffset(300, 500);
@@ -52,7 +52,7 @@ public class ScrollBarStateTests
     }
 
     [Fact]
-    public void AnImageThatFitsNeedsNoBars()
+    public void R043_AnImageThatFitsNeedsNoBars()
     {
         Viewport viewport = Create();
         viewport.ZoomToFit();
@@ -63,7 +63,7 @@ public class ScrollBarStateTests
     }
 
     [Fact]
-    public void OnlyTheOverflowingAxisGetsABar()
+    public void R043_OnlyTheOverflowingAxisGetsABar()
     {
         // Wide and short: the width overflows a square viewport, the height does not.
         Viewport viewport = Create(contentWidth: 2000, contentHeight: 100, viewportWidth: 200, viewportHeight: 200);
@@ -74,7 +74,7 @@ public class ScrollBarStateTests
     }
 
     [Fact]
-    public void TheValueNeverEscapesTheRangeTheBarAdvertises()
+    public void R043_TheValueNeverEscapesTheRangeTheBarAdvertises()
     {
         // At fit the offset is negative on the axis with spare room, which a scroll bar
         // cannot represent.

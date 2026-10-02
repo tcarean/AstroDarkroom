@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.IO;
-using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
 
 namespace ImageVisualCompare.Wpf.Imaging;

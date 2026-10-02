@@ -1,0 +1,28 @@
+{
+  "$comment": "What the shared scripts, skills and agent need to know about ImageVisualCompare. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028; ADR 0002). The layout is the kit's default, src/ and tests/. The validation cases on the real pair stay out of the gate, and the files are git-ignored copies in tests/testdata/large/; IVC_TESTDATA_LARGE is the override kit-config.ps1 requires a name for, and nobody sets it (ADR 0005). See scripts/kit-config.ps1 for every key.",
+  "solution": "ImageVisualCompare.sln",
+  "testFilter": "Category!=Validation",
+  "codeFolders": ["src/"],
+  "codeFiles": [],
+  "testFolders": ["tests/"],
+  "testData": {
+    "folder": "tests/testdata/",
+    "largeEnv": "IVC_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "tests/ImageVisualCompare.Tests/"
+  },
+  "release": {
+    "publish": [
+      {
+        "project": "src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj",
+        "output": "",
+        "args": ["-r", "win-x64", "--self-contained"]
+      }
+    ]
+  },
+  "audit": {
+    "alsoRead": ["README.md"]
+  },
+  "kit": "../ClaudeCodeStarterKit"
+}

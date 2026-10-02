@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Version.cs - versiunea uneltei, citita din assembly.
+// Version.cs - the tool's version, read from the assembly.
 //
-// SURSA DE ADEVAR e <Version> (si <Copyright>) din ImageVisualCompare.Wpf.csproj. Nu hardcoda
-// nimic aici: MSBuild transforma <Version> in AssemblyInformationalVersion, iar de acolo o
-// citim. Asa exista un singur loc de schimbat.
+// THE SOURCE OF TRUTH is <Version> (and <Copyright>) in Directory.Build.props (ADR 0004).
+// Hardcode nothing here: MSBuild turns <Version> into AssemblyInformationalVersion, and it is
+// read from there. That way there is a single place to change.
 //
-// Se incrementeaza MANUAL la fiecare feature/fix.
+// It is bumped BY HAND, per feature or fix.
 
 using System.Reflection;
 
@@ -31,24 +31,23 @@ internal static class VersionInfo
 {
     internal static string Value { get; } = Read();
 
-    /// <summary>Numele si versiunea, asa cum apar in bara de stare si in About.</summary>
+    /// <summary>The name and the version, as they appear in the status bar and in About.</summary>
     internal static string Banner => "Image Visual Compare " + Value;
 
     /// <summary>
-    /// Notita de copyright. Programul e GPLv3 (vezi LICENSE), iar licenta cere ca fiecare
-    /// copie sa o poarte; aici e afisata permanent in bara de stare, langa banner. Ca si
-    /// versiunea, vine din csproj (&lt;Copyright&gt;) - nu o hardcoda aici.
+    /// The copyright notice. The program is GPLv3 (see LICENSE), and the licence wants every
+    /// copy to carry it; it is shown permanently in the status bar, next to the banner. Like the
+    /// version, it comes from Directory.Build.props (&lt;Copyright&gt;) - do not hardcode it here.
     /// </summary>
     internal static string Copyright { get; } = ReadCopyright();
 
     /// <summary>
-    /// Textul din dialogul About.
+    /// The text of the About dialog.
     ///
-    /// GPLv3 sectiunea 5(d): un program cu interfata interactiva trebuie sa arate si lipsa
-    /// garantiei, nu doar copyright-ul. Nu incape in bara de stare, deci sta aici, la un
-    /// click distanta, si trimite mai departe la textul complet. E o proprietate, si nu
-    /// continut inghesuit in handler-ul butonului, ca sa poata fi verificata de teste fara
-    /// sa deschida o fereastra.
+    /// GPLv3 section 5(d): a program with an interactive interface must also show the absence
+    /// of warranty, not just the copyright. It does not fit in the status bar, so it lives
+    /// here, one click away, and points on to the full text. It is a property, and not content
+    /// crammed into the button's handler, so that tests can check it without opening a window.
     /// </summary>
     internal static string About { get; } = string.Join(
         Environment.NewLine,
@@ -74,8 +73,8 @@ internal static class VersionInfo
     {
         Assembly assembly = typeof(VersionInfo).Assembly;
 
-        // InformationalVersion vine direct din <Version> si pastreaza forma "1.0.0".
-        // AssemblyVersion ar da "1.0.0.0", care nu e ce vrem sa aratam.
+        // InformationalVersion comes straight from <Version> and keeps the "1.0.0" form.
+        // AssemblyVersion would give "1.0.0.0", which is not what should be shown.
         string? version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                           ?? assembly.GetName().Version?.ToString();
 
@@ -84,7 +83,7 @@ internal static class VersionInfo
             return "0.0.0";
         }
 
-        // Unele build-uri lipesc metadata de sursa: "1.0.0+9a8b7c6". Taie de la '+'.
+        // Some builds append source metadata: "1.0.0+9a8b7c6". Cut at the '+'.
         int plus = version.IndexOf('+', StringComparison.Ordinal);
         return plus >= 0 ? version[..plus] : version;
     }

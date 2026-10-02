@@ -23,79 +23,79 @@ using ImageVisualCompare.Wpf;
 namespace ImageVisualCompare.Tests;
 
 /// <summary>
-/// Versiunea se incrementeaza manual. Sursa de adevar e <c>&lt;Version&gt;</c> din csproj -
-/// <see cref="VersionInfo"/> o citeste din assembly, nu o hardcodeaza. Testele astea verifica
-/// plumbing-ul, si ca notitele cerute de GPLv3 chiar exista in textele pe care le arata
-/// aplicatia.
+/// The version is bumped by hand. The source of truth is <c>&lt;Version&gt;</c> in
+/// Directory.Build.props (ADR 0004) - <see cref="VersionInfo"/> reads it from the assembly and
+/// does not hardcode it. These tests check the plumbing, and that the notices GPLv3 asks for
+/// really are in the texts the application shows.
 /// </summary>
 public class VersionTests
 {
     private static string RepoDir([CallerFilePath] string thisFile = "") =>
         Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(thisFile)))!;
 
-    private static string AppCsproj() => File.ReadAllText(Path.Combine(
-        RepoDir(), "src", "ImageVisualCompare.Wpf", "ImageVisualCompare.Wpf.csproj"));
+    private static string BuildProps() => File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
 
     [Fact]
-    public void VersionIsAThreePartNumber()
+    public void R070_VersionIsAThreePartNumber()
     {
         Assert.Matches(@"^\d+\.\d+\.\d+$", VersionInfo.Value);
     }
 
     /// <summary>
-    /// Verifica plumbing-ul csproj -> assembly -> VersionInfo. Daca cineva scoate
-    /// &lt;Version&gt; sau MSBuild inceteaza sa mai propage InformationalVersion, aici se vede.
+    /// Checks the plumbing Directory.Build.props -> assembly -> VersionInfo. If someone removes
+    /// &lt;Version&gt; or MSBuild stops propagating InformationalVersion, this is where it shows.
     /// </summary>
     [Fact]
-    public void TheVersionComesFromTheCsproj()
+    public void R070_TheVersionComesFromTheBuildProps()
     {
-        Match m = Regex.Match(AppCsproj(), @"<Version>([^<]+)</Version>");
+        Match m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
-        Assert.True(m.Success, "csproj-ul nu are <Version>");
+        Assert.True(m.Success, "Directory.Build.props has no <Version>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Value);
     }
 
-    /// <summary>Nu trebuie sa ramana "1.0.0.0" sau "1.0.0+abc123" din assembly.</summary>
+    /// <summary>Neither "1.0.0.0" nor "1.0.0+abc123" from the assembly may remain.</summary>
     [Fact]
-    public void TheVersionIsNotTheFourPartOrSourceTaggedForm()
+    public void R070_TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
         Assert.DoesNotContain("+", VersionInfo.Value);
         Assert.Equal(3, VersionInfo.Value.Split('.').Length);
     }
 
     /// <summary>
-    /// Copyright-ul vine din &lt;Copyright&gt;, la fel cum versiunea vine din &lt;Version&gt;.
-    /// Daca cineva il scoate, ramane fallback-ul din cod - si aici se vede.
+    /// The copyright comes from &lt;Copyright&gt;, just as the version comes from &lt;Version&gt;.
+    /// If someone removes it, the fallback in the code is what remains - and this is where it
+    /// shows.
     /// </summary>
     [Fact]
-    public void TheCopyrightComesFromTheCsproj()
+    public void R071_TheCopyrightComesFromTheBuildProps()
     {
-        Match m = Regex.Match(AppCsproj(), @"<Copyright>([^<]+)</Copyright>");
+        Match m = Regex.Match(BuildProps(), @"<Copyright>([^<]+)</Copyright>");
 
-        Assert.True(m.Success, "csproj-ul nu are <Copyright>");
+        Assert.True(m.Success, "Directory.Build.props has no <Copyright>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
     }
 
     [Fact]
-    public void TheCopyrightNamesTheAuthorAndTheYear()
+    public void R071_TheCopyrightNamesTheAuthorAndTheYear()
     {
         Assert.Equal("Copyright (C) 2026 Tudor Carean", VersionInfo.Copyright);
     }
 
     [Fact]
-    public void TheCsprojDeclaresTheLicence()
+    public void R073_TheBuildPropsDeclareTheLicence()
     {
-        Assert.Contains("<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>", AppCsproj());
+        Assert.Contains("<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>", BuildProps());
     }
 
     [Fact]
-    public void TheBannerIsTheNameAndTheVersion()
+    public void R070_TheBannerIsTheNameAndTheVersion()
     {
         Assert.Equal($"Image Visual Compare {VersionInfo.Value}", VersionInfo.Banner);
     }
 
     [Fact]
-    public void AboutStartsWithTheBannerAndTheCopyright()
+    public void R072_AboutStartsWithTheBannerAndTheCopyright()
     {
         string[] lines = VersionInfo.About.Replace("\r\n", "\n").Split('\n');
 
@@ -104,11 +104,11 @@ public class VersionTests
     }
 
     /// <summary>
-    /// GPLv3 sectiunea 5(d): un program cu interfata interactiva trebuie sa afiseze si lipsa
-    /// garantiei, nu doar copyright-ul, si sa spuna unde e licenta completa.
+    /// GPLv3 section 5(d): a program with an interactive interface must also display the
+    /// absence of warranty, not just the copyright, and say where the full licence is.
     /// </summary>
     [Fact]
-    public void AboutCarriesTheWarrantyDisclaimerAndPointsAtTheLicence()
+    public void R072_AboutCarriesTheWarrantyDisclaimerAndPointsAtTheLicence()
     {
         Assert.Contains("ABSOLUTELY NO WARRANTY", VersionInfo.About);
         Assert.Contains("GNU General Public License", VersionInfo.About);

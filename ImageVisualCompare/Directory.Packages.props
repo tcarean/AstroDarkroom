@@ -1,0 +1,14 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once (ADR 0003). The rule
+       "No imaging dependency" (CLAUDE.md, ADR 0008): the core and the application reference no
+       package at all; the test project has the four below and nothing else. No new package
+       without asking (the kit's rule "Packages"), and every package gets a "why" here. -->
+  <ItemGroup>
+    <!-- Test host and runner (xUnit 2: no dynamic skip, which is why an absent large file returns
+         early with a message instead of skipping). -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
+  </ItemGroup>
+</Project>

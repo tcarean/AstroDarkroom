@@ -28,7 +28,7 @@ public class ImageInfoTests
     [InlineData(8, ColorChannels.GrayAlpha, "8-bit gray + alpha")]
     [InlineData(4, ColorChannels.Indexed, "4-bit indexed")]
     [InlineData(8, ColorChannels.Unknown, "8-bit")]
-    public void FormatDescription_ReportsWhatWasLoaded(int bits, ColorChannels channels, string expected)
+    public void R011_FormatDescription_ReportsWhatWasLoaded(int bits, ColorChannels channels, string expected)
     {
         var info = new ImageInfo(@"C:\x.png", 10, 10, bits, channels);
 
@@ -36,7 +36,7 @@ public class ImageInfoTests
     }
 
     [Fact]
-    public void FileName_StripsTheDirectory()
+    public void R013_FileName_StripsTheDirectory()
     {
         var info = new ImageInfo(@"E:\Photografie\Astro\final\stack.png", 10, 10, 16, ColorChannels.Rgb);
 
@@ -44,7 +44,7 @@ public class ImageInfoTests
     }
 
     [Fact]
-    public void DisplayBytes_CountsTheBgra32Footprint()
+    public void R013_DisplayBytes_CountsTheBgra32Footprint()
     {
         var info = new ImageInfo(@"C:\x.png", 5794, 3637, 16, ColorChannels.Rgb);
 

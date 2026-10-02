@@ -1,16 +1,48 @@
 <Project>
 
+  <!-- Shared by the three projects. The single place for the version, the copyright and the
+       strictness. Do not move <Version> or <Copyright> back into a csproj: VersionTests reads
+       this file, and scripts/release.ps1 writes <Version> here (ADR 0004). -->
   <PropertyGroup>
+    <!-- The owner bumps the version by hand, per feature or fix (ADR 0023; the kit's ADR 0029).
+         MSBuild carries it into AssemblyInformationalVersion, where VersionInfo reads it. -->
+    <Version>1.1.1</Version>
+
+    <!-- <Copyright> reaches AssemblyCopyrightAttribute, where VersionInfo.Copyright reads it for
+         the status bar. The program is GPLv3-or-later; the full text is in LICENSE at the
+         project root (ADR 0024). -->
+    <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- IDE0005 (unused usings, .editorconfig) only runs at build when the documentation file is
+         generated; without it the build stops on EnableGenerateDocumentationFile. CS1591
+         (missing XML comment) and CS1573 (a parameter without a param tag while another has
+         one) are muted: comments are for the "why", not for every member, and a comment here
+         documents the one parameter that needs it (ADR 0003; the kit mutes CS1591 too). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
     <!-- A 21 MP pair needs ~300 MB at peak; a 32-bit process cannot host that. -->
     <PlatformTarget>x64</PlatformTarget>
     <!-- Do not set InvariantGlobalization here. WPF's font cache builds a CultureInfo("en")
          while working out typography availability, which throws in invariant mode and takes
-         the whole application down the moment certain text is laid out. -->
+         the whole application down the moment certain text is laid out (ADR 0017). -->
+  </PropertyGroup>
+
+  <!-- Reproducibility (ADR 0003): the same sources, the same bytes; every package version once,
+       in Directory.Packages.props; the full graph in packages.lock.json, which CI restores in
+       locked mode. -->
+  <PropertyGroup>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
   </PropertyGroup>
 
 </Project>

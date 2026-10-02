@@ -34,7 +34,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void WithoutContent_ZoomAndPanAreNoOps()
+    public void R029_WithoutContent_ZoomAndPanAreNoOps()
     {
         var viewport = new Viewport();
 
@@ -48,7 +48,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ScreenAndContentSpaceRoundTrip()
+    public void R029_ScreenAndContentSpaceRoundTrip()
     {
         var viewport = Create();
         viewport.ZoomTo(2.5, 200, 200);
@@ -64,7 +64,7 @@ public class ViewportTests
     [InlineData(2.0, 100, 100)]
     [InlineData(4.0, 350, 20)]
     [InlineData(0.6, 200, 200)]
-    public void ZoomTo_HoldsTheAnchoredContentPointUnderTheCursor(double scale, double anchorX, double anchorY)
+    public void R023_ZoomTo_HoldsTheAnchoredContentPointUnderTheCursor(double scale, double anchorX, double anchorY)
     {
         var viewport = Create();
         viewport.CentreOn(500, 500);
@@ -78,7 +78,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ZoomTo_ClampsAtTheCeiling()
+    public void R020_ZoomTo_ClampsAtTheCeiling()
     {
         var viewport = Create();
 
@@ -88,7 +88,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ZoomTo_WillNotShrinkAnImageBelowTheFitScale()
+    public void R020_ZoomTo_WillNotShrinkAnImageBelowTheFitScale()
     {
         var viewport = Create();
 
@@ -99,7 +99,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ForAnImageSmallerThanTheViewport_TheFloorIsActualSize()
+    public void R020_ForAnImageSmallerThanTheViewport_TheFloorIsActualSize()
     {
         var viewport = Create(contentWidth: 100, contentHeight: 100);
 
@@ -111,7 +111,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ZoomToFit_ShowsTheWholeImage()
+    public void R021_ZoomToFit_ShowsTheWholeImage()
     {
         var viewport = Create(contentWidth: 5794, contentHeight: 3637, viewportWidth: 1200, viewportHeight: 800);
 
@@ -123,7 +123,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ZoomToFit_CentresTheImageOnTheAxisWithSpareRoom()
+    public void R021_ZoomToFit_CentresTheImageOnTheAxisWithSpareRoom()
     {
         var viewport = Create(contentWidth: 5794, contentHeight: 3637, viewportWidth: 1200, viewportHeight: 800);
 
@@ -137,7 +137,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ZoomToActualSize_GivesOneScreenPixelPerImagePixel()
+    public void R022_ZoomToActualSize_GivesOneScreenPixelPerImagePixel()
     {
         var viewport = Create();
         viewport.ZoomToFit();
@@ -148,7 +148,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void AnImageSmallerThanTheViewportIsCentred()
+    public void R021_AnImageSmallerThanTheViewportIsCentred()
     {
         var viewport = Create(contentWidth: 100, contentHeight: 100);
         viewport.ZoomTo(1.0, 200, 200);
@@ -160,7 +160,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void PanBy_MovesTheImageWithTheDrag()
+    public void R026_PanBy_MovesTheImageWithTheDrag()
     {
         var viewport = Create();
         viewport.CentreOn(500, 500);
@@ -172,7 +172,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void PanBy_StopsAtTheImageEdges()
+    public void R026_PanBy_StopsAtTheImageEdges()
     {
         var viewport = Create(viewportWidth: 200, viewportHeight: 200);
 
@@ -186,7 +186,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void MaxOffsets_DescribeTheScrollableRange()
+    public void R026_MaxOffsets_DescribeTheScrollableRange()
     {
         var viewport = Create(viewportWidth: 200, viewportHeight: 200);
 
@@ -200,7 +200,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void SetOffset_IsClampedLikeEveryOtherMovement()
+    public void R026_SetOffset_IsClampedLikeEveryOtherMovement()
     {
         var viewport = Create(viewportWidth: 200, viewportHeight: 200);
 
@@ -211,7 +211,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void CentreOn_PutsTheRequestedPointInTheMiddle()
+    public void R026_CentreOn_PutsTheRequestedPointInTheMiddle()
     {
         var viewport = Create();
         viewport.ZoomTo(1.0, 200, 200);
@@ -224,7 +224,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ResizingTheWindowHoldsTheCentreOfTheViewStill()
+    public void R027_ResizingTheWindowHoldsTheCentreOfTheViewStill()
     {
         var viewport = Create();
         viewport.ZoomTo(1.0, 200, 200);
@@ -238,7 +238,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void GrowingTheWindowRaisesTheFitScaleAndPullsTheZoomUpWithIt()
+    public void R027_GrowingTheWindowRaisesTheFitScaleAndPullsTheZoomUpWithIt()
     {
         var viewport = Create();
         viewport.ZoomToFit();
@@ -251,7 +251,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ContentPointInsideAt_ReturnsTheImagePixelUnderTheCursor()
+    public void R028_ContentPointInsideAt_ReturnsTheImagePixelUnderTheCursor()
     {
         var viewport = Create();
         viewport.ZoomTo(1.0, 200, 200);
@@ -265,7 +265,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ContentPointInsideAt_ReturnsNullOnTheEmptyMarginAroundTheImage()
+    public void R028_ContentPointInsideAt_ReturnsNullOnTheEmptyMarginAroundTheImage()
     {
         var viewport = Create(contentWidth: 100, contentHeight: 100);
         viewport.ZoomTo(1.0, 200, 200);
@@ -276,7 +276,7 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ContentPointInsideAt_ExcludesTheFarEdgeBecauseThereIsNoPixelThere()
+    public void R028_ContentPointInsideAt_ExcludesTheFarEdgeBecauseThereIsNoPixelThere()
     {
         var viewport = Create(contentWidth: 100, contentHeight: 100, viewportWidth: 100, viewportHeight: 100);
         viewport.ZoomTo(1.0, 50, 50);
@@ -286,13 +286,13 @@ public class ViewportTests
     }
 
     [Fact]
-    public void ContentPointInsideAt_WithoutContentIsNull()
+    public void R028_ContentPointInsideAt_WithoutContentIsNull()
     {
         Assert.Null(new Viewport().ContentPointInsideAt(10, 10));
     }
 
     [Fact]
-    public void SetContentSize_RejectsNegativeDimensions()
+    public void R029_SetContentSize_RejectsNegativeDimensions()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new Viewport().SetContentSize(-1, 10));
     }
