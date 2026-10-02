@@ -55,18 +55,20 @@ public class BackgroundRecommendationTests
     }
 
     [Fact]
-    public void R092_WithAWcsTheBecauseNamesTheClouds()
+    public void R092_WithABandTheBecauseNamesTheClassesAndTheClouds()
     {
-        double rr = WcsFixtures.DarkDiscPx;
-        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) => (x - 255.5) * (x - 255.5) + (y - 255.5) * (y - 255.5) <= rr * rr ? 0.05f : 0.25f);
-        r.Source = new SourceInfo { Wcs = WcsFixtures.SyntheticWcs(512, 512, 263.27, -25.70, WcsFixtures.NarrowScale) };
-        Recommendation rec = Background(r);
+        Recommendation rec = Background(WcsFixtures.BandScene());
 
         Assert.Equal(Verdict.Attention, rec.Verdict);
-        Assert.Contains("praful (10 % din dalele norilor catalogati (", rec.Because);
-        Assert.Contains("cei mai intunecati: LDN 42 (B78) L* ", rec.Because);
-        Assert.Contains("cerul (mediana dalelor din afara norilor) la L* 2", rec.Because);
+        Assert.Contains("praful (percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; ", rec.Because);
+        Assert.Contains("cei mai intunecati: LDN ", rec.Because);
+        Assert.Contains("cerul (mediana dalelor de cer, in afara benzii (|b| peste 10 grade)) la L* 2", rec.Because);
         Assert.DoesNotContain("fara WCS", rec.Because);
+
+        // Wholly inside the band: the fallback rule, named.
+        Recommendation inside = Background(WcsFixtures.Ldn42Scene());
+        Assert.Contains("praful (cele mai intunecate 1 % din dalele de 32 px; cadrul e in intregime in banda)", inside.Because);
+        Assert.Contains("cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
     }
 
     [Fact]

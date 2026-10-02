@@ -13,11 +13,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   extended structure, on 32 px patches, and recommends the lowest background of the grid
   0.10..0.20, the as-is level included, at which the dust lands on paper black, downwards as
   readily as upwards. On a plate-solved FITS (`CTYPE RA---TAN`, `CD`, `PC` + `CDELT` or
-  `CDELT` + `CROTA2`; SIP ignored) the embedded Lynds catalogue of dark nebulae names the clouds
-  in the frame: the dust is the 10 % percentile of all catalogued-cloud patches, the sky the
-  median of the patches outside them, and every cloud with 9 or more patches gets a row with its
-  L\* and the target that puts it on black. Without a WCS, the dust is the darkest 1 % of the
-  frame's patches and the sky the median, and the report says so. Anexa B lists the grid, the
+  `CDELT` + `CROTA2`; SIP ignored) the patches are classed relative to the galactic band
+  (ADR 0026): band (|b| < 10°), sky (modelled from outside the band), dust (5 L\* under the
+  band's local level or under the sky model), bright clouds, peaks; the dust's L\* is the 25 %
+  percentile of the dust patches, the sky's the median of the sky patches, and the embedded
+  Lynds catalogue of dark nebulae names the clouds in the frame, every cloud with 9 or more
+  patches getting a row with its L\* and the target that puts it on black. Without a WCS, or on
+  a frame without the band or without sky outside it, the dust is the darkest 1 % of the frame's
+  patches and the sky the median, and the report says why. Anexa B lists the grid, the
   exact target (also at Dmax -0.1 and +0.1), the Dmax from which the image passes as is, and
   the darkest 15 clouds by name; the `Because` of the background recommendation names them.
 - `--target-bg` is optional and only adds a row (marked `(dat)`) to the simulation; the Preview
@@ -29,9 +32,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - `--wcs <file.fit>` (the window: `WCS din FITS`): a TIFF or PNG borrows the WCS of a
   plate-solved FITS of the same size, since the export carries no header (R-027).
-- The map window (`Harta praf / cer`): the image with the patches that set the dust and the sky
-  coloured and the catalogued clouds circled and named, each layer, the clouds and each cloud
-  behind a check box, with `Toti` / `Niciunul` (R-130).
+- The map window (`Harta praf / cer`): the image with the five classes of patches coloured and
+  the catalogued clouds circled and named, each layer, the clouds and each cloud behind a check
+  box, with `Toti` / `Niciunul` (R-130).
 - The preview window of a simulation row: the image lifted to that row's target with the pixels
   under paper black and under L\* 15 coloured, each behind a check box (R-131).
 - The Lynds catalogue (`VII/7A`, 1787 clouds) as an embedded resource, with its notice in

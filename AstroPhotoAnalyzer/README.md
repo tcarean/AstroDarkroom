@@ -42,11 +42,12 @@ F1 = Despre.
 
 Două ferestre pleacă din tabul Tonuri, amândouă maximizate și amândouă doar de privit (nu
 calculează nimic, arată ce a decis analiza). **Harta praf / cer** pune peste imaginea întreagă,
-colorat diferit, dalele de 32 px care dau L\*-ul prafului (cele ale norilor la sau sub el) și
-cele care dau L\*-ul cerului (cele din afara norilor la sau sub mediana lor; banda Căii Lactee
-e peste ea), iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai
-întunecați 15; fiecare strat are bifa lui, norii au bifa lor (cercuri și etichete; fără WCS e
-dezactivată), iar lista norilor are „Toți" / „Niciunul" și o bifă pe fiecare nor.
+colorat diferit, cele cinci clase ale dalelor de 32 px (praf, cer, bandă, nori luminoși,
+vârfuri; fără clase, doar praful și cerul), fiecare cu procentul ei și cu definiția în
+legendă, iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai întunecați
+15; fiecare strat are bifa lui, norii au bifa lor (cercuri și etichete; fără WCS e
+dezactivată), iar lista norilor are „Toți" / „Niciunul" și o bifă pe fiecare nor. E făcută ca
+să verifici clasele cu ochii pe alte imagini.
 **Preview**-ul unui rând al simulării arată imaginea ridicată la fundalul acelui rând (și
 rândul „așa cum e"), cu pixelii de sub negrul hârtiei și cei de sub L\* 15 colorați, fiecare
 strat cu bifa lui. Esc le închide.
@@ -59,11 +60,19 @@ dalei, ca zgomotul și stropii să nu conteze), și recomandă nivelul **minim**
 pe grila 0.10..0.20, rândul „așa cum e" inclus — la care praful ajunge pe negrul hârtiei fără
 să coboare sub el; pe o imagine prea luminoasă, cât de jos poți coborî. Pe un **FITS
 plate-solved** (Siril scrie WCS-ul în antet; `CTYPE RA---TAN`, cu `CD`, `PC` + `CDELT` sau
-`CDELT` + `CROTA2`; termenii SIP se ignoră) catalogul Lynds al nebuloaselor întunecate,
-îmbarcat în unealtă, spune ce nori sunt în cadru și unde: praful e percentila de 10 % a
-dalelor tuturor norilor din cadru la un loc, cerul mediana dalelor din afara lor, și fiecare
-nor cu cel puțin 9 dale primește un rând cu L\*-ul lui și cu fundalul la care ajunge el pe
-negru — ca să citești care rămân negri la nivelul recomandat. Un TIFF sau PNG exportat din
+`CDELT` + `CROTA2`; termenii SIP se ignoră) dalele se împart în cinci clase, relativ, nu după
+un prag fix: banda Căii Lactee e latitudinea galactică |b| sub 10°; cerul e modelat din dalele
+din afara ei; praful e dala cu 5 L\* sub nivelul local al benzii (mediana pe ~480 px) sau sub
+cerul modelat, adică mai întunecată decât ar fi banda acolo; norii luminoși, cu 10 L\* peste
+nivelul local; vârfurile, cele mai luminoase 0,1 % din dale. L\*-ul prafului e percentila de
+25 % a dalelor de praf (trei sferturi din praf rămâne cu tonuri peste negru; sfertul cel mai
+întunecat, nucleele negre și pe ecran, se tipărește negru plat), L\*-ul cerului mediana dalelor
+de cer. Catalogul Lynds al nebuloaselor întunecate, îmbarcat în unealtă, spune ce nori sunt în
+cadru și unde: fiecare nor cu cel puțin 9 dale primește un rând cu L\*-ul lui și cu fundalul
+la care ajunge el pe negru — ca să citești care rămân negri la nivelul recomandat. Clasele cer
+bandă și cer în afara ei, fiecare cu cel puțin 10 % din dale: metoda e făcută pentru cadre
+largi cu Calea Lactee; pe un cadru deep-sky (în întregime în bandă, sau fără bandă) raportul
+spune de ce și cade pe regula de mai jos. Un TIFF sau PNG exportat din
 Siril nu poartă antetul, dar stack-ul din care a ieșit îl are: dă-l cu `--wcs` (consola) sau în
 câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Fără WCS, praful e cele mai
 întunecate 1 % din dalele cadrului și cerul mediana lor, și raportul spune asta. Anexa B

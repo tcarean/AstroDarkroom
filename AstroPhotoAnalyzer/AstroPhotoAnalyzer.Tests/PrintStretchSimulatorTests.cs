@@ -185,31 +185,42 @@ public class PrintStretchSimulatorTests
     }
 
     [Fact]
-    public void R044_WithAWcsTheRowsNameTheCloudsAndTheDustIsTheirs()
+    public void R044_WithABandTheDustAndTheSkyAreTheClassesAndTheCloudsHaveRows()
     {
-        // 512 x 512 at 9"/px on LDN 42: the cloud's disc (272 px) is the dark disc in the middle.
-        double rr = WcsFixtures.DarkDiscPx;
-        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) => (x - 255.5) * (x - 255.5) + (y - 255.5) * (y - 255.5) <= rr * rr ? 0.05f : 0.25f);
-        r.Source = new SourceInfo { Wcs = WcsFixtures.SyntheticWcs(512, 512, 263.27, -25.70, WcsFixtures.NarrowScale) };
+        // The wide band scene across the plane in Scutum: the classes apply, and the Rift's
+        // largest cloud, in the frame, gets its row from the catalogue.
+        Raster r = WcsFixtures.BandScene();
         var s = Simulate(r);
 
-        Assert.Equal(DustMethod.Catalogue, s.Method);
-        Assert.Contains(s.Clouds, c => c.Name == "LDN 42 (B78)");
-        CloudRow ldn42 = s.Clouds.Single(c => c.Name == "LDN 42 (B78)");
-        Assert.True(ldn42.Patches >= Thresholds.DustCloudMinPatches);
-        Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
-        Assert.NotNull(ldn42.ExactTarget);
-        Assert.Equal(Lstar(0.05), s.AsIs.LstarDust, 1);
-        Assert.Equal(Lstar(0.25), s.AsIs.LstarSky, 1);
+        Assert.Equal(DustMethod.Classes, s.Method);
+        Assert.InRange(s.AsIs.LstarDust, 3, 8);           // the blob at 0.05 (L* 3.6) dominates the dust class
+        Assert.Equal(Lstar(0.25), s.AsIs.LstarSky, 0);    // the plain sky outside the band
         Assert.True(s.DustBelowPaperBlack);
         Assert.False(s.SkyBelowPaperBlack);
+        Assert.NotEmpty(s.Clouds);
+        Assert.Contains(s.Clouds, c => c.Name.StartsWith("LDN "));
         Assert.Equal(s.Clouds.OrderBy(c => c.Lstar).Select(c => c.Name), s.Clouds.Select(c => c.Name));
-        Assert.Contains("norilor catalogati", s.DustDescription);
-        Assert.Equal("mediana dalelor din afara norilor", s.SkyDescription);
+        Assert.StartsWith("percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; ", s.DustDescription);
+        Assert.StartsWith("mediana dalelor de cer, in afara benzii", s.SkyDescription);
         Assert.Null(s.MethodNote);
+        Assert.StartsWith("praf ", s.ClassFractions);
+        Assert.Contains("varfuri ", s.ClassFractions);
+        Assert.NotNull(s.ExactTarget);
+    }
 
-        // The ladder's exact target for the cloud agrees with the simulation's: the cloud is the dust here.
-        Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);
+    [Fact]
+    public void R044_AFrameWhollyInsideTheBandFallsBackAndStillNamesItsClouds()
+    {
+        var s = Simulate(WcsFixtures.Ldn42Scene());
+
+        Assert.Equal(DustMethod.AllBand, s.Method);
+        Assert.Equal("cadrul e in intregime in banda", s.MethodNote);
+        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
+        Assert.Null(s.ClassFractions);
+        CloudRow ldn42 = s.Clouds.Single(c => c.Name == "LDN 42 (B78)");
+        Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
+        Assert.NotNull(ldn42.ExactTarget);
+        Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);   // the darkest 1 % of the frame is the cloud
     }
 
     [Fact]

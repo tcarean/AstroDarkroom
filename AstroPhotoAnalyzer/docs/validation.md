@@ -48,7 +48,7 @@ stops on a drift instead of editing them.
 | V-001 | the PNG; none: the full frame, baryta, the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust by the fallback rule, the recommended row, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
 | V-002 | the PNG; `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
 | V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.6) above paper black (L\* 4.0), so the as-is row is the recommended one; a guard on the paper-black maths more than on the image |
-| V-004 | the plate-solved FITS; none | the WCS and the catalogue: 397 clouds in the frame, 3980 cloud patches of 21 840, 114 cloud rows; the dust at L\* 7.9 and the sky at 18.1; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.164 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
+| V-004 | the plate-solved FITS; none | the WCS, the classes and the catalogue (ADR 0026): 2062 dust patches of 21 840, the dust at L\* 7.9 (the 25 % percentile of the dust class) and the sky at 17.6 (the median of the sky class); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -162,13 +162,15 @@ V-003 adds a figure the record does not have: at Dmax 2.35, paper black is L\* 4
 the pixels fall below it; the dust (L\* 4.6 by the fallback rule) is above it, so the as-is row
 is the recommended one and the overall verdict is ATENTIE (the size section).
 
-V-004, the plate-solved FITS, measured on 2026-10-02 by the build of ADR 0025: 397 clouds have a
+V-004, the plate-solved FITS, measured on 2026-10-02 by the build of ADR 0026: 397 clouds have a
 patch in the frame (the hand measurement with astropy, which honoured the SIP terms, found 406;
-the nine are edge clouds whose one or two patches move by a few pixels), 3980 of 21 840 patches
-are cloud patches, 114 clouds have 9 or more; the dust is at L\* 7.89 (astropy: 7.63, the same
-SIP difference at the frame's edge) and the sky at 18.08; the recommended row is 0.19 (dust
-9.6, sky 20.2), the exact target 0.184 (0.205 at Dmax 1.9, 0.164 at 2.1), and the image passes
-as it is from Dmax 2.06. The darkest clouds: LDN 42 (B78) at 1.0 (11 patches, target 0.39),
+the nine are edge clouds whose one or two patches move by a few pixels), 114 clouds have 9 or
+more; the classes put 2062 of 21 840 patches in the dust (the hand measurement with scipy's
+filters: 9.3 % against the core's 9.4 %), the dust at L\* 7.90 (hand: 7.5, the two smoothings
+differ) and the sky at 17.58 (hand: 17.6); the recommended row is 0.19 (dust 9.6, sky 19.7), the
+exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it is from Dmax
+2.06. Under ADR 0025's cloud-disc dust the same build measured the dust at 7.89 and the sky at
+18.08, with the same recommendation. The darkest clouds: LDN 42 (B78) at 1.0 (11 patches, target 0.39),
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
@@ -188,3 +190,8 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   `simulation.primary.lstarMedian` and `simulation.primary.pctBelowPaperBlack` no longer exist
   (`simulation.primary.lstarSky` and `pctPatchesBelowPaperBlack` replace the last two). V-004
   added, on the plate-solved FITS, 197 figures.
+- 2026-10-02 (ADR 0026, the classes): V-004 re-measured; `simulation.method` Catalogue ->
+  Classes, `simulation.dustPatchCount` 3980 -> 2062, `simulation.asIs.lstarDust` 7.8911 -> 7.90,
+  `simulation.asIs.lstarSky` 18.0835 -> 17.5767, `simulation.primary.lstarSky` 20.2343 ->
+  19.7143, the exact targets at Dmax 1.9 / 2.1 by a thousandth. V-001 to V-003 (no WCS) did not
+  move.

@@ -20,16 +20,22 @@
 //
 // Nu pe pixeli: cei mai intunecati pixeli sunt zgomot si stropi izolati. Pe DALE de
 // Thresholds.DustPatchPx x DustPatchPx pixeli ai imaginii, fiecare cu L*-ul luminantei ei
-// medii LINIARE - ce integreaza ochiul pe o pata de 4 mm de hartie. Dalele sunt in doua
-// feluri (ADR 0025):
-//   - cu WCS si catalog: o dala e a unui nor cand centrul ei cade in discul de aceeasi arie
-//     al norului; praful e percentila DustCloudFraction a dalelor tuturor norilor din cadru
-//     la un loc, cerul mediana dalelor din afara oricarui nor, si fiecare nor cu destule
-//     dale primeste un rand al lui;
-//   - fara WCS, sau fara nor catalogat in cadru: praful e percentila DustAreaFraction a
-//     tuturor dalelor, cerul mediana tuturor; raportul spune ca asa s-a masurat.
-// Geometria (DustMap: ce dala e a cui) se face o data pe imagine; L*-ul dalelor se refac
-// la fiecare ridicare a simularii, pe aceeasi harta.
+// medii LINIARE - ce integreaza ochiul pe o pata de 4 mm de hartie. Dalele se impart in
+// CLASE (ADR 0026), relativ, nu dupa un prag absolut:
+//   - banda Caii Lactee e geometrie, din WCS: dalele cu |b| < BandGalacticLatitudeDeg;
+//   - cerul e un model neted, din dalele din AFARA benzii (grila de celule, mediana pe
+//     celula, interpolare, netezire), ca gradientul sa nu para praf;
+//   - nivelul local al benzii e mediana pe o fereastra de BandLocalWindowPatches, netezita:
+//     cat de luminoasa ar fi banda acolo;
+//   - praful e dala cu DustDepthLstar sub nivelul local (sau sub cerul modelat, oriunde),
+//     "mai intunecat decat ar fi banda acolo"; norii luminosi, cu BrightCloudLstar peste
+//     nivelul local; varfurile, cele mai luminoase PeakFraction dale; cerul, restul din
+//     afara benzii (o dala din afara benzii dar mult peste cerul modelat e banda).
+// Praful verdictului e percentila DustClassFraction a dalelor din clasa praf; cerul,
+// mediana dalelor din clasa cer. Fara WCS, fara banda sau fara cer in afara ei
+// (BandMinFraction), raman regula pe tot cadrul (DustAreaFraction, mediana) si o nota.
+// Catalogul Lynds (DarkNebulaCatalogue) nu mai da praful: da NUMELE norilor si randul
+// fiecaruia. Geometria (DustMap) se face o data; L*-urile se refac la fiecare ridicare.
 //
 // Lucreaza pe subesantionul tonal (pasul 4): o dala e 8 x 8 esantioane. Dalele partiale de
 // la marginea din dreapta si de jos se lasa afara.
@@ -43,14 +49,17 @@ namespace AstroPhotoAnalyzer
     /// <summary>Cum s-au ales praful si cerul.</summary>
     internal enum DustMethod
     {
-        /// <summary>WCS si cel putin un nor catalogat in cadru.</summary>
-        Catalogue,
+        /// <summary>WCS, banda si cer in afara ei: clasele.</summary>
+        Classes,
 
         /// <summary>Fisierul n-are WCS: regula pe tot cadrul.</summary>
         NoWcs,
 
-        /// <summary>WCS, dar niciun nor catalogat nu are o dala in cadru: regula pe tot cadrul.</summary>
-        NoClouds,
+        /// <summary>WCS, dar banda galactica e sub BandMinFraction din cadru (deep-sky departe de plan): regula pe tot cadrul.</summary>
+        NoBand,
+
+        /// <summary>WCS, dar cerul din afara benzii e sub BandMinFraction din cadru (deep-sky in plan): regula pe tot cadrul.</summary>
+        AllBand,
     }
 
     /// <summary>Un nor catalogat cu cel putin o dala in cadru: care dale sunt ale lui, si unde e pe imagine.</summary>
@@ -67,18 +76,21 @@ namespace AstroPhotoAnalyzer
         internal string Name => Nebula.Name;
     }
 
-    /// <summary>Clasa unei dale pe harta ferestrei: in ce statistica intra.</summary>
+    /// <summary>Clasa unei dale (ADR 0026); None doar fara clase, pentru dalele care nu intra in nicio statistica.</summary>
     internal enum PatchClass : byte
     {
         None = 0,
         Dust = 1,
         Sky = 2,
+        Band = 3,
+        BrightCloud = 4,
+        Peak = 5,
     }
 
     /// <summary>
-    /// Geometria masuratorii: grila de dale si apartenenta fiecareia la nori. Nu stie
-    /// nimic despre valorile pixelilor - se construieste o data si se refoloseste la
-    /// fiecare ridicare.
+    /// Geometria masuratorii: grila de dale, clasa fiecareia si norii catalogati. Se
+    /// construieste o data pe imagine, pe L*-urile ei asa cum e, si se refoloseste la fiecare
+    /// ridicare: clasele nu se muta cu ridicarea, doar valorile.
     /// </summary>
     internal sealed class DustMap
     {
@@ -88,15 +100,23 @@ namespace AstroPhotoAnalyzer
         internal int Side, Stride;
         internal DustMethod Method;
 
-        /// <summary>Pe dala: e in discul cel putin unui nor catalogat?</summary>
-        internal bool[] InCloud;
+        /// <summary>Clasa fiecarei dale; toate None fara clase.</summary>
+        internal PatchClass[] Classes;
 
-        /// <summary>Norii cu cel putin o dala in cadru, in ordinea catalogului.</summary>
+        /// <summary>Latitudinea galactica a centrului fiecarei dale; null fara WCS.</summary>
+        internal float[] GalacticLatitude;
+
+        /// <summary>Cerul modelat si nivelul local al benzii, L* pe dala, asa cum e; null fara clase.</summary>
+        internal float[] SkyModel, BandLevel;
+
+        /// <summary>Norii cu cel putin o dala in cadru, in ordinea catalogului; gol fara WCS.</summary>
         internal IReadOnlyList<DustCloud> Clouds;
 
         internal int PatchCount => Cols * Rows;
-        internal int CloudPatchCount;
-        internal bool UsesCatalogue => Method == DustMethod.Catalogue;
+        internal bool UsesClasses => Method == DustMethod.Classes;
+
+        /// <summary>Fractia dalelor din fiecare clasa, indexata cu PatchClass; goala fara clase.</summary>
+        internal double FractionOf(PatchClass c) => Classes.Count(x => x == c) / (double)PatchCount;
 
         /// <summary>Centrul dalei (bx, by), in pixeli ai imaginii intregi.</summary>
         internal (double X, double Y) PatchCentre(int bx, int by)
@@ -118,7 +138,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>Percentila DustCloudFraction a dalelor fiecarui nor din DustMap.Clouds, in aceeasi ordine.</summary>
         internal double[] CloudLstars { get; init; }
 
-        /// <summary>Cate dale au intrat in statistica prafului (ale norilor, sau toate).</summary>
+        /// <summary>Cate dale au intrat in statistica prafului (clasa praf, sau toate).</summary>
         internal int DustPatchCount { get; init; }
     }
 
@@ -129,31 +149,33 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Harta dalelor unei imagini de <paramref name="w"/> x <paramref name="h"/> pixeli,
-        /// subesantionata cu <paramref name="stride"/>: cu WCS, fiecare dala isi afla (RA, Dec)
-        /// si norii catalogati o revendica dupa distanta pana la centrul lor; fara WCS,
-        /// o grila goala cu metoda NoWcs.
+        /// subesantionata cu <paramref name="stride"/>, pe L*-urile ei asa cum e
+        /// (<paramref name="asIsPatchLstars"/>, de la PatchLstars pe aceeasi grila): cu WCS,
+        /// latitudinea galactica a fiecarei dale, clasele, si norii catalogati care o
+        /// revendica dupa distanta pana la centrul lor; fara WCS, o grila goala cu metoda NoWcs.
         /// </summary>
-        internal static DustMap Build(int w, int h, Wcs wcs, IReadOnlyList<DarkNebula> catalogue = null, int stride = Thresholds.TonalStride)
+        internal static DustMap Build(int w, int h, Wcs wcs, float[] asIsPatchLstars, IReadOnlyList<DarkNebula> catalogue = null, int stride = Thresholds.TonalStride)
         {
-            int subW = (w + stride - 1) / stride, subH = (h + stride - 1) / stride;
-            int side = Math.Max(1, Math.Min(PatchSamples, Math.Min(subW, subH)));
-            int cols = subW / side, rows = subH / side;
+            var (cols, rows, side) = Grid(w, h, stride);
             var map = new DustMap
             {
                 Cols = cols,
                 Rows = rows,
                 Side = side,
                 Stride = stride,
-                InCloud = new bool[cols * rows],
+                Classes = new PatchClass[cols * rows],
                 Clouds = Array.Empty<DustCloud>(),
                 Method = DustMethod.NoWcs,
             };
             if (wcs == null) return map;
+            if (asIsPatchLstars.Length != cols * rows) throw new ArgumentException("L*-urile dalelor nu sunt pe grila hartii");
 
             catalogue ??= DarkNebulaCatalogue.All;
 
-            // Vectorul unitate al centrului fiecarei dale, o singura data.
-            var vx = new double[cols * rows]; var vy = new double[cols * rows]; var vz = new double[cols * rows];
+            // Directia cerului si latitudinea galactica ale centrului fiecarei dale, o singura data.
+            int n = cols * rows;
+            var vx = new double[n]; var vy = new double[n]; var vz = new double[n];
+            map.GalacticLatitude = new float[n];
             for (int by = 0; by < rows; by++)
                 for (int bx = 0; bx < cols; bx++)
                 {
@@ -162,23 +184,39 @@ namespace AstroPhotoAnalyzer
                     var v = Astrometry.UnitVector(ra, dec);
                     int i = by * cols + bx;
                     vx[i] = v.X; vy[i] = v.Y; vz[i] = v.Z;
+                    map.GalacticLatitude[i] = (float)Astrometry.GalacticLatitude(ra, dec);
                 }
 
-            double patchPx = side * stride;
+            map.Clouds = FindClouds(map, wcs, catalogue, w, h, vx, vy, vz);
+            Classify(map, asIsPatchLstars);
+            return map;
+        }
+
+        static (int Cols, int Rows, int Side) Grid(int w, int h, int stride)
+        {
+            int subW = (w + stride - 1) / stride, subH = (h + stride - 1) / stride;
+            int side = Math.Max(1, Math.Min(PatchSamples, Math.Min(subW, subH)));
+            return (subW / side, subH / side, side);
+        }
+
+        static List<DustCloud> FindClouds(DustMap map, Wcs wcs, IReadOnlyList<DarkNebula> catalogue, int w, int h, double[] vx, double[] vy, double[] vz)
+        {
+            int cols = map.Cols, rows = map.Rows;
+            double patchPx = map.Side * map.Stride;
             var clouds = new List<DustCloud>();
-            foreach (DarkNebula n in catalogue)
+            foreach (DarkNebula nebula in catalogue)
             {
-                var (px, py) = wcs.SkyToPixel(n.Ra, n.Dec);
+                var (px, py) = wcs.SkyToPixel(nebula.Ra, nebula.Dec);
                 if (double.IsNaN(px)) continue;
-                double rpx = n.RadiusDeg / wcs.ScaleDegPerPx;
+                double rpx = nebula.RadiusDeg / wcs.ScaleDegPerPx;
                 // Discul nu atinge cadrul: afara. Altfel se testeaza doar dalele din dreptunghiul
                 // lui, pe distanta unghiulara adevarata.
                 if (px + rpx < 0 || py + rpx < 0 || px - rpx > w || py - rpx > h) continue;
                 int bx0 = Math.Max(0, (int)Math.Floor((px - rpx) / patchPx)), bx1 = Math.Min(cols - 1, (int)Math.Ceiling((px + rpx) / patchPx));
                 int by0 = Math.Max(0, (int)Math.Floor((py - rpx) / patchPx)), by1 = Math.Min(rows - 1, (int)Math.Ceiling((py + rpx) / patchPx));
                 if (bx0 > bx1 || by0 > by1) continue;
-                var c = Astrometry.UnitVector(n.Ra, n.Dec);
-                double cosR = Math.Cos(n.RadiusDeg * Astrometry.Deg);
+                var c = Astrometry.UnitVector(nebula.Ra, nebula.Dec);
+                double cosR = Math.Cos(nebula.RadiusDeg * Astrometry.Deg);
                 var patches = new List<int>();
                 for (int by = by0; by <= by1; by++)
                     for (int bx = bx0; bx <= bx1; bx++)
@@ -187,23 +225,140 @@ namespace AstroPhotoAnalyzer
                         if (vx[i] * c.X + vy[i] * c.Y + vz[i] * c.Z >= cosR) patches.Add(i);
                     }
                 if (patches.Count == 0) continue;
-                foreach (int i in patches) map.InCloud[i] = true;
-                clouds.Add(new DustCloud { Nebula = n, Patches = patches.ToArray(), CentreX = px, CentreY = py, RadiusPx = rpx });
+                clouds.Add(new DustCloud { Nebula = nebula, Patches = patches.ToArray(), CentreX = px, CentreY = py, RadiusPx = rpx });
             }
-            map.Clouds = clouds;
-            map.CloudPatchCount = map.InCloud.Count(x => x);
-            map.Method = clouds.Count == 0 ? DustMethod.NoClouds : DustMethod.Catalogue;
-            return map;
+            return clouds;
+        }
+
+        /// <summary>Clasele (ADR 0026) pe L*-urile asa cum e; sau metoda NoBand / AllBand cand nu se pot face.</summary>
+        static void Classify(DustMap map, float[] L)
+        {
+            int cols = map.Cols, rows = map.Rows, n = cols * rows;
+            var band = new bool[n];
+            int inBand = 0;
+            for (int i = 0; i < n; i++)
+            {
+                band[i] = Math.Abs(map.GalacticLatitude[i]) < Thresholds.BandGalacticLatitudeDeg;
+                if (band[i]) inBand++;
+            }
+            if (inBand < Thresholds.BandMinFraction * n) { map.Method = DustMethod.NoBand; return; }
+            if (n - inBand < Thresholds.BandMinFraction * n) { map.Method = DustMethod.AllBand; return; }
+
+            float[] sky = SkyModel(L, band, cols, rows);
+            float[] level = Smooth(MedianFilter(L, cols, rows, Thresholds.BandLocalWindowPatches), cols, rows, Thresholds.BandLocalSmoothPatches);
+            float peak = (float)Stats.PercentileSorted(Stats.Sorted(L), 100 * (1 - Thresholds.PeakFraction));
+
+            double k = Thresholds.DustDepthLstar, kb = Thresholds.BrightCloudLstar;
+            var cls = map.Classes;
+            for (int i = 0; i < n; i++)
+            {
+                float l = L[i];
+                PatchClass c = band[i] ? PatchClass.Band : PatchClass.Sky;
+                if (!band[i] && l > sky[i] + kb) c = PatchClass.Band;
+                if ((band[i] && l < level[i] - k) || l < sky[i] - k) c = PatchClass.Dust;
+                if (band[i] && l > level[i] + kb) c = PatchClass.BrightCloud;
+                if (l > peak) c = PatchClass.Peak;
+                cls[i] = c;
+            }
+            map.SkyModel = sky;
+            map.BandLevel = level;
+            map.Method = DustMethod.Classes;
+        }
+
+        /// <summary>
+        /// Cerul modelat: mediana dalelor din afara benzii pe celule de SkyModelCellPatches,
+        /// celulele fara destule dale de cer luate de la cea mai apropiata, interpolat liniar
+        /// la rezolutia dalelor si netezit.
+        /// </summary>
+        internal static float[] SkyModel(float[] L, bool[] band, int cols, int rows)
+        {
+            int cell = Thresholds.SkyModelCellPatches;
+            int gw = (cols + cell - 1) / cell, gh = (rows + cell - 1) / cell;
+            var grid = new float[gw * gh];
+            var known = new bool[gw * gh];
+            for (int gy = 0; gy < gh; gy++)
+                for (int gx = 0; gx < gw; gx++)
+                {
+                    var v = new List<float>();
+                    for (int by = gy * cell; by < Math.Min(rows, (gy + 1) * cell); by++)
+                        for (int bx = gx * cell; bx < Math.Min(cols, (gx + 1) * cell); bx++)
+                            if (!band[by * cols + bx]) v.Add(L[by * cols + bx]);
+                    if (v.Count >= Thresholds.SkyModelCellMinPatches) { grid[gy * gw + gx] = (float)Stats.Median(v.ToArray()); known[gy * gw + gx] = true; }
+                }
+            // Celulele necunoscute iau valoarea celei mai apropiate cunoscute (distanta pe grila).
+            for (int g = 0; g < grid.Length; g++)
+            {
+                if (known[g]) continue;
+                int gx = g % gw, gy = g / gw; double best = double.MaxValue; float val = 0;
+                for (int k2 = 0; k2 < grid.Length; k2++)
+                {
+                    if (!known[k2]) continue;
+                    int kx = k2 % gw, ky = k2 / gw;
+                    double d = (kx - gx) * (kx - gx) + (ky - gy) * (ky - gy);
+                    if (d < best) { best = d; val = grid[k2]; }
+                }
+                grid[g] = val;
+            }
+            // Interpolare biliniara intre centrele celulelor, apoi netezire.
+            var o = new float[cols * rows];
+            for (int by = 0; by < rows; by++)
+                for (int bx = 0; bx < cols; bx++)
+                {
+                    double fx = (bx + 0.5) / cell - 0.5, fy = (by + 0.5) / cell - 0.5;
+                    int x0 = Math.Clamp((int)Math.Floor(fx), 0, gw - 1), y0 = Math.Clamp((int)Math.Floor(fy), 0, gh - 1);
+                    int x1 = Math.Min(x0 + 1, gw - 1), y1 = Math.Min(y0 + 1, gh - 1);
+                    double tx = Math.Clamp(fx - x0, 0, 1), ty = Math.Clamp(fy - y0, 0, 1);
+                    double top = grid[y0 * gw + x0] * (1 - tx) + grid[y0 * gw + x1] * tx;
+                    double bottom = grid[y1 * gw + x0] * (1 - tx) + grid[y1 * gw + x1] * tx;
+                    o[by * cols + bx] = (float)(top * (1 - ty) + bottom * ty);
+                }
+            return Smooth(o, cols, rows, Thresholds.SkyModelSmoothPatches);
+        }
+
+        /// <summary>Mediana pe o fereastra patrata de <paramref name="window"/> dale, taiata la margini.</summary>
+        internal static float[] MedianFilter(float[] L, int cols, int rows, int window)
+        {
+            int r = window / 2;
+            var o = new float[L.Length];
+            var buf = new List<float>(window * window);
+            for (int by = 0; by < rows; by++)
+                for (int bx = 0; bx < cols; bx++)
+                {
+                    buf.Clear();
+                    for (int y = Math.Max(0, by - r); y <= Math.Min(rows - 1, by + r); y++)
+                        for (int x = Math.Max(0, bx - r); x <= Math.Min(cols - 1, bx + r); x++)
+                            buf.Add(L[y * cols + x]);
+                    o[by * cols + bx] = (float)Stats.Median(buf.ToArray());
+                }
+            return o;
+        }
+
+        /// <summary>Media pe o fereastra de raza <paramref name="radius"/> dale, taiata la margini: netezirea.</summary>
+        internal static float[] Smooth(float[] L, int cols, int rows, int radius)
+        {
+            var o = new float[L.Length];
+            for (int by = 0; by < rows; by++)
+                for (int bx = 0; bx < cols; bx++)
+                {
+                    double sum = 0; int count = 0;
+                    for (int y = Math.Max(0, by - radius); y <= Math.Min(rows - 1, by + radius); y++)
+                        for (int x = Math.Max(0, bx - radius); x <= Math.Min(cols - 1, bx + radius); x++) { sum += L[y * cols + x]; count++; }
+                    o[by * cols + bx] = (float)(sum / count);
+                }
+            return o;
         }
 
         /// <summary>
         /// L*-ul luminantei medii liniare al fiecarei dale intregi, in ordinea randurilor
         /// hartii, pe un raster DEJA subesantionat la pasul hartii (si, in simulare, deja
-        /// ridicat).
+        /// ridicat). Grila e cea pe care o construieste Build pentru aceeasi imagine.
         /// </summary>
-        internal static float[] PatchLstars(Raster sub, DustMap map)
+        internal static float[] PatchLstars(Raster sub, int stride = Thresholds.TonalStride)
         {
-            int side = map.Side, cols = map.Cols, rows = map.Rows;
+            var (cols, rows, side) = Grid(sub.W * stride, sub.H * stride, stride);
+            // Grid presupune latimea intreaga; pe un subesantion deja facut, dimensiunile lui sunt
+            // chiar subW/subH, deci se recalculeaza direct.
+            cols = sub.W / side; rows = sub.H / side;
             var o = new float[cols * rows];
             bool color = sub.IsColor;
             float[] R = sub.Planes[0], G = color ? sub.Planes[1] : null, B = color ? sub.Planes[2] : null;
@@ -236,23 +391,21 @@ namespace AstroPhotoAnalyzer
 
             double dust, sky;
             int dustCount;
-            var cloudLstars = new double[map.Clouds.Count];
-            if (map.UsesCatalogue)
+            if (map.UsesClasses)
             {
-                var inside = new List<float>(map.CloudPatchCount);
-                var outside = new List<float>(n - map.CloudPatchCount);
-                for (int i = 0; i < n; i++) (map.InCloud[i] ? inside : outside).Add(patchLstars[i]);
-                dust = Stats.PercentileSorted(Stats.Sorted(inside.ToArray()), Thresholds.DustCloudFraction * 100);
-                // Un cadru acoperit in intregime de nori n-are dale de cer: mediana tuturor.
-                sky = outside.Count > 0 ? Stats.Median(outside.ToArray()) : Stats.Median(patchLstars);
-                dustCount = inside.Count;
-                for (int c = 0; c < map.Clouds.Count; c++)
+                var dustL = new List<float>(); var skyL = new List<float>();
+                for (int i = 0; i < n; i++)
                 {
-                    int[] idx = map.Clouds[c].Patches;
-                    var v = new float[idx.Length];
-                    for (int k = 0; k < idx.Length; k++) v[k] = patchLstars[idx[k]];
-                    cloudLstars[c] = Stats.PercentileSorted(Stats.Sorted(v), Thresholds.DustCloudFraction * 100);
+                    if (map.Classes[i] == PatchClass.Dust) dustL.Add(patchLstars[i]);
+                    else if (map.Classes[i] == PatchClass.Sky) skyL.Add(patchLstars[i]);
                 }
+                // Clasele exista doar cu banda si cer; praful poate lipsi (o banda fara nori):
+                // atunci praful e cea mai intunecata dala a benzii, nu o eroare.
+                dust = dustL.Count > 0
+                    ? Stats.PercentileSorted(Stats.Sorted(dustL.ToArray()), Thresholds.DustClassFraction * 100)
+                    : Stats.Min(patchLstars);
+                sky = skyL.Count > 0 ? Stats.Median(skyL.ToArray()) : Stats.Median(patchLstars);
+                dustCount = dustL.Count;
             }
             else
             {
@@ -260,6 +413,15 @@ namespace AstroPhotoAnalyzer
                 dust = Stats.PercentileSorted(sorted, Thresholds.DustAreaFraction * 100);
                 sky = Stats.PercentileSorted(sorted, 50);
                 dustCount = n;
+            }
+
+            var cloudLstars = new double[map.Clouds.Count];
+            for (int c = 0; c < map.Clouds.Count; c++)
+            {
+                int[] idx = map.Clouds[c].Patches;
+                var v = new float[idx.Length];
+                for (int k = 0; k < idx.Length; k++) v[k] = patchLstars[idx[k]];
+                cloudLstars[c] = Stats.PercentileSorted(Stats.Sorted(v), Thresholds.DustCloudFraction * 100);
             }
 
             return new DustStats
@@ -274,26 +436,18 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Clasa fiecarei dale pentru harta ferestrei: dalele care DAU cifra, nu toate cele
-        /// care intra in statistica. Praful e dalele din care se ia L*-ul prafului (ale
-        /// norilor cu catalog, toate fara) aflate la sau sub L*-ul prafului - nucleele, nu
-        /// discul intreg; cerul e dalele din care se ia L*-ul cerului (din afara norilor cu
-        /// catalog, toate fara) aflate la sau sub mediana lor - cerul curat, nu banda Caii
-        /// Lactee, care e peste mediana. Restul: None. (Prima forma, discul intreg ca praf si
-        /// tot restul ca cer, arata norii ca praf si banda ca cer; proprietarul a respins-o
-        /// pe 2026-10-02.)
+        /// Clasele pentru harta ferestrei: cele ale hartii cand exista; fara ele, praful e
+        /// dalele la sau sub L*-ul prafului (cele mai intunecate 1 %) si cerul dalele la sau sub
+        /// mediana, restul None.
         /// </summary>
         internal static PatchClass[] Classes(DustMap map, DustStats asIs)
         {
+            if (map.UsesClasses) return (PatchClass[])map.Classes.Clone();
             var o = new PatchClass[map.PatchCount];
             for (int i = 0; i < o.Length; i++)
             {
                 float l = asIs.PatchLstars[i];
-                bool dustSide = !map.UsesCatalogue || map.InCloud[i];
-                bool skySide = !map.UsesCatalogue || !map.InCloud[i];
-                o[i] = dustSide && l <= asIs.LstarDust ? PatchClass.Dust
-                    : skySide && l <= asIs.LstarSky ? PatchClass.Sky
-                    : PatchClass.None;
+                o[i] = l <= asIs.LstarDust ? PatchClass.Dust : l <= asIs.LstarSky ? PatchClass.Sky : PatchClass.None;
             }
             return o;
         }

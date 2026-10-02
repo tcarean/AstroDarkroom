@@ -23,7 +23,7 @@
 // remasoara praful si cerul (DustAnalyzer, pe aceeasi harta de dale) si procentele.
 // Recomandarea e cel mai mic rand - "asa cum e" inclus, sub sau peste nivelul masurat -
 // la care praful sta la sau peste negrul hartiei: nivelul minim folosibil, in ambele
-// sensuri (ADR 0025). Ce va face stretch-ul adevarat al lui Siril difera in forma curbei,
+// sensuri (ADR 0025; praful si cerul sunt clasele din ADR 0026). Ce va face stretch-ul adevarat al lui Siril difera in forma curbei,
 // si nu putin: un stretch VeraLux la 0.17 a tinut praful la L* 7.6, unde curba gamma il
 // prezicea peste negru (ADR 0025). Raportul o numeste simulare de fiecare data.
 //
@@ -136,21 +136,35 @@ namespace AstroPhotoAnalyzer
         internal int PatchCount => Map.PatchCount;
         internal int DustPatchCount => AsIsDust.DustPatchCount;
 
-        /// <summary>"10 % din dalele norilor catalogati (406 nori, 4078 dale)" sau "cele mai intunecate 1 % din dalele de 32 px".</summary>
-        internal string DustDescription => Map.UsesCatalogue
-            ? $"{Fmt.F0(Thresholds.DustCloudFraction * 100)} % din dalele norilor catalogati ({Fmt.Int(CloudCount)} nori, {Fmt.Int(DustPatchCount)} dale)"
+        /// <summary>
+        /// Ce e praful: "percentila 25 % a dalelor de praf (cu 5 L* sub nivelul local al benzii
+        /// sau sub cerul modelat; 9.3 % din cadru)" sau "cele mai intunecate 1 % din dalele de
+        /// 32 px".
+        /// </summary>
+        internal string DustDescription => Map.UsesClasses
+            ? $"percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf (cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii "
+              + $"sau sub cerul modelat; {Fmt.Pct(100.0 * DustPatchCount / PatchCount)} din cadru)"
             : $"cele mai intunecate {Fmt.F0(Thresholds.DustAreaFraction * 100)} % din dalele de {Thresholds.DustPatchPx} px";
 
-        /// <summary>"mediana dalelor din afara norilor" sau "mediana dalelor".</summary>
-        internal string SkyDescription => Map.UsesCatalogue ? "mediana dalelor din afara norilor" : "mediana dalelor";
+        /// <summary>"mediana dalelor de cer din afara benzii" sau "mediana dalelor".</summary>
+        internal string SkyDescription => Map.UsesClasses
+            ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
+            : "mediana dalelor";
 
-        /// <summary>De ce nu s-a folosit catalogul: "fara WCS", "fara nori catalogati in cadru"; null cu catalog.</summary>
+        /// <summary>De ce nu s-au facut clasele: "fara WCS", "fara banda galactica in cadru", "cadrul e in intregime in banda"; null cu clase.</summary>
         internal string MethodNote => Map.Method switch
         {
             DustMethod.NoWcs => "fara WCS",
-            DustMethod.NoClouds => "fara nori catalogati in cadru",
+            DustMethod.NoBand => "fara banda galactica in cadru",
+            DustMethod.AllBand => "cadrul e in intregime in banda",
             _ => null,
         };
+
+        /// <summary>"praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; null fara clase.</summary>
+        internal string ClassFractions => Map.UsesClasses
+            ? $"praf {Fmt.Pct(100 * Map.FractionOf(PatchClass.Dust))}, cer {Fmt.Pct(100 * Map.FractionOf(PatchClass.Sky))}, banda {Fmt.Pct(100 * Map.FractionOf(PatchClass.Band))}, "
+              + $"nori luminosi {Fmt.Pct(100 * Map.FractionOf(PatchClass.BrightCloud))}, varfuri {Fmt.Pct(100 * Map.FractionOf(PatchClass.Peak))}"
+            : null;
     }
 
     internal static class PrintStretchSimulator
@@ -160,9 +174,8 @@ namespace AstroPhotoAnalyzer
             double bg = tonal.BackgroundMedian;
             double black = tonal.PaperBlackLstar;
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
-            DustMap map = DustAnalyzer.Build(r.W, r.H, r.Source?.Wcs);
-
-            float[] asIsPatches = DustAnalyzer.PatchLstars(sub, map);
+            float[] asIsPatches = DustAnalyzer.PatchLstars(sub);
+            DustMap map = DustAnalyzer.Build(r.W, r.H, r.Source?.Wcs, asIsPatches);
             DustStats asIsDust = DustAnalyzer.Measure(asIsPatches, map, black);
             var asIs = new SimulationRow
             {
@@ -202,7 +215,7 @@ namespace AstroPhotoAnalyzer
                     double target = targets[i];
                     double gamma = RasterOps.GammaFor(bg, target);
                     Raster lifted = RasterOps.Gamma(sub, gamma);
-                    DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(lifted, map), map, black);
+                    DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(lifted), map, black);
                     dustAt[i] = d.LstarDust;
                     cloudAt[i] = d.CloudLstars;
                     if (!tableRows.Contains(target)) continue;

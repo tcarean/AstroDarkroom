@@ -18,52 +18,83 @@
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// R-044 and R-045: the dust and the sky on 32 px patches, with a synthetic WCS pointed at a
-/// catalogued cloud, and the fallback without one; the preview classes.
+/// R-044 and R-045: the five classes of the patches (ADR 0026) on a synthetic wide field
+/// across the galactic plane, the catalogue's clouds, the fallbacks without a WCS, without a
+/// band and without sky, and the preview classes.
 /// </summary>
 public class DustAnalyzerTests
 {
-    static Wcs OnLdn42() => WcsFixtures.OnLdn42();
-    static Raster SkyWithDisc(float sky, float dust, double rPx) => WcsFixtures.SkyWithDisc(sky, dust, rPx);
-    static readonly DarkNebula Ldn42 = DarkNebulaCatalogue.All.Single(n => n.Ldn == 42);
-    const double NarrowScale = WcsFixtures.NarrowScale, DarkDiscPx = WcsFixtures.DarkDiscPx;
+    static float[] Patches(Raster r) => DustAnalyzer.PatchLstars(RasterOps.Subsample(r, Thresholds.TonalStride));
+
+    static DustMap Build(Raster r, Wcs? wcs) => DustAnalyzer.Build(r.W, r.H, wcs, Patches(r));
 
     [Fact]
-    public void R044_WithAWcsTheCatalogueNamesTheCloudAndTheSkyIsOutsideIt()
+    public void R044_TheFiveClassesFollowTheBandTheLocalLevelAndTheSkyModel()
     {
-        Wcs wcs = OnLdn42();
-        DustMap map = DustAnalyzer.Build(512, 512, wcs);
+        Raster r = WcsFixtures.BandScene();
+        DustMap map = Build(r, WcsFixtures.OnThePlane());
+        float[] L = Patches(r);
 
-        Assert.Equal(DustMethod.Catalogue, map.Method);
-        Assert.Equal(16 * 16, map.PatchCount);   // 512 / 4 = 128 samples, / 8 per patch = 16
-        DustCloud cloud = Assert.Single(map.Clouds, c => c.Nebula.Ldn == 42);
-        // The WCS is centred on the rounded 263.27, -25.70; the catalogue's centre is 1.3 px away.
-        Assert.InRange(cloud.CentreX, 252, 259);
-        Assert.InRange(cloud.CentreY, 252, 259);
-        Assert.Equal(Ldn42.RadiusDeg / NarrowScale, cloud.RadiusPx, 0);
-        // Patches whose centre is within 272 px of the middle: about pi * 272^2 / 32^2 = 227 of 256.
-        Assert.InRange(cloud.Patches.Length, 200, 240);
+        Assert.Equal(DustMethod.Classes, map.Method);
+        Assert.Equal(16 * 16, map.PatchCount);
+        Assert.NotNull(map.GalacticLatitude);
+        Assert.NotNull(map.SkyModel);
+        Assert.NotNull(map.BandLevel);
 
-        Raster sub = RasterOps.Subsample(SkyWithDisc(0.25f, 0.05f, DarkDiscPx), Thresholds.TonalStride);
-        DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, map), map, ColorMath.PaperBlackLstar(2.0));
+        // The band is the strip |b| < 10 degrees: about two thirds of a 31 degree field.
+        double band = map.FractionOf(PatchClass.Band) + map.FractionOf(PatchClass.Dust) + map.FractionOf(PatchClass.BrightCloud) + map.FractionOf(PatchClass.Peak);
+        Assert.InRange(band, 0.45, 0.85);
+        Assert.InRange(map.FractionOf(PatchClass.Sky), 0.15, 0.55);
 
-        Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), d.LstarDust, 1);
-        Assert.Equal(ColorMath.LstarOfSrgb(0.25, 0.25, 0.25), d.LstarSky, 1);
-        Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), d.CloudLstars[map.Clouds.ToList().IndexOf(cloud)], 1);
-        Assert.InRange(d.PctPatchesBelowPaperBlack, 50, 75);   // the 240 px disc: ~154 of 256 patches fully dark
-        Assert.Equal(map.CloudPatchCount, d.DustPatchCount);
-        Assert.True(d.DustPatchCount >= cloud.Patches.Length);
+        for (int i = 0; i < map.PatchCount; i++)
+        {
+            bool inBand = Math.Abs(map.GalacticLatitude[i]) < Thresholds.BandGalacticLatitudeDeg;
+            if (map.Classes[i] == PatchClass.Dust)
+                Assert.True(L[i] < map.BandLevel[i] - Thresholds.DustDepthLstar || L[i] < map.SkyModel[i] - Thresholds.DustDepthLstar);
+            if (map.Classes[i] == PatchClass.BrightCloud)
+                Assert.True(inBand && L[i] > map.BandLevel[i] + Thresholds.BrightCloudLstar);
+            if (map.Classes[i] == PatchClass.Sky)
+                Assert.False(inBand);
+        }
+        Assert.Contains(PatchClass.Dust, map.Classes);
+        Assert.Contains(PatchClass.BrightCloud, map.Classes);
+        Assert.Contains(PatchClass.Peak, map.Classes);
+        Assert.InRange(map.FractionOf(PatchClass.Peak), 0.0005, 0.02);
+
+        // The dust blob (0.05 on a 0.35 band) and the bright blob (0.6): the patches inside them.
+        Assert.Equal(PatchClass.Dust, map.Classes[WcsFixtures.DustPatchIndex(map)]);
+        Assert.Equal(PatchClass.BrightCloud, map.Classes[WcsFixtures.BrightPatchIndex(map)]);
+    }
+
+    [Fact]
+    public void R044_TheDustIsTheQuarterPercentileOfItsClassAndTheSkyTheMedianOfItsOwn()
+    {
+        Raster r = WcsFixtures.BandScene();
+        DustMap map = Build(r, WcsFixtures.OnThePlane());
+        float[] L = Patches(r);
+        DustStats d = DustAnalyzer.Measure(L, map, ColorMath.PaperBlackLstar(2.0));
+
+        var dust = Enumerable.Range(0, L.Length).Where(i => map.Classes[i] == PatchClass.Dust).Select(i => L[i]).ToArray();
+        var sky = Enumerable.Range(0, L.Length).Where(i => map.Classes[i] == PatchClass.Sky).Select(i => L[i]).ToArray();
+        Assert.Equal(Stats.PercentileSorted(Stats.Sorted(dust), Thresholds.DustClassFraction * 100), d.LstarDust, 6);
+        Assert.Equal(Stats.Median(sky), d.LstarSky, 6);
+        Assert.Equal(dust.Length, d.DustPatchCount);
+        // The blob is at 0.05 (L* 3.6), the outside sky at 0.25 (L* 27).
+        Assert.InRange(d.LstarDust, 3, 12);
+        Assert.Equal(ColorMath.LstarOfSrgb(0.25, 0.25, 0.25), d.LstarSky, 0);
+        Assert.Equal(map.Classes, DustAnalyzer.Classes(map, d));
     }
 
     [Fact]
     public void R044_WithoutAWcsTheDustIsTheDarkestPercentAndTheSkyTheMedian()
     {
-        DustMap map = DustAnalyzer.Build(512, 512, null);
+        Raster r = WcsFixtures.SkyWithDisc(0.25f, 0.05f, 70);
+        DustMap map = Build(r, null);
         Assert.Equal(DustMethod.NoWcs, map.Method);
         Assert.Empty(map.Clouds);
+        Assert.Null(map.GalacticLatitude);
 
-        Raster sub = RasterOps.Subsample(SkyWithDisc(0.25f, 0.05f, 70), Thresholds.TonalStride);
-        float[] patches = DustAnalyzer.PatchLstars(sub, map);
+        float[] patches = Patches(r);
         DustStats d = DustAnalyzer.Measure(patches, map, ColorMath.PaperBlackLstar(2.0));
 
         Assert.Equal(Stats.PercentileSorted(Stats.Sorted(patches), 1), d.LstarDust, 6);
@@ -73,22 +104,46 @@ public class DustAnalyzerTests
         PatchClass[] classes = DustAnalyzer.Classes(map, d);
         Assert.Contains(PatchClass.Dust, classes);
         Assert.Contains(PatchClass.Sky, classes);
-        // Without a catalogue the sky patches are the half at or under the median.
+        Assert.DoesNotContain(PatchClass.Band, classes);
         Assert.InRange(classes.Count(c => c == PatchClass.Sky), map.PatchCount / 3, map.PatchCount);
-        // The dust patches are those at or under the 1 % level: the disc's patches, all tied at 0.05.
-        Assert.InRange(classes.Count(c => c == PatchClass.Dust), 1, map.PatchCount / 4);
     }
 
     [Fact]
-    public void R044_AFrameWithoutACatalogueCloudFallsBackAndSaysSo()
+    public void R044_AFrameFarFromThePlaneOrWhollyInsideItFallsBackAndSaysWhy()
     {
-        // The north galactic pole: no LDN cloud within a 512 x 512 field at 42"/px.
-        Wcs wcs = WcsFixtures.SyntheticWcs(512, 512, 192.86, 27.13, 0.01158);
-        DustMap map = DustAnalyzer.Build(512, 512, wcs);
+        // The north galactic pole: no band at all.
+        Raster r = WcsFixtures.SkyWithDisc(0.25f, 0.05f, 70);
+        DustMap pole = Build(r, WcsFixtures.SyntheticWcs(512, 512, 192.86, 27.13, 0.01158));
+        Assert.Equal(DustMethod.NoBand, pole.Method);
+        Assert.False(pole.UsesClasses);
 
-        Assert.Equal(DustMethod.NoClouds, map.Method);
-        Assert.Empty(map.Clouds);
-        Assert.False(map.UsesCatalogue);
+        // LDN 42 at 9"/px: a 1.3 degree field wholly inside the band, the catalogue still naming the cloud.
+        Raster ldn = WcsFixtures.Ldn42Scene();
+        DustMap inside = Build(ldn, ldn.Source.Wcs);
+        Assert.Equal(DustMethod.AllBand, inside.Method);
+        Assert.Contains(inside.Clouds, c => c.Nebula.Ldn == 42);
+
+        // Both fall back to the frame rule, and the clouds keep their rows' figures.
+        float[] L = Patches(ldn);
+        DustStats d = DustAnalyzer.Measure(L, inside, 9);
+        Assert.Equal(Stats.PercentileSorted(Stats.Sorted(L), 1), d.LstarDust, 6);
+        int c42 = inside.Clouds.ToList().FindIndex(c => c.Nebula.Ldn == 42);
+        Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), d.CloudLstars[c42], 1);
+    }
+
+    [Fact]
+    public void R044_TheCatalogueNamesTheCloudsInTheFrame()
+    {
+        Raster ldn = WcsFixtures.Ldn42Scene();
+        DustMap map = Build(ldn, ldn.Source.Wcs);
+        DustCloud cloud = Assert.Single(map.Clouds, c => c.Nebula.Ldn == 42);
+
+        // The WCS is centred on the rounded 263.27, -25.70; the catalogue's centre is 1.3 px away.
+        Assert.InRange(cloud.CentreX, 252, 259);
+        Assert.InRange(cloud.CentreY, 252, 259);
+        Assert.Equal(cloud.Nebula.RadiusDeg / WcsFixtures.NarrowScale, cloud.RadiusPx, 0);
+        // Patches whose centre is within 272 px of the middle: about pi * 272^2 / 32^2 = 227 of 256.
+        Assert.InRange(cloud.Patches.Length, 200, 240);
     }
 
     [Fact]
@@ -97,32 +152,35 @@ public class DustAnalyzerTests
         // Half the pixels of every patch at 0 and half at 0.5: the mean LINEAR luminance is
         // Y(0.5) / 2, far above the L* of the median pixel (0).
         Raster r = SyntheticRasters.From(64, 64, 3, (x, y, p) => (x / Thresholds.TonalStride) % 2 == 0 ? 0f : 0.5f);
-        DustMap map = DustAnalyzer.Build(64, 64, null);
-        float[] patches = DustAnalyzer.PatchLstars(RasterOps.Subsample(r, Thresholds.TonalStride), map);
+        float[] patches = Patches(r);
 
         Assert.Equal(2 * 2, patches.Length);
         Assert.All(patches, l => Assert.Equal(ColorMath.LstarOfY(ColorMath.SrgbToLinear(0.5) / 2), l, 2));
     }
 
     [Fact]
-    public void R044_ClassesWithACatalogueAreCloudAgainstSky()
+    public void R044_TheSkyModelFollowsAGradientAndTheMedianFilterIgnoresASpeck()
     {
-        DustMap map = DustAnalyzer.Build(512, 512, OnLdn42());
-        Raster sub = RasterOps.Subsample(SkyWithDisc(0.25f, 0.05f, DarkDiscPx), Thresholds.TonalStride);
-        DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, map), map, 9);
+        // A 48 x 48 grid of patches with a left-to-right gradient outside the band (the middle
+        // rows), and the band itself bright: the model interpolates the gradient under the band.
+        int cols = 48, rows = 48;
+        var L = new float[cols * rows]; var band = new bool[cols * rows];
+        for (int by = 0; by < rows; by++)
+            for (int bx = 0; bx < cols; bx++)
+            {
+                band[by * cols + bx] = by >= 18 && by < 30;
+                L[by * cols + bx] = band[by * cols + bx] ? 60 : 10 + bx / 4f;
+            }
+        float[] model = DustAnalyzer.SkyModel(L, band, cols, rows);
+        Assert.InRange(model[24 * cols + 4], 9, 14);     // under the band, left: near 11
+        Assert.InRange(model[24 * cols + 43], 18, 23);   // under the band, right: near 21
+        Assert.All(model, v => Assert.InRange(v, 9, 23));
 
-        PatchClass[] classes = DustAnalyzer.Classes(map, d);
-        // Dust: the cloud patches at or under the dust level (the fully dark ones, not the
-        // disc's edge); sky: the outside patches at or under the sky median. The rest: none.
-        int dust = classes.Count(c => c == PatchClass.Dust), sky = classes.Count(c => c == PatchClass.Sky);
-        Assert.InRange(dust, 1, map.CloudPatchCount - 1);
-        Assert.InRange(sky, 1, map.PatchCount - map.CloudPatchCount);
-        for (int i = 0; i < classes.Length; i++)
-        {
-            if (classes[i] == PatchClass.Dust) { Assert.True(map.InCloud[i]); Assert.True(d.PatchLstars[i] <= d.LstarDust); }
-            if (classes[i] == PatchClass.Sky) { Assert.False(map.InCloud[i]); Assert.True(d.PatchLstars[i] <= d.LstarSky); }
-        }
-        Assert.Contains(PatchClass.None, classes);
+        var speck = new float[cols * rows]; Array.Fill(speck, 20f); speck[5 * cols + 5] = 0;
+        float[] med = DustAnalyzer.MedianFilter(speck, cols, rows, 5);
+        Assert.Equal(20, med[5 * cols + 5]);
+        float[] smooth = DustAnalyzer.Smooth(speck, cols, rows, 1);
+        Assert.InRange(smooth[5 * cols + 5], 17, 18);
     }
 
     [Fact]

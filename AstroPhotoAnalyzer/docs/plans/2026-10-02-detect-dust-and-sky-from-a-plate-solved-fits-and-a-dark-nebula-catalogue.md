@@ -220,6 +220,10 @@ Core: `Input/Wcs.cs`, `Input/Astrometry.cs`, `Input/DarkNebulaCatalogue.cs`, `In
   so the resource was regenerated from 4-character fields and the ids are strings.
 - The map and preview windows take their layers from `DustAnalyzer.Classes` and `PrintPreview`
   (R-045), two small additions to the core, so that the windows paint and never decide.
+- After testing the window on the plate-solved FITS, the owner rejected the catalogue's discs
+  as the dust and the outside-disc median as the sky on the map (the Rift uncovered, the edges
+  unpainted), and chose the relative classes of ADR 0026, with the dust's L\* at the 25 %
+  percentile of the dust class; decision 3 of ADR 0025 and the map's layers are superseded.
 - At the end of the task the freshly built `AstroPhotoAnalyzer.Wpf.Tests.dll` could not be read
   by any process on the owner's machine (no handle held, ACL intact; the machine runs three
   third-party antivirus products beside Defender), so the window tests and the gate were left

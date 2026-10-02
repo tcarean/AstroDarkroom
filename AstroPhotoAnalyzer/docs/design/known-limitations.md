@@ -23,8 +23,12 @@
   L\* 7.6, under paper black, where the curve from 0.103 predicted it above from 0.14 (ADR
   0025). The exact target is the curve's, a lower bound on what Siril will need.
 - A catalogued cloud is a disc of its catalogue area around its centre; an irregular cloud's row
-  mixes its patches with the sky around it, and the verdict moves with the disc's size (x0.7 /
-  x1.4 gave 0.197 / 0.177 against 0.187 on the plate-solved FITS), which is the catalogue's.
+  mixes its patches with the sky around it. The disc no longer sets the verdict (ADR 0026).
+- The classes (band, sky model, dust under the band's local level) are for wide fields with the
+  galactic band and plain sky both in the frame. The winter band is a few L\* above the sky and
+  its dark clouds lie outside |b| < 10°; a deep-sky field is wholly in or wholly out of the band.
+  Those frames fall back to the frame rule, named in the report. A horizon corner darker than the
+  modelled sky counts as dust.
 - Without a WCS, a foreground or a silhouette larger than 1 % of the frame becomes "the dust";
   a plate-solved FITS, or `--wcs` with the stack's header, is the way out.
 - The SIP terms of a WCS are ignored: at most 6 px at the edge of the plate-solved FITS, under a

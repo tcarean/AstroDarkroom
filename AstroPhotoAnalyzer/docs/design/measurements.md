@@ -67,35 +67,42 @@ recomandat` otherwise, no row when the as-is row is primary) - sorted by L\*. Th
 that of a grey with the same L\*; on colour the same level gives a different L\* by hue,
 which the window says under the table.
 
-### B5 - `DustAnalyzer` - where the dust and the sky sit (ADR 0025)
+### B5 - `DustAnalyzer` - where the dust and the sky sit (ADR 0025, ADR 0026)
 
 The dust is the darkest *extended* structure, measured on patches of `DustPatchPx` (32) x 32
 image pixels on the stride-4 subsample (8 x 8 samples, partial edge patches dropped), each
 patch's value the L\* of its **mean linear luminance**, so that noise and isolated pixels
-cannot move it. Two parts:
+cannot move it (`PatchLstars(sub)`). Three parts:
 
-- `DustMap` (`Build(w, h, wcs, catalogue)`) is the geometry, built once per image: the patch
-  grid (`Cols`, `Rows`, `Side`, `Stride`, `PatchCentre`), and with a `Wcs` the membership of
-  every patch to the catalogued clouds: each patch centre goes to (RA, Dec) through
-  `Wcs.PixelToSky`, each cloud of `DarkNebulaCatalogue.All` whose disc touches the frame
-  (`Wcs.SkyToPixel` for the centre, the radius in pixels from `ScaleDegPerPx`) claims the
-  patches within its angular radius (dot product of unit vectors), tested only inside the
-  disc's bounding box of patches. `InCloud` is the union; `Clouds` the `DustCloud`s with at
-  least one patch (nebula, patch indices, centre and radius in image pixels). `Method` is
-  `Catalogue`, `NoWcs` (no WCS) or `NoClouds` (a WCS but no cloud in the frame).
-- `PatchLstars(sub, map)` gives the L\* per patch of a (lifted) subsample, and
-  `Measure(patchLstars, map, paperBlack)` the `DustStats`: with the catalogue, `LstarDust` is
-  the `DustCloudFraction` (10 %) percentile of all cloud patches together and `LstarSky` the
-  median of the patches outside every disc (the median of all when none is outside);
-  otherwise `LstarDust` is the `DustAreaFraction` (1 %) percentile of all patches and
-  `LstarSky` their median. Always `PctPatchesBelowPaperBlack` ("negru pur") and, with the
-  catalogue, `CloudLstars`, the 10 % percentile of each cloud's own patches.
-- `Classes(map, asIs)` tells the window which patches *set* each figure, not which entered
-  the statistic: `Dust` are the patches of the dust statistic (the clouds', or all without a
-  catalogue) at or under the dust's L\*, `Sky` the patches of the sky statistic (outside the
-  clouds, or all) at or under the sky's median, the rest `None`. The first form (every cloud
-  patch as dust, every outside patch as sky) painted the clouds' discs as dust and the Milky
-  Way band as sky; the owner rejected it on 2026-10-02.
+- `DustMap` (`Build(w, h, wcs, asIsPatchLstars, catalogue)`) is the geometry and the classes,
+  built once per image on its as-is patch L\*s: the patch grid (`Cols`, `Rows`, `Side`,
+  `Stride`, `PatchCentre`); with a `Wcs`, the galactic latitude of every patch centre
+  (`Astrometry.GalacticLatitude` on `Wcs.PixelToSky`), the catalogued clouds whose discs hold
+  patches (`FindClouds`: `Wcs.SkyToPixel` for the centre, the radius in pixels from
+  `ScaleDegPerPx`, the patches within the angular radius by dot product, tested inside the
+  disc's bounding box), and the five classes (`Classify`): the band is |b| <
+  `BandGalacticLatitudeDeg`; `SkyModel` is the median of the outside-band patches per cell of
+  `SkyModelCellPatches`, empty cells from the nearest, bilinear to patch resolution, then
+  `Smooth`; `BandLevel` is `MedianFilter` over `BandLocalWindowPatches` then `Smooth`; a patch
+  is `Dust` when `DustDepthLstar` under the local level in the band or under the sky model
+  anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the local level, `Peak`
+  when over the `PeakFraction` percentile, `Band` otherwise in the band (or outside it when
+  `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Classes`, or `NoWcs`,
+  `NoBand` (the band under `BandMinFraction` of the patches) or `AllBand` (the outside sky under
+  it), when no classes are made.
+- `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample: with
+  classes, `LstarDust` is the `DustClassFraction` (25 %) percentile of the dust patches and
+  `LstarSky` the median of the sky patches (the darkest patch and the median of all when a class
+  is empty); otherwise `LstarDust` is the `DustAreaFraction` (1 %) percentile of all patches and
+  `LstarSky` their median. Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`,
+  the `DustCloudFraction` (10 %) percentile of each cloud's own patches, for the rows.
+- `Classes(map, asIs)` is what the map window paints: the map's classes; without them, the
+  patches at or under the dust's L\* as `Dust` and those at or under the sky's as `Sky`.
+
+The first form (ADR 0025: every cloud-disc patch as dust, every outside patch as sky; the
+owner rejected it on the map on 2026-10-02) and the second (the patches at or under the two
+levels) are gone; what the Great Rift is on the plate-solved FITS, and what the plain edges
+are, is now what the classes say.
 
 ### B4 - `PrintStretchSimulator` - the lowest level that puts the dust on paper black
 

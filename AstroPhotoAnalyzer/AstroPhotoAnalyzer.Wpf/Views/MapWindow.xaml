@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MapWindow - harta praf / cer (R-130): imaginea intreaga, maximizata, cu dalele prafului
-     si ale cerului vopsite diferit si norii catalogati incercuiti, fiecare strat si fiecare
+<!-- MapWindow - harta praf / cer (R-130): imaginea intreaga, maximizata, cu cele cinci clase
+     ale dalelor vopsite diferit si norii catalogati incercuiti, fiecare strat si fiecare
      nor cu bifa lui. Nicio cifra nu se calculeaza aici: totul vine din MapViewModel. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.MapWindow"
@@ -42,12 +42,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <DockPanel>
         <StackPanel DockPanel.Dock="Top">
           <TextBlock Style="{StaticResource Heading}" Text="STRATURI" />
-          <CheckBox IsChecked="{Binding ShowDust}" Foreground="{StaticResource TextBr}" Margin="0,4,0,4">
-            <TextBlock Text="{Binding DustLegend}" TextWrapping="Wrap" MaxWidth="240" />
-          </CheckBox>
-          <CheckBox IsChecked="{Binding ShowSky}" Foreground="{StaticResource TextBr}" Margin="0,0,0,4">
-            <TextBlock Text="{Binding SkyLegend}" TextWrapping="Wrap" MaxWidth="240" />
-          </CheckBox>
+          <ItemsControl ItemsSource="{Binding Layers}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <CheckBox IsChecked="{Binding IsVisible}" Foreground="{StaticResource TextBr}" Margin="0,4,0,4">
+                  <StackPanel Orientation="Horizontal">
+                    <Border Width="12" Height="12" Background="{Binding Swatch}" CornerRadius="2" Margin="0,2,6,0" VerticalAlignment="Top" />
+                    <TextBlock Text="{Binding Legend}" TextWrapping="Wrap" MaxWidth="225" />
+                  </StackPanel>
+                </CheckBox>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
           <CheckBox IsChecked="{Binding ShowClouds}" IsEnabled="{Binding HasWcs}" Foreground="{StaticResource TextBr}" Margin="0,0,0,8"
                     Content="norii catalogati: cercuri si etichete (eticheta pe cei mai intunecati)" />
           <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Text="{Binding Definition}" />
@@ -77,8 +83,18 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Viewbox Grid.Column="1" Stretch="Uniform" Margin="8">
       <Grid Width="{Binding Width}" Height="{Binding Height}">
         <Image Source="{Binding Image}" Stretch="None" />
-        <Image Source="{Binding SkyLayer}" Stretch="None" Visibility="{Binding ShowSky, Converter={StaticResource BoolToVis}}" />
-        <Image Source="{Binding DustLayer}" Stretch="None" Visibility="{Binding ShowDust, Converter={StaticResource BoolToVis}}" />
+        <ItemsControl ItemsSource="{Binding Layers}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <Grid />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Image Source="{Binding Layer}" Stretch="None" Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
         <ItemsControl ItemsSource="{Binding Clouds}" Visibility="{Binding ShowClouds, Converter={StaticResource BoolToVis}}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>

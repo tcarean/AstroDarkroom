@@ -70,6 +70,25 @@ namespace AstroPhotoAnalyzer
             { 0.0048579479, -0.0000271474, 0.9999881997 },
         };
 
+        // Rotatia ecuatorial J2000 -> galactic (polul nord galactic la RA 192.859, Dec 27.128,
+        // originea longitudinii la RA 266.405, Dec -28.936): matricea standard, aceeasi in
+        // astropy si SLALIB. Unealta foloseste doar latitudinea b: banda Caii Lactee e |b| mic.
+        static readonly double[,] EquatorialToGalacticMatrix =
+        {
+            { -0.0548755604, -0.8734370902, -0.4838350155 },
+            { 0.4941094279, -0.4448296300, 0.7469822445 },
+            { -0.8676661490, -0.1980763734, 0.4559837762 },
+        };
+
+        /// <summary>Latitudinea galactica, in grade, a directiei (RA, Dec) J2000.</summary>
+        internal static double GalacticLatitude(double raDeg, double decDeg)
+        {
+            var v = UnitVector(raDeg, decDeg);
+            double[,] m = EquatorialToGalacticMatrix;
+            double z = m[2, 0] * v.X + m[2, 1] * v.Y + m[2, 2] * v.Z;
+            return Math.Asin(Math.Clamp(z, -1, 1)) / Deg;
+        }
+
         /// <summary>Precesia unei directii din B1950 in J2000, in grade.</summary>
         internal static (double Ra, double Dec) B1950ToJ2000(double raDeg, double decDeg)
         {

@@ -107,7 +107,7 @@ public class WcsBorrowTests
         AnalyzerCli.Run(new[] { tif, "--wcs", fits }, o, e);
 
         Assert.Contains("LDN 42 (B78)", o.ToString());
-        Assert.Contains("norilor catalogati", o.ToString());
+        Assert.Contains("cadrul e in intregime in banda", o.ToString());   // a 1.3 degree field on the Pipe: no sky outside the band
         Assert.Contains("WCS " + fits, o.ToString());
     }
 }

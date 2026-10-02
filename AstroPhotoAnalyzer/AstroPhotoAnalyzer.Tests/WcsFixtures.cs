@@ -74,4 +74,49 @@ internal static class WcsFixtures
         r.Source = new SourceInfo { Path = "scena.fit", Format = "FITS", Wcs = OnLdn42() };
         return r;
     }
+
+    /// <summary>
+    /// A wide field across the galactic plane: 512 px at 0.06 deg/px (31 degrees), centred on
+    /// the plane in Scutum (l = 30, b = 0: RA 281.4, Dec -1.95), so that |b| &lt; 10 degrees is a
+    /// strip of about two thirds of the frame and the rest is plain sky (ADR 0026's classes
+    /// need both); a 32 px patch is 3.7 square degrees, so the largest Rift cloud (LDN 621, 45
+    /// square degrees, 5 degrees north of the centre) still gets the 9 patches of a row.
+    /// </summary>
+    internal const double WideScale = 0.06;
+    internal static Wcs OnThePlane() => SyntheticWcs(512, 512, 281.4, -1.95, WideScale);
+
+    /// <summary>The dust blob's centre (the frame's centre, on the plane) and the bright blob's, 100 px to the right, still in the band.</summary>
+    internal const int DustX = 255, DustY = 255, BrightX = 355, BrightY = 255;
+
+    /// <summary>
+    /// The band scene: plain sky at 0.25 outside |b| &lt; 10 degrees, the band at 0.35 inside it, a
+    /// dark blob (0.05, radius 60 px) on the plane, a bright blob (0.6, radius 40 px) in the band,
+    /// and one 32 px patch at 1.0 inside the bright blob, the peak. The WCS is on the source.
+    /// </summary>
+    internal static Raster BandScene()
+    {
+        Wcs wcs = OnThePlane();
+        var inBand = new bool[512 * 512];
+        for (int y = 0; y < 512; y++)
+            for (int x = 0; x < 512; x++)
+            {
+                var (ra, dec) = wcs.PixelToSky(x, y);
+                inBand[y * 512 + x] = Math.Abs(Astrometry.GalacticLatitude(ra, dec)) < Thresholds.BandGalacticLatitudeDeg;
+            }
+        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+        {
+            double dd = (x - DustX) * (x - DustX) + (y - DustY) * (y - DustY);
+            double db = (x - BrightX) * (x - BrightX) + (y - BrightY) * (y - BrightY);
+            if (x >= 384 && x < 416 && y >= 256 && y < 288) return 1.0f;
+            if (dd <= 60 * 60) return 0.05f;
+            if (db <= 40 * 40) return 0.6f;
+            return inBand[y * 512 + x] ? 0.35f : 0.25f;
+        });
+        r.Source = new SourceInfo { Path = "banda.fit", Format = "FITS", Wcs = wcs };
+        return r;
+    }
+
+    /// <summary>The patch of the band scene fully inside the dust blob, and the one fully inside the bright blob.</summary>
+    internal static int DustPatchIndex(DustMap map) => (DustY / 32) * map.Cols + DustX / 32;
+    internal static int BrightPatchIndex(DustMap map) => (BrightY / 32) * map.Cols + (BrightX + 16) / 32;
 }
