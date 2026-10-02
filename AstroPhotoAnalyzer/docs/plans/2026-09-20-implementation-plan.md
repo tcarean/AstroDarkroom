@@ -1,5 +1,9 @@
 # Implementation plan
 
+> Moved unchanged from `docs/implementation-plan.md` on 2026-10-02 (ADR 0001). A plan is
+> history: its decisions are ADRs 0007 to 0024, its notes are in `docs/design/`, its
+> acceptance numbers in `docs/validation.md`. The paths it names are those of 2026-09-21.
+
 Status: **all phases done** (0-7). The console and the window are complete; the tool was
 run on the reference image and the numbers are in `acceptance-de-printat.md`. This file
 stays as the record of what was built and why.

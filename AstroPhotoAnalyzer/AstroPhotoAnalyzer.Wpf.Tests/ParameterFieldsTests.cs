@@ -20,7 +20,7 @@ namespace AstroPhotoAnalyzer.Wpf.Tests;
 public class ParameterFieldsTests
 {
     [Fact]
-    public void TheDefaultsBuildTheDefaultParameters()
+    public void R024_TheDefaultsBuildTheDefaultParameters()
     {
         Parameters d = new();
         Parameters? p = new ParameterFields().TryBuild(out string? error);
@@ -37,7 +37,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void EveryFieldIsHonoured()
+    public void R024_EveryFieldIsHonoured()
     {
         // 8 cu 4: passepartout-ul trebuie sa fie cel putin dublul ramei (Parameters.Validate).
         var f = new ParameterFields { Medium = "canvas", Dmax = "1.7", Distance = "2", Sizes = "60, 70;80", Aspect = "50x35", TargetBg = "0.2", Passepartout = "8", Frame = "4" };
@@ -62,7 +62,7 @@ public class ParameterFieldsTests
     [InlineData("Sizes", "60,x", "latime")]
     [InlineData("Aspect", "50", "latime:inaltime")]
     [InlineData("TargetBg", "1.5", "intervalului")]
-    public void ABadFieldGivesAMessageNotAnException(string field, string value, string fragment)
+    public void R024_ABadFieldGivesAMessageNotAnException(string field, string value, string fragment)
     {
         var f = new ParameterFields();
         typeof(ParameterFields).GetProperty(field)!.SetValue(f, value);
@@ -75,7 +75,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void APassepartoutNarrowerThanTwiceTheFrameIsRefusedWithTheCoresMessage()
+    public void R025_APassepartoutNarrowerThanTwiceTheFrameIsRefusedWithTheCoresMessage()
     {
         var f = new ParameterFields { Passepartout = "5", Frame = "3" };
 
@@ -86,7 +86,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void ZeroMeansNoPassepartoutAndIsAllowed()
+    public void R025_ZeroMeansNoPassepartoutAndIsAllowed()
     {
         var f = new ParameterFields { Passepartout = "0", Frame = "3" };
 
@@ -97,7 +97,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void TheFramingFieldsCarryHelpText()
+    public void R026_TheFramingFieldsCarryHelpText()
     {
         var f = new ParameterFields();
 
@@ -108,7 +108,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void TheDistanceFieldExplainsTheEmptyCaseAndTheFactor()
+    public void R026_TheDistanceFieldExplainsTheEmptyCaseAndTheFactor()
     {
         var f = new ParameterFields();
 
@@ -122,7 +122,7 @@ public class ParameterFieldsTests
     /// din nucleu, nu tastate: implicitul, pragul print-safe, tintele suplimentare.
     /// </summary>
     [Fact]
-    public void TheTargetBackgroundFieldExplainsTheSimulationAndTheDefault()
+    public void R026_TheTargetBackgroundFieldExplainsTheSimulationAndTheDefault()
     {
         var f = new ParameterFields();
 
@@ -140,7 +140,7 @@ public class ParameterFieldsTests
     /// ajutor e in paragrafe despartite de o linie goala, fara spatii la capete.
     /// </summary>
     [Fact]
-    public void TheHelpTextsAreParagraphs()
+    public void R026_TheHelpTextsAreParagraphs()
     {
         var f = new ParameterFields();
         foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.TargetBgHelp, f.PassepartoutHelp, f.FrameHelp })
@@ -153,7 +153,7 @@ public class ParameterFieldsTests
     }
 
     [Fact]
-    public void TheMediaListIsTheCoreOne()
+    public void R020_TheMediaListIsTheCoreOne()
     {
         Assert.Equal(new[] { "baryta", "canvas", "acrilic" }, new ParameterFields().Media);
     }

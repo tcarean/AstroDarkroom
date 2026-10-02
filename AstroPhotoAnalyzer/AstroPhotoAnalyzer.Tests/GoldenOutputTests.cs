@@ -63,14 +63,14 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void Help()
+    public void R004_Help()
     {
         using var ws = new TempWorkspace();
         Check("help", RunCli(ws, "--help"));
     }
 
     [Fact]
-    public void DarkSkyTiff16WithEveryFlag()
+    public void R100_DarkSkyTiff16WithEveryFlag()
     {
         using var ws = new TempWorkspace();
         Raster r = Scenes.DarkSky();
@@ -81,7 +81,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void CleanSkyOnCanvasAtTheNaturalDistance()
+    public void R073_CleanSkyOnCanvasAtTheNaturalDistance()
     {
         using var ws = new TempWorkspace();
         Raster r = Scenes.CleanSky();
@@ -92,7 +92,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void MonoPng8WithoutProfile()
+    public void R096_MonoPng8WithoutProfile()
     {
         using var ws = new TempWorkspace();
         string png = ImageFiles.SavePng8Gray(Scenes.MonoSky(), ws.PathTo("mono.png"));
@@ -101,7 +101,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void LinearFitsIsRefused()
+    public void R015_LinearFitsIsRefused()
     {
         using var ws = new TempWorkspace();
         string fits = ws.WriteFile("liniar.fit", FitsTestData.Build(64, 64, 3, (x, y, p) => 0.004, bitpix: -32));
@@ -110,7 +110,7 @@ public class GoldenOutputTests
     }
 
     [Fact]
-    public void MissingFileAndBadOption()
+    public void R003_MissingFileAndBadOption()
     {
         using var ws = new TempWorkspace();
         Check("missing-file", RunCli(ws, ws.PathTo("nu-exista.tif")));

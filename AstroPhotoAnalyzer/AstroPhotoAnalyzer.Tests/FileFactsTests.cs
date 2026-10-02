@@ -25,9 +25,16 @@ public class FileFactsTests
         var r = SyntheticRasters.Flat(3888, 5938, 0.1f);
         r.Source = new SourceInfo
         {
-            Path = "x.png", Format = "PNG", BitDepth = 16, IsFloat = false, PlanesInFile = 3,
-            Compression = "Deflate", Icc = new byte[10], IccDescription = "sRGB-elle-V2-srgbtrc.icc",
-            FileBytes = 103387067, Note = null,
+            Path = "x.png",
+            Format = "PNG",
+            BitDepth = 16,
+            IsFloat = false,
+            PlanesInFile = 3,
+            Compression = "Deflate",
+            Icc = new byte[10],
+            IccDescription = "sRGB-elle-V2-srgbtrc.icc",
+            FileBytes = 103387067,
+            Note = null,
         };
 
         var f = FileFacts.Of(r);

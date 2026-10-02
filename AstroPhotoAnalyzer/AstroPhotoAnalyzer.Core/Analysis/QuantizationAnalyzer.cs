@@ -30,7 +30,6 @@
 // "pastreaza master-ul de 16 biti" nu e o parere, e diferenta dintre cele doua.
 
 using System;
-using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
@@ -68,10 +67,16 @@ namespace AstroPhotoAnalyzer
             var (u16, m16, u8, m8) = applicable ? Stress(r) : (0, 0, 0, 0);
             return new QuantizationResult
             {
-                PlateauTiles = tiles, PlateauPx = plateau,
+                PlateauTiles = tiles,
+                PlateauPx = plateau,
                 Applicable = applicable,
-                RoundingMeanAbs = mean, RoundingMax = max, RoundingP999 = p999,
-                LevelsUsedFrom16 = u16, MissingFrom16 = m16, LevelsUsedFrom8 = u8, MissingFrom8 = m8,
+                RoundingMeanAbs = mean,
+                RoundingMax = max,
+                RoundingP999 = p999,
+                LevelsUsedFrom16 = u16,
+                MissingFrom16 = m16,
+                LevelsUsedFrom8 = u8,
+                MissingFrom8 = m8,
             };
         }
 

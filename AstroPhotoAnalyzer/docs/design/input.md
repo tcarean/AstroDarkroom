@@ -1,0 +1,76 @@
+# Inputs: readers, the raster, colour maths, statistics
+
+> Moved unchanged on 2026-10-02 (ADR 0001) from `docs/specification.md` §3 and
+> `docs/implementation-plan.md`, "Things measured about ImageSharp 3.1.11 while building phase
+> 1". The behaviour is stated with IDs in `../requirements.md` (R-010 to R-017); the raster
+> and the statistics are ADR 0010, the refusal of linear data ADR 0008. **Covers:**
+> `AstroPhotoAnalyzer.Core/Input/` and the hand-built fixtures
+> `AstroPhotoAnalyzer.Tests/TiffTestData.cs` and `AstroPhotoAnalyzer.Tests/PngTestData.cs`. A
+> change to the code this describes means this note is updated in the same task, or deleted
+> with the decision it explains.
+
+## Inputs
+
+### Formats and readers (`Input/`)
+
+`ImageLoader` picks a reader **by extension** (never by sniffing) and is the only place
+that knows both. An unknown extension is an error naming the accepted ones.
+
+| reader | extensions | what it reads |
+|---|---|---|
+| `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows flipped when `ROWORDER = 'BOTTOM-UP'`; empty primary HDUs skipped |
+| `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
+
+### The raster (`Input/Raster.cs`)
+
+`Raster`: `W`, `H`, `Planes` = 1 or 3 `float[]` in **0..1**, row 0 at the **top**.
+Normalisation: 8-bit `/255`, 16-bit `/65535`, 32-bit int `/4294967295`, float as is,
+clipped to [0, 1] with the count noted. `Reference` is the green plane on colour, the
+only plane on mono: the channel every single-channel measurement uses.
+
+`SourceInfo` (attached by the reader): `Path`, `Format`, `BitDepth`, `IsFloat`,
+`PlanesInFile`, `Compression`, `Icc` (bytes), `IccDescription` (from the `desc` tag, v2
+text or v4 mluc, parsed by `IccProfileInfo`; null when absent or malformed),
+`FileBytes`, `Note` (reader observations: clipped values, flipped rows, palette, multi-page).
+
+Memory: float planes cost `4 x W x H x planes` bytes - 277 MB for 23 MP RGB. Float was
+chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level exactly
+(`RasterOps.Level16` round-trips all 65536 values; tested).
+
+### Refusal of linear data
+
+`RasterOps.LooksLinear`: median of the reference plane at stride 8 `< LinearMedianMax
+(0.02)` -> `RefusedImageException` with the median in the message. A stacked linear
+frame sits at 0.001-0.01; a finished image at 0.08-0.25.
+
+### Colour maths (`Input/ColorMath.cs`)
+
+sRGB <-> linear per IEC 61966-2-1; Y = 0.2126 R + 0.7152 G + 0.0722 B on linear values;
+L\* per CIE 1976 with the linear segment below Y = 0.008856; **paper black** =
+L\*(10^-Dmax): baryta 2.0 -> 9.0, canvas 1.5 -> 20.7, acrylic C-print 2.2 -> 5.7.
+`YOfLstar` is the exact inverse of `LstarOfY` (both segments); `GrayLevelOfLstar` /
+`LstarOfGrayLevel` go between an L\* and the 8-bit level of a grey (R = G = B) with that
+L\* - one fixed curve, used only by the window's level - L\* table and guide text.
+
+### Statistics (`Input/Stats.cs`)
+
+Percentiles use numpy's default linear interpolation between ranks (the acceptance
+numbers were made with numpy). `SeededRandom` is xorshift64\*, so tile selection is the
+same on every runtime and every year.
+
+## Things measured about ImageSharp 3.1.11 while building phase 1
+
+Written down because each one cost a probe to find, and each one shapes code or tests:
+
+- **The TIFF encoder writes 8 bits per sample for `Rgb48`, even with
+  `BitsPerPixel = Bit48` requested.** 16-bit grey (`L16`) does encode. So a 16-bit RGB
+  TIFF - the file Siril writes - cannot be produced through ImageSharp; the reader tests
+  use a hand-built uncompressed TIFF (`TiffTestData`) instead, which is also the more
+  honest test: decode of a foreign file, not encoder-decoder symmetry.
+- **`Image.Identify` does not read a PNG's `iCCP` chunk** (it stops at the header) and
+  returns no frame metadata for PNG at all. `Image.Load` does populate
+  `Metadata.IccProfile`. The reader therefore takes the profile from the decoded image.
+- **The TIFF decoder puts the ICC profile on the first frame's metadata**
+  (`Frames[0].Metadata.IccProfile`), not on `Image.Metadata`. The reader checks both.
+- The PNG encoder does not write `iCCP` from `Metadata.IccProfile`; the PNG-with-profile
+  test uses a hand-built PNG (`PngTestData`, with its own CRC-32 and `ZLibStream`).

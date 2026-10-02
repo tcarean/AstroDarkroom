@@ -24,19 +24,19 @@ public class ParametersTests
     [InlineData("baryta", 2.0)]
     [InlineData("canvas", 1.5)]
     [InlineData("acrilic", 2.2)]
-    public void EachMediumHasItsDmax(string medium, double dmax)
+    public void R020_EachMediumHasItsDmax(string medium, double dmax)
     {
         Assert.Equal(dmax, new Parameters { Medium = Parameters.MediumFromName(medium) }.Dmax);
     }
 
     [Fact]
-    public void AnExplicitDmaxBeatsTheMedium()
+    public void R020_AnExplicitDmaxBeatsTheMedium()
     {
         Assert.Equal(1.8, new Parameters { Medium = PrintMedium.Baryta, DmaxOverride = 1.8 }.Dmax);
     }
 
     [Fact]
-    public void TheDefaultsAreTheOnesFromTheConversation()
+    public void R021_TheDefaultsAreTheOnesFromTheConversation()
     {
         var p = new Parameters();
 
@@ -54,20 +54,20 @@ public class ParametersTests
     [InlineData("baryta", "baryta")]
     [InlineData("Canvas", "canvas")]
     [InlineData("ACRILIC", "acrilic")]
-    public void MediumNamesRoundTripCaseInsensitively(string typed, string canonical)
+    public void R020_MediumNamesRoundTripCaseInsensitively(string typed, string canonical)
     {
         Assert.Equal(canonical, Parameters.NameOf(Parameters.MediumFromName(typed)));
     }
 
     [Fact]
-    public void TheThreeMediaAreDistinct()
+    public void R020_TheThreeMediaAreDistinct()
     {
         Assert.NotEqual(Parameters.MediumFromName("baryta"), Parameters.MediumFromName("canvas"));
         Assert.NotEqual(Parameters.MediumFromName("canvas"), Parameters.MediumFromName("acrilic"));
     }
 
     [Fact]
-    public void AnUnknownMediumNameIsAnArgumentError()
+    public void R020_AnUnknownMediumNameIsAnArgumentError()
     {
         Assert.Throws<ArgumentException>(() => Parameters.MediumFromName("hartie"));
     }
@@ -80,7 +80,7 @@ public class ParametersTests
     [InlineData(4, 2, true)]
     [InlineData(0, 3, true)]
     [InlineData(5, 0, true)]
-    public void ThePassepartoutMustBeAtLeastTwiceTheFrame(double passepartout, double frame, bool valid)
+    public void R025_ThePassepartoutMustBeAtLeastTwiceTheFrame(double passepartout, double frame, bool valid)
     {
         string error = new Parameters { PassepartoutCm = passepartout, FrameCm = frame }.Validate();
 
@@ -93,7 +93,7 @@ public class ParametersTests
     }
 
     [Fact]
-    public void TheDefaultsValidate()
+    public void R025_TheDefaultsValidate()
     {
         Assert.Null(new Parameters().Validate());
     }

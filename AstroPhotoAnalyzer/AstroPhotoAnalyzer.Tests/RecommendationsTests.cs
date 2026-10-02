@@ -25,7 +25,7 @@ public class RecommendationsTests
     static IEnumerable<Recommendation> Of(AnalysisResult a, Topic t) => a.Recommendations.Where(x => x.Topic == t);
 
     [Fact]
-    public void ACleanImageGetsAnOverallOk()
+    public void R090_ACleanImageGetsAnOverallOk()
     {
         // O scena de 512 px are ~170 px de detaliu real: e clara pentru print doar la
         // 10 cm privita de la 3 m. Testul e despre restul regulilor, nu despre marime.
@@ -38,7 +38,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void TheDarkSkyRaisesEveryFlagTheRealImageDid()
+    public void R092_TheDarkSkyRaisesEveryFlagTheRealImageDid()
     {
         var a = Run(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0, ViewingDistanceM = 1.5 });
 
@@ -52,7 +52,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void EveryRecommendationCarriesItsEvidenceAndTopicsAreInDecisionOrder()
+    public void R090_EveryRecommendationCarriesItsEvidenceAndTopicsAreInDecisionOrder()
     {
         var a = Run(Scenes.DarkSky());
 
@@ -62,7 +62,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void AnUpscaledFileAndAMissingProfileAreWarnings()
+    public void R096_AnUpscaledFileAndAMissingProfileAreWarnings()
     {
         Raster r = SyntheticRasters.Upscaled8(Scenes.CleanSky());
         r.Source = new SourceInfo { Format = "memorie", BitDepth = 16, IsFloat = false, PlanesInFile = 3 };
@@ -75,7 +75,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void ANonSrgbProfileIsNamedInTheWarning()
+    public void R096_ANonSrgbProfileIsNamedInTheWarning()
     {
         Raster r = Scenes.CleanSky();
         r.Source = r.Source! with { IccDescription = "ProPhoto RGB" };
@@ -86,7 +86,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void MonoHasNoColourToJudge()
+    public void R093_MonoHasNoColourToJudge()
     {
         var a = Run(Scenes.MonoSky());
 
@@ -96,7 +96,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void ALinearImageIsRefusedWithAMessage()
+    public void R015_ALinearImageIsRefusedWithAMessage()
     {
         var e = Assert.Throws<RefusedImageException>(() => Run(SyntheticRasters.Flat(64, 64, 0.005f)));
 
@@ -105,7 +105,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void TheReportBodyCarriesTheVerdictAndEverySection()
+    public void R100_TheReportBodyCarriesTheVerdictAndEverySection()
     {
         var a = Run(Scenes.DarkSky());
 
@@ -117,7 +117,7 @@ public class RecommendationsTests
     }
 
     [Fact]
-    public void TheExitCodeFollowsTheVerdict()
+    public void R002_TheExitCodeFollowsTheVerdict()
     {
         Assert.Equal(0, AnalyzerCli.ExitFor(Verdict.Ok));
         Assert.Equal(2, AnalyzerCli.ExitFor(Verdict.Attention));

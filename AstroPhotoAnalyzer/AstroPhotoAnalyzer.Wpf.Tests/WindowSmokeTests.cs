@@ -102,7 +102,7 @@ public class WindowSmokeTests
 
     /// <summary>Cazul din FlatCheck care a crapat la pornire: fereastra goala, fara rezultat.</summary>
     [Fact]
-    public void TheMainWindowLoadsAndRenders()
+    public void R110_TheMainWindowLoadsAndRenders()
         => _sta.Invoke(() =>
         {
             using var errors = new BindingErrors();
@@ -111,7 +111,7 @@ public class WindowSmokeTests
         });
 
     [Fact]
-    public void TheAboutWindowLoadsAndRenders()
+    public void R119_TheAboutWindowLoadsAndRenders()
         => _sta.Invoke(() =>
         {
             using var errors = new BindingErrors();
@@ -128,7 +128,7 @@ public class WindowSmokeTests
     /// sabloane gresite - abia cu date se ating toate legarile.
     /// </summary>
     [Fact]
-    public async Task EveryTabRendersWithARealResultAndNoBindingErrors()
+    public async Task R110_EveryTabRendersWithARealResultAndNoBindingErrors()
     {
         using var ws = new TempWorkspace();
         string tif = DarkTiff(ws);
@@ -165,7 +165,7 @@ public class WindowSmokeTests
 
     /// <summary>Cardul de eroare, cu textul refuzului - starea pe care o vede omul pe un FITS liniar.</summary>
     [Fact]
-    public async Task TheErrorCardRendersARefusal()
+    public async Task R015_TheErrorCardRendersARefusal()
     {
         using var ws = new TempWorkspace();
         string bad = ws.WriteFile("gol.tif", new byte[16]);
@@ -187,7 +187,7 @@ public class WindowSmokeTests
     /// paragrafele lui. APA_DUMP_SCREENS il salveaza ca "tooltip-distanta.png".
     /// </summary>
     [Fact]
-    public void TheHelpTooltipRendersAtTheThemeWidth()
+    public void R026_TheHelpTooltipRendersAtTheThemeWidth()
         => _sta.Invoke(() =>
         {
             var tip = new ToolTip { Content = new ParameterFields().DistanceHelp };

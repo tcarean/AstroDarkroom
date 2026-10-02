@@ -25,7 +25,7 @@ public class ViewModelTests
     static AnalysisResult Result(Raster r, Parameters? p = null) => AnalysisRun.Execute(r, "memorie", p ?? new Parameters());
 
     [Fact]
-    public void TheReportTabHasOneSectionPerTopicInDecisionOrder()
+    public void R112_TheReportTabHasOneSectionPerTopicInDecisionOrder()
     {
         var vm = new ReportTabViewModel();
         vm.Populate(Result(Scenes.DarkSky(), new Parameters { TargetAspect = 50.0 / 35.0 }));
@@ -39,7 +39,7 @@ public class ViewModelTests
     }
 
     [Fact]
-    public void ClearEmptiesEveryTab()
+    public void R111_ClearEmptiesEveryTab()
     {
         var vm = new MainViewModel();
         var result = Result(Scenes.CleanSky());
@@ -56,7 +56,7 @@ public class ViewModelTests
     }
 
     [Fact]
-    public void PreviewTilesSayWhatToCheckAndTheGuideHasTheStepBack()
+    public void R117_PreviewTilesSayWhatToCheckAndTheGuideHasTheStepBack()
     {
         var vm = new PreviewTabViewModel();
         vm.Populate(Result(Scenes.DarkSky()));

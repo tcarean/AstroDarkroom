@@ -49,14 +49,14 @@ public class CultureTests
     }
 
     [Fact]
-    public void RomanianCultureReallyWouldWriteACommaDecimalSeparator()
+    public void R118_RomanianCultureReallyWouldWriteACommaDecimalSeparator()
     {
         using var _ = new RomanianCulture();
         Assert.Equal("0,24", 0.24.ToString("F2"));
     }
 
     [Fact]
-    public void ForcingInvariantNumbersFixesTheCurrentThread()
+    public void R118_ForcingInvariantNumbersFixesTheCurrentThread()
     {
         using var _ = new RomanianCulture();
         App.ForceInvariantNumbers();
@@ -77,7 +77,7 @@ public class CultureTests
     /// e identic cu cel produs sub cultura invarianta - Fmt il tine invariant singur.
     /// </summary>
     [Fact]
-    public void TheReportIsIdenticalUnderARomanianCultureWithoutForcing()
+    public void R118_TheReportIsIdenticalUnderARomanianCultureWithoutForcing()
     {
         Raster r = Scenes.CleanSky();
         var p = new Parameters();
@@ -99,7 +99,7 @@ public class CultureTests
     }
 
     [Fact]
-    public void ParameterFieldsParseWithThePointRegardlessOfCulture()
+    public void R024_ParameterFieldsParseWithThePointRegardlessOfCulture()
     {
         using var _ = new RomanianCulture();
         var f = new ParameterFields { Distance = "1.5", TargetBg = "0.19" };

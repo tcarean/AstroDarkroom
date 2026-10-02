@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ObservableObject.cs - INotifyPropertyChanged, scris de mana. Nu s-a adus un framework
-// MVVM pentru douazeci de linii; regula dependentelor e in CLAUDE.md.
+// MVVM pentru douazeci de linii; regula dependentelor e regula "Package notices" din
+// CLAUDE.md, cu motivele in docs/design/dependencies.md.
 //
 // Publica, nu internal, fiindca o mostenesc ViewModel-urile, care trebuie sa fie publice
 // ca sa le vada legarea WPF. Consecinta e utila: un ViewModel public NU poate expune un

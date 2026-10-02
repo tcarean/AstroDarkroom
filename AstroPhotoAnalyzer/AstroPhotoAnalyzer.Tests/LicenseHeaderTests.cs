@@ -134,7 +134,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void EverySourceFileStartsWithTheLicenseNotice()
+    public void R121_EverySourceFileStartsWithTheLicenseNotice()
     {
         var offenders = SourceFiles()
             .Where(f => HeaderOf(f) != Expected(KindOf(f)))
@@ -147,7 +147,7 @@ public class LicenseHeaderTests
 
     /// <summary>Daca enumerarea da gres, testul de mai sus ar trece pe zero fisiere.</summary>
     [Fact]
-    public void TheScanSeesEveryProjectAndTheIconScript()
+    public void R121_TheScanSeesEveryProjectAndTheIconScript()
     {
         var names = SourceFiles().Select(Path.GetFileName).ToList();
 
@@ -159,7 +159,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void TheRepoShipsTheFullGplText()
+    public void R121_TheRepoShipsTheFullGplText()
     {
         string license = File.ReadAllText(Path.Combine(RepoDir(), "LICENSE"));
 

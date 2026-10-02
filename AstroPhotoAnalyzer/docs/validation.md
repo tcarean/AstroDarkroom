@@ -1,4 +1,51 @@
-# Acceptance: `de_printat.png`
+# Validation
+
+The project's memory of "how well it works, measured on what". Every case lives in
+`validation.json`, read by `ValidationTests` (trait `Category=Validation`, not in the gate,
+ADR 0004), and is explained here. A number changes only after a re-measurement, with a dated
+line under History saying the old value, the new value and why; never by editing the expected
+values to match (the kit's rule "No test edited to pass").
+
+The data is one image, `de_printat.png`: the owner's Milky Way core, 5938 x 3888, 16-bit RGB PNG,
+103 387 067 bytes, whose original is in `E:\Photografie\Claude`. A copy of it, made by hand,
+sits in `AstroPhotoAnalyzer.Tests/testdata/large/`, which git ignores, and
+`AstroPhotoAnalyzer.Tests/testdata/manifest.json` holds its SHA-256. On a machine or in a
+worktree without the copy, the cases print `NOT MEASURED` and pass.
+
+## How a case runs
+
+One kind of case, `analysis`: `AnalysisRun.Execute` on the image with the parameters the case
+names (`aspect`, `distanceM`, `dmax`, `medium`, `targetBg`; an absent one is the core's
+default), exactly as the console runs it. `ValidationTests` reads from the result a fixed set of
+figures, named by the record and field they come from (`tonal.pctBelowPaperBlack`,
+`stars.fwhmMedian`, `size.recommendedWidthCm`), and prints them all as one JSON line, `MEASURED
+<id> {...}`, in the test output and in the file `APA_VALIDATION_DUMP` names when it is set. A
+case's `expected` lists the figures it guards: a number within the case's `tolerance` (absolute,
+in the figure's own unit), an integer, a boolean or a string exactly. A case whose `expected` is
+`null` is unmeasured: it prints what it found and passes.
+
+```bash
+dotnet test AstroPhotoAnalyzer.sln -c Release --filter "Category=Validation"
+```
+
+Or `/validate` in Claude Code, which prints the expected and measured figures of every case and
+stops on a drift instead of editing them.
+
+## Cases
+
+| ID | Parameters | What it guards |
+| --- | --- | --- |
+| V-001 | none: the full frame, baryta, the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation at 0.19, noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
+| V-002 | `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
+| V-003 | `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % below paper black, print-safe; a guard on the paper-black maths more than on the image |
+
+The figures recorded for each case are in `validation.json`; the table below, from the reference
+run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
+
+## The reference run
+
+Until 2026-10-02 the rest of this file was `docs/acceptance-de-printat.md`, moved here unchanged
+(ADR 0001).
 
 The tool was built to reproduce, and then automate, the measurements made by hand (Python
 / NumPy / ImageMagick) on one image in the conversation that started it:
@@ -9,7 +56,7 @@ it, next to the hand-made numbers.
 Run: `AstroPhotoAnalyzer.exe de_printat.png --aspect 50:35 --distance 1.5` (the hallway
 scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 
-## Numbers
+### Numbers
 
 | measurement | by hand (conversation) | tool | note |
 |---|---|---|---|
@@ -35,7 +82,7 @@ scenario from the conversation), version 1.0.0, 11 seconds on the whole 23 MP.
 | crop to 50:35 | 5554 x 3888, 192 px per side | 5554 x 3888, 192 px, 6.5 % | identical |
 | 70 cm row | 215 dpi, star 0.35 mm, point from 1.2 m (full frame, FWHM 3.0) | 202 dpi, 0.39 mm, 1.36 m (the crop, FWHM 3.13) | consistent |
 
-## What the tool said that the conversation also said
+### What the tool said that the conversation also said
 
 Verdict PROBLEMA. Send TIFF 8-bit LZW; if only JPEG, q100 and never below (q95 max
 error 27). No visible banding on 8 bits (plateau 0.34 mm at 202 dpi). Background too low
@@ -46,7 +93,7 @@ horizon glow, fix on linear or keep as composition. Recommended 70 x 49 cm at 1.
 0.8-1.5, and after the re-stretch it becomes ~0.61. Keep the 16-bit master: 46 levels
 missing from 8 bits after a shadow lift, none from 16.
 
-## What the real image taught the tool
+### What the real image taught the tool
 
 - **Edge regions that brighten neutrally are the object, not a gradient.** The first run
   flagged all eight edge regions as "residual gradient" because the Milky Way band enters
@@ -71,3 +118,32 @@ missing from 8 bits after a shadow lift, none from 16.
   wall's choice and that a given distance is what separates the sizes. With `--distance
   1.5` (the hallway) the recommendation is 70 cm on the 50:35 crop, as in the
   conversation; on the full frame it is 80 (FWHM 3.13 instead of 3.00).
+
+## The figures of 2026-10-02
+
+`validation.json` holds every figure the build of 2026-10-02 (version 1.0.0 plus the process
+migration, no formula changed) measured on the image: 168 for V-001, 36 for V-002 and 9 for
+V-003, in 27 s for the three cases. They reproduce, to the last decimal the record printed, the
+"tool" column of the table above: the means and the shares below 32 and 64, the percentiles, the
+L\* figures, the simulation at 0.19 (gamma 0.730 from 0.1028), the noise (128 smooth tiles,
+median 0.45 LSB), the plateau (2.68 px from 20 tiles), the rounding, the stress test, the JPEG
+and TIFF sizes and errors, the stars (7166, median 3.133 px, centre 4.27 px), the background
+colour and the bottom-right corner, the crop and the 70 cm row on 50:35, and the 70 cm
+recommended at 1.5 m.
+
+One figure does not. The natural ratio, the distance from which a star is a point over the
+natural viewing distance, is given as 1.018 for this image by the record and by
+`design/measurements.md`; the build of 2026-10-02 measures 1.0147 on the full frame and 1.0623 on
+the 50:35 crop. With the median FWHM of 3.133 px, the formula in `design/measurements.md` gives
+1.0147 on the full frame, so the recorded figures follow the code; how the record's 1.018 was
+obtained is not written down. Left open for the owner on 2026-10-02.
+
+V-003 adds a figure the record does not have: at Dmax 2.35, paper black is L\* 4.03 and 1.34 % of
+the image falls below it, so the image is print-safe as it is, no target is recommended, and the
+overall verdict drops from PROBLEMA to ATENTIE.
+
+## History
+
+- 2026-10-02: the acceptance record became this file (ADR 0001); V-001 to V-003 recorded from
+  the build of the same day, by `ValidationTests`' `MEASURED` lines; the natural ratio differs
+  from the record (above).

@@ -1,0 +1,84 @@
+# Recommendations and the report
+
+> Moved unchanged on 2026-10-02 (ADR 0001) from `docs/specification.md` §6 and §8. The
+> behaviour is stated with IDs in `../requirements.md` (R-090 to R-101); the evidence rule and
+> the verdict order are ADR 0011, the invariant formatting ADR 0021. **Covers:**
+> `AstroPhotoAnalyzer.Core/Report/`. A change to the code this describes means this note is
+> updated in the same task, or deleted with the decision it explains.
+
+## Recommendations (`Report/Recommendations.cs`)
+
+`Recommendation(Topic, Verdict, Text, Because)`; the constructor refuses an empty
+`Because`. Verdicts are monotone `Ok < Attention < Problem`; a section's verdict is its
+maximum, the overall verdict the maximum of all. Topics in decision order: Format,
+Background, Colour, Size, Denoise, Warnings.
+
+| topic | condition | verdict | text (gist) |
+|---|---|---|---|
+| Format | source > 8 bits | Ok | send TIFF 8-bit LZW (size); 16 -> 8 is rounding (mean/max) |
+| Format | source 8 bits | Ok | send TIFF 8-bit LZW; nothing to convert |
+| Format | q100 row exists | Ok, or Attention when not `Acceptable` or > `JpegOverThresholdWarnPct` (5 %) samples over 2 | if only JPEG: q100 4:4:4 (size, errors, where they sit; "in the dark sky" when the mean level of affected samples < 64) |
+| Format | any q < 100 not `Acceptable` | Attention | never below q100 (the highest failing quality's max error) |
+| Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
+| Format | plateau known and not visible | Ok | no visible banding |
+| Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
+| Background | `PrintSafe` | Ok | background print-safe |
+| Background | `BackgroundTooLowForPaper` | Problem | too low; re-stretch to `RecommendedTarget` (with its simulated numbers) or "no target qualifies" |
+| Background | otherwise | Attention | at the limit; same fix text |
+| Colour | mono | Ok | nothing to measure |
+| Colour | `HasCast` | Attention | green/magenta/warm/cool cast (whichever metric is larger); neutralise on linear |
+| Colour | no cast | Ok | neutral background |
+| Colour | each flagged **coloured** region | Attention | warm (R > B + 3) / cool (B > R + 3) / greenish / other; fix on linear or keep as composition |
+| Colour | flagged **neutral** regions | Ok (one note) | most likely the object; check Preview |
+| Size | stars `Insufficient` | Attention | no real resolution: the pixel-grid rule (physical floor from the given distance, else the 180 dpi convention), how far the file reaches or that the smallest width misses it; a file limit, not a detail one; no size recommended; asks for a distance when none |
+| Size | explicit distance, recommended row passes | Ok | recommended size, outer size; FWHM, effective detail, star mm, point distance, the given distance |
+| Size | explicit distance, no row passes | Attention | "discs at any listed size from that distance; the smallest minimises it; try smaller widths or a larger distance" |
+| Size | natural distance, rows pass | Ok | "no size is recommended without a distance: up to <largest> cm the image is equally sharp at its natural distance, choose by the wall; give a distance if viewed from close" |
+| Size | natural distance, rows fail | Attention | "slightly discs at any size; the smallest minimises it; give a distance" |
+| Size | `SoftCorners` | Attention | do not enlarge the whole frame; consider a crop |
+| Size | crop `Needed` | Attention | what the target cuts |
+| Size | any oversize row passes | Ok | above 100 cm glass/weight/transport are the limit |
+| Denoise | noise `Insufficient` | Attention | not enough flat sky |
+| Denoise | `BandingRisk` | Attention | denoise pressed too hard for print; target 0.8-1.5; sigma after the recommended re-stretch (x the curve's slope at the background) |
+| Denoise | `UnderDenoised` | Attention | visible at 100 % on screen, not on paper |
+| Denoise | `GoodForPrint` | Ok | exactly where it should be |
+| Denoise | otherwise | Ok | acceptable |
+| Warnings | `IsUpscaled` | Attention | 8 bits in disguise |
+| Warnings | no ICC | Attention | export with sRGB embedded |
+| Warnings | ICC not sRGB | Attention | tell the lab; L\* assumed sRGB |
+| Warnings | `Keep16BitMaster` | Attention | keep the 16-bit master (levels missing from 8 vs 16) |
+| Warnings | reader note | Ok | the note |
+
+The noise-after-restretch figure: slope = gamma x bg^(gamma - 1) at the measured
+background, sigma_after = sigma x slope.
+
+## The report (`Report/ReportWriter.cs`, `Report/Fmt.cs`)
+
+`WriteFull` = banner (`AstroPhotoAnalyzer <version>`, copyright) + body; `WriteBody`
+alone is what the console prints after its own banner. Body layout:
+
+```
+Fisier: <path>
+  <format> <bits> <RGB|mono>, W x H (MP), <compression>, <MB>, <ICC>
+  Mediu: <name> (Dmax, negrul hartiei L*). Distanta de privire: <m | 1.5 x diagonala>.
+
+VERDICT: <OK|ATENTIE|PROBLEMA>
+
+1. Formatul de trimis  [verdict]
+   <-|!|!!> <text>
+     fiindca: <because>
+... sections 2-6, "(nimic de semnalat)" when empty
+
+Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
+Anexa B. Simularea     table: target, gamma, L*, % below black, % below 15, % above 50, print-safe
+Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
+Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
+Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regions with deltas, "!" when flagged
+Anexa F. Parametri     every parameter as used
+```
+
+Every number goes through `Fmt` with `CultureInfo.InvariantCulture` spelled out (`F0..F4`,
+`S1` signed, `Pct`, `Mb`, `Int`, `Dim`); NaN prints as `n/a`. This is what makes the
+window's saved file byte-identical to the console's output on any Windows culture
+(`CultureTests`). Text is Romanian without diacritics. The format is pinned by the golden
+tests: change it on purpose, re-approve, read the diff.

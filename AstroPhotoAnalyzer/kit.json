@@ -1,0 +1,33 @@
+{
+  "$comment": "What the shared scripts, skills and agent need to know about AstroPhotoAnalyzer. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028; ADR 0002). The projects sit at the folder root, not under src/ and tests/, so the folders are listed. The validation cases on the reference image stay out of the gate, and the image is a git-ignored copy in AstroPhotoAnalyzer.Tests/testdata/large/; APA_TESTDATA_LARGE is the override kit-config.ps1 requires a name for, and nobody sets it (ADR 0004). See scripts/kit-config.ps1 for every key.",
+  "solution": "AstroPhotoAnalyzer.sln",
+  "testFilter": "Category!=Validation",
+  "codeFolders": ["AstroPhotoAnalyzer.Core/", "AstroPhotoAnalyzer/", "AstroPhotoAnalyzer.Wpf/"],
+  "codeFiles": [],
+  "testFolders": ["AstroPhotoAnalyzer.Tests/", "AstroPhotoAnalyzer.Wpf.Tests/"],
+  "testData": {
+    "folder": "AstroPhotoAnalyzer.Tests/testdata/",
+    "largeEnv": "APA_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "AstroPhotoAnalyzer.Tests/"
+  },
+  "release": {
+    "publish": [
+      {
+        "project": "AstroPhotoAnalyzer/AstroPhotoAnalyzer.csproj",
+        "output": "console",
+        "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true"]
+      },
+      {
+        "project": "AstroPhotoAnalyzer.Wpf/AstroPhotoAnalyzer.Wpf.csproj",
+        "output": "wpf",
+        "args": ["-r", "win-x64", "--self-contained"]
+      }
+    ]
+  },
+  "audit": {
+    "alsoRead": ["THIRD-PARTY-NOTICES.md", "AstroPhotoAnalyzer.Tests/Golden/"]
+  },
+  "kit": "../ClaudeCodeStarterKit"
+}

@@ -162,10 +162,15 @@ namespace AstroPhotoAnalyzer
                 bool point = known ? minDist <= allowed : dpi >= fallbackDpi;
                 rows.Add(new SizeRow
                 {
-                    WidthCm = wcm, HeightCm = hcm, Dpi = dpi, PitchMm = pitch,
+                    WidthCm = wcm,
+                    HeightCm = hcm,
+                    Dpi = dpi,
+                    PitchMm = pitch,
                     PixelDistanceM = pitch / Thresholds.AcuityMmAt1m,
-                    StarMm = star, MinDistanceM = minDist,
-                    NaturalDistanceM = natural, ViewingDistanceM = viewing,
+                    StarMm = star,
+                    MinDistanceM = minDist,
+                    NaturalDistanceM = natural,
+                    ViewingDistanceM = viewing,
                     PointAtViewingDistance = point,
                     OuterWidthCm = wcm + 2 * (p.PassepartoutCm + p.FrameCm),
                     OuterHeightCm = hcm + 2 * (p.PassepartoutCm + p.FrameCm),
@@ -183,7 +188,8 @@ namespace AstroPhotoAnalyzer
 
             return new PrintSizeResult
             {
-                PixelW = pixelW, PixelH = pixelH,
+                PixelW = pixelW,
+                PixelH = pixelH,
                 FwhmPx = known ? fwhmPx : double.NaN,
                 DistanceIsExplicit = p.ViewingDistanceM.HasValue,
                 CanRecommend = canRecommend,

@@ -34,7 +34,7 @@ public class CliTests
     }
 
     [Fact]
-    public void AProblemImageExitsWithThreeAndPrintsTheReport()
+    public void R002_AProblemImageExitsWithThreeAndPrintsTheReport()
     {
         using var ws = new TempWorkspace();
         var (code, output, err) = Run(DarkTiff(ws), "--aspect", "50:35", "--distance", "1.5");
@@ -47,7 +47,7 @@ public class CliTests
     }
 
     [Fact]
-    public void ACleanMonoPngExitsWithAttentionForTheMissingProfile()
+    public void R002_ACleanMonoPngExitsWithAttentionForTheMissingProfile()
     {
         using var ws = new TempWorkspace();
         string png = ImageFiles.SavePng8Gray(Scenes.MonoSky(), ws.PathTo("mono.png"));
@@ -60,7 +60,7 @@ public class CliTests
     }
 
     [Fact]
-    public void TheSavedReportIsTheBannerPlusExactlyWhatWasPrinted()
+    public void R005_TheSavedReportIsTheBannerPlusExactlyWhatWasPrinted()
     {
         using var ws = new TempWorkspace();
         string outFile = ws.PathTo("raport.txt");
@@ -75,7 +75,7 @@ public class CliTests
     }
 
     [Fact]
-    public void ALinearFitsIsRefusedWithExitOne()
+    public void R015_ALinearFitsIsRefusedWithExitOne()
     {
         using var ws = new TempWorkspace();
         string fits = ws.WriteFile("lin.fit", FitsTestData.Build(128, 128, 3, (x, y, p) => 0.004 + 0.0001 * (x % 7), bitpix: -32));
@@ -87,7 +87,7 @@ public class CliTests
     }
 
     [Fact]
-    public void APassepartoutNarrowerThanTwiceTheFrameIsRefusedBeforeAnyWork()
+    public void R025_APassepartoutNarrowerThanTwiceTheFrameIsRefusedBeforeAnyWork()
     {
         using var ws = new TempWorkspace();
         string tif = ws.WriteFile("x.tif", new byte[16]);   // nu se ajunge la citire
@@ -102,7 +102,7 @@ public class CliTests
     }
 
     [Fact]
-    public void AnUnreadableFileIsAnErrorNotACrash()
+    public void R002_AnUnreadableFileIsAnErrorNotACrash()
     {
         using var ws = new TempWorkspace();
         string bad = ws.WriteFile("bad.tif", new byte[32]);
@@ -115,7 +115,7 @@ public class CliTests
     }
 
     [Fact]
-    public void OptionsMapOntoParametersWithoutACopyOfTheDefaults()
+    public void R024_OptionsMapOntoParametersWithoutACopyOfTheDefaults()
     {
         Parameters d = new();
         Parameters p = AnalyzerCli.ParametersFrom(Options.Parse(new[] { "x.tif" }));
