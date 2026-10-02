@@ -6,6 +6,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- `LICENSE` now sits next to the program, in the build folder and in the publish folder, where
+  the About dialog says the full licence text is (R-074, ADR 0027).
+
 ### Internal
 
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0007): `scripts/verify.ps1`

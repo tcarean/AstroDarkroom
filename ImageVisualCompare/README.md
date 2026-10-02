@@ -193,6 +193,7 @@ Programul e distribuit în speranța că va fi util, dar **FĂRĂ NICIO GARANȚI
 măcar garanția implicită de VANDABILITATE sau POTRIVIRE PENTRU UN SCOP ANUME. Vezi GNU
 General Public License pentru detalii.
 
-Textul complet al licenței e în fișierul [LICENSE](LICENSE); îl găsești și la
+Textul complet al licenței e în fișierul [LICENSE](LICENSE), care stă și lângă program, în
+folderul în care e compilat sau publicat; îl găsești și la
 <https://www.gnu.org/licenses/gpl-3.0.html>. Aceeași notă, pe scurt, apare la butonul
 `About`; versiunea și copyright-ul stau permanent în bara de stare.

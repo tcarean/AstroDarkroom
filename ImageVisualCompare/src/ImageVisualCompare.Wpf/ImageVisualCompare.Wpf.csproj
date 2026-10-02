@@ -14,4 +14,11 @@
     <InternalsVisibleTo Include="ImageVisualCompare.Tests" />
   </ItemGroup>
 
+  <!-- About says the full licence is in the LICENSE file next to this program (GPLv3 5(d)), so
+       the root LICENSE is linked here, not copied, and lands beside the executable in the
+       build output and, through it, in the publish folder (ADR 0027). -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
