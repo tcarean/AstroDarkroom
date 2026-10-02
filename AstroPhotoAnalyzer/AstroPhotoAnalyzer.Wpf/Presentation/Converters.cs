@@ -39,17 +39,6 @@ namespace AstroPhotoAnalyzer.Wpf
         public object ConvertBack(object value, Type t, object p, CultureInfo c) => throw new NotSupportedException();
     }
 
-    /// <summary>Vizibil doar cand toate legarile sunt adevarate: eticheta unui nor pe harta (norul e etichetabil SI etichetele sunt bifate).</summary>
-    internal sealed class AllTrueToVisibilityConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type t, object p, CultureInfo c)
-        {
-            foreach (object v in values) if (v is not true) return Visibility.Collapsed;
-            return Visibility.Visible;
-        }
-        public object[] ConvertBack(object value, Type[] t, object p, CultureInfo c) => throw new NotSupportedException();
-    }
-
     internal sealed class InverseBoolConverter : IValueConverter
     {
         public object Convert(object value, Type t, object p, CultureInfo c) => value is not true;

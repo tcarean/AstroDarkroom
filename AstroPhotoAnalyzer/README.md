@@ -42,9 +42,11 @@ F1 = Despre.
 
 Două ferestre pleacă din tabul Tonuri, amândouă maximizate și amândouă doar de privit (nu
 calculează nimic, arată ce a decis analiza). **Harta praf / cer** pune peste imaginea întreagă,
-colorat diferit, dalele de 32 px din care s-a luat L\*-ul prafului și cele din care s-a luat
-L\*-ul cerului, iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai
-întunecați 15; fiecare strat și fiecare nor are bifa lui (eticheta e dezactivată fără WCS).
+colorat diferit, dalele de 32 px care dau L\*-ul prafului (cele ale norilor la sau sub el) și
+cele care dau L\*-ul cerului (cele din afara norilor la sau sub mediana lor; banda Căii Lactee
+e peste ea), iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai
+întunecați 15; fiecare strat are bifa lui, norii au bifa lor (cercuri și etichete; fără WCS e
+dezactivată), iar lista norilor are „Toți" / „Niciunul" și o bifă pe fiecare nor.
 **Preview**-ul unui rând al simulării arată imaginea ridicată la fundalul acelui rând (și
 rândul „așa cum e"), cu pixelii de sub negrul hârtiei și cei de sub L\* 15 colorați, fiecare
 strat cu bifa lui. Esc le închide.

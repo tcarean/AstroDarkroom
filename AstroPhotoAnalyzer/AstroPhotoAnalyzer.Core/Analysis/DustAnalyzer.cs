@@ -274,17 +274,27 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Clasa fiecarei dale pentru harta ferestrei: cu catalog, dalele norilor sunt praf
-        /// si restul cer; fara, praful e dalele de la percentila in jos (cele mai intunecate
-        /// 1 %) si cerul toate celelalte.
+        /// Clasa fiecarei dale pentru harta ferestrei: dalele care DAU cifra, nu toate cele
+        /// care intra in statistica. Praful e dalele din care se ia L*-ul prafului (ale
+        /// norilor cu catalog, toate fara) aflate la sau sub L*-ul prafului - nucleele, nu
+        /// discul intreg; cerul e dalele din care se ia L*-ul cerului (din afara norilor cu
+        /// catalog, toate fara) aflate la sau sub mediana lor - cerul curat, nu banda Caii
+        /// Lactee, care e peste mediana. Restul: None. (Prima forma, discul intreg ca praf si
+        /// tot restul ca cer, arata norii ca praf si banda ca cer; proprietarul a respins-o
+        /// pe 2026-10-02.)
         /// </summary>
         internal static PatchClass[] Classes(DustMap map, DustStats asIs)
         {
             var o = new PatchClass[map.PatchCount];
             for (int i = 0; i < o.Length; i++)
-                o[i] = map.UsesCatalogue
-                    ? (map.InCloud[i] ? PatchClass.Dust : PatchClass.Sky)
-                    : (asIs.PatchLstars[i] <= asIs.LstarDust ? PatchClass.Dust : PatchClass.Sky);
+            {
+                float l = asIs.PatchLstars[i];
+                bool dustSide = !map.UsesCatalogue || map.InCloud[i];
+                bool skySide = !map.UsesCatalogue || !map.InCloud[i];
+                o[i] = dustSide && l <= asIs.LstarDust ? PatchClass.Dust
+                    : skySide && l <= asIs.LstarSky ? PatchClass.Sky
+                    : PatchClass.None;
+            }
             return o;
         }
     }

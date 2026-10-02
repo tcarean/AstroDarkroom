@@ -29,8 +29,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - `--wcs <file.fit>` (the window: `WCS din FITS`): a TIFF or PNG borrows the WCS of a
   plate-solved FITS of the same size, since the export carries no header (R-027).
-- The map window (`Harta praf / cer`): the image with the dust and sky patches coloured and the
-  catalogued clouds circled and named, each layer and each cloud behind a check box (R-130).
+- The map window (`Harta praf / cer`): the image with the patches that set the dust and the sky
+  coloured and the catalogued clouds circled and named, each layer, the clouds and each cloud
+  behind a check box, with `Toti` / `Niciunul` (R-130).
 - The preview window of a simulation row: the image lifted to that row's target with the pixels
   under paper black and under L\* 15 coloured, each behind a check box (R-131).
 - The Lynds catalogue (`VII/7A`, 1787 clouds) as an embedded resource, with its notice in

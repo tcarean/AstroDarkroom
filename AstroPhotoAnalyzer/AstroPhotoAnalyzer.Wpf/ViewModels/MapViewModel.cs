@@ -16,15 +16,16 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // MapViewModel.cs - fereastra "Harta praf / cer" (R-130): imaginea intreaga, cu dalele
-// care intra in statistica prafului si cele care intra in cea a cerului vopsite diferit,
-// si norii catalogati incercuiti, cu numele lor.
+// care dau L*-ul prafului si cele care dau L*-ul cerului vopsite diferit, si norii
+// catalogati incercuiti, cu numele lor.
 //
 // Nu calculeaza nimic: clasele dalelor, cercurile si numele vin din rezultatul nucleului
 // (DustAnalyzer, PrintStretchSimulator); aici se aseaza pe o copie redusa a imaginii si se
-// lasa omul sa stinga straturile.
+// lasa omul sa stinga straturile, norii toti sau unul cate unul.
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -36,7 +37,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Color DustColour = Color.FromArgb(110, 0xE3, 0xB3, 0x41);
         static readonly Color SkyColour = Color.FromArgb(70, 0x4E, 0xA8, 0xDE);
 
-        bool _showDust = true, _showSky = true, _showLabels;
+        bool _showDust = true, _showSky = true, _showClouds;
 
         public string Title { get; private init; }
         public BitmapSource Image { get; private init; }
@@ -48,7 +49,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public int Width { get; private init; }
         public int Height { get; private init; }
 
-        /// <summary>Fara WCS nu exista nori de etichetat: bifa e dezactivata si nebifata.</summary>
+        /// <summary>Fara WCS nu exista nori de aratat: bifa norilor e dezactivata si nebifata.</summary>
         public bool HasWcs { get; private init; }
 
         /// <summary>Propozitia care defineste praful si cerul, aceeasi ca sub tabelul simularii.</summary>
@@ -62,9 +63,19 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public bool ShowDust { get => _showDust; set => Set(ref _showDust, value); }
         public bool ShowSky { get => _showSky; set => Set(ref _showSky, value); }
-        public bool ShowLabels { get => _showLabels; set => Set(ref _showLabels, value); }
 
-        MapViewModel() { }
+        /// <summary>Norii, cercuri si etichete deopotriva; nebifat, lista lor e dezactivata.</summary>
+        public bool ShowClouds { get => _showClouds; set => Set(ref _showClouds, value); }
+
+        /// <summary>Toti norii vizibili, respectiv niciunul: bifele din lista, nu stratul.</summary>
+        public ICommand SelectAllClouds { get; }
+        public ICommand DeselectAllClouds { get; }
+
+        MapViewModel()
+        {
+            SelectAllClouds = new RelayCommand(() => { foreach (CloudLayer c in Clouds) c.IsVisible = true; });
+            DeselectAllClouds = new RelayCommand(() => { foreach (CloudLayer c in Clouds) c.IsVisible = false; });
+        }
 
         internal static MapViewModel From(AnalysisResult r)
         {
@@ -99,6 +110,7 @@ namespace AstroPhotoAnalyzer.Wpf
             }).ToList();
 
             bool hasWcs = img.Source?.Wcs != null;
+            SimulationRow asIs = s.AsIs;
             return new MapViewModel
             {
                 Title = $"Harta praf / cer - {System.IO.Path.GetFileName(r.Path)}",
@@ -109,11 +121,13 @@ namespace AstroPhotoAnalyzer.Wpf
                 SkyLayer = RasterBitmaps.Overlay(w, h, (x, y) => ClassAt(x, y) == PatchClass.Sky, SkyColour),
                 Clouds = clouds,
                 HasWcs = hasWcs,
-                _showLabels = hasWcs && clouds.Count > 0,
+                _showClouds = hasWcs && clouds.Count > 0,
                 Definition = ReportWriter.DustDefinition(s),
                 NoWcsWarning = hasWcs ? null : TonesTabViewModel.NoWcsSentence,
-                DustLegend = $"praf: dalele de {Thresholds.DustPatchPx} px din care se ia L*-ul prafului ({s.DustDescription})",
-                SkyLegend = $"cer: dalele din care se ia L*-ul cerului ({s.SkyDescription})",
+                DustLegend = $"praf: dalele de {Thresholds.DustPatchPx} px la sau sub L*-ul prafului ({Fmt.F1(asIs.LstarDust)}), "
+                    + (map.UsesCatalogue ? "dintre cele ale norilor catalogati" : "din tot cadrul") + " - cele care dau cifra",
+                SkyLegend = $"cer: dalele la sau sub L*-ul cerului ({Fmt.F1(asIs.LstarSky)}, mediana), "
+                    + (map.UsesCatalogue ? "dintre cele din afara norilor" : "din tot cadrul") + " - cerul curat; banda e peste mediana",
             };
         }
     }

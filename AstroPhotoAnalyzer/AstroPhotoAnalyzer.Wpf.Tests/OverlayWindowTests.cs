@@ -78,7 +78,7 @@ public class OverlayWindowTests
         MapViewModel map = MapViewModel.From(result);
 
         Assert.True(map.HasWcs);
-        Assert.True(map.ShowDust && map.ShowSky && map.ShowLabels);
+        Assert.True(map.ShowDust && map.ShowSky && map.ShowClouds);
         Assert.Equal(512, map.Width);
         Assert.Equal(512, map.Height);
         Assert.Equal(map.Width, map.Image.PixelWidth);
@@ -99,6 +99,13 @@ public class OverlayWindowTests
 
         // The clouds come darkest first, as the report lists them.
         Assert.Equal(result.Simulation.Clouds.Select(c => c.Name), map.Clouds.Select(c => c.Name));
+
+        // "Niciunul" / "Toti" flip every cloud's box; the layer box is separate.
+        map.DeselectAllClouds.Execute(null);
+        Assert.All(map.Clouds, c => Assert.False(c.IsVisible));
+        Assert.True(map.ShowClouds);
+        map.SelectAllClouds.Execute(null);
+        Assert.All(map.Clouds, c => Assert.True(c.IsVisible));
     }
 
     [Fact]
@@ -107,7 +114,7 @@ public class OverlayWindowTests
         MapViewModel map = MapViewModel.From(Result(Scenes.DarkSky()));
 
         Assert.False(map.HasWcs);
-        Assert.False(map.ShowLabels);
+        Assert.False(map.ShowClouds);
         Assert.Empty(map.Clouds);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, map.NoWcsWarning);
         Assert.Contains("fara WCS", map.Definition);
@@ -147,7 +154,7 @@ public class OverlayWindowTests
             content.Arrange(new Rect(0, 0, 1400, 860));
             content.UpdateLayout();
             Assert.True(content.ActualWidth > 0);
-            map.ShowLabels = false;
+            map.ShowClouds = false;
             map.Clouds[0].IsVisible = false;
             content.UpdateLayout();
         });

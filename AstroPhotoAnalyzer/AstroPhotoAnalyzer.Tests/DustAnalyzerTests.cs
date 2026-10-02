@@ -73,6 +73,8 @@ public class DustAnalyzerTests
         PatchClass[] classes = DustAnalyzer.Classes(map, d);
         Assert.Contains(PatchClass.Dust, classes);
         Assert.Contains(PatchClass.Sky, classes);
+        // Without a catalogue the sky patches are the half at or under the median.
+        Assert.InRange(classes.Count(c => c == PatchClass.Sky), map.PatchCount / 3, map.PatchCount);
         // The dust patches are those at or under the 1 % level: the disc's patches, all tied at 0.05.
         Assert.InRange(classes.Count(c => c == PatchClass.Dust), 1, map.PatchCount / 4);
     }
@@ -110,8 +112,17 @@ public class DustAnalyzerTests
         DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, map), map, 9);
 
         PatchClass[] classes = DustAnalyzer.Classes(map, d);
-        Assert.Equal(map.CloudPatchCount, classes.Count(c => c == PatchClass.Dust));
-        Assert.Equal(map.PatchCount - map.CloudPatchCount, classes.Count(c => c == PatchClass.Sky));
+        // Dust: the cloud patches at or under the dust level (the fully dark ones, not the
+        // disc's edge); sky: the outside patches at or under the sky median. The rest: none.
+        int dust = classes.Count(c => c == PatchClass.Dust), sky = classes.Count(c => c == PatchClass.Sky);
+        Assert.InRange(dust, 1, map.CloudPatchCount - 1);
+        Assert.InRange(sky, 1, map.PatchCount - map.CloudPatchCount);
+        for (int i = 0; i < classes.Length; i++)
+        {
+            if (classes[i] == PatchClass.Dust) { Assert.True(map.InCloud[i]); Assert.True(d.PatchLstars[i] <= d.LstarDust); }
+            if (classes[i] == PatchClass.Sky) { Assert.False(map.InCloud[i]); Assert.True(d.PatchLstars[i] <= d.LstarSky); }
+        }
+        Assert.Contains(PatchClass.None, classes);
     }
 
     [Fact]

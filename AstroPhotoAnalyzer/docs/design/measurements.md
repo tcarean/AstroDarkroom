@@ -90,9 +90,12 @@ cannot move it. Two parts:
   otherwise `LstarDust` is the `DustAreaFraction` (1 %) percentile of all patches and
   `LstarSky` their median. Always `PctPatchesBelowPaperBlack` ("negru pur") and, with the
   catalogue, `CloudLstars`, the 10 % percentile of each cloud's own patches.
-- `Classes(map, asIs)` tells the window which patches entered which statistic: cloud
-  patches are `Dust` and the rest `Sky`; without the catalogue, the patches at or under the
-  1 % level are `Dust`, the rest `Sky`.
+- `Classes(map, asIs)` tells the window which patches *set* each figure, not which entered
+  the statistic: `Dust` are the patches of the dust statistic (the clouds', or all without a
+  catalogue) at or under the dust's L\*, `Sky` the patches of the sky statistic (outside the
+  clouds, or all) at or under the sky's median, the rest `None`. The first form (every cloud
+  patch as dust, every outside patch as sky) painted the clouds' discs as dust and the Milky
+  Way band as sky; the owner rejected it on 2026-10-02.
 
 ### B4 - `PrintStretchSimulator` - the lowest level that puts the dust on paper black
 
