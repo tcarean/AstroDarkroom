@@ -41,6 +41,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `THIRD-PARTY-NOTICES.md` and in "Despre" (R-019, R-122).
 - A second validation image, the plate-solved FITS, as case V-004.
 
+### Fixed
+
+- A NaN sample in a float FITS is clipped to 0 and counted like an out-of-range value (R-013);
+  it used to reach the raster and, with the simulation's lookup table, would have stopped the
+  run.
+
 ### Internal
 
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1`

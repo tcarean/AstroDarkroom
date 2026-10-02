@@ -224,6 +224,10 @@ Core: `Input/Wcs.cs`, `Input/Astrometry.cs`, `Input/DarkNebulaCatalogue.cs`, `In
   as the dust and the outside-disc median as the sky on the map (the Rift uncovered, the edges
   unpainted), and chose the relative classes of ADR 0026, with the dust's L\* at the 25 %
   percentile of the dust class; decision 3 of ADR 0025 and the map's layers are superseded.
+- The code review (`/code-review`, 2026-10-02) found a NaN crash in the lifted rasters, the empty
+  dust class, two typed numbers in window texts, a dead grid computation and a duplicated
+  reduction stride, all fixed on the branch; the simulation's cost (56 lifts with per-sample
+  Pow, 11 s to 23 s per 23 MP image) is left for a task of its own.
 - At the end of the task the freshly built `AstroPhotoAnalyzer.Wpf.Tests.dll` could not be read
   by any process on the owner's machine (no handle held, ACL intact; the machine runs three
   third-party antivirus products beside Defender), so the window tests and the gate were left

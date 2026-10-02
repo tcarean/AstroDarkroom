@@ -65,7 +65,10 @@ median of the sky patches, recomputed on every lift over the same patch sets. Th
 only when the band and the outside sky each hold at least `BandMinFraction` (10 %) of the
 patches; otherwise, as without a WCS, the frame rule of ADR 0025 stands (the darkest 1 % of the
 patches, the median), and the report names the reason (`fara WCS`, `fara banda galactica in
-cadru`, `cadrul e in intregime in banda`). The catalogue no longer defines the dust: it names the
+cadru`, `cadrul e in intregime in banda`). When the classes exist but no patch is dust (a smooth
+band), the frame rule stands too, named `nicio dala de praf sub nivelul local al benzii`, and the
+map keeps the classes: a percentile of an empty class would have made one darkest patch the dust
+(found at the code review of 2026-10-02). The catalogue no longer defines the dust: it names the
 clouds, gives each one with 9 or more patches its row, and draws the circles on the map. The map
 window shows the five classes as layers, each behind a check box, so the owner can judge them on
 other images; the clouds' circles and labels are one more layer, with their list.
