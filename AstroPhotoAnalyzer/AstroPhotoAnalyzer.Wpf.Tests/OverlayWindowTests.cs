@@ -46,6 +46,8 @@ public class OverlayWindowTests
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
         Assert.Empty(noWcs.CloudRows);
         Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
+        Assert.Equal($"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Thresholds.LowSeparationLstar:0} vopsit", noWcs.PreviewTooltip);
+        Assert.Contains($"grila {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", string.Join(" ", noWcs.Guide.Select(g => g.Text)));
         Assert.True(noWcs.OpenMap.CanExecute(null));
 
         var withWcs = new TonesTabViewModel();

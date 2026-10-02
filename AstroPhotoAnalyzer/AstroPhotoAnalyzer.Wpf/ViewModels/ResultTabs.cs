@@ -142,6 +142,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Panoul "cum se citeste tabul". Cifrele din el vin din Thresholds si ColorMath, nu sunt scrise de mana.</summary>
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
+        /// <summary>Tooltip-ul butonului Preview al unui rand: pragul vine din Thresholds, nu e tastat.</summary>
+        public string PreviewTooltip => $"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} vopsit";
+
         /// <summary>Deschide harta praf / cer (R-130). Fereastra o face cine asculta MapRequested; aici nu se deschide nimic.</summary>
         public System.Windows.Input.ICommand OpenMap { get; }
 
@@ -246,6 +249,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static IReadOnlyList<GuideParagraph> GuideParagraphs()
         {
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));
+            double[] grid = new Parameters().SimulationTargets;
             static string Black(PrintMedium m)
                 => $"{Fmt.F1(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
             return new[]
@@ -301,7 +305,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = "Simularea",
                     Text = $"raspunde la \"si daca mut fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate canalele, "
-                        + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(Thresholds.ExactTargetLo < 0.10 ? 0.10 : Thresholds.ExactTargetLo)}..0.20, apoi remasoara praful si cerul. "
+                        + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, apoi remasoara praful si cerul. "
                         + "Randul \"asa cum e\" sta printre tinte, la nivelul lui. Cea mai mica tinta marcata print-safe e cea recomandata: refa "
                         + "stretch-ul din datele liniare in Siril pana la fundalul acela. Sub tabel: tinta exacta la care praful atinge negrul, "
                         + $"si aceeasi tinta la Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine. "

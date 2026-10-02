@@ -93,7 +93,7 @@ internal static class WcsFixtures
     /// dark blob (0.05, radius 60 px) on the plane, a bright blob (0.6, radius 40 px) in the band,
     /// and one 32 px patch at 1.0 inside the bright blob, the peak. The WCS is on the source.
     /// </summary>
-    internal static Raster BandScene()
+    internal static Raster BandScene(bool withDust = true)
     {
         Wcs wcs = OnThePlane();
         var inBand = new bool[512 * 512];
@@ -108,9 +108,11 @@ internal static class WcsFixtures
             double dd = (x - DustX) * (x - DustX) + (y - DustY) * (y - DustY);
             double db = (x - BrightX) * (x - BrightX) + (y - BrightY) * (y - BrightY);
             if (x >= 384 && x < 416 && y >= 256 && y < 288) return 1.0f;
-            if (dd <= 60 * 60) return 0.05f;
+            if (withDust && dd <= 60 * 60) return 0.05f;
             if (db <= 40 * 40) return 0.6f;
-            return inBand[y * 512 + x] ? 0.35f : 0.25f;
+            // Without the dust blob the band sits at the sky's level too: a band that is only
+            // brighter than the sky has mixed patches on its edge that read as dust by a hair.
+            return inBand[y * 512 + x] && withDust ? 0.35f : 0.25f;
         });
         r.Source = new SourceInfo { Path = "banda.fit", Format = "FITS", Wcs = wcs };
         return r;

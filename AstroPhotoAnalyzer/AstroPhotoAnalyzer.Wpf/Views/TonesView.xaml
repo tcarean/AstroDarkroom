@@ -61,7 +61,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                   </Grid.ColumnDefinitions>
                   <TextBlock Grid.Column="0" Style="{StaticResource Mono}" Text="{Binding Text}" VerticalAlignment="Center" />
                   <Button Grid.Column="1" Content="Preview" Command="{Binding Preview}" Padding="8,1" Margin="12,0,0,0" FontSize="11"
-                          ToolTip="Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* 15 vopsit"
+                          ToolTip="{Binding DataContext.PreviewTooltip, RelativeSource={RelativeSource AncestorType=UserControl}}"
                           Visibility="{Binding Preview, Converter={StaticResource NotNullToVis}}" />
                 </Grid>
               </DataTemplate>

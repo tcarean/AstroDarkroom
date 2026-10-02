@@ -209,6 +209,19 @@ public class PrintStretchSimulatorTests
     }
 
     [Fact]
+    public void R044_ABandWithoutDustSaysSoAndStillListsItsClasses()
+    {
+        var s = Simulate(WcsFixtures.BandScene(withDust: false));
+
+        Assert.Equal(DustMethod.NoDust, s.Method);
+        Assert.Equal("nicio dala de praf sub nivelul local al benzii", s.MethodNote);
+        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
+        Assert.Equal("mediana dalelor", s.SkyDescription);
+        Assert.NotNull(s.ClassFractions);
+        Assert.StartsWith("praf 0.0 %", s.ClassFractions);
+    }
+
+    [Fact]
     public void R044_AFrameWhollyInsideTheBandFallsBackAndStillNamesItsClouds()
     {
         var s = Simulate(WcsFixtures.Ldn42Scene());

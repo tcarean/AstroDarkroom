@@ -85,6 +85,27 @@ public class DustAnalyzerTests
         Assert.Equal(map.Classes, DustAnalyzer.Classes(map, d));
     }
 
+    /// <summary>A smooth band with nothing under its local level: the classes exist for the map, the verdict takes the frame rule and says why.</summary>
+    [Fact]
+    public void R044_ABandWithoutDustFallsBackToTheFrameRuleAndKeepsItsClasses()
+    {
+        Raster r = WcsFixtures.BandScene(withDust: false);
+        DustMap map = Build(r, WcsFixtures.OnThePlane());
+        float[] L = Patches(r);
+
+        Assert.Equal(DustMethod.NoDust, map.Method);
+        Assert.True(map.HasClasses);
+        Assert.False(map.UsesClasses);
+        Assert.DoesNotContain(PatchClass.Dust, map.Classes);
+        Assert.Contains(PatchClass.Band, map.Classes);
+
+        DustStats d = DustAnalyzer.Measure(L, map, 9);
+        Assert.Equal(Stats.PercentileSorted(Stats.Sorted(L), Thresholds.DustAreaFraction * 100), d.LstarDust, 6);
+        Assert.Equal(Stats.Median(L), d.LstarSky, 6);
+        Assert.Equal(map.PatchCount, d.DustPatchCount);
+        Assert.Equal(map.Classes, DustAnalyzer.Classes(map, d));
+    }
+
     [Fact]
     public void R044_WithoutAWcsTheDustIsTheDarkestPercentAndTheSkyTheMedian()
     {

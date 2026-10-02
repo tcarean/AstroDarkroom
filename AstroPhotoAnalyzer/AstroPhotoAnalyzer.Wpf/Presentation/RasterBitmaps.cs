@@ -64,11 +64,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>Intreaga imagine, micsorata cu pasul care o aduce sub <paramref name="maxSide"/> px.</summary>
         internal static BitmapSource Whole(Raster r, int maxSide)
-            => Region(r, 0, 0, r.W, r.H, StrideFor(r, maxSide));
-
-        /// <summary>Pasul intreg care aduce latura mare a rasterului sub <paramref name="maxSide"/>.</summary>
-        internal static int StrideFor(Raster r, int maxSide)
-            => Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide));
+            => Region(r, 0, 0, r.W, r.H, Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide)));
 
         /// <summary>
         /// Un strat de culoare semitransparenta de <paramref name="w"/> x <paramref name="h"/>

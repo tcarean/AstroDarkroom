@@ -97,8 +97,9 @@ namespace AstroPhotoAnalyzer.Wpf
             SimulationResult s = r.Simulation;
             DustMap map = s.Map;
             Raster img = r.Raster;
-            int stride = RasterBitmaps.StrideFor(img, Thresholds.PreviewMaxSide);
-            BitmapSource image = RasterBitmaps.Whole(img, Thresholds.PreviewMaxSide);
+            // Acelasi pas ca PrintPreview, ca dalele sa cada pe pixelii imaginii reduse.
+            int stride = PrintPreview.ReductionStride(img);
+            BitmapSource image = RasterBitmaps.Region(img, 0, 0, img.W, img.H, stride);
             int w = image.PixelWidth, h = image.PixelHeight;
 
             PatchClass[] classes = DustAnalyzer.Classes(map, s.AsIsDust);
@@ -112,7 +113,7 @@ namespace AstroPhotoAnalyzer.Wpf
             var layers = new List<ClassLayer>();
             foreach (var (cls, name, colour) in Palette)
             {
-                if (!map.UsesClasses && cls != PatchClass.Dust && cls != PatchClass.Sky) continue;
+                if (!map.HasClasses && cls != PatchClass.Dust && cls != PatchClass.Sky) continue;
                 double pct = 100.0 * classes.Count(c => c == cls) / classes.Length;
                 layers.Add(new ClassLayer
                 {
@@ -158,14 +159,14 @@ namespace AstroPhotoAnalyzer.Wpf
         static string LegendOf(PatchClass cls, SimulationResult s)
         {
             SimulationRow asIs = s.AsIs;
-            if (!s.Map.UsesClasses)
+            if (!s.Map.HasClasses)
                 return cls == PatchClass.Dust
                     ? $" - la sau sub L*-ul prafului ({Fmt.F1(asIs.LstarDust)}, cele mai intunecate {Fmt.F0(Thresholds.DustAreaFraction * 100)} %)"
                     : $" - la sau sub mediana ({Fmt.F1(asIs.LstarSky)})";
             return cls switch
             {
-                PatchClass.Dust => $" - cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}",
-                PatchClass.Sky => $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}",
+                PatchClass.Dust => $" - cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat" + (s.Map.UsesClasses ? $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}" : "; niciuna in cadru"),
+                PatchClass.Sky => $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf" + (s.Map.UsesClasses ? $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}" : ""),
                 PatchClass.Band => $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei",
                 PatchClass.BrightCloud => $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local",
                 PatchClass.Peak => $" - cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale",

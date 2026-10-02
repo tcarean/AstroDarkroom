@@ -77,6 +77,19 @@ public class RasterOpsTests
         Assert.Throws<ArgumentException>(() => RasterOps.GammaFor(0, 0.19));
     }
 
+    /// <summary>A NaN sample (a raster built in memory; the readers never let one through) is lifted as 0, not as an impossible table index.</summary>
+    [Fact]
+    public void R013_GammaTreatsANaNSampleAsBlack()
+    {
+        Raster r = SyntheticRasters.Flat(4, 4, 0.2f);
+        r.Planes[1][5] = float.NaN;
+
+        Raster lifted = RasterOps.Gamma(r, 0.7);
+
+        Assert.Equal(0f, lifted.Planes[1][5]);
+        Assert.Equal((float)Math.Pow(0.2, 0.7), lifted.Planes[1][0], 5);
+    }
+
     [Fact]
     public void GammaLiftsEveryChannelAlikeSoNeutralStaysNeutral()
     {

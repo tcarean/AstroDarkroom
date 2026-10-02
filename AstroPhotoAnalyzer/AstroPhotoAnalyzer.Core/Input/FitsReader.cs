@@ -228,7 +228,11 @@ namespace AstroPhotoAnalyzer
                 for (int k = 0; k < want; k++, i++)
                 {
                     double v = (bzero + bscale * ReadSample(buf, k * bytesPer, bitpix)) / scale;
-                    if (v < 0) { v = 0; clipped++; }
+                    // Un NaN (Siril il lasa dupa unele operatii pe float) nu e nici sub 0, nici
+                    // peste 1: fara randul asta ar trece in raster si ar rupe orice tabela indexata
+                    // pe nivel (RasterOps.Gamma). Se trateaza ca valoare taiata, la 0.
+                    if (double.IsNaN(v)) { v = 0; clipped++; }
+                    else if (v < 0) { v = 0; clipped++; }
                     else if (v > 1) { v = 1; clipped++; }
                     int p = (int)(i / plane);
                     long idx = i % plane;

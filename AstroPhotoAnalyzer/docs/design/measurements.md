@@ -87,9 +87,10 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   is `Dust` when `DustDepthLstar` under the local level in the band or under the sky model
   anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the local level, `Peak`
   when over the `PeakFraction` percentile, `Band` otherwise in the band (or outside it when
-  `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Classes`, or `NoWcs`,
-  `NoBand` (the band under `BandMinFraction` of the patches) or `AllBand` (the outside sky under
-  it), when no classes are made.
+  `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Classes`; `NoDust` when the
+  classes exist but none is dust (the map keeps them, `HasClasses`, the verdict takes the frame
+  rule, `UsesClasses` false); or `NoWcs`, `NoBand` (the band under `BandMinFraction` of the
+  patches) or `AllBand` (the outside sky under it), when no classes are made.
 - `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample: with
   classes, `LstarDust` is the `DustClassFraction` (25 %) percentile of the dust patches and
   `LstarSky` the median of the sky patches (the darkest patch and the median of all when a class

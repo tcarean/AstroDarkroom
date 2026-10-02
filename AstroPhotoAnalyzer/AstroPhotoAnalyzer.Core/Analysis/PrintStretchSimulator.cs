@@ -157,11 +157,12 @@ namespace AstroPhotoAnalyzer
             DustMethod.NoWcs => "fara WCS",
             DustMethod.NoBand => "fara banda galactica in cadru",
             DustMethod.AllBand => "cadrul e in intregime in banda",
+            DustMethod.NoDust => "nicio dala de praf sub nivelul local al benzii",
             _ => null,
         };
 
         /// <summary>"praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; null fara clase.</summary>
-        internal string ClassFractions => Map.UsesClasses
+        internal string ClassFractions => Map.HasClasses
             ? $"praf {Fmt.Pct(100 * Map.FractionOf(PatchClass.Dust))}, cer {Fmt.Pct(100 * Map.FractionOf(PatchClass.Sky))}, banda {Fmt.Pct(100 * Map.FractionOf(PatchClass.Band))}, "
               + $"nori luminosi {Fmt.Pct(100 * Map.FractionOf(PatchClass.BrightCloud))}, varfuri {Fmt.Pct(100 * Map.FractionOf(PatchClass.Peak))}"
             : null;

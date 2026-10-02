@@ -83,7 +83,10 @@ namespace AstroPhotoAnalyzer
                 float[] src = r.Planes[p], dst = o.Planes[p];
                 for (int i = 0; i < src.Length; i++)
                 {
-                    double v = Math.Clamp(src[i], 0f, 1f) * 65535.0;
+                    // Un NaN ar da (int)NaN = int.MinValue, un indice imposibil; cititorii nu lasa
+                    // NaN sa treaca, dar un raster facut in memorie poate.
+                    float s = src[i];
+                    double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
                     int k = (int)v;
                     double f = v - k;
                     dst[i] = (float)(f == 0 ? lut[k] : lut[k] + f * (lut[k + 1] - lut[k]));

@@ -60,6 +60,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>WCS, dar cerul din afara benzii e sub BandMinFraction din cadru (deep-sky in plan): regula pe tot cadrul.</summary>
         AllBand,
+
+        /// <summary>Clasele s-au facut, dar nicio dala nu e praf (o banda neteda): clasele raman pe harta, praful si cerul iau regula pe tot cadrul.</summary>
+        NoDust,
     }
 
     /// <summary>Un nor catalogat cu cel putin o dala in cadru: care dale sunt ale lui, si unde e pe imagine.</summary>
@@ -113,6 +116,11 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<DustCloud> Clouds;
 
         internal int PatchCount => Cols * Rows;
+
+        /// <summary>Clasele exista (harta le arata); cu NoDust, verdictul nu le foloseste.</summary>
+        internal bool HasClasses => Method == DustMethod.Classes || Method == DustMethod.NoDust;
+
+        /// <summary>Praful si cerul vin din clase.</summary>
         internal bool UsesClasses => Method == DustMethod.Classes;
 
         /// <summary>Fractia dalelor din fiecare clasa, indexata cu PatchClass; goala fara clase.</summary>
@@ -192,9 +200,13 @@ namespace AstroPhotoAnalyzer
             return map;
         }
 
+        /// <summary>Grila dalelor pentru o imagine intreaga: subesantionul ei, apoi SubsampleGrid.</summary>
         static (int Cols, int Rows, int Side) Grid(int w, int h, int stride)
+            => SubsampleGrid((w + stride - 1) / stride, (h + stride - 1) / stride);
+
+        /// <summary>Grila dalelor pe un subesantion de subW x subH: dale intregi de PatchSamples, sau una singura pe un raster mai mic.</summary>
+        static (int Cols, int Rows, int Side) SubsampleGrid(int subW, int subH)
         {
-            int subW = (w + stride - 1) / stride, subH = (h + stride - 1) / stride;
             int side = Math.Max(1, Math.Min(PatchSamples, Math.Min(subW, subH)));
             return (subW / side, subH / side, side);
         }
@@ -262,7 +274,9 @@ namespace AstroPhotoAnalyzer
             }
             map.SkyModel = sky;
             map.BandLevel = level;
-            map.Method = DustMethod.Classes;
+            // Fara nicio dala de praf, percentila clasei n-ar avea pe ce sta: verdictul ia regula
+            // pe tot cadrul si o spune; clasele raman pentru harta.
+            map.Method = Array.IndexOf(cls, PatchClass.Dust) >= 0 ? DustMethod.Classes : DustMethod.NoDust;
         }
 
         /// <summary>
@@ -353,12 +367,9 @@ namespace AstroPhotoAnalyzer
         /// hartii, pe un raster DEJA subesantionat la pasul hartii (si, in simulare, deja
         /// ridicat). Grila e cea pe care o construieste Build pentru aceeasi imagine.
         /// </summary>
-        internal static float[] PatchLstars(Raster sub, int stride = Thresholds.TonalStride)
+        internal static float[] PatchLstars(Raster sub)
         {
-            var (cols, rows, side) = Grid(sub.W * stride, sub.H * stride, stride);
-            // Grid presupune latimea intreaga; pe un subesantion deja facut, dimensiunile lui sunt
-            // chiar subW/subH, deci se recalculeaza direct.
-            cols = sub.W / side; rows = sub.H / side;
+            var (cols, rows, side) = SubsampleGrid(sub.W, sub.H);
             var o = new float[cols * rows];
             bool color = sub.IsColor;
             float[] R = sub.Planes[0], G = color ? sub.Planes[1] : null, B = color ? sub.Planes[2] : null;
@@ -399,11 +410,9 @@ namespace AstroPhotoAnalyzer
                     if (map.Classes[i] == PatchClass.Dust) dustL.Add(patchLstars[i]);
                     else if (map.Classes[i] == PatchClass.Sky) skyL.Add(patchLstars[i]);
                 }
-                // Clasele exista doar cu banda si cer; praful poate lipsi (o banda fara nori):
-                // atunci praful e cea mai intunecata dala a benzii, nu o eroare.
-                dust = dustL.Count > 0
-                    ? Stats.PercentileSorted(Stats.Sorted(dustL.ToArray()), Thresholds.DustClassFraction * 100)
-                    : Stats.Min(patchLstars);
+                // UsesClasses garanteaza cel putin o dala de praf (altfel metoda e NoDust); cerul
+                // poate lipsi doar teoretic, cand toate dalele din afara benzii sunt praf.
+                dust = Stats.PercentileSorted(Stats.Sorted(dustL.ToArray()), Thresholds.DustClassFraction * 100);
                 sky = skyL.Count > 0 ? Stats.Median(skyL.ToArray()) : Stats.Median(patchLstars);
                 dustCount = dustL.Count;
             }
@@ -442,7 +451,7 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal static PatchClass[] Classes(DustMap map, DustStats asIs)
         {
-            if (map.UsesClasses) return (PatchClass[])map.Classes.Clone();
+            if (map.HasClasses) return (PatchClass[])map.Classes.Clone();
             var o = new PatchClass[map.PatchCount];
             for (int i = 0; i < o.Length; i++)
             {

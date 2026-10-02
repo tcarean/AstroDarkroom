@@ -51,13 +51,19 @@ namespace AstroPhotoAnalyzer
     internal static class PrintPreview
     {
         /// <summary>
+        /// Pasul intreg care aduce latura mare a imaginii sub PreviewMaxSide: acelasi pentru
+        /// preview si pentru harta, ca dalele hartii sa cada pe pixelii imaginii reduse.
+        /// </summary>
+        internal static int ReductionStride(Raster img)
+            => Math.Max(1, (int)Math.Ceiling(Math.Max(img.W, img.H) / (double)Thresholds.PreviewMaxSide));
+
+        /// <summary>
         /// Imaginea <paramref name="img"/> redusa sub Thresholds.PreviewMaxSide, ridicata cu
         /// <paramref name="gamma"/> (1 = asa cum e), si clasele pixelilor ei la Dmax-ul dat.
         /// </summary>
         internal static PrintPreviewResult Render(Raster img, double gamma, double dmax)
         {
-            int stride = Math.Max(1, (int)Math.Ceiling(Math.Max(img.W, img.H) / (double)Thresholds.PreviewMaxSide));
-            Raster small = RasterOps.Subsample(img, stride);
+            Raster small = RasterOps.Subsample(img, ReductionStride(img));
             Raster lifted = Math.Abs(gamma - 1) < 1e-12 ? small : RasterOps.Gamma(small, gamma);
             float[] L = RasterOps.LstarPlane(lifted, 1);
             double black = ColorMath.PaperBlackLstar(dmax);
