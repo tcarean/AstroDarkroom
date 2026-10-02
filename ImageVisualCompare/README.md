@@ -124,6 +124,52 @@ dotnet build ImageVisualCompare.sln -c Release
 dotnet test ImageVisualCompare.sln
 ```
 
+Gate-ul complet, cel pe care îl rulează hook-ul `pre-commit`, e `scripts/verify.ps1` (vezi mai
+jos).
+
+### Dezvoltare: gate-ul, documentația și Claude Code
+
+Din 2026-10-02 proiectul urmează procesul din `ClaudeCodeStarterKit` (folderul de lângă acesta
+în repo-ul `photo`; ghidul cu motivația fiecărei piese e `GHID.md` acolo), la fel ca FlatCheck
+și AstroPhotoAnalyzer. Pe scurt, ce e impus mecanic:
+
+- **`scripts/verify.ps1` e gate-ul**: scripturile identice cu ale kit-ului, manifestul datelor
+  de test, antetele ADR-urilor, notele de design (fiecare în index, cu fișierele ei numite în
+  propoziția `Covers:`), restore, `dotnet format` (doar verifică), build cu avertismentele ca
+  erori, toate testele în afară de cele de validare. Cam 20 de secunde. Îl rulează hook-ul git
+  `pre-commit` de la rădăcina repo-ului la orice commit care atinge proiectul, hook-ul
+  `pre-merge-commit` la orice merge fără conflicte, hook-ul Claude Code înainte de orice
+  `git commit` al modelului, și `scripts/release.ps1`. Fără el verde nu intră niciun commit.
+
+  ```bash
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+  ```
+
+- **Mesajul de commit** e o singură linie, în engleză, de cel mult 100 de caractere.
+- **`scripts/`, `.claude/skills/`, `.claude/agents/` și `.claude/rules/kit/` sunt ale
+  kit-ului**, byte cu byte, și nu se editează aici; ce e specific proiectului ca valori e în
+  `kit.json`, pașii pe care îi adaugă la skill-uri sunt în `docs/skills.md`.
+- **Comportamentul e în `docs/requirements.md`**, cu ID-uri `R-NNN` purtate în numele testelor;
+  `RepoInvariantTests` cere ca fiecare cerință `implemented` să aibă un test cu ID-ul ei și
+  invers. Vechiul `CLAUDE.md` a fost împărțit pe 2026-10-02 în cerințe, decizii și note de
+  design; nimic nu s-a pierdut, s-a mutat.
+- **Deciziile sunt în `docs/decisions/`**, un ADR per decizie, cu alternativele respinse; cele
+  luate înainte de 2026-10-02 (cele zece invariante din vechiul `CLAUDE.md`, printre altele) au
+  fost scrise retroactiv.
+- **Cifrele pe o pereche reală** (exporturi de 23 MP ale aceleiași imagini, care nu sunt în
+  repo) sunt în `docs/validation.json`, citit de `ValidationTests` (`--filter
+  "Category=Validation"`, nu în gate); copiile stau în `tests/testdata/large/`, ignorat de git,
+  iar `tests/testdata/manifest.json` le ține hash-urile. `docs/validation.md` spune de unde vine
+  fiecare cifră, lângă măsurătorile de memorie din 2026-09-08.
+- **Explicațiile din spatele codului** sunt în `docs/design/`, cu indexul în
+  `docs/design/README.md`; `CLAUDE.md` ține doar regulile proiectului, cele de proces sunt ale
+  kit-ului, în `.claude/rules/kit/process.md`.
+- **Versiunea** o crește omul, în `Directory.Build.props` (mutată acolo din csproj pe
+  2026-10-02). Un release se face pe `main`, cu `scripts/release.ps1 -Version X.Y.Z`, care
+  rulează gate-ul, închide secțiunea din CHANGELOG și publică aplicația în `artifacts/X.Y.Z/`.
+  Commit-ul și tag-ul rămân ai omului.
+- În Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`.
+
 ## Ce nu face (încă)
 
 - Fără mod diferență (`|A−B|` amplificat). Ar cere păstrarea masterelor pe 16 biți, adică

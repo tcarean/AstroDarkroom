@@ -9,16 +9,27 @@ ImageVisualCompare was built on 2026-09-08 and 2026-09-09 with Claude Code, in t
 before the kit at `../ClaudeCodeStarterKit` existed. Its documentation was one 247-line
 `CLAUDE.md`: a file map ("Structure"), ten invariants that each record a decision and the defect
 that taught it, the sections "No imaging dependency", "Memory, measured", "Testing",
-"Versioning" and "Licensing", and a section "Committing" that told the assistant not to commit
-("Make the changes, run the tests, and hand over a commit message for the user to use") and to
-write messages with "a short lowercase subject line, then a body that explains *why*". The user
-documentation was, and stays, the Romanian `README.md`. There was no `docs/` folder, no gate
-before a commit (the root pre-commit hook skips a project without `scripts/verify.ps1`), no
-requirement IDs, no decision records, no changelog, and no test read a measured figure.
-FlatCheck adopted the kit on 2026-09-25 (its ADR 0001) and AstroPhotoAnalyzer on 2026-10-02 (its
-ADR 0001). On 2026-10-02 the owner approved the same for this project
+"Versioning" and "Licensing", and a section "Committing", quoted whole at the end of this
+section. The user documentation was, and stays, the Romanian `README.md`. There was no `docs/`
+folder, no gate before a commit (the root pre-commit hook skips a project without
+`scripts/verify.ps1`), no requirement IDs, no decision records, no changelog, and no test read a
+measured figure. FlatCheck adopted the kit on 2026-09-25 (its ADR 0001) and AstroPhotoAnalyzer on
+2026-10-02 (its ADR 0001). On 2026-10-02 the owner approved the same for this project
 (`docs/plans/2026-10-02-adopt-the-starter-kit.md`): "Aprob planul, trei commit-uri, mută
 versiunea în Directory.Build.props".
+
+The section "Committing" of the former `CLAUDE.md`, which this decision supersedes, said:
+
+> **Do not commit.** Make the changes, run the tests, and hand over a commit message for the
+> user to use. They commit themselves.
+>
+> This also means: don't `git add`, don't stage, don't amend. Leave the working tree as it is
+> so they can review the diff before deciding.
+>
+> A good commit message here follows the existing log: a short lowercase subject line, then a
+> body that explains *why* rather than restating the diff — what the change is for, what was
+> deliberately left alone and why, and anything a future reader would otherwise have to
+> rediscover. No `Co-Authored-By` trailer.
 
 ## Decision
 

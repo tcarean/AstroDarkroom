@@ -12,9 +12,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in
   `Directory.Packages.props` with lock files, and `<Version>` and `<Copyright>` moved from the
-  Wpf csproj to `Directory.Build.props`, where the kit's release script reads them. The
-  comments of three files turned English. No behaviour changed; one `dotnet format` pass over 4
-  files.
+  Wpf csproj to `Directory.Build.props`, where the kit's release script reads them. `CLAUDE.md`
+  was split into `docs/requirements.md` (45 rows with IDs), `docs/decisions/` (26 ADRs, 19 of
+  them retroactive) and `docs/design/` (6 notes, moved unchanged); `CLAUDE.md` holds only the
+  project's rules. The comments of three files turned English. No behaviour changed; one
+  `dotnet format` pass over 4 files.
 
 ## [1.1.1] - 2026-09-09
 

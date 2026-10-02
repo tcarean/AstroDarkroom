@@ -1,247 +1,141 @@
 # ImageVisualCompare
 
-WPF before/after slider for two identically sized images: image A left of a draggable
-vertical line, image B right of it, both at the same zoom and pan. Built for comparing two
-variants of the same astro processing.
+WPF before/after slider for two variants of the same astro processing: image A left of a
+draggable vertical line, image B right of it, both at the same zoom and pan, with the RGB of
+the pixel under the cursor read from both. Built to see a difference of one or two levels in a
+dark field, where the eye cannot. One WPF application over a pure core library, .NET 9,
+Windows, x64, **no NuGet package** outside the test project: decoding is WIC, the codec WPF
+uses anyway (ADR 0008). Everything on screen is dark, whatever the system theme (ADR 0018).
 
-.NET 9, Windows, x64, **zero NuGet dependencies** outside the test project. See
-"No imaging dependency" below before adding one.
+## Commands
 
-User documentation lives in `README.md`. Do not restate it here or in comments.
+- Gate (what pre-commit, pre-merge-commit and the Claude commit hook run, about 20 s):
+  `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
+- Fast loop, no tests: `... scripts/verify.ps1 -SkipTests`
+- Build: `dotnet build ImageVisualCompare.sln -c Release --nologo` (Windows only: WPF)
+- Test: `dotnet test ImageVisualCompare.sln -c Release --nologo --filter "Category!=Validation"`
+- One test: `dotnet test ImageVisualCompare.sln --filter "FullyQualifiedName~R020"`
+- Format: `dotnet format ImageVisualCompare.sln` (check only: `--verify-no-changes`)
+- Run: `dotnet run --project src/ImageVisualCompare.Wpf -- [A.png B.png]`; without the two
+  paths the file dialogs ask (R-001, R-002)
+- Figures on the real pair (seconds per case, not in the gate): `/validate`, or
+  `dotnet test ImageVisualCompare.sln -c Release --filter "Category=Validation"`; the files are
+  git-ignored copies in `tests/testdata/large/` (ADR 0005)
+- Test data hashes after an intentional change: `scripts/check-testdata.ps1 -Update`
+- Design notes a branch touched (the index and Covers paths are a gate step):
+  `scripts/check-design.ps1 -Since main`
+- Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/Viewport.cs"]`
+- Release (verify, version in `Directory.Build.props`, CHANGELOG, publish; no commit, no tag):
+  `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
+- Take the kit's shared folders and settings keys after a change there: `scripts/sync.ps1`
+  (`-Check` only compares)
 
-## Structure
+## Layout
 
-- `src/ImageVisualCompare.Core/` — `net9.0`, no UI framework reference at all. Everything
-  here is pure and unit tested.
-  - `Viewport.cs` — the single source of truth for zoom and pan. Screen space is **physical
-    pixels**, content space is image pixels. Holds `Scale`, `OffsetX/Y`, the clamping rules,
-    and anchored zoom.
-  - `DividerModel.cs` — the split line as a fraction of viewport width, plus hit testing.
-  - `ZoomLadder.cs` — the discrete stops the `+`/`−` buttons step through. The wheel zooms
-    continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
-    therefore search rather than index.
-  - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on.
-  - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
-    larger extent on each axis, plus whether that meant padding and the question to put to
-    the user if it did.
-  - `PointD.cs`, `Geometry.cs` — `PointD`, `SizeD`, `RectD` and `AspectFit`, declared here
-    so Core needs no `WindowsBase` reference.
-  - `RenderPlan.cs` — `RenderPlanner.For(viewport, deviceScale)` turns viewport state into
-    the translation, scale and resampling mode the view puts on its transform. This is where
-    the physical-pixel to device-independent-pixel conversion lives.
-  - `DividerLayout.cs` — the record `DividerModel.Layout` returns: line position, the clip
-    region for image A, and the handle rectangle.
-  - `MinimapGeometry.cs` — the viewport rectangle on the thumbnail, and the content point a
-    click maps to.
-  - `ScrollBarState.cs` — range, thumb proportion, value and visibility per axis.
+- `src/ImageVisualCompare.Core/` - `net9.0`, no UI framework reference: zoom and pan
+  (`Viewport.cs`, `ZoomLadder.cs`), the divider (`DividerModel.cs`), the canvas of a pair
+  (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), and the layout
+  records the controls assign without arithmetic of their own (`RenderPlan.cs`,
+  `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`).
+  All of it unit tested.
+- `src/ImageVisualCompare.Wpf/` - `net9.0-windows`, the application: `Imaging/` (the decoder
+  seam and WIC behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
+  surface, the minimap), `MainWindow`, `MessageDialog`, `Interop/DarkTitleBar.cs`,
+  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`.
+- `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
+  on the real WIC codecs (fixtures generated at run time by `TempImages`),
+  `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,
+  `VersionTests`. `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
+- `Directory.Build.props` - `<Version>` and `<Copyright>`, the single place for both (ADR
+  0004), and the strictness every project builds with.
+- `kit.json` - what the kit's scripts, skills and agent need to know about this project.
+  `docs/skills.md` - this project's additions to the kit's skills. `scripts/`,
+  `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` and the process keys of
+  `.claude/settings.json` are the kit's, the same here (ADR 0002; the kit's ADRs 0017, 0018,
+  0028).
+- `docs/requirements.md` - the behaviour, with IDs. `docs/decisions/` - ADRs. `docs/validation.md`
+  + `.json` - figures on the real pair. `docs/design/` - the explanations, per area, read on
+  demand. `docs/plans/` - approved plans. `README.md` - the user documentation, Romanian.
+- The process rules are the kit's, in `.claude/rules/kit/process.md`; this project's own are in
+  this file. The reasons behind the process are in `GHID.md` in the kit folder
+  `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
+- This folder lives inside the `photo` monorepo (`E:\Photografie\Code`); the git root is the
+  parent. Sample images never enter the repository: the root `.gitignore` covers `*.tiff` but
+  not `*.tif` or `*.png`, so keep them out by hand.
 
-  The last four exist so that the controls do no arithmetic of their own. A control reads a
-  layout record and assigns properties; if a number looks wrong on screen, the test for it
-  is in Core.
-- `src/ImageVisualCompare.Wpf/` — `net9.0-windows`, the application.
-  - `Imaging/IImageLoader.cs` — the decoder seam. Typed on `BitmapSource` deliberately: any
-    replacement decoder still has to produce one for the `Image` control, so a generic
-    parameter would buy nothing. That is also why it lives here and not in Core.
-  - `Imaging/WicImageLoader.cs` — decodes via WIC. `Probe` reads the header only;
-    `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
-    words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
-    anything it does not recognise.
-  - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before
-    decoding either, so a pair that needs a decision costs nothing until it is made. A
-    mismatch is put to the caller through `confirmPadding`; with no delegate it is refused,
-    which is what anything headless wants. Decodes sequentially, never in parallel, to keep
-    the peak down. Turns every expected file failure into a message rather than a crash.
-  - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
-    process memory readout.
-  - `Services/FileDialogService.cs` — the two open dialogs and the file filter. These are
-    the Windows common dialogs and follow the *system* theme, which is the one place the
-    palette is not ours to choose.
-  - `Interop/DarkTitleBar.cs` — the DWM opt-in that makes a window's caption dark. Every
-    `Window` in the application calls `Apply` in its constructor.
-  - `Controls/CompareView.xaml(.cs)` — the comparison surface. All input handling, the
-    shared transform, the clip, the overlay, the scrollbars.
-  - `Controls/MinimapView.xaml(.cs)` — thumbnail plus viewport rectangle, and click-to-jump.
-  - `MainWindow.xaml(.cs)` — shell: toolbar, status bar, open/error/retry flow, pixel readout.
-  - `MessageDialog.xaml(.cs)` — the application's own message box: `Show` to say something,
-    `Confirm` to ask yes or no.
-  - `App.xaml.cs` — command line pair, handed over once via `TakeStartupSelection`.
-  - `Theme.xaml` — the dark palette and every control style.
-- `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
-  tests drive the real WIC codecs. References both other projects.
+## Rules
 
-## Invariants
+The process rules every project made from the kit follows are in `.claude/rules/kit/process.md`,
+loaded with this file (the kit's ADR 0028). These are ImageVisualCompare's own; one that extends
+or varies a kit rule names it.
 
-These are the things that will bite a future change. Each one has already cost time.
+- **No imaging dependency** (extends the kit's rule "Packages"). Core and the application
+  reference no NuGet package; WIC decodes, and `IImageLoader` is the one seam a replacement
+  decoder would fill. SkiaSharp, ImageSharp and Magick.NET were compared and rejected; read
+  `docs/design/imaging.md` before proposing one again (ADR 0008).
+- **Core has no UI.** `ImageVisualCompare.Core` references no UI framework; its own `PointD`,
+  `SizeD` and `RectD` exist so it never needs `WindowsBase`. The controls do no arithmetic: a
+  number on screen comes from a Core record and has its test there (ADR 0009).
+- **One transform object, not two.** The same `TransformGroup` instance on both images and both
+  backdrops; the synchronisation is structural (ADR 0010).
+- **Physical pixels below, device-independent pixels above.** `Viewport` counts physical
+  pixels; the conversion happens only in `CompareView`: on the way in, wherever it hands
+  `Viewport` a position or a size, and in `Sync` on the way out. The divider stays in DIPs
+  (ADR 0011).
+- **The image layers are `Canvas`, sized in pixels, clipped on the layer, over one backdrop.**
+  Never a `Grid`, never the natural size, never a clip on the `Image`, never a layer without
+  the shared opaque backdrop (ADR 0012, ADR 0013).
+- **Padding is layout, never pixels.** A mismatched pair is compared on the larger canvas,
+  both anchored top-left, the backdrop fills the gap, and the user is asked before any decode
+  (ADR 0014).
+- **Formats are reported, never branched on.** Everything is Bgra32 after the load; the status
+  bar says what the file was (ADR 0022).
+- **Never set `InvariantGlobalization`.** WPF's font cache dies on it during text layout, and no
+  unit test can catch it (ADR 0017).
+- **No `MessageBox`; every `Window` calls `DarkTitleBar.Apply` in its constructor.** The
+  application's own `MessageDialog` says and asks; the file dialogs are the one thing that
+  follows the system theme (ADR 0018).
+- **Run the application when the WPF layer changes.** Both real defects lived in the untested
+  layer and were found on a screenshot; a green suite says nothing about `Controls/`,
+  `MainWindow` or `Directory.Build.props` (ADR 0026).
+- **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
+  `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
+  is a decision (ADR 0024).
+- **User documentation lives in `README.md`, and only there.** Code comments explain why the
+  code is the way it is; the README explains how to use the tool, in Romanian; `docs/` explains
+  what it does and how, for whoever maintains it (ADR 0025).
 
-**One transform object, not two.** `CompareView` assigns the *same* `TransformGroup`
-instance to both images and to the backdrop. The synchronisation the comparison depends on is
-structural: there is no state to keep in step and no way to update one image and forget the
-other. Do not replace this with two transforms configured alike.
+## Workflow
 
-**Physical pixels below, device-independent pixels above.** `Viewport` works entirely in
-physical screen pixels. WPF lays out in device-independent pixels. The conversion happens in
-exactly two places — `CompareView`'s input handlers (multiply by `_deviceScale`) and `Sync`
-(divide the render scale by it). This is what makes 100% mean one image pixel per physical
-screen pixel on a scaled display. The divider is the exception and stays in DIPs throughout,
-because it is a fraction of the window and never touches image coordinates.
+The kit's workflow in `.claude/rules/kit/process.md` applies. ImageVisualCompare adds:
 
-**The image layers are `Canvas`, not `Grid`.** A `Grid` clamps a child's desired size to the
-cell, so a 5794 px wide image gets laid out at the width of the window and `Stretch` squashes
-the bitmap into it. The symptom is a tiny image in the corner at a fraction of the reported
-zoom. A `Canvas` measures with infinite space and the transform alone decides what is seen.
+- `/wrap-up` checks `README.md`, the user documentation, and launches the application when a
+  file under `src/ImageVisualCompare.Wpf/` changed (the rule "Run the application").
+- A release is tagged `imagevisualcompare-vX.Y.Z`, the name `scripts/release.ps1` prints; it
+  publishes the application self-contained for win-x64 into `artifacts/X.Y.Z/`.
+- The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.
+  A worktree has no copy of the real pair; a task that runs `/validate` copies the three files
+  into the worktree's `tests/testdata/large/` first (ADR 0005).
 
-**The clip goes on the layer, never on the image.** A clip set on the `Image` is measured in
-image coordinates and travels with the pan; on the layer it stays put on screen, which is
-what a before/after slider needs.
+## Read before touching
 
-**Both layers need the same opaque backdrop.** A is drawn over B, so a file with an alpha
-channel would blend into B on the left while B blends into whatever is behind it on the right
-— two halves composited over different backgrounds, which is exactly the artefact this tool
-exists to rule out. `BeforeBackdrop` and `AfterBackdrop` are the same brush, the same size and
-the same transform for that reason. Verified with a 50%-alpha red over opaque blue: the left
-half reads 128,0,0 (A over the backdrop), not 128,0,127 (A over B).
+`docs/design/README.md` maps every area to its note. The ones most likely to catch a careless
+edit:
 
-**Padding is layout, never pixels.** When the two images differ in size they are compared on
-a canvas as large as the pair needs, and the smaller one simply does not reach the far edge —
-the backdrop is what fills the gap. Nothing is copied into a larger buffer — at 84 MB an
-image, that copy would be the most expensive thing here. Both are anchored top-left, and that is what
-keeps a content coordinate equal to a pixel coordinate in *both* images: the pixel readout
-needs no offsets and prints `—` past the end of an image on its own bounds check. Centring
-would break that, and `PadPlan` is where the offsets would have to go.
+- Anything in `Controls/`: `docs/design/rendering.md` and ADR 0010 to ADR 0013, ADR 0019 (the
+  shared transform, the two pixel spaces, `Canvas`, the clip, the backdrop, the floating bars).
+- Anything in `Imaging/`, or a package: `docs/design/imaging.md` and ADR 0008, ADR 0014 to
+  ADR 0016 (probe first, decode sequentially, release through the finaliser pass).
+- `Directory.Build.props`, a new `Window`: `docs/design/shell.md` and ADR 0017, ADR 0018.
+- `Version.cs`, `LicenseHeaderTests`: `docs/design/versioning-and-licence.md`, ADR 0023, ADR
+  0024.
+- A file you have not opened before: `docs/design/code-map.md`.
 
-**Never set `InvariantGlobalization`.** WPF's font cache constructs `CultureInfo("en")` while
-computing typography availability; in invariant mode that throws `CultureNotFoundException`
-and takes the process down during text layout. It was set in `Directory.Build.props` for two
-phases and only crashed once a Consolas run appeared in the status bar. No unit test catches
-this — the app has to be launched.
+## Style
 
-**Images are sized explicitly in pixels.** `image.Width = pair.Before.Info.PixelWidth` — its
-own size, not the shared canvas, and not the natural size. WPF derives natural size from the file's DPI metadata, so a 72 dpi export would lay out
-larger than its own pixel count and quietly break the 1:1 zoom level.
-
-**No `MessageBox`, and every window opts into a dark caption.** `MessageBox.Show` opens a
-Win32 window that cannot be themed at all — white background, black text — and on a tool for
-judging dark images that is a bright rectangle over the picture being compared, not a
-cosmetic complaint. `MessageDialog` replaces it. The caption is a separate problem: it belongs
-to the desktop window manager, WPF cannot reach it and does not follow the system theme
-either, so each window asks DWM for it through `DarkTitleBar.Apply` — in the constructor, so
-the attribute is set before the first frame and the caption is never white even briefly. On
-Windows 11 the caption is set to the exact chrome colour; Windows 10 has no such attribute and
-gets the generic dark caption, which is close but not `#1B1F26`.
-
-**Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
-they appear, which changes the fit scale, which can change whether they are needed.
-
-## No imaging dependency
-
-WIC was chosen over SkiaSharp, ImageSharp and Magick.NET after comparing them, and the
-reasoning still holds: it is the most complete PNG implementation on Windows, it costs
-nothing at build time, and it is the only one that reaches the `Image` control without an
-intermediate copy — which matters at 84 MB per image. It also gives access to the true source
-format, which the status bar reports.
-
-If a decoder ever has to change, `IImageLoader` is the seam. Replacing it is one class.
-
-## Memory, measured
-
-Measured on a 5794×3637 16-bit pair, ~108 MB each on disk:
-
-| | private | working set |
-|---|---|---|
-| headless load, both images | 173 MB | 199 MB |
-| after release | 12 MB | 38 MB |
-| loaded and rendered, at fit | 283 MB | 290 MB |
-| plateau after visiting several zoom levels | ~570 MB | ~300 MB |
-
-The plateau is bounded, not a leak: five zoom cycles left it flat and it drifts down when
-idle. The extra over the headless figure is WPF's render thread keeping scaled intermediates
-for the Fant resampling path.
-
-Two things follow. WIC **streams** the Rgb48 to Bgra32 conversion rather than materialising a
-126 MB intermediate, so there is no transient spike above the steady state. And the managed
-heap stays near zero because WIC pixels are unmanaged — which is why `ReleaseImageBuffers`
-forces a finaliser pass and does *not* bother with large object heap compaction.
-
-## Testing
-
-142 cases. `dotnet test ImageVisualCompare.sln`.
-
-Covered: everything in Core, and the imaging layer. `WicImageLoaderTests` generates fixtures
-at run time in six pixel formats plus TIFF via `TempImages`, so the real codecs are exercised
-without binary files in the repository. `ImagePairLoaderTests` covers valid, mismatched,
-missing and corrupt inputs, progress reporting, and — with a recording fake — that a
-mismatched pair never reaches a decode, whether it was refused outright or declined at the
-prompt.
-
-What remains untested is now genuinely untestable without UI automation: event wiring, mouse
-capture, property assignment, and the interop that darkens a caption. Every number those controls put on screen comes from Core
-and has a test. `MainWindow`, `MessageDialog`, `DarkTitleBar`,
-`FileDialogService` and `MemoryHousekeeping` have none.
-
-Be aware of what that has meant in practice: both real defects found in this project lived in
-the untested layer, and neither would have been caught by any reasonable unit test. One was
-WPF layout behaviour, the other was build configuration killing text rendering. Both were
-found by launching the app and looking at a screenshot. When changing the WPF layer, run it —
-a green test suite says nothing about that code.
-
-## Versioning
-
-The version is shown in the window title, in the status bar next to the copyright, and in
-the About dialog. There is no `--version` flag; a GUI that already displays it permanently
-does not need one.
-
-The single source of truth is `<Version>` in `src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj`.
-`Version.cs` does **not** hardcode it: `VersionInfo.Value` reads the assembly's
-`AssemblyInformationalVersion`, which MSBuild derives from `<Version>`, and trims any
-`+sourcerevision` suffix. Don't reintroduce a literal there.
-
-**The user bumps the version manually**, per feature or fix, choosing the increment
-themselves. **Never bump it on your own initiative** — not as part of a change, not "while
-you're in there". If a change seems to warrant a bump, say so and let them decide.
-
-Bumping breaks nothing: `VersionTests` asserts the format and the csproj-to-assembly
-plumbing, never a particular number. What does fail, and should: removing `<Version>` or
-`<Copyright>` from the csproj, or breaking the way `VersionInfo` reads them back.
-
-## Licensing
-
-The tool is **GPLv3-or-later**. The full text is in `LICENSE` at the project root (the
-verbatim FSF `gpl-3.0.txt` — don't reword it, and don't reflow it).
-
-Four things follow, and all four are pinned by tests:
-
-- **Every source file starts with the notice**, above the file's own header comment: the
-  SPDX line, the copyright, and all three paragraphs of the standard GNU notice
-  (permission, no-warranty, where-to-get-a-copy), with a `//` prefix. New files get it too
-  — it is the first thing to write, not an afterthought. `LicenseHeaderTests` walks all
-  three projects and fails on any file missing it, which is the only thing keeping the
-  convention alive as files get added. The SPDX line is there so licence scanners can read
-  the file without parsing English. `.xaml` files do not carry it, matching FlatCheck's
-  `.cs`-only convention.
-- **The copyright is on screen for the whole run**, in the status bar, docked right so it
-  is never what gets clipped when the window narrows.
-- **The About dialog carries the warranty disclaimer** and points at `LICENSE` — GPLv3
-  §5(d), which wants a program that displays legal notices to display that one too. It
-  lives behind a button rather than in the status bar on purpose: five lines of legal text
-  across the bottom of a comparison window would crowd out the pixel readout. The text is
-  `VersionInfo.About`, a property rather than a string built inside the click handler, so
-  `VersionTests` can assert its content without opening a window.
-- **One source of truth for the copyright string**: `<Copyright>` in the app csproj, read
-  back through `AssemblyCopyrightAttribute` by `VersionInfo.Copyright`. The literal in
-  `ReadCopyright` is only a fallback.
-
-The year and the author are the user's call, exactly like the version. Don't roll the year
-forward on your own initiative.
-
-## Committing
-
-**Do not commit.** Make the changes, run the tests, and hand over a commit message for the
-user to use. They commit themselves.
-
-This also means: don't `git add`, don't stage, don't amend. Leave the working tree as it is
-so they can review the diff before deciding.
-
-A good commit message here follows the existing log: a short lowercase subject line, then a
-body that explains *why* rather than restating the diff — what the change is for, what was
-deliberately left alone and why, and anything a future reader would otherwise have to
-rediscover. No `Co-Authored-By` trailer.
+- `.editorconfig` holds whitespace rules and `IDE0005`; `dotnet format` enforces them, and so
+  does the build, which writes the XML documentation file for that reason (CS1591 and CS1573
+  muted). Warnings are errors, `EnforceCodeStyleInBuild` and `Nullable` are on, in
+  `Directory.Build.props` (ADR 0003). The kit's code-style rules (braces, `var`) are not
+  enabled: 38 findings on 2026-10-02; a style pass is a task of its own.
+- Fix, do not suppress, unless the suppression carries a comment with the reason.

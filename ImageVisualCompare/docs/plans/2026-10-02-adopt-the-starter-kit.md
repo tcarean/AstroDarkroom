@@ -804,7 +804,85 @@ Commit 2.
 
 ## What deviated
 
-(filled at wrap-up)
+Implemented on 2026-10-02 in one session, on `claude/Adopt-the-starter-kit-process`, in three
+commits, one per layer, each with the gate green.
+
+- **Ten invariants, not eight.** The former `CLAUDE.md` lists ten under "Invariants"; this plan
+  said eight in its Goal, its measurements, decision 1 and Appendix D.11. The mapping tables
+  already placed all ten (seven in `rendering.md`, one in `imaging.md`, two in `shell.md`), so
+  only the count was wrong; ADR 0001 and the README say ten.
+- **The build writes the documentation file.** With `EnforceCodeStyleInBuild` on, IDE0005 at
+  warning stopped the build on `EnableGenerateDocumentationFile`: Roslyn checks unused usings at
+  build only when the XML documentation file is generated. `Directory.Build.props` now sets
+  `GenerateDocumentationFile` and mutes CS1591, as the kit does, and CS1573, which the
+  documentation file raised six times in `ImagePairLoader.cs`, where a comment documents the one
+  parameter that needs it. ADR 0003 records it.
+- **The format pass touched 4 files**, not the measured "about six" usings: one space in
+  `AssemblyInfo.cs` and three unused usings. The measurement had counted each diagnostic twice.
+  The CRLF files of the main checkout did not matter: a fresh worktree is LF on disk.
+- **ADR 0003 has the analyzer count the plan lacked**: 48 warnings at `AnalysisLevel`
+  latest-recommended, 37 of them CA1707 for the underscores in test names.
+- **`release.ps1 -Version 1.1.2 -WhatIf` refuses a linked worktree before it reads the
+  version**, so it proved only that `kit.json` parses. Its two regexes, run directly, read
+  `<Version>` 1.1.1 from exactly one place in `Directory.Build.props` and the floor 1.1.1 from
+  `CHANGELOG.md`.
+- **ADRs 0001 to 0007 were written by this session, 0008 to 0026 by three subagents** from the
+  table, the sources and the commit each decision came from (found with `git log -S`), then
+  reviewed. ADR 0001 quotes the superseded section "Committing" whole, since it is that
+  section's destination.
+- **The CHANGELOG line grew with each commit**, so each commit's tree describes itself; the
+  final text is Appendix D.5 with the counts filled in.
+- **The design notes' Covers sentences name only what each note describes** (the kit's ADR
+  0032), which differs from the table in section 2.3: `rendering.md` leaves out
+  `MinimapView.xaml.cs`, `DividerLayout.cs`, `MinimapGeometry.cs` and `ScrollBarState.cs`, which
+  its invariants do not describe; `imaging.md` leaves out `ImagePairLoader.cs` and adds
+  `CompareView.xaml.cs` and `MainWindow.xaml.cs` for the padding paragraph; `shell.md` leaves out
+  `MainWindow.xaml`, `MessageDialog.xaml`, `FileDialogService.cs` and `App.xaml.cs`;
+  `versioning-and-licence.md` adds `MainWindow.xaml` for the status bar; `code-map.md` names the
+  two code folders and the test csproj, since the moved map has no line for `Version.cs`,
+  `AssemblyInfo.cs` or the test files. The pointers to decisions are "See ADR NNNN." sentences
+  after the paragraphs; the four sentences that named the csproj as the home of the version or
+  the copyright carry "(`Directory.Build.props` since 2026-10-02, ADR 0004)". Two phrases of
+  `rendering.md` that the code had outgrown before today carry a pointer the same way: "the
+  backdrop", singular since 861f5c1 added the second (ADR 0010), and the "exactly two places" of
+  the conversion, which `UpdateViewportSize` and `ZoomAtCentre` also do (ADR 0011). A script cut
+  the notes out of the original `CLAUDE.md` and confirmed every other line verbatim.
+- **`CLAUDE.md`'s rule "Physical pixels below, device-independent pixels above" says the
+  conversion happens only in `CompareView`**, on the way in and in `Sync`, instead of Appendix
+  A's "in exactly two places": the subagent that wrote ADR 0011 found it in two more places of
+  the same control.
+- **The README's development section sits at the end of "Compilare"**, right below the new
+  sentence that points to it: placed just before "Licență", its `###` heading would have fallen
+  under "Ce nu face (încă)".
+- **`CLAUDE.md` says the gate takes about 20 s**, as measured, not "under a minute", and its
+  style section names the documentation file. It is 140 lines.
+- **Findings, left for tasks of their own** (the ADRs state what the code does, and say so):
+  - the summary of `Viewport.cs` says screen space is device-independent pixels; the code and
+    ADR 0011 say physical;
+  - the README and the comment in `MainWindow.ShowPair` say two pairs are never in memory at
+    once; while a new pair decodes, the current one is still held and on screen (R-008,
+    ADR 0016);
+  - the comment in `ImagePairLoader.LoadAsync` calls the transient decode buffer the largest
+    allocation, while the 2026-09-08 measurement found that WIC streams the conversion with no
+    transient spike (ADR 0015);
+  - the comment in `DarkTitleBar.ApplyTo` says the colour call "simply fails" on Windows 10; the
+    code makes it only from build 22000 (ADR 0018);
+  - the summary of `MemorySnapshot.PrivateBytes` says "private working set"; the value is
+    `PrivateMemorySize64`, private bytes (R-052);
+  - the README says the arrow keys move the divider by 1 or 10 px; they move it by 1 or 10 DIPs,
+    the same only at 100 % display scaling (R-031, ADR 0011); its padded status bar example has
+    one space around each `·`, the code two (R-050); it says nearest-neighbour starts "peste
+    400%", the code at 400 % itself (R-025, ADR 0020);
+  - About says the full licence "is in the LICENSE file next to this program", and nothing puts
+    it there: no csproj item copies `LICENSE` to the build or the publish output. This one is a
+    defect against GPLv3 §5(d), not wording, and the most useful of the tasks to follow;
+  - the former `CLAUDE.md` said all four licensing points "are pinned by tests"; the copyright
+    docked right has no test, and `LicenseHeaderTests` checks four markers of `LICENSE`, not its
+    exact text (ADR 0024);
+  - the summary of `TempImages` says it writes "every format the loader claims to handle"; the
+    tests use six PNG formats and one TIFF, and `Classify`'s fall-through for an unknown format
+    has no test (ADR 0022); `ColorChannels.GrayAlpha` has a description and a test, and
+    `Classify` never returns it.
 
 ---
 

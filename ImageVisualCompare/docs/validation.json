@@ -1,0 +1,23 @@
+{
+  "$comment": "Figures measured on real pairs of images, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0005) reads this file; docs/validation.md explains each case and records every change. One kind, pair: both files are probed with WicImageLoader and compared with ImagePairValidator.Inspect, the pair is loaded with ImagePairLoader (the padding question answered yes), then dropped and released with MemoryHousekeeping.ReleaseImageBuffers. before and after are manifest names under tests/testdata/large/. expected lists the figures the case guards, by the names ValidationTests prints; tolerance applies to every numeric field that is not an integer (the memory figures, in MB); integers, booleans and strings are compared exactly; decode.seconds is printed and never guarded; null means unmeasured. Change a figure here only after re-measuring and recording why in validation.md.",
+  "cases": [
+    {
+      "id": "V-001",
+      "kind": "pair",
+      "before": "de_printat.png",
+      "after": "de_printat_PRINT_preview_16bit.tif",
+      "tolerance": 60,
+      "measuredOn": null,
+      "expected": null
+    },
+    {
+      "id": "V-002",
+      "kind": "pair",
+      "before": "de_printat.png",
+      "after": "de_printat_50x35_TIFF8.tif",
+      "tolerance": 60,
+      "measuredOn": null,
+      "expected": null
+    }
+  ]
+}

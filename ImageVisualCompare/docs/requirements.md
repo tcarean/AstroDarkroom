@@ -1,0 +1,116 @@
+# Requirements
+
+The source of truth for behaviour. Code follows this file, not the reverse. A behaviour change is
+first an edit here (status `draft`), then a test, then code (status `implemented`), and the design
+note of its area changes in the same task (the kit's rules "Requirements first" and "Design
+notes"). Until 2026-10-02 the behaviour was described only by the code, its comments and the user
+documentation; that day `CLAUDE.md` was split into this file, `docs/decisions/` and `docs/design/`
+(ADR 0001).
+
+Rules for entries:
+
+- IDs are `R-NNN`, assigned once, never reused. A dropped requirement keeps its ID with status
+  `dropped`. Gaps in the numbering are deliberate: each block of ten is one area.
+- Status is one of `draft`, `accepted`, `implemented`, `dropped`. `implemented` means a test
+  named `R###_...` exists in `tests/ImageVisualCompare.Tests` (`RepoInvariantTests` checks it both
+  ways). `accepted` means the behaviour is agreed and in the code, and no test carries the ID yet.
+- Describe observable behaviour, with one concrete example that includes numbers. No adjectives.
+- Error behaviour is a requirement too.
+- Constants are quoted by their name in the code and their value on 2026-10-02; the code holds the
+  value, this file the meaning.
+- The examples use the README's controls and status bar, and the real pairs of
+  `docs/validation.md`: `de_printat.png` and `de_printat_PRINT_preview_16bit.tif` (both
+  5938 × 3888, 16-bit RGB), and `de_printat_50x35_TIFF8.tif` (5554 × 3888, 8-bit RGB).
+
+The user documentation of the same behaviour, in Romanian, is `README.md` (ADR 0025); the
+explanations behind each row are in `docs/design/` and `docs/decisions/`.
+
+## Opening a pair
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-001 | accepted | Without paths on the command line, the application asks for the two images with two Windows open dialogs in turn, titled `Select image A  —  shown left of the divider` and `Select image B  —  shown right of the divider`; the filter's entries are `Images (*.png;*.tif;*.tiff)` (the default), `PNG (*.png)`, `TIFF (*.tif;*.tiff)` and `All files (*.*)`. The second dialog opens in the folder of the first file; a later first dialog opens in the folder of the image A chosen last, whether or not that pair loaded. Cancelling either dialog cancels the pair: with no pair loaded the application closes, with one loaded it stays as it was. Example: picking `E:\Photografie\Claude\de_printat.png` as A opens the B dialog in `E:\Photografie\Claude`. |
+| R-002 | accepted | Two or more arguments whose first two name existing files skip the dialogs: the first is image A, shown left of the divider, the second image B. The pair from the command line is used once; `Ctrl+O` and `Open…` go through the dialogs afterwards. Fewer than two arguments, or a path that does not exist, fall through to the dialogs, not to an error. Example: `ImageVisualCompare.Wpf.exe "A.png" "B.png"`. |
+| R-003 | accepted | Both headers are read (`IImageLoader.Probe`) before any pixel is decoded. When the pixel dimensions differ, the user is asked first, in the dialog titled `Images have different sizes`, with the text of `ImagePairValidator.DescribeMismatch`: `The two images have different dimensions.`, `A: <file name> — <W> × <H>`, `B: <file name> — <W> × <H>`, a blank line, `Both can be padded with black to <W> × <H>,`, `anchored top-left, and compared on that canvas.`, `The image files themselves are not modified.`, a blank line, `Continue?`. `Yes` loads the pair (R-004); `No` returns to the dialogs with no message and nothing decoded. With no one to ask (`confirmPadding` null) the same text comes back as the error and nothing is decoded. A pair of equal dimensions is never asked about. Example: `de_printat.png` (5938 × 3888) against `de_printat_50x35_TIFF8.tif` (5554 × 3888) asks to pad both to `5938 × 3888`. |
+| R-004 | accepted | The canvas a pair is compared on is the larger extent on each axis (`ImagePairValidator.Inspect`, `PadPlan`), and `RequiresPadding` is true when the two dimensions differ. Both images are drawn at their own pixel size from the top-left corner of the canvas; where one does not reach, the black backdrop shows; neither image is copied, moved or resized. Example: 5938 × 3888 against 5554 × 3888 gives a 5938 × 3888 canvas with `RequiresPadding` true, and image B ends 384 pixels before the right edge. |
+| R-005 | accepted | A file that is missing, locked, truncated, in a format no codec reads, or too large for the machine (`IOException`, `UnauthorizedAccessException`, `NotSupportedException`, `FileFormatException`, `ArgumentException`, `OutOfMemoryException`) gives the message `Could not read <file name>.` and, on the next line, the exception's message, shown in the dialog titled `Cannot compare these files`; then the dialogs open again. It never crashes the application; a cancellation is not a failure and is passed on. Example: a corrupt `broken.png` gives `Could not read broken.png.` followed by the codec's message. |
+| R-006 | accepted | While a pair loads, an overlay over the whole window shows `Opening…`, then `Decoding <file name>…` for each image, then `Almost there…`, over a progress bar fed by `ImageLoadProgress`: 0 with A's file name, 0.5 with B's, 1 with no name. The two images are decoded one after the other, never at the same time. The overlay is hidden while the question of R-003 is on screen. |
+| R-007 | accepted | A loaded pair (`ImagePair`) holds both images, the canvas (`PixelWidth`, `PixelHeight`) and `DisplayBytes`, the sum of the two Bgra32 buffers. Example: `de_printat.png` with `de_printat_PRINT_preview_16bit.tif` holds 184 695 552 display bytes (2 × 92 347 776) on a 5938 × 3888 canvas. |
+| R-008 | accepted | Once a new pair has loaded, the current one is dropped (`CompareView.Clear`) and its buffers released (`MemoryHousekeeping.ReleaseImageBuffers`) before the new one is shown; while the new pair decodes, the current one is still on screen. The new pair is shown at fit (R-021) with the divider at the centre, and the comparison surface takes the keyboard focus. The window title becomes `<A>  vs  <B>  —  Image Visual Compare <version>` and the toolbar shows `<A>   vs   <B>`, with the file names. Example: `de_printat.png  vs  de_printat_PRINT_preview_16bit.tif  —  Image Visual Compare 1.1.1`. |
+
+## Formats
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-010 | accepted | PNG and TIFF files in any pixel format WIC decodes are accepted: 8 or 16 bits per channel, gray, RGB, RGBA, indexed. Every image is converted to Bgra32 and frozen, so it can be used from any thread; the file is not locked once loaded; loading off the calling thread gives the same result. Example: a 16-bit RGB PNG exported from Siril loads as a Bgra32 bitmap of the same pixel size. |
+| R-011 | accepted | The format reported is the file's own, read with `PreservePixelFormat`, as `WicImageLoader.Classify` maps it and `ImageInfo.FormatDescription` words it: `Rgb48` is `16-bit RGB`, `Bgr24` and `Rgb24` are `8-bit RGB`, `Gray16` is `16-bit gray`, `Gray8` `8-bit gray`, `Indexed8` `8-bit indexed`, `Rgba64` `16-bit RGBA`, `Bgra32` `8-bit RGBA`; a format the table does not know is reported by its bits per pixel, `<n>-bit`, and loaded anyway. `Probe`, which reads only the header, reports exactly what a full load does. Example: a Siril "32-bit" export is a PNG with 16 bits per channel (48 bpp), reported `16-bit RGB`. |
+| R-012 | accepted | Bit depth and channel layout may differ between A and B; only the pixel dimensions are compared. Example: a 16-bit RGB PNG against an 8-bit RGB TIFF of the same size loads without a question. |
+| R-013 | accepted | `ImageInfo.DisplayBytes` is width × height × 4, the Bgra32 footprint; `Dimensions` is `<W> × <H>` with the multiplication sign; `FileName` is the name without its folder. Example: `de_printat.png` gives 92 347 776 display bytes and `5938 × 3888`. |
+
+## Zoom and pan
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-020 | accepted | The zoom floor is `Viewport.MinScale`: the fit scale, at which the whole image is visible, or 1 (100 %) when the image is smaller than the viewport, so a small image can still be seen at its own resolution. The ceiling is `Viewport.MaxScale`, 16 (1600 %). A zoom outside the two is clamped. Example: a 5938 × 3888 image in a 2969 × 1944 physical-pixel viewport cannot go below 50 %; a 1000 × 800 image in the same viewport cannot go below 100 %. |
+| R-021 | accepted | `Fit` (the button, `Ctrl+0`, and every new pair) zooms to the fit scale, clamped to the floor and the ceiling, and centres the image on the axis with room to spare, with equal empty margins; an axis the image does not fill is always centred. Example: a 5938 × 3888 image in a 2969 × 2000 viewport fits at 50 % with 28 empty physical pixels above and below. |
+| R-022 | accepted | `100%` (the button and `Ctrl+1`) is one image pixel per physical screen pixel, anchored at the viewport centre. The viewport counts in physical pixels, and the render scale is `Viewport.Scale / deviceScale` with the translation `-OffsetX`, `-OffsetY` (`RenderPlanner.For`). A device scale of zero or less is rejected with `ArgumentOutOfRangeException`. Example: on a display scaled to 150 %, an image at 100 % is drawn at a render scale of 0.667, one physical pixel per image pixel. |
+| R-023 | accepted | The mouse wheel zooms by `WheelZoomFactor` (1.15) per wheel event, in or out, anchored at the cursor: the content point under the pointer stays under it. `Ctrl`+wheel does the same. `Shift`+wheel pans horizontally by `WheelPanPixels` (140 physical pixels) per wheel event. Example: three notches in from 100 % give 152 % (1.15³ = 1.521). |
+| R-024 | accepted | `+` and `−` (the keys `OemPlus`, `Add`, `OemMinus`, `Subtract`, and the toolbar buttons) step to the next or the previous stop of `ZoomLadder.Steps`: 0.02, 0.03, 0.05, 0.08, 0.125, 0.17, 0.25, 0.33, 0.5, 0.67, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, anchored at the viewport centre and clamped like any zoom (R-020). A scale between two stops steps to its neighbour (stops within 1e-6 of the scale do not count); past either end the step stays at the end. Example: at 152 % after a wheel zoom, `+` goes to 200 % and `−` to 150 %. |
+| R-025 | accepted | From `RenderPlanner.PixelatedThreshold` (4.0, that is 400 %) up, both images are resampled nearest-neighbour, so each image pixel shows as a square; below it they are resampled with `HighQuality`. Example: at 399 % the image is smooth, at 400 % its pixels are squares. |
+| R-026 | accepted | Dragging with the left button outside the divider pans the images with the pointer; the offset is clamped so an image larger than the viewport cannot be dragged past its edges (`Viewport.MaxOffsetX`, `MaxOffsetY`), and an axis the image fits stays centred. The scrollbars and the minimap set the offset through the same clamp; `CentreOn` puts a content point in the middle of the view. Example: at 100 % a 5938 px wide image in a 2969 px wide viewport scrolls horizontally from offset 0 to 2969. |
+| R-027 | accepted | When the window is resized, the content point at the centre of the view stays at the centre, and the scale is clamped again, so growing the window raises the fit scale and pulls a zoom that sat at the old floor up to the new one. |
+| R-028 | accepted | The image pixel under the cursor (`Viewport.ContentPointInsideAt`) is the content point at the pointer's physical position, or null on the empty margin around the image, at the far edge (x equal to the width has no pixel) and when nothing is loaded. |
+| R-029 | accepted | With nothing loaded, zoom and pan do nothing; a negative content or viewport size is rejected with `ArgumentOutOfRangeException`; converting a screen point to content and back returns the same point. |
+
+## The divider
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-030 | accepted | The divider is a vertical line at a fraction of the viewport width (`DividerModel.Position`: 0 at the left edge, 1 at the right), clamped to 0..1; it starts at 0.5 and is reset to 0.5 for every new pair. It belongs to the window: zooming and panning move the images under it and leave it where it is. Image A is shown left of it, image B right of it. Example: dragging the line to x = 500 on a 2000 DIP wide surface sets the position to 0.25; after the window shrinks to 1000 DIPs the line is at x = 250. |
+| R-031 | accepted | With the comparison surface focused, `←` and `→` move the divider by 1 device-independent pixel, `Shift+←` and `Shift+→` by 10. |
+| R-032 | accepted | A left-button press starts a divider drag, not a pan, when it lands within `DividerModel.LineGrabTolerance` (8 DIPs) of the line anywhere along its height, or inside the handle, `HandleWidth` (26) by `HandleHeight` (56) DIPs, centred on the line and on the height. The cursor over the line or the handle is `SizeWE`; while panning it is `SizeAll`. The handle the surface draws is the rectangle the hit test accepts. Example: on a 2000 × 1000 DIP surface with the line at x = 1000, a press at (1012, 500) grabs the handle, a press at (1012, 100) pans. |
+| R-033 | accepted | Image A is clipped to the region from the left edge to the line (`DividerLayout.ClipRect`: from 0 to `LineX`, the full height); the line is 2 DIPs wide; the handle is centred on the line and on the height. At positions 0 and 1 the layout stays well formed: an empty clip and a full one. |
+
+## Minimap and scrollbars
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-040 | accepted | The minimap at the bottom left of the surface shows a thumbnail of the shared canvas, not of image A alone, fitted with its aspect ratio into `MaxThumbnailWidth` (190) by `MaxThumbnailHeight` (150) DIPs (`AspectFit.Fit`; a zero or negative size gives an empty box). The thumbnail bitmap is rendered once per pair from image A, at most 380 by 300 pixels, over black where A does not reach. Example: a 5938 × 3888 canvas gives a minimap of 190 × 124.4 DIPs. |
+| R-041 | accepted | On the thumbnail, the viewport rectangle is the visible region scaled to the thumbnail, clamped to the thumbnail where the view overhangs the image, never smaller than 2 pixels a side, and hidden when the whole image is on screen; with nothing loaded nothing is drawn. |
+| R-042 | accepted | A click in the minimap, or a drag across it, centres the view on the content point under the pointer. Example: a click at the centre of the thumbnail centres the view on the middle of the image. |
+| R-043 | accepted | A scrollbar appears only on an axis the image overflows; its range is 0 to the largest offset, its thumb the visible extent, its value the current offset clamped into the range, and moving it pans the view. The bars float over the image, so their appearing never changes the viewport size. Example: at fit no bar is shown; at 100 % on a 5938 × 3888 image in a 2969 × 1944 viewport both are, each with a range of 0 to 2969 and 0 to 1944. |
+
+## Status bar and readouts
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-050 | accepted | The status bar names the pair: `<W> × <H>  ·  A <format>  ·  B <format>` when the two have the same size, and `<canvas> padded  ·  A <W> × <H>  ·  B <W> × <H>  ·  A <format>  ·  B <format>` when the pair was padded. Example: `5938 × 3888  ·  A 16-bit RGB  ·  B 16-bit RGB`; `5938 × 3888 padded  ·  A 5938 × 3888  ·  B 5554 × 3888  ·  A 16-bit RGB  ·  B 8-bit RGB`. |
+| R-051 | accepted | With the pointer on the image, the status bar shows the pixel's coordinate as integers, `<x>, <y>`, and its value in both images, `A <R> <G> <B>` and `B <R> <G> <B>`, each channel right-aligned in three characters, read from the Bgra32 bitmap; where one image does not reach (past its own width or height), its value is `—`. With the pointer off the image the three items are empty. The readout changes only when the pointer reaches another whole pixel. Example: `2617, 1839`, `A  35  35  36`, `B  35  35  35`. |
+| R-052 | accepted | The status bar shows the memory in use as `managed <N> MB, process <N> MB` (`MemorySnapshot.Describe`: the managed heap and the process's private bytes, in whole megabytes of 1 048 576 bytes), refreshed every 2 s while a pair is shown. Example: `managed 2 MB, process 560 MB`. |
+| R-053 | accepted | The zoom is shown in percent with no decimals, in the toolbar between `−` and `+` and in a badge at the top right of the surface. Example: `100%`, `152%`. |
+| R-054 | accepted | The status bar's hint, `wheel to zoom · drag the line to move it · drag to pan · ←/→ nudge · Ctrl+O open`, takes the width left over and is trimmed with an ellipsis when the window narrows; the version and the copyright are docked right and are never trimmed. |
+
+## Window and chrome
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-060 | accepted | The window starts maximised and is titled `Image Visual Compare <version>` until a pair is loaded (R-008). Its toolbar shows the names of the pair on the left and, from left to right on the right, `Navigation`, `−`, the zoom readout, `+`, `Fit`, `100%`, `Open…` and `About`. The comparison surface takes the keyboard focus after a pair is loaded and on any click on it. Example: `Image Visual Compare 1.1.1` before the first pair. |
+| R-061 | accepted | Every window is dark whatever the system theme (the chrome is `#1B1F26`), and so is its caption: each window asks the desktop window manager for a dark caption in its constructor, before its first frame (`DarkTitleBar.Apply`: attribute 20 from Windows build 19041, 19 from build 17763; from build 22000, Windows 11, the caption and the border take the chrome colour exactly, COLORREF `0x00261F1B`; earlier builds get the generic dark caption, and before build 17763 nothing changes). The Windows open-file dialogs are the one exception and follow the system theme. |
+| R-062 | accepted | Messages and questions use the application's own dark dialog, never the system message box: `MessageDialog.Show` has one button, `OK`; `MessageDialog.Confirm` has `Yes` and `No`, and `Escape` or closing the dialog answers no. |
+| R-063 | accepted | The keyboard shortcuts of the comparison surface work while it has the focus: `+` and `−` (R-024), `Ctrl+0` (R-021), `Ctrl+1` (R-022), `←`, `→`, `Shift+←`, `Shift+→` (R-031). `Ctrl+O` works anywhere in the window and, like `Open…`, opens another pair (R-001, R-008). `About` shows the dialog titled `About Image Visual Compare <version>` with the text of R-072. |
+
+## Version and licence
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-070 | accepted | The version is the `<Version>` of `Directory.Build.props` (1.1.1 on 2026-10-02), read from the application assembly's `AssemblyInformationalVersion` with any `+<source revision>` suffix cut, always three parts; `VersionInfo.Banner` is `Image Visual Compare <version>`, shown in the window title, in the status bar and in About. There is no `--version` flag. Example: `Image Visual Compare 1.1.1`. |
+| R-071 | accepted | The copyright is the `<Copyright>` of `Directory.Build.props`, `Copyright (C) 2026 Tudor Carean` (with that literal as the fallback when the attribute is missing), shown for the whole run at the right of the status bar after the banner. Example: `Image Visual Compare 1.1.1 · Copyright (C) 2026 Tudor Carean`. |
+| R-072 | accepted | The About text (`VersionInfo.About`) is nine lines: the banner, the copyright, a blank line, `This program comes with ABSOLUTELY NO WARRANTY.`, `This is free software, and you are welcome to redistribute it under the terms`, `of the GNU General Public License, version 3 or later.`, a blank line, `The full licence text is in the LICENSE file next to this program, and at`, `https://www.gnu.org/licenses/gpl-3.0.html` (GPLv3 §5(d)). |
+| R-073 | accepted | The program is GPL-3.0-or-later: `LICENSE` is the verbatim GPL v3 text, `<PackageLicenseExpression>` in `Directory.Build.props` is `GPL-3.0-or-later`, and every `.cs` file of the three projects, generated files under `bin/` and `obj/` aside, starts with the sixteen-line notice: the SPDX line, the copyright and the three paragraphs of the GNU notice, each line prefixed with `//`. `.xaml` files carry no notice. |
+
+## Memory
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-080 | accepted | A loaded pair costs about its two Bgra32 buffers in private memory, and releasing it gives them back: on the real pairs, `docs/validation.json` V-001 and V-002 record the private memory a load adds and what the release leaves, within 60 MB (ADR 0005). On the 5794 × 3637 16-bit pair measured on 2026-09-08 a headless load of both images held 173 MB private, 12 MB after the release; loaded and rendered at fit, 283 MB; after several zoom levels a bounded plateau near 570 MB private and 300 MB working set. Decoding two files of about 108 MB takes about 2.7 s. |
+| R-081 | accepted | `MemoryHousekeeping.ReleaseImageBuffers` is a forced, blocking full collection, a wait for the pending finalisers, and a second forced collection; it does not compact the large object heap. It runs after the outgoing pair is dropped and before the new one is shown (R-008). |
