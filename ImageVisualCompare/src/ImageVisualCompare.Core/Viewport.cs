@@ -22,8 +22,10 @@ namespace ImageVisualCompare.Core;
 /// drawn through this one transform, so they cannot drift apart: the synchronisation the
 /// comparison depends on is structural, not something the UI has to keep up to date.
 ///
-/// Screen space is measured in device-independent pixels from the top-left corner of the
-/// viewport. Content space is measured in image pixels.
+/// Screen space is measured in physical screen pixels from the top-left corner of the
+/// viewport; the view converts from WPF's device-independent pixels before it calls in, which
+/// is what lets a scale of 1 mean one image pixel per screen pixel on a scaled display.
+/// Content space is measured in image pixels.
 /// </summary>
 public sealed class Viewport
 {

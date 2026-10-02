@@ -73,7 +73,9 @@ Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la înce
 | deschide altă pereche | `Ctrl+O`, sau butonul `Open…` |
 
 Scurtăturile de tastatură merg când suprafața de comparație are focus; îl primește singură
-după încărcare, și îl recapătă la orice click pe imagine.
+după încărcare, și îl recapătă la orice click pe imagine. Pasul săgeților e în pixeli
+logici, ca tot ce ține de linie: la scalarea Windows de 100% e un pixel de ecran, la 150%
+linia se mută cu 1,5 pixeli de ecran, respectiv 15 cu `Shift`.
 
 **Zoom-ul e limitat în jos la încadrarea completă** — sub asta ai doar o miniatură pierdută
 pe un fundal gol. Excepție: o imagine mai mică decât fereastra poate coborî până la 100%,
@@ -107,8 +109,10 @@ toolbar arată nota completă de licență.
 O pereche de 21 MP pe 16 biți ocupă ~170 MB după decodare (fiecare imagine devine Bgra32,
 adică 84 MB, indiferent cât avea pe disc). Cu randarea WPF pornită, procesul se așază pe un
 platou de ~570 MB memorie privată și ~300 MB rezidenți. Platoul e mărginit, nu o scurgere —
-plimbarea prin nivele de zoom nu îl mai crește. La deschiderea unei perechi noi, cea veche e
-eliberată explicit înainte ca noua să se așeze, deci nu stau două perechi în memorie simultan.
+plimbarea prin nivele de zoom nu îl mai crește. La deschiderea unei perechi noi, cea veche
+rămâne pe ecran cât timp se decodează noua, deci în timpul încărcării stau amândouă în
+memorie; imediat ce noua e gata, cea veche e eliberată explicit, înainte ca noua să fie
+afișată, și de acolo rămâne una singură.
 
 Decodarea a două fișiere de ~108 MB durează ~2,7 secunde, cu bară de progres.
 

@@ -54,6 +54,8 @@ unscaled display and wrong everywhere else".
 - The summary of `src/ImageVisualCompare.Core/Viewport.cs` says "Screen space is measured in
   device-independent pixels", against the code and `CLAUDE.md`, and has said so since a6e5f10.
   The code's meaning is the decision; the comment is stale, left for a task of its own.
+  (Corrected 2026-10-02: the summary now says physical screen pixels and that the view
+  converts before it calls in; `docs/plans/2026-10-02-copy-the-licence-next-to-the-program-and-fix-stale-texts.md`.)
 - Guards: `RenderPlanTests` for the render side (the render scale divided by the device scale,
   and 100 % on a scaled display landing on one physical pixel); the input side none by test, and
   the application has to be launched and looked at on a scaled display (ADR 0026).
