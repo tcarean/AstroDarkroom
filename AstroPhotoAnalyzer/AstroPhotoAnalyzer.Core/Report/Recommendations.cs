@@ -137,7 +137,7 @@ namespace AstroPhotoAnalyzer
             string fix;
             if (s.Recommended != null)
             {
-                string exact = s.ExactTarget.HasValue ? $"; exact pe negru la {Fmt.Level(s.ExactTarget.Value)}" : "";
+                string exact = s.ExactTarget.HasValue ? $"; exact pe negru la {ReportWriter.TargetText(s.ExactTarget)}" : "";
                 fix = $" Re-stretch din liniar la fundal {Fmt.Level(s.Recommended.Target)} (simulat: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).";
             }
             else

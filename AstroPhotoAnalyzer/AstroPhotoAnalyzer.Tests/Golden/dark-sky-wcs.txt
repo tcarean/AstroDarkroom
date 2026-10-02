@@ -73,7 +73,7 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   LDN 142 (B279)                 12    7.2   0.104
   LDN 69 (B77, B269)             16    7.3   0.103
   LDN 1793                        9    7.6   0.10
-  LDN 42 (B78)                   12   38.5   0.05
+  LDN 42 (B78)                   12   38.5   <= 0.05
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.2 MB

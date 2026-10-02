@@ -131,7 +131,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 return new CloudLayer
                 {
                     Name = c.Name,
-                    Caption = $"{c.Name}  L* {Fmt.F1(c.Lstar)}  tinta {(c.ExactTarget.HasValue ? Fmt.Level(c.ExactTarget.Value) : "> " + Fmt.Level(Thresholds.ExactTargetHi))}  ({Fmt.Int(c.Patches)} dale)",
+                    Caption = $"{c.Name}  L* {Fmt.F1(c.Lstar)}  tinta {ReportWriter.TargetText(c.ExactTarget)}  ({Fmt.Int(c.Patches)} dale)",
                     CentreX = cloud.CentreX / stride,
                     CentreY = cloud.CentreY / stride,
                     Radius = cloud.RadiusPx / stride,

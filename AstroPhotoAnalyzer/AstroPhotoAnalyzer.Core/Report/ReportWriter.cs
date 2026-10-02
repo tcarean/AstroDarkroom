@@ -140,19 +140,29 @@ namespace AstroPhotoAnalyzer
             => $"praful = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; cerul = {s.SkyDescription}; "
              + $"negru pur = dale de {Thresholds.DustPatchPx} px sub negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})";
 
+        /// <summary>
+        /// O tinta exacta de pe scara (R-043): valoarea ei, sau o margine la capetele scarii -
+        /// "<= 0.05" cand chiar prima treapta pune deja praful (sau norul) pe negru, deci tinta
+        /// adevarata e undeva mai jos, unde scara nu ajunge; "> 0.60" cand nici ultima nu-l
+        /// pune. Scris "0.05" simplu, primul caz parea o tinta masurata.
+        /// </summary>
+        internal static string TargetText(double? t)
+            => !t.HasValue ? "> " + Fmt.Level(Thresholds.ExactTargetHi)
+             : t.Value <= Thresholds.ExactTargetLo + 1e-9 ? "<= " + Fmt.Level(Thresholds.ExactTargetLo)
+             : Fmt.Level(t.Value);
+
         /// <summary>Tinta exacta, cele doua la Dmax vecin, si Dmax-ul de la care trece asa cum e.</summary>
         internal static string ExactLine(SimulationResult s)
         {
             string pass = double.IsNaN(s.DmaxToPassAsIs) ? "nu trece asa cum e la niciun Dmax" : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
-            static string T(double? t) => t.HasValue ? Fmt.Level(t.Value) : "peste " + Fmt.Level(Thresholds.ExactTargetHi);
             double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
-            return $"tinta exacta a prafului pe negru: {T(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({T(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {T(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}";
+            return $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}";
         }
 
         internal const string CloudHeader = "nor                          dale   L*     tinta";
 
         internal static string CloudLine(CloudRow c)
-            => $"{c.Name,-28} {Fmt.Int(c.Patches),4}   {Fmt.F1(c.Lstar),4}   {(c.ExactTarget.HasValue ? Fmt.Level(c.ExactTarget.Value) : "> " + Fmt.Level(Thresholds.ExactTargetHi))}";
+            => $"{c.Name,-28} {Fmt.Int(c.Patches),4}   {Fmt.F1(c.Lstar),4}   {TargetText(c.ExactTarget)}";
 
         static void AppendixExport(AnalysisResult r, TextWriter w)
         {
