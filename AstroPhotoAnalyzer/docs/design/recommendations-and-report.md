@@ -22,9 +22,9 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
 | Format | plateau known and not visible | Ok | no visible banding |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
-| Background | `PrintSafe` | Ok | background print-safe |
-| Background | `BackgroundTooLowForPaper` | Problem | too low; re-stretch to `RecommendedTarget` (with its simulated numbers) or "no target qualifies" |
-| Background | otherwise | Attention | at the limit; same fix text |
+| Background | the as-is dust at or above paper black | Ok | print-safe as is; "poti cobori pana la <row>" when the recommended row is lower, or the row just below and where it puts the dust when the as-is row is the recommended one |
+| Background | the as-is sky under paper black | Problem | the sky and the dust would print the same black; re-stretch to the recommended row (its simulated dust and sky, the exact target), or "no target up to 0.20" with the exact target or "nici 0.60" |
+| Background | only the dust under paper black | Attention | the clouds would print pure black; same fix text |
 | Colour | mono | Ok | nothing to measure |
 | Colour | `HasCast` | Attention | green/magenta/warm/cool cast (whichever metric is larger); neutralise on linear |
 | Colour | no cast | Ok | neutral background |
@@ -70,7 +70,9 @@ VERDICT: <OK|ATENTIE|PROBLEMA>
 ... sections 2-6, "(nimic de semnalat)" when empty
 
 Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
-Anexa B. Simularea     table: target, gamma, L*, % below black, % below 15, % above 50, print-safe
+Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma, L* praf, L* cer, negru pur (% patches), % below 15, % above 50, print-safe;
+                       the footer, the definition line (dust, sky, method), the exact-target line (at Dmax, Dmax -/+ 0.1, the Dmax from which it passes as is),
+                       the cloud table (name, patches, L*, target), the darkest DustCloudReportRows of them
 Anexa C. Export        TIFF size; JPEG table; rounding; stress; plateau
 Anexa D. Rezolutie     stars, regions, size table with "*" on the recommended row, or a note on why there is none
 Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regions with deltas, "!" when flagged

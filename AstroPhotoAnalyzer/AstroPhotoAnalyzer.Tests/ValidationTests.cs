@@ -179,20 +179,41 @@ public class ValidationTests
         f["tonal.pctBelowPaperBlack"] = R(t.PctBelowPaperBlack);
         f["tonal.pctBelowLowSeparation"] = R(t.PctBelowLowSeparation);
         f["tonal.pctAboveHighlight"] = R(t.PctAboveHighlight);
-        f["tonal.printSafe"] = t.PrintSafe;
-        f["tonal.backgroundTooLowForPaper"] = t.BackgroundTooLowForPaper;
 
         SimulationResult s = a.Simulation;
+        f["simulation.method"] = s.Method.ToString();
+        f["simulation.patchCount"] = s.PatchCount;
+        f["simulation.cloudCount"] = s.CloudCount;
+        f["simulation.dustPatchCount"] = s.DustPatchCount;
+        f["simulation.asIs.lstarDust"] = R(s.AsIs.LstarDust);
+        f["simulation.asIs.lstarSky"] = R(s.AsIs.LstarSky);
+        f["simulation.asIs.pctPatchesBelowPaperBlack"] = R(s.AsIs.PctPatchesBelowPaperBlack);
         f["simulation.alreadyPrintSafe"] = s.AlreadyPrintSafe;
+        f["simulation.skyBelowPaperBlack"] = s.SkyBelowPaperBlack;
         f["simulation.recommendedTarget"] = s.RecommendedTarget is double rt ? R(rt) : "none";
+        f["simulation.recommendedIsAsIs"] = s.RecommendedIsAsIs;
+        f["simulation.exactTarget"] = s.ExactTarget is double et ? R(et) : "none";
+        f["simulation.exactTargetDmaxLower"] = s.ExactTargetDmaxLower is double el ? R(el) : "none";
+        f["simulation.exactTargetDmaxHigher"] = s.ExactTargetDmaxHigher is double eh ? R(eh) : "none";
+        f["simulation.dmaxToPassAsIs"] = R(s.DmaxToPassAsIs);
         if (s.Primary != null)
         {
             f["simulation.primary.target"] = R(s.Primary.Target);
             f["simulation.primary.gamma"] = R(s.Primary.Gamma);
-            f["simulation.primary.lstarMedian"] = R(s.Primary.LstarMedian);
-            f["simulation.primary.pctBelowPaperBlack"] = R(s.Primary.PctBelowPaperBlack);
+            f["simulation.primary.lstarDust"] = R(s.Primary.LstarDust);
+            f["simulation.primary.lstarSky"] = R(s.Primary.LstarSky);
+            f["simulation.primary.pctPatchesBelowPaperBlack"] = R(s.Primary.PctPatchesBelowPaperBlack);
             f["simulation.primary.pctBelowLowSeparation"] = R(s.Primary.PctBelowLowSeparation);
             f["simulation.primary.printSafe"] = s.Primary.PrintSafe;
+        }
+        f["simulation.clouds.count"] = s.Clouds.Count;
+        for (int i = 0; i < Math.Min(5, s.Clouds.Count); i++)
+        {
+            string k = "simulation.cloud" + (i + 1) + ".";
+            f[k + "name"] = s.Clouds[i].Name;
+            f[k + "patches"] = s.Clouds[i].Patches;
+            f[k + "lstar"] = R(s.Clouds[i].Lstar);
+            f[k + "exactTarget"] = s.Clouds[i].ExactTarget is double ce ? R(ce) : "none";
         }
 
         NoiseResult n = a.Noise;

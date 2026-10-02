@@ -58,11 +58,33 @@ namespace AstroPhotoAnalyzer
         /// <summary>Raportul de aspect tinta (latime/inaltime). Null = cel nativ, fara decupaj.</summary>
         internal double? TargetAspect { get; init; }
 
-        /// <summary>Fundalul-tinta principal al simularii de print.</summary>
-        internal double TargetBackground { get; init; } = 0.19;
+        /// <summary>
+        /// Fundalul-tinta dat de om, optional: adauga randul lui in tabelul simularii si
+        /// alege dala de print din Preview. Null = fara rand in plus; Preview-ul ia randul
+        /// recomandat (R-023).
+        /// </summary>
+        internal double? TargetBackground { get; init; }
 
-        /// <summary>Tintele suplimentare din tabelul simularii, pe langa cea principala.</summary>
-        internal double[] SimulationTargets { get; init; } = { 0.15, 0.20 };
+        /// <summary>
+        /// Grila simularii: 0.10 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
+        /// cer de noapte (sub 0.10 e negru pe orice hartie, peste 0.20 un gri spalat). Nu e
+        /// expusa; o tinta in afara ei intra prin TargetBackground.
+        /// </summary>
+        internal double[] SimulationTargets { get; init; } = DefaultSimulationTargets();
+
+        static double[] DefaultSimulationTargets()
+        {
+            var t = new double[11];
+            for (int i = 0; i < t.Length; i++) t[i] = Math.Round(0.10 + 0.01 * i, 2);
+            return t;
+        }
+
+        /// <summary>
+        /// Un FITS al carui WCS se imprumuta imaginii analizate (R-027): un TIFF sau PNG
+        /// exportat din acelasi stack nu poarta antetul, dar are aceeasi geometrie. Null = WCS-ul
+        /// fisierului insusi, daca are.
+        /// </summary>
+        internal string WcsPath { get; init; }
 
         /// <summary>Samanta alegerii de dale. Fixa, ca doua rulari pe acelasi fisier sa dea aceleasi cifre.</summary>
         internal int Seed { get; init; } = 0;

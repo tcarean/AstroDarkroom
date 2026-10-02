@@ -31,6 +31,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <local:InverseBoolToVisibilityConverter x:Key="NotBoolToVis" />
   <local:InverseBoolConverter x:Key="Not" />
   <local:NotNullToVisibilityConverter x:Key="NotNullToVis" />
+  <local:AllTrueToVisibilityConverter x:Key="AllTrueToVis" />
   <local:FileNameConverter x:Key="FileName" />
   <local:VerdictToBrushConverter x:Key="VerdictToBrush" />
 

@@ -22,8 +22,9 @@
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
 | `FrameCm` | 3 | `--frame cm` | field | PrintSize (outer size) |
 | `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Raport de aspect" | Crop, PrintSize |
-| `TargetBackground` | 0.19 | `--target-bg 0..1` | "Fundal-tinta" | Simulation (primary row) |
-| `SimulationTargets` | 0.15, 0.20 | - | - | Simulation (extra rows) |
+| `TargetBackground` | null = none | `--target-bg 0..1` | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one; the Preview tile) |
+| `SimulationTargets` | 0.10 .. 0.20 by 0.01 | - | - | Simulation (the grid) |
+| `WcsPath` | null = the file's own WCS | `--wcs file.fit` | "WCS din FITS" | the dust and the sky (R-027: a FITS header lent to a TIFF/PNG of the same size) |
 | `Seed` | 0 | - | - | Noise tiles |
 
 The console (`Options.cs`) and the window (`ParameterFields.cs`) validate syntax only,
@@ -34,8 +35,8 @@ Rules between parameters are the core's: `Parameters.Validate()` returns a messa
 null, and both the console (exit 1, before any reading) and the window (the error text)
 call it. Currently one rule: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
-checked. The window's distance, aspect, target-background and framing fields carry help
-text (`DistanceHelp`, `AspectHelp`, `TargetBgHelp`, `PassepartoutHelp`, `FrameHelp`) as
+checked. The window's distance, aspect, target-background, framing and WCS fields carry help
+text (`DistanceHelp`, `AspectHelp`, `TargetBgHelp`, `PassepartoutHelp`, `FrameHelp`, `WcsHelp`) as
 tooltips on the field
 and its label. Each text is two to four paragraphs separated by a blank line (`\n\n`),
 which the tooltip wraps at 420 px with a 17 px line height (`Theme/Dark.xaml`); a test
@@ -47,15 +48,17 @@ being the lens's own perspective (a normal focal length equals the frame diagona
 2 x gallery practice; at 1.5 x the print subtends ~37 degrees. The aspect one says that
 empty means the native ratio with no crop (what a fine-art lab needs), that a ready-made
 frame does not constrain it either (the passepartout absorbs the difference), and that it
-is for labs with fixed formats. The target-background one says what the level is for
-(the simulation lifts the sky to it, to see whether the print keeps a background above
-paper black), where a screen image's sky usually sits and where a print's should
-(`ScreenBackgroundLo`-`Hi`, `PrintBackgroundLo`-`Hi`), how the measured background is
-taken (the median of the green channel over the whole frame) and how the simulation
-uses it (gamma = ln(target) / ln(background), a simulation and not Siril's stretch),
-and where the default comes from (the lowest target that made the reference image
-print-safe on baryta, under `PaperBlackOkPct`), with the extra `SimulationTargets`
-the table tries anyway.
+is for labs with fixed formats. The target-background one says that the level is one more row for the simulation
+beside its grid (`SimulationTargets`' bounds), marked `(dat)` and used by the Preview tile,
+and that empty means the grid alone; how the measured background is taken (the median of the
+green channel over the whole frame) and how the simulation uses it (gamma = ln(target) /
+ln(background), a simulation and not Siril's stretch); where a screen image's sky usually sits
+and where a print's should (`ScreenBackgroundLo`-`Hi`, `PrintBackgroundLo`-`Hi`); and that the
+report's recommendation is the minimum level that keeps the dust above paper black, which the
+field does not change. The WCS one says what a plate-solved FITS of the same size gives (the
+clouds by name, through the Lynds catalogue), why a TIFF or PNG needs it lent (the export
+carries no header, the stack does), what empty means (the file's own WCS, else the fallback
+rule, said in red in the Tonuri tab), and that the size must be identical.
 
 ## The console (`AstroPhotoAnalyzer/`)
 

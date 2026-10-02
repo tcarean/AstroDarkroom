@@ -44,6 +44,14 @@
     <PackageReference Include="SixLabors.ImageSharp" />
   </ItemGroup>
 
+  <!-- Datele imbarcate: catalogul Lynds al nebuloaselor intunecate (ADR 0025), un fisier
+       text de 52 KB citit de DarkNebulaCatalogue. Nu e un pachet, dar e scris de altii:
+       intrarea lui din ThirdParty.cs si notita din THIRD-PARTY-NOTICES.md sunt obligatorii
+       la fel (ThirdPartyTests citeste si lista asta). -->
+  <ItemGroup>
+    <EmbeddedResource Include="Input\ldn.txt" LogicalName="ldn.txt" />
+  </ItemGroup>
+
   <!-- Nucleul ramane internal in intregime: consumatorii sunt in acelasi repo si se
        compileaza impreuna. Lista de mai jos nu e o portita, e contractul. -->
   <ItemGroup>

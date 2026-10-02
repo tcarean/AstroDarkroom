@@ -39,9 +39,10 @@ namespace AstroPhotoAnalyzer.Wpf
         string _distance = "";
         string _sizes = string.Join(", ", D.CandidateWidthsCm.Select(Fmt.F0));
         string _aspect = "";
-        string _targetBg = Fmt.F2(D.TargetBackground);
+        string _targetBg = "";
         string _passepartout = Fmt.F0(D.PassepartoutCm);
         string _frame = Fmt.F0(D.FrameCm);
+        string _wcsPath = "";
 
         public IReadOnlyList<string> Media { get; } = new[]
         {
@@ -57,6 +58,9 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Passepartout { get => _passepartout; set => Set(ref _passepartout, value); }
         public string Frame { get => _frame; set => Set(ref _frame, value); }
 
+        /// <summary>FITS-ul al carui WCS se imprumuta imaginii (R-027); gol = WCS-ul fisierului, daca are.</summary>
+        public string WcsPath { get => _wcsPath; set => Set(ref _wcsPath, value); }
+
         /// <summary>Parametrii, sau null cu un mesaj in <paramref name="error"/>.</summary>
         internal Parameters TryBuild(out string error)
         {
@@ -70,9 +74,10 @@ namespace AstroPhotoAnalyzer.Wpf
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),
-                    TargetBackground = OptionalNumber(TargetBg, "fundalul-tinta", 0, 1) ?? D.TargetBackground,
+                    TargetBackground = OptionalNumber(TargetBg, "fundalul-tinta", 0, 1),
                     PassepartoutCm = OptionalNumber(Passepartout, "passepartout-ul", 0, 100, allowZero: true) ?? D.PassepartoutCm,
                     FrameCm = OptionalNumber(Frame, "rama", 0, 100, allowZero: true) ?? D.FrameCm,
+                    WcsPath = string.IsNullOrWhiteSpace(WcsPath) ? null : WcsPath.Trim(),
                 };
                 // Regulile intre parametri sunt ale nucleului; aici doar se arata mesajul.
                 error = p.Validate();
@@ -124,18 +129,29 @@ namespace AstroPhotoAnalyzer.Wpf
             + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
 
         public string TargetBgHelp =>
-            $"Nivelul (0..1) la care simularea ridica cerul, ca sa vada daca printul mai are fundal peste negrul "
-            + $"hartiei. Pe ecran {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
-            + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru. Un print vrea cerul la "
-            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}."
+            $"Un nivel (0..1) in plus pe care sa-l incerce simularea, pe langa grila ei "
+            + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: randul lui apare in tabel marcat "
+            + "\"(dat)\" si e cel pe care il arata dala de print din Preview. Gol = doar grila, si Preview-ul ia randul recomandat."
             + "\n\n"
             + "Nivelul fundalului = mediana canalului verde pe toata imaginea (cerul domina cadrul). Simularea aplica "
-            + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara L*. E o simulare, nu stretch-ul lui Siril, "
+            + "gamma = ln(tinta) / ln(fundal) pe toate canalele si remasoara praful si cerul. E o simulare, nu stretch-ul lui Siril, "
             + "dar fundalul ajunge in acelasi loc."
             + "\n\n"
-            + $"Implicit {Fmt.F2(D.TargetBackground)}: cea mai mica tinta care a facut imaginea de referinta print-safe pe "
-            + $"baryta (sub {Fmt.F0(Thresholds.PaperBlackOkPct)} % din pixeli sub negru). Tabelul incearca oricum si "
-            + $"{string.Join(" si ", D.SimulationTargets.Select(Fmt.F2))}.";
+            + $"Pe ecran un cer la {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
+            + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru, si un print vrea cerul la "
+            + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. Recomandarea din raport e nivelul minim "
+            + "la care praful mai ramane deasupra negrului hartiei; campul asta nu o schimba.";
+
+        public string WcsHelp =>
+            "Calea unui FITS plate-solved (Siril: Image Information > Plate solving, sau un stack rezolvat) cu aceeasi "
+            + "latime si inaltime ca imaginea analizata. Antetul lui spune unde pe cer e fiecare pixel, si cu catalogul Lynds "
+            + "unealta recunoaste norii de praf din cadru pe nume: praful si cerul se masoara pe ei, nu pe o fractie din cadru."
+            + "\n\n"
+            + "Un TIFF sau PNG exportat din Siril nu poarta WCS-ul; stack-ul din care a iesit il are, si asa se imprumuta. "
+            + "Gol = WCS-ul fisierului analizat, daca e un FITS plate-solved; altfel praful si cerul se masoara fara catalog, "
+            + "si tabul Tonuri o spune cu rosu."
+            + "\n\n"
+            + "Marimea trebuie sa fie identica: un decupaj sau o redimensionare intre stack si export muta norii.";
 
         public string PassepartoutHelp =>
             "Latimea benzii de carton dintre imagine si rama, pe fiecare latura. Regula inramatorilor: "

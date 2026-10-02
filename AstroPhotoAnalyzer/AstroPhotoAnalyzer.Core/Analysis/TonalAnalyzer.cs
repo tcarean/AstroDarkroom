@@ -23,7 +23,8 @@
 // un L* (din Dmax), si ce e sub el se printeaza cu acelasi negru. Pe gri trecerea e o
 // curba fixa (ColorMath.GrayLevelOfLstar, tabela LstarLadder); pe culoare acelasi nivel
 // da alt L* dupa nuanta, iar B1 numara esantioane pe canale, B2 pixeli - de asta se
-// raporteaza amandoua.
+// raporteaza amandoua. Sunt FAPTE ale imaginii, nu verdictul: verdictul de print se da
+// pe praf si pe cer, in DustAnalyzer si PrintStretchSimulator (ADR 0025).
 //
 // Pasii de subesantionare sunt cei ai scripturilor de acceptanta (Thresholds.*Stride).
 
@@ -59,9 +60,6 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Histograma L*, 101 cosuri (0..100), procente - pentru fereastra.</summary>
         internal IReadOnlyList<double> LstarHistogramPct { get; init; }
-
-        internal bool BackgroundTooLowForPaper => PctBelowPaperBlack > Thresholds.PaperBlackWarnPct;
-        internal bool PrintSafe => PctBelowPaperBlack < Thresholds.PaperBlackOkPct;
     }
 
     /// <summary>
@@ -74,12 +72,13 @@ namespace AstroPhotoAnalyzer
     {
         /// <summary>
         /// Tabela de corespondenta nivel - L* pentru reperele tabului: negrul celor trei
-        /// medii, pragurile in niveluri (32/64), pragurile in L* (15/50) si fundalul-tinta.
-        /// Nu masoara nimic din imagine - e fereastra care o arata, ca sa se poata citi un
-        /// prag in L* pe histograma din Siril. Valabila pe gri; pe culoare acelasi nivel da
-        /// alt L* dupa nuanta. Crescator dupa L*.
+        /// medii, pragurile in niveluri (32/64), pragurile in L* (15/50) si tinta principala
+        /// a simularii (cea data, altfel cea recomandata; niciun rand cand "asa cum e" e
+        /// randul principal). Nu masoara nimic din imagine - e fereastra care o arata, ca sa
+        /// se poata citi un prag in L* pe histograma din Siril. Valabila pe gri; pe culoare
+        /// acelasi nivel da alt L* dupa nuanta. Crescator dupa L*.
         /// </summary>
-        internal static IReadOnlyList<LstarLadderRow> LstarLadder(Parameters p)
+        internal static IReadOnlyList<LstarLadderRow> LstarLadder(Parameters p, SimulationResult s = null)
         {
             var rows = new List<LstarLadderRow>();
             bool chosenIsMedium = false;
@@ -96,7 +95,11 @@ namespace AstroPhotoAnalyzer
             rows.Add(FromLevel(Thresholds.DarkLevelB, $"pragul \"sub nivelul {Thresholds.DarkLevelB}\""));
             rows.Add(FromLstar(Thresholds.LowSeparationLstar, "separare slaba"));
             rows.Add(FromLstar(Thresholds.HighlightLstar, "lumini"));
-            rows.Add(FromLevel(p.TargetBackground * 255, $"fundalul-tinta {Fmt.F2(p.TargetBackground)}"));
+            SimulationRow primary = s?.Primary;
+            if (primary != null && !primary.AsIs)
+                rows.Add(FromLevel(primary.Target * 255, primary.Explicit ? $"fundalul-tinta dat {Fmt.Level(primary.Target)}" : $"fundalul recomandat {Fmt.Level(primary.Target)}"));
+            else if (primary == null && p.TargetBackground.HasValue)
+                rows.Add(FromLevel(p.TargetBackground.Value * 255, $"fundalul-tinta dat {Fmt.Level(p.TargetBackground.Value)}"));
             return rows.OrderBy(r => r.Lstar).ToList();
 
             static LstarLadderRow FromLstar(double l, string meaning, bool chosen = false)

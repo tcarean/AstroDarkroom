@@ -67,6 +67,40 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Check { get; init; }
     }
 
+    /// <summary>Un rand al tabelului simularii: textul mono al raportului si butonul lui de preview (R-113).</summary>
+    public sealed class SimulationRowItem
+    {
+        public string Text { get; init; }
+
+        /// <summary>"asa cum e", "0.17", "0.135 (dat)".</summary>
+        public string Target { get; init; }
+        public System.Windows.Input.ICommand Preview { get; init; }
+    }
+
+    /// <summary>Un nor pe harta: cercul lui in pixelii imaginii reduse, numele, si daca omul l-a lasat vizibil (R-130).</summary>
+    public sealed class CloudLayer : ObservableObject
+    {
+        bool _visible = true;
+
+        public string Name { get; init; }
+
+        /// <summary>"LDN 42 (B78)  L* 0.9  tinta 0.392", pentru lista de bife si pentru eticheta.</summary>
+        public string Caption { get; init; }
+
+        /// <summary>Centrul si raza, in pixelii imaginii REDUSE aratate de fereastra.</summary>
+        public double CentreX { get; init; }
+        public double CentreY { get; init; }
+        public double Radius { get; init; }
+        public double Left => CentreX - Radius;
+        public double Top => CentreY - Radius;
+        public double Diameter => 2 * Radius;
+
+        /// <summary>Cei mai intunecati primesc eticheta pe harta; restul doar cercul.</summary>
+        public bool Labelled { get; init; }
+
+        public bool IsVisible { get => _visible; set => Set(ref _visible, value); }
+    }
+
     public sealed class ComponentRow
     {
         public string Name { get; init; }

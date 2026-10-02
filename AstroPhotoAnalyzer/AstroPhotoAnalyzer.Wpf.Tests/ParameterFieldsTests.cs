@@ -129,10 +129,28 @@ public class ParameterFieldsTests
         Assert.Contains("gamma = ln(tinta) / ln(fundal)", f.TargetBgHelp);
         Assert.Contains("mediana canalului verde", f.TargetBgHelp);
         Assert.Contains("nu stretch-ul lui Siril", f.TargetBgHelp);
-        Assert.Contains("Implicit 0.19", f.TargetBgHelp);
-        Assert.Contains("sub 2 % din pixeli sub negru", f.TargetBgHelp);
-        Assert.Contains("0.15 si 0.20", f.TargetBgHelp);
+        Assert.Contains("grila ei 0.10..0.20", f.TargetBgHelp);
+        Assert.Contains("\"(dat)\"", f.TargetBgHelp);
         Assert.Contains("0.15-0.25", f.TargetBgHelp);
+        Assert.Contains("nivelul minim", f.TargetBgHelp);
+        Assert.Equal("", f.TargetBg);   // gol: doar grila
+    }
+
+    /// <summary>R-027: the WCS field lends a FITS's header; empty means none, and the help says what it is for.</summary>
+    [Fact]
+    public void R027_TheWcsFieldIsOptionalAndExplained()
+    {
+        var f = new ParameterFields();
+        Assert.Equal("", f.WcsPath);
+        Assert.Null(f.TryBuild(out _)!.WcsPath);
+
+        f.WcsPath = "  E:\\stack.fit ";
+        Assert.Equal("E:\\stack.fit", f.TryBuild(out _)!.WcsPath);
+
+        Assert.Contains("plate-solved", f.WcsHelp);
+        Assert.Contains("aceeasi latime si inaltime", f.WcsHelp);
+        Assert.Contains("catalogul Lynds", f.WcsHelp);
+        Assert.Contains("cu rosu", f.WcsHelp);
     }
 
     /// <summary>
@@ -143,7 +161,7 @@ public class ParameterFieldsTests
     public void R026_TheHelpTextsAreParagraphs()
     {
         var f = new ParameterFields();
-        foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.TargetBgHelp, f.PassepartoutHelp, f.FrameHelp })
+        foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.TargetBgHelp, f.PassepartoutHelp, f.FrameHelp, f.WcsHelp })
         {
             string[] paragraphs = help.Split("\n\n");
             Assert.True(paragraphs.Length >= 2, "un singur paragraf: " + help);

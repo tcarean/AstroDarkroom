@@ -17,7 +17,14 @@ All empirical, most from the reference image. Change one, change its comment.
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
 | `LowSeparationLstar` | 15 | below: paper separates, the eye barely |
 | `HighlightLstar` | 50 | above: bright |
-| `PaperBlackWarnPct` / `PaperBlackOkPct` | 20 / 2 | % below paper black: problem / safe |
+| `DustPatchPx` | 32 | the patch side (image px) the dust and the sky are measured on: 4 mm at 200 dpi; 16/32/64 barely move the verdict |
+| `DustCloudFraction` | 0.10 | the dust with the catalogue: this percentile of all cloud patches together (ADR 0025) |
+| `DustCloudMinPatches` | 9 | a cloud with this many patches gets its own row and circle |
+| `DustAreaFraction` | 0.01 | the dust without a WCS or without a cloud: this percentile of all patches |
+| `DustCloudReportRows` | 15 | clouds named in Anexa B and in the Because; the window lists all |
+| `ExactTargetLo` / `ExactTargetHi` / `ExactTargetStep` | 0.05 / 0.60 / 0.01 | the ladder of lifts the exact targets are interpolated on |
+| `DmaxSensitivityStep` | 0.1 | the two neighbouring Dmax values Anexa B gives the exact target at (about 0.02 of target per 0.1) |
+| `PreviewMaxSide` | 1600 | longest side of the map and preview windows' image |
 | `ScreenBackgroundLo` / `ScreenBackgroundHi` / `PrintBackgroundLo` / `PrintBackgroundHi` | 0.05 / 0.10 / 0.15 / 0.25 | where a screen image's sky sits and where a print's should; rules of thumb for the window's help text only, no rule reads them |
 | `TonalStride` / `PercentileStride` / `BackgroundStride` | 4 / 2 / 3 | subsampling steps of the acceptance scripts |
 | `NoiseTileSize` / `NoiseTileCandidates` | 64 / 400 | |

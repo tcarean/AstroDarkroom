@@ -46,7 +46,11 @@ public class ParametersTests
         Assert.Equal(7, p.PassepartoutCm);
         Assert.Equal(3, p.FrameCm);
         Assert.Null(p.TargetAspect);
-        Assert.Equal(0.19, p.TargetBackground);
+        Assert.Null(p.TargetBackground);
+        Assert.Equal(11, p.SimulationTargets.Length);
+        Assert.Equal(0.10, p.SimulationTargets[0]);
+        Assert.Equal(0.20, p.SimulationTargets[10]);
+        Assert.Null(p.WcsPath);
         Assert.Equal(0, p.Seed);
     }
 

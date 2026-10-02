@@ -54,25 +54,82 @@ namespace AstroPhotoAnalyzer
         /// <summary>Peste L*-ul asta un pixel e "luminos" - nucleul, stelele.</summary>
         internal const double HighlightLstar = 50;
 
-        /// <summary>Peste procentul asta de pixeli sub negrul hartiei, fundalul e prea jos pentru print.</summary>
-        internal const double PaperBlackWarnPct = 20;
-
-        /// <summary>Sub procentul asta, o tinta de fundal e considerata print-safe.</summary>
-        internal const double PaperBlackOkPct = 2;
-
         /// <summary>
         /// Unde sta de obicei cerul (0..1) intr-o imagine facuta pentru ecran, si unde
         /// trebuie sa stea pentru hartie. Reguli de degetul mare din conversatia care a
         /// nascut unealta, nu masuratori: pe ecran un cer la 0.05-0.10 arata "negru
         /// adanc" si bine; pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru,
         /// asa ca versiunea de print vrea cerul la 0.15-0.25, un gri inchis. Imaginea de
-        /// referinta avea 0.103 si a iesit print-safe la 0.19. Doar pentru textele de
-        /// ajutor ale ferestrei; nicio regula nu se ia dupa ele.
+        /// referinta avea 0.103, iar praful ei catalogat ajunge pe negru la 0.19. Doar
+        /// pentru textele de ajutor ale ferestrei; nicio regula nu se ia dupa ele.
         /// </summary>
         internal const double ScreenBackgroundLo = 0.05;
         internal const double ScreenBackgroundHi = 0.10;
         internal const double PrintBackgroundLo = 0.15;
         internal const double PrintBackgroundHi = 0.25;
+
+        // ------------------------------------------------------------ praf si cer (ADR 0025)
+
+        /// <summary>
+        /// Latura dalei pe care se masoara praful si cerul, in pixeli ai imaginii: L*-ul
+        /// luminantei medii liniare a unei dale, nu al unui pixel, ca zgomotul si stropii
+        /// izolati sa nu-l miste. 32 px sunt 4 mm de hartie la 200 dpi, cam cat integreaza
+        /// ochiul pe o pata. Masurat pe ramura parcata: 16, 32 si 64 px dau 0.166, 0.162,
+        /// 0.157 pe aceeasi imagine, deci latura abia conteaza.
+        /// </summary>
+        internal const int DustPatchPx = 32;
+
+        /// <summary>
+        /// Praful, cu catalog: percentila asta (fractie) a dalelor tuturor norilor catalogati
+        /// din cadru la un loc - nucleele norilor, nu marginile lor, care se amesteca cu cerul
+        /// intr-un disc. Singura definitie care nu sare cu un prag de marime al norului
+        /// (ADR 0025: 9 sau 100 de dale aleg alt nor si dau 0.39 sau 0.28 in loc de 0.19).
+        /// </summary>
+        internal const double DustCloudFraction = 0.10;
+
+        /// <summary>
+        /// Un nor cu cel putin atatea dale primeste un rand al lui (L*, tinta exacta) si un
+        /// cerc pe harta: 9 dale = 3 x 3 = un grad patrat la 42"/px, destul ca percentila
+        /// lui sa nu fie o singura dala. Pe imaginea de referinta: 116 din 406 nori.
+        /// </summary>
+        internal const int DustCloudMinPatches = 9;
+
+        /// <summary>
+        /// Praful FARA catalog (fisier fara WCS, sau cadru fara nori catalogati): percentila
+        /// asta a tuturor dalelor cadrului - cea mai mica fractie la care statistica sta pe
+        /// sute de dale si nu pe un obiect; la 1 % nicio banda de praf nu se tipareste negru
+        /// pur, doar nucleele negre si pe ecran. Pe o galaxie, acelasi 1 % e cerul cel mai
+        /// intunecat al cadrului. Masurat pe ramura parcata (2026-10-02).
+        /// </summary>
+        internal const double DustAreaFraction = 0.01;
+
+        /// <summary>Cati nori, de la cel mai intunecat, numeste raportul (Anexa B si "fiindca"); fereastra ii arata pe toti.</summary>
+        internal const int DustCloudReportRows = 15;
+
+        /// <summary>
+        /// Scara pe care se cauta tinta exacta: ridicari din pas in pas, de la Lo la Hi, cu
+        /// interpolare liniara intre doi pasi. 0.05 e sub orice fundal de ecran; 0.60 e un
+        /// cer gri deschis, peste care nimeni nu tipareste; 0.01 e pasul grilei din tabel,
+        /// si statistica prafului e lina pe el (eroarea interpolarii, sub 0.001).
+        /// </summary>
+        internal const double ExactTargetLo = 0.05;
+        internal const double ExactTargetHi = 0.60;
+        internal const double ExactTargetStep = 0.01;
+
+        /// <summary>
+        /// Cu cat se misca Dmax-ul in cele doua tinte exacte vecine din Anexa B: tinta se
+        /// muta cu ~0.02 la 0.1 de Dmax (masurat pe imaginea de referinta: 1.9 / 2.0 / 2.1
+        /// dau 0.208 / 0.187 / 0.166), iar Dmax-ul unei hartii pe o imprimanta anume rar e
+        /// stiut mai bine de atat.
+        /// </summary>
+        internal const double DmaxSensitivityStep = 0.1;
+
+        /// <summary>
+        /// Latura maxima a imaginii din ferestrele de harta si de preview: destul pentru un
+        /// ecran de 1080p maximizat, destul de mica incat o curba gamma si L*-ul pe fiecare
+        /// pixel sa dureze sub o secunda.
+        /// </summary>
+        internal const int PreviewMaxSide = 1600;
 
         // ------------------------------------------------------------ subesantionare
 

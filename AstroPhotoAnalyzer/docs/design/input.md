@@ -21,6 +21,36 @@ that knows both. An unknown extension is an error naming the accepted ones.
 | `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows flipped when `ROWORDER = 'BOTTOM-UP'`; empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
 
+### The WCS (`Input/Wcs.cs`, `Input/Astrometry.cs`)
+
+`Wcs.TryFrom(header, w, h, rowsFlipped)` reads the gnomonic projection Siril writes, or
+returns null (never throws): `CTYPE1` starting `RA---TAN` and `CTYPE2` starting `DEC--TAN`
+(a `-SIP` suffix accepted, its terms ignored: under one 32 px patch at the frame's edge, ADR
+0025), `CRPIX`, `CRVAL`, and the linear part as `CD1_1..CD2_2`, as `PC` x `CDELT` (Siril 1.4),
+or as `CDELT` + `CROTA2` (the AIPS convention). `PixelToSky` is the TAN deprojection of FITS
+WCS Paper II with `LONPOLE` 180; `SkyToPixel` its inverse (NaN behind the tangent plane).
+Both take **raster** coordinates (0-based, row 0 at the top) and convert to FITS pixels
+inside: `y_fits = H - y` when the rows were flipped (`ROWORDER = BOTTOM-UP`), `y + 1`
+otherwise; `WithRowsFlipped` re-targets a WCS lent to a raster of another orientation.
+`ScaleDegPerPx` is the root of the determinant. `FitsReader` attaches the WCS to
+`SourceInfo.Wcs`; `FitsReader.ReadImageHeader(path)` reads a header without its data, for
+`AnalysisRun.BorrowWcs` (`--wcs`, R-027), which refuses a different size or a header without
+a WCS. `Astrometry` holds the sphere: unit vectors, angular separation, the radius of a disc
+of a given area, and the FK4-to-FK5 rotation (B1950 to J2000, no E-terms; within 0.02' of
+VizieR's own precession over the whole catalogue).
+
+### The catalogue (`Input/DarkNebulaCatalogue.cs`, `Input/ldn.txt`)
+
+Lynds' Catalogue of Dark Nebulae as an embedded text resource (`LogicalName` `ldn.txt`, 52
+KB, 1787 numbered rows of VizieR's `VII/7A`): LDN number, B1950 centre (`h m.m`, `d m` with
+the sign in the text so that `-00 30` stays negative), area in square degrees, opacity class,
+Barnard cross-identifications (space-separated; a designation may carry a letter, `119A`;
+VizieR's column is `8A4`, so the file was written from 4-character fields, not split on
+spaces). `DarkNebulaCatalogue.All` parses it once, precessing the centres to J2000;
+`DarkNebula.RadiusDeg` is the disc of the cloud's area and `Name` is `LDN n` or `LDN n (Bm,
+...)`. Its notice is in `THIRD-PARTY-NOTICES.md` and `ThirdParty.cs` (a data component with
+`Resources`, which `ThirdPartyTests` ties to the csproj like a package).
+
 ### The raster (`Input/Raster.cs`)
 
 `Raster`: `W`, `H`, `Planes` = 1 or 3 `float[]` in **0..1**, row 0 at the **top**.
@@ -31,7 +61,8 @@ only plane on mono: the channel every single-channel measurement uses.
 `SourceInfo` (attached by the reader): `Path`, `Format`, `BitDepth`, `IsFloat`,
 `PlanesInFile`, `Compression`, `Icc` (bytes), `IccDescription` (from the `desc` tag, v2
 text or v4 mluc, parsed by `IccProfileInfo`; null when absent or malformed),
-`FileBytes`, `Note` (reader observations: clipped values, flipped rows, palette, multi-page).
+`FileBytes`, `Wcs` (R-018, null without one), `Note` (reader observations: clipped values,
+flipped rows, palette, multi-page).
 
 Memory: float planes cost `4 x W x H x planes` bytes - 277 MB for 23 MP RGB. Float was
 chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level exactly

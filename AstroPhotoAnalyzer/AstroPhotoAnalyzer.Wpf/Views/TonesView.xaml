@@ -49,7 +49,31 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="SIMULAREA FUNDALULUI (curba gamma pe toate canalele)" />
-          <ItemsControl ItemsSource="{Binding SimulationRows}" ItemTemplate="{StaticResource MonoRowTemplate}" />
+          <!-- Acelasi text mono ca in Anexa B; pe fiecare rand cu tinta, butonul care deschide
+               preview-ul randului (R-131). Antetul si nota n-au buton. -->
+          <ItemsControl ItemsSource="{Binding SimulationRows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,0,0,2">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Style="{StaticResource Mono}" Text="{Binding Text}" VerticalAlignment="Center" />
+                  <Button Grid.Column="1" Content="Preview" Command="{Binding Preview}" Padding="8,1" Margin="12,0,0,0" FontSize="11"
+                          ToolTip="Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* 15 vopsit"
+                          Visibility="{Binding Preview, Converter={StaticResource NotNullToVis}}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Style="{StaticResource Mono}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding ExactLine}" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Definition}" />
+          <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource BadBr}" Text="{Binding NoWcsWarning}"
+                     Visibility="{Binding NoWcsWarning, Converter={StaticResource NotNullToVis}}" />
+          <Button Content="Harta praf / cer" Command="{Binding OpenMap}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                  ToolTip="Imaginea intreaga cu dalele de praf si de cer vopsite si norii catalogati pe nume" />
+          <ItemsControl ItemsSource="{Binding CloudRows}" ItemTemplate="{StaticResource MonoRowTemplate}" Margin="0,12,0,0" />
         </StackPanel>
       </Border>
 

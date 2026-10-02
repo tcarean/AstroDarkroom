@@ -153,6 +153,13 @@ public class WindowSmokeTests
             Render(new BackgroundView { DataContext = vm.Background }, name: "tab-fundal");
             Render(new PreviewView { DataContext = vm.Preview }, h: 2400, name: "tab-preview");
 
+            // R-130, R-131: the two windows of the Tonuri tab, built from the same result.
+            MapViewModel map = vm.Tones.BuildMap();
+            Render((FrameworkElement)new MapWindow { DataContext = map }.Content, name: "harta-praf-cer");
+            Assert.False(map.HasWcs);   // a TIFF: no WCS, the labels box is disabled
+            PreviewWindowViewModel preview = vm.Tones.BuildPreview(AnalysisRun.Execute(tif, new Parameters()).Simulation.Rows[3]);
+            Render((FrameworkElement)new PreviewWindow { DataContext = preview }.Content, name: "preview-rand");
+
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 

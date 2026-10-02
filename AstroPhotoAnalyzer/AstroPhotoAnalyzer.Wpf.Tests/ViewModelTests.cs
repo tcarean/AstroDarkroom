@@ -78,17 +78,22 @@ public class ViewModelTests
 
         Assert.Equal(101, tones.Histogram.Count);
         Assert.InRange(tones.PaperBlack, 8.9, 9.1);
-        Assert.Equal(5, tones.SimulationRows.Count);   // antet + "asa cum e" + tintele 0.15, 0.19, 0.20
+        Assert.Equal(1 + 12 + 1, tones.SimulationRows.Count);   // antet + "asa cum e" + grila 0.10..0.20 + nota
+        Assert.Null(tones.SimulationRows[0].Preview);
+        Assert.All(tones.SimulationRows.Skip(1).Take(12), row => Assert.NotNull(row.Preview));
+        Assert.Contains(tones.SimulationRows, row => row.Target == "asa cum e");
         Assert.All(tones.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         // Rezolutie: descriere pe fiecare rand, mai putin colturile (le acopera centrul).
         Assert.Contains(res.Rows, row => row.Label == "FWHM median in centru" && row.Description != null);
         Assert.All(res.Rows, row => Assert.Equal(row.Label.Contains("coltul "), string.IsNullOrWhiteSpace(row.Description)));
-        Assert.Equal(1 + 8, tones.LadderRows.Count);   // antet + 3 negre, 32/64, L* 15/50, fundalul-tinta
+        Assert.Equal(1 + 8, tones.LadderRows.Count);   // antet + 3 negre, 32/64, L* 15/50, fundalul recomandat
+        Assert.Contains(tones.LadderRows, s => s.Contains("fundalul recomandat 0.1"));
         Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("baryta"));
-        Assert.Equal(5, tones.Guide.Count);
+        Assert.Equal(6, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
-        Assert.Contains($"Sub {Thresholds.PaperBlackOkPct:0} %", guide);
-        Assert.Contains($"Peste {Thresholds.PaperBlackWarnPct:0} %", guide);
+        Assert.Contains($"percentila de {Thresholds.DustCloudFraction * 100:0} % a dalelor", guide);
+        Assert.Contains($"cele mai intunecate {Thresholds.DustAreaFraction * 100:0} % din dalele cadrului", guide);
+        Assert.Contains("nivelul MINIM", guide);
         Assert.Contains("nivelul 25 e L* 9 (negrul baryta)", guide);
         Assert.Contains("canvas 1.5 -> L* 20.7", guide);
         Assert.Equal(4, export.JpegRows.Count);

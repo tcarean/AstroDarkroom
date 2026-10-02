@@ -4,11 +4,12 @@
 > invariants and validation and the last section were added the same day, with the kit's
 > process. **Covers:** the
 > shared fixtures `AstroPhotoAnalyzer.Tests/SyntheticRasters.cs`,
-> `AstroPhotoAnalyzer.Tests/Scenes.cs`, `AstroPhotoAnalyzer.Tests/FitsTestData.cs`,
+> `AstroPhotoAnalyzer.Tests/Scenes.cs`, `AstroPhotoAnalyzer.Tests/WcsFixtures.cs`,
+> `AstroPhotoAnalyzer.Tests/FitsTestData.cs`,
 > `AstroPhotoAnalyzer.Tests/TiffTestData.cs`, `AstroPhotoAnalyzer.Tests/PngTestData.cs`,
 > `AstroPhotoAnalyzer.Tests/IccTestData.cs`, `AstroPhotoAnalyzer.Tests/ImageFiles.cs`,
 > `AstroPhotoAnalyzer.Tests/TempWorkspace.cs`, the project file
-> `AstroPhotoAnalyzer.Wpf.Tests/AstroPhotoAnalyzer.Wpf.Tests.csproj` that borrows five of
+> `AstroPhotoAnalyzer.Wpf.Tests/AstroPhotoAnalyzer.Wpf.Tests.csproj` that borrows six of
 > them, and the window's harness `AstroPhotoAnalyzer.Wpf.Tests/StaFixture.cs` and
 > `AstroPhotoAnalyzer.Wpf.Tests/WindowSmokeTests.cs`, and the tests of the process
 > `AstroPhotoAnalyzer.Tests/RepoInvariantTests.cs`, `AstroPhotoAnalyzer.Tests/ValidationTests.cs`
@@ -20,14 +21,14 @@
 | kind | where | what |
 |---|---|---|
 | synthetic, known answer | `AstroPhotoAnalyzer.Tests/*AnalyzerTests.cs` | Gaussian stars of known FWHM, injected noise sigma, ramps, casts, corners, upscales; each analyzer recovers the truth within a stated tolerance |
-| fixtures | `SyntheticRasters`, `Scenes` (DarkSky with every defect of the reference image, CleanSky, MonoSky), `FitsTestData`, `TiffTestData` (hand-built 16-bit RGB TIFF with ICC), `PngTestData` (hand-built 16-bit PNG with iCCP, own CRC-32), `IccTestData` (v2/v4 profiles), `ImageFiles` (ImageSharp-encoded 8-bit files), `TempWorkspace` | the 16-bit TIFF/PNG fixtures are hand-built because ImageSharp 3.1 cannot encode them |
-| golden | `GoldenOutputTests`, `Golden/*.txt` | the console's whole output on the scenes, version banner and temp path scrubbed; `APA_UPDATE_GOLDEN=1` re-approves |
+| fixtures | `SyntheticRasters`, `Scenes` (DarkSky with every defect of the reference image, CleanSky, MonoSky), `WcsFixtures` (a synthetic TAN WCS, and the LDN 42 scene: the cloud's disc dark on a flat sky at 9"/px, narrow so that the Pipe's other clouds stay out of the frame), `FitsTestData`, `TiffTestData` (hand-built 16-bit RGB TIFF with ICC), `PngTestData` (hand-built 16-bit PNG with iCCP, own CRC-32), `IccTestData` (v2/v4 profiles), `ImageFiles` (ImageSharp-encoded 8-bit files), `TempWorkspace` | the 16-bit TIFF/PNG fixtures are hand-built because ImageSharp 3.1 cannot encode them |
+| golden | `GoldenOutputTests`, `Golden/*.txt` | the console's whole output on the scenes (one of them, `dark-sky-wcs`, a float FITS with a WCS centred on LDN 42), version banner and temp path scrubbed; `APA_UPDATE_GOLDEN=1` re-approves |
 | console | `CliTests`, `OptionsTests` | exit codes, `-o`, parsing, parameter mapping |
 | recommendations | `RecommendationsTests` | every flag the reference image raised, on the dark scene |
 | plumbing | `LicenseHeaderTests` (every source file starts with the notice; explicit project list), `VersionTests` (version/copyright from props, banner on line 1), `ThirdPartyTests` (csproj <-> `ThirdParty.Components` <-> notices headings) | |
-| window | `Wpf.Tests/WindowSmokeTests` (renders the window's *content*, About, every tab with a real result, the error card; fails on any binding error; `APA_DUMP_SCREENS=<dir>` saves PNGs), `CultureTests` (report identical under ro-RO), `ParameterFieldsTests`, `ViewModelTests` | one STA thread with a message loop per process (`StaFixture`) |
+| window | `Wpf.Tests/WindowSmokeTests` (renders the window's *content*, About, every tab with a real result, the map and preview windows, the error card; fails on any binding error; `APA_DUMP_SCREENS=<dir>` saves PNGs), `CultureTests` (report identical under ro-RO), `ParameterFieldsTests`, `ViewModelTests`, `OverlayWindowTests` (the Tonuri tab's definitions and buttons, the map and preview view-models with and without a WCS) | one STA thread with a message loop per process (`StaFixture`) |
 | invariants | `RepoInvariantTests` | every `implemented` row of `docs/requirements.md` has a test named `R###_...` and every such test names a real row, read from the sources of both test projects; unique IDs; the design index exists; every validation case names a manifest file; `CLAUDE.md` at most 200 lines |
-| validation | `ValidationTests`, `TestData` | the reference image against `docs/validation.json`; trait `Category=Validation`, kept out of the gate by `kit.json`'s filter; `TestData.Large` finds the git-ignored copy in `testdata/large/` |
+| validation | `ValidationTests`, `TestData` | the two reference images (the PNG, V-001 to V-003; the plate-solved FITS, V-004) against `docs/validation.json`; trait `Category=Validation`, kept out of the gate by `kit.json`'s filter; `TestData.Large` finds the git-ignored copies in `testdata/large/` |
 
 ```bash
 dotnet test AstroPhotoAnalyzer.sln

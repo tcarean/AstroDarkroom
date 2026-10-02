@@ -42,6 +42,7 @@
     <Compile Include="..\AstroPhotoAnalyzer.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\SyntheticRasters.cs" Link="Shared\SyntheticRasters.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\Scenes.cs" Link="Shared\Scenes.cs" />
+    <Compile Include="..\AstroPhotoAnalyzer.Tests\WcsFixtures.cs" Link="Shared\WcsFixtures.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\TiffTestData.cs" Link="Shared\TiffTestData.cs" />
     <Compile Include="..\AstroPhotoAnalyzer.Tests\IccTestData.cs" Link="Shared\IccTestData.cs" />
   </ItemGroup>

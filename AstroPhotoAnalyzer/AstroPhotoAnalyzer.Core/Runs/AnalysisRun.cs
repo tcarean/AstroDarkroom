@@ -73,7 +73,26 @@ namespace AstroPhotoAnalyzer
         {
             progress?.Report("citire");
             Raster r = ImageLoader.Load(path);
+            if (p.WcsPath != null) r.Source = r.Source with { Wcs = BorrowWcs(p.WcsPath, r) };
             return Execute(r, path, p, progress);
+        }
+
+        /// <summary>
+        /// WCS-ul unui alt FITS, pentru un raster de aceeasi geometrie (R-027). Un PNG sau TIFF
+        /// exportat din Siril e in orientarea afisata, adica FITS-ul BOTTOM-UP rasturnat, deci
+        /// rasturnarea WCS-ului urmeaza ROWORDER-ul FITS-ului imprumutat, nu fisierul analizat.
+        /// </summary>
+        internal static Wcs BorrowWcs(string wcsPath, Raster r)
+        {
+            if (!File.Exists(wcsPath)) throw new Exception("--wcs: fisierul nu exista: " + wcsPath);
+            IReadOnlyDictionary<string, string> hdr; int w, h; bool bottomUp;
+            try { (hdr, w, h, bottomUp) = FitsReader.ReadImageHeader(wcsPath); }
+            catch (Exception e) { throw new Exception("--wcs: " + e.Message); }
+            if (w != r.W || h != r.H)
+                throw new Exception($"--wcs: FITS-ul are {Fmt.Dim(w, h)} px, imaginea {Fmt.Dim(r.W, r.H)}: WCS-ul se imprumuta doar intre imagini de aceeasi marime.");
+            Wcs wcs = Wcs.TryFrom(hdr, w, h, bottomUp);
+            if (wcs == null) throw new Exception("--wcs: FITS-ul n-are WCS (CTYPE RA---TAN / DEC--TAN cu CRPIX, CRVAL si CD, PC + CDELT sau CDELT + CROTA2): " + wcsPath);
+            return wcs;
         }
 
         internal static AnalysisResult Execute(Raster r, string path, Parameters p, IProgress<string> progress = null)
@@ -92,6 +111,7 @@ namespace AstroPhotoAnalyzer
 
             progress?.Report("tonuri");
             res.Tonal = TonalAnalyzer.Analyze(r, p);
+            progress?.Report("praf");
             res.Simulation = PrintStretchSimulator.Simulate(r, res.Tonal, p);
 
             progress?.Report("zgomot");

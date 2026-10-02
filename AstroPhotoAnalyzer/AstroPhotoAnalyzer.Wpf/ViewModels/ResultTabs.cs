@@ -102,19 +102,39 @@ namespace AstroPhotoAnalyzer.Wpf
 
     public sealed class TonesTabViewModel : ResultTabViewModel
     {
+        /// <summary>Propozitia rosie de sub tabel cand fisierul n-are WCS (R-113); aceeasi in fereastra hartii.</summary>
+        public const string NoWcsSentence = "Fisierul nu are WCS: norii nu au fost identificati dupa coordonate astrometrice.";
+
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
         IReadOnlyList<double> _hist = Array.Empty<double>();
-        IReadOnlyList<string> _simulation = Array.Empty<string>();
+        IReadOnlyList<SimulationRowItem> _simulation = Array.Empty<SimulationRowItem>();
+        IReadOnlyList<string> _clouds = Array.Empty<string>();
         IReadOnlyList<string> _ladder = Array.Empty<string>();
         IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
         double _paperBlack = double.NaN;
+        string _definition, _exactLine, _noWcs;
+        AnalysisResult _result;
 
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
         public IReadOnlyList<double> Histogram { get => _hist; private set => Set(ref _hist, value); }
 
         /// <summary>Negrul hartiei, in L*, ca pozitie in histograma (cosurile sunt 0..100).</summary>
         public double PaperBlack { get => _paperBlack; private set => Set(ref _paperBlack, value); }
-        public IReadOnlyList<string> SimulationRows { get => _simulation; private set => Set(ref _simulation, value); }
+
+        /// <summary>Tabelul simularii: antetul, apoi un rand pe tinta, fiecare cu butonul lui de preview (R-113, R-131).</summary>
+        public IReadOnlyList<SimulationRowItem> SimulationRows { get => _simulation; private set => Set(ref _simulation, value); }
+
+        /// <summary>Definitia prafului si a cerului in uz, sub tabel (R-044).</summary>
+        public string Definition { get => _definition; private set => Set(ref _definition, value); }
+
+        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care trece asa cum e (R-043).</summary>
+        public string ExactLine { get => _exactLine; private set => Set(ref _exactLine, value); }
+
+        /// <summary>Propozitia rosie fara WCS; null cu WCS (ascunsa).</summary>
+        public string NoWcsWarning { get => _noWcs; private set => Set(ref _noWcs, value); }
+
+        /// <summary>Norii catalogati cu randul lor, toti, ca text mono (raportul ii arata pe primii 15).</summary>
+        public IReadOnlyList<string> CloudRows { get => _clouds; private set => Set(ref _clouds, value); }
 
         /// <summary>Tabela nivel - L* a reperelor tabului, din TonalAnalyzer.LstarLadder; doar in fereastra.</summary>
         public IReadOnlyList<string> LadderRows { get => _ladder; private set => Set(ref _ladder, value); }
@@ -122,11 +142,28 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Panoul "cum se citeste tabul". Cifrele din el vin din Thresholds si ColorMath, nu sunt scrise de mana.</summary>
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
+        /// <summary>Deschide harta praf / cer (R-130). Fereastra o face cine asculta MapRequested; aici nu se deschide nimic.</summary>
+        public System.Windows.Input.ICommand OpenMap { get; }
+
+        public event Action<MapViewModel> MapRequested;
+        public event Action<PreviewWindowViewModel> PreviewRequested;
+
+        public TonesTabViewModel()
+        {
+            OpenMap = new RelayCommand(() => { if (_result != null) MapRequested?.Invoke(BuildMap()); }, () => _result != null);
+        }
+
+        /// <summary>Harta pentru rezultatul curent, construita la cerere (R-130).</summary>
+        internal MapViewModel BuildMap() => MapViewModel.From(_result);
+
+        /// <summary>Preview-ul unui rand al simularii, construit la cerere (R-131).</summary>
+        internal PreviewWindowViewModel BuildPreview(SimulationRow row) => PreviewWindowViewModel.From(_result, row);
+
         internal override void Populate(AnalysisResult r)
         {
             TonalResult t = r.Tonal;
             SimulationResult s = r.Simulation;
-            string okPct = Fmt.F0(Thresholds.PaperBlackOkPct), warnPct = Fmt.F0(Thresholds.PaperBlackWarnPct);
+            _result = r;
             Rows = new[]
             {
                 Row("Medii pe canal (0..255)", string.Join(" / ", t.MeanLevels.Select(Fmt.F1)),
@@ -142,10 +179,10 @@ namespace AstroPhotoAnalyzer.Wpf
                 Row("L* median", Fmt.F1(t.LstarMedian),
                     description: "Luminozitatea perceputa a pixelului median, de la 0 (negru) la 100 (alb). L* e scara hartiei: "
                         + "pasi egali de L* se vad ca pasi egali de gri. Pe o astrofoto, L* median e practic cerul."),
-                Row($"Sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}, Dmax {Fmt.F1(t.Dmax)})", Fmt.Pct(t.PctBelowPaperBlack),
-                    t.PrintSafe ? "print-safe" : t.BackgroundTooLowForPaper ? "prea jos pentru hartie" : "la limita",
-                    "Pixelii mai intunecati decat cel mai adanc negru pe care il da hartia aleasa. Toti ies cu acelasi negru, "
-                        + $"deci nuantele dintre ei se pierd. Sub {okPct} % e print-safe, peste {warnPct} % fundalul e prea jos pentru hartie."),
+                Row($"Sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}, Dmax {Fmt.Dmax(t.Dmax)})", Fmt.Pct(t.PctBelowPaperBlack),
+                    description: "Pixelii mai intunecati decat cel mai adanc negru pe care il da hartia aleasa. Toti ies cu acelasi negru, "
+                        + "deci nuantele dintre ei se pierd. E un fapt al imaginii, nu verdictul: verdictul se da pe praf si pe cer, "
+                        + "in simularea de mai jos."),
                 Row($"Sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} (separare slaba)", Fmt.Pct(t.PctBelowLowSeparation),
                     description: "Tonuri pe care hartia inca le separa, dar pe care ochiul, in lumina obisnuita de camera, abia le deosebeste. "
                         + "Include si pixelii de sub negrul hartiei. Un procent mare inseamna un cer care va parea o pata uniforma."),
@@ -160,22 +197,54 @@ namespace AstroPhotoAnalyzer.Wpf
             };
             Histogram = t.LstarHistogramPct;
             PaperBlack = t.PaperBlackLstar;
-            SimulationRows = new[] { "fundal-tinta   gamma   L* median   sub negru   sub L*15   peste L*50" }
-                .Concat(s.Rows.Select(row =>
-                    $"{(row.AsIs ? "asa cum e" : Fmt.F2(row.Target)),-12}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarMedian),9}   {Fmt.Pct(row.PctBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{(row.PrintSafe ? "   print-safe" : "")}"))
-                .ToList();
+            // Acelasi text mono ca in Anexa B, plus butonul de preview pe fiecare rand (antetul n-are).
+            var sim = new List<SimulationRowItem> { new SimulationRowItem { Text = ReportWriter.SimulationHeader } };
+            foreach (SimulationRow row in s.Rows)
+            {
+                SimulationRow captured = row;
+                sim.Add(new SimulationRowItem
+                {
+                    Text = ReportWriter.SimulationLine(row),
+                    Target = row.AsIs ? "asa cum e" : Fmt.Level(row.Target) + (row.Explicit ? " (dat)" : ""),
+                    Preview = new RelayCommand(() => PreviewRequested?.Invoke(BuildPreview(captured))),
+                });
+            }
+            sim.Add(new SimulationRowItem { Text = ReportWriter.SimulationFooter(s) });
+            SimulationRows = sim;
+            Definition = ReportWriter.DustDefinition(s);
+            ExactLine = ReportWriter.ExactLine(s);
+            NoWcsWarning = r.Raster.Source?.Wcs == null ? NoWcsSentence : null;
+            CloudRows = s.Clouds.Count == 0
+                ? Array.Empty<string>()
+                : new[] { ReportWriter.CloudHeader }.Concat(s.Clouds.Select(ReportWriter.CloudLine)).ToList();
             LadderRows = new[] { "   L*   nivel (gri)   reper" }
-                .Concat(TonalAnalyzer.LstarLadder(r.Parameters).Select(l =>
+                .Concat(TonalAnalyzer.LstarLadder(r.Parameters, s).Select(l =>
                     $"{Fmt.F1(l.Lstar),5}   {Fmt.F1(l.GrayLevel),11}   {l.Meaning}{(l.Chosen ? "   <- mediul ales" : "")}"))
                 .ToList();
             Guide = GuideParagraphs();
             HasResult = true;
+            (OpenMap as RelayCommand)?.RaiseCanExecuteChanged();
+        }
+
+        internal override void Clear()
+        {
+            base.Clear();
+            _result = null;
+            Rows = Array.Empty<MetricRow>();
+            Histogram = Array.Empty<double>();
+            SimulationRows = Array.Empty<SimulationRowItem>();
+            CloudRows = Array.Empty<string>();
+            LadderRows = Array.Empty<string>();
+            Guide = Array.Empty<GuideParagraph>();
+            Definition = null;
+            ExactLine = null;
+            NoWcsWarning = null;
+            (OpenMap as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
         // Textul panoului: explicatie, nu diagnostic - nu depinde de imagine, doar de praguri.
         static IReadOnlyList<GuideParagraph> GuideParagraphs()
         {
-            string okPct = Fmt.F0(Thresholds.PaperBlackOkPct), warnPct = Fmt.F0(Thresholds.PaperBlackWarnPct);
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));
             static string Black(PrintMedium m)
                 => $"{Fmt.F1(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
@@ -208,19 +277,33 @@ namespace AstroPhotoAnalyzer.Wpf
                 },
                 new GuideParagraph
                 {
+                    Lead = "Praful si cerul.",
+                    Text = $"Imaginea se imparte in dale de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, fiecare cu L*-ul luminantei ei medii: "
+                        + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul "
+                        + $"\"WCS din FITS\"), catalogul Lynds spune ce nori de praf sunt in cadru si unde; praful e percentila de {Fmt.F0(Thresholds.DustCloudFraction * 100)} % a dalelor "
+                        + $"tuturor norilor la un loc, cerul e mediana dalelor din afara lor, si fiecare nor cu cel putin {Thresholds.DustCloudMinPatches} dale isi are randul, "
+                        + $"cu tinta la care ajunge el pe negru. Fara WCS, praful e cele mai intunecate {Fmt.F0(Thresholds.DustAreaFraction * 100)} % din dalele cadrului si cerul mediana lor, "
+                        + "si tabul o spune cu rosu. Butonul \"Harta praf / cer\" arata pe imagine ce dale au intrat in fiecare statistica si norii pe nume.",
+                },
+                new GuideParagraph
+                {
                     Lead = "Verdictul.",
-                    Text = $"Sub {okPct} % din pixeli sub negrul hartiei: print-safe. Intre {okPct} % si {warnPct} %: la limita. "
-                        + $"Peste {warnPct} %: fundalul e prea jos pentru hartie. Pragurile sunt reguli empirice, masurate pe o imagine "
-                        + "de referinta, nu constante fizice.",
+                    Text = "Praful la sau peste negrul hartiei: print-safe. Praful sub negru, cerul peste: atentie, norii s-ar tipari negru pur. "
+                        + "Cerul sub negru: problema, cerul si praful ies cu acelasi negru. Nu e un procent de pixeli: e cea mai intunecata "
+                        + "structura intinsa fata de negrul hartiei, si recomandarea e nivelul MINIM la care ea mai ramane deasupra lui - in sus "
+                        + "pe o imagine prea intunecata, in jos pe una prea luminoasa.",
                 },
                 new GuideParagraph
                 {
                     Lead = "Simularea",
-                    Text = "raspunde la \"si daca ridic fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate "
-                        + "canalele, care duce fundalul masurat la fiecare tinta, apoi remasoara L*. Primul rand e imaginea asa cum e. "
-                        + "Cea mai mica tinta marcata print-safe e cea recomandata: refa stretch-ul din datele liniare in Siril pana la "
-                        + "fundalul acela. E o simulare: stretch-ul din Siril are alta forma de curba, dar arata corect unde ajunge fundalul "
-                        + $"fata de negrul hartiei. O tinta prea mare spala cerul in gri; urmareste coloana \"peste L*{Fmt.F0(Thresholds.HighlightLstar)}\".",
+                    Text = $"raspunde la \"si daca mut fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate canalele, "
+                        + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(Thresholds.ExactTargetLo < 0.10 ? 0.10 : Thresholds.ExactTargetLo)}..0.20, apoi remasoara praful si cerul. "
+                        + "Randul \"asa cum e\" sta printre tinte, la nivelul lui. Cea mai mica tinta marcata print-safe e cea recomandata: refa "
+                        + "stretch-ul din datele liniare in Siril pana la fundalul acela. Sub tabel: tinta exacta la care praful atinge negrul, "
+                        + $"si aceeasi tinta la Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine. "
+                        + "E o simulare: un stretch adevarat (Siril, VeraLux) tine umbrele mai jos decat curba gamma, deci tinta exacta e a curbei, "
+                        + $"nu a lui. Butonul Preview al unui rand arata imaginea la tinta lui, cu ce e sub negru si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} vopsit. "
+                        + $"O tinta prea mare spala cerul in gri; urmareste coloana \"peste L*{Fmt.F0(Thresholds.HighlightLstar)}\".",
                 },
             };
         }

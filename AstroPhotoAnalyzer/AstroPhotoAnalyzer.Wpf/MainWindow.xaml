@@ -102,9 +102,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBox Style="{StaticResource Field}" Text="{Binding Aspect, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding AspectHelp}" />
 
-            <TextBlock Style="{StaticResource Faint}" Text="Fundal-tinta al simularii (0..1)" ToolTip="{Binding TargetBgHelp}" />
+            <TextBlock Style="{StaticResource Faint}" Text="Fundal-tinta in plus in simulare (0..1, gol = doar grila)" ToolTip="{Binding TargetBgHelp}" />
             <TextBox Style="{StaticResource Field}" Text="{Binding TargetBg, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
                      ToolTip="{Binding TargetBgHelp}" />
+
+            <TextBlock Style="{StaticResource Faint}" Text="WCS din FITS (optional, aceeasi marime)" ToolTip="{Binding WcsHelp}" />
+            <TextBox Style="{StaticResource Field}" Text="{Binding WcsPath, UpdateSourceTrigger=PropertyChanged}" Margin="0,3,0,10"
+                     ToolTip="{Binding WcsHelp}" />
 
             <Grid Margin="0,0,0,10">
               <Grid.ColumnDefinitions>

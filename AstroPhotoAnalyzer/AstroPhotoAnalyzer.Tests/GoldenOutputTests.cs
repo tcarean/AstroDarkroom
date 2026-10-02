@@ -100,6 +100,27 @@ public class GoldenOutputTests
         Check("mono-png8", RunCli(ws, png));
     }
 
+    /// <summary>
+    /// The dark scene again, as a float FITS whose header carries a TAN WCS centred on LDN 42
+    /// (42"/px, 512 px = 6 degrees): the report names the catalogued clouds and the method.
+    /// </summary>
+    [Fact]
+    public void R044_DarkSkyFitsWithAWcsNamesTheClouds()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.DarkSky();
+        var cards = new List<string>
+        {
+            FitsTestData.StringCard("CTYPE1", "RA---TAN"), FitsTestData.StringCard("CTYPE2", "DEC--TAN"),
+            FitsTestData.Card("CRPIX1", "256.5"), FitsTestData.Card("CRPIX2", "256.5"),
+            FitsTestData.Card("CRVAL1", "263.27"), FitsTestData.Card("CRVAL2", "-25.70"),
+            FitsTestData.Card("CDELT1", "-0.01158"), FitsTestData.Card("CDELT2", "0.01158"),
+        };
+        string fits = ws.WriteFile("cer-intunecat-wcs.fit", FitsTestData.Build(r.W, r.H, 3, (x, y, p) => r.At(p, y, x), bitpix: -32, extraCards: cards));
+
+        Check("dark-sky-wcs", RunCli(ws, fits, "--target-bg", "0.135"));
+    }
+
     [Fact]
     public void R015_LinearFitsIsRefused()
     {

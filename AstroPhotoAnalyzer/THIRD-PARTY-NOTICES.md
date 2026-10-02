@@ -8,8 +8,52 @@ Nu e o formalitate: licența ImageSharp e condiționată și trebuie arătat că
 pachet adăugat fără o intrare aici e un pachet a cărui compatibilitate n-a verificat-o
 nimeni.
 
-Ce e scris de mână și **nu** e cod terț: cititorul FITS, toate măsurătorile, toate
-pragurile și tot textul recomandărilor.
+Ce e scris de mână și **nu** e cod terț: cititorul FITS, cititorul WCS, toate măsurătorile,
+toate pragurile și tot textul recomandărilor. Pe lângă cod, unealta îmbarcă un set de **date**
+scrise de alții, catalogul Lynds; e tratat aici ca o componentă, cu aceeași notiță.
+
+---
+
+## Lynds' Catalogue of Dark Nebulae
+
+**Rol.** Catalogul norilor de praf după care unealta recunoaște, într-un FITS plate-solved,
+ce nebuloase întunecate sunt în cadru și unde: 1787 de nori cu centrul, aria și clasa de
+opacitate, plus numerele Barnard cu care sunt cunoscuți (B78 pentru LDN 42, de pildă). Fără el,
+praful se măsoară pe tot cadrul, ca o fracție; cu el, pe nume (ADR 0025, R-019, R-044). Stă în
+`AstroPhotoAnalyzer.Core/Input/ldn.txt`, o resursă text de 52 KB citită de `DarkNebulaCatalogue`.
+
+**Sursa.** Lynds, B. T., *Catalogue of Dark Nebulae*, Astrophysical Journal Supplement 7, 1
+(1962). Fișierul îmbarcat e versiunea citibilă de mașină din 1979, pregătită de NASA/ADC din
+copia autorului (1791 de intrări, cu identificările Barnard adăugate din tabelul publicației
+originale), distribuită de CDS Strasbourg prin VizieR ca **VII/7A**
+(<https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>), luată pe 2026-10-02. Se păstrează
+coloanele originale (centrul în B1950, aria, opacitatea, numerele Barnard), nu coloanele ICRS
+calculate de VizieR; precesia în J2000 o face unealta. Cele patru intrări fără număr LDN de la
+sfârșitul tabelului sunt lăsate afară.
+
+**Licență.** Nicio licență formală nu însoțește catalogul: e un tabel de fapte dintr-o
+publicație științifică din 1962, distribuit de 47 de ani de agențiile de date astronomice.
+Regulile VizieR (<https://cds.unistra.fr/vizier-org/licences_vizier.html>) cer citarea
+autorului și a publicației originale și apreciază o mențiune a serviciului VizieR
+(DOI 10.26093/cds/vizier); nota lor despre licența CC-BY-NC privește tabelele jurnalelor AAS din
+seria `J/` (J/ApJ, J/ApJS, J/AJ), din care VII/7A nu face parte. ReadMe-ul catalogului nu
+conține nicio clauză de copyright.
+
+**Compatibilitate.** Datele nu sunt cod și nu se leagă de licența programului: GPLv3 acoperă
+programul, iar un tabel de poziții, arii și clase e un set de fapte, pe care dreptul de autor
+american nu-l protejează (Feist, 1991); dreptul european *sui generis* asupra bazelor de date
+durează 15 ani de la constituire, iar compilația e din 1979. Rămâne obligația de citare, pe
+care unealta o îndeplinește aici, în `ThirdParty.cs` (ce arată „Despre") și în README. Un
+derivat al AstroPhotoAnalyzer preia aceeași obligație, nimic mai mult.
+
+**Un lucru de știut.** Catalogul dă aria unui nor, nu conturul lui: unealta îl tratează ca un
+disc de aceeași arie în jurul centrului (ADR 0025), iar rândul unui nor neregulat amestecă
+dalele lui cu cerul din jur.
+
+Lynds B. T., 1962; versiunea citibilă NASA/ADC, 1979; distribuită de CDS, Strasbourg.
+
+- Catalog: <https://cdsarc.cds.unistra.fr/viz-bin/cat/VII/7A>
+- Articol: <https://ui.adsabs.harvard.edu/abs/1962ApJS....7....1L>
 
 ---
 

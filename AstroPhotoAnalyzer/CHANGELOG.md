@@ -6,6 +6,37 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Changed
+
+- The print-background verdict (R-041, R-043, R-044, R-092; ADR 0025). The image is no longer
+  judged by the share of pixels under paper black: the tool measures the *dust*, the darkest
+  extended structure, on 32 px patches, and recommends the lowest background of the grid
+  0.10..0.20, the as-is level included, at which the dust lands on paper black, downwards as
+  readily as upwards. On a plate-solved FITS (`CTYPE RA---TAN`, `CD`, `PC` + `CDELT` or
+  `CDELT` + `CROTA2`; SIP ignored) the embedded Lynds catalogue of dark nebulae names the clouds
+  in the frame: the dust is the 10 % percentile of all catalogued-cloud patches, the sky the
+  median of the patches outside them, and every cloud with 9 or more patches gets a row with its
+  L\* and the target that puts it on black. Without a WCS, the dust is the darkest 1 % of the
+  frame's patches and the sky the median, and the report says so. Anexa B lists the grid, the
+  exact target (also at Dmax -0.1 and +0.1), the Dmax from which the image passes as is, and
+  the darkest 15 clouds by name; the `Because` of the background recommendation names them.
+- `--target-bg` is optional and only adds a row (marked `(dat)`) to the simulation; the Preview
+  tab's print tile follows the recommended row when none is given.
+- The Tonuri tab shows the simulation as rows with a `Preview` button each, the definition of
+  the dust and the sky in use, a red sentence when the file has no WCS, and the cloud table.
+
+### Added
+
+- `--wcs <file.fit>` (the window: `WCS din FITS`): a TIFF or PNG borrows the WCS of a
+  plate-solved FITS of the same size, since the export carries no header (R-027).
+- The map window (`Harta praf / cer`): the image with the dust and sky patches coloured and the
+  catalogued clouds circled and named, each layer and each cloud behind a check box (R-130).
+- The preview window of a simulation row: the image lifted to that row's target with the pixels
+  under paper black and under L\* 15 coloured, each behind a check box (R-131).
+- The Lynds catalogue (`VII/7A`, 1787 clouds) as an embedded resource, with its notice in
+  `THIRD-PARTY-NOTICES.md` and in "Despre" (R-019, R-122).
+- A second validation image, the plate-solved FITS, as case V-004.
+
 ### Internal
 
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1`

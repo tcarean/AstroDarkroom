@@ -64,9 +64,35 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>Intreaga imagine, micsorata cu pasul care o aduce sub <paramref name="maxSide"/> px.</summary>
         internal static BitmapSource Whole(Raster r, int maxSide)
+            => Region(r, 0, 0, r.W, r.H, StrideFor(r, maxSide));
+
+        /// <summary>Pasul intreg care aduce latura mare a rasterului sub <paramref name="maxSide"/>.</summary>
+        internal static int StrideFor(Raster r, int maxSide)
+            => Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide));
+
+        /// <summary>
+        /// Un strat de culoare semitransparenta de <paramref name="w"/> x <paramref name="h"/>
+        /// pixeli, vopsit acolo unde <paramref name="on"/>(x, y) e adevarat si transparent in
+        /// rest: cum arata ferestrele de harta si de preview ce a decis nucleul. Nu decide
+        /// nimic: primeste clasa fiecarui pixel sau a fiecarei dale.
+        /// </summary>
+        internal static BitmapSource Overlay(int w, int h, Func<int, int, bool> on, Color colour)
         {
-            int stride = Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide));
-            return Region(r, 0, 0, r.W, r.H, stride);
+            var bgra = new byte[w * h * 4];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    if (!on(x, y)) continue;
+                    int o = (y * w + x) * 4;
+                    // Pbgra32: canalele premultiplicate cu alpha.
+                    bgra[o] = (byte)(colour.B * colour.A / 255);
+                    bgra[o + 1] = (byte)(colour.G * colour.A / 255);
+                    bgra[o + 2] = (byte)(colour.R * colour.A / 255);
+                    bgra[o + 3] = colour.A;
+                }
+            var b = BitmapSource.Create(w, h, 96, 96, PixelFormats.Pbgra32, null, bgra, w * 4);
+            b.Freeze();
+            return b;
         }
     }
 }

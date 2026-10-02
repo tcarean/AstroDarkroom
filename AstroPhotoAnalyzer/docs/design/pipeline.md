@@ -30,13 +30,14 @@ Invariants that the structure enforces:
 ### The chain (`Runs/AnalysisRun.cs`)
 
 ```
-ImageLoader.Load(path)            -> Raster (+ SourceInfo)
+ImageLoader.Load(path)            -> Raster (+ SourceInfo, with the FITS's WCS)
+AnalysisRun.BorrowWcs             -> SourceInfo.Wcs replaced by another FITS's (Parameters.WcsPath, R-027)
 RasterOps.LooksLinear             -> RefusedImageException if median < LinearMedianMax
 FileFacts.Of                      -> FileFactsResult
 BitDepthAnalyzer.Analyze          -> BitDepthResult
 CropAnalyzer.Analyze              -> CropResult          (needs Parameters.TargetAspect)
 TonalAnalyzer.Analyze             -> TonalResult         (needs Parameters.Dmax)
-PrintStretchSimulator.Simulate    -> SimulationResult    (needs TonalResult)
+PrintStretchSimulator.Simulate    -> SimulationResult    (needs TonalResult, SourceInfo.Wcs; builds the DustMap, runs DustAnalyzer per lift)
 NoiseAnalyzer.Analyze             -> NoiseResult         (needs Parameters.Seed)
 BackgroundAnalyzer.Analyze        -> BackgroundResult
 StarAnalyzer.Analyze              -> StarResult
@@ -47,7 +48,7 @@ Recommendations.Build             -> IReadOnlyList<Recommendation>   (needs ever
 ReportWriter.WriteBody            -> AnalysisResult.ReportBody
 ```
 
-Progress stages reported through `IProgress<string>`, in order: `citire`, `fisier`,
+Progress stages reported through `IProgress<string>`, in order: `citire`, `fisier`, `praf` (after `tonuri`),
 `tonuri`, `zgomot`, `fundal`, `stele`, `cuantizare`, `JPEG`, `raport`. No percentage:
 JPEG is about half the wall time and the rest is uneven.
 
