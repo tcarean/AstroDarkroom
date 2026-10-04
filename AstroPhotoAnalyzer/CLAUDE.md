@@ -26,7 +26,7 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   [--passepartout cm] [--frame cm] [--wcs file.fit] [-o file]`; flags before or after the image
   (R-003).
   Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- <image>`
-- Golden console texts, re-approved after the assistant has read and explained the diff (ADR 0027):
+- Golden console texts, after an intended output change (the rule "Golden files"):
   `APA_UPDATE_GOLDEN=1 dotnet test AstroPhotoAnalyzer.sln`
 - Window renders as PNGs without running it:
   `APA_DUMP_SCREENS=<dir> dotnet test AstroPhotoAnalyzer.Wpf.Tests --filter WindowSmokeTests`
@@ -78,10 +78,9 @@ The process rules every project made from the kit follows are in `.claude/rules/
 loaded with this file (the kit's ADR 0028). These are AstroPhotoAnalyzer's own; one that extends
 or varies a kit rule names it.
 
-- **Golden files** (extends the kit's rule "No test edited to pass"). A golden file is never
-  changed to make something pass either. After a regeneration the assistant reads the whole diff
-  of `Golden/*.txt`, ties every changed line to its cause in the change and reports them in the
-  wrap-up; a line that moved without a cause is a finding, asked about, not re-approved (ADR 0027).
+- **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
+  golden files are the console snapshots `AstroPhotoAnalyzer.Tests/Golden/*.txt`, regenerated
+  with `APA_UPDATE_GOLDEN=1`.
 - **Package notices** (extends the kit's rule "Packages"). A package also needs an entry in
   `THIRD-PARTY-NOTICES.md` with its GPLv3 compatibility argued, one in `ThirdParty.cs` (what
   "Despre" shows; `ThirdPartyTests` enforces both) and a row in the README's table, by hand. The

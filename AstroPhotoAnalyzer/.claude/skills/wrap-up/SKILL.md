@@ -13,8 +13,11 @@ adds project-specific steps and says where they go.
    ten lines. If it is red, fix it or stop and report; never continue with a red gate.
 2. If the session touched numeric code (CLAUDE.md says which files) and `docs/validation.json`
    has cases, run `/validate` and paste its drift table. A figure that moved is a finding, not
-   something to re-measure into place; so is a golden file that changed, where the project has
-   them.
+   something to re-measure into place. Where the project has golden files, read every one the
+   task changed line by line and report each changed line with its cause in the change, or that
+   none changed. A line with its cause is reported, not asked about; a line without one is a
+   finding, and so is any changed line of a golden the project's `CLAUDE.md` names as carrying
+   confirmed figures, a moved figure (the kit's ADR 0033).
 3. `git diff` the whole change. Read it back. Write a three-sentence plain-language summary:
    what changed for the user, what changed inside, what did not change that someone might expect.
 4. `CHANGELOG.md`: a change a reader of the version history cares about (behaviour added,
