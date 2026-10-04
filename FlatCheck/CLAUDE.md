@@ -23,9 +23,8 @@ It is not an image processor and it never decides what a shape on a map is.
 - Format: `dotnet format FlatCheck.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project FlatCheck -- <file.fit> [--ratio B.fit | --light | --expo | ...]`;
   the flag may come before or after the path (R-003). Window: `dotnet run --project FlatCheck.Wpf -- <session folder>`
-- Golden console texts, re-approved only after the owner read the diff:
-  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln` (`Golden/parity_*.txt` are the 43
-  scenarios the Python prototype confirmed on 2026-09-26; re-approving one is a C#-only call)
+- Golden console texts, after an intended output change (the rule "Golden files"):
+  `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln`
 - Window renders as PNGs without running it: `FLATCHECK_DUMP_SCREENS=<dir> dotnet test FlatCheck.Wpf.Tests --filter WindowSmokeTests`
 - Figures on the real masters (minutes, not in the gate): `/validate`, or
   `dotnet test FlatCheck.sln -c Release --filter "Category=Validation"` with
@@ -71,9 +70,11 @@ The process rules every project made from the kit follows are in `.claude/rules/
 loaded with this file (the kit's ADR 0028). These are FlatCheck's own; one that extends or varies
 a kit rule names it.
 
-- **Golden files** (extends the kit's rule "No test edited to pass"). A golden file is never
-  changed to make something pass either; golden files are re-approved only after the owner has
-  read the diff.
+- **Golden files** (extends the kit's rule "No test edited to pass", the kit's ADR 0033). The
+  golden files are the console snapshots `FlatCheck.Tests/Golden/*.txt`, regenerated with
+  `FLATCHECK_UPDATE_GOLDEN=1`. The 43 `Golden/parity_*.txt` carry the figures the Python
+  prototype confirmed on 2026-09-26, before it froze, so they are figures too: any line that
+  changes there is a finding, and the owner re-approves it, a C#-only call (ADR 0047, R-098).
 - **Package notices** (extends the kit's rule "Packages"). A package also needs an entry in
   `THIRD-PARTY-NOTICES.md` with its GPLv3 compatibility argued, and one in `ThirdParty.cs`
   (`ThirdPartyTests` enforces both). The FITS reader and the PNG encoder stay hand-rolled.

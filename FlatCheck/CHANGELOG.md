@@ -56,6 +56,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0033: after a regeneration the assistant reads the whole diff of the golden
+  files, ties every changed line to its cause in the change and reports them at wrap-up, instead
+  of waiting for the owner's read; a line without a cause is a finding. The 43 parity goldens
+  stay figures: any changed line there is a finding and the owner re-approves it (ADR 0047,
+  R-098). `CLAUDE.md` names the golden files and the variable that regenerates them.
 - The kit's ADR 0031: how the code works lives only in the design notes, and the kit's
   `check-design.ps1`, a new step of the gate, checks that every note is in the index and that
   every `Covers:` sentence names its files as paths that exist. It found `Report/AgainstReport.cs`

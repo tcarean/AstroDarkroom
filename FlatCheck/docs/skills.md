@@ -22,8 +22,9 @@ are in `kit.json`, not here.
   `Runs/` chains them), then the console and the window, which only call `Runs/`. Nothing is
   computed outside the core (the rule "Computed only in the core").
 - At step 6: numeric code is `Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/` (the rule
-  "Formula changes re-validate"). The golden files, the parity ones included, are re-approved
-  with `FLATCHECK_UPDATE_GOLDEN=1` only after the owner has read the diff and said yes.
+  "Formula changes re-validate"). The golden files are regenerated with
+  `FLATCHECK_UPDATE_GOLDEN=1`; a changed `Golden/parity_*.txt` waits for the owner (the rule
+  "Golden files", R-098).
 - At step 8: `README.md` is in Romanian; the "Opțiuni" section lists every console flag
   (`docs/design/process.md`, "The README Opțiuni section").
 

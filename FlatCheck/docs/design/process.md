@@ -220,7 +220,8 @@ The procedure:
    copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
    `<TMP>/`.
 5. Run the suite without the variable; it must be green.
-6. The owner reads the diff and approves it (the rule "Golden files").
+6. The wrap-up report names the new file and every changed line of an existing one with its
+   cause (the rule "Golden files").
 
 ### Adding a parity golden scenario
 
