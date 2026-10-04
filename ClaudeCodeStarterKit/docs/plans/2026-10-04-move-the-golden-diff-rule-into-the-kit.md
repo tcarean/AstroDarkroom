@@ -302,3 +302,28 @@ merge, `git merge --no-ff claude/Move-the-golden-diff-rule-into-the-kit` in
   `git worktree remove` and `git branch -d`.
 - **The parked APA branch** `claude/Recommend-the-lift-that-puts-the-dust-on-paper-black` touches
   only `AstroPhotoAnalyzer/`. It is not affected beyond what `main` already holds.
+
+## What deviated
+
+- **Measured on 2026-10-04, by the commit hook's gate at each commit:**
+
+  | Project | Gate | Tests | Decisions |
+  |---|---|---|---|
+  | kit | `== OK in 119s` | 131 | `ok 33` |
+  | AstroPhotoAnalyzer | `== OK in 27s` | 290 + 40 | `ok 27` |
+  | FlatCheck | `== OK in 116s` | 946 + 331 | `ok 55` |
+  | ImageVisualCompare | `== OK in 16s` | 149 | `ok 26` |
+
+  In each adopter, `sync.ps1` copied exactly `.claude/rules/kit/process.md` and the two skills.
+  The WPF tests ran in this worktree with no antivirus block. `CLAUDE.md` went from 169 to 168
+  lines in APA and from 132 to 133 in FlatCheck.
+- **Wording only, no change of substance:**
+  - The rules-file sentence says "report the lines and their causes" instead of "report them".
+  - The guide's golden line keeps "au o procedura explicita de regenerare" from the old line.
+  - FlatCheck's rule dates the confirmation (2026-09-26).
+- **Found at wrap-up, not in the plan.** The plan's grep covered `docs/` and `CLAUDE.md` only, so
+  it missed two files. `AstroPhotoAnalyzer.Tests/testdata/README.md` and
+  `FlatCheck.Tests/testdata/README.md` still said the goldens are re-approved "after the owner
+  has read the diff". Both now point at the rule "Golden files", in a wrap-up commit.
+- **The first commit was refused** by the Claude commit hook, because the worktree path came
+  through a shell variable. It ran again with the path written out.
