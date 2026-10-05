@@ -20,7 +20,7 @@ using System.Diagnostics;
 namespace ImageVisualCompare.Wpf.Imaging;
 
 /// <param name="ManagedBytes">Managed heap in use.</param>
-/// <param name="PrivateBytes">Private working set of the whole process.</param>
+/// <param name="PrivateBytes">Private bytes of the whole process (<c>Process.PrivateMemorySize64</c>), not its working set.</param>
 public readonly record struct MemorySnapshot(long ManagedBytes, long PrivateBytes)
 {
     public string Describe() =>

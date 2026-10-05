@@ -92,7 +92,8 @@ internal static class DarkTitleBar
 
         // Windows 11 lets the caption be an exact colour, so it can match the toolbar below it
         // rather than being the generic Windows dark. Windows 10 has no such attribute and
-        // gets the generic one; the call simply fails there, which is why nothing checks it.
+        // gets the generic one, so the colour is set only from build 22000. No result of
+        // DwmSetWindowAttribute is checked, here or for the dark mode above.
         if (build >= FirstWindows11Build)
         {
             int colour = ChromeColorRef;

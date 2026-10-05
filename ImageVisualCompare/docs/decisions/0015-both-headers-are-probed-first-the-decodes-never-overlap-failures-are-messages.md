@@ -35,7 +35,10 @@ handles, or too large for the machine (the `IsExpectedLoadFailure` comment).
   user after "several seconds and ~170 MB on pixels that may be about to be thrown away";
   probed first, it has allocated nothing (the `LoadAsync` comment).
 - **Decode the two in parallel.** Overlapping them "would double the peak for no gain the user
-  would notice" (the same comment).
+  would notice" (the same comment). (Restated 2026-10-02: the 2026-09-08 measurement found no
+  transient buffer to double, since WIC streams the conversion, and the comment now says so.
+  The decodes stay sequential, one decoder at a time and a progress report that names the file
+  being read; two at once has not been measured.)
 - **A crash dialog for a file that cannot be read.** None of those failures is a defect in this
   program (the `IsExpectedLoadFailure` comment); the user gets the file's name and the reason,
   and picks again.
@@ -51,7 +54,8 @@ handles, or too large for the machine (the `IsExpectedLoadFailure` comment).
 - The measurement of 2026-09-08 found that WIC streams the Rgb48 to Bgra32 conversion instead of
   materialising a 126 MB intermediate, so a load has no transient spike above the steady state
   (`CLAUDE.md`, "Memory, measured"); the loader's comment still names a transient decode buffer
-  as the largest allocation. No figure exists for two decodes at once.
+  as the largest allocation. No figure exists for two decodes at once. (Corrected 2026-10-02:
+  the comment now gives the measurement instead; `docs/plans/2026-10-02-copy-the-licence-next-to-the-program-and-fix-stale-texts.md`.)
 - Guards: `ImagePairLoaderTests` (two probes and no decode for a mismatched pair; at most one
   decode running at a time; a missing and a corrupt file become messages naming them; progress
   as each image starts), `WicImageLoaderTests` (the probe reports what a full load does).

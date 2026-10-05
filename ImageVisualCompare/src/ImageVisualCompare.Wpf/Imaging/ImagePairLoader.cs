@@ -104,9 +104,11 @@ public sealed class ImagePairLoader(IImageLoader loader)
                 }
             }
 
-            // Sequentially, not in parallel: the transient decode buffer is the largest single
-            // allocation in the whole application, and overlapping the two would double the peak
-            // for no gain the user would notice.
+            // Sequentially, not in parallel: one decoder at a time, and the progress report names
+            // the file being read. The reason first given here, a transient decode buffer that two
+            // decodes at once would double, did not hold when measured on 2026-09-08: WIC streams
+            // each conversion with no spike above the finished bitmap (docs/design/imaging.md).
+            // Decoding both at once has not been measured.
             currentPath = beforePath;
             progress?.Report(new ImageLoadProgress(0, beforeInfo.FileName));
             LoadedImage before = await loader.LoadAsync(beforePath, cancellationToken).ConfigureAwait(false);

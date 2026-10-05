@@ -163,8 +163,9 @@ public partial class MainWindow : Window
     {
         if (_pair is not null)
         {
-            // Drop the outgoing pair before the incoming one settles, so two pairs are never
-            // resident at once.
+            // The incoming pair was decoded while the outgoing one stayed on screen, so both are
+            // resident up to here. Drop the outgoing one before the incoming one is shown, so
+            // that from here on only one is.
             _pair = null;
             Compare.Clear();
             MemoryHousekeeping.ReleaseImageBuffers();

@@ -17,6 +17,7 @@
 
 using System.IO;
 using System.Runtime.CompilerServices;
+using ImageVisualCompare.Wpf;
 
 namespace ImageVisualCompare.Tests;
 
@@ -129,5 +130,22 @@ public class LicenseHeaderTests
         Assert.Contains("Version 3, 29 June 2007", license);
         Assert.Contains("TERMS AND CONDITIONS", license);
         Assert.Contains("How to Apply These Terms to Your New Programs", license);
+    }
+
+    /// <summary>
+    /// About says the full licence "is in the LICENSE file next to this program" (GPLv3
+    /// section 5(d)), so the build has to put it there. The application assembly these tests
+    /// load sits in the test output folder, where the project reference brings the
+    /// application's copy of LICENSE too: the same item that puts it beside the program in the
+    /// application's own output and in its publish folder.
+    /// </summary>
+    [Fact]
+    public void R074_TheLicenceSitsNextToTheApplication()
+    {
+        string folder = Path.GetDirectoryName(typeof(VersionInfo).Assembly.Location)!;
+        string beside = Path.Combine(folder, "LICENSE");
+
+        Assert.True(File.Exists(beside), "no LICENSE next to the application in " + folder);
+        Assert.Equal(File.ReadAllText(Path.Combine(RepoDir(), "LICENSE")), File.ReadAllText(beside));
     }
 }

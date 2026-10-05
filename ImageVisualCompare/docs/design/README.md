@@ -27,7 +27,7 @@ stop.
 | The comparison surface: one shared transform, physical and device-independent pixels, `Canvas` layers sized in pixels, the clip on the layer, the shared opaque backdrop, the floating scrollbars | `rendering.md` | anything in `Controls/`, `Viewport.cs`, `RenderPlan.cs`, `DividerModel.cs`; ADR 0010 to ADR 0013 and ADR 0019 first |
 | The decoder seam and why WIC, the memory a pair costs and how it is given back, padding a mismatched pair | `imaging.md` | anything in `Imaging/`, `ImagePairValidator.cs`, a new package; ADR 0008 and ADR 0014 to ADR 0016 first |
 | The culture trap and the dark chrome: no `InvariantGlobalization`, no `MessageBox`, the DWM caption | `shell.md` | `Directory.Build.props`, a new `Window`, `Theme.xaml`; ADR 0017 and ADR 0018 first |
-| The version and the licence: one source for each, what `VersionTests` and `LicenseHeaderTests` pin | `versioning-and-licence.md` | `Version.cs`, `Directory.Build.props`, `VersionTests`, `LicenseHeaderTests`; ADR 0004, ADR 0023 and ADR 0024 first |
+| The version and the licence: one source for each, what `VersionTests` and `LicenseHeaderTests` pin | `versioning-and-licence.md` | `Version.cs`, `Directory.Build.props`, `VersionTests`, `LicenseHeaderTests`, the `LICENSE` item of the Wpf csproj; ADR 0004, ADR 0023, ADR 0024 and ADR 0027 first |
 | What is tested, how the fixtures are made, what is not tested and why the application has to be launched | `testing.md` | a new fixture, any change to the WPF layer; ADR 0026 first |
 
 The decisions themselves, with the alternatives rejected, are in `../decisions/`. The behaviour,

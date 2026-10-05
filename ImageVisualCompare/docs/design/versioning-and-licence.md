@@ -7,6 +7,7 @@
 > `tests/ImageVisualCompare.Tests/VersionTests.cs`,
 > `tests/ImageVisualCompare.Tests/LicenseHeaderTests.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml`,
+> `src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj`,
 > `LICENSE`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
@@ -62,3 +63,11 @@ Four things follow, and all four are pinned by tests:
 
 The year and the author are the user's call, exactly like the version. Don't roll the year
 forward on your own initiative.
+
+The About text says the full licence is "in the LICENSE file next to this program", and since
+2026-10-02 the build puts it there (ADR 0027): the Wpf csproj links the root `LICENSE` as a
+`None` item with `Link="LICENSE"` and `CopyToOutputDirectory="PreserveNewest"`, so the file lands
+at the root of the application's build output and `dotnet publish` carries it into the publish
+folder. The project reference copies it into the test project's output too, which is where
+`R074_TheLicenceSitsNextToTheApplication` finds it beside the application assembly. There is one
+`LICENSE` in the repository; the item is a link, not a copy.

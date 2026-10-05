@@ -49,7 +49,9 @@
     decoding either, so a pair that needs a decision costs nothing until it is made. A
     mismatch is put to the caller through `confirmPadding`; with no delegate it is refused,
     which is what anything headless wants. Decodes sequentially, never in parallel, to keep
-    the peak down. Turns every expected file failure into a message rather than a crash. See ADR 0015.
+    the peak down (the 2026-09-08 measurement found no transient spike to keep down; the
+    loader's comment says why the order stays, ADR 0015). Turns every expected file failure into
+    a message rather than a crash. See ADR 0015.
   - `Imaging/MemoryHousekeeping.cs` — the release path when a pair is replaced, and the
     process memory readout.
   - `Services/FileDialogService.cs` — the two open dialogs and the file filter. These are
