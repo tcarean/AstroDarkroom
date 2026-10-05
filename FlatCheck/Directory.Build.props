@@ -36,6 +36,17 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+
+    <!-- The runtime the release publishes for (kit.json, release.publish: -r win-x64). Declared
+         here, every restore writes its section into packages.lock.json; otherwise a publish for
+         it rewrites the lock files and the release stops on them. The test projects are never
+         published, so they leave it out (ADR 0056). -->
+    <RuntimeIdentifiers Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">win-x64</RuntimeIdentifiers>
+
+    <!-- The single-file analyzer, which PublishSingleFile turns on for the console's publish,
+         brings its package (Microsoft.NET.ILLink.Tasks, at the installed SDK's version) into the
+         lock files. Off, a publish leaves them alone (ADR 0056). -->
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
   </PropertyGroup>
 
 </Project>
