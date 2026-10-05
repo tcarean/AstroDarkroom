@@ -7,6 +7,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- ADR 0034: a project whose release publishes for a runtime declares it in
+  `Directory.Build.props` (`RuntimeIdentifiers` on every project but the test projects) and, for
+  a single-file publish, turns off the single-file analyzer, so the release's publish leaves the
+  lock files alone and `/release` does not stop on them; `GHID.md` says so in its Release section.
 - The kit's rule "Design notes" (ADR 0031): any file may name the project's code and say what a
   test or a check enforces; how the code works and how its parts fit go only in the design note
   of its area, which names the files it covers in a `Covers:` sentence and changes with them.
