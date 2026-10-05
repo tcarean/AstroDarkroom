@@ -73,7 +73,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
-- The level-L* ladder of the Tonuri tab marks the paper in use: an explicit Dmax that is another
+- The level-L\* ladder of the Tonuri tab marks the paper in use: an explicit Dmax that is another
   medium's (canvas with Dmax 2.2) no longer marks that other medium as the chosen one (R-042).
 - The report's header line and Anexa F print a Dmax with its second decimal: `--dmax 2.35` read
   `Dmax 2.4`, the Dmax of another paper (R-101).

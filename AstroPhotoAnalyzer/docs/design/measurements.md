@@ -59,8 +59,10 @@ are gone; the verdict is B5's).
 
 `LstarLadder(parameters, simulation)` is a reference table, not a measurement (window only, like
 `DpiLadder`): one `LstarLadderRow(Lstar, GrayLevel, Meaning, Chosen)` per reference of
-the tab - the paper black of each of the three media (`Chosen` on the one whose Dmax is
-`Parameters.Dmax`; a `DmaxOverride` that matches no medium adds its own chosen row), the
+the tab - the paper black of each of the three media (`Chosen` on the chosen medium's when the Dmax
+in use is that medium's; an explicit Dmax, `Parameters.DmaxIsExplicit`, adds its own chosen
+row instead, even when another medium has that Dmax, labelled `Dmax explicit` or, read from a
+profile, `Dmax din profilul ICC`; R-042), the
 levels `DarkLevelA`/`DarkLevelB`, the L\* thresholds `LowSeparationLstar`/`HighlightLstar`,
 and the simulation's primary row (`fundalul-tinta dat` when the owner gave one, `fundalul
 recomandat` otherwise, no row when the as-is row is primary) - sorted by L\*. The level is
