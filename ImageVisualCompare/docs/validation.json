@@ -1,5 +1,5 @@
 {
-  "$comment": "Figures measured on real pairs of images, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0005) reads this file; docs/validation.md explains each case and records every change. One kind, pair: both files are probed with WicImageLoader and compared with ImagePairValidator.Inspect, the pair is loaded with ImagePairLoader (the padding question answered yes), then dropped and released with MemoryHousekeeping.ReleaseImageBuffers. before and after are manifest names under tests/testdata/large/. expected lists the figures the case guards, by the names ValidationTests prints; tolerance applies to the figures measured as decimals, the memory figures in MB, however their number is written here; the integers (sizes, bytes), booleans and strings are compared exactly; decode.seconds is printed and never guarded; null means unmeasured. Change a figure here only after re-measuring and recording why in validation.md.",
+  "$comment": "Figures measured on real pairs of images, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0005) reads this file; docs/validation.md explains each case and records every change. One kind, pair: both files are probed with RoutingImageLoader (the project's reader for a FITS, WIC for the rest) and compared with ImagePairValidator.Inspect, the pair is loaded with ImagePairLoader (the padding question answered yes), then dropped and released with MemoryHousekeeping.ReleaseImageBuffers. before and after are manifest names under tests/testdata/large/. expected lists the figures the case guards, by the names ValidationTests prints; tolerance applies to the figures measured as decimals, the memory figures in MB, however their number is written here; the integers (sizes, bytes), booleans and strings are compared exactly; decode.seconds is printed and never guarded; null means unmeasured. Change a figure here only after re-measuring and recording why in validation.md.",
   "cases": [
     {
       "id": "V-001",
@@ -69,6 +69,80 @@
         "load.frozen": true,
         "memory.privateDeltaMb": 169,
         "memory.privateAfterReleaseDeltaMb": -2
+      }
+    },
+    {
+      "id": "V-003",
+      "kind": "pair",
+      "before": "result_3813s.fit",
+      "after": "result_3813s_Graxpert_AI.fit",
+      "tolerance": 60,
+      "measuredOn": "2026-10-05",
+      "expected": {
+        "before.width": 5938,
+        "before.height": 3888,
+        "before.bitsPerChannel": 32,
+        "before.channels": "Rgb",
+        "before.format": "32-bit float RGB",
+        "before.displayBytes": 92347776,
+        "before.fileBytes": 277053120,
+        "after.width": 5938,
+        "after.height": 3888,
+        "after.bitsPerChannel": 32,
+        "after.channels": "Rgb",
+        "after.format": "32-bit float RGB",
+        "after.displayBytes": 92347776,
+        "after.fileBytes": 277047360,
+        "pad.width": 5938,
+        "pad.height": 3888,
+        "pad.requiresPadding": false,
+        "pad.dimensions": "5938 × 3888",
+        "load.success": true,
+        "load.displayBytes": 184695552,
+        "load.beforeIsBgra32": true,
+        "load.afterIsBgra32": true,
+        "load.frozen": true,
+        "load.beforeFormat": "32-bit float RGB",
+        "load.afterFormat": "32-bit float RGB",
+        "memory.privateDeltaMb": 204.3,
+        "memory.privateAfterReleaseDeltaMb": 28.1
+      }
+    },
+    {
+      "id": "V-004",
+      "kind": "pair",
+      "before": "result_3813s.fit",
+      "after": "de_printat.png",
+      "tolerance": 60,
+      "measuredOn": "2026-10-05",
+      "expected": {
+        "before.width": 5938,
+        "before.height": 3888,
+        "before.bitsPerChannel": 32,
+        "before.channels": "Rgb",
+        "before.format": "32-bit float RGB",
+        "before.displayBytes": 92347776,
+        "before.fileBytes": 277053120,
+        "after.width": 5938,
+        "after.height": 3888,
+        "after.bitsPerChannel": 16,
+        "after.channels": "Rgb",
+        "after.format": "16-bit RGB",
+        "after.displayBytes": 92347776,
+        "after.fileBytes": 103387067,
+        "pad.width": 5938,
+        "pad.height": 3888,
+        "pad.requiresPadding": false,
+        "pad.dimensions": "5938 × 3888",
+        "load.success": true,
+        "load.displayBytes": 184695552,
+        "load.beforeIsBgra32": true,
+        "load.afterIsBgra32": true,
+        "load.frozen": true,
+        "load.beforeFormat": "32-bit float RGB",
+        "load.afterFormat": "16-bit RGB",
+        "memory.privateDeltaMb": 175.6,
+        "memory.privateAfterReleaseDeltaMb": -0.6
       }
     }
   ]

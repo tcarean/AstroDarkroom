@@ -6,6 +6,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- FITS files (`.fit`, `.fits`, `.fts`) open as image A or B, next to or against a PNG or a
+  TIFF: 8, 16 and 32-bit integers, 32 and 64-bit floats, one plane (gray) or three (RGB). The
+  values are shown as stored, with no stretch, at the level the same value has in a 16-bit
+  PNG; rows follow `ROWORDER`, bottom-up without it, as in Siril; a float file that counts to
+  65 535 instead of 1 is recognised and the status bar says so (R-014 to R-019, ADR 0029).
+
 ### Fixed
 
 - `LICENSE` now sits next to the program, in the build folder and in the publish folder, where

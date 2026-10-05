@@ -33,11 +33,12 @@ public sealed record ImagePairSelection(string BeforePath, string AfterPath);
 public sealed class FileDialogService : IFileDialogService
 {
     // TIFF comes free with the WIC codec set and Siril exports it, so there is no reason to
-    // turn those files away.
+    // turn those files away. FITS is what Siril works in; the project's own reader opens it.
     private const string Filter =
-        "Images (*.png;*.tif;*.tiff)|*.png;*.tif;*.tiff|" +
+        "Images (*.png;*.tif;*.tiff;*.fit;*.fits;*.fts)|*.png;*.tif;*.tiff;*.fit;*.fits;*.fts|" +
         "PNG (*.png)|*.png|" +
         "TIFF (*.tif;*.tiff)|*.tif;*.tiff|" +
+        "FITS (*.fit;*.fits;*.fts)|*.fit;*.fits;*.fts|" +
         "All files (*.*)|*.*";
 
     public ImagePairSelection? PickImagePair(string? initialDirectory = null)

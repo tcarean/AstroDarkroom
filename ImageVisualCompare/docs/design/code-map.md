@@ -20,6 +20,10 @@
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
     therefore search rather than index. See ADR 0020.
   - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on. See ADR 0022.
+  - `FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs` — the project's own FITS reader:
+    where the image is in the file and how it is stored (`FitsImageLayout`), how a value
+    becomes one of 256 levels, and one Bgra32 row at a time out of the planes. How they fit is
+    in `imaging.md`. See ADR 0029.
   - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
     larger extent on each axis, plus whether that meant padding and the question to put to
     the user if it did.
@@ -45,6 +49,11 @@
     `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
     words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
     anything it does not recognise. See ADR 0022.
+  - `Imaging/FitsImageLoader.cs` — decodes FITS with the reader in Core, row by row into a
+    `WriteableBitmap`, and a second time when the floats turn out to count to 65 535. See
+    ADR 0029.
+  - `Imaging/RoutingImageLoader.cs` — the loader the application constructs: FITS, by the
+    file's first bytes, to `FitsImageLoader`, everything else to `WicImageLoader`.
   - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before
     decoding either, so a pair that needs a decision costs nothing until it is made. A
     mismatch is put to the caller through `confirmPadding`; with no delegate it is refused,

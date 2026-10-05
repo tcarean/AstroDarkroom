@@ -146,7 +146,7 @@ public class ValidationTests(ITestOutputHelper output)
     private static Dictionary<string, object> Measure(string beforePath, string afterPath)
     {
         var figures = new Dictionary<string, object>(StringComparer.Ordinal);
-        var loader = new WicImageLoader();
+        var loader = new RoutingImageLoader();
 
         // The headers first, as the application reads them: this also loads the two codecs, so
         // their own cost is not counted as the pair's below.
@@ -179,7 +179,7 @@ public class ValidationTests(ITestOutputHelper output)
     /// </summary>
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void LoadAndDescribe(
-        WicImageLoader loader, string beforePath, string afterPath, long baseline, Dictionary<string, object> figures)
+        IImageLoader loader, string beforePath, string afterPath, long baseline, Dictionary<string, object> figures)
     {
         var stopwatch = Stopwatch.StartNew();
 
@@ -199,6 +199,8 @@ public class ValidationTests(ITestOutputHelper output)
             figures["load.beforeIsBgra32"] = pair.Before.Bitmap.Format == PixelFormats.Bgra32;
             figures["load.afterIsBgra32"] = pair.After.Bitmap.Format == PixelFormats.Bgra32;
             figures["load.frozen"] = pair.Before.Bitmap.IsFrozen && pair.After.Bitmap.IsFrozen;
+            figures["load.beforeFormat"] = pair.Before.Info.FormatDescription;
+            figures["load.afterFormat"] = pair.After.Info.FormatDescription;
         }
 
         figures["memory.privateDeltaMb"] = Megabytes(MemoryHousekeeping.Snapshot().PrivateBytes - baseline);

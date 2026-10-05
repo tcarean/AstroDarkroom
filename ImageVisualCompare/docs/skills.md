@@ -32,10 +32,12 @@ are in `kit.json`, not here.
 
 ## /validate
 
-- At step 1: the files are `de_printat.png`, `de_printat_PRINT_preview_16bit.tif` and
-  `de_printat_50x35_TIFF8.tif`, git-ignored copies in `tests/testdata/large/` of the owner's
+- At step 1: the files are `de_printat.png`, `de_printat_PRINT_preview_16bit.tif`,
+  `de_printat_50x35_TIFF8.tif` and, for the FITS cases, `result_3813s.fit` and
+  `result_3813s_Graxpert_AI.fit` (from the subfolder `Processed_WithFlats_RBF_light`),
+  git-ignored copies in `tests/testdata/large/` of the owner's
   files in `E:\Photografie\Claude` (ADR 0005); `tests/testdata/manifest.json` holds their
-  hashes. A worktree has no copy: copy the three files into the worktree's
+  hashes. A worktree has no copy: copy the five files into the worktree's
   `tests/testdata/large/` first, or every case prints `NOT MEASURED`. A case probes and decodes a 23 MP pair, a few
   seconds.
 - At step 3: the table's second column is the case's two files, not a fixture; `decode.seconds`

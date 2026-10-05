@@ -5,7 +5,8 @@ draggable vertical line, image B right of it, both at the same zoom and pan, wit
 the pixel under the cursor read from both. Built to see a difference of one or two levels in a
 dark field, where the eye cannot. One WPF application over a pure core library, .NET 9,
 Windows, x64, **no NuGet package** outside the test project: decoding is WIC, the codec WPF
-uses anyway (ADR 0008). Everything on screen is dark, whatever the system theme (ADR 0018).
+uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does not read (ADR
+0029). Everything on screen is dark, whatever the system theme (ADR 0018).
 
 ## Commands
 
@@ -34,16 +35,17 @@ uses anyway (ADR 0008). Everything on screen is dark, whatever the system theme 
 
 - `src/ImageVisualCompare.Core/` - `net9.0`, no UI framework reference: zoom and pan
   (`Viewport.cs`, `ZoomLadder.cs`), the divider (`DividerModel.cs`), the canvas of a pair
-  (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), and the layout
+  (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), the FITS reader
+  (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`).
   All of it unit tested.
 - `src/ImageVisualCompare.Wpf/` - `net9.0-windows`, the application: `Imaging/` (the decoder
-  seam and WIC behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
+  seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
   surface, the minimap), `MainWindow`, `MessageDialog`, `Interop/DarkTitleBar.cs`,
   `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`.
 - `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
-  on the real WIC codecs (fixtures generated at run time by `TempImages`),
+  on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`),
   `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,
   `VersionTests`. `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
 - `Directory.Build.props` - `<Version>` and `<Copyright>`, the single place for both (ADR
@@ -61,7 +63,7 @@ uses anyway (ADR 0008). Everything on screen is dark, whatever the system theme 
   `ClaudeCodeStarterKit` beside this project in the `photo` repository (for people, not loaded).
 - This folder lives inside the `photo` monorepo (`E:\Photografie\Code`); the git root is the
   parent. Sample images never enter the repository: the root `.gitignore` covers `*.tiff` but
-  not `*.tif` or `*.png`, so keep them out by hand.
+  not `*.tif`, `*.png` or `*.fit`, so keep them out by hand.
 
 ## Rules
 
@@ -72,7 +74,10 @@ or varies a kit rule names it.
 - **No imaging dependency** (extends the kit's rule "Packages"). Core and the application
   reference no NuGet package; WIC decodes, and `IImageLoader` is the one seam a replacement
   decoder would fill. SkiaSharp, ImageSharp and Magick.NET were compared and rejected; read
-  `docs/design/imaging.md` before proposing one again (ADR 0008).
+  `docs/design/imaging.md` before proposing one again (ADR 0008). FITS, which WIC has no codec
+  for, is read by the project's own code in Core, behind the same seam (ADR 0029).
+- **A FITS is shown as stored.** No stretch, and the 8-bit level is the one WIC gives the same
+  value in a 16-bit PNG; `FitsScale` is the only place a FITS value becomes a level (ADR 0029).
 - **Core has no UI.** `ImageVisualCompare.Core` references no UI framework; its own `PointD`,
   `SizeD` and `RectD` exist so it never needs `WindowsBase`. The controls do no arithmetic: a
   number on screen comes from a Core record and has its test there (ADR 0009).

@@ -30,7 +30,7 @@ namespace ImageVisualCompare.Wpf;
 public partial class MainWindow : Window
 {
     private readonly IFileDialogService _dialogs = new FileDialogService();
-    private readonly ImagePairLoader _loader = new(new WicImageLoader());
+    private readonly ImagePairLoader _loader = new(new RoutingImageLoader());
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
 
     private ImagePair? _pair;

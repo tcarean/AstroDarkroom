@@ -3,6 +3,8 @@
 > Moved unchanged on 2026-10-02 (ADR 0001) from `CLAUDE.md`, "Testing". Where a paragraph became a
 > decision record, its number is given beside it.
 > **Covers:** `tests/ImageVisualCompare.Tests/TempImages.cs`,
+> `tests/ImageVisualCompare.Tests/FitsFixture.cs`,
+> `tests/ImageVisualCompare.Tests/FitsImageLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/WicImageLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/ImagePairLoaderTests.cs`,
 > and the untested files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
@@ -19,7 +21,10 @@
 
 Covered: everything in Core, and the imaging layer. `WicImageLoaderTests` generates fixtures
 at run time in six pixel formats plus TIFF via `TempImages`, so the real codecs are exercised
-without binary files in the repository. `ImagePairLoaderTests` covers valid, mismatched,
+without binary files in the repository. FITS files are built in memory, card by card, by
+`FitsFixture` (`tests/ImageVisualCompare.Tests/FitsFixture.cs`): the Core tests read them from a
+`MemoryStream`, and `FitsImageLoaderTests` writes them to disk with `TempImages.WriteBytes`,
+whole or cut short. `ImagePairLoaderTests` covers valid, mismatched,
 missing and corrupt inputs, progress reporting (recorded on the reporting thread: a
 `Progress<T>` posts its callbacks, and an assertion after the load raced them), and — with a
 recording fake — that a

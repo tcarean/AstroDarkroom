@@ -1,5 +1,5 @@
 {
-  "$comment": "Every test data file outside git: three images under tests/testdata/large/, git-ignored, copied by hand from E:/Photografie/Claude (ADR 0005); IVC_TESTDATA_LARGE may name another folder, nobody sets it. Paths are relative to that folder. scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. ImageVisualCompare has no repo fixtures: TempImages writes them at run time.",
+  "$comment": "Every test data file outside git: three images and two FITS files under tests/testdata/large/, git-ignored, copied by hand from E:/Photografie/Claude (ADR 0005); IVC_TESTDATA_LARGE may name another folder, nobody sets it. Paths are relative to that folder. scripts/check-testdata.ps1 verifies presence and SHA-256 (a missing large file is a warning locally); -Update rewrites this file with PowerShell JSON layout. The cases in docs/validation.json name these files. ImageVisualCompare has no repo fixtures: TempImages writes them at run time.",
   "files": [
     {
       "name": "de_printat.png",
@@ -24,6 +24,22 @@
       "sha256": "a92f02df49b142be6747042e9628ff2e71dbe388db2a100daa8e17edba3d673e",
       "source": "the same frame cropped to 50:35 and exported as 8-bit TIFF (Bgr24), 5554 x 3888, 2026-09-19; image B of V-002",
       "demonstrates": "docs/validation.json V-002: a mismatched pair, 16-bit against 8-bit, padded to 5938 x 3888; R-003, R-004, R-012"
+    },
+    {
+      "name": "result_3813s.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "cb2af35bd6963a8b1146a63fe096413a5c26189d4a887e5a3804bf0959dda64f",
+      "source": "the linear stack the frame was processed from, 5938 x 3888, three planes of 32-bit float in 0 to 1, ROWORDER BOTTOM-UP, written by Siril 1.4.4 on 2026-08-30; copied from E:/Photografie/Claude/Processed_WithFlats_RBF_light; image A of V-003 and V-004",
+      "demonstrates": "docs/validation.json V-003, V-004: a float FITS probed and decoded by the project's own reader; R-014, R-015, R-018"
+    },
+    {
+      "name": "result_3813s_Graxpert_AI.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "5049bd1d211865580b4180c2229e5d4f3ac14967e5ebfbecf5e9d051dda3f926",
+      "source": "the same stack after GraXpert's background extraction, 5938 x 3888, three planes of 32-bit float, saved by Siril 1.4.4 on 2026-08-30; same folder; image B of V-003",
+      "demonstrates": "docs/validation.json V-003: a matched pair of two FITS files, no padding; R-014"
     }
   ]
 }
