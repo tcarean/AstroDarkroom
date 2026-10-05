@@ -61,3 +61,13 @@
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
+- The suggested curves (ADR 0031) are one recipe: the segment slopes come from one curve the
+  owner liked on one image, and the anchors of a frame without the classes are percentiles of
+  its histogram, not objects. A frame whose five anchors do not increase gets no suggestion.
+- A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is
+  saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
+  (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.
+- The gamut figure counts the chroma only, through relative colorimetric tables without black
+  point compensation, on an interpolated grid: an estimate to tenths of a percent, not a
+  soft proof. `Maxima` clips more pixels than the other suggestions (0.37 % against 0.10 % on
+  the reference PNG).

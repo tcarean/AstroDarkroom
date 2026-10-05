@@ -49,6 +49,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Resolution = new ResolutionTabViewModel();
             Background = new BackgroundTabViewModel();
             Preview = new PreviewTabViewModel();
+            Curves = new CurvesTabViewModel();
         }
 
         public ParameterFields Parameters { get; }
@@ -58,6 +59,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public ResolutionTabViewModel Resolution { get; }
         public BackgroundTabViewModel Background { get; }
         public PreviewTabViewModel Preview { get; }
+        public CurvesTabViewModel Curves { get; }
 
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
@@ -157,11 +159,12 @@ namespace AstroPhotoAnalyzer.Wpf
             Resolution.Populate(r);
             Background.Populate(r);
             Preview.Populate(r);
+            Curves.Populate(r);
         }
 
         void ClearTabs()
         {
-            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear();
+            Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear();
         }
 
         /// <summary>Mesajul exceptiei, cu cauza daca exista; fara stiva - nu ajuta pe nimeni pe ecran.</summary>

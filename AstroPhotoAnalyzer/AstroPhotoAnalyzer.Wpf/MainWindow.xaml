@@ -177,7 +177,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </StackPanel>
         </Border>
 
-        <TabControl Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
+        <TabControl x:Name="Tabs" Visibility="{Binding HasResult, Converter={StaticResource BoolToVis}}">
           <TabItem Header="Raport">
             <local:ReportView DataContext="{Binding Report}" />
           </TabItem>
@@ -195,6 +195,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </TabItem>
           <TabItem Header="Preview">
             <local:PreviewView DataContext="{Binding Preview}" />
+          </TabItem>
+          <TabItem x:Name="CurvesTabItem" Header="Curbe">
+            <local:CurvesView DataContext="{Binding Curves}" />
           </TabItem>
         </TabControl>
 

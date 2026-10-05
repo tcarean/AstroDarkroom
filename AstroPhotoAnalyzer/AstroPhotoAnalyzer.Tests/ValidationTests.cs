@@ -61,7 +61,7 @@ public class ValidationTests
         JsonElement c = doc.RootElement.GetProperty("cases").EnumerateArray()
             .Single(e => e.GetProperty("id").GetString() == id);
         string kind = c.GetProperty("kind").GetString()!;
-        Assert.Contains(kind, new[] { "analysis", "icc" });
+        Assert.Contains(kind, new[] { "analysis", "icc", "curves" });
 
         string name = c.GetProperty("image").GetString()!;
         string? image = TestData.Large(name);
@@ -71,10 +71,14 @@ public class ValidationTests
             return;
         }
 
-        // An icc case reads the Dmax of a printer profile (R-028); an analysis case runs the whole chain.
-        Dictionary<string, object> measured = kind == "icc"
-            ? IccFigures(IccPaperBlack.Read(image))
-            : Figures(AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters"))));
+        // An icc case reads the Dmax of a printer profile (R-028); a curves case suggests the
+        // curves for print and saves one (R-140 to R-145); an analysis case runs the whole chain.
+        Dictionary<string, object> measured = kind switch
+        {
+            "icc" => IccFigures(IccPaperBlack.Read(image)),
+            "curves" => CurveFigures(image, c.GetProperty("parameters")),
+            _ => Figures(AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters")))),
+        };
 
         string line = id + " " + JsonSerializer.Serialize(measured);
         _out.WriteLine("MEASURED " + line);
@@ -124,6 +128,90 @@ public class ValidationTests
         }
 
         Assert.True(failures.Count == 0, $"{id} drifted from docs/validation.json:\n  " + string.Join("\n  ", failures));
+    }
+
+    /// <summary>
+    /// What a curves case guards: the anchors, each suggestion's upper points, the five L* after
+    /// it, its noise gain, clipped share and, with the parameter <c>icc</c> (a profile beside the
+    /// image), the share out of gamut; and a save of the last suggestion into a temporary folder:
+    /// every card of a FITS input kept, the input's bytes unchanged.
+    /// </summary>
+    static Dictionary<string, object> CurveFigures(string image, JsonElement parameters)
+    {
+        Parameters p = ParametersOf(parameters);
+        if (parameters.TryGetProperty("icc", out JsonElement icc))
+        {
+            string profile = TestData.Large(icc.GetString()!) ?? throw new FileNotFoundException("the case's profile is absent: " + icc.GetString());
+            p = p.WithDmaxFromProfile(profile, out string error) ?? throw new Exception(error);
+        }
+        AnalysisResult a = AnalysisRun.Execute(image, p);
+        CurveSet set = CurveRun.Execute(a, CurvePurpose.Print, 1600, 900);
+        string[] cls = { "dust", "sky", "band", "clouds", "peaks" };
+        var f = new Dictionary<string, object>(StringComparer.Ordinal)
+        {
+            ["curves.source"] = set.Source.ToString(),
+            ["curves.problem"] = set.Problem ?? "none",
+            ["curves.count"] = set.Suggestions.Count,
+            ["curves.names"] = string.Join(",", set.Suggestions.Select(s => s.Name)),
+            ["curves.previewWidth"] = set.OriginalPreview.W,
+        };
+        double[] anchors = set.Anchors.AsArray();
+        for (int i = 0; i < 5; i++) f["curves.anchor." + cls[i]] = R(anchors[i]);
+        foreach (CurveSuggestion s in set.Suggestions)
+        {
+            string k = "curves." + s.Name + ".";
+            CurveEvidence e = s.Evidence;
+            for (int i = 0; i < 5; i++)
+            {
+                f["curves.before.lstar." + cls[i]] = R(e.LstarBefore[i]);
+                f[k + "lstar." + cls[i]] = R(e.LstarAfter[i]);
+                if (i >= 2) f[k + "point." + cls[i]] = R(s.Curve.Points[i + 1].Y);
+            }
+            f["curves.before.pctClipped"] = R(e.PctClippedBefore);
+            f[k + "noiseGain"] = R(e.NoiseGain);
+            f[k + "noiseAfterLsb"] = R(e.NoiseAfterLsb);
+            f[k + "pctClipped"] = R(e.PctClippedAfter);
+            f[k + "paperChecks"] = e.PaperChecks.Count;
+            f[k + "monotone"] = s.Curve.IsMonotone;
+            if (e.Gamut == null) continue;
+            f["curves.before.gamut.all"] = R(e.GamutBefore.PctAll);
+            f[k + "gamut.all"] = R(e.Gamut.PctAll);
+            for (int i = 0; e.Gamut.PctByClass != null && i < 5; i++)
+            {
+                f["curves.before.gamut." + cls[i]] = R(e.GamutBefore.PctByClass[i]);
+                f[k + "gamut." + cls[i]] = R(e.Gamut.PctByClass[i]);
+            }
+        }
+        if (set.Suggestions.Count == 0) return f;
+
+        using var ws = new TempWorkspace();
+        static string Hash(string path)
+        {
+            using FileStream fs = File.OpenRead(path);
+            return Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs));
+        }
+        string before = Hash(image), target = ws.PathTo("curba.fit");
+        CurveSuggestion last = set.Suggestions[^1];
+        CurveExport.Save(a, last, target);
+        f["save.inputUnchanged"] = Hash(image) == before;
+        var saved = FitsReader.ReadImageHeader(target);
+        f["save.bitpix"] = FitsReader.HInt(saved.Header, "BITPIX", 0);
+        f["save.width"] = saved.W;
+        f["save.fileBytes"] = new FileInfo(target).Length;
+        if (image.EndsWith(".fit", StringComparison.OrdinalIgnoreCase))
+        {
+            var source = FitsReader.ReadImageHeader(image);
+            f["save.cards"] = saved.Header.Count;
+            f["save.everyCardKept"] = source.Header.All(kv => saved.Header.TryGetValue(kv.Key, out string? v) && v == kv.Value);
+        }
+        Raster back = ImageLoader.Load(target), want = last.Curve.Apply(a.Raster);
+        double worst = 0;
+        for (int pl = 0; pl < want.Planes.Length; pl++)
+            for (int i = 0; i < want.Planes[pl].Length; i += 97)
+                worst = Math.Max(worst, Math.Abs(want.Planes[pl][i] - back.Planes[pl][i]));
+        f["save.maxDifference"] = R(worst);
+        f["save.hasWcs"] = back.Source.Wcs != null;
+        return f;
     }
 
     /// <summary>What an icc case guards: the profile's name, whether it could be read, its black and its Dmax.</summary>

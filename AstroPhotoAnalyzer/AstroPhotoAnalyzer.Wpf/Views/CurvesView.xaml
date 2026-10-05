@@ -1,0 +1,91 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- CurvesView - tabul Curbe (R-146): scopul, "Calculeaza", galeria cu originalul si curbele
+     sugerate, dovada curbei aratate si cele doua butoane ale ei. Imaginea ia tot locul
+     ramas, de aceea tabul e o grila, nu o coloana derulata ca celelalte. Nicio cifra nu se
+     calculeaza aici. -->
+
+<UserControl x:Class="AstroPhotoAnalyzer.Wpf.CurvesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid Margin="20,12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+      <TextBlock Text="Curbe de contrast pentru:" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <RadioButton Content="Print" GroupName="CurvePurpose" IsChecked="{Binding IsPrint}" Foreground="{StaticResource TextBr}"
+                   VerticalAlignment="Center" Margin="0,0,14,0"
+                   ToolTip="Aceleasi curbe; dovada fiecareia primeste si verificarile de hartie: fundalul, zgomotul fata de tinta de print, gamutul" />
+      <RadioButton Content="Ecran" GroupName="CurvePurpose" IsChecked="{Binding IsScreen}" Foreground="{StaticResource TextBr}"
+                   VerticalAlignment="Center" Margin="0,0,20,0" ToolTip="Aceleasi curbe, fara verificarile de hartie" />
+      <Button Content="Calculeaza" Command="{Binding Calculate}" Padding="14,3" />
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900" />
+    </StackPanel>
+
+    <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">
+      <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+        <Image Source="{Binding Current.Image}" Width="{Binding Current.Width}" Height="{Binding Current.Height}" Stretch="None" />
+      </Viewbox>
+    </Border>
+
+    <Grid Grid.Row="2" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="Auto" />
+      </Grid.ColumnDefinitions>
+      <Button Grid.Column="0" Content="&lt; Inapoi" Command="{Binding Previous}" Padding="12,3" ToolTip="Sageata stanga" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0" MinWidth="170">
+        <TextBlock Text="{Binding Current.Name}" FontWeight="SemiBold" />
+        <TextBlock Style="{StaticResource Muted}" Text="{Binding Position}" Margin="10,0,0,0" />
+      </StackPanel>
+      <Button Grid.Column="2" Content="Inainte &gt;" Command="{Binding Next}" Padding="12,3" ToolTip="Sageata dreapta" />
+      <Button Grid.Column="4" Content="Curba..." Command="{Binding OpenCurve}" Padding="12,3"
+              ToolTip="Tabelul punctelor si graficul curbei, ca sa o refaci de mana in Siril" />
+      <Button Grid.Column="5" Content="Salveaza ca..." Command="{Binding SaveAs}" Padding="12,3" Margin="10,0,0,0"
+              ToolTip="Un FITS nou cu curba aplicata; imaginea de intrare nu se modifica" />
+    </Grid>
+
+    <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
+      <ItemsControl ItemsSource="{Binding Current.Evidence}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Style="{StaticResource Faint}" Text="{Binding AnchorSource}" TextWrapping="Wrap" Margin="0,6,0,0" />
+      <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
+                 Text="Curbele nu muta praful si cerul: un fundal prea jos pentru hartie se ridica la stretch (tabul Tonuri). Previzualizarea e o copie redusa; pixelii sunt presupusi sRGB." />
+      <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" Margin="0,4,0,0"
+                 Visibility="{Binding SaveMessage, Converter={StaticResource NotNullToVis}}" />
+      <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" Margin="0,4,0,0"
+                 Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
+    </StackPanel>
+  </Grid>
+</UserControl>

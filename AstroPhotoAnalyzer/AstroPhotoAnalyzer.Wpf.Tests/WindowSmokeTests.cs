@@ -171,6 +171,16 @@ public class WindowSmokeTests
             Render(new ResolutionView { DataContext = vm.Resolution }, name: "tab-rezolutie");
             Render(new BackgroundView { DataContext = vm.Background }, name: "tab-fundal");
             Render(new PreviewView { DataContext = vm.Preview }, h: 2400, name: "tab-preview");
+            Render(new CurvesView { DataContext = vm.Curves }, name: "tab-curbe-gol");
+            // R-146, R-147: the gallery on a suggestion, and its curve window.
+            vm.Curves.Compute(1300, 600);
+            Assert.True(vm.Curves.HasGallery, vm.Curves.Message);
+            vm.Curves.Next.Execute(null);
+            Render(new CurvesView { DataContext = vm.Curves }, name: "tab-curbe");
+            CurveWindowViewModel? curve = null;
+            vm.Curves.CurveRequested += c => curve = c;
+            vm.Curves.OpenCurve.Execute(null);
+            Render((FrameworkElement)new CurveWindow { DataContext = curve }.Content, 1280, 760, "fereastra-curba");
 
             // R-130, R-131: the two windows of the Tonuri tab, built from the same result.
             MapViewModel map = vm.Tones.BuildMap();

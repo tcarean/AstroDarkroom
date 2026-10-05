@@ -159,7 +159,7 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>Cardurile pana la END, ca dictionar; null la sfarsit de fisier.</summary>
-        static Dictionary<string, string> ReadHeader(Stream s, byte[] block)
+        internal static Dictionary<string, string> ReadHeader(Stream s, byte[] block)
         {
             var hdr = new Dictionary<string, string>(StringComparer.Ordinal);
             bool any = false;

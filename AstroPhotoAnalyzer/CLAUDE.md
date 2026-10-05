@@ -3,9 +3,10 @@
 Print-readiness diagnostic for a *finished* astrophoto: a stretched TIFF, PNG or FITS as it
 comes out of Siril. It measures the image and reports, in decision order, how to send it to
 print: file format, whether the background survives paper, colour cast and gradient, the
-largest size the real detail supports, how much denoise the print version needs. It **exports
-nothing**: recommendations only, each with the number and the threshold behind it; exports are
-made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
+largest size the real detail supports, how much denoise the print version needs. It gives
+recommendations only, each with the number and the threshold behind it, and **writes one
+image**: on request, from the window's Curbe tab, a new FITS with a suggested contrast curve
+applied, the input never touched (ADR 0031); every other export is made cleanly from Siril. Two applications, a console (`AstroPhotoAnalyzer.exe`) and a WPF
 window, over one core library that hand-parses FITS and takes ImageSharp for TIFF/PNG/JPEG;
 neither application computes a number or writes a sentence of diagnosis. .NET 8. A sibling of
 FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this file says so.
@@ -49,9 +50,10 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
   Console, no UI, no entry point: a compile boundary. `Input/` reads (readers, `Raster`, colour
   maths, statistics), `Analysis/` decides numbers (one class per measurement family), `Report/`
   decides words (Romanian) and the recommendations, `Runs/` chains them; both applications call
-  `Runs/AnalysisRun.Execute` only. `Thresholds.cs`, `Parameters.cs`.
+  `Runs/AnalysisRun.Execute`, and the window alone, on request, `Runs/CurveRun.cs` (the
+  suggested curves and the saved FITS, ADR 0031), nothing else. `Thresholds.cs`, `Parameters.cs`.
 - `AstroPhotoAnalyzer/` - the console: `Program.cs`, `Options.cs`, `AnalyzerCli.cs`. Nothing else.
-- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, six
+- `AstroPhotoAnalyzer.Wpf/` - the window, `net8.0-windows`, dark theme: `ParameterFields` in, seven
   tabs out. Formats, never decides; view-models are public and cannot expose a core type.
 - `AstroPhotoAnalyzer.Tests/` (core + console, portable; `Golden/` holds the console snapshots;
   `testdata/manifest.json` hashes the reference image, which stays outside git) and
@@ -155,6 +157,9 @@ edit:
   is the 1 % rule, the simulation is a gamma curve that a real stretch undercuts).
 - `NoiseAnalyzer`, `QuantizationAnalyzer`: ADR 0015 (two tile criteria on purpose).
 - `JpegAnalyzer`: ADR 0019 (the mean error votes nothing).
+- `ToneCurve`, `CurveAdvisor`, `GamutAnalyzer`, `FitsWriter`: ADR 0031 (the curve never moves
+  the dust or the sky; the anchors are the upper part of the classes; the spline is Siril's; the
+  gamut is a figure; the writer copies a FITS and never opens the input for writing).
 - Any text in a view-model: `docs/design/window.md` and ADR 0020.
 - The ImageSharp version or a 16-bit fixture: `docs/design/dependencies.md` (four measured
   behaviours the code depends on).

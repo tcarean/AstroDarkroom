@@ -415,5 +415,66 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Densitatea "clasica" de referinta, doar pentru a arata ca nu e limita reala.</summary>
         internal const double ReferenceDpi = 300;
+
+        // ---------------------------------------------------------------- curbele sugerate (ADR 0031)
+
+        /// <summary>
+        /// Ancora "banda" a unei curbe, cu clase: percentila dalelor din clasa banda. Nu
+        /// mediana: mediana benzii sta langa cer (banda larga isi include partea slaba), si
+        /// portiunea abrupta a curbei ar incepe de la cer. Masurat pe 2026-10-05 pe
+        /// starless_rbf0.5_stretch0.17.fit: percentila 80 da 0.306, punctul 0.32 al curbei
+        /// vechi a proprietarului; cu mediana (0.225) zgomotul din cer creste de 1.40 x in loc de 1.26.
+        /// </summary>
+        internal const double CurveBandClassPercentile = 80;
+
+        /// <summary>Ancora "nori luminosi", cu clase: percentila 75 a clasei da 0.543 pe acelasi FITS (curba veche: 0.55).</summary>
+        internal const double CurveCloudClassPercentile = 75;
+
+        /// <summary>
+        /// Fara clase (fara WCS), ancorele de sus sunt percentile ale griului luminantei
+        /// pixelilor: acolo stau intrarile curbei vechi in histograma imaginii ei (cei mai
+        /// luminosi 5.8 %, 0.9 % si 0.1 % din pixeli; 0.317, 0.538 si 0.701 pe FITS-ul 0.17).
+        /// </summary>
+        internal const double CurveBandPercentile = 94.2;
+        internal const double CurveCloudPercentile = 99.1;
+        internal const double CurvePeakPercentile = 99.9;
+
+        /// <summary>
+        /// Pantele celor trei segmente de deasupra cerului, cele ale curbei vechi a
+        /// proprietarului pentru FITS-ul 0.17 (0.17 > 0.165, 0.32 > 0.42, 0.55 > 0.76,
+        /// 0.72 > 0.92): cer-banda, banda-nori, nori-varfuri. Vin de la o singura curba pe o
+        /// singura imagine; raportul dintre ele e reteta, marimea lor se scaleaza.
+        /// </summary>
+        internal const double CurveSlopeSkyBand = 1.70;
+        internal const double CurveSlopeBandCloud = 1.48;
+        internal const double CurveSlopeCloudPeak = 0.94;
+
+        /// <summary>Unde ajung cel mult varfurile: 0.92 in curba veche, cu loc de umar pana la alb.</summary>
+        internal const double CurvePeakTarget = 0.92;
+
+        /// <summary>Tariile Blanda, Medie, Puternica: cat din drumul de la identitate la curba intreaga.</summary>
+        internal static readonly double[] CurveStrengths = { 0.5, 0.75, 1.0 };
+
+        /// <summary>Maxima se ofera doar cand Puternica lasa varfurile cu mai mult de atat sub CurvePeakTarget; sub 0.02 cele doua nu se disting.</summary>
+        internal const double CurveMaximaMinGain = 0.02;
+
+        /// <summary>Un pixel e "ars" cand un canal al lui e la sau peste nivelul asta; pragul studiului din 2026-10-05.</summary>
+        internal const double CurveClipLevel = 0.995;
+
+        /// <summary>Graficul umbrelor din fereastra curbei merge de la 0 la de atatea ori intrarea benzii: praful si cerul stau in primii 10-20 % ai axei si nu se vad pe graficul intreg.</summary>
+        internal const double CurveShadowChartFactor = 1.25;
+
+        /// <summary>Cate puncte are curba esantionata pentru un grafic.</summary>
+        internal const int CurveChartSamples = 257;
+
+        /// <summary>
+        /// Gamutul hartiei (R-144): o culoare e in afara cand drumul sRGB - imprimanta - inapoi
+        /// ii muta a*, b* cu mai mult de atat. Doar croma: negrul hartiei il judeca tabul
+        /// Tonuri. 3 e pragul Delta E al studiului din 2026-10-05.
+        /// </summary>
+        internal const double CurveGamutDeltaAb = 3;
+
+        /// <summary>Nodurile pe canal ale tabelei dus-intors prin profil; 33 inseamna 35 937 de culori trecute o data prin pachet (~28 microsecunde fiecare), restul prin interpolare.</summary>
+        internal const int CurveGamutGrid = 33;
     }
 }

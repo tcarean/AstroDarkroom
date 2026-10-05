@@ -1,0 +1,105 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- CurveWindow - o curba sugerata (R-147): tabelul punctelor de control, cum se tasteaza
+     in Siril, si doua grafice: curba intreaga si umbrele marite, unde stau praful si cerul
+     si unde pe graficul intreg nu se vede nimic. Nicio cifra nu se calculeaza aici. -->
+
+<Window x:Class="AstroPhotoAnalyzer.Wpf.CurveWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf"
+        Title="{Binding Title}"
+        Icon="/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico"
+        Width="1280" Height="760" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBg}"
+        TextOptions.TextFormattingMode="Display">
+
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="Auto" />
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Style="{StaticResource Muted}" Text="{Binding Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top" Grid.IsSharedSizeScope="True">
+      <StackPanel>
+        <TextBlock Style="{StaticResource Heading}" Text="PUNCTELE CURBEI" />
+        <Grid Margin="0,0,0,4">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition SharedSizeGroup="CurveLabel" />
+            <ColumnDefinition SharedSizeGroup="CurveIn" />
+            <ColumnDefinition SharedSizeGroup="CurveOut" />
+            <ColumnDefinition SharedSizeGroup="CurveBefore" />
+            <ColumnDefinition SharedSizeGroup="CurveAfter" />
+          </Grid.ColumnDefinitions>
+          <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="clasa" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="1" Style="{StaticResource Faint}" Text="intrare (x)" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Text="iesire (y)" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="3" Style="{StaticResource Faint}" Text="L* inainte" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="4" Style="{StaticResource Faint}" Text="L* dupa" />
+        </Grid>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,2">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition SharedSizeGroup="CurveLabel" />
+                  <ColumnDefinition SharedSizeGroup="CurveIn" />
+                  <ColumnDefinition SharedSizeGroup="CurveOut" />
+                  <ColumnDefinition SharedSizeGroup="CurveBefore" />
+                  <ColumnDefinition SharedSizeGroup="CurveAfter" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding Label}" Margin="0,0,18,0" />
+                <TextBlock Grid.Column="1" Style="{StaticResource Mono}" Text="{Binding Input}" Margin="0,0,18,0" />
+                <TextBlock Grid.Column="2" Style="{StaticResource Mono}" Text="{Binding Output}" Margin="0,0,18,0" />
+                <TextBlock Grid.Column="3" Style="{StaticResource Mono}" Text="{Binding LstarBefore}" Margin="0,0,18,0" />
+                <TextBlock Grid.Column="4" Style="{StaticResource Mono}" Text="{Binding LstarAfter}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" MaxWidth="330" Margin="0,10,0,0"
+                   Text="Intrarea si iesirea sunt valori 0..1 ale pixelului, aceleasi pe R, G si B. Primul si ultimul rand sunt capetele curbei. L* e al dalelor clasei, masurat inainte si dupa curba." />
+      </StackPanel>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card}" Margin="12,0,0,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="CURBA INTREAGA (intrare - iesire; diagonala = fara schimbare)" />
+        <local:CurveCanvas Points="{Binding Chart}" ControlPoints="{Binding ControlPoints}" Markers="{Binding Markers}" XMax="1"
+                           Stroke="{StaticResource AccentBr}" GridBrush="{StaticResource BorderBr}" TextBrush="{StaticResource MutedBr}" />
+      </DockPanel>
+    </Border>
+
+    <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" Margin="12,0,0,0">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Heading}" Text="{Binding ShadowHeading}" />
+        <local:CurveCanvas Points="{Binding ShadowChart}" ControlPoints="{Binding ControlPoints}" Markers="{Binding Markers}" XMax="{Binding ShadowLimit}"
+                           Stroke="{StaticResource AccentBr}" GridBrush="{StaticResource BorderBr}" TextBrush="{StaticResource MutedBr}" />
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>

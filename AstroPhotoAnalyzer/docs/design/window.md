@@ -14,7 +14,7 @@
 "Salveaza raportul...", "Despre" = F1); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
-Preview; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
+Preview, Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
 sky; Tonuri measures its *level* (`BackgroundMedian`, "Nivelul fundalului") and Culoare
 its *colour* (`BackgroundResult.Levels`, "Culoarea fundalului"), and every label, row
 and appendix says which of the two it shows. Starts maximised. A file from
@@ -70,11 +70,36 @@ frame of the .ico for "Despre").
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on
 the WPF project (XAML fails to load without culture data).
 
+**The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0031). Unlike
+the other tabs it is empty after an analysis: `Populate` only keeps the result, and
+`Calculeaza` runs `CurveRun.Execute` on a pool thread (`ComputeAsync`; `Compute(w, h)` is the
+same body, synchronous, for the tests). The gallery is a list of `CurveGalleryItem` (name,
+frozen bitmap, evidence lines, the core's suggestion), the original first; `Next` /
+`Previous` move an index and stop at the ends, `OpenCurve` and `SaveAs` are disabled on the
+original. The view is a grid, not a scrolled column, so the image takes the room left; it
+reports the gallery area's size in screen pixels (`GallerySizeChanged`, `SetGallerySize`) and
+the previews are computed to fit it. Changing the purpose runs the core again for the other
+purpose and keeps the position: the curves are the same, the evidence differs. The Left and
+Right keys are caught on the window (`MainWindow.GalleryKeys`, `PreviewKeyDown`), before the
+`TabControl`, which would use them to change the tab; they act only while the Curbe tab is
+selected, the gallery exists and the focus is not in a text box. `SaveRequested` makes the
+window show the save dialog with the core's proposed name, then `Save(path)` calls
+`CurveExport.Save` and shows `SaveMessage` or `SaveError`.
+
+**The curve window** (`Views/CurveWindow.xaml`, `CurveWindowViewModel`; R-147): the table of
+control points (label, input, output at three decimals, the class's L\* before and after) and
+two `CurveCanvas` charts, the whole curve and the shadows up to `CurveShadowChartFactor`
+times the band's input, where the dust and the sky sit and the whole chart shows nothing.
+`Presentation/CurveCanvas.cs` draws in `OnRender`, after `BarsCanvas`: grid with tick labels,
+the diagonal, the sampled curve, the control points, a dotted vertical with a rotated label
+per class; the output axis ends at the largest value drawn. Not modal, not maximised, Esc
+closes it.
+
 ## Notes from phases 5-7
 
 - **The window adds no number and no sentence.** `MainViewModel.RunAsync` calls
-  `AnalysisRun.Execute` on a pool thread; the six tab view-models turn the result records
-  into rows. Tables are rendered as pre-aligned mono strings - the same strings the
+  `AnalysisRun.Execute` on a pool thread; the tab view-models turn the result records
+  into rows (the Curbe tab is filled on request, see above). Tables are rendered as pre-aligned mono strings - the same strings the
   report writes - instead of one XAML template per table.
 - **View-models are public and therefore cannot expose core types**, which are internal.
   The compiler enforces that everything shown passes through the simple rows in

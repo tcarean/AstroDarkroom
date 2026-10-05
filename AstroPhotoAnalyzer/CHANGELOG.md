@@ -6,6 +6,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- The Curbe tab (R-140 to R-147; ADR 0031): contrast curves suggested for a finished image,
+  `Blanda`, `Medie`, `Puternica` and, when the peaks have room left, `Maxima`, built on five
+  anchors (the dust and the sky of the Tonuri tab; the band, the bright clouds and the peaks
+  from the upper part of their classes, or from the frame's histogram without a WCS). A gallery
+  of previews with `Inapoi` / `Inainte` and the arrow keys; each curve with its evidence (the
+  five L\* before and after, the noise gain at the sky, the clipped share, and for print the
+  paper checks and the share outside the paper's gamut when the Dmax came from an ICC profile);
+  a window with the control points and two charts, to redo the curve in Siril's Curves tool;
+  and `Salveaza ca...`, which writes a new FITS with the curve applied, keeping every header
+  card of a FITS input. The first image the tool writes; the input is never modified.
+
 ### Changed
 
 - Baryta's Dmax is 2.4, not 2.0 (R-016, R-020; ADR 0028): measured, 2.41 relative to paper white,

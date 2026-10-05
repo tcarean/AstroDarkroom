@@ -53,3 +53,14 @@ rows carries the first, and the second row waits for a test of its own.
 How a validation case runs, and how its figures are recorded, is in `../validation.md`, "How a
 case runs". The gate never runs it: `scripts/verify.ps1` passes `kit.json`'s `testFilter`,
 `Category!=Validation`; `/validate` runs it.
+
+## The curves in the tests (ADR 0031)
+
+`CurveTests` checks the spline against values computed with scipy's natural cubic spline on
+the owner's earlier curve, the anchors and the recipe on the band scene of `WcsFixtures` at
+0.7 of its values (its peak patch is at white, where no control point fits above it) and on a
+striped frame without a WCS, and the saved FITS against hand-built FITS and PNG files.
+`CurvesTabTests` drives the tab's view-model through `Compute(w, h)`, the synchronous body of
+`Calculeaza`. `ValidationTests` has a third kind of case, `curves`: an analysis, a curve run
+for print (with the parameter `icc`, a profile beside the image, for the gamut figure) and a
+save of the last suggestion into a temporary folder, with the input hashed before and after.

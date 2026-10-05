@@ -15,10 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ResultViews.xaml.cs - legaturile cu XAML-ul celor sase taburi. Comportamentul e in
-// ViewModel-uri; aici nu e nimic.
+// ResultViews.xaml.cs - legaturile cu XAML-ul celor sapte taburi. Comportamentul e in
+// ViewModel-uri; aici e doar marimea galeriei tabului Curbe, pe care numai vederea o stie.
 
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
@@ -28,4 +30,20 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class ResolutionView : UserControl { public ResolutionView() => InitializeComponent(); }
     public partial class BackgroundView : UserControl { public BackgroundView() => InitializeComponent(); }
     public partial class PreviewView : UserControl { public PreviewView() => InitializeComponent(); }
+
+    public partial class CurvesView : UserControl
+    {
+        public CurvesView() => InitializeComponent();
+
+        /// <summary>
+        /// Previzualizarile se cer la marimea zonei galeriei (R-146), in pixeli ai ecranului:
+        /// "Calculeaza" o ia de la view-model, unde o pune randul acesta la fiecare reasezare.
+        /// </summary>
+        void GallerySizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (DataContext is not CurvesTabViewModel vm) return;
+            DpiScale dpi = VisualTreeHelper.GetDpi(this);
+            vm.SetGallerySize((int)(e.NewSize.Width * dpi.DpiScaleX), (int)(e.NewSize.Height * dpi.DpiScaleY));
+        }
+    }
 }
