@@ -23,7 +23,7 @@ On a machine or in a worktree without the copies, the cases print `NOT MEASURED`
 
 ## How a case runs
 
-One kind of case, `analysis`: `AnalysisRun.Execute` on the image with the parameters the case
+Two kinds of case. `icc`: `IccPaperBlack.Read` on the profile the case names as its image, with the figures `icc.description`, `icc.readable`, `icc.blackLstar` and `icc.dmax`. `analysis`: `AnalysisRun.Execute` on the image with the parameters the case
 names (`aspect`, `distanceM`, `dmax`, `medium`, `targetBg`; an absent one is the core's
 default), exactly as the console runs it. `ValidationTests` reads from the result a fixed set of
 figures, named by the record and field they come from (`tonal.pctBelowPaperBlack`,
@@ -50,6 +50,8 @@ stops on a drift instead of editing them.
 | V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the image is print-safe as it is; since ADR 0029 the sky (L\* 9.4) is under the visibility threshold and the recommended row is 0.15 (sky L\* 15.3); a guard on the paper-black maths more than on the image |
 | V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 2062 dust patches of 21 840, the dust at L\* 7.9 (the 25 % percentile of the dust class) and the sky at 17.6 (the median of the sky class); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
 | V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.09) above it, so the dust is print-safe as it is; the sky (L\* 9.4) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.148, so the recommended row is 0.15 (dust L\* 7.8, sky L\* 15.3, 48.0 % of pixels still under L\* 15 against 82.8 % as it is); the exact target 0.094 (0.110 at Dmax 2.3, 0.080 at 2.5), the Dmax from which it passes as is 2.34; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
+| V-006 | the lab's profile `Hahnemuhle PRBaryta.icm`; kind `icc` | the Dmax read from a real v2 `lut16` printer profile (R-028): black at L\* 3.49 relative to paper white, Dmax 2.41, the figure ADR 0028 took baryta's default from; the name from the `desc` tag |
+| V-007 | `HARMAN_Canvas.icc`; kind `icc` | a paper with a weak black: L\* 20.84, Dmax 1.49; through the perceptual table the same profile would answer 2.46 |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -219,3 +221,7 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   `.pctBelowLowSeparation` 83.8455 -> 48.0471; the new figures `simulation.skyBelowVisibility`
   True and `simulation.visibilityTarget` 0.1479. V-001, V-002 and V-004 did not move: their
   recommended rows already had the sky above L\* 15. The five cases pass.
+- 2026-10-05 (ADR 0030, the Dmax from an ICC profile): V-006 and V-007 added, kind `icc`, on the
+  two profiles of the lab's page, copied into `testdata/large/` beside the images. Recorded from
+  their `MEASURED` lines: `Hahnemuhle PRBaryta` L\* 3.4903, Dmax 2.41; `HARMAN Canvas` L\* 20.8407,
+  Dmax 1.49, the figures the hand-written reader of ADR 0028 gave. The seven cases pass.

@@ -67,6 +67,25 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal bool DmaxIsExplicit => DmaxOverride.HasValue && Math.Abs(DmaxOverride.Value - DmaxOf(Medium)) > 1e-9;
 
+        /// <summary>
+        /// Numele profilului ICC din care a fost citit Dmax-ul explicit (R-028); null cand
+        /// Dmax-ul e al mediului sau scris de om. Doar pentru raport: spune de unde vine cifra.
+        /// </summary>
+        internal string DmaxProfile { get; init; }
+
+        /// <summary>
+        /// Aceiasi parametri, cu Dmax-ul citit din profilul ICC de imprimanta de la
+        /// <paramref name="path"/>: negrul dispozitivului fata de albul hartiei, la doua
+        /// zecimale (IccPaperBlack). Null, cu motivul in <paramref name="error"/>, cand
+        /// profilul nu se poate citi sau nu e al unei imprimante.
+        /// </summary>
+        internal Parameters WithDmaxFromProfile(string path, out string error)
+        {
+            IccBlack black = IccPaperBlack.Read(path);
+            error = black.Problem;
+            return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description } : null;
+        }
+
         /// <summary>Latimile de print candidate, in cm, pentru tabelul de marimi.</summary>
         internal double[] CandidateWidthsCm { get; init; } = { 50, 60, 70, 80, 90, 100 };
 

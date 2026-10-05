@@ -94,6 +94,12 @@ namespace AstroPhotoAnalyzer
             w.WriteLine($"  L* median {Fmt.F1(t.LstarMedian)}; sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(t.PctBelowLowSeparation)}; peste L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}");
         }
 
+        /// <summary>De unde vine Dmax-ul, in Anexa F: nimic cand e al mediului, profilul cand a fost citit din el, altfel "(explicit)".</summary>
+        internal static string DmaxOrigin(Parameters p)
+            => p.DmaxProfile != null && p.DmaxOverride.HasValue ? $" (din profilul ICC \"{p.DmaxProfile}\")"
+             : p.DmaxIsExplicit ? " (explicit)"
+             : "";
+
         static void AppendixSimulation(AnalysisResult r, TextWriter w)
         {
             SimulationResult s = r.Simulation;
@@ -255,7 +261,7 @@ namespace AstroPhotoAnalyzer
             Parameters p = r.Parameters;
             w.WriteLine();
             w.WriteLine("Anexa F. Parametri");
-            w.WriteLine($"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{(p.DmaxIsExplicit ? " (explicit)" : "")}; latimi {string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0))} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm");
+            w.WriteLine($"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; latimi {string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0))} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm");
             w.WriteLine($"  distanta {(p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "naturala")}; raport tinta {(p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : "nativ")}; fundal-tinta {(p.TargetBackground.HasValue ? Fmt.Level(p.TargetBackground.Value) : "niciunul")} (grila {Fmt.Level(p.SimulationTargets.Min())}..{Fmt.Level(p.SimulationTargets.Max())}); WCS {(p.WcsPath ?? (r.Raster.Source?.Wcs != null ? "din fisier" : "fara"))}; samanta {p.Seed}");
         }
     }

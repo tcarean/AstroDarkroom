@@ -26,7 +26,7 @@ AstroPhotoAnalyzer.Core/
   Input/RasterOps.cs                   subsample, crop, gamma, levels, L* plane, linear guard
   Input/ColorMath.cs                   sRGB, luminance, L*, paper black
   Input/Stats.cs                       percentiles (numpy), SeededRandom
-  Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, ImageLoader.cs
+  Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs
   Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
   Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000
   Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader
@@ -51,10 +51,11 @@ AstroPhotoAnalyzer.Wpf/
   Interop/DarkTitleBar.cs, Mvvm/ObservableObject.cs, Mvvm/RelayCommand.cs
   Presentation/AppIcon.cs, BarsCanvas.cs, Converters.cs, RasterBitmaps.cs, VerdictPalette.cs
   ViewModels/MainViewModel.cs, ParameterFields.cs, ResultTabs.cs, Rows.cs, AboutViewModel.cs,
-             MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131)
+             MapViewModel.cs (the map window, R-130), PreviewWindowViewModel.cs (the preview window, R-131),
+             IccPickerViewModel.cs (the profile window, R-132)
   Views/ReportView, TonesView, ExportView, ResolutionView, BackgroundView, PreviewView (.xaml),
         ResultViews.xaml.cs, AboutWindow.xaml(.cs), BusyOverlay.xaml(.cs),
-        MapWindow.xaml, PreviewWindow.xaml, OverlayWindows.xaml.cs
+        MapWindow.xaml, PreviewWindow.xaml, OverlayWindows.xaml.cs, IccPickerWindow.xaml(.cs)
 
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt; testdata/ (manifest, large/)
 AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests

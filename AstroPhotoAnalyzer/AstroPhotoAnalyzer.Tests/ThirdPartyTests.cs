@@ -116,7 +116,7 @@ public class ThirdPartyTests
     [Fact]
     public void R122_EveryComponentNamesItsLicenceAndUrl()
     {
-        Assert.Equal(2, ThirdParty.Components.Count);
+        Assert.Equal(3, ThirdParty.Components.Count);   // ImageSharp, Unicolour, the Lynds catalogue
 
         foreach (var c in ThirdParty.Components)
         {

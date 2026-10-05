@@ -9,6 +9,10 @@
          and TIFF for the export table. Pinned to 3.1.x on purpose: 4.x adds a licence-key
          MSBuild task that errors on Release builds (ADR 0009, docs/design/dependencies.md). -->
     <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.11" />
+    <!-- Evaluates the tables of an ICC printer profile (v2 lut8/lut16, v4 lutAToB), from which
+         the paper's Dmax is read (ADR 0030). MIT, pure managed, no dependencies. Chosen over a
+         hand-written reader after it matched one to the last digit on two real profiles. -->
+    <PackageVersion Include="Wacton.Unicolour" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <!-- Test host and runner (xUnit 2: no dynamic skip, which is why an absent reference

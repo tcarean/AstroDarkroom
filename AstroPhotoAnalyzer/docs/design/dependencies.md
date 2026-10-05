@@ -22,7 +22,13 @@ displayed in "Despre" through `ThirdParty.Components`; bound to the csproj by
 bits per sample for `Rgb48` even when asked for 48; `Image.Identify` does not read a
 PNG's `iCCP` (`Image.Load` does); the TIFF decoder puts the ICC profile on
 `Frames[0].Metadata`; the PNG encoder does not write `iCCP`; LZW needs the horizontal
-predictor to be competitive. Adding a package: discuss first, then csproj + notices +
+predictor to be competitive. `Wacton.Unicolour` **8.0.0** (MIT, pure
+managed, no dependencies): evaluates the tables of an ICC printer profile for
+`IccPaperBlack` (ADR 0030). Measured behaviours the code depends on: a file that is not a
+profile does not throw, the configuration carries an `Error` and the colour is computed
+"naively" (L\* 100), so the header is checked before and the error after; the perceptual
+intent answers L\* 3.14 for every profile, so the intent is always asked for; a profile
+header without a date is refused, so the hand-built fixtures carry one. Adding a package: discuss first, then csproj + notices +
 `ThirdParty.cs` + README table (`CLAUDE.md`, the rule "Package notices"). Embedded data is a
 component too: the Lynds catalogue (`Input/ldn.txt`, an `EmbeddedResource` with a
 `LogicalName`) has a `ThirdPartyComponent` with `Resources` instead of `Packages`, and

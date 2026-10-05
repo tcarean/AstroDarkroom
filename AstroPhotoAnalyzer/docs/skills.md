@@ -39,7 +39,8 @@ are in `kit.json`, not here.
 - At step 1: the reference images are `de_printat.png` (V-001 to V-003 and V-005), a git-ignored copy in
   `AstroPhotoAnalyzer.Tests/testdata/large/` of the owner's file in `E:\Photografie\Claude`
   (ADR 0004), and `starless_rbf0.5_stretch0.17.fit` (V-004), the plate-solved FITS of ADR 0025,
-  copied from the folder `testdata/manifest.json` names; the manifest holds both hashes. A
+  copied from the folder `testdata/manifest.json` names, and the lab's two ICC profiles (V-006,
+  V-007; ADR 0030), from the page the manifest names; the manifest holds the four hashes. A
   worktree has no copies: copy the images into the worktree's `testdata/large/` first, or every
   case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 11 to 23 s.
 - At step 3: the table's second column is the case's parameters, not a fixture; the figures are

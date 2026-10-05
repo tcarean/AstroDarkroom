@@ -16,6 +16,22 @@
       "sha256": "c155924d95acf8725e0f4c729820e09b905462c2dd787831005442bdcb86bf2a",
       "source": "the owner's plate-solved, starless, VeraLux-stretched FITS of the same Milky Way core (E:/Photografie/Astro/Milkyway-Core/2026-08-12-Smida/Processed_With_1mmPTFE_Flats/CropAndPlateSolve/RBF0.5/preview/, 270 869 760 bytes, 5837 x 3867, Siril 1.4.4 with a TAN-SIP WCS); the image ADR 0025 was measured on",
       "demonstrates": "docs/validation.json V-004: the dust and the sky from the WCS and the LDN catalogue"
+    },
+    {
+      "name": "Hahnemuhle PRBaryta.icm",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "214fb7b9774deb89691da87288bbb5a6b22f92f16750037575a44da03d018576",
+      "source": "the ICC profile the lab Chromatone publishes for Hahnemuehle Photo Rag Baryta on its Canon iPF8300 (https://www.chromatone.ro/profile.html, assets/icc/Hahnemuhle PRBaryta.icm, 1 625 256 bytes; v2, lut16, made with MonacoPROFILER on 2012-03-07); the profile ADR 0028 took baryta's Dmax from",
+      "demonstrates": "docs/validation.json V-006: the Dmax read from a real v2 printer profile"
+    },
+    {
+      "name": "HARMAN_Canvas.icc",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "96aa6f77c52b1846a7e861fee09722319e4cbf163f6742085c8c6e43d90ddf22",
+      "source": "the ICC profile the same page offers for Harman Canvas (assets/icc/HARMAN_Canvas.icc, 1 515 624 bytes; v2, lut16, made with LOGO ProfileMaker on 2010-09-07, measured with an Eye-One Pro)",
+      "demonstrates": "docs/validation.json V-007: a paper with a weak black, where the perceptual table would give 2.46"
     }
   ]
 }

@@ -11,6 +11,24 @@
 
 ## Inputs
 
+### The Dmax of a printer profile (`IccPaperBlack`, R-028, ADR 0030)
+
+Not an input of the analysis but of its parameters. `Read(path)` returns an `IccBlack`:
+`Description` (`IccProfileInfo.Describe`, the file name without a `desc` tag), `Problem` (a
+sentence for the user, null when the profile was read), `Note` (the CMYK reserve),
+`BlackLstar` and `Dmax`. The header is checked first, by hand: `acsp` at 36, class `prtr` at
+12, device space `RGB ` or `CMYK` at 16. Then Wacton.Unicolour evaluates the device black
+(zeros on RGB, ones on CMYK) through an `IccConfiguration` built with
+`Intent.RelativeColorimetric` and an XYZ configuration at D50; Y of the result is the black
+relative to paper white, `BlackLstar` its L\*, `Dmax` = -log10(Y) rounded to two decimals. A Y
+outside (0, 1), the package's `Error`, or an exception from it becomes a `Problem`.
+`Installed(folder)` lists the `.icc` / `.icm` files of a folder (default
+`<System>\spool\drivers\color`) whose class is `prtr`, read the same way, by name; other
+classes and non-profiles are skipped, an absent folder is an empty list. `Describe(IccBlack)`
+is the sentence the window's list shows. `Parameters.WithDmaxFromProfile(path, out error)` is
+what the console calls: the same parameters with `DmaxOverride` and `DmaxProfile` set, or null
+with the problem.
+
 ### Formats and readers (`Input/`)
 
 `ImageLoader` picks a reader **by extension** (never by sniffing) and is the only place

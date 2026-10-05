@@ -23,7 +23,8 @@ FlatCheck (`../FlatCheck`) with the same conventions; where the two differ, this
 - Format: `dotnet format AstroPhotoAnalyzer.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project AstroPhotoAnalyzer -- <image> [--medium baryta|canvas|acrilic]
   [--dmax n] [--distance m] [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
-  [--passepartout cm] [--frame cm] [--wcs file.fit] [-o file]`; flags before or after the image
+  [--passepartout cm] [--frame cm] [--wcs file.fit] [--icc profile.icc] [-o file]`; flags before
+  or after the image
   (R-003).
   Window: `dotnet run --project AstroPhotoAnalyzer.Wpf -- <image>`
 - Golden console texts, after an intended output change (the rule "Golden files"):

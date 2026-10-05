@@ -42,6 +42,8 @@
        Aici ramane doar numele pachetului, pe care il citeste ThirdPartyTests. -->
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" />
+    <!-- Tabelele profilelor ICC de imprimanta, pentru Dmax-ul din profil (ADR 0030). -->
+    <PackageReference Include="Wacton.Unicolour" />
   </ItemGroup>
 
   <!-- Datele imbarcate: catalogul Lynds al nebuloaselor intunecate (ADR 0025), un fisier
