@@ -88,8 +88,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Grila simularii: 0.10 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
-        /// cer de noapte (sub 0.10 e negru pe orice hartie, peste 0.20 un gri spalat). Nu e
-        /// expusa; o tinta in afara ei intra prin TargetBackground.
+        /// cer de noapte (peste 0.20 un gri spalat). Podeaua de 0.10 e a simularii, nu a
+        /// hartiei: era negrul unei hartii de Dmax 2.0 (L* 9), iar pe baryta de 2.4 praful
+        /// poate cere mai putin - atunci recomandarea se opreste la 0.10 si raportul spune ca
+        /// grila nu coboara mai jos (ADR 0028). Nu e expusa; o tinta in afara ei intra prin
+        /// TargetBackground.
         /// </summary>
         internal double[] SimulationTargets { get; init; } = DefaultSimulationTargets();
 

@@ -108,6 +108,26 @@ public class TonalAnalyzerTests
         Assert.Contains("Dmax explicit 1.8", Assert.Single(custom, l => l.Chosen).Meaning);
     }
 
+    /// <summary>
+    /// The marked row is the paper in use. A Dmax typed on canvas that happens to be acrylic's
+    /// is still an explicit Dmax on canvas: it gets its own row, and acrylic's is not "the
+    /// chosen medium", which the report beside it calls canvas.
+    /// </summary>
+    [Fact]
+    public void R042_AnExplicitDmaxGetsItsOwnRowEvenWhenItIsAnotherMediumsDmax()
+    {
+        var ladder = TonalAnalyzer.LstarLadder(new Parameters { Medium = PrintMedium.Canvas, DmaxOverride = 2.2 });
+
+        Assert.Equal(3 + 1 + 2 + 2, ladder.Count);
+        Assert.Contains("Dmax explicit 2.2", Assert.Single(ladder, l => l.Chosen).Meaning);
+        Assert.False(ladder.Single(l => l.Meaning.Contains("acrilic")).Chosen);
+
+        // The medium's own Dmax, given explicitly, is not explicit: its row is the marked one.
+        var own = TonalAnalyzer.LstarLadder(new Parameters { Medium = PrintMedium.Canvas, DmaxOverride = 1.5 });
+        Assert.Equal(3 + 2 + 2, own.Count);
+        Assert.Contains("canvas", Assert.Single(own, l => l.Chosen).Meaning);
+    }
+
     [Fact]
     public void MonoUsesItsOnlyPlaneAsReference()
     {

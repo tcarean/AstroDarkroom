@@ -43,9 +43,9 @@ the chosen medium into it (in the field's initialiser and in the `Medium` setter
 sets both sets the medium first) and decides nothing. A field that still shows that text is no
 override: `TryBuild` passes null and the core's own value is used, not a copy rounded for
 display. Whether a Dmax that was typed is explicit is `Parameters.DmaxIsExplicit`'s answer,
-which the report asks. The level-L\* ladder marks as chosen the medium whose Dmax equals the
-Dmax in use, whichever medium is selected (R-042), and adds an explicit row only when the Dmax
-is no medium's.
+which the report asks. The level-L\* ladder asks the same question: it marks the chosen medium's
+row when the Dmax in use is that medium's, and otherwise adds and marks an explicit row, even
+when another medium has that Dmax (R-042).
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)
