@@ -301,7 +301,11 @@ merge, `git merge --no-ff claude/Move-the-golden-diff-rule-into-the-kit` in
   there. They belong to another session, so I leave them; you can remove them with
   `git worktree remove` and `git branch -d`.
 - **The parked APA branch** `claude/Recommend-the-lift-that-puts-the-dust-on-paper-black` touches
-  only `AstroPhotoAnalyzer/`. It is not affected beyond what `main` already holds.
+  only `AstroPhotoAnalyzer/`. (Corrected at the code review: this branch adds one conflict hunk
+  there. Both branches rewrite the R-100 row of `docs/requirements.md`, which `main` had not
+  touched since that branch's base, 9dd0b79. Taking the parked side brings back "after the owner
+  has read the diff"; taking this side drops that branch's R-100 and R-101 changes, so the hunk
+  is merged by hand.)
 
 ## What deviated
 
@@ -327,3 +331,47 @@ merge, `git merge --no-ff claude/Move-the-golden-diff-rule-into-the-kit` in
   has read the diff". Both now point at the rule "Golden files", in a wrap-up commit.
 - **The first commit was refused** by the Claude commit hook, because the worktree path came
   through a shell variable. It ran again with the path written out.
+
+## After the code review
+
+`/code-review main...claude/Move-the-golden-diff-rule-into-the-kit` (max effort, 2026-10-05)
+reported 15 findings. The owner said to fix them ("repara"), and all were fixed on the branch:
+
+- **The test for a changed line is the change the task meant to make, not any cause.** A side
+  effect has a cause too: a threshold changed for one scene that also flips another scene's
+  verdict would have passed. The rules file, both skills, ADR 0033 and the guide now say: a line
+  the task did not mean to change, even one whose cause is known, is a finding.
+- **A finding stops the task.** `/wrap-up` step 2 says "say so and stop before step 11 commits;
+  the owner decides". The rules file drops "a wrong test" and "a moved figure", and calls both
+  cases a finding that stops.
+- **The golden check holds whatever code was touched.** It no longer reads as part of the
+  numeric-code condition, in `/wrap-up` step 2, `/new-feature` step 6 (now "Figures and golden
+  files") and the guide's step 2. It stays inside step 2, so the step numbers that the projects'
+  `docs/skills.md` cite do not move.
+- **A git listing.** Step 2 pastes `git diff --stat $(git merge-base main HEAD)` and
+  `git status --short`, limited to the golden folder `CLAUDE.md` names. A change repeated
+  across files is reported once.
+- **One criterion for confirmed goldens.** The rules file and both skills say "a golden the
+  project's `CLAUDE.md` names as carrying confirmed figures". `CLAUDE.md` also says where an
+  approved change to one is recorded. ADR 0033 keeps real-data numbers in
+  `docs/validation.json`, as the guide does.
+- **FlatCheck.**
+  - The routine regeneration is `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter
+    GoldenOutputTests`, which leaves the parity goldens alone. The 43 parity goldens are
+    recaptured only after the owner's yes, with `--filter ParityGoldenTests`. The approved change
+    is recorded with the divergences in `docs/design/python-parity.md`.
+  - The confirmed set is the 43 captured on 2026-09-26; a parity scenario added later is judged
+    like any golden.
+  - The parity clauses left `docs/skills.md`, so `CLAUDE.md` alone states them.
+  - `docs/design/process.md` and the README use the filtered command. A capture that rewrote one
+    of the 43 is now put back and asked about, not "explained".
+- **Facts.**
+  - ADR 0033 and the guide say "twice in one task" (957e5f4 and ebf9cf2, one branch).
+  - ADR 0033 no longer says the guide is synced.
+  - The note on the parked APA branch above is corrected.
+  - The guide's `/wrap-up` item 9 now says what step 9 of the skill says.
+  - The guide's long golden bullet became a short bullet plus a headed paragraph.
+  - The kit CHANGELOG line drops the guide fix, which gets no line.
+- **Kept as the owner chose:** any changed line of a confirmed golden is a finding, numbers or
+  not, so a copyright year roll still asks the owner about the 43 parity goldens. Grouping a
+  change repeated across files makes that one question, not 43.
