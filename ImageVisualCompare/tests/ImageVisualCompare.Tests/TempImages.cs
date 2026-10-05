@@ -39,6 +39,21 @@ public sealed class TempImages : IDisposable
     public string WriteTiff(string name, PixelFormat format, int width, int height) =>
         Write(name, format, width, height, new TiffBitmapEncoder());
 
+    /// <summary>A 16-bit RGB PNG of the given samples, red, green, blue for each pixel, top row first.</summary>
+    public string WritePng(string name, ushort[] rgb48, int width, int height)
+    {
+        BitmapSource source = BitmapSource.Create(width, height, 96, 96, PixelFormats.Rgb48, null, rgb48, width * 6);
+        return Save(name, source, new PngBitmapEncoder());
+    }
+
+    /// <summary>A file of exactly these bytes: a FITS built by <see cref="FitsFixture"/>, whole or cut short.</summary>
+    public string WriteBytes(string name, byte[] bytes)
+    {
+        string path = Path.Combine(_directory, name);
+        File.WriteAllBytes(path, bytes);
+        return path;
+    }
+
     /// <summary>A file with the right extension and nothing a codec can make sense of.</summary>
     public string WriteCorrupt(string name)
     {
@@ -69,7 +84,11 @@ public sealed class TempImages : IDisposable
 
         BitmapPalette? palette = format == PixelFormats.Indexed8 ? BitmapPalettes.Halftone256 : null;
         BitmapSource source = BitmapSource.Create(width, height, 96, 96, format, palette, pixels, stride);
+        return Save(name, source, encoder);
+    }
 
+    private string Save(string name, BitmapSource source, BitmapEncoder encoder)
+    {
         string path = Path.Combine(_directory, name);
         encoder.Frames.Add(BitmapFrame.Create(source));
         using FileStream stream = File.Create(path);

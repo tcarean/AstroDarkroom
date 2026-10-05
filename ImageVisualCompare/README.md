@@ -6,7 +6,8 @@ loc și la același zoom. Făcut pentru a compara două variante ale aceleiași 
 — înainte și după extracția stelelor, două setări de background extraction, două stretch-uri.
 
 Aplicație WPF pe .NET 9, Windows, x64, **fără nicio dependință NuGet**. Decodarea se face
-prin WIC, codecul din Windows pe care îl folosește WPF oricum.
+prin WIC, codecul din Windows pe care îl folosește WPF oricum; fișierele FITS, pe care WIC nu
+le știe, sunt citite de un cititor propriu, tot fără dependințe.
 
 Totul e întunecat, indiferent de tema sistemului — fereastra, bara de titlu și casetele de
 mesaj — fiindcă un chrome luminos în jurul unei imagini astro strică percepția a ce e cu
@@ -20,7 +21,8 @@ comun Windows și urmează tema sistemului, nu a aplicației.
 ## Ce fișiere îi dai
 
 PNG sau TIFF, orice adâncime de biți și orice combinație de canale pe care WIC le poate
-citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat. Nu există nicio ramură în
+citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat. Și FITS, cu ce e scris mai jos
+la „Fișiere FITS". Nu există nicio ramură în
 cod care să întrebe ce format are fișierul — totul se normalizează la Bgra32 la încărcare,
 iar formatul real e afișat în bara de stare ca să știi mereu ce ai deschis.
 
@@ -40,6 +42,29 @@ nu într-o zonă neagră din poză.
 
 Un export „32 bit" din Siril ajunge pe disc ca PNG pe **16 biți pe canal** (48 bpp), fiindcă
 formatul PNG nu are un mod pe 32 de biți. Windows raportează corect „bit depth 48".
+
+### Fișiere FITS
+
+Poți deschide direct și fișiere FITS (`.fit`, `.fits`, `.fts`), ca imagine A, ca imagine B sau
+ca amândouă, inclusiv un FITS față în față cu un PNG sau un TIFF. Se citesc întregi pe 8, 16 și
+32 de biți și float pe 32 și 64 de biți, cu un plan (afișat gri) sau cu trei (RGB). Fișierul e
+recunoscut după conținut, nu după extensie.
+
+- **Valorile se afișează așa cum sunt în fișier, fără niciun stretch.** Un FITS deja procesat
+  arată exact ca exportul lui PNG sau TIFF pe 16 biți, nivel cu nivel, deci îl poți compara
+  cinstit cu exportul. Un stack liniar, nestretch-uit, apare aproape negru: e corect, așa e
+  el. Stretch-uiește-l în Siril și salvează-l dacă vrei să-l vezi.
+- **Orientarea e cea din Siril.** Se respectă `ROWORDER` din antet; un fișier fără acest
+  cuvânt-cheie e considerat scris de jos în sus, cum îl arată și Siril.
+- **Float în 0..1 sau în 0..65535.** Siril scrie float între 0 și 1. Dacă mai mult de 1% din
+  valorile din fișier trec de 2, fișierul e citit ca fiind între 0 și 65535, iar bara de stare
+  o spune: `32-bit float RGB (0..65535)`. Câțiva pixeli fierbinți peste 2 nu schimbă scara.
+  Valorile negative și NaN devin negru, cele peste maxim devin alb.
+- **Ce nu se citește:** FITS comprimat (tile-compressed, `.fz`), cuburi cu alt număr de
+  planuri decât 1 sau 3, întregi pe 64 de biți. Primești un mesaj care spune care dintre ele
+  e, nu o eroare generică; la fel pentru un antet stricat sau o imagine prea mare ca să fie
+  afișată. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
+  gri care este: nu se face debayer.
 
 ## Cum o pornești
 
@@ -96,6 +121,10 @@ Dimensiunea perechii și formatul real al fiecărui fișier, coordonata pixelulu
 și **valorile RGB din ambele imagini în acel pixel**. Ultima parte e adesea singurul mod de a
 vedea o diferență: pe un fundal întunecat, o diferență de una-două unități din 255 e complet
 invizibilă cu ochiul, dar se citește imediat în cifre.
+
+Pentru un FITS formatul arată adâncimea și planurile din fișier, de exemplu `A 32-bit float
+RGB` sau `B 16-bit gray`. Valorile RGB citite sunt tot cele 0–255 de pe ecran, nu valorile
+float din fișier.
 
 Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded · A 600 × 300 ·
 B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre

@@ -38,22 +38,36 @@ public sealed record ImageInfo(
     int PixelWidth,
     int PixelHeight,
     int BitsPerChannel,
-    ColorChannels Channels)
+    ColorChannels Channels,
+    bool IsFloat = false,
+    string? ValueRange = null)
 {
     public string FileName => System.IO.Path.GetFileName(Path);
 
     public string Dimensions => $"{PixelWidth} × {PixelHeight}";
 
-    /// <summary>The source format in words, for example "16-bit RGB".</summary>
-    public string FormatDescription => Channels switch
+    /// <summary>
+    /// The source format in words, for example "16-bit RGB", or "32-bit float RGB (0..65535)"
+    /// for a FITS whose floats were not in 0 to 1.
+    /// </summary>
+    public string FormatDescription
     {
-        ColorChannels.Gray => $"{BitsPerChannel}-bit gray",
-        ColorChannels.GrayAlpha => $"{BitsPerChannel}-bit gray + alpha",
-        ColorChannels.Rgb => $"{BitsPerChannel}-bit RGB",
-        ColorChannels.Rgba => $"{BitsPerChannel}-bit RGBA",
-        ColorChannels.Indexed => $"{BitsPerChannel}-bit indexed",
-        _ => $"{BitsPerChannel}-bit",
-    };
+        get
+        {
+            string depth = IsFloat ? $"{BitsPerChannel}-bit float" : $"{BitsPerChannel}-bit";
+            string format = Channels switch
+            {
+                ColorChannels.Gray => $"{depth} gray",
+                ColorChannels.GrayAlpha => $"{depth} gray + alpha",
+                ColorChannels.Rgb => $"{depth} RGB",
+                ColorChannels.Rgba => $"{depth} RGBA",
+                ColorChannels.Indexed => $"{depth} indexed",
+                _ => depth,
+            };
+
+            return ValueRange is null ? format : $"{format} ({ValueRange})";
+        }
+    }
 
     /// <summary>Bytes the image occupies once converted to Bgra32, for the memory budget.</summary>
     public long DisplayBytes => (long)PixelWidth * PixelHeight * 4;

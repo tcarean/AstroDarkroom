@@ -35,6 +35,18 @@ public class ImageInfoTests
         Assert.Equal(expected, info.FormatDescription);
     }
 
+    [Theory]
+    [InlineData(32, ColorChannels.Rgb, null, "32-bit float RGB")]
+    [InlineData(64, ColorChannels.Gray, null, "64-bit float gray")]
+    [InlineData(32, ColorChannels.Gray, "0..65535", "32-bit float gray (0..65535)")]
+    public void R018_FormatDescription_SaysFloatAndTheRangeTheValuesWereReadIn(
+        int bits, ColorChannels channels, string? range, string expected)
+    {
+        var info = new ImageInfo(@"C:\x.fit", 10, 10, bits, channels, IsFloat: true, ValueRange: range);
+
+        Assert.Equal(expected, info.FormatDescription);
+    }
+
     [Fact]
     public void R013_FileName_StripsTheDirectory()
     {

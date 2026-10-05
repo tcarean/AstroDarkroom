@@ -10,7 +10,11 @@ The data is three exports of one frame, the owner's Milky Way core, whose origin
 `E:\Photografie\Claude`: `de_printat.png` (5938 x 3888, 16-bit RGB PNG, 103 387 067 bytes),
 `de_printat_PRINT_preview_16bit.tif` (the same frame after the print-preview stretch, 5938 x
 3888, 16-bit RGB TIFF, 130 166 332 bytes) and `de_printat_50x35_TIFF8.tif` (cropped to 50:35,
-5554 x 3888, 8-bit RGB TIFF, 20 099 182 bytes). Copies made by hand sit in
+5554 x 3888, 8-bit RGB TIFF, 20 099 182 bytes). Since 2026-10-05 two FITS files of the same
+frame, from `E:\Photografie\Claude\Processed_WithFlats_RBF_light`, are beside them:
+`result_3813s.fit` (the linear stack, 5938 x 3888, three planes of 32-bit float, 277 053 120
+bytes) and `result_3813s_Graxpert_AI.fit` (the same after GraXpert's background extraction,
+277 047 360 bytes), both written by Siril 1.4.4 with `ROWORDER = 'BOTTOM-UP'`. Copies made by hand sit in
 `tests/testdata/large/`, which git ignores, and `tests/testdata/manifest.json` holds their
 SHA-256. On a machine or in a worktree without the copies, the cases print `NOT MEASURED` and
 pass.
@@ -20,8 +24,10 @@ pass.
 One kind of case, `pair`, which does what the application does when it opens a pair, without a
 window:
 
-1. `WicImageLoader.Probe` on both files and `ImagePairValidator.Inspect` on the two answers: what
-   the status bar would say about each file, and the canvas.
+1. `RoutingImageLoader.Probe` on both files (the loader the application uses: the project's
+   reader for a FITS, WIC for the rest; until 2026-10-05 `WicImageLoader`) and
+   `ImagePairValidator.Inspect` on the two answers: what the status bar would say about each
+   file, and the canvas.
 2. A forced release (`MemoryHousekeeping.ReleaseImageBuffers`) and a reading of the process's
    private bytes, the baseline; then `ImagePairLoader.LoadAsync` with the padding question
    answered yes, timed.
@@ -32,7 +38,8 @@ and in the file `IVC_VALIDATION_DUMP` names when it is set. The names: `before.*
 for each file (`width`, `height`, `bitsPerChannel`, `channels`, `format`, `displayBytes`,
 `fileBytes`); `pad.*` for the canvas (`width`, `height`, `requiresPadding`, `dimensions`);
 `load.*` for the loaded pair (`success`, `displayBytes`, `beforeIsBgra32`, `afterIsBgra32`,
-`frozen`); `memory.privateDeltaMb`, what the load added to the baseline, and
+`frozen`, and `beforeFormat` and `afterFormat`, the format the loaded image reports, which for
+a FITS can say more than the probe's, R-018); `memory.privateDeltaMb`, what the load added to the baseline, and
 `memory.privateAfterReleaseDeltaMb`, what is left after the release, in megabytes of 1 048 576
 bytes with one decimal; and `decode.seconds`. A case's `expected` lists the figures it guards:
 integers, booleans and strings exactly, the memory figures within the case's `tolerance` (60 MB:
@@ -53,6 +60,29 @@ stops on a drift instead of editing them.
 | --- | --- | --- | --- |
 | V-001 | `de_printat.png` | `de_printat_PRINT_preview_16bit.tif` | a matched 16-bit pair, PNG against TIFF: what the probe reports for both (5938 x 3888, 16 bits, RGB, `16-bit RGB`, 92 347 776 display bytes, the file sizes), no padding, a load whose two bitmaps are Bgra32 and frozen, 184 695 552 display bytes, the private memory the load adds and what the release leaves |
 | V-002 | `de_printat.png` | `de_printat_50x35_TIFF8.tif` | a mismatched pair, 16-bit against 8-bit: the probe of the second file (5554 x 3888, 8 bits, RGB, `8-bit RGB`, 86 375 808 display bytes), a 5938 x 3888 canvas with `RequiresPadding` true and `Dimensions` `5938 × 3888`, a load once the question is answered yes, 178 723 584 display bytes, the memory figures |
+| V-003 | `result_3813s.fit` | `result_3813s_Graxpert_AI.fit` | a matched pair of two float FITS files: what the probe reports for both (5938 x 3888, 32 bits, RGB, `32-bit float RGB`, 92 347 776 display bytes, the file sizes), no padding, a load whose two bitmaps are Bgra32 and frozen and still say `32-bit float RGB` (neither file was rescaled, R-016), 184 695 552 display bytes, the memory figures |
+| V-004 | `result_3813s.fit` | `de_printat.png` | a FITS against a PNG, one loader each behind `RoutingImageLoader`: `32-bit float RGB` against `16-bit RGB` on one 5938 x 3888 canvas with no padding, the load, the memory figures |
+
+## The figures of 2026-10-05
+
+Measured twice on the branch `claude/Add-FITS-support`, Release, in one test host where the
+cases ran in the order V-003, V-002, V-001, V-004 both times. `validation.json` holds the first
+run for V-003 and V-004; V-001 and V-002 passed against their figures of 2026-10-02, which were
+not touched. Every exact figure was the same in both runs.
+
+| Case | Decode, s | Private memory the load adds, MB | Left after the release, MB | The two Bgra32 buffers, MB |
+| --- | --- | --- | --- | --- |
+| V-003 | 2.75, 2.55 | 204.3, 204.3 | 28.1, 29 | 176.1 |
+| V-004 | 2.7, 3.14 | 175.6, 175.8 | -0.6, -0.5 | 176.1 |
+| V-001 | 3.14, 3.64 | 176.3, 175 | -1.2, -2.6 | 176.1 |
+| V-002 | 2.06, 2.44 | 172.5, 173.2 | 1.1, 1.7 | 170.4 |
+
+V-003 carries about 28 MB that is not the pair's: it is the first FITS load of the process. The
+same pair loaded and released five times in a process of its own left +29.7, +29.5, +29.8, +29
+and +30.1 MB over the baseline, with +206 to +207 MB while loaded: paid once, not once a load.
+V-004, which runs after it, shows a FITS and a PNG costing their two buffers and giving them
+back. Two float FITS files of 277 MB each decode in about the time two 16-bit files of 103 and
+130 MB take through WIC.
 
 ## The figures of 2026-10-02
 
@@ -100,3 +130,11 @@ files above. They are kept here as they were written, as the history of the figu
 
 - 2026-10-02: the file created (ADR 0001, ADR 0005); V-001 and V-002 measured the same day and
   recorded as `expected`, the decode time left out.
+- 2026-10-05: FITS support (ADR 0029). V-003 and V-004 added and measured the same day; the
+  cases now probe and load through `RoutingImageLoader`, as the application does, and print
+  `load.beforeFormat` and `load.afterFormat`. No figure of V-001 or V-002 changed.
+- 2026-10-05, later: after the review fixes to the FITS reader (the header validated, the scale
+  by a share of the samples, one decode loop per sample type), all four cases ran again and
+  passed against the figures above, which were left as they are: V-003 decoded in 1.55 s (2.75
+  and 2.55 before), +201.5 MB and 25.5 MB after the release; V-004 in 2.06 s, +172.4 and -4.2 MB;
+  V-001 in 2.71 s, +178.3 and 0.7 MB; V-002 in 1.82 s, +171.3 and -0.3 MB.
