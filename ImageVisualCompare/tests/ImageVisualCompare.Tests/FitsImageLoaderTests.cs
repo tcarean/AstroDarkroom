@@ -65,12 +65,78 @@ public class FitsImageLoaderTests : IDisposable
     [Fact]
     public async Task R014_LoadAsync_ProducesTheSameResultOffTheCallingThread()
     {
-        string path = _images.WriteBytes("async.fit", FitsFixture.Image(16, 3, 2, 1, new double[6]));
+        string path = _images.WriteBytes("async.fit", FitsFixture.Image(16, 3, 2, 1, [0, 5000, 10000, 15000, 20000, 32767]));
 
         LoadedImage loaded = await _loader.LoadAsync(path);
+        LoadedImage direct = _loader.Load(path);
 
         Assert.True(loaded.Bitmap.IsFrozen);
-        Assert.Equal(3, loaded.Info.PixelWidth);
+        Assert.Equal(direct.Info, loaded.Info);
+        Assert.Equal(Pixels(direct.Bitmap), Pixels(loaded.Bitmap));
+    }
+
+    [Fact]
+    public void R014_LoadsDoubles()
+    {
+        string path = _images.WriteBytes("double.fit", FitsFixture.Image(-64, 2, 1, 3, [1, 0, 0.5, 0.5, 0, 1]));
+
+        LoadedImage loaded = _loader.Load(path);
+
+        Assert.Equal([0, 128, 255, 255, 255, 128, 0, 255], Pixels(loaded.Bitmap));
+        Assert.Equal("64-bit float RGB", loaded.Info.FormatDescription);
+    }
+
+    [Fact]
+    public void R014_Load_StopsWhenCancelled()
+    {
+        string path = _images.WriteBytes("cancel.fit", FitsFixture.Image(8, 4, 4, 1, new double[16]));
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+
+        Assert.Throws<OperationCanceledException>(() => _loader.Load(path, cancelled.Token));
+    }
+
+    [Fact]
+    public async Task R014_Routing_LooksAtTheFileOffTheCallingThread()
+    {
+        // The task is handed back before the file is opened: a file that is not there faults
+        // the task, it does not throw at the caller, who may be the UI thread.
+        Task<LoadedImage> loading = new RoutingImageLoader().LoadAsync(_images.PathFor("not-here.fit"));
+
+        await Assert.ThrowsAsync<System.IO.FileNotFoundException>(() => loading);
+    }
+
+    [Fact]
+    public void R016_OneHotPixelAboveTwo_DoesNotTurnAZeroToOneImageBlack()
+    {
+        // 20 x 10 at 0.5, one sample at 2.5: 1 in 200, under the 1 in 100 that changes the scale.
+        double[] samples = Enumerable.Repeat(0.5, 200).ToArray();
+        samples[0] = 2.5;
+        string path = _images.WriteBytes("hot.fit", FitsFixture.Image(-32, 20, 10, 1, samples, FitsFixture.Text("ROWORDER", "TOP-DOWN")));
+
+        LoadedImage loaded = _loader.Load(path);
+        byte[] pixels = Pixels(loaded.Bitmap);
+
+        Assert.Equal(255, pixels[0]);
+        Assert.Equal(128, pixels[4]);
+        Assert.Equal(128, pixels[^4]);
+        Assert.Equal("32-bit float gray", loaded.Info.FormatDescription);
+    }
+
+    [Fact]
+    public void R016_TheSecondPass_RewritesEveryRowOfEveryPlane_TheRightWayUp()
+    {
+        // 2 x 2, three planes, bottom-up, counting to 65535: red 65535 in the first row of the
+        // file only, green 32768 everywhere, blue 256 in the second row of the file only.
+        double[] samples = [65535, 65535, 0, 0, /* green */ 32768, 32768, 32768, 32768, /* blue */ 0, 0, 256, 256];
+        string path = _images.WriteBytes("adu-rgb.fit", FitsFixture.Image(-32, 2, 2, 3, samples));
+
+        LoadedImage loaded = _loader.Load(path);
+
+        byte[] top = [1, 128, 0, 255];
+        byte[] bottom = [0, 128, 255, 255];
+        Assert.Equal([.. top, .. top, .. bottom, .. bottom], Pixels(loaded.Bitmap));
+        Assert.Equal("32-bit float RGB (0..65535)", loaded.Info.FormatDescription);
     }
 
     [Fact]

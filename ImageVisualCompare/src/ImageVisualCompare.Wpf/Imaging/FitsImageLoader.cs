@@ -37,23 +37,23 @@ public sealed class FitsImageLoader : IImageLoader
     }
 
     public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
-        Task.Run(() => Load(path), cancellationToken);
+        Task.Run(() => Load(path, cancellationToken), cancellationToken);
 
-    public LoadedImage Load(string path)
+    public LoadedImage Load(string path, CancellationToken cancellationToken = default)
     {
         using FileStream stream = OpenRead(path);
         FitsImageLayout layout = FitsHeader.ReadLayout(stream);
 
-        var bitmap = new WriteableBitmap(layout.Width, layout.Height, 96, 96, PixelFormats.Bgra32, null);
-        double largest = Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix));
+        WriteableBitmap bitmap = CreateBitmap(layout);
+        long above = Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix), cancellationToken);
 
         // Whether a float file counts in 0 to 1 or in 0 to 65535 is known only once every
         // sample has been seen. The rare file that turns out to be the second pays for a
         // second pass; holding the floats to avoid it would cost every file 277 MB.
         string? valueRange = null;
-        if (FitsScale.IsRescaled(layout.BitPix, largest))
+        if (FitsScale.IsRescaled(layout.BitPix, above, (long)layout.Width * layout.Height * layout.Planes))
         {
-            Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix, largest));
+            Decode(layout, stream, bitmap, FitsScale.FullScale(layout.BitPix, rescaled: true), cancellationToken);
             valueRange = FitsScale.SixteenBitRange;
         }
 
@@ -61,8 +61,30 @@ public sealed class FitsImageLoader : IImageLoader
         return new LoadedImage(layout.Describe(path, valueRange), bitmap);
     }
 
-    /// <summary>Writes every row into the bitmap and returns the largest finite sample.</summary>
-    private static double Decode(FitsImageLayout layout, Stream stream, WriteableBitmap bitmap, double fullScale)
+    /// <summary>
+    /// The bitmap the rows are written into. A file can be whole and still hold more pixels
+    /// than WPF makes a bitmap of; that is said as a message, as every other FITS that cannot
+    /// be shown is, and not left to be an <see cref="OverflowException"/> nothing expects.
+    /// </summary>
+    private static WriteableBitmap CreateBitmap(FitsImageLayout layout)
+    {
+        try
+        {
+            return new WriteableBitmap(layout.Width, layout.Height, 96, 96, PixelFormats.Bgra32, null);
+        }
+        catch (Exception ex) when (ex is OverflowException or ArgumentException)
+        {
+            throw new NotSupportedException(
+                $"FITS: an image of {layout.Width} × {layout.Height} is too large to show.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Writes every row into the bitmap and returns how many float samples were above
+    /// <see cref="FitsScale.RescaleThreshold"/>.
+    /// </summary>
+    private static long Decode(
+        FitsImageLayout layout, Stream stream, WriteableBitmap bitmap, double fullScale, CancellationToken cancellationToken)
     {
         var decoder = new FitsRowDecoder(layout, stream, fullScale);
         int stride = layout.Width * 4;
@@ -71,13 +93,16 @@ public sealed class FitsImageLoader : IImageLoader
         // In the order of the file, whichever way up the image is, so the disk is read forwards.
         for (int fileRow = 0; fileRow < layout.Height; fileRow++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             decoder.ReadFileRow(fileRow, row);
             bitmap.WritePixels(new Int32Rect(0, layout.DisplayRow(fileRow), layout.Width, 1), row, stride, 0);
         }
 
-        return decoder.LargestSample;
+        return decoder.SamplesAboveThreshold;
     }
 
+    // No buffer of the stream's own: the decoder reads one whole row at each of three places
+    // in turn, and a buffer would be filled past the row and thrown away at every seek.
     private static FileStream OpenRead(string path) =>
-        new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1 << 16, FileOptions.RandomAccess);
+        new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
 }

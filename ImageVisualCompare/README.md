@@ -56,13 +56,14 @@ recunoscut după conținut, nu după extensie.
   el. Stretch-uiește-l în Siril și salvează-l dacă vrei să-l vezi.
 - **Orientarea e cea din Siril.** Se respectă `ROWORDER` din antet; un fișier fără acest
   cuvânt-cheie e considerat scris de jos în sus, cum îl arată și Siril.
-- **Float în 0..1 sau în 0..65535.** Siril scrie float între 0 și 1. Dacă valorile din fișier
-  trec clar de 1 (peste 2), fișierul e citit ca fiind între 0 și 65535, iar bara de stare o
-  spune: `32-bit float RGB (0..65535)`. Valorile negative și NaN devin negru, cele peste
-  maxim devin alb.
+- **Float în 0..1 sau în 0..65535.** Siril scrie float între 0 și 1. Dacă mai mult de 1% din
+  valorile din fișier trec de 2, fișierul e citit ca fiind între 0 și 65535, iar bara de stare
+  o spune: `32-bit float RGB (0..65535)`. Câțiva pixeli fierbinți peste 2 nu schimbă scara.
+  Valorile negative și NaN devin negru, cele peste maxim devin alb.
 - **Ce nu se citește:** FITS comprimat (tile-compressed, `.fz`), cuburi cu alt număr de
   planuri decât 1 sau 3, întregi pe 64 de biți. Primești un mesaj care spune care dintre ele
-  e, nu o eroare generică. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
+  e, nu o eroare generică; la fel pentru un antet stricat sau o imagine prea mare ca să fie
+  afișată. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
   gri care este: nu se face debayer.
 
 ## Cum o pornești

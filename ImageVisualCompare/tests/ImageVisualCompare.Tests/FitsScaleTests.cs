@@ -58,35 +58,64 @@ public class FitsScaleTests
         Assert.Equal(expected, FitsScale.ToByte(value, 1));
     }
 
-    [Theory]
-    [InlineData(8, 0.0, 255.0)]
-    [InlineData(16, 0.0, 65535.0)]
-    [InlineData(32, 0.0, 4294967295.0)]
-    [InlineData(-32, 0.0, 1.0)]
-    [InlineData(-64, 0.0, 1.0)]
-    public void R015_FullScale_IsTheRangeOfTheSampleType(int bitPix, double largest, double expected)
+    [Fact]
+    public void R015_ToByte_GivesEverySixteenBitValueItsHighByte_OnEachScaleAFileCanHave()
     {
-        Assert.Equal(expected, FitsScale.FullScale(bitPix, largest));
+        for (int value = 0; value <= 65535; value++)
+        {
+            byte highByte = (byte)(value >> 8);
+
+            // As a 16-bit integer, as a float in 0 to 65535, and as the float32 a program
+            // writes when it divides that value by 65535.
+            Assert.Equal(highByte, FitsScale.ToByte(value, 65535));
+            Assert.Equal(highByte, FitsScale.ToByte((float)value, FitsScale.FullScale(-32, rescaled: true)));
+            Assert.Equal(highByte, FitsScale.ToByte(value / 65535f, FitsScale.FullScale(-32)));
+        }
     }
 
     [Theory]
-    [InlineData(-32, 1.0005, 1.0, false)]
-    [InlineData(-32, 2.0, 1.0, false)]
-    [InlineData(-32, 2.001, 65535.0, true)]
-    [InlineData(-64, 41200.0, 65535.0, true)]
-    [InlineData(16, 60000.0, 65535.0, false)]
-    [InlineData(8, 200.0, 255.0, false)]
-    public void R016_FullScale_AFloatFileAboveTheThresholdCountsToSixtyFiveThousand(
-        int bitPix, double largest, double expected, bool rescaled)
+    [InlineData(8, 255.0)]
+    [InlineData(16, 65535.0)]
+    [InlineData(32, 4294967295.0)]
+    [InlineData(-32, 1.0)]
+    [InlineData(-64, 1.0)]
+    public void R015_FullScale_IsTheRangeOfTheSampleType(int bitPix, double expected)
     {
-        Assert.Equal(expected, FitsScale.FullScale(bitPix, largest));
-        Assert.Equal(rescaled, FitsScale.IsRescaled(bitPix, largest));
+        Assert.Equal(expected, FitsScale.FullScale(bitPix));
+    }
+
+    [Theory]
+    [InlineData(-32, 65535.0)]
+    [InlineData(-64, 65535.0)]
+    [InlineData(16, 65535.0)]
+    [InlineData(8, 255.0)]
+    public void R016_FullScale_OnlyAFloatFileCanBeRescaled(int bitPix, double expected)
+    {
+        Assert.Equal(expected, FitsScale.FullScale(bitPix, rescaled: true));
+    }
+
+    [Theory]
+    [InlineData(-32, 0, 1000, false)]
+    [InlineData(-32, 1, 1000, false)]
+    [InlineData(-32, 10, 1000, false)]
+    [InlineData(-32, 11, 1000, true)]
+    [InlineData(-64, 1000, 1000, true)]
+    [InlineData(16, 1000, 1000, false)]
+    [InlineData(8, 1000, 1000, false)]
+    public void R016_IsRescaled_WhenMoreThanOneSampleInAHundredIsAboveTheThreshold(
+        int bitPix, long above, long samples, bool rescaled)
+    {
+        Assert.Equal(rescaled, FitsScale.IsRescaled(bitPix, above, samples));
     }
 
     [Fact]
-    public void R016_TheExampleOfTheRequirement_FortyOneThousandTwoHundredShowsAs160()
+    public void R016_TheFiguresOfTheRequirement()
     {
         Assert.Equal(2.0, FitsScale.RescaleThreshold);
-        Assert.Equal(160, FitsScale.ToByte(41200, FitsScale.FullScale(-32, 41200)));
+        Assert.Equal(0.01, FitsScale.RescaleFraction);
+        Assert.Equal(160, FitsScale.ToByte(41200, FitsScale.FullScale(-32, rescaled: true)));
+
+        // result_3813s_wcsplane_bge.fit: 1 sample above 1 (1.0005, not above 2) of 69 260 832.
+        Assert.False(FitsScale.IsRescaled(-32, 0, 69260832));
     }
 }

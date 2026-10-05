@@ -75,6 +75,12 @@ public static class FitsHeader
 
     private const int CardSize = 80;
 
+    /// <summary>The most axes the standard allows a unit.</summary>
+    private const int MaxAxes = 999;
+
+    /// <summary>The widest row whose samples, at 8 bytes each, still fit one array.</summary>
+    private const int MaxWidth = int.MaxValue / 8;
+
     private static readonly byte[] Signature = "SIMPLE  ="u8.ToArray();
 
     /// <summary>
@@ -91,7 +97,8 @@ public static class FitsHeader
     /// <summary>
     /// The first unit that holds an image: the primary, or an IMAGE extension. An empty primary
     /// and a table are stepped over. Reads headers only, and checks against the length of the
-    /// stream that the data is all there.
+    /// stream that the data is all there. The header is not trusted: a size that is negative,
+    /// or that no file could hold, is refused before anything is computed from it.
     /// </summary>
     /// <exception cref="NotSupportedException">The file has no image this program can show.</exception>
     /// <exception cref="EndOfStreamException">The file is cut short.</exception>
@@ -100,10 +107,10 @@ public static class FitsHeader
         bool primary = true;
         while (true)
         {
-            Dictionary<string, string>? cards = ReadCards(stream);
+            Dictionary<string, string>? cards = ReadCards(stream, primary);
             if (cards is null)
             {
-                throw new NotSupportedException("FITS: no image found in the file.");
+                throw NoImage();
             }
 
             if (IsTrue(cards, "ZIMAGE"))
@@ -111,30 +118,25 @@ public static class FitsHeader
                 throw new NotSupportedException("FITS: a tile-compressed image is not read.");
             }
 
-            int bitPix = Int(cards, "BITPIX", 0);
-            int axes = Int(cards, "NAXIS", 0);
-            int width = Int(cards, "NAXIS1", 0);
-            int height = Int(cards, "NAXIS2", 0);
+            long axes = Count(cards, "NAXIS", 0);
+            if (axes > MaxAxes)
+            {
+                throw InvalidHeader();
+            }
+
+            long width = Count(cards, "NAXIS1", 0);
+            long height = Count(cards, "NAXIS2", 0);
             bool holdsImages = primary || Text(cards, "XTENSION") == "IMAGE";
 
             if (holdsImages && axes >= 2 && width > 0 && height > 0)
             {
-                return Layout(cards, bitPix, axes, width, height, stream);
+                return Layout(cards, (int)axes, width, height, stream);
             }
 
-            // A unit with no axes has no data at all, not one sample: the empty product would
-            // be 1, and the next header would be looked for 2880 bytes too far.
-            long samples = axes == 0 ? 0 : 1;
-            for (int axis = 1; axis <= axes; axis++)
+            long next = stream.Position + DataBlockBytes(cards, (int)axes);
+            if (next > stream.Length || next < 0)
             {
-                samples *= Int(cards, "NAXIS" + axis.ToString(CultureInfo.InvariantCulture), 1);
-            }
-
-            long dataBytes = Math.Abs(bitPix) / 8 * (long)Int(cards, "GCOUNT", 1) * (Int(cards, "PCOUNT", 0) + samples);
-            long next = stream.Position + ((dataBytes + BlockSize - 1) / BlockSize * BlockSize);
-            if (next > stream.Length)
-            {
-                throw new NotSupportedException("FITS: no image found in the file.");
+                throw NoImage();
             }
 
             stream.Position = next;
@@ -142,8 +144,39 @@ public static class FitsHeader
         }
     }
 
+    /// <summary>
+    /// The bytes a unit's data takes in the file, to the end of its last block: the standard's
+    /// |BITPIX| / 8 x GCOUNT x (PCOUNT + NAXIS1 x ... x NAXISn). Random groups, whose first
+    /// axis is 0, leave that axis out of the product.
+    /// </summary>
+    private static long DataBlockBytes(Dictionary<string, string> cards, int axes)
+    {
+        try
+        {
+            checked
+            {
+                // A unit with no axes has no data at all, not one sample: the empty product
+                // would be 1, and the next header would be looked for 2880 bytes too far.
+                long samples = axes == 0 ? 0 : 1;
+                bool groups = IsTrue(cards, "GROUPS") && Count(cards, "NAXIS1", 1) == 0;
+                for (int axis = groups ? 2 : 1; axis <= axes; axis++)
+                {
+                    samples *= Count(cards, "NAXIS" + axis.ToString(CultureInfo.InvariantCulture), 1);
+                }
+
+                long bytesPerSample = Math.Abs(Count(cards, "BITPIX", 0, signed: true)) / 8;
+                long dataBytes = bytesPerSample * Count(cards, "GCOUNT", 1) * (Count(cards, "PCOUNT", 0) + samples);
+                return (dataBytes + BlockSize - 1) / BlockSize * BlockSize;
+            }
+        }
+        catch (OverflowException)
+        {
+            throw InvalidHeader();
+        }
+    }
+
     private static FitsImageLayout Layout(
-        Dictionary<string, string> cards, int bitPix, int axes, int width, int height, Stream stream)
+        Dictionary<string, string> cards, int axes, long width, long height, Stream stream)
     {
         if (axes > 3)
         {
@@ -151,15 +184,23 @@ public static class FitsHeader
                 $"FITS: an image with {axes} axes is not read; 2, or 3 with 1 or 3 planes, are.");
         }
 
-        int planes = axes == 3 ? Int(cards, "NAXIS3", 1) : 1;
+        long planes = axes == 3 ? Count(cards, "NAXIS3", 1) : 1;
         if (planes is not (1 or 3))
         {
             throw new NotSupportedException($"FITS: an image with {planes} planes is not read; 1 or 3 are.");
         }
 
+        long bitPix = Count(cards, "BITPIX", 0, signed: true);
         if (bitPix is not (8 or 16 or 32 or -32 or -64))
         {
             throw new NotSupportedException($"FITS: BITPIX {bitPix} is not read.");
+        }
+
+        // A row of samples and a row of Bgra32 are each one array, so a width past this cannot
+        // be decoded whatever the machine; the height only has to be a row number.
+        if (width > MaxWidth || height > int.MaxValue)
+        {
+            throw TooLarge(width, height);
         }
 
         // Siril writes its rows bottom first and says so. A file that says nothing is bottom
@@ -167,14 +208,21 @@ public static class FitsHeader
         bool bottomUp = !string.Equals(Text(cards, "ROWORDER"), "TOP-DOWN", StringComparison.OrdinalIgnoreCase);
 
         var layout = new FitsImageLayout(
-            width,
-            height,
-            planes,
-            bitPix,
+            (int)width,
+            (int)height,
+            (int)planes,
+            (int)bitPix,
             Number(cards, "BZERO", 0),
             Number(cards, "BSCALE", 1),
             bottomUp,
             stream.Position);
+
+        // 2^31 x 2^31 doubles would not fit a 64-bit count, and a count that wrapped to a
+        // negative number would pass the comparison below.
+        if (width * height > long.MaxValue / (layout.BytesPerSample * planes) - layout.DataOffset)
+        {
+            throw TooLarge(width, height);
+        }
 
         if (layout.DataOffset + layout.DataBytes > stream.Length)
         {
@@ -184,17 +232,33 @@ public static class FitsHeader
         return layout;
     }
 
-    /// <summary>The cards of one header up to END, or null when the stream ends where a header would start.</summary>
-    private static Dictionary<string, string>? ReadCards(Stream stream)
+    private static NotSupportedException NoImage() => new("FITS: no image found in the file.");
+
+    private static NotSupportedException InvalidHeader() => new("FITS: the header is not valid.");
+
+    private static NotSupportedException TooLarge(long width, long height) =>
+        new($"FITS: an image of {width} × {height} is too large to show.");
+
+    /// <summary>
+    /// The cards of one header up to END, or null when no header starts here: at the end of the
+    /// stream, or, after the primary, at bytes that are not an extension (some programs leave
+    /// padding or their own data after the last unit).
+    /// </summary>
+    private static Dictionary<string, string>? ReadCards(Stream stream, bool primary)
     {
         var cards = new Dictionary<string, string>(StringComparer.Ordinal);
         byte[] block = new byte[BlockSize];
-        bool any = false;
+        bool first = true;
 
         while (true)
         {
             int read = stream.ReadAtLeast(block, BlockSize, throwOnEndOfStream: false);
-            if (read == 0 && !any)
+            if (first && !primary && (read < BlockSize || !block.AsSpan().StartsWith("XTENSION"u8)))
+            {
+                return null;
+            }
+
+            if (read == 0 && first)
             {
                 return null;
             }
@@ -204,7 +268,7 @@ public static class FitsHeader
                 throw new EndOfStreamException("FITS: the header ends before its END card.");
             }
 
-            any = true;
+            first = false;
             for (int offset = 0; offset < BlockSize; offset += CardSize)
             {
                 string card = Encoding.ASCII.GetString(block, offset, CardSize);
@@ -244,11 +308,26 @@ public static class FitsHeader
 
     private static bool IsTrue(Dictionary<string, string> cards, string key) => Text(cards, key) == "T";
 
-    private static int Int(Dictionary<string, string> cards, string key, int fallback) =>
-        cards.TryGetValue(key, out string? value)
-        && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
-            ? parsed
-            : fallback;
+    /// <summary>
+    /// A keyword the layout is computed from: an integer, and except for BITPIX not a negative
+    /// one. A value that is neither makes the header invalid; it is never read as its default,
+    /// which would step over a heap of 3 000 000 000 bytes as if it were empty.
+    /// </summary>
+    private static long Count(Dictionary<string, string> cards, string key, long fallback, bool signed = false)
+    {
+        if (!cards.TryGetValue(key, out string? value))
+        {
+            return fallback;
+        }
+
+        if (!long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long parsed)
+            || (parsed < 0 && !signed))
+        {
+            throw InvalidHeader();
+        }
+
+        return parsed;
+    }
 
     // FITS allows a Fortran exponent, 1.0D3.
     private static double Number(Dictionary<string, string> cards, string key, double fallback) =>

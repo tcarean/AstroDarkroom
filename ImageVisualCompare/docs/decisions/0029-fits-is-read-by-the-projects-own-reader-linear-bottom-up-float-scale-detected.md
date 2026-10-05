@@ -18,6 +18,12 @@ NaN and no negative sample; their largest samples are 0.017, 0.025, 1, 1 and 1.0
 buffer handed to `BitmapSource.Create` took 1.2 to 1.5 s and left +179 MB, which only an
 aggressive, compacting collection gave back.
 
+An independent review of the first version, the same day, found that it trusted the header (a
+negative `NAXISn` or `PCOUNT`, or `NAXIS = 2147483647`, made `ReadLayout` loop for ever; a size
+that overflowed 64 bits passed the length check and ended in an `OverflowException` nothing
+caught), and that deciding the float scale on the largest sample let one hot pixel above 2 turn
+a whole image in 0 to 1 black. The owner's answer to the review was to fix all of it.
+
 ## Decision
 
 - **The project's own reader, in Core, no package.** `FitsHeader`, `FitsScale` and
@@ -32,12 +38,20 @@ aggressive, compacting collection gave back.
   nearly black, and that is accepted.
 - **Bottom-up unless the file says `TOP-DOWN` (the owner's answer).** `ROWORDER` is obeyed; a
   file without it has its first row at the bottom, the FITS convention and what Siril shows.
-- **The float scale is detected (the owner's answer).** A float file is read as 0 to 1 unless
-  its largest finite sample exceeds `FitsScale.RescaleThreshold`, 2.0; then it is read as 0 to
-  65 535, decoded a second time, and the status bar says `(0..65535)`. 2.0 sits between the
-  largest overshoot measured, 1.0005, and any file in 0 to 65 535 that is not black.
+- **The float scale is detected (the owner's answer), by a share of the samples.** A float file
+  is read as 0 to 1 unless more than `FitsScale.RescaleFraction`, 1 in 100, of its samples are
+  finite and above `FitsScale.RescaleThreshold`, 2.0; then it is read as 0 to 65 535, decoded a
+  second time, and the status bar says `(0..65535)`. 2.0 is above the largest overshoot
+  measured, 1.0005; none of the five files has a sample above it. The share is a choice, not a
+  measurement: no float file in 0 to 65 535 was at hand, and in one nearly every sample is
+  above 2, so anything from a few in a million to a half would tell the two apart.
 - **Rows go straight into a `WriteableBitmap`**, one row buffer at a time, in the order of the
   file; the image is never held as floats.
+- **The header is not trusted.** The keywords the layout is computed from must be integers,
+  and none but `BITPIX` negative; a unit has at most 999 axes; sizes are multiplied with
+  overflow checked. Anything else is `FITS: the header is not valid.` or `FITS: an image of
+  W × H is too large to show.`, at the probe, never a loop and never an exception the pair
+  loader does not expect.
 
 ## Alternatives rejected
 
@@ -49,6 +63,8 @@ aggressive, compacting collection gave back.
 - **Clipping floats to 0..1 and nothing else.** A float file written in 0 to 65 535 would be
   white everywhere.
 - **Trusting `DATAMAX` for the scale.** None of the five files has the keyword.
+- **Deciding the scale on the largest sample.** The first version did: a 2 x 1 file holding
+  0.5 and 2.5 loaded as two black pixels marked `(0..65535)`.
 - **A FITS package, or a reference to AstroPhotoAnalyzer's assembly.** The format is 80-byte
   cards and big-endian samples, about 300 lines; the rule "No imaging dependency" asks for no
   package, and the sibling projects share no assemblies. Its reader also keeps the planes as
@@ -71,7 +87,16 @@ aggressive, compacting collection gave back.
 - Not read, each with its own message (R-019): tile-compressed images, `BITPIX` 64, more than 3
   axes, 2 or more than 3 planes. A colour filter array is shown as the gray mosaic it is.
 - A float file in 0 to 65 535 is decoded twice. A float file in some third scale (0 to 255, 0 to
-  4095) is read as 0 to 65 535 and looks dark; none has been met.
+  4095) is read as 0 to 65 535 and looks dark; none has been met. A file in 0 to 65 535 in
+  which 99 samples in 100 are 2 or less would be read as 0 to 1, and be white where it is not
+  black.
+- The decode is one loop per sample type over a stream with no buffer of its own: on
+  `result_3813s.fit`, repeated loads in one process took 0.92 to 0.98 s before that change and
+  0.59 to 0.61 s after it. The load checks its cancellation token at every row, and
+  `RoutingImageLoader.LoadAsync` opens the file on the thread pool, not on the caller's thread.
+- Where WPF's limit on a bitmap lies was not found: 24 000 x 24 000 was created, 46 341 x
+  46 341 threw `OverflowException`. `FitsImageLoader` turns that into the too-large message;
+  no test reaches it, since the file would have to hold the pixels.
 - A first FITS load in a process leaves about 29 MB of private memory that later loads do not
   add to (five load and release cycles of V-003's pair: +29.7, +29.5, +29.8, +29, +30.1 MB).
 - Guards: `FitsHeaderTests`, `FitsScaleTests`, `FitsRowDecoderTests` (Core, on files built in

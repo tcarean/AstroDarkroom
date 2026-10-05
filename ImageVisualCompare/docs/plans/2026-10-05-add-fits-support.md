@@ -139,5 +139,11 @@ dependency" holds.
 - `ImageInfo.ValueRange`, not `ValueScaleNote`.
 - A second case, V-004 (a FITS against `de_printat.png`), beside V-003; `ValidationTests` loads
   through `RoutingImageLoader`.
+- After an independent review of the first commit (the owner: "fix them all"): the header is
+  validated (negative or absurd sizes hung or crashed the reader), the float scale goes by the
+  share of samples above 2.0, more than 1 in 100, not by the largest sample, the decode loop is
+  one loop per sample type on an unbuffered stream (0.95 s to 0.60 s on `result_3813s.fit`),
+  the load checks its cancellation token, and the routing loader opens the file off the
+  calling thread. The header tests were written first and seen to fail.
 - Step 2 was not kept in order: the tests and the code were written together, so no failing
   run was recorded before the code existed.

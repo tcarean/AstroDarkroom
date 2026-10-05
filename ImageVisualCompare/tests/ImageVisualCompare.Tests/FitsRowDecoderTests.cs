@@ -94,33 +94,70 @@ public class FitsRowDecoderTests
     }
 
     [Fact]
-    public void R016_LargestSample_IsTheLargestFiniteValue()
+    public void R016_SamplesAboveThreshold_CountsFiniteSamplesAboveTwo_NotNaNNorInfinities()
     {
         byte[] file = FitsFixture.Image(
-            -32, 5, 1, 1, [0.25, double.NaN, double.PositiveInfinity, 0.75, double.NegativeInfinity]);
+            -32, 7, 1, 1, [0.25, double.NaN, double.PositiveInfinity, 2.0, 2.5, 41200, double.NegativeInfinity]);
 
         (byte[] bgra, FitsRowDecoder decoder) = Row(file, 0);
 
-        Assert.Equal(0.75, decoder.LargestSample);
+        Assert.Equal(2, decoder.SamplesAboveThreshold);
         Assert.Equal(0, bgra[4]);
         Assert.Equal(255, bgra[8]);
-        Assert.Equal(0, bgra[16]);
+        Assert.Equal(0, bgra[24]);
     }
 
     [Fact]
-    public void R016_LargestSample_CountsBZeroAndBScale_AndEveryRowReadSoFar()
+    public void R016_SamplesAboveThreshold_CountsAfterBZeroAndBScale_OverEveryPlaneAndRowReadSoFar()
     {
-        byte[] file = FitsFixture.Image(16, 1, 2, 1, [100, -5], FitsFixture.Card("BZERO", 32768));
+        // Stored 1 and 3 under BSCALE 0.5 and BZERO 1 are 1.5 and 2.5: one above 2 a row.
+        byte[] file = FitsFixture.Image(
+            -64, 2, 2, 3, [1, 3, 1, 3, 1, 3, 1, 3, 1, 3, 1, 3], FitsFixture.Card("BSCALE", 0.5), FitsFixture.Card("BZERO", 1));
         var stream = new MemoryStream(file);
         FitsImageLayout layout = FitsHeader.ReadLayout(stream);
-        var decoder = new FitsRowDecoder(layout, stream, 65535);
-        byte[] bgra = new byte[4];
+        var decoder = new FitsRowDecoder(layout, stream, 1);
+        byte[] bgra = new byte[8];
 
         decoder.ReadFileRow(1, bgra);
-        Assert.Equal(32763, decoder.LargestSample);
+        Assert.Equal(3, decoder.SamplesAboveThreshold);
 
         decoder.ReadFileRow(0, bgra);
-        Assert.Equal(32868, decoder.LargestSample);
+        Assert.Equal(6, decoder.SamplesAboveThreshold);
+    }
+
+    [Fact]
+    public void R016_SamplesAboveThreshold_IntegersAreNotCounted_TheirScaleIsTheirType()
+    {
+        byte[] file = FitsFixture.Image(16, 2, 1, 1, [100, 30000]);
+
+        Assert.Equal(0, Row(file, 0).Decoder.SamplesAboveThreshold);
+    }
+
+    [Fact]
+    public void R014_BZeroMakesThirtyTwoBitSamplesUnsigned()
+    {
+        // Stored -2147483648, 0 and 2147483647 with BZERO 2147483648 are 0, 2^31 and 2^32 - 1.
+        byte[] file = FitsFixture.Image(
+            32, 3, 1, 1, [-2147483648, 0, 2147483647], FitsFixture.Card("BZERO", 2147483648));
+
+        byte[] bgra = Row(file, 0).Bgra;
+
+        Assert.Equal(0, bgra[0]);
+        Assert.Equal(128, bgra[4]);
+        Assert.Equal(255, bgra[8]);
+    }
+
+    [Fact]
+    public void R014_AnImageInAnExtension_IsDecodedFromWhereItsDataIs()
+    {
+        byte[] file =
+        [
+            .. FitsFixture.Header([FitsFixture.Card("SIMPLE", "T"), FitsFixture.Card("BITPIX", 8), FitsFixture.Card("NAXIS", 0)]),
+            .. FitsFixture.Header([FitsFixture.Text("XTENSION", "IMAGE"), .. FitsFixture.ImageCards(8, 2, 2, 1)]),
+            .. FitsFixture.Data(8, [10, 20, 30, 40]),
+        ];
+
+        Assert.Equal([30, 30, 30, 255, 40, 40, 40, 255], Row(file, 1).Bgra);
     }
 
     [Fact]

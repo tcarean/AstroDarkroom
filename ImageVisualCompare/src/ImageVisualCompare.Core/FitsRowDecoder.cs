@@ -29,12 +29,14 @@ namespace ImageVisualCompare.Core;
 public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double fullScale)
 {
     private readonly byte[] _row = new byte[layout.Width * layout.BytesPerSample];
+    private readonly double _toSixteenBits = FitsScale.ToSixteenBits(fullScale);
 
     /// <summary>
-    /// The largest finite value among the rows read so far, after BZERO and BSCALE: what tells
-    /// a float file in 0 to 65535 from one in 0 to 1.
+    /// How many float samples among the rows read so far are finite and above
+    /// <see cref="FitsScale.RescaleThreshold"/>, after BZERO and BSCALE: what tells a file in 0
+    /// to 65535 from one in 0 to 1. Integer samples are not counted; their scale is their type.
     /// </summary>
-    public double LargestSample { get; private set; } = double.NegativeInfinity;
+    public long SamplesAboveThreshold { get; private set; }
 
     /// <summary>
     /// Reads one row as the file numbers them, 0 first in the file, into
@@ -43,7 +45,6 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// </summary>
     public void ReadFileRow(int fileRow, Span<byte> bgra)
     {
-        double largest = LargestSample;
         for (int plane = 0; plane < layout.Planes; plane++)
         {
             stream.Position = layout.DataOffset + (plane * layout.PlaneBytes) + ((long)fileRow * _row.Length);
@@ -53,20 +54,8 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
             }
 
             // Red, green, blue in the file; blue, green, red in the bitmap.
-            int channel = layout.Planes == 3 ? 2 - plane : 0;
-            for (int x = 0; x < layout.Width; x++)
-            {
-                double value = layout.BZero + (layout.BScale * Sample(x));
-                if (value > largest && double.IsFinite(value))
-                {
-                    largest = value;
-                }
-
-                bgra[(x * 4) + channel] = FitsScale.ToByte(value, fullScale);
-            }
+            Convert(bgra, channel: layout.Planes == 3 ? 2 - plane : 0);
         }
-
-        LargestSample = largest;
 
         for (int x = 0; x < layout.Width; x++)
         {
@@ -80,16 +69,72 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
         }
     }
 
-    private double Sample(int x)
+    /// <summary>
+    /// The row in hand into one channel. One loop per sample type, so that nothing is decided
+    /// per sample: an image of 23 megapixels in three planes passes here 69 million times.
+    /// </summary>
+    private void Convert(Span<byte> bgra, int channel)
     {
-        ReadOnlySpan<byte> bytes = _row.AsSpan(x * layout.BytesPerSample, layout.BytesPerSample);
-        return layout.BitPix switch
+        ReadOnlySpan<byte> row = _row;
+        int width = layout.Width;
+        double zero = layout.BZero;
+        double scale = layout.BScale;
+        double toSixteenBits = _toSixteenBits;
+        long above = 0;
+
+        switch (layout.BitPix)
         {
-            8 => bytes[0],
-            16 => BinaryPrimitives.ReadInt16BigEndian(bytes),
-            32 => BinaryPrimitives.ReadInt32BigEndian(bytes),
-            -32 => BinaryPrimitives.ReadSingleBigEndian(bytes),
-            _ => BinaryPrimitives.ReadDoubleBigEndian(bytes),
-        };
+            case 8:
+                for (int x = 0; x < width; x++)
+                {
+                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * row[x])) * toSixteenBits);
+                }
+
+                break;
+
+            case 16:
+                for (int x = 0; x < width; x++)
+                {
+                    short stored = BinaryPrimitives.ReadInt16BigEndian(row.Slice(x * 2, 2));
+                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * stored)) * toSixteenBits);
+                }
+
+                break;
+
+            case 32:
+                for (int x = 0; x < width; x++)
+                {
+                    int stored = BinaryPrimitives.ReadInt32BigEndian(row.Slice(x * 4, 4));
+                    bgra[(x * 4) + channel] = FitsScale.Level((zero + (scale * stored)) * toSixteenBits);
+                }
+
+                break;
+
+            case -32:
+                for (int x = 0; x < width; x++)
+                {
+                    double value = zero + (scale * BinaryPrimitives.ReadSingleBigEndian(row.Slice(x * 4, 4)));
+                    above += IsAboveThreshold(value) ? 1 : 0;
+                    bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
+                }
+
+                break;
+
+            default:
+                for (int x = 0; x < width; x++)
+                {
+                    double value = zero + (scale * BinaryPrimitives.ReadDoubleBigEndian(row.Slice(x * 8, 8)));
+                    above += IsAboveThreshold(value) ? 1 : 0;
+                    bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
+                }
+
+                break;
+        }
+
+        SamplesAboveThreshold += above;
     }
+
+    // An infinity says nothing about the scale of the file; NaN fails the first comparison.
+    private static bool IsAboveThreshold(double value) =>
+        value > FitsScale.RescaleThreshold && value <= double.MaxValue;
 }

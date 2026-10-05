@@ -133,3 +133,8 @@ files above. They are kept here as they were written, as the history of the figu
 - 2026-10-05: FITS support (ADR 0029). V-003 and V-004 added and measured the same day; the
   cases now probe and load through `RoutingImageLoader`, as the application does, and print
   `load.beforeFormat` and `load.afterFormat`. No figure of V-001 or V-002 changed.
+- 2026-10-05, later: after the review fixes to the FITS reader (the header validated, the scale
+  by a share of the samples, one decode loop per sample type), all four cases ran again and
+  passed against the figures above, which were left as they are: V-003 decoded in 1.55 s (2.75
+  and 2.55 before), +201.5 MB and 25.5 MB after the release; V-004 in 2.06 s, +172.4 and -4.2 MB;
+  V-001 in 2.71 s, +178.3 and 0.7 MB; V-002 in 1.82 s, +171.3 and -0.3 MB.

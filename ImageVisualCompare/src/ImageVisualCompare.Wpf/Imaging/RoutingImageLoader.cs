@@ -34,8 +34,10 @@ public sealed class RoutingImageLoader(IImageLoader fits, IImageLoader other) : 
 
     public ImageInfo Probe(string path) => For(path).Probe(path);
 
+    // Looking at the file is disk work too, and the caller may be the UI thread: after the
+    // padding question the pair loader resumes there.
     public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
-        For(path).LoadAsync(path, cancellationToken);
+        Task.Run(() => For(path).LoadAsync(path, cancellationToken), cancellationToken);
 
     private IImageLoader For(string path)
     {

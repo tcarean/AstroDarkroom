@@ -25,47 +25,61 @@ namespace ImageVisualCompare.Core;
 public static class FitsScale
 {
     /// <summary>
-    /// A float file whose largest sample is above this is taken to count in 0 to 65535, not in
-    /// 0 to 1. The largest sample of five Siril files measured on 2026-10-05 was 1.0005; a file
-    /// in 0 to 65535 that stays under 2 would be black on any scale.
+    /// A float sample above this cannot belong to an image in 0 to 1. The largest sample of
+    /// five Siril files measured on 2026-10-05 was 1.0005.
     /// </summary>
     public const double RescaleThreshold = 2.0;
+
+    /// <summary>
+    /// The share of a float file's samples that has to be above
+    /// <see cref="RescaleThreshold"/> for the file to be taken to count in 0 to 65535. A share,
+    /// not one sample: a hot pixel or a stray overshoot in a file in 0 to 1 must not turn the
+    /// whole image black, and a file in 0 to 65535 has nearly every sample above 2.
+    /// </summary>
+    public const double RescaleFraction = 0.01;
 
     /// <summary>What <see cref="ImageInfo.ValueRange"/> says of a float file read in 0 to 65535.</summary>
     public const string SixteenBitRange = "0..65535";
 
     private const double SixteenBitMax = 65535;
 
-    /// <summary>The value that is white, for a sample type and, for floats, the largest sample seen.</summary>
-    public static double FullScale(int bitPix, double largestSample = 0) => bitPix switch
+    /// <summary>The value that is white, for a sample type; for floats, by what <see cref="IsRescaled"/> found.</summary>
+    public static double FullScale(int bitPix, bool rescaled = false) => bitPix switch
     {
         8 => 255,
         16 => SixteenBitMax,
         32 => 4294967295,
-        _ => IsRescaled(bitPix, largestSample) ? SixteenBitMax : 1,
+        _ => rescaled ? SixteenBitMax : 1,
     };
 
-    public static bool IsRescaled(int bitPix, double largestSample) =>
-        bitPix < 0 && largestSample > RescaleThreshold;
+    /// <param name="samplesAbove">How many finite samples of the file are above <see cref="RescaleThreshold"/>.</param>
+    /// <param name="samples">How many samples the file has, all planes.</param>
+    public static bool IsRescaled(int bitPix, long samplesAbove, long samples) =>
+        bitPix < 0 && samplesAbove > samples * RescaleFraction;
+
+    /// <summary>What a value is multiplied by to count in 0 to 65535, given the value that is white.</summary>
+    public static double ToSixteenBits(double fullScale) => SixteenBitMax / fullScale;
+
+    /// <summary>The level of a value on a scale whose white is <paramref name="fullScale"/>.</summary>
+    public static byte ToByte(double value, double fullScale) => Level(value * ToSixteenBits(fullScale));
 
     /// <summary>
-    /// The level of a value: through 16 bits, then the high byte, which is what WIC keeps of a
-    /// 16-bit sample (measured on all 65536 values). NaN, which Siril leaves behind after some
-    /// float operations, is black.
+    /// The level of a value already brought to 0 to 65535: rounded to a 16-bit sample, then the
+    /// high byte, which is what WIC keeps of one (measured on all 65536 values). NaN, which
+    /// Siril leaves behind after some float operations, is black.
     /// </summary>
-    public static byte ToByte(double value, double fullScale)
+    public static byte Level(double sixteenBit)
     {
-        double fraction = value / fullScale;
-        if (!(fraction > 0))
+        if (!(sixteenBit > 0))
         {
             return 0;
         }
 
-        if (fraction >= 1)
+        if (sixteenBit >= SixteenBitMax)
         {
             return 255;
         }
 
-        return (byte)((int)((fraction * SixteenBitMax) + 0.5) >> 8);
+        return (byte)((int)(sixteenBit + 0.5) >> 8);
     }
 }

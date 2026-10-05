@@ -12,7 +12,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   TIFF: 8, 16 and 32-bit integers, 32 and 64-bit floats, one plane (gray) or three (RGB). The
   values are shown as stored, with no stretch, at the level the same value has in a 16-bit
   PNG; rows follow `ROWORDER`, bottom-up without it, as in Siril; a float file that counts to
-  65 535 instead of 1 is recognised and the status bar says so (R-014 to R-019, ADR 0029).
+  65 535 instead of 1 is recognised and the status bar says so; a damaged header or an image
+  too large to show is a message (R-014 to R-019, ADR 0029).
 
 ### Fixed
 

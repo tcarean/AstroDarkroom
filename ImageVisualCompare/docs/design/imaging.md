@@ -33,38 +33,57 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
 
 1. `RoutingImageLoader` opens the file, and `FitsHeader.IsFits` compares its first nine bytes
    with `SIMPLE  =`. A match goes to `FitsImageLoader`, anything else to `WicImageLoader`. The
-   name of the file is never looked at.
+   name of the file is never looked at. `LoadAsync` does this on the thread pool: the pair
+   loader can resume on the UI thread after the padding question, and opening a file is disk
+   work.
 2. `FitsHeader.ReadLayout` walks the header-data units: 2880-byte blocks of 80-byte cards up to
    `END`, then the unit's data, padded to a block. It stops at the first unit that can hold an
    image (the primary, or an `IMAGE` extension) and has two axes or more, and steps over the
-   others by their size, which for a table needs `PCOUNT` and `GCOUNT`. A binary table has two
-   axes and 8 bits like a small image, which is why the extension's type is asked first; one
-   with `ZIMAGE = T` is a tile-compressed image and is refused by name. The result is a
-   `FitsImageLayout`: size, planes, `BITPIX`, `BZERO`, `BSCALE`, the row order, and the offset
-   of the first sample. The length of the stream is checked here, so a file cut short fails at
-   the probe, before the padding question and before any decode.
+   others by their size (`DataBlockBytes`), which for a table needs `PCOUNT` and `GCOUNT` and
+   for random groups leaves out the first axis. A binary table has two axes and 8 bits like a
+   small image, which is why the extension's type is asked first; one with `ZIMAGE = T` is a
+   tile-compressed image and is refused by name. After the primary, a block that does not
+   start with `XTENSION` is not a header, and the search ends there with "no image": programs
+   leave padding after the last unit. The result is a `FitsImageLayout`: size, planes,
+   `BITPIX`, `BZERO`, `BSCALE`, the row order, and the offset of the first sample. The length
+   of the stream is checked here, so a file cut short fails at the probe, before the padding
+   question and before any decode.
+
+   The header is input from outside and is not trusted. `Count` reads every keyword the
+   layout is computed from: an integer, never negative except `BITPIX`, and a value that is
+   neither makes the header invalid instead of falling back to a default. The size of a
+   unit's data is multiplied in a `checked` block, the number of axes is capped at the
+   standard's 999, and an image's width is capped so that a row of its samples fits one
+   array. The first version had none of this, and a negative axis sent the walk back to the
+   header it had just read, for ever.
 3. `FitsRowDecoder.ReadFileRow` fills one Bgra32 row. FITS is plane-sequential (all of red,
    then all of green, then all of blue), so the row is read from one place per plane; the
-   decoder seeks, reads `Width` samples into its one row buffer, and writes each through
-   `FitsScale.ToByte` into the channel the plane is. It also keeps the largest finite value it
-   has seen.
+   decoder seeks, reads `Width` samples into its one row buffer, and `Convert` writes each
+   through `FitsScale.Level` into the channel the plane is, in one loop per sample type so
+   that nothing is decided per sample. For float files it also counts the finite samples
+   above `FitsScale.RescaleThreshold`. The stream has no buffer of its own
+   (`FitsImageLoader.OpenRead`): each read is a whole row, and a buffer would be filled past
+   the row and thrown away at the next seek.
 4. `FitsImageLoader.Load` walks the rows in the order of the file, so the disk is read
    forwards three times over, and writes each into a `WriteableBitmap` at
-   `FitsImageLayout.DisplayRow`, which is where the row order is applied. Then it asks
-   `FitsScale.IsRescaled` about the largest sample; a yes means every byte written so far is
-   wrong (nearly all white), and the same loop runs again with 65 535 as the full scale.
-   Then `Freeze`.
+   `FitsImageLayout.DisplayRow`, which is where the row order is applied; the cancellation
+   token is checked at every row. Then it asks `FitsScale.IsRescaled` about the count: more
+   than one sample in a hundred above 2.0 means the file counts to 65 535, every byte written
+   so far is wrong (nearly all white), and the same loop runs again with 65 535 as the full
+   scale. Then `Freeze`. A size WPF makes no bitmap of becomes the too-large message here.
 
-`FitsScale.ToByte` is the one place a value becomes a level: divide by the full scale, clamp,
-`round(x * 65535)`, keep the high byte. The last step is WIC's own reduction of a 16-bit
-sample, measured, and it is what makes a FITS and its 16-bit export agree to the level.
+`FitsScale.Level` is the one place a value becomes a level: the value, already multiplied to
+count in 0 to 65 535 (`ToSixteenBits`, one multiplication a sample instead of a division),
+is clamped, rounded to a 16-bit sample, and its high byte kept. The last step is WIC's own
+reduction of a 16-bit sample, measured, and it is what makes a FITS and its 16-bit export
+agree to the level; `FitsScaleTests` walks all 65 536 values on each scale a file can have.
 
 What a FITS costs, on `result_3813s.fit` (5938 x 3888, three float planes, 277 MB on disk):
-1.2 to 1.3 s with the file in the cache, +89.7 MB private once loaded, the same as a 16-bit
-PNG of that size through WIC, and a transient peak of one more buffer during the load (peak
-working set 227 MB against WIC's 139 MB). The managed alternative and the figures of a pair
-are in ADR 0029 and in `../validation.md`, V-003 and V-004.
-
+about 0.6 s with the file in the cache (1.1 to 1.2 s for the first load of a process), +89.7
+MB private once loaded, the same as a 16-bit PNG of that size through WIC, and a transient
+peak of one more buffer during the load (peak working set 227 MB against WIC's 139 MB). The
+managed alternative and the figures of a pair are in ADR 0029 and in `../validation.md`,
+V-003 and V-004.
 ## Memory, measured
 
 Measured on a 5794×3637 16-bit pair, ~108 MB each on disk:
