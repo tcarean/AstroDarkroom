@@ -89,7 +89,7 @@ public class ViewModelTests
         // antet + 3 negre + negrul hartiei scenei (Dmax explicit 2.0, al niciunui mediu), 32/64, L* 15/50, fundalul recomandat
         Assert.Equal(1 + 9, tones.LadderRows.Count);
         Assert.Contains(tones.LadderRows, s => s.Contains("fundalul recomandat 0.1"));
-        Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.00"));
+        Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.0"));
         Assert.Equal(6, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
         Assert.Contains($"percentila {Thresholds.DustClassFraction * 100:0} % a dalelor de praf", guide);

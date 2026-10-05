@@ -37,10 +37,15 @@ The media are the values of `PrintMedium`, and their names one list, `Parameters
 window's combo, is the same object. The level-L\* ladder of the Tonuri tab walks the enum too.
 Two places still name the media by hand, because they are prose: the "Negrul hartiei" paragraph
 of the Tonuri guide (`ResultTabs.cs`), which calls the third one "C-print sub acril", and the
-README. The window's Dmax field is the one field that shows a core default instead of staying
-empty: `ParameterFields` formats `Parameters.DmaxOf` of the chosen medium into it (in the
-constructor and in the `Medium` setter) and decides nothing; whether the value that comes back
-is explicit is `Parameters.DmaxIsExplicit`'s answer, which the report asks.
+README. The window's Dmax field starts filled, like the widths, the passepartout and the frame,
+and is the one field another field rewrites: `ParameterFields` formats `Parameters.DmaxOf` of
+the chosen medium into it (in the field's initialiser and in the `Medium` setter, so code that
+sets both sets the medium first) and decides nothing. A field that still shows that text is no
+override: `TryBuild` passes null and the core's own value is used, not a copy rounded for
+display. Whether a Dmax that was typed is explicit is `Parameters.DmaxIsExplicit`'s answer,
+which the report asks. The level-L\* ladder marks as chosen the medium whose Dmax equals the
+Dmax in use, whichever medium is selected (R-042), and adds an explicit row only when the Dmax
+is no medium's.
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)

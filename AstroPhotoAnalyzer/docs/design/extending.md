@@ -64,8 +64,9 @@ without a source is recorded as unsourced). Then:
 - the docs: `console.md`, "Parameters" (the Dmax row), `input.md` (the paper-black list), the
   `Run` line of `CLAUDE.md`, and `README.md` (the window paragraph and "Consola", the options
   line);
-- `/validate` if the default medium or its Dmax changed: every Dmax-dependent figure of V-001
-  and V-004 moves (the rule "Formula changes re-validate").
+- `/validate` if the default medium or its Dmax changed: the cases that run on the default move,
+  V-005 on every figure and V-002 if its verdict does; V-001 and V-004 name their paper (`dmax`
+  2.0) and stay (the rule "Formula changes re-validate").
 
 The scenes of `Scenes.cs` were built for a paper black of L\* 9.0 (`Scenes.BuiltForDmax`, ADR
 0028): a test of "the background under paper black" gives that paper itself and does not

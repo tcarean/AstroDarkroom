@@ -47,21 +47,24 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
         /// <summary>
-        /// Alegerea unui mediu scrie Dmax-ul lui in campul Dmax, peste orice era acolo: campul
-        /// arata mereu Dmax-ul cu care se va analiza. Valoarea e a nucleului (R-020).
+        /// Alegerea unui mediu scrie Dmax-ul lui in campul Dmax, peste orice era acolo, ca
+        /// omul sa vada cu ce Dmax se va analiza. Valoarea e a nucleului (R-020). Ordinea
+        /// conteaza: cine le pune pe amandoua din cod pune mediul intai, apoi Dmax-ul.
         /// </summary>
         public string Medium
         {
             get => _medium;
             set
             {
-                if (Set(ref _medium, value) && Media.Contains(value))
-                    Dmax = Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(value)));
+                if (Set(ref _medium, value) && Media.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    Dmax = DmaxTextOf(value);
             }
         }
 
         /// <summary>Completat cu Dmax-ul mediului ales; omul il poate schimba. Gol = al mediului.</summary>
         public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
+
+        static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
         public string Distance { get => _distance; set => Set(ref _distance, value); }
         public string Sizes { get => _sizes; set => Set(ref _sizes, value); }
         public string Aspect { get => _aspect; set => Set(ref _aspect, value); }
@@ -78,10 +81,13 @@ namespace AstroPhotoAnalyzer.Wpf
             error = null;
             try
             {
+                // Campul care arata inca textul pus de mediu nu e un Dmax dat: ramane al nucleului,
+                // cu toate zecimalele lui, nu o copie rotunjita la afisare (R-024).
+                bool untouched = (Dmax ?? "").Trim() == DmaxTextOf(Medium);
                 var p = new Parameters
                 {
                     Medium = Parameters.MediumFromName(Medium),
-                    DmaxOverride = OptionalNumber(Dmax, "Dmax", 0, 4),
+                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, 4),
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),

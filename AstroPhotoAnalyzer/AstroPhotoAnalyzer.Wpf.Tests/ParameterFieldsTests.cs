@@ -27,8 +27,8 @@ public class ParameterFieldsTests
 
         Assert.Null(error);
         Assert.Equal(d.Medium, p!.Medium);
+        Assert.Null(p.DmaxOverride);   // the field shows the medium's Dmax; untouched, it is not an override
         Assert.Equal(d.Dmax, p.Dmax);
-        Assert.False(p.DmaxIsExplicit);   // the field shows the medium's Dmax; that is not an explicit one
         Assert.Null(p.ViewingDistanceM);
         Assert.Equal(d.CandidateWidthsCm, p.CandidateWidthsCm);
         Assert.Null(p.TargetAspect);
@@ -53,7 +53,11 @@ public class ParameterFieldsTests
         f.Dmax = "1.7";
         f.Medium = "acrilic";
         Assert.Equal("2.2", f.Dmax);
-        Assert.False(f.TryBuild(out _)!.DmaxIsExplicit);
+        Assert.Null(f.TryBuild(out _)!.DmaxOverride);   // untouched: the core's own value, not a copy of its text
+
+        f.Medium = "Canvas";   // from code, in another case: still the medium, still its Dmax
+        Assert.Equal("1.5", f.Dmax);
+        f.Medium = "acrilic";
 
         f.Dmax = "2.35";
         Parameters? typed = f.TryBuild(out _);

@@ -105,7 +105,7 @@ public class TonalAnalyzerTests
 
         var custom = TonalAnalyzer.LstarLadder(new Parameters { DmaxOverride = 1.8 });
         Assert.Equal(8, custom.Count);
-        Assert.Contains("Dmax explicit 1.80", Assert.Single(custom, l => l.Chosen).Meaning);
+        Assert.Contains("Dmax explicit 1.8", Assert.Single(custom, l => l.Chosen).Meaning);
     }
 
     [Fact]

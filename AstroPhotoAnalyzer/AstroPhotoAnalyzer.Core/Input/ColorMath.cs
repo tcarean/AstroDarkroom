@@ -73,7 +73,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Cel mai negru negru pe care il poate reda un mediu cu densitatea maxima data:
-        /// reflectanta 10^-Dmax, in L*. Gloss baryta (Dmax 2.0) -> L* ~9; canvas mat
+        /// reflectanta 10^-Dmax, in L*. Gloss baryta (Dmax 2.4) -> L* ~3.6; canvas mat
         /// (1.5) -> ~21; C-print sub acril (2.2) -> ~6. Tot ce e sub pragul asta in
         /// fisier se printeaza cu ACELASI negru - de aici pleaca recomandarea de fundal.
         /// </summary>

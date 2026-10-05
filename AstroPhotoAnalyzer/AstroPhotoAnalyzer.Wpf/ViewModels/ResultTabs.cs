@@ -251,7 +251,7 @@ namespace AstroPhotoAnalyzer.Wpf
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));
             double[] grid = new Parameters().SimulationTargets;
             static string Black(PrintMedium m)
-                => $"{Fmt.F1(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
+                => $"{Fmt.Dmax(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
             return new[]
             {
                 new GuideParagraph

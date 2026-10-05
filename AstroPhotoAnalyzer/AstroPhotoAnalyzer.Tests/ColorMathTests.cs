@@ -96,7 +96,7 @@ public class ColorMathTests
     }
 
     /// <summary>
-    /// Perechile din panoul Tonuri: negrul baryta (L* 9) e nivelul ~25 al unui gri,
+    /// Perechile din panoul Tonuri: L* 9 (negrul unei hartii de Dmax 2.0) e nivelul ~25 al unui gri,
     /// nivelul 32 e L* ~12, 64 e L* ~27, L* 50 e nivelul ~119.
     /// </summary>
     [Theory]

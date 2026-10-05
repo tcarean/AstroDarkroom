@@ -47,7 +47,7 @@ stops on a drift instead of editing them.
 | --- | --- | --- |
 | V-001 | the PNG; `dmax` 2.0: the full frame, the baryta of before ADR 0028 (paper black L\* 9.0), the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust by the fallback rule, the recommended row, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
 | V-002 | the PNG; `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
-| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.6) above paper black (L\* 4.0), so the as-is row is the recommended one; a guard on the paper-black maths more than on the image |
+| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the as-is row is the recommended one; a guard on the paper-black maths more than on the image |
 | V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 2062 dust patches of 21 840, the dust at L\* 7.9 (the 25 % percentile of the dust class) and the sky at 17.6 (the median of the sky class); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
 | V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.09) above it, so the image is print-safe as it is and the recommended row is the grid's lowest, 0.10; the exact target 0.094 (0.110 at Dmax 2.3, 0.080 at 2.5), the Dmax from which it passes as is 2.34; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
 
@@ -160,7 +160,7 @@ the 50:35 crop. With the median FWHM of 3.133 px, the formula in `design/measure
 obtained is not written down. Left open for the owner on 2026-10-02.
 
 V-003 adds a figure the record does not have: at Dmax 2.35, paper black is L\* 4.03 and 1.34 % of
-the pixels fall below it; the dust (L\* 4.6 by the fallback rule) is above it, so the as-is row
+the pixels fall below it; the dust (L\* 4.09 by the fallback rule) is above it, so the as-is row
 is the recommended one and the overall verdict is ATENTIE (the size section).
 
 V-004, the plate-solved FITS, measured on 2026-10-02 by the build of ADR 0026: 397 clouds have a

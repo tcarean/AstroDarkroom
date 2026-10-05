@@ -32,9 +32,15 @@ internal static class Scenes
     /// </summary>
     internal const double BuiltForDmax = 2.0;
 
-    /// <summary>Aceiasi parametri, pe hartia pentru care au fost construite scenele.</summary>
+    /// <summary>
+    /// Aceiasi parametri, pe hartia pentru care au fost construite scenele. Un Dmax dat de
+    /// test ramane al lui; mediul nu conteaza, Dmax-ul explicit il bate.
+    /// </summary>
     internal static Parameters OnBuiltForPaper(Parameters? p = null)
-        => (p ?? new Parameters()) with { DmaxOverride = BuiltForDmax };
+    {
+        p ??= new Parameters();
+        return p with { DmaxOverride = p.DmaxOverride ?? BuiltForDmax };
+    }
 
     /// <summary>Stele de FWHM 3 pe o grila, la 55 px, peste orice raster.</summary>
     internal static Raster WithStars(Raster r, int count = 64, double fwhm = 3.0, float amplitude = 0.3f)

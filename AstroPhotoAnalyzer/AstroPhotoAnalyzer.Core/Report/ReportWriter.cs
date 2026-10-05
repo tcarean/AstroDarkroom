@@ -135,7 +135,7 @@ namespace AstroPhotoAnalyzer
                     ? $"nicio tinta din grila nu aduce praful pe negrul hartiei (ar trebui ~{Fmt.Level(s.ExactTarget.Value)})"
                     : $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}";
 
-        /// <summary>"praful = 10 % din dalele norilor catalogati (406 nori, 4078 dale); cerul = mediana dalelor din afara norilor; negru pur = dale de 32 px sub negrul hartiei (L* 9.0)".</summary>
+        /// <summary>"praful = 10 % din dalele norilor catalogati (406 nori, 4078 dale); cerul = mediana dalelor din afara norilor; negru pur = dale de 32 px sub negrul hartiei (L* 3.6 la Dmax 2.4)".</summary>
         internal static string DustDefinition(SimulationResult s)
             => $"praful = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; cerul = {s.SkyDescription}; "
              + $"negru pur = dale de {Thresholds.DustPatchPx} px sub negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})";

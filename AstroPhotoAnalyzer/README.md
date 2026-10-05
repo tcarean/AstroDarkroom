@@ -22,9 +22,9 @@ AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 ```
 
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
-passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată mereu valoarea cu care se
+passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată valoarea cu care se
 analizează: alegerea unui mediu o scrie pe a lui (baryta 2.4, canvas 1.5, acrilic 2.2), iar tu
-o poți înlocui cu cea a hârtiei tale; distanța, raportul de aspect, fundalul-țintă,
+o poți înlocui cu cea a hârtiei tale (golit, înseamnă tot cea a mediului); distanța, raportul de aspect, fundalul-țintă,
 passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**

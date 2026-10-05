@@ -80,9 +80,9 @@ the WPF project (XAML fails to load without culture data).
   `Rows.cs`.
 - **Parameters are text fields, parsed once at "Analizeaza"** (`ParameterFields`): a
   TextBox bound to a double refuses to be emptied while typing. Parsing is invariant;
-  a comma decimal gets a message that says to use the point. The Dmax field alone is not
-  empty at the start: it shows the chosen medium's Dmax and is rewritten when the medium
-  changes (`console.md`, "Parameters"; ADR 0028).
+  a comma decimal gets a message that says to use the point. The Dmax field shows
+  the chosen medium's Dmax and is rewritten when the medium changes (`console.md`,
+  "Parameters"; ADR 0028).
 - **The saved `Raport.txt` is `ReportWriter.WriteFull`** - banner plus body, the same
   bytes the console writes with `-o`. `CultureTests` proves the body is identical under
   `ro-RO` even without forcing the culture, because every number goes through `Fmt`.
