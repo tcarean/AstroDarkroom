@@ -45,4 +45,25 @@ build leave every lock file unchanged.
 
 ## What deviated
 
-(filled at wrap-up)
+- Step 1 in AstroPhotoAnalyzer and FlatCheck measured two facts the plan did not foresee. Their
+  console publishes as a single file, which turns on the single-file analyzer, and its package
+  `Microsoft.NET.ILLink.Tasks` (at the installed SDK's version, 8.0.31) entered the console's
+  lock file even with the runtime declared. In AstroPhotoAnalyzer the declaration on every
+  project also wrote 844 lines (76 `runtime.*` packages) into each test project's lock file.
+  `-p:RestorePackagesWithLockFile=false` fails with NU1005. Put back to the owner (the kit's
+  rule "Questions to the owner"), the owner chose option A: the runtime without the test
+  projects in the three, `<EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>` in the two
+  that publish a single file.
+- ImageVisualCompare therefore has two commits: 6a4c5ee, then c845ef6 for the condition, which
+  put its test project's lock file back as it is on `main`.
+- AstroPhotoAnalyzer's ADR is 0031, not 0030: its open branch
+  `claude/Read-the-Dmax-from-an-ICC-profile` took 0030 in the meantime.
+- FlatCheck's `docs/design/process.md` got one pointer sentence in "Build, test and publish". The
+  other notes `check-design.ps1 -Since main` names in the three projects cover the project
+  folders and describe nothing a lock file's runtime section changes.
+- Measured after the change, in the three: a forced publish of every release target and a forced
+  build left every lock file unchanged; the gates were green (ImageVisualCompare 150 tests,
+  AstroPhotoAnalyzer 290 and 40, FlatCheck 946 and 331); the window of ImageVisualCompare loaded
+  the real image, and the console exes of AstroPhotoAnalyzer and FlatCheck ran `--help`.
+- Offered, not done: the kit's own release publishes `Starter.Cli` without a runtime, so the kit
+  has no such churn; a project made from it that adds `-r` to its publish arguments meets it.
