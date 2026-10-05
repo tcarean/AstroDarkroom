@@ -1422,7 +1422,7 @@ Testele golden fixează textul de consolă al fiecărui mod. Când schimbi ieși
 reaprobă-le și **citește diff-ul** — toată valoarea lor e acolo:
 
 ```bash
-FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln
+FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests
 ```
 
 ### Golden-urile de paritate
@@ -1433,7 +1433,10 @@ două erau de acord pe toate cele 43 (0 diferențe numerice), prototipul a fost 
 și cele 43 de scenarii au devenit `FlatCheck.Tests/Golden/parity_*.txt`, rulate de
 `ParityGoldenTests` în gate. Spre deosebire de celelalte golden-uri, acestea poartă cifre
 confirmate de o implementare independentă; o re-aprobare acolo e o decizie luată doar pe C#,
-și se citește ca atare. După o schimbare de formulă se rulează `/validate` pe masterele reale.
+și se citește ca atare. De aceea comanda de mai sus le lasă neatinse: se recapturează separat,
+cu `--filter ParityGoldenTests`, numai după ce schimbarea a fost aprobată, iar schimbarea se
+notează la divergențele din `docs/design/python-parity.md`. După o schimbare de formulă se
+rulează `/validate` pe masterele reale.
 
 Cele două fișiere Python rămân în repo ca istorie și nu se mai întrețin. Cine vrea totuși
 comparația de mână, cât timp ieșirea prototipului înghețat mai spune ceva:

@@ -8,8 +8,7 @@ FlatCheck has two kinds of test data and one manifest.
   simpler than the file is large, and a synthetic with known truth is a better fixture than a
   real master, because the right answer is known exactly. The golden texts under
   `FlatCheck.Tests/Golden/` are compared byte for byte and re-approved only with
-  `FLATCHECK_UPDATE_GOLDEN=1`, as the rule "Golden files" says (the parity ones by the owner).
-  So `fixtures/` is empty.
+  `FLATCHECK_UPDATE_GOLDEN=1`, as the rule "Golden files" says. So `fixtures/` is empty.
 - **Large, outside git.** The real masters and raws under `E:\Photografie\Astro\Flats and Darks`
   that the acceptance figures in `docs/validation.json` were measured on. `manifest.json` lists
   them with `"location": "large"`, a path relative to the folder named by
