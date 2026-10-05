@@ -18,10 +18,11 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
 - **No test edited to pass.** Never change a test, a fixture, a hash or a figure in
   `docs/validation.json` to make something pass. If a test or figure is wrong, say so and stop;
   the owner decides. A golden file, a whole output a test compares, changes only with an
-  intended change of that output: read its whole diff, tie every changed line to its cause in
-  the change, and report the lines and their causes at wrap-up, without waiting for the owner.
-  A line without a cause is a wrong test; any changed line of a golden whose numbers were
-  confirmed outside the code is a moved figure (the kit's ADR 0033).
+  intended change of that output: read its whole diff, tie every changed line to the change the
+  task meant to make, and report the lines and their causes at wrap-up, without waiting for the
+  owner. A line the task did not mean to change, even one whose cause is known, or any changed
+  line of a golden the project's `CLAUDE.md` names as carrying confirmed figures, is a finding:
+  say so and stop; the owner decides (the kit's ADR 0033).
 - **Gate.** No commit unless `scripts/verify.ps1` is green. Never `--no-verify`. Never skip a
   failing test.
 - **Packages.** No new NuGet package without asking. Every package in

@@ -53,8 +53,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 ### Internal
 
 - The golden console texts are re-approved after the assistant has read their whole diff and
-  tied every changed line to its cause; a line that moved without one is a finding (the kit's
-  ADR 0033, which supersedes ADR 0027).
+  tied every changed line to the change the task meant to make; a line the task did not mean to
+  change, even with a known cause, is a finding that stops the task (the kit's ADR 0033, which
+  supersedes ADR 0027).
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1`
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in
