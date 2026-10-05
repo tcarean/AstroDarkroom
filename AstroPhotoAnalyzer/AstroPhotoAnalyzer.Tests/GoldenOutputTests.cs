@@ -77,7 +77,7 @@ public class GoldenOutputTests
         string tif = ws.WriteFile("cer-intunecat.tif", TiffTestData.Build16Rgb(r.W, r.H,
             (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V2("sRGB test")));
 
-        Check("dark-sky", RunCli(ws, tif, "--aspect", "50:35", "--distance", "1.5"));
+        Check("dark-sky", RunCli(ws, tif, "--aspect", "50:35", "--distance", "1.5", "--dmax", "2.0"));
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class GoldenOutputTests
         };
         string fits = ws.WriteFile("cer-intunecat-wcs.fit", FitsTestData.Build(r.W, r.H, 3, (x, y, p) => r.At(p, y, x), bitpix: -32, extraCards: cards));
 
-        Check("dark-sky-wcs", RunCli(ws, fits, "--target-bg", "0.135"));
+        Check("dark-sky-wcs", RunCli(ws, fits, "--target-bg", "0.135", "--dmax", "2.0"));
     }
 
     [Fact]

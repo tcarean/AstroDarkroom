@@ -72,7 +72,7 @@ namespace AstroPhotoAnalyzer
         { "--medium", "--dmax", "--distance", "--sizes", "--aspect", "--target-bg",
           "--passepartout", "--frame", "--wcs", "-o", "--out" };
 
-        internal static readonly string[] Media = { "baryta", "canvas", "acrilic" };
+        internal static readonly string[] Media = Parameters.MediumNames.ToArray();
 
         internal static Options Parse(string[] args)
         {

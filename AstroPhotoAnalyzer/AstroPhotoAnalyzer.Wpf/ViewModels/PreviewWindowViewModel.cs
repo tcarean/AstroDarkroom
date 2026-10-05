@@ -67,7 +67,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 BlackLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderPaperBlack, BlackColour),
                 LowLayer = RasterBitmaps.Overlay(w, h, (x, y) => c[y * w + x] == PreviewClass.UnderLowSeparation, LowColour),
                 Caption = $"{target}: gamma {Fmt.F3(row.Gamma)}; praful la L* {Fmt.F1(row.LstarDust)}, cerul la L* {Fmt.F1(row.LstarSky)}; "
-                    + $"negrul hartiei L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}" + (row.PrintSafe ? "; print-safe" : ""),
+                    + $"negrul hartiei L* {Fmt.F1(p.PaperBlackLstar)} la Dmax {Fmt.Dmax(r.Parameters.Dmax)}" + ReportWriter.RowMark(row).Replace("   ", "; "),
                 BlackLegend = $"sub negrul hartiei (L* {Fmt.F1(p.PaperBlackLstar)}): {Fmt.Pct(p.PctUnderPaperBlack)} din pixeli - se tiparesc cu acelasi negru",
                 LowLegend = $"sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, peste negru: {Fmt.Pct(p.PctUnderLowSeparation - p.PctUnderPaperBlack)} din pixeli - hartia le separa, ochiul abia",
             };

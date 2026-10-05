@@ -21,7 +21,32 @@ namespace AstroPhotoAnalyzer.Tests;
 public class BackgroundRecommendationTests
 {
     static Recommendation Background(Raster r, Parameters? p = null)
-        => AnalysisRun.Execute(r, "memorie", p ?? new Parameters()).Recommendations.Single(x => x.Topic == Topic.Background);
+        => AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper(p)).Recommendations.Single(x => x.Topic == Topic.Background);
+
+    /// <summary>
+    /// On the default paper (baryta, Dmax 2.4, black at L* 3.6) a flat 0.08 sky clears paper
+    /// black, and the paper would print it; the eye in room light would not see it. The sky
+    /// under the visibility threshold is an Attention of its own, and the fix is the row that
+    /// brings the sky to L* 15 (ADR 0029).
+    /// </summary>
+    [Fact]
+    public void R092_ASkyUnderTheVisibilityThresholdIsAnAttentionEvenAbovePaperBlack()
+    {
+        Recommendation rec = AnalysisRun.Execute(SyntheticRasters.Flat(64, 64, 0.08f), "memorie", new Parameters())
+            .Recommendations.Single(x => x.Topic == Topic.Background);
+
+        Assert.Equal(Verdict.Attention, rec.Verdict);
+        Assert.StartsWith("Cerul e sub L* 15: hartia il separa de negru", rec.Text);
+        Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; cerul la L* 15 de la 0.14", rec.Text);
+        Assert.Contains("negrul hartiei L* 3.6 la Dmax 2.4", rec.Because);
+        Assert.Contains("pragul de vizibilitate L* 15, sub el 100.0 % din pixeli", rec.Because);
+
+        // A sky already above the threshold: Ok, and the way down stops at the threshold, not at paper black.
+        Recommendation bright = AnalysisRun.Execute(SyntheticRasters.Flat(64, 64, 0.3f), "memorie", new Parameters())
+            .Recommendations.Single(x => x.Topic == Topic.Background);
+        Assert.Equal(Verdict.Ok, bright.Verdict);
+        Assert.Contains("poti cobori pana la 0.15 (praful la L* 15.3, cerul la L* 15.3)", bright.Text);
+    }
 
     [Fact]
     public void R092_ASkyUnderPaperBlackIsAProblemWithTheReStretch()
@@ -31,7 +56,8 @@ public class BackgroundRecommendationTests
 
         Assert.Equal(Verdict.Problem, rec.Verdict);
         Assert.StartsWith("Cerul e sub negrul hartiei", rec.Text);
-        Assert.Contains("Re-stretch din liniar la fundal 0.10 (simulat: praful la L* 9.0, cerul la L* 9.0; exact pe negru la 0.1", rec.Text);
+        // 0.10 already puts the dust on paper black (exact 0.10); the row recommended is the first that also has the sky at L* 15.
+        Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; exact pe negru la 0.1", rec.Text);
         Assert.Contains("praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 6.", rec.Because);
         Assert.Contains("negrul hartiei L* 9.0 la Dmax 2.0", rec.Because);
         Assert.Contains("cerul (mediana dalelor) la L* 6.", rec.Because);
@@ -77,7 +103,8 @@ public class BackgroundRecommendationTests
         Recommendation rec = Background(SyntheticRasters.Flat(64, 64, 0.3f));
 
         Assert.Equal(Verdict.Ok, rec.Verdict);
-        Assert.StartsWith("Fundalul e print-safe asa cum e; poti cobori pana la 0.10 (praful la L* 9.0, cerul la L* 9.0); grila nu coboara mai jos.", rec.Text);
+        // The way down stops where the sky meets the visibility threshold (L* 15, the level 0.148), not at paper black.
+        Assert.StartsWith("Fundalul e print-safe asa cum e; poti cobori pana la 0.15 (praful la L* 15.3, cerul la L* 15.3).", rec.Text);
     }
 
     [Fact]
@@ -97,12 +124,12 @@ public class BackgroundRecommendationTests
     [Fact]
     public void R095_TheDenoiseFigureAfterTheReStretchSaysWhetherTheNoiseGrowsOrShrinks()
     {
-        var dark = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", new Parameters());
+        var dark = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation up = dark.Recommendations.Single(x => x.Topic == Topic.Denoise);
         Assert.Contains("dupa re-stretch la 0.1", up.Because);
         Assert.Contains("zgomotul creste de ~", up.Because);
 
-        var bright = AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters());
+        var bright = AnalysisRun.Execute(Scenes.CleanSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation down = bright.Recommendations.Single(x => x.Topic == Topic.Denoise);
         Assert.Contains("dupa re-stretch la 0.1", down.Because);
         Assert.Contains("zgomotul scade de ~", down.Because);

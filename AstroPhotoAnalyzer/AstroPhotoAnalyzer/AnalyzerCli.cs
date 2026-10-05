@@ -141,7 +141,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine("  AstroPhotoAnalyzer <imagine> [optiuni]");
             w.WriteLine();
             w.WriteLine("Optiuni:");
-            w.WriteLine("  --medium <baryta|canvas|acrilic>   mediul de print; da Dmax-ul hartiei (implicit baryta)");
+            w.WriteLine($"  --medium <{string.Join("|", Options.Media)}>   mediul de print; da Dmax-ul hartiei (implicit {Parameters.NameOf(new Parameters().Medium)})");
             w.WriteLine("  --dmax <n>                          Dmax explicit, in locul mediului (ex. 2.0)");
             w.WriteLine("  --distance <m>                      distanta de privire, in metri (implicit 1.5 x diagonala)");
             w.WriteLine("  --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)");

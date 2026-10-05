@@ -22,7 +22,9 @@ AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 ```
 
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
-passepartout, ramă, WCS din FITS) și „Analizează"; distanța, raportul de aspect, fundalul-țintă,
+passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată valoarea cu care se
+analizează: alegerea unui mediu o scrie pe a lui (baryta 2.4, canvas 1.5, acrilic 2.2), iar tu
+o poți înlocui cu cea a hârtiei tale (golit, înseamnă tot cea a mediului); distanța, raportul de aspect, fundalul-țintă,
 passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
@@ -75,10 +77,14 @@ largi cu Calea Lactee; pe un cadru deep-sky (în întregime în bandă, sau făr
 spune de ce și cade pe regula de mai jos. Un TIFF sau PNG exportat din
 Siril nu poartă antetul, dar stack-ul din care a ieșit îl are: dă-l cu `--wcs` (consola) sau în
 câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Fără WCS, praful e cele mai
-întunecate 1 % din dalele cadrului și cerul mediana lor, și raportul spune asta. Anexa B
+întunecate 1 % din dalele cadrului și cerul mediana lor, și raportul spune asta. Pe lângă negrul hârtiei mai e o întrebare, a privitului: un cer sub L\* 15 (nivelul 0.148)
+se tipărește, dar în lumina obișnuită de cameră se vede aproape negru, oricât de adânc ar fi
+negrul hârtiei; raportul îl dă ca „atenție", iar rândul recomandat are praful pe negrul hârtiei
+și cerul la L\* 15 sau peste. Pragul e o regulă de degetul mare, nu o măsurătoare: un petic de
+probă privit în lumina camerei unde va sta tabloul spune mai mult. Anexa B
 dă grila, ținta exactă (și la Dmax cu 0.1 mai mic și mai mare, fiindcă Dmax-ul hârtiei pe
-imprimanta ta rar e știut mai bine), Dmax-ul de la care imaginea trece așa cum e și norii cei
-mai întunecați. Simularea rămâne o curbă gamma: un stretch adevărat (Siril, VeraLux) ține
+imprimanta ta rar e știut mai bine), Dmax-ul de la care imaginea trece așa cum e, nivelul de la
+care cerul ajunge la L\* 15 și norii cei mai întunecați. Simularea rămâne o curbă gamma: un stretch adevărat (Siril, VeraLux) ține
 umbrele mai jos, deci ținta exactă e a curbei, nu a lui — citește-o ca pe o margine de jos.
 
 ## Consola
@@ -91,7 +97,8 @@ AstroPhotoAnalyzer poza.tif
 AstroPhotoAnalyzer poza.tif --medium baryta --distance 1.5 --sizes 60,70,80 --aspect 50:35 -o raport.txt
 ```
 
-Opțiuni: `--medium baryta|canvas|acrilic`, `--dmax`, `--distance` (m), `--sizes` (cm),
+Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-ul hârtiei tale,
+în locul celui al mediului), `--distance` (m), `--sizes` (cm),
 `--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.10..0.20),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
 folosește pentru nori), `-o`. `--help` le explică.

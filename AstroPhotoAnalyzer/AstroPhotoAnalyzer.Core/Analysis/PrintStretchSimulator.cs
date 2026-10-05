@@ -63,7 +63,24 @@ namespace AstroPhotoAnalyzer
         internal double PaperBlackLstar { get; init; }
 
         /// <summary>Praful la sau peste negrul hartiei. Toleranta e pentru egalitatea in virgula mobila.</summary>
-        internal bool PrintSafe => LstarDust >= PaperBlackLstar - 1e-9;
+        internal bool DustOnPaperBlack => LstarDust >= PaperBlackLstar - 1e-9;
+
+        /// <summary>
+        /// Randul se poate tipari: praful pe negrul hartiei SI cerul vizibil. Un rand cu praful
+        /// pe negru si cerul sub prag nu e print-safe - asa il numea tabelul, si omul citea
+        /// "print-safe" langa un cer de L* 11 (ADR 0029).
+        /// </summary>
+        internal bool PrintSafe => DustOnPaperBlack && SkyVisible;
+
+        /// <summary>
+        /// Cerul la sau peste pragul de vizibilitate (Thresholds.LowSeparationLstar): hartia
+        /// separa si mai jos, dar in lumina de camera un cer sub prag se vede aproape negru
+        /// (ADR 0029).
+        /// Se compara cum se tipareste in tabel, la o zecimala: un rand care arata "15.0" trece,
+        /// altfel tabelul ar pune "cer sub L* 15" langa un cer scris 15.0. Pragul e o regula de
+        /// degetul mare; a doua zecimala nu spune nimic.
+        /// </summary>
+        internal bool SkyVisible => Math.Round(LstarSky, 1) >= Thresholds.LowSeparationLstar;
 
         /// <summary>Randul recomandat; il marcheaza simulatorul dupa ce a ales.</summary>
         internal bool Recommended { get; set; }
@@ -96,18 +113,24 @@ namespace AstroPhotoAnalyzer
 
         internal SimulationRow AsIs { get; init; }
 
-        /// <summary>Cel mai mic rand print-safe, "asa cum e" inclus; null cand niciunul nu e.</summary>
+        /// <summary>Cel mai mic rand print-safe si cu cerul vizibil, "asa cum e" inclus; null cand niciunul nu e.</summary>
         internal SimulationRow Recommended { get; init; }
         internal double? RecommendedTarget => Recommended?.Target;
         internal bool RecommendedIsAsIs => Recommended != null && Recommended.AsIs;
 
-        internal bool AlreadyPrintSafe => AsIs.PrintSafe;
+        internal bool AlreadyPrintSafe => AsIs.DustOnPaperBlack;
 
         /// <summary>Cerul insusi e sub negrul hartiei: cerul si praful s-ar tipari cu acelasi negru (Problema).</summary>
         internal bool SkyBelowPaperBlack => AsIs.LstarSky < PaperBlackLstar;
 
         /// <summary>Praful e sub negrul hartiei (Atentie cand cerul nu e).</summary>
-        internal bool DustBelowPaperBlack => !AsIs.PrintSafe;
+        internal bool DustBelowPaperBlack => !AsIs.DustOnPaperBlack;
+
+        /// <summary>Cerul e sub pragul de vizibilitate (Atentie, chiar cu praful peste negrul hartiei).</summary>
+        internal bool SkyBelowVisibility => !AsIs.SkyVisible;
+
+        /// <summary>Tinta la care cerul ajunge la pragul de vizibilitate, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
+        internal double? VisibilityTarget { get; init; }
 
         /// <summary>Tinta exacta la care praful ajunge pe negru, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
         internal double? ExactTarget { get; init; }
@@ -192,7 +215,7 @@ namespace AstroPhotoAnalyzer
             };
 
             var rows = new List<SimulationRow> { asIs };
-            double? exact = null, exactLo = null, exactHi = null;
+            double? exact = null, exactLo = null, exactHi = null, visible = null;
             var cloudRows = new List<CloudRow>();
             int[] rowClouds = Enumerable.Range(0, map.Clouds.Count).Where(c => map.Clouds[c].Patches.Length >= Thresholds.DustCloudMinPatches).ToArray();
 
@@ -208,6 +231,7 @@ namespace AstroPhotoAnalyzer
                 double[] targets = ladder.ToArray();
 
                 var dustAt = new double[targets.Length];
+                var skyAt = new double[targets.Length];
                 var cloudAt = new double[targets.Length][];
                 var tableRows = new HashSet<double>(p.SimulationTargets.Select(t => Math.Round(t, 6)));
                 if (p.TargetBackground.HasValue) tableRows.Add(Math.Round(p.TargetBackground.Value, 6));
@@ -218,6 +242,7 @@ namespace AstroPhotoAnalyzer
                     Raster lifted = RasterOps.Gamma(sub, gamma);
                     DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(lifted), map, black);
                     dustAt[i] = d.LstarDust;
+                    skyAt[i] = d.LstarSky;
                     cloudAt[i] = d.CloudLstars;
                     if (!tableRows.Contains(target)) continue;
                     // Subesantionul e deja la pasul tonal; LstarStats primeste pasul 1 ca sa nu-l
@@ -239,6 +264,7 @@ namespace AstroPhotoAnalyzer
                 rows = rows.OrderBy(x => x.Target).ToList();
 
                 exact = Crossing(targets, dustAt, black);
+                visible = Crossing(targets, skyAt, Thresholds.LowSeparationLstar);
                 exactLo = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax - Thresholds.DmaxSensitivityStep));
                 exactHi = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax + Thresholds.DmaxSensitivityStep));
 
@@ -278,6 +304,7 @@ namespace AstroPhotoAnalyzer
                 ExactTarget = exact,
                 ExactTargetDmaxLower = exactLo,
                 ExactTargetDmaxHigher = exactHi,
+                VisibilityTarget = visible,
                 DmaxToPassAsIs = asIs.LstarDust > 0 ? -Math.Log10(ColorMath.YOfLstar(asIs.LstarDust)) : double.NaN,
                 Primary = primary,
                 Map = map,

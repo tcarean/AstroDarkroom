@@ -24,6 +24,24 @@ namespace AstroPhotoAnalyzer.Tests;
 /// </summary>
 internal static class Scenes
 {
+    /// <summary>
+    /// Dmax-ul hartiei pentru care au fost construite scenele: baryta de 2.0 de dinainte de
+    /// ADR 0028, cu negrul la L* 9.0. Un cer la 0.08 e sub negrul acela si deasupra celui de
+    /// azi (2.4, L* 3.6), asa ca testele despre "fundal sub negrul hartiei" isi dau hartia
+    /// explicit, prin <see cref="OnBuiltForPaper"/> sau --dmax 2.0, in loc sa atarne de implicit.
+    /// </summary>
+    internal const double BuiltForDmax = 2.0;
+
+    /// <summary>
+    /// Aceiasi parametri, pe hartia pentru care au fost construite scenele. Un Dmax dat de
+    /// test ramane al lui; mediul nu conteaza, Dmax-ul explicit il bate.
+    /// </summary>
+    internal static Parameters OnBuiltForPaper(Parameters? p = null)
+    {
+        p ??= new Parameters();
+        return p with { DmaxOverride = p.DmaxOverride ?? BuiltForDmax };
+    }
+
     /// <summary>Stele de FWHM 3 pe o grila, la 55 px, peste orice raster.</summary>
     internal static Raster WithStars(Raster r, int count = 64, double fwhm = 3.0, float amplitude = 0.3f)
     {

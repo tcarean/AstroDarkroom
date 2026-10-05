@@ -93,8 +93,9 @@ namespace AstroPhotoAnalyzer
         // ------------------------------------------------------------ 2. fundal
 
         // Verdictul: praful (percentila dalelor norilor catalogati, sau a cadrului fara WCS)
-        // fata de negrul hartiei, si cerul fata de el (ADR 0025). "Fiindca" spune ce e praful,
-        // care sunt norii cei mai intunecati, unde e negrul si de la ce Dmax ar trece asa cum e.
+        // fata de negrul hartiei, si cerul fata de el (ADR 0025); apoi cerul fata de pragul de
+        // vizibilitate (ADR 0029). "Fiindca" spune ce e praful, care sunt norii cei mai
+        // intunecati, unde e negrul, de la ce Dmax ar trece asa cum e si cat e sub prag.
         static void Background(AnalysisResult r, List<Recommendation> o)
         {
             SimulationResult s = r.Simulation;
@@ -105,9 +106,11 @@ namespace AstroPhotoAnalyzer
             string clouds = s.Clouds.Count == 0 ? "" : "; cei mai intunecati: " + CloudList(s);
             string because = $"praful ({s.DustDescription}{(s.MethodNote == null ? "" : "; " + s.MethodNote)}) la L* {Fmt.F1(asIs.LstarDust)}{clouds}; "
                 + $"negrul hartiei L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)}; "
-                + $"cerul ({s.SkyDescription}) la L* {Fmt.F1(asIs.LstarSky)}; nivelul fundalului {Fmt.Level(s.BackgroundMeasured)}; {pass}";
+                + $"cerul ({s.SkyDescription}) la L* {Fmt.F1(asIs.LstarSky)}; nivelul fundalului {Fmt.Level(s.BackgroundMeasured)}; {pass}; "
+                + $"pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}, sub el {Fmt.Pct(asIs.PctBelowLowSeparation)} din pixeli";
+            string threshold = "L* " + Fmt.F0(Thresholds.LowSeparationLstar);
 
-            if (!s.DustBelowPaperBlack)
+            if (!s.DustBelowPaperBlack && !s.SkyBelowVisibility)
             {
                 SimulationRow rec = s.Recommended;
                 string text;
@@ -118,7 +121,9 @@ namespace AstroPhotoAnalyzer
                     SimulationRow lower = s.Rows.LastOrDefault(x => x.Target < asIs.Target);
                     text = lower == null
                         ? "Fundalul e print-safe asa cum e; grila nu coboara sub nivelul lui."
-                        : $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} praful ar cobori la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei.";
+                        : !lower.DustOnPaperBlack
+                            ? $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} praful ar cobori la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei."
+                            : $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} cerul ar cobori la L* {Fmt.F1(lower.LstarSky)}, sub pragul de vizibilitate {threshold}.";
                 }
                 else
                 {
@@ -133,12 +138,22 @@ namespace AstroPhotoAnalyzer
             Verdict v = s.SkyBelowPaperBlack ? Verdict.Problem : Verdict.Attention;
             string what = s.SkyBelowPaperBlack
                 ? "Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru."
-                : "Praful e sub negrul hartiei: norii de praf s-ar tipari negru pur.";
+                : s.DustBelowPaperBlack
+                    ? "Praful e sub negrul hartiei: norii de praf s-ar tipari negru pur."
+                    : $"Cerul e sub {threshold}: hartia il separa de negru, dar in lumina de camera s-ar vedea aproape negru.";
             string fix;
             if (s.Recommended != null)
             {
-                string exact = s.ExactTarget.HasValue ? $"; exact pe negru la {ReportWriter.TargetText(s.ExactTarget)}" : "";
+                string exact = s.DustBelowPaperBlack
+                    ? (s.ExactTarget.HasValue ? $"; exact pe negru la {ReportWriter.TargetText(s.ExactTarget)}" : "")
+                    : $"; cerul la {threshold} de la {ReportWriter.TargetText(s.VisibilityTarget)}";
                 fix = $" Re-stretch din liniar la fundal {Fmt.Level(s.Recommended.Target)} (simulat: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).";
+            }
+            else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.DustOnPaperBlack))
+            {
+                // Praful ajunge pe negru pe grila, dar cerul nu ajunge la prag: doar pe o grila data de om.
+                string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
+                fix = $" Nicio tinta pana la {top} nu aduce cerul la {threshold}; ar trebui {ReportWriter.TargetText(s.VisibilityTarget)}.";
             }
             else
             {

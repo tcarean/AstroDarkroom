@@ -251,7 +251,7 @@ namespace AstroPhotoAnalyzer.Wpf
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));
             double[] grid = new Parameters().SimulationTargets;
             static string Black(PrintMedium m)
-                => $"{Fmt.F1(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
+                => $"{Fmt.Dmax(Parameters.DmaxOf(m))} -> L* {Fmt.F1(ColorMath.PaperBlackLstar(Parameters.DmaxOf(m)))}";
             return new[]
             {
                 new GuideParagraph
@@ -296,9 +296,13 @@ namespace AstroPhotoAnalyzer.Wpf
                 new GuideParagraph
                 {
                     Lead = "Verdictul.",
-                    Text = "Praful la sau peste negrul hartiei: print-safe. Praful sub negru, cerul peste: atentie, norii s-ar tipari negru pur. "
+                    Text = "Praful sub negrul hartiei, cerul peste: atentie, norii s-ar tipari negru pur. "
                         + "Cerul sub negru: problema, cerul si praful ies cu acelasi negru. Nu e un procent de pixeli: e cea mai intunecata "
-                        + "structura intinsa fata de negrul hartiei, si recomandarea e nivelul MINIM la care ea mai ramane deasupra lui - in sus "
+                        + "structura intinsa fata de negrul hartiei. Apoi vine privitul: hartia separa tonurile si mai jos, dar un cer sub "
+                        + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)} se vede aproape negru in lumina de camera, deci si el e atentie, oricat de adanc ar fi negrul hartiei. "
+                        + "Print-safe inseamna amandoua: praful la sau peste negrul hartiei si cerul la prag sau peste; un rand cu praful pe negru "
+                        + $"si cerul dedesubt e marcat \"cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}\". "
+                        + "Recomandarea e nivelul MINIM print-safe - in sus "
                         + "pe o imagine prea intunecata, in jos pe una prea luminoasa.",
                 },
                 new GuideParagraph

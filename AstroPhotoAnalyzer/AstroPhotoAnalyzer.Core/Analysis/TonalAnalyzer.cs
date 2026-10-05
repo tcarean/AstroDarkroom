@@ -81,16 +81,16 @@ namespace AstroPhotoAnalyzer
         internal static IReadOnlyList<LstarLadderRow> LstarLadder(Parameters p, SimulationResult s = null)
         {
             var rows = new List<LstarLadderRow>();
-            bool chosenIsMedium = false;
+            // Randul marcat e hartia cu care se analizeaza: mediul ales cand Dmax-ul e al lui,
+            // altfel randul Dmax-ului explicit - chiar daca alt mediu are acelasi Dmax (R-042).
             foreach (PrintMedium m in Enum.GetValues(typeof(PrintMedium)))
             {
                 double dmax = Parameters.DmaxOf(m);
-                bool chosen = Math.Abs(dmax - p.Dmax) < 1e-9;
-                chosenIsMedium |= chosen;
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.F1(dmax)})", chosen));
+                bool chosen = m == p.Medium && !p.DmaxIsExplicit;
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})", chosen));
             }
-            if (!chosenIsMedium)
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax explicit {Fmt.F2(p.Dmax)}", true));
+            if (p.DmaxIsExplicit)
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax explicit {Fmt.Dmax(p.Dmax)}", true));
             rows.Add(FromLevel(Thresholds.DarkLevelA, $"pragul \"sub nivelul {Thresholds.DarkLevelA}\""));
             rows.Add(FromLevel(Thresholds.DarkLevelB, $"pragul \"sub nivelul {Thresholds.DarkLevelB}\""));
             rows.Add(FromLstar(Thresholds.LowSeparationLstar, "separare slaba"));

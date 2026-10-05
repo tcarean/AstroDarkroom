@@ -22,7 +22,7 @@ namespace AstroPhotoAnalyzer.Wpf.Tests;
 
 public class ViewModelTests
 {
-    static AnalysisResult Result(Raster r, Parameters? p = null) => AnalysisRun.Execute(r, "memorie", p ?? new Parameters());
+    static AnalysisResult Result(Raster r, Parameters? p = null) => AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper(p));
 
     [Fact]
     public void R112_TheReportTabHasOneSectionPerTopicInDecisionOrder()
@@ -86,15 +86,16 @@ public class ViewModelTests
         // Rezolutie: descriere pe fiecare rand, mai putin colturile (le acopera centrul).
         Assert.Contains(res.Rows, row => row.Label == "FWHM median in centru" && row.Description != null);
         Assert.All(res.Rows, row => Assert.Equal(row.Label.Contains("coltul "), string.IsNullOrWhiteSpace(row.Description)));
-        Assert.Equal(1 + 8, tones.LadderRows.Count);   // antet + 3 negre, 32/64, L* 15/50, fundalul recomandat
+        // antet + 3 negre + negrul hartiei scenei (Dmax explicit 2.0, al niciunui mediu), 32/64, L* 15/50, fundalul recomandat
+        Assert.Equal(1 + 9, tones.LadderRows.Count);
         Assert.Contains(tones.LadderRows, s => s.Contains("fundalul recomandat 0.1"));
-        Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("baryta"));
+        Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.0"));
         Assert.Equal(6, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
         Assert.Contains($"percentila {Thresholds.DustClassFraction * 100:0} % a dalelor de praf", guide);
         Assert.Contains($"cele mai intunecate {Thresholds.DustAreaFraction * 100:0} % din dalele cadrului", guide);
         Assert.Contains("nivelul MINIM", guide);
-        Assert.Contains("nivelul 25 e L* 9 (negrul baryta)", guide);
+        Assert.Contains("nivelul 13 e L* 4 (negrul baryta)", guide);
         Assert.Contains("canvas 1.5 -> L* 20.7", guide);
         Assert.Equal(4, export.JpegRows.Count);
         Assert.Equal(5, export.JpegGuide.Count);

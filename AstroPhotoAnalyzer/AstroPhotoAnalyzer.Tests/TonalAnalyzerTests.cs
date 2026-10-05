@@ -31,8 +31,8 @@ public class TonalAnalyzerTests
         Assert.Equal(0, t.PctBelowDarkB);
         Assert.All(t.ReferencePercentiles, v => Assert.Equal(127.5, v, 3));
         Assert.Equal(0.5, t.BackgroundMedian, 6);
-        Assert.Equal(2.0, t.Dmax);
-        Assert.Equal(8.99, t.PaperBlackLstar, 1);
+        Assert.Equal(2.4, t.Dmax);
+        Assert.Equal(3.60, t.PaperBlackLstar, 1);
         Assert.Equal(53.39, t.LstarMedian, 1);
         Assert.Equal(0, t.PctBelowPaperBlack);
         Assert.Equal(0, t.PctBelowLowSeparation);
@@ -76,8 +76,8 @@ public class TonalAnalyzerTests
     [Fact]
     public void TheMediumChangesWhatCountsAsPaperBlack()
     {
-        // 0.10: L* ~9, exact la negrul baryta-ului (Dmax 2.0) si mult sub cel al
-        // canvasului (Dmax 1.5, L* ~21), dar peste cel al acrilului (2.2, L* ~6).
+        // 0.10: L* ~9, mult sub negrul canvasului (Dmax 1.5, L* ~21), dar peste cel al
+        // acrilului (2.2, L* ~6).
         var r = SyntheticRasters.Flat(32, 32, 0.10f);
 
         Assert.Equal(100, TonalAnalyzer.Analyze(r, new Parameters { Medium = PrintMedium.Canvas }).PctBelowPaperBlack);
@@ -98,14 +98,34 @@ public class TonalAnalyzerTests
         Assert.Equal(ladder.OrderBy(l => l.Lstar).Select(l => l.Lstar), ladder.Select(l => l.Lstar));
         var chosen = Assert.Single(ladder, l => l.Chosen);
         Assert.Contains("baryta", chosen.Meaning);
-        Assert.Equal(25.5, chosen.GrayLevel, 1);
+        Assert.Equal(12.9, chosen.GrayLevel, 1);   // L* 3.6, the black of baryta at Dmax 2.4
         Assert.Equal(12.3, ladder.Single(l => l.GrayLevel == Thresholds.DarkLevelA).Lstar, 1);
         Assert.Equal(20.1, ladder.Single(l => l.Meaning.StartsWith("fundalul-tinta dat 0.19")).Lstar, 1);
         Assert.Equal(3 + 2 + 2, TonalAnalyzer.LstarLadder(Baryta).Count);   // no target given, no simulation: no target row
 
         var custom = TonalAnalyzer.LstarLadder(new Parameters { DmaxOverride = 1.8 });
         Assert.Equal(8, custom.Count);
-        Assert.Contains("Dmax explicit 1.80", Assert.Single(custom, l => l.Chosen).Meaning);
+        Assert.Contains("Dmax explicit 1.8", Assert.Single(custom, l => l.Chosen).Meaning);
+    }
+
+    /// <summary>
+    /// The marked row is the paper in use. A Dmax typed on canvas that happens to be acrylic's
+    /// is still an explicit Dmax on canvas: it gets its own row, and acrylic's is not "the
+    /// chosen medium", which the report beside it calls canvas.
+    /// </summary>
+    [Fact]
+    public void R042_AnExplicitDmaxGetsItsOwnRowEvenWhenItIsAnotherMediumsDmax()
+    {
+        var ladder = TonalAnalyzer.LstarLadder(new Parameters { Medium = PrintMedium.Canvas, DmaxOverride = 2.2 });
+
+        Assert.Equal(3 + 1 + 2 + 2, ladder.Count);
+        Assert.Contains("Dmax explicit 2.2", Assert.Single(ladder, l => l.Chosen).Meaning);
+        Assert.False(ladder.Single(l => l.Meaning.Contains("acrilic")).Chosen);
+
+        // The medium's own Dmax, given explicitly, is not explicit: its row is the marked one.
+        var own = TonalAnalyzer.LstarLadder(new Parameters { Medium = PrintMedium.Canvas, DmaxOverride = 1.5 });
+        Assert.Equal(3 + 2 + 2, own.Count);
+        Assert.Contains("canvas", Assert.Single(own, l => l.Chosen).Meaning);
     }
 
     [Fact]

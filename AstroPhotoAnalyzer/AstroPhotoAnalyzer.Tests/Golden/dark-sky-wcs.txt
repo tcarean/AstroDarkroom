@@ -16,8 +16,8 @@ VERDICT: PROBLEMA
      fiindca: palier de 2.2 px = 2.13 mm la 26 dpi, peste 1.0 mm
 
 2. Fundalul si hartia  [PROBLEMA]
-   !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.14 (simulat: praful la L* 9.1, cerul la L* 13.9; exact pe negru la 0.139).
-     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; cadrul e in intregime in banda) la L* 4.5; cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor) la L* 7.6; nivelul fundalului 0.089; trece asa cum e de la Dmax 2.3
+   !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 10.1, cerul la L* 15.2; exact pe negru la 0.139).
+     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; cadrul e in intregime in banda) la L* 4.5; cei mai intunecati: LDN 1776 L* 3.2, LDN 1764 L* 6.7, LDN 34 L* 7.1, LDN 1769 (B275, B278) L* 7.1, LDN 1741 L* 7.1, LDN 142 (B279) L* 7.2, LDN 69 (B77, B269) L* 7.3, LDN 1793 L* 7.6, LDN 42 (B78) L* 38.5; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor) la L* 7.6; nivelul fundalului 0.089; trece asa cum e de la Dmax 2.3; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
 
 3. Culoarea fundalului si gradientele  [ATENTIE]
    ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
@@ -31,7 +31,7 @@ VERDICT: PROBLEMA
 
 5. Denoise pentru versiunea de print  [ATENTIE]
    ! Denoise-ul e apasat tare pentru print: zgomotul nu mai dither-eaza cuantizarea. Pentru versiunea de print, o valoare mai mica pastreaza textura si stelele slabe.
-     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.14 zgomotul creste de ~1.28 x (panta curbei la fundal), la ~0.38 LSB; sub 0.5 LSB, 100.0 % din dale
+     fiindca: sigma median 0.30 LSB pe 38 dale netede (10 % 0.30, minim 0.29); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul creste de ~1.32 x (panta curbei la fundal), la ~0.39 LSB; sub 0.5 LSB, 100.0 % din dale
 
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
@@ -53,16 +53,16 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.12                 0.878       7.0     11.5       2.7 %     77.6 %        1.6 %
   0.13                 0.845       8.0     12.7       2.3 %     74.3 %        2.0 %
   0.135 (dat)          0.829       8.5     13.3       1.6 %     72.2 %        2.2 %
-  0.14 *               0.814       9.1     13.9       1.2 %     69.5 %        2.3 %   print-safe
-  0.15                 0.785      10.1     15.2       0.8 %     53.3 %        2.7 %   print-safe
+  0.14                 0.814       9.1     13.9       1.2 %     69.5 %        2.3 %   cer sub L* 15
+  0.15 *               0.785      10.1     15.2       0.8 %     53.3 %        2.7 %   print-safe
   0.16                 0.759      11.2     16.4       0.8 %      5.4 %        3.1 %   print-safe
   0.17                 0.734      12.2     17.6       0.0 %      3.6 %        3.5 %   print-safe
   0.18                 0.710      13.3     18.8       0.0 %      2.7 %        3.9 %   print-safe
   0.19                 0.687      14.3     19.9       0.0 %      2.0 %        4.3 %   print-safe
   0.20                 0.666      15.4     21.1       0.0 %      1.5 %        4.7 %   print-safe
-  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei
+  * = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste
   praful = cele mai intunecate 1 % din dalele de 32 px (cadrul e in intregime in banda); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)
-  tinta exacta a prafului pe negru: 0.139 la Dmax 2.0 (0.158 la Dmax 1.9, 0.121 la Dmax 2.1); trece asa cum e de la Dmax 2.3
+  tinta exacta a prafului pe negru: 0.139 la Dmax 2.0 (0.158 la Dmax 1.9, 0.121 la Dmax 2.1); trece asa cum e de la Dmax 2.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.149
   norii catalogati cu cel putin 9 dale (9), de la cel mai intunecat; L* = 10 % din dalele norului; tinta = unde ajunge pe negrul hartiei:
   nor                          dale   L*     tinta
   LDN 1776                       10    3.2   0.164
@@ -111,7 +111,7 @@ Anexa E. Culoarea fundalului
   latura dreapta     20.6 / 22.6 / 20.6     delta +0.6 / +0.5 / +0.5
 
 Anexa F. Parametri
-  mediu baryta, Dmax 2.0; latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
+  mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
   distanta naturala; raport tinta nativ; fundal-tinta 0.135 (grila 0.10..0.20); WCS din fisier; samanta 0
 
 --- stderr ---

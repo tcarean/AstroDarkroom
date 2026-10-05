@@ -190,6 +190,8 @@ public class ValidationTests
         f["simulation.asIs.pctPatchesBelowPaperBlack"] = R(s.AsIs.PctPatchesBelowPaperBlack);
         f["simulation.alreadyPrintSafe"] = s.AlreadyPrintSafe;
         f["simulation.skyBelowPaperBlack"] = s.SkyBelowPaperBlack;
+        f["simulation.skyBelowVisibility"] = s.SkyBelowVisibility;
+        f["simulation.visibilityTarget"] = s.VisibilityTarget is double vt ? R(vt) : "none";
         f["simulation.recommendedTarget"] = s.RecommendedTarget is double rt ? R(rt) : "none";
         f["simulation.recommendedIsAsIs"] = s.RecommendedIsAsIs;
         f["simulation.exactTarget"] = s.ExactTarget is double et ? R(et) : "none";

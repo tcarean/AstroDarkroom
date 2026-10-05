@@ -35,7 +35,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Parameters D = new();
 
         string _medium = Parameters.NameOf(D.Medium);
-        string _dmax = "";
+        string _dmax = Fmt.Dmax(D.Dmax);
         string _distance = "";
         string _sizes = string.Join(", ", D.CandidateWidthsCm.Select(Fmt.F0));
         string _aspect = "";
@@ -44,13 +44,27 @@ namespace AstroPhotoAnalyzer.Wpf
         string _frame = Fmt.F0(D.FrameCm);
         string _wcsPath = "";
 
-        public IReadOnlyList<string> Media { get; } = new[]
-        {
-            Parameters.NameOf(PrintMedium.Baryta), Parameters.NameOf(PrintMedium.Canvas), Parameters.NameOf(PrintMedium.Acrylic),
-        };
+        public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
-        public string Medium { get => _medium; set => Set(ref _medium, value); }
+        /// <summary>
+        /// Alegerea unui mediu scrie Dmax-ul lui in campul Dmax, peste orice era acolo, ca
+        /// omul sa vada cu ce Dmax se va analiza. Valoarea e a nucleului (R-020). Ordinea
+        /// conteaza: cine le pune pe amandoua din cod pune mediul intai, apoi Dmax-ul.
+        /// </summary>
+        public string Medium
+        {
+            get => _medium;
+            set
+            {
+                if (Set(ref _medium, value) && Media.Contains(value, StringComparer.OrdinalIgnoreCase))
+                    Dmax = DmaxTextOf(value);
+            }
+        }
+
+        /// <summary>Completat cu Dmax-ul mediului ales; omul il poate schimba. Gol = al mediului.</summary>
         public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
+
+        static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
         public string Distance { get => _distance; set => Set(ref _distance, value); }
         public string Sizes { get => _sizes; set => Set(ref _sizes, value); }
         public string Aspect { get => _aspect; set => Set(ref _aspect, value); }
@@ -67,10 +81,13 @@ namespace AstroPhotoAnalyzer.Wpf
             error = null;
             try
             {
+                // Campul care arata inca textul pus de mediu nu e un Dmax dat: ramane al nucleului,
+                // cu toate zecimalele lui, nu o copie rotunjita la afisare (R-024).
+                bool untouched = (Dmax ?? "").Trim() == DmaxTextOf(Medium);
                 var p = new Parameters
                 {
                     Medium = Parameters.MediumFromName(Medium),
-                    DmaxOverride = OptionalNumber(Dmax, "Dmax", 0, 4),
+                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, 4),
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),
@@ -140,7 +157,7 @@ namespace AstroPhotoAnalyzer.Wpf
             + $"Pe ecran un cer la {Fmt.F2(Thresholds.ScreenBackgroundLo)}-{Fmt.F2(Thresholds.ScreenBackgroundHi)} arata bine; "
             + "pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru, si un print vrea cerul la "
             + $"{Fmt.F2(Thresholds.PrintBackgroundLo)}-{Fmt.F2(Thresholds.PrintBackgroundHi)}. Recomandarea din raport e nivelul minim "
-            + "la care praful mai ramane deasupra negrului hartiei; campul asta nu o schimba.";
+            + $"la care praful mai ramane deasupra negrului hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste; campul asta nu o schimba.";
 
         public string WcsHelp =>
             "Calea unui FITS plate-solved (Siril: Image Information > Plate solving, sau un stack rezolvat) cu aceeasi "

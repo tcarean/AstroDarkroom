@@ -37,7 +37,7 @@ public class CliTests
     public void R002_AProblemImageExitsWithThreeAndPrintsTheReport()
     {
         using var ws = new TempWorkspace();
-        var (code, output, err) = Run(DarkTiff(ws), "--aspect", "50:35", "--distance", "1.5");
+        var (code, output, err) = Run(DarkTiff(ws), "--aspect", "50:35", "--distance", "1.5", "--dmax", "2.0");
 
         Assert.Equal(3, code);
         Assert.Equal("", err);

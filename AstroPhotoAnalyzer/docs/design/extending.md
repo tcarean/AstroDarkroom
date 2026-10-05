@@ -44,8 +44,33 @@ names the metric and the threshold; a test in `RecommendationsTests` on a scene 
 `ParameterFieldsTests`, appendix F; goldens (help.txt changes); **its row in
 `../requirements.md` and `console.md`, "Parameters"**.
 
-**A new print medium**: `PrintMedium` + `DmaxOf` + `MediumFromName`/`NameOf` in
-`Parameters.cs`; `Options.Media`; `ParametersTests`; **R-020 and `console.md`, "Parameters"**.
+**A new print medium**: the source of its Dmax first, in a new ADR beside ADR 0028 (a value
+without a source is recorded as unsourced). Then:
+
+- the core: `PrintMedium` (with the source in its comment), `DmaxOf`, `MediumFromName` and
+  `NameOf` in `Parameters.cs`. `MediumNames`, `Options.Media`, the `--medium` line of `--help`,
+  the unknown-medium error, the window's combo and the level-L\* ladder follow by themselves;
+- the one text that names the media by hand: the "Negrul hartiei" paragraph of the Tonuri guide
+  in `ResultTabs.cs` (`window.md`);
+- the requirements: R-003 (the usage line), R-016 (the paper-black list), R-020 (the names, the
+  Dmax values and the error text), R-042 and R-113 ("the three media");
+- the tests: `ParametersTests` (`R020_EachMediumHasItsDmax`,
+  `R020_TheMediumNamesAreTheCoresAndRoundTrip`), `ColorMathTests.PaperBlackLstarPerMedium`,
+  `TonalAnalyzerTests` (the ladder's row count), `OptionsTests`, and in the window's project
+  `ParameterFieldsTests` (`R020_ChoosingAMediumFillsTheDmaxFieldWithItsDmax`) and
+  `ViewModelTests` (the ladder's rows, the guide's sentence);
+- the goldens: `Golden/help.txt` changes; a golden scenario on the new medium if its Dmax opens
+  a case the others do not;
+- the docs: `console.md`, "Parameters" (the Dmax row), `input.md` (the paper-black list), the
+  `Run` line of `CLAUDE.md`, and `README.md` (the window paragraph and "Consola", the options
+  line);
+- `/validate` if the default medium or its Dmax changed: the cases that run on the default move,
+  V-005 on every figure and V-002 if its verdict does; V-001 and V-004 name their paper (`dmax`
+  2.0) and stay (the rule "Formula changes re-validate").
+
+The scenes of `Scenes.cs` were built for a paper black of L\* 9.0 (`Scenes.BuiltForDmax`, ADR
+0028): a test of "the background under paper black" gives that paper itself and does not
+depend on the default medium.
 
 **A new input format**: an `IFrameReader` in `Core/Input/` claiming its extensions,
 registered in `ImageLoader.Readers`; fill `SourceInfo`; a hand-built fixture if the

@@ -78,7 +78,7 @@ frame sits at 0.001-0.01; a finished image at 0.08-0.25.
 
 sRGB <-> linear per IEC 61966-2-1; Y = 0.2126 R + 0.7152 G + 0.0722 B on linear values;
 L\* per CIE 1976 with the linear segment below Y = 0.008856; **paper black** =
-L\*(10^-Dmax): baryta 2.0 -> 9.0, canvas 1.5 -> 20.7, acrylic C-print 2.2 -> 5.7.
+L\*(10^-Dmax): baryta 2.4 -> 3.6, canvas 1.5 -> 20.7, acrylic C-print 2.2 -> 5.7 (ADR 0028).
 `YOfLstar` is the exact inverse of `LstarOfY` (both segments); `GrayLevelOfLstar` /
 `LstarOfGrayLevel` go between an L\* and the 8-bit level of a grey (R = G = B) with that
 L\* - one fixed curve, used only by the window's level - L\* table and guide text.

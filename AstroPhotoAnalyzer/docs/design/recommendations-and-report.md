@@ -22,9 +22,10 @@ Background, Colour, Size, Denoise, Warnings.
 | Format | plateau known and visible at the reference row's dpi | Attention | banding risk: send 16-bit or dither |
 | Format | plateau known and not visible | Ok | no visible banding |
 | Format | plateau unknown and `BandingRisk` | Attention | banding risk from sigma alone |
-| Background | the as-is dust at or above paper black | Ok | print-safe as is; "poti cobori pana la <row>" when the recommended row is lower, or the row just below and where it puts the dust when the as-is row is the recommended one |
+| Background | the as-is dust at or above paper black and the as-is sky at or above L\* 15 | Ok | print-safe as is; "poti cobori pana la <row>" when the recommended row is lower, or the row just below and what fails there (the dust under paper black, or the sky under L\* 15) when the as-is row is the recommended one |
 | Background | the as-is sky under paper black | Problem | the sky and the dust would print the same black; re-stretch to the recommended row (its simulated dust and sky, the exact target), or "no target up to 0.20" with the exact target or "nici 0.60" |
 | Background | only the dust under paper black | Attention | the clouds would print pure black; same fix text |
+| Background | the dust at or above paper black, the as-is sky under L\* 15 (ADR 0029) | Attention | the paper separates the sky from black, the eye in room light barely; re-stretch to the recommended row (its simulated dust and sky, the target at which the sky reaches L\* 15) |
 | Colour | mono | Ok | nothing to measure |
 | Colour | `HasCast` | Attention | green/magenta/warm/cool cast (whichever metric is larger); neutralise on linear |
 | Colour | no cast | Ok | neutral background |

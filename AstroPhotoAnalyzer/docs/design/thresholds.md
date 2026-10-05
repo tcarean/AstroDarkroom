@@ -15,7 +15,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `LinearMedianMax` | 0.02 | below: image is probably linear, refused |
 | `UpscaledFraction` | 0.5 | above: 16-bit file is an 8-bit upscale |
 | `DarkLevelA` / `DarkLevelB` | 32 / 64 | "dark pixel" levels for context |
-| `LowSeparationLstar` | 15 | below: paper separates, the eye barely |
+| `LowSeparationLstar` | 15 | the visibility threshold: below, the paper separates, the eye in room light barely; a sky under it is an Attention and the recommended row has the sky at or above it (ADR 0029); a grey of L\* 15 is the level 0.148, the same rule as `PrintBackgroundLo` |
 | `HighlightLstar` | 50 | above: bright |
 | `DustPatchPx` | 32 | the patch side (image px) the dust and the sky are measured on: 4 mm at 200 dpi; 16/32/64 barely move the verdict |
 | `DustCloudFraction` | 0.10 | a catalogued cloud's L\* for its row: this percentile of its patches |

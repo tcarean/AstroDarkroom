@@ -60,10 +60,12 @@ public class ColorMathTests
     }
 
     /// <summary>
-    /// Negrul hartiei: baryta lucios (2.0) ~9, canvas mat (1.5) ~21, C-print sub acril
-    /// (2.2) ~6. Pragurile din raport pleaca de aici.
+    /// Negrul hartiei: baryta lucios (2.4) ~3.6, canvas mat (1.5) ~21, C-print sub acril
+    /// (2.2) ~6; 2.0 (~9) e baryta de dinainte de ADR 0028, pe care stau scenele. Pragurile
+    /// din raport pleaca de aici.
     /// </summary>
     [Theory]
+    [InlineData(2.4, 3.60)]
     [InlineData(2.0, 8.99)]
     [InlineData(1.5, 20.68)]
     [InlineData(2.2, 5.70)]
@@ -94,7 +96,7 @@ public class ColorMathTests
     }
 
     /// <summary>
-    /// Perechile din panoul Tonuri: negrul baryta (L* 9) e nivelul ~25 al unui gri,
+    /// Perechile din panoul Tonuri: L* 9 (negrul unei hartii de Dmax 2.0) e nivelul ~25 al unui gri,
     /// nivelul 32 e L* ~12, 64 e L* ~27, L* 50 e nivelul ~119.
     /// </summary>
     [Theory]

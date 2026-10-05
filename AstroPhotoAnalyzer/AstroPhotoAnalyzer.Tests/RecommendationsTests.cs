@@ -20,7 +20,7 @@ namespace AstroPhotoAnalyzer.Tests;
 public class RecommendationsTests
 {
     static AnalysisResult Run(Raster r, Parameters? p = null)
-        => AnalysisRun.Execute(r, "memorie", p ?? new Parameters());
+        => AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper(p));
 
     static IEnumerable<Recommendation> Of(AnalysisResult a, Topic t) => a.Recommendations.Where(x => x.Topic == t);
 

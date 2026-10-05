@@ -114,10 +114,12 @@ then, when the background is strictly inside (0, 1), lifts the subsample once pe
 gamma = `ln(target) / ln(BackgroundMedian)` on every channel (`RasterOps.Gamma`, a 16-bit
 lookup table with linear interpolation, exact on 16-bit sources). The grid steps become
 `SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,
-`PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `PrintSafe` = dust
-at or above paper black), sorted by target with the as-is row among them; every step feeds
-the ladder of dust values and of per-cloud values. `Recommended` is the first print-safe
-row, the as-is row included and whether below or above the measured level. `Crossing`
+`PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `DustOnPaperBlack`,
+`SkyVisible` = the sky, rounded to the one decimal the table prints, at or above
+`LowSeparationLstar`, 15, and `PrintSafe` = both), sorted by
+target with the as-is row among them; every step feeds the ladder of dust values, of sky
+values and of per-cloud values. `Recommended` is the first print-safe row (ADR 0029), the as-is row included and whether below or above the measured level;
+`VisibilityTarget` is where the ladder of sky values crosses the threshold. `Crossing`
 reads the ladder: the first step at or above a level, interpolated linearly with the step
 before (the first step when it already passes, null when the last does not), which gives
 `ExactTarget` at the Dmax in use, `ExactTargetDmaxLower`/`Higher` at Dmax -/+
