@@ -53,3 +53,9 @@ The reference image at Dmax 2.0, 2.35 and 2.44. The tables are in ADR 0028.
 - After the owner tried the window: the sky under L\* 15 is an Attention and the recommended
   row has the sky at L\* 15 or above (ADR 0029), in this branch, so that the new default does
   not reach `main` telling the reference image it can be printed darker.
+- After the owner tried the plate-solved FITS: a row was marked `print-safe` beside a sky of
+  L\* 11.3, because the mark still meant the dust alone. `print-safe` now needs both, a row with
+  only the dust on paper black is marked `cer sub L* 15`, and the sky is compared as the table
+  prints it, to one decimal (ADR 0029, decisions 4 and 5).
+- The validation figures of V-003 and V-005 were re-recorded under the visibility rule, at the
+  owner's word.

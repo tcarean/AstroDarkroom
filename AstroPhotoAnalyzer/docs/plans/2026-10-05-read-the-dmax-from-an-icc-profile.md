@@ -37,3 +37,16 @@ paper and printer at hand from the profile the lab publishes.
    new kind, `icc`.
 8. ADR 0030; `input.md`, `console.md`, `window.md`, `dependencies.md`, `testing.md`,
    `code-map.md`; README; CHANGELOG.
+
+## What deviated
+
+- The branch was stacked on the first task's branch, as said above; both were merged into `main`
+  on 2026-10-05, in order, once the other merge there was concluded.
+- After the code review: the CMYK note goes into Anexa F, not only into the window's list; a
+  profile whose black gives a Dmax outside (0, `Thresholds.DmaxMax`] is refused as damaged,
+  where the first version analysed with it; the MIT text is reproduced in the notices; the
+  level-L\* ladder labels a Dmax read from a profile; a folder that cannot be listed is an
+  empty list.
+- Left as known limits (`docs/design/known-limitations.md`): the installed profiles are read on
+  the UI thread, and the chosen medium keeps its name when a profile replaces its Dmax.
+- Not done: a single-file publish of the console with the new package was not run.
