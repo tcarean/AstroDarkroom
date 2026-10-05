@@ -110,8 +110,8 @@ namespace AstroPhotoAnalyzer
                                 return o.Fail($"--medium asteapta {string.Join(", ", Media)}; a primit '{v}'");
                             o.Medium = m; break;
                         case "--dmax":
-                            if (!TryNum(v, out var dmax) || dmax <= 0 || dmax > 4)
-                                return o.Fail($"--dmax asteapta un numar intre 0 si 4, a primit '{v}'");
+                            if (!TryNum(v, out var dmax) || dmax <= 0 || dmax > Thresholds.DmaxMax)
+                                return o.Fail($"--dmax asteapta un numar intre 0 si {Fmt.F0(Thresholds.DmaxMax)}, a primit '{v}'");
                             o.Dmax = dmax; break;
                         case "--distance":
                             if (!TryNum(v, out var dist) || dist <= 0)

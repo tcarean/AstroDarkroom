@@ -54,7 +54,7 @@ namespace AstroPhotoAnalyzer.Wpf
         void UseOnDoubleClick(object sender, MouseButtonEventArgs e)
         {
             // Dublu-clic pe un rand, nu pe bara de derulare sau pe golul listei.
-            if (e.OriginalSource is DependencyObject d && ItemsControl_ContainerOf(d) && Vm.CanUse) DialogResult = true;
+            if (e.ChangedButton == MouseButton.Left && e.OriginalSource is DependencyObject d && ItemsControl_ContainerOf(d) && Vm.CanUse) DialogResult = true;
         }
 
         bool ItemsControl_ContainerOf(DependencyObject d)

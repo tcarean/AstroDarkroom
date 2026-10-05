@@ -46,7 +46,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         // Profilul ICC din care a fost luat Dmax-ul, si textul pus atunci in camp: numele
         // ajunge in raport doar cat timp campul mai arata textul acela (R-132).
-        string _dmaxProfile, _dmaxProfileText;
+        string _dmaxProfile, _dmaxProfileText, _dmaxProfileNote;
 
         public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
@@ -63,7 +63,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 if (Set(ref _medium, value) && Media.Contains(value, StringComparer.OrdinalIgnoreCase))
                 {
                     Dmax = DmaxTextOf(value);
-                    _dmaxProfile = _dmaxProfileText = null;
+                    _dmaxProfile = _dmaxProfileText = _dmaxProfileNote = null;
                 }
             }
         }
@@ -81,6 +81,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Dmax = profile.DmaxText;
             _dmaxProfile = profile.Name;
             _dmaxProfileText = profile.DmaxText;
+            _dmaxProfileNote = profile.Note;
         }
 
         static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
@@ -108,8 +109,9 @@ namespace AstroPhotoAnalyzer.Wpf
                 var p = new Parameters
                 {
                     Medium = Parameters.MediumFromName(Medium),
-                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, 4),
+                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, Thresholds.DmaxMax),
                     DmaxProfile = fromProfile ? _dmaxProfile : null,
+                    DmaxProfileNote = fromProfile ? _dmaxProfileNote : null,
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),

@@ -58,5 +58,5 @@ AstroPhotoAnalyzer.Wpf/
         MapWindow.xaml, PreviewWindow.xaml, OverlayWindows.xaml.cs, IccPickerWindow.xaml(.cs)
 
 AstroPhotoAnalyzer.Tests/              see testing.md; Golden/*.txt; testdata/ (manifest, large/)
-AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests
+AstroPhotoAnalyzer.Wpf.Tests/          StaFixture, WindowSmokeTests, CultureTests, ParameterFieldsTests, ViewModelTests, OverlayWindowTests, IccPickerTests
 ```

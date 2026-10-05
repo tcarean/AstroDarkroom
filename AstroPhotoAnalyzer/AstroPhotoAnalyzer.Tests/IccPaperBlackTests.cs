@@ -39,9 +39,10 @@ public class IccPaperBlackTests
     }
 
     /// <summary>
-    /// The perceptual table of the fixture puts black at L* 0, and the package then answers L* 3.14
-    /// (Dmax 2.46), the ICC reference medium's black, for any profile. A reader that took the
-    /// header's intent, or the perceptual one, would give 2.46 here instead of 1.52.
+    /// The perceptual table of the fixtures puts black at L* 0. On the v2 one the package then
+    /// answers L* 3.14 (Dmax 2.46), the ICC reference medium's black, as it does for real
+    /// profiles; on the v4 one it answers Y 0, which is refused. A reader that took the header's
+    /// intent, or the perceptual one, would give 2.46 or a problem here instead of 1.52 and 1.21.
     /// </summary>
     [Fact]
     public void R028_ThePerceptualTableIsNeverRead()
@@ -102,6 +103,52 @@ public class IccPaperBlackTests
         byte[] whole = IccPrinterTestData.V2Lut16("Rupt", 20);
         IccBlack cut = IccPaperBlack.Read(whole.Take(whole.Length - 60).ToArray(), "rupt.icc");
         Assert.False(cut.Readable);
+
+        // A class of four NUL bytes is shown as nothing, not as control characters on the console.
+        byte[] zeroed = IccPrinterTestData.V2Lut16("Fara clasa", 20, deviceClass: "\0\0\0\0");
+        Assert.Contains("(clasa '')", IccPaperBlack.Read(zeroed, "z.icc").Problem);
+    }
+
+    /// <summary>
+    /// A table that gives a black the paper cannot have is a damaged profile, and says so: Y 0
+    /// from a black at L* 0, and a Dmax above the range --dmax itself accepts (L* 0.05 is
+    /// Y 0.0000554, Dmax 4.26). The console refuses the second one instead of analysing with it.
+    /// </summary>
+    [Fact]
+    public void R028_ABlackThePaperCannotHaveIsADamagedProfile()
+    {
+        IccBlack zero = IccPaperBlack.Read(IccPrinterTestData.V2Lut16("Negru zero", 0), "zero.icc");
+        Assert.Equal("tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei; profilul e probabil stricat", zero.Problem);
+
+        IccBlack deep = IccPaperBlack.Read(IccPrinterTestData.V2Lut16("Prea negru", 0.05), "deep.icc");
+        Assert.StartsWith("profilul da Dmax 4.2", deep.Problem);
+        Assert.EndsWith("in afara intervalului (0, 4]; profilul e probabil stricat", deep.Problem);
+
+        IccBlack white = IccPaperBlack.Read(IccPrinterTestData.V2Lut16("Fara negru", 99.9), "white.icc");
+        Assert.False(white.Readable);
+
+        using var ws = new TempWorkspace();
+        Assert.Null(new Parameters().WithDmaxFromProfile(ws.WriteFile("deep.icc", IccPrinterTestData.V2Lut16("Prea negru", 0.05)), out string? error));
+        Assert.Contains("profilul e probabil stricat", error);
+    }
+
+    /// <summary>The CMYK reserve travels with the Dmax: Anexa F prints it under the parameters, in the console and in the saved report.</summary>
+    [Fact]
+    public void R028_TheCmykNoteReachesTheReport()
+    {
+        using var ws = new TempWorkspace();
+        string cmyk = ws.WriteFile("tipar.icc", IccPrinterTestData.V2Lut16("Tipar", 8, space: "CMYK"));
+        string rgb = ws.WriteFile("hartie.icc", IccPrinterTestData.V2Lut16("Hartie de test", 20));
+
+        Parameters? p = new Parameters().WithDmaxFromProfile(cmyk, out _);
+        var w = new StringWriter();
+        ReportWriter.WriteBody(AnalysisRun.Execute(Scenes.CleanSky(), "memorie", p!), w);
+        Assert.Contains("Dmax 2.05 (din profilul ICC \"Tipar\")", w.ToString());
+        Assert.Contains("  nota profilului: profil CMYK: negrul e cu toate cernelurile la maximum", w.ToString());
+
+        var plain = new StringWriter();
+        ReportWriter.WriteBody(AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters().WithDmaxFromProfile(rgb, out _)!), plain);
+        Assert.DoesNotContain("nota profilului", plain.ToString());
     }
 
     [Fact]
@@ -109,7 +156,7 @@ public class IccPaperBlackTests
     {
         using var ws = new TempWorkspace();
         ws.WriteFile("b.icc", IccPrinterTestData.V2Lut16("Zeta baryta", 20));
-        ws.WriteFile("a.icm", IccPrinterTestData.V4LutAToB("alfa canvas", 30));
+        ws.WriteFile("a.ICM", IccPrinterTestData.V4LutAToB("alfa canvas", 30));   // the extension in capitals, as Windows often has it
         ws.WriteFile("m.icc", IccPrinterTestData.V2Lut16("Monitor", 20, deviceClass: "mntr"));
         ws.WriteFile("gunoi.icc", Encoding.ASCII.GetBytes(new string('x', 400)));
         ws.WriteFile("alt.txt", IccPrinterTestData.V2Lut16("Nu se vede", 20));
@@ -149,7 +196,7 @@ public class IccPaperBlackTests
 
         var (code, output, err) = Run(tif, "--icc", icc);
         Assert.Equal("", err);
-        Assert.InRange(code, 0, 3);
+        Assert.NotEqual(1, code);
         Assert.Contains("Mediu: baryta (Dmax 1.52, negrul hartiei L* 20.1)", output);
         Assert.Contains("mediu baryta, Dmax 1.52 (din profilul ICC \"Hartie de test\")", output);
 

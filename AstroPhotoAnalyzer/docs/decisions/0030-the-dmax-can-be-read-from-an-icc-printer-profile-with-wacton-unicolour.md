@@ -37,7 +37,10 @@ the canvas included. The header of both lab profiles names the perceptual intent
    relative to paper white (ADR 0028), rounded to the two decimals a Dmax is printed with.
 2. Only profiles of class `prtr` with an RGB or CMYK device are read; a CMYK profile carries a
    note that a real printer lays less ink than "everything at maximum". Anything else, and any
-   failure of the package, is a sentence for the user, never an exception.
+   failure of the package, is a sentence for the user, never an exception. A black outside
+   (0, paper white), or a Dmax outside the range `--dmax` accepts, is refused as a damaged
+   profile: the package swallows a broken table and returns some Y (the review's corruption
+   run got "readable" Dmax values from 0 to 5.05).
 3. The console takes `--icc <file>`, which excludes `--dmax`; the window has `Din profil
    ICC...` beside a narrower Dmax field, with the printer profiles of the Windows colour folder
    and a way to add a file. The report names the profile in Anexa F while the Dmax is the one

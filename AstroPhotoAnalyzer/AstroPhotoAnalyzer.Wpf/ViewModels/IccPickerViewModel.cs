@@ -85,9 +85,14 @@ namespace AstroPhotoAnalyzer.Wpf
         /// </summary>
         public void AddFile(string path)
         {
-            var row = new IccProfileRow(IccPaperBlack.Read(path));
-            Profiles.Add(row);
-            Raise(nameof(IsEmpty));
+            // Un fisier deja in lista (ales a doua oara, sau unul dintre cele instalate) se selecteaza, nu se dubleaza.
+            IccProfileRow row = Profiles.FirstOrDefault(p => string.Equals(p.File, path, System.StringComparison.OrdinalIgnoreCase));
+            if (row == null)
+            {
+                row = new IccProfileRow(IccPaperBlack.Read(path));
+                Profiles.Add(row);
+                Raise(nameof(IsEmpty));
+            }
             Selected = row;
         }
 

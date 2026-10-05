@@ -28,8 +28,9 @@ o poți înlocui cu cea a hârtiei tale (golit, înseamnă tot cea a mediului). 
 ICC..." de lângă el o citește din profilul hârtiei pe imprimanta care o va tipări: arată
 profilele de imprimantă instalate în Windows, cu Dmax-ul fiecăruia, și primește și un fișier
 `.icc`/`.icm` de oriunde — de obicei profilul îl publică atelierul. Aceeași hârtie pe altă
-imprimantă are alt negru, deci contează profilul perechii, nu al hârtiei; distanța, raportul de aspect, fundalul-țintă,
-passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
+imprimantă are alt negru, deci contează profilul perechii, nu al hârtiei. Raportul spune în
+Anexa F din ce profil vine Dmax-ul; mediul ales își păstrează numele, doar Dmax-ul lui e
+înlocuit. Distanța, raportul de aspect, fundalul-țintă, passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
 (histograma L\* cu negrul hârtiei marcat, cifrele tonale cu o explicație sub fiecare,

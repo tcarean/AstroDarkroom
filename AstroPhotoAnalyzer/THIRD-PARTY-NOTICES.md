@@ -133,7 +133,7 @@ Pachetul le are pe toate și e testat pe profile reale.
 **Licență.** MIT.
 
 **Compatibilitate.** MIT e o licență permisivă, compatibilă cu GPLv3 fără condiții în afara
-păstrării notiței de copyright și a textului licenței, ceea ce face fișierul acesta. Pachetul e
+păstrării notiței de copyright și a textului licenței, reprodus mai jos. Pachetul e
 cod gestionat pur, fără dependențe și fără componente native, deci consola rămâne un singur
 fișier copiabil.
 
@@ -142,7 +142,29 @@ calculează „naiv" mai departe (L\* 100). Unealta verifică antetul înainte �
 Intenția perceptuală dă același negru (L\* 3.14) pentru orice profil; unealta cere mereu
 intenția colorimetrică relativă.
 
-Copyright (c) 2022-2026 William Acton.
+Textul licenței, așa cum îl cere ea păstrat în orice copie:
+
+> MIT License
+>
+> Copyright (c) 2022-2026 William Acton
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
 
 - Proiect: <https://github.com/waacton/Unicolour>
 - Licență: <https://github.com/waacton/Unicolour/blob/main/LICENSE>

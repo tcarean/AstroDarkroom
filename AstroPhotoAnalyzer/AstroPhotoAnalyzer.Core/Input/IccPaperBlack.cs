@@ -96,7 +96,7 @@ namespace AstroPhotoAnalyzer
 
             string deviceClass = Signature(bytes, 12), space = Signature(bytes, 16);
             if (deviceClass != "prtr")
-                return result with { Problem = $"nu e un profil de imprimanta (clasa '{deviceClass.Trim()}'); negrul hartiei e in profilul hartiei pe imprimanta ei" };
+                return result with { Problem = $"nu e un profil de imprimanta (clasa '{Printable(deviceClass)}'); negrul hartiei e in profilul hartiei pe imprimanta ei" };
 
             // Negrul dispozitivului: fara lumina pe RGB, toate cernelurile pe CMYK.
             double[] black;
@@ -109,7 +109,7 @@ namespace AstroPhotoAnalyzer
                     note = "profil CMYK: negrul e cu toate cernelurile la maximum; o imprimanta reala pune mai putina cerneala, deci Dmax-ul ei e ceva mai mic";
                     break;
                 default:
-                    return result with { Problem = $"profil de imprimanta '{space.Trim()}': se citesc doar profilele RGB si CMYK" };
+                    return result with { Problem = $"profil de imprimanta '{Printable(space)}': se citesc doar profilele RGB si CMYK" };
             }
 
             try
@@ -118,9 +118,14 @@ namespace AstroPhotoAnalyzer
                 if (!string.IsNullOrEmpty(icc.Error)) return result with { Problem = "profilul nu se poate citi: " + icc.Error };
                 var colour = new Unicolour(new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: icc), new Channels(black));
                 double y = colour.Xyz.Y;
+                // Pachetul inghite o tabela stricata si intoarce un Y oarecare; un negru care nu e
+                // intre 0 si alb, sau un Dmax pe care --dmax l-ar refuza, e semnul ei.
                 if (double.IsNaN(y) || y <= 0 || y >= 1)
-                    return result with { Problem = "tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei" };
-                return result with { BlackLstar = ColorMath.LstarOfY(y), Dmax = Math.Round(-Math.Log10(y), 2), Note = note };
+                    return result with { Problem = "tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei; profilul e probabil stricat" };
+                double dmax = Math.Round(-Math.Log10(y), 2);
+                if (dmax <= 0 || dmax > Thresholds.DmaxMax)
+                    return result with { Problem = $"profilul da Dmax {Fmt.Dmax(dmax)}, in afara intervalului (0, {Fmt.F0(Thresholds.DmaxMax)}]; profilul e probabil stricat" };
+                return result with { BlackLstar = ColorMath.LstarOfY(y), Dmax = dmax, Note = note };
             }
             catch (Exception e)
             {
@@ -139,8 +144,18 @@ namespace AstroPhotoAnalyzer
         {
             folder ??= InstalledFolder;
             if (!Directory.Exists(folder)) return Array.Empty<IccBlack>();
+            string[] files;
+            try
+            {
+                files = Directory.GetFiles(folder);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Un folder care nu se lasa listat e ca unul gol: fereastra spune "niciun profil" si ramane "Alege fisier...".
+                return Array.Empty<IccBlack>();
+            }
             var found = new List<IccBlack>();
-            foreach (string path in Directory.EnumerateFiles(folder).Where(f => Extensions.Contains(System.IO.Path.GetExtension(f).ToLowerInvariant())))
+            foreach (string path in files.Where(f => Extensions.Contains(System.IO.Path.GetExtension(f).ToLowerInvariant())))
             {
                 byte[] bytes;
                 try { bytes = File.ReadAllBytes(path); }
@@ -161,5 +176,8 @@ namespace AstroPhotoAnalyzer
         static bool IsProfile(byte[] b) => b != null && b.Length >= 132 && Signature(b, 36) == "acsp";
 
         static string Signature(byte[] b, int at) => Encoding.ASCII.GetString(b, at, 4);
+
+        /// <summary>O semnatura de 4 octeti, de aratat omului: fara spatiile de umplere si fara octetii care nu sunt litere.</summary>
+        static string Printable(string signature) => new string(signature.Where(c => c > ' ' && c < 127).ToArray());
     }
 }

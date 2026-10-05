@@ -122,6 +122,10 @@ public class TonalAnalyzerTests
         Assert.Contains("Dmax explicit 2.2", Assert.Single(ladder, l => l.Chosen).Meaning);
         Assert.False(ladder.Single(l => l.Meaning.Contains("acrilic")).Chosen);
 
+        // Read from an ICC profile, the row says so instead of "explicit" (R-028).
+        var profile = TonalAnalyzer.LstarLadder(new Parameters { DmaxOverride = 2.41, DmaxProfile = "Hartie" });
+        Assert.Contains("Dmax din profilul ICC 2.41", Assert.Single(profile, l => l.Chosen).Meaning);
+
         // The medium's own Dmax, given explicitly, is not explicit: its row is the marked one.
         var own = TonalAnalyzer.LstarLadder(new Parameters { Medium = PrintMedium.Canvas, DmaxOverride = 1.5 });
         Assert.Equal(3 + 2 + 2, own.Count);

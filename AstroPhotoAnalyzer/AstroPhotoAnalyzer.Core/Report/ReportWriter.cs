@@ -262,6 +262,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine();
             w.WriteLine("Anexa F. Parametri");
             w.WriteLine($"  mediu {Parameters.NameOf(p.Medium)}, Dmax {Fmt.Dmax(p.Dmax)}{DmaxOrigin(p)}; latimi {string.Join(", ", p.CandidateWidthsCm.Select(Fmt.F0))} cm; passepartout {Fmt.F0(p.PassepartoutCm)} cm, rama {Fmt.F0(p.FrameCm)} cm");
+            if (p.DmaxProfile != null && p.DmaxOverride.HasValue && p.DmaxProfileNote != null) w.WriteLine("  nota profilului: " + p.DmaxProfileNote);
             w.WriteLine($"  distanta {(p.ViewingDistanceM.HasValue ? Fmt.F1(p.ViewingDistanceM.Value) + " m" : "naturala")}; raport tinta {(p.TargetAspect.HasValue ? Fmt.F3(p.TargetAspect.Value) : "nativ")}; fundal-tinta {(p.TargetBackground.HasValue ? Fmt.Level(p.TargetBackground.Value) : "niciunul")} (grila {Fmt.Level(p.SimulationTargets.Min())}..{Fmt.Level(p.SimulationTargets.Max())}); WCS {(p.WcsPath ?? (r.Raster.Source?.Wcs != null ? "din fisier" : "fara"))}; samanta {p.Seed}");
         }
     }

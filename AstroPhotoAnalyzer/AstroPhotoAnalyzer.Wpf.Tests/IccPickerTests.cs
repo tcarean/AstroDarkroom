@@ -74,6 +74,11 @@ public class IccPickerTests
         Assert.Equal("Hartie de test", vm.Selected!.Name);
         Assert.True(vm.CanUse);
         Assert.Equal(2, vm.Profiles.Count);
+
+        // The same file again: selected, not listed twice.
+        vm.AddFile(notIcc);
+        Assert.Equal(2, vm.Profiles.Count);
+        Assert.Equal("nu e un profil ICC", vm.Selected!.Detail);
     }
 
     /// <summary>
@@ -105,6 +110,13 @@ public class IccPickerTests
         p = f.TryBuild(out _);
         Assert.Null(p!.DmaxProfile);
         Assert.Equal("", ReportWriter.DmaxOrigin(p));
+
+        // The CMYK reserve goes with the profile into the report, and leaves with it.
+        f.UseProfile(vm.Profiles.Single(x => x.Name == "Tipar"));
+        Assert.Contains("profil CMYK", f.TryBuild(out _)!.DmaxProfileNote);
+        f.Medium = "baryta";
+        Assert.Null(f.TryBuild(out _)!.DmaxProfileNote);
+        f.Medium = "canvas";
 
         // An unreadable profile changes nothing.
         vm.AddFile(ws.WriteFile("note.icc", Encoding.ASCII.GetBytes(new string('x', 400))));

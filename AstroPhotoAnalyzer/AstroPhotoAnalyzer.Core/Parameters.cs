@@ -73,6 +73,9 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal string DmaxProfile { get; init; }
 
+        /// <summary>Rezerva profilului despre Dmax-ul lui (profilele CMYK), pentru Anexa F; null cand nu e niciuna.</summary>
+        internal string DmaxProfileNote { get; init; }
+
         /// <summary>
         /// Aceiasi parametri, cu Dmax-ul citit din profilul ICC de imprimanta de la
         /// <paramref name="path"/>: negrul dispozitivului fata de albul hartiei, la doua
@@ -83,7 +86,7 @@ namespace AstroPhotoAnalyzer
         {
             IccBlack black = IccPaperBlack.Read(path);
             error = black.Problem;
-            return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description } : null;
+            return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description, DmaxProfileNote = black.Note } : null;
         }
 
         /// <summary>Latimile de print candidate, in cm, pentru tabelul de marimi.</summary>

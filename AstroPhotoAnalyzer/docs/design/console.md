@@ -87,7 +87,7 @@ rule, said in red in the Tonuri tab), and that the size must be identical.
 ## The console (`AstroPhotoAnalyzer/`)
 
 ```
-AstroPhotoAnalyzer <image> [--medium baryta|canvas|acrilic] [--dmax n | --icc profile.icc] [--distance m]
+AstroPhotoAnalyzer <image> [--medium baryta|canvas|acrilic] [--dmax n | --icc profile.icc] [--wcs file.fit] [--distance m]
                    [--sizes cm,cm,...] [--aspect w:h] [--target-bg 0..1]
                    [--passepartout cm] [--frame cm] [-o|--out file] [-h|--help]
 ```

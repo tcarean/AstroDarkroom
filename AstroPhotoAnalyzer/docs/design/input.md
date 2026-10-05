@@ -21,10 +21,14 @@ sentence for the user, null when the profile was read), `Note` (the CMYK reserve
 (zeros on RGB, ones on CMYK) through an `IccConfiguration` built with
 `Intent.RelativeColorimetric` and an XYZ configuration at D50; Y of the result is the black
 relative to paper white, `BlackLstar` its L\*, `Dmax` = -log10(Y) rounded to two decimals. A Y
-outside (0, 1), the package's `Error`, or an exception from it becomes a `Problem`.
+outside (0, 1), a Dmax outside (0, `Thresholds.DmaxMax`], the package's `Error`, or an exception
+from it becomes a `Problem`; the first two are what a damaged table looks like, since the
+package swallows it and returns some Y.
 `Installed(folder)` lists the `.icc` / `.icm` files of a folder (default
 `<System>\spool\drivers\color`) whose class is `prtr`, read the same way, by name; other
-classes and non-profiles are skipped, an absent folder is an empty list. `Describe(IccBlack)`
+classes and non-profiles are skipped; an absent folder, or one that cannot be listed, is an empty
+list. Every file is read whole and every printer profile evaluated, on the caller's thread: 31 ms
+for the 15 files of the owner's machine, which is why the window does it in the click. `Describe(IccBlack)`
 is the sentence the window's list shows. `Parameters.WithDmaxFromProfile(path, out error)` is
 what the console calls: the same parameters with `DmaxOverride` and `DmaxProfile` set, or null
 with the problem.
