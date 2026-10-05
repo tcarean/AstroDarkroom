@@ -43,5 +43,5 @@ The reference image at Dmax 2.0, 2.35 and 2.44. The tables are in ADR 0028.
 5. Goldens regenerated, every changed line tied to its cause.
 6. ADR 0028; `extending.md` (the full checklist), `console.md` (where the media come from),
    `input.md`, `window.md`, `known-limitations.md` (BPC), README, CHANGELOG.
-7. `/validate`: V-001 and V-004 drift on every Dmax-dependent figure; the owner decides what
-   the recorded figures become.
+7. `/validate`: V-001 and V-004 drift on every Dmax-dependent figure; the owner decided that both
+   keep their figures and name their paper (`dmax` 2.0), and that V-005 records the new default.

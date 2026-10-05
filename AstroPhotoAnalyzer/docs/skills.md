@@ -36,7 +36,7 @@ are in `kit.json`, not here.
 
 ## /validate
 
-- At step 1: the reference images are `de_printat.png` (V-001 to V-003), a git-ignored copy in
+- At step 1: the reference images are `de_printat.png` (V-001 to V-003 and V-005), a git-ignored copy in
   `AstroPhotoAnalyzer.Tests/testdata/large/` of the owner's file in `E:\Photografie\Claude`
   (ADR 0004), and `starless_rbf0.5_stretch0.17.fit` (V-004), the plate-solved FITS of ADR 0025,
   copied from the folder `testdata/manifest.json` names; the manifest holds both hashes. A

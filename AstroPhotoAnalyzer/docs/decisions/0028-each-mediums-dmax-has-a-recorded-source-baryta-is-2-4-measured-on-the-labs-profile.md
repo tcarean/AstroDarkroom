@@ -83,4 +83,5 @@ the paper: it puts every profile's black at the ICC reference medium's L\* 3.14 
   medium", lists every place.
 - Guards: `R020_EachMediumHasItsDmax`, `R020_ADmaxEqualToTheMediumsIsNotExplicit`,
   `R020_TheMediumNamesAreTheCoresAndRoundTrip`, `R020_ChoosingAMediumFillsTheDmaxFieldWithItsDmax`,
-  `PaperBlackLstarPerMedium`; the figures of V-001 and V-004 in `docs/validation.json`.
+  `PaperBlackLstarPerMedium`; in `docs/validation.json`, V-005 on the default medium, and V-001 and
+  V-004 on the old paper (`dmax` 2.0), which keep the re-stretch path guarded on the real images.

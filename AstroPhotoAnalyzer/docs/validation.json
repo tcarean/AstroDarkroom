@@ -5,7 +5,9 @@
       "id": "V-001",
       "kind": "analysis",
       "image": "de_printat.png",
-      "parameters": {},
+      "parameters": {
+        "dmax": 2.0
+      },
       "tolerance": 0.01,
       "measuredOn": "2026-10-02",
       "expected": {
@@ -284,7 +286,9 @@
       "id": "V-004",
       "kind": "analysis",
       "image": "starless_rbf0.5_stretch0.17.fit",
-      "parameters": {},
+      "parameters": {
+        "dmax": 2.0
+      },
       "tolerance": 0.01,
       "measuredOn": "2026-10-02",
       "expected": {
@@ -484,6 +488,59 @@
         "jpeg.q90.meanLevelOverThreshold": 45.9937,
         "jpeg.q90.acceptable": false,
         "jpeg.tiff8LzwMegabytes": 47.6339,
+        "overall": "ATENTIE"
+      }
+    },
+    {
+      "id": "V-005",
+      "kind": "analysis",
+      "image": "de_printat.png",
+      "parameters": {},
+      "tolerance": 0.01,
+      "measuredOn": "2026-10-05",
+      "expected": {
+        "tonal.meanLevels.r": 32.1749,
+        "tonal.meanLevels.g": 29.5842,
+        "tonal.meanLevels.b": 27.8896,
+        "tonal.pctBelowDarkA": 74.053,
+        "tonal.pctBelowDarkB": 96.3479,
+        "tonal.percentile.p0_1": 3.5486,
+        "tonal.percentile.p1": 12.9767,
+        "tonal.percentile.p50": 26.1984,
+        "tonal.percentile.p90": 43.9883,
+        "tonal.percentile.p99": 80.7302,
+        "tonal.percentile.p99_9": 115.537,
+        "tonal.percentile.p100": 255,
+        "tonal.backgroundMedian": 0.1028,
+        "tonal.dmax": 2.4,
+        "tonal.paperBlackLstar": 3.5961,
+        "tonal.lstarMedian": 9.2539,
+        "tonal.pctBelowPaperBlack": 0.8104,
+        "tonal.pctBelowLowSeparation": 82.7636,
+        "tonal.pctAboveHighlight": 0.3452,
+        "simulation.method": "NoWcs",
+        "simulation.patchCount": 22385,
+        "simulation.cloudCount": 0,
+        "simulation.dustPatchCount": 22385,
+        "simulation.asIs.lstarDust": 4.0925,
+        "simulation.asIs.lstarSky": 9.3816,
+        "simulation.asIs.pctPatchesBelowPaperBlack": 0.5673,
+        "simulation.alreadyPrintSafe": true,
+        "simulation.skyBelowPaperBlack": false,
+        "simulation.recommendedTarget": 0.1,
+        "simulation.recommendedIsAsIs": false,
+        "simulation.exactTarget": 0.0942,
+        "simulation.exactTargetDmaxLower": 0.1096,
+        "simulation.exactTargetDmaxHigher": 0.08,
+        "simulation.dmaxToPassAsIs": 2.3438,
+        "simulation.primary.target": 0.1,
+        "simulation.primary.gamma": 1.0121,
+        "simulation.primary.lstarDust": 3.924,
+        "simulation.primary.lstarSky": 9.0246,
+        "simulation.primary.pctPatchesBelowPaperBlack": 0.6388,
+        "simulation.primary.pctBelowLowSeparation": 83.8455,
+        "simulation.primary.printSafe": true,
+        "simulation.clouds.count": 0,
         "overall": "ATENTIE"
       }
     }
