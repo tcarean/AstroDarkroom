@@ -35,8 +35,17 @@ using System.Windows.Media.Imaging;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>O imagine a galeriei: originalul sau o curba sugerata.</summary>
-    public sealed class CurveGalleryItem
+    public sealed class CurveGalleryItem : ObservableObject
     {
+        bool _isCurrent;
+
+        /// <summary>
+        /// E imaginea aratata. Dovezile tuturor imaginilor stau suprapuse sub galerie si se
+        /// vede doar a celei curente: zona are mereu inaltimea celei mai lungi, iar imaginea
+        /// nu-si schimba marimea si locul la rasfoire (R-146).
+        /// </summary>
+        public bool IsCurrent { get => _isCurrent; internal set => Set(ref _isCurrent, value); }
+
         public string Name { get; init; }
         public BitmapSource Image { get; init; }
         public int Width { get; init; }
@@ -288,6 +297,7 @@ namespace AstroPhotoAnalyzer.Wpf
 
         void RaiseGallery()
         {
+            for (int i = 0; i < _items.Count; i++) _items[i].IsCurrent = i == _index;
             Raise(nameof(HasGallery)); Raise(nameof(Current)); Raise(nameof(Position));
             foreach (ICommand c in new[] { Next, Previous, OpenCurve, SaveAs }) (c as RelayCommand)?.RaiseCanExecuteChanged();
         }

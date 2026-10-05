@@ -72,20 +72,46 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
 
     <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
-      <ItemsControl ItemsSource="{Binding Current.Evidence}">
+      <!-- Dovezile tuturor imaginilor, suprapuse; se vede doar a celei curente (Hidden, nu
+           Collapsed), deci zona are inaltimea celei mai lungi si imaginea de deasupra nu se
+           muta la rasfoire. -->
+      <ItemsControl x:Name="EvidenceArea" ItemsSource="{Binding Items}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <Grid />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate>
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+            <ItemsControl ItemsSource="{Binding Evidence}">
+              <ItemsControl.Style>
+                <Style TargetType="ItemsControl">
+                  <Setter Property="Visibility" Value="Hidden" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                      <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </ItemsControl.Style>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
       <TextBlock Style="{StaticResource Faint}" Text="{Binding AnchorSource}" TextWrapping="Wrap" Margin="0,6,0,0" />
       <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
                  Text="Curbele nu muta praful si cerul: un fundal prea jos pentru hartie se ridica la stretch (tabul Tonuri). Previzualizarea e o copie redusa; pixelii sunt presupusi sRGB." />
-      <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" Margin="0,4,0,0"
-                 Visibility="{Binding SaveMessage, Converter={StaticResource NotNullToVis}}" />
-      <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" Margin="0,4,0,0"
-                 Visibility="{Binding SaveError, Converter={StaticResource NotNullToVis}}" />
+      <!-- Un loc fix, de doua randuri, pentru mesajul salvarii: aparitia lui nu muta imaginea. -->
+      <Grid Height="34" Margin="0,4,0,0">
+        <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
+        <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"
+                   ToolTip="{Binding SaveError}" />
+      </Grid>
     </StackPanel>
   </Grid>
 </UserControl>

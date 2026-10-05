@@ -205,9 +205,29 @@ public class CurvesTabTests
             Assert.True(radios[0].IsChecked);
 
             tab.Compute(800, 500);
-            tab.Next.Execute(null);
             view.UpdateLayout();
             Assert.True(view.ActualWidth > 0);
+
+            // The image keeps its size and its place from the original to every suggestion, and
+            // when a save message appears: the gallery area never changes.
+            var gallery = (FrameworkElement)view.FindName("GalleryArea");
+            Rect Place() { view.UpdateLayout(); return gallery.TransformToAncestor(view).TransformBounds(new Rect(gallery.RenderSize)); }
+            Rect original = Place();
+            Assert.True(original.Height > 100);
+            Assert.Empty(tab.Current.Evidence);
+            while (tab.Next.CanExecute(null))
+            {
+                tab.Next.Execute(null);
+                Assert.NotEmpty(tab.Current.Evidence);
+                Assert.Equal(original, Place());
+                Assert.Single(tab.Items, i => i.IsCurrent);
+            }
+            tab.Save(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "nu-exista-" + Guid.NewGuid().ToString("N"), "x.fit"));
+            Assert.NotNull(tab.SaveError);
+            Assert.Equal(original, Place());
+            while (tab.Previous.CanExecute(null)) tab.Previous.Execute(null);
+            Assert.Equal(original, Place());
+            tab.Next.Execute(null);
 
             CurveWindowViewModel? opened = null;
             tab.CurveRequested += w => opened = w;
