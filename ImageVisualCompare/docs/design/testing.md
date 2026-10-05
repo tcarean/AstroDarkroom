@@ -20,7 +20,9 @@
 Covered: everything in Core, and the imaging layer. `WicImageLoaderTests` generates fixtures
 at run time in six pixel formats plus TIFF via `TempImages`, so the real codecs are exercised
 without binary files in the repository. `ImagePairLoaderTests` covers valid, mismatched,
-missing and corrupt inputs, progress reporting, and — with a recording fake — that a
+missing and corrupt inputs, progress reporting (recorded on the reporting thread: a
+`Progress<T>` posts its callbacks, and an assertion after the load raced them), and — with a
+recording fake — that a
 mismatched pair never reaches a decode, whether it was refused outright or declined at the
 prompt.
 
