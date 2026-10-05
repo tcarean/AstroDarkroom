@@ -53,7 +53,7 @@ public class PrintStretchSimulatorTests
         Assert.Equal(0.15, s.RecommendedTarget);
         Assert.Same(s.Rows[6], Assert.Single(s.Rows, x => x.Recommended));
         Assert.Equal(Math.Log(0.10) / Math.Log(0.08), s.Rows[1].Gamma, 6);
-        Assert.All(s.Rows.Skip(1), x => Assert.True(x.PrintSafe));
+        Assert.All(s.Rows.Skip(1), x => Assert.True(x.DustOnPaperBlack));
         Assert.Equal(DustMethod.NoWcs, s.Method);
         Assert.Empty(s.Clouds);
         Assert.Equal(Lstar(0.08), s.AsIs.LstarDust, 1);
@@ -137,11 +137,18 @@ public class PrintStretchSimulatorTests
 
         Assert.True(s.AlreadyPrintSafe);
         Assert.True(s.SkyBelowVisibility);
-        Assert.All(s.Rows.Where(x => x.Target < 0.145), x => Assert.True(x.PrintSafe && !x.SkyVisible));
+        Assert.All(s.Rows.Where(x => x.Target < 0.145), x => Assert.True(x.DustOnPaperBlack && !x.SkyVisible && !x.PrintSafe));
         Assert.Equal(0.15, s.Recommended.Target, 9);
+        // The mark of a row says which of the two it passes: a row with the dust on paper black
+        // and the sky under the threshold is not called print-safe.
+        Assert.EndsWith("   cer sub L* 15", ReportWriter.SimulationLine(s.Rows.Single(x => Math.Abs(x.Target - 0.12) < 1e-9)));
+        Assert.EndsWith("   print-safe", ReportWriter.SimulationLine(s.Recommended));
+        // The sky is judged as the table prints it: 14.96 shows as 15.0 and passes, 14.94 does not.
+        Assert.True(new SimulationRow { LstarSky = 14.96 }.SkyVisible);
+        Assert.False(new SimulationRow { LstarSky = 14.94 }.SkyVisible);
         Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
         Assert.EndsWith("cerul ajunge la pragul de vizibilitate L* 15 la 0.148", ReportWriter.ExactLine(s));
-        Assert.Equal("* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
+        Assert.Equal("* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
     }
 
     [Fact]
@@ -185,7 +192,8 @@ public class PrintStretchSimulatorTests
 
         Assert.Equal(new[] { 0.08, 0.12 }, s.Rows.Select(x => Math.Round(x.Target, 2)));
         // 0.12 puts the dust on paper black but leaves the sky at L* 11.6: no row to recommend, and the footer says what would do.
-        Assert.True(s.Rows[1].PrintSafe);
+        Assert.True(s.Rows[1].DustOnPaperBlack);
+        Assert.False(s.Rows[1].PrintSafe);
         Assert.Null(s.RecommendedTarget);
         Assert.Equal("nicio tinta din grila nu aduce cerul la L* 15 (ar trebui 0.148)", ReportWriter.SimulationFooter(s));
     }

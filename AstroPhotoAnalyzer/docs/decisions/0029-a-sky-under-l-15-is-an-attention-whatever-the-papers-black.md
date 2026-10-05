@@ -39,7 +39,13 @@ Measured on `de_printat.png`, baryta at Dmax 2.4, full frame, no WCS, on 2026-10
    not the dust and not a share of the frame: the sky is the tone that fills the print, and the
    share of pixels under the threshold goes into the `Because` as evidence.
 4. Anexa B gives the target at which the sky reaches the threshold, read on the same ladder as
-   the exact target. The `print-safe` mark of a row keeps its meaning: the dust on paper black.
+   the exact target. A row is marked `print-safe` only when it passes both questions; a row
+   with the dust on paper black and the sky under the threshold is marked `cer sub L* 15`. The
+   first version kept `print-safe` for the dust alone, and the owner, on the plate-solved FITS,
+   read "print-safe" beside a sky of L\* 11.3.
+5. The sky is compared with the threshold as the table prints it, to one decimal: a row that
+   shows 15.0 passes. The threshold is a rule of thumb; its second decimal says nothing, and
+   "under L\* 15" beside "15.0" would be read as a bug.
 
 ## Alternatives rejected
 

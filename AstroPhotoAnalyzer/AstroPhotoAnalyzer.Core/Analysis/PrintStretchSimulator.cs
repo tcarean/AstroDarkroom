@@ -63,14 +63,24 @@ namespace AstroPhotoAnalyzer
         internal double PaperBlackLstar { get; init; }
 
         /// <summary>Praful la sau peste negrul hartiei. Toleranta e pentru egalitatea in virgula mobila.</summary>
-        internal bool PrintSafe => LstarDust >= PaperBlackLstar - 1e-9;
+        internal bool DustOnPaperBlack => LstarDust >= PaperBlackLstar - 1e-9;
+
+        /// <summary>
+        /// Randul se poate tipari: praful pe negrul hartiei SI cerul vizibil. Un rand cu praful
+        /// pe negru si cerul sub prag nu e print-safe - asa il numea tabelul, si omul citea
+        /// "print-safe" langa un cer de L* 11 (ADR 0029).
+        /// </summary>
+        internal bool PrintSafe => DustOnPaperBlack && SkyVisible;
 
         /// <summary>
         /// Cerul la sau peste pragul de vizibilitate (Thresholds.LowSeparationLstar): hartia
         /// separa si mai jos, dar in lumina de camera un cer sub prag se vede aproape negru
         /// (ADR 0029).
+        /// Se compara cum se tipareste in tabel, la o zecimala: un rand care arata "15.0" trece,
+        /// altfel tabelul ar pune "cer sub L* 15" langa un cer scris 15.0. Pragul e o regula de
+        /// degetul mare; a doua zecimala nu spune nimic.
         /// </summary>
-        internal bool SkyVisible => LstarSky >= Thresholds.LowSeparationLstar - 1e-9;
+        internal bool SkyVisible => Math.Round(LstarSky, 1) >= Thresholds.LowSeparationLstar;
 
         /// <summary>Randul recomandat; il marcheaza simulatorul dupa ce a ales.</summary>
         internal bool Recommended { get; set; }
@@ -108,13 +118,13 @@ namespace AstroPhotoAnalyzer
         internal double? RecommendedTarget => Recommended?.Target;
         internal bool RecommendedIsAsIs => Recommended != null && Recommended.AsIs;
 
-        internal bool AlreadyPrintSafe => AsIs.PrintSafe;
+        internal bool AlreadyPrintSafe => AsIs.DustOnPaperBlack;
 
         /// <summary>Cerul insusi e sub negrul hartiei: cerul si praful s-ar tipari cu acelasi negru (Problema).</summary>
         internal bool SkyBelowPaperBlack => AsIs.LstarSky < PaperBlackLstar;
 
         /// <summary>Praful e sub negrul hartiei (Atentie cand cerul nu e).</summary>
-        internal bool DustBelowPaperBlack => !AsIs.PrintSafe;
+        internal bool DustBelowPaperBlack => !AsIs.DustOnPaperBlack;
 
         /// <summary>Cerul e sub pragul de vizibilitate (Atentie, chiar cu praful peste negrul hartiei).</summary>
         internal bool SkyBelowVisibility => !AsIs.SkyVisible;
@@ -278,7 +288,7 @@ namespace AstroPhotoAnalyzer
                     cloudRows.Add(new CloudRow { Name = map.Clouds[c].Name, Patches = map.Clouds[c].Patches.Length, Lstar = asIsDust.CloudLstars[c], MapIndex = c });
             }
 
-            SimulationRow recommended = rows.FirstOrDefault(x => x.PrintSafe && x.SkyVisible);
+            SimulationRow recommended = rows.FirstOrDefault(x => x.PrintSafe);
             if (recommended != null) recommended.Recommended = true;
 
             SimulationRow primary = rows.FirstOrDefault(x => x.Explicit) ?? recommended ?? asIs;

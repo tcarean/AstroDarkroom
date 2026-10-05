@@ -53,14 +53,14 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.12                 0.878       7.0     11.5       2.7 %     77.6 %        1.6 %
   0.13                 0.845       8.0     12.7       2.3 %     74.3 %        2.0 %
   0.135 (dat)          0.829       8.5     13.3       1.6 %     72.2 %        2.2 %
-  0.14                 0.814       9.1     13.9       1.2 %     69.5 %        2.3 %   print-safe
+  0.14                 0.814       9.1     13.9       1.2 %     69.5 %        2.3 %   cer sub L* 15
   0.15 *               0.785      10.1     15.2       0.8 %     53.3 %        2.7 %   print-safe
   0.16                 0.759      11.2     16.4       0.8 %      5.4 %        3.1 %   print-safe
   0.17                 0.734      12.2     17.6       0.0 %      3.6 %        3.5 %   print-safe
   0.18                 0.710      13.3     18.8       0.0 %      2.7 %        3.9 %   print-safe
   0.19                 0.687      14.3     19.9       0.0 %      2.0 %        4.3 %   print-safe
   0.20                 0.666      15.4     21.1       0.0 %      1.5 %        4.7 %   print-safe
-  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* 15 sau peste
+  * = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste
   praful = cele mai intunecate 1 % din dalele de 32 px (cadrul e in intregime in banda); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)
   tinta exacta a prafului pe negru: 0.139 la Dmax 2.0 (0.158 la Dmax 1.9, 0.121 la Dmax 2.1); trece asa cum e de la Dmax 2.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.149
   norii catalogati cu cel putin 9 dale (9), de la cel mai intunecat; L* = 10 % din dalele norului; tinta = unde ajunge pe negrul hartiei:

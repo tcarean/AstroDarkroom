@@ -125,13 +125,22 @@ namespace AstroPhotoAnalyzer
         internal static string SimulationLine(SimulationRow row)
         {
             string target = Fmt.Level(row.Target) + (row.AsIs ? " asa cum e" : row.Explicit ? " (dat)" : "") + (row.Recommended ? " *" : "");
-            return $"{target,-18}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarDust),7}   {Fmt.F1(row.LstarSky),6}   {Fmt.Pct(row.PctPatchesBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{(row.PrintSafe ? "   print-safe" : "")}";
+            return $"{target,-18}   {Fmt.F3(row.Gamma),5}   {Fmt.F1(row.LstarDust),7}   {Fmt.F1(row.LstarSky),6}   {Fmt.Pct(row.PctPatchesBelowPaperBlack),9}   {Fmt.Pct(row.PctBelowLowSeparation),8}   {Fmt.Pct(row.PctAboveHighlight),10}{RowMark(row)}";
         }
+
+        /// <summary>
+        /// Marca unui rand: "print-safe" cand praful e pe negrul hartiei si cerul la prag sau
+        /// peste, "cer sub L* 15" cand doar praful trece, nimic cand praful e sub negru (R-043).
+        /// </summary>
+        internal static string RowMark(SimulationRow row)
+            => row.PrintSafe ? "   print-safe"
+             : row.DustOnPaperBlack ? $"   cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}"
+             : "";
 
         internal static string SimulationFooter(SimulationResult s)
             => s.Recommended != null
-                ? $"* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste"
-                : s.Rows.Any(x => x.PrintSafe)
+                ? $"* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste"
+                : s.Rows.Any(x => x.DustOnPaperBlack)
                     ? $"nicio tinta din grila nu aduce cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} (ar trebui {TargetText(s.VisibilityTarget)})"
                 : s.ExactTarget.HasValue
                     ? $"nicio tinta din grila nu aduce praful pe negrul hartiei (ar trebui ~{Fmt.Level(s.ExactTarget.Value)})"

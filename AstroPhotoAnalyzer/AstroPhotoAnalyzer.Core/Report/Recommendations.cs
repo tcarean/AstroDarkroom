@@ -121,7 +121,7 @@ namespace AstroPhotoAnalyzer
                     SimulationRow lower = s.Rows.LastOrDefault(x => x.Target < asIs.Target);
                     text = lower == null
                         ? "Fundalul e print-safe asa cum e; grila nu coboara sub nivelul lui."
-                        : !lower.PrintSafe
+                        : !lower.DustOnPaperBlack
                             ? $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} praful ar cobori la L* {Fmt.F1(lower.LstarDust)}, sub negrul hartiei."
                             : $"Fundalul e print-safe asa cum e; la {Fmt.Level(lower.Target)} cerul ar cobori la L* {Fmt.F1(lower.LstarSky)}, sub pragul de vizibilitate {threshold}.";
                 }
@@ -149,7 +149,7 @@ namespace AstroPhotoAnalyzer
                     : $"; cerul la {threshold} de la {ReportWriter.TargetText(s.VisibilityTarget)}";
                 fix = $" Re-stretch din liniar la fundal {Fmt.Level(s.Recommended.Target)} (simulat: praful la L* {Fmt.F1(s.Recommended.LstarDust)}, cerul la L* {Fmt.F1(s.Recommended.LstarSky)}{exact}).";
             }
-            else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.PrintSafe))
+            else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.DustOnPaperBlack))
             {
                 // Praful ajunge pe negru pe grila, dar cerul nu ajunge la prag: doar pe o grila data de om.
                 string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
