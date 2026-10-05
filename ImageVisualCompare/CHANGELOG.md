@@ -24,6 +24,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   tests renamed for 31 rows), and `ValidationTests` checks two cases on a real 23 MP pair outside
   the gate. The comments of three files turned English. No behaviour changed; one
   `dotnet format` pass over 4 files.
+- `Directory.Build.props` declares the `win-x64` runtime the release publishes for, on every
+  project but the test project, so a release's publish no longer rewrites the lock files and
+  stops the release on them (ADR 0028).
 
 ## [1.1.1] - 2026-09-09
 

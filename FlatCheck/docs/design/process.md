@@ -56,7 +56,9 @@ targets are in `kit.json` (`scripts/release.ps1` runs them), and `README.md` ("B
 teste") explains them for the user: the two flags that keep `flatcheck.exe` a single copyable
 file now that libraw is in, the RIDs that have a libraw binary, the `lensfun/` folder that rides
 beside both executables (ADR 0028), why the window publishes without `PublishSingleFile`, and
-why the whole solution no longer builds on Linux. One reason kept here: `FLATCHECK_DUMP_SCREENS`
+why the whole solution no longer builds on Linux. `Directory.Build.props` declares the runtime
+they publish for and turns the single-file analyzer off, so a release's publish leaves the lock
+files alone (ADR 0056). One reason kept here: `FLATCHECK_DUMP_SCREENS`
 exists for the locked Windows session, where a screen capture would catch the lock screen and
 the render does not (ADR 0037: the PNGs are for eyes, never a golden).
 

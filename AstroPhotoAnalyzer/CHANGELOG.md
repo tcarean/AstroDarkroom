@@ -73,6 +73,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `Directory.Build.props` declares the `win-x64` runtime the release publishes for, on every
+  project but the two test projects, and turns off the single-file analyzer, so a release's
+  publish no longer rewrites the lock files and stops the release on them (ADR 0031).
 - The golden console texts are re-approved after the assistant has read their whole diff and
   tied every changed line to the change the task meant to make; a line the task did not mean to
   change, even with a known cause, is a finding that stops the task (the kit's ADR 0033, which
