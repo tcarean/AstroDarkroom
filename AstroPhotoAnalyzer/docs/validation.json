@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures on the reference image, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0004) reads this file; docs/validation.md explains each case and records every change. One kind, analysis: AnalysisRun.Execute on the image with the case's parameters (aspect, distanceM, dmax, medium, targetBg; absent = the core's default). image is a manifest name under AstroPhotoAnalyzer.Tests/testdata/large/. expected lists the figures the case guards, by the names ValidationTests prints; tolerance applies to every numeric field that is not an integer; integers, booleans and strings are compared exactly; null means unmeasured. Change a figure here only after re-measuring and recording why in validation.md.",
+  "$comment": "Acceptance figures on the reference image, machine-readable. ValidationTests (trait Category=Validation, not in the gate, ADR 0004) reads this file; docs/validation.md explains each case and records every change. Two kinds. icc: IccPaperBlack.Read on the profile the case names as its image, figures icc.*. analysis: AnalysisRun.Execute on the image with the case's parameters (aspect, distanceM, dmax, medium, targetBg; absent = the core's default). image is a manifest name under AstroPhotoAnalyzer.Tests/testdata/large/. expected lists the figures the case guards, by the names ValidationTests prints; tolerance applies to every numeric field that is not an integer; integers, booleans and strings are compared exactly; null means unmeasured. Change a figure here only after re-measuring and recording why in validation.md.",
   "cases": [
     {
       "id": "V-001",
@@ -544,6 +544,34 @@
         "overall": "ATENTIE",
         "simulation.skyBelowVisibility": true,
         "simulation.visibilityTarget": 0.1479
+      }
+    },
+    {
+      "id": "V-006",
+      "kind": "icc",
+      "image": "Hahnemuhle PRBaryta.icm",
+      "parameters": {},
+      "tolerance": 0.01,
+      "measuredOn": "2026-10-05",
+      "expected": {
+        "icc.description": "Hahnemuhle PRBaryta",
+        "icc.readable": true,
+        "icc.blackLstar": 3.4903,
+        "icc.dmax": 2.41
+      }
+    },
+    {
+      "id": "V-007",
+      "kind": "icc",
+      "image": "HARMAN_Canvas.icc",
+      "parameters": {},
+      "tolerance": 0.01,
+      "measuredOn": "2026-10-05",
+      "expected": {
+        "icc.description": "HARMAN Canvas",
+        "icc.readable": true,
+        "icc.blackLstar": 20.8407,
+        "icc.dmax": 1.49
       }
     }
   ]

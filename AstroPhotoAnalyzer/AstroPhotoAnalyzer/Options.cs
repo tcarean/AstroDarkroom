@@ -60,6 +60,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>FITS-ul al carui WCS se imprumuta imaginii (R-027). Null = WCS-ul fisierului, daca are.</summary>
         internal string Wcs;
 
+        /// <summary>Profilul ICC de imprimanta din care se citeste Dmax-ul (R-028); exclude --dmax.</summary>
+        internal string Icc;
+
         /// <summary>Unde se scrie si raportul, pe langa stdout. Null = doar stdout.</summary>
         internal string Out;
 
@@ -70,7 +73,7 @@ namespace AstroPhotoAnalyzer
 
         static readonly HashSet<string> ValueFlags = new()
         { "--medium", "--dmax", "--distance", "--sizes", "--aspect", "--target-bg",
-          "--passepartout", "--frame", "--wcs", "-o", "--out" };
+          "--passepartout", "--frame", "--wcs", "--icc", "-o", "--out" };
 
         internal static readonly string[] Media = Parameters.MediumNames.ToArray();
 
@@ -107,8 +110,8 @@ namespace AstroPhotoAnalyzer
                                 return o.Fail($"--medium asteapta {string.Join(", ", Media)}; a primit '{v}'");
                             o.Medium = m; break;
                         case "--dmax":
-                            if (!TryNum(v, out var dmax) || dmax <= 0 || dmax > 4)
-                                return o.Fail($"--dmax asteapta un numar intre 0 si 4, a primit '{v}'");
+                            if (!TryNum(v, out var dmax) || dmax <= 0 || dmax > Thresholds.DmaxMax)
+                                return o.Fail($"--dmax asteapta un numar intre 0 si {Fmt.F0(Thresholds.DmaxMax)}, a primit '{v}'");
                             o.Dmax = dmax; break;
                         case "--distance":
                             if (!TryNum(v, out var dist) || dist <= 0)
@@ -143,6 +146,9 @@ namespace AstroPhotoAnalyzer
                         case "--wcs":
                             if (v.Length == 0) return o.Fail("--wcs asteapta calea unui FITS plate-solved");
                             o.Wcs = v; break;
+                        case "--icc":
+                            if (v.Length == 0) return o.Fail("--icc asteapta calea unui profil ICC de imprimanta");
+                            o.Icc = v; break;
                         case "-o":
                         case "--out":
                             if (v.Length == 0) return o.Fail("-o asteapta calea fisierului de raport");
@@ -159,6 +165,7 @@ namespace AstroPhotoAnalyzer
 
             if (positional.Count == 0) return o.Fail("lipseste fisierul de analizat");
             if (positional.Count > 1) return o.Fail("un singur fisier de analizat; a primit " + positional.Count);
+            if (o.Icc != null && o.Dmax.HasValue) return o.Fail("--icc si --dmax dau amandoua Dmax-ul hartiei; alege unul");
             o.Image = positional[0];
             return o;
         }

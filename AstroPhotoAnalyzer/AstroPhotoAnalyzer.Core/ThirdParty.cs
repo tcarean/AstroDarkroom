@@ -60,6 +60,13 @@ namespace AstroPhotoAnalyzer
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
             new ThirdPartyComponent(
+                Name: "Wacton.Unicolour",
+                Role: "evaluarea tabelelor unui profil ICC de imprimanta, din care se citeste Dmax-ul hartiei",
+                Licence: "MIT",
+                Copyright: "Copyright (c) 2022-2026 William Acton",
+                Url: "https://github.com/waacton/Unicolour",
+                Packages: new[] { "Wacton.Unicolour" }),
+            new ThirdPartyComponent(
                 Name: "Lynds' Catalogue of Dark Nebulae",
                 Role: "catalogul norilor de praf (LDN, 1962), dupa care se recunosc norii dintr-un FITS plate-solved",
                 Licence: "date publicate (Lynds 1962, ApJS 7, 1), versiunea ADC/NASA din 1979 distribuita de CDS/VizieR ca VII/7A; citarea sursei e singura conditie",

@@ -90,7 +90,7 @@ namespace AstroPhotoAnalyzer
                 rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})", chosen));
             }
             if (p.DmaxIsExplicit)
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax explicit {Fmt.Dmax(p.Dmax)}", true));
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax {(p.DmaxProfile != null ? "din profilul ICC" : "explicit")} {Fmt.Dmax(p.Dmax)}", true));
             rows.Add(FromLevel(Thresholds.DarkLevelA, $"pragul \"sub nivelul {Thresholds.DarkLevelA}\""));
             rows.Add(FromLevel(Thresholds.DarkLevelB, $"pragul \"sub nivelul {Thresholds.DarkLevelB}\""));
             rows.Add(FromLstar(Thresholds.LowSeparationLstar, "separare slaba"));

@@ -49,6 +49,14 @@ namespace AstroPhotoAnalyzer.Wpf
 
         void Analyze(object sender, RoutedEventArgs e) => _ = _vm.RunAsync();
 
+        /// <summary>"Din profil ICC...": fereastra cu profilele instalate; "Foloseste" scrie Dmax-ul profilului in camp (R-132).</summary>
+        void ChooseProfile(object sender, RoutedEventArgs e)
+        {
+            var picker = new IccPickerViewModel();
+            if (new IccPickerWindow { Owner = this, DataContext = picker }.ShowDialog() == true)
+                _vm.Parameters.UseProfile(picker.Selected);
+        }
+
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
             => new AboutWindow { Owner = this }.ShowDialog();
 

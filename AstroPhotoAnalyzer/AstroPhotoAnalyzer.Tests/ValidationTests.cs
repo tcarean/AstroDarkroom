@@ -60,7 +60,8 @@ public class ValidationTests
         using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(ValidationJson));
         JsonElement c = doc.RootElement.GetProperty("cases").EnumerateArray()
             .Single(e => e.GetProperty("id").GetString() == id);
-        Assert.Equal("analysis", c.GetProperty("kind").GetString());
+        string kind = c.GetProperty("kind").GetString()!;
+        Assert.Contains(kind, new[] { "analysis", "icc" });
 
         string name = c.GetProperty("image").GetString()!;
         string? image = TestData.Large(name);
@@ -70,8 +71,10 @@ public class ValidationTests
             return;
         }
 
-        AnalysisResult result = AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters")));
-        Dictionary<string, object> measured = Figures(result);
+        // An icc case reads the Dmax of a printer profile (R-028); an analysis case runs the whole chain.
+        Dictionary<string, object> measured = kind == "icc"
+            ? IccFigures(IccPaperBlack.Read(image))
+            : Figures(AnalysisRun.Execute(image, ParametersOf(c.GetProperty("parameters"))));
 
         string line = id + " " + JsonSerializer.Serialize(measured);
         _out.WriteLine("MEASURED " + line);
@@ -122,6 +125,15 @@ public class ValidationTests
 
         Assert.True(failures.Count == 0, $"{id} drifted from docs/validation.json:\n  " + string.Join("\n  ", failures));
     }
+
+    /// <summary>What an icc case guards: the profile's name, whether it could be read, its black and its Dmax.</summary>
+    static Dictionary<string, object> IccFigures(IccBlack b) => new()
+    {
+        ["icc.description"] = b.Description,
+        ["icc.readable"] = b.Readable,
+        ["icc.blackLstar"] = R(b.BlackLstar),
+        ["icc.dmax"] = b.Dmax,
+    };
 
     /// <summary>The case's parameters on top of the core's defaults, as the console maps its flags.</summary>
     static Parameters ParametersOf(JsonElement p)

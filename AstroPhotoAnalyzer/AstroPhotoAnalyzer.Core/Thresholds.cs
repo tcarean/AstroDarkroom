@@ -178,6 +178,13 @@ namespace AstroPhotoAnalyzer
         /// si statistica prafului e lina pe el (eroarea interpolarii, sub 0.001).
         /// </summary>
         internal const double ExactTargetLo = 0.05;
+
+        /// <summary>
+        /// Cel mai mare Dmax primit, de la om (--dmax, campul ferestrei) sau dintr-un profil ICC:
+        /// peste 4 reflectanta e sub 0.01 %, mai neagra decat orice suprafata tiparita (cele mai
+        /// bune hartii lucioase ajung la ~2.5-2.9). Un profil care da mai mult e stricat.
+        /// </summary>
+        internal const double DmaxMax = 4;
         internal const double ExactTargetHi = 0.60;
         internal const double ExactTargetStep = 0.01;
 

@@ -118,6 +118,59 @@ Copyright (c) Six Labors.
 
 ---
 
+## Wacton.Unicolour
+
+**Rol.** Evaluează tabelele unui profil ICC de imprimantă (v2 `lut8`/`lut16`, v4 `lutAToB`):
+unealta îi dă negrul dispozitivului și intenția colorimetrică relativă și primește culoarea
+lui față de albul hârtiei, din care iese Dmax-ul hârtiei pe imprimanta aceea (`--icc`, butonul
+„Din profil ICC..." al ferestrei). Nu face nicio conversie de culoare pe imagine.
+
+**De ce nu scris de mână.** Un cititor scris de mână pentru cele două profile ale atelierului a
+dat aceleași cifre până la ultima zecimală, dar știa un singur format de tabelă; al doilea
+(`lutAToB`, din profilele v4) înseamnă curbe parametrice, matrice și cub, fiecare opțional.
+Pachetul le are pe toate și e testat pe profile reale.
+
+**Licență.** MIT.
+
+**Compatibilitate.** MIT e o licență permisivă, compatibilă cu GPLv3 fără condiții în afara
+păstrării notiței de copyright și a textului licenței, reprodus mai jos. Pachetul e
+cod gestionat pur, fără dependențe și fără componente native, deci consola rămâne un singur
+fișier copiabil.
+
+**Un lucru de știut.** Pe un fișier care nu e profil, pachetul nu aruncă: notează o eroare și
+calculează „naiv" mai departe (L\* 100). Unealta verifică antetul înainte și eroarea după.
+Intenția perceptuală dă același negru (L\* 3.14) pentru orice profil; unealta cere mereu
+intenția colorimetrică relativă.
+
+Textul licenței, așa cum îl cere ea păstrat în orice copie:
+
+> MIT License
+>
+> Copyright (c) 2022-2026 William Acton
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy
+> of this software and associated documentation files (the "Software"), to deal
+> in the Software without restriction, including without limitation the rights
+> to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+> copies of the Software, and to permit persons to whom the Software is
+> furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all
+> copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
+- Proiect: <https://github.com/waacton/Unicolour>
+- Licență: <https://github.com/waacton/Unicolour/blob/main/LICENSE>
+
+---
+
 ## Componente de test
 
 Folosite numai la compilarea și rularea testelor, deci nu sunt distribuite cu unealta.

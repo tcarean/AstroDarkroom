@@ -110,6 +110,24 @@ public class WindowSmokeTests
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
         });
 
+    /// <summary>The profile window with a list of its own: three printer profiles, one of them CMYK with its note.</summary>
+    [Fact]
+    public void R132_TheProfileWindowLoadsAndRenders()
+        => _sta.Invoke(() =>
+        {
+            using var ws = new TempWorkspace();
+            ws.WriteFile("baryta.icc", IccPrinterTestData.V2Lut16("Zeta baryta", 20));
+            ws.WriteFile("canvas.icm", IccPrinterTestData.V4LutAToB("Alfa canvas", 30));
+            ws.WriteFile("tipar.icc", IccPrinterTestData.V2Lut16("Tipar", 8, space: "CMYK"));
+            using var errors = new BindingErrors();
+
+            var picker = new IccPickerWindow { DataContext = new IccPickerViewModel(ws.Dir) };
+            Render((FrameworkElement)picker.Content, 720, 520, "profil-icc");
+            Render((FrameworkElement)new IccPickerWindow { DataContext = new IccPickerViewModel(ws.PathTo("gol")) }.Content, 720, 520, "profil-icc-gol");
+
+            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+        });
+
     [Fact]
     public void R119_TheAboutWindowLoadsAndRenders()
         => _sta.Invoke(() =>

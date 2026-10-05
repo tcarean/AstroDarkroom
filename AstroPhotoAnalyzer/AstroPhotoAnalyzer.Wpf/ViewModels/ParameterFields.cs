@@ -44,6 +44,10 @@ namespace AstroPhotoAnalyzer.Wpf
         string _frame = Fmt.F0(D.FrameCm);
         string _wcsPath = "";
 
+        // Profilul ICC din care a fost luat Dmax-ul, si textul pus atunci in camp: numele
+        // ajunge in raport doar cat timp campul mai arata textul acela (R-132).
+        string _dmaxProfile, _dmaxProfileText, _dmaxProfileNote;
+
         public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
         /// <summary>
@@ -57,12 +61,28 @@ namespace AstroPhotoAnalyzer.Wpf
             set
             {
                 if (Set(ref _medium, value) && Media.Contains(value, StringComparer.OrdinalIgnoreCase))
+                {
                     Dmax = DmaxTextOf(value);
+                    _dmaxProfile = _dmaxProfileText = _dmaxProfileNote = null;
+                }
             }
         }
 
         /// <summary>Completat cu Dmax-ul mediului ales; omul il poate schimba. Gol = al mediului.</summary>
         public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
+
+        /// <summary>
+        /// Dmax-ul unui profil ales in fereastra "Din profil ICC...": intra in camp, iar numele
+        /// profilului il insoteste in raport pana cand omul scrie altceva sau alege un mediu.
+        /// </summary>
+        public void UseProfile(IccProfileRow profile)
+        {
+            if (profile == null || !profile.Readable) return;
+            Dmax = profile.DmaxText;
+            _dmaxProfile = profile.Name;
+            _dmaxProfileText = profile.DmaxText;
+            _dmaxProfileNote = profile.Note;
+        }
 
         static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
         public string Distance { get => _distance; set => Set(ref _distance, value); }
@@ -83,11 +103,15 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 // Campul care arata inca textul pus de mediu nu e un Dmax dat: ramane al nucleului,
                 // cu toate zecimalele lui, nu o copie rotunjita la afisare (R-024).
-                bool untouched = (Dmax ?? "").Trim() == DmaxTextOf(Medium);
+                string dmax = (Dmax ?? "").Trim();
+                bool fromProfile = _dmaxProfile != null && dmax == _dmaxProfileText;
+                bool untouched = !fromProfile && dmax == DmaxTextOf(Medium);
                 var p = new Parameters
                 {
                     Medium = Parameters.MediumFromName(Medium),
-                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, 4),
+                    DmaxOverride = untouched ? null : OptionalNumber(Dmax, "Dmax", 0, Thresholds.DmaxMax),
+                    DmaxProfile = fromProfile ? _dmaxProfile : null,
+                    DmaxProfileNote = fromProfile ? _dmaxProfileNote : null,
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),

@@ -64,6 +64,15 @@ namespace AstroPhotoAnalyzer
             }
 
             Parameters p = ParametersFrom(o);
+            if (o.Icc != null)
+            {
+                p = p.WithDmaxFromProfile(o.Icc, out string profileError);
+                if (p == null)
+                {
+                    stderr.WriteLine("EROARE: --icc: " + profileError);
+                    return 1;
+                }
+            }
             string invalid = p.Validate();
             if (invalid != null)
             {
@@ -143,6 +152,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine("Optiuni:");
             w.WriteLine($"  --medium <{string.Join("|", Options.Media)}>   mediul de print; da Dmax-ul hartiei (implicit {Parameters.NameOf(new Parameters().Medium)})");
             w.WriteLine("  --dmax <n>                          Dmax explicit, in locul mediului (ex. 2.0)");
+            w.WriteLine("  --icc <profil.icc>                  profilul ICC al hartiei pe imprimanta ei; da Dmax-ul, in locul mediului");
             w.WriteLine("  --distance <m>                      distanta de privire, in metri (implicit 1.5 x diagonala)");
             w.WriteLine("  --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)");
             w.WriteLine("  --aspect <l:i>                      raportul de aspect tinta, ex. 50:35 (implicit cel nativ)");

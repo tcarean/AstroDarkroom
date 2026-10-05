@@ -24,8 +24,13 @@ AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
 passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată valoarea cu care se
 analizează: alegerea unui mediu o scrie pe a lui (baryta 2.4, canvas 1.5, acrilic 2.2), iar tu
-o poți înlocui cu cea a hârtiei tale (golit, înseamnă tot cea a mediului); distanța, raportul de aspect, fundalul-țintă,
-passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
+o poți înlocui cu cea a hârtiei tale (golit, înseamnă tot cea a mediului). Butonul „Din profil
+ICC..." de lângă el o citește din profilul hârtiei pe imprimanta care o va tipări: arată
+profilele de imprimantă instalate în Windows, cu Dmax-ul fiecăruia, și primește și un fișier
+`.icc`/`.icm` de oriunde — de obicei profilul îl publică atelierul. Aceeași hârtie pe altă
+imprimantă are alt negru, deci contează profilul perechii, nu al hârtiei. Raportul spune în
+Anexa F din ce profil vine Dmax-ul; mediul ales își păstrează numele, doar Dmax-ul lui e
+înlocuit. Distanța, raportul de aspect, fundalul-țintă, passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
 (histograma L\* cu negrul hârtiei marcat, cifrele tonale cu o explicație sub fiecare,
@@ -101,7 +106,8 @@ Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-
 în locul celui al mediului), `--distance` (m), `--sizes` (cm),
 `--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.10..0.20),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
-folosește pentru nori), `-o`. `--help` le explică.
+folosește pentru nori), `--icc` (profilul ICC al hârtiei pe imprimanta ei: Dmax-ul se citește
+din el, în locul celui al mediului; nu merge împreună cu `--dmax`), `-o`. `--help` le explică.
 Coduri de ieșire: 0 ok, 1 eroare, 2 atenție, 3 problemă.
 
 Raportul începe cu deciziile — format, fundal, culoare, mărime, denoise, avertismente —
@@ -184,4 +190,5 @@ GPLv3 sau ulterioară — vezi [LICENSE](LICENSE). Componentele terțe, cu licen
 | componentă | rol | licență |
 |---|---|---|
 | SixLabors.ImageSharp | citirea TIFF/PNG/JPEG, encodarea JPEG pentru tabelul de compresie | Six Labors Split License 1.0 (termenii Apache 2.0) |
+| Wacton.Unicolour | evaluarea tabelelor unui profil ICC de imprimantă, pentru Dmax-ul hârtiei | MIT |
 | Lynds' Catalogue of Dark Nebulae (date, nu cod) | norii de praf recunoscuți pe nume dintr-un FITS plate-solved | date publicate (Lynds 1962, ApJS 7, 1; versiunea NASA/ADC 1979, distribuită de CDS/VizieR ca VII/7A); se cere doar citarea |

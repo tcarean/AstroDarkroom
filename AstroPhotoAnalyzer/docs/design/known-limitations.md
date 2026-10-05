@@ -26,6 +26,12 @@
 - The visibility threshold, L\* 15, is a rule of thumb with no measurement behind it, and one
   number for every room: a print under gallery light shows tones well under it, one in a dim
   hallway loses tones above it. The tool does not know the viewing light (ADR 0029).
+- The profile window lists the installed profiles on the UI thread, with no busy sign: tens of
+  milliseconds for a normal colour folder, but a folder of hundreds of printer profiles, or one
+  damaged profile the package is slow on (4 s measured on one corrupted file), freezes the
+  window that long.
+- A Dmax read from a profile replaces the medium's Dmax and leaves its name: a canvas profile
+  used with `baryta` chosen prints `Mediu: baryta (Dmax 1.49, ...)`. Anexa F names the profile.
 - The simulation is a gamma curve from the measured background. A real stretch to the same
   background keeps the shadows lower: the owner's VeraLux stretch to 0.17 measured the dust at
   L\* 7.6, under paper black, where the curve from 0.103 predicted it above from 0.14 (ADR

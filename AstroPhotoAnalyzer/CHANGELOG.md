@@ -41,6 +41,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Dmax of the paper can be read from its ICC printer profile (R-028, R-132; ADR 0030):
+  `--icc <file>` in the console, and in the window the button `Din profil ICC...` beside the Dmax
+  field, which lists the printer profiles installed in Windows with the Dmax of each and takes
+  a file from anywhere. The Dmax is the device black through the relative colorimetric table,
+  relative to paper white; Anexa F names the profile. Wacton.Unicolour (MIT) evaluates the
+  tables, with its notice in `THIRD-PARTY-NOTICES.md` and in "Despre".
 - `--wcs <file.fit>` (the window: `WCS din FITS`): a TIFF or PNG borrows the WCS of a
   plate-solved FITS of the same size, since the export carries no header (R-027).
 - The map window (`Harta praf / cer`): the image with the five classes of patches coloured and
