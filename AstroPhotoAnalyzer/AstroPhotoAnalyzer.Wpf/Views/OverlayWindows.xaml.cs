@@ -15,8 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// OverlayWindows.xaml.cs - legaturile cu XAML-ul celor doua ferestre de vizualizare, harta
-// praf / cer (R-130) si preview-ul unui rand (R-131). Comportamentul e in ViewModel-uri;
+// OverlayWindows.xaml.cs - legaturile cu XAML-ul ferestrelor de vizualizare: harta
+// praf / cer (R-130), preview-ul unui rand (R-131) si curba sugerata (R-147). Comportamentul e in ViewModel-uri;
 // aici doar bara de titlu intunecata si Esc.
 
 using System.Windows;
@@ -27,6 +27,16 @@ namespace AstroPhotoAnalyzer.Wpf
     public partial class MapWindow : Window
     {
         public MapWindow()
+        {
+            InitializeComponent();
+            SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
+            KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
+        }
+    }
+
+    public partial class CurveWindow : Window
+    {
+        public CurveWindow()
         {
             InitializeComponent();
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);

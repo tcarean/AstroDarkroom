@@ -73,6 +73,9 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal string DmaxProfile { get; init; }
 
+        /// <summary>Calea aceluiasi profil, ca tabul Curbe sa-l poata redeschide pentru cifra de gamut (R-144); null cand DmaxProfile e null.</summary>
+        internal string DmaxProfilePath { get; init; }
+
         /// <summary>Rezerva profilului despre Dmax-ul lui (profilele CMYK), pentru Anexa F; null cand nu e niciuna.</summary>
         internal string DmaxProfileNote { get; init; }
 
@@ -86,7 +89,7 @@ namespace AstroPhotoAnalyzer
         {
             IccBlack black = IccPaperBlack.Read(path);
             error = black.Problem;
-            return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description, DmaxProfileNote = black.Note } : null;
+            return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description, DmaxProfilePath = path, DmaxProfileNote = black.Note } : null;
         }
 
         /// <summary>Latimile de print candidate, in cm, pentru tabelul de marimi.</summary>

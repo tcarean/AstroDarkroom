@@ -56,3 +56,11 @@ All empirical, most from the reference image. Change one, change its comment.
 | `AcuityMmAt1m` / `ViewingDistanceFactor` / `OversizeCm` / `ReferenceDpi` | 0.29 / 1.5 / 100 / 300 | 1.5 x the diagonal sits between the perspective-correct 1 x and the gallery 2 x (~37 degrees subtended); a presumption about the viewer, not a measurement |
 | `NaturalDistanceTolerance` | 1.15 | allowance on the natural distance (the verdict is size-independent there) |
 | `PassepartoutMinFrameRatio` | 2 | passepartout >= this x frame width, else the parameters are refused |
+| `CurveBandClassPercentile` / `CurveCloudClassPercentile` | 80 / 75 | the upper part of the band and bright-cloud classes as curve anchors: 0.306 and 0.543 on the plate-solved FITS, the 0.32 and 0.55 of the owner's earlier curve (ADR 0032) |
+| `CurveBandPercentile` / `CurveCloudPercentile` / `CurvePeakPercentile` | 94.2 / 99.1 / 99.9 | the same three anchors without classes: where that curve's inputs sit in its image's histogram |
+| `CurveSlopeSkyBand` / `CurveSlopeBandCloud` / `CurveSlopeCloudPeak` | 1.70 / 1.48 / 0.94 | the segment slopes of that curve; one curve on one image |
+| `CurvePeakTarget` / `CurveStrengths` / `CurveMaximaMinGain` | 0.92 / 0.5, 0.75, 1 / 0.02 | where the peaks go at most; the three strengths; `Maxima` only when `Puternica` stops further than this under the target |
+| `CurveClipLevel` | 0.995 | a pixel counts as clipped with a channel at or over it |
+| `CurveGamutDeltaAb` / `CurveGamutGrid` | 3 / 33 | the chroma displacement that counts as out of gamut; the round-trip grid per channel (0.01 % of decisions differ from the exact round trip) |
+| `CurveShadowChartFactor` / `CurveChartSamples` | 1.25 / 257 | the shadow chart ends at this many times the band's input; samples per chart |
+| `CurvePreviewDefaultWidth` / `CurvePreviewDefaultHeight` | 1600 / 900 | the preview size before the view has reported its gallery area: a presumption about the screen |

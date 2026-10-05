@@ -287,6 +287,71 @@ Measured and relied upon: mean error is **not** monotone in quality this close t
 lossless (integer YCbCr costs 1-2 levels at q100); max error and the count over 2 levels
 are, and only those feed a verdict. The numbers are this encoder's, not libjpeg's.
 
+### F1 - `ToneCurve`, `CurveAdvisor` - the suggested curves (ADR 0032)
+
+Not a measurement of the image but a suggestion built on its measurements; computed on request
+(`pipeline.md`, "The second run").
+
+**The curve** (`ToneCurve`). Control points from (0, 0) to (1, 1), strictly increasing in x,
+and the natural cubic spline through them, solved with the same tridiagonal recurrence as
+Siril's `curve_transform.c`, clamped to 0..1: the table of points typed into Siril's Curves
+tool in `cubic spline` mode gives the same image. `Map` and `Slope` evaluate the spline;
+`Apply` and the FITS writer go through a 65 536-entry table with linear interpolation between
+entries (`MapSample`), exact at every 16-bit level; `IsMonotone` is judged on that table,
+after clamping, because it is the curve that is applied.
+
+**The anchors** (`CurveAdvisor.ClassLevels`, `Anchors`). Five L\* levels turned into greys:
+the dust and the sky exactly as `DustAnalyzer.Measure` gives them; the band at the
+`CurveBandClassPercentile` (80) of the band class's patches, the bright clouds at
+`CurveCloudClassPercentile` (75), the peaks at the median of the peak class. The upper part,
+not the median: the band's median sits beside the sky, and the steep segment would start at
+the sky (measured: noise gain 1.40 against 1.26). The classes are used only when the dust and
+the sky come from them and none of the three upper classes is empty (`SourceOf`); otherwise
+the three upper anchors are the `CurveBandPercentile` / `CurveCloudPercentile` /
+`CurvePeakPercentile` (94.2 / 99.1 / 99.9) of the grey of the pixel luminance on the tonal
+subsample. Anchors that do not increase strictly between 0 and 1 give a `Problem` and no curve.
+
+**The recipe** (`CurveAdvisor.Curves`). The dust and the sky map to themselves. The three
+segments above the sky get the increments slope x width with `CurveSlopeSkyBand`,
+`CurveSlopeBandCloud`, `CurveSlopeCloudPeak` (1.70, 1.48, 0.94), all multiplied by one factor
+`min(1, (CurvePeakTarget - sky) / sum)` so the peaks do not pass 0.92: the full curve. A point
+never goes under its own input. `Blanda`, `Medie`, `Puternica` are `CurveStrengths` (0.5,
+0.75, 1) of the way from the identity to it; `Maxima` uses the factor without the cap at 1, so
+the peaks land on 0.92, and exists only when `Puternica` leaves them more than
+`CurveMaximaMinGain` under it. A curve whose table is not monotone is dropped.
+
+**The evidence** (`CurveAdvisor.Measure`). The five class levels again, with the same
+statistics, on the tonal subsample with the curve applied: measured, not predicted, since a
+per-channel curve does not take a coloured patch where it takes its grey. The noise gain is
+the spline's slope at the sky's input, and the noise after is `NoiseResult.SigmaMedianLsb`
+times it. The clipped share counts pixels with a channel at or over `CurveClipLevel`.
+
+On the plate-solved FITS (V-008): anchors 0.091, 0.169, 0.306, 0.543, 0.720; `Puternica` has
+the points 0.401, 0.753, 0.919 and takes the five levels from 7.9, 17.6, 33.2, 57.7, 74.6 to
+7.9, 17.8, 43.4, 77.0, 90.8 with a gain of 1.26. The study's Python port gave the same anchors
+and points; its class levels for the band and the bright clouds were medians (28.2 and 64.4),
+the build's are the upper parts of the classes, like the anchors.
+
+### F2 - `GamutAnalyzer` - how much of the image leaves the paper's gamut (R-144)
+
+A figure, never a correction. A colour is outside when the round trip sRGB to the printer's
+device values and back, through the profile's relative colorimetric tables (Wacton.Unicolour,
+both directions), moves its a\*, b\* by more than `CurveGamutDeltaAb` (3). The chroma only:
+without black point compensation the round trip also lifts everything under paper black, which
+is the Tonuri tab's subject and on canvas is half the image. The package takes about 28
+microseconds per colour, so the displacement (da, db) is computed once on a grid of
+`CurveGamutGrid` (33) values per channel and interpolated trilinearly per pixel; against the
+exact round trip on 20 000 colours the grid of 33 changed 0.01 % of the decisions (17: 0.11 %).
+`Measure` gives the share of the tonal subsample's pixels, in all and per class of the patch
+each pixel lies in.
+
+On the plate-solved FITS through the lab's baryta profile (V-008): 1.02 % as is (dust 2.7 %,
+sky 0.4 %, band 1.8 %, bright clouds 0.6 %, peaks 0.0 %), 0.82 % after `Puternica`. The study
+of ADR 0032 counted Delta E with black point compensation in 8 bits through LittleCMS and got
+4.2 % in all, most of it in the darks, and 0.9 % / 0.3 % for the band and the bright clouds:
+the same order above the darks, a different definition, so the two are not to be compared digit
+by digit.
+
 ## Notes from phase 2
 
 - **Two different tile criteria, on purpose.** The noise sigma (B3) uses tiles with a

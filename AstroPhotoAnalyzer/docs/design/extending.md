@@ -80,6 +80,13 @@ encoder at hand cannot produce the real thing; **its row in `../requirements.md`
 **A new tab**: a `ResultTabViewModel` in `ResultTabs.cs`, a `UserControl` in `Views/`
 (partial class in `ResultViews.xaml.cs`), a `TabItem` in `MainWindow.xaml`, a `Render`
 line in `WindowSmokeTests.R110_EveryTabRenders...`; **its row in `../requirements.md` and `window.md`**.
+A tab whose content is computed on request, like Curbe, also gets its own run in
+`Core/Runs/` beside `AnalysisRun` (**`pipeline.md`**), never a computation in the view-model.
+
+**A new output**: the tool writes one image, the FITS of `Core/Input/FitsWriter.cs` (ADR 0032).
+Another format, or another thing written, is a decision first (the owner chose FITS for every
+input); then a writer in `Core/Input/`, called from `Core/Runs/`, that never opens the input
+for writing; **`input.md`**.
 
 **A new dependency**: the kit's rule "Packages" and the rule "Package notices" in `CLAUDE.md` -
 discuss first; four places, two enforced by tests; **`dependencies.md`, and ADR 0009 if the

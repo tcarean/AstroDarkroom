@@ -36,6 +36,10 @@ namespace AstroPhotoAnalyzer.Wpf
             // fereastra deschide. Nemodale, maximizate, cate vrea omul.
             _vm.Tones.MapRequested += m => new MapWindow { Owner = this, DataContext = m }.Show();
             _vm.Tones.PreviewRequested += p => new PreviewWindow { Owner = this, DataContext = p }.Show();
+            // Tabul Curbe (R-146, R-147): fereastra curbei, dialogul de salvare si sagetile.
+            _vm.Curves.CurveRequested += c => new CurveWindow { Owner = this, DataContext = c }.Show();
+            _vm.Curves.SaveRequested += SaveCurve;
+            PreviewKeyDown += GalleryKeys;
         }
 
         /// <summary>Pornirea: cu un fisier din linia de comanda il deschide; altfel intreaba imediat.</summary>
@@ -70,6 +74,38 @@ namespace AstroPhotoAnalyzer.Wpf
                 Multiselect = false,
             };
             if (dlg.ShowDialog(this) == true) _ = _vm.OpenAsync(dlg.FileName);
+        }
+
+        /// <summary>
+        /// Sagetile stanga / dreapta rasfoiesc galeria cat timp tabul Curbe e cel ales (R-146).
+        /// Se prind la fereastra, inainte de TabControl, care altfel le-ar folosi ca sa schimbe
+        /// tabul; intr-un camp de text raman ale campului.
+        /// </summary>
+        void GalleryKeys(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key != System.Windows.Input.Key.Left && e.Key != System.Windows.Input.Key.Right) return;
+            if (!_vm.HasResult || !CurvesTabItem.IsSelected || !_vm.Curves.HasGallery) return;
+            if (System.Windows.Input.Keyboard.FocusedElement is System.Windows.Controls.Primitives.TextBoxBase) return;
+            System.Windows.Input.ICommand move = e.Key == System.Windows.Input.Key.Left ? _vm.Curves.Previous : _vm.Curves.Next;
+            if (move.CanExecute(null)) move.Execute(null);
+            e.Handled = true;
+        }
+
+        /// <summary>Intreaba unde se salveaza FITS-ul curbei aratate (R-145); scrierea o face nucleul.</summary>
+        void SaveCurve(string proposedName)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Title = "Salveaza imaginea cu curba aplicata",
+                FileName = proposedName,
+                InitialDirectory = _vm.Curves.InputFolder,
+                Filter = "FITS|*.fit",
+                DefaultExt = ".fit",
+            };
+            if (dlg.ShowDialog(this) != true) return;
+            System.Windows.Input.Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
+            try { _vm.Curves.Save(dlg.FileName); }
+            finally { System.Windows.Input.Mouse.OverrideCursor = null; }
         }
 
         void SaveReport(object sender, RoutedEventArgs e)

@@ -31,7 +31,7 @@ profilele de imprimantă instalate în Windows, cu Dmax-ul fiecăruia, și prime
 imprimantă are alt negru, deci contează profilul perechii, nu al hârtiei. Raportul spune în
 Anexa F din ce profil vine Dmax-ul; mediul ales își păstrează numele, doar Dmax-ul lui e
 înlocuit. Distanța, raportul de aspect, fundalul-țintă, passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
-valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
+valoarea implicită și când merită schimbate. Dreapta, șapte taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
 (histograma L\* cu negrul hârtiei marcat, cifrele tonale cu o explicație sub fiecare,
 simularea de fundal cu un buton Preview pe fiecare rând, sub ea definiția prafului și a
@@ -42,7 +42,8 @@ shadow-lift, palierul), **Rezoluție** (FWHM pe regiuni, tabelul de mărimi, sca
 distanță), **Culoare** (R/G/B ale fundalului și cele opt margini, cu „! colorat" / „! neutru" și
 explicația tabelului), **Preview** (decupaje la 100 % și 200 %,
 cadrul întreg, simularea de print, decupajul la raportul țintă, fiecare cu ce ai de
-verificat în ea, și regula ecran-hârtie cu pasul înapoi calculat pe imagine). În toate
+verificat în ea, și regula ecran-hârtie cu pasul înapoi calculat pe imagine), **Curbe**
+(curbe de contrast sugerate, vezi mai jos). În toate
 taburile, fiecare cifră are sub ea ce măsoară și pragul de care se judecă. „Salvează
 raportul..." scrie `Raport.txt` — byte-identic cu ieșirea consolei. Temă întunecată;
 F1 = Despre.
@@ -58,6 +59,39 @@ să verifici clasele cu ochii pe alte imagini.
 **Preview**-ul unui rând al simulării arată imaginea ridicată la fundalul acelui rând (și
 rândul „așa cum e"), cu pixelii de sub negrul hârtiei și cei de sub L\* 15 colorați, fiecare
 strat cu bifa lui. Esc le închide.
+
+### Curbe de contrast sugerate
+
+Tabul **Curbe** e singurul care nu se umple la analiză: alegi **Print** sau **Ecran** și apeși
+„Calculează". Primești o galerie cu imaginea originală și trei sau patru variante — **Blândă**,
+**Medie**, **Puternică** și, când mai e loc până la alb, **Maximă** — fiecare la mărimea la care
+încape în fereastră. Le răsfoiești cu „Înapoi" / „Înainte" sau cu săgețile stânga / dreapta.
+
+Curbele sunt de contrast: nu mută praful și cerul, ci desfac banda, norii luminoși și vârfurile
+în spațiul rămas liber până aproape de alb. Punctele lor vin din imagine: praful și cerul sunt
+cele din tabul Tonuri; cu un FITS plate-solved, banda, norii luminoși și vârfurile sunt partea
+de sus a claselor de acolo, iar fără WCS sunt cei mai luminoși 5,8 %, 0,9 % și 0,1 % din
+pixeli (tabul spune care din două). Un cer prea întunecat pentru hârtie nu se ridică din
+curbă: îl ridici la stretch, cum recomandă Tonuri, apoi revii aici.
+
+Sub imagine, fiecare variantă își arată cifrele: punctele curbei, L\* al celor cinci clase
+înainte și după, de câte ori crește zgomotul din cer și câți pixeli ajung arși. Print și Ecran
+dau aceleași curbe; la Print apar în plus verificările de hârtie — fundalul prea jos, zgomotul
+peste ținta de print și, dacă Dmax-ul vine dintr-un profil ICC, cât din imagine iese din
+gamutul hârtiei (doar o cifră: saturația se corectează la soft-proofing, local, nu din curbă).
+
+Două butoane sub imagine:
+
+- **Curba...** deschide tabelul punctelor (intrare și ieșire, la trei zecimale) și două
+  grafice: curba întreagă și umbrele mărite, unde stau praful și cerul. Tabelul e făcut ca să
+  refaci curba de mână în Siril: *Curves Transformation*, modul *cubic spline*, aceleași puncte
+  pe R, G și B.
+- **Salvează ca...** scrie un fișier `.fit` nou cu curba aplicată pe toată imaginea, oricare ar
+  fi formatul de intrare. Dintr-un FITS se păstrează toate cartelele antetului (WCS, expunere,
+  instrument) și codarea datelor, și se adaugă linii `HISTORY` cu varianta și punctele curbei;
+  dintr-un PNG sau TIFF iese un FITS float pe 32 de biți, fără profilul ICC al sursei.
+  Imaginea de intrare nu se modifică niciodată, iar salvarea peste ea e refuzată. E singurul
+  fișier-imagine pe care îl scrie unealta.
 
 ### Praful, cerul și catalogul
 

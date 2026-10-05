@@ -43,6 +43,34 @@ that knows both. An unknown extension is an error naming the accepted ones.
 | `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows flipped when `ROWORDER = 'BOTTOM-UP'`; empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
 
+### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
+
+The one image the tool writes: a new FITS with a curve applied, hand-written like the reader.
+From a FITS source the file is re-opened for reading only and copied as it is, byte for byte,
+except two places of the image HDU: the header gets `HISTORY` cards before `END` (every other
+card stays, in order; a full last block grows by one), and the data are written from the
+raster in memory through the curve's table, with the source's `BITPIX`, `BZERO`, `BSCALE` and
+row order (`WriteData` is `FitsReader.ReadData` inverted: integers are rounded and clamped to
+their type). HDUs before and after the image pass unchanged. `FitsReader.ReadHeader` is shared
+for the dictionary; the raw header bytes are re-read between the two stream positions it
+leaves. From any other source the file is a 32-bit float FITS with a minimal header and
+`ROWORDER = 'TOP-DOWN'`. The values are the raster's: what the reader clipped to 0..1 stays
+clipped. The write goes to a temporary file in the target folder, moved over the name at the
+end and deleted on failure. An integer sample that falls outside its type by more than a
+rounding (a signed 16-bit source without `BZERO` holds 0..32767) is counted, and one such
+sample refuses the save: clipped silently the file would not be the curve's.
+
+The input is protected in `CurveExport.Save`, not here, and twice. The path the image was read
+from is kept in full on the result (`AnalysisResult.FullPath`), so a later change of the
+working directory cannot lose it; a target equal to it is refused by name. A string compare
+cannot see every spelling of one file (the review of 2026-10-05 overwrote the input through
+`\\?\`, `\\.\` and the local admin share), so the input is also held open for reading with
+`FileShare.Read`, no write and no delete, until the save ends: the final move over it fails in
+the operating system. An input that is gone refuses the save, since a FITS would otherwise be
+written without its header. On the plate-solved FITS the saved file keeps every card of the
+source, has the same 270 869 760 bytes, and reads back equal to the curve applied to the
+raster, with its WCS (V-008).
+
 ### The WCS (`Input/Wcs.cs`, `Input/Astrometry.cs`)
 
 `Wcs.TryFrom(header, w, h, rowsFlipped)` reads the gnomonic projection Siril writes, or
