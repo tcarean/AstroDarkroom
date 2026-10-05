@@ -27,13 +27,44 @@ public class ParameterFieldsTests
 
         Assert.Null(error);
         Assert.Equal(d.Medium, p!.Medium);
-        Assert.Null(p.DmaxOverride);
+        Assert.Equal(d.Dmax, p.Dmax);
+        Assert.False(p.DmaxIsExplicit);   // the field shows the medium's Dmax; that is not an explicit one
         Assert.Null(p.ViewingDistanceM);
         Assert.Equal(d.CandidateWidthsCm, p.CandidateWidthsCm);
         Assert.Null(p.TargetAspect);
         Assert.Equal(d.TargetBackground, p.TargetBackground);
         Assert.Equal(d.PassepartoutCm, p.PassepartoutCm);
         Assert.Equal(d.FrameCm, p.FrameCm);
+    }
+
+    /// <summary>
+    /// The Dmax field always shows the Dmax in use: the chosen medium's, from the core, until
+    /// the user types another; choosing a medium writes over whatever the field held.
+    /// </summary>
+    [Fact]
+    public void R020_ChoosingAMediumFillsTheDmaxFieldWithItsDmax()
+    {
+        var f = new ParameterFields();
+        Assert.Equal("2.4", f.Dmax);
+
+        f.Medium = "canvas";
+        Assert.Equal("1.5", f.Dmax);
+
+        f.Dmax = "1.7";
+        f.Medium = "acrilic";
+        Assert.Equal("2.2", f.Dmax);
+        Assert.False(f.TryBuild(out _)!.DmaxIsExplicit);
+
+        f.Dmax = "2.35";
+        Parameters? typed = f.TryBuild(out _);
+        Assert.Equal(2.35, typed!.Dmax);
+        Assert.True(typed.DmaxIsExplicit);
+
+        f.Dmax = "";   // emptied by hand: the medium's
+        Parameters? empty = f.TryBuild(out string? error);
+        Assert.Null(error);
+        Assert.Null(empty!.DmaxOverride);
+        Assert.Equal(2.2, empty.Dmax);
     }
 
     [Fact]

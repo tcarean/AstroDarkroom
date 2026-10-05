@@ -32,7 +32,7 @@ public class OverlayWindowTests
 
     public OverlayWindowTests(StaFixture sta) => _sta = sta;
 
-    static AnalysisResult Result(Raster r) => AnalysisRun.Execute(r, "memorie", new Parameters());
+    static AnalysisResult Result(Raster r) => AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper());
 
     static Raster Ldn42Scene() => WcsFixtures.Ldn42Scene();
 

@@ -18,6 +18,11 @@
 
 - The background is the median of the reference channel: right when the sky dominates,
   wrong otherwise.
+- Paper black is a clip: every pixel under L\*(10^-Dmax) is taken to print as the same black.
+  That is a relative colorimetric conversion without black point compensation. A lab that
+  converts with BPC (the owner's does, ADR 0028) compresses the shadows onto paper black
+  instead: nothing prints as pure black, the separation in the shadows shrinks. The tool does
+  not model BPC; "the dust prints pure black" is then the pessimistic reading.
 - The simulation is a gamma curve from the measured background. A real stretch to the same
   background keeps the shadows lower: the owner's VeraLux stretch to 0.17 measured the dust at
   L\* 7.6, under paper black, where the curve from 0.103 predicted it above from 0.14 (ADR

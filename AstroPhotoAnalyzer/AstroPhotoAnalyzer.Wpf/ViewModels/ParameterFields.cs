@@ -35,7 +35,7 @@ namespace AstroPhotoAnalyzer.Wpf
         static readonly Parameters D = new();
 
         string _medium = Parameters.NameOf(D.Medium);
-        string _dmax = "";
+        string _dmax = Fmt.Dmax(D.Dmax);
         string _distance = "";
         string _sizes = string.Join(", ", D.CandidateWidthsCm.Select(Fmt.F0));
         string _aspect = "";
@@ -44,12 +44,23 @@ namespace AstroPhotoAnalyzer.Wpf
         string _frame = Fmt.F0(D.FrameCm);
         string _wcsPath = "";
 
-        public IReadOnlyList<string> Media { get; } = new[]
-        {
-            Parameters.NameOf(PrintMedium.Baryta), Parameters.NameOf(PrintMedium.Canvas), Parameters.NameOf(PrintMedium.Acrylic),
-        };
+        public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
-        public string Medium { get => _medium; set => Set(ref _medium, value); }
+        /// <summary>
+        /// Alegerea unui mediu scrie Dmax-ul lui in campul Dmax, peste orice era acolo: campul
+        /// arata mereu Dmax-ul cu care se va analiza. Valoarea e a nucleului (R-020).
+        /// </summary>
+        public string Medium
+        {
+            get => _medium;
+            set
+            {
+                if (Set(ref _medium, value) && Media.Contains(value))
+                    Dmax = Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(value)));
+            }
+        }
+
+        /// <summary>Completat cu Dmax-ul mediului ales; omul il poate schimba. Gol = al mediului.</summary>
         public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
         public string Distance { get => _distance; set => Set(ref _distance, value); }
         public string Sizes { get => _sizes; set => Set(ref _sizes, value); }

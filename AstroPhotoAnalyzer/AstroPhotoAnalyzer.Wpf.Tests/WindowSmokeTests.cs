@@ -135,6 +135,7 @@ public class WindowSmokeTests
         var vm = new MainViewModel();
         vm.Parameters.Aspect = "50:35";
         vm.Parameters.Distance = "1.5";
+        vm.Parameters.Dmax = "2.0";   // the paper the dark scene was built for (Scenes.BuiltForDmax)
 
         await _sta.InvokeAsync(async () =>
         {

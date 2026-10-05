@@ -19,21 +19,35 @@
 // privire, rama. Cu implicitele din conversatia care a nascut unealta.
 //
 // Consola si fereastra construiesc amandoua un Parameters si il dau nucleului; niciuna
-// nu stie ce Dmax are un baryta - asta e aici, o singura data.
+// nu stie ce Dmax are un baryta - asta e aici, o singura data. De unde vine fiecare
+// Dmax: ADR 0028.
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
     internal enum PrintMedium
     {
-        /// <summary>Hartie baryta lucioasa cu pigment (Harman Gloss Baryta, Photo Rag Baryta). Dmax ~2.0.</summary>
+        /// <summary>
+        /// Hartie baryta lucioasa cu pigment (Harman Gloss Baryta, Photo Rag Baryta). Dmax 2.4:
+        /// masurat, 2.41 fata de albul hartiei in profilul ICC al atelierului Chromatone
+        /// pentru Hahnemuhle Photo Rag Baryta pe Canon iPF8300 (ADR 0028).
+        /// </summary>
         Baryta,
 
-        /// <summary>Canvas mat, latex sau pigment. Dmax ~1.5: negrul cel mai slab dintre cele trei.</summary>
+        /// <summary>
+        /// Canvas mat, latex sau pigment. Dmax 1.5, negrul cel mai slab dintre cele trei:
+        /// regula din conversatia care a nascut unealta, sprijinita de profilul ICC Harman
+        /// Canvas (1.49 fata de albul panzei; ADR 0028).
+        /// </summary>
         Canvas,
 
-        /// <summary>C-print fotografic (Fuji Crystal Archive) sub acril. Dmax ~2.2.</summary>
+        /// <summary>
+        /// C-print fotografic (Fuji Crystal Archive) sub acril. Dmax 2.2: regula din
+        /// conversatia care a nascut unealta, fara o masuratoare in spate (ADR 0028).
+        /// </summary>
         Acrylic,
     }
 
@@ -45,6 +59,13 @@ namespace AstroPhotoAnalyzer
         internal double? DmaxOverride { get; init; }
 
         internal double Dmax => DmaxOverride ?? DmaxOf(Medium);
+
+        /// <summary>
+        /// Dmax-ul e al omului, nu al mediului: un Dmax dat care e chiar cel al mediului nu
+        /// schimba nimic si nu se anunta "(explicit)" - fereastra isi arata campul completat
+        /// cu Dmax-ul mediului ales, si un raport care l-ar numi explicit ar minti.
+        /// </summary>
+        internal bool DmaxIsExplicit => DmaxOverride.HasValue && Math.Abs(DmaxOverride.Value - DmaxOf(Medium)) > 1e-9;
 
         /// <summary>Latimile de print candidate, in cm, pentru tabelul de marimi.</summary>
         internal double[] CandidateWidthsCm { get; init; } = { 50, 60, 70, 80, 90, 100 };
@@ -107,11 +128,18 @@ namespace AstroPhotoAnalyzer
 
         internal static double DmaxOf(PrintMedium m) => m switch
         {
-            PrintMedium.Baryta => 2.0,
+            PrintMedium.Baryta => 2.4,
             PrintMedium.Canvas => 1.5,
             PrintMedium.Acrylic => 2.2,
             _ => throw new ArgumentOutOfRangeException(nameof(m)),
         };
+
+        /// <summary>
+        /// Numele tuturor mediilor, in ordinea enum-ului: lista din care consola isi scrie
+        /// --help-ul si eroarea de mediu necunoscut, iar fereastra isi umple combo-ul.
+        /// </summary>
+        internal static IReadOnlyList<string> MediumNames { get; }
+            = ((PrintMedium[])Enum.GetValues(typeof(PrintMedium))).Select(NameOf).ToArray();
 
         /// <summary>Numele din linia de comanda si din fereastra: baryta, canvas, acrilic.</summary>
         internal static PrintMedium MediumFromName(string name) => name?.ToLowerInvariant() switch

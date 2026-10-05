@@ -30,6 +30,13 @@
 | invariants | `RepoInvariantTests` | every `implemented` row of `docs/requirements.md` has a test named `R###_...` and every such test names a real row, read from the sources of both test projects; unique IDs; the design index exists; every validation case names a manifest file; `CLAUDE.md` at most 200 lines |
 | validation | `ValidationTests`, `TestData` | the two reference images (the PNG, V-001 to V-003; the plate-solved FITS, V-004) against `docs/validation.json`; trait `Category=Validation`, kept out of the gate by `kit.json`'s filter; `TestData.Large` finds the git-ignored copies in `testdata/large/` |
 
+The scenes were built for a paper black of L\* 9.0, the baryta of Dmax 2.0 from before ADR 0028
+(`Scenes.BuiltForDmax`): a sky at 0.08 is under that black and above today's (2.4, L\* 3.6). A
+test of "the background under paper black" therefore gives that paper itself, through
+`Scenes.OnBuiltForPaper` or `--dmax 2.0` (the golden scenarios `dark-sky` and `dark-sky-wcs`),
+and does not depend on the default medium; `mono-png8` and `clean-sky-canvas` run on a medium's
+own Dmax.
+
 ```bash
 dotnet test AstroPhotoAnalyzer.sln
 ```

@@ -22,7 +22,9 @@ AstroPhotoAnalyzer.Wpf.exe "E:\Astro\poza.tif"     # optional: imaginea
 ```
 
 Stânga: parametrii (mediu, Dmax, distanță, lățimi, raport de aspect, fundal-țintă,
-passepartout, ramă, WCS din FITS) și „Analizează"; distanța, raportul de aspect, fundalul-țintă,
+passepartout, ramă, WCS din FITS) și „Analizează"; câmpul Dmax arată mereu valoarea cu care se
+analizează: alegerea unui mediu o scrie pe a lui (baryta 2.4, canvas 1.5, acrilic 2.2), iar tu
+o poți înlocui cu cea a hârtiei tale; distanța, raportul de aspect, fundalul-țintă,
 passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șase taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
@@ -91,7 +93,8 @@ AstroPhotoAnalyzer poza.tif
 AstroPhotoAnalyzer poza.tif --medium baryta --distance 1.5 --sizes 60,70,80 --aspect 50:35 -o raport.txt
 ```
 
-Opțiuni: `--medium baryta|canvas|acrilic`, `--dmax`, `--distance` (m), `--sizes` (cm),
+Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-ul hârtiei tale,
+în locul celui al mediului), `--distance` (m), `--sizes` (cm),
 `--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.10..0.20),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
 folosește pentru nori), `-o`. `--help` le explică.

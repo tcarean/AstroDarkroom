@@ -24,11 +24,11 @@ namespace AstroPhotoAnalyzer.Tests;
 /// </summary>
 public class PrintStretchSimulatorTests
 {
-    static readonly Parameters P = new();
+    static readonly Parameters P = Scenes.OnBuiltForPaper();
 
     static SimulationResult Simulate(Raster r, Parameters? p = null)
     {
-        p ??= P;
+        p = Scenes.OnBuiltForPaper(p);
         return PrintStretchSimulator.Simulate(r, TonalAnalyzer.Analyze(r, p), p);
     }
 

@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Baryta's Dmax is 2.4, not 2.0 (R-016, R-020; ADR 0028): measured, 2.41 relative to paper white,
+  on the ICC profile of the lab Chromatone for Hahnemühle Photo Rag Baryta on a Canon iPF8300.
+  Paper black on baryta is L\* 3.6 instead of 9.0, so a sky at 0.08 to 0.10 is no longer under
+  it; canvas (1.5) and acrylic (2.2) keep their values, each with its source recorded.
+- The window's Dmax field shows the Dmax in use: choosing a medium writes its Dmax into the
+  field, and a Dmax equal to the medium's is no longer reported as `(explicit)`.
 - The print-background verdict (R-041, R-043, R-044, R-092; ADR 0025). The image is no longer
   judged by the share of pixels under paper black: the tool measures the *dust*, the darkest
   extended structure, on 32 px patches, and recommends the lowest background of the grid
@@ -43,6 +49,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The report's header line and Anexa F print a Dmax with its second decimal: `--dmax 2.35` read
+  `Dmax 2.4`, the Dmax of another paper (R-101).
 - A target at the ends of the simulation's ladder is written as a bound: `<= 0.05` when even the
   lowest step already puts the dust or a cloud on paper black (it read `0.05`, as if measured),
   `> 0.60` when no step does, in the cloud table, the exact-target line and the map (R-043).

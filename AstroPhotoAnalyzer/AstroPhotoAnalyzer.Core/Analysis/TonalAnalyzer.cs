@@ -87,7 +87,7 @@ namespace AstroPhotoAnalyzer
                 double dmax = Parameters.DmaxOf(m);
                 bool chosen = Math.Abs(dmax - p.Dmax) < 1e-9;
                 chosenIsMedium |= chosen;
-                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.F1(dmax)})", chosen));
+                rows.Add(FromLstar(ColorMath.PaperBlackLstar(dmax), $"negrul hartiei: {Parameters.NameOf(m)} (Dmax {Fmt.Dmax(dmax)})", chosen));
             }
             if (!chosenIsMedium)
                 rows.Add(FromLstar(ColorMath.PaperBlackLstar(p.Dmax), $"negrul hartiei: Dmax explicit {Fmt.F2(p.Dmax)}", true));

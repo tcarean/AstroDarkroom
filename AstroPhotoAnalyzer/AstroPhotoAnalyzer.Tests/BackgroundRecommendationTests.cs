@@ -21,7 +21,7 @@ namespace AstroPhotoAnalyzer.Tests;
 public class BackgroundRecommendationTests
 {
     static Recommendation Background(Raster r, Parameters? p = null)
-        => AnalysisRun.Execute(r, "memorie", p ?? new Parameters()).Recommendations.Single(x => x.Topic == Topic.Background);
+        => AnalysisRun.Execute(r, "memorie", Scenes.OnBuiltForPaper(p)).Recommendations.Single(x => x.Topic == Topic.Background);
 
     [Fact]
     public void R092_ASkyUnderPaperBlackIsAProblemWithTheReStretch()
@@ -97,12 +97,12 @@ public class BackgroundRecommendationTests
     [Fact]
     public void R095_TheDenoiseFigureAfterTheReStretchSaysWhetherTheNoiseGrowsOrShrinks()
     {
-        var dark = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", new Parameters());
+        var dark = AnalysisRun.Execute(Scenes.DarkSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation up = dark.Recommendations.Single(x => x.Topic == Topic.Denoise);
         Assert.Contains("dupa re-stretch la 0.1", up.Because);
         Assert.Contains("zgomotul creste de ~", up.Because);
 
-        var bright = AnalysisRun.Execute(Scenes.CleanSky(), "memorie", new Parameters());
+        var bright = AnalysisRun.Execute(Scenes.CleanSky(), "memorie", Scenes.OnBuiltForPaper());
         Recommendation down = bright.Recommendations.Single(x => x.Topic == Topic.Denoise);
         Assert.Contains("dupa re-stretch la 0.1", down.Because);
         Assert.Contains("zgomotul scade de ~", down.Because);

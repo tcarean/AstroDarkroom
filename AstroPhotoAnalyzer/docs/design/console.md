@@ -15,8 +15,8 @@
 | parameter | default | console flag | window field | used by |
 |---|---|---|---|---|
 | `Medium` | `Baryta` | `--medium baryta\|canvas\|acrilic` | combo | Dmax |
-| `DmaxOverride` | null | `--dmax n` (0 < n <= 4) | "Dmax explicit" | paper black |
-| `Dmax` (derived) | baryta 2.0 / canvas 1.5 / acrylic 2.2 | | | Tonal, Simulation |
+| `DmaxOverride` | null | `--dmax n` (0 < n <= 4) | "Dmax", filled with the chosen medium's | paper black |
+| `Dmax` (derived) | baryta 2.4 / canvas 1.5 / acrylic 2.2 (ADR 0028) | | | Tonal, Simulation |
 | `CandidateWidthsCm` | 50, 60, 70, 80, 90, 100 | `--sizes a,b,c` | "Latimi candidate" | PrintSize |
 | `ViewingDistanceM` | null = 1.5 x diagonal per row (then no row is recommended) | `--distance m` | "Distanta de privire" | PrintSize |
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
@@ -30,6 +30,17 @@
 The console (`Options.cs`) and the window (`ParameterFields.cs`) validate syntax only,
 with the invariant culture (a comma decimal is an error that says to use the point).
 Neither holds a copy of the defaults: an unset field means "the core's default".
+
+The media are the values of `PrintMedium`, and their names one list, `Parameters.MediumNames`
+(the enum's order, through `NameOf`). `Options.Media` is that list, so the `--medium` line of
+`--help` and the unknown-medium error are built from it, and `ParameterFields.Media`, the
+window's combo, is the same object. The level-L\* ladder of the Tonuri tab walks the enum too.
+Two places still name the media by hand, because they are prose: the "Negrul hartiei" paragraph
+of the Tonuri guide (`ResultTabs.cs`), which calls the third one "C-print sub acril", and the
+README. The window's Dmax field is the one field that shows a core default instead of staying
+empty: `ParameterFields` formats `Parameters.DmaxOf` of the chosen medium into it (in the
+constructor and in the `Medium` setter) and decides nothing; whether the value that comes back
+is explicit is `Parameters.DmaxIsExplicit`'s answer, which the report asks.
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)

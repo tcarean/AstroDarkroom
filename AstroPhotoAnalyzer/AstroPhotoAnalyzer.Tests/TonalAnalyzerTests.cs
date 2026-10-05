@@ -31,8 +31,8 @@ public class TonalAnalyzerTests
         Assert.Equal(0, t.PctBelowDarkB);
         Assert.All(t.ReferencePercentiles, v => Assert.Equal(127.5, v, 3));
         Assert.Equal(0.5, t.BackgroundMedian, 6);
-        Assert.Equal(2.0, t.Dmax);
-        Assert.Equal(8.99, t.PaperBlackLstar, 1);
+        Assert.Equal(2.4, t.Dmax);
+        Assert.Equal(3.60, t.PaperBlackLstar, 1);
         Assert.Equal(53.39, t.LstarMedian, 1);
         Assert.Equal(0, t.PctBelowPaperBlack);
         Assert.Equal(0, t.PctBelowLowSeparation);
@@ -76,8 +76,8 @@ public class TonalAnalyzerTests
     [Fact]
     public void TheMediumChangesWhatCountsAsPaperBlack()
     {
-        // 0.10: L* ~9, exact la negrul baryta-ului (Dmax 2.0) si mult sub cel al
-        // canvasului (Dmax 1.5, L* ~21), dar peste cel al acrilului (2.2, L* ~6).
+        // 0.10: L* ~9, mult sub negrul canvasului (Dmax 1.5, L* ~21), dar peste cel al
+        // acrilului (2.2, L* ~6).
         var r = SyntheticRasters.Flat(32, 32, 0.10f);
 
         Assert.Equal(100, TonalAnalyzer.Analyze(r, new Parameters { Medium = PrintMedium.Canvas }).PctBelowPaperBlack);
@@ -98,7 +98,7 @@ public class TonalAnalyzerTests
         Assert.Equal(ladder.OrderBy(l => l.Lstar).Select(l => l.Lstar), ladder.Select(l => l.Lstar));
         var chosen = Assert.Single(ladder, l => l.Chosen);
         Assert.Contains("baryta", chosen.Meaning);
-        Assert.Equal(25.5, chosen.GrayLevel, 1);
+        Assert.Equal(12.9, chosen.GrayLevel, 1);   // L* 3.6, the black of baryta at Dmax 2.4
         Assert.Equal(12.3, ladder.Single(l => l.GrayLevel == Thresholds.DarkLevelA).Lstar, 1);
         Assert.Equal(20.1, ladder.Single(l => l.Meaning.StartsWith("fundalul-tinta dat 0.19")).Lstar, 1);
         Assert.Equal(3 + 2 + 2, TonalAnalyzer.LstarLadder(Baryta).Count);   // no target given, no simulation: no target row
