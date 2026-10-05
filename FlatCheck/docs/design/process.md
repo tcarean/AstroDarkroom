@@ -211,8 +211,10 @@ The procedure:
    $env:FLATCHECK_UPDATE_GOLDEN = '1'; dotnet test FlatCheck.sln --filter GoldenOutputTests; Remove-Item Env:\FLATCHECK_UPDATE_GOLDEN
    ```
 
-   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln` form in CLAUDE.md is the same
-   thing from a POSIX shell. The variable rewrites **every** golden file, not only the new one.
+   The `FLATCHECK_UPDATE_GOLDEN=1 dotnet test FlatCheck.sln --filter GoldenOutputTests` form in
+   CLAUDE.md is the same thing from a POSIX shell. The variable rewrites **every** golden file
+   the filter selects, not only the new one; without the filter it would rewrite the 43 parity
+   goldens too.
 3. `git status`: the only change under `Golden/` must be the new untracked file. A modified
    existing file is an output change you did not mean, or one you did mean and must now
    account for; either way it is read line by line, never re-approved by reflex.
@@ -220,7 +222,8 @@ The procedure:
    copyright, the header lines, the numbers, the verdict, the `harta salvata` line with
    `<TMP>/`.
 5. Run the suite without the variable; it must be green.
-6. The owner reads the diff and approves it (the rule "Golden files").
+6. The wrap-up report names the new file and every changed line of an existing one with its
+   cause (the rule "Golden files").
 
 ### Adding a parity golden scenario
 
@@ -247,8 +250,10 @@ A scenario has two halves that must agree on the file name:
    (lower case, runs of non-alphanumerics to `_`), with the exit code as its last line.
 
 Then capture the one new file with `FLATCHECK_UPDATE_GOLDEN=1 dotnet test --filter
-ParityGoldenTests`, read it, and check `git status` shows only the new `parity_*.txt`: a capture
-that rewrote an existing one is a behaviour change to explain. Bump the count in
+ParityGoldenTests`, read it, and check `git status` shows only the new `parity_*.txt`. A capture
+that also rewrote one of the 43 originals is a finding for the owner (the rule "Golden files"):
+put that file back with `git checkout -- <file>` and ask; a scenario added after 2026-09-26 is
+judged like any golden. Bump the count in
 `TheTableHasTheFortyThreeScenariosOfTheCrossCheckAndNoTwoShareAGolden`, in R-098 and in
 `python-parity.md`. Unlike the 43 originals, a new scenario's numbers were never confirmed by a
 second implementation; its comment says what confirms them (a unit test, a hand calculation, a

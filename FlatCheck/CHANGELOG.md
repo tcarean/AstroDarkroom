@@ -56,6 +56,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The kit's ADR 0033: after a regeneration the assistant reads the whole diff of the golden
+  files, ties every changed line to the change the task meant to make and reports them at
+  wrap-up, instead of waiting for the owner's read; a line the task did not mean to change is a
+  finding that stops the task. The 43 parity goldens stay figures: any changed line there is a
+  finding and the owner re-approves it (ADR 0047, R-098). The routine regeneration is filtered
+  to `GoldenOutputTests`, so it leaves them alone; they are recaptured with
+  `--filter ParityGoldenTests` only after the owner's yes, and the change is recorded with the
+  divergences in `docs/design/python-parity.md`.
 - The kit's ADR 0031: how the code works lives only in the design notes, and the kit's
   `check-design.ps1`, a new step of the gate, checks that every note is in the index and that
   every `Covers:` sentence names its files as paths that exist. It found `Report/AgainstReport.cs`

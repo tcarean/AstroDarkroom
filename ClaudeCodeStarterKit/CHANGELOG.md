@@ -147,6 +147,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Golden files (ADR 0033): after a regeneration the assistant reads the whole diff, ties every
+  changed line to the change the task meant to make, and reports the changes at wrap-up, from a
+  git listing of the golden files the task changed, without waiting for the owner's read. A line
+  the task did not mean to change, even with a known cause, and any changed line of a golden a
+  project names as carrying confirmed figures are findings that stop the task before the commit;
+  the owner decides. The rule "No test edited to pass" says so in a sentence, and `/new-feature`
+  step 6 and `/wrap-up` step 2 carry the steps, whatever code the session touched. Until now the
+  guide asked for the owner's OK before a regeneration and `/new-feature` for the owner's read of
+  the diff.
 - `CLAUDE.md` drops its rule "No code structure in docs", which the kit's "Design notes" replaces
   (ADR 0031), and `docs/design/README.md` says what a note holds, the Covers sentence and the
   index the check reads, instead of forbidding a note to list classes or methods.

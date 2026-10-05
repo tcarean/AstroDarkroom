@@ -1,7 +1,7 @@
 # 0027. The assistant reads and judges the golden diffs; a line that moved without a cause is a finding
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: superseded by the kit's ADR 0033
 
 ## Context
 

@@ -30,9 +30,13 @@ read `docs/skills.md` if it exists: its `## /new-feature` section adds project-s
 5. **Code.** Implement in the core library first (the compile boundary CLAUDE.md names), then
    the entry points, which only call it. Keep `scripts/verify.ps1 -SkipTests` green while
    editing; run the full gate before claiming done.
-6. **Figures.** If the change touched numeric code (CLAUDE.md says which files), run `/validate`
-   and paste its drift table. A golden file, where the project has them, is re-approved only
-   after the owner has read the diff and said yes.
+6. **Figures and golden files.** If the change touched numeric code (CLAUDE.md says which
+   files), run `/validate` and paste its drift table. Whatever the change touched, a golden
+   file, where the project has them, is regenerated only for an intended change of its output:
+   read its whole diff and carry each changed line, with the change the task meant to make, into
+   the wrap-up report. A line the task did not mean to change, or any changed line of a golden
+   the project's `CLAUDE.md` names as carrying confirmed figures, is a finding: say so and stop
+   (the kit's rule "No test edited to pass", the kit's ADR 0033).
 7. **Measure.** Fill in the `validation.json` figures from real output, paste the output in the
    session, and record the date in `validation.md`.
 8. **Record.** Set the requirement status to `implemented`, add the CHANGELOG line, and update

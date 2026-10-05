@@ -22,16 +22,16 @@ are in `kit.json`, not here.
   `Runs/` chains them), then the console and the window, which only call `Runs/`. Nothing is
   computed outside the core (the rule "Computed only in the core").
 - At step 6: numeric code is `Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/` (the rule
-  "Formula changes re-validate"). The golden files, the parity ones included, are re-approved
-  with `FLATCHECK_UPDATE_GOLDEN=1` only after the owner has read the diff and said yes.
+  "Formula changes re-validate"). The golden files are regenerated with
+  `FLATCHECK_UPDATE_GOLDEN=1` and `--filter GoldenOutputTests` (the rule "Golden files", the
+  kit's ADR 0033).
 - At step 8: `README.md` is in Romanian; the "Opțiuni" section lists every console flag
   (`docs/design/process.md`, "The README Opțiuni section").
 
 ## /wrap-up
 
 - At step 2: numeric code is `FlatCheck.Core/Metrics.cs`, `Stats.cs`, `Analysis/` and `Report/`
-  (the rule "Formula changes re-validate"); a `Golden/parity_*.txt` that changed is a finding
-  like a moved figure, and a re-approval there is a C#-only decision (ADR 0047).
+  (the rule "Formula changes re-validate").
 
 ## /validate
 

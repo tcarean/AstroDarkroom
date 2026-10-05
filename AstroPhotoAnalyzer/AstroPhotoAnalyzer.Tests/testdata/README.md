@@ -9,7 +9,7 @@ AstroPhotoAnalyzer has two kinds of test data and one manifest.
   the more honest test (`docs/design/dependencies.md`); FITS files by `FitsTestData`, ICC
   profiles by `IccTestData`, 8-bit files by `ImageFiles`. The golden texts under
   `AstroPhotoAnalyzer.Tests/Golden/` are compared byte for byte and re-approved only with
-  `APA_UPDATE_GOLDEN=1` after the owner has read the diff. So `fixtures/` is empty.
+  `APA_UPDATE_GOLDEN=1`, as the rule "Golden files" says. So `fixtures/` is empty.
 - **Large, outside git.** The reference image `de_printat.png` (a Milky Way core, 5938 x 3888,
   16-bit RGB PNG, 103 MB) that the acceptance figures in `docs/validation.json` were measured
   on. It is a copy, made by hand, of the owner's file in `E:\Photografie\Claude`, kept in
