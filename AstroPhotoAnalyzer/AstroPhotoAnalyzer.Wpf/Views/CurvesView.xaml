@@ -83,7 +83,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </ItemsControl.ItemsPanel>
         <ItemsControl.ItemTemplate>
           <DataTemplate>
-            <ItemsControl ItemsSource="{Binding Evidence}">
+            <ItemsControl ItemsSource="{Binding EvidenceRows}">
               <ItemsControl.Style>
                 <Style TargetType="ItemsControl">
                   <Setter Property="Visibility" Value="Hidden" />
@@ -96,7 +96,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
               </ItemsControl.Style>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="12" Margin="0,1" />
+                  <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="12" Margin="0,1">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -54,7 +54,17 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Dovada curbei, rand cu rand; goala pentru original.</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
 
+        /// <summary>Aceleasi randuri, cu semnul de avertisment al nucleului.</summary>
+        public IReadOnlyList<CurveEvidenceRow> EvidenceRows { get; init; } = Array.Empty<CurveEvidenceRow>();
+
         internal CurveSuggestion Suggestion { get; init; }
+    }
+
+    /// <summary>Un rand al dovezii unei curbe; avertismentele (verificarile de hartie) se arata cu rosu.</summary>
+    public sealed class CurveEvidenceRow
+    {
+        public string Text { get; init; }
+        public bool IsWarning { get; init; }
     }
 
     /// <summary>Un rand al tabelului de puncte, cum se tasteaza in Siril.</summary>
@@ -286,6 +296,8 @@ namespace AstroPhotoAnalyzer.Wpf
             Width = image.W,
             Height = image.H,
             Evidence = s == null ? Array.Empty<string>() : CurveTexts.EvidenceLines(s),
+            EvidenceRows = s == null ? Array.Empty<CurveEvidenceRow>()
+                : CurveTexts.EvidenceRows(s).Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),
             Suggestion = s,
         };
 

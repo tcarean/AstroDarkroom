@@ -79,7 +79,8 @@ frozen bitmap, evidence lines, the core's suggestion), the original first; `Next
 original. The view is a grid, not a scrolled column, so the image takes the room left, and that room
 never changes while browsing: the evidence of every item is laid out in one cell, only the
 current item's visible (`CurveGalleryItem.IsCurrent`, `Hidden` rather than `Collapsed`), so the
-cell is as tall as the longest evidence, and the save message has a fixed two-line place. The
+cell is as tall as the longest evidence (a row the core marks as a warning, a paper check, is
+drawn in red), and the save message has a fixed two-line place. The
 original and the suggestions are therefore drawn at the same size in the same place. The view
 reports the gallery area's size in screen pixels (`GallerySizeChanged`, `SetGallerySize`) and
 the previews are computed to fit it. Changing the purpose runs the core again for the other

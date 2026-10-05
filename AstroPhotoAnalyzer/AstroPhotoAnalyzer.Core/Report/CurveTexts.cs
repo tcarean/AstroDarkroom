@@ -81,10 +81,31 @@ namespace AstroPhotoAnalyzer
                + (g.PctByClass == null ? "" : " (" + string.Join(", ", Enumerable.Range(0, 5).Select(i => $"{CurveAdvisor.Labels[i]} {(double.IsNaN(g.PctByClass[i]) ? "n/a" : Fmt.Pct(g.PctByClass[i]))}")) + ")");
 
         /// <summary>Dovada unei curbe, rand cu rand, cum o arata tabul sub imagine.</summary>
-        internal static IReadOnlyList<string> EvidenceLines(CurveSuggestion s)
+        internal static IReadOnlyList<string> EvidenceLines(CurveSuggestion s) => EvidenceRows(s).Select(r => r.Text).ToArray();
+
+        /// <summary>
+        /// Aceleasi randuri, fiecare cu semnul lui: verificarile de hartie sunt avertismente
+        /// si fereastra le arata cu rosu (R-146). Ce e avertisment se decide aici, nu in fereastra.
+        /// </summary>
+        internal static IReadOnlyList<(string Text, bool Warning)> EvidenceRows(CurveSuggestion s)
         {
             CurveEvidence e = s.Evidence;
-            var o = new List<string>
+            var o = new List<(string, bool)>();
+            foreach (string line in Plain(s)) o.Add((line, false));
+            foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} (fiindca: {r.Because})", true));
+            if (e.Gamut != null)
+            {
+                o.Add((GamutLine($"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte", e.GamutBefore), false));
+                o.Add((GamutLine("in afara gamutului hartiei, dupa", e.Gamut), false));
+            }
+            else if (e.GamutNote != null) o.Add((e.GamutNote, false));
+            return o;
+        }
+
+        static IReadOnlyList<string> Plain(CurveSuggestion s)
+        {
+            CurveEvidence e = s.Evidence;
+            return new List<string>
             {
                 "puncte (intrare > iesire): " + string.Join(", ", s.Curve.Points.Where(p => p.Label != null).Select(p => $"{p.Label} {Fmt.F3(p.X)} > {Fmt.F3(p.Y)}")),
                 "L* inainte: " + Levels(e.LstarBefore),
@@ -94,14 +115,6 @@ namespace AstroPhotoAnalyzer
                     : $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} x (panta curbei la cer), la {Fmt.F2(e.NoiseAfterLsb)} LSB",
                 $"pixeli arsi (un canal la sau peste {Fmt.F3(Thresholds.CurveClipLevel)}): {Fmt.F2(e.PctClippedBefore)} % inainte, {Fmt.F2(e.PctClippedAfter)} % dupa",
             };
-            foreach (Recommendation r in e.PaperChecks) o.Add($"! {r.Text} (fiindca: {r.Because})");
-            if (e.Gamut != null)
-            {
-                o.Add(GamutLine($"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte", e.GamutBefore));
-                o.Add(GamutLine("in afara gamutului hartiei, dupa", e.Gamut));
-            }
-            else if (e.GamutNote != null) o.Add(e.GamutNote);
-            return o;
         }
 
         /// <summary>Numele propus fisierului salvat: numele imaginii, sugestia, .fit (R-146).</summary>

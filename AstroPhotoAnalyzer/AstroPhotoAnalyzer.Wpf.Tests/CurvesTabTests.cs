@@ -95,12 +95,20 @@ public class CurvesTabTests
         string printEvidence = string.Join("\n", tab.Current.Evidence);
         Assert.Contains("Din profil ICC...", printEvidence);
 
+        // The paper checks, and only they, are the warnings the view paints red.
+        CurveSuggestion core = CurveRun.Execute(result, CurvePurpose.Print, 800, 500).Suggestions[0];
+        Assert.NotEmpty(core.Evidence.PaperChecks);
+        Assert.Equal(tab.Current.Evidence, tab.Current.EvidenceRows.Select(r => r.Text).ToArray());
+        Assert.Equal(core.Evidence.PaperChecks.Select(c => $"! {c.Text} (fiindca: {c.Because})").ToArray(),
+            tab.Current.EvidenceRows.Where(r => r.IsWarning).Select(r => r.Text).ToArray());
+
         tab.IsScreen = true;
 
         Assert.True(tab.HasGallery);
         Assert.Equal(names, tab.Items.Select(i => i.Name).ToArray());
         Assert.Equal("Blanda", tab.Current.Name);
         Assert.DoesNotContain("Din profil ICC...", string.Join("\n", tab.Current.Evidence));
+        Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.IsWarning);
 
         tab.Clear();
         Assert.False(tab.HasGallery);
