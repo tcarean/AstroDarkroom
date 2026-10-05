@@ -3,7 +3,10 @@
 Status: approved by the owner on 2026-10-05 ("da, fă merge-ul, curățenia și apoi
 RuntimeIdentifiers"), after the finding of `docs/plans/2026-10-02-copy-the-licence-next-to-the-program-and-fix-stale-texts.md`
 ("What deviated") and the recommendation to add it in ImageVisualCompare, AstroPhotoAnalyzer and
-FlatCheck before their next release.
+FlatCheck before their next release. Changed by the owner the same day, after step 1 measured
+two facts in AstroPhotoAnalyzer and FlatCheck (see "What deviated"): option A, "A, cu condiția și
+la IVC", the declaration without the test projects in the three, and the single-file analyzer
+turned off in the two that publish a single file.
 
 ## Goal
 
@@ -24,10 +27,12 @@ ImageVisualCompare, AstroPhotoAnalyzer, FlatCheck. In each:
    folder and record which lock files change; restore them.
 2. Add the property to `Directory.Build.props`, with a comment in the file's own language
    (English here and in FlatCheck; Romanian without diacritics in AstroPhotoAnalyzer, its ADR
-   0005), then restore and commit the lock files it rewrites.
+   0005), then restore and commit the lock files it rewrites. Since the owner's answer: with
+   `Condition="!$(MSBuildProjectName.EndsWith('.Tests'))"`, and in AstroPhotoAnalyzer and
+   FlatCheck also `<EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>`.
 3. Publish the release targets again: the lock files must stay unchanged. Build, gate.
-4. An ADR, as each project's own value: ADR 0028 here, AstroPhotoAnalyzer ADR 0030 (0028 and
-   0029 are taken by two of its open branches), FlatCheck ADR 0056; an `Internal` line in each
+4. An ADR, as each project's own value: ADR 0028 here, AstroPhotoAnalyzer ADR 0031 (0028 to
+   0030 are taken by its open branches), FlatCheck ADR 0056; an `Internal` line in each
    `CHANGELOG.md`.
 5. ImageVisualCompare's rule "Run the application" names `Directory.Build.props`: launch it once.
 

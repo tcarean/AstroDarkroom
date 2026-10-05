@@ -116,7 +116,6 @@
           "ImageVisualCompare.Core": "[1.1.1, )"
         }
       }
-    },
-    "net9.0-windows7.0/win-x64": {}
+    }
   }
 }
