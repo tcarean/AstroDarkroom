@@ -178,16 +178,13 @@ public class ImagePairLoaderTests : IDisposable
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);
         string after = _images.WritePng("after.png", PixelFormats.Bgr24, 32, 32);
-        List<ImageLoadProgress> reported = [];
+        var progress = new RecordingProgress();
 
-        await Real().LoadAsync(before, after, new Progress<ImageLoadProgress>(reported.Add));
+        await Real().LoadAsync(before, after, progress);
 
-        // Progress<T> marshals through the synchronisation context, so give the posted
-        // callbacks a chance to run before asserting on them.
-        await Task.Delay(50);
-        Assert.Contains(reported, p => p.FileName == "before.png");
-        Assert.Contains(reported, p => p.FileName == "after.png");
-        Assert.Contains(reported, p => p.Fraction == 1 && p.FileName is null);
+        Assert.Contains(progress.Reported, p => p.FileName == "before.png");
+        Assert.Contains(progress.Reported, p => p.FileName == "after.png");
+        Assert.Contains(progress.Reported, p => p.Fraction == 1 && p.FileName is null);
     }
 
     [Fact]
@@ -232,5 +229,17 @@ public class ImagePairLoaderTests : IDisposable
             bitmap.Freeze();
             return new LoadedImage(info, bitmap);
         }
+    }
+
+    /// <summary>
+    /// Records each report on the thread that makes it, before the load goes on. A
+    /// <see cref="Progress{T}"/> posts its callback through the synchronisation context instead,
+    /// so a test that asserts once the load has returned races the posted callbacks.
+    /// </summary>
+    private sealed class RecordingProgress : IProgress<ImageLoadProgress>
+    {
+        public List<ImageLoadProgress> Reported { get; } = [];
+
+        public void Report(ImageLoadProgress value) => Reported.Add(value);
     }
 }
