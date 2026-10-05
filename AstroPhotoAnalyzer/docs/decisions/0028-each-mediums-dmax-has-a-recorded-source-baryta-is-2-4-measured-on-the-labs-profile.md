@@ -80,9 +80,9 @@ the paper: it puts every profile's black at the ICC reference medium's L\* 3.14 
   instead of clipping them. The tool does not model that (`docs/design/known-limitations.md`); a
   task of its own.
 - The simulation grid (0.10 to 0.20) and the help text's print range (0.15 to 0.25) were sized
-  for the old paper black and stay as they are, by the owner's decision, until the BPC task: on
-  the reference image the exact target (0.094) is under the grid's floor, so the recommendation
-  stops at 0.10 and says so.
+  for the old paper black: on the reference image the exact target (0.094) is under the grid's
+  floor. With paper black out of the way, what limits the print is whether the sky can be seen;
+  ADR 0029, made in the same task, adds that rule.
 - The level-L\* ladder marks the paper in use: the chosen medium's row, or the explicit Dmax's
   own row even when another medium has that Dmax (R-042).
 - A new medium, or a new value, needs its source here. `docs/design/extending.md`, "A new print

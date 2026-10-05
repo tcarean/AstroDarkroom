@@ -12,6 +12,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   on the ICC profile of the lab Chromatone for Hahnemühle Photo Rag Baryta on a Canon iPF8300.
   Paper black on baryta is L\* 3.6 instead of 9.0, so a sky at 0.08 to 0.10 is no longer under
   it; canvas (1.5) and acrylic (2.2) keep their values, each with its source recorded.
+- The background verdict asks a second question (R-043, R-092; ADR 0029): a sky under L\* 15, the
+  visibility threshold, is an Attention even when the dust is above paper black, and the
+  recommended row is the lowest that has the dust on paper black and the sky at L\* 15 or above.
+  On baryta at Dmax 2.4 the reference image is told to re-stretch to 0.15 instead of "print-safe
+  as it is; you can go down to 0.10". Anexa B gives the level at which the sky reaches L\* 15.
 - The window's Dmax field shows the Dmax in use: choosing a medium writes its Dmax into the
   field, and a Dmax equal to the medium's is no longer reported as `(explicit)`.
 - The print-background verdict (R-041, R-043, R-044, R-092; ADR 0025). The image is no longer

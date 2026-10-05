@@ -14,8 +14,8 @@ VERDICT: ATENTIE
      fiindca: eroare medie 0.08, maxima 1.0 niveluri; 0.0 % din esantioane cu eroare > 2, la nivelul mediu 0
 
 2. Fundalul si hartia  [OK]
-   - Fundalul e print-safe asa cum e; poti cobori pana la 0.10 (praful la L* 8.8, cerul la L* 8.9); grila nu coboara mai jos.
-     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 26.8; negrul hartiei L* 3.6 la Dmax 2.4; cerul (mediana dalelor) la L* 27.0; nivelul fundalului 0.251; trece asa cum e de la Dmax 1.3
+   - Fundalul e print-safe asa cum e; poti cobori pana la 0.15 (praful la L* 15.1, cerul la L* 15.2).
+     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 26.8; negrul hartiei L* 3.6 la Dmax 2.4; cerul (mediana dalelor) la L* 27.0; nivelul fundalului 0.251; trece asa cum e de la Dmax 1.3; pragul de vizibilitate L* 15, sub el 0.0 % din pixeli
 
 3. Culoarea fundalului si gradientele  [OK]
    - Imagine mono: nu exista tenta de masurat.
@@ -27,7 +27,7 @@ VERDICT: ATENTIE
 
 5. Denoise pentru versiunea de print  [OK]
    - Zgomotul rezidual e exact unde trebuie pentru print.
-     fiindca: sigma median 1.05 LSB pe 123 dale netede (10 % 1.03, minim 1.02); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.10 zgomotul scade de ~0.66 x (panta curbei la fundal), la ~0.69 LSB
+     fiindca: sigma median 1.05 LSB pe 123 dale netede (10 % 1.03, minim 1.02); tinta pentru versiunea de print: 0.8-1.5 LSB; dupa re-stretch la 0.15 zgomotul scade de ~0.82 x (panta curbei la fundal), la ~0.86 LSB
 
 6. Avertismente  [ATENTIE]
    ! Fara profil ICC: laboratorul va presupune sRGB. Exporta cu profilul sRGB inglobat, ca sa nu presupuna nimeni nimic.
@@ -41,21 +41,21 @@ Anexa A. Tonuri
 
 Anexa B. Simularea fundalului (de la nivelul 0.251; curba gamma pe toate canalele)
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
-  0.10 *               1.666       8.8      8.9       0.0 %     99.7 %        0.0 %   print-safe
+  0.10                 1.666       8.8      8.9       0.0 %     99.7 %        0.0 %   print-safe
   0.11                 1.597      10.1     10.2       0.0 %     99.6 %        0.0 %   print-safe
   0.12                 1.534      11.4     11.5       0.0 %     99.6 %        0.0 %   print-safe
   0.13                 1.476      12.6     12.7       0.0 %     99.5 %        0.0 %   print-safe
   0.14                 1.422      13.8     14.0       0.0 %     99.1 %        0.0 %   print-safe
-  0.15                 1.372      15.1     15.2       0.0 %     40.0 %        0.0 %   print-safe
+  0.15 *               1.372      15.1     15.2       0.0 %     40.0 %        0.0 %   print-safe
   0.16                 1.326      16.3     16.4       0.0 %      0.1 %        0.0 %   print-safe
   0.17                 1.282      17.5     17.6       0.0 %      0.0 %        0.0 %   print-safe
   0.18                 1.240      18.7     18.8       0.0 %      0.0 %        0.0 %   print-safe
   0.19                 1.201      19.8     20.0       0.0 %      0.0 %        0.0 %   print-safe
   0.20                 1.164      21.0     21.2       0.0 %      0.0 %        0.0 %   print-safe
   0.251 asa cum e      1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
-  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei
+  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* 15 sau peste
   praful = cele mai intunecate 1 % din dalele de 32 px (fara WCS); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei (L* 3.6 la Dmax 2.4)
-  tinta exacta a prafului pe negru: 0.051 la Dmax 2.4 (0.062 la Dmax 2.3, <= 0.05 la Dmax 2.5); trece asa cum e de la Dmax 1.3
+  tinta exacta a prafului pe negru: 0.051 la Dmax 2.4 (0.062 la Dmax 2.3, <= 0.05 la Dmax 2.5); trece asa cum e de la Dmax 1.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.148
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.0 MB

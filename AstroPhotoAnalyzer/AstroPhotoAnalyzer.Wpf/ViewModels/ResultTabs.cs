@@ -298,7 +298,9 @@ namespace AstroPhotoAnalyzer.Wpf
                     Lead = "Verdictul.",
                     Text = "Praful la sau peste negrul hartiei: print-safe. Praful sub negru, cerul peste: atentie, norii s-ar tipari negru pur. "
                         + "Cerul sub negru: problema, cerul si praful ies cu acelasi negru. Nu e un procent de pixeli: e cea mai intunecata "
-                        + "structura intinsa fata de negrul hartiei, si recomandarea e nivelul MINIM la care ea mai ramane deasupra lui - in sus "
+                        + "structura intinsa fata de negrul hartiei. Apoi vine privitul: hartia separa tonurile si mai jos, dar un cer sub "
+                        + $"L* {Fmt.F0(Thresholds.LowSeparationLstar)} se vede aproape negru in lumina de camera, deci si el e atentie, oricat de adanc ar fi negrul hartiei. "
+                        + "Recomandarea e nivelul MINIM la care praful ramane deasupra negrului si cerul la prag sau peste - in sus "
                         + "pe o imagine prea intunecata, in jos pe una prea luminoasa.",
                 },
                 new GuideParagraph
@@ -306,7 +308,8 @@ namespace AstroPhotoAnalyzer.Wpf
                     Lead = "Simularea",
                     Text = $"raspunde la \"si daca mut fundalul?\". Aplica pe o copie redusa a imaginii o curba gamma, aceeasi pe toate canalele, "
                         + $"care duce fundalul masurat la fiecare tinta din grila {Fmt.Level(grid.Min())}..{Fmt.Level(grid.Max())}, apoi remasoara praful si cerul. "
-                        + "Randul \"asa cum e\" sta printre tinte, la nivelul lui. Cea mai mica tinta marcata print-safe e cea recomandata: refa "
+                        + "Randul \"asa cum e\" sta printre tinte, la nivelul lui. Cea mai mica tinta marcata print-safe si cu cerul la L* "
+                        + $"{Fmt.F0(Thresholds.LowSeparationLstar)} sau peste e cea recomandata: refa "
                         + "stretch-ul din datele liniare in Siril pana la fundalul acela. Sub tabel: tinta exacta la care praful atinge negrul, "
                         + $"si aceeasi tinta la Dmax cu {Fmt.F1(Thresholds.DmaxSensitivityStep)} mai mic si mai mare, fiindca Dmax-ul unei hartii pe o imprimanta rar e stiut mai bine. "
                         + "E o simulare: un stretch adevarat (Siril, VeraLux) tine umbrele mai jos decat curba gamma, deci tinta exacta e a curbei, "

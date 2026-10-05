@@ -45,3 +45,11 @@ The reference image at Dmax 2.0, 2.35 and 2.44. The tables are in ADR 0028.
    `input.md`, `window.md`, `known-limitations.md` (BPC), README, CHANGELOG.
 7. `/validate`: V-001 and V-004 drift on every Dmax-dependent figure; the owner decided that both
    keep their figures and name their paper (`dmax` 2.0), and that V-005 records the new default.
+
+## Added during the task
+
+- After the review: the level-L\* ladder marks the paper in use (R-042); the grid's floor is
+  described as the simulation's, not the paper's.
+- After the owner tried the window: the sky under L\* 15 is an Attention and the recommended
+  row has the sky at L\* 15 or above (ADR 0029), in this branch, so that the new default does
+  not reach `main` telling the reference image it can be printed darker.

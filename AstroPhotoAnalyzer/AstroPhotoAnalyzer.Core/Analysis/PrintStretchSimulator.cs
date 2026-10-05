@@ -65,6 +65,13 @@ namespace AstroPhotoAnalyzer
         /// <summary>Praful la sau peste negrul hartiei. Toleranta e pentru egalitatea in virgula mobila.</summary>
         internal bool PrintSafe => LstarDust >= PaperBlackLstar - 1e-9;
 
+        /// <summary>
+        /// Cerul la sau peste pragul de vizibilitate (Thresholds.LowSeparationLstar): hartia
+        /// separa si mai jos, dar in lumina de camera un cer sub prag se vede aproape negru
+        /// (ADR 0029).
+        /// </summary>
+        internal bool SkyVisible => LstarSky >= Thresholds.LowSeparationLstar - 1e-9;
+
         /// <summary>Randul recomandat; il marcheaza simulatorul dupa ce a ales.</summary>
         internal bool Recommended { get; set; }
     }
@@ -96,7 +103,7 @@ namespace AstroPhotoAnalyzer
 
         internal SimulationRow AsIs { get; init; }
 
-        /// <summary>Cel mai mic rand print-safe, "asa cum e" inclus; null cand niciunul nu e.</summary>
+        /// <summary>Cel mai mic rand print-safe si cu cerul vizibil, "asa cum e" inclus; null cand niciunul nu e.</summary>
         internal SimulationRow Recommended { get; init; }
         internal double? RecommendedTarget => Recommended?.Target;
         internal bool RecommendedIsAsIs => Recommended != null && Recommended.AsIs;
@@ -108,6 +115,12 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Praful e sub negrul hartiei (Atentie cand cerul nu e).</summary>
         internal bool DustBelowPaperBlack => !AsIs.PrintSafe;
+
+        /// <summary>Cerul e sub pragul de vizibilitate (Atentie, chiar cu praful peste negrul hartiei).</summary>
+        internal bool SkyBelowVisibility => !AsIs.SkyVisible;
+
+        /// <summary>Tinta la care cerul ajunge la pragul de vizibilitate, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
+        internal double? VisibilityTarget { get; init; }
 
         /// <summary>Tinta exacta la care praful ajunge pe negru, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
         internal double? ExactTarget { get; init; }
@@ -192,7 +205,7 @@ namespace AstroPhotoAnalyzer
             };
 
             var rows = new List<SimulationRow> { asIs };
-            double? exact = null, exactLo = null, exactHi = null;
+            double? exact = null, exactLo = null, exactHi = null, visible = null;
             var cloudRows = new List<CloudRow>();
             int[] rowClouds = Enumerable.Range(0, map.Clouds.Count).Where(c => map.Clouds[c].Patches.Length >= Thresholds.DustCloudMinPatches).ToArray();
 
@@ -208,6 +221,7 @@ namespace AstroPhotoAnalyzer
                 double[] targets = ladder.ToArray();
 
                 var dustAt = new double[targets.Length];
+                var skyAt = new double[targets.Length];
                 var cloudAt = new double[targets.Length][];
                 var tableRows = new HashSet<double>(p.SimulationTargets.Select(t => Math.Round(t, 6)));
                 if (p.TargetBackground.HasValue) tableRows.Add(Math.Round(p.TargetBackground.Value, 6));
@@ -218,6 +232,7 @@ namespace AstroPhotoAnalyzer
                     Raster lifted = RasterOps.Gamma(sub, gamma);
                     DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(lifted), map, black);
                     dustAt[i] = d.LstarDust;
+                    skyAt[i] = d.LstarSky;
                     cloudAt[i] = d.CloudLstars;
                     if (!tableRows.Contains(target)) continue;
                     // Subesantionul e deja la pasul tonal; LstarStats primeste pasul 1 ca sa nu-l
@@ -239,6 +254,7 @@ namespace AstroPhotoAnalyzer
                 rows = rows.OrderBy(x => x.Target).ToList();
 
                 exact = Crossing(targets, dustAt, black);
+                visible = Crossing(targets, skyAt, Thresholds.LowSeparationLstar);
                 exactLo = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax - Thresholds.DmaxSensitivityStep));
                 exactHi = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax + Thresholds.DmaxSensitivityStep));
 
@@ -262,7 +278,7 @@ namespace AstroPhotoAnalyzer
                     cloudRows.Add(new CloudRow { Name = map.Clouds[c].Name, Patches = map.Clouds[c].Patches.Length, Lstar = asIsDust.CloudLstars[c], MapIndex = c });
             }
 
-            SimulationRow recommended = rows.FirstOrDefault(x => x.PrintSafe);
+            SimulationRow recommended = rows.FirstOrDefault(x => x.PrintSafe && x.SkyVisible);
             if (recommended != null) recommended.Recommended = true;
 
             SimulationRow primary = rows.FirstOrDefault(x => x.Explicit) ?? recommended ?? asIs;
@@ -278,6 +294,7 @@ namespace AstroPhotoAnalyzer
                 ExactTarget = exact,
                 ExactTargetDmaxLower = exactLo,
                 ExactTargetDmaxHigher = exactHi,
+                VisibilityTarget = visible,
                 DmaxToPassAsIs = asIs.LstarDust > 0 ? -Math.Log10(ColorMath.YOfLstar(asIs.LstarDust)) : double.NaN,
                 Primary = primary,
                 Map = map,

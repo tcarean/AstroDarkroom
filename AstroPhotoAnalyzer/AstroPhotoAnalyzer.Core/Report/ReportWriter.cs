@@ -130,7 +130,9 @@ namespace AstroPhotoAnalyzer
 
         internal static string SimulationFooter(SimulationResult s)
             => s.Recommended != null
-                ? "* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei"
+                ? $"* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste"
+                : s.Rows.Any(x => x.PrintSafe)
+                    ? $"nicio tinta din grila nu aduce cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} (ar trebui {TargetText(s.VisibilityTarget)})"
                 : s.ExactTarget.HasValue
                     ? $"nicio tinta din grila nu aduce praful pe negrul hartiei (ar trebui ~{Fmt.Level(s.ExactTarget.Value)})"
                     : $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}";
@@ -156,7 +158,8 @@ namespace AstroPhotoAnalyzer
         {
             string pass = double.IsNaN(s.DmaxToPassAsIs) ? "nu trece asa cum e la niciun Dmax" : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
             double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
-            return $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}";
+            return $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}; "
+                + $"cerul ajunge la pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)} la {TargetText(s.VisibilityTarget)}";
         }
 
         internal const string CloudHeader = "nor                          dale   L*     tinta";

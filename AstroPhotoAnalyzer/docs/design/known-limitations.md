@@ -23,11 +23,9 @@
   converts with BPC (the owner's does, ADR 0028) compresses the shadows onto paper black
   instead: nothing prints as pure black, the separation in the shadows shrinks. The tool does
   not model BPC; "the dust prints pure black" is then the pessimistic reading.
-- The simulation grid's floor, 0.10, and the help text's "a print wants the sky at 0.15-0.25"
-  (`Thresholds.PrintBackgroundLo` / `Hi`) both date from the paper black of L\* 9.0. On baryta at
-  Dmax 2.4 the recommendation can stop at the floor while the exact target is lower (the
-  reference image: 0.094), and the help text then disagrees with a verdict of "print-safe as it
-  is". Left as it is by the owner on 2026-10-05, for the task that models BPC (ADR 0028).
+- The visibility threshold, L\* 15, is a rule of thumb with no measurement behind it, and one
+  number for every room: a print under gallery light shows tones well under it, one in a dim
+  hallway loses tones above it. The tool does not know the viewing light (ADR 0029).
 - The simulation is a gamma curve from the measured background. A real stretch to the same
   background keeps the shadows lower: the owner's VeraLux stretch to 0.17 measured the dust at
   L\* 7.6, under paper black, where the curve from 0.103 predicted it above from 0.14 (ADR

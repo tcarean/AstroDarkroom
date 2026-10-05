@@ -15,7 +15,7 @@ VERDICT: ATENTIE
 
 2. Fundalul si hartia  [OK]
    - Fundalul e print-safe asa cum e; poti cobori pana la 0.20 (praful la L* 21.2, cerul la L* 21.3).
-     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 26.9; negrul hartiei L* 20.7 la Dmax 1.5; cerul (mediana dalelor) la L* 27.0; nivelul fundalului 0.25; trece asa cum e de la Dmax 1.3
+     fiindca: praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 26.9; negrul hartiei L* 20.7 la Dmax 1.5; cerul (mediana dalelor) la L* 27.0; nivelul fundalului 0.25; trece asa cum e de la Dmax 1.3; pragul de vizibilitate L* 15, sub el 0.0 % din pixeli
 
 3. Culoarea fundalului si gradientele  [OK]
    - Fundalul e neutru.
@@ -52,9 +52,9 @@ Anexa B. Simularea fundalului (de la nivelul 0.25; curba gamma pe toate canalele
   0.19                 1.198      20.0     20.1      92.2 %      0.0 %        0.0 %
   0.20 *               1.161      21.2     21.3       0.0 %      0.0 %        0.0 %   print-safe
   0.25 asa cum e       1.000      26.9     27.0       0.0 %      0.0 %        0.1 %   print-safe
-  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei
+  * = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* 15 sau peste
   praful = cele mai intunecate 1 % din dalele de 32 px (fara WCS); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei (L* 20.7 la Dmax 1.5)
-  tinta exacta a prafului pe negru: 0.196 la Dmax 1.5 (0.221 la Dmax 1.4, 0.173 la Dmax 1.6); trece asa cum e de la Dmax 1.3
+  tinta exacta a prafului pe negru: 0.196 la Dmax 1.5 (0.221 la Dmax 1.4, 0.173 la Dmax 1.6); trece asa cum e de la Dmax 1.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.148
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.3 MB

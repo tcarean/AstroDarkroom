@@ -48,7 +48,15 @@ namespace AstroPhotoAnalyzer
         internal const int DarkLevelA = 32;
         internal const int DarkLevelB = 64;
 
-        /// <summary>Sub L*-ul asta hartia separa tonurile, dar ochiul in lumina de camera abia le distinge.</summary>
+        /// <summary>
+        /// Pragul de vizibilitate: sub L*-ul asta hartia separa tonurile, dar ochiul in lumina
+        /// de camera abia le distinge - lumina slaba si reflexiile de pe hartie si de pe sticla
+        /// pun un val peste negru. Tine de privit, nu de hartie, deci nu se muta cu Dmax-ul.
+        /// Regula de degetul mare din conversatia care a nascut unealta, fara o masuratoare in
+        /// spate; un gri de L* 15 e nivelul 0.148, adica PrintBackgroundLo de mai jos, aceeasi
+        /// regula pe cealalta scara. Cerul sub el e Atentie, iar randul recomandat al simularii
+        /// il are la sau peste (ADR 0029).
+        /// </summary>
         internal const double LowSeparationLstar = 15;
 
         /// <summary>Peste L*-ul asta un pixel e "luminos" - nucleul, stelele.</summary>

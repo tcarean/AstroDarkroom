@@ -38,7 +38,9 @@ public class PrintStretchSimulatorTests
     public void R043_ADarkBackgroundGetsTheLowestSafeRowAbove()
     {
         // Flat 0.08: L* ~6, under paper black (9.0). The grid row that first puts it at or
-        // above 9.0 is 0.10 (L* 9.03, by a hair); the rows are the as-is row and 0.10..0.20.
+        // above 9.0 is 0.10 (L* 9.03, by a hair); the first that also has the sky at the
+        // visibility threshold (L* 15) is 0.15, the recommended one. The rows are the as-is
+        // row and 0.10..0.20.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
@@ -48,8 +50,8 @@ public class PrintStretchSimulatorTests
         Assert.Equal(12, s.Rows.Count);
         Assert.True(s.Rows[0].AsIs);
         Assert.Equal(P.SimulationTargets, s.Rows.Skip(1).Select(x => x.Target));
-        Assert.Equal(0.10, s.RecommendedTarget);
-        Assert.True(s.Rows[1].Recommended);
+        Assert.Equal(0.15, s.RecommendedTarget);
+        Assert.Same(s.Rows[6], Assert.Single(s.Rows, x => x.Recommended));
         Assert.Equal(Math.Log(0.10) / Math.Log(0.08), s.Rows[1].Gamma, 6);
         Assert.All(s.Rows.Skip(1), x => Assert.True(x.PrintSafe));
         Assert.Equal(DustMethod.NoWcs, s.Method);
@@ -63,13 +65,14 @@ public class PrintStretchSimulatorTests
     public void R043_ABrightImageIsToldHowFarDownItCanGo()
     {
         // Flat 0.30 (L* ~31): print-safe as is; the lowest grid row that keeps the dust on
-        // paper black is 0.10 (L* 9.03), so that is recommended, below the measured level.
+        // paper black is 0.10 (L* 9.03), the lowest that also keeps the sky at L* 15 is 0.15,
+        // so that is recommended, below the measured level.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));
 
         Assert.True(s.AlreadyPrintSafe);
         Assert.NotNull(s.Recommended);
         Assert.False(s.RecommendedIsAsIs);
-        Assert.Equal(0.10, s.RecommendedTarget);
+        Assert.Equal(0.15, s.RecommendedTarget);
         Assert.True(s.Rows[0].Target < s.AsIs.Target);
         Assert.Equal(s.Rows.Last(), s.AsIs);   // 0.30 sorts after 0.20
         // The exact target of a flat image is the level whose L* is paper black, ~0.0999.
@@ -120,6 +123,27 @@ public class PrintStretchSimulatorTests
         Assert.StartsWith("tinta exacta a prafului pe negru: > 0.60 la Dmax 2.0 (> 0.60 la Dmax 1.9, > 0.60 la Dmax 2.1); ", ReportWriter.ExactLine(none));
     }
 
+    /// <summary>
+    /// The recommended row needs both: the dust on paper black and the sky at the visibility
+    /// threshold. On the default paper a 0.08 sky passes the first at every row and the second
+    /// only from 0.15, a grey of L* 15 being the level 0.148.
+    /// </summary>
+    [Fact]
+    public void R043_TheRecommendedRowAlsoHasTheSkyAtTheVisibilityThreshold()
+    {
+        var p = new Parameters();
+        Raster r = SyntheticRasters.Flat(64, 64, 0.08f);
+        SimulationResult s = PrintStretchSimulator.Simulate(r, TonalAnalyzer.Analyze(r, p), p);
+
+        Assert.True(s.AlreadyPrintSafe);
+        Assert.True(s.SkyBelowVisibility);
+        Assert.All(s.Rows.Where(x => x.Target < 0.145), x => Assert.True(x.PrintSafe && !x.SkyVisible));
+        Assert.Equal(0.15, s.Recommended.Target, 9);
+        Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
+        Assert.EndsWith("cerul ajunge la pragul de vizibilitate L* 15 la 0.148", ReportWriter.ExactLine(s));
+        Assert.Equal("* = recomandat: cea mai mica tinta la care praful e pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
+    }
+
     [Fact]
     public void R043_CrossingInterpolatesBetweenTwoStepsAndHandlesTheEnds()
     {
@@ -160,7 +184,10 @@ public class PrintStretchSimulatorTests
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), p);
 
         Assert.Equal(new[] { 0.08, 0.12 }, s.Rows.Select(x => Math.Round(x.Target, 2)));
-        Assert.Equal(0.12, s.RecommendedTarget);
+        // 0.12 puts the dust on paper black but leaves the sky at L* 11.6: no row to recommend, and the footer says what would do.
+        Assert.True(s.Rows[1].PrintSafe);
+        Assert.Null(s.RecommendedTarget);
+        Assert.Equal("nicio tinta din grila nu aduce cerul la L* 15 (ar trebui 0.148)", ReportWriter.SimulationFooter(s));
     }
 
     [Fact]
