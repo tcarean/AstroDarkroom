@@ -187,7 +187,14 @@ namespace AstroPhotoAnalyzer
                 throw new Exception("BITPIX sau BSCALE neacceptat la scriere: " + bitpix + ", " + bscale.ToString(CultureInfo.InvariantCulture));
             double scale = bitpix switch { 8 => 255.0, 16 => 65535.0, 32 => 4294967295.0, _ => 1.0 };
             var row = new byte[r.W * bytesPer];
-            long written = 0;
+            long written = 0, outside = 0;
+            (double lo, double hi) = bitpix switch
+            {
+                8 => (0.0, 255.0),
+                16 => (short.MinValue, short.MaxValue),
+                32 => (int.MinValue, int.MaxValue),
+                _ => (double.NegativeInfinity, double.PositiveInfinity),
+            };
             foreach (float[] plane in r.Planes)
                 for (int fy = 0; fy < r.H; fy++)
                 {
@@ -195,6 +202,8 @@ namespace AstroPhotoAnalyzer
                     for (int x = 0; x < r.W; x++)
                     {
                         double stored = (curve.MapSample(plane[y * r.W + x]) * scale - bzero) / bscale;
+                        // Peste capatul tipului cu mai mult de o rotunjire: valoarea n-ar mai fi cea a curbei.
+                        if (stored < lo - 0.5 || stored > hi + 0.5) outside++;
                         var span = new Span<byte>(row, x * bytesPer, bytesPer);
                         switch (bitpix)
                         {
@@ -208,6 +217,10 @@ namespace AstroPhotoAnalyzer
                     o.Write(row, 0, row.Length);
                     written += row.Length;
                 }
+            // Un FITS intreg fara BZERO (16 biti cu semn: doar 0..32767, jumatate de scara) nu
+            // poate tine valorile ridicate de curba. Taiate pe tacute ar da un fisier gresit:
+            // salvarea se refuza, iar fisierul temporar se sterge (Save).
+            if (outside > 0) throw new Exception(CurveTexts.ValuesDoNotFit(outside, bitpix, bzero));
             var zero = new byte[1];
             for (; written % Block != 0; written++) o.Write(zero, 0, 1);
         }

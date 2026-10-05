@@ -45,6 +45,13 @@ namespace AstroPhotoAnalyzer
     internal sealed class AnalysisResult
     {
         internal string Path;
+
+        /// <summary>
+        /// Calea completa a imaginii in clipa citirii; null pentru un raster din memorie. Path
+        /// ramane cum a fost data (raportul o tipareste asa); salvarea unei curbe are nevoie de
+        /// cea completa, care nu se mai schimba daca directorul de lucru se schimba (R-145).
+        /// </summary>
+        internal string FullPath;
         internal Parameters Parameters;
         internal Raster Raster;
 
@@ -74,7 +81,9 @@ namespace AstroPhotoAnalyzer
             progress?.Report("citire");
             Raster r = ImageLoader.Load(path);
             if (p.WcsPath != null) r.Source = r.Source with { Wcs = BorrowWcs(p.WcsPath, r) };
-            return Execute(r, path, p, progress);
+            AnalysisResult res = Execute(r, path, p, progress);
+            res.FullPath = System.IO.Path.GetFullPath(path);
+            return res;
         }
 
         /// <summary>

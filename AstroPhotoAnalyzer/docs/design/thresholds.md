@@ -63,3 +63,4 @@ All empirical, most from the reference image. Change one, change its comment.
 | `CurveClipLevel` | 0.995 | a pixel counts as clipped with a channel at or over it |
 | `CurveGamutDeltaAb` / `CurveGamutGrid` | 3 / 33 | the chroma displacement that counts as out of gamut; the round-trip grid per channel (0.01 % of decisions differ from the exact round trip) |
 | `CurveShadowChartFactor` / `CurveChartSamples` | 1.25 / 257 | the shadow chart ends at this many times the band's input; samples per chart |
+| `CurvePreviewDefaultWidth` / `CurvePreviewDefaultHeight` | 1600 / 900 | the preview size before the view has reported its gallery area: a presumption about the screen |

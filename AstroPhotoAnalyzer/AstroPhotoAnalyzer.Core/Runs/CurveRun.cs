@@ -120,24 +120,73 @@ namespace AstroPhotoAnalyzer
             }
             return set with { Suggestions = suggestions };
         }
+
+        /// <summary>
+        /// Setul pentru ecran al unui set calculat pentru print: aceleasi curbe, aceleasi
+        /// previzualizari, dovada fara verificarile de hartie si fara gamut. Fereastra calculeaza
+        /// o data, pentru print, si schimba scopul fara sa mai calculeze nimic.
+        /// </summary>
+        internal static CurveSet ForScreen(CurveSet print)
+        {
+            var suggestions = new List<CurveSuggestion>();
+            foreach (CurveSuggestion s in print.Suggestions)
+                suggestions.Add(s with
+                {
+                    Evidence = s.Evidence with { PaperChecks = Array.Empty<Recommendation>(), GamutBefore = null, Gamut = null, GamutNote = null },
+                });
+            return print with { Purpose = CurvePurpose.Screen, Suggestions = suggestions };
+        }
     }
 
     internal static class CurveExport
     {
         /// <summary>
         /// Scrie la <paramref name="targetPath"/> un FITS nou cu curba sugestiei aplicata pe
-        /// toata imaginea (R-145). Imaginea de intrare nu se deschide niciodata pentru scriere,
-        /// iar o tinta care e chiar ea se refuza.
+        /// toata imaginea (R-145).
+        ///
+        /// Imaginea de intrare nu se deschide niciodata pentru scriere. O tinta care e chiar ea
+        /// se refuza de doua ori: intai dupa cale, cu un mesaj limpede; apoi, pentru orice
+        /// alta scriere a aceleiasi cai (\\?\, o unitate mapata fata de \\server\share, un
+        /// link), prin sistemul de operare: imaginea se tine deschisa la citire, FARA partajare
+        /// la scriere si la stergere, cat dureaza salvarea, asa ca mutarea fisierului temporar
+        /// peste ea esueaza. Compararea cailor ca text nu poate vedea toate scrierile.
+        ///
+        /// Imaginea trebuie sa mai fie unde era la analiza: fara ea un FITS si-ar pierde
+        /// antetul pe tacute, deci salvarea se refuza.
         /// </summary>
         internal static void Save(AnalysisResult a, CurveSuggestion s, string targetPath)
         {
             Raster r = a.Raster;
-            string input = r.Source?.Path ?? a.Path;
-            bool inputOnDisk = !string.IsNullOrEmpty(input) && File.Exists(input);
-            if (inputOnDisk && string.Equals(Path.GetFullPath(input), Path.GetFullPath(targetPath), StringComparison.OrdinalIgnoreCase))
-                throw new Exception(CurveTexts.SaveOverInput);
-            string sourceFits = inputOnDisk && r.Source?.Format == "FITS" ? input : null;
-            FitsWriter.Save(r, s.Curve, sourceFits, CurveTexts.History(s.Name, s.Curve), targetPath);
+            string input = a.FullPath;
+            string target = Path.GetFullPath(targetPath);
+            IReadOnlyList<string> history = CurveTexts.History(s.Name, s.Curve);
+            if (input == null)
+            {
+                // Un raster din memorie (testele): n-are fisier de aparat si nici antet de pastrat.
+                FitsWriter.Save(r, s.Curve, null, history, target);
+                return;
+            }
+            if (!File.Exists(input)) throw new Exception(CurveTexts.InputGone(input));
+            if (string.Equals(input, target, StringComparison.OrdinalIgnoreCase)) throw new Exception(CurveTexts.SaveOverInput);
+
+            using var hold = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read, 1);
+            try
+            {
+                FitsWriter.Save(r, s.Curve, r.Source?.Format == "FITS" ? input : null, history, target);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Mutarea peste o tinta existenta de aceeasi marime cu imaginea a esuat cat timp
+                // imaginea era tinuta: aproape sigur tinta e chiar ea, pe alta cale.
+                if (File.Exists(target) && SameLength(target, hold.Length)) throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
+                throw;
+            }
+        }
+
+        static bool SameLength(string path, long length)
+        {
+            try { return new FileInfo(path).Length == length; }
+            catch (IOException) { return false; }
         }
     }
 }

@@ -56,7 +56,18 @@ for the dictionary; the raw header bytes are re-read between the two stream posi
 leaves. From any other source the file is a 32-bit float FITS with a minimal header and
 `ROWORDER = 'TOP-DOWN'`. The values are the raster's: what the reader clipped to 0..1 stays
 clipped. The write goes to a temporary file in the target folder, moved over the name at the
-end and deleted on failure. On the plate-solved FITS the saved file keeps every card of the
+end and deleted on failure. An integer sample that falls outside its type by more than a
+rounding (a signed 16-bit source without `BZERO` holds 0..32767) is counted, and one such
+sample refuses the save: clipped silently the file would not be the curve's.
+
+The input is protected in `CurveExport.Save`, not here, and twice. The path the image was read
+from is kept in full on the result (`AnalysisResult.FullPath`), so a later change of the
+working directory cannot lose it; a target equal to it is refused by name. A string compare
+cannot see every spelling of one file (the review of 2026-10-05 overwrote the input through
+`\\?\`, `\\.\` and the local admin share), so the input is also held open for reading with
+`FileShare.Read`, no write and no delete, until the save ends: the final move over it fails in
+the operating system. An input that is gone refuses the save, since a FITS would otherwise be
+written without its header. On the plate-solved FITS the saved file keeps every card of the
 source, has the same 270 869 760 bytes, and reads back equal to the curve applied to the
 raster, with its WCS (V-008).
 

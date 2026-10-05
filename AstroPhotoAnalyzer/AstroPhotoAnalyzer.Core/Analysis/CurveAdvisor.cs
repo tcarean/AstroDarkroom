@@ -253,6 +253,9 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
+        /// <summary>Capatul din dreapta al graficului umbrelor unei curbe sugerate: CurveShadowChartFactor x intrarea benzii (R-147).</summary>
+        internal static double ShadowChartLimit(ToneCurve curve) => Thresholds.CurveShadowChartFactor * curve.Points[3].X;
+
         /// <summary>Procentul pixelilor cu un canal la sau peste CurveClipLevel.</summary>
         internal static double PctClipped(Raster r)
         {

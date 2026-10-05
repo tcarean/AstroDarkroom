@@ -70,7 +70,9 @@ original at the integer stride that fits the size asked; then, unless the anchor
 increase (`CurveSet.Problem`), the curves (`CurveAdvisor.Curves`), the gamut table when the
 purpose is print and the Dmax came from a profile (`GamutAnalyzer.Build`, once), and for each
 curve its evidence on the curved subsample and its preview. The purpose changes the evidence
-only: the paper checks and the gamut figure are added for print. `CurveExport.Save` is the one
+only: the paper checks and the gamut figure are added for print, and `CurveRun.ForScreen`
+derives the screen set from a print set by dropping them, which is how the window changes the
+purpose without computing anything. `CurveExport.Save` is the one
 place that writes an image: it refuses the input's own path, then hands the raster, the curve
 and the `HISTORY` text to `FitsWriter` (`input.md`).
 

@@ -96,11 +96,14 @@ namespace AstroPhotoAnalyzer.Wpf
         public double ShadowLimit { get; init; }
         public string ShadowHeading { get; init; }
 
+        /// <summary>Ce inseamna coloanele tabelului, sub el.</summary>
+        public string PointsNote { get; init; }
+
         /// <summary>Punctele de control si pozitiile celor cinci clase.</summary>
         public IReadOnlyList<Point> ControlPoints { get; init; }
         public IReadOnlyList<CurveMarker> Markers { get; init; }
 
-        internal static CurveWindowViewModel From(CurveSuggestion s, string imageName)
+        internal static CurveWindowViewModel From(CurveSuggestion s, string imageName, CurveAnchorSource source, bool colour)
         {
             ToneCurve c = s.Curve;
             CurveEvidence e = s.Evidence;
@@ -119,16 +122,17 @@ namespace AstroPhotoAnalyzer.Wpf
                 });
                 if (labelled) k++;
             }
-            double shadow = Thresholds.CurveShadowChartFactor * c.Points[3].X;
+            double shadow = CurveAdvisor.ShadowChartLimit(c);
             return new CurveWindowViewModel
             {
                 Title = $"Curba {s.Name} - {imageName}",
-                Caption = "Spline cubic prin puncte, aceeasi curba pe R, G si B: in Siril, Curves Transformation, modul cubic spline, cu punctele din tabel.",
+                Caption = CurveTexts.CurveCaption(colour),
+                PointsNote = CurveTexts.PointsNote(source, colour),
                 Rows = rows,
                 Chart = c.Sample(1, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
                 ShadowChart = c.Sample(shadow, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
                 ShadowLimit = shadow,
-                ShadowHeading = $"UMBRELE MARITE (0 - {Fmt.F3(shadow)}): unde stau praful si cerul",
+                ShadowHeading = CurveTexts.ShadowHeading(shadow),
                 ControlPoints = c.Points.Select(p => new Point(p.X, p.Y)).ToArray(),
                 Markers = c.Points.Where(p => p.Label != null).Select(p => new CurveMarker { X = p.X, Label = p.Label }).ToArray(),
             };
@@ -138,9 +142,18 @@ namespace AstroPhotoAnalyzer.Wpf
     public sealed class CurvesTabViewModel : ResultTabViewModel
     {
         AnalysisResult _result;
-        CurveSet _set;
+
+        // Curbele se calculeaza o data, pentru print; setul pentru ecran e acelasi fara
+        // verificarile de hartie (CurveRun.ForScreen). Schimbarea scopului nu mai calculeaza
+        // nimic si nu reface nicio imagine: alege intre cele doua seturi de randuri.
+        CurveSet _print, _screen;
+        IReadOnlyList<BitmapSource> _images = Array.Empty<BitmapSource>();
         IReadOnlyList<CurveGalleryItem> _items = Array.Empty<CurveGalleryItem>();
-        int _index, _width = 1600, _height = 900;
+        int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
+
+        // Fiecare calcul pornit are numarul lui; unul care se termina dupa ce s-a deschis alta
+        // imagine, sau dupa ce s-a pornit altul, nu mai atinge nimic.
+        int _run;
         bool _isPrint = true, _busy;
         string _message, _anchorSource, _saveMessage, _saveError;
 
@@ -149,7 +162,8 @@ namespace AstroPhotoAnalyzer.Wpf
             Calculate = new RelayCommand(() => _ = ComputeAsync(), () => _result != null && !IsBusy);
             Next = new RelayCommand(() => Move(1), () => _index < _items.Count - 1);
             Previous = new RelayCommand(() => Move(-1), () => _index > 0);
-            OpenCurve = new RelayCommand(() => CurveRequested?.Invoke(CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path))), HasCurve);
+            OpenCurve = new RelayCommand(() => CurveRequested?.Invoke(
+                CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path), _print.Source, _result.Raster.IsColor)), HasCurve);
             SaveAs = new RelayCommand(() => SaveRequested?.Invoke(CurveTexts.ProposedFileName(_result.Path, Current.Name)), HasCurve);
         }
 
@@ -172,14 +186,12 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!Set(ref _isPrint, value)) return;
                 Raise(nameof(IsScreen));
-                // Scopul schimba doar dovada: aceleasi curbe, aceeasi pozitie in galerie.
-                if (HasGallery) Show(CurveRun.Execute(_result, Purpose, _width, _height), _index);
+                // Scopul schimba doar dovada: aceleasi curbe, aceleasi imagini, aceeasi pozitie.
+                if (HasGallery) ShowItems(_index);
             }
         }
 
         public bool IsScreen { get => !_isPrint; set => IsPrint = !value; }
-
-        CurvePurpose Purpose => _isPrint ? CurvePurpose.Print : CurvePurpose.Screen;
 
         public bool IsBusy
         {
@@ -202,7 +214,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
         /// <summary>Folderul imaginii, de unde porneste dialogul de salvare.</summary>
-        public string InputFolder => _result == null || !File.Exists(_result.Path) ? null : Path.GetDirectoryName(Path.GetFullPath(_result.Path));
+        public string InputFolder => _result?.FullPath == null || !File.Exists(_result.FullPath) ? null : Path.GetDirectoryName(_result.FullPath);
 
         /// <summary>Marimea zonei galeriei, in pixeli: o pune vederea, o foloseste "Calculeaza".</summary>
         internal void SetGallerySize(int width, int height)
@@ -229,72 +241,104 @@ namespace AstroPhotoAnalyzer.Wpf
             (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
+        /// <summary>Goleste tabul si paraseste orice calcul in curs: rezultatul lui nu mai e al nimanui.</summary>
         void Reset()
         {
-            _set = null;
+            _run++;
+            _print = _screen = null;
+            _images = Array.Empty<BitmapSource>();
             _index = 0;
             Items = Array.Empty<CurveGalleryItem>();
             Message = null; AnchorSource = null; SaveMessage = null; SaveError = null;
+            IsBusy = false;
             RaiseGallery();
         }
 
-        /// <summary>Ce ruleaza "Calculeaza", sincron: curbele pentru scopul ales, la marimea data a galeriei.</summary>
+        /// <summary>Ce ruleaza "Calculeaza", sincron: curbele imaginii, la marimea data a galeriei.</summary>
         internal void Compute(int width, int height)
         {
             SetGallerySize(width, height);
-            Show(CurveRun.Execute(_result, Purpose, _width, _height), 0);
+            _run++;
+            Show(CurveRun.Execute(_result, CurvePurpose.Print, _width, _height));
         }
 
-        async Task ComputeAsync()
+        internal async Task ComputeAsync()
         {
             AnalysisResult result = _result;
-            CurvePurpose purpose = Purpose;
-            int w = _width, h = _height;
+            int w = _width, h = _height, run = ++_run;
             IsBusy = true;
-            Message = "se calculeaza curbele...";
+            Message = CurveTexts.Computing;
             try
             {
-                CurveSet set = await Task.Run(() => CurveRun.Execute(result, purpose, w, h));
-                if (ReferenceEquals(result, _result)) Show(set, 0);
+                CurveSet set = await Task.Run(() => CurveRun.Execute(result, CurvePurpose.Print, w, h));
+                if (run == _run) Show(set);
             }
             catch (Exception e)
             {
-                Reset();
-                Message = MainViewModel.Describe(e);
+                if (run == _run)
+                {
+                    Reset();
+                    Message = MainViewModel.Describe(e);
+                }
             }
             finally
             {
-                IsBusy = false;
+                if (run == _run) IsBusy = false;
             }
         }
 
-        void Show(CurveSet set, int index)
+        /// <summary>Un set calculat pentru print: imaginile se fac o data, randurile pentru amandoua scopurile.</summary>
+        void Show(CurveSet print)
         {
-            _set = set;
             SaveMessage = null; SaveError = null;
-            AnchorSource = set.SourceSentence;
-            if (set.Problem != null)
+            AnchorSource = print.SourceSentence;
+            _print = print;
+            _screen = CurveRun.ForScreen(print);
+            _index = 0;
+            if (print.Problem != null)
             {
-                _index = 0;
+                _images = Array.Empty<BitmapSource>();
                 Items = Array.Empty<CurveGalleryItem>();
-                Message = set.Problem;
+                Message = print.Problem;
                 RaiseGallery();
                 return;
             }
-            var items = new List<CurveGalleryItem> { Item(CurveTexts.Original, set.OriginalPreview, null) };
-            foreach (CurveSuggestion s in set.Suggestions) items.Add(Item(s.Name, s.Preview, s));
-            _index = Math.Clamp(index, 0, items.Count - 1);
+            var images = new List<BitmapSource> { Bitmap(print.OriginalPreview) };
+            foreach (CurveSuggestion s in print.Suggestions) images.Add(Bitmap(s.Preview));
+            _images = images;
+            // Rasterele previzualizarilor nu mai trebuie: bitmapurile le tin locul. Curbele si
+            // dovezile raman, pentru fereastra curbei si pentru salvare.
+            _print = Slim(_print);
+            _screen = Slim(_screen);
             Message = null;
+            ShowItems(0);
+        }
+
+        static BitmapSource Bitmap(Raster image) => RasterBitmaps.Region(image, 0, 0, image.W, image.H);
+
+        static CurveSet Slim(CurveSet set) => set with
+        {
+            OriginalPreview = null,
+            Suggestions = set.Suggestions.Select(s => s with { Preview = null }).ToArray(),
+        };
+
+        /// <summary>Galeria pentru scopul ales, din imaginile deja facute.</summary>
+        void ShowItems(int index)
+        {
+            CurveSet set = _isPrint ? _print : _screen;
+            var items = new List<CurveGalleryItem> { Item(CurveTexts.Original, _images[0], null) };
+            for (int i = 0; i < set.Suggestions.Count; i++) items.Add(Item(set.Suggestions[i].Name, _images[i + 1], set.Suggestions[i]));
+            _index = Math.Clamp(index, 0, items.Count - 1);
             Items = items;
             RaiseGallery();
         }
 
-        static CurveGalleryItem Item(string name, Raster image, CurveSuggestion s) => new()
+        static CurveGalleryItem Item(string name, BitmapSource image, CurveSuggestion s) => new()
         {
             Name = name,
-            Image = RasterBitmaps.Region(image, 0, 0, image.W, image.H),
-            Width = image.W,
-            Height = image.H,
+            Image = image,
+            Width = image.PixelWidth,
+            Height = image.PixelHeight,
             Evidence = s == null ? Array.Empty<string>() : CurveTexts.EvidenceLines(s),
             EvidenceRows = s == null ? Array.Empty<CurveEvidenceRow>()
                 : CurveTexts.EvidenceRows(s).Select(r => new CurveEvidenceRow { Text = r.Text, IsWarning = r.Warning }).ToArray(),

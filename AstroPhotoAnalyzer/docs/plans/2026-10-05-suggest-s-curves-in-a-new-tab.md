@@ -151,6 +151,12 @@ format; black point compensation and the viewing light (the open follow-up of AD
 
 ## What deviated (2026-10-05)
 
+- A review by a subagent after the first commits found the save unsafe in two ways (another
+  spelling of the input's path; a relative input and a changed working directory), a purpose
+  change that recomputed everything on the UI thread and could show the wrong purpose's
+  evidence, a test that asserted nothing, and behaviour without gate tests. All fixed on the
+  branch with tests first; stale `CHECKSUM` cards are recorded as a known limit.
+
 - Step 0 was run on single colours and a 17-cube grid, not on the 0.17 FITS per class; the
   per-class comparison came at step 3, from the build. The figures do not match the study's
   digit by digit because the definition differs (chroma only, no black point compensation);

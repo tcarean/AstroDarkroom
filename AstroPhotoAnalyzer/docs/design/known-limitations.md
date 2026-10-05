@@ -71,3 +71,12 @@
   point compensation, on an interpolated grid: an estimate to tenths of a percent, not a
   soft proof. `Maxima` clips more pixels than the other suggestions (0.37 % against 0.10 % on
   the reference PNG).
+- A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /
+  `DATAMAX`, would describe the old data. Siril writes none of them by default; a source that
+  carries them yields a file that fails checksum verification.
+- The protection of the input against a save over it by another spelling of its path relies on
+  Windows file sharing; elsewhere only the path compare stands (the window, the only caller, is
+  Windows-only). The file a WCS was borrowed from and the ICC profile are not guarded: the save
+  dialog asks before replacing any existing file.
+- `Salveaza ca...` writes on the UI thread, with a wait cursor: about a second for a 24 MP float
+  FITS on an SSD.

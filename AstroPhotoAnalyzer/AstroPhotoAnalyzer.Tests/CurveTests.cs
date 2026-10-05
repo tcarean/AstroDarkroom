@@ -332,6 +332,189 @@ public class CurveTests
     }
 
     [Fact]
+    public void R145_TheInputIsProtectedWhateverSpellingTheTargetReachesItBy()
+    {
+        if (!OperatingSystem.IsWindows()) return;   // the device spellings and the sharing rules are Windows'
+        using var ws = new TempWorkspace();
+        byte[] source = FitsTestData.Build(48, 48, 3, (x, y, p) => 3000 + 900 * ((x + y + p) % 60));
+        string input = ws.WriteFile("in.fit", source);
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        var s = new CurveSuggestion { Name = "Medie", Curve = Curve(Earlier) };
+
+        // The same file through the Win32 file and device namespaces: a string compare cannot
+        // see it, so the input is held open against writing for the length of the save.
+        foreach (string prefix in new[] { @"\\?\", @"\\.\" })
+        {
+            Exception e = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, s, prefix + input));
+            Assert.Contains("imaginea de intrare", e.Message);
+            Assert.Equal(source, File.ReadAllBytes(input));
+        }
+        Assert.Equal(new[] { input }, Directory.GetFiles(ws.Dir));   // no temporary file left
+    }
+
+    [Fact]
+    public void R145_TheInputIsKnownByItsFullPathAndASaveWithoutItIsRefused()
+    {
+        using var ws = new TempWorkspace();
+        byte[] source = FitsTestData.Build(48, 48, 3, (x, y, p) => 3000 + 900 * ((x + y + p) % 60));
+        string input = ws.WriteFile("in.fit", source);
+        var s = new CurveSuggestion { Name = "Medie", Curve = Curve(Earlier) };
+
+        // Opened by a relative path: the result keeps the full path of that moment, so a later
+        // change of the working directory cannot make the tool lose the input.
+        string relative = Path.GetRelativePath(Environment.CurrentDirectory, input);
+        AnalysisResult a = AnalysisRun.Execute(relative, Scenes.OnBuiltForPaper());
+        Assert.Equal(Path.GetFullPath(input), a.FullPath);
+        Exception same = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, s, input));
+        Assert.Contains("imaginea de intrare", same.Message);
+        Assert.Equal(source, File.ReadAllBytes(input));
+
+        // The input gone between the analysis and the save: refused, never a FITS without its header.
+        File.Delete(input);
+        string target = ws.PathTo("out.fit");
+        Exception gone = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, s, target));
+        Assert.Contains("nu mai e", gone.Message);
+        Assert.False(File.Exists(target));
+        Assert.Empty(Directory.GetFiles(ws.Dir));
+    }
+
+    [Fact]
+    public void R145_ValuesThatDoNotFitTheSourcesEncodingRefuseTheSave()
+    {
+        using var ws = new TempWorkspace();
+        // A signed 16-bit FITS without BZERO holds 0..32767, half the scale: the curve lifts the
+        // bright samples past it. Clipping them silently would be a wrong file.
+        string input = ws.WriteFile("in.fit", FitsTestData.Build(48, 48, 3, (x, y, p) => 3000 + 500 * ((x + y + p) % 56), bzero: 0));
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        string target = ws.PathTo("out.fit");
+
+        Exception e = Assert.ThrowsAny<Exception>(() => CurveExport.Save(a, new CurveSuggestion { Name = "Medie", Curve = Curve(Earlier) }, target));
+        Assert.Contains("nu incap", e.Message);
+        Assert.False(File.Exists(target));
+        Assert.Equal(new[] { input }, Directory.GetFiles(ws.Dir));
+    }
+
+    [Fact]
+    public void R145_TheHdusAroundTheImagePassUnchangedAndABottomUpIntegerImageKeepsItsRows()
+    {
+        using var ws = new TempWorkspace();
+        byte[] image = FitsTestData.Build(40, 24, 1, (x, y, _) => 2000 + 1500 * ((x + 3 * y) % 36),
+            extraCards: new[] { FitsTestData.StringCard("ROWORDER", "BOTTOM-UP") });
+        byte[] trailing = FitsTestData.Build2D(8, 8, (x, y) => 100 * (x + y));
+        byte[] source = FitsTestData.WithEmptyPrimary(image).Concat(trailing).ToArray();
+        string input = ws.WriteFile("in.fit", source);
+        AnalysisResult a = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
+        ToneCurve c = Curve(Earlier);
+        string target = ws.PathTo("out.fit");
+
+        CurveExport.Save(a, new CurveSuggestion { Name = "Medie", Curve = c }, target);
+
+        byte[] saved = File.ReadAllBytes(target);
+        Assert.Equal(source[..2880], saved[..2880]);                                   // the empty primary
+        Assert.Equal(trailing, saved[^trailing.Length..]);                            // the HDU after the image
+        Assert.Equal(0, saved.Length % 2880);
+        Raster back = ImageLoader.Load(target), want = c.Apply(a.Raster);
+        Assert.Single(back.Planes);
+        for (int i = 0; i < want.Planes[0].Length; i++)
+            Assert.InRange(Math.Abs(back.Planes[0][i] - want.Planes[0][i]), 0, 1.0 / 65535 + 1e-7);
+    }
+
+    [Fact]
+    public void R142_TheScreenEvidenceIsThePrintEvidenceWithoutThePaperChecks()
+    {
+        AnalysisResult a = Band();
+        CurveSet print = Suggest(a, CurvePurpose.Print), derived = CurveRun.ForScreen(print), screen = Suggest(a, CurvePurpose.Screen);
+
+        Assert.Equal(CurvePurpose.Screen, derived.Purpose);
+        Assert.Equal(screen.Suggestions.Count, derived.Suggestions.Count);
+        for (int i = 0; i < screen.Suggestions.Count; i++)
+        {
+            CurveEvidence d = derived.Suggestions[i].Evidence, e = screen.Suggestions[i].Evidence;
+            Assert.Same(print.Suggestions[i].Curve, derived.Suggestions[i].Curve);
+            Assert.Equal(e.LstarAfter, d.LstarAfter);
+            Assert.Equal(e.NoiseGain, d.NoiseGain);
+            Assert.Equal(e.PctClippedAfter, d.PctClippedAfter);
+            Assert.Empty(d.PaperChecks);
+            Assert.Null(d.Gamut);
+            Assert.Null(d.GamutNote);
+        }
+    }
+
+    [Fact]
+    public void R143_TheNoiseCheckFiresWhenTheGainTakesTheNoisePastThePrintTarget()
+    {
+        AnalysisResult a = Band();
+        var quiet = new NoiseResult { SmoothTiles = Thresholds.NoiseMinTiles, SigmaMedianLsb = 1.0 };
+        var loud = new NoiseResult { SmoothTiles = Thresholds.NoiseMinTiles, SigmaMedianLsb = 1.4 };
+        var few = new NoiseResult { SmoothTiles = 0, SigmaMedianLsb = 5 };
+        CurveEvidence With(NoiseResult n) => new()
+        {
+            NoiseGain = 1.2,
+            NoiseAfterLsb = n.Insufficient ? double.NaN : n.SigmaMedianLsb * 1.2,
+        };
+
+        Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, quiet, With(quiet)), r => r.Topic == Topic.Denoise);   // 1.2 LSB, under 1.5
+        Recommendation check = Assert.Single(CurveTexts.PaperChecks(a.Simulation, loud, With(loud)), r => r.Topic == Topic.Denoise);   // 1.68 LSB
+        Assert.Equal(Verdict.Attention, check.Verdict);
+        Assert.Contains("1.40 LSB x 1.20", check.Because);
+        Assert.Contains("1.68 LSB", check.Because);
+        Assert.Contains($"{Thresholds.NoisePrintHiLsb:0.0} LSB", check.Because);
+        Assert.DoesNotContain(CurveTexts.PaperChecks(a.Simulation, few, With(few)), r => r.Topic == Topic.Denoise);       // not enough flat sky: no figure, no check
+    }
+
+    [Fact]
+    public void R144_TheGamutTableIsInterpolatedAndCountedPerClassOfThePatch()
+    {
+        // A hand-built table on a 2-cube: only the corner of pure red is displaced, by 12 in a*.
+        var table = new GamutTable { N = 2, Da = new float[8], Db = new float[8] };
+        table.Da[(1 * 2 + 0) * 2 + 0] = 12;
+        Assert.True(GamutAnalyzer.Outside(table, 1, 0, 0));
+        Assert.False(GamutAnalyzer.Outside(table, 0, 0, 0));
+        Assert.False(GamutAnalyzer.Outside(table, 0, 1, 0));
+        Assert.False(GamutAnalyzer.Outside(table, 0.2f, 0, 0));    // 12 x 0.2 = 2.4, under the threshold of 3
+        Assert.True(GamutAnalyzer.Outside(table, 0.3f, 0, 0));     // 3.6
+        Assert.False(GamutAnalyzer.Outside(table, 1, 0.8f, 0));    // 12 x 0.2 = 2.4
+
+        // 16 x 16 samples, patches of 8: the left half red (outside), the right half grey; the
+        // top-left patch is dust, the bottom-left sky, the right two band.
+        Raster sub = SyntheticRasters.From(16, 16, 3, (x, y, p) => x < 8 ? (p == 0 ? 1f : 0f) : 0.3f);
+        var map = new DustMap
+        {
+            Cols = 2,
+            Rows = 2,
+            Side = 8,
+            Stride = 4,
+            Classes = new[] { PatchClass.Dust, PatchClass.Band, PatchClass.Sky, PatchClass.Band },
+        };
+        GamutFigure g = GamutAnalyzer.Measure(table, sub, map, byClass: true);
+        Assert.Equal(50, g.PctAll, 9);
+        Assert.Equal(new[] { 100.0, 100.0, 0.0, double.NaN, double.NaN }, g.PctByClass);
+        Assert.Null(GamutAnalyzer.Measure(table, sub, map, byClass: false).PctByClass);
+
+        // A mono image has no chroma to lose.
+        Assert.Equal(0, GamutAnalyzer.Measure(table, SyntheticRasters.Flat(16, 16, 0.5f, planes: 1), map, byClass: true).PctAll);
+    }
+
+    [Fact]
+    public void R144_AProfileThatCannotBeUsedGivesItsReasonInsteadOfAFigure()
+    {
+        using var ws = new TempWorkspace();
+        string notAProfile = ws.WriteFile("gol.icc", new byte[200]);
+        Assert.NotNull(GamutAnalyzer.Build(notAProfile, 3).Problem);
+        Assert.NotNull(GamutAnalyzer.Build(ws.PathTo("lipsa.icc"), 3).Problem);
+
+        // Through the run: the Dmax came from a profile that then cannot give a round trip.
+        AnalysisResult a = AnalysisRun.Execute(BandScene(), "memorie",
+            Scenes.OnBuiltForPaper() with { DmaxProfile = "Gol", DmaxProfilePath = notAProfile });
+        foreach (CurveSuggestion s in Suggest(a, CurvePurpose.Print).Suggestions)
+        {
+            Assert.Null(s.Evidence.Gamut);
+            Assert.StartsWith("gamutul hartiei: necunoscut - ", s.Evidence.GamutNote);
+            Assert.DoesNotContain("Din profil ICC...", s.Evidence.GamutNote);
+        }
+    }
+
+    [Fact]
     public void R145_SavingOverTheInputIsRefusedAndAFailedWriteLeavesNoFile()
     {
         using var ws = new TempWorkspace();

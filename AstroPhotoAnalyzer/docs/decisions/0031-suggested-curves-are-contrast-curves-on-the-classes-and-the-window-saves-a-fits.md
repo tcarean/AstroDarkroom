@@ -111,6 +111,10 @@ console's class shares and dust and sky L\* on both FITS files:
 - The evidence gives each class's level with the statistic of its anchor, so the band and the
   bright clouds read higher than the class medians quoted in the Context (33.2 and 57.7 as is
   on the 0.17 FITS, against medians of 24.2 and 47.4).
+- A review on 2026-10-05, before the merge, overwrote the input through other spellings of its
+  path and found a FITS saved without its header after a change of working directory. The input
+  is therefore known by its full path, held open against writing for the length of a save, and
+  required to exist; an integer encoding that cannot hold the curved values refuses the save.
 - Known limits: the anchors of a frame without the classes are percentiles of the histogram, not
   objects; the slopes come from one curve on one image; `Maxima` clips more pixels (0.16 to
   0.37 % against 0.02 to 0.10 % on the three images).

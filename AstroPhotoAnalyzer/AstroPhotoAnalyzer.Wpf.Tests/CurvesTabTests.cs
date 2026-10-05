@@ -121,13 +121,15 @@ public class CurvesTabTests
     {
         using var ws = new TempWorkspace();
         // A TIFF input: the proposed name and the saved file are a FITS all the same (R-145).
-        string input = ws.WriteFile("calea-lactee.tif", TiffTestData.Build16Rgb(64, 64,
-            (x, y, c) => (ushort)(3000 + 40000 * ((x * 7 + y * 3 + c) % 64) / 64), IccTestData.V2("sRGB test")));
+        // Vertical stripes with five increasing levels, so that the frame has its five anchors.
+        string input = ws.WriteFile("calea-lactee.tif", TiffTestData.Build16Rgb(512, 512,
+            (x, y, c) => (int)(65535 * (x < 32 ? 0.05 : x < 400 ? 0.15 : x < 490 ? 0.3 : x < 508 ? 0.5 : 0.7)), IccTestData.V2("sRGB test")));
         AnalysisResult result = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
         var tab = new CurvesTabViewModel();
         tab.Populate(result);
         tab.Compute(400, 300);
-        if (!tab.HasGallery || tab.Items.Count < 2) return;   // a scene whose anchors do not increase has nothing to save
+        Assert.True(tab.HasGallery, tab.Message);
+        Assert.Equal(ws.Dir, tab.InputFolder);
         tab.Next.Execute(null);
 
         string? proposed = null;
@@ -141,8 +143,95 @@ public class CurvesTabTests
         Assert.Null(tab.SaveError);
         Assert.Contains(target, tab.SaveMessage);
 
+        byte[] before = File.ReadAllBytes(input);
         tab.Save(input);   // over the input: refused, said, nothing written
         Assert.Contains("imaginea de intrare", tab.SaveError);
+        Assert.Null(tab.SaveMessage);
+        Assert.Equal(before, File.ReadAllBytes(input));
+
+        // The saved file is a float FITS that reads back as the curve applied to the image.
+        Raster back = ImageLoader.Load(target);
+        Assert.Equal("FITS", back.Source.Format);
+        Assert.Equal(512, back.W);
+        Assert.Equal(3, back.Planes.Length);
+    }
+
+    [Fact]
+    public async Task R146_CalculeazaRunsInTheBackgroundAndALateResultNeverReachesAnotherImage()
+    {
+        AnalysisResult first = Result(), second = Result();
+        var tab = new CurvesTabViewModel();
+        tab.Populate(first);
+
+        // The button's own path: busy while it runs, then the gallery for the purpose chosen
+        // at the end, not at the start.
+        Task run = tab.ComputeAsync();
+        Assert.True(tab.IsBusy);
+        Assert.False(tab.Calculate.CanExecute(null));
+        tab.IsScreen = true;
+        await run;
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.HasGallery, tab.Message);
+        Assert.Null(tab.Message);
+        tab.Next.Execute(null);
+        Assert.DoesNotContain(tab.Current.EvidenceRows, r => r.IsWarning);
+        tab.IsPrint = true;
+        Assert.Contains(tab.Current.EvidenceRows, r => r.IsWarning);
+
+        // Another image opened while a computation runs: the old result is dropped, the tab
+        // is free for the new image at once.
+        Task late = tab.ComputeAsync();
+        tab.Populate(second);
+        Assert.False(tab.IsBusy);
+        Assert.True(tab.Calculate.CanExecute(null));
+        await late;
+        Assert.False(tab.HasGallery);
+        Assert.Empty(tab.Items);
+        Assert.Null(tab.Message);
+        Assert.False(tab.IsBusy);
+    }
+
+    [Fact]
+    public void R146_ChangingThePurposeKeepsTheSameImages()
+    {
+        var tab = new CurvesTabViewModel();
+        tab.Populate(Result());
+        tab.Compute(800, 500);
+        var images = tab.Items.Select(i => i.Image).ToArray();
+
+        tab.IsScreen = true;
+        Assert.Equal(images.Length, tab.Items.Count);
+        for (int i = 0; i < images.Length; i++) Assert.Same(images[i], tab.Items[i].Image);
+        tab.IsPrint = true;
+        for (int i = 0; i < images.Length; i++) Assert.Same(images[i], tab.Items[i].Image);
+    }
+
+    [Fact]
+    public void R147_TheCurveWindowSaysWhatItsColumnsMeanForTheImageAtHand()
+    {
+        CurveWindowViewModel Open(AnalysisResult result)
+        {
+            var tab = new CurvesTabViewModel();
+            tab.Populate(result);
+            tab.Compute(400, 300);
+            Assert.True(tab.HasGallery, tab.Message);
+            tab.Next.Execute(null);
+            CurveWindowViewModel? opened = null;
+            tab.CurveRequested += w => opened = w;
+            tab.OpenCurve.Execute(null);
+            return opened!;
+        }
+
+        CurveWindowViewModel classes = Open(Result());
+        Assert.Contains("aceeasi curba pe R, G si B", classes.Caption);
+        Assert.Contains("L* e al dalelor clasei", classes.PointsNote);
+
+        // A mono frame without a WCS: no R, G and B to speak of, and no classes behind the upper points.
+        Raster mono = SyntheticRasters.From(512, 512, 1, (x, y, p) => x < 32 ? 0.05f : x < 400 ? 0.15f : x < 490 ? 0.3f : x < 508 ? 0.5f : 0.7f);
+        CurveWindowViewModel frame = Open(AnalysisRun.Execute(mono, "memorie", Scenes.OnBuiltForPaper()));
+        Assert.DoesNotContain("R, G si B", frame.Caption);
+        Assert.DoesNotContain("R, G si B", frame.PointsNote);
+        Assert.Contains("percentile ale histogramei cadrului", frame.PointsNote);
     }
 
     [Fact]
@@ -175,7 +264,8 @@ public class CurvesTabTests
         Assert.Equal(0, w.Chart.First().X, 9);
         Assert.Equal(1, w.Chart.Last().X, 9);
         Assert.Equal(strong.Curve.Map(w.Chart[w.Chart.Count / 2].X), w.Chart[w.Chart.Count / 2].Y, 6);
-        Assert.Equal(Thresholds.CurveShadowChartFactor * strong.Curve.Points[3].X, w.ShadowLimit, 9);
+        Assert.Equal(CurveAdvisor.ShadowChartLimit(strong.Curve), w.ShadowLimit, 9);
+        Assert.InRange(w.ShadowLimit, strong.Curve.Points[3].X, strong.Curve.Points[4].X);   // past the band, short of the clouds
         Assert.Equal(w.ShadowLimit, w.ShadowChart.Last().X, 9);
         Assert.Equal(5, w.Markers.Count);
         Assert.Equal("banda", w.Markers[2].Label);

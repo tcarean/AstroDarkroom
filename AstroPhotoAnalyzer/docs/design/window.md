@@ -73,7 +73,7 @@ the WPF project (XAML fails to load without culture data).
 **The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0031). Unlike
 the other tabs it is empty after an analysis: `Populate` only keeps the result, and
 `Calculeaza` runs `CurveRun.Execute` on a pool thread (`ComputeAsync`; `Compute(w, h)` is the
-same body, synchronous, for the tests). The gallery is a list of `CurveGalleryItem` (name,
+same body, synchronous, for most tests; one test awaits `ComputeAsync` itself). The gallery is a list of `CurveGalleryItem` (name,
 frozen bitmap, evidence lines, the core's suggestion), the original first; `Next` /
 `Previous` move an index and stop at the ends, `OpenCurve` and `SaveAs` are disabled on the
 original. The view is a grid, not a scrolled column, so the image takes the room left, and that room
@@ -83,8 +83,11 @@ cell is as tall as the longest evidence (a row the core marks as a warning, a pa
 drawn in red), and the save message has a fixed two-line place. The
 original and the suggestions are therefore drawn at the same size in the same place. The view
 reports the gallery area's size in screen pixels (`GallerySizeChanged`, `SetGallerySize`) and
-the previews are computed to fit it. Changing the purpose runs the core again for the other
-purpose and keeps the position: the curves are the same, the evidence differs. The Left and
+the previews are computed to fit it. The run is always for print; the tab keeps that set and the screen set derived from it
+(`CurveRun.ForScreen`), makes the bitmaps once and then drops the preview rasters, so changing
+the purpose only rebuilds the rows over the same bitmaps and keeps the position. Each run has
+a number (`_run`): `Reset`, on another image or a clear, advances it and frees `IsBusy`, and a
+computation that ends with an old number touches nothing, on success or on failure. The Left and
 Right keys are caught on the window (`MainWindow.GalleryKeys`, `PreviewKeyDown`), before the
 `TabControl`, which would use them to change the tab; they act only while the Curbe tab is
 selected, the gallery exists and the focus is not in a text box. `SaveRequested` makes the

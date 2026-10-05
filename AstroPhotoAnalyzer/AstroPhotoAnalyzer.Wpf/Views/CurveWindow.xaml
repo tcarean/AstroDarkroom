@@ -55,7 +55,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition SharedSizeGroup="CurveBefore" />
             <ColumnDefinition SharedSizeGroup="CurveAfter" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="clasa" Margin="0,0,18,0" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Faint}" Text="punct" Margin="0,0,18,0" />
           <TextBlock Grid.Column="1" Style="{StaticResource Faint}" Text="intrare (x)" Margin="0,0,18,0" />
           <TextBlock Grid.Column="2" Style="{StaticResource Faint}" Text="iesire (y)" Margin="0,0,18,0" />
           <TextBlock Grid.Column="3" Style="{StaticResource Faint}" Text="L* inainte" Margin="0,0,18,0" />
@@ -82,7 +82,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </ItemsControl.ItemTemplate>
         </ItemsControl>
         <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" MaxWidth="330" Margin="0,10,0,0"
-                   Text="Intrarea si iesirea sunt valori 0..1 ale pixelului, aceleasi pe R, G si B. Primul si ultimul rand sunt capetele curbei. L* e al dalelor clasei, masurat inainte si dupa curba." />
+                   Text="{Binding PointsNote}" />
       </StackPanel>
     </Border>
 

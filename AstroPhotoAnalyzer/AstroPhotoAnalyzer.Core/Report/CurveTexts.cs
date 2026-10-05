@@ -39,6 +39,30 @@ namespace AstroPhotoAnalyzer
 
         internal const string SaveOverInput = "Nu se salveaza peste imaginea de intrare: alege alt nume sau alt folder. Imaginea de intrare nu se modifica niciodata.";
 
+        internal static string InputGone(string path)
+            => "Imaginea de intrare nu mai e unde era la analiza (" + path + "): salvarea are nevoie de ea, ca sa-i pastreze antetul. Deschide imaginea din nou.";
+
+        internal static string ValuesDoNotFit(long count, int bitpix, double bzero)
+            => $"{Fmt.Int(count)} valori nu incap in codarea FITS-ului sursa (BITPIX {bitpix}, BZERO {Fmt.F0(bzero)}): curba le ridica peste capatul ei. "
+               + "Nu s-a salvat nimic. Salveaza sursa din Siril pe 32 de biti si analizeaz-o pe aceea.";
+
+        /// <summary>Ce spune fereastra curbei deasupra tabelului (R-147): cum se reface curba in Siril.</summary>
+        internal static string CurveCaption(bool colour)
+            => "Spline cubic natural prin puncte"
+               + (colour ? ", aceeasi curba pe R, G si B" : "")
+               + ": in Siril, Curves Transformation, modul cubic spline, cu punctele din tabel.";
+
+        /// <summary>Ce inseamna coloanele tabelului de puncte, dupa sursa ancorelor.</summary>
+        internal static string PointsNote(CurveAnchorSource source, bool colour)
+            => "Intrarea si iesirea sunt valori 0..1 ale pixelului" + (colour ? ", aceleasi pe R, G si B" : "") + ". Primul si ultimul rand sunt capetele curbei. "
+               + (source == CurveAnchorSource.Classes
+                   ? "L* e al dalelor clasei, masurat inainte si dupa curba."
+                   : "L* e masurat inainte si dupa curba: praful si cerul pe dale, banda, norii luminosi si varfurile ca percentile ale histogramei cadrului.");
+
+        internal static string ShadowHeading(double limit) => $"UMBRELE MARITE (0 - {Fmt.F3(limit)}): unde stau praful si cerul";
+
+        internal const string Computing = "se calculeaza curbele...";
+
         internal static string AnchorsNotIncreasing(string lower, double lowerValue, string upper, double upperValue)
             => $"Nu se poate sugera o curba: ancora \"{upper}\" ({Fmt.F3(upperValue)}) nu e peste ancora \"{lower}\" ({Fmt.F3(lowerValue)}). "
                + "Curbele au nevoie de cinci trepte crescatoare: praf, cer, banda, nori luminosi, varfuri.";

@@ -452,10 +452,20 @@ namespace AstroPhotoAnalyzer
         /// <summary>Unde ajung cel mult varfurile: 0.92 in curba veche, cu loc de umar pana la alb.</summary>
         internal const double CurvePeakTarget = 0.92;
 
-        /// <summary>Tariile Blanda, Medie, Puternica: cat din drumul de la identitate la curba intreaga.</summary>
+        /// <summary>
+        /// Tariile Blanda, Medie, Puternica: cat din drumul de la identitate la curba intreaga.
+        /// Alese pe plansele studiului din 2026-10-05: pe FITS-ul 0.17 treptele muta norii
+        /// luminosi cu cate ~4 L* (56, 60, 64), cat sa se deosebeasca la rasfoire; pasii de
+        /// 0.15 ai primei incercari (1 L* la banda) nu se deosebeau.
+        /// </summary>
         internal static readonly double[] CurveStrengths = { 0.5, 0.75, 1.0 };
 
-        /// <summary>Maxima se ofera doar cand Puternica lasa varfurile cu mai mult de atat sub CurvePeakTarget; sub 0.02 cele doua nu se disting.</summary>
+        /// <summary>
+        /// Maxima se ofera doar cand Puternica lasa varfurile cu mai mult de atat sub
+        /// CurvePeakTarget. O alegere, nu o masuratoare: 0.02 din scara e sub 2 L* la varfuri,
+        /// mai putin decat o treapta de tarie; pe FITS-ul 0.17 Puternica ajunge la 0.919 si
+        /// Maxima n-ar adauga nimic.
+        /// </summary>
         internal const double CurveMaximaMinGain = 0.02;
 
         /// <summary>Un pixel e "ars" cand un canal al lui e la sau peste nivelul asta; pragul studiului din 2026-10-05.</summary>
@@ -463,6 +473,14 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Graficul umbrelor din fereastra curbei merge de la 0 la de atatea ori intrarea benzii: praful si cerul stau in primii 10-20 % ai axei si nu se vad pe graficul intreg.</summary>
         internal const double CurveShadowChartFactor = 1.25;
+
+        /// <summary>
+        /// Marimea previzualizarilor cand fereastra n-a apucat sa spuna cat e zona galeriei (in
+        /// teste, sau inainte de prima asezare): cat incape pe un ecran Full HD sub bara de
+        /// parametri. O prezumtie despre ecran, nu o masuratoare.
+        /// </summary>
+        internal const int CurvePreviewDefaultWidth = 1600;
+        internal const int CurvePreviewDefaultHeight = 900;
 
         /// <summary>Cate puncte are curba esantionata pentru un grafic.</summary>
         internal const int CurveChartSamples = 257;
