@@ -47,9 +47,9 @@ stops on a drift instead of editing them.
 | --- | --- | --- |
 | V-001 | the PNG; `dmax` 2.0: the full frame, the baryta of before ADR 0028 (paper black L\* 9.0), the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust by the fallback rule, the recommended row, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
 | V-002 | the PNG; `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
-| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the as-is row is the recommended one; a guard on the paper-black maths more than on the image |
+| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the image is print-safe as it is; since ADR 0029 the sky (L\* 9.4) is under the visibility threshold and the recommended row is 0.15 (sky L\* 15.3); a guard on the paper-black maths more than on the image |
 | V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 2062 dust patches of 21 840, the dust at L\* 7.9 (the 25 % percentile of the dust class) and the sky at 17.6 (the median of the sky class); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
-| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.09) above it, so the image is print-safe as it is and the recommended row is the grid's lowest, 0.10; the exact target 0.094 (0.110 at Dmax 2.3, 0.080 at 2.5), the Dmax from which it passes as is 2.34; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
+| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.09) above it, so the dust is print-safe as it is; the sky (L\* 9.4) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.148, so the recommended row is 0.15 (dust L\* 7.8, sky L\* 15.3, 48.0 % of pixels still under L\* 15 against 82.8 % as it is); the exact target 0.094 (0.110 at Dmax 2.3, 0.080 at 2.5), the Dmax from which it passes as is 2.34; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -207,3 +207,15 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   recorded on (`dmax` 2.0), which keeps the re-stretch path guarded on the real images, and V-005
   was added on the default medium, 43 figures from its `MEASURED` line. V-002 and V-003 did not
   move. The five cases pass.
+- 2026-10-05 (ADR 0029, the visibility threshold): the recommended row now also needs the sky at
+  L\* 15, so the two cases whose recommended row had the sky under it were re-recorded, by the
+  owner's word, from the `MEASURED` lines of the new build. V-003: `simulation.recommendedTarget`
+  0.1028 -> 0.15, `simulation.recommendedIsAsIs` True -> False, `simulation.primary.target`
+  0.1028 -> 0.15, `.gamma` 1 -> 0.8339, `.lstarDust` 4.0925 -> 7.7976, `.lstarSky` 9.3816 ->
+  15.2617, `.pctPatchesBelowPaperBlack` 0.9292 -> 0.1876, `.pctBelowLowSeparation` 82.7636 ->
+  48.0471. V-005 (recorded earlier the same day): `simulation.recommendedTarget` 0.1 -> 0.15,
+  `simulation.primary.target` 0.1 -> 0.15, `.gamma` 1.0121 -> 0.8339, `.lstarDust` 3.924 ->
+  7.7976, `.lstarSky` 9.0246 -> 15.2617, `.pctPatchesBelowPaperBlack` 0.6388 -> 0.143,
+  `.pctBelowLowSeparation` 83.8455 -> 48.0471; the new figures `simulation.skyBelowVisibility`
+  True and `simulation.visibilityTarget` 0.1479. V-001, V-002 and V-004 did not move: their
+  recommended rows already had the sky above L\* 15. The five cases pass.
