@@ -416,7 +416,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>Densitatea "clasica" de referinta, doar pentru a arata ca nu e limita reala.</summary>
         internal const double ReferenceDpi = 300;
 
-        // ---------------------------------------------------------------- curbele sugerate (ADR 0031)
+        // ---------------------------------------------------------------- curbele sugerate (ADR 0032)
 
         /// <summary>
         /// Ancora "banda" a unei curbe, cu clase: percentila dalelor din clasa banda. Nu

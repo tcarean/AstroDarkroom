@@ -43,7 +43,7 @@ that knows both. An unknown extension is an error naming the accepted ones.
 | `FitsReader` (hand-written, streaming) | `.fit .fits .fts` | first HDU with NAXIS 2 or 3; BITPIX 8/16/32 int (BZERO/BSCALE applied) and -32/-64 float; NAXIS3 = 1 or 3, anything else refused; rows flipped when `ROWORDER = 'BOTTOM-UP'`; empty primary HDUs skipped |
 | `ImageSharpReader` | `.tif .tiff .png .jpg .jpeg` | colour decoded as `Rgb48`, mono as `L16`; bit depth and channel count from the format's own metadata (PNG `BitDepth`/`ColorType`, TIFF `BitsPerSample`/`PhotometricInterpretation`, JPEG always 8); compression name; ICC profile from the **decoded** image (`Metadata.IccProfile` or `Frames[0].Metadata.IccProfile`) |
 
-### The writer (`Input/FitsWriter.cs`, R-145, ADR 0031)
+### The writer (`Input/FitsWriter.cs`, R-145, ADR 0032)
 
 The one image the tool writes: a new FITS with a curve applied, hand-written like the reader.
 From a FITS source the file is re-opened for reading only and copied as it is, byte for byte,

@@ -59,7 +59,7 @@ recommendations, `Ok` when there are none.
 Timing on the reference image (23 MP, 16-bit RGB PNG): ~11 s in Release, of which
 reading ~3 s, JPEG ~5 s.
 
-### The second run (`Runs/CurveRun.cs`, ADR 0031)
+### The second run (`Runs/CurveRun.cs`, ADR 0032)
 
 `CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight)` is not a stage of the
 chain: it runs when the owner presses `Calculeaza` in the Curbe tab, on the result the chain

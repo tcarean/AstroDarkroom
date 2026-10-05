@@ -61,7 +61,7 @@
 - Palette PNG/TIFF and multi-page TIFF are read through ImageSharp's conversion and noted,
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
-- The suggested curves (ADR 0031) are one recipe: the segment slopes come from one curve the
+- The suggested curves (ADR 0032) are one recipe: the segment slopes come from one curve the
   owner liked on one image, and the anchors of a frame without the classes are percentiles of
   its histogram, not objects. A frame whose five anchors do not increase gets no suggestion.
 - A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is

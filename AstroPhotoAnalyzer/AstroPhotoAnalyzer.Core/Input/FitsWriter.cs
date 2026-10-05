@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // FitsWriter.cs - singurul lucru pe care unealta il scrie in afara de raport: un FITS NOU
-// cu o curba aplicata (R-145, ADR 0031). Scris de mana, ca si cititorul (ADR 0009).
+// cu o curba aplicata (R-145, ADR 0032). Scris de mana, ca si cititorul (ADR 0009).
 //
 // DINTR-UN FITS. Fisierul sursa se redeschide DOAR pentru citire si se copiaza asa cum e,
 // octet cu octet, in afara de doua locuri ale HDU-ului cu imaginea: antetul primeste

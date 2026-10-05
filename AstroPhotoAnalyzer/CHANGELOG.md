@@ -8,7 +8,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
-- The Curbe tab (R-140 to R-147; ADR 0031): contrast curves suggested for a finished image,
+- The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
   `Blanda`, `Medie`, `Puternica` and, when the peaks have room left, `Maxima`, built on five
   anchors (the dust and the sky of the Tonuri tab; the band, the bright clouds and the peaks
   from the upper part of their classes, or from the frame's histogram without a WCS). A gallery

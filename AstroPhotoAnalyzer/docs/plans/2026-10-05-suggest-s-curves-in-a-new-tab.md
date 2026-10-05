@@ -1,11 +1,11 @@
-# Suggest S-curves in a new tab (R-140 to R-147, ADR 0031)
+# Suggest S-curves in a new tab (R-140 to R-147, ADR 0032)
 
 ## Context
 
 The owner wants the window to suggest contrast curves for a finished image, show a preview of
 each, show the curve as a table and a chart that can be typed into Siril's Curves tool, and
 save a new FITS with the curve applied, the input never touched. The measurements of
-2026-10-05 on the three reference images settled the design (ADR 0031, written, accepted in
+2026-10-05 on the three reference images settled the design (ADR 0032, written, accepted in
 chat): five anchors (dust and sky from Tonuri; band, bright clouds and peaks from the upper
 part of their classes, or from the frame's histogram without a WCS), the slopes of the owner's
 earlier curve, three strengths plus `Maxima`, a natural cubic spline per channel as Siril
@@ -14,7 +14,7 @@ a FITS on save.
 
 Already on the branch `claude/Suggest-S-curves-in-a-new-tab` (worktree
 `.claude/worktrees/Suggest-S-curves-in-a-new-tab`), uncommitted: the eight requirement rows
-(`draft`), ADR 0031, the acceptance tests `AstroPhotoAnalyzer.Tests/CurveTests.cs` and
+(`draft`), ADR 0032, the acceptance tests `AstroPhotoAnalyzer.Tests/CurveTests.cs` and
 `AstroPhotoAnalyzer.Wpf.Tests/CurvesTabTests.cs` (42 compile errors, all for types that do not
 exist yet), and the unmeasured case V-008. The tests fix the API named below.
 
@@ -131,7 +131,7 @@ Verified by `CurvesTabTests` (5 tests, R-146, R-147) and a `Render` line for `Cu
   outside 0..1 are saved clipped, as read; the ICC profile of a PNG is not carried; SIP cards
   are copied but still ignored by the classes), `testing.md`.
 - `CLAUDE.md`: the first paragraph and the Layout section ("exports nothing", "six tabs", "both
-  applications call `AnalysisRun.Execute` only"), per ADR 0031. `README.md` (Romanian): the
+  applications call `AnalysisRun.Execute` only"), per ADR 0032. `README.md` (Romanian): the
   `Curbe` tab under "Fereastra". `CHANGELOG.md`: Added. `docs/validation.md` and `.json`.
 - The plan itself saved as `docs/plans/2026-10-05-suggest-s-curves-in-a-new-tab.md`.
 - `/wrap-up`: gate green, the diff read back, commits on the task branch, the merge proposed.
@@ -160,7 +160,7 @@ format; black point compensation and the viewing light (the open follow-up of AD
 - Step 0 was run on single colours and a 17-cube grid, not on the 0.17 FITS per class; the
   per-class comparison came at step 3, from the build. The figures do not match the study's
   digit by digit because the definition differs (chroma only, no black point compensation);
-  R-144 and ADR 0031 say so.
+  R-144 and ADR 0032 say so.
 - The evidence reports the band and the bright clouds at the upper part of their classes, like
   the anchors, not at the class medians the plan's step 3 quoted (28.2 / 64.4); the anchors, the
   control points, the dust, the sky, the peaks, the noise gain and the clipped share match the

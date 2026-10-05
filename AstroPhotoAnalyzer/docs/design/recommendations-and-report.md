@@ -88,7 +88,7 @@ window's saved file byte-identical to the console's output on any Windows cultur
 (`CultureTests`). Text is Romanian without diacritics. The format is pinned by the golden
 tests: change it on purpose, re-approve, read the diff.
 
-### The Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0031)
+### The Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0032)
 
 Not part of the report: the console prints none of it. The file holds every sentence the
 Curbe tab shows, so that the window writes none: the evidence lines of a suggestion

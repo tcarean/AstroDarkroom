@@ -70,7 +70,7 @@ frame of the .ico for "Despre").
 `CurrentCulture` to invariant at startup; `InvariantGlobalization` must **not** be set on
 the WPF project (XAML fails to load without culture data).
 
-**The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0031). Unlike
+**The Curbe tab** (`ViewModels/CurvesTab.cs`, `Views/CurvesView.xaml`; R-146, ADR 0032). Unlike
 the other tabs it is empty after an analysis: `Populate` only keeps the result, and
 `Calculeaza` runs `CurveRun.Execute` on a pool thread (`ComputeAsync`; `Compute(w, h)` is the
 same body, synchronous, for most tests; one test awaits `ComputeAsync` itself). The gallery is a list of `CurveGalleryItem` (name,

@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ToneCurve.cs - o curba de ton: puncte de control si spline-ul cubic NATURAL prin ele
-// (R-140, ADR 0031).
+// (R-140, ADR 0032).
 //
 // E spline-ul pe care il calculeaza unealta Curves Transformation din Siril in modul
 // "cubic spline" (curve_transform.c: derivata a doua zero la capete, sistem tridiagonal,

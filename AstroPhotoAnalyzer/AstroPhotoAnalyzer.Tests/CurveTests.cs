@@ -18,7 +18,7 @@
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// R-140 to R-145: the suggested curves (ADR 0031). The spline against values computed with
+/// R-140 to R-145: the suggested curves (ADR 0032). The spline against values computed with
 /// scipy's natural cubic spline on the owner's earlier curve; the anchors, the strengths and
 /// the evidence on the synthetic band scene; the saved FITS against the file it came from.
 /// </summary>

@@ -287,7 +287,7 @@ Measured and relied upon: mean error is **not** monotone in quality this close t
 lossless (integer YCbCr costs 1-2 levels at q100); max error and the count over 2 levels
 are, and only those feed a verdict. The numbers are this encoder's, not libjpeg's.
 
-### F1 - `ToneCurve`, `CurveAdvisor` - the suggested curves (ADR 0031)
+### F1 - `ToneCurve`, `CurveAdvisor` - the suggested curves (ADR 0032)
 
 Not a measurement of the image but a suggestion built on its measurements; computed on request
 (`pipeline.md`, "The second run").
@@ -347,7 +347,7 @@ each pixel lies in.
 
 On the plate-solved FITS through the lab's baryta profile (V-008): 1.02 % as is (dust 2.7 %,
 sky 0.4 %, band 1.8 %, bright clouds 0.6 %, peaks 0.0 %), 0.82 % after `Puternica`. The study
-of ADR 0031 counted Delta E with black point compensation in 8 bits through LittleCMS and got
+of ADR 0032 counted Delta E with black point compensation in 8 bits through LittleCMS and got
 4.2 % in all, most of it in the darks, and 0.9 % / 0.3 % for the band and the bright clouds:
 the same order above the darks, a different definition, so the two are not to be compared digit
 by digit.

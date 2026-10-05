@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutAnalyzer.cs - cati pixeli ies din gamutul hartiei (R-144, ADR 0031).
+// GamutAnalyzer.cs - cati pixeli ies din gamutul hartiei (R-144, ADR 0032).
 //
 // O CIFRA, nu o corectie: nu intra in nicio curba. O culoare e "in afara" cand drumul
 // sRGB -> imprimanta -> inapoi, prin tabelele colorimetrice relative ale profilului, ii

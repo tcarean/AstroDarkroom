@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurveAdvisor.cs - curbele de contrast sugerate (R-141, R-142, R-143; ADR 0031).
+// CurveAdvisor.cs - curbele de contrast sugerate (R-141, R-142, R-143; ADR 0032).
 //
 // CINCI ANCORE, masurate pe imagine: praful si cerul sunt cele ale tabului Tonuri
 // (DustAnalyzer); banda, norii luminosi si varfurile sunt PARTEA DE SUS a claselor lor -

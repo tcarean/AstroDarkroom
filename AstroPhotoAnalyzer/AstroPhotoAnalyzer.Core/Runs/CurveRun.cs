@@ -16,7 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // CurveRun.cs - a doua rulare a nucleului, la cerere: curbele sugerate pentru o imagine
-// deja analizata, si salvarea uneia (R-140 pana la R-145, ADR 0031).
+// deja analizata, si salvarea uneia (R-140 pana la R-145, ADR 0032).
 //
 // Nu e in AnalysisRun fiindca nu e diagnostic si costa: se face doar cand omul apasa
 // "Calculeaza" in tabul Curbe, pe rezultatul analizei (rasterul, harta dalelor, zgomotul,

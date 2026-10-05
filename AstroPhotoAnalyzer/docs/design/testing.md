@@ -54,7 +54,7 @@ How a validation case runs, and how its figures are recorded, is in `../validati
 case runs". The gate never runs it: `scripts/verify.ps1` passes `kit.json`'s `testFilter`,
 `Category!=Validation`; `/validate` runs it.
 
-## The curves in the tests (ADR 0031)
+## The curves in the tests (ADR 0032)
 
 `CurveTests` checks the spline against values computed with scipy's natural cubic spline on
 the owner's earlier curve, the anchors and the recipe on the band scene of `WcsFixtures` at
