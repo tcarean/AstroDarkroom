@@ -8,6 +8,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR
+  0033): the Curbe tab shows the reason in red, instead of four curves that change nothing.
 - The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
   `Blanda`, `Medie`, `Puternica` and, when the peaks have room left, `Maxima`, built on five
   anchors (the dust and the sky of the Tonuri tab; the band, the bright clouds and the peaks
@@ -20,6 +22,23 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   card of a FITS input. The first image the tool writes; the input is never modified.
 
 ### Changed
+
+- Every frame gets the five classes of the Tonuri tab (R-044, R-113, R-130; ADR 0033). With a
+  WCS and the Milky Way band in the frame they are the band's, as before; otherwise they are
+  relative to a sky modelled from the whole frame, with the thresholds taken from the image
+  (the sky's own patch noise for the nebula, the Otsu split for the bright nebula), named
+  `praf, cer, nebuloasa, nebuloasa stralucitoare, varfuri`, and the map shows all five with
+  the image's thresholds in its legend. The verdict measures the same way on both paths: the
+  sky is the median of the sky class, the dust the darkest extended area, the dust class's
+  25 % percentile when the class is at least 5 % of the frame or else the darkest 1 % of the
+  sky; the report says which. The whole-frame rule (the darkest 1 % of all patches, the median
+  of all patches) is gone. On `de_printat.png` the sky moves from L\* 9.4 to 8.9 and the
+  recommended row from 0.17 to 0.16.
+- The simulation grid starts at 0.05 instead of 0.10 (R-023, R-043; ADR 0034): on baryta the
+  dust reaches paper black under 0.10, and those rows were missing from the table.
+- The curves' anchors come from the classes on either path (R-141, R-146, R-147; ADR 0033), the
+  points carry the classes' names, and the sentence under the gallery names the path; the
+  histogram percentiles of a frame without a WCS are gone.
 
 - Baryta's Dmax is 2.4, not 2.0 (R-016, R-020; ADR 0028): measured, 2.41 relative to paper white,
   on the ICC profile of the lab Chromatone for Hahnemühle Photo Rag Baryta on a Canon iPF8300.

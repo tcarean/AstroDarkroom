@@ -98,10 +98,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Procentul pixelilor subesantionului tonal <paramref name="sub"/> din afara gamutului,
-        /// in total si pe clasele hartii (praf, cer, banda, nori luminosi, varfuri) cand
-        /// <paramref name="byClass"/>; o imagine mono n-are croma si da 0.
+        /// in total si pe cele cinci clase ale hartii; o imagine mono n-are croma si da 0.
         /// </summary>
-        internal static GamutFigure Measure(GamutTable t, Raster sub, DustMap map, bool byClass)
+        internal static GamutFigure Measure(GamutTable t, Raster sub, DustMap map)
         {
             long all = 0, outAll = 0;
             var n = new long[6]; var o = new long[6];
@@ -117,18 +116,14 @@ namespace AstroPhotoAnalyzer
                         bool outside = Outside(t, R[i], G[i], B[i]);
                         all++; if (outside) outAll++;
                         int bx = x / map.Side;
-                        if (!byClass || bx >= map.Cols || by >= map.Rows) continue;
+                        if (bx >= map.Cols || by >= map.Rows) continue;
                         int c = (int)map.Classes[by * map.Cols + bx];
                         n[c]++; if (outside) o[c]++;
                     }
                 }
             }
-            double[] per = null;
-            if (byClass)
-            {
-                per = new double[5];
-                for (int c = 1; c <= 5; c++) per[c - 1] = n[c] == 0 ? (sub.IsColor ? double.NaN : 0) : 100.0 * o[c] / n[c];
-            }
+            var per = new double[5];
+            for (int c = 1; c <= 5; c++) per[c - 1] = n[c] == 0 ? (sub.IsColor ? double.NaN : 0) : 100.0 * o[c] / n[c];
             return new GamutFigure { PctAll = all == 0 ? 0 : 100.0 * outAll / all, PctByClass = per };
         }
     }

@@ -64,10 +64,11 @@ reading ~3 s, JPEG ~5 s.
 `CurveRun.Execute(AnalysisResult, CurvePurpose, maxWidth, maxHeight)` is not a stage of the
 chain: it runs when the owner presses `Calculeaza` in the Curbe tab, on the result the chain
 already produced (the raster, the patch map of the simulation, the noise, the parameters), and
-the console never calls it. Order: the tonal subsample; the source of the anchors and the five
-class levels as they are (`CurveAdvisor.ClassLevels`); the anchors; the preview of the
-original at the integer stride that fits the size asked; then, unless the anchors do not
-increase (`CurveSet.Problem`), the curves (`CurveAdvisor.Curves`), the gamut table when the
+the console never calls it. Order: the tonal subsample; the class names of the map's path
+(`CurveSet.Method`, `Labels`) and the five class levels as they are
+(`CurveAdvisor.ClassLevels`); the anchors; the preview of the original at the integer stride
+that fits the size asked; then, unless a class is empty, the peaks are at or over the target
+or the anchors do not increase (`CurveSet.Problem`), the curves (`CurveAdvisor.Curves`), the gamut table when the
 purpose is print and the Dmax came from a profile (`GamutAnalyzer.Build`, once), and for each
 curve its evidence on the curved subsample and its preview. The purpose changes the evidence
 only: the paper checks and the gamut figure are added for print, and `CurveRun.ForScreen`

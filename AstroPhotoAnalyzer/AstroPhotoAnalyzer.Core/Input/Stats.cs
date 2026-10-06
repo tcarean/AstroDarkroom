@@ -55,6 +55,44 @@ namespace AstroPhotoAnalyzer
 
         internal static double Median(float[] values) => PercentileSorted(Sorted(values), 50);
 
+        /// <summary>
+        /// Sigma robusta: 1.4826 x mediana abaterilor absolute de la mediana (MAD), egala cu
+        /// deviatia standard pe o gaussiana si insensibila la coada. Da si mediana.
+        /// </summary>
+        internal static double RobustSigma(float[] values, out double median)
+        {
+            median = Median(values);
+            double m = median;
+            var dev = new float[values.Length];
+            for (int i = 0; i < values.Length; i++) dev[i] = (float)Math.Abs(values[i] - m);
+            return 1.4826 * Median(dev);
+        }
+
+        /// <summary>
+        /// Pragul Otsu pe un vector DEJA SORTAT: valoarea la care impartirea in doua clase are
+        /// varianta intre clase maxima; cele la sau sub prag sunt clasa de jos. Clasa de sus
+        /// are cel putin <paramref name="minAbove"/> valori: cateva valori extreme (stele pe o
+        /// nebuloasa slaba) ar castiga altfel orice impartire. NaN cu mai putin de
+        /// minAbove + 1 valori; cu toate valorile egale, cea mai mica (si nimic nu e peste ea).
+        /// </summary>
+        internal static double OtsuThreshold(float[] sorted, int minAbove = 1)
+        {
+            minAbove = Math.Max(1, minAbove);
+            if (sorted.Length < minAbove + 1) return double.NaN;
+            double total = 0;
+            foreach (float v in sorted) total += v;
+            double best = -1, threshold = sorted[0], sumBelow = 0;
+            for (int i = 0; i < sorted.Length - minAbove; i++)
+            {
+                sumBelow += sorted[i];
+                int nBelow = i + 1, nAbove = sorted.Length - nBelow;
+                double meanBelow = sumBelow / nBelow, meanAbove = (total - sumBelow) / nAbove;
+                double between = (double)nBelow * nAbove * (meanBelow - meanAbove) * (meanBelow - meanAbove);
+                if (between > best) { best = between; threshold = sorted[i]; }
+            }
+            return threshold;
+        }
+
         internal static double Mean(float[] values)
         {
             double s = 0;

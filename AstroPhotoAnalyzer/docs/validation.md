@@ -10,14 +10,20 @@ The data is two images, copies made by hand in `AstroPhotoAnalyzer.Tests/testdat
 git ignores, listed with their SHA-256 in `AstroPhotoAnalyzer.Tests/testdata/manifest.json`:
 
 - `de_printat.png`: the owner's Milky Way core, 5938 x 3888, 16-bit RGB PNG, 103 387 067 bytes,
-  whose original is in `E:\Photografie\Claude`. No WCS: the dust and the sky are measured by the
-  fallback rule (V-001 to V-003 and V-005).
+  whose original is in `E:\Photografie\Claude`. No WCS: the classes are relative to the modelled
+  sky and the dust is the darkest sky (ADR 0033; V-001 to V-003, V-005 and V-009).
 - `starless_rbf0.5_stretch0.17.fit`: the same core, plate-solved by Siril 1.4.4 (`RA---TAN-SIP`,
   `CDELT` + `PC`, SIP of order 3), starless, VeraLux-stretched to a background of 0.17,
   5837 x 3867, three float planes, 270 869 760 bytes, from
   `E:\Photografie\Astro\Milkyway-Core\2026-08-12-Smida\Processed_With_1mmPTFE_Flats\CropAndPlateSolve\RBF0.5\preview\`.
   The image ADR 0025 was measured on; the dust and the sky come from the WCS and the catalogue
   (V-004).
+- `Rosetta_starless_no_WCS.fit`: the owner's starless Rosetta nebula, 3551 x 2422, three float
+  planes, 103 210 560 bytes, no WCS: the deep-sky frame the sky-relative classes were designed
+  on (ADR 0033; V-010, V-011).
+- `Orion_with_WCS.fit`: the owner's Orion nebula with the Running Man, 1564 x 2302, three float
+  planes, 43 214 400 bytes, a WCS far from the plane: the frame whose peaks are over the curves'
+  target (V-012).
 
 On a machine or in a worktree without the copies, the cases print `NOT MEASURED` and pass.
 
@@ -45,15 +51,18 @@ stops on a drift instead of editing them.
 
 | ID | Image, parameters | What it guards |
 | --- | --- | --- |
-| V-001 | the PNG; `dmax` 2.0: the full frame, the baryta of before ADR 0028 (paper black L\* 9.0), the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust by the fallback rule, the recommended row, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
+| V-001 | the PNG; `dmax` 2.0: the full frame, the baryta of before ADR 0028 (paper black L\* 9.0), the natural distance | every figure of the reference run on the full frame: tones, L\*, the simulation (the dust from the darkest sky, L\* 4.2, the sky's median 8.9, under the paper black of 9.0 since ADR 0033, so the verdict is PROBLEMA; the recommended row 0.16, the exact target, the Dmax figures), noise, plateau, rounding, stress test, JPEG and TIFF, stars, background colour, the bottom-right corner, the size table's reference row, the overall verdict |
 | V-002 | the PNG; `aspect` 50:35, `distanceM` 1.5 | the run of the acceptance record, the hallway scenario: the crop, the 70 cm row, the recommended width, the verdict |
-| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the image is print-safe as it is; since ADR 0029 the sky (L\* 9.4) is under the visibility threshold and the recommended row is 0.15 (sky L\* 15.3); a guard on the paper-black maths more than on the image |
+| V-003 | the PNG; `dmax` 2.35 | the figure measured on 2026-10-01 for a baryta paper that reaches Dmax 2.35 on a good printer: 1.3 % of pixels below paper black, and, since ADR 0025, the dust (L\* 4.1) above paper black (L\* 4.0), so the image is print-safe as it is; since ADR 0029 the sky is under the visibility threshold; since ADR 0033 the dust is L\* 4.2 and the sky 8.9, and the recommended row is 0.16 (sky L\* 15.9); a guard on the paper-black maths more than on the image |
 | V-004 | the plate-solved FITS; `dmax` 2.0 | the WCS, the classes and the catalogue (ADR 0026): 2062 dust patches of 21 840, the dust at L\* 7.9 (the 25 % percentile of the dust class) and the sky at 17.6 (the median of the sky class); 397 clouds in the frame, 114 cloud rows; the recommended row 0.19, the exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), the Dmax from which it passes as is 2.06; the five darkest clouds by name (LDN 42 (B78) at 1.0, LDN 1769 (B275, B278) at 3.2, LDN 1793, LDN 572, LDN 559); and every other figure of the run |
-| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.09) above it, so the dust is print-safe as it is; the sky (L\* 9.4) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.148, so the recommended row is 0.15 (dust L\* 7.8, sky L\* 15.3, 48.0 % of pixels still under L\* 15 against 82.8 % as it is); the exact target 0.094 (0.110 at Dmax 2.3, 0.080 at 2.5), the Dmax from which it passes as is 2.34; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
+| V-005 | the PNG; none: the full frame on the default medium, baryta at Dmax 2.4 (ADR 0028) | what the owner's paper is told: paper black L\* 3.60, 0.81 % of pixels under it, the dust (L\* 4.18, the darkest sky; the dust class, the Pipe's cores, is 0.6 % of the frame and does not decide, ADR 0033) above it, so the dust is print-safe as it is; the sky (L\* 8.9, the median of the sky class) is under the visibility threshold L\* 15 (ADR 0029), which it reaches at 0.152, so the recommended row is 0.16 (dust L\* 9.1, sky L\* 15.9, 30.7 % of pixels still under L\* 15); the exact target 0.093 (0.108 at Dmax 2.3, 0.079 at 2.5), the Dmax from which it passes as is 2.33; the overall verdict ATENTIE. Only the tonal and simulation figures and the verdict: the rest are V-001's |
 | V-006 | the lab's profile `Hahnemuhle PRBaryta.icm`; kind `icc` | the Dmax read from a real v2 `lut16` printer profile (R-028): black at L\* 3.49 relative to paper white, Dmax 2.41, the figure ADR 0028 took baryta's default from; the name from the `desc` tag |
 | V-007 | `HARMAN_Canvas.icc`; kind `icc` | a paper with a weak black: L\* 20.84, Dmax 1.49; through the perceptual table the same profile would answer 2.46 |
 | V-008 | the plate-solved FITS; kind `curves`, `icc` `Hahnemuhle PRBaryta.icm` | measured 2026-10-05: the suggested curves with the classes (R-140 to R-145, ADR 0032): anchors 0.091, 0.169, 0.306, 0.543, 0.720; three suggestions, no `Maxima`; `Puternica` with the points 0.401, 0.753, 0.919, the five L\* from 7.9, 17.6, 33.2, 57.7, 74.6 to 7.9, 17.8, 43.4, 77.0, 90.8, a noise gain of 1.26 (2.04 LSB to 2.57) and 0.03 % clipped; 1.02 % of the pixels outside the baryta's gamut as is, 0.82 % after `Puternica`, per class; the saved FITS: every card kept, `BITPIX` -32, the same 270 869 760 bytes, the WCS read back, the input's hash unchanged |
-| V-009 | the PNG; kind `curves` | measured 2026-10-05: the same without a WCS: the anchors from the frame's histogram (0.056, 0.103, 0.214, 0.377, 0.577); four suggestions, `Maxima` with the peaks at 0.920, a gain of 1.38 and 0.37 % clipped against 0.10 %; one paper check on each (the sky at L\* 9.4); the saved file a float FITS of 5938 px, no WCS, the PNG's hash unchanged |
+| V-009 | the PNG; kind `curves` | measured 2026-10-05, re-measured 2026-10-06 (ADR 0033): the same without a WCS: the anchors from the sky-relative classes (0.057, 0.099, 0.216, 0.395, 0.593); four suggestions, `Maxima` with the peaks at 0.920, a gain of 1.29 and 0.33 % clipped against 0.10 %; one paper check on each (the sky at L\* 8.9); the saved file a float FITS of 5938 px, no WCS, the PNG's hash unchanged |
+| V-010 | the Rosetta FITS; none | measured 2026-10-06 (ADR 0033): the sky-relative classes on a deep-sky frame without a WCS: 8325 patches, no cloud; the dust class 18 patches (0.2 %, under the 5 % floor), so the dust is the darkest sky, L\* 6.1, and the sky 8.1; paper black 3.6 on baryta; the recommended row 0.16 (the sky reaches L\* 15 at 0.154), the exact target 0.067 (0.079 at Dmax 2.3, 0.055 at 2.5), passes as is from Dmax 2.17; the overall verdict ATENTIE; and every other figure of the run |
+| V-011 | the Rosetta FITS; kind `curves` | measured 2026-10-06: the curves anchored on the sky-relative classes: anchors 0.077, 0.093, 0.272, 0.419, 0.603; four suggestions, `Puternica` with the points 0.409, 0.628, 0.793 and the five L\* from 6.1, 8.1, 30.2, 46.0, 63.5 to 6.2, 8.3, 42.9, 61.2, 77.6, a gain of 1.06; `Maxima` to 0.920 with 0.72 % clipped against 0.17 %; one paper check on each (the sky at L\* 8.1); the noise figure n/a (too little flat sky) |
+| V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.365, 0.738, 0.971; the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the anchor, 0.971 and the target 0.92 |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
 run of 2026-09-21, gives the same measurements made by hand in the originating conversation.
@@ -180,6 +189,32 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-06, after the code review of ADR 0033's branch: the sky-path thresholds became
+  offsets from the model instead of the residual's median, and the Otsu split lost the peak
+  patches and gained a floor of 5 % of the tail; the dust's source is decided once, as is. The
+  sky-path cases moved by small amounts: V-001, V-003, V-005 `simulation.dustPatchCount` 189 ->
+  128, `simulation.asIs.lstarDust` 4.2341 -> 4.1843, `simulation.asIs.lstarSky` 8.9169 ->
+  8.8743, the exact targets and `dmaxToPassAsIs` (2.3291 -> 2.3342) with them; V-009 anchors
+  0.0579 / 0.0993 / 0.2234 / 0.4084 -> 0.0574 / 0.0989 / 0.216 / 0.3945 and the per-curve
+  figures; V-010 `dustPatchCount` 31 -> 18, `lstarSky` 8.1055 -> 8.0849; V-011 anchors 0.2791 /
+  0.4271 -> 0.2723 / 0.4194; V-012 anchors 0.3751 / 0.7395 -> 0.3654 / 0.7378. V-002, V-004,
+  V-006 to V-008: no drift. The verdicts did not change.
+- 2026-10-06 (ADR 0033, the sky-relative classes and the one measurement): on `de_printat.png`
+  (no WCS) V-001, V-003 and V-005 moved on the simulation figures: `simulation.method` NoWcs ->
+  Sky, `simulation.dustPatchCount` 22385 (all patches) -> 189 (the dust class, the Pipe's
+  cores, under the 5 % floor), `simulation.asIs.lstarDust` 4.0925 -> 4.2341 (the darkest 1 %
+  of the sky class instead of all patches), `simulation.asIs.lstarSky` 9.3816 -> 8.9169 (the
+  median of the sky class, the band's patches no longer in it), `simulation.recommendedTarget`
+  0.17 (V-001) and 0.15 (V-003, V-005) -> 0.16, `simulation.exactTarget` by 0.002 to 0.003,
+  `simulation.dmaxToPassAsIs` 2.3438 -> 2.3291, `simulation.visibilityTarget` 0.1479 -> 0.1522
+  (V-005), the primary row's figures with the row; V-001 `simulation.skyBelowPaperBlack` False
+  -> True and `overall` ATENTIE -> PROBLEMA: on the Dmax 2.0 paper the sky's median, 8.92, sits
+  a tenth under paper black. V-009 re-measured on the class anchors: `curves.source` ->
+  `curves.method` Sky, the anchors 0.0563 / 0.1029 / 0.2138 / 0.3769 / 0.5768 -> 0.0579 /
+  0.0993 / 0.2234 / 0.4084 / 0.5932 and every per-curve figure with them (`Maxima`'s gain
+  1.3781 -> 1.2882, clipped 0.3679 -> 0.3256). V-004 and V-008 (the band path): no figure
+  moved; `simulation.method` Classes -> Band and `curves.source` -> `curves.method` Band are
+  the renamed enum and key. V-002: no drift. V-010 to V-012 added on the two new images.
 - 2026-10-02: the acceptance record became this file (ADR 0001); V-001 to V-003 recorded from
   the build of the same day, by `ValidationTests`' `MEASURED` lines; the natural ratio differs
   from the record (above).

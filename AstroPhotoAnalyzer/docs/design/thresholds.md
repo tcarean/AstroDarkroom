@@ -20,7 +20,11 @@ All empirical, most from the reference image. Change one, change its comment.
 | `DustPatchPx` | 32 | the patch side (image px) the dust and the sky are measured on: 4 mm at 200 dpi; 16/32/64 barely move the verdict |
 | `DustCloudFraction` | 0.10 | a catalogued cloud's L\* for its row: this percentile of its patches |
 | `BandGalacticLatitudeDeg` | 10 | the galactic band: patches with \|b\| under it (ADR 0026) |
-| `BandMinFraction` | 0.10 | the classes need the band and the outside sky each at or above this share of the patches; else the frame rule |
+| `BandMinFraction` | 0.10 | the band classes need the band and the outside sky each at or above this share of the patches; else the classes are relative to the modelled sky (ADR 0033) |
+| `SkyModelLowPercentile` | 25 | without the band, the sky model takes this percentile of each cell over all patches, so an object covering half a cell does not lift it |
+| `SkyNoiseClipK` / `SkyNoiseK` | 3 / 4 | the sky's patch noise: robust sigma of patch minus model after one clipping pass at the first; nebula is over the model by the second times that sigma, dust under it by as much (the bright-nebula threshold is the Otsu split of the nebula residuals, no constant) |
+| `BrightClassMinTailFraction` | 0.05 | the Otsu split of the nebula residuals leaves at least this share of them above: a few star patches far over a faint nebula would otherwise be the upper class and leave the bright class empty |
+| `DustClassMinFraction` | 0.05 | the dust class decides the verdict only from this share of the patches; under it (cores, artefacts) the darkest sky stands (the owner's choice, ADR 0033) |
 | `DustDepthLstar` | 5 | a dust patch is this many L\* under the band's local level or under the sky model |
 | `BrightCloudLstar` | 10 | a bright-cloud patch is this many L\* over the band's local level |
 | `PeakFraction` | 0.001 | the peaks: the brightest patches by this fraction |
@@ -28,7 +32,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `SkyModelCellPatches` / `SkyModelCellMinPatches` / `SkyModelSmoothPatches` | 20 / 20 / 3 | the sky model: cell size, patches a cell needs, smoothing radius |
 | `DustClassFraction` | 0.25 | the dust's L\* for the verdict: this percentile of the dust patches (the owner's choice, ADR 0026) |
 | `DustCloudMinPatches` | 9 | a cloud with this many patches gets its own row and circle |
-| `DustAreaFraction` | 0.01 | the dust without a WCS or without a cloud: this percentile of all patches |
+| `SkyDarkestFraction` | 0.01 | the darkest sky: this percentile of the sky patches; the dust is the lower of it and the dust class's percentile |
 | `DustCloudReportRows` | 15 | clouds named in Anexa B and in the Because; the window lists all |
 | `ExactTargetLo` / `ExactTargetHi` / `ExactTargetStep` | 0.05 / 0.60 / 0.01 | the ladder of lifts the exact targets are interpolated on |
 | `DmaxMax` | 4 | the largest Dmax accepted, typed or read from an ICC profile; a profile above it is damaged |
@@ -57,7 +61,6 @@ All empirical, most from the reference image. Change one, change its comment.
 | `NaturalDistanceTolerance` | 1.15 | allowance on the natural distance (the verdict is size-independent there) |
 | `PassepartoutMinFrameRatio` | 2 | passepartout >= this x frame width, else the parameters are refused |
 | `CurveBandClassPercentile` / `CurveCloudClassPercentile` | 80 / 75 | the upper part of the band and bright-cloud classes as curve anchors: 0.306 and 0.543 on the plate-solved FITS, the 0.32 and 0.55 of the owner's earlier curve (ADR 0032) |
-| `CurveBandPercentile` / `CurveCloudPercentile` / `CurvePeakPercentile` | 94.2 / 99.1 / 99.9 | the same three anchors without classes: where that curve's inputs sit in its image's histogram |
 | `CurveSlopeSkyBand` / `CurveSlopeBandCloud` / `CurveSlopeCloudPeak` | 1.70 / 1.48 / 0.94 | the segment slopes of that curve; one curve on one image |
 | `CurvePeakTarget` / `CurveStrengths` / `CurveMaximaMinGain` | 0.92 / 0.5, 0.75, 1 / 0.02 | where the peaks go at most; the three strengths; `Maxima` only when `Puternica` stops further than this under the target |
 | `CurveClipLevel` | 0.995 | a pixel counts as clipped with a channel at or over it |

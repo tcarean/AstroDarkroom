@@ -90,8 +90,10 @@ internal static class WcsFixtures
 
     /// <summary>
     /// The band scene: plain sky at 0.25 outside |b| &lt; 10 degrees, the band at 0.35 inside it, a
-    /// dark blob (0.05, radius 60 px) on the plane, a bright blob (0.6, radius 40 px) in the band,
-    /// and one 32 px patch at 1.0 inside the bright blob, the peak. The WCS is on the source.
+    /// dark blob (0.05, radius 80 px: with its edge patches about 10 % of the frame, over the
+    /// `DustClassMinFraction` a dust class needs to decide the verdict) on the plane, a bright
+    /// blob (0.6, radius 40 px) in the band, and one 32 px patch at 1.0 inside the bright blob,
+    /// the peak. The WCS is on the source.
     /// </summary>
     internal static Raster BandScene(bool withDust = true)
     {
@@ -108,7 +110,7 @@ internal static class WcsFixtures
             double dd = (x - DustX) * (x - DustX) + (y - DustY) * (y - DustY);
             double db = (x - BrightX) * (x - BrightX) + (y - BrightY) * (y - BrightY);
             if (x >= 384 && x < 416 && y >= 256 && y < 288) return 1.0f;
-            if (withDust && dd <= 60 * 60) return 0.05f;
+            if (withDust && dd <= 80 * 80) return 0.05f;
             if (db <= 40 * 40) return 0.6f;
             // Without the dust blob the band sits at the sky's level too: a band that is only
             // brighter than the sky has mixed patches on its edge that read as dust by a hair.
@@ -116,6 +118,24 @@ internal static class WcsFixtures
         });
         r.Source = new SourceInfo { Path = "banda.fit", Format = "FITS", Wcs = wcs };
         return r;
+    }
+
+    /// <summary>
+    /// A deep-sky frame without a WCS (ADR 0033's classes): a flat sky at 0.15 with Gaussian
+    /// pixel noise of <paramref name="noise"/>, a wide halo (0.25 over the sky, sigma 70 px) with
+    /// a bright core (0.4 more, sigma 25 px) at the centre, and, with <paramref name="withLane"/>,
+    /// a dark lane at 0.03 over the patch columns 1 and 2 (x 32..96, 12.5 % of the patches): a
+    /// dust class large enough to decide the verdict.
+    /// </summary>
+    internal static Raster NebulaScene(bool withLane = false, double noise = 4.0 / 255, int seed = 31)
+    {
+        Raster r = SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+        {
+            if (withLane && x >= 32 && x < 96) return 0.03f;
+            double d2 = (x - 255.5) * (x - 255.5) + (y - 255.5) * (y - 255.5);
+            return (float)(0.15 + 0.25 * Math.Exp(-d2 / (2 * 70.0 * 70.0)) + 0.4 * Math.Exp(-d2 / (2 * 25.0 * 25.0)));
+        });
+        return SyntheticRasters.AddNoise(r, noise, seed);
     }
 
     /// <summary>The patch of the band scene fully inside the dust blob, and the one fully inside the bright blob.</summary>

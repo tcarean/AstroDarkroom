@@ -52,12 +52,11 @@ namespace AstroPhotoAnalyzer
                + (colour ? ", aceeasi curba pe R, G si B" : "")
                + ": in Siril, Curves Transformation, modul cubic spline, cu punctele din tabel.";
 
-        /// <summary>Ce inseamna coloanele tabelului de puncte, dupa sursa ancorelor.</summary>
-        internal static string PointsNote(CurveAnchorSource source, bool colour)
+        /// <summary>Ce inseamna coloanele tabelului de puncte, dupa calea claselor.</summary>
+        internal static string PointsNote(DustMethod method, bool colour)
             => "Intrarea si iesirea sunt valori 0..1 ale pixelului" + (colour ? ", aceleasi pe R, G si B" : "") + ". Primul si ultimul rand sunt capetele curbei. "
-               + (source == CurveAnchorSource.Classes
-                   ? "L* e al dalelor clasei, masurat inainte si dupa curba."
-                   : "L* e masurat inainte si dupa curba: praful si cerul pe dale, banda, norii luminosi si varfurile ca percentile ale histogramei cadrului.");
+               + "L* e al dalelor clasei, masurat inainte si dupa curba"
+               + (method == DustMethod.Band ? " (clasele benzii Caii Lactee)." : " (clase relative la cerul modelat).");
 
         internal static string ShadowHeading(double limit) => $"UMBRELE MARITE (0 - {Fmt.F3(limit)}): unde stau praful si cerul";
 
@@ -67,18 +66,27 @@ namespace AstroPhotoAnalyzer
             => $"Nu se poate sugera o curba: ancora \"{upper}\" ({Fmt.F3(upperValue)}) nu e peste ancora \"{lower}\" ({Fmt.F3(lowerValue)}). "
                + "Curbele au nevoie de cinci trepte crescatoare: praf, cer, banda, nori luminosi, varfuri.";
 
-        internal static string AnchorAtEnd(string label, double value, bool atBlack)
-            => $"Nu se poate sugera o curba: ancora \"{label}\" ({Fmt.F3(value)}) e la {(atBlack ? "negru" : "alb")}, nu mai are loc de un punct de control dincolo de ea.";
+        internal static string ClassEmpty(string label)
+            => $"Nu se poate sugera o curba: clasa \"{label}\" nu are nicio dala pe imaginea asta, si curbele au nevoie de cinci trepte: praf, cer, "
+               + "banda sau nebuloasa, nori luminosi sau nebuloasa stralucitoare, varfuri.";
+
+        /// <summary>Varfurile deja la sau peste tinta (R-142): imaginea e la plafon, si curbele de aici nu coboara nimic.</summary>
+        internal static string PeaksOverTarget(string label, double value)
+            => $"Nu se sugereaza nicio curba: ancora \"{label}\" e deja la {Fmt.F3(value)}, la sau peste tinta {Fmt.F2(Thresholds.CurvePeakTarget)} la care ajung varfurile "
+               + "dupa o curba. Nu mai e loc de contrast fara sa cobori ceva, iar curbele sugerate nu coboara niciun punct: imaginea e deja la plafon.";
 
         internal static string GamutUnreadable(string reason) => "gamutul hartiei: necunoscut - " + reason;
 
-        /// <summary>De unde vin ancorele, sub galerie (R-146).</summary>
-        internal static string AnchorSource(CurveAnchorSource source, string methodNote)
-            => source == CurveAnchorSource.Classes
-                ? $"Ancorele vin din clasele tabului Tonuri: praful si cerul ca acolo, banda la percentila {Fmt.F0(Thresholds.CurveBandClassPercentile)} % a clasei ei, "
-                  + $"norii luminosi la {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, varfurile la mediana."
-                : $"Ancorele de sus vin din histograma cadrului ({methodNote ?? "fara toate clasele"}): banda, norii luminosi si varfurile sunt cei mai luminosi "
-                  + $"{Fmt.F1(100 - Thresholds.CurveBandPercentile)} %, {Fmt.F1(100 - Thresholds.CurveCloudPercentile)} % si {Fmt.F1(100 - Thresholds.CurvePeakPercentile)} % din pixeli; praful si cerul, ca in tabul Tonuri.";
+        /// <summary>De unde vin ancorele, sub galerie (R-146): clasele tabului Tonuri, pe calea benzii sau pe cea a cerului, cu motivul ei.</summary>
+        internal static string AnchorSource(DustMap map, string methodNote)
+        {
+            IReadOnlyList<string> n = map.ClassNames;
+            string path = map.Method == DustMethod.Band
+                ? "clasele benzii Caii Lactee"
+                : $"clase relative la cerul modelat ({methodNote})";
+            return $"Ancorele vin din clasele tabului Tonuri ({path}): praful si cerul ca acolo, {n[2]} la percentila {Fmt.F0(Thresholds.CurveBandClassPercentile)} % a clasei ei, "
+                 + $"{n[3]} la {Fmt.F0(Thresholds.CurveCloudClassPercentile)} %, {n[4]} la mediana.";
+        }
 
         /// <summary>Verificarile de hartie ale unei curbe, pentru print (R-143).</summary>
         internal static IReadOnlyList<Recommendation> PaperChecks(SimulationResult sim, NoiseResult noise, CurveEvidence e)
@@ -97,12 +105,12 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
-        static string Levels(IReadOnlyList<double> l)
-            => string.Join(", ", Enumerable.Range(0, 5).Select(i => $"{CurveAdvisor.Labels[i]} {Fmt.F1(l[i])}"));
+        static string Levels(IReadOnlyList<string> labels, IReadOnlyList<double> l)
+            => string.Join(", ", Enumerable.Range(0, 5).Select(i => $"{labels[i]} {Fmt.F1(l[i])}"));
 
-        static string GamutLine(string what, GamutFigure g)
+        static string GamutLine(IReadOnlyList<string> labels, string what, GamutFigure g)
             => $"{what}: {Fmt.F2(g.PctAll)} % din pixeli"
-               + (g.PctByClass == null ? "" : " (" + string.Join(", ", Enumerable.Range(0, 5).Select(i => $"{CurveAdvisor.Labels[i]} {(double.IsNaN(g.PctByClass[i]) ? "n/a" : Fmt.Pct(g.PctByClass[i]))}")) + ")");
+               + (g.PctByClass == null ? "" : " (" + string.Join(", ", Enumerable.Range(0, 5).Select(i => $"{labels[i]} {(double.IsNaN(g.PctByClass[i]) ? "n/a" : Fmt.Pct(g.PctByClass[i]))}")) + ")");
 
         /// <summary>Dovada unei curbe, rand cu rand, cum o arata tabul sub imagine.</summary>
         internal static IReadOnlyList<string> EvidenceLines(CurveSuggestion s) => EvidenceRows(s).Select(r => r.Text).ToArray();
@@ -119,8 +127,8 @@ namespace AstroPhotoAnalyzer
             foreach (Recommendation r in e.PaperChecks) o.Add(($"! {r.Text} (fiindca: {r.Because})", true));
             if (e.Gamut != null)
             {
-                o.Add((GamutLine($"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte", e.GamutBefore), false));
-                o.Add((GamutLine("in afara gamutului hartiei, dupa", e.Gamut), false));
+                o.Add((GamutLine(e.Labels, $"in afara gamutului hartiei (croma mutata cu peste {Fmt.F0(Thresholds.CurveGamutDeltaAb)}), inainte", e.GamutBefore), false));
+                o.Add((GamutLine(e.Labels, "in afara gamutului hartiei, dupa", e.Gamut), false));
             }
             else if (e.GamutNote != null) o.Add((e.GamutNote, false));
             return o;
@@ -132,8 +140,8 @@ namespace AstroPhotoAnalyzer
             return new List<string>
             {
                 "puncte (intrare > iesire): " + string.Join(", ", s.Curve.Points.Where(p => p.Label != null).Select(p => $"{p.Label} {Fmt.F3(p.X)} > {Fmt.F3(p.Y)}")),
-                "L* inainte: " + Levels(e.LstarBefore),
-                "L* dupa: " + Levels(e.LstarAfter),
+                "L* inainte: " + Levels(e.Labels, e.LstarBefore),
+                "L* dupa: " + Levels(e.Labels, e.LstarAfter),
                 double.IsNaN(e.NoiseAfterLsb)
                     ? $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} x (panta curbei la cer)"
                     : $"zgomotul din cer creste de {Fmt.F2(e.NoiseGain)} x (panta curbei la cer), la {Fmt.F2(e.NoiseAfterLsb)} LSB",

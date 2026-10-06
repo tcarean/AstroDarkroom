@@ -16,8 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // MapViewModel.cs - fereastra "Harta praf / cer" (R-130): imaginea intreaga, cu cele cinci
-// clase ale dalelor (praf, cer, banda, nori luminosi, varfuri; ADR 0026) vopsite diferit,
-// fiecare cu bifa ei, si norii catalogati incercuiti, cu numele lor.
+// clase ale dalelor (praf, cer, banda sau nebuloasa, nori luminosi sau nebuloasa
+// stralucitoare, varfuri; ADR 0026, ADR 0033) vopsite diferit, fiecare cu bifa ei, si norii
+// catalogati incercuiti, cu numele lor.
 //
 // Nu calculeaza nimic: clasele dalelor, cercurile si numele vin din rezultatul nucleului
 // (DustAnalyzer, PrintStretchSimulator); aici se aseaza pe o copie redusa a imaginii si se
@@ -46,15 +47,16 @@ namespace AstroPhotoAnalyzer.Wpf
 
     public sealed class MapViewModel : ObservableObject
     {
-        // Culorile claselor, cu alpha: praful cald, cerul rece, banda verde, norii luminosi
+        // Culorile claselor, cu alpha, in ordinea numelor nucleului (DustMap.ClassNames): praful
+        // cald, cerul rece, banda / nebuloasa verde, norii luminosi / nebuloasa stralucitoare
         // roz, varfurile albe.
-        static readonly (PatchClass Class, string Name, Color Colour)[] Palette =
+        static readonly (PatchClass Class, Color Colour)[] Palette =
         {
-            (PatchClass.Dust, "praf", Color.FromArgb(130, 0xE3, 0xB3, 0x41)),
-            (PatchClass.Sky, "cer", Color.FromArgb(80, 0x4E, 0xA8, 0xDE)),
-            (PatchClass.Band, "banda", Color.FromArgb(70, 0x78, 0xDC, 0x78)),
-            (PatchClass.BrightCloud, "nori luminosi", Color.FromArgb(100, 0xFF, 0x78, 0xFF)),
-            (PatchClass.Peak, "varfuri", Color.FromArgb(160, 0xFF, 0xFF, 0xFF)),
+            (PatchClass.Dust, Color.FromArgb(130, 0xE3, 0xB3, 0x41)),
+            (PatchClass.Sky, Color.FromArgb(80, 0x4E, 0xA8, 0xDE)),
+            (PatchClass.Band, Color.FromArgb(70, 0x78, 0xDC, 0x78)),
+            (PatchClass.BrightCloud, Color.FromArgb(100, 0xFF, 0x78, 0xFF)),
+            (PatchClass.Peak, Color.FromArgb(160, 0xFF, 0xFF, 0xFF)),
         };
 
         bool _showClouds;
@@ -62,7 +64,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Title { get; private init; }
         public BitmapSource Image { get; private init; }
 
-        /// <summary>Cele cinci clase, in ordinea paletei; fara clase (fara WCS sau banda), doar praf si cer.</summary>
+        /// <summary>Cele cinci clase, in ordinea paletei, cu numele caii lor (banda sau cerul modelat).</summary>
         public IReadOnlyList<ClassLayer> Layers { get; private init; }
         public IReadOnlyList<CloudLayer> Clouds { get; private init; }
 
@@ -102,7 +104,8 @@ namespace AstroPhotoAnalyzer.Wpf
             BitmapSource image = RasterBitmaps.Region(img, 0, 0, img.W, img.H, stride);
             int w = image.PixelWidth, h = image.PixelHeight;
 
-            PatchClass[] classes = DustAnalyzer.Classes(map, s.AsIsDust);
+            PatchClass[] classes = map.Classes;
+            IReadOnlyList<string> names = map.ClassNames;
             double patchPx = map.Side * map.Stride;
             PatchClass ClassAt(int x, int y)
             {
@@ -111,9 +114,10 @@ namespace AstroPhotoAnalyzer.Wpf
             }
 
             var layers = new List<ClassLayer>();
-            foreach (var (cls, name, colour) in Palette)
+            for (int k = 0; k < Palette.Length; k++)
             {
-                if (!map.HasClasses && cls != PatchClass.Dust && cls != PatchClass.Sky) continue;
+                var (cls, colour) = Palette[k];
+                string name = names[k];
                 double pct = 100.0 * classes.Count(c => c == cls) / classes.Length;
                 layers.Add(new ClassLayer
                 {
@@ -155,20 +159,32 @@ namespace AstroPhotoAnalyzer.Wpf
             };
         }
 
-        // Ce inseamna fiecare clasa, cu cifrele din Thresholds si din rezultat; explicatie, nu diagnostic.
+        // Ce inseamna fiecare clasa, cu cifrele din Thresholds, din harta si din rezultat;
+        // explicatie, nu diagnostic. Praful si cerul spun si ce a dat verdictul (ADR 0033).
         static string LegendOf(PatchClass cls, SimulationResult s)
         {
             SimulationRow asIs = s.AsIs;
-            if (!s.Map.HasClasses)
-                return cls == PatchClass.Dust
-                    ? $" - la sau sub L*-ul prafului ({Fmt.F1(asIs.LstarDust)}, cele mai intunecate {Fmt.F0(Thresholds.DustAreaFraction * 100)} %)"
-                    : $" - la sau sub mediana ({Fmt.F1(asIs.LstarSky)})";
+            DustMap map = s.Map;
+            bool band = map.Method == DustMethod.Band;
+            string dustVerdict = map.DustSource == DustSource.DustClass
+                ? $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}"
+                : $"; L*-ul prafului e cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al cerului, {Fmt.F1(asIs.LstarDust)}"
+                  + (map.FractionOf(PatchClass.Dust) == 0 ? " (nicio dala de praf)" : $" (clasa praf decide doar de la {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale si cand e mai intunecata)");
             return cls switch
             {
-                PatchClass.Dust => $" - cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat" + (s.Map.UsesClasses ? $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}" : "; niciuna in cadru"),
-                PatchClass.Sky => $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf" + (s.Map.UsesClasses ? $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}" : ""),
-                PatchClass.Band => $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei",
-                PatchClass.BrightCloud => $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local",
+                PatchClass.Dust => " - " + s.DustClassDefinition + dustVerdict,
+                PatchClass.Sky => (band
+                    ? $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf"
+                    : $" - la cel mult {Fmt.F1(map.NoiseThreshold)} L* de cerul modelat, in sus sau in jos")
+                    + (map.SkyClassEmpty ? $"; nicio dala: L*-ul cerului = mediana tuturor dalelor, {Fmt.F1(asIs.LstarSky)}" : $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}"),
+                PatchClass.Band => band
+                    ? $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei"
+                    : $" - peste cerul modelat cu {Fmt.F1(map.NoiseThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului, sigma {Fmt.F2(map.SkySigma)} L*)",
+                PatchClass.BrightCloud => band
+                    ? $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local"
+                    : double.IsPositiveInfinity(map.BrightThreshold)
+                        ? " - nicio dala: coada de nebuloasa nu se imparte in doua"
+                        : $" - peste cerul modelat cu {Fmt.F1(map.BrightThreshold)} L*, pragul Otsu al nebuloasei",
                 PatchClass.Peak => $" - cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale",
                 _ => "",
             };

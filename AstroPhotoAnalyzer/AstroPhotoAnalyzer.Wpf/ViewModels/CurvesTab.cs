@@ -103,7 +103,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<Point> ControlPoints { get; init; }
         public IReadOnlyList<CurveMarker> Markers { get; init; }
 
-        internal static CurveWindowViewModel From(CurveSuggestion s, string imageName, CurveAnchorSource source, bool colour)
+        internal static CurveWindowViewModel From(CurveSuggestion s, string imageName, DustMethod method, bool colour)
         {
             ToneCurve c = s.Curve;
             CurveEvidence e = s.Evidence;
@@ -127,7 +127,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 Title = $"Curba {s.Name} - {imageName}",
                 Caption = CurveTexts.CurveCaption(colour),
-                PointsNote = CurveTexts.PointsNote(source, colour),
+                PointsNote = CurveTexts.PointsNote(method, colour),
                 Rows = rows,
                 Chart = c.Sample(1, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
                 ShadowChart = c.Sample(shadow, Thresholds.CurveChartSamples).Select(p => new Point(p.X, p.Y)).ToArray(),
@@ -154,7 +154,7 @@ namespace AstroPhotoAnalyzer.Wpf
         // Fiecare calcul pornit are numarul lui; unul care se termina dupa ce s-a deschis alta
         // imagine, sau dupa ce s-a pornit altul, nu mai atinge nimic.
         int _run;
-        bool _isPrint = true, _busy;
+        bool _isPrint = true, _busy, _isProblem;
         string _message, _anchorSource, _saveMessage, _saveError;
 
         public CurvesTabViewModel()
@@ -163,7 +163,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Next = new RelayCommand(() => Move(1), () => _index < _items.Count - 1);
             Previous = new RelayCommand(() => Move(-1), () => _index > 0);
             OpenCurve = new RelayCommand(() => CurveRequested?.Invoke(
-                CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path), _print.Source, _result.Raster.IsColor)), HasCurve);
+                CurveWindowViewModel.From(Current.Suggestion, Path.GetFileName(_result.Path), _print.Method, _result.Raster.IsColor)), HasCurve);
             SaveAs = new RelayCommand(() => SaveRequested?.Invoke(CurveTexts.ProposedFileName(_result.Path, Current.Name)), HasCurve);
         }
 
@@ -207,6 +207,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>De ce nu s-a sugerat nimic, sau eroarea calculului; null cand galeria exista.</summary>
         public string Message { get => _message; private set => Set(ref _message, value); }
 
+        /// <summary>Mesajul e un motiv al nucleului pentru care nu exista curbe (R-142, R-146): fereastra il arata cu rosu. Fals pentru "se calculeaza" si pentru o eroare.</summary>
+        public bool IsProblem { get => _isProblem; private set => Set(ref _isProblem, value); }
+
         /// <summary>De unde vin ancorele (R-141).</summary>
         public string AnchorSource { get => _anchorSource; private set => Set(ref _anchorSource, value); }
 
@@ -249,7 +252,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _images = Array.Empty<BitmapSource>();
             _index = 0;
             Items = Array.Empty<CurveGalleryItem>();
-            Message = null; AnchorSource = null; SaveMessage = null; SaveError = null;
+            Message = null; IsProblem = false; AnchorSource = null; SaveMessage = null; SaveError = null;
             IsBusy = false;
             RaiseGallery();
         }
@@ -267,6 +270,7 @@ namespace AstroPhotoAnalyzer.Wpf
             AnalysisResult result = _result;
             int w = _width, h = _height, run = ++_run;
             IsBusy = true;
+            IsProblem = false;
             Message = CurveTexts.Computing;
             try
             {
@@ -300,6 +304,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 _images = Array.Empty<BitmapSource>();
                 Items = Array.Empty<CurveGalleryItem>();
                 Message = print.Problem;
+                IsProblem = true;
                 RaiseGallery();
                 return;
             }

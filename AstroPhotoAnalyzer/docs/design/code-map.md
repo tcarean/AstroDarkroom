@@ -25,14 +25,14 @@ AstroPhotoAnalyzer.Core/
   Input/Raster.cs                      Raster, SourceInfo
   Input/RasterOps.cs                   subsample, crop, gamma, levels, L* plane, linear guard
   Input/ColorMath.cs                   sRGB, luminance, L*, paper black
-  Input/Stats.cs                       percentiles (numpy), SeededRandom
+  Input/Stats.cs                       percentiles (numpy), robust sigma, Otsu, SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,
         FitsWriter.cs (the saved FITS with a curve applied, R-145)
   Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
   Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000
   Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader
   Analysis/FileFacts.cs, BitDepthAnalyzer.cs, CropAnalyzer.cs, TonalAnalyzer.cs,
-           DustAnalyzer.cs (the dust and the sky on patches, with or without the catalogue),
+           DustAnalyzer.cs (the five classes of the patches, by the band or by the modelled sky, the one measurement of the dust and the sky, the catalogue's clouds),
            PrintStretchSimulator.cs (the grid, the ladder, the recommendation, the cloud rows),
            PrintPreview.cs (a row as an image, for the preview window),
            ToneCurve.cs, CurveAdvisor.cs (the suggested curves: spline, anchors, recipe, evidence; R-140 to R-143),

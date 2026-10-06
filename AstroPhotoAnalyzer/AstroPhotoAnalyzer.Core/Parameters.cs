@@ -112,19 +112,20 @@ namespace AstroPhotoAnalyzer
         internal double? TargetBackground { get; init; }
 
         /// <summary>
-        /// Grila simularii: 0.10 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
-        /// cer de noapte (peste 0.20 un gri spalat). Podeaua de 0.10 e a simularii, nu a
-        /// hartiei: era negrul unei hartii de Dmax 2.0 (L* 9), iar pe baryta de 2.4 praful
-        /// poate cere mai putin - atunci recomandarea se opreste la 0.10 si raportul spune ca
-        /// grila nu coboara mai jos (ADR 0028). Nu e expusa; o tinta in afara ei intra prin
-        /// TargetBackground.
+        /// Grila simularii: 0.05 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
+        /// cer de noapte (peste 0.20 un gri spalat). Podeaua a fost 0.10, negrul unei hartii
+        /// de Dmax 2.0 (L* 9); pe baryta de 2.4 (L* 3.6) praful ajunge pe negru sub 0.10 (0.093
+        /// pe imaginea de referinta, 0.067 pe Rosetta) si randurile acelea lipseau din tabel,
+        /// desi scara tintei exacte cobora deja la ExactTargetLo = 0.05; proprietarul a cerut
+        /// grila de la 0.05 pe 2026-10-06 (ADR 0034). Nu e expusa; o tinta in afara ei intra
+        /// prin TargetBackground.
         /// </summary>
         internal double[] SimulationTargets { get; init; } = DefaultSimulationTargets();
 
         static double[] DefaultSimulationTargets()
         {
-            var t = new double[11];
-            for (int i = 0; i < t.Length; i++) t[i] = Math.Round(0.10 + 0.01 * i, 2);
+            var t = new double[16];
+            for (int i = 0; i < t.Length; i++) t[i] = Math.Round(0.05 + 0.01 * i, 2);
             return t;
         }
 

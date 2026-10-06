@@ -41,7 +41,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RadioButton Content="Ecran" GroupName="CurvePurpose" IsChecked="{Binding IsScreen}" Foreground="{StaticResource TextBr}"
                    VerticalAlignment="Center" Margin="0,0,20,0" ToolTip="Aceleasi curbe, fara verificarile de hartie" />
       <Button Content="Calculeaza" Command="{Binding Calculate}" Padding="14,3" />
-      <TextBlock Style="{StaticResource Muted}" Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900" />
+      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="16,0,0,0" TextWrapping="Wrap" MaxWidth="900">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding IsProblem}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource BadBr}" />
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
     </StackPanel>
 
     <Border Grid.Row="1" x:Name="GalleryArea" Background="{StaticResource PanelBg2}" CornerRadius="4" SizeChanged="GallerySizeChanged">

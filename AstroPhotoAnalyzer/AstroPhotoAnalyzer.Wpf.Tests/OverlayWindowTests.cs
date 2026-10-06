@@ -42,7 +42,8 @@ public class OverlayWindowTests
         var noWcs = new TonesTabViewModel();
         noWcs.Populate(Result(Scenes.DarkSky()));
 
-        Assert.StartsWith("praful = cele mai intunecate 1 % din dalele de 32 px (fara WCS); cerul = mediana dalelor; negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
+        Assert.StartsWith("praful = ", noWcs.Definition);
+        Assert.Contains(" (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei", noWcs.Definition);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, noWcs.NoWcsWarning);
         Assert.Empty(noWcs.CloudRows);
         Assert.StartsWith("tinta exacta a prafului pe negru:", noWcs.ExactLine);
@@ -99,9 +100,9 @@ public class OverlayWindowTests
         Assert.NotEmpty(map.Clouds);
         Assert.Equal(result.Simulation.Clouds.Select(c => c.Name), map.Clouds.Select(c => c.Name));
 
-        // The LDN 42 scene (wholly in the band): the two fallback layers, the cloud named and circled.
+        // The LDN 42 scene (wholly in the band): the sky path's five layers, the cloud named and circled.
         MapViewModel ldnMap = MapViewModel.From(Result(Ldn42Scene()));
-        Assert.Equal(new[] { "praf", "cer" }, ldnMap.Layers.Select(l => l.Name));
+        Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" }, ldnMap.Layers.Select(l => l.Name));
         CloudLayer ldn42 = Assert.Single(ldnMap.Clouds, c => c.Name == "LDN 42 (B78)");
         Assert.True(ldn42.Labelled);
         Assert.True(ldn42.IsVisible);
@@ -130,7 +131,16 @@ public class OverlayWindowTests
         Assert.Empty(map.Clouds);
         Assert.Equal(TonesTabViewModel.NoWcsSentence, map.NoWcsWarning);
         Assert.Contains("fara WCS", map.Definition);
-        Assert.Equal(2, map.Layers.Count);
+        // Five layers on the sky path too, named for it, each with the image's own threshold in its legend.
+        Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" }, map.Layers.Select(l => l.Name).ToArray());
+        Assert.Contains("sigma ale cerului", map.Layers[2].Legend);
+        Assert.Contains("pragul Otsu", map.Layers[3].Legend);
+        Assert.Contains("L*-ul cerului = mediana lor", map.Layers[1].Legend);
+        Assert.All(map.Layers, l => Assert.NotNull(l.Layer));
+
+        MapViewModel band = MapViewModel.From(Result(WcsFixtures.BandScene()));
+        Assert.Equal(new[] { "praf", "cer", "banda", "nori luminosi", "varfuri" }, band.Layers.Select(l => l.Name).ToArray());
+        Assert.Contains("sub nivelul local al benzii", band.Layers[0].Legend);
     }
 
     [Fact]

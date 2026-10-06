@@ -32,6 +32,22 @@
       "sha256": "96aa6f77c52b1846a7e861fee09722319e4cbf163f6742085c8c6e43d90ddf22",
       "source": "the ICC profile the same page offers for Harman Canvas (assets/icc/HARMAN_Canvas.icc, 1 515 624 bytes; v2, lut16, made with LOGO ProfileMaker on 2010-09-07, measured with an Eye-One Pro)",
       "demonstrates": "docs/validation.json V-007: a paper with a weak black, where the perceptual table would give 2.46"
+    },
+    {
+      "name": "Rosetta_starless_no_WCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "c59b9370a033d1ed6312d953f4f3609af92405c82dce3e71e3e58b1cbcacf792",
+      "source": "the owner's starless Rosetta nebula, stretched in Siril, 3551 x 2422, three float planes, 103 210 560 bytes, no WCS; added 2026-10-06 as the deep-sky frame the sky-relative classes were designed on (ADR 0033)",
+      "demonstrates": "docs/validation.json V-010 and V-011: the classes relative to the modelled sky, the dust from the darkest sky, the curves anchored on those classes"
+    },
+    {
+      "name": "Orion_with_WCS.fit",
+      "location": "large",
+      "requiredInCi": false,
+      "sha256": "830e9ef1af554dccc3213d5e5a0c47356e41cdb45b56e58b5aca9460c93bb063",
+      "source": "the owner's Orion nebula with the Running Man, stretched in Siril, 1564 x 2302, three float planes, 43 214 400 bytes, with a WCS far from the galactic plane; added 2026-10-06 as the frame whose peaks are already over the curves' target (ADR 0033)",
+      "demonstrates": "docs/validation.json V-012: no curve suggested, the reason naming the peaks and the target"
     }
   ]
 }

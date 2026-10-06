@@ -1,7 +1,7 @@
 # 0028. Each medium's Dmax has a recorded source; baryta is 2.4, measured on the lab's profile
 
 Date: 2026-10-05
-Status: accepted 2026-10-05
+Status: accepted 2026-10-05; the simulation grid's floor of 0.10 superseded by 0034
 
 ## Context
 
@@ -79,7 +79,7 @@ the paper: it puts every profile's black at the ICC reference medium's L\* 3.14 
   lab converts with black point compensation, which compresses the shadows onto paper black
   instead of clipping them. The tool does not model that (`docs/design/known-limitations.md`); a
   task of its own.
-- The simulation grid (0.10 to 0.20) and the help text's print range (0.15 to 0.25) were sized
+- The simulation grid (0.10 to 0.20; Restated 2026-10-06: from 0.05 since ADR 0034) and the help text's print range (0.15 to 0.25) were sized
   for the old paper black: on the reference image the exact target (0.094) is under the grid's
   floor. With paper black out of the way, what limits the print is whether the sky can be seen;
   ADR 0029, made in the same task, adds that rule.
