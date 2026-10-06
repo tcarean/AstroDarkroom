@@ -43,7 +43,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 - `src/ImageVisualCompare.Wpf/` - `net9.0-windows`, the application: `Imaging/` (the decoder
   seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
   surface, the minimap), `MainWindow`, `MessageDialog`, `Interop/DarkTitleBar.cs`,
-  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`.
+  `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`, `Assets/` (the icon and the
+  script that draws it).
 - `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
   on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`),
   `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,

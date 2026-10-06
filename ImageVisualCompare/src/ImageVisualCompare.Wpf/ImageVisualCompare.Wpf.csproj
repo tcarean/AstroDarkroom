@@ -8,6 +8,9 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- The executable's icon; a window with no Icon of its own takes it for its caption and the
+         taskbar. Assets/make-icon.ps1 writes the file (ADR 0030). -->
+    <ApplicationIcon>Assets\ImageVisualCompare.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

@@ -6,7 +6,8 @@
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
-> `src/ImageVisualCompare.Wpf/Theme.xaml`.
+> `src/ImageVisualCompare.Wpf/Theme.xaml`,
+> `src/ImageVisualCompare.Wpf/Assets/make-icon.ps1`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -32,3 +33,21 @@ either, so each window asks DWM for it through `DarkTitleBar.Apply` — in the c
 the attribute is set before the first frame and the caption is never white even briefly. On
 Windows 11 the caption is set to the exact chrome colour; Windows 10 has no such attribute and
 gets the generic dark caption, which is close but not `#1B1F26`. See ADR 0018.
+
+## The icon
+
+`Assets/make-icon.ps1` draws the curtain of ADR 0030 with WPF's own drawing classes, from
+Windows PowerShell, and writes `Assets/ImageVisualCompare.ico`; the file is committed, and the
+script runs only when the drawing changes. The drawing lives on a 64-unit grid, but each of the
+nine sizes is drawn at its own pixel size rather than scaled down from 256, because a scaled
+divider lands between pixels and blurs into a grey band at 16 px. So the divider is always an
+even number of whole pixels centred on the middle; below 32 px the stars are fewer and one
+pixel each, and the ringed handle becomes a solid dot, since a ring with a hole does not
+survive four pixels. A one-pixel outline in the chrome border colour keeps the tile's
+edge visible on a black taskbar, where the dark half alone disappears. Entries below 256 px are
+32-bit DIBs, the 256 px entry is a PNG, as Windows expects.
+
+No window sets `Icon`: a WPF window without one takes the executable's, which the
+`ApplicationIcon` of the csproj puts there, so the caption, the taskbar and the dialogs owned
+by the main window all show it. `AppIconTests` checks the sizes of the file and that the built
+application carries one icon group with all nine.

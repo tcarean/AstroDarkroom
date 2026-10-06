@@ -76,5 +76,7 @@
     `Confirm` to ask yes or no.
   - `App.xaml.cs` — command line pair, handed over once via `TakeStartupSelection`.
   - `Theme.xaml` — the dark palette and every control style.
+  - `Assets/ImageVisualCompare.ico` and `Assets/make-icon.ps1` — the application's icon and the
+    script that draws it; the csproj's `ApplicationIcon` embeds the file. See `shell.md`.
 - `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
   tests drive the real WIC codecs. References both other projects.
