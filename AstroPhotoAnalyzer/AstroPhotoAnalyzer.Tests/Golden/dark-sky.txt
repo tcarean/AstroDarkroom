@@ -47,7 +47,12 @@ Anexa A. Tonuri
 
 Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalele)
   fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50
+  0.05                 1.240       2.3      3.4      84.8 %     90.1 %        0.0 %
+  0.06                 1.165       2.8      4.2      81.6 %     88.6 %        0.0 %
+  0.07                 1.101       3.4      5.1      80.9 %     87.2 %        0.0 %
+  0.08                 1.046       4.1      6.1      76.2 %     85.5 %        0.1 %
   0.089 asa cum e      1.000       4.8      7.2      70.7 %     83.9 %        0.4 %
+  0.09                 0.997       4.8      7.3      69.5 %     83.8 %        0.5 %
   0.10                 0.953       5.6      8.5      50.8 %     82.0 %        0.9 %
   0.11                 0.914       6.5      9.8       5.1 %     80.0 %        1.2 %
   0.12                 0.878       7.5     11.0       2.7 %     77.6 %        1.6 %
@@ -100,7 +105,7 @@ Anexa E. Culoarea fundalului
 
 Anexa F. Parametri
   mediu baryta, Dmax 2.0 (explicit); latimi 50, 60, 70, 80, 90, 100 cm; passepartout 7 cm, rama 3 cm
-  distanta 1.5 m; raport tinta 1.429; fundal-tinta niciunul (grila 0.10..0.20); WCS fara; samanta 0
+  distanta 1.5 m; raport tinta 1.429; fundal-tinta niciunul (grila 0.05..0.20); WCS fara; samanta 0
 
 --- stderr ---
 --- exit 3

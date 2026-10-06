@@ -129,7 +129,7 @@ are, is now what the classes say.
 Builds the `DustMap`, measures the as-is row (B5 on the subsample; the pixel shares of B2),
 then, when the background is strictly inside (0, 1), lifts the subsample once per step of a
 **ladder**: every `ExactTargetStep` (0.01) from `ExactTargetLo` (0.05) to `ExactTargetHi`
-(0.60), plus the grid `SimulationTargets` (0.10..0.20) and the explicit `TargetBackground`;
+(0.60), plus the grid `SimulationTargets` (0.05..0.20) and the explicit `TargetBackground`;
 gamma = `ln(target) / ln(BackgroundMedian)` on every channel (`RasterOps.Gamma`, a 16-bit
 lookup table with linear interpolation, exact on 16-bit sources). The grid steps become
 `SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,

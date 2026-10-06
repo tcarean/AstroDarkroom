@@ -102,7 +102,7 @@ Două butoane sub imagine:
 Verdictul de fundal nu mai numără pixeli sub negrul hârtiei: caută *praful*, cea mai
 întunecată structură întinsă a imaginii, pe dale de 32 x 32 px (L\*-ul luminanței medii a
 dalei, ca zgomotul și stropii să nu conteze), și recomandă nivelul **minim** al fundalului —
-pe grila 0.10..0.20, rândul „așa cum e" inclus — la care praful ajunge pe negrul hârtiei fără
+pe grila 0.05..0.20, rândul „așa cum e" inclus — la care praful ajunge pe negrul hârtiei fără
 să coboare sub el; pe o imagine prea luminoasă, cât de jos poți coborî. Pe un **FITS
 plate-solved** (Siril scrie WCS-ul în antet; `CTYPE RA---TAN`, cu `CD`, `PC` + `CDELT` sau
 `CDELT` + `CROTA2`; termenii SIP se ignoră) dalele se împart în cinci clase, relativ, nu după
@@ -149,7 +149,7 @@ AstroPhotoAnalyzer poza.tif --medium baryta --distance 1.5 --sizes 60,70,80 --as
 
 Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-ul hârtiei tale,
 în locul celui al mediului), `--distance` (m), `--sizes` (cm),
-`--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.10..0.20),
+`--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.05..0.20),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
 folosește pentru nori), `--icc` (profilul ICC al hârtiei pe imprimanta ei: Dmax-ul se citește
 din el, în locul celui al mediului; nu merge împreună cu `--dmax`), `-o`. `--help` le explică.

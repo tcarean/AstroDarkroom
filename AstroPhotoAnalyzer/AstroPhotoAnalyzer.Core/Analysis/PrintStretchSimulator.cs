@@ -19,7 +19,7 @@
 // hartiei, fara sa coboare sub el?
 //
 // E O SIMULARE, nu un stretch. Duce fundalul MASURAT (mediana canalului de referinta)
-// la fiecare tinta a grilei 0.10..0.20 cu o curba gamma identica pe toate canalele, apoi
+// la fiecare tinta a grilei 0.05..0.20 cu o curba gamma identica pe toate canalele, apoi
 // remasoara praful si cerul (DustAnalyzer, pe aceeasi harta de dale) si procentele.
 // Recomandarea e cel mai mic rand - "asa cum e" inclus, sub sau peste nivelul masurat -
 // la care praful sta la sau peste negrul hartiei: nivelul minim folosibil, in ambele

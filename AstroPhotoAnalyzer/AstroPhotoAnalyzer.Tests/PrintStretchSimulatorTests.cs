@@ -39,21 +39,22 @@ public class PrintStretchSimulatorTests
     {
         // Flat 0.08: L* ~6, under paper black (9.0). The grid row that first puts it at or
         // above 9.0 is 0.10 (L* 9.03, by a hair); the first that also has the sky at the
-        // visibility threshold (L* 15) is 0.15, the recommended one. The rows are the as-is
-        // row and 0.10..0.20.
+        // visibility threshold (L* 15) is 0.15, the recommended one. The rows are 0.05..0.07,
+        // the as-is row, and 0.09..0.20 (the as-is 0.08 takes the grid's 0.08 place).
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
         Assert.False(s.AlreadyPrintSafe);
         Assert.True(s.DustBelowPaperBlack);
         Assert.True(s.SkyBelowPaperBlack);
-        Assert.Equal(12, s.Rows.Count);
-        Assert.True(s.Rows[0].AsIs);
-        Assert.Equal(P.SimulationTargets, s.Rows.Skip(1).Select(x => x.Target));
+        Assert.Equal(17, s.Rows.Count);
+        Assert.True(s.Rows[3].AsIs);   // the measured 0.08 sorts just before the grid's 0.08
+        Assert.Equal(P.SimulationTargets, s.Rows.Where(x => !x.AsIs).Select(x => x.Target));
         Assert.Equal(0.15, s.RecommendedTarget);
-        Assert.Same(s.Rows[6], Assert.Single(s.Rows, x => x.Recommended));
-        Assert.Equal(Math.Log(0.10) / Math.Log(0.08), s.Rows[1].Gamma, 6);
-        Assert.All(s.Rows.Skip(1), x => Assert.True(x.DustOnPaperBlack));
+        Assert.Same(s.Rows[11], Assert.Single(s.Rows, x => x.Recommended));
+        Assert.Equal(Math.Log(0.05) / Math.Log(0.08), s.Rows[0].Gamma, 6);
+        Assert.All(s.Rows.Where(x => x.Target >= 0.10), x => Assert.True(x.DustOnPaperBlack));
+        Assert.All(s.Rows.Where(x => x.Target < 0.10), x => Assert.False(x.DustOnPaperBlack));
         Assert.Equal(DustMethod.Sky, s.Method);
         Assert.Equal("fara WCS", s.MethodNote);
         Assert.Empty(s.Clouds);
@@ -138,7 +139,10 @@ public class PrintStretchSimulatorTests
 
         Assert.True(s.AlreadyPrintSafe);
         Assert.True(s.SkyBelowVisibility);
-        Assert.All(s.Rows.Where(x => x.Target < 0.145), x => Assert.True(x.DustOnPaperBlack && !x.SkyVisible && !x.PrintSafe));
+        // On the default baryta (paper black L* 3.6) the dust is on black from 0.06 (L* 4.4) up,
+        // but under 0.15 the sky is under the visibility threshold: no row before it is print-safe.
+        Assert.All(s.Rows.Where(x => x.Target < 0.145), x => Assert.True(!x.SkyVisible && !x.PrintSafe));
+        Assert.All(s.Rows.Where(x => x.Target >= 0.06 && x.Target < 0.145), x => Assert.True(x.DustOnPaperBlack));
         Assert.Equal(0.15, s.Recommended.Target, 9);
         // The mark of a row says which of the two it passes: a row with the dust on paper black
         // and the sky under the threshold is not called print-safe.
@@ -168,7 +172,7 @@ public class PrintStretchSimulatorTests
         var p = new Parameters { TargetBackground = 0.135 };
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), p);
 
-        Assert.Equal(13, s.Rows.Count);
+        Assert.Equal(18, s.Rows.Count);   // 16 grid rows, the as-is row, the explicit one
         SimulationRow given = Assert.Single(s.Rows, x => x.Explicit);
         Assert.Equal(0.135, given.Target);
         Assert.Same(given, s.Primary);
@@ -176,7 +180,7 @@ public class PrintStretchSimulatorTests
 
         // On the grid: no extra row, but the row is marked explicit.
         var onGrid = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.15 });
-        Assert.Equal(12, onGrid.Rows.Count);
+        Assert.Equal(17, onGrid.Rows.Count);
         Assert.True(onGrid.Rows.Single(x => Math.Abs(x.Target - 0.15) < 1e-9).Explicit);
         Assert.Equal(0.15, onGrid.Primary.Target);
 

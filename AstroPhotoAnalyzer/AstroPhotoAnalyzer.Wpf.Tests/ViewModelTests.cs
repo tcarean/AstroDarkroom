@@ -78,9 +78,9 @@ public class ViewModelTests
 
         Assert.Equal(101, tones.Histogram.Count);
         Assert.InRange(tones.PaperBlack, 8.9, 9.1);
-        Assert.Equal(1 + 12 + 1, tones.SimulationRows.Count);   // antet + "asa cum e" + grila 0.10..0.20 + nota
+        Assert.Equal(1 + 17 + 1, tones.SimulationRows.Count);   // antet + "asa cum e" + grila 0.05..0.20 + nota
         Assert.Null(tones.SimulationRows[0].Preview);
-        Assert.All(tones.SimulationRows.Skip(1).Take(12), row => Assert.NotNull(row.Preview));
+        Assert.All(tones.SimulationRows.Skip(1).Take(17), row => Assert.NotNull(row.Preview));
         Assert.Contains(tones.SimulationRows, row => row.Target == "asa cum e");
         Assert.All(tones.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         // Rezolutie: descriere pe fiecare rand, mai putin colturile (le acopera centrul).

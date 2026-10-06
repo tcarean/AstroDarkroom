@@ -164,7 +164,7 @@ public class ParameterFieldsTests
         Assert.Contains("gamma = ln(tinta) / ln(fundal)", f.TargetBgHelp);
         Assert.Contains("mediana canalului verde", f.TargetBgHelp);
         Assert.Contains("nu stretch-ul lui Siril", f.TargetBgHelp);
-        Assert.Contains("grila ei 0.10..0.20", f.TargetBgHelp);
+        Assert.Contains($"grila ei {new Parameters().SimulationTargets.Min():0.00}..{new Parameters().SimulationTargets.Max():0.00}", f.TargetBgHelp);
         Assert.Contains("\"(dat)\"", f.TargetBgHelp);
         Assert.Contains("0.15-0.25", f.TargetBgHelp);
         Assert.Contains("nivelul minim", f.TargetBgHelp);
