@@ -51,8 +51,9 @@ F1 = Despre.
 Două ferestre pleacă din tabul Tonuri, amândouă maximizate și amândouă doar de privit (nu
 calculează nimic, arată ce a decis analiza). **Harta praf / cer** pune peste imaginea întreagă,
 colorat diferit, cele cinci clase ale dalelor de 32 px (praf, cer, bandă, nori luminoși,
-vârfuri; fără clase, doar praful și cerul), fiecare cu procentul ei și cu definiția în
-legendă, iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai întunecați
+vârfuri cu Calea Lactee; praf, cer, nebuloasă, nebuloasă strălucitoare, vârfuri altfel),
+fiecare cu procentul ei și cu definiția în legendă, cu pragurile imaginii și cu ce a luat
+verdictul, iar cu WCS încercuiește norii catalogați, pe nume, cu eticheta pe cei mai întunecați
 15; fiecare strat are bifa lui, norii au bifa lor (cercuri și etichete; fără WCS e
 dezactivată), iar lista norilor are „Toți" / „Niciunul" și o bifă pe fiecare nor. E făcută ca
 să verifici clasele cu ochii pe alte imagini.
@@ -67,12 +68,15 @@ Tabul **Curbe** e singurul care nu se umple la analiză: alegi **Print** sau **E
 **Medie**, **Puternică** și, când mai e loc până la alb, **Maximă** — fiecare la mărimea la care
 încape în fereastră. Le răsfoiești cu „Înapoi" / „Înainte" sau cu săgețile stânga / dreapta.
 
-Curbele sunt de contrast: nu mută praful și cerul, ci desfac banda, norii luminoși și vârfurile
-în spațiul rămas liber până aproape de alb. Punctele lor vin din imagine: praful și cerul sunt
-cele din tabul Tonuri; cu un FITS plate-solved, banda, norii luminoși și vârfurile sunt partea
-de sus a claselor de acolo, iar fără WCS sunt cei mai luminoși 5,8 %, 0,9 % și 0,1 % din
-pixeli (tabul spune care din două). Un cer prea întunecat pentru hârtie nu se ridică din
-curbă: îl ridici la stretch, cum recomandă Tonuri, apoi revii aici.
+Curbele sunt de contrast: nu mută praful și cerul, ci desfac clasele de deasupra lor în
+spațiul rămas liber până aproape de alb. Punctele lor vin din clasele tabului Tonuri, pe
+oricare din cele două căi: praful și cerul ca acolo, apoi partea de sus a benzii, a norilor
+luminoși și a vârfurilor cu Calea Lactee, respectiv a nebuloasei, a nebuloasei strălucitoare
+și a vârfurilor altfel (tabul spune calea, iar punctele poartă numele claselor, aceleași ca pe
+hartă). Un cer prea întunecat pentru hârtie nu se ridică din curbă: îl ridici la stretch, cum
+recomandă Tonuri, apoi revii aici. Când vârfurile sunt deja la sau peste 0,92 din scară nu se
+sugerează nicio curbă: curbele de aici nu coboară niciun punct, iar imaginea e deja la plafon;
+tabul o spune cu roșu.
 
 Sub imagine, fiecare variantă își arată cifrele: punctele curbei, L\* al celor cinci clase
 înainte și după, de câte ori crește zgomotul din cer și câți pixeli ajung arși. Print și Ecran
@@ -113,10 +117,17 @@ cadru și unde: fiecare nor cu cel puțin 9 dale primește un rând cu L\*-ul lu
 la care ajunge el pe negru — ca să citești care rămân negri la nivelul recomandat. Clasele cer
 bandă și cer în afara ei, fiecare cu cel puțin 10 % din dale: metoda e făcută pentru cadre
 largi cu Calea Lactee; pe un cadru deep-sky (în întregime în bandă, sau fără bandă) raportul
-spune de ce și cade pe regula de mai jos. Un TIFF sau PNG exportat din
+spune de ce și ia cealaltă cale. Un TIFF sau PNG exportat din
 Siril nu poartă antetul, dar stack-ul din care a ieșit îl are: dă-l cu `--wcs` (consola) sau în
-câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Fără WCS, praful e cele mai
-întunecate 1 % din dalele cadrului și cerul mediana lor, și raportul spune asta. Pe lângă negrul hârtiei mai e o întrebare, a privitului: un cer sub L\* 15 (nivelul 0.148)
+câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Pe cealaltă cale, fără WCS
+sau fără bandă, clasele sunt relative la cerul modelat din toate dalele (percentila 25 a
+fiecărei celule, ca un obiect să nu-l ridice), cu praguri scoase din imagine: nebuloasa e dala
+cu mai mult de 4 sigma ale cerului peste model, praful cu la fel de mult sub el, nebuloasa
+strălucitoare cea de peste pragul Otsu al nebuloasei, vârfurile ca mai sus; raportul dă
+pragurile, în L\*. Pe orice cale verdictul măsoară la fel: cerul e mediana dalelor de cer, iar
+praful e zona întinsă cea mai întunecată — percentila de 25 % a dalelor de praf când clasa are
+cel puțin 5 % din dale (sub atât sunt nuclee sau artefacte), sau cel mai întunecat 1 % al
+dalelor de cer, care din două e mai întunecată; raportul spune care a decis. Pe lângă negrul hârtiei mai e o întrebare, a privitului: un cer sub L\* 15 (nivelul 0.148)
 se tipărește, dar în lumina obișnuită de cameră se vede aproape negru, oricât de adânc ar fi
 negrul hârtiei; raportul îl dă ca „atenție", iar rândul recomandat are praful pe negrul hârtiei
 și cerul la L\* 15 sau peste. Pragul e o regulă de degetul mare, nu o măsurătoare: un petic de

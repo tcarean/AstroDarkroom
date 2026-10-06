@@ -17,18 +17,20 @@
 
 // CurveAdvisor.cs - curbele de contrast sugerate (R-141, R-142, R-143; ADR 0032).
 //
-// CINCI ANCORE, masurate pe imagine: praful si cerul sunt cele ale tabului Tonuri
-// (DustAnalyzer); banda, norii luminosi si varfurile sunt PARTEA DE SUS a claselor lor -
-// nu mediana, care la banda sta langa cer si ar porni portiunea abrupta chiar din cer.
-// Fara clase (fara WCS, fara banda, fara praf) cele trei de sus sunt percentile ale
-// histogramei cadrului, acolo unde stateau intrarile curbei vechi a proprietarului.
+// CINCI ANCORE, masurate pe imagine, mereu din clasele tabului Tonuri (DustAnalyzer, pe
+// calea benzii sau pe cea a cerului; ADR 0033): praful si cerul sunt cele ale verdictului;
+// banda / nebuloasa, norii luminosi / nebuloasa stralucitoare si varfurile sunt PARTEA DE
+// SUS a claselor lor - nu mediana, care la banda sta langa cer si ar porni portiunea
+// abrupta chiar din cer. Punctele curbei poarta numele claselor caii.
 //
 // RETETA. Curba nu muta praful si cerul: ridicarea unui cer prea intunecat e re-stretch-ul
 // pe care il recomanda Tonuri, nu treaba unei curbe (masurat: acelasi lucru, cu acelasi
 // zgomot). Deasupra cerului, cele trei segmente iau pantele curbei vechi, micsorate
 // impreuna cand varfurile ar trece de CurvePeakTarget. Blanda, Medie si Puternica sunt
 // parti din drumul de la identitate la curba aceea; Maxima mareste pantele impreuna pana
-// cand varfurile ating tinta, si exista doar cand Puternica nu ajunge acolo.
+// cand varfurile ating tinta, si exista doar cand Puternica nu ajunge acolo. Niciun punct
+// nu coboara sub intrarea lui: cu varfurile deja la sau peste tinta nu mai e loc de nimic,
+// si nu se sugereaza nicio curba (Problem), in loc de patru curbe care nu schimba nimic.
 //
 // DOVADA fiecarei curbe se REMASOARA pe subesantionul tonal cu curba aplicata, nu se
 // prezice din puncte: pe o imagine colorata, o curba pe canale nu duce o dala exact unde
@@ -43,17 +45,7 @@ namespace AstroPhotoAnalyzer
     /// <summary>Pentru ce e curba. Schimba doar dovada (verificarile de hartie), niciodata curba.</summary>
     internal enum CurvePurpose { Print, Screen }
 
-    /// <summary>De unde vin ancorele de sus.</summary>
-    internal enum CurveAnchorSource
-    {
-        /// <summary>Clasele tabului Tonuri (ADR 0026).</summary>
-        Classes,
-
-        /// <summary>Percentilele histogramei cadrului: fara WCS, fara banda sau fara vreuna din clase.</summary>
-        FrameHistogram,
-    }
-
-    /// <summary>Intrarile celor cinci puncte, in valori 0..1.</summary>
+    /// <summary>Intrarile celor cinci puncte, in valori 0..1; NaN pentru o clasa goala.</summary>
     internal sealed record CurveAnchors
     {
         internal double Dust { get; init; }
@@ -70,13 +62,16 @@ namespace AstroPhotoAnalyzer
     {
         internal double PctAll { get; init; }
 
-        /// <summary>Pe clasele praf, cer, banda, nori luminosi, varfuri; null fara clase, NaN pentru o clasa goala.</summary>
+        /// <summary>Pe cele cinci clase, in ordinea hartii; NaN pentru o clasa goala.</summary>
         internal IReadOnlyList<double> PctByClass { get; init; }
     }
 
     internal sealed record CurveEvidence
     {
-        /// <summary>L*-ul celor cinci clase (praf, cer, banda, nori luminosi, varfuri) inainte si dupa curba.</summary>
+        /// <summary>Numele celor cinci clase, ale caii hartii (DustAnalyzer.ClassNames).</summary>
+        internal IReadOnlyList<string> Labels { get; init; }
+
+        /// <summary>L*-ul celor cinci clase (praf, cer, banda / nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri) inainte si dupa curba.</summary>
         internal IReadOnlyList<double> LstarBefore { get; init; }
         internal IReadOnlyList<double> LstarAfter { get; init; }
 
@@ -113,26 +108,10 @@ namespace AstroPhotoAnalyzer
 
     internal static class CurveAdvisor
     {
-        internal static readonly string[] Labels = { "praf", "cer", "banda", "nori luminosi", "varfuri" };
         internal static readonly string[] Names = { "Blanda", "Medie", "Puternica" };
         internal const string MaximaName = "Maxima";
 
-        static double Gray(double lstar) => ColorMath.GrayLevelOfLstar(lstar) / 255;
-
-        /// <summary>Griul luminantei fiecarui pixel al subesantionului, sortat.</summary>
-        static float[] SortedLuminanceGray(Raster sub)
-        {
-            int n = sub.W * sub.H;
-            var g = new float[n];
-            bool color = sub.IsColor;
-            float[] R = sub.Planes[0], G = color ? sub.Planes[1] : null, B = color ? sub.Planes[2] : null;
-            for (int i = 0; i < n; i++)
-                g[i] = color
-                    ? (float)ColorMath.LinearToSrgb(ColorMath.Luminance(ColorMath.SrgbToLinear(R[i]), ColorMath.SrgbToLinear(G[i]), ColorMath.SrgbToLinear(B[i])))
-                    : R[i];
-            Array.Sort(g);
-            return g;
-        }
+        static double Gray(double lstar) => double.IsNaN(lstar) ? double.NaN : ColorMath.GrayLevelOfLstar(lstar) / 255;
 
         static float[] ClassLstars(float[] patchLstars, DustMap map, PatchClass c)
         {
@@ -141,40 +120,30 @@ namespace AstroPhotoAnalyzer
             return v.ToArray();
         }
 
-        /// <summary>Ancorele de sus vin din clase doar cand praful si cerul vin din ele si niciuna din cele trei clase nu e goala.</summary>
-        internal static CurveAnchorSource SourceOf(DustMap map)
-            => map.UsesClasses
-               && Array.IndexOf(map.Classes, PatchClass.Band) >= 0
-               && Array.IndexOf(map.Classes, PatchClass.BrightCloud) >= 0
-               && Array.IndexOf(map.Classes, PatchClass.Peak) >= 0
-                ? CurveAnchorSource.Classes : CurveAnchorSource.FrameHistogram;
+        /// <summary>Percentila clasei, sau NaN cand clasa e goala.</summary>
+        static double ClassLevel(float[] patchLstars, DustMap map, PatchClass c, double percentile)
+        {
+            float[] v = ClassLstars(patchLstars, map, c);
+            return v.Length == 0 ? double.NaN : Stats.PercentileSorted(Stats.Sorted(v), percentile);
+        }
 
         /// <summary>
         /// L*-ul celor cinci clase pe subesantionul tonal <paramref name="sub"/> (asa cum e sau
         /// cu o curba aplicata), cu aceleasi statistici ca ancorele: praful si cerul de la
-        /// DustAnalyzer, restul din partea de sus a claselor sau din histograma cadrului.
+        /// DustAnalyzer, restul din partea de sus a claselor; NaN pentru o clasa goala.
         /// </summary>
-        internal static double[] ClassLevels(Raster sub, DustMap map, CurveAnchorSource source, double paperBlackLstar)
+        internal static double[] ClassLevels(Raster sub, DustMap map, double paperBlackLstar)
         {
             float[] patches = DustAnalyzer.PatchLstars(sub);
             DustStats d = DustAnalyzer.Measure(patches, map, paperBlackLstar);
-            var o = new double[5];
-            o[0] = d.LstarDust;
-            o[1] = d.LstarSky;
-            if (source == CurveAnchorSource.Classes)
+            return new[]
             {
-                o[2] = Stats.PercentileSorted(Stats.Sorted(ClassLstars(patches, map, PatchClass.Band)), Thresholds.CurveBandClassPercentile);
-                o[3] = Stats.PercentileSorted(Stats.Sorted(ClassLstars(patches, map, PatchClass.BrightCloud)), Thresholds.CurveCloudClassPercentile);
-                o[4] = Stats.Median(ClassLstars(patches, map, PatchClass.Peak));
-            }
-            else
-            {
-                float[] g = SortedLuminanceGray(sub);
-                o[2] = ColorMath.LstarOfY(ColorMath.SrgbToLinear(Stats.PercentileSorted(g, Thresholds.CurveBandPercentile)));
-                o[3] = ColorMath.LstarOfY(ColorMath.SrgbToLinear(Stats.PercentileSorted(g, Thresholds.CurveCloudPercentile)));
-                o[4] = ColorMath.LstarOfY(ColorMath.SrgbToLinear(Stats.PercentileSorted(g, Thresholds.CurvePeakPercentile)));
-            }
-            return o;
+                d.LstarDust,
+                d.LstarSky,
+                ClassLevel(patches, map, PatchClass.Band, Thresholds.CurveBandClassPercentile),
+                ClassLevel(patches, map, PatchClass.BrightCloud, Thresholds.CurveCloudClassPercentile),
+                ClassLevel(patches, map, PatchClass.Peak, 50),
+            };
         }
 
         /// <summary>Ancorele: griul L*-ului fiecarei clase.</summary>
@@ -188,24 +157,29 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// De ce nu se poate sugera nimic, pentru om: ancorele nu cresc strict intre 0 si 1
-        /// (un cadru plat, varfuri arse, o banda nu mai luminoasa decat cerul). Null cand cresc.
+        /// De ce nu se poate sugera nimic, pentru om: o clasa goala; varfurile deja la sau peste
+        /// CurvePeakTarget (imaginea e la plafon, reteta n-ar avea loc); ancorele nu cresc strict
+        /// intre 0 si 1 (un cadru plat, varfuri arse, o banda nu mai luminoasa decat cerul).
+        /// Null cand se poate.
         /// </summary>
-        internal static string Problem(CurveAnchors a)
+        internal static string Problem(CurveAnchors a, IReadOnlyList<string> labels)
         {
             double[] x = a.AsArray();
-            if (!(x[0] > 0)) return CurveTexts.AnchorAtEnd(Labels[0], x[0], atBlack: true);
+            for (int i = 0; i < 5; i++)
+                if (double.IsNaN(x[i])) return CurveTexts.ClassEmpty(labels[i]);
+            if (x[4] >= Thresholds.CurvePeakTarget) return CurveTexts.PeaksOverTarget(labels[4], x[4]);
+            if (!(x[0] > 0)) return CurveTexts.AnchorAtEnd(labels[0], x[0], atBlack: true);
             for (int i = 1; i < 5; i++)
-                if (!(x[i] > x[i - 1])) return CurveTexts.AnchorsNotIncreasing(Labels[i - 1], x[i - 1], Labels[i], x[i]);
-            if (!(x[4] < 1)) return CurveTexts.AnchorAtEnd(Labels[4], x[4], atBlack: false);
+                if (!(x[i] > x[i - 1])) return CurveTexts.AnchorsNotIncreasing(labels[i - 1], x[i - 1], labels[i], x[i]);
             return null;
         }
 
         /// <summary>
         /// Curbele sugerate pentru ancorele date, in ordinea Blanda, Medie, Puternica si,
-        /// cand exista, Maxima. Una al carei spline n-ar fi monoton nu se intoarce.
+        /// cand exista, Maxima, cu punctele etichetate cu <paramref name="labels"/>. Una al
+        /// carei spline n-ar fi monoton nu se intoarce.
         /// </summary>
-        internal static IReadOnlyList<(string Name, ToneCurve Curve)> Curves(CurveAnchors a)
+        internal static IReadOnlyList<(string Name, ToneCurve Curve)> Curves(CurveAnchors a, IReadOnlyList<string> labels)
         {
             double[] x = a.AsArray();
             double ys = x[1];
@@ -233,7 +207,7 @@ namespace AstroPhotoAnalyzer
             ToneCurve Build(double[] full, double strength)
             {
                 var pts = new List<CurvePoint> { new(0, 0, null) };
-                for (int i = 0; i < 5; i++) pts.Add(new CurvePoint(x[i], x[i] + strength * (full[i] - x[i]), Labels[i]));
+                for (int i = 0; i < 5; i++) pts.Add(new CurvePoint(x[i], x[i] + strength * (full[i] - x[i]), labels[i]));
                 pts.Add(new CurvePoint(1, 1, null));
                 return new ToneCurve(pts);
             }
@@ -275,14 +249,15 @@ namespace AstroPhotoAnalyzer
         /// Dovada masurata a unei curbe (R-143), fara verificarile de hartie si fara gamut, pe
         /// care le adauga rularea dupa scop.
         /// </summary>
-        internal static CurveEvidence Measure(ToneCurve curve, Raster sub, Raster curvedSub, DustMap map, CurveAnchorSource source,
+        internal static CurveEvidence Measure(ToneCurve curve, Raster sub, Raster curvedSub, DustMap map,
             double[] before, double clippedBefore, double sky, NoiseResult noise, double paperBlackLstar)
         {
             double gain = curve.Slope(sky);
             return new CurveEvidence
             {
+                Labels = map.ClassNames,
                 LstarBefore = before,
-                LstarAfter = ClassLevels(curvedSub, map, source, paperBlackLstar),
+                LstarAfter = ClassLevels(curvedSub, map, paperBlackLstar),
                 NoiseGain = gain,
                 NoiseAfterLsb = noise == null || noise.Insufficient ? double.NaN : noise.SigmaMedianLsb * gain,
                 PctClippedBefore = clippedBefore,

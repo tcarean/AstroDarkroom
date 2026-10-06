@@ -33,7 +33,10 @@ namespace AstroPhotoAnalyzer
     {
         internal CurvePurpose Purpose { get; init; }
         internal CurveAnchors Anchors { get; init; }
-        internal CurveAnchorSource Source { get; init; }
+
+        /// <summary>Pe ce cale s-au facut clasele ancorelor, si numele lor (DustAnalyzer.ClassNames).</summary>
+        internal DustMethod Method { get; init; }
+        internal IReadOnlyList<string> Labels { get; init; }
 
         /// <summary>De ce nu s-a sugerat nimic, pentru om; null cand exista sugestii.</summary>
         internal string Problem { get; init; }
@@ -67,27 +70,27 @@ namespace AstroPhotoAnalyzer
 
             progress?.Report("ancore");
             Raster sub = RasterOps.Subsample(r, Thresholds.TonalStride);
-            CurveAnchorSource source = CurveAdvisor.SourceOf(map);
-            double[] before = CurveAdvisor.ClassLevels(sub, map, source, black);
+            IReadOnlyList<string> labels = map.ClassNames;
+            double[] before = CurveAdvisor.ClassLevels(sub, map, black);
             CurveAnchors anchors = CurveAdvisor.Anchors(before);
             Raster original = RasterOps.Subsample(r, PreviewStride(r, maxWidth, maxHeight));
             var set = new CurveSet
             {
                 Purpose = purpose,
                 Anchors = anchors,
-                Source = source,
+                Method = map.Method,
+                Labels = labels,
                 OriginalPreview = original,
-                SourceSentence = CurveTexts.AnchorSource(source, sim.MethodNote),
+                SourceSentence = CurveTexts.AnchorSource(map, sim.MethodNote),
             };
 
-            string problem = CurveAdvisor.Problem(anchors);
+            string problem = CurveAdvisor.Problem(anchors, labels);
             if (problem != null) return set with { Problem = problem };
-            IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(anchors);
+            IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(anchors, labels);
             if (curves.Count == 0) return set with { Problem = CurveTexts.NoMonotoneCurve };
 
             // Gamutul: doar pentru print si doar cu profilul din care a venit Dmax-ul.
             GamutTable gamut = null; string gamutNote = null; GamutFigure gamutBefore = null;
-            bool byClass = source == CurveAnchorSource.Classes;
             if (purpose == CurvePurpose.Print)
             {
                 string profile = a.Parameters.DmaxProfile != null && a.Parameters.DmaxOverride.HasValue ? a.Parameters.DmaxProfilePath : null;
@@ -97,7 +100,7 @@ namespace AstroPhotoAnalyzer
                     progress?.Report("gamut");
                     gamut = GamutAnalyzer.Build(profile);
                     if (gamut.Problem != null) { gamutNote = CurveTexts.GamutUnreadable(gamut.Problem); gamut = null; }
-                    else gamutBefore = GamutAnalyzer.Measure(gamut, sub, map, byClass);
+                    else gamutBefore = GamutAnalyzer.Measure(gamut, sub, map);
                 }
             }
 
@@ -107,13 +110,13 @@ namespace AstroPhotoAnalyzer
             {
                 progress?.Report(name);
                 Raster curvedSub = curve.Apply(sub);
-                CurveEvidence e = CurveAdvisor.Measure(curve, sub, curvedSub, map, source, before, clippedBefore, anchors.Sky, a.Noise, black);
+                CurveEvidence e = CurveAdvisor.Measure(curve, sub, curvedSub, map, before, clippedBefore, anchors.Sky, a.Noise, black);
                 if (purpose == CurvePurpose.Print)
                     e = e with
                     {
                         PaperChecks = CurveTexts.PaperChecks(sim, a.Noise, e),
                         GamutBefore = gamutBefore,
-                        Gamut = gamut == null ? null : GamutAnalyzer.Measure(gamut, curvedSub, map, byClass),
+                        Gamut = gamut == null ? null : GamutAnalyzer.Measure(gamut, curvedSub, map),
                         GamutNote = gamutNote,
                     };
                 suggestions.Add(new CurveSuggestion { Name = name, Curve = curve, Preview = curve.Apply(original), Evidence = e });

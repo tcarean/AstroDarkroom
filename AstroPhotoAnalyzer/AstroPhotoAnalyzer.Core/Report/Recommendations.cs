@@ -92,9 +92,9 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ 2. fundal
 
-        // Verdictul: praful (percentila dalelor norilor catalogati, sau a cadrului fara WCS)
-        // fata de negrul hartiei, si cerul fata de el (ADR 0025); apoi cerul fata de pragul de
-        // vizibilitate (ADR 0029). "Fiindca" spune ce e praful, care sunt norii cei mai
+        // Verdictul: praful (zona intinsa cea mai intunecata: clasa praf sau cerul cel mai
+        // intunecat, ADR 0033) fata de negrul hartiei, si cerul fata de el (ADR 0025); apoi
+        // cerul fata de pragul de vizibilitate (ADR 0029). "Fiindca" spune ce e praful, care sunt norii cei mai
         // intunecati, unde e negrul, de la ce Dmax ar trece asa cum e si cat e sub prag.
         static void Background(AnalysisResult r, List<Recommendation> o)
         {

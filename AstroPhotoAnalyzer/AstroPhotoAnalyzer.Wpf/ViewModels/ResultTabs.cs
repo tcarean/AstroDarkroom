@@ -283,15 +283,18 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Lead = "Praful si cerul.",
                     Text = $"Imaginea se imparte in dale de {Thresholds.DustPatchPx} x {Thresholds.DustPatchPx} px, fiecare cu L*-ul luminantei ei medii: "
-                        + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul "
-                        + $"\"WCS din FITS\") dalele se impart in cinci clase, relativ, nu dupa un prag fix: banda Caii Lactee e latitudinea galactica |b| sub "
+                        + "ce integreaza ochiul pe o pata de hartie, nu un pixel. Dalele se impart in cinci clase, relativ, nu dupa un prag fix, pe una din doua cai. "
+                        + "Cu un FITS plate-solved (WCS in antet, sau imprumutat cu campul \"WCS din FITS\") si cu Calea Lactee in cadru: banda e latitudinea galactica |b| sub "
                         + $"{Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade; cerul e modelat din dalele din afara ei; praful e dala cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii "
                         + $"(mediana pe ~{Thresholds.BandLocalWindowPatches * Thresholds.DustPatchPx} px) sau sub cerul modelat, adica mai intunecata decat ar fi banda acolo; norii luminosi, "
                         + $"cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul local; varfurile, cele mai luminoase {Fmt.F1(Thresholds.PeakFraction * 100)} % din dale. "
-                        + $"L*-ul prafului e percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf, L*-ul cerului mediana dalelor de cer. Catalogul Lynds da numele norilor "
-                        + $"si randul fiecaruia cu cel putin {Thresholds.DustCloudMinPatches} dale, cu tinta la care ajunge el pe negru. Clasele cer banda si cer in afara ei, fiecare cu "
-                        + $"cel putin {Fmt.F0(Thresholds.BandMinFraction * 100)} % din dale: pe un cadru deep-sky, ca si fara WCS, praful e cele mai intunecate {Fmt.F0(Thresholds.DustAreaFraction * 100)} % "
-                        + "din dalele cadrului si cerul mediana lor, si tabul o spune. Butonul \"Harta praf / cer\" arata clasele pe imagine si norii pe nume.",
+                        + $"Calea asta cere banda si cer in afara ei, fiecare cu cel putin {Fmt.F0(Thresholds.BandMinFraction * 100)} % din dale. Altfel, ca si fara WCS, clasele sunt relative la cerul "
+                        + $"modelat din toate dalele (percentila {Fmt.F0(Thresholds.SkyModelLowPercentile)} a fiecarei celule), cu praguri din imagine: nebuloasa e dala cu peste {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale "
+                        + "cerului deasupra modelului, praful cu la fel de mult sub el, nebuloasa stralucitoare cea de peste pragul Otsu al nebuloasei, varfurile ca mai sus. "
+                        + $"Pe orice cale, L*-ul cerului e mediana dalelor de cer, iar L*-ul prafului e zona intinsa cea mai intunecata: percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf "
+                        + $"cand clasa are cel putin {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale (sub atat sunt nuclee sau artefacte), sau cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer, "
+                        + $"care din doua e mai intunecata. Catalogul Lynds da numele norilor si randul fiecaruia cu cel putin {Thresholds.DustCloudMinPatches} dale, cu tinta la care ajunge el pe negru. "
+                        + "Butonul \"Harta praf / cer\" arata clasele pe imagine si norii pe nume.",
                 },
                 new GuideParagraph
                 {

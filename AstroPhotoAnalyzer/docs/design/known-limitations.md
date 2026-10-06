@@ -41,10 +41,23 @@
 - The classes (band, sky model, dust under the band's local level) are for wide fields with the
   galactic band and plain sky both in the frame. The winter band is a few L\* above the sky and
   its dark clouds lie outside |b| < 10°; a deep-sky field is wholly in or wholly out of the band.
-  Those frames fall back to the frame rule, named in the report. A horizon corner darker than the
-  modelled sky counts as dust.
-- Without a WCS, a foreground or a silhouette larger than 1 % of the frame becomes "the dust";
-  a plate-solved FITS, or `--wcs` with the stack's header, is the way out.
+  Those frames take the classes relative to the modelled sky (ADR 0033), named in the report. A
+  horizon corner darker than the modelled sky counts as dust on either path.
+- On the sky path the Great Rift is not found: without geometry the band is the sky's level and
+  only its darkest knots fall under the model, so on `de_printat.png` the dust is the darkest sky
+  (L\* 4.2), not the Rift's 25 % percentile (7.9 with the band). A plate-solved FITS, or `--wcs`
+  with the stack's header, is the way to the band classes.
+- On the sky path a 32 px patch holding a bright star reads as nebula or bright nebula, so a
+  frame with stars has speckles on the map; the anchors move by under 1 L\* (Rosetta with and
+  without stars: 32.0 against 32.2). A 3 x 3 median on the patches was measured and rejected
+  (ADR 0033).
+- An object that fills the frame becomes the modelled sky: on a 1.3 degree field on LDN 42 the
+  cloud is the sky class and the plain sky around it the bright nebula, and the verdict's "sky"
+  is the cloud's own level. The report still says what it measured.
+- The dark globules inside a nebula are not dust on the sky path: they are under the nebula,
+  not under the modelled sky; that would need the band path's local level over the whole frame.
+- Without a WCS, a foreground or a silhouette darker than the modelled sky by the sky's noise and
+  larger than 5 % of the frame becomes "the dust".
 - The SIP terms of a WCS are ignored: at most 6 px at the edge of the plate-solved FITS, under a
   patch; a field with far stronger distortion would misplace the outer patches.
 - Stars on bright nebulosity measure wider (border median overestimates the base); the
@@ -62,8 +75,10 @@
   not measured natively.
 - The plateau needs flat sky; a frame full of structure may yield few or no tiles.
 - The suggested curves (ADR 0032) are one recipe: the segment slopes come from one curve the
-  owner liked on one image, and the anchors of a frame without the classes are percentiles of
-  its histogram, not objects. A frame whose five anchors do not increase gets no suggestion.
+  owner liked on one image, and no point ever goes under its input, so a frame whose peaks are
+  already at or over 0.92 of the scale gets no suggestion, only the reason (ADR 0033); the
+  shoulder that would make room by compressing the highlights is not built. A frame whose five
+  anchors do not increase, or with an empty class, gets none either.
 - A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.

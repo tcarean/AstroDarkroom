@@ -42,11 +42,14 @@ public class CurveTests
     }
 
     /// <summary>
-    /// A frame without a WCS, in vertical stripes: dust 0.05 (6 % of the frame), sky 0.15, a band
-    /// at 0.3 from 78 % to 96 % of the pixels, clouds at 0.5 up to 99.6 %, peaks at 0.7 above.
+    /// A frame without a WCS, in vertical stripes aligned to the 32 px patches: dust 0.05 (one
+    /// column, 6 % of the patches), sky 0.15 (twelve columns), nebula 0.3 (two), bright nebula
+    /// 0.5 (one), and one patch at <paramref name="peak"/> inside the nebula, the peak. The
+    /// sky-relative classes find exactly these (ADR 0033), so the anchors are the five levels.
     /// </summary>
-    static Raster StripeScene()
-        => SyntheticRasters.From(512, 512, 3, (x, y, p) => x < 32 ? 0.05f : x < 400 ? 0.15f : x < 490 ? 0.3f : x < 508 ? 0.5f : 0.7f);
+    internal static Raster StripeScene(float peak = 0.7f)
+        => SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+            x >= 448 && x < 480 && y >= 224 && y < 256 ? peak : x < 32 ? 0.05f : x < 416 ? 0.15f : x < 480 ? 0.3f : 0.5f);
 
     static AnalysisResult Band() => AnalysisRun.Execute(BandScene(), "memorie", Scenes.OnBuiltForPaper());
 
@@ -98,7 +101,9 @@ public class CurveTests
         CurveSet set = Suggest(a);
 
         Assert.Null(set.Problem);
-        Assert.Equal(CurveAnchorSource.Classes, set.Source);
+        Assert.Equal(DustMethod.Band, set.Method);
+        Assert.Equal(new[] { "praf", "cer", "banda", "nori luminosi", "varfuri" }, set.Labels);
+        Assert.All(set.Suggestions, s => Assert.Equal("banda", s.Curve.Points[3].Label));
         CurveAnchors k = set.Anchors;
         Assert.Equal(ColorMath.GrayLevelOfLstar(a.Simulation.AsIs.LstarDust) / 255, k.Dust, 9);
         Assert.Equal(ColorMath.GrayLevelOfLstar(a.Simulation.AsIs.LstarSky) / 255, k.Sky, 9);
@@ -112,20 +117,51 @@ public class CurveTests
     }
 
     [Fact]
-    public void R141_WithoutTheClassesTheUpperAnchorsAreTheFramesPercentilesAndABadOrderIsAProblem()
+    public void R141_WithoutTheBandTheAnchorsAreTheSkyRelativeClassesAndTheirNamesAreThePoints()
     {
         CurveSet set = Suggest(AnalysisRun.Execute(StripeScene(), "memorie", Scenes.OnBuiltForPaper()));
-        Assert.Equal(CurveAnchorSource.FrameHistogram, set.Source);
+        Assert.Equal(DustMethod.Sky, set.Method);
+        Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" }, set.Labels);
         Assert.Null(set.Problem);
+        Assert.Equal(0.05, set.Anchors.Dust, 3);
         Assert.Equal(0.15, set.Anchors.Sky, 3);
         Assert.Equal(0.3, set.Anchors.Band, 3);
         Assert.Equal(0.5, set.Anchors.Clouds, 3);
         Assert.Equal(0.7, set.Anchors.Peaks, 3);
+        Assert.All(set.Suggestions, s => Assert.Equal("nebuloasa", s.Curve.Points[3].Label));
+        Assert.Contains("clase relative la cerul modelat (fara WCS)", set.SourceSentence);
+        Assert.Contains("nebuloasa la percentila 80 %", set.SourceSentence);
+        Assert.All(set.Suggestions, s => Assert.Equal(set.Labels, s.Evidence.Labels));
 
         // A flat frame has one level: the anchors cannot increase, and nothing is suggested.
         CurveSet flat = Suggest(AnalysisRun.Execute(SyntheticRasters.Flat(64, 64, 0.2f), "memorie", Scenes.OnBuiltForPaper()));
         Assert.NotNull(flat.Problem);
         Assert.Empty(flat.Suggestions);
+
+        // Without a bright-nebula column there is no fourth class: a problem naming it, no suggestion.
+        Raster noBright = SyntheticRasters.From(512, 512, 3, (x, y, p) => x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.05f : x < 416 ? 0.15f : 0.3f);
+        CurveSet empty = Suggest(AnalysisRun.Execute(noBright, "memorie", Scenes.OnBuiltForPaper()));
+        Assert.Contains("clasa \"nebuloasa stralucitoare\" nu are nicio dala", empty.Problem);
+        Assert.Empty(empty.Suggestions);
+    }
+
+    [Fact]
+    public void R142_PeaksAlreadyAtOrOverTheTargetGetNoCurveAndTheReasonNamesTheTarget()
+    {
+        // The same stripes with the peak patch at 0.95: above CurvePeakTarget, the recipe would
+        // leave every point on the diagonal, so nothing is suggested and the message says why.
+        CurveSet set = Suggest(AnalysisRun.Execute(StripeScene(peak: 0.95f), "memorie", Scenes.OnBuiltForPaper()));
+        Assert.Equal(0.95, set.Anchors.Peaks, 3);
+        Assert.NotNull(set.Problem);
+        Assert.Contains("ancora \"varfuri\" e deja la 0.950", set.Problem);
+        Assert.Contains($"tinta {Thresholds.CurvePeakTarget:0.00}", set.Problem);
+        Assert.Contains("la plafon", set.Problem);
+        Assert.Empty(set.Suggestions);
+
+        // Exactly at the target counts too; just under it does not.
+        var labels = new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" };
+        Assert.NotNull(CurveAdvisor.Problem(new CurveAnchors { Dust = 0.05, Sky = 0.15, Band = 0.3, Clouds = 0.5, Peaks = Thresholds.CurvePeakTarget }, labels));
+        Assert.Null(CurveAdvisor.Problem(new CurveAnchors { Dust = 0.05, Sky = 0.15, Band = 0.3, Clouds = 0.5, Peaks = Thresholds.CurvePeakTarget - 0.01 }, labels));
     }
 
     [Fact]
@@ -486,13 +522,12 @@ public class CurveTests
             Stride = 4,
             Classes = new[] { PatchClass.Dust, PatchClass.Band, PatchClass.Sky, PatchClass.Band },
         };
-        GamutFigure g = GamutAnalyzer.Measure(table, sub, map, byClass: true);
+        GamutFigure g = GamutAnalyzer.Measure(table, sub, map);
         Assert.Equal(50, g.PctAll, 9);
         Assert.Equal(new[] { 100.0, 100.0, 0.0, double.NaN, double.NaN }, g.PctByClass);
-        Assert.Null(GamutAnalyzer.Measure(table, sub, map, byClass: false).PctByClass);
 
         // A mono image has no chroma to lose.
-        Assert.Equal(0, GamutAnalyzer.Measure(table, SyntheticRasters.Flat(16, 16, 0.5f, planes: 1), map, byClass: true).PctAll);
+        Assert.Equal(0, GamutAnalyzer.Measure(table, SyntheticRasters.Flat(16, 16, 0.5f, planes: 1), map).PctAll);
     }
 
     [Fact]

@@ -123,7 +123,7 @@ public class CurvesTabTests
         // A TIFF input: the proposed name and the saved file are a FITS all the same (R-145).
         // Vertical stripes with five increasing levels, so that the frame has its five anchors.
         string input = ws.WriteFile("calea-lactee.tif", TiffTestData.Build16Rgb(512, 512,
-            (x, y, c) => (int)(65535 * (x < 32 ? 0.05 : x < 400 ? 0.15 : x < 490 ? 0.3 : x < 508 ? 0.5 : 0.7)), IccTestData.V2("sRGB test")));
+            (x, y, c) => (int)(65535 * (x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7 : x < 32 ? 0.05 : x < 416 ? 0.15 : x < 480 ? 0.3 : 0.5)), IccTestData.V2("sRGB test")));
         AnalysisResult result = AnalysisRun.Execute(input, Scenes.OnBuiltForPaper());
         var tab = new CurvesTabViewModel();
         tab.Populate(result);
@@ -192,6 +192,33 @@ public class CurvesTabTests
     }
 
     [Fact]
+    public void R146_AReasonForNoCurvesIsShownAsAProblemAndTheGalleryStaysEmpty()
+    {
+        // Stripes with the peak patch at 0.95, over the target: the core gives a reason, the tab
+        // marks it as a problem (drawn red), and there is nothing to page through.
+        Raster ceiling = SyntheticRasters.From(512, 512, 3, (x, y, p) => x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.95f : x < 32 ? 0.05f : x < 416 ? 0.15f : x < 480 ? 0.3f : 0.5f);
+        var tab = new CurvesTabViewModel();
+        tab.Populate(AnalysisRun.Execute(ceiling, "memorie", Scenes.OnBuiltForPaper()));
+        Assert.False(tab.IsProblem);
+
+        tab.Compute(400, 300);
+
+        Assert.True(tab.IsProblem);
+        Assert.False(tab.HasGallery);
+        Assert.Empty(tab.Items);
+        Assert.Contains($"tinta {Thresholds.CurvePeakTarget:0.00}", tab.Message);
+        Assert.Contains("clasele tabului Tonuri", tab.AnchorSource);
+
+        // A gallery clears the mark; so does opening another image.
+        tab.Populate(Result());
+        Assert.False(tab.IsProblem);
+        Assert.Null(tab.Message);
+        tab.Compute(400, 300);
+        Assert.True(tab.HasGallery, tab.Message);
+        Assert.False(tab.IsProblem);
+    }
+
+    [Fact]
     public void R146_ChangingThePurposeKeepsTheSameImages()
     {
         var tab = new CurvesTabViewModel();
@@ -225,13 +252,16 @@ public class CurvesTabTests
         CurveWindowViewModel classes = Open(Result());
         Assert.Contains("aceeasi curba pe R, G si B", classes.Caption);
         Assert.Contains("L* e al dalelor clasei", classes.PointsNote);
+        Assert.Contains("clasele benzii", classes.PointsNote);
+        Assert.Contains(classes.Rows, r => r.Label == "banda");
 
-        // A mono frame without a WCS: no R, G and B to speak of, and no classes behind the upper points.
-        Raster mono = SyntheticRasters.From(512, 512, 1, (x, y, p) => x < 32 ? 0.05f : x < 400 ? 0.15f : x < 490 ? 0.3f : x < 508 ? 0.5f : 0.7f);
+        // A mono frame without a WCS: no R, G and B to speak of, and the sky-relative classes behind the points.
+        Raster mono = SyntheticRasters.From(512, 512, 1, (x, y, p) => x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.05f : x < 416 ? 0.15f : x < 480 ? 0.3f : 0.5f);
         CurveWindowViewModel frame = Open(AnalysisRun.Execute(mono, "memorie", Scenes.OnBuiltForPaper()));
         Assert.DoesNotContain("R, G si B", frame.Caption);
         Assert.DoesNotContain("R, G si B", frame.PointsNote);
-        Assert.Contains("percentile ale histogramei cadrului", frame.PointsNote);
+        Assert.Contains("clase relative la cerul modelat", frame.PointsNote);
+        Assert.Contains(frame.Rows, r => r.Label == "nebuloasa stralucitoare");
     }
 
     [Fact]

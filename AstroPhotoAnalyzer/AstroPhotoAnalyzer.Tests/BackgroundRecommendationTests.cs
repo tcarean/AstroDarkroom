@@ -58,9 +58,9 @@ public class BackgroundRecommendationTests
         Assert.StartsWith("Cerul e sub negrul hartiei", rec.Text);
         // 0.10 already puts the dust on paper black (exact 0.10); the row recommended is the first that also has the sky at L* 15.
         Assert.Contains("Re-stretch din liniar la fundal 0.15 (simulat: praful la L* 15.3, cerul la L* 15.3; exact pe negru la 0.1", rec.Text);
-        Assert.Contains("praful (cele mai intunecate 1 % din dalele de 32 px; fara WCS) la L* 6.", rec.Because);
+        Assert.Contains("praful (cel mai intunecat 1 % al dalelor de cer (nicio dala de praf); fara WCS) la L* 6.", rec.Because);
         Assert.Contains("negrul hartiei L* 9.0 la Dmax 2.0", rec.Because);
-        Assert.Contains("cerul (mediana dalelor) la L* 6.", rec.Because);
+        Assert.Contains("cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 6.", rec.Because);
         Assert.Contains("nivelul fundalului 0.08", rec.Because);
         Assert.Contains("trece asa cum e de la Dmax 2.", rec.Because);
     }
@@ -91,9 +91,10 @@ public class BackgroundRecommendationTests
         Assert.Contains("cerul (mediana dalelor de cer, in afara benzii (|b| peste 10 grade)) la L* 2", rec.Because);
         Assert.DoesNotContain("fara WCS", rec.Because);
 
-        // Wholly inside the band: the fallback rule, named.
+        // Wholly inside the band: the sky path, named; the cloud fills the frame and is the
+        // modelled sky itself, so the dust is the darkest sky.
         Recommendation inside = Background(WcsFixtures.Ldn42Scene());
-        Assert.Contains("praful (cele mai intunecate 1 % din dalele de 32 px; cadrul e in intregime in banda)", inside.Because);
+        Assert.Contains("praful (cel mai intunecat 1 % al dalelor de cer (nicio dala de praf); cadrul e in intregime in banda) la L* ", inside.Because);
         Assert.Contains("cei mai intunecati: LDN 42 (B78) L* ", inside.Because);
     }
 

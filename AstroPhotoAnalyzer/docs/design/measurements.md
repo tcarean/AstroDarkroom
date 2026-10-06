@@ -69,7 +69,7 @@ recomandat` otherwise, no row when the as-is row is primary) - sorted by L\*. Th
 that of a grey with the same L\*; on colour the same level gives a different L\* by hue,
 which the window says under the table.
 
-### B5 - `DustAnalyzer` - where the dust and the sky sit (ADR 0025, ADR 0026)
+### B5 - `DustAnalyzer` - where the dust and the sky sit (ADR 0025, ADR 0026, ADR 0033)
 
 The dust is the darkest *extended* structure, measured on patches of `DustPatchPx` (32) x 32
 image pixels on the stride-4 subsample (8 x 8 samples, partial edge patches dropped), each
@@ -83,24 +83,34 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   patches (`FindClouds`: `Wcs.SkyToPixel` for the centre, the radius in pixels from
   `ScaleDegPerPx`, the patches within the angular radius by dot product, tested inside the
   disc's bounding box), and the five classes (`Classify`): the band is |b| <
-  `BandGalacticLatitudeDeg`; `SkyModel` is the median of the outside-band patches per cell of
-  `SkyModelCellPatches`, empty cells from the nearest, bilinear to patch resolution, then
-  `Smooth`; `BandLevel` is `MedianFilter` over `BandLocalWindowPatches` then `Smooth`; a patch
-  is `Dust` when `DustDepthLstar` under the local level in the band or under the sky model
-  anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the local level, `Peak`
-  when over the `PeakFraction` percentile, `Band` otherwise in the band (or outside it when
-  `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Classes`; `NoDust` when the
-  classes exist but none is dust (the map keeps them, `HasClasses`, the verdict takes the frame
-  rule, `UsesClasses` false); or `NoWcs`, `NoBand` (the band under `BandMinFraction` of the
-  patches) or `AllBand` (the outside sky under it), when no classes are made.
-- `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample: with
-  classes, `LstarDust` is the `DustClassFraction` (25 %) percentile of the dust patches and
-  `LstarSky` the median of the sky patches (the darkest patch and the median of all when a class
-  is empty); otherwise `LstarDust` is the `DustAreaFraction` (1 %) percentile of all patches and
-  `LstarSky` their median. Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`,
-  the `DustCloudFraction` (10 %) percentile of each cloud's own patches, for the rows.
-- `Classes(map, asIs)` is what the map window paints: the map's classes; without them, the
-  patches at or under the dust's L\* as `Dust` and those at or under the sky's as `Sky`.
+  `BandGalacticLatitudeDeg`; `SkyModel(L, band, cols, rows, percentile)` is the given
+  percentile (the median here) of the outside-band patches per cell of `SkyModelCellPatches`,
+  empty cells from the nearest (all patches together when no cell has enough), bilinear to
+  patch resolution, then `Smooth`; `BandLevel` is `MedianFilter` over `BandLocalWindowPatches`
+  then `Smooth`; a patch is `Dust` when `DustDepthLstar` under the local level in the band or
+  under the sky model anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the
+  local level, `Peak` when over the `PeakFraction` percentile, `Band` otherwise in the band (or
+  outside it when `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Band`.
+  Without a WCS, or with the band under `BandMinFraction` of the patches (`SkyReason.NoBand`)
+  or the outside sky under it (`AllBand`), `ClassifyBySky` makes the classes instead (ADR
+  0033, `Method` `Sky`): the sky model from all patches at `SkyModelLowPercentile` per cell;
+  the residual patch minus model, with `Stats.RobustSigma` (median and 1.4826 x MAD), one
+  clipping pass at `SkyNoiseClipK` sigmas and the two taken again on what is kept; `Dust`
+  under the median by `SkyNoiseK` sigmas, `Band` (nebula) over it by as much, `BrightCloud`
+  (bright nebula) over `Stats.OtsuThreshold` of the nebula residuals (none under two), `Peak`
+  as above, `Sky` the rest. The map keeps `SkySigma`, `NebulaThreshold`, `BrightThreshold` and
+  `DustThreshold` (L\* over or under the model) for the legend and Anexa B; `BandLevel` is
+  null. The five `PatchClass` values are one enum on both paths and `ClassNames(Method)` gives
+  their Romanian names (`banda` / `nori luminosi` or `nebuloasa` / `nebuloasa stralucitoare`).
+- `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample on one
+  path for both: `LstarSky` is the median of the sky patches (of all patches when the class is
+  empty); `LstarDust` is the darkest extended area, the lower of the `DustClassFraction` (25 %)
+  percentile of the dust patches, counted only when the class holds at least
+  `DustClassMinFraction` (5 %) of the patches, and the `SkyDarkestFraction` (1 %) percentile of
+  the sky patches; `DustSource` says which won and `DustPatchCount` is the dust class's size.
+  Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`, the `DustCloudFraction`
+  (10 %) percentile of each cloud's own patches, for the rows. The map window paints
+  `map.Classes` as they are.
 
 The first form (ADR 0025: every cloud-disc patch as dust, every outside patch as sky; the
 owner rejected it on the map on 2026-10-02) and the second (the patches at or under the two
@@ -307,11 +317,12 @@ the dust and the sky exactly as `DustAnalyzer.Measure` gives them; the band at t
 `CurveBandClassPercentile` (80) of the band class's patches, the bright clouds at
 `CurveCloudClassPercentile` (75), the peaks at the median of the peak class. The upper part,
 not the median: the band's median sits beside the sky, and the steep segment would start at
-the sky (measured: noise gain 1.40 against 1.26). The classes are used only when the dust and
-the sky come from them and none of the three upper classes is empty (`SourceOf`); otherwise
-the three upper anchors are the `CurveBandPercentile` / `CurveCloudPercentile` /
-`CurvePeakPercentile` (94.2 / 99.1 / 99.9) of the grey of the pixel luminance on the tonal
-subsample. Anchors that do not increase strictly between 0 and 1 give a `Problem` and no curve.
+the sky (measured: noise gain 1.40 against 1.26). The classes are those of the map on either
+path (ADR 0033): on the sky path the third and fourth are the nebula and the bright nebula,
+and the point labels take the path's names (`map.ClassNames`, carried in `CurveSet.Labels`
+and `CurveEvidence.Labels`). An empty upper class, a peaks anchor at or over `CurvePeakTarget`
+(the recipe would leave every point on the diagonal: the image is at the ceiling) and anchors
+that do not increase strictly between 0 and 1 give a `Problem` and no curve, in that order.
 
 **The recipe** (`CurveAdvisor.Curves`). The dust and the sky map to themselves. The three
 segments above the sky get the increments slope x width with `CurveSlopeSkyBand`,

@@ -110,7 +110,7 @@ namespace AstroPhotoAnalyzer
                 w.WriteLine("  " + SimulationLine(row));
             w.WriteLine("  " + SimulationFooter(s));
             w.WriteLine("  " + DustDefinition(s));
-            if (s.ClassFractions != null) w.WriteLine("  clase: " + s.ClassFractions);
+            w.WriteLine("  clase: " + s.ClassFractions);
             w.WriteLine("  " + ExactLine(s));
             if (s.Clouds.Count > 0)
             {

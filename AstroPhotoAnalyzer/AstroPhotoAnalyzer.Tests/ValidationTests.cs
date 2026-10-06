@@ -149,7 +149,7 @@ public class ValidationTests
         string[] cls = { "dust", "sky", "band", "clouds", "peaks" };
         var f = new Dictionary<string, object>(StringComparer.Ordinal)
         {
-            ["curves.source"] = set.Source.ToString(),
+            ["curves.method"] = set.Method.ToString(),
             ["curves.problem"] = set.Problem ?? "none",
             ["curves.count"] = set.Suggestions.Count,
             ["curves.names"] = string.Join(",", set.Suggestions.Select(s => s.Name)),

@@ -54,7 +54,8 @@ public class PrintStretchSimulatorTests
         Assert.Same(s.Rows[6], Assert.Single(s.Rows, x => x.Recommended));
         Assert.Equal(Math.Log(0.10) / Math.Log(0.08), s.Rows[1].Gamma, 6);
         Assert.All(s.Rows.Skip(1), x => Assert.True(x.DustOnPaperBlack));
-        Assert.Equal(DustMethod.NoWcs, s.Method);
+        Assert.Equal(DustMethod.Sky, s.Method);
+        Assert.Equal("fara WCS", s.MethodNote);
         Assert.Empty(s.Clouds);
         Assert.Equal(Lstar(0.08), s.AsIs.LstarDust, 1);
         Assert.Equal(Lstar(0.08), s.AsIs.LstarSky, 1);
@@ -249,7 +250,7 @@ public class PrintStretchSimulatorTests
         Raster r = WcsFixtures.BandScene();
         var s = Simulate(r);
 
-        Assert.Equal(DustMethod.Classes, s.Method);
+        Assert.Equal(DustMethod.Band, s.Method);
         Assert.InRange(s.AsIs.LstarDust, 3, 8);           // the blob at 0.05 (L* 3.6) dominates the dust class
         Assert.Equal(Lstar(0.25), s.AsIs.LstarSky, 0);    // the plain sky outside the band
         Assert.True(s.DustBelowPaperBlack);
@@ -266,31 +267,36 @@ public class PrintStretchSimulatorTests
     }
 
     [Fact]
-    public void R044_ABandWithoutDustSaysSoAndStillListsItsClasses()
+    public void R044_ABandWithoutDustTakesTheDarkestSkyAndStillListsItsClasses()
     {
         var s = Simulate(WcsFixtures.BandScene(withDust: false));
 
-        Assert.Equal(DustMethod.NoDust, s.Method);
-        Assert.Equal("nicio dala de praf sub nivelul local al benzii", s.MethodNote);
-        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
-        Assert.Equal("mediana dalelor", s.SkyDescription);
-        Assert.NotNull(s.ClassFractions);
+        Assert.Equal(DustMethod.Band, s.Method);
+        Assert.Null(s.MethodNote);
+        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
+        Assert.StartsWith("mediana dalelor de cer, in afara benzii", s.SkyDescription);
         Assert.StartsWith("praf 0.0 %", s.ClassFractions);
+        Assert.Contains(", banda ", s.ClassFractions);
     }
 
     [Fact]
-    public void R044_AFrameWhollyInsideTheBandFallsBackAndStillNamesItsClouds()
+    public void R044_AFrameWhollyInsideTheBandTakesTheSkyPathAndStillNamesItsClouds()
     {
         var s = Simulate(WcsFixtures.Ldn42Scene());
 
-        Assert.Equal(DustMethod.AllBand, s.Method);
+        Assert.Equal(DustMethod.Sky, s.Method);
         Assert.Equal("cadrul e in intregime in banda", s.MethodNote);
-        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
-        Assert.Null(s.ClassFractions);
+        // The disc covers nine tenths of the frame: the modelled sky is the cloud itself, no
+        // patch is under it, and the dust is the darkest sky, the cloud's level.
+        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
+        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
+        Assert.Contains(", nebuloasa ", s.ClassFractions);
+        Assert.Contains("sigma ale cerului", s.ClassFractions);
+        Assert.Equal(Lstar(0.05), s.AsIs.LstarDust, 1);
         CloudRow ldn42 = s.Clouds.Single(c => c.Name == "LDN 42 (B78)");
         Assert.Equal(Lstar(0.05), ldn42.Lstar, 1);
         Assert.NotNull(ldn42.ExactTarget);
-        Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);   // the darkest 1 % of the frame is the cloud
+        Assert.Equal(s.ExactTarget!.Value, ldn42.ExactTarget!.Value, 3);   // the darkest sky is the cloud
     }
 
     [Fact]
@@ -298,8 +304,9 @@ public class PrintStretchSimulatorTests
     {
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
-        Assert.StartsWith("cele mai intunecate 1 % din dalele de 32 px", s.DustDescription);
-        Assert.Equal("mediana dalelor", s.SkyDescription);
+        Assert.Equal("cel mai intunecat 1 % al dalelor de cer (nicio dala de praf)", s.DustDescription);
+        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
         Assert.Equal("fara WCS", s.MethodNote);
+        Assert.StartsWith("praf 0.0 %, cer 100.0 %, nebuloasa 0.0 % (peste cerul modelat cu ", s.ClassFractions);
     }
 }

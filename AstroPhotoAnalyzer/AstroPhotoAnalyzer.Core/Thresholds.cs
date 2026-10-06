@@ -103,12 +103,49 @@ namespace AstroPhotoAnalyzer
         internal const double BandGalacticLatitudeDeg = 10;
 
         /// <summary>
-        /// Clasele au sens doar cu banda SI cer in afara ei, fiecare cu cel putin atata din
-        /// dale: un cadru deep-sky in intregime in banda (M8) n-are din ce modela cerul, unul
-        /// in intregime in afara ei (o galaxie) n-are nivel local al benzii. Sub prag, praful si
-        /// cerul se masoara cu regula pe tot cadrul, si raportul spune de ce.
+        /// Clasele benzii au sens doar cu banda SI cer in afara ei, fiecare cu cel putin atata
+        /// din dale: un cadru deep-sky in intregime in banda (M8) n-are din ce modela cerul, unul
+        /// in intregime in afara ei (o galaxie) n-are nivel local al benzii. Sub prag, ca si
+        /// fara WCS, clasele se fac relativ la cerul modelat (ADR 0033), si raportul spune de ce.
         /// </summary>
         internal const double BandMinFraction = 0.10;
+
+        // ---- clasele relative la cerul modelat, fara banda (ADR 0033)
+
+        /// <summary>
+        /// Fara banda, cerul se modeleaza din TOATE dalele, cu percentila asta a fiecarei celule
+        /// in loc de mediana: un obiect care acopera jumatate din celula ar ridica mediana in el,
+        /// percentila 25 ramane pe cer. Ales pe 2026-10-06 pe Rosetta, Orion, Andromeda si cele
+        /// doua imagini de referinta.
+        /// </summary>
+        internal const double SkyModelLowPercentile = 25;
+
+        /// <summary>
+        /// Zgomotul cerului pe dale: sigma robusta (1.4826 x MAD) a diferentei dala - cer
+        /// modelat, dupa o trecere de curatare care scoate dalele la peste SkyNoiseClipK sigma
+        /// (obiectul umfla MAD-ul: pe Orion starless sigma cade de la 2.95 la 1.75 L* cu
+        /// trecerea; a doua trecere ar contracta-o la 1.46, prea mult).
+        /// </summary>
+        internal const double SkyNoiseClipK = 3;
+
+        /// <summary>
+        /// O dala e nebuloasa cand e peste cerul modelat cu mai mult de atatea sigma ale
+        /// cerului, si praf cand e sub el cu la fel de mult. Intre 3 si 5 fractia de nebuloasa
+        /// se misca cu 2 % (Rosetta: 14.1 / 12.3 / 10.8 %) si ancorele cu sub 1.5 L*; 4 e
+        /// mijlocul. Pragul de nebuloasa stralucitoare nu are constanta: e pragul Otsu al
+        /// cozii de deasupra. Masurat pe 2026-10-06 (ADR 0033).
+        /// </summary>
+        internal const double SkyNoiseK = 4;
+
+        /// <summary>
+        /// Clasa praf decide verdictul doar cand are cel putin atata din dale; sub prag, praful
+        /// e cerul cel mai intunecat (SkyDarkestFraction). Cu banda, Ruptura e 9.4 % din cadru;
+        /// fara banda, clasa praf gaseste doar nuclee sau artefacte: 0.8 % pe de_printat.png
+        /// (nucleele Pipe-ului, p25 la L* 2.5, pe care ADR 0025 le-a respins ca praf), 0.4 % pe
+        /// Rosetta (marginea nebuloasei, mai luminoasa decat cerul), 0-2.7 % pe celelalte.
+        /// Proprietarul a ales 5 % pe 2026-10-06 (ADR 0033).
+        /// </summary>
+        internal const double DustClassMinFraction = 0.05;
 
         /// <summary>
         /// Praful e o dala cu cel putin atatea unitati L* sub nivelul local al benzii (sau sub
@@ -160,13 +197,14 @@ namespace AstroPhotoAnalyzer
         internal const int DustCloudMinPatches = 9;
 
         /// <summary>
-        /// Praful FARA clase (fisier fara WCS, sau cadru fara banda ori fara cer in afara ei):
-        /// percentila asta a tuturor dalelor cadrului - cea mai mica fractie la care statistica
-        /// sta pe sute de dale si nu pe un obiect; la 1 % nicio banda de praf nu se tipareste
-        /// negru pur, doar nucleele negre si pe ecran. Pe o galaxie, acelasi 1 % e cerul cel
-        /// mai intunecat al cadrului. Masurat pe ramura parcata (2026-10-02).
+        /// Cerul cel mai intunecat: percentila asta (fractie) a dalelor din clasa cer. Praful
+        /// verdictului e minimul dintre percentila DustClassFraction a clasei praf (cand ea
+        /// decide) si cerul asta: zona intinsa cea mai intunecata, orice ar fi ea. 1 % e cea
+        /// mai mica fractie la care statistica sta pe sute de dale si nu pe o pata; pana la
+        /// ADR 0033 era aceeasi fractie, pe toate dalele cadrului (2026-10-02). Pe cele sase
+        /// imagini din 2026-10-06 cerul cel mai intunecat difera de vechea regula cu sub 0.2 L*.
         /// </summary>
-        internal const double DustAreaFraction = 0.01;
+        internal const double SkyDarkestFraction = 0.01;
 
         /// <summary>Cati nori, de la cel mai intunecat, numeste raportul (Anexa B si "fiindca"); fereastra ii arata pe toti.</summary>
         internal const int DustCloudReportRows = 15;
@@ -427,17 +465,13 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const double CurveBandClassPercentile = 80;
 
-        /// <summary>Ancora "nori luminosi", cu clase: percentila 75 a clasei da 0.543 pe acelasi FITS (curba veche: 0.55).</summary>
-        internal const double CurveCloudClassPercentile = 75;
-
         /// <summary>
-        /// Fara clase (fara WCS), ancorele de sus sunt percentile ale griului luminantei
-        /// pixelilor: acolo stau intrarile curbei vechi in histograma imaginii ei (cei mai
-        /// luminosi 5.8 %, 0.9 % si 0.1 % din pixeli; 0.317, 0.538 si 0.701 pe FITS-ul 0.17).
+        /// Ancora "nori luminosi", cu clase: percentila 75 a clasei da 0.543 pe acelasi FITS
+        /// (curba veche: 0.55). Aceleasi doua percentile pe clasele relative la cer (nebuloasa,
+        /// nebuloasa stralucitoare): pe FITS-ul 0.17 fara geometrie dau L* 32.5 / 57.3 fata de
+        /// 33.2 / 57.7 cu banda (ADR 0033).
         /// </summary>
-        internal const double CurveBandPercentile = 94.2;
-        internal const double CurveCloudPercentile = 99.1;
-        internal const double CurvePeakPercentile = 99.9;
+        internal const double CurveCloudClassPercentile = 75;
 
         /// <summary>
         /// Pantele celor trei segmente de deasupra cerului, cele ale curbei vechi a

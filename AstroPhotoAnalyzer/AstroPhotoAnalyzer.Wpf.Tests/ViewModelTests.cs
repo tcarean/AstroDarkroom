@@ -93,7 +93,9 @@ public class ViewModelTests
         Assert.Equal(6, tones.Guide.Count);
         string guide = string.Join(" ", tones.Guide.Select(g => g.Lead + " " + g.Text));
         Assert.Contains($"percentila {Thresholds.DustClassFraction * 100:0} % a dalelor de praf", guide);
-        Assert.Contains($"cele mai intunecate {Thresholds.DustAreaFraction * 100:0} % din dalele cadrului", guide);
+        Assert.Contains($"cel mai intunecat {Thresholds.SkyDarkestFraction * 100:0} % al dalelor de cer", guide);
+        Assert.Contains($"peste {Thresholds.SkyNoiseK:0} sigma ale cerului", guide);
+        Assert.Contains($"cel putin {Thresholds.DustClassMinFraction * 100:0} % din dale", guide);
         Assert.Contains("nivelul MINIM", guide);
         Assert.Contains("nivelul 13 e L* 4 (negrul baryta)", guide);
         Assert.Contains("canvas 1.5 -> L* 20.7", guide);
