@@ -31,12 +31,15 @@
 //     model neted din TOATE dalele, cu percentila SkyModelLowPercentile pe celula; pragurile
 //     vin din imagine: nebuloasa e dala cu mai mult de SkyNoiseK sigma ale cerului peste
 //     model, praful cu la fel de mult sub el, nebuloasa stralucitoare peste pragul Otsu al
-//     cozii de nebuloasa, varfurile ca mai sus, cerul restul.
+//     cozii de nebuloasa (fara varfuri), varfurile ca mai sus, cerul restul.
 // Pe orice cale, verdictul masoara la fel (Measure): cerul e mediana clasei cer; praful e zona
-// intinsa cea mai intunecata, minimul dintre percentila DustClassFraction a clasei praf (cand
-// clasa are DustClassMinFraction din dale; sub atat sunt nuclee sau artefacte) si percentila
-// SkyDarkestFraction a clasei cer. Catalogul Lynds (DarkNebulaCatalogue) da NUMELE norilor si
-// randul fiecaruia. Geometria (DustMap) se face o data; L*-urile se refac la fiecare ridicare.
+// intinsa cea mai intunecata, decisa O DATA pe imaginea asa cum e (DecideDustSource): percentila
+// DustClassFraction a clasei praf cand clasa are DustClassMinFraction din dale (sub atat sunt
+// nuclee sau artefacte) si e mai intunecata decat percentila SkyDarkestFraction a clasei cer,
+// altfel aceasta din urma; la fiecare ridicare se remasoara aceeasi statistica, ca randurile
+// scarii sa spuna acelasi praf ca definitia. Catalogul Lynds (DarkNebulaCatalogue) da NUMELE
+// norilor si randul fiecaruia. Geometria (DustMap) se face o data; L*-urile se refac la fiecare
+// ridicare.
 //
 // Lucreaza pe subesantionul tonal (pasul 4): o dala e 8 x 8 esantioane. Dalele partiale de
 // la marginea din dreapta si de jos se lasa afara.
@@ -129,11 +132,15 @@ namespace AstroPhotoAnalyzer
         internal float[] BandLevel;
 
         /// <summary>
-        /// Pe calea cerului: sigma zgomotului dalelor de cer, si pragurile, in L* peste cerul
-        /// modelat, de la care o dala e nebuloasa si nebuloasa stralucitoare (infinit cand
-        /// nicio dala nu e stralucitoare); praful e sub model cu DustThreshold. NaN pe calea benzii.
+        /// Pe calea cerului: sigma zgomotului dalelor de cer; NoiseThreshold = SkyNoiseK x sigma,
+        /// distanta in L* fata de cerul modelat de la care o dala e nebuloasa (in sus) sau praf
+        /// (in jos); BrightThreshold, in L* peste cerul modelat, de la care e nebuloasa
+        /// stralucitoare (infinit cand niciuna nu e). NaN pe calea benzii.
         /// </summary>
-        internal double SkySigma = double.NaN, NebulaThreshold = double.NaN, BrightThreshold = double.NaN, DustThreshold = double.NaN;
+        internal double SkySigma = double.NaN, NoiseThreshold = double.NaN, BrightThreshold = double.NaN;
+
+        /// <summary>Cine da L*-ul prafului, decis o data pe imaginea asa cum e (DustAnalyzer.DecideDustSource).</summary>
+        internal DustSource DustSource;
 
         /// <summary>Norii cu cel putin o dala in cadru, in ordinea catalogului; gol fara WCS.</summary>
         internal IReadOnlyList<DustCloud> Clouds;
@@ -143,6 +150,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>Fractia dalelor din fiecare clasa, indexata cu PatchClass.</summary>
         internal double FractionOf(PatchClass c) => Classes.Count(x => x == c) / (double)PatchCount;
 
+        /// <summary>Nicio dala de cer (toate sunt praf, nebuloasa sau varf): cerul verdictului e mediana tuturor dalelor.</summary>
+        internal bool SkyClassEmpty => Array.IndexOf(Classes, PatchClass.Sky) < 0;
+
         /// <summary>Numele celor cinci clase pe calea hartii, in ordinea praf, cer, banda / nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri.</summary>
         internal IReadOnlyList<string> ClassNames => DustAnalyzer.ClassNames(Method);
 
@@ -151,13 +161,13 @@ namespace AstroPhotoAnalyzer
             => ((bx + 0.5) * Side * Stride - 0.5, (by + 0.5) * Side * Stride - 0.5);
     }
 
-    /// <summary>Ce a dat L*-ul prafului: clasa praf, sau cerul cel mai intunecat.</summary>
+    /// <summary>Ce da L*-ul prafului: clasa praf, sau cerul cel mai intunecat.</summary>
     internal enum DustSource
     {
-        /// <summary>Percentila DustClassFraction a clasei praf, care are cel putin DustClassMinFraction din dale si e mai intunecata decat cerul cel mai intunecat.</summary>
+        /// <summary>Percentila DustClassFraction a clasei praf, care are cel putin DustClassMinFraction din dale si e, asa cum e, mai intunecata decat cerul cel mai intunecat.</summary>
         DustClass,
 
-        /// <summary>Percentila SkyDarkestFraction a clasei cer: clasa praf e goala, prea mica, sau mai luminoasa.</summary>
+        /// <summary>Percentila SkyDarkestFraction a clasei cer (a tuturor dalelor cand clasa cer e goala): clasa praf e goala, prea mica, sau mai luminoasa.</summary>
         DarkestSky,
     }
 
@@ -166,7 +176,6 @@ namespace AstroPhotoAnalyzer
     {
         internal double LstarDust { get; init; }
         internal double LstarSky { get; init; }
-        internal DustSource DustSource { get; init; }
 
         /// <summary>Procentul dalelor cadrului cu L* sub negrul hartiei - "negru pur".</summary>
         internal double PctPatchesBelowPaperBlack { get; init; }
@@ -213,7 +222,12 @@ namespace AstroPhotoAnalyzer
                 Clouds = Array.Empty<DustCloud>(),
             };
             if (asIsPatchLstars.Length != cols * rows) throw new ArgumentException("L*-urile dalelor nu sunt pe grila hartii");
-            if (wcs == null) { ClassifyBySky(map, asIsPatchLstars, SkyReason.NoWcs); return map; }
+            if (wcs == null)
+            {
+                ClassifyBySky(map, asIsPatchLstars, SkyReason.NoWcs);
+                map.DustSource = DecideDustSource(asIsPatchLstars, map);
+                return map;
+            }
 
             catalogue ??= DarkNebulaCatalogue.All;
 
@@ -234,6 +248,7 @@ namespace AstroPhotoAnalyzer
 
             map.Clouds = FindClouds(map, wcs, catalogue, w, h, vx, vy, vz);
             Classify(map, asIsPatchLstars);
+            map.DustSource = DecideDustSource(asIsPatchLstars, map);
             return map;
         }
 
@@ -317,11 +332,16 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Clasele relative la cerul modelat (ADR 0033): cerul din toate dalele, cu percentila
-        /// joasa pe celula; reziduul dala - cer, cu mediana si sigma robusta dupa o trecere de
-        /// curatare la SkyNoiseClipK sigma; praf sub mediana - SkyNoiseK sigma, nebuloasa peste
-        /// mediana + SkyNoiseK sigma, nebuloasa stralucitoare peste pragul Otsu al cozii de
-        /// nebuloasa (niciuna cand coada are sub doua dale), varfurile cele mai luminoase
-        /// PeakFraction dale, cerul restul. Pragurile raman pe harta, pentru legenda si raport.
+        /// joasa pe celula; reziduul dala - cer, cu sigma robusta dupa o trecere de curatare la
+        /// SkyNoiseClipK sigma in jurul medianei; praf sub cerul modelat cu SkyNoiseK sigma,
+        /// nebuloasa peste el cu la fel de mult, nebuloasa stralucitoare peste pragul Otsu al
+        /// cozii de nebuloasa luate FARA varfuri si cu cel putin BrightClassMinTailFraction din
+        /// coada deasupra pragului (altfel doua stele ar fi "clasa" de sus si nebuloasa
+        /// stralucitoare ar ramane goala; niciuna cand coada are prea putine dale), varfurile
+        /// cele mai luminoase PeakFraction dale, cerul restul. Pragurile raman pe harta, pentru
+        /// legenda si raport.
+        /// Cu sigma 0 (un cer posterizat, mai mult de jumatate din dale la o valoare) pragul e
+        /// 0 si clasa e semnul reziduului.
         /// </summary>
         static void ClassifyBySky(DustMap map, float[] L, SkyReason reason)
         {
@@ -332,18 +352,21 @@ namespace AstroPhotoAnalyzer
 
             double sigma = Stats.RobustSigma(resid, out double med);
             float[] kept = resid.Where(v => Math.Abs(v - med) <= Thresholds.SkyNoiseClipK * sigma).ToArray();
-            if (kept.Length > 0) sigma = Stats.RobustSigma(kept, out med);
+            if (kept.Length > 0) sigma = Stats.RobustSigma(kept, out _);
 
-            double nebula = med + Thresholds.SkyNoiseK * sigma, dust = med - Thresholds.SkyNoiseK * sigma;
-            float[] tail = Stats.Sorted(resid.Where(v => v > nebula).ToArray());
-            double bright = tail.Length >= 2 ? Stats.OtsuThreshold(tail) : double.PositiveInfinity;
+            double noise = Thresholds.SkyNoiseK * sigma;
             float peak = PeakLevel(L);
+            var tail = new List<float>();
+            for (int i = 0; i < n; i++) if (resid[i] > noise && L[i] <= peak) tail.Add(resid[i]);
+            int minAbove = (int)Math.Ceiling(Thresholds.BrightClassMinTailFraction * tail.Count);
+            double bright = Stats.OtsuThreshold(Stats.Sorted(tail.ToArray()), minAbove);
+            if (double.IsNaN(bright)) bright = double.PositiveInfinity;
 
             var cls = map.Classes;
             for (int i = 0; i < n; i++)
             {
                 double v = resid[i];
-                PatchClass c = v < dust ? PatchClass.Dust : v > bright ? PatchClass.BrightCloud : v > nebula ? PatchClass.Band : PatchClass.Sky;
+                PatchClass c = v < -noise ? PatchClass.Dust : v > bright ? PatchClass.BrightCloud : v > noise ? PatchClass.Band : PatchClass.Sky;
                 if (L[i] > peak) c = PatchClass.Peak;
                 cls[i] = c;
             }
@@ -352,9 +375,8 @@ namespace AstroPhotoAnalyzer
             map.Method = DustMethod.Sky;
             map.SkyReason = reason;
             map.SkySigma = sigma;
-            map.NebulaThreshold = nebula;
+            map.NoiseThreshold = noise;
             map.BrightThreshold = bright;
-            map.DustThreshold = -dust;
         }
 
         /// <summary>L*-ul peste care o dala e varf: percentila (1 - PeakFraction) a dalelor.</summary>
@@ -483,12 +505,39 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
+        /// <summary>Dalele clasei praf si ale clasei cer; cerul e toate dalele cand clasa cer e goala (DustMap.SkyClassEmpty).</summary>
+        static (float[] DustSorted, float[] SkySorted) ClassSets(float[] patchLstars, DustMap map)
+        {
+            var dustL = new List<float>(); var skyL = new List<float>();
+            for (int i = 0; i < patchLstars.Length; i++)
+            {
+                if (map.Classes[i] == PatchClass.Dust) dustL.Add(patchLstars[i]);
+                else if (map.Classes[i] == PatchClass.Sky) skyL.Add(patchLstars[i]);
+            }
+            return (Stats.Sorted(dustL.ToArray()), Stats.Sorted(skyL.Count > 0 ? skyL.ToArray() : patchLstars));
+        }
+
+        /// <summary>
+        /// Cine da L*-ul prafului, pe L*-urile asa cum e (ADR 0033): clasa praf cand are cel
+        /// putin DustClassMinFraction din dale si percentila ei DustClassFraction e la sau sub
+        /// percentila SkyDarkestFraction a clasei cer; altfel cerul cel mai intunecat. Sub prag
+        /// clasa praf e nuclee sau artefacte si nu decide. Decis o data, ca fiecare rand al
+        /// scarii sa masoare acelasi praf ca definitia.
+        /// </summary>
+        internal static DustSource DecideDustSource(float[] asIsPatchLstars, DustMap map)
+        {
+            var (dust, sky) = ClassSets(asIsPatchLstars, map);
+            if (dust.Length < Thresholds.DustClassMinFraction * asIsPatchLstars.Length) return DustSource.DarkestSky;
+            double dustClass = Stats.PercentileSorted(dust, Thresholds.DustClassFraction * 100);
+            double darkestSky = Stats.PercentileSorted(sky, Thresholds.SkyDarkestFraction * 100);
+            return dustClass <= darkestSky ? DustSource.DustClass : DustSource.DarkestSky;
+        }
+
         /// <summary>
         /// Praful, cerul si "negru pur" pe L*-urile dalelor, pe clasele hartii, pe orice cale:
-        /// cerul e mediana clasei cer (a tuturor dalelor cand clasa e goala); praful e zona
-        /// intinsa cea mai intunecata, minimul dintre percentila DustClassFraction a clasei praf,
-        /// cand ea are cel putin DustClassMinFraction din dale, si percentila SkyDarkestFraction
-        /// a clasei cer. Sub prag clasa praf e nuclee sau artefacte si nu decide (ADR 0033).
+        /// cerul e mediana clasei cer (a tuturor dalelor cand clasa e goala); praful e statistica
+        /// pe care a ales-o DecideDustSource pe imaginea asa cum e: percentila DustClassFraction
+        /// a clasei praf, sau percentila SkyDarkestFraction a clasei cer.
         /// </summary>
         internal static DustStats Measure(float[] patchLstars, DustMap map, double paperBlackLstar)
         {
@@ -496,23 +545,11 @@ namespace AstroPhotoAnalyzer
             int below = 0;
             for (int i = 0; i < n; i++) if (patchLstars[i] < paperBlackLstar) below++;
 
-            var dustL = new List<float>(); var skyL = new List<float>();
-            for (int i = 0; i < n; i++)
-            {
-                if (map.Classes[i] == PatchClass.Dust) dustL.Add(patchLstars[i]);
-                else if (map.Classes[i] == PatchClass.Sky) skyL.Add(patchLstars[i]);
-            }
-            float[] skySorted = Stats.Sorted(skyL.Count > 0 ? skyL.ToArray() : patchLstars);
+            var (dustSorted, skySorted) = ClassSets(patchLstars, map);
             double sky = Stats.PercentileSorted(skySorted, 50);
-            double darkestSky = Stats.PercentileSorted(skySorted, Thresholds.SkyDarkestFraction * 100);
-
-            double dust = darkestSky;
-            DustSource source = DustSource.DarkestSky;
-            if (dustL.Count > 0 && dustL.Count >= Thresholds.DustClassMinFraction * n)
-            {
-                double dustClass = Stats.PercentileSorted(Stats.Sorted(dustL.ToArray()), Thresholds.DustClassFraction * 100);
-                if (dustClass <= darkestSky) { dust = dustClass; source = DustSource.DustClass; }
-            }
+            double dust = map.DustSource == DustSource.DustClass
+                ? Stats.PercentileSorted(dustSorted, Thresholds.DustClassFraction * 100)
+                : Stats.PercentileSorted(skySorted, Thresholds.SkyDarkestFraction * 100);
 
             var cloudLstars = new double[map.Clouds.Count];
             for (int c = 0; c < map.Clouds.Count; c++)
@@ -527,11 +564,10 @@ namespace AstroPhotoAnalyzer
             {
                 LstarDust = dust,
                 LstarSky = sky,
-                DustSource = source,
                 PctPatchesBelowPaperBlack = 100.0 * below / n,
                 PatchLstars = patchLstars,
                 CloudLstars = cloudLstars,
-                DustPatchCount = dustL.Count,
+                DustPatchCount = dustSorted.Length,
             };
         }
     }

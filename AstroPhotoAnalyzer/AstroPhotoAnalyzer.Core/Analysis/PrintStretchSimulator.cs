@@ -50,10 +50,10 @@ namespace AstroPhotoAnalyzer
         internal bool Explicit { get; init; }
         internal double Gamma { get; init; }
 
-        /// <summary>Cerul: mediana dalelor din afara norilor, sau a tuturor (DustAnalyzer).</summary>
+        /// <summary>Cerul: mediana dalelor de cer (DustAnalyzer.Measure).</summary>
         internal double LstarSky { get; init; }
 
-        /// <summary>Praful: percentila dalelor norilor, sau a tuturor (DustAnalyzer).</summary>
+        /// <summary>Praful: percentila clasei praf sau cerul cel mai intunecat, dupa DustMap.DustSource (DustAnalyzer.Measure).</summary>
         internal double LstarDust { get; init; }
 
         /// <summary>"Negru pur": procentul dalelor de 32 px sub negrul hartiei.</summary>
@@ -159,10 +159,10 @@ namespace AstroPhotoAnalyzer
         internal int PatchCount => Map.PatchCount;
         internal int DustPatchCount => AsIsDust.DustPatchCount;
 
-        /// <summary>Cum e definita clasa praf pe calea hartii: "cu 5 L* sub nivelul local al benzii sau sub cerul modelat" sau "cu 3.8 L* sub cerul modelat".</summary>
-        string DustClassDefinition => Map.Method == DustMethod.Band
+        /// <summary>Cum e definita clasa praf pe calea hartii: "cu 5 L* sub nivelul local al benzii sau sub cerul modelat" sau "cu 3.8 L* sub cerul modelat (4 sigma ale cerului)"; aceeasi propozitie in legenda hartii.</summary>
+        internal string DustClassDefinition => Map.Method == DustMethod.Band
             ? $"cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat"
-            : $"cu {Fmt.F1(Map.DustThreshold)} L* sub cerul modelat";
+            : $"cu {Fmt.F1(Map.NoiseThreshold)} L* sub cerul modelat ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
 
         /// <summary>
         /// Ce e praful, dupa cine a dat L*-ul lui (ADR 0033): "percentila 25 % a dalelor de praf
@@ -175,21 +175,25 @@ namespace AstroPhotoAnalyzer
             get
             {
                 string dustPct = Fmt.Pct(100.0 * DustPatchCount / PatchCount);
-                if (AsIsDust.DustSource == DustSource.DustClass)
+                if (Map.DustSource == DustSource.DustClass)
                     return $"percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf ({DustClassDefinition}; {dustPct} din cadru)";
                 string why = DustPatchCount == 0
                     ? "nicio dala de praf"
                     : DustPatchCount < Thresholds.DustClassMinFraction * PatchCount
                         ? $"dalele de praf, {dustPct} din cadru, sunt sub {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % si nu decid"
                         : $"mai intunecat decat percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a dalelor de praf, {dustPct} din cadru";
-                return $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer ({why})";
+                return Map.SkyClassEmpty
+                    ? $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al tuturor dalelor (nicio dala de cer; {why})"
+                    : $"cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al dalelor de cer ({why})";
             }
         }
 
-        /// <summary>"mediana dalelor de cer, in afara benzii (|b| peste 10 grade)" sau "mediana dalelor de cer (clase relative la cerul modelat)".</summary>
-        internal string SkyDescription => Map.Method == DustMethod.Band
-            ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
-            : "mediana dalelor de cer (clase relative la cerul modelat)";
+        /// <summary>"mediana dalelor de cer, in afara benzii (|b| peste 10 grade)", "mediana dalelor de cer (clase relative la cerul modelat)" sau, fara nicio dala de cer, "mediana tuturor dalelor (nicio dala de cer)".</summary>
+        internal string SkyDescription => Map.SkyClassEmpty
+            ? "mediana tuturor dalelor (nicio dala de cer)"
+            : Map.Method == DustMethod.Band
+                ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
+                : "mediana dalelor de cer (clase relative la cerul modelat)";
 
         /// <summary>De ce nu s-au facut clasele benzii: "fara WCS", "fara banda galactica in cadru", "cadrul e in intregime in banda"; null cu banda.</summary>
         internal string MethodNote => Map.SkyReason switch
@@ -214,7 +218,7 @@ namespace AstroPhotoAnalyzer
                 string nebula = Of(2, PatchClass.Band), bright = Of(3, PatchClass.BrightCloud);
                 if (Map.Method == DustMethod.Sky)
                 {
-                    nebula += $" (peste cerul modelat cu {Fmt.F1(Map.NebulaThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
+                    nebula += $" (peste cerul modelat cu {Fmt.F1(Map.NoiseThreshold)} L*, {Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
                     bright += double.IsPositiveInfinity(Map.BrightThreshold) ? " (nicio dala peste pragul Otsu)" : $" (peste {Fmt.F1(Map.BrightThreshold)} L*, pragul Otsu)";
                 }
                 return $"{Of(0, PatchClass.Dust)}, {Of(1, PatchClass.Sky)}, {nebula}, {bright}, {Of(4, PatchClass.Peak)}";

@@ -166,22 +166,20 @@ namespace AstroPhotoAnalyzer.Wpf
             SimulationRow asIs = s.AsIs;
             DustMap map = s.Map;
             bool band = map.Method == DustMethod.Band;
-            string dustVerdict = s.AsIsDust.DustSource == DustSource.DustClass
+            string dustVerdict = map.DustSource == DustSource.DustClass
                 ? $"; L*-ul prafului = percentila {Fmt.F0(Thresholds.DustClassFraction * 100)} % a lor, {Fmt.F1(asIs.LstarDust)}"
                 : $"; L*-ul prafului e cel mai intunecat {Fmt.F0(Thresholds.SkyDarkestFraction * 100)} % al cerului, {Fmt.F1(asIs.LstarDust)}"
                   + (map.FractionOf(PatchClass.Dust) == 0 ? " (nicio dala de praf)" : $" (clasa praf decide doar de la {Fmt.F0(Thresholds.DustClassMinFraction * 100)} % din dale si cand e mai intunecata)");
             return cls switch
             {
-                PatchClass.Dust => (band
-                    ? $" - cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat"
-                    : $" - cu {Fmt.F1(map.DustThreshold)} L* sub cerul modelat ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)") + dustVerdict,
+                PatchClass.Dust => " - " + s.DustClassDefinition + dustVerdict,
                 PatchClass.Sky => (band
                     ? $" - in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade), fara praf"
-                    : $" - la cel mult {Fmt.F1(map.NebulaThreshold)} L* de cerul modelat, in sus sau in jos")
-                    + $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}",
+                    : $" - la cel mult {Fmt.F1(map.NoiseThreshold)} L* de cerul modelat, in sus sau in jos")
+                    + (map.SkyClassEmpty ? $"; nicio dala: L*-ul cerului = mediana tuturor dalelor, {Fmt.F1(asIs.LstarSky)}" : $"; L*-ul cerului = mediana lor, {Fmt.F1(asIs.LstarSky)}"),
                 PatchClass.Band => band
                     ? $" - |b| sub {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade, nici praf, nici nor luminos; sau peste cerul modelat cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* in afara ei"
-                    : $" - peste cerul modelat cu {Fmt.F1(map.NebulaThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului, sigma {Fmt.F2(map.SkySigma)} L*)",
+                    : $" - peste cerul modelat cu {Fmt.F1(map.NoiseThreshold)} L* ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului, sigma {Fmt.F2(map.SkySigma)} L*)",
                 PatchClass.BrightCloud => band
                     ? $" - in banda, cu {Fmt.F0(Thresholds.BrightCloudLstar)} L* peste nivelul ei local"
                     : double.IsPositiveInfinity(map.BrightThreshold)

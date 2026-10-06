@@ -191,9 +191,9 @@ namespace AstroPhotoAnalyzer
             };
             double reach = inc.Sum();
             double room = Thresholds.CurvePeakTarget - ys;
-            // Varfurile nu trec de tinta: pantele se micsoreaza impreuna. Cu varfurile deja
-            // peste tinta nu mai ramane contrast de dat, iar curba ramane identitatea.
-            double scale = Math.Clamp(room / reach, 0, 1);
+            // Varfurile nu trec de tinta: pantele se micsoreaza impreuna. Varfurile deja la sau
+            // peste tinta nu ajung aici: Problem le-a refuzat, deci room > 0.
+            double scale = Math.Min(room / reach, 1);
 
             double[] Full(double k)
             {

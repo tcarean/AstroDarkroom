@@ -70,16 +70,19 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Pragul Otsu pe un vector DEJA SORTAT: valoarea la care impartirea in doua clase are
-        /// varianta intre clase maxima; cele la sau sub prag sunt clasa de jos. NaN sub doua
-        /// valori; cu toate valorile egale, cea mai mica (si nimic nu e peste ea).
+        /// varianta intre clase maxima; cele la sau sub prag sunt clasa de jos. Clasa de sus
+        /// are cel putin <paramref name="minAbove"/> valori: cateva valori extreme (stele pe o
+        /// nebuloasa slaba) ar castiga altfel orice impartire. NaN cu mai putin de
+        /// minAbove + 1 valori; cu toate valorile egale, cea mai mica (si nimic nu e peste ea).
         /// </summary>
-        internal static double OtsuThreshold(float[] sorted)
+        internal static double OtsuThreshold(float[] sorted, int minAbove = 1)
         {
-            if (sorted.Length < 2) return double.NaN;
+            minAbove = Math.Max(1, minAbove);
+            if (sorted.Length < minAbove + 1) return double.NaN;
             double total = 0;
             foreach (float v in sorted) total += v;
             double best = -1, threshold = sorted[0], sumBelow = 0;
-            for (int i = 0; i < sorted.Length - 1; i++)
+            for (int i = 0; i < sorted.Length - minAbove; i++)
             {
                 sumBelow += sorted[i];
                 int nBelow = i + 1, nAbove = sorted.Length - nBelow;

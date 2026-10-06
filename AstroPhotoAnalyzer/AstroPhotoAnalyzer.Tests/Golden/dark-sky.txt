@@ -17,7 +17,7 @@ VERDICT: PROBLEMA
 
 2. Fundalul si hartia  [PROBLEMA]
    !! Cerul e sub negrul hartiei: cerul si praful s-ar tipari cu ACELASI negru. Re-stretch din liniar la fundal 0.16 (simulat: praful la L* 11.7, cerul la L* 15.9; exact pe negru la 0.135).
-     fiindca: praful (percentila 25 % a dalelor de praf (cu 0.4 L* sub cerul modelat; 5.5 % din cadru); fara WCS) la L* 4.8; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 7.2; nivelul fundalului 0.089; trece asa cum e de la Dmax 2.28; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
+     fiindca: praful (percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale cerului); 5.5 % din cadru); fara WCS) la L* 4.8; negrul hartiei L* 9.0 la Dmax 2.0; cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 7.2; nivelul fundalului 0.089; trece asa cum e de la Dmax 2.28; pragul de vizibilitate L* 15, sub el 83.9 % din pixeli
 
 3. Culoarea fundalului si gradientele  [ATENTIE]
    ! Tenta verde pe fundal: neutralizeaza (SCNR / BackgroundNeutralization) inainte de print - la fundal ridicat se va vedea.
@@ -50,7 +50,7 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.089 asa cum e      1.000       4.8      7.2      70.7 %     83.9 %        0.4 %
   0.10                 0.953       5.6      8.5      50.8 %     82.0 %        0.9 %
   0.11                 0.914       6.5      9.8       5.1 %     80.0 %        1.2 %
-  0.12                 0.878       7.5     11.1       2.7 %     77.6 %        1.6 %
+  0.12                 0.878       7.5     11.0       2.7 %     77.6 %        1.6 %
   0.13                 0.845       8.5     12.3       2.3 %     74.3 %        2.0 %
   0.14                 0.814       9.6     13.5       1.2 %     69.5 %        2.3 %   cer sub L* 15
   0.15                 0.785      10.6     14.7       0.8 %     53.3 %        2.7 %   cer sub L* 15
@@ -60,8 +60,8 @@ Anexa B. Simularea fundalului (de la nivelul 0.089; curba gamma pe toate canalel
   0.19                 0.687      14.8     19.5       0.0 %      2.0 %        4.3 %   print-safe
   0.20                 0.666      15.9     20.6       0.0 %      1.5 %        4.7 %   print-safe
   * = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste
-  praful = percentila 25 % a dalelor de praf (cu 0.4 L* sub cerul modelat; 5.5 % din cadru) (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)
-  clase: praf 5.5 %, cer 49.2 %, nebuloasa 35.2 % (peste cerul modelat cu 0.5 L*, 4 sigma ale cerului), nebuloasa stralucitoare 9.8 % (peste 15.2 L*, pragul Otsu), varfuri 0.4 %
+  praful = percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale cerului); 5.5 % din cadru) (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)
+  clase: praf 5.5 %, cer 47.3 %, nebuloasa 35.9 % (peste cerul modelat cu 0.5 L*, 4 sigma ale cerului), nebuloasa stralucitoare 10.9 % (peste 14.0 L*, pragul Otsu), varfuri 0.4 %
   tinta exacta a prafului pe negru: 0.135 la Dmax 2.0 (0.154 la Dmax 1.9, 0.117 la Dmax 2.1); trece asa cum e de la Dmax 2.28; cerul ajunge la pragul de vizibilitate L* 15 la 0.152
 
 Anexa C. Export

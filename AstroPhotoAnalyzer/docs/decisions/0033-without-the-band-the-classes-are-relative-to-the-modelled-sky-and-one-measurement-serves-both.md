@@ -54,11 +54,19 @@ stars, Orion starless and with stars, Andromeda with stars, the 0.17 reference F
   at 7.9. So a dust class decides only from `DustClassMinFraction` (5 %) of the patches: under
   that it is cores or artefacts (0.4 to 2.7 % on the six frames), and the darkest sky stands.
   The owner chose 5 % on 2026-10-06.
-- Orion's peaks (the Trapezium, the brightest 0.1 % of patches) sit at 0.962 of the scale,
+- Orion's peaks (the Trapezium, the brightest 0.1 % of patches) sit at 0.971 of the scale (0.962 by the old histogram rule),
   over `CurvePeakTarget` (0.92). The recipe of ADR 0032 never lowers a point and scales the
   slopes down so the peaks stay under the target: with the peaks already over it, every point
   stays on the diagonal, whatever the anchors (0.014 to 0.029 of movement on the band point).
   The image is at the ceiling; the tool said nothing.
+- The code review of 2026-10-06 found two more things, fixed before the merge: the Otsu tail
+  must leave the peak patches out and keep at least `BrightClassMinTailFraction` (5 %) of the
+  tail above the split (a few star patches far above a faint nebula would otherwise be the
+  split, and the bright class would be them or nothing, so the Curbe tab would refuse the
+  frame; the real classes are 15 to 30 % of their tail); and the thresholds must be offsets from the model, not from the residual's median,
+  or the printed "4 sigma" is two different numbers up and down (0.5 and 0.4 L\* on the
+  dark-sky golden). The dust's source is also decided once, on the image as it is, so every
+  row of the ladder measures the statistic the definition sentence names.
 
 ## Decision
 
@@ -67,18 +75,20 @@ stars, Orion starless and with stars, Andromeda with stars, the 0.17 reference F
    frame (no WCS, far from the plane, wholly inside it: `SkyReason`) gets classes **relative to
    the modelled sky** (`DustMethod.Sky`): the sky model from all patches at
    `SkyModelLowPercentile` (25) per cell; dust under the model by `SkyNoiseK` (4) robust sigmas
-   of the residual (one clipping pass at `SkyNoiseClipK`, 3); nebula over it by the same; bright
-   nebula over the Otsu threshold of the nebula residuals; peaks the brightest `PeakFraction`
-   as before; sky the rest. The thresholds are the image's and the map carries them
-   (`SkySigma`, `NebulaThreshold`, `BrightThreshold`, `DustThreshold`) for the legend and the
-   report. The five classes keep one enum; their names follow the path (`praf, cer, banda,
+   of the residual (one clipping pass at `SkyNoiseClipK`, 3, about the median); nebula over
+   it by the same; bright nebula over the Otsu threshold of the nebula residuals taken without
+   the peak patches and leaving at least `BrightClassMinTailFraction` of them above; peaks the brightest `PeakFraction` as before; sky the rest. The
+   thresholds are the image's and the map carries them (`SkySigma`, `NoiseThreshold`,
+   `BrightThreshold`) for the legend and the report. The five classes keep one enum; their names follow the path (`praf, cer, banda,
    nori luminosi, varfuri` or `praf, cer, nebuloasa, nebuloasa stralucitoare, varfuri`,
    `DustAnalyzer.ClassNames`).
 2. **One measurement** (`DustAnalyzer.Measure`), on either path: the sky is the median of the
    sky class; the dust is the darkest extended area, min(the `DustClassFraction` percentile of
    the dust class when the class holds at least `DustClassMinFraction` of the patches, the
-   `SkyDarkestFraction` percentile of the sky class), and `DustStats.DustSource` says which
-   won; the report's definition sentence and the `Because` name it. The frame rule, the
+   `SkyDarkestFraction` percentile of the sky class), decided once on the as-is image
+   (`DecideDustSource`, `DustMap.DustSource`) and re-measured as that statistic on every lift,
+   so the ladder's rows and the definition sentence agree; the report names it, and says when
+   the sky class is empty and the sky is the median of all patches. The frame rule, the
    `NoDust` method and `DustAreaFraction` are gone.
 3. The curve anchors come from the classes **always** (`CurveAdvisor.ClassLevels`), the point
    labels take the path's class names, and the sentence under the gallery names the path and
@@ -112,16 +122,16 @@ stars, Orion starless and with stars, Andromeda with stars, the 0.17 reference F
 ## Consequences
 
 - `DustAnalyzer`: `DustMethod { Band, Sky }`, `SkyReason`, `ClassifyBySky`, `SkyModel` with the
-  cell percentile as a parameter, `ClassNames`, `Measure` on one path, `DustSource`;
+  cell percentile as a parameter, `ClassNames`, `DecideDustSource`, `Measure` on one path;
   `Stats.RobustSigma`, `Stats.OtsuThreshold`. Thresholds: `SkyModelLowPercentile`,
-  `SkyNoiseClipK`, `SkyNoiseK`, `DustClassMinFraction`, `SkyDarkestFraction` (in place of
+  `SkyNoiseClipK`, `SkyNoiseK`, `BrightClassMinTailFraction`, `DustClassMinFraction`, `SkyDarkestFraction` (in place of
   `DustAreaFraction`); the three `Curve*Percentile` removed. `CurveSet.Method` and `Labels`
   in place of `Source`; `GamutAnalyzer.Measure` always per class. `MapViewModel` always five
   layers; the Tonuri guide and the README rewritten for the two paths. R-044, R-092, R-113,
   R-130, R-141, R-142, R-146, R-147 rewritten.
 - Figures: V-004 and V-008 (the band path) moved on no figure, only on the method's name.
-  V-001, V-003, V-005 and V-009 (`de_printat.png`, no WCS) moved: the dust 4.09 -> 4.23 (the
-  darkest 1 % of the sky class instead of all patches), the sky 9.38 -> 8.92 (the median of
+  V-001, V-003, V-005 and V-009 (`de_printat.png`, no WCS) moved: the dust 4.09 -> 4.18 (the
+  darkest 1 % of the sky class instead of all patches), the sky 9.38 -> 8.87 (the median of
   the sky class, the band's patches no longer in it), the recommended row 0.17 / 0.15 -> 0.16;
   on the Dmax 2.0 paper of V-001 the sky now sits under paper black (9.0) by a tenth, and the
   verdict is PROBLEMA instead of ATENTIE. V-010 to V-012 added on Rosetta (the sky classes, the

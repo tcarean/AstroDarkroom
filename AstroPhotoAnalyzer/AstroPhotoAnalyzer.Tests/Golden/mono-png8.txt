@@ -55,8 +55,8 @@ Anexa B. Simularea fundalului (de la nivelul 0.251; curba gamma pe toate canalel
   0.251 asa cum e      1.000      26.8     27.0       0.0 %      0.0 %        0.1 %   print-safe
   * = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste
   praful = cel mai intunecat 1 % al dalelor de cer (nicio dala de praf) (fara WCS); cerul = mediana dalelor de cer (clase relative la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 3.6 la Dmax 2.4)
-  clase: praf 0.0 %, cer 84.0 %, nebuloasa 7.4 % (peste cerul modelat cu 0.3 L*, 4 sigma ale cerului), nebuloasa stralucitoare 7.4 % (peste 0.5 L*, pragul Otsu), varfuri 1.2 %
-  tinta exacta a prafului pe negru: 0.051 la Dmax 2.4 (0.062 la Dmax 2.3, <= 0.05 la Dmax 2.5); trece asa cum e de la Dmax 1.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.148
+  clase: praf 0.0 %, cer 81.5 %, nebuloasa 9.9 % (peste cerul modelat cu 0.3 L*, 4 sigma ale cerului), nebuloasa stralucitoare 7.4 % (peste 0.5 L*, pragul Otsu), varfuri 1.2 %
+  tinta exacta a prafului pe negru: 0.051 la Dmax 2.4 (0.062 la Dmax 2.3, <= 0.05 la Dmax 2.5); trece asa cum e de la Dmax 1.3; cerul ajunge la pragul de vizibilitate L* 15 la 0.149
 
 Anexa C. Export
   TIFF 8-bit LZW: 0.0 MB

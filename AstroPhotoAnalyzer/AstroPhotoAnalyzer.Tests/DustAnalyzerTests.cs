@@ -84,7 +84,7 @@ public class DustAnalyzerTests
         // The blob is at 0.05 (L* 3.6), the outside sky at 0.25 (L* 27).
         Assert.InRange(d.LstarDust, 3, 12);
         Assert.Equal(ColorMath.LstarOfSrgb(0.25, 0.25, 0.25), d.LstarSky, 0);
-        Assert.Equal(DustSource.DustClass, d.DustSource);
+        Assert.Equal(DustSource.DustClass, map.DustSource);
     }
 
     /// <summary>A smooth band with nothing under its local level: the classes stay the band's, and the dust is the darkest sky.</summary>
@@ -101,7 +101,7 @@ public class DustAnalyzerTests
 
         DustStats d = DustAnalyzer.Measure(L, map, 9);
         var sky = Enumerable.Range(0, L.Length).Where(i => map.Classes[i] == PatchClass.Sky).Select(i => L[i]).ToArray();
-        Assert.Equal(DustSource.DarkestSky, d.DustSource);
+        Assert.Equal(DustSource.DarkestSky, map.DustSource);
         Assert.Equal(Stats.PercentileSorted(Stats.Sorted(sky), Thresholds.SkyDarkestFraction * 100), d.LstarDust, 6);
         Assert.Equal(Stats.Median(sky), d.LstarSky, 6);
         Assert.Equal(0, d.DustPatchCount);
@@ -123,9 +123,9 @@ public class DustAnalyzerTests
         Assert.Null(map.BandLevel);
         Assert.NotNull(map.SkyModel);
         Assert.True(map.SkySigma > 0);
-        Assert.True(map.NebulaThreshold > 0 && map.NebulaThreshold < 5);   // a few tenths of an L* of patch noise, times 4
-        Assert.True(map.BrightThreshold > map.NebulaThreshold);
-        Assert.True(map.DustThreshold > 0);
+        Assert.Equal(Thresholds.SkyNoiseK * map.SkySigma, map.NoiseThreshold, 9);
+        Assert.True(map.NoiseThreshold > 0 && map.NoiseThreshold < 5);   // a few tenths of an L* of patch noise, times 4
+        Assert.True(map.BrightThreshold > map.NoiseThreshold);
 
         // The flat sky is sky, the halo nebula, the core bright nebula, the single brightest patch the peak.
         for (int i = 0; i < map.PatchCount; i++)
@@ -133,8 +133,8 @@ public class DustAnalyzerTests
             double over = L[i] - map.SkyModel[i];
             switch (map.Classes[i])
             {
-                case PatchClass.Sky: Assert.InRange(over, -map.DustThreshold, map.NebulaThreshold); break;
-                case PatchClass.Band: Assert.True(over > map.NebulaThreshold && over <= map.BrightThreshold); break;
+                case PatchClass.Sky: Assert.InRange(over, -map.NoiseThreshold, map.NoiseThreshold); break;
+                case PatchClass.Band: Assert.True(over > map.NoiseThreshold && over <= map.BrightThreshold); break;
                 case PatchClass.BrightCloud: Assert.True(over > map.BrightThreshold); break;
                 case PatchClass.Peak: break;
                 default: Assert.Fail("unexpected class " + map.Classes[i]); break;
@@ -151,7 +151,22 @@ public class DustAnalyzerTests
 
         // The nebula threshold is the sky's own noise: twice the pixel noise, about twice the threshold.
         DustMap noisier = Build(WcsFixtures.NebulaScene(noise: 8.0 / 255), null);
-        Assert.InRange(noisier.NebulaThreshold / map.NebulaThreshold, 1.5, 2.7);
+        Assert.InRange(noisier.NoiseThreshold / map.NoiseThreshold, 1.5, 2.7);
+
+        // Two star patches far above a faint nebula: one is the peak (0.1 % of 256 patches is one
+        // patch), the other stays in the Otsu tail, and the split may not leave under 5 % of the
+        // tail above it, so the bright threshold lands inside the nebula, not at the star.
+        Raster faint = SyntheticRasters.AddNoise(SyntheticRasters.From(512, 512, 3, (x, y, p) =>
+        {
+            if (x >= 32 && x < 64 && y >= 32 && y < 64) return 0.9f;
+            if (x >= 448 && x < 480 && y >= 448 && y < 480) return 0.9f;
+            double d2 = (x - 255.5) * (x - 255.5) + (y - 255.5) * (y - 255.5);
+            return (float)(0.15 + 0.08 * Math.Exp(-d2 / (2 * 90.0 * 90.0)));
+        }), 4.0 / 255, 7);
+        DustMap stars = Build(faint, null);
+        Assert.Equal(1, stars.Classes.Count(c => c == PatchClass.Peak));
+        Assert.True(stars.FractionOf(PatchClass.BrightCloud) > 0.01);
+        Assert.True(stars.BrightThreshold < 30, $"bright threshold {stars.BrightThreshold}");   // inside the nebula, not at the star (L* 96 over a sky of 15)
     }
 
     /// <summary>On both paths the verdict is one measurement: the sky's median, and the darkest extended area for the dust (ADR 0033).</summary>
@@ -162,34 +177,53 @@ public class DustAnalyzerTests
         var map = new DustMap { Cols = 10, Rows = 10, Side = 8, Stride = 4, Classes = new PatchClass[100], Clouds = Array.Empty<DustCloud>() };
         var L = new float[100];
         for (int i = 0; i < 100; i++) { map.Classes[i] = i < 10 ? PatchClass.Dust : PatchClass.Sky; L[i] = i < 10 ? 5 + i * 0.5f : 20 + (i - 10) / 10f; }
+        map.DustSource = DustAnalyzer.DecideDustSource(L, map);
         DustStats d = DustAnalyzer.Measure(L, map, 9);
-        Assert.Equal(DustSource.DustClass, d.DustSource);
+        Assert.Equal(DustSource.DustClass, map.DustSource);
         Assert.Equal(Stats.PercentileSorted(Stats.Sorted(L.Take(10).ToArray()), Thresholds.DustClassFraction * 100), d.LstarDust, 6);
         Assert.Equal(Stats.Median(L.Skip(10).ToArray()), d.LstarSky, 6);
         Assert.Equal(10, d.DustPatchCount);
 
         // The same dust, brighter than the darkest sky: the sky's darkest 1 % wins.
         for (int i = 0; i < 10; i++) L[i] = 25 + i * 0.5f;
+        map.DustSource = DustAnalyzer.DecideDustSource(L, map);
         d = DustAnalyzer.Measure(L, map, 9);
-        Assert.Equal(DustSource.DarkestSky, d.DustSource);
+        Assert.Equal(DustSource.DarkestSky, map.DustSource);
         Assert.Equal(Stats.PercentileSorted(Stats.Sorted(L.Skip(10).ToArray()), Thresholds.SkyDarkestFraction * 100), d.LstarDust, 6);
 
         // A dust class under DustClassMinFraction of the patches (4 of 100) does not decide, however dark.
         for (int i = 0; i < 10; i++) { L[i] = i < 4 ? 1 : 24; map.Classes[i] = i < 4 ? PatchClass.Dust : PatchClass.Sky; }
+        map.DustSource = DustAnalyzer.DecideDustSource(L, map);
         d = DustAnalyzer.Measure(L, map, 9);
-        Assert.Equal(DustSource.DarkestSky, d.DustSource);
+        Assert.Equal(DustSource.DarkestSky, map.DustSource);
         Assert.Equal(4, d.DustPatchCount);
         Assert.True(d.LstarDust > 19);
+
+        // The source is decided once, as is: a lift that brightens the dust class past the
+        // darkest sky still measures the dust class, so the ladder's rows and the definition agree.
+        for (int i = 0; i < 100; i++) { map.Classes[i] = i < 10 ? PatchClass.Dust : PatchClass.Sky; L[i] = i < 10 ? 5 + i * 0.5f : 20 + (i - 10) / 10f; }
+        map.DustSource = DustAnalyzer.DecideDustSource(L, map);
+        var lifted = (float[])L.Clone();
+        for (int i = 0; i < 10; i++) lifted[i] = 30 + i * 0.5f;
+        Assert.Equal(DustSource.DustClass, map.DustSource);
+        Assert.Equal(Stats.PercentileSorted(Stats.Sorted(lifted.Take(10).ToArray()), Thresholds.DustClassFraction * 100), DustAnalyzer.Measure(lifted, map, 9).LstarDust, 6);
+
+        // No sky patch at all: the sky is the median of every patch, and the map says so.
+        for (int i = 0; i < 100; i++) map.Classes[i] = i < 10 ? PatchClass.Dust : PatchClass.Band;
+        map.DustSource = DustAnalyzer.DecideDustSource(L, map);
+        Assert.True(map.SkyClassEmpty);
+        Assert.Equal(Stats.Median(L), DustAnalyzer.Measure(L, map, 9).LstarSky, 6);
 
         // On the nebula scene: a dark lane of 12.5 % of the patches is the dust; without it, the darkest sky.
         Raster lane = WcsFixtures.NebulaScene(withLane: true);
         DustMap laneMap = Build(lane, null);
         Assert.InRange(laneMap.FractionOf(PatchClass.Dust), 0.1, 0.2);
         DustStats withLane = DustAnalyzer.Measure(Patches(lane), laneMap, 9);
-        Assert.Equal(DustSource.DustClass, withLane.DustSource);
+        Assert.Equal(DustSource.DustClass, laneMap.DustSource);
         Assert.InRange(withLane.LstarDust, 0.5, 4);    // the lane at 0.03 is L* 2
-        DustStats noLane = DustAnalyzer.Measure(Patches(WcsFixtures.NebulaScene()), Build(WcsFixtures.NebulaScene(), null), 9);
-        Assert.Equal(DustSource.DarkestSky, noLane.DustSource);
+        DustMap noLaneMap = Build(WcsFixtures.NebulaScene(), null);
+        DustStats noLane = DustAnalyzer.Measure(Patches(WcsFixtures.NebulaScene()), noLaneMap, 9);
+        Assert.Equal(DustSource.DarkestSky, noLaneMap.DustSource);
         Assert.InRange(noLane.LstarDust, 13, 17);       // the sky at 0.15 is L* 15.3
     }
 
@@ -206,7 +240,7 @@ public class DustAnalyzerTests
         float[] L = Patches(r);
         DustStats d = DustAnalyzer.Measure(L, pole, 9);
         Assert.InRange(pole.FractionOf(PatchClass.Dust), Thresholds.DustClassMinFraction, 0.15);
-        Assert.Equal(DustSource.DustClass, d.DustSource);
+        Assert.Equal(DustSource.DustClass, pole.DustSource);
         Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), d.LstarDust, 1);
         Assert.Equal(ColorMath.LstarOfSrgb(0.25, 0.25, 0.25), d.LstarSky, 0);
 
@@ -223,7 +257,7 @@ public class DustAnalyzerTests
         Assert.InRange(inside.FractionOf(PatchClass.Sky), 0.5, 0.95);
         float[] Lldn = Patches(ldn);
         DustStats dl = DustAnalyzer.Measure(Lldn, inside, 9);
-        Assert.Equal(DustSource.DarkestSky, dl.DustSource);
+        Assert.Equal(DustSource.DarkestSky, inside.DustSource);
         Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), dl.LstarDust, 1);
         int c42 = inside.Clouds.ToList().FindIndex(c => c.Nebula.Ldn == 42);
         Assert.Equal(ColorMath.LstarOfSrgb(0.05, 0.05, 0.05), dl.CloudLstars[c42], 1);

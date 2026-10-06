@@ -47,6 +47,10 @@ from `DustClassMinFraction` (5 %) of the patches, because on `de_printat.png` th
 dust class is the Pipe's cores (0.8 %, p25 at L\* 2.5), which ADR 0025 rejected; the band
 scene's dust blob grew to a radius of 80 px to clear that floor; V-010 to V-012 replaced the
 planned V-010 / V-011 (an analysis case and a curves case on Rosetta, a curves case on Orion).
+After the code review (ADR 0033, Context): the thresholds are offsets from the model, not
+from the residual's median; the Otsu split leaves the peaks out and keeps at least 5 % of the
+tail above it (`BrightClassMinTailFraction`); the dust's source is decided once, as is
+(`DecideDustSource`).
 
 ## Step 0: worktree, data, two measurements
 
@@ -130,7 +134,7 @@ gamut; `SourceSentence` from `CurveTexts.AnchorSource(map)`.
 
 **`Report/CurveTexts.cs`**: `PointsNote(map, colour)` and `AnchorSource(map)` per method (`Ancorele
 vin din clasele tabului Tonuri: ...` naming the method and, for `Sky`, the reason); new
-`PeaksOverTarget` (`Varfurile sunt deja la 0.962, la sau peste tinta 0.92: nu mai e loc de
+`PeaksOverTarget` (`Varfurile sunt deja la 0.971, la sau peste tinta 0.92: nu mai e loc de
 contrast fara sa cobori ceva, si curbele sugerate nu coboara nimic. Imaginea e deja la plafon.`)
 and `ClassEmpty`. `Report/ReportWriter.cs` and `Recommendations.cs`: the definition sentence and
 the Because follow `DustDescription`; the `clase:` line is always printed.
@@ -191,7 +195,7 @@ the Because follow `DustDescription`; the `clase:` line is always printed.
 - New ADR 0033 "Without the band, the classes are relative to the modelled sky with thresholds
   from the image, and one measurement serves both sources": the six-image measurements of
   2026-10-06 (the table of σ, thresholds, fractions, anchors; the min rule's numbers; Orion's
-  0.962), the alternatives rejected (fixed 5 / 10 L\*; histogram percentiles as classes; the
+  0.971), the alternatives rejected (fixed 5 / 10 L\*; histogram percentiles as classes; the
   shoulder; a flag for a "real" dust class instead of the min). Status lines on ADR 0025
   (decision 4 superseded), ADR 0026 (the fallback paragraph superseded) and ADR 0032 (the
   histogram anchors superseded), in the way the kit's ADR 0024 allows.

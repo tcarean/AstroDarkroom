@@ -94,12 +94,16 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   Without a WCS, or with the band under `BandMinFraction` of the patches (`SkyReason.NoBand`)
   or the outside sky under it (`AllBand`), `ClassifyBySky` makes the classes instead (ADR
   0033, `Method` `Sky`): the sky model from all patches at `SkyModelLowPercentile` per cell;
-  the residual patch minus model, with `Stats.RobustSigma` (median and 1.4826 x MAD), one
-  clipping pass at `SkyNoiseClipK` sigmas and the two taken again on what is kept; `Dust`
-  under the median by `SkyNoiseK` sigmas, `Band` (nebula) over it by as much, `BrightCloud`
-  (bright nebula) over `Stats.OtsuThreshold` of the nebula residuals (none under two), `Peak`
-  as above, `Sky` the rest. The map keeps `SkySigma`, `NebulaThreshold`, `BrightThreshold` and
-  `DustThreshold` (L\* over or under the model) for the legend and Anexa B; `BandLevel` is
+  the residual patch minus model, with `Stats.RobustSigma` (1.4826 x MAD about the median),
+  one clipping pass at `SkyNoiseClipK` sigmas and sigma taken again on what is kept; `Dust`
+  under the model by `SkyNoiseK` sigmas (`NoiseThreshold`), `Band` (nebula) over it by as
+  much, `BrightCloud` (bright nebula) over `Stats.OtsuThreshold` of the nebula residuals taken
+  without the peak patches and with at least `BrightClassMinTailFraction` of them left above
+  the split (a few star patches far over a faint nebula would otherwise be the upper class and
+  leave the bright class empty; infinity when the tail is too small), `Peak` as above, `Sky`
+  the rest. With sigma 0 (a
+  posterised sky) the threshold is 0 and the class is the sign of the residual. The map keeps
+  `SkySigma`, `NoiseThreshold` and `BrightThreshold` for the legend and Anexa B; `BandLevel` is
   null. The five `PatchClass` values are one enum on both paths and `ClassNames(Method)` gives
   their Romanian names (`banda` / `nori luminosi` or `nebuloasa` / `nebuloasa stralucitoare`).
 - `Measure(patchLstars, map, paperBlack)` gives the `DustStats` of a (lifted) subsample on one
@@ -107,7 +111,10 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   empty); `LstarDust` is the darkest extended area, the lower of the `DustClassFraction` (25 %)
   percentile of the dust patches, counted only when the class holds at least
   `DustClassMinFraction` (5 %) of the patches, and the `SkyDarkestFraction` (1 %) percentile of
-  the sky patches; `DustSource` says which won and `DustPatchCount` is the dust class's size.
+  the sky patches. Which of the two is decided once, on the as-is L\*s (`DecideDustSource`,
+  `DustMap.DustSource`), and every lift measures that statistic, so the ladder's rows and the
+  definition sentence name the same thing; `DustPatchCount` is the dust class's size, and
+  `DustMap.SkyClassEmpty` tells the texts when the sky is the median of all patches.
   Always `PctPatchesBelowPaperBlack` ("negru pur") and `CloudLstars`, the `DustCloudFraction`
   (10 %) percentile of each cloud's own patches, for the rows. The map window paints
   `map.Classes` as they are.

@@ -36,7 +36,8 @@ public class StatsTests
     [Fact]
     public void RobustSigmaIsTheScaledMadAndIgnoresATail()
     {
-        // 1..9 plus two far outliers: the median stays 5.5-ish, the MAD 2.5, the tail does not count.
+        // 1..9 plus two far outliers: the median is 6, the absolute deviations 0..5 and the two
+        // outliers give a MAD of 3, and the tail does not count.
         float[] v = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1000, 2000 };
         double sigma = Stats.RobustSigma(v, out double median);
         Assert.Equal(6, median, 6);
@@ -51,6 +52,14 @@ public class StatsTests
         Assert.Equal(4, Stats.OtsuThreshold(v));
         Assert.Equal(double.NaN, Stats.OtsuThreshold(new float[] { 7 }));
         Assert.Equal(5, Stats.OtsuThreshold(new float[] { 5, 5, 5 }));   // all equal: nothing is above it
+
+        // A floor on the upper class: two far outliers over a hundred close values win every
+        // split (the threshold sits at the top of the hundred, the outliers alone above it);
+        // with at least ten values required above, the split is inside the hundred.
+        float[] w = Stats.Sorted(Enumerable.Range(0, 100).Select(i => (float)(4 + 4.0 * i / 99)).Concat(new float[] { 60, 61 }).ToArray());
+        Assert.Equal(8, Stats.OtsuThreshold(w), 3);                // without the floor: only the outliers above
+        Assert.True(Stats.OtsuThreshold(w, 10) < 8);               // with it: inside the ramp
+        Assert.Equal(double.NaN, Stats.OtsuThreshold(w, 102));     // not enough values to leave 102 above
     }
 
     [Fact]

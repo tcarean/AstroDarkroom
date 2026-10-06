@@ -138,8 +138,9 @@ L\* - one fixed curve, used only by the window's level - L\* table and guide tex
 Percentiles use numpy's default linear interpolation between ranks (the acceptance
 numbers were made with numpy). `RobustSigma` is 1.4826 x the median absolute deviation,
 with the median as a second result; `OtsuThreshold` on a sorted vector is the split that
-maximises the variance between the two halves, the lower half at or under it (NaN under two
-values; with all values equal, the value itself, so nothing is above it). Both serve the
+maximises the variance between the two halves, the lower half at or under it, with a floor on
+the size of the upper half (NaN when the vector cannot leave that many above; with all values
+equal, the value itself, so nothing is above it). Both serve the
 sky-relative classes (ADR 0033). `SeededRandom` is xorshift64\*, so tile selection is the
 same on every runtime and every year.
 

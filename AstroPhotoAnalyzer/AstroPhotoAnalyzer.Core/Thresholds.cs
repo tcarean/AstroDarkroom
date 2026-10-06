@@ -138,6 +138,16 @@ namespace AstroPhotoAnalyzer
         internal const double SkyNoiseK = 4;
 
         /// <summary>
+        /// Pragul Otsu al nebuloasei stralucitoare lasa deasupra lui cel putin atata din dalele
+        /// de nebuloasa: Otsu maximizeaza varianta intre clase, si cateva dale de stele cu
+        /// zeci de L* peste o nebuloasa slaba ar fi "clasa" de sus, lasand nebuloasa
+        /// stralucitoare goala (gasit la revizia din 2026-10-06). Pe cele patru imagini cu
+        /// nebuloasa clasa de sus e 15-30 % din coada (referinta 15 %, Orion 28 %, Rosetta
+        /// 30 %), deci 5 % nu atinge nicio impartire reala.
+        /// </summary>
+        internal const double BrightClassMinTailFraction = 0.05;
+
+        /// <summary>
         /// Clasa praf decide verdictul doar cand are cel putin atata din dale; sub prag, praful
         /// e cerul cel mai intunecat (SkyDarkestFraction). Cu banda, Ruptura e 9.4 % din cadru;
         /// fara banda, clasa praf gaseste doar nuclee sau artefacte: 0.8 % pe de_printat.png

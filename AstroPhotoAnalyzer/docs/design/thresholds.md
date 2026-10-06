@@ -23,6 +23,7 @@ All empirical, most from the reference image. Change one, change its comment.
 | `BandMinFraction` | 0.10 | the band classes need the band and the outside sky each at or above this share of the patches; else the classes are relative to the modelled sky (ADR 0033) |
 | `SkyModelLowPercentile` | 25 | without the band, the sky model takes this percentile of each cell over all patches, so an object covering half a cell does not lift it |
 | `SkyNoiseClipK` / `SkyNoiseK` | 3 / 4 | the sky's patch noise: robust sigma of patch minus model after one clipping pass at the first; nebula is over the model by the second times that sigma, dust under it by as much (the bright-nebula threshold is the Otsu split of the nebula residuals, no constant) |
+| `BrightClassMinTailFraction` | 0.05 | the Otsu split of the nebula residuals leaves at least this share of them above: a few star patches far over a faint nebula would otherwise be the upper class and leave the bright class empty |
 | `DustClassMinFraction` | 0.05 | the dust class decides the verdict only from this share of the patches; under it (cores, artefacts) the darkest sky stands (the owner's choice, ADR 0033) |
 | `DustDepthLstar` | 5 | a dust patch is this many L\* under the band's local level or under the sky model |
 | `BrightCloudLstar` | 10 | a bright-cloud patch is this many L\* over the band's local level |

@@ -283,7 +283,6 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Reset();
                     Message = MainViewModel.Describe(e);
-                    IsProblem = false;
                 }
             }
             finally
