@@ -66,9 +66,6 @@ namespace AstroPhotoAnalyzer
             => $"Nu se poate sugera o curba: ancora \"{upper}\" ({Fmt.F3(upperValue)}) nu e peste ancora \"{lower}\" ({Fmt.F3(lowerValue)}). "
                + "Curbele au nevoie de cinci trepte crescatoare: praf, cer, banda, nori luminosi, varfuri.";
 
-        internal static string AnchorAtEnd(string label, double value, bool atBlack)
-            => $"Nu se poate sugera o curba: ancora \"{label}\" ({Fmt.F3(value)}) e la {(atBlack ? "negru" : "alb")}, nu mai are loc de un punct de control dincolo de ea.";
-
         internal static string ClassEmpty(string label)
             => $"Nu se poate sugera o curba: clasa \"{label}\" nu are nicio dala pe imaginea asta, si curbele au nevoie de cinci trepte: praf, cer, "
                + "banda sau nebuloasa, nori luminosi sau nebuloasa stralucitoare, varfuri.";

@@ -81,7 +81,8 @@
   owner liked on one image, and no point ever goes under its input, so a frame whose peaks are
   already at or over 0.92 of the scale gets no suggestion, only the reason (ADR 0033); the
   shoulder that would make room by compressing the highlights is not built. A frame whose five
-  anchors do not increase, or with an empty class, gets none either.
+  anchors do not increase, or with an empty class, gets none either; a dust at black is not a
+  refusal, its point is the origin.
 - A saved FITS holds the raster's values: what the reader clipped to 0..1 (and a NaN, to 0) is
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.

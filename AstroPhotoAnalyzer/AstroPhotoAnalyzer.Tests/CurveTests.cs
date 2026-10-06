@@ -138,6 +138,22 @@ public class CurveTests
         Assert.NotNull(flat.Problem);
         Assert.Empty(flat.Suggestions);
 
+        // The dust at black (a stack's black border is the darkest sky): no refusal, the dust
+        // point is the curve's own origin, labelled, and the five labelled points are still there.
+        Raster border = SyntheticRasters.From(512, 512, 3, (x, y, p) => y < 32 ? 0f : x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 416 ? 0.15f : x < 480 ? 0.3f : 0.5f);
+        CurveSet black = Suggest(AnalysisRun.Execute(border, "memorie", Scenes.OnBuiltForPaper()));
+        Assert.Null(black.Problem);
+        Assert.Equal(0, black.Anchors.Dust, 6);
+        Assert.NotEmpty(black.Suggestions);
+        foreach (CurveSuggestion s in black.Suggestions)
+        {
+            Assert.Equal(6, s.Curve.Points.Count);
+            Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri", null }, s.Curve.Points.Select(q => q.Label).ToArray());
+            Assert.Equal(0, s.Curve.Points[0].X);
+            Assert.Equal(0, s.Curve.Points[0].Y);
+            Assert.Equal(5, s.Evidence.LstarBefore.Count);
+        }
+
         // Without a bright-nebula column there is no fourth class: a problem naming it, no suggestion.
         Raster noBright = SyntheticRasters.From(512, 512, 3, (x, y, p) => x >= 448 && x < 480 && y >= 224 && y < 256 ? 0.7f : x < 32 ? 0.05f : x < 416 ? 0.15f : 0.3f);
         CurveSet empty = Suggest(AnalysisRun.Execute(noBright, "memorie", Scenes.OnBuiltForPaper()));

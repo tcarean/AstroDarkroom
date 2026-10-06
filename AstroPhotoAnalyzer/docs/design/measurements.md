@@ -329,7 +329,9 @@ path (ADR 0033): on the sky path the third and fourth are the nebula and the bri
 and the point labels take the path's names (`map.ClassNames`, carried in `CurveSet.Labels`
 and `CurveEvidence.Labels`). An empty upper class, a peaks anchor at or over `CurvePeakTarget`
 (the recipe would leave every point on the diagonal: the image is at the ceiling) and anchors
-that do not increase strictly between 0 and 1 give a `Problem` and no curve, in that order.
+that do not increase strictly give a `Problem` and no curve, in that order. A dust anchor at 0 is the
+origin itself: the dust point takes the place of the (0, 0) end, with its label, since the
+curve never moves it anyway.
 
 **The recipe** (`CurveAdvisor.Curves`). The dust and the sky map to themselves. The three
 segments above the sky get the increments slope x width with `CurveSlopeSkyBand`,

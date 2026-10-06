@@ -159,8 +159,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// De ce nu se poate sugera nimic, pentru om: o clasa goala; varfurile deja la sau peste
         /// CurvePeakTarget (imaginea e la plafon, reteta n-ar avea loc); ancorele nu cresc strict
-        /// intre 0 si 1 (un cadru plat, varfuri arse, o banda nu mai luminoasa decat cerul).
-        /// Null cand se poate.
+        /// (un cadru plat, o banda nu mai luminoasa decat cerul). Praful la negru nu e un motiv:
+        /// punctul lui e chiar originea curbei, pe care curba oricum n-o muta (o margine neagra
+        /// de stack face asta). Null cand se poate.
         /// </summary>
         internal static string Problem(CurveAnchors a, IReadOnlyList<string> labels)
         {
@@ -168,7 +169,6 @@ namespace AstroPhotoAnalyzer
             for (int i = 0; i < 5; i++)
                 if (double.IsNaN(x[i])) return CurveTexts.ClassEmpty(labels[i]);
             if (x[4] >= Thresholds.CurvePeakTarget) return CurveTexts.PeaksOverTarget(labels[4], x[4]);
-            if (!(x[0] > 0)) return CurveTexts.AnchorAtEnd(labels[0], x[0], atBlack: true);
             for (int i = 1; i < 5; i++)
                 if (!(x[i] > x[i - 1])) return CurveTexts.AnchorsNotIncreasing(labels[i - 1], x[i - 1], labels[i], x[i]);
             return null;
@@ -206,7 +206,10 @@ namespace AstroPhotoAnalyzer
 
             ToneCurve Build(double[] full, double strength)
             {
-                var pts = new List<CurvePoint> { new(0, 0, null) };
+                // Praful la negru e originea insasi: punctul lui ia locul capatului (0, 0),
+                // cu eticheta, ca tabelul si dovada sa aiba tot cinci puncte etichetate.
+                var pts = new List<CurvePoint>();
+                if (x[0] > 0) pts.Add(new CurvePoint(0, 0, null));
                 for (int i = 0; i < 5; i++) pts.Add(new CurvePoint(x[i], x[i] + strength * (full[i] - x[i]), labels[i]));
                 pts.Add(new CurvePoint(1, 1, null));
                 return new ToneCurve(pts);
