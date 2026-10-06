@@ -10,7 +10,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR
   0033): the Curbe tab shows the reason in red, instead of four curves that change nothing.
-
 - The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
   `Blanda`, `Medie`, `Puternica` and, when the peaks have room left, `Maxima`, built on five
   anchors (the dust and the sky of the Tonuri tab; the band, the bright clouds and the peaks
