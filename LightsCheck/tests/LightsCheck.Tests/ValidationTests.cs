@@ -46,14 +46,48 @@ public class ValidationTests
         using JsonDocument tolerance = JsonDocument.Parse(toleranceJson);
         JsonElement e = expected.RootElement;
         JsonElement t = tolerance.RootElement;
-        if (kind == "inventory")
+        switch (kind)
         {
-            CheckInventory(InventoryRun.Run(folder), e, t);
+            case "inventory":
+                CheckInventory(InventoryRun.Run(folder), e, t);
+                break;
+            case "frame":
+                CheckFrame(FrameRun.Run(folder, frame).Measurement, e, t);
+                break;
+            default:
+                CheckSeries(SeriesRun.Run(folder, new SeriesOptions()), e, t);
+                break;
         }
-        else
-        {
-            CheckFrame(FrameRun.Run(folder, frame).Measurement, e, t);
-        }
+    }
+
+    private static void CheckSeries(SeriesResult r, JsonElement e, JsonElement t)
+    {
+        SeriesAnalysis s = r.Series;
+        DitherAnalysis d = r.Dither;
+        Assert.Equal(e.GetProperty("good").GetInt32(), s.GoodCount);
+        Assert.Equal(e.GetProperty("marginal").GetInt32(), s.MarginalCount);
+        Assert.Equal(e.GetProperty("bad").GetInt32(), s.BadCount);
+        int[] bad = Enumerable.Range(0, r.Frames.Count).Where(i => s.Classes[i] == FrameClass.Bad).Select(i => r.Frames[i].Info.Index).ToArray();
+        Assert.Equal(e.GetProperty("badFrames").EnumerateArray().Select(x => x.GetInt32()).ToArray(), bad);
+        Assert.Equal(e.GetProperty("registered").GetInt32(), d.Registered);
+        Assert.Equal(e.GetProperty("moves").GetInt32(), d.Moves);
+        Assert.Equal(e.GetProperty("pauses").GetInt32(), d.Pauses);
+        Assert.Equal(e.GetProperty("pausesWithoutMove").GetInt32(), d.PausesWithoutMove);
+        Assert.Equal(e.GetProperty("distinctMid").GetInt32(), d.DistinctMid);
+        Assert.Equal(e.GetProperty("distinctLoose").GetInt32(), d.DistinctLoose);
+        Assert.Equal(e.GetProperty("isolated").GetInt32(), d.IsolatedLoose);
+        Assert.Equal(e.GetProperty("longestRunLoose").GetInt32(), d.RunsLoose.Max(x => x.Frames));
+        AssertWithin("medianMove", e.GetProperty("medianMove").GetDouble(), Figure(d.MedianMove, "medianMove"), t.GetProperty("px").GetDouble());
+        AssertWithin("rotationArcmin", e.GetProperty("rotationArcmin").GetDouble(), Figure(s.RotationTotalDeg, "rotation") * 60, t.GetProperty("arcmin").GetDouble());
+        AssertWithin("driftYPerMin", e.GetProperty("driftYPerMin").GetDouble(), Figure(s.DriftYPerMin, "driftY"), t.GetProperty("px").GetDouble());
+        AssertWithin("sessionFwhm", e.GetProperty("sessionFwhm").GetDouble(), Figure(s.SessionFwhm, "sessionFwhm"), t.GetProperty("fwhm").GetDouble());
+        AssertWithin("readNoiseG1", e.GetProperty("readNoiseG1").GetDouble(), s.ReadNoise![1].PairSigma, t.GetProperty("adu").GetDouble());
+        AssertWithin("swampingRFrame1", e.GetProperty("swampingRFrame1").GetDouble(), s.Swamping![0][0].SwampingRatio, t.GetProperty("ratio").GetDouble());
+        Assert.Equal(e.GetProperty("raAxis").GetString(), s.RaAxis.ToString());
+        Assert.Equal(e.GetProperty("focusHeld").GetBoolean(), s.FocusHeld);
+        Assert.Equal(e.GetProperty("dew").GetBoolean(), s.DewSuspected);
+        Assert.Equal(e.GetProperty("hotPixelsOk").GetBoolean(), d.HotPixelsOk);
+        Assert.Equal(e.GetProperty("walkingNoiseOk").GetBoolean(), d.WalkingNoiseOk);
     }
 
     private static void CheckInventory(Inventory inv, JsonElement e, JsonElement t)

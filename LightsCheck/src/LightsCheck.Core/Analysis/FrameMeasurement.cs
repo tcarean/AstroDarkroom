@@ -17,8 +17,13 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>One CFA position: its name (R, G1, G2, B, or CFA[y,x]), its colour, its median above black, its saturated pixels, its minimum.</summary>
-internal sealed record ChannelLevel(string Name, char Colour, double Median, int Saturated, double Min);
+/// <summary>
+/// One CFA position: its name (R, G1, G2, B, or CFA[y,x]), its colour, its median above
+/// black, its saturated pixels, its minimum, and the sigma-clipped standard deviation of its
+/// high-pass residual (pixel minus the 5 x 5 median) in the central window: the frame's total
+/// noise on that channel, read noise included (R-024).
+/// </summary>
+internal sealed record ChannelLevel(string Name, char Colour, double Median, int Saturated, double Min, double HighPassSigma);
 
 /// <summary>A long, thin component: a satellite or a plane. Length is the bounding-box diagonal in pixels.</summary>
 internal sealed record Trail(double Length, int Area, int X, int Y);

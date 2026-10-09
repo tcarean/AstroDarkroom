@@ -115,8 +115,105 @@ internal static class Th
     internal const double TrailMaxFill = 0.25;
     internal const int TrailFillSlack = 60;
 
-    // ---- registration (R-016)
+    // ---- registration (R-016, R-018)
 
     /// <summary>How many stars, the brightest, saturated included, are kept for registering the frame.</summary>
     internal const int RegistrationStars = 600;
+
+    /// <summary>The brightest stars of each list that vote on the coarse shift.</summary>
+    internal const int VoteStars = 300;
+
+    /// <summary>The vote histogram covers +-VoteRange px in bins of VoteBin px.</summary>
+    internal const int VoteRange = 2000;
+    internal const int VoteBin = 8;
+
+    /// <summary>Match tolerance of the first iteration and of the following ones, in pixels; how many iterations.</summary>
+    internal const double MatchToleranceCoarse = 8.0;
+    internal const double MatchToleranceFine = 3.0;
+    internal const int MatchIterations = 4;
+
+    /// <summary>Fewer matched stars than this and the registration failed.</summary>
+    internal const int MinMatches = 10;
+
+    // ---- dithering (R-019 to R-021)
+
+    /// <summary>
+    /// A step between consecutive frames at or above this many pixels is a dither move. Not
+    /// 3 px: on the Veil session the frames shot back to back, with no move at all, drifted
+    /// 1 to 7 px in two minutes (tracking and backlash), and 3 px counted 15 of those as moves.
+    /// </summary>
+    internal const double DitherStep = 5.0;
+
+    /// <summary>A pause longer than this many seconds before a frame is a deliberate pause (a manual dither).</summary>
+    internal const double DitherPause = 5.0;
+
+    /// <summary>The size classes of the moves: [5, 10), [10, 20), [20, ...) px.</summary>
+    internal static readonly double[] DitherSizeBounds = [10.0, 20.0];
+
+    /// <summary>A move counts on an axis when its component is at least this many pixels.</summary>
+    internal const double AxisStep = 3.0;
+
+    /// <summary>Coverage radii: another frame within these many pixels is the same spot, nearly, or close.</summary>
+    internal const double CoverageTight = 3.0;
+    internal const double CoverageMid = 5.0;
+    internal const double CoverageLoose = 10.0;
+
+    /// <summary>A run is this many consecutive frames or more within a radius of its first.</summary>
+    internal const int RunMinFrames = 3;
+
+    /// <summary>Hot pixels: fine while no more than this many consecutive frames sit within CoverageTight of each other.</summary>
+    internal const int HotPixelRunMax = 3;
+
+    /// <summary>Walking noise: fine when this fraction of frames are distinct at CoverageLoose ...</summary>
+    internal const double WalkingNoiseDistinctFraction = 0.5;
+
+    /// <summary>... this fraction sit at least CoverageLoose from every other frame ...</summary>
+    internal const double WalkingNoiseIsolatedFraction = 0.3;
+
+    /// <summary>... and each axis carries at least this fraction of the moves.</summary>
+    internal const double TwoDAxisFraction = 0.25;
+
+    // ---- frame classes (R-022)
+
+    /// <summary>Median elongation at or above which a frame is bad, and above which it is marginal.</summary>
+    internal const double ElongationBad = 1.6;
+    internal const double ElongationMarginal = 1.35;
+
+    /// <summary>A frame whose median FWHM exceeds this factor of the session's median of the good frames is soft.</summary>
+    internal const double SoftFwhmFactor = 1.3;
+
+    /// <summary>A frame with fewer detected stars than this fraction of the session's median has clouds or haze.</summary>
+    internal const double CloudStarFraction = 0.6;
+
+    /// <summary>A frame whose green background differs from the median of its neighbours by more than this percentage has a background jump.</summary>
+    internal const double BackgroundJumpPct = 8.0;
+
+    /// <summary>How many frames on each side make the neighbourhood of the background jump test.</summary>
+    internal const int BackgroundNeighbours = 2;
+
+    // ---- trends (R-023)
+
+    /// <summary>How many good frames at each end of the night make the first/last comparison.</summary>
+    internal const int TrendFrames = 10;
+
+    /// <summary>Dew: the median FWHM of the last good frames exceeds the first by this fraction ...</summary>
+    internal const double DewFwhmRise = 0.15;
+
+    /// <summary>... and the halo ratio rose by this much.</summary>
+    internal const double DewHaloRise = 0.02;
+
+    /// <summary>Focus held when the median FWHM moved by less than this fraction between the ends.</summary>
+    internal const double FocusHeldFraction = 0.10;
+
+    /// <summary>The read-noise swamping ratio (shot variance over read variance) under which a channel is read-noise limited.</summary>
+    internal const double SwampingRatioOk = 10.0;
+
+    // ---- the RA axis (R-025)
+
+    /// <summary>At least this many bad frames with a coherent trail direction (coherence above TrailAxisCoherence) vote on the RA axis ...</summary>
+    internal const int TrailAxisMinFrames = 2;
+    internal const double TrailAxisCoherence = 0.8;
+
+    /// <summary>... and their mean direction must be within this many degrees of an image axis.</summary>
+    internal const double TrailAxisTolerance = 25.0;
 }

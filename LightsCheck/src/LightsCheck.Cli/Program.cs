@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using LightsCheck.Core;
 
 namespace LightsCheck.Cli;
@@ -26,7 +27,7 @@ internal static class Program
     /// <summary>
     /// The whole console, testable: the tests call this with a StringWriter and compare the
     /// text. Exit 0 on a clean run and for --help, 1 on an error or when a frame could not be
-    /// read (R-002, R-004, R-017).
+    /// read (R-002, R-004, R-017, R-026).
     /// </summary>
     internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
     {
@@ -56,9 +57,30 @@ internal static class Program
                 return 0;
             }
 
-            Inventory inv = InventoryRun.Run(o.Folder!);
-            InventoryReport.Write(inv, stdout);
-            return inv.HasErrors ? 1 : 0;
+            if (o.Inventory)
+            {
+                Inventory inv = InventoryRun.Run(o.Folder!);
+                InventoryReport.Write(inv, stdout);
+                return inv.HasErrors ? 1 : 0;
+            }
+
+            // Progress on stderr, one line rewritten, so stdout stays the report alone. Written
+            // synchronously on the reporting thread (Progress<T> would post to the thread pool and
+            // could print after the report), under a lock since the frames finish in parallel.
+            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads), new ConsoleProgress(stderr));
+            stderr.Write("\r                        \r");
+            SeriesReport.Write(r, stdout);
+            if (o.Out is not null)
+            {
+                IReadOnlyList<string> written = SeriesOutputs.WriteAll(r, o.Out);
+                stdout.WriteLine();
+                foreach (string p in written)
+                {
+                    stdout.WriteLine($"    -> scris: {p}");
+                }
+            }
+
+            return r.HasErrors ? 1 : 0;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
         {
@@ -67,18 +89,39 @@ internal static class Program
         }
     }
 
+    /// <summary>Progress written as it happens, on the calling thread, serialised by a lock.</summary>
+    private sealed class ConsoleProgress(TextWriter stderr) : IProgress<(int Done, int Total)>
+    {
+        private readonly Lock _lock = new();
+
+        public void Report((int Done, int Total) value)
+        {
+            lock (_lock)
+            {
+                stderr.Write($"\r    cadrul {value.Done.ToString(CultureInfo.InvariantCulture)} / {value.Total.ToString(CultureInfo.InvariantCulture)}");
+            }
+        }
+    }
+
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();
-        w.WriteLine("Folosire: lightscheck <folder sesiune> [--frame N]");
+        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]");
+        w.WriteLine("          lightscheck <folder sesiune> --inventory");
+        w.WriteLine("          lightscheck <folder sesiune> --frame N");
         w.WriteLine();
         w.WriteLine("  Folderul sesiunii Siril: cadrele se iau din lights\\ (sau direct din folder,");
         w.WriteLine("  daca nu exista lights\\), iar bias-urile, optional, din biases\\. Raw de aparat");
         w.WriteLine("  (" + string.Join(", ", RawReader.RawExtensions) + ") sau FITS. Nimic nu e scris in folder.");
         w.WriteLine();
-        w.WriteLine("  Fara optiuni: inventarul cadrelor (metadate, interval, pauze).");
-        w.WriteLine("  --frame N     masoara cadrul N (1 = primul din lights\\): nivele, fond, zgomot,");
-        w.WriteLine("                stele (FWHM, alungire, unghi), halo, dare.");
+        w.WriteLine("  Fara optiuni: masoara toate cadrele si tipareste raportul: focus, expunere si");
+        w.WriteLine("                zgomot, roua, cadre miscate, drift, dithering, lista de respins.");
+        w.WriteLine("  --out DIR     scrie in DIR raportul, un CSV cu toate cifrele si lista de respins");
+        w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
+        w.WriteLine("  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).");
+        w.WriteLine("  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");
+        w.WriteLine("  --frame N     masoara un singur cadru (1 = primul din lights\\).");
         w.WriteLine("  -h, --help    acest text");
         w.WriteLine();
         w.WriteLine("Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.");

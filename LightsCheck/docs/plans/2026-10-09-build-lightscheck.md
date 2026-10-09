@@ -69,3 +69,10 @@ Veil session equals the one in `docs/validation/2026-10-06-veil/raport.md`.
 - Step 1: the kit's tests of its own scripts, hooks and guide were dropped rather than kept
   (ADR 0001); ImageSharp was not copied (no preview is shown); the kit's `src/` and `tests/`
   layout was kept instead of FlatCheck's root layout (ADR 0001).
+- Step 2: the saturation margin became a function of the scale (a float 0..1 FITS would have
+  read every pixel as saturated); frames smaller than a tile are one tile.
+- Step 3: the dither move threshold is 5 px, not the 3 px the plan's list had: with 3 px the
+  Veil session's back-to-back drifts (1 to 7 px) counted as 15 extra moves and the nine presses
+  "without effect" of the hand report disappeared (ADR 0007). The default console run is now
+  the whole series and the inventory moved behind `--inventory`. The RA axis is read from a
+  plate-solved FITS at the session root when there is one (the plan had it as "maybe").

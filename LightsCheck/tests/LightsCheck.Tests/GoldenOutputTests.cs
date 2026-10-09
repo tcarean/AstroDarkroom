@@ -32,7 +32,7 @@ public class GoldenOutputTests
     {
         using SessionFixture s = new SessionFixture().WithLights(5, biases: 3);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0006.fit"), new byte[100]);
-        (int code, string stdout, string stderr) = Cli.Run(s.Root);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--inventory");
 
         string actual = Scrub(stdout, s.Root) + "--- stderr ---\n" + stderr + "--- exit " + code + " ---\n";
         Compare("inventory.txt", actual);
@@ -44,6 +44,16 @@ public class GoldenOutputTests
         using SessionFixture s = new SessionFixture().WithLights(1, withStars: true);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--frame", "1");
         Compare("frame.txt", Scrub(stdout, s.Root) + "--- stderr ---\n" + stderr + "--- exit " + code + " ---\n");
+    }
+
+    [Fact]
+    public void Series_MatchesTheGoldenText()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+        // The progress lines on stderr arrive in the order the threads finish: not golden material.
+        Assert.Contains("cadrul 8 / 8", stderr, StringComparison.Ordinal);
+        Compare("series.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
     }
 
     [Fact]

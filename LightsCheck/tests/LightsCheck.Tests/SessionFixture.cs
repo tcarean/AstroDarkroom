@@ -71,7 +71,10 @@ internal sealed class SessionFixture : IDisposable
     /// field in every frame (the seed varies the noise only), with the metadata cards and
     /// BAYERPAT so the analyzer knows the colour order.
     /// </summary>
-    internal static byte[] StarLight(DateTime start, double exposure, int seed)
+    internal static byte[] StarLight(DateTime start, double exposure, int seed) => StarLight(start, exposure, seed, 0, 0, 1.0);
+
+    /// <summary>The same field shifted by (dx, dy) pixels and, when elongation is above 1, every star trailed along the vertical axis.</summary>
+    internal static byte[] StarLight(DateTime start, double exposure, int seed, double dx, double dy, double elongation)
     {
         SyntheticFrame f = new SyntheticFrame
         {
@@ -84,10 +87,57 @@ internal sealed class SessionFixture : IDisposable
             BackgroundB = 2300,
             NoiseSigma = 40,
         }.WithStarGrid(40, 3.0, 3000, 30000);
+        for (int i = 0; i < f.Stars.Count; i++)
+        {
+            SyntheticStar s = f.Stars[i];
+            f.Stars[i] = elongation > 1
+                ? SyntheticStar.Elongated(s.X + dx, s.Y + dy, s.Peak, 3.0, elongation, 90)
+                : SyntheticStar.Round(s.X + dx, s.Y + dy, s.Peak, 3.0);
+        }
+
         Func<int, int, double> px = f.Pixel();
         string[] cards = [.. Cards(start, exposure), .. FitsTestData.BayerCards("RGGB")];
         return FitsTestData.BuildFits(f.Width, f.Height, px, bitpix: 16, extraCards: cards);
     }
+
+    /// <summary>
+    /// A series with a known dither pattern: one frame per entry, shifted by (Dx, Dy) px,
+    /// trailed when Elongation is above 1, started PauseSeconds after the previous frame's end.
+    /// </summary>
+    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0)
+    {
+        Directory.CreateDirectory(LightsDir);
+        DateTime t = FirstStart;
+        for (int i = 0; i < frames.Count; i++)
+        {
+            if (i > 0)
+            {
+                t = t.AddSeconds(exposure + frames[i].PauseSeconds);
+            }
+
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, i, frames[i].Dx, frames[i].Dy, frames[i].Elongation));
+        }
+
+        if (biases > 0)
+        {
+            string bdir = Path.Combine(Root, "biases");
+            Directory.CreateDirectory(bdir);
+            for (int i = 0; i < biases; i++)
+            {
+                SyntheticFrame b = new() { Width = 640, Height = 480, White = 65535, Seed = 500 + i, BackgroundR = 100, BackgroundG = 100, BackgroundB = 100, NoiseSigma = 12 };
+                File.WriteAllBytes(Path.Combine(bdir, $"bias_{i + 1:0000}.fit"), FitsTestData.BuildFits(b.Width, b.Height, b.Pixel(), bitpix: 16, extraCards: [.. Cards(FirstStart, 0.0002), .. FitsTestData.BayerCards("RGGB")]));
+            }
+        }
+
+        return this;
+    }
+
+    /// <summary>The eight-frame pattern the series tests and the golden use: pairs at the same spot, a move every two frames, frames 3 and 6 trailed.</summary>
+    internal static readonly (double Dx, double Dy, double Elongation, double PauseSeconds)[] Pattern =
+    [
+        (0, 0, 1.0, 0), (0.5, 0.2, 1.0, 1), (12, 0, 2.0, 30), (12.5, 0.3, 1.0, 1),
+        (12, -15, 1.0, 30), (12.5, -15, 2.0, 1), (40, -15, 1.0, 30), (40.5, -15.3, 1.0, 1),
+    ];
 
     internal static string[] Cards(DateTime start, double exposure) =>
     [
