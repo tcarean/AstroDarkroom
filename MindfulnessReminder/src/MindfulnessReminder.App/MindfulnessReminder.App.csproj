@@ -3,9 +3,6 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!-- The hybrid: WPF for the reminder window, Windows Forms purely for NotifyIcon,
          which has no WPF equivalent in the BCL. Both are in the WindowsDesktop shared

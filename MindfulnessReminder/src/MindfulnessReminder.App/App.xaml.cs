@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // Copyright (C) 2026 Tudor Carean
 //
@@ -15,10 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
 using MindfulnessReminder.Core;

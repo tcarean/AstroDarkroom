@@ -16,7 +16,6 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Windows;
-using System.Windows.Media;
 using MindfulnessReminder.Core;
 using Key = System.Windows.Input.Key;
 using Point = System.Windows.Point;

@@ -6,3 +6,11 @@ obj/
 # The repository root ignores *.app (a macOS bundle rule), which happens to match the
 # MindfulnessReminder.App project directory and hides the whole app from git.
 !src/MindfulnessReminder.App/
+
+# The kit's process files (ADR 0001).
+.verify-stamp
+artifacts/
+TestResults/
+StrykerOutput/
+tests/testdata/large/
+.claude/settings.local.json
