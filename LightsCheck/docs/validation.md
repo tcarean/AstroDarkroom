@@ -30,7 +30,6 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | V-005 | same, frame 23 (doubled stars) | frame | 11352 / 1340, FWHM 4.88 (5.24), elongation 2.23, 98 %, angle -87 at 0.98, halo 0.182, background 135, sigma 14.5, channels 27 / 135 / 135 / 153 | 2026-10-09 |
 | V-006 | same, frame 72 (clean, late) | frame | 13338 / 1886, FWHM 3.03 (3.64), elongation 1.16, 15 %, angle -76 at 0.46, halo 0.012, background 161, sigma 15.0, channels 33 / 159 / 159 / 183 | 2026-10-09 |
 | V-007 | same, frame 83 (clean, last hour) | frame | 12135 / 1662, FWHM 3.06 (3.58), elongation 1.13, 13 %, angle -87 at 0.17, halo -0.006, background 174, sigma 15.8, channels 35 / 174 / 174 / 195 | 2026-10-09 |
-
 | V-008 | same, the whole session | series | 48 good / 17 marginal / 22 bad, the bad frames 1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76; 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.48 px/min along Y; session FWHM 3.12 px; read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, walking noise insufficient | 2026-10-09 |
 
 The series figures are the console's run of 2026-10-09 (88 s on 4 threads) and equal the hand
@@ -73,3 +72,6 @@ drift instead of editing the figures.
   and model, and the measured value `Nikon D3300` replaced it before the case was accepted.
   The duty was first written as 85.96 % from 87 x 120.2 s; the measured 86.06 % counts frame
   75's 133.2 s, and replaced it the same way.
+- 2026-10-09: before 1.0.0, all eight cases re-measured on the merged code of steps 1 to 4
+  (`ValidationTests`, 8 passed, the series case in 2 min 16 s on 4 threads); no figure
+  changed.

@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory) or 'frame' (one light measured). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory), 'frame' (one light measured) or 'series' (the whole session analyzed). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",

@@ -53,8 +53,9 @@ stretched from its own 5th percentile to its own maximum into bytes, with the po
 and the `StarShape`; `SeriesReport.CropCaption` writes the caption (the words stay in
 `Report/`), and `RasterBitmaps.Grey` turns the bytes into a frozen `Gray8` bitmap in the
 window, shown 5x with nearest-neighbour scaling so the pixels stay square. Whatever the
-decoder throws becomes the note of that frame, the net `SeriesRun` casts per frame. `CropsPending` is the decode in flight; a selection made
-while it runs wins (`LoadCropsAsync` checks the selected row before publishing).
+decoder throws becomes the note of that frame, caught by the same net `SeriesRun` casts per
+frame. `CropsPending` is the decode in flight; a selection made while it runs wins
+(`LoadCropsAsync` checks the selected row before publishing).
 
 ## Drawing (`Charts.cs`)
 
