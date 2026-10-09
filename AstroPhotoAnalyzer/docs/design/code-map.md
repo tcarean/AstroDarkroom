@@ -24,6 +24,7 @@ docs/plans/                            approved plans, the implementation plan o
 AstroPhotoAnalyzer.Core/
   Input/Raster.cs                      Raster, SourceInfo
   Input/RasterOps.cs                   subsample, crop, gamma, levels, L* plane, linear guard
+  Input/LiftTable.cs                   the two linearisers: exact, or lifted with a gamma through one 16-bit table (ADR 0035)
   Input/ColorMath.cs                   sRGB, luminance, L*, paper black
   Input/Stats.cs                       percentiles (numpy), robust sigma, Otsu, SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,

@@ -55,7 +55,9 @@ luminance of the linearised channels): `LstarMedian`, `PaperBlackLstar` (from
 These are facts of the image, not the verdict (since ADR 0025 the two pixel-share flags
 are gone; the verdict is B5's).
 
-`LstarStats(raster, dmax, stride)` is public for the simulator.
+`LstarStats(raster, dmax, stride)` computes them through `LstarStats(L*, dmax)` on the plane;
+`LstarShares(L*)` gives only the two pixel shares (under 15, over 50) a simulation row carries,
+without the median's sort and the histogram, which the row does not show (ADR 0035).
 
 `LstarLadder(parameters, simulation)` is a reference table, not a measurement (window only, like
 `DpiLadder`): one `LstarLadderRow(Lstar, GrayLevel, Meaning, Chosen)` per reference of
@@ -130,8 +132,14 @@ Builds the `DustMap`, measures the as-is row (B5 on the subsample; the pixel sha
 then, when the background is strictly inside (0, 1), lifts the subsample once per step of a
 **ladder**: every `ExactTargetStep` (0.01) from `ExactTargetLo` (0.05) to `ExactTargetHi`
 (0.60), plus the grid `SimulationTargets` (0.05..0.20) and the explicit `TargetBackground`;
-gamma = `ln(target) / ln(BackgroundMedian)` on every channel (`RasterOps.Gamma`, a 16-bit
-lookup table with linear interpolation, exact on 16-bit sources). The grid steps become
+gamma = `ln(target) / ln(BackgroundMedian)` on every channel. A step builds no lifted raster:
+one `LiftTable` for its gamma lifts and linearises every sample from a 16-bit table
+interpolated on the linear value (`input.md`), `DustAnalyzer.PatchLstars(sub, table)` sums the
+patch luminances straight from it, and a grid row's pixel shares come from
+`TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, table))`; the as-is row stays on the
+exact path (ADR 0035; before it, `RasterOps.Gamma` plus a `Math.Pow` per lifted sample made
+the lifted passes 15 of the simulation's 17 s on the FITS; the whole simulation takes 2.6 s
+now). The grid steps become
 `SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,
 `PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `DustOnPaperBlack`,
 `SkyVisible` = the sky, rounded to the one decimal the table prints, at or above

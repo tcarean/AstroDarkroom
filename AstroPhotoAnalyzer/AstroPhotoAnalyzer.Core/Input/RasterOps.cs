@@ -70,13 +70,13 @@ namespace AstroPhotoAnalyzer
         internal static Raster Gamma(Raster r, double gamma)
         {
             // Printr-o tabela pe cele 65536 de niveluri de 16 biti, nu prin Math.Pow pe fiecare
-            // esantion: simularea ridica subesantionul de ~60 de ori (scara tintei exacte,
-            // ADR 0025), si 60 x 4 milioane de Pow ar fi secunde. Pe o sursa de 16 biti
-            // valoarea cade exact pe un nivel al tabelei si rezultatul e cel al lui Pow; pe
-            // float (FITS) se interpoleaza liniar intre cele doua niveluri vecine, cu o eroare
-            // sub 1e-6 pe orice gamma dintre 0.3 si 3.
-            var lut = new double[65537];
-            for (int k = 0; k < lut.Length; k++) lut[k] = Math.Pow(k / 65535.0, gamma);
+            // esantion: pe un raster de 4 milioane de esantioane Pow ar fi secunde. Pe o sursa
+            // de 16 biti valoarea cade exact pe un nivel al tabelei si rezultatul e cel al lui
+            // Pow; pe float (FITS) se interpoleaza liniar intre cele doua niveluri vecine, cu o
+            // eroare sub 1e-6 pe orice gamma dintre 0.3 si 3. Simularea de print nu mai trece
+            // pe aici: ridica si liniarizeaza dintr-o singura tabela (LiftTable, ADR 0035);
+            // aici raman preview-ul si harta ferestrei, care au nevoie de rasterul ridicat.
+            double[] lut = PowerLut(gamma);
             var o = new Raster(r.H, r.W, r.Planes.Length) { Source = r.Source };
             for (int p = 0; p < r.Planes.Length; p++)
             {
@@ -93,6 +93,17 @@ namespace AstroPhotoAnalyzer
                 }
             }
             return o;
+        }
+
+        /// <summary>
+        /// Tabela curbei v^gamma pe cele 65536 de niveluri de 16 biti, plus nivelul 65536 ca
+        /// interpolarea sa aiba vecin si la 1.0: aceeasi pentru Gamma si pentru LiftTable.
+        /// </summary>
+        internal static double[] PowerLut(double gamma)
+        {
+            var lut = new double[65537];
+            for (int k = 0; k < lut.Length; k++) lut[k] = Math.Pow(k / 65535.0, gamma);
+            return lut;
         }
 
         /// <summary>Gamma care duce fundalul <paramref name="from"/> in <paramref name="to"/>.</summary>
@@ -115,20 +126,27 @@ namespace AstroPhotoAnalyzer
         /// e L*-ul valorii. Vectorul e in ordinea pixelilor, bun de sortat.
         /// </summary>
         internal static float[] LstarPlane(Raster r, int stride)
+            => LstarPlane(Subsample(r, stride), new ExactLinearizer());
+
+        /// <summary>
+        /// L* pentru fiecare pixel al unui raster DEJA subesantionat, cu esantioanele trecute
+        /// prin <paramref name="lin"/>: exact, sau ridicate cu o gamma si liniarizate din
+        /// tabela (LiftTable), cum le vrea simularea pe randurile grilei.
+        /// </summary>
+        internal static float[] LstarPlane<T>(Raster s, T lin) where T : struct, ISrgbLinearizer
         {
-            Raster s = Subsample(r, stride);
             var o = new float[s.H * s.W];
             if (s.IsColor)
             {
                 float[] R = s.Planes[0], G = s.Planes[1], B = s.Planes[2];
                 for (int i = 0; i < o.Length; i++)
-                    o[i] = (float)ColorMath.LstarOfSrgb(R[i], G[i], B[i]);
+                    o[i] = (float)ColorMath.LstarOfY(ColorMath.Luminance(lin.Linear(R[i]), lin.Linear(G[i]), lin.Linear(B[i])));
             }
             else
             {
                 float[] M = s.Planes[0];
                 for (int i = 0; i < o.Length; i++)
-                    o[i] = (float)ColorMath.LstarOfY(ColorMath.SrgbToLinear(M[i]));
+                    o[i] = (float)ColorMath.LstarOfY(lin.Linear(M[i]));
             }
             return o;
         }

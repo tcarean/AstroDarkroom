@@ -42,7 +42,8 @@ are in `kit.json`, not here.
   copied from the folder `testdata/manifest.json` names, and the lab's two ICC profiles (V-006,
   V-007; ADR 0030), from the page the manifest names; the manifest holds the four hashes. A
   worktree has no copies: copy the images into the worktree's `testdata/large/` first, or every
-  case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 11 to 23 s.
+  case prints `NOT MEASURED`. A case runs the whole analysis on a 23 MP image, 10 to 15 s
+  (the twelve cases together about 2.5 min; before ADR 0035 a case took up to 27 s).
 - At step 3: the table's second column is the case's parameters, not a fixture; the figures are
   the ones `ValidationTests` prints on its `MEASURED` line.
 
