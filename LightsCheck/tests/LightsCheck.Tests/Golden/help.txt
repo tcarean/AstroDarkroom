@@ -1,12 +1,15 @@
 lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: lightscheck <folder sesiune>
+Folosire: lightscheck <folder sesiune> [--frame N]
 
   Folderul sesiunii Siril: cadrele se iau din lights\ (sau direct din folder,
   daca nu exista lights\), iar bias-urile, optional, din biases\. Raw de aparat
   (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
 
+  Fara optiuni: inventarul cadrelor (metadate, interval, pauze).
+  --frame N     masoara cadrul N (1 = primul din lights\): nivele, fond, zgomot,
+                stele (FWHM, alungire, unghi), halo, dare.
   -h, --help    acest text
 
 Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.

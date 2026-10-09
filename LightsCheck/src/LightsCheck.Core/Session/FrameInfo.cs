@@ -40,6 +40,14 @@ internal sealed record FrameInfo(
 {
     internal string FileName => System.IO.Path.GetFileName(Path);
 
+    /// <summary>The shot fields of a loaded frame, whether or not its pixels were decoded.</summary>
+    internal static FrameInfo From(int index, string path, LoadedFrame f)
+    {
+        ArgumentNullException.ThrowIfNull(f);
+        return new FrameInfo(index, path, f.Camera, f.FocalMm, f.FNumber, f.ExposureSeconds, f.Iso,
+            f.Timestamp, f.PixelSizeUm, f.NikonLensId, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
+    }
+
     /// <summary>Reads the metadata of one file; never throws, the error becomes part of the record.</summary>
     internal static FrameInfo Read(int index, string path)
     {
@@ -54,8 +62,7 @@ internal sealed record FrameInfo(
                 return new FrameInfo(index, path, null, null, null, null, null, null, null, null, null, null, null, "nu e un fisier FITS (nu incepe cu SIMPLE)");
             }
 
-            return new FrameInfo(index, path, f.Camera, f.FocalMm, f.FNumber, f.ExposureSeconds, f.Iso,
-                f.Timestamp, f.PixelSizeUm, f.NikonLensId, f.LensMinFocalMm, f.LensMaxFocalMm, f.LensMaxAperture, null);
+            return From(index, path, f);
         }
         catch (Exception e)
         {

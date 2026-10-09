@@ -70,6 +70,46 @@ Ce se afiseaza azi:
 manual e pauza in care ai miscat montura. Ora vine din EXIF (ora aparatului) pe un raw si din
 `DATE-OBS` (UTC, cum il scrie Siril) pe un FITS.
 
+### Un singur cadru: `--frame N`
+
+```
+lightscheck <folder sesiune> --frame 4
+```
+
+Decodeaza al N-lea cadru din `lights/` (1 = primul) si il masoara:
+
+```
+=== CADRU 4: DSC_0004.NEF ===
+    dimensiune         : 6016 x 4016 px; scara 150 .. 4095 ADU (libraw (exact))
+    nivele CFA         : R 25 (saturati 63, min -3)  G1 120 (saturati 414, min 1)  G2 120 ...  [ADU peste black]
+    fond verde         : median 120, centru 165, colturi 76 .. 86 (dale 71 .. 171); zgomot sigma 13.1
+    stele              : 15132 detectate, 2104 luminoase, 357 saturate; 398 masurate
+    FWHM               : 3.06 px median (p90 3.64); centru 3.15 (95), mijloc 3.08 (202), margine 2.90 (101)
+    alungire           : 1.15 mediana (p90 1.39); 14 % peste 1.3; unghi 86 grade, coerenta 0.36; ...
+    halo               : 0.019 (inel 5-10 px / nucleu 3 px, la cele mai luminoase 40 stele)
+    dare               : 0
+    inregistrare       : 600 stele retinute
+```
+
+- `nivele CFA`: mediana fiecarei pozitii Bayer peste black, cati pixeli ating varful scarii
+  (stelele luminoase; nebuloasa nu ar trebui sa apara aici), minimul (sub 0 = zgomot, nu
+  taiere in negru).
+- `fond verde`: fondul de cer pe verde, din mediane pe dale de 128 px; `centru` vs `colturi`
+  arata vignetarea si gradientul; `zgomot sigma` e abaterea robusta a pixelului fata de fond.
+- `stele`: cate componente de marimea unei stele s-au detectat la 5 sigma, cate au varful
+  peste 50 sigma, cate ating saturatia; `masurate` = cele carora li s-a masurat forma (cele
+  mai luminoase 400, nesaturate).
+- `FWHM`: latimea stelelor in pixeli (focusul), pe tot cadrul si pe trei zone radiale, cu
+  numarul de stele din fiecare in paranteze; margini mai mari decat centrul = coma sau camp
+  curb.
+- `alungire`: raportul axelor (1 = rotund); `% peste 1.3` cate stele sunt vizibil alungite;
+  `unghi` e directia axei mari fata de orizontala, `coerenta` cat de bine se aliniaza stelele
+  (aproape de 1 = toate in aceeasi directie, deci urmarirea; mic = fara directie, deci optica
+  sau zgomot).
+- `halo`: cat din lumina unei stele luminoase sta intr-un inel de 5-10 px fata de nucleul de
+  3 px; creste cu roua sau ceata.
+- `dare`: urme de sateliti sau avioane, cu lungimea si coltul din stanga-sus.
+
 ## Compilare
 
 .NET SDK 9.0.3xx (`global.json`). `dotnet build LightsCheck.sln -c Release`. Gate-ul complet

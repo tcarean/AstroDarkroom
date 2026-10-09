@@ -1,8 +1,9 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory) or 'frame' (one light measured). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",
+      "kind": "inventory",
       "session": "Veil/2026-10-06-3h",
       "measuredOn": "2026-10-09",
       "expected": {
@@ -16,6 +17,60 @@
         "dutyPct": 86.06
       },
       "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "dutyPct": 0.05 }
+    },
+    {
+      "id": "V-002",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 1,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 12308, "bright": 1532, "fwhm": 3.85, "fwhmP90": 4.17, "elongation": 1.68, "elongatedFraction": 0.98, "angle": 83, "coherence": 0.94, "halo": 0.035, "background": 128, "sigma": 13.9, "channels": [27, 126, 126, 144], "fwhmCentre": 3.90, "fwhmEdge": 3.74, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-003",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 4,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 15132, "bright": 2104, "fwhm": 3.06, "fwhmP90": 3.64, "elongation": 1.15, "elongatedFraction": 0.14, "angle": 86, "coherence": 0.36, "halo": 0.019, "background": 120, "sigma": 13.1, "channels": [25, 120, 120, 138], "fwhmCentre": 3.15, "fwhmEdge": 2.90, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-004",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 17,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 9763, "bright": 1176, "fwhm": 4.92, "fwhmP90": 5.58, "elongation": 2.29, "elongatedFraction": 0.99, "angle": -89, "coherence": 0.98, "halo": 0.387, "background": 131, "sigma": 14.3, "channels": [27, 129, 129, 147], "fwhmCentre": 4.90, "fwhmEdge": 4.92, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-005",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 23,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 11352, "bright": 1340, "fwhm": 4.88, "fwhmP90": 5.24, "elongation": 2.23, "elongatedFraction": 0.98, "angle": -87, "coherence": 0.98, "halo": 0.182, "background": 135, "sigma": 14.5, "channels": [27, 135, 135, 153], "fwhmCentre": 4.93, "fwhmEdge": 4.78, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 3, "coherence": 0.03, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-006",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 72,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 13338, "bright": 1886, "fwhm": 3.03, "fwhmP90": 3.64, "elongation": 1.16, "elongatedFraction": 0.15, "angle": -76, "coherence": 0.46, "halo": 0.012, "background": 161, "sigma": 15.0, "channels": [33, 159, 159, 183], "fwhmCentre": 3.10, "fwhmEdge": 2.88, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-007",
+      "kind": "frame",
+      "session": "Veil/2026-10-06-3h",
+      "frame": 83,
+      "measuredOn": "2026-10-09",
+      "expected": { "detected": 12135, "bright": 1662, "fwhm": 3.06, "fwhmP90": 3.58, "elongation": 1.13, "elongatedFraction": 0.13, "angle": -87, "coherence": 0.17, "halo": -0.006, "background": 174, "sigma": 15.8, "channels": [35, 174, 174, 195], "fwhmCentre": 3.12, "fwhmEdge": 2.92, "trails": 0 },
+      "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
     }
   ]
 }

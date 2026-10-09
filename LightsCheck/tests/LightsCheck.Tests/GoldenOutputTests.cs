@@ -39,6 +39,14 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void Frame_MatchesTheGoldenText()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(1, withStars: true);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--frame", "1");
+        Compare("frame.txt", Scrub(stdout, s.Root) + "--- stderr ---\n" + stderr + "--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");
