@@ -22,6 +22,12 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>One paragraph of the Respinse explanation; the window sets the emphasised one in bold (R-037).</summary>
+public sealed record ParagraphVm(string Text, bool Emphasis);
+
+/// <summary>A table of the Dithering tab, the core's cells as they are (R-037).</summary>
+public sealed record TableVm(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
+
 /// <summary>One labelled line of a section, with the verdict chip when the line opens with one.</summary>
 public sealed record RowVm(string Label, string Value, string? Verdict)
 {
@@ -209,10 +215,13 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<GuideLine> ElongationGuides { get; private set; } = [];
     public IReadOnlyList<ChartPoint> StarPoints { get; private set; } = [];
     public IReadOnlyList<ChartPoint> BackgroundPoints { get; private set; } = [];
+    public IReadOnlyList<TableVm> DitherTables { get; private set; } = [];
     public string MapXLabel { get; private set; } = "X";
     public string MapYLabel { get; private set; } = "Y";
+    public string DxHeader { get; private set; } = "dX";
+    public string DyHeader { get; private set; } = "dY";
     public string RejectedHeading { get; private set; } = "";
-    public string RejectedExplanation => SeriesReport.RejectedExplanation;
+    public IReadOnlyList<ParagraphVm> RejectedExplanation { get; } = SeriesReport.RejectedExplanation.Select(p => new ParagraphVm(p.Text, p.Emphasis)).ToList();
 
     public FrameRowVm? SelectedFrame
     {
@@ -329,6 +338,10 @@ public sealed class MainViewModel : ObservableObject
         Report = "";
         SessionRows = SummaryRows = FocusRows = NoiseRows = DewRows = TrailRows = DriftRows = DitherRows = [];
         Frames = Rejected = [];
+        DitherTables = [];
+        (DxHeader, DyHeader) = ("dX", "dY");
+        (MapXLabel, MapYLabel) = ("X", "Y");
+        RejectedHeading = "";
         MapPoints = StepPoints = NearestPoints = FwhmPoints = ElongationPoints = StarPoints = BackgroundPoints = [];
         StepGuides = ElongationGuides = [];
         SelectedFrame = null;
@@ -364,7 +377,8 @@ public sealed class MainViewModel : ObservableObject
         DewRows = Rows(SeriesReport.DewRows(r));
         TrailRows = Rows(SeriesReport.TrailRows(r));
         DriftRows = Rows(SeriesReport.DriftRows(r));
-        DitherRows = Rows(SeriesReport.DitherRows(r));
+        DitherRows = Rows(SeriesReport.DitherScalarRows(r));
+        DitherTables = SeriesReport.DitherTables(r).Select(t => new TableVm(t.Title, t.Columns, t.Rows)).ToList();
 
         SeriesAnalysis s = r.Series;
         DitherAnalysis d = r.Dither;
@@ -401,12 +415,8 @@ public sealed class MainViewModel : ObservableObject
         ElongationGuides = [new GuideLine(Th.ElongationMarginal, "la limita", VerdictPalette.Warn), new GuideLine(Th.ElongationBad, "SLAB", VerdictPalette.Bad)];
         StarPoints = stars;
         BackgroundPoints = bg;
-        (MapXLabel, MapYLabel) = s.RaAxis switch
-        {
-            Axis.Y => ("X = DEC", "Y = RA"),
-            Axis.X => ("X = RA", "Y = DEC"),
-            _ => ("X", "Y"),
-        };
+        (MapXLabel, MapYLabel) = SeriesReport.AxisLabels(s);
+        (DxHeader, DyHeader) = SeriesReport.PositionHeaders(s);
         RaiseAll();
     }
 
@@ -464,7 +474,7 @@ public sealed class MainViewModel : ObservableObject
             nameof(HasResult), nameof(SessionRows), nameof(SummaryRows), nameof(FocusRows), nameof(NoiseRows), nameof(DewRows), nameof(TrailRows),
             nameof(DriftRows), nameof(DitherRows), nameof(Frames), nameof(Rejected), nameof(RejectedHeading), nameof(MapPoints), nameof(StepPoints),
             nameof(NearestPoints), nameof(StepGuides), nameof(FwhmPoints), nameof(ElongationPoints), nameof(ElongationGuides), nameof(StarPoints),
-            nameof(BackgroundPoints), nameof(MapXLabel), nameof(MapYLabel),
+            nameof(BackgroundPoints), nameof(MapXLabel), nameof(MapYLabel), nameof(DitherTables), nameof(DxHeader), nameof(DyHeader),
         })
         {
             Raise(name);

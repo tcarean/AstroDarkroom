@@ -51,6 +51,18 @@ public class SeriesAnalyzerTests
     }
 
     [Fact]
+    public void R036_TheAxisWordsFollowTheRaAxisAndStayPlainWithoutOne()
+    {
+        SeriesAnalysis s = Analyze(Frame(1, Measurement(3.0, 1.1, 10000, 120)));
+        Assert.Equal(Axis.Unknown, s.RaAxis);
+        Assert.Equal(("X", "Y"), SeriesReport.AxisLabels(s));
+        Assert.Equal(("dX", "dY"), SeriesReport.PositionHeaders(s));
+        Assert.Equal(("X = RA", "Y = DEC"), SeriesReport.AxisLabels(s with { RaAxis = Axis.X }));
+        Assert.Equal(("dX (RA)", "dY (DEC)"), SeriesReport.PositionHeaders(s with { RaAxis = Axis.X }));
+        Assert.Equal(("dX (DEC)", "dY (RA)"), SeriesReport.PositionHeaders(s with { RaAxis = Axis.Y }));
+    }
+
+    [Fact]
     public void R033_TheTrailAxisIsTheImageAxisWithinTheTolerance()
     {
         Assert.Equal(TrailAxis.Ra, SeriesAnalyzer.TrailAxisOf(-88, Axis.Y));

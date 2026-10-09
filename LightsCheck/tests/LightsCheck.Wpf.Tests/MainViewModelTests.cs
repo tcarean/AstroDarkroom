@@ -383,16 +383,47 @@ public class MainViewModelTests
 
         await vm.OpenAsync(f.Root);
 
-        Assert.Equal(SeriesReport.RejectedExplanation, vm.RejectedExplanation);
-        Assert.Contains("RA", vm.RejectedExplanation, StringComparison.Ordinal);
-        Assert.Contains("DEC", vm.RejectedExplanation, StringComparison.Ordinal);
-        Assert.Contains("la limita", vm.RejectedExplanation, StringComparison.Ordinal);
-        Assert.Contains("CADRE MISCATE", vm.RejectedExplanation, StringComparison.Ordinal);
+        Assert.Equal(SeriesReport.RejectedExplanation.Select(p => p.Text), vm.RejectedExplanation.Select(p => p.Text));
+        string explanation = string.Join(" ", vm.RejectedExplanation.Select(p => p.Text));
+        Assert.Contains("RA", explanation, StringComparison.Ordinal);
+        Assert.Contains("DEC", explanation, StringComparison.Ordinal);
+        Assert.Contains("la limita", explanation, StringComparison.Ordinal);
+        Assert.Contains("CADRE MISCATE", explanation, StringComparison.Ordinal);
 
         Assert.Equal(SeriesReport.FrameRows(vm.Result!).Select(r => r.Spot), vm.Frames.Select(r => r.Spot));
         Assert.Equal("3/3 de la 1", vm.Frames[2].Spot);
         Assert.Equal("-", vm.Frames[3].Spot);
         Assert.Equal([true, true, true, false, false], vm.MapPoints.Select(p => p.Ring));
+    }
+
+    /// <summary>The headers, the FOCUS chip, the explanation paragraphs and the dithering tables are the core's, arranged (R-037).</summary>
+    [Fact]
+    public async Task R037_TheWindowTakesTheHeadersTheFocusChipTheParagraphsAndTheTablesFromTheCore()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal("dX (DEC)", vm.DxHeader);
+        Assert.Equal("dY (RA)", vm.DyHeader);
+        Assert.Equal("X = DEC", vm.MapXLabel);
+        Assert.Equal("Y = RA", vm.MapYLabel);
+
+        RowVm focus = vm.FocusRows[^1];
+        Assert.Equal("verdict", focus.Label);
+        Assert.True(focus.HasVerdict);
+        Assert.Equal("BUN", focus.Verdict);
+
+        Assert.Equal(SeriesReport.RejectedExplanation.Select(p => p.Emphasis), vm.RejectedExplanation.Select(p => p.Emphasis));
+        Assert.Single(vm.RejectedExplanation, p => p.Emphasis);
+
+        Assert.Equal(SeriesReport.DitherTables(vm.Result!).Select(t => t.Title), vm.DitherTables.Select(t => t.Title));
+        Assert.Equal(5, vm.DitherTables.Count);
+        Assert.Equal(["axa", "numai pe ea", "semn +", "semn -"], vm.DitherTables[2].Columns);
+        Assert.Equal(["X = DEC", "Y = RA", "ambele"], vm.DitherTables[2].Rows.Select(r => r[0]));
+        Assert.Equal(SeriesReport.DitherScalarRows(vm.Result!).Select(r => r.Label), vm.DitherRows.Select(r => r.Label));
+        Assert.Equal("verdict", vm.DitherRows[^1].Label);
     }
 
     [Fact]

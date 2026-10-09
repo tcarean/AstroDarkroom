@@ -23,6 +23,7 @@ Copyright (C) 2026 Tudor Carean
     FWHM median (cadre bune): 3.25 px = 19.5"
     primele / ultimele 2 bune: 3.25 / 3.25 px (+0 %) -> focusul a tinut
     centru / mijloc / margine: 3.25 / 3.25 / 3.25 px (mediane pe cadrele bune)
+    verdict            : BUN - FWHM median 3.25 px = 19.5" pe cadrele bune, 3.25 / 3.25 px (+0 %) la inceput / sfarsit: a tinut toata sesiunea
 
   EXPUNERE SI ZGOMOT
     fond de cer (ADU peste black, cadrele bune, primele -> ultimele): 2000 -> 2000 pe verde (+0 %)

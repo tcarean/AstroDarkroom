@@ -63,6 +63,21 @@ public class ValidationTests
 
                 CheckWords(SeriesRun.Run(folder, new SeriesOptions()), e);
                 break;
+            case "tables":
+                IReadOnlyList<ReportTable> tables = SeriesReport.DitherTables(SeriesRun.Run(folder, new SeriesOptions()));
+                if (e.ValueKind == JsonValueKind.Null)
+                {
+                    Console.WriteLine($"{id}: unmeasured (expected is null); the tables measured, to record:");
+                    foreach (ReportTable table in tables)
+                    {
+                        Console.WriteLine($"  {table.Title}: {string.Join(" || ", table.Rows.Select(row => string.Join(" | ", row)))}");
+                    }
+
+                    return;
+                }
+
+                CheckTables(tables, e);
+                break;
             default:
                 CheckSeries(SeriesRun.Run(folder, new SeriesOptions()), e, t);
                 break;
@@ -121,6 +136,18 @@ public class ValidationTests
         {
             int index = int.Parse(p.Name, CultureInfo.InvariantCulture);
             Assert.True(p.Value.GetString() == rows[index - 1].Spot, $"frame {index}: cell '{rows[index - 1].Spot}', expected '{p.Value.GetString()}'");
+        }
+    }
+
+    /// <summary>The dithering tables on the real session: every table named in `expected` has exactly the rows recorded, cell by cell (R-036).</summary>
+    private static void CheckTables(IReadOnlyList<ReportTable> tables, JsonElement e)
+    {
+        foreach (JsonProperty p in e.EnumerateObject())
+        {
+            ReportTable table = Assert.Single(tables, t => t.Title == p.Name);
+            string[] expected = p.Value.EnumerateArray().Select(row => string.Join(" | ", row.EnumerateArray().Select(c => c.GetString()))).ToArray();
+            string[] actual = table.Rows.Select(row => string.Join(" | ", row)).ToArray();
+            Assert.True(expected.SequenceEqual(actual), $"{p.Name}: measured [{string.Join(" || ", actual)}], expected [{string.Join(" || ", expected)}]");
         }
     }
 

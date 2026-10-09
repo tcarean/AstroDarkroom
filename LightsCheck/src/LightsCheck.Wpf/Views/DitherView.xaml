@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- DitherView: the map of positions, the steps per frame, the nearest-other-frame distance,
-     and the DITHERING rows of the report (how often, how far, directions, coverage, verdict). -->
+     and the DITHERING card: the report's scalar rows (pauses and moves, the longest stretch,
+     coverage, spans, axes, verdict) and its five tables (how often, how far, direction,
+     coverage per radius, runs), laid out as fixed-width cells. -->
 
 <UserControl x:Class="LightsCheck.Wpf.DitherView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -89,6 +91,45 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="DITHERING" />
           <ItemsControl ItemsSource="{Binding DitherRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+          <ItemsControl ItemsSource="{Binding DitherTables}" Margin="0,4,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Margin="0,10,0,0">
+                  <TextBlock Style="{StaticResource Muted}" Text="{Binding Title}" Margin="0,0,0,4" />
+                  <ItemsControl ItemsSource="{Binding Columns}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Style="{StaticResource Faint}" FontSize="11" Width="100" Margin="0,0,4,2" TextWrapping="Wrap" Text="{Binding}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <ItemsControl ItemsSource="{Binding Rows}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <ItemsControl ItemsSource="{Binding}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                              <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="12" Width="100" Margin="0,0,4,2" Text="{Binding}" />
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </StackPanel>
       </Border>
     </ScrollViewer>

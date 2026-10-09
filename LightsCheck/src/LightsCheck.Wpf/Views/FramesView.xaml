@@ -109,8 +109,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="fond" ToolTip="fondul de cer pe verde, ADU peste black" />
           <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="pauza" ToolTip="secunde de la sfarsitul cadrului anterior" />
           <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="pas" ToolTip="deplasarea fata de cadrul anterior, px" />
-          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="dX" ToolTip="pozitia fata de cadrul 1, px" />
-          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="dY" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
+          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
           <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="acelasi loc" ToolTip="al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise" />
           <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="motive" />
         </Grid>
