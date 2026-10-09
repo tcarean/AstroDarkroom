@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The window. The same core as lightscheck.exe, through LightsCheck.Core: it computes no
+       figure and writes no sentence of its own; it calls Runs/ and shows what comes back
+       (ADR 0008). net9.0-windows + UseWPF makes this project Windows-only, so the solution
+       builds on Windows only; the console alone builds anywhere.
+       No <InvariantGlobalization> here: WPF needs culture data to bind anything and would
+       throw while loading XAML (FlatCheck's ADR 0037); App.ForceInvariantNumbers pins the
+       number culture instead. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>LightsCheck.Wpf</RootNamespace>
+    <AssemblyName>LightsCheck.Wpf</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- The executable's icon (Explorer, the taskbar); the window takes the same file through
+         the <Resource> below and Icon= in MainWindow.xaml. Drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\lightscheck.ico</ApplicationIcon>
+    <!-- DarkTitleBar's LibraryImport (DwmSetWindowAttribute) is source-generated as unsafe
+         code; nothing else in the project is unsafe. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- A WPF project gets no System.IO in its implicit usings (Path would collide with
+         System.Windows.Shapes.Path); the view-models read files, so it is added here. -->
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LightsCheck.Core\LightsCheck.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\Icon\lightscheck.ico" Link="Icon\lightscheck.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="LightsCheck.Wpf.Tests" />
+  </ItemGroup>
+</Project>

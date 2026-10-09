@@ -22,6 +22,25 @@ namespace LightsCheck.Tests;
 /// <summary>The whole series on the synthetic eight-frame session (R-022 to R-028).</summary>
 public class SeriesTests
 {
+    /// <summary>The table rows and the RESPINSE heading the window shows are the console's (R-027, ADR 0008).</summary>
+    [Fact]
+    public void R027_TheTableRowsAndTheRejectedHeadingAreWhatTheConsolePrints()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(), null, CancellationToken.None);
+
+        IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string text = sw.ToString();
+
+        Assert.Equal(8, rows.Count);
+        Assert.Equal("SLAB", rows[2].Class);
+        Assert.Contains($"  RESPINSE ({SeriesReport.RejectedHeading(r)})", text, StringComparison.Ordinal);
+        Assert.Contains($"  {rows[2].Elongation,5}  {rows[2].Fwhm,5}  ", text, StringComparison.Ordinal);
+        Assert.Equal([3, 6], SeriesReport.RejectedRows(r).Select(x => x.Index));
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);

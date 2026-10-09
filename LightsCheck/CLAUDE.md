@@ -19,6 +19,7 @@ neither computes a number itself. It never modifies, moves or writes anything in
 - One test: `dotnet test LightsCheck.sln --filter "FullyQualifiedName~R002"`
 - Format: `dotnet format LightsCheck.sln` (check only: `--verify-no-changes`)
 - Run: `dotnet run --project src/LightsCheck.Cli -- <session folder>`
+- Window: `dotnet run --project src/LightsCheck.Wpf -- [session folder]`
 - Golden console texts, after an intended output change (the rule "Golden files"):
   `LIGHTSCHECK_UPDATE_GOLDEN=1 dotnet test LightsCheck.sln --filter GoldenOutputTests`
 - Figures on the real sessions (minutes, not in the gate): `/validate`, or
@@ -41,11 +42,19 @@ neither computes a number itself. It never modifies, moves or writes anything in
   FlatCheck, ADR 0003), `Session/` finds the frames, `Analysis/` decides numbers, `Report/`
   decides words (Romanian), `Runs/` chains them; both applications call `Runs/` only.
 - `src/LightsCheck.Cli/` - the console, `lightscheck.exe`: options, dispatch, exit code.
+- `src/LightsCheck.Wpf/` - the window, `LightsCheck.Wpf.exe`: the theme and the small pieces
+  copied from FlatCheck (`Theme/`, `Presentation/`), the view-models (`ViewModels/`), the XAML
+  (`Views/`, `MainWindow.xaml`). It binds the core's report rows and computes nothing (ADR
+  0008). `Icon/` holds the one icon of both executables, drawn per size by `make_icon.py`.
 - `tests/LightsCheck.Tests/` - unit, acceptance (`AcceptanceTests`), golden texts
   (`GoldenOutputTests`, `Golden/`), figures (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `ThirdPartyTests`, `VersionTests`). Every frame
   is generated in the tests (`SessionFixture`, `FitsTestData`); `tests/testdata/` holds only
   the manifest. The real sessions stay outside git (`docs/validation.md`).
+- `tests/LightsCheck.Wpf.Tests/` - the window's tests, Windows-only: view-models, the window
+  rendered with real results and no binding error (`WindowSmokeTests`,
+  `LIGHTSCHECK_DUMP_SCREENS=<folder>` saves a PNG per screen), culture, icon. It links the
+  fixtures of `LightsCheck.Tests`.
 - `prototype/` - the Python scripts of the 2026-10-09 analysis of the Veil session, frozen:
   the numeric oracle of the validation figures, neither maintained nor run by the gate
   (ADR 0003). `docs/validation/2026-10-06-veil/` holds their report and CSV.

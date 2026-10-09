@@ -1,0 +1,384 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+using System.Windows.Media.Imaging;
+using LightsCheck.Core;
+using LightsCheck.Tests;
+
+namespace LightsCheck.Wpf.Tests;
+
+/// <summary>
+/// Opening a folder end to end (R-029), what the tabs hold (R-030), the star cut-outs (R-031)
+/// and the export (R-032). The frames are the synthetic eight-frame pattern of the core's
+/// tests, with frames 3 and 6 trailed.
+/// </summary>
+public class MainViewModelTests
+{
+    [Fact]
+    public async Task R029_OpeningAFolderRunsTheWholeSeriesByItself()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.True(vm.HasResult);
+        Assert.False(vm.IsRunning);
+        Assert.True(vm.IsIdle);
+        Assert.False(vm.HasProblem);
+        Assert.Equal(f.Root, vm.Folder);
+        Assert.Equal(8, vm.Frames.Count);
+        Assert.StartsWith("lightscheck ", vm.Report, StringComparison.Ordinal);
+        Assert.Null(vm.Status);
+    }
+
+    [Fact]
+    public async Task R029_AFolderThatCannotBeAnalysedBecomesTheProblemCard()
+    {
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(Path.Combine(ws.Dir, "missing"));
+
+        Assert.True(vm.HasProblem);
+        Assert.False(vm.HasResult);
+        Assert.False(vm.IsRunning);
+        Assert.True(vm.HasFolder);
+        Assert.Contains("missing", vm.ProblemText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task R029_StoppingTheRunLeavesNoResultAndTheWindowIdle()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        Task run = vm.OpenAsync(f.Root);
+        vm.CancelPending();
+        await run;
+
+        Assert.False(vm.HasResult);
+        Assert.False(vm.IsRunning);
+        Assert.False(vm.HasProblem);
+    }
+
+    /// <summary>A run superseded by a later OpenAsync must not write its "stopped" line over the new run's state.</summary>
+    [Fact]
+    public async Task R029_ARunSupersededByAnotherFolderLeavesNoStatusLine()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+
+        Task first = vm.OpenAsync(f.Root);
+        Task second = vm.OpenAsync(Path.Combine(ws.Dir, "missing"));
+        await Task.WhenAll(first, second);
+
+        Assert.Null(vm.Status);
+        Assert.True(vm.HasProblem);
+        Assert.False(vm.HasResult);
+        Assert.False(vm.IsRunning);
+    }
+
+    [Fact]
+    public async Task R029_StoppingAlwaysSaysSo()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        Task run = vm.OpenAsync(f.Root);
+        vm.CancelPending();
+        await run;
+
+        Assert.Equal("Analiza a fost oprita.", vm.Status);
+    }
+
+    [Fact]
+    public async Task R029_OpeningAnotherFolderDropsTheFirstResult()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        Assert.True(vm.HasResult);
+
+        await vm.OpenAsync(Path.Combine(ws.Dir, "missing"));
+
+        Assert.False(vm.HasResult);
+        Assert.Empty(vm.Frames);
+        Assert.Empty(vm.Report);
+        Assert.True(vm.HasProblem);
+    }
+
+    /// <summary>The inputs the files do not carry: invariant parsing, the D3300's pixel when blank or wrong.</summary>
+    [Theory]
+    [InlineData("4.5", 4.5, true)]
+    [InlineData("3.92", 3.92, true)]
+    [InlineData("", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("abc", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("4,5", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("-1", SeriesOptions.D3300PixelUm, false)]
+    public void R029_ThePixelInputIsParsedInvariantAndFallsBackToTheD3300(string typed, double expected, bool valid)
+    {
+        MainViewModel vm = new() { PixelText = typed };
+
+        Assert.Equal(expected, vm.Options.PixelSizeUm);
+        Assert.Equal(valid, vm.PixelIsValid);
+    }
+
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("3", 3)]
+    [InlineData("0", 0)]
+    [InlineData("x", 0)]
+    public void R029_TheThreadsInputIsAPositiveCountOrTheDefault(string typed, int expected)
+    {
+        MainViewModel vm = new() { ThreadsText = typed };
+
+        Assert.Equal(expected, vm.Options.Threads);
+    }
+
+    [Fact]
+    public void R029_ThePixelInputStartsAtTheD3300()
+    {
+        MainViewModel vm = new();
+
+        Assert.Equal("3.92", vm.PixelText);
+        Assert.True(vm.PixelIsValid);
+        Assert.Equal("", vm.ThreadsText);
+    }
+
+    [Fact]
+    public async Task R030_TheTabsHoldTheReportRowsAndTheFramesTable()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: 2);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.NotEmpty(vm.SessionRows);
+        Assert.Contains(vm.SessionRows, r => r.Label == "scara");
+        Assert.NotEmpty(vm.SummaryRows);
+        Assert.NotEmpty(vm.FocusRows);
+        Assert.NotEmpty(vm.NoiseRows);
+        Assert.NotEmpty(vm.DewRows);
+        Assert.NotEmpty(vm.TrailRows);
+        Assert.NotEmpty(vm.DriftRows);
+        Assert.NotEmpty(vm.DitherRows);
+        Assert.Contains(vm.SummaryRows, r => r.HasVerdict);
+
+        Assert.Equal(Enumerable.Range(1, 8), vm.Frames.Select(r => r.Index));
+        Assert.Equal(SeriesReport.FrameRows(vm.Result!).Select(r => r.Fwhm), vm.Frames.Select(r => r.Fwhm));
+        Assert.Equal("SLAB", vm.Frames[2].Class);
+        Assert.Equal("SLAB", vm.Frames[5].Class);
+        Assert.Equal("bun", vm.Frames[0].Class);
+        Assert.Contains("alungire", vm.Frames[2].Reasons, StringComparison.Ordinal);
+        Assert.Equal("", vm.Frames[0].Reasons);
+
+        Assert.Equal(8, vm.MapPoints.Count);
+        Assert.Equal(8, vm.StepPoints.Count);
+        Assert.Equal(8, vm.NearestPoints.Count);
+        Assert.Equal(8, vm.FwhmPoints.Count);
+        Assert.Equal(8, vm.ElongationPoints.Count);
+        Assert.Equal(8, vm.StarPoints.Count);
+        Assert.Equal(8, vm.BackgroundPoints.Count);
+        Assert.Equal(2, vm.StepGuides.Count);
+        Assert.Equal(2, vm.ElongationGuides.Count);
+        Assert.Equal(Th.ElongationMarginal, vm.ElongationGuides[0].Value);
+        Assert.Equal(Th.ElongationBad, vm.ElongationGuides[1].Value);
+        Assert.Equal(Th.DitherStep, vm.StepGuides[0].Value);
+    }
+
+    /// <summary>The frames to drop are the bad and the unreadable ones, the marginal stay with the user.</summary>
+    [Fact]
+    public async Task R030_TheRejectedTabListsTheBadFramesWithTheirReasons()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal([3, 6], vm.Rejected.Select(r => r.Index));
+        Assert.All(vm.Rejected, r => Assert.Contains("prag", r.Reasons, StringComparison.Ordinal));
+        Assert.Equal(SeriesReport.RejectedHeading(vm.Result!), vm.RejectedHeading);
+        Assert.StartsWith("2 cadre slabe", vm.RejectedHeading, StringComparison.Ordinal);
+    }
+
+    /// <summary>The report tab is the console's text, byte for byte: banner, then the series report.</summary>
+    [Fact]
+    public async Task R030_TheReportTabIsTheConsoleText()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        using StringWriter expected = new();
+        RunReport.WriteBanner(expected);
+        SeriesReport.Write(vm.Result!, expected);
+        Assert.Equal(expected.ToString(), vm.Report);
+    }
+
+    /// <summary>The map's axis labels follow the RA axis the core found; unknown here, on synthetic frames.</summary>
+    [Fact]
+    public async Task R030_TheMapLabelsNameTheAxesOnlyWhenTheRaAxisIsKnown()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal(vm.Result!.Series.RaAxis switch { Axis.Y => "Y = RA", Axis.X => "Y = DEC", _ => "Y" }, vm.MapYLabel);
+    }
+
+    [Fact]
+    public void R030_TheClassColoursFollowTheVerdictPalette()
+    {
+        Assert.Equal(VerdictPalette.Good, MainViewModel.ClassColour(FrameClass.Good));
+        Assert.Equal(VerdictPalette.Warn, MainViewModel.ClassColour(FrameClass.Marginal));
+        Assert.Equal(VerdictPalette.Bad, MainViewModel.ClassColour(FrameClass.Bad));
+        Assert.Equal(VerdictPalette.Neutral, MainViewModel.ClassColour(FrameClass.Unknown));
+    }
+
+    /// <summary>Selecting a frame decodes it again and cuts its brightest stars out, 25 x 25 px each.</summary>
+    [Fact]
+    public async Task R031_SelectingAFrameLoadsItsStarCutOuts()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+
+        vm.SelectedFrame = vm.Frames[0];
+        await vm.CropsPending;
+
+        Assert.NotEmpty(vm.Crops);
+        Assert.Null(vm.CropsNote);
+        Assert.All(vm.Crops, c =>
+        {
+            Assert.Equal(2 * StarCrops.Radius + 1, c.Image.PixelWidth);
+            Assert.Equal(2 * StarCrops.Radius + 1, c.Image.PixelHeight);
+            Assert.True(c.Image.IsFrozen);
+            Assert.False(string.IsNullOrWhiteSpace(c.Caption));
+        });
+        Assert.Contains(vm.Crops, c => c.Caption.Contains("centru", StringComparison.Ordinal));
+
+        vm.SelectedFrame = null;
+        await vm.CropsPending;
+        Assert.Empty(vm.Crops);
+    }
+
+    [Fact]
+    public async Task R031_ALaterSelectionWinsOverAnEarlierDecode()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+
+        vm.SelectedFrame = vm.Frames[0];
+        Task first = vm.CropsPending;
+        vm.SelectedFrame = vm.Frames[1];
+        await first;
+        await vm.CropsPending;
+
+        Assert.Same(vm.Frames[1], vm.SelectedFrame);
+        Assert.NotEmpty(vm.Crops);
+    }
+
+    /// <summary>The export writes the console's three files into the chosen folder and nothing into lights/.</summary>
+    [Fact]
+    public async Task R032_ExportWritesTheThreeFilesIntoTheChosenFolderOnly()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        string[] lightsBefore = Directory.GetFiles(f.LightsDir);
+        string outDir = Path.Combine(ws.Dir, "out");
+
+        vm.Export(outDir);
+
+        Assert.StartsWith("Scris:", vm.Status, StringComparison.Ordinal);
+        Assert.Equal(vm.Report, File.ReadAllText(Path.Combine(outDir, "lightscheck-raport.txt")));
+        Assert.True(File.Exists(Path.Combine(outDir, "lightscheck-cadre.csv")));
+        Assert.Equal(vm.Rejected.Select(r => r.File), File.ReadAllLines(Path.Combine(outDir, "lightscheck-respinse.txt")));
+        Assert.Equal(lightsBefore, Directory.GetFiles(f.LightsDir));
+    }
+
+    [Fact]
+    public void R032_ExportWithoutAResultDoesNothing()
+    {
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+
+        vm.Export(Path.Combine(ws.Dir, "out"));
+
+        Assert.Null(vm.Status);
+        Assert.False(Directory.Exists(Path.Combine(ws.Dir, "out")));
+    }
+
+    [Fact]
+    public async Task R032_AnExportThatCannotWriteBecomesAStatusLineNotACrash()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using TempWorkspace ws = new();
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        string blocker = Path.Combine(ws.Dir, "file");
+        File.WriteAllText(blocker, "not a folder");
+
+        vm.Export(Path.Combine(blocker, "out"));
+
+        Assert.StartsWith("EROARE", vm.Status, StringComparison.Ordinal);
+    }
+
+    /// <summary>Whatever the decoder throws for the selected frame becomes its note, never an unobserved exception.</summary>
+    [Fact]
+    public async Task R031_AFrameThatCannotBeDecodedAgainShowsTheErrorAsItsNote()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        File.WriteAllText(vm.Frames[0].Path!, "no longer a FITS");
+
+        vm.SelectedFrame = vm.Frames[0];
+        await vm.CropsPending;
+
+        Assert.Empty(vm.Crops);
+        Assert.StartsWith("EROARE", vm.CropsNote, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheReportRowsHaveNoNoteAndNoKeyRow()
+    {
+        RowVm row = new("focus", "tinut", "BUN");
+
+        Assert.True(row.HasVerdict);
+        Assert.False(row.HasNote);
+        Assert.False(row.IsKey);
+        Assert.Null(row.Note);
+        Assert.False(new RowVm("x", "y", null).HasVerdict);
+    }
+
+    [Fact]
+    public void TheCropImageIsAGreyBitmap()
+    {
+        BitmapSource b = RasterBitmaps.Grey(new byte[] { 0, 128, 255, 7 }, 2, 2);
+
+        Assert.Equal(2, b.PixelWidth);
+        Assert.True(b.IsFrozen);
+    }
+}

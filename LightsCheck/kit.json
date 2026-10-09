@@ -18,6 +18,11 @@
         "project": "src/LightsCheck.Cli/LightsCheck.Cli.csproj",
         "output": "console",
         "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
+      },
+      {
+        "project": "src/LightsCheck.Wpf/LightsCheck.Wpf.csproj",
+        "output": "wpf",
+        "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
       }
     ]
   },

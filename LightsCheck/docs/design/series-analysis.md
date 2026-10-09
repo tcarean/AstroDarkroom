@@ -33,7 +33,7 @@ position; on the Veil frames 500 to 550 of 600 match with an RMS of 0.3 to 0.8 p
 ## Dithering (`DitherAnalyzer`)
 
 Steps are differences of consecutive positions; a step needs both frames registered. A move
-is a step of 3 px or more. The tables are what ADR 0007 lists. Coverage is O(n^2) over the
+is a step of `Th.DitherStep` (5 px) or more (ADR 0007). The tables are what ADR 0007 lists. Coverage is O(n^2) over the
 registered frames (87 frames: nothing). The greedy clustering seeds a cluster with the first
 frame no earlier seed covers; it is the prototype's, order-dependent by design (the first
 frame of a spot names it). Runs at a radius are stretches of 3 or more consecutive frames
@@ -65,6 +65,15 @@ variance is total minus read; the swamping ratio shot over read variance; the pe
 report found.
 
 ## The report and the files (`SeriesReport`, `SeriesOutputs`)
+
+Each section is a list of `ReportRow(Label, Value, Verdict)` built by a producer
+(`SummaryRows`, `FocusRows`, `NoiseRows`, `DewRows`, `TrailRows`, `DriftRows`, `DitherRows`,
+`RejectedRows`); `Write` prints every row as the label in a 19-column field, a colon, then the
+verdict word and the value, and the window binds the same rows (ADR 0008). A section's text
+therefore has one label column; a label longer than the field pushes its colon right.
+`FrameRows` formats the table's cells once for the console and the window, `RejectedRows`
+and `RejectedHeading` the RESPINSE block, `CropCaption` the caption of a star cut-out
+(`StarCrops` cuts, this file words).
 
 The report prints the session header shared with the inventory, then the sections the
 owner's hand report had, in the same order, with every verdict followed by its numbers. The

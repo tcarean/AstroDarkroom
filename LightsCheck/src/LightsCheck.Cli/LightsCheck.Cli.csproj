@@ -8,6 +8,8 @@
     <!-- Read from lightscheck.runtimeconfig.json at run time: the console formats numbers with
          "." whatever the Windows culture (R-005). -->
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The same icon file as the window's, drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\lightscheck.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\LightsCheck.Core\LightsCheck.Core.csproj" />

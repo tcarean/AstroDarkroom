@@ -48,7 +48,7 @@ public class LicenseHeaderTests
     /// <summary>Explicit, not discovered from the solution, so adding a project is a decision.</summary>
     private static readonly string[] Projects =
     [
-        "src/LightsCheck.Core", "src/LightsCheck.Cli", "src/LightsCheck.Wpf", "tests/LightsCheck.Tests", "tests/LightsCheck.Wpf.Tests", "prototype",
+        "src/LightsCheck.Core", "src/LightsCheck.Cli", "src/LightsCheck.Wpf", "tests/LightsCheck.Tests", "tests/LightsCheck.Wpf.Tests", "prototype", "Icon",
     ];
 
     /// <summary>XAML is source like C#: hand-written, it describes the interface, so it carries the notice too.</summary>

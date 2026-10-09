@@ -8,6 +8,26 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The window, `LightsCheck.Wpf.exe` (R-029 to R-032, ADR 0008): open a session folder (or pass
+  it on the command line), the series runs by itself with a progress bar and a stop button;
+  the tabs Rezumat (the report's rows with verdict chips), Cadre (one row per frame, the star
+  cut-outs of the selected frame), Dithering (the map of positions, the step per frame, the
+  nearest-frame distance, the dithering rows), Calitate (FWHM, elongation, stars, background
+  over the night), Respinse, Raport (the console's text); the pixel size and the thread count
+  as inputs with the D3300's defaults; `Scrie fisierele...` writes the three files of `--out`
+  into a chosen folder. The dark theme, the About window and the icon follow FlatCheck; the
+  icon is LightsCheck's own, drawn per size by `Icon/make_icon.py`.
+
+### Changed
+
+- The series report prints every label of a section in one 19-column field; the few labels
+  that had their own padding (FOCUS, ROUA, CADRE MISCATE, the first DITHERING line) line up
+  with the rest, and the second coverage line has its own label, `pozitii distincte`. Every
+  REZUMAT line and every verdict line now opens with a verdict word, also where there is
+  none to give: `NEDETERMINAT - niciun cadru bun` where 0.1.0 printed `nedeterminat (niciun
+  cadru bun)`, `NEMASURAT - ...` for the exposure without biases. The RESPINSE heading counts
+  the unreadable frames too (`2 cadre slabe, 1 necitite`). No figure changed.
+
 - The whole series (R-018 to R-028, ADR 0007): `lightscheck <folder>` measures every light in
   parallel, registers them to the first (shift, rotation, matched stars), and prints the
   report the hand analysis had: focus and its trend, exposure against the read noise from the

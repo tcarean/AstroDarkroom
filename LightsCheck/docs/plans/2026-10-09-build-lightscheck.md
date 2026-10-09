@@ -76,3 +76,12 @@ Veil session equals the one in `docs/validation/2026-10-06-veil/raport.md`.
   "without effect" of the hand report disappeared (ADR 0007). The default console run is now
   the whole series and the inventory moved behind `--inventory`. The RA axis is read from a
   plate-solved FITS at the session root when there is one (the plan had it as "maybe").
+- Step 4: `SeriesReport` was rewritten into row producers (`ReportRow`) so the window binds
+  the console's rows instead of formatting its own; as a consequence every label of a section
+  prints in the same 19-column field and `series.txt` changed on eight lines of alignment, no
+  figure (listed at wrap-up). The star cut-outs are cut in the core (`StarCrops`), not in the
+  window; `RepoInvariantTests` reads the sources of the other test projects for their `R###_`
+  tests, since it cannot reference the Windows-only one; three local analyzer exemptions (ADR
+  0008). No `BusyOverlay`, `ReportPanel` or `MessagePanel` controls: the wait screen, the
+  report and the problem card are plain XAML in `MainWindow.xaml`. A missing folder on the
+  command line is ignored and the window asks for one, as FlatCheck does.

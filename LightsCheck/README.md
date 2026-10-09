@@ -11,9 +11,9 @@ aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acel
 versionare si aceeasi fereastra "Despre" ca FlatCheck, de unde sunt copiate si cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: in constructie.** Pasii 1-3 din 5 (planul e in `docs/plans/2026-10-09-build-lightscheck.md`):
+**Stadiu: in constructie.** Pasii 1-4 din 5 (planul e in `docs/plans/2026-10-09-build-lightscheck.md`):
 consola face inventarul, masoara fiecare cadru si analizeaza seria (dithering, drift, cadre
-de respins). Fereastra vine in pasul 4.
+de respins); fereastra arata aceleasi rezultate. Pasul 5 e validarea si lansarea 1.0.0.
 
 > **Documentatia de utilizator sta aici, in acest fisier.** Nu o duplica in comentarii.
 
@@ -143,11 +143,36 @@ Decodeaza al N-lea cadru din `lights/` (1 = primul) si il masoara:
   3 px; creste cu roua sau ceata.
 - `dare`: urme de sateliti sau avioane, cu lungimea si coltul din stanga-sus.
 
+## Fereastra
+
+`LightsCheck.Wpf.exe [folder sesiune]`. Fara argument, cere folderul la pornire. Analiza
+porneste singura (aceeasi ca `lightscheck <folder>`, cu bara de progres si buton de oprire) si
+rezultatul apare in sase taburi:
+
+- **Rezumat**: sectiunile raportului, rand cu rand, cu verdictul colorat.
+- **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitie,
+  motive). Alege un cadru si in dreapta apar decupajele stelelor lui (centru si colturi, pe
+  canalul verde): asa vezi cu ochiul dara pe care o raporteaza alungirea.
+- **Dithering**: harta pozitiilor fata de primul cadru (grila la 10 px, culoarea e clasa
+  cadrului), pasul fata de cadrul anterior (galben = miscare >= 5 px), distanta la cel mai
+  apropiat alt cadru, si randurile DITHERING din raport.
+- **Calitate**: FWHM, alungire (cu liniile 1.35 si 1.6), stele si fond de cer, cadru cu cadru.
+- **Respinse**: cadrele slabe si cele necitite, cu motivul si pragul; cele la limita raman la
+  alegerea ta.
+- **Raport**: textul consolei, identic.
+
+In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300) si
+`FIRE` (cate cadre se masoara in paralel; gol = jumatate din nuclee). `Scrie fisierele...`
+scrie, intr-un folder la alegere (propus: folderul sesiunii), aceleasi trei fisiere ca
+`--out`. `Despre` (F1) arata versiunea, licenta si componentele terte. Nimic nu se scrie in
+`lights/` sau `biases/`.
+
 ## Compilare
 
-.NET SDK 9.0.3xx (`global.json`). `dotnet build LightsCheck.sln -c Release`. Gate-ul complet
-(format, build strict, teste): `scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie
-`lightscheck.exe` ca un singur fisier, cu DLL-urile libraw inglobate, in `artifacts/`.
+.NET SDK 9.0.3xx (`global.json`). `dotnet build LightsCheck.sln -c Release` (fereastra cere
+Windows; consola singura se compileaza oriunde). Gate-ul complet (format, build strict,
+teste): `scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie `lightscheck.exe` si
+`LightsCheck.Wpf.exe`, fiecare un singur fisier cu DLL-urile libraw inglobate, in `artifacts/`.
 
 ## Pentru cine dezvolta
 

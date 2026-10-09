@@ -1,0 +1,90 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- SummaryView: the report's sections as cards of labelled rows; a row that opens with a
+     verdict word shows it as a chip. The rows are the core's; nothing is reworded here. -->
+
+<UserControl x:Class="LightsCheck.Wpf.SummaryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LightsCheck.Wpf">
+  <UserControl.Resources>
+    <DataTemplate x:Key="ReportRow">
+      <Grid Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="250" />
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Grid.Column="0" Style="{StaticResource Muted}" Text="{Binding Label}" TextWrapping="Wrap" Margin="0,0,12,0" />
+        <ContentControl Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
+                        Margin="0,0,10,0" VerticalAlignment="Top"
+                        Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
+        <TextBlock Grid.Column="2" Text="{Binding Value}" TextWrapping="Wrap" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
+    <StackPanel MaxWidth="1200" HorizontalAlignment="Left">
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="SESIUNE" />
+          <ItemsControl ItemsSource="{Binding SessionRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="REZUMAT" />
+          <ItemsControl ItemsSource="{Binding SummaryRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="FOCUS" />
+          <ItemsControl ItemsSource="{Binding FocusRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="EXPUNERE SI ZGOMOT" />
+          <ItemsControl ItemsSource="{Binding NoiseRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="ROUA" />
+          <ItemsControl ItemsSource="{Binding DewRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="CADRE MISCATE" />
+          <ItemsControl ItemsSource="{Binding TrailRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="DRIFT SI ROTATIE" />
+          <ItemsControl ItemsSource="{Binding DriftRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
