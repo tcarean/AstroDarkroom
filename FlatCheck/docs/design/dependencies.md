@@ -42,3 +42,21 @@ and why FlatCheck qualifies for its Apache-2.0 terms all the way downstream, the
 and what 4.x would cost (a licence key at compile time, `ColorProfileHandling.Preserve`), why
 the version is pinned at all, the one file that names an ImageSharp type (`PreviewReader.cs`),
 and `StbImageSharp` as the measured drop-in fallback if the licence ever moves.
+
+### Security advisories against 3.1.11
+
+NuGet's audit reports every published advisory against the pinned version at restore (NU1902
+moderate, NU1903 high); `Directory.Build.props` keeps the two codes as warnings under the gate's
+`-warnaserror`, so the gate shows them and stays green (ADR 0058). Each one is read against what
+FlatCheck does with the package, which is one thing: `PreviewReader.DecodeJpeg` decodes the JPEG
+preview a raw embeds, for the Expunere tab's picture, from the owner's own raw files; no TIFF is
+read or written and no filter is applied. One that applies opens the upgrade task. The five
+published on 2026-10-07, all patched in 4.1.2 only:
+
+| advisory | severity | what | applies? |
+| --- | --- | --- | --- |
+| GHSA-j3p4-wp97-rph4 | high | out-of-bounds read in `HistogramEqualization` on a float TIFF with infinite samples | no: never called, no TIFF decoded |
+| GHSA-jjfr-hcj7-qf5w | high | buffer overrun in the 1-bit CCITT Group 4 TIFF encoder | no: nothing is encoded |
+| GHSA-j9gm-c75j-xc9q | high | the same in the CCITT Group 3 encoder | no: as above |
+| GHSA-gwg2-r3hj-4w44 | moderate | large allocation from a malformed embedded ICC profile's CLUT dimensions | no: the profile decoded is the one in the owner's own raw's preview; worst case a failed allocation of a local tool, caught by the preview's try/catch |
+| GHSA-wmxv-xphr-5c9g | moderate | a crafted BigTIFF makes the decoder loop without progress | no: only JPEG is decoded |

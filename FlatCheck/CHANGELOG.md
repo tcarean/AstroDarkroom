@@ -56,6 +56,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
+  each one is judged in `docs/design/dependencies.md` (ADR 0058): the five published against
+  ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0010 rejects, and none
+  applies to a tool that decodes the JPEG preview of the owner's own raws.
 - `Directory.Build.props` declares the `win-x64` runtime the release publishes for, on every
   project but the two test projects, and turns off the single-file analyzer, so a release's
   publish no longer rewrites the lock files and stops the release on them (ADR 0056).
