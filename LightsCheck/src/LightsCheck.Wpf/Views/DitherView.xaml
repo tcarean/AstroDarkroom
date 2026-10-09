@@ -18,7 +18,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
 <!-- DitherView: the map of positions, the steps per frame, the nearest-other-frame distance,
-     and the DITHERING rows of the report (how often, how far, directions, coverage, verdict). -->
+     and the DITHERING card: the report's scalar rows (pauses and moves, the longest stretch,
+     coverage, spans, axes, verdict) and its five tables (how often, how far, direction,
+     coverage per radius, runs), laid out as fixed-width cells. -->
 
 <UserControl x:Class="LightsCheck.Wpf.DitherView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -102,7 +104,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <TextBlock Style="{StaticResource Faint}" FontSize="11" Width="118" Margin="0,0,6,2" TextWrapping="Wrap" Text="{Binding}" />
+                        <TextBlock Style="{StaticResource Faint}" FontSize="11" Width="100" Margin="0,0,4,2" TextWrapping="Wrap" Text="{Binding}" />
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
@@ -117,7 +119,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                           </ItemsControl.ItemsPanel>
                           <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                              <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="12" Width="118" Margin="0,0,6,2" Text="{Binding}" />
+                              <TextBlock FontFamily="{StaticResource MonoFont}" FontSize="12" Width="100" Margin="0,0,4,2" Text="{Binding}" />
                             </DataTemplate>
                           </ItemsControl.ItemTemplate>
                         </ItemsControl>

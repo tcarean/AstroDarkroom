@@ -268,8 +268,32 @@ public class SeriesTests
         Assert.Equal(["raza", "cadre", "cate", "minute"], t[4].Columns);
         Assert.Equal(["5 px | niciunul | - | -", "10 px | niciunul | - | -"], Rows(t[4]));
 
-        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
+        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
         Assert.Equal("X 40 px, Y 16 px", SeriesReport.DitherScalarRows(r)[3].Value);
+        Assert.StartsWith("axa Y a imaginii = RA, X = DEC", SeriesReport.DitherScalarRows(r)[4].Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>A run of three frames fills the runs table at both radii with its frames, its length and its minutes; a session without moves keeps the console's words (R-036).</summary>
+    [Fact]
+    public void R036_TheRunsTableListsEachRunAndTheHowOftenTableKeepsTheNoMoveWords()
+    {
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] pattern = [(0, 0, 1.0, 0), (1, 0.5, 1.0, 1), (0.5, 1.5, 1.0, 1), (30, 0, 1.0, 30), (30.5, 0.2, 1.0, 1)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(pattern);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        IReadOnlyList<ReportTable> t = SeriesReport.DitherTables(r);
+        string[] runs = Rows(t[4]);
+        Assert.Equal(2, runs.Length);
+        Assert.StartsWith("5 px | 1-3 | 3 | ", runs[0], StringComparison.Ordinal);
+        Assert.EndsWith(" min", runs[0], StringComparison.Ordinal);
+        Assert.StartsWith("10 px | 1-3 | 3 | ", runs[1], StringComparison.Ordinal);
+        Assert.Equal(["1 cadru | 1 data"], Rows(t[0]));   // one move, from frame 3 to 4
+        Assert.Equal("3 px | 3 | - | -", Rows(t[3])[0]);
+
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] still = [(0, 0, 1.0, 0), (0.5, 0.2, 1.0, 1), (0.2, 0.6, 1.0, 1)];
+        using SessionFixture g = new SessionFixture().WithStarSeries(still);
+        IReadOnlyList<ReportTable> u = SeriesReport.DitherTables(SeriesRun.Run(g.Root, new SeriesOptions(Threads: 2)));
+        Assert.Equal(["nicio miscare | -"], Rows(u[0]));
     }
 
     private static string[] Rows(ReportTable t) => t.Rows.Select(row => string.Join(" | ", row)).ToArray();

@@ -117,9 +117,12 @@ three `spot_run_*` columns.
 Beside the rows, the report gives the window shapes it cannot derive from prose (ADR 0012):
 `AxisLabels` and `PositionHeaders` word the RA/DEC axis for the map and the table headers;
 `DitherTables` builds the five `ReportTable`s (how often, how far, direction, coverage, runs)
-from the same `DitherAnalysis` figures the `DitherRows` print, through shared helpers
-(`SizeWord`, `PausesRow`, `LongestRow`, `RunRows`, `MinutesCell`) so a wording lives once;
-`DitherScalarRows` is the subset of DITHERING rows that are not tables. FOCUS closes with a
+from the same `DitherAnalysis` figures the `DitherRows` print, through the helpers both use
+(`SizeWord`, `FramesWord`, `TimesWord`, `PausesRow`, `LongestRow`, `HowOften` for the
+no-move words) so a wording lives once; the runs table has its own `RunRows` and
+`MinutesCell` beside the rows' `Runs` and `Minutes`, which differ in shape, not in words.
+`DitherScalarRows` is the DITHERING rows that are not tables, plus the `axe` row that names
+the RA axis and its source, which the console carries on its `directie` row. FOCUS closes with a
 `verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
 and never the tables.
 

@@ -22,13 +22,13 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Wpf;
 
-/// <summary>One labelled line of a section, with the verdict chip when the line opens with one.</summary>
 /// <summary>One paragraph of the Respinse explanation; the window sets the emphasised one in bold (R-037).</summary>
 public sealed record ParagraphVm(string Text, bool Emphasis);
 
 /// <summary>A table of the Dithering tab, the core's cells as they are (R-037).</summary>
 public sealed record TableVm(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
+/// <summary>One labelled line of a section, with the verdict chip when the line opens with one.</summary>
 public sealed record RowVm(string Label, string Value, string? Verdict)
 {
     public bool HasVerdict => Verdict is not null;
@@ -340,6 +340,8 @@ public sealed class MainViewModel : ObservableObject
         Frames = Rejected = [];
         DitherTables = [];
         (DxHeader, DyHeader) = ("dX", "dY");
+        (MapXLabel, MapYLabel) = ("X", "Y");
+        RejectedHeading = "";
         MapPoints = StepPoints = NearestPoints = FwhmPoints = ElongationPoints = StarPoints = BackgroundPoints = [];
         StepGuides = ElongationGuides = [];
         SelectedFrame = null;

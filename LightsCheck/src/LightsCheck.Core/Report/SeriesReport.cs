@@ -297,6 +297,7 @@ internal static class SeriesReport
             LongestRow(r, d),
             new("acoperire", $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}"),
             new("intindere", $"X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
+            new("axe", AxisLine(r.Series)),
             new("verdict", text, verdict),
         ];
     }
@@ -308,8 +309,13 @@ internal static class SeriesReport
         DitherAnalysis d = r.Dither;
         (string xAxis, string yAxis) = AxisLabels(r.Series);
         List<IReadOnlyList<string>> often = d.FramesBetweenMoves.OrderBy(k => k.Key)
-            .Select(kv => (IReadOnlyList<string>)[$"{kv.Key.ToString(Inv)} {(kv.Key == 1 ? "cadru" : "cadre")}", $"{kv.Value.ToString(Inv)} {(kv.Value == 1 ? "data" : "ori")}"])
+            .Select(kv => (IReadOnlyList<string>)[FramesWord(kv.Key), TimesWord(kv.Value)])
             .ToList();
+        if (often.Count == 0)
+        {
+            often.Add([HowOften(d), "-"]);   // "nicio miscare" or "o singura miscare", the console's words
+        }
+
         List<IReadOnlyList<string>> sizes = [["median", Px(d.MedianMove, r)]];
         sizes.AddRange(d.Sizes.Select(c => (IReadOnlyList<string>)[SizeWord(c), c.Count.ToString(Inv)]));
         List<IReadOnlyList<string>> runs = [.. RunRows(d.RunsMid, Th.CoverageMid, r), .. RunRows(d.RunsLoose, Th.CoverageLoose, r)];
@@ -323,7 +329,7 @@ internal static class SeriesReport
                 [yAxis, d.MovesOnYOnly.ToString(Inv), d.MovesYPlus.ToString(Inv), d.MovesYMinus.ToString(Inv)],
                 ["ambele", d.MovesOnBoth.ToString(Inv), "", ""],
             ]),
-            new("acoperire", ["raza", "cu alt cadru sub raza", "pozitii distincte", "grupuri de 3+ consecutive"],
+            new("acoperire", ["raza", "cu alt cadru sub raza", "pozitii distincte", $"grupuri de {Th.RunMinFrames.ToString(Inv)}+ consecutive"],
             [
                 [PxWord(Th.CoverageTight), d.WithinTight.ToString(Inv), "-", "-"],
                 [PxWord(Th.CoverageMid), d.WithinMid.ToString(Inv), d.DistinctMid.ToString(Inv), d.RunsMid.Count.ToString(Inv)],
@@ -338,6 +344,10 @@ internal static class SeriesReport
 
     private static ReportRow LongestRow(SeriesResult r, DitherAnalysis d)
         => new("cel mai lung interval intre doua miscari", $"cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})");
+
+    private static string FramesWord(int frames) => $"{frames.ToString(Inv)} {(frames == 1 ? "cadru" : "cadre")}";
+
+    private static string TimesWord(int times) => $"{times.ToString(Inv)} {(times == 1 ? "data" : "ori")}";
 
     private static string SizeWord(SizeClass c) => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px";
 
@@ -501,7 +511,7 @@ internal static class SeriesReport
         List<string> parts = [];
         foreach (KeyValuePair<int, int> kv in d.FramesBetweenMoves.OrderBy(k => k.Key))
         {
-            parts.Add($"la fiecare {kv.Key.ToString(Inv)} {(kv.Key == 1 ? "cadru" : "cadre")}: {kv.Value.ToString(Inv)} {(kv.Value == 1 ? "data" : "ori")}");
+            parts.Add($"la fiecare {FramesWord(kv.Key)}: {TimesWord(kv.Value)}");
         }
 
         return parts.Count == 0 ? "o singura miscare" : string.Join("; ", parts);
