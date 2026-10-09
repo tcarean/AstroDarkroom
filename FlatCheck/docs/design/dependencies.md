@@ -4,6 +4,7 @@
 > CLAUDE.md nor a decision record says (ADR 0051): the rule "Package notices" and ADR 0008 hold the
 > rule, ADR 0009 and ADR 0010 the two packages, ADR 0028 and ADR 0040 the data component and the
 > displayed list. **Covers:** by pointer, `FlatCheck.Core.csproj`, `Directory.Packages.props`,
+> `Directory.Build.props` (the audit codes kept as warnings),
 > `RawReader.cs`, `PreviewReader.cs`, `ThirdParty.cs`, `THIRD-PARTY-NOTICES.md`; in full, one
 > mechanic of the lazy loading of libraw. Cross-references such as "see X below" point at the
 > sibling notes in this folder; the index in `README.md` here maps them. A change to the code this

@@ -20,7 +20,8 @@ correctness bugs that used to live here were fixed in phase 8.
    Fine for the numeric keys actually used.
 2. **File extension is only half-validated.** The six raw extensions dispatch to
    `RawReader`; *everything else* goes to `FitsReader.Load`, so a `.jpg` surfaces as a
-   FITS parse error rather than "unrecognised format". Python raises
+   FITS error, `FITS: fisierul nu incepe cu SIMPLE.` since the magic check of ADR 0057,
+   rather than "unrecognised format". Python raises
    `Format nerecunoscut` instead. Left as is deliberately: the error still points at the
    right file, and tightening it would change behaviour no test asks for.
 3. **`CornerStats` can throw on tiny images.** With `h < 8`, `h/2 - bh` goes negative
