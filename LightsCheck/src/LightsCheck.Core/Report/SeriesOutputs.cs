@@ -109,7 +109,8 @@ internal static class SeriesOutputs
             MountMove? move = r.Series.MountMoves[i];
             cells.Add(move is { Signed: true } ? N(move.RaPx) : "");
             cells.Add(move is { Signed: true } ? N(move.DecPx) : "");
-            cells.Add(SeriesReport.MoveArrows(move));
+            string arrows = SeriesReport.MoveArrows(move);
+            cells.Add(arrows.Length == 0 ? "" : Q(arrows));   // two arrows are joined with a comma
             cells.Add(Q(f.Error ?? f.Info.Error ?? ""));
             sb.Append(string.Join(",", cells)).Append('\n');
         }

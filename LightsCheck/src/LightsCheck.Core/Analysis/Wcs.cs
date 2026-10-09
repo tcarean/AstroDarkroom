@@ -27,8 +27,11 @@ internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc1
     /// <summary>The image axis RA runs along: the one that dominates the RA row of the matrix.</summary>
     internal Axis RaAxis => Math.Abs(Pc12) > Math.Abs(Pc11) ? Axis.Y : Axis.X;
 
-    /// <summary>Degrees per pixel, from the RA scale.</summary>
-    internal double ScaleDeg => Math.Abs(Cdelt1);
+    /// <summary>Degrees per pixel along RA: the scale times the length of the matrix row, so a CD matrix (unit scales) gives the same figure.</summary>
+    internal double RaScaleDeg => Math.Abs(Cdelt1) * Math.Sqrt(Pc11 * Pc11 + Pc12 * Pc12);
+
+    /// <summary>Degrees per pixel along DEC, from the DEC scale and row.</summary>
+    internal double DecScaleDeg => Math.Abs(Cdelt2) * Math.Sqrt(Pc21 * Pc21 + Pc22 * Pc22);
 
     /// <summary>
     /// The change of RA (scaled by cos DEC, as the matrix gives it) and of DEC, in degrees,

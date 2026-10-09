@@ -76,9 +76,11 @@ positions on a 10 px grid, equal scales on both axes, each point coloured by its
 to the next and numbered, a `Ring` point drawn as a hollow circle in the same colour. Both
 redraw when `Points` changes (the dependency properties call
 `InvalidateVisual`) and draw nothing under a minimum size. `SeriesChart` keeps its last
-layout (`_xMin`, `_xMax`, `_plotW`, the points drawn) and on `OnMouseMove` sets its own
-`ToolTip` to the `Tip` of the point whose slot holds the cursor (`PointAt`), clearing it on
-leave: one tooltip per element, re-pointed as the mouse moves, no per-bar visuals.
+layout (`_xMin`, `_xMax`, `_plotW`, the points drawn) and owns one `ToolTip` placed at the
+mouse: on `OnMouseMove` it finds the point whose slot holds the cursor (`PointAt`) and, when
+that point changes, closes the tip and reopens it with the point's `Tip` (none for a point
+without one), closing it on leave. It opens and closes the tip itself because a tooltip the
+framework opens shows once per entry into the element and then stays shut.
 
 ## Culture, title bar, icon
 

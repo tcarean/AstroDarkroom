@@ -92,14 +92,17 @@ public sealed class SeriesChart : ChartElement
     /// <summary>The y axis starts here when set; otherwise at the smallest value (or 0 for bars).</summary>
     public double Minimum { get => (double)GetValue(MinimumProperty); set => SetValue(MinimumProperty, value); }
 
-    // The last layout, for the hover: which point sits under the mouse (R-039).
+    // The last layout, for the hover: which point sits under the mouse (R-039). The tooltip
+    // is one owned object opened and closed by hand as the hovered point changes, since a
+    // ToolTip the framework opens shows once per entry into the element and then stays shut.
     private double _xMin, _xMax = 1, _plotW;
     private IReadOnlyList<ChartPoint> _drawn = [];
+    private readonly ToolTip _tip = new() { Placement = System.Windows.Controls.Primitives.PlacementMode.Mouse };
+    private ChartPoint? _hover;
 
     public SeriesChart()
     {
-        ToolTipService.SetInitialShowDelay(this, 200);
-        ToolTipService.SetShowDuration(this, 20000);
+        _tip.PlacementTarget = this;
     }
 
     /// <summary>The point whose slot holds the x position, or null outside every slot; the tooltip shows its Tip.</summary>
@@ -135,13 +138,26 @@ public sealed class SeriesChart : ChartElement
     {
         base.OnMouseMove(e);
         ArgumentNullException.ThrowIfNull(e);
-        ToolTip = PointAt(e.GetPosition(this).X)?.Tip;
+        ChartPoint? hit = PointAt(e.GetPosition(this).X);
+        if (ReferenceEquals(hit, _hover))
+        {
+            return;
+        }
+
+        _hover = hit;
+        _tip.IsOpen = false;
+        if (hit?.Tip is string tip)
+        {
+            _tip.Content = tip;
+            _tip.IsOpen = true;
+        }
     }
 
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
-        ToolTip = null;
+        _hover = null;
+        _tip.IsOpen = false;
     }
 
     protected override void OnRender(DrawingContext drawingContext)

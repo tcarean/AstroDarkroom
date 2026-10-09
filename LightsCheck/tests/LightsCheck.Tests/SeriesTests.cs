@@ -222,7 +222,7 @@ public class SeriesTests
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
         string text = sw.ToString();
-        Assert.Matches("      dY  dithering {29}  acelasi loc     motive", text);   // the dithering column of R-038 sits between dY and acelasi loc
+        Assert.Matches("      dY  dithering {33}  acelasi loc     motive", text);   // the dithering column of R-038 sits between dY and acelasi loc
         Assert.Contains("  3/3 de la 1    ", text, StringComparison.Ordinal);
 
         string[] csv = SeriesOutputs.Csv(r).Split('\n');
@@ -327,7 +327,9 @@ public class SeriesTests
 
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
-        Assert.Matches("      dY  dithering {29}  acelasi loc", sw.ToString());
+        Assert.Matches("      dY  dithering {33}  acelasi loc", sw.ToString());
+        // A two-axis cell (41 characters at most, three-digit moves included) fits the column.
+        Assert.True("RA 142 px V (dreapta), DEC 129 px S (jos)".Length <= 42);
 
         string[] csv = SeriesOutputs.Csv(r).Split('\n');
         string[] head = CsvCells(csv[0]);
@@ -337,6 +339,7 @@ public class SeriesTests
         Assert.Equal("dreapta", CsvCells(csv[5])[arrows]);
         Assert.Equal(-11.5, double.Parse(CsvCells(csv[3])[dec], System.Globalization.CultureInfo.InvariantCulture), 0.5);
         Assert.Equal("", CsvCells(csv[1])[ra]);
+        Assert.All(csv.Where(l => l.Length > 0), l => Assert.Equal(head.Length, CsvCells(l).Length));   // a two-arrow cell is quoted, the row keeps its cell count
 
         // Without the FITS: the axis from the trails, the components without a sense.
         File.Delete(Path.Combine(s.Root, "result.fit"));

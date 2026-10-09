@@ -106,3 +106,8 @@ gives DEC 128.7 px for the 128.2 px shift (the matrix's 0.0037 shear), worded `1
 fixture's frame 7 reads `DEC 27 px` for a 27.5 px step (formatting). V-011 counts 11 south
 and 2 north DEC components over the 41 moves because `Th.AxisStep` (3 px) admits the small
 ones; the hand analysis's nine DEC jumps of 12 px or more are all south.
+
+The subagent review (six findings, all applied) widened the console column to 42, quoted the
+two-arrow CSV cell, gave `Wcs` a scale per axis from the matrix rows so a CD-matrix solve
+yields pixels too, merged the cell and arrow wording into `MoveComponents`, and made the step
+chart own and reopen its tooltip as the hovered bar changes.

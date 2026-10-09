@@ -87,12 +87,13 @@ still reads its angle (R-033, ADR 0011). The per-frame axis is derived, not meas
 change of the axis rule moves every frame's word with it.
 
 The solved FITS is read whole by `SeriesRun.ReadWcs` into a `Wcs` (`CDELT` and the `PC`
-matrix, or the `CD` matrix with unit scales); `RaAxis` is the old rule on the matrix. Each
-move (R-019) then gets a `MountMove` (R-038): the pointing moved by minus the stars' shift,
-and because Siril writes its FITS rows bottom-up while the raws are read top-down, the WCS is
-applied to `(-StepX, +StepY)`, giving degrees of RA (scaled by cos DEC, as the matrix is) and
-DEC, divided by the plate scale into pixels, positive east and north (ADR 0013, measured on
-Veil with two plate-solved raws). Without a WCS but with the axis from the trails, the move
+matrix, or the `CD` matrix with unit scales, the matrix then holding the scale); `RaAxis` is
+the old rule on the matrix, `RaScaleDeg` and `DecScaleDeg` are each scale times the length of
+its matrix row, so both forms give the same pixels. Each move (R-019) then gets a `MountMove`
+(R-038): the pointing moved by minus the stars' shift, and because Siril writes its FITS rows
+bottom-up while the raws are read top-down, the WCS is applied to `(-StepX, +StepY)`, giving
+degrees of RA (scaled by cos DEC, as the matrix is) and DEC, each divided by its own scale
+into pixels, positive east and north (ADR 0013, measured on Veil with two plate-solved raws). Without a WCS but with the axis from the trails, the move
 keeps the magnitudes along the two axes with `Signed` false; without an axis it is null, as
 is every non-move.
 
@@ -125,7 +126,8 @@ quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or e
 three `spot_run_*` columns and the three `move_*` columns (signed pixels east and north, and
 the arrow words). `MoveCell` words a `MountMove` as `RA 15 px V (dreapta), DEC 12 px S (jos)`:
 a component under `Th.AxisStep` is dropped, the sense letter and the SynScan default arrow
-appear only when the move is signed, `MoveArrows` gives the arrows alone for the CSV;
+appear only when the move is signed, `MoveArrows` gives the arrows alone for the CSV (quoted
+there, two arrows being joined with a comma); both read the one `MoveComponents` rule;
 `FrameRows` also fills `StepTip`, the bar tooltip `cadrul 5: pas 15.3 px; <cell>`, null when
 the frame has no step.
 

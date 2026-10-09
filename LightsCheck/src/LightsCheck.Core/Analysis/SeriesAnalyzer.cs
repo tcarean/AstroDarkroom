@@ -330,7 +330,7 @@ internal static class SeriesAnalyzer
             if (wcs is not null)
             {
                 (double raDeg, double decDeg) = wcs.SkyOffsetDeg(-sx, sy);
-                moves[i] = new MountMove(raDeg / wcs.ScaleDeg, decDeg / wcs.ScaleDeg, true);
+                moves[i] = new MountMove(raDeg / wcs.RaScaleDeg, decDeg / wcs.DecScaleDeg, true);
             }
             else if (ra == Axis.Y)
             {

@@ -62,15 +62,15 @@ Copyright (C) 2026 Tudor Carean
       6  DSC_0006.fit          alungire 1.76 (prag 1.60), dara pe RA (-90 grade)
 
   TABEL PE CADRE
-     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                               acelasi loc     motive
-      1  DSC_0001.fit          20:35:03  bun        1.01   3.25      40   2000      -      -     0.0     0.0  -                                       -               
-      2  DSC_0002.fit          20:37:04  bun        1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                       -               
-      3  DSC_0003.fit          20:39:34  SLAB       1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                               -               alungire 1.76 (prag 1.60), dara pe RA (-90 grade)
-      4  DSC_0004.fit          20:41:35  bun        1.01   3.26      40   2000    1 s    0.6    12.5     0.3  -                                       -               
-      5  DSC_0005.fit          20:44:05  bun        1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                -               
-      6  DSC_0006.fit          20:46:06  SLAB       1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                       -               alungire 1.76 (prag 1.60), dara pe RA (-90 grade)
-      7  DSC_0007.fit          20:48:36  bun        1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  DEC 27 px                               -               
-      8  DSC_0008.fit          20:50:37  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                       -               
+     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  dithering                                   acelasi loc     motive
+      1  DSC_0001.fit          20:35:03  bun        1.01   3.25      40   2000      -      -     0.0     0.0  -                                           -               
+      2  DSC_0002.fit          20:37:04  bun        1.01   3.25      40   2000    1 s    0.5     0.5     0.2  -                                           -               
+      3  DSC_0003.fit          20:39:34  SLAB       1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  DEC 12 px                                   -               alungire 1.76 (prag 1.60), dara pe RA (-90 grade)
+      4  DSC_0004.fit          20:41:35  bun        1.01   3.26      40   2000    1 s    0.6    12.5     0.3  -                                           -               
+      5  DSC_0005.fit          20:44:05  bun        1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  RA 15 px                                    -               
+      6  DSC_0006.fit          20:46:06  SLAB       1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  -                                           -               alungire 1.76 (prag 1.60), dara pe RA (-90 grade)
+      7  DSC_0007.fit          20:48:36  bun        1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  DEC 27 px                                   -               
+      8  DSC_0008.fit          20:50:37  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  -                                           -               
 --- stderr ---
 (progresul, omis)
 --- exit 0 ---

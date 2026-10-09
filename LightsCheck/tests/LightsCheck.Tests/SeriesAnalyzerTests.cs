@@ -88,6 +88,24 @@ public class SeriesAnalyzerTests
         (double ra, double dec) = VeilWcs.SkyOffsetDeg(0, -100);   // +100 px up the solved frame
         Assert.Equal(-0.172, ra, 0.001);
         Assert.Equal(0, dec, 0.001);
+        Assert.Equal(0.00172, VeilWcs.RaScaleDeg, 0.00001);
+        Assert.Equal(0.00172, VeilWcs.DecScaleDeg, 0.00001);
+
+        // The same solve written as a CD matrix (unit scales, the matrix holds them): the same pixels and senses.
+        Wcs cd = new(1, 1, -0.00172 * 0.0037, 0.00172, 0.00172, 0.00172 * 0.0037);
+        Assert.Equal(Axis.Y, cd.RaAxis);
+        Assert.Equal(0.00172, cd.RaScaleDeg, 0.00001);
+        Assert.Equal(0.00172, cd.DecScaleDeg, 0.00001);
+        (double cdRa, double cdDec) = cd.SkyOffsetDeg(0, -100);
+        Assert.Equal(ra, cdRa, 0.0001);
+        Assert.Equal(dec, cdDec, 0.0001);
+        Assert.Equal(-100, cdRa / cd.RaScaleDeg, 0.1);
+
+        // A move on both axes words both, in a cell and as arrows, through one rule.
+        MountMove both = new(-15.3, 12.0, true);
+        Assert.Equal("RA 15 px V (dreapta), DEC 12 px N (sus)", SeriesReport.MoveCell(both));
+        Assert.Equal("dreapta, sus", SeriesReport.MoveArrows(both));
+        Assert.Equal("", SeriesReport.MoveArrows(new MountMove(15.3, 12.0, false)));
     }
 
     [Fact]

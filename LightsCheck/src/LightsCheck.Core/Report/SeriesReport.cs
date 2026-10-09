@@ -69,11 +69,11 @@ internal static class SeriesReport
 
         w.WriteLine();
         w.WriteLine("  TABEL PE CADRE");
-        w.WriteLine($"     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  {"dithering",-38}  acelasi loc     motive");
+        w.WriteLine($"     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  {"dithering",-42}  acelasi loc     motive");
         foreach (FrameTableRow f in FrameRows(r))
         {
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
-            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Move,-38}  {f.Spot,-14}  {f.Reasons}");
+            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Move,-42}  {f.Spot,-14}  {f.Reasons}");
         }
     }
 
@@ -122,40 +122,30 @@ internal static class SeriesReport
             return "-";
         }
 
-        List<string> parts = [];
-        if (Math.Abs(m.RaPx) >= Th.AxisStep)
-        {
-            parts.Add($"RA {RunReport.F(Math.Abs(m.RaPx), 0)} px" + (m.Signed ? (m.RaPx > 0 ? " E (stanga)" : " V (dreapta)") : ""));
-        }
-
-        if (Math.Abs(m.DecPx) >= Th.AxisStep)
-        {
-            parts.Add($"DEC {RunReport.F(Math.Abs(m.DecPx), 0)} px" + (m.Signed ? (m.DecPx > 0 ? " N (sus)" : " S (jos)") : ""));
-        }
-
+        List<string> parts = MoveComponents(m).Select(c => $"{c.Axis} {RunReport.F(c.Px, 0)} px" + (m.Signed ? $" {c.Sense} ({c.Arrow})" : "")).ToList();
         return parts.Count == 0 ? "-" : string.Join(", ", parts);
     }
 
     /// <summary>The SynScan arrows of a signed move, `dreapta, jos`, for the CSV; empty otherwise (R-038).</summary>
     internal static string MoveArrows(MountMove? m)
-    {
-        if (m is null || !m.Signed)
-        {
-            return "";
-        }
+        => m is null || !m.Signed ? "" : string.Join(", ", MoveComponents(m).Select(c => c.Arrow));
 
-        List<string> parts = [];
+    /// <summary>
+    /// The components of a move that clear Th.AxisStep, each with its axis word, its pixels,
+    /// its sense letter and the SynScan default arrow (stanga east, dreapta west, sus north,
+    /// jos south, ADR 0013); the sense and the arrow mean nothing when the move is unsigned.
+    /// </summary>
+    private static IEnumerable<(string Axis, double Px, string Sense, string Arrow)> MoveComponents(MountMove m)
+    {
         if (Math.Abs(m.RaPx) >= Th.AxisStep)
         {
-            parts.Add(m.RaPx > 0 ? "stanga" : "dreapta");
+            yield return ("RA", Math.Abs(m.RaPx), m.RaPx > 0 ? "E" : "V", m.RaPx > 0 ? "stanga" : "dreapta");
         }
 
         if (Math.Abs(m.DecPx) >= Th.AxisStep)
         {
-            parts.Add(m.DecPx > 0 ? "sus" : "jos");
+            yield return ("DEC", Math.Abs(m.DecPx), m.DecPx > 0 ? "N" : "S", m.DecPx > 0 ? "sus" : "jos");
         }
-
-        return string.Join(", ", parts);
     }
 
     /// <summary>The cell `k/n de la f` of a frame's run at 10 px, `-` outside one (R-034).</summary>
