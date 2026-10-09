@@ -215,4 +215,55 @@ public class ImageLoaderTests
         Assert.Null(info.Image);
         Assert.Equal(20, info.FocalMm);
     }
+
+    /// <summary>
+    /// R-008: the two reads of one file refuse a file that does not begin with the SIMPLE
+    /// card with the same exception and message, in three shapes (an empty file, one shorter
+    /// than a keyword, a whole block whose first card is something else), instead of an empty
+    /// header from the metadata read that every caller would have to recognise by its count,
+    /// and a parse of whatever follows from the full load (ADR 0057).
+    /// </summary>
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("acesta nu e un fisier FITS", 100)]
+    [InlineData("NAXIS   =                    2", 2880)]
+    public void R008_BothReadsRefuseAFileThatDoesNotBeginWithSimple(string start, int length)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("bad.fit", Padded(start, length));
+
+        var info = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
+        var full = Assert.Throws<InvalidDataException>(() => ImageLoader.Load(path));
+
+        Assert.Contains("SIMPLE", info.Message);
+        Assert.Equal(info.Message, full.Message);
+    }
+
+    /// <summary>
+    /// R-008: a header that begins with SIMPLE but ends before END is refused by both reads
+    /// too, with the full load's message; the metadata read used to answer it with an empty
+    /// header (ADR 0057). Shorter than one block, and exactly one block without END.
+    /// </summary>
+    [Theory]
+    [InlineData(100)]
+    [InlineData(2880)]
+    public void R008_BothReadsRefuseAHeaderCutBeforeEnd(int length)
+    {
+        using var ws = new TempWorkspace();
+        string path = ws.WriteFile("cut.fit", Padded(FitsTestData.Card("SIMPLE", "T"), length));
+
+        var info = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
+        var full = Assert.Throws<InvalidDataException>(() => ImageLoader.Load(path));
+
+        Assert.Contains("incomplet", info.Message);
+        Assert.Equal(info.Message, full.Message);
+    }
+
+    /// <summary><paramref name="start"/> in ASCII, then spaces, <paramref name="length"/> bytes in all.</summary>
+    static byte[] Padded(string start, int length)
+    {
+        byte[] bytes = Enumerable.Repeat((byte)' ', length).ToArray();
+        System.Text.Encoding.ASCII.GetBytes(start, 0, Math.Min(start.Length, length), bytes, 0);
+        return bytes;
+    }
 }

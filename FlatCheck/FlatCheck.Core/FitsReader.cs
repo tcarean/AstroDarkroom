@@ -55,10 +55,35 @@ namespace FlatCheck
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
+        const string NotSimple = "FITS: fisierul nu incepe cu SIMPLE.";
+        const string HeaderIncomplete = "FITS: header incomplet.";
+
+        /// <summary>
+        /// Cuvantul-cheie al unui card: primii 8 octeti, fara spatii. O singura definitie pentru
+        /// Load si LoadHeader, ca cele doua sa nu citeasca un card diferit.
+        /// </summary>
+        static string KeyOf(string card) => card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
+
+        /// <summary>
+        /// Magicul fisierului: primul card al HDU-ului primar e SIMPLE, altfel nu e un FITS si
+        /// ambele cititiri refuza fisierul cu acelasi mesaj (ADR 0057). <paramref name="length"/>
+        /// e cat s-a citit de fapt din <paramref name="bytes"/>: un fisier gol sau mai scurt decat
+        /// un cuvant-cheie e refuzat la fel.
+        /// </summary>
+        static void RequireSimple(byte[] bytes, int length)
+        {
+            if (length < 8 || KeyOf(Encoding.ASCII.GetString(bytes, 0, Math.Min(length, 80))) != "SIMPLE")
+                throw new InvalidDataException(NotSimple);
+        }
+
         /// <summary>
         /// Doar headerul HDU-ului primar, fara pixeli: blocurile de 2880 pana la END. Pentru
         /// cine vrea FOCALLEN sau INSTRUME dintr-un master de 96 MB fara sa-l citeasca (tabul
-        /// Sintetic, la deschiderea sesiunii). Dictionar gol daca fisierul nu incepe cu SIMPLE.
+        /// Sintetic, la deschiderea sesiunii). Refuza, cu InvalidDataException, exact ce refuza
+        /// si incarcarea completa: un fisier care nu incepe cu cardul SIMPLE (gol, mai scurt
+        /// decat un cuvant-cheie, sau cu altceva in primul card) si un header taiat inainte de
+        /// END. Un header gol ar fi un raspuns, nu o eroare, si fiecare apelant ar trebui sa-l
+        /// recunoasca dupa numarul de carduri (ADR 0057).
         /// </summary>
         internal static IReadOnlyDictionary<string, string> LoadHeader(string path)
         {
@@ -71,13 +96,15 @@ namespace FlatCheck
                 while (got < block.Length)
                 {
                     int n = fs.Read(block, got, block.Length - got);
-                    if (n <= 0) return hdr;
+                    if (n <= 0) break;
                     got += n;
                 }
+                if (b == 0) RequireSimple(block, got);
+                if (got < block.Length) throw new InvalidDataException(HeaderIncomplete);
                 for (int c = 0; c < 36; c++)
                 {
                     string card = Encoding.ASCII.GetString(block, c * 80, 80);
-                    string key = card.Substring(0, 8).Trim();
+                    string key = KeyOf(card);
                     if (key == "END") return hdr;
                     if (key.Length == 0 || card.Length < 10 || card[8] != '=') continue;
                     string value = card.Substring(10);
@@ -129,8 +156,8 @@ namespace FlatCheck
         /// <summary>
         /// Doar ce spune headerul: focala, aparatul, planurile, BITPIX, ordinea CFA. Fara
         /// pixeli si fara cardurile brute (LoadHeader nu le pastreaza; cine scrie un fisier
-        /// inapoi incarca oricum tot). Un fisier care nu incepe cu SIMPLE da un header gol,
-        /// nu o eroare - la fel ca LoadHeader.
+        /// inapoi incarca oricum tot). Ce refuza LoadHeader (fara SIMPLE, header taiat) arunca
+        /// InvalidDataException cu acelasi mesaj ca Load pe acelasi fisier (ADR 0057).
         /// </summary>
         public LoadedFrame LoadInfo(string path)
         {
@@ -195,7 +222,7 @@ namespace FlatCheck
         internal static (Img Image, IReadOnlyDictionary<string, string> Header, IReadOnlyList<string> Cards, int Planes, int Bitpix)
             LoadFull(byte[] raw)
         {
-
+            RequireSimple(raw, raw.Length);
             int pos = 0;
             while (pos < raw.Length)
             {
@@ -204,11 +231,11 @@ namespace FlatCheck
                 bool end = false;
                 while (!end)
                 {
-                    if (pos + 2880 > raw.Length) throw new Exception("FITS: header incomplet.");
+                    if (pos + 2880 > raw.Length) throw new InvalidDataException(HeaderIncomplete);
                     for (int c = 0; c < 36; c++)
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
-                        string key = card.Length >= 8 ? card.Substring(0, 8).Trim() : "";
+                        string key = KeyOf(card);
                         if (key == "END") { end = true; break; }   // nimic dupa END nu mai conteaza
                         cards.Add(card);
                         if (card.Length > 10 && card[8] == '=')

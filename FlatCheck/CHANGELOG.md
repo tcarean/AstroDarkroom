@@ -28,6 +28,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The FITS reader checks the file's magic: a file that does not begin with the `SIMPLE` card
+  fails with `FITS: fisierul nu incepe cu SIMPLE.` in both reads, the full load and the
+  metadata-only one (`ImageLoader.LoadInfo`), and a header cut before `END` fails in both with
+  `FITS: header incomplet.` (R-008, ADR 0057). The metadata read used to answer either with an
+  empty header, so the window's Sintetic tab now says why its prefill failed on a master that
+  is not a FITS; the console names the real fault on a `.jpg` given by mistake instead of
+  `header incomplet` or a parse error further in.
 - `--help` names `--out` beside `-o` for the output map, as the README and R-006 do; the
   golden `help.txt` was re-approved for that one line.
 - The Python prototype is frozen at 2.2.0 and no longer maintained (ADR 0047, supersedes 0005
@@ -56,6 +63,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
+  each one is judged in `docs/design/dependencies.md` (ADR 0058): the five published against
+  ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0010 rejects, and none
+  applies to a tool that decodes the JPEG preview of the owner's own raws.
 - `Directory.Build.props` declares the `win-x64` runtime the release publishes for, on every
   project but the two test projects, and turns off the single-file analyzer, so a release's
   publish no longer rewrites the lock files and stops the release on them (ADR 0056).
