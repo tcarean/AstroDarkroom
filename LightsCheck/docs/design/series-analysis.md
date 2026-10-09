@@ -62,7 +62,9 @@ is a step of `Th.DitherStep` (5 px) or more (ADR 0007). The tables are what ADR 
 registered frames (87 frames: nothing). The greedy clustering seeds a cluster with the first
 frame no earlier seed covers; it is the prototype's, order-dependent by design (the first
 frame of a spot names it). Runs at a radius are stretches of 3 or more consecutive frames
-within the radius of the stretch's first frame.
+within the radius of the stretch's first frame. `SpotRun` is the per-frame view of the runs at
+10 px, filled from `runsLoose` (the ordinal in the run, its length, its first frame; null
+outside a run), for the table cell and the map ring of R-034 (ADR 0011).
 
 ## Classes, trends, drift, axes (`SeriesAnalyzer`)
 
@@ -76,7 +78,13 @@ hand report found. Rotation is the last registered frame's minus the first's; th
 figure is that rate over one exposure at the half-diagonal. The RA axis comes from the WCS
 when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
 along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
-frames, stated as an assumption.
+frames, stated as an assumption. Once the axis is known, the trailing flag (bad or marginal)
+of every frame whose coherence clears the same `Th.TrailAxisCoherence` is rewritten with the
+axis its trail runs along (`TrailAxisOf`: RA within `Th.TrailAxisTolerance` of the image axis
+that is RA, DEC within it of the other, oblique otherwise), and the series' mean angle gets
+its own word (`TrailOn`); the flag keeps the angle as its `Detail`, so a frame without an axis
+still reads its angle (R-033, ADR 0011). The per-frame axis is derived, not measured again: a
+change of the axis rule moves every frame's word with it.
 
 ## Noise (`NoiseAnalyzer`)
 
@@ -96,9 +104,14 @@ Each section is a list of `ReportRow(Label, Value, Verdict)` built by a producer
 `RejectedRows`); `Write` prints every row as the label in a 19-column field, a colon, then the
 verdict word and the value, and the window binds the same rows (ADR 0008). A section's text
 therefore has one label column; a label longer than the field pushes its colon right.
-`FrameRows` formats the table's cells once for the console and the window, `RejectedRows`
-and `RejectedHeading` the RESPINSE block, `CropCaption` the caption of a star cut-out
-(`StarCrops` cuts, this file words).
+`FrameRows` formats the table's cells once for the console and the window (`SpotCell` the
+`k/n de la f` cell of a run, `-` outside one), `RejectedRows` and `RejectedHeading` the
+RESPINSE block, `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
+words). `Reason` words a trailing flag as `alungire v (prag t)` plus `TrailSuffix`: `, dara pe
+RA (a grade)` when the flag has an axis (`AxisWord`), `, dara la a grade` when it has only the
+angle. `RejectedExplanation` is the paragraph the window shows under RESPINSE, built once from
+`Th` so the thresholds it quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`,
+`oblic` or empty) and the three `spot_run_*` columns.
 
 The report prints the session header shared with the inventory, then the sections the
 owner's hand report had, in the same order, with every verdict followed by its numbers. The

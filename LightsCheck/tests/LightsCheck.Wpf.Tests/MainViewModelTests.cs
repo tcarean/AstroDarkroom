@@ -373,6 +373,28 @@ public class MainViewModelTests
         Assert.False(new RowVm("x", "y", null).HasVerdict);
     }
 
+    /// <summary>The explanation under RESPINSE is the core's text; the frames carry the run cell of R-034 and the map rings the frames of a run.</summary>
+    [Fact]
+    public async Task R035_TheRejectedTabCarriesTheCoreExplanationAndTheFramesTheirRunCell()
+    {
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] pattern = [(0, 0, 1.0, 0), (1, 0.5, 1.0, 1), (0.5, 1.5, 1.0, 1), (30, 0, 2.0, 30), (30.5, 0.2, 1.0, 1)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal(SeriesReport.RejectedExplanation, vm.RejectedExplanation);
+        Assert.Contains("RA", vm.RejectedExplanation, StringComparison.Ordinal);
+        Assert.Contains("DEC", vm.RejectedExplanation, StringComparison.Ordinal);
+        Assert.Contains("la limita", vm.RejectedExplanation, StringComparison.Ordinal);
+        Assert.Contains("CADRE MISCATE", vm.RejectedExplanation, StringComparison.Ordinal);
+
+        Assert.Equal(SeriesReport.FrameRows(vm.Result!).Select(r => r.Spot), vm.Frames.Select(r => r.Spot));
+        Assert.Equal("3/3 de la 1", vm.Frames[2].Spot);
+        Assert.Equal("-", vm.Frames[3].Spot);
+        Assert.Equal([true, true, true, false, false], vm.MapPoints.Select(p => p.Ring));
+    }
+
     [Fact]
     public void TheCropImageIsAGreyBitmap()
     {

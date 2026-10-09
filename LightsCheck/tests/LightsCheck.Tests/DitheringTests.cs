@@ -146,4 +146,25 @@ public class DitheringTests
         Assert.Equal(3, d.Registered);
         Assert.Null(d.NearestOther[1]);
     }
+
+    /// <summary>The per-frame view of the runs at 10 px: ordinal, length and first frame, null outside a run (R-034).</summary>
+    [Fact]
+    public void R034_EachFrameKnowsItsRunAtTenPixels()
+    {
+        double?[] x = [0, 1, 0, 2, 100, 300];
+        double?[] y = [0, 1, 2, 1, 100, 300];
+        DitherAnalysis d = Analyze(x, y);
+        Assert.Equal(6, d.SpotRun.Count);
+        Assert.Equal(new SpotRun(1, 4, 1), d.SpotRun[0]);
+        Assert.Equal(new SpotRun(4, 4, 1), d.SpotRun[3]);
+        Assert.Null(d.SpotRun[4]);
+        Assert.Null(d.SpotRun[5]);
+
+        // Two frames together are a pair, not a run; an unregistered frame breaks one.
+        Assert.All(Analyze([0, 1, 50], [0, 1, 50]).SpotRun, s => Assert.Null(s));
+        DitherAnalysis broken = Analyze([0, 1, null, 2, 3, 4], [0, 0, null, 0, 0, 0]);
+        Assert.Null(broken.SpotRun[0]);
+        Assert.Null(broken.SpotRun[2]);
+        Assert.Equal(new SpotRun(3, 3, 4), broken.SpotRun[5]);
+    }
 }

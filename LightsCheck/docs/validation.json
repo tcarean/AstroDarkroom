@@ -87,6 +87,17 @@
         "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true, "walkingNoiseOk": false
       },
       "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3 }
+    },
+    {
+      "id": "V-009",
+      "kind": "words",
+      "session": "Veil/2026-10-06-3h",
+      "measuredOn": "2026-10-09",
+      "expected": {
+        "badTrailOn": "RA", "marginalTrailOn": "RA",
+        "spotCells": { "57": "1/4 de la 57", "60": "4/4 de la 57", "61": "1/10 de la 61", "70": "10/10 de la 61", "71": "-", "72": "-" }
+      },
+      "tolerance": {}
     }
   ]
 }

@@ -18,6 +18,7 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | `inventory` | `InventoryRun` on the session | the counts of lights and biases, the camera, the exposure and ISO of the first frame, the start of the first frame, the span, the duty | 0.01 s exposure, 1 s span, 0.05 points duty |
 | `frame` | `FrameRun` on one light | detected and bright counts, median and p90 FWHM, median elongation, the elongated fraction, the angle and its coherence, the halo, the background and noise, the four channel medians, the centre and edge FWHM, the trail count | counts 1 %, FWHM 0.05 px, elongation 0.05, fraction 0.03, angle 3 or 8 degrees (8 where the coherence is under 0.5 and the angle means little), coherence 0.03 / 0.05, halo 0.01, ADU 1.0, sigma 0.2 |
 | `series` | `SeriesRun` on the whole session (minutes) | the class counts and the list of bad frames, the registered frames, the moves, pauses and pauses without a move, the distinct spots at 5 and 10 px, the isolated frames, the longest run at 10 px, the median move, the rotation, the drift along Y, the session FWHM, the read noise of G1, the swamping ratio of R on the first frame, the RA axis and the four verdicts | counts and lists exact; px 0.1, arcmin 0.3, FWHM 0.05, ADU 0.1, ratio 0.3 |
+| `words` | `SeriesRun` on the whole session (minutes) | the trail axis word of every frame with a trailing flag, one expected word for the bad and one for the marginal frames, and the `acelasi loc` cell of the frames listed | exact |
 
 ## Cases
 
@@ -31,6 +32,7 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | V-006 | same, frame 72 (clean, late) | frame | 13338 / 1886, FWHM 3.03 (3.64), elongation 1.16, 15 %, angle -76 at 0.46, halo 0.012, background 161, sigma 15.0, channels 33 / 159 / 159 / 183 | 2026-10-09 |
 | V-007 | same, frame 83 (clean, last hour) | frame | 12135 / 1662, FWHM 3.06 (3.58), elongation 1.13, 13 %, angle -87 at 0.17, halo -0.006, background 174, sigma 15.8, channels 35 / 174 / 174 / 195 | 2026-10-09 |
 | V-008 | same, the whole session | series | 48 good / 17 marginal / 22 bad, the bad frames 1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76; 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.48 px/min along Y; session FWHM 3.12 px; read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, walking noise insufficient | 2026-10-09 |
+| V-009 | same, the whole session | words | the trail axis word `RA` on all 22 bad and all 17 marginal frames (angles 77 to 89 degrees in absolute value, coherence 0.94 and 0.86 or more); the `acelasi loc` cells `1/4 de la 57` to `4/4 de la 57` on 57 to 60, `1/10 de la 61` to `10/10 de la 61` on 61 to 70, `-` on 71 and 72 | 2026-10-09 |
 
 The series figures are the console's run of 2026-10-09 (88 s on 4 threads) and equal the hand
 report's: the same 22 bad and 17 marginal frames, 47 pauses and 9 presses without effect, the
@@ -75,3 +77,7 @@ drift instead of editing the figures.
 - 2026-10-09: before 1.0.0, all eight cases re-measured on the merged code of steps 1 to 4
   (`ValidationTests`, 8 passed, the series case in 2 min 16 s on 4 threads); no figure
   changed.
+- 2026-10-09: V-009 recorded from the console's `--out` run on the Veil session (R-033, R-034,
+  ADR 0011): the CSV's `trail_on` is `RA` on every bad and marginal frame, and the runs at
+  10 px the `spot_run_*` columns give are the eleven `grupuri in 10 px` of V-008's run, the
+  same as the hand analysis found. The eight earlier cases were re-measured with it.

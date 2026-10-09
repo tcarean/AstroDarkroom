@@ -26,7 +26,7 @@ internal sealed record ReportRow(string Label, string Value, string? Verdict = n
 internal sealed record RejectedRow(int Index, string FileName, string Reasons);
 
 /// <summary>One frame of the table, every cell already formatted; "-" where a figure is missing.</summary>
-internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Reasons);
+internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Spot, string Reasons);
 
 /// <summary>
 /// The whole series as the console prints it (Romanian, R-027), built from labelled rows that
@@ -63,11 +63,11 @@ internal static class SeriesReport
 
         w.WriteLine();
         w.WriteLine("  TABEL PE CADRE");
-        w.WriteLine("     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  motive");
+        w.WriteLine("     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  acelasi loc     motive");
         foreach (FrameTableRow f in FrameRows(r))
         {
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
-            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Reasons}");
+            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Spot,-14}  {f.Reasons}");
         }
     }
 
@@ -96,11 +96,22 @@ internal static class SeriesReport
                 ClassWord(s.Classes[i]), Opt(m?.ElongationMedian, 2), Opt(m?.FwhmMedian, 2),
                 m is null ? "-" : m.Detected.ToString(Inv), Opt(m?.BackgroundMedian, 0),
                 r.Cadence.PauseSeconds[i] is double p ? RunReport.F(p, 0) + " s" : "-",
-                Opt(d.Step[i], 1), Opt(g?.Dx, 1), Opt(g?.Dy, 1), Reasons(s.Flags[i])));
+                Opt(d.Step[i], 1), Opt(g?.Dx, 1), Opt(g?.Dy, 1), SpotCell(d.SpotRun[i]), Reasons(s.Flags[i])));
         }
 
         return rows;
     }
+
+    /// <summary>The cell `k/n de la f` of a frame's run at 10 px, `-` outside one (R-034).</summary>
+    internal static string SpotCell(SpotRun? run)
+        => run is null ? "-" : $"{run.Ordinal.ToString(Inv)}/{run.Frames.ToString(Inv)} de la {run.FirstIndex.ToString(Inv)}";
+
+    /// <summary>What the Respinse tab says under its heading: the elongation, the trail and its axis, where the marginal frames are (R-035).</summary>
+    internal static string RejectedExplanation { get; } =
+        $"Alungirea e raportul dintre axa lunga si axa scurta a stelelor (1 = rotunde), mediana pe cadru: de la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva; " +
+        $"intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} e la limita si ramane, la alegerea ta (lista lui e randul 'la limita' din CADRE MISCATE, tabul Rezumat; in tabul Cadre are clasa galbena). " +
+        "Dara e directia in care s-au intins stelele in timpul expunerii: unghiul fata de orizontala imaginii si, cand se stie care axa a imaginii e RA si stelele cadrului sunt de acord intre ele (coerenta), axa monturii pe care cade. " +
+        "Dara pe RA vine din urmarire: eroarea periodica, viteza, backlash-ul pe RA. Dara pe DEC vine din alinierea polara, vant sau o atingere a monturii. Oblica: amandoua, sau o lovitura.";
 
     /// <summary>The caption of a star cut-out: where it was taken and the star's three figures.</summary>
     internal static string CropCaption(StarCrop c)
@@ -204,7 +215,7 @@ internal static class SeriesReport
         [
             new($"slabe (alungire >= {RunReport.F(Th.ElongationBad, 2)})", List(r, FrameClass.Bad)),
             new($"la limita ({RunReport.F(Th.ElongationMarginal, 2)} .. {RunReport.F(Th.ElongationBad, 2)})", List(r, FrameClass.Marginal)),
-            new("directia darelor", $"{(s.TrailAngleDeg is double ta ? RunReport.F(ta, 0) + " grade fata de orizontala pe cadrele slabe" : "nedeterminata (prea putine cadre slabe cu directie coerenta)")}; {AxisLine(s)}"),
+            new("directia darelor", $"{(s.TrailAngleDeg is double ta ? RunReport.F(ta, 0) + " grade fata de orizontala pe cadrele slabe" + (s.TrailOn == TrailAxis.Unknown ? "" : " = " + AxisWord(s.TrailOn)) : "nedeterminata (prea putine cadre slabe cu directie coerenta)")}; {AxisLine(s)}"),
         ];
     }
 
@@ -263,8 +274,8 @@ internal static class SeriesReport
         ArgumentNullException.ThrowIfNull(f);
         return f.Kind switch
         {
-            FlagKind.Trailed => $"alungire {RunReport.F(f.Value, 2)} (prag {RunReport.F(f.Threshold, 2)}){(f.Detail is null ? "" : ", dara la " + f.Detail + " grade")}",
-            FlagKind.MarginalTrail => $"alungire {RunReport.F(f.Value, 2)} la limita (prag {RunReport.F(f.Threshold, 2)})",
+            FlagKind.Trailed => $"alungire {RunReport.F(f.Value, 2)} (prag {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}",
+            FlagKind.MarginalTrail => $"alungire {RunReport.F(f.Value, 2)} la limita (prag {RunReport.F(f.Threshold, 2)}){TrailSuffix(f)}",
             FlagKind.Soft => $"FWHM {RunReport.F(f.Value, 2)} px, peste {RunReport.F(f.Threshold, 2)} ({RunReport.F(Th.SoftFwhmFactor, 1)} x mediana sesiunii)",
             FlagKind.Clouds => $"stele {RunReport.F(f.Value, 0)}, sub {RunReport.F(f.Threshold, 0)} ({RunReport.F(100 * Th.CloudStarFraction, 0)} % din mediana): nori sau ceata",
             FlagKind.BackgroundJump => $"salt de fond {Signed(f.Value, 0)} % fata de vecini (prag {RunReport.F(f.Threshold, 0)} %)",
@@ -274,6 +285,18 @@ internal static class SeriesReport
             _ => f.Kind.ToString(),
         };
     }
+
+    /// <summary>`, dara pe RA (-90 grade)` when the trail's axis is known, `, dara la -90 grade` when only its angle is, nothing without an angle (R-033).</summary>
+    private static string TrailSuffix(FrameFlag f)
+        => f.Detail is null ? "" : f.On == TrailAxis.Unknown ? $", dara la {f.Detail} grade" : $", dara {AxisWord(f.On)} ({f.Detail} grade)";
+
+    internal static string AxisWord(TrailAxis on) => on switch
+    {
+        TrailAxis.Ra => "pe RA",
+        TrailAxis.Dec => "pe DEC",
+        TrailAxis.Oblique => "oblica",
+        _ => "",
+    };
 
     internal static string Reasons(IReadOnlyList<FrameFlag> flags)
     {

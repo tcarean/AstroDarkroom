@@ -32,13 +32,16 @@ bug and propagates.
   `RowVm(Label, Value, Verdict)`; the session card takes the lines `InventoryReport.WriteHeader`
   prints (split on `" : "`) plus `SeriesReport.ScaleLine`;
 - the frames table takes `SeriesReport.FrameRows(r)`, the console's table cells already
-  formatted, plus the frame's path for the cut-outs; `Rejected` is the frames
-  `SeriesReport.RejectedRows` names and `RejectedHeading` is `SeriesReport.RejectedHeading`;
+  formatted (the run cell as `Spot`), plus the frame's path for the cut-outs; `Rejected` is
+  the frames `SeriesReport.RejectedRows` names, `RejectedHeading` is
+  `SeriesReport.RejectedHeading` and `RejectedExplanation` passes
+  `SeriesReport.RejectedExplanation` through for the paragraph under the heading;
 - the charts take `ChartPoint(X, Y, Label, Colour)` lists: the map from the registration's
   `Dx`/`Dy`, the steps and nearest distances from `DitherAnalysis`, the four quality series
   from `FrameMeasurement`; a frame without a figure is `NaN` and the chart leaves a gap. The
   guide lines quote `Th` (the move threshold, the 10 px coverage radius, the two elongation
-  classes) so a change there moves the lines;
+  classes) so a change there moves the lines; a map point whose frame sits in a run at 10 px
+  (`DitherAnalysis.SpotRun`) carries `Ring`;
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
@@ -62,7 +65,8 @@ frame. `CropsPending` is the decode in flight; a selection made while it runs wi
 Two `FrameworkElement`s that draw in `OnRender`, no chart library. `SeriesChart` is a line or
 bar chart over the frame index with optional guide lines and a minimum; `DitherMap` is the
 positions on a 10 px grid, equal scales on both axes, each point coloured by its class, joined
-to the next and numbered. Both redraw when `Points` changes (the dependency properties call
+to the next and numbered, a `Ring` point drawn as a hollow circle in the same colour. Both
+redraw when `Points` changes (the dependency properties call
 `InvalidateVisual`) and draw nothing under a minimum size.
 
 ## Culture, title bar, icon

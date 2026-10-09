@@ -57,6 +57,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:DitherMap Height="460" Points="{Binding MapPoints}" XLabel="{Binding MapXLabel}" YLabel="{Binding MapYLabel}" />
             </Border>
+            <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
+                       Text="Inel in loc de punct plin = cadru dintr-un sir de 3 sau mai multe cadre consecutive in acelasi loc (10 px), sirurile care fac walking noise; coloana 'acelasi loc' din tabul Cadre spune al catelea e." />
           </StackPanel>
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">

@@ -28,6 +28,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel>
         <TextBlock Style="{StaticResource Heading}" Text="RESPINSE" />
         <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,10" TextWrapping="Wrap" Text="{Binding RejectedHeading}" />
+        <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10" TextWrapping="Wrap" Text="{Binding RejectedExplanation}" />
         <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,10" TextWrapping="Wrap"
                    Text="Butonul &quot;Scrie fisierele...&quot; din bara de sus salveaza si lista numelor (lightscheck-respinse.txt), cate unul pe linie, de scos din secventa in Siril." />
         <ItemsControl ItemsSource="{Binding Rejected}">

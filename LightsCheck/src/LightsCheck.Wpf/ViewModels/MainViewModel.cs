@@ -52,6 +52,7 @@ public sealed class FrameRowVm
         Step = row.Step;
         Dx = row.Dx;
         Dy = row.Dy;
+        Spot = row.Spot;
         Reasons = row.Reasons;
         Path = path;
     }
@@ -68,6 +69,7 @@ public sealed class FrameRowVm
     public string Step { get; }
     public string Dx { get; }
     public string Dy { get; }
+    public string Spot { get; }
     public string Reasons { get; }
     public string? Path { get; }
 }
@@ -210,6 +212,7 @@ public sealed class MainViewModel : ObservableObject
     public string MapXLabel { get; private set; } = "X";
     public string MapYLabel { get; private set; } = "Y";
     public string RejectedHeading { get; private set; } = "";
+    public string RejectedExplanation => SeriesReport.RejectedExplanation;
 
     public FrameRowVm? SelectedFrame
     {
@@ -377,7 +380,7 @@ public sealed class MainViewModel : ObservableObject
             Color colour = ClassColour(s.Classes[i]);
             string label = f.Info.Index.ToString(CultureInfo.InvariantCulture);
             frames.Add(new FrameRowVm(table[i], m is null ? null : f.Info.Path));
-            map.Add(new ChartPoint(g?.Dx ?? double.NaN, g?.Dy ?? double.NaN, label, colour));
+            map.Add(new ChartPoint(g?.Dx ?? double.NaN, g?.Dy ?? double.NaN, label, colour, Ring: d.SpotRun[i] is not null));
             steps.Add(new ChartPoint(f.Info.Index, d.Step[i] ?? double.NaN, label, d.IsMove[i] ? VerdictPalette.Warn : VerdictPalette.Neutral));
             nearest.Add(new ChartPoint(f.Info.Index, d.NearestOther[i] ?? double.NaN, label, Color.FromRgb(0x4E, 0xA8, 0xDE)));
             fwhm.Add(new ChartPoint(f.Info.Index, m?.FwhmMedian ?? double.NaN, label, colour));

@@ -20,6 +20,9 @@ namespace LightsCheck.Core;
 /// <summary>A stretch of consecutive frames that stayed within a radius of the first one.</summary>
 internal sealed record FrameStretch(int FirstIndex, int LastIndex, int Frames);
 
+/// <summary>One frame's place in a run at Th.CoverageLoose: the k-th of n frames from frame f (R-034).</summary>
+internal sealed record SpotRun(int Ordinal, int Frames, int FirstIndex);
+
 /// <summary>A count per size class of the dither moves, in pixels, the classes bounded by Th.DitherSizeBounds.</summary>
 internal sealed record SizeClass(double Lower, double? Upper, int Count);
 
@@ -60,6 +63,7 @@ internal sealed record DitherAnalysis(
     int DistinctLoose,
     IReadOnlyList<FrameStretch> RunsMid,
     IReadOnlyList<FrameStretch> RunsLoose,
+    IReadOnlyList<SpotRun?> SpotRun,
     double SpanX,
     double SpanY,
     int Registered,
@@ -250,6 +254,15 @@ internal static class DitherAnalyzer
         double spanX = reg.Count > 0 ? reg.Max(i => x[i]!.Value) - reg.Min(i => x[i]!.Value) : 0;
         double spanY = reg.Count > 0 ? reg.Max(i => y[i]!.Value) - reg.Min(i => y[i]!.Value) : 0;
         List<FrameStretch> runsMid = Runs(x, y, Th.CoverageMid), runsLoose = Runs(x, y, Th.CoverageLoose);
+        SpotRun?[] spot = new SpotRun?[n];
+        foreach (FrameStretch run in runsLoose)
+        {
+            for (int k = 0; k < run.Frames; k++)
+            {
+                spot[run.FirstIndex - 1 + k] = new SpotRun(k + 1, run.Frames, run.FirstIndex);
+            }
+        }
+
         int longestTight = Runs(x, y, Th.CoverageTight).Select(r => r.Frames).DefaultIfEmpty(1).Max();
         int distinctMid = Distinct(x, y, reg, Th.CoverageMid), distinctLoose = Distinct(x, y, reg, Th.CoverageLoose);
 
@@ -262,7 +275,7 @@ internal static class DitherAnalyzer
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, runsMid, runsLoose, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)

@@ -49,3 +49,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - `prototype/`: the Python scripts of the 2026-10-09 analysis of the Veil session, frozen, and
   their report and figures under `docs/validation/2026-10-06-veil/`; V-001 checks the inventory
   on that session.
+- The axis of each trail (R-033, ADR 0011): a trailed or marginal frame's reason says on which
+  mount axis its stars stretched, `dara pe RA (-90 grade)`, `pe DEC` or `oblica`, when the RA
+  axis is known and the frame's stars agree on a direction; the `directia darelor` row ends
+  with the same word, the CSV gets `trail_on`. V-009 checks the words on the Veil session.
+- The run at 10 px per frame (R-034, R-035, ADR 0011): the column `acelasi loc` of the frame
+  table and of the Cadre tab (`7/10 de la 61`: the seventh of ten consecutive frames at the
+  spot of frame 61), three `spot_run_*` CSV columns, and a ring instead of a dot on the
+  dithering map for those frames. No class changes: a run is a property of the stack, not a
+  defect of the frame.
+- The Respinse tab explains its words under the heading: the elongation and its thresholds,
+  the trail and its axis, what RA against DEC points to, where the marginal frames are listed.
+
+### Changed
+
+- The reason of a frame at the limit carries the trail angle too (`alungire 1.49 la limita
+  (prag 1.35), dara la -90 grade`), as the bad frames' did.

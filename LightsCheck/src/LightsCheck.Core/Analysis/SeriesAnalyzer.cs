@@ -42,8 +42,20 @@ internal enum FlagKind
     Unregistered,
 }
 
-/// <summary>A reason attached to a frame: its kind, the measured value and the threshold it was judged against.</summary>
-internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null);
+/// <summary>
+/// A reason attached to a frame: its kind, the measured value and the threshold it was judged
+/// against; for a trailing flag, the angle as Detail and the mount axis the trail runs along (R-033).
+/// </summary>
+internal sealed record FrameFlag(FlagKind Kind, double Value, double Threshold, string? Detail = null, TrailAxis On = TrailAxis.Unknown);
+
+/// <summary>The mount axis a trail runs along, against the RA axis of the image (R-033).</summary>
+internal enum TrailAxis
+{
+    Unknown,
+    Ra,
+    Dec,
+    Oblique,
+}
 
 /// <summary>Medians of the first and the last <see cref="Count"/> good frames, for the trends (R-023).</summary>
 internal sealed record Trend(double? First, double? Last, int Count)
@@ -89,6 +101,7 @@ internal sealed record SeriesAnalysis(
     Axis RaAxis,
     string AxisSource,
     double? TrailAngleDeg,
+    TrailAxis TrailOn,
     IReadOnlyList<ReadNoise>? ReadNoise,
     IReadOnlyList<IReadOnlyList<ChannelNoise>>? Swamping,
     IReadOnlyList<int> SwampingFrames);
@@ -124,15 +137,16 @@ internal static class SeriesAnalyzer
             FrameMeasurement m = f.Measurement;
             starsAll.Add(m.Detected);
             double el = m.ElongationMedian ?? 1;
+            string? angle = m.AngleDeg is double a ? a.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) : null;
             if (el >= Th.ElongationBad)
             {
                 classes[i] = FrameClass.Bad;
-                flags[i].Add(new FrameFlag(FlagKind.Trailed, el, Th.ElongationBad, m.AngleDeg is double a ? a.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) : null));
+                flags[i].Add(new FrameFlag(FlagKind.Trailed, el, Th.ElongationBad, angle));
             }
             else if (el >= Th.ElongationMarginal)
             {
                 classes[i] = FrameClass.Marginal;
-                flags[i].Add(new FrameFlag(FlagKind.MarginalTrail, el, Th.ElongationMarginal));
+                flags[i].Add(new FrameFlag(FlagKind.MarginalTrail, el, Th.ElongationMarginal, angle));
             }
             else
             {
@@ -273,6 +287,27 @@ internal static class SeriesAnalyzer
             }
         }
 
+        // The axis of each flagged frame's trail, against the RA axis just decided, when the
+        // frame's stars agree on a direction as well as the voters do (R-033).
+        TrailAxis trailOn = trailAngle is double meanAngle ? TrailAxisOf(meanAngle, ra) : TrailAxis.Unknown;
+        if (ra != Axis.Unknown)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                FrameMeasurement? fm = frames[i].Measurement;
+                if (fm?.AngleDeg is double fa && fm.AngleCoherence is double fc && fc > Th.TrailAxisCoherence)
+                {
+                    for (int k = 0; k < flags[i].Count; k++)
+                    {
+                        if (flags[i][k].Kind is FlagKind.Trailed or FlagKind.MarginalTrail)
+                        {
+                            flags[i][k] = flags[i][k] with { On = TrailAxisOf(fa, ra) };
+                        }
+                    }
+                }
+            }
+        }
+
         // Swamping on the first, the middle and the last measured frames.
         List<IReadOnlyList<ChannelNoise>>? swamping = null;
         List<int> swampingFrames = [];
@@ -293,7 +328,24 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, readNoise, swamping, swampingFrames);
+            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, readNoise, swamping, swampingFrames);
+    }
+
+    /// <summary>
+    /// The mount axis a trail at <paramref name="angleDeg"/> (from the image's horizontal) runs
+    /// along: RA within Th.TrailAxisTolerance of the image axis that is RA, DEC within it of the
+    /// other axis, oblique otherwise; unknown without an RA axis (R-033).
+    /// </summary>
+    internal static TrailAxis TrailAxisOf(double angleDeg, Axis ra)
+    {
+        if (ra == Axis.Unknown)
+        {
+            return TrailAxis.Unknown;
+        }
+
+        double fromX = Math.Abs(angleDeg), fromY = Math.Abs(90 - Math.Abs(angleDeg));
+        (double fromRa, double fromDec) = ra == Axis.X ? (fromX, fromY) : (fromY, fromX);
+        return fromRa < Th.TrailAxisTolerance ? TrailAxis.Ra : fromDec < Th.TrailAxisTolerance ? TrailAxis.Dec : TrailAxis.Oblique;
     }
 
     private static Trend TrendOf(List<FrameMeasurement> good, Func<FrameMeasurement, double?> pick)

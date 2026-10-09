@@ -54,6 +54,15 @@ public class ValidationTests
             case "frame":
                 CheckFrame(FrameRun.Run(folder, frame).Measurement, e, t);
                 break;
+            case "words":
+                if (e.ValueKind == JsonValueKind.Null)
+                {
+                    Console.WriteLine($"{id}: unmeasured (expected is null); nothing checked");
+                    return;
+                }
+
+                CheckWords(SeriesRun.Run(folder, new SeriesOptions()), e);
+                break;
             default:
                 CheckSeries(SeriesRun.Run(folder, new SeriesOptions()), e, t);
                 break;
@@ -88,6 +97,31 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("dew").GetBoolean(), s.DewSuspected);
         Assert.Equal(e.GetProperty("hotPixelsOk").GetBoolean(), d.HotPixelsOk);
         Assert.Equal(e.GetProperty("walkingNoiseOk").GetBoolean(), d.WalkingNoiseOk);
+    }
+
+    /// <summary>The words per frame on the real session: the trail axis of every frame with a trailing flag, by class, and the run cell of the frames listed (R-033, R-034).</summary>
+    private static void CheckWords(SeriesResult r, JsonElement e)
+    {
+        SeriesAnalysis s = r.Series;
+        IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
+        for (int i = 0; i < r.Frames.Count; i++)
+        {
+            FrameFlag? trail = s.Flags[i].FirstOrDefault(f => f.Kind is FlagKind.Trailed or FlagKind.MarginalTrail);
+            if (trail is null)
+            {
+                continue;
+            }
+
+            string expectedWord = e.GetProperty(s.Classes[i] == FrameClass.Bad ? "badTrailOn" : "marginalTrailOn").GetString()!;
+            string word = trail.On.ToString().ToUpperInvariant();
+            Assert.True(expectedWord == word, $"frame {r.Frames[i].Info.Index}: trail on {word}, expected {expectedWord}");
+        }
+
+        foreach (JsonProperty p in e.GetProperty("spotCells").EnumerateObject())
+        {
+            int index = int.Parse(p.Name, CultureInfo.InvariantCulture);
+            Assert.True(p.Value.GetString() == rows[index - 1].Spot, $"frame {index}: cell '{rows[index - 1].Spot}', expected '{p.Value.GetString()}'");
+        }
     }
 
     private static void CheckInventory(Inventory inv, JsonElement e, JsonElement t)
