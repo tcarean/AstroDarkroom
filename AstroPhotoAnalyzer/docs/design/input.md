@@ -122,9 +122,11 @@ chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level 
 
 `RasterOps` returns new rasters and never modifies its input: `Subsample` (every n-th pixel,
 anchored top-left, `a[::s, ::s]`), `Crop`, `Gamma` (v^gamma on every channel through a
-65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`, interpolated linearly between
-levels; a NaN sample is lifted as 0), `GammaFor` (ln(to) / ln(from)), `Level8` / `Level16`,
-`LstarPlane` (L\* per pixel of a subsample).
+65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`), `GammaFor` (ln(to) / ln(from)),
+`Level8` / `Level16`, `LstarPlane` (L\* per pixel of a subsample). `Interpolate(lut, s)` is
+the one reading of such a table, shared by `Gamma` and `LiftTable`: exact on a 16-bit level,
+linear between two neighbouring levels, a NaN sample taken as 0 (it would index the table at
+`int.MinValue`).
 
 The linearisation of a sample has two paths behind one interface, `ISrgbLinearizer`, and the
 two per-sample loops, `LstarPlane<T>` here and `DustAnalyzer.PatchLstars<T>`, are generic on

@@ -85,6 +85,31 @@ public class LiftTableTests
         Assert.Equal(0.7, t.Gamma);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-0.5)]
+    [InlineData(double.NaN)]
+    [InlineData(double.PositiveInfinity)]
+    public void AGammaThatIsNotPositiveAndFiniteIsRefused(double gamma)
+    {
+        Assert.Throws<ArgumentException>(() => new LiftTable(gamma));
+    }
+
+    [Fact]
+    public void PatchLstarsOnMonoGoThroughTheSameTable()
+    {
+        var rng = new Random(19);
+        Raster mono = SyntheticRasters.From(16, 16, 1, (x, y, p) => (float)(0.05 + 0.5 * rng.NextDouble()));
+        double gamma = RasterOps.GammaFor(0.1, 0.19);
+
+        float[] old = DustAnalyzer.PatchLstars(RasterOps.Gamma(mono, gamma));
+        float[] now = DustAnalyzer.PatchLstars(mono, new LiftTable(gamma));
+
+        Assert.Equal(4, now.Length);
+        double worst = Worst(old, now);
+        Assert.True(worst < 1e-5, $"{worst:E2}");
+    }
+
     [Fact]
     public void TheExactLineariserIsSrgbToLinear()
     {

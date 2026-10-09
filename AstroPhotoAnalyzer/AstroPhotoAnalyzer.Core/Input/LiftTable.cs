@@ -64,20 +64,18 @@ namespace AstroPhotoAnalyzer
 
         internal LiftTable(double gamma)
         {
+            // RasterOps.GammaFor da intotdeauna o gamma pozitiva si finita; orice altceva ar
+            // umple tabela cu NaN sau infinit si ar iesi din simulare ca tinte NaN, fara nicio
+            // eroare la sursa.
+            if (!(gamma > 0) || double.IsInfinity(gamma))
+                throw new ArgumentException("gamma trebuie sa fie un numar pozitiv finit");
             Gamma = gamma;
             double[] pow = RasterOps.PowerLut(gamma);
             _lin = new double[pow.Length];
             for (int k = 0; k < pow.Length; k++) _lin[k] = ColorMath.SrgbToLinear(pow[k]);
         }
 
-        public double Linear(float s)
-        {
-            // Aceeasi indexare ca RasterOps.Gamma: un NaN ar da (int)NaN = int.MinValue; cititorii
-            // nu lasa NaN sa treaca (R-013), dar un raster facut in memorie poate.
-            double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
-            int k = (int)v;
-            double f = v - k;
-            return f == 0 ? _lin[k] : _lin[k] + f * (_lin[k + 1] - _lin[k]);
-        }
+        /// <summary>Aceeasi indexare si interpolare ca RasterOps.Gamma, pe tabela liniarizata.</summary>
+        public double Linear(float s) => RasterOps.Interpolate(_lin, s);
     }
 }

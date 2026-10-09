@@ -81,18 +81,23 @@ namespace AstroPhotoAnalyzer
             for (int p = 0; p < r.Planes.Length; p++)
             {
                 float[] src = r.Planes[p], dst = o.Planes[p];
-                for (int i = 0; i < src.Length; i++)
-                {
-                    // Un NaN ar da (int)NaN = int.MinValue, un indice imposibil; cititorii nu lasa
-                    // NaN sa treaca, dar un raster facut in memorie poate.
-                    float s = src[i];
-                    double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
-                    int k = (int)v;
-                    double f = v - k;
-                    dst[i] = (float)(f == 0 ? lut[k] : lut[k] + f * (lut[k + 1] - lut[k]));
-                }
+                for (int i = 0; i < src.Length; i++) dst[i] = (float)Interpolate(lut, src[i]);
             }
             return o;
+        }
+
+        /// <summary>
+        /// Valoarea unei tabele pe cele 65536 de niveluri de 16 biti (PowerLut, LiftTable) la
+        /// esantionul <paramref name="s"/>: exact pe un nivel, liniar intre doua niveluri vecine.
+        /// Un NaN se ia ca 0: ar da (int)NaN = int.MinValue, un indice imposibil; cititorii nu
+        /// lasa NaN sa treaca (R-013), dar un raster facut in memorie poate.
+        /// </summary>
+        internal static double Interpolate(double[] lut, float s)
+        {
+            double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
+            int k = (int)v;
+            double f = v - k;
+            return f == 0 ? lut[k] : lut[k] + f * (lut[k + 1] - lut[k]);
         }
 
         /// <summary>
