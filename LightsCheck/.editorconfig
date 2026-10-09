@@ -1,0 +1,42 @@
+# Style is enforced by the build (EnforceCodeStyleInBuild) and by `dotnet format`.
+# Do not describe style in CLAUDE.md; change it here.
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{json,yml,yaml,props,targets,csproj,sln}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cmd,bat}]
+end_of_line = crlf
+
+[*.cs]
+dotnet_sort_system_directives_first = true
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_prefer_braces = true:warning
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+dotnet_style_qualification_for_field = false:warning
+# unnecessary using
+dotnet_diagnostic.IDE0005.severity = warning
+# formatting
+dotnet_diagnostic.IDE0055.severity = warning
+# catch general exception: allowed at the CLI boundary, filtered there
+dotnet_diagnostic.CA1031.severity = none
+
+# The files copied from FlatCheck keep its style (block namespaces, no braces around one-line
+# ifs, Romanian comments), so a diff against their source stays readable (ADR 0003). The
+# compiler's own warnings still apply to them.
+[src/LightsCheck.Core/Imaging/*.cs]
+csharp_style_namespace_declarations = block_scoped:silent
+csharp_prefer_braces = false:silent
+dotnet_analyzer_diagnostic.category-Style.severity = none

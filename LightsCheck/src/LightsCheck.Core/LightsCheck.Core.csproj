@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The core: everything that computes and everything that formats. No Console, no UI, no
+       entry point: a compile boundary. Both applications call Runs/ only (the kit's ADR 0002).
+       The version and the copyright come from Directory.Build.props, the same in every assembly. -->
+  <PropertyGroup>
+    <RootNamespace>LightsCheck.Core</RootNamespace>
+    <!-- Numbers are formatted and parsed with the invariant culture whatever the Windows
+         culture: "0.24", never "0,24" on a Romanian Windows. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <!-- Sdcb.LibRaw, only for camera raw files: no pure managed .NET library decodes the Bayer
+       mosaic of a NEF. The native DLLs of the runtime.* packages sit beside the executable and
+       are loaded lazily, from RawReader.cs alone; without them a FITS run is unaffected and a
+       raw run says what is missing (ADR 0003, THIRD-PARTY-NOTICES.md). -->
+  <ItemGroup>
+    <PackageReference Include="Sdcb.LibRaw" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.win64" />
+    <PackageReference Include="Sdcb.LibRaw.runtime.linux64" />
+  </ItemGroup>
+
+  <!-- The core stays internal: its consumers are in this repository and compile with it. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="lightscheck" />
+    <InternalsVisibleTo Include="LightsCheck.Tests" />
+    <InternalsVisibleTo Include="LightsCheck.Wpf" />
+    <InternalsVisibleTo Include="LightsCheck.Wpf.Tests" />
+  </ItemGroup>
+</Project>

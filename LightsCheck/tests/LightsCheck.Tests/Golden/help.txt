@@ -1,0 +1,20 @@
+lightscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+Folosire: lightscheck <folder sesiune>
+
+  Folderul sesiunii Siril: cadrele se iau din lights\ (sau direct din folder,
+  daca nu exista lights\), iar bias-urile, optional, din biases\. Raw de aparat
+  (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
+
+  -h, --help    acest text
+
+Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.
+
+Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de
+vandabilitate sau potrivire pentru un scop anume. E software liber:
+il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea
+ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,
+sau la <https://www.gnu.org/licenses/gpl-3.0.html>.
+--- stderr ---
+--- exit 0 ---
