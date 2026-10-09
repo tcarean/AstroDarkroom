@@ -12,8 +12,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in
   `Directory.Packages.props` with lock files, and the strictness every project builds with
-  moved from the three csproj files to `Directory.Build.props`. No behaviour changed; one
-  `dotnet format` pass removed six unused usings in five files.
+  moved from the three csproj files to `Directory.Build.props`. `CLAUDE.md` was split into
+  `docs/requirements.md` (55 rows with IDs), `docs/decisions/` (34 ADRs, 28 of them
+  retroactive) and `docs/design/` (9 notes, moved unchanged); `CLAUDE.md` holds only the
+  project's rules. There are no validation figures, and `docs/validation.md` says why. No
+  behaviour changed; one `dotnet format` pass removed six unused usings in five files.
 
 ## [1.4.0] - 2026-09-14
 

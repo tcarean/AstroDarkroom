@@ -200,6 +200,9 @@ dotnet build -c Release
 dotnet test -c Release
 ```
 
+The full gate, the one the `pre-commit` hook runs, is `scripts/verify.ps1` (see
+"Development" below).
+
 To see the reminder window without locking the machine:
 
 ```
@@ -230,6 +233,50 @@ a move has to happen manually. Publish somewhere stable, e.g.
 ```
 dotnet publish src\MindfulnessReminder.App -c Release -o %LOCALAPPDATA%\MindfulnessReminder
 ```
+
+## Development: the gate, the documentation and Claude Code
+
+Since 2026-10-09 the project follows the process of `ClaudeCodeStarterKit` (the folder beside
+this one in the `photo` repository; the guide with the reasoning behind each piece is `GHID.md`
+there, in Romanian), like FlatCheck, AstroPhotoAnalyzer and ImageVisualCompare. In short, what
+is enforced mechanically:
+
+- **`scripts/verify.ps1` is the gate**: the scripts identical with the kit's, the test data
+  manifest, the decision records' headers, the design notes (each in the index, with its files
+  named in its `Covers:` sentence), restore, `dotnet format` (check only), the build with
+  warnings as errors, all the tests. About 20 seconds. The git `pre-commit` hook at the
+  repository root runs it on every commit that touches the project, the `pre-merge-commit` hook
+  on every clean merge, the Claude Code hook before any `git commit` of the model, and
+  `scripts/release.ps1`. Without it green no commit goes in.
+
+  ```
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1
+  ```
+
+- **The commit message** is one line, in English, of at most 100 characters.
+- **`scripts/`, `.claude/skills/`, `.claude/agents/` and `.claude/rules/kit/` are the kit's**,
+  byte for byte, and are not edited here; what is specific to the project as values is in
+  `kit.json`, the steps it adds to the skills are in `docs/skills.md`.
+- **The behaviour is in `docs/requirements.md`**, with `R-NNN` IDs carried in the test names;
+  `RepoInvariantTests` requires every `implemented` requirement to have a test with its ID, and
+  the reverse. The old `CLAUDE.md` was split on 2026-10-09 into requirements, decisions and
+  design notes; nothing was lost, it was moved.
+- **The decisions are in `docs/decisions/`**, one record per decision, with the alternatives
+  rejected; those taken before 2026-10-09 (the periodic reminder's timer and deadline, reading
+  the device instead of window titles, the dark theme merged per window, among others) were
+  written down after the fact. The "Design decisions" table above is the short form of the same
+  choices.
+- **There are no validation figures**: the application has no numeric output and no input
+  data, and `docs/validation.json` lists no case; `docs/validation.md` says what would become
+  one.
+- **The explanations behind the code** are in `docs/design/`, with the index in
+  `docs/design/README.md`; `CLAUDE.md` holds only the project's rules, and the process rules are
+  the kit's, in `.claude/rules/kit/process.md`.
+- **The version** is bumped by the owner, in `Directory.Build.props`. A release is made on
+  `main`, with `scripts/release.ps1 -Version X.Y.Z`, which runs the gate, closes the CHANGELOG
+  section and publishes the application, framework-dependent, into `artifacts/X.Y.Z/`. The
+  commit and the tag stay the owner's.
+- In Claude Code: `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`.
 
 ## Versioning
 

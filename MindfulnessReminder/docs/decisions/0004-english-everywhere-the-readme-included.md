@@ -8,8 +8,9 @@ Status: accepted 2026-10-09
 The kit's rule "Languages" puts English in everything the model reads or writes and allows
 Romanian in `GHID.md` and the READMEs, which are for people (the kit's ADR 0012); FlatCheck,
 AstroPhotoAnalyzer and ImageVisualCompare have Romanian READMEs. Mindfulness Reminder's
-`CLAUDE.md` has carried, since the base version (61a0121, 2026-08-28), the convention: "**All
-text is in English** — UI strings, comments, documentation. (The sibling `FlatCheck` tool in
+README has been English since the base version (61a0121, 2026-08-28), and its `CLAUDE.md`, since
+it was first written (b6554d5, the periodic reminder, 2026-09-08), has carried the convention:
+"**All text is in English** — UI strings, comments, documentation. (The sibling `FlatCheck` tool in
 this repo is Romanian; that convention is its own, do not carry it over.)" On 2026-10-09 every
 `.cs` and `.xaml` file, every csproj comment, `Directory.Build.props` and the 291-line
 `README.md` were English; nothing needed translating, unlike the three earlier migrations.
