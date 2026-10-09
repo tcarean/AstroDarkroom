@@ -5,7 +5,8 @@
 > "Packages" and this project's rule "Package notices" in `CLAUDE.md`; the choice of
 > ImageSharp 3.1.11, its licence and its pin are ADR 0009, and the place of the notices ADR
 > 0023. This note keeps where the package is touched and the behaviours of 3.1.11 the code
-> depends on. **Covers:** `Directory.Packages.props`,
+> depends on, and the judgment on each security advisory NuGet's audit reports against it
+> (ADR 0036). **Covers:** `Directory.Packages.props`, `Directory.Build.props`,
 > `AstroPhotoAnalyzer.Core/AstroPhotoAnalyzer.Core.csproj`,
 > `AstroPhotoAnalyzer.Core/ThirdParty.cs`,
 > `AstroPhotoAnalyzer.Core/Input/ImageSharpReader.cs`,
@@ -68,6 +69,22 @@ frame, and the PNG encoder does not write `iCCP`. Details and consequences in
 `input.md`, "Things measured about ImageSharp 3.1.11 while building phase 1". The 16-bit
 TIFF and PNG fixtures in the tests are hand-built for exactly these reasons - don't replace
 them with ImageSharp-encoded ones.
+
+### Security advisories against 3.1.11
+
+NuGet's audit reports every published advisory against the pinned version at restore (NU1902
+moderate, NU1903 high); `Directory.Build.props` keeps the two codes as warnings under the gate's
+`-warnaserror`, so the gate shows them and stays green (ADR 0036). Each one is read against what
+the tool does with the package and judged here; one that applies opens the upgrade task. The
+five published on 2026-10-07, all patched in 4.1.2 only:
+
+| advisory | severity | what | applies? |
+| --- | --- | --- | --- |
+| GHSA-j3p4-wp97-rph4 | high | out-of-bounds read in `HistogramEqualization` on a float TIFF with infinite samples | no: never called |
+| GHSA-jjfr-hcj7-qf5w | high | buffer overrun in the 1-bit CCITT Group 4 TIFF encoder | no: the tool encodes 8-bit LZW only |
+| GHSA-j9gm-c75j-xc9q | high | the same in the CCITT Group 3 encoder | no: as above |
+| GHSA-gwg2-r3hj-4w44 | moderate | large allocation from a malformed embedded ICC profile's CLUT dimensions | no: the profiles decoded are those of the owner's own files; worst case a failed allocation of a local tool |
+| GHSA-wmxv-xphr-5c9g | moderate | a crafted BigTIFF makes the decoder loop without progress | no: the owner's own files; worst case a hung local tool |
 
 The implementation plan of 2026-09-20 recorded the choice as: "SixLabors.ImageSharp 3.1.11 for
 TIFF/PNG/JPEG; approved dependency; same licence reasoning as FlatCheck; hand-rolled TIFF+JPEG

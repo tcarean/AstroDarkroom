@@ -21,6 +21,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   and `Salveaza ca...`, which writes a new FITS with the curve applied, keeping every header
   card of a FITS input. The first image the tool writes; the input is never modified.
 
+### Internal
+
+- NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
+  each one is judged in `docs/design/dependencies.md` (ADR 0036): the five published against
+  ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0009 rejects, and none
+  applies to a tool that reads the owner's own files.
+
 ### Changed
 
 - Every frame gets the five classes of the Tonuri tab (R-044, R-113, R-130; ADR 0033). With a
