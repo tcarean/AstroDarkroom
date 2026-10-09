@@ -39,14 +39,14 @@ internal sealed class SessionFixture : IDisposable
     /// lights/, one every <paramref name="cadence"/> seconds from <see cref="FirstStart"/>,
     /// and <paramref name="biases"/> frames into biases/ when asked.
     /// </summary>
-    internal SessionFixture WithLights(int lights, double exposure = 120.2, double cadence = 141, int biases = 0, bool inSubfolder = true)
+    internal SessionFixture WithLights(int lights, double exposure = 120.2, double cadence = 141, int biases = 0, bool inSubfolder = true, bool withStars = false)
     {
         string dir = inSubfolder ? LightsDir : Root;
         Directory.CreateDirectory(dir);
         for (int i = 0; i < lights; i++)
         {
             DateTime t = FirstStart.AddSeconds(i * cadence);
-            File.WriteAllBytes(Path.Combine(dir, $"DSC_{i + 1:0000}.fit"), Light(t, exposure));
+            File.WriteAllBytes(Path.Combine(dir, $"DSC_{i + 1:0000}.fit"), withStars ? StarLight(t, exposure, i) : Light(t, exposure));
         }
 
         if (biases > 0)
@@ -65,6 +65,29 @@ internal sealed class SessionFixture : IDisposable
     /// <summary>A frame with the metadata cards and a flat 300 ADU field (no stars; the inventory reads no pixel).</summary>
     internal static byte[] Light(DateTime start, double exposure) =>
         FitsTestData.BuildFits(32, 24, (x, y) => 300, bitpix: 16, extraCards: Cards(start, exposure));
+
+    /// <summary>
+    /// A 640 x 480 RGGB frame with 40 round stars of FWHM 3.0 on a 16-bit scale, the same
+    /// field in every frame (the seed varies the noise only), with the metadata cards and
+    /// BAYERPAT so the analyzer knows the colour order.
+    /// </summary>
+    internal static byte[] StarLight(DateTime start, double exposure, int seed)
+    {
+        SyntheticFrame f = new SyntheticFrame
+        {
+            Width = 640,
+            Height = 480,
+            White = 65535,
+            Seed = 100 + seed,
+            BackgroundR = 400,
+            BackgroundG = 2000,
+            BackgroundB = 2300,
+            NoiseSigma = 40,
+        }.WithStarGrid(40, 3.0, 3000, 30000);
+        Func<int, int, double> px = f.Pixel();
+        string[] cards = [.. Cards(start, exposure), .. FitsTestData.BayerCards("RGGB")];
+        return FitsTestData.BuildFits(f.Width, f.Height, px, bitpix: 16, extraCards: cards);
+    }
 
     internal static string[] Cards(DateTime start, double exposure) =>
     [

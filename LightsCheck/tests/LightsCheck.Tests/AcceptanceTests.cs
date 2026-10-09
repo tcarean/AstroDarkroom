@@ -148,6 +148,32 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R017_FrameOptionMeasuresOneLight_Exit0()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2, withStars: true);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--frame", "2");
+        Assert.Equal(0, code);
+        Assert.Equal(string.Empty, stderr);
+        Assert.Contains("=== CADRU 2: DSC_0002.fit ===", stdout, StringComparison.Ordinal);
+        Assert.Contains("640 x 480 px; scara 0 .. 65535 ADU (FITS (presupus din BITPIX 16))", stdout, StringComparison.Ordinal);
+        Assert.Contains("nivele CFA         : R 400", stdout, StringComparison.Ordinal);
+        Assert.Contains("stele              : 40 detectate", stdout, StringComparison.Ordinal);
+        Assert.Contains("inregistrare       : 40 stele retinute", stdout, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("3")]
+    [InlineData("x")]
+    public void R017_FrameOutsideTheSession_Exit1(string n)
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2);
+        (int code, _, string stderr) = Cli.Run(s.Root, "--frame", n);
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE:", stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R006_IntervalLineGivesSpanIntegrationAndDuty()
     {
         using SessionFixture s = new SessionFixture().WithLights(3, exposure: 120, cadence: 150);

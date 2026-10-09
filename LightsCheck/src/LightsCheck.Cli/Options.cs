@@ -15,12 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+
 namespace LightsCheck.Cli;
 
-/// <summary>The console's arguments: one folder, or --help. Anything else is an error naming the argument (R-004).</summary>
+/// <summary>
+/// The console's arguments: one folder, optionally <c>--frame N</c>, or --help. Anything else
+/// is an error naming the argument (R-004).
+/// </summary>
 internal sealed class Options
 {
     internal string? Folder { get; private set; }
+    internal int? Frame { get; private set; }
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -34,12 +40,26 @@ internal sealed class Options
             return o;
         }
 
-        foreach (string a in args)
+        for (int i = 0; i < args.Length; i++)
         {
+            string a = args[i];
             if (a is "-h" or "--help")
             {
                 o.Help = true;
                 return o;
+            }
+
+            if (a == "--frame")
+            {
+                if (i + 1 >= args.Length || !int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) || n < 1)
+                {
+                    o.Error = "--frame cere numarul cadrului (1 = primul din lights\\)";
+                    return o;
+                }
+
+                o.Frame = n;
+                i++;
+                continue;
             }
 
             if (a.StartsWith('-'))
@@ -61,6 +81,11 @@ internal sealed class Options
             }
 
             o.Folder = a;
+        }
+
+        if (o.Folder is null)
+        {
+            o.Error = "lipseste folderul sesiunii";
         }
 
         return o;

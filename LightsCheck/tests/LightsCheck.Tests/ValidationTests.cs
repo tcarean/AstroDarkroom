@@ -33,7 +33,7 @@ public class ValidationTests
 {
     [Theory]
     [MemberData(nameof(Cases))]
-    public void ValidationCase_MatchesRecordedFigures(string id, string session, string expectedJson, string toleranceJson)
+    public void ValidationCase_MatchesRecordedFigures(string id, string kind, string session, int frame, string expectedJson, string toleranceJson)
     {
         string? folder = TestData.Large(session);
         if (folder is null)
@@ -46,8 +46,18 @@ public class ValidationTests
         using JsonDocument tolerance = JsonDocument.Parse(toleranceJson);
         JsonElement e = expected.RootElement;
         JsonElement t = tolerance.RootElement;
+        if (kind == "inventory")
+        {
+            CheckInventory(InventoryRun.Run(folder), e, t);
+        }
+        else
+        {
+            CheckFrame(FrameRun.Run(folder, frame).Measurement, e, t);
+        }
+    }
 
-        Inventory inv = InventoryRun.Run(folder);
+    private static void CheckInventory(Inventory inv, JsonElement e, JsonElement t)
+    {
         Assert.Equal(e.GetProperty("lights").GetInt32(), inv.Lights.Count);
         Assert.Equal(e.GetProperty("biases").GetInt32(), inv.Session.Biases.Count);
         Assert.False(inv.HasErrors, string.Join("; ", inv.Lights.Where(f => f.Error is not null).Select(f => f.FileName + ": " + f.Error)));
@@ -59,9 +69,44 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("dutyPct").GetDouble(), inv.Cadence.DutyPct, t.GetProperty("dutyPct").GetDouble());
     }
 
-    public static TheoryData<string, string, string, string> Cases()
+    private static void CheckFrame(FrameMeasurement m, JsonElement e, JsonElement t)
     {
-        TheoryData<string, string, string, string> data = [];
+        double counts = t.GetProperty("counts").GetDouble();
+        AssertWithin("detected", e.GetProperty("detected").GetInt32(), m.Detected, counts * e.GetProperty("detected").GetInt32());
+        AssertWithin("bright", e.GetProperty("bright").GetInt32(), m.DetectedBright, counts * e.GetProperty("bright").GetInt32());
+        AssertWithin("fwhm", e.GetProperty("fwhm").GetDouble(), Figure(m.FwhmMedian, "fwhm"), t.GetProperty("fwhm").GetDouble());
+        AssertWithin("fwhmP90", e.GetProperty("fwhmP90").GetDouble(), Figure(m.FwhmP90, "fwhmP90"), t.GetProperty("fwhm").GetDouble());
+        AssertWithin("elongation", e.GetProperty("elongation").GetDouble(), Figure(m.ElongationMedian, "elongation"), t.GetProperty("elongation").GetDouble());
+        AssertWithin("elongatedFraction", e.GetProperty("elongatedFraction").GetDouble(), Figure(m.ElongatedFraction, "elongatedFraction"), t.GetProperty("fraction").GetDouble());
+        AssertWithin("angle", e.GetProperty("angle").GetDouble(), Figure(m.AngleDeg, "angle"), t.GetProperty("angle").GetDouble());
+        AssertWithin("coherence", e.GetProperty("coherence").GetDouble(), Figure(m.AngleCoherence, "coherence"), t.GetProperty("coherence").GetDouble());
+        AssertWithin("halo", e.GetProperty("halo").GetDouble(), Figure(m.Halo, "halo"), t.GetProperty("halo").GetDouble());
+        AssertWithin("background", e.GetProperty("background").GetDouble(), m.BackgroundMedian, t.GetProperty("background").GetDouble());
+        AssertWithin("sigma", e.GetProperty("sigma").GetDouble(), m.NoiseSigma, t.GetProperty("sigma").GetDouble());
+        double[] channels = e.GetProperty("channels").EnumerateArray().Select(c => c.GetDouble()).ToArray();
+        for (int i = 0; i < 4; i++)
+        {
+            AssertWithin("channel " + m.Channels[i].Name, channels[i], m.Channels[i].Median, t.GetProperty("background").GetDouble());
+        }
+
+        AssertWithin("fwhmCentre", e.GetProperty("fwhmCentre").GetDouble(), Figure(m.Centre.Fwhm, "fwhmCentre"), t.GetProperty("fwhm").GetDouble());
+        AssertWithin("fwhmEdge", e.GetProperty("fwhmEdge").GetDouble(), Figure(m.Edge.Fwhm, "fwhmEdge"), t.GetProperty("fwhm").GetDouble());
+        Assert.Equal(e.GetProperty("trails").GetInt32(), m.Trails.Count);
+    }
+
+    /// <summary>A figure the frame did not yield (too few stars) fails by name, not with a null dereference.</summary>
+    private static double Figure(double? v, string what)
+    {
+        Assert.True(v.HasValue, $"{what}: the frame yielded no figure (null)");
+        return v!.Value;
+    }
+
+    private static void AssertWithin(string what, double expected, double actual, double tolerance)
+        => Assert.True(Math.Abs(expected - actual) <= tolerance, $"{what}: expected {expected} +- {tolerance}, measured {actual}");
+
+    public static TheoryData<string, string, string, int, string, string> Cases()
+    {
+        TheoryData<string, string, string, int, string, string> data = [];
         // From the source tree, not the build output's copy: `dotnet test --no-build` after an
         // edit of the figures would otherwise compare the stale copy.
         string path = Path.Combine(TestData.FindRepoRoot(), "docs", "validation.json");
@@ -70,7 +115,9 @@ public class ValidationTests
         {
             data.Add(
                 c.GetProperty("id").GetString()!,
+                c.GetProperty("kind").GetString()!,
                 c.GetProperty("session").GetString()!,
+                c.TryGetProperty("frame", out JsonElement f) ? f.GetInt32() : 0,
                 c.GetProperty("expected").GetRawText(),
                 c.GetProperty("tolerance").GetRawText());
         }
