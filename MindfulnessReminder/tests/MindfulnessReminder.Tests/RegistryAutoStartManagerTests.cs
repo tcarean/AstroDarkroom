@@ -30,13 +30,13 @@ public class RegistryAutoStartManagerTests
         new(_registry, ValueName, exePath);
 
     [Fact]
-    public void GetStatus_returns_disabled_when_no_run_entry_exists()
+    public void R004_GetStatus_returns_disabled_when_no_run_entry_exists()
     {
         Assert.Equal(AutoStartStatus.Disabled, CreateManager().GetStatus());
     }
 
     [Fact]
-    public void GetStatus_returns_disabled_for_a_blank_run_entry()
+    public void R004_GetStatus_returns_disabled_for_a_blank_run_entry()
     {
         _registry.SetString(RegistryAutoStartManager.RunKeyPath, ValueName, "   ");
 
@@ -44,7 +44,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void GetStatus_returns_enabled_after_Enable()
+    public void R005_GetStatus_returns_enabled_after_Enable()
     {
         var manager = CreateManager();
 
@@ -54,7 +54,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void Enable_writes_the_quoted_executable_path()
+    public void R003_Enable_writes_the_quoted_executable_path()
     {
         CreateManager().Enable();
 
@@ -66,7 +66,7 @@ public class RegistryAutoStartManagerTests
     [Theory]
     [InlineData(0x02)] // what Task Manager writes for an enabled entry
     [InlineData(0x06)]
-    public void GetStatus_reports_enabled_when_the_approval_flag_is_even(byte flag)
+    public void R004_GetStatus_reports_enabled_when_the_approval_flag_is_even(byte flag)
     {
         var manager = CreateManager();
         manager.Enable();
@@ -78,7 +78,7 @@ public class RegistryAutoStartManagerTests
     [Theory]
     [InlineData(0x03)] // what Task Manager writes when the user switches the entry off
     [InlineData(0x01)]
-    public void GetStatus_reports_blocked_when_the_approval_flag_is_odd(byte flag)
+    public void R004_GetStatus_reports_blocked_when_the_approval_flag_is_odd(byte flag)
     {
         var manager = CreateManager();
         manager.Enable();
@@ -88,7 +88,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void GetStatus_ignores_a_Task_Manager_veto_when_no_run_entry_exists()
+    public void R004_GetStatus_ignores_a_Task_Manager_veto_when_no_run_entry_exists()
     {
         SetApproval(0x03);
 
@@ -96,7 +96,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void Enable_clears_a_Task_Manager_veto()
+    public void R005_Enable_clears_a_Task_Manager_veto()
     {
         var manager = CreateManager();
         manager.Enable();
@@ -109,7 +109,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void Disable_removes_the_run_entry()
+    public void R005_Disable_removes_the_run_entry()
     {
         var manager = CreateManager();
         manager.Enable();
@@ -121,7 +121,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void Disable_is_a_no_op_when_nothing_is_registered()
+    public void R005_Disable_is_a_no_op_when_nothing_is_registered()
     {
         CreateManager().Disable();
 
@@ -129,7 +129,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void RepairPathIfNeeded_rewrites_a_stale_path()
+    public void R006_RepairPathIfNeeded_rewrites_a_stale_path()
     {
         CreateManager(@"D:\Old\MindfulnessReminder.exe").Enable();
 
@@ -142,7 +142,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void RepairPathIfNeeded_leaves_a_matching_path_alone_regardless_of_case()
+    public void R006_RepairPathIfNeeded_leaves_a_matching_path_alone_regardless_of_case()
     {
         CreateManager(ExePath.ToUpperInvariant()).Enable();
         var writesBefore = _registry.WriteCount;
@@ -152,14 +152,14 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void RepairPathIfNeeded_does_not_register_an_unregistered_app()
+    public void R006_RepairPathIfNeeded_does_not_register_an_unregistered_app()
     {
         Assert.False(CreateManager().RepairPathIfNeeded());
         Assert.False(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
     }
 
     [Fact]
-    public void RepairPathIfNeeded_keeps_a_Task_Manager_veto_intact()
+    public void R006_RepairPathIfNeeded_keeps_a_Task_Manager_veto_intact()
     {
         CreateManager(@"D:\Old\MindfulnessReminder.exe").Enable();
         SetApproval(0x03);
@@ -171,7 +171,7 @@ public class RegistryAutoStartManagerTests
     }
 
     [Fact]
-    public void Constructor_rejects_a_blank_executable_path()
+    public void R003_Constructor_rejects_a_blank_executable_path()
     {
         Assert.Throws<ArgumentException>(() => new RegistryAutoStartManager(_registry, ValueName, "  "));
     }

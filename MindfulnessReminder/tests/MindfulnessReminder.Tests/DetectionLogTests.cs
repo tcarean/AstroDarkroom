@@ -38,7 +38,7 @@ public class DetectionLogTests
             suppression);
 
     [Fact]
-    public void A_run_with_no_readings_says_so_rather_than_rendering_nothing()
+    public void R081_A_run_with_no_readings_says_so_rather_than_rendering_nothing()
     {
         Assert.Equal("No readings taken.", DetectionLog.Render(Array.Empty<DetectionSample>()));
     }
@@ -48,7 +48,7 @@ public class DetectionLogTests
     /// saying the same thing would bury the two moments that matter.
     /// </summary>
     [Fact]
-    public void Consecutive_identical_readings_collapse_into_one_line()
+    public void R081_Consecutive_identical_readings_collapse_into_one_line()
     {
         var samples = Enumerable.Range(0, 30).Select(i => At(i)).ToList();
 
@@ -60,7 +60,7 @@ public class DetectionLogTests
 
     /// <summary>The whole point of watching over time: catching the moment it changed.</summary>
     [Fact]
-    public void A_change_in_the_reading_starts_a_new_line()
+    public void R081_A_change_in_the_reading_starts_a_new_line()
     {
         var samples = new List<DetectionSample>
         {
@@ -87,7 +87,7 @@ public class DetectionLogTests
     /// gap swallowed -- a game alt-tabbed out of and back into has to read as two.
     /// </summary>
     [Fact]
-    public void A_reading_that_returns_is_a_second_run_not_a_merged_one()
+    public void R081_A_reading_that_returns_is_a_second_run_not_a_merged_one()
     {
         var busy = ReminderSuppression.FullScreen;
 
@@ -102,7 +102,7 @@ public class DetectionLogTests
     }
 
     [Fact]
-    public void Each_line_says_what_the_microphone_the_camera_and_the_desktop_were_doing()
+    public void R081_Each_line_says_what_the_microphone_the_camera_and_the_desktop_were_doing()
     {
         var line = Lines(DetectionLog.Render(new[]
         {
@@ -116,7 +116,7 @@ public class DetectionLogTests
     }
 
     [Fact]
-    public void The_summary_counts_the_readings_that_would_have_held_a_reminder_back()
+    public void R081_The_summary_counts_the_readings_that_would_have_held_a_reminder_back()
     {
         var samples = new List<DetectionSample>
         {
@@ -133,7 +133,7 @@ public class DetectionLogTests
     /// ambiguous between "the check is broken" and "there was nothing to detect".
     /// </summary>
     [Fact]
-    public void A_run_that_never_held_anything_back_says_so_in_as_many_words()
+    public void R081_A_run_that_never_held_anything_back_says_so_in_as_many_words()
     {
         var report = DetectionLog.Render(new[] { At(0), At(1) });
 
@@ -142,7 +142,7 @@ public class DetectionLogTests
     }
 
     [Fact]
-    public void Runs_longer_than_a_minute_are_still_readable()
+    public void R081_Runs_longer_than_a_minute_are_still_readable()
     {
         var samples = new List<DetectionSample> { At(0), At(95) };
 

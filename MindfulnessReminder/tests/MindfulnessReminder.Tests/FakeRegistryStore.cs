@@ -27,14 +27,29 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public int WriteCount { get; private set; }
 
+    /// <summary>When set, every read throws it, as a key the account may not read does.</summary>
+    public Exception? ReadRefusal { get; set; }
+
+    /// <summary>When set, every write throws it, as a key the account may not write does.</summary>
+    public Exception? WriteRefusal { get; set; }
+
     public string? GetString(string keyPath, string valueName) =>
-        _values.TryGetValue((keyPath, valueName), out var value) ? value as string : null;
+        ReadRefusal is { } refusal
+            ? throw refusal
+            : _values.TryGetValue((keyPath, valueName), out var value) ? value as string : null;
 
     public byte[]? GetBinary(string keyPath, string valueName) =>
-        _values.TryGetValue((keyPath, valueName), out var value) ? value as byte[] : null;
+        ReadRefusal is { } refusal
+            ? throw refusal
+            : _values.TryGetValue((keyPath, valueName), out var value) ? value as byte[] : null;
 
     public void SetString(string keyPath, string valueName, string value)
     {
+        if (WriteRefusal is { } refusal)
+        {
+            throw refusal;
+        }
+
         _values[(keyPath, valueName)] = value;
         WriteCount++;
     }

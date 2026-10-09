@@ -2,16 +2,18 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- VersionTests, LicenseHeaderTests and RepoInvariantTests find the project folder from
+         [CallerFilePath]. A CI build (ContinuousIntegrationBuild, Directory.Build.props) maps
+         source paths to /_/ by default, and those tests would then read from a folder that
+         does not exist; the shipped assemblies keep the mapping. -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
 
   <ItemGroup>

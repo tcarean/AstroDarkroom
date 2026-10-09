@@ -33,7 +33,7 @@ public class IntervalScheduleTests
         => new(new ReminderSettings(enabled, minutes));
 
     [Fact]
-    public void A_fresh_schedule_is_not_counting_until_it_is_started()
+    public void R020_A_fresh_schedule_is_not_counting_until_it_is_started()
     {
         var schedule = Create();
 
@@ -42,7 +42,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Restart_puts_the_whole_interval_on_the_clock()
+    public void R024_Restart_puts_the_whole_interval_on_the_clock()
     {
         var schedule = Create(30);
 
@@ -53,7 +53,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Nothing_is_due_before_the_interval_has_passed()
+    public void R021_Nothing_is_due_before_the_interval_has_passed()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -62,7 +62,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void The_reminder_is_due_exactly_at_the_interval()
+    public void R021_The_reminder_is_due_exactly_at_the_interval()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -71,7 +71,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Becoming_due_re_arms_for_another_full_interval()
+    public void R021_Becoming_due_re_arms_for_another_full_interval()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -84,7 +84,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void A_disabled_schedule_never_counts_and_never_fires()
+    public void R027_A_disabled_schedule_never_counts_and_never_fires()
     {
         var schedule = Create(30, enabled: false);
 
@@ -96,7 +96,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void A_lock_stops_the_countdown()
+    public void R024_A_lock_stops_the_countdown()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -114,7 +114,7 @@ public class IntervalScheduleTests
     /// is due 30 minutes after the unlock rather than immediately.
     /// </summary>
     [Fact]
-    public void A_lock_longer_than_the_interval_still_grants_the_full_interval_after_unlock()
+    public void R024_A_lock_longer_than_the_interval_still_grants_the_full_interval_after_unlock()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -131,7 +131,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Any_number_of_lock_unlock_cycles_leaves_the_full_interval_after_the_last_one()
+    public void R024_Any_number_of_lock_unlock_cycles_leaves_the_full_interval_after_the_last_one()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -152,7 +152,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void An_unlock_without_a_lock_still_restarts_the_countdown()
+    public void R024_An_unlock_without_a_lock_still_restarts_the_countdown()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -164,7 +164,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void An_unlock_does_not_restart_a_disabled_schedule()
+    public void R024_An_unlock_does_not_restart_a_disabled_schedule()
     {
         var schedule = Create(30, enabled: false);
 
@@ -174,7 +174,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Applying_settings_restarts_the_countdown_from_zero()
+    public void R026_Applying_settings_restarts_the_countdown_from_zero()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -186,7 +186,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Switching_the_feature_off_stops_the_countdown_immediately()
+    public void R026_Switching_the_feature_off_stops_the_countdown_immediately()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -197,7 +197,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Switching_the_feature_back_on_starts_a_whole_interval()
+    public void R026_Switching_the_feature_back_on_starts_a_whole_interval()
     {
         var schedule = Create(30, enabled: false);
         schedule.Restart(T0);
@@ -209,7 +209,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void An_out_of_range_interval_is_clamped_rather_than_taken_literally()
+    public void R028_An_out_of_range_interval_is_clamped_rather_than_taken_literally()
     {
         var schedule = Create();
 
@@ -225,7 +225,7 @@ public class IntervalScheduleTests
     /// the deadline is further out than a whole interval could put it, and starts over.
     /// </summary>
     [Fact]
-    public void A_clock_that_jumps_backwards_restarts_instead_of_postponing_the_reminder()
+    public void R025_A_clock_that_jumps_backwards_restarts_instead_of_postponing_the_reminder()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -242,7 +242,7 @@ public class IntervalScheduleTests
     /// that is genuinely owed, and it fires on the first tick after waking.
     /// </summary>
     [Fact]
-    public void A_deadline_that_passed_while_the_machine_slept_fires_on_the_first_tick_after()
+    public void R022_A_deadline_that_passed_while_the_machine_slept_fires_on_the_first_tick_after()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -251,7 +251,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Remaining_never_goes_negative()
+    public void R025_Remaining_never_goes_negative()
     {
         var schedule = Create(30);
         schedule.Restart(T0);
@@ -262,7 +262,7 @@ public class IntervalScheduleTests
     // ------------------------------------------------------------------------- postponing
 
     [Fact]
-    public void Postpone_moves_the_deadline_to_the_gap_it_is_given()
+    public void R033_Postpone_moves_the_deadline_to_the_gap_it_is_given()
     {
         var schedule = new IntervalSchedule(ReminderSettings.Default);
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
@@ -274,7 +274,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void A_postponed_deadline_comes_due_when_the_gap_has_passed()
+    public void R033_A_postponed_deadline_comes_due_when_the_gap_has_passed()
     {
         var schedule = new IntervalSchedule(ReminderSettings.Default);
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
@@ -293,7 +293,7 @@ public class IntervalScheduleTests
     /// clock jump, which reset the schedule and threw the postponement away.
     /// </summary>
     [Fact]
-    public void A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump()
+    public void R025_A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump()
     {
         var settings = new ReminderSettings(true, 1);
         var schedule = new IntervalSchedule(settings);
@@ -308,7 +308,7 @@ public class IntervalScheduleTests
 
     /// <summary>The guard still has to work while a postponement is standing.</summary>
     [Fact]
-    public void A_clock_jumped_backwards_during_a_postponement_still_restarts_the_countdown()
+    public void R025_A_clock_jumped_backwards_during_a_postponement_still_restarts_the_countdown()
     {
         var schedule = new IntervalSchedule(ReminderSettings.Default);
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
@@ -327,7 +327,7 @@ public class IntervalScheduleTests
     /// deadline would be a countdown running with the feature switched off.
     /// </summary>
     [Fact]
-    public void Postpone_does_nothing_while_the_feature_is_off()
+    public void R033_Postpone_does_nothing_while_the_feature_is_off()
     {
         var schedule = new IntervalSchedule(new ReminderSettings(false, 30));
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
@@ -340,7 +340,7 @@ public class IntervalScheduleTests
     }
 
     [Fact]
-    public void Postpone_does_nothing_while_the_workstation_is_locked()
+    public void R033_Postpone_does_nothing_while_the_workstation_is_locked()
     {
         var schedule = new IntervalSchedule(ReminderSettings.Default);
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);
@@ -354,7 +354,7 @@ public class IntervalScheduleTests
 
     /// <summary>A postponement lasts until the next thing that sets a deadline, and no longer.</summary>
     [Fact]
-    public void A_restart_puts_the_whole_interval_back_over_a_postponement()
+    public void R033_A_restart_puts_the_whole_interval_back_over_a_postponement()
     {
         var schedule = new IntervalSchedule(ReminderSettings.Default);
         var now = new DateTimeOffset(2026, 8, 28, 9, 0, 0, TimeSpan.Zero);

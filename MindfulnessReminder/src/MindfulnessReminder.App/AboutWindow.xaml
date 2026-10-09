@@ -32,8 +32,8 @@
 
     <!--
         The same theme as the Settings window, merged the same way: into this window rather
-        than into Application.Resources, so BreakWindow keeps its light card. See "The dark
-        theme" in CLAUDE.md.
+        than into Application.Resources, so BreakWindow keeps its light card. See
+        docs/design/dark-theme.md (ADR 0030).
     -->
     <Window.Resources>
         <ResourceDictionary>

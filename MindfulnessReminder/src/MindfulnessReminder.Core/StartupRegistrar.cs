@@ -47,14 +47,24 @@ public sealed class StartupRegistrar
     /// </summary>
     public bool EnsureRegisteredOnFirstRun()
     {
-        if (_registry.GetString(SettingsKeyPath, RegisteredMarkerValueName) is not null)
+        try
         {
-            _autoStart.RepairPathIfNeeded();
+            if (_registry.GetString(SettingsKeyPath, RegisteredMarkerValueName) is not null)
+            {
+                _autoStart.RepairPathIfNeeded();
+                return false;
+            }
+
+            _autoStart.Enable();
+            _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
+            return true;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            // A key this account may not write (a policy, security software) is not a reason
+            // to fail to start: nothing is registered and no marker is written, so the next
+            // start tries again. The tray checkbox reports the same refusal when clicked.
             return false;
         }
-
-        _autoStart.Enable();
-        _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
-        return true;
     }
 }

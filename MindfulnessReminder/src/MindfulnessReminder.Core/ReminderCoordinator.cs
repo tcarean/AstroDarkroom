@@ -232,6 +232,14 @@ public sealed class ReminderCoordinator : IDisposable
         // moment you came back, which is the exact thing the setting exists to prevent.
         if (Evaluate() is not ReminderSuppression.None)
         {
+            // Skipped, not postponed. With the periodic reminder off there is no countdown,
+            // so no tick reads the monitor again: a reason kept here would stay in the
+            // tooltip after the call, for a reminder that is not being held back.
+            if (!_schedule.IsCountingDown)
+            {
+                Suppression = ReminderSuppression.None;
+            }
+
             // The reason changed, so the tooltip has something new to say.
             CountdownChanged?.Invoke(this, EventArgs.Empty);
             return;

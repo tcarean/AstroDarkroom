@@ -112,7 +112,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void Every_source_file_starts_with_the_license_notice()
+    public void R092_Every_source_file_starts_with_the_license_notice()
     {
         var offenders = SourceFiles()
             .Where(f => HeaderOf(f) != Expected(Path.GetExtension(f)))
@@ -126,7 +126,7 @@ public class LicenseHeaderTests
 
     /// <summary>Without this, a broken scan would let the test above pass on zero files.</summary>
     [Fact]
-    public void The_scan_sees_all_three_projects_and_the_xaml()
+    public void R092_The_scan_sees_all_three_projects_and_the_xaml()
     {
         var names = SourceFiles().Select(Path.GetFileName).ToList();
 
@@ -139,7 +139,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void The_repo_ships_the_full_gpl_text()
+    public void R092_The_repo_ships_the_full_gpl_text()
     {
         var license = File.ReadAllText(Path.Combine(RepoDir(), "LICENSE"));
 
@@ -155,7 +155,7 @@ public class LicenseHeaderTests
     /// this is where that shows up.
     /// </summary>
     [Fact]
-    public void The_copyright_comes_from_the_build_props()
+    public void R091_The_copyright_comes_from_the_build_props()
     {
         var props = File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
 
@@ -166,7 +166,7 @@ public class LicenseHeaderTests
     }
 
     [Fact]
-    public void The_copyright_names_the_author_and_the_year()
+    public void R091_The_copyright_names_the_author_and_the_year()
     {
         Assert.Equal("Copyright (C) 2026 Tudor Carean", LicenseInfo.Copyright);
     }
@@ -177,7 +177,7 @@ public class LicenseHeaderTests
     /// for it, so About carries it -- and points at the full text from there.
     /// </summary>
     [Fact]
-    public void About_carries_the_warranty_disclaimer_and_points_at_the_license()
+    public void R091_About_carries_the_warranty_disclaimer_and_points_at_the_license()
     {
         var about = LicenseInfo.AboutText;
 
@@ -190,7 +190,7 @@ public class LicenseHeaderTests
 
     /// <summary>About says the licence sits next to the executable; the build has to make that true.</summary>
     [Fact]
-    public void The_app_copies_the_license_next_to_the_executable()
+    public void R093_The_app_copies_the_license_next_to_the_executable()
     {
         var csproj = File.ReadAllText(Path.Combine(
             RepoDir(), "src", "MindfulnessReminder.App", "MindfulnessReminder.App.csproj"));
