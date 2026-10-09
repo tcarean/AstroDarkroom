@@ -233,6 +233,47 @@ public class SeriesTests
         Assert.Equal(["", "", ""], CsvCells(csv[4])[index..(index + 3)]);
     }
 
+    /// <summary>The words and tables the window arranges come from the report: axis labels, the FOCUS verdict row, the explanation paragraphs, the dithering tables (R-036).</summary>
+    [Fact]
+    public void R036_TheReportGivesTheAxisWordsTheFocusVerdictTheParagraphsAndTheDitherTables()
+    {
+        SeriesResult r = RunPattern();
+        Assert.Equal(("X = DEC", "Y = RA"), SeriesReport.AxisLabels(r.Series));
+        Assert.Equal(("dX (DEC)", "dY (RA)"), SeriesReport.PositionHeaders(r.Series));
+
+        ReportRow focus = SeriesReport.FocusRows(r)[^1];
+        Assert.Equal("verdict", focus.Label);
+        Assert.Equal("BUN", focus.Verdict);
+        Assert.StartsWith("FWHM median 3.25 px", focus.Value, StringComparison.Ordinal);
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Contains("    verdict            : BUN - FWHM median 3.25 px = 19.4\" pe cadrele bune, 3.25 / 3.25 px (-0 %) la inceput / sfarsit: a tinut toata sesiunea", sw.ToString(), StringComparison.Ordinal);
+
+        IReadOnlyList<ReportParagraph> paragraphs = SeriesReport.RejectedExplanation;
+        Assert.True(paragraphs.Count >= 3, "fewer than three paragraphs");
+        ReportParagraph bold = Assert.Single(paragraphs, p => p.Emphasis);
+        Assert.StartsWith("Dara pe RA", bold.Text, StringComparison.Ordinal);
+        Assert.Contains("pe DEC", bold.Text, StringComparison.Ordinal);
+
+        IReadOnlyList<ReportTable> t = SeriesReport.DitherTables(r);
+        Assert.Equal(["cat de des", "cat de mult", "directie", "acoperire", "grupuri in acelasi loc"], t.Select(x => x.Title));
+        Assert.Equal(["la fiecare", "de cate ori"], t[0].Columns);
+        Assert.Equal(["2 cadre | 2 ori"], Rows(t[0]));
+        Assert.Equal(["marime", "miscari"], t[1].Columns);
+        Assert.Equal(["median | 15.32 px = 91.7\"", "5-10 px | 0", "10-20 px | 2", "20+ px | 1"], Rows(t[1]));
+        Assert.Equal(["axa", "numai pe ea", "semn +", "semn -"], t[2].Columns);
+        Assert.Equal(["X = DEC | 2 | 2 | 0", "Y = RA | 1 | 0 | 1", "ambele | 0 |  | "], Rows(t[2]));
+        Assert.Equal(["raza", "cu alt cadru sub raza", "pozitii distincte", "grupuri de 3+ consecutive"], t[3].Columns);
+        Assert.Equal(["3 px | 8 | - | -", "5 px | 8 | 4 | 0", "10 px | 8 | 4 | 0"], Rows(t[3]));
+        Assert.Equal(["raza", "cadre", "cate", "minute"], t[4].Columns);
+        Assert.Equal(["5 px | niciunul | - | -", "10 px | niciunul | - | -"], Rows(t[4]));
+
+        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
+        Assert.Equal("X 40 px, Y 16 px", SeriesReport.DitherScalarRows(r)[3].Value);
+    }
+
+    private static string[] Rows(ReportTable t) => t.Rows.Select(row => string.Join(" | ", row)).ToArray();
+
     /// <summary>One CSV line into its cells, the quoted ones unquoted (a reason holds commas).</summary>
     private static string[] CsvCells(string line)
     {

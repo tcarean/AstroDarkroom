@@ -25,6 +25,12 @@ internal sealed record ReportRow(string Label, string Value, string? Verdict = n
 /// <summary>A rejected frame: its index, its file and its reasons in words.</summary>
 internal sealed record RejectedRow(int Index, string FileName, string Reasons);
 
+/// <summary>One paragraph of an explanation the window shows; Emphasis marks the one to set in bold (R-036).</summary>
+internal sealed record ReportParagraph(string Text, bool Emphasis);
+
+/// <summary>A table the window lays out: a title, the column headers and the rows, every cell already a string (R-036).</summary>
+internal sealed record ReportTable(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
+
 /// <summary>One frame of the table, every cell already formatted; "-" where a figure is missing.</summary>
 internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Spot, string Reasons);
 
@@ -106,12 +112,14 @@ internal static class SeriesReport
     internal static string SpotCell(SpotRun? run)
         => run is null ? "-" : $"{run.Ordinal.ToString(Inv)}/{run.Frames.ToString(Inv)} de la {run.FirstIndex.ToString(Inv)}";
 
-    /// <summary>What the Respinse tab says under its heading: the elongation, the trail and its axis, where the marginal frames are (R-035).</summary>
-    internal static string RejectedExplanation { get; } =
-        $"Alungirea e raportul dintre axa lunga si axa scurta a stelelor (1 = rotunde), mediana pe cadru: de la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva; " +
-        $"intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} e la limita si ramane, la alegerea ta (lista lui e randul 'la limita' din CADRE MISCATE, tabul Rezumat; in tabul Cadre are clasa galbena). " +
-        "Dara e directia in care s-au intins stelele in timpul expunerii: unghiul fata de orizontala imaginii si, cand se stie care axa a imaginii e RA si stelele cadrului sunt de acord intre ele (coerenta), axa monturii pe care cade. " +
-        "Dara pe RA vine din urmarire: eroarea periodica, viteza, backlash-ul pe RA. Dara pe DEC vine din alinierea polara, vant sau o atingere a monturii. Oblica: amandoua, sau o lovitura.";
+    /// <summary>What the Respinse tab says under its heading, one paragraph per line: the elongation, where the marginal frames are, the trail and its axis, and in bold what each axis points to (R-035, R-036).</summary>
+    internal static IReadOnlyList<ReportParagraph> RejectedExplanation { get; } =
+    [
+        new($"Alungirea e raportul dintre axa lunga si axa scurta a stelelor (1 = rotunde), mediana pe cadru: de la {RunReport.F(Th.ElongationBad, 2)} cadrul e slab si iese din stiva.", false),
+        new($"Intre {RunReport.F(Th.ElongationMarginal, 2)} si {RunReport.F(Th.ElongationBad, 2)} cadrul e la limita si ramane, la alegerea ta: lista lui e randul 'la limita' din CADRE MISCATE, tabul Rezumat; in tabul Cadre are clasa galbena.", false),
+        new("Dara e directia in care s-au intins stelele in timpul expunerii: unghiul fata de orizontala imaginii si, cand se stie care axa a imaginii e RA si stelele cadrului sunt de acord intre ele (coerenta), axa monturii pe care cade.", false),
+        new("Dara pe RA vine din urmarire: eroarea periodica, viteza, backlash-ul pe RA. Dara pe DEC vine din alinierea polara, vant sau o atingere a monturii. Oblica: amandoua, sau o lovitura.", true),
+    ];
 
     /// <summary>The caption of a star cut-out: where it was taken and the star's three figures.</summary>
     internal static string CropCaption(StarCrop c)
@@ -163,12 +171,38 @@ internal static class SeriesReport
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
+        (string fv, string ft) = Focus(s, r);
         return
         [
             new("FWHM median (cadre bune)", Px(s.SessionFwhm, r)),
             new($"primele / ultimele {s.Fwhm.Count.ToString(Inv)} bune", $"{TrendPx(s.Fwhm)} -> {(s.FocusHeld is bool fh ? (fh ? "focusul a tinut" : "focusul s-a miscat") : "prea putine cadre bune")}"),
             new("centru / mijloc / margine", $"{ZoneMedians(r)} (mediane pe cadrele bune)"),
+            new("verdict", ft, fv),
         ];
+    }
+
+    /// <summary>The map's axis labels: which image axis is RA and which DEC, plain `X` / `Y` without an axis (R-036).</summary>
+    internal static (string X, string Y) AxisLabels(SeriesAnalysis s)
+    {
+        ArgumentNullException.ThrowIfNull(s);
+        return s.RaAxis switch
+        {
+            Axis.Y => ("X = DEC", "Y = RA"),
+            Axis.X => ("X = RA", "Y = DEC"),
+            _ => ("X", "Y"),
+        };
+    }
+
+    /// <summary>The headers of the position columns of the frame table: `dX (DEC)`, `dY (RA)`, plain without an axis (R-036).</summary>
+    internal static (string Dx, string Dy) PositionHeaders(SeriesAnalysis s)
+    {
+        ArgumentNullException.ThrowIfNull(s);
+        return s.RaAxis switch
+        {
+            Axis.Y => ("dX (DEC)", "dY (RA)"),
+            Axis.X => ("dX (RA)", "dY (DEC)"),
+            _ => ("dX", "dY"),
+        };
     }
 
     internal static IReadOnlyList<ReportRow> NoiseRows(SeriesResult r)
@@ -238,10 +272,10 @@ internal static class SeriesReport
         (string verdict, string text) = DitherVerdict(d);
         return
         [
-            new($"pauze > {RunReport.F(Th.DitherPause, 0)} s", $"{d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}"),
+            PausesRow(r, d),
             new("cat de des", HowOften(d)),
-            new("cel mai lung interval intre doua miscari", $"cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})"),
-            new("cat de mult", $"median {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px: {c.Count.ToString(Inv)}"))),
+            LongestRow(r, d),
+            new("cat de mult", $"median {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{SizeWord(c)}: {c.Count.ToString(Inv)}"))),
             new("directie", $"numai X: {d.MovesOnXOnly.ToString(Inv)}; numai Y: {d.MovesOnYOnly.ToString(Inv)}; ambele: {d.MovesOnBoth.ToString(Inv)}; semn X: +{d.MovesXPlus.ToString(Inv)} / -{d.MovesXMinus.ToString(Inv)}; semn Y: +{d.MovesYPlus.ToString(Inv)} / -{d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}"),
             new("acoperire", $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; sub {RunReport.F(Th.CoverageTight, 0)} px: {d.WithinTight.ToString(Inv)}, sub {RunReport.F(Th.CoverageMid, 0)}: {d.WithinMid.ToString(Inv)}, sub {RunReport.F(Th.CoverageLoose, 0)}: {d.WithinLoose.ToString(Inv)}; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}"),
             new("pozitii distincte", $"{d.DistinctMid.ToString(Inv)} la {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} la {RunReport.F(Th.CoverageLoose, 0)} px; intindere X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
@@ -249,6 +283,82 @@ internal static class SeriesReport
             new($"grupuri in {RunReport.F(Th.CoverageLoose, 0)} px", Runs(d.RunsLoose, r)),
             new("verdict", text, verdict),
         ];
+    }
+
+    /// <summary>The DITHERING rows that are not tables, for the window's Dithering tab beside <see cref="DitherTables"/> (R-036).</summary>
+    internal static IReadOnlyList<ReportRow> DitherScalarRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        DitherAnalysis d = r.Dither;
+        (string verdict, string text) = DitherVerdict(d);
+        return
+        [
+            PausesRow(r, d),
+            LongestRow(r, d),
+            new("acoperire", $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}"),
+            new("intindere", $"X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
+            new("verdict", text, verdict),
+        ];
+    }
+
+    /// <summary>The DITHERING figures that are tables, for the window (R-036): how often, how far, direction, coverage, runs; the console keeps its rows (ADR 0012).</summary>
+    internal static IReadOnlyList<ReportTable> DitherTables(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        DitherAnalysis d = r.Dither;
+        (string xAxis, string yAxis) = AxisLabels(r.Series);
+        List<IReadOnlyList<string>> often = d.FramesBetweenMoves.OrderBy(k => k.Key)
+            .Select(kv => (IReadOnlyList<string>)[$"{kv.Key.ToString(Inv)} {(kv.Key == 1 ? "cadru" : "cadre")}", $"{kv.Value.ToString(Inv)} {(kv.Value == 1 ? "data" : "ori")}"])
+            .ToList();
+        List<IReadOnlyList<string>> sizes = [["median", Px(d.MedianMove, r)]];
+        sizes.AddRange(d.Sizes.Select(c => (IReadOnlyList<string>)[SizeWord(c), c.Count.ToString(Inv)]));
+        List<IReadOnlyList<string>> runs = [.. RunRows(d.RunsMid, Th.CoverageMid, r), .. RunRows(d.RunsLoose, Th.CoverageLoose, r)];
+        return
+        [
+            new("cat de des", ["la fiecare", "de cate ori"], often),
+            new("cat de mult", ["marime", "miscari"], sizes),
+            new("directie", ["axa", "numai pe ea", "semn +", "semn -"],
+            [
+                [xAxis, d.MovesOnXOnly.ToString(Inv), d.MovesXPlus.ToString(Inv), d.MovesXMinus.ToString(Inv)],
+                [yAxis, d.MovesOnYOnly.ToString(Inv), d.MovesYPlus.ToString(Inv), d.MovesYMinus.ToString(Inv)],
+                ["ambele", d.MovesOnBoth.ToString(Inv), "", ""],
+            ]),
+            new("acoperire", ["raza", "cu alt cadru sub raza", "pozitii distincte", "grupuri de 3+ consecutive"],
+            [
+                [PxWord(Th.CoverageTight), d.WithinTight.ToString(Inv), "-", "-"],
+                [PxWord(Th.CoverageMid), d.WithinMid.ToString(Inv), d.DistinctMid.ToString(Inv), d.RunsMid.Count.ToString(Inv)],
+                [PxWord(Th.CoverageLoose), d.WithinLoose.ToString(Inv), d.DistinctLoose.ToString(Inv), d.RunsLoose.Count.ToString(Inv)],
+            ]),
+            new("grupuri in acelasi loc", ["raza", "cadre", "cate", "minute"], runs),
+        ];
+    }
+
+    private static ReportRow PausesRow(SeriesResult r, DitherAnalysis d)
+        => new($"pauze > {RunReport.F(Th.DitherPause, 0)} s", $"{d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}");
+
+    private static ReportRow LongestRow(SeriesResult r, DitherAnalysis d)
+        => new("cel mai lung interval intre doua miscari", $"cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})");
+
+    private static string SizeWord(SizeClass c) => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px";
+
+    private static string PxWord(double px) => RunReport.F(px, 0) + " px";
+
+    /// <summary>The rows of one radius in the runs table: one per run, or a single `niciunul` row.</summary>
+    private static List<IReadOnlyList<string>> RunRows(IReadOnlyList<FrameStretch> runs, double radius, SeriesResult r)
+    {
+        if (runs.Count == 0)
+        {
+            return [[PxWord(radius), "niciunul", "-", "-"]];
+        }
+
+        return runs.Select(x => (IReadOnlyList<string>)[PxWord(radius), $"{x.FirstIndex.ToString(Inv)}-{x.LastIndex.ToString(Inv)}", x.Frames.ToString(Inv), MinutesCell(r, x.FirstIndex, x.LastIndex)]).ToList();
+    }
+
+    /// <summary>The duration of a stretch as a cell: <see cref="Minutes"/> without its leading separator, `-` when the frames carry no time.</summary>
+    private static string MinutesCell(SeriesResult r, int first, int last)
+    {
+        string m = Minutes(r, first, last);
+        return m.Length > 2 ? m[2..] : "-";
     }
 
     internal static IReadOnlyList<RejectedRow> RejectedRows(SeriesResult r)

@@ -58,7 +58,8 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
 
 - **REZUMAT**: focus, expunere (fata de zgomotul de citire din `biases/`), roua, cadre
   miscate, dithering, cate cadre scoti din stiva si cate raman.
-- **FOCUS**: FWHM median pe cadrele bune, la inceput si la sfarsit, pe trei zone radiale.
+- **FOCUS**: FWHM median pe cadrele bune, la inceput si la sfarsit, pe trei zone radiale, si
+  verdictul (acelasi ca pe randul `focus` din REZUMAT).
 - **EXPUNERE SI ZGOMOT**: fondul de cer, zgomotul de citire pe fiecare canal, si pe trei
   cadre raportul "shot/citire" pe canal: peste 10, cerul ineaca zgomotul de citire; sub,
   canalul e limitat de citire si subexpunerile mai lungi ar ajuta.
@@ -159,17 +160,20 @@ porneste singura (aceeasi ca `lightscheck <folder>`, cu bara de progres si buton
 rezultatul apare in sase taburi:
 
 - **Rezumat**: sectiunile raportului, rand cu rand, cu verdictul colorat.
-- **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitie,
-  `acelasi loc`, motive). Alege un cadru si in dreapta apar decupajele stelelor lui (centru si
-  colturi, pe canalul verde): asa vezi cu ochiul dara pe care o raporteaza alungirea.
+- **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitia
+  `dX (DEC)` / `dY (RA)` cand se stie axa, `acelasi loc`, motive). Alege un cadru si in dreapta
+  apar decupajele stelelor lui (centru si colturi, pe canalul verde): asa vezi cu ochiul dara
+  pe care o raporteaza alungirea.
 - **Dithering**: harta pozitiilor fata de primul cadru (grila la 10 px, culoarea e clasa
   cadrului, inel in loc de punct = cadru dintr-un sir de 3 sau mai multe in acelasi loc),
   pasul fata de cadrul anterior (galben = miscare >= 5 px), distanta la cel mai apropiat alt
-  cadru, si randurile DITHERING din raport.
+  cadru, si in dreapta cifrele DITHERING: pauzele si miscarile, cel mai lung interval,
+  acoperirea, intinderea si verdictul ca randuri, iar cat de des, cat de mult, directia,
+  acoperirea pe raze si grupurile ca tabele.
 - **Calitate**: FWHM, alungire (cu liniile 1.35 si 1.6), stele si fond de cer, cadru cu cadru.
 - **Respinse**: cadrele slabe si cele necitite, cu motivul si pragul, sub o explicatie a
-  cuvintelor (alungirea, dara si axa ei, RA fata de DEC); cele la limita raman la alegerea ta,
-  lista lor e in CADRE MISCATE.
+  cuvintelor (alungirea, dara si axa ei; ce inseamna dara pe RA fata de dara pe DEC, pe rand
+  separat, ingrosat); cele la limita raman la alegerea ta, lista lor e in CADRE MISCATE.
 - **Raport**: textul consolei, identic.
 
 In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300) si

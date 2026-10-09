@@ -32,16 +32,23 @@ bug and propagates.
   `RowVm(Label, Value, Verdict)`; the session card takes the lines `InventoryReport.WriteHeader`
   prints (split on `" : "`) plus `SeriesReport.ScaleLine`;
 - the frames table takes `SeriesReport.FrameRows(r)`, the console's table cells already
-  formatted (the run cell as `Spot`), plus the frame's path for the cut-outs; `Rejected` is
+  formatted (the run cell as `Spot`), plus the frame's path for the cut-outs, and its `dX` /
+  `dY` headers from `SeriesReport.PositionHeaders` (`DxHeader`, `DyHeader`); `Rejected` is
   the frames `SeriesReport.RejectedRows` names, `RejectedHeading` is
-  `SeriesReport.RejectedHeading` and `RejectedExplanation` passes
-  `SeriesReport.RejectedExplanation` through for the paragraph under the heading;
+  `SeriesReport.RejectedHeading` and `RejectedExplanation` maps
+  `SeriesReport.RejectedExplanation` to `ParagraphVm`s, which `RejectedView` lists one per
+  line with a `DataTrigger` on `Emphasis` for the bold one;
+- the Dithering tab's card takes `SeriesReport.DitherScalarRows` as `DitherRows` and
+  `SeriesReport.DitherTables` as `TableVm`s; `DitherView` lays a table out as its title, a
+  header row and the rows, each row an `ItemsControl` with a horizontal panel of fixed-width
+  `TextBlock` cells, no grid control and no column logic;
 - the charts take `ChartPoint(X, Y, Label, Colour)` lists: the map from the registration's
   `Dx`/`Dy`, the steps and nearest distances from `DitherAnalysis`, the four quality series
   from `FrameMeasurement`; a frame without a figure is `NaN` and the chart leaves a gap. The
   guide lines quote `Th` (the move threshold, the 10 px coverage radius, the two elongation
   classes) so a change there moves the lines; a map point whose frame sits in a run at 10 px
-  (`DitherAnalysis.SpotRun`) carries `Ring`;
+  (`DitherAnalysis.SpotRun`) carries `Ring`, and the map's axis labels are
+  `SeriesReport.AxisLabels`;
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.

@@ -109,9 +109,19 @@ therefore has one label column; a label longer than the field pushes its colon r
 RESPINSE block, `CropCaption` the caption of a star cut-out (`StarCrops` cuts, this file
 words). `Reason` words a trailing flag as `alungire v (prag t)` plus `TrailSuffix`: `, dara pe
 RA (a grade)` when the flag has an axis (`AxisWord`), `, dara la a grade` when it has only the
-angle. `RejectedExplanation` is the paragraph the window shows under RESPINSE, built once from
-`Th` so the thresholds it quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`,
-`oblic` or empty) and the three `spot_run_*` columns.
+angle. `RejectedExplanation` is the list of `ReportParagraph`s the window shows under
+RESPINSE, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
+quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or empty) and the
+three `spot_run_*` columns.
+
+Beside the rows, the report gives the window shapes it cannot derive from prose (ADR 0012):
+`AxisLabels` and `PositionHeaders` word the RA/DEC axis for the map and the table headers;
+`DitherTables` builds the five `ReportTable`s (how often, how far, direction, coverage, runs)
+from the same `DitherAnalysis` figures the `DitherRows` print, through shared helpers
+(`SizeWord`, `PausesRow`, `LongestRow`, `RunRows`, `MinutesCell`) so a wording lives once;
+`DitherScalarRows` is the subset of DITHERING rows that are not tables. FOCUS closes with a
+`verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
+and never the tables.
 
 The report prints the session header shared with the inventory, then the sections the
 owner's hand report had, in the same order, with every verdict followed by its numbers. The
