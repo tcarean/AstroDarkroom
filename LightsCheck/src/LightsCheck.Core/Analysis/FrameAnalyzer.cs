@@ -200,7 +200,8 @@ internal static class FrameAnalyzer
                 }
             }
 
-            levels.Add(new ChannelLevel(Mosaic.Label(cfa, p), Mosaic.ColourOf(cfa, p), Raster.Percentile(sample, 50), sat, min));
+            levels.Add(new ChannelLevel(Mosaic.Label(cfa, p), Mosaic.ColourOf(cfa, p), Raster.Percentile(sample, 50), sat, min,
+                NoiseAnalyzer.HighPassSigma(raw, py, px)));
         }
 
         return levels;

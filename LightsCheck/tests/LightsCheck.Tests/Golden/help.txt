@@ -1,15 +1,22 @@
 lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: lightscheck <folder sesiune> [--frame N]
+Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]
+          lightscheck <folder sesiune> --inventory
+          lightscheck <folder sesiune> --frame N
 
   Folderul sesiunii Siril: cadrele se iau din lights\ (sau direct din folder,
   daca nu exista lights\), iar bias-urile, optional, din biases\. Raw de aparat
   (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
 
-  Fara optiuni: inventarul cadrelor (metadate, interval, pauze).
-  --frame N     masoara cadrul N (1 = primul din lights\): nivele, fond, zgomot,
-                stele (FWHM, alungire, unghi), halo, dare.
+  Fara optiuni: masoara toate cadrele si tipareste raportul: focus, expunere si
+                zgomot, roua, cadre miscate, drift, dithering, lista de respins.
+  --out DIR     scrie in DIR raportul, un CSV cu toate cifrele si lista de respins
+                (lightscheck-raport.txt, lightscheck-cadre.csv, lightscheck-respinse.txt).
+  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).
+  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit 3.92, Nikon D3300).
+  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.
+  --frame N     masoara un singur cadru (1 = primul din lights\).
   -h, --help    acest text
 
 Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.

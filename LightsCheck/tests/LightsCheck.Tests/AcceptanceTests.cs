@@ -87,7 +87,7 @@ public class AcceptanceTests
     public void R002_LightsSubfolderIsReadAndBiasesCounted_Exit0()
     {
         using SessionFixture s = new SessionFixture().WithLights(3, biases: 2);
-        (int code, string stdout, string stderr) = Cli.Run(s.Root);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(0, code);
         Assert.Equal(string.Empty, stderr);
         Assert.Contains("lights             : lights\\ (3 cadre .fit)", stdout, StringComparison.Ordinal);
@@ -98,7 +98,7 @@ public class AcceptanceTests
     public void R002_FramesDirectlyInTheFolderAreTheLights()
     {
         using SessionFixture s = new SessionFixture().WithLights(2, inSubfolder: false);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(0, code);
         Assert.Contains("lights             : . (2 cadre .fit)", stdout, StringComparison.Ordinal);
         Assert.Contains("biases             : (lipsa)", stdout, StringComparison.Ordinal);
@@ -108,7 +108,7 @@ public class AcceptanceTests
     public void R003_EveryFrameRowCarriesItsMetadata()
     {
         using SessionFixture s = new SessionFixture().WithLights(2);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("aparat             : NIKON D3300", stdout, StringComparison.Ordinal);
         Assert.Contains("expunere           : 120.2 s la ISO 1600 (toate cadrele)", stdout, StringComparison.Ordinal);
         Assert.Contains("  1  DSC_0001.fit          20:35:03     120.2   1600     -   135 mm       -", stdout, StringComparison.Ordinal);
@@ -120,7 +120,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithLights(2);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0003.fit"), new byte[100]);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("  3  DSC_0003.fit          eroare:", stdout, StringComparison.Ordinal);
         Assert.Contains("ATENTIE            : 1 cadru nu s-a putut citi", stdout, StringComparison.Ordinal);
@@ -132,7 +132,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithLights(1);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0002.NEF"), new byte[4096]);
-        (int code, string stdout, string stderr) = Cli.Run(s.LightsDir);
+        (int code, string stdout, string stderr) = Cli.Run(s.LightsDir, "--inventory");
         Assert.Equal(1, code);
         Assert.Equal(string.Empty, stderr);
         Assert.Contains("  1  DSC_0002.NEF          eroare:", stdout, StringComparison.Ordinal);
@@ -174,10 +174,46 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R027_TheDefaultRunPrintsTheSeriesReport_Exit0()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(0, code);
+        Assert.Contains("cadrul 8 / 8", stderr, StringComparison.Ordinal);
+        Assert.Contains("  REZUMAT", stdout, StringComparison.Ordinal);
+        Assert.Contains("cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8)", stdout, StringComparison.Ordinal);
+        Assert.Contains("  RESPINSE (2 cadre slabe", stdout, StringComparison.Ordinal);
+        Assert.Contains("DSC_0003.fit", stdout, StringComparison.Ordinal);
+        Assert.Contains("la fiecare 2 cadre: 2 ori", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R028_OutWritesTheThreeFilesAndNamesThem()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        using TempWorkspace outDir = new();
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
+        Assert.Equal(0, code);
+        Assert.Contains("-> scris: " + Path.Combine(outDir.Dir, "lightscheck-respinse.txt"), stdout, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(outDir.Dir, "lightscheck-cadre.csv")));
+    }
+
+    [Theory]
+    [InlineData("--threads", "0")]
+    [InlineData("--pixel", "abc")]
+    [InlineData("--out", "")]
+    public void R004_ABadOptionValueNamesTheOption_Exit1(string option, string value)
+    {
+        (int code, _, string stderr) = Cli.Run("folder", option, value);
+        Assert.Equal(1, code);
+        Assert.Contains(option, stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R006_IntervalLineGivesSpanIntegrationAndDuty()
     {
         using SessionFixture s = new SessionFixture().WithLights(3, exposure: 120, cadence: 150);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         // 3 frames: starts at 0, 150, 300 s; the last ends at 420 s; 360 s of shutter over 420 = 86 %.
         Assert.Contains("interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:42:03 (7 min); integrare 6 min din 3 cadre (86 % din interval)", stdout, StringComparison.Ordinal);
     }
@@ -186,7 +222,7 @@ public class AcceptanceTests
     public void R005_NumbersUseTheDotWhateverTheCulture()
     {
         using SessionFixture s = new SessionFixture().WithLights(1, exposure: 0.5);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("0.5 s la ISO 1600", stdout, StringComparison.Ordinal);
         Assert.DoesNotContain("0,5", stdout, StringComparison.Ordinal);
     }

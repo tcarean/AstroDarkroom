@@ -1,0 +1,72 @@
+# Analysing the series
+
+**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
+
+The behaviour is R-018 to R-028; the dither definitions and the verdicts are ADR 0007. The
+prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
+is the hand report the tool reproduces, and V-008 pins its session figures.
+
+## The chain (`SeriesRun`)
+
+1. Every light is decoded and measured in parallel (`Parallel.For`, half the cores by
+   default; each frame holds about 400 MB at its peak, so four in flight is 1.6 GB). A frame
+   that throws becomes an `AnalyzedFrame` with its error and the metadata read without pixels.
+2. The reference is the first measured frame; every measured frame is registered to its
+   600-star list, in parallel.
+3. `CadenceAnalyzer` (pauses), `DitherAnalyzer` (positions and pauses), the read noise from
+   the first two biases, the RA axis from a plate-solved FITS at the root, then
+   `SeriesAnalyzer`.
+4. The pixel scale is `206.265 x pixel_um / focal_mm` from the first frame's focal length and
+   the file's `XPIXSZ` or the option's pixel size.
+
+## Registration (`Registration`)
+
+The prototype's `reg.py`: the offsets between the 300 brightest stars of each list vote in
+a 2D histogram (8 px bins, +-2000 px); the peak is the coarse shift. Then four rounds: every
+reference star is transformed by the current similarity, its nearest frame star within the
+tolerance (8 px, then 3 px) found through a hash grid, and the pairs fit a similarity by the
+normal equations of (a, b, tx, ty) solved with the copied `Stats.Solve`. The reported shift is
+where the reference's centre lands in the frame, so a dither that moved the mount left shows
+as a positive Dx. Rotation is `atan2(b, a)`. With fewer than 10 matches the frame has no
+position; on the Veil frames 500 to 550 of 600 match with an RMS of 0.3 to 0.8 px.
+
+## Dithering (`DitherAnalyzer`)
+
+Steps are differences of consecutive positions; a step needs both frames registered. A move
+is a step of 3 px or more. The tables are what ADR 0007 lists. Coverage is O(n^2) over the
+registered frames (87 frames: nothing). The greedy clustering seeds a cluster with the first
+frame no earlier seed covers; it is the prototype's, order-dependent by design (the first
+frame of a spot names it). Runs at a radius are stretches of 3 or more consecutive frames
+within the radius of the stretch's first frame.
+
+## Classes, trends, drift, axes (`SeriesAnalyzer`)
+
+Two passes: the classes that need no session figure (trailing, from the median elongation)
+and the session medians (FWHM over the good frames, stars over all), then the flags against
+the session (soft, clouds, background jump against the two neighbours on each side). Trends
+compare the first and the last 10 good frames (fewer on a short session: half the good
+frames). Drift is the mean step per minute over the consecutive registered pairs that were
+not moves, so a dither does not count as drift; on Veil it is the 0.8 px/min along RA the
+hand report found. Rotation is the last registered frame's minus the first's; the corner
+figure is that rate over one exposure at the half-diagonal. The RA axis comes from the WCS
+when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
+along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
+frames, stated as an assumption.
+
+## Noise (`NoiseAnalyzer`)
+
+The prototype's `noise2.py`. The read noise per CFA position is the clipped standard
+deviation of the central 600 x 600 difference of two biases over sqrt 2 (the fixed pattern
+cancels); the lights' total noise per position is the clipped standard deviation of the
+pixel minus its 5 x 5 median in the same window, which overestimates sigma by a few percent,
+so it is corrected by the ratio of the pair sigma to the same estimator on the bias. The shot
+variance is total minus read; the swamping ratio shot over read variance; the penalty
+`sqrt(1 + 1/ratio) - 1`. On Veil: 9 to 11 in red, 40 to 60 in green and blue, as the hand
+report found.
+
+## The report and the files (`SeriesReport`, `SeriesOutputs`)
+
+The report prints the session header shared with the inventory, then the sections the
+owner's hand report had, in the same order, with every verdict followed by its numbers. The
+CSV holds every figure per frame with the invariant culture; the rejected list is the file
+names of the bad and unreadable frames, one per line, for Siril's sequence selection by hand.

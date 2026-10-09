@@ -24,4 +24,5 @@ the same task as the code it covers.
 | --- | --- | --- |
 | The readers copied from FlatCheck: what each file does here, what was cut, the two adapted files, libraw's lazy loading and the shot metadata | `imaging.md` | anything in `src/LightsCheck.Core/Imaging/` |
 | Measuring one light frame: the pipeline from mosaic to figures, each step's window and kernel, what was measured against the prototype | `frame-analysis.md` | `FrameAnalyzer`, `Raster`, `Components`, `StarShapes`, `Thresholds.cs`, `FrameRun`, any figure of R-012 to R-017 |
+| The series: registration, the dither tables and verdicts, the frame classes and trends, drift and rotation, the RA axis, the read noise, the report and the files | `series-analysis.md` | `Registration`, `DitherAnalyzer`, `SeriesAnalyzer`, `NoiseAnalyzer`, `SeriesRun`, `SeriesReport`, `SeriesOutputs`, any verdict wording |
 | The hand analysis the tool reproduces: the Veil session of 2026-10-06, the Python scripts, their figures and findings | `../validation/2026-10-06-veil/raport.md` (Romanian, the report as delivered), `prototype/` | any threshold, any verdict wording, the dithering tables |

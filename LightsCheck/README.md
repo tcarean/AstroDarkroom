@@ -11,9 +11,9 @@ aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acel
 versionare si aceeasi fereastra "Despre" ca FlatCheck, de unde sunt copiate si cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: in constructie.** Pasul 1 din 5 (planul e in `docs/plans/2026-10-09-build-lightscheck.md`):
-consola deschide sesiunea si face inventarul cadrelor. Masuratorile pe cadru, analiza seriei si
-a dithering-ului, lista de respins si fereastra vin in pasii urmatori.
+**Stadiu: in constructie.** Pasii 1-3 din 5 (planul e in `docs/plans/2026-10-09-build-lightscheck.md`):
+consola face inventarul, masoara fiecare cadru si analizeaza seria (dithering, drift, cadre
+de respins). Fereastra vine in pasul 4.
 
 > **Documentatia de utilizator sta aici, in acest fisier.** Nu o duplica in comentarii.
 
@@ -41,15 +41,48 @@ numelor de fisier.
 ## Folosire
 
 ```
-lightscheck <folder sesiune>
+lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]
+lightscheck <folder sesiune> --inventory
+lightscheck <folder sesiune> --frame N
 lightscheck --help
 ```
 
 Fiecare rulare incepe cu `lightscheck <versiune>` si notita de copyright. Codul de iesire e
 `0` cand toate cadrele s-au citit si `1` la eroare (folder lipsa, niciun cadru, un cadru care
-nu se poate citi; cadrul e listat cu `eroare:` si restul sunt listate in continuare).
+nu se poate citi; cadrul e listat cu `eroare:` si restul sunt analizate in continuare).
 
-Ce se afiseaza azi:
+### Toata sesiunea (fara optiuni)
+
+Masoara fiecare cadru (in paralel, `--threads N`, implicit jumatate din nuclee; 87 de cadre
+de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportul:
+
+- **REZUMAT**: focus, expunere (fata de zgomotul de citire din `biases/`), roua, cadre
+  miscate, dithering, cate cadre scoti din stiva si cate raman.
+- **FOCUS**: FWHM median pe cadrele bune, la inceput si la sfarsit, pe trei zone radiale.
+- **EXPUNERE SI ZGOMOT**: fondul de cer, zgomotul de citire pe fiecare canal, si pe trei
+  cadre raportul "shot/citire" pe canal: peste 10, cerul ineaca zgomotul de citire; sub,
+  canalul e limitat de citire si subexpunerile mai lungi ar ajuta.
+- **ROUA**: halo-ul si numarul de stele la inceput si la sfarsit.
+- **CADRE MISCATE**: cadrele slabe (alungire >= 1.6) si la limita (1.35..1.6), directia
+  darelor si care axa a imaginii e RA (din `result.fit` plate-solvat din folderul sesiunii,
+  daca exista, altfel din directia darelor).
+- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, rotatia de camp.
+- **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
+  ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
+  grupuri de cadre consecutive in acelasi loc) si verdictul pentru pixeli calzi si walking
+  noise, cu cifrele lui.
+- **RESPINSE**: fiecare cadru slab cu motivul si pragul.
+- **TABEL PE CADRE**: o linie pe cadru.
+
+`--out DIR` scrie in DIR raportul (`lightscheck-raport.txt`), un CSV cu toate cifrele pe
+cadru (`lightscheck-cadre.csv`) si lista numelor de respins (`lightscheck-respinse.txt`),
+cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
+`--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
+cu focala din raw da scara in "/px.
+
+### Doar inventarul: `--inventory`
+
+Citeste metadatele fara sa decodeze pixelii (o secunda pentru 87 de cadre):
 
 ```
 === SESIUNE: E:\Photografie\Astro\Veil\2026-10-06-3h ===

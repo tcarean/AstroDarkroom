@@ -16,17 +16,23 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using LightsCheck.Core;
 
 namespace LightsCheck.Cli;
 
 /// <summary>
-/// The console's arguments: one folder, optionally <c>--frame N</c>, or --help. Anything else
-/// is an error naming the argument (R-004).
+/// The console's arguments: one folder, the mode (the whole series by default,
+/// <c>--inventory</c>, <c>--frame N</c>), <c>--out DIR</c>, <c>--threads N</c>,
+/// <c>--pixel UM</c>, or --help. Anything else is an error naming the argument (R-004).
 /// </summary>
 internal sealed class Options
 {
     internal string? Folder { get; private set; }
     internal int? Frame { get; private set; }
+    internal bool Inventory { get; private set; }
+    internal string? Out { get; private set; }
+    internal int Threads { get; private set; }
+    internal double PixelSizeUm { get; private set; } = SeriesOptions.D3300PixelUm;
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -49,16 +55,61 @@ internal sealed class Options
                 return o;
             }
 
-            if (a == "--frame")
+            if (a == "--inventory")
             {
-                if (i + 1 >= args.Length || !int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) || n < 1)
+                o.Inventory = true;
+                continue;
+            }
+
+            if (a is "--frame" or "--threads" or "--pixel" or "--out")
+            {
+                if (i + 1 >= args.Length)
                 {
-                    o.Error = "--frame cere numarul cadrului (1 = primul din lights\\)";
+                    o.Error = $"{a} cere o valoare";
                     return o;
                 }
 
-                o.Frame = n;
-                i++;
+                string v = args[++i];
+                switch (a)
+                {
+                    case "--frame":
+                        if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int n) || n < 1)
+                        {
+                            o.Error = "--frame cere numarul cadrului (1 = primul din lights\\)";
+                            return o;
+                        }
+
+                        o.Frame = n;
+                        break;
+                    case "--threads":
+                        if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) || t < 1)
+                        {
+                            o.Error = "--threads cere un numar de fire, cel putin 1";
+                            return o;
+                        }
+
+                        o.Threads = t;
+                        break;
+                    case "--pixel":
+                        if (!double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) || p <= 0)
+                        {
+                            o.Error = "--pixel cere marimea pixelului in microni, de exemplu 3.92";
+                            return o;
+                        }
+
+                        o.PixelSizeUm = p;
+                        break;
+                    default:
+                        if (string.IsNullOrWhiteSpace(v))
+                        {
+                            o.Error = "--out cere un folder";
+                            return o;
+                        }
+
+                        o.Out = v;
+                        break;
+                }
+
                 continue;
             }
 
@@ -86,6 +137,10 @@ internal sealed class Options
         if (o.Folder is null)
         {
             o.Error = "lipseste folderul sesiunii";
+        }
+        else if (o.Inventory && o.Frame is not null)
+        {
+            o.Error = "--inventory si --frame nu merg impreuna";
         }
 
         return o;

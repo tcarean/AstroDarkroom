@@ -71,6 +71,22 @@
       "measuredOn": "2026-10-09",
       "expected": { "detected": 12135, "bright": 1662, "fwhm": 3.06, "fwhmP90": 3.58, "elongation": 1.13, "elongatedFraction": 0.13, "angle": -87, "coherence": 0.17, "halo": -0.006, "background": 174, "sigma": 15.8, "channels": [35, 174, 174, 195], "fwhmCentre": 3.12, "fwhmEdge": 2.92, "trails": 0 },
       "tolerance": { "counts": 0.01, "fwhm": 0.05, "elongation": 0.05, "fraction": 0.03, "angle": 8, "coherence": 0.05, "halo": 0.01, "background": 1.0, "sigma": 0.2 }
+    },
+    {
+      "id": "V-008",
+      "kind": "series",
+      "session": "Veil/2026-10-06-3h",
+      "measuredOn": "2026-10-09",
+      "expected": {
+        "good": 48, "marginal": 17, "bad": 22,
+        "badFrames": [1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76],
+        "registered": 87, "moves": 41, "pauses": 47, "pausesWithoutMove": 9,
+        "distinctMid": 38, "distinctLoose": 25, "isolated": 1, "longestRunLoose": 10,
+        "medianMove": 13.29, "rotationArcmin": 8.5, "driftYPerMin": -0.48, "sessionFwhm": 3.12,
+        "readNoiseG1": 2.9, "swampingRFrame1": 9.4,
+        "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true, "walkingNoiseOk": false
+      },
+      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3 }
     }
   ]
 }

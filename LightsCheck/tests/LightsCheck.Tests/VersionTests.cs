@@ -79,7 +79,7 @@ public partial class VersionTests
         [
             [],
             ["--help"],
-            [s.Root],
+            [s.Root, "--inventory"],
             [ws.PathTo("nu-exista")],
             ["--optiune-inventata"],
         ];

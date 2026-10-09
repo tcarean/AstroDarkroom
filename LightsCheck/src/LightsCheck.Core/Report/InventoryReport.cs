@@ -24,6 +24,13 @@ internal static class InventoryReport
 {
     internal static void Write(Inventory inv, TextWriter w)
     {
+        WriteHeader(inv, w);
+        WriteTable(inv, w);
+    }
+
+    /// <summary>The session lines: folders, camera, lens, exposure, interval; the series report reuses them.</summary>
+    internal static void WriteHeader(Inventory inv, TextWriter w)
+    {
         ArgumentNullException.ThrowIfNull(inv);
         ArgumentNullException.ThrowIfNull(w);
         SessionFolder s = inv.Session;
@@ -40,7 +47,13 @@ internal static class InventoryReport
             int n = inv.Lights.Count(f => f.Error is not null);
             w.WriteLine($"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelul)");
         }
+    }
 
+    /// <summary>One row per light: the metadata and the pause before it.</summary>
+    internal static void WriteTable(Inventory inv, TextWriter w)
+    {
+        ArgumentNullException.ThrowIfNull(inv);
+        ArgumentNullException.ThrowIfNull(w);
         w.WriteLine();
         w.WriteLine("  CADRE");
         w.WriteLine("     nr  fisier                ora       expunere   ISO    f/   focala   pauza");

@@ -1,0 +1,75 @@
+lightscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+=== SESIUNE: <sesiune> ===
+    lights             : lights\ (8 cadre .fit)
+    biases             : biases\ (2 cadre .fit)
+    aparat             : NIKON D3300
+    obiectiv           : 135 mm (poza)
+    expunere           : 120.0 s la ISO 1600 (toate cadrele)
+    interval           : 2026-10-06 20:35:03 -> 2026-10-06 20:52:37 (17 min); integrare 16 min din 8 cadre (91 % din interval)
+    scara              : 5.99 "/px; pixel 3.92 um (din fisier (XPIXSZ)); referinta cadrul 1
+
+  REZUMAT
+    focus              : BUN - FWHM median 3.25 px = 19.4" pe cadrele bune, 3.25 / 3.25 px (-0 %) la inceput / sfarsit: a tinut toata sesiunea
+    expunere           : BUNA - fond G 2000 -> 2000 ADU; canalul cel mai slab B: shot/citire 10.0, penalizare 5 %
+    roua               : NU - FWHM -0 %, halo +0.001
+    cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
+    dithering          : INSUFICIENT pentru walking noise, OK pentru pixeli calzi - 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    de scos din stiva  : 2 cadre (lista la RESPINSE); raman 6 = 12 min
+
+  FOCUS
+    FWHM median (cadre bune)   : 3.25 px = 19.4"
+    primele / ultimele 3 bune : 3.25 / 3.25 px (-0 %) -> focusul a tinut
+    centru / mijloc / margine  : 3.25 / 3.25 / 3.24 px (mediane pe cadrele bune)
+
+  EXPUNERE SI ZGOMOT
+    fond de cer (ADU peste black, cadrele bune, primele -> ultimele): 2000 -> 2000 pe verde (+0 %)
+    zgomot de citire   : R 12.0  G1 12.0  G2 12.0  B 12.0 ADU (din perechea de bias-uri)
+    cadrul   1         : R: cer 399, shot/citire 10.1, penalizare 4.8 %  G1: cer 2002, shot/citire 10.1, penalizare 4.8 %  G2: cer 2001, shot/citire 10.2, penalizare 4.8 %  B: cer 2300, shot/citire 10.0, penalizare 4.9 %
+    cadrul   5         : R: cer 401, shot/citire 10.2, penalizare 4.8 %  G1: cer 2000, shot/citire 10.1, penalizare 4.8 %  G2: cer 2000, shot/citire 10.2, penalizare 4.8 %  B: cer 2300, shot/citire 10.1, penalizare 4.8 %
+    cadrul   8         : R: cer 401, shot/citire 10.1, penalizare 4.8 %  G1: cer 2002, shot/citire 10.2, penalizare 4.8 %  G2: cer 2001, shot/citire 10.2, penalizare 4.8 %  B: cer 2300, shot/citire 10.2, penalizare 4.8 %
+    scara              : shot/citire peste 10 = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta
+
+  ROUA
+    halo primele / ultimele    : 0.001 / 0.001; stele detectate 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (-0 %)
+    verdict            : NU - FWHM -0 %, halo +0.001
+
+  CADRE MISCATE
+    slabe (alungire >= 1.60)    : 3, 6
+    la limita (1.35 .. 1.60) : niciunul
+    directia darelor   : -90 grade fata de orizontala pe cadrele slabe; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
+
+  DRIFT SI ROTATIE
+    drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi) = +1.5 / +0.2 "/min
+    rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
+
+  DITHERING
+    pauze > 5 s : 3; miscari >= 5 px: 3; pauze fara miscare: 0; miscari fara pauza: 0; cadre inregistrate: 8 din 8
+    cat de des         : la fiecare 2 cadre: 2 ori
+    cel mai lung interval intre doua miscari: cadrele 1-2 (2 cadre de la o miscare la urmatoarea, 4 min)
+    cat de mult        : median 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
+    directie           : numai X: 2; numai Y: 1; ambele: 0; semn X: +2 / -0; semn Y: +0 / -1; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
+    acoperire          : cel mai apropiat alt cadru median 0.6 px; sub 3 px: 8, sub 5: 8, sub 10: 8; izolate (>= 10 px de orice): 0
+                         pozitii distincte: 4 la 5 px, 4 la 10 px; intindere X 40 px, Y 16 px
+    grupuri in 5 px    : niciunul
+    grupuri in 10 px   : niciunul
+    verdict            : INSUFICIENT pentru walking noise, OK pentru pixeli calzi - 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+
+  RESPINSE (2 cadre slabe; cele la limita raman la alegerea ta)
+      3  DSC_0003.fit          alungire 1.76 (prag 1.60), dara la -90 grade
+      6  DSC_0006.fit          alungire 1.76 (prag 1.60), dara la -90 grade
+
+  TABEL PE CADRE
+     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  motive
+      1  DSC_0001.fit          20:35:03  bun        1.01   3.25      40   2000      -      -     0.0     0.0  
+      2  DSC_0002.fit          20:37:04  bun        1.01   3.25      40   2000    1 s    0.5     0.5     0.2  
+      3  DSC_0003.fit          20:39:34  SLAB       1.76   4.59      40   2000   30 s   11.5    12.0    -0.0  alungire 1.76 (prag 1.60), dara la -90 grade
+      4  DSC_0004.fit          20:41:35  bun        1.01   3.26      40   2000    1 s    0.6    12.5     0.3  
+      5  DSC_0005.fit          20:44:05  bun        1.01   3.25      40   2000   30 s   15.3    12.0   -15.0  
+      6  DSC_0006.fit          20:46:06  SLAB       1.76   4.60      40   2001    1 s    0.5    12.5   -15.0  alungire 1.76 (prag 1.60), dara la -90 grade
+      7  DSC_0007.fit          20:48:36  bun        1.01   3.24      40   2001   30 s   27.5    40.0   -15.0  
+      8  DSC_0008.fit          20:50:37  bun        1.01   3.25      40   2000    1 s    0.6    40.5   -15.3  
+--- stderr ---
+(progresul, omis)
+--- exit 0 ---
