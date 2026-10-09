@@ -19,9 +19,9 @@ Copyright (C) 2026 Tudor Carean
     de scos din stiva  : 2 cadre (lista la RESPINSE); raman 6 = 12 min
 
   FOCUS
-    FWHM median (cadre bune)   : 3.25 px = 19.4"
-    primele / ultimele 3 bune : 3.25 / 3.25 px (-0 %) -> focusul a tinut
-    centru / mijloc / margine  : 3.25 / 3.25 / 3.24 px (mediane pe cadrele bune)
+    FWHM median (cadre bune): 3.25 px = 19.4"
+    primele / ultimele 3 bune: 3.25 / 3.25 px (-0 %) -> focusul a tinut
+    centru / mijloc / margine: 3.25 / 3.25 / 3.24 px (mediane pe cadrele bune)
 
   EXPUNERE SI ZGOMOT
     fond de cer (ADU peste black, cadrele bune, primele -> ultimele): 2000 -> 2000 pe verde (+0 %)
@@ -32,12 +32,12 @@ Copyright (C) 2026 Tudor Carean
     scara              : shot/citire peste 10 = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta
 
   ROUA
-    halo primele / ultimele    : 0.001 / 0.001; stele detectate 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (-0 %)
+    halo primele / ultimele: 0.001 / 0.001; stele detectate 40 -> 40 (+0 %); FWHM 3.25 / 3.25 px (-0 %)
     verdict            : NU - FWHM -0 %, halo +0.001
 
   CADRE MISCATE
-    slabe (alungire >= 1.60)    : 3, 6
-    la limita (1.35 .. 1.60) : niciunul
+    slabe (alungire >= 1.60): 3, 6
+    la limita (1.35 .. 1.60): niciunul
     directia darelor   : -90 grade fata de orizontala pe cadrele slabe; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
 
   DRIFT SI ROTATIE
@@ -45,13 +45,13 @@ Copyright (C) 2026 Tudor Carean
     rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
 
   DITHERING
-    pauze > 5 s : 3; miscari >= 5 px: 3; pauze fara miscare: 0; miscari fara pauza: 0; cadre inregistrate: 8 din 8
+    pauze > 5 s        : 3; miscari >= 5 px: 3; pauze fara miscare: 0; miscari fara pauza: 0; cadre inregistrate: 8 din 8
     cat de des         : la fiecare 2 cadre: 2 ori
     cel mai lung interval intre doua miscari: cadrele 1-2 (2 cadre de la o miscare la urmatoarea, 4 min)
     cat de mult        : median 15.32 px = 91.7"; 5-10 px: 0; 10-20 px: 2; 20+ px: 1
     directie           : numai X: 2; numai Y: 1; ambele: 0; semn X: +2 / -0; semn Y: +0 / -1; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
     acoperire          : cel mai apropiat alt cadru median 0.6 px; sub 3 px: 8, sub 5: 8, sub 10: 8; izolate (>= 10 px de orice): 0
-                         pozitii distincte: 4 la 5 px, 4 la 10 px; intindere X 40 px, Y 16 px
+    pozitii distincte  : 4 la 5 px, 4 la 10 px; intindere X 40 px, Y 16 px
     grupuri in 5 px    : niciunul
     grupuri in 10 px   : niciunul
     verdict            : INSUFICIENT pentru walking noise, OK pentru pixeli calzi - 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe

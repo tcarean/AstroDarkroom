@@ -19,7 +19,19 @@ using System.Globalization;
 
 namespace LightsCheck.Core;
 
-/// <summary>The whole series as the console prints it (Romanian, R-027). Words only; every number comes from the analyzers.</summary>
+/// <summary>One labelled line of the report; Verdict is the word the summary rows open with (BUN, LA LIMITA, NU, ...), null elsewhere.</summary>
+internal sealed record ReportRow(string Label, string Value, string? Verdict = null);
+
+/// <summary>A rejected frame: its index, its file and its reasons in words.</summary>
+internal sealed record RejectedRow(int Index, string FileName, string Reasons);
+
+/// <summary>One frame of the table, every cell already formatted; "-" where a figure is missing.</summary>
+internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Reasons);
+
+/// <summary>
+/// The whole series as the console prints it (Romanian, R-027), built from labelled rows that
+/// the window shows as they are (R-029): words only, every number comes from the analyzers.
+/// </summary>
 internal static class SeriesReport
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
@@ -32,93 +44,218 @@ internal static class SeriesReport
         DitherAnalysis d = r.Dither;
         List<FrameInfo> infos = r.Frames.Select(f => f.Info).ToList();
         InventoryReport.WriteHeader(new Inventory(r.Session, infos, r.Cadence), w);
-        w.WriteLine($"    scara              : {(r.ArcsecPerPixel is double sc ? RunReport.F(sc, 2) + " \"/px" : "necunoscuta (fara focala)")}; pixel {RunReport.F(r.PixelSizeUm, 2)} um ({r.PixelSizeSource}); referinta cadrul {r.ReferenceIndex.ToString(Inv)}");
+        w.WriteLine($"    scara              : {ScaleLine(r)}");
+
+        Section(w, "REZUMAT", SummaryRows(r));
+        Section(w, "FOCUS", FocusRows(r));
+        Section(w, "EXPUNERE SI ZGOMOT", NoiseRows(r));
+        Section(w, "ROUA", DewRows(r));
+        Section(w, "CADRE MISCATE", TrailRows(r));
+        Section(w, "DRIFT SI ROTATIE", DriftRows(r));
+        Section(w, "DITHERING", DitherRows(r));
 
         w.WriteLine();
-        w.WriteLine("  REZUMAT");
-        w.WriteLine($"    focus              : {Focus(s, r)}");
-        w.WriteLine($"    expunere           : {Exposure(s, r)}");
-        w.WriteLine($"    roua               : {Dew(s)}");
-        w.WriteLine($"    cadre miscate      : {s.BadCount.ToString(Inv)} slabe, {s.MarginalCount.ToString(Inv)} la limita, {s.GoodCount.ToString(Inv)} bune{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}");
-        w.WriteLine($"    dithering          : {DitherVerdict(d)}");
-        w.WriteLine($"    de scos din stiva  : {Keep(r)}");
-
-        w.WriteLine();
-        w.WriteLine("  FOCUS");
-        w.WriteLine($"    FWHM median (cadre bune)   : {Px(s.SessionFwhm, r)}");
-        w.WriteLine($"    primele / ultimele {s.Fwhm.Count.ToString(Inv)} bune : {TrendPx(s.Fwhm, r)} -> {(s.FocusHeld is bool fh ? (fh ? "focusul a tinut" : "focusul s-a miscat") : "prea putine cadre bune")}");
-        w.WriteLine($"    centru / mijloc / margine  : {ZoneMedians(r)} (mediane pe cadrele bune)");
-
-        w.WriteLine();
-        w.WriteLine("  EXPUNERE SI ZGOMOT");
-        w.WriteLine($"    fond de cer (ADU peste black, cadrele bune, primele -> ultimele): {Opt(s.Background.First, 0)} -> {Opt(s.Background.Last, 0)} pe verde{(s.Background.RelativeChange is double bc ? " (" + Signed(100 * bc, 0) + " %)" : "")}");
-        if (s.ReadNoise is null)
+        w.WriteLine($"  RESPINSE ({RejectedHeading(r)})");
+        foreach (RejectedRow row in RejectedRows(r))
         {
-            w.WriteLine("    zgomot de citire   : nemasurat (fara doua bias-uri in biases\\)");
-        }
-        else
-        {
-            w.WriteLine("    zgomot de citire   : " + string.Join("  ", s.ReadNoise.Select(n => $"{n.Name} {RunReport.F(n.PairSigma, 1)}")) + " ADU (din perechea de bias-uri)");
-            for (int i = 0; i < s.SwampingFrames.Count; i++)
-            {
-                w.WriteLine($"    cadrul {s.SwampingFrames[i].ToString(Inv),3}         : " + string.Join("  ", s.Swamping![i].Select(c => $"{c.Name}: cer {RunReport.F(c.Sky, 0)}, shot/citire {RunReport.F(c.SwampingRatio, 1)}, penalizare {(double.IsNaN(c.PenaltyPct) ? "-" : RunReport.F(c.PenaltyPct, 1) + " %")}")));
-            }
-
-            w.WriteLine($"    scara              : shot/citire peste {RunReport.F(Th.SwampingRatioOk, 0)} = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta");
-        }
-
-        w.WriteLine();
-        w.WriteLine("  ROUA");
-        w.WriteLine($"    halo primele / ultimele    : {Opt(s.Halo.First, 3)} / {Opt(s.Halo.Last, 3)}; stele detectate {Opt(s.Stars.First, 0)} -> {Opt(s.Stars.Last, 0)}{(s.Stars.RelativeChange is double sr ? " (" + Signed(100 * sr, 0) + " %)" : "")}; FWHM {TrendPx(s.Fwhm, r)}");
-        w.WriteLine($"    verdict            : {Dew(s)}");
-
-        w.WriteLine();
-        w.WriteLine("  CADRE MISCATE");
-        w.WriteLine($"    slabe (alungire >= {RunReport.F(Th.ElongationBad, 2)})    : {List(r, FrameClass.Bad)}");
-        w.WriteLine($"    la limita ({RunReport.F(Th.ElongationMarginal, 2)} .. {RunReport.F(Th.ElongationBad, 2)}) : {List(r, FrameClass.Marginal)}");
-        w.WriteLine($"    directia darelor   : {(s.TrailAngleDeg is double ta ? RunReport.F(ta, 0) + " grade fata de orizontala pe cadrele slabe" : "nedeterminata (prea putine cadre slabe cu directie coerenta)")}; {AxisLine(s)}");
-
-        w.WriteLine();
-        w.WriteLine("  DRIFT SI ROTATIE");
-        w.WriteLine($"    drift intre cadre consecutive fara dithering: X {Signed(s.DriftXPerMin, 2)} px/min, Y {Signed(s.DriftYPerMin, 2)} px/min ({s.DriftPairs.ToString(Inv)} perechi){(r.ArcsecPerPixel is double a1 && s.DriftXPerMin is double dxm && s.DriftYPerMin is double dym ? $" = {Signed(dxm * a1, 1)} / {Signed(dym * a1, 1)} \"/min" : "")}");
-        w.WriteLine($"    rotatie de camp    : {(s.RotationTotalDeg is double rt ? RunReport.F(rt * 60, 1) + " arcmin in total" : "-")}{(s.RotationPerHourDeg is double rh ? ", " + RunReport.F(rh * 60, 1) + " arcmin/h" : "")}{(s.CornerShiftPerExposurePx is double cs ? "; in colt, intr-o expunere: " + RunReport.F(cs, 2) + " px" : "")}");
-
-        w.WriteLine();
-        w.WriteLine("  DITHERING");
-        w.WriteLine($"    pauze > {RunReport.F(Th.DitherPause, 0)} s : {d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}");
-        w.WriteLine("    cat de des         : " + HowOften(d));
-        w.WriteLine($"    cel mai lung interval intre doua miscari: cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})");
-        w.WriteLine($"    cat de mult        : median {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px: {c.Count.ToString(Inv)}")));
-        w.WriteLine($"    directie           : numai X: {d.MovesOnXOnly.ToString(Inv)}; numai Y: {d.MovesOnYOnly.ToString(Inv)}; ambele: {d.MovesOnBoth.ToString(Inv)}; semn X: +{d.MovesXPlus.ToString(Inv)} / -{d.MovesXMinus.ToString(Inv)}; semn Y: +{d.MovesYPlus.ToString(Inv)} / -{d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}");
-        w.WriteLine($"    acoperire          : cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; sub {RunReport.F(Th.CoverageTight, 0)} px: {d.WithinTight.ToString(Inv)}, sub {RunReport.F(Th.CoverageMid, 0)}: {d.WithinMid.ToString(Inv)}, sub {RunReport.F(Th.CoverageLoose, 0)}: {d.WithinLoose.ToString(Inv)}; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}");
-        w.WriteLine($"                         pozitii distincte: {d.DistinctMid.ToString(Inv)} la {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} la {RunReport.F(Th.CoverageLoose, 0)} px; intindere X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px");
-        w.WriteLine($"    grupuri in {RunReport.F(Th.CoverageMid, 0)} px    : {Runs(d.RunsMid, r)}");
-        w.WriteLine($"    grupuri in {RunReport.F(Th.CoverageLoose, 0)} px   : {Runs(d.RunsLoose, r)}");
-        w.WriteLine($"    verdict            : {DitherVerdict(d)}");
-
-        w.WriteLine();
-        w.WriteLine($"  RESPINSE ({s.BadCount.ToString(Inv)} cadre slabe; cele la limita raman la alegerea ta)");
-        for (int i = 0; i < r.Frames.Count; i++)
-        {
-            if (s.Classes[i] == FrameClass.Bad || s.Classes[i] == FrameClass.Unknown)
-            {
-                w.WriteLine($"    {r.Frames[i].Info.Index.ToString(Inv),3}  {r.Frames[i].Info.FileName,-20}  {Reasons(s.Flags[i])}");
-            }
+            w.WriteLine($"    {row.Index.ToString(Inv),3}  {row.FileName,-20}  {row.Reasons}");
         }
 
         w.WriteLine();
         w.WriteLine("  TABEL PE CADRE");
         w.WriteLine("     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  motive");
+        foreach (FrameTableRow f in FrameRows(r))
+        {
+            string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
+            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Reasons}");
+        }
+    }
+
+    /// <summary>The text in the RESPINSE heading's parentheses: the counts and the rule for the marginal frames.</summary>
+    internal static string RejectedHeading(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        return $"{s.BadCount.ToString(Inv)} cadre slabe{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " necitite" : "")}; cele la limita raman la alegerea ta";
+    }
+
+    /// <summary>The table, one row per frame, the cells formatted as the console prints them (the window shows the same cells).</summary>
+    internal static IReadOnlyList<FrameTableRow> FrameRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        DitherAnalysis d = r.Dither;
+        List<FrameTableRow> rows = [];
         for (int i = 0; i < r.Frames.Count; i++)
         {
             AnalyzedFrame f = r.Frames[i];
             FrameMeasurement? m = f.Measurement;
-            string name = f.Info.FileName.Length > 20 ? f.Info.FileName[..20] : f.Info.FileName;
-            string time = f.Info.Timestamp is DateTime t ? t.ToString("HH:mm:ss", Inv) : "-";
-            double? pause = r.Cadence.PauseSeconds[i];
-            w.WriteLine($"    {f.Info.Index.ToString(Inv),3}  {name,-20}  {time,-8}  {ClassWord(s.Classes[i]),-8}  {Opt(m?.ElongationMedian, 2),5}  {Opt(m?.FwhmMedian, 2),5}  {(m is null ? "-" : m.Detected.ToString(Inv)),6}  {Opt(m?.BackgroundMedian, 0),5}  {(pause is double p ? RunReport.F(p, 0) + " s" : "-"),5}  {Opt(d.Step[i], 1),5}  {Opt(f.Registration is { Ok: true } rg ? rg.Dx : null, 1),6}  {Opt(f.Registration is { Ok: true } rg2 ? rg2.Dy : null, 1),6}  {Reasons(s.Flags[i])}");
+            RegistrationResult? g = f.Registration is { Ok: true } rg ? rg : null;
+            rows.Add(new FrameTableRow(f.Info.Index, f.Info.FileName,
+                f.Info.Timestamp is DateTime t ? t.ToString("HH:mm:ss", Inv) : "-",
+                ClassWord(s.Classes[i]), Opt(m?.ElongationMedian, 2), Opt(m?.FwhmMedian, 2),
+                m is null ? "-" : m.Detected.ToString(Inv), Opt(m?.BackgroundMedian, 0),
+                r.Cadence.PauseSeconds[i] is double p ? RunReport.F(p, 0) + " s" : "-",
+                Opt(d.Step[i], 1), Opt(g?.Dx, 1), Opt(g?.Dy, 1), Reasons(s.Flags[i])));
+        }
+
+        return rows;
+    }
+
+    /// <summary>The caption of a star cut-out: where it was taken and the star's three figures.</summary>
+    internal static string CropCaption(StarCrop c)
+    {
+        ArgumentNullException.ThrowIfNull(c);
+        return $"{c.Where}: FWHM {RunReport.F(c.Star.Fwhm, 1)} px, alungire {RunReport.F(c.Star.Elongation, 2)}, unghi {RunReport.F(c.Star.AngleDeg, 0)}";
+    }
+
+    private static void Section(TextWriter w, string title, IReadOnlyList<ReportRow> rows)
+    {
+        w.WriteLine();
+        w.WriteLine("  " + title);
+        foreach (ReportRow row in rows)
+        {
+            string value = row.Verdict is null ? row.Value : row.Verdict + " - " + row.Value;
+            w.WriteLine($"    {row.Label,-19}: {value}");
         }
     }
+
+    internal static string ScaleLine(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        return $"{(r.ArcsecPerPixel is double sc ? RunReport.F(sc, 2) + " \"/px" : "necunoscuta (fara focala)")}; pixel {RunReport.F(r.PixelSizeUm, 2)} um ({r.PixelSizeSource}); referinta cadrul {(r.ReferenceIndex > 0 ? r.ReferenceIndex.ToString(Inv) : "niciunul")}";
+    }
+
+    // ------------------------------------------------------------------ the sections
+
+    internal static IReadOnlyList<ReportRow> SummaryRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        DitherAnalysis d = r.Dither;
+        (string fv, string ft) = Focus(s, r);
+        (string ev, string et) = Exposure(s, r);
+        (string dv, string dt) = Dew(s);
+        (string dither, string ditherText) = DitherVerdict(d);
+        return
+        [
+            new("focus", ft, fv),
+            new("expunere", et, ev),
+            new("roua", dt, dv),
+            new("cadre miscate", $"{s.BadCount.ToString(Inv)} slabe, {s.MarginalCount.ToString(Inv)} la limita, {s.GoodCount.ToString(Inv)} bune{(s.UnknownCount > 0 ? ", " + s.UnknownCount.ToString(Inv) + " necitite" : "")} (din {r.Frames.Count.ToString(Inv)}); {AxisLine(s)}"),
+            new("dithering", ditherText, dither),
+            new("de scos din stiva", Keep(r)),
+        ];
+    }
+
+    internal static IReadOnlyList<ReportRow> FocusRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        return
+        [
+            new("FWHM median (cadre bune)", Px(s.SessionFwhm, r)),
+            new($"primele / ultimele {s.Fwhm.Count.ToString(Inv)} bune", $"{TrendPx(s.Fwhm)} -> {(s.FocusHeld is bool fh ? (fh ? "focusul a tinut" : "focusul s-a miscat") : "prea putine cadre bune")}"),
+            new("centru / mijloc / margine", $"{ZoneMedians(r)} (mediane pe cadrele bune)"),
+        ];
+    }
+
+    internal static IReadOnlyList<ReportRow> NoiseRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        List<ReportRow> rows =
+        [
+            new("fond de cer (ADU peste black, cadrele bune, primele -> ultimele)", $"{Opt(s.Background.First, 0)} -> {Opt(s.Background.Last, 0)} pe verde{(s.Background.RelativeChange is double bc ? " (" + Signed(100 * bc, 0) + " %)" : "")}"),
+        ];
+        if (s.ReadNoise is null)
+        {
+            rows.Add(new("zgomot de citire", "nemasurat (fara doua bias-uri in biases\\)"));
+            return rows;
+        }
+
+        rows.Add(new("zgomot de citire", string.Join("  ", s.ReadNoise.Select(n => $"{n.Name} {RunReport.F(n.PairSigma, 1)}")) + " ADU (din perechea de bias-uri)"));
+        for (int i = 0; i < s.SwampingFrames.Count; i++)
+        {
+            rows.Add(new($"cadrul {s.SwampingFrames[i].ToString(Inv),3}", string.Join("  ", s.Swamping![i].Select(c => $"{c.Name}: cer {RunReport.F(c.Sky, 0)}, shot/citire {RunReport.F(c.SwampingRatio, 1)}, penalizare {(double.IsNaN(c.PenaltyPct) ? "-" : RunReport.F(c.PenaltyPct, 1) + " %")}"))));
+        }
+
+        rows.Add(new("scara", $"shot/citire peste {RunReport.F(Th.SwampingRatioOk, 0)} = cerul ineaca zgomotul de citire (penalizare sub 5 %); sub = canalul e limitat de citire, subexpuneri mai lungi ar ajuta"));
+        return rows;
+    }
+
+    internal static IReadOnlyList<ReportRow> DewRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        (string dv, string dt) = Dew(s);
+        return
+        [
+            new("halo primele / ultimele", $"{Opt(s.Halo.First, 3)} / {Opt(s.Halo.Last, 3)}; stele detectate {Opt(s.Stars.First, 0)} -> {Opt(s.Stars.Last, 0)}{(s.Stars.RelativeChange is double sr ? " (" + Signed(100 * sr, 0) + " %)" : "")}; FWHM {TrendPx(s.Fwhm)}"),
+            new("verdict", dt, dv),
+        ];
+    }
+
+    internal static IReadOnlyList<ReportRow> TrailRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        return
+        [
+            new($"slabe (alungire >= {RunReport.F(Th.ElongationBad, 2)})", List(r, FrameClass.Bad)),
+            new($"la limita ({RunReport.F(Th.ElongationMarginal, 2)} .. {RunReport.F(Th.ElongationBad, 2)})", List(r, FrameClass.Marginal)),
+            new("directia darelor", $"{(s.TrailAngleDeg is double ta ? RunReport.F(ta, 0) + " grade fata de orizontala pe cadrele slabe" : "nedeterminata (prea putine cadre slabe cu directie coerenta)")}; {AxisLine(s)}"),
+        ];
+    }
+
+    internal static IReadOnlyList<ReportRow> DriftRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        return
+        [
+            new("drift intre cadre consecutive fara dithering", $"X {Signed(s.DriftXPerMin, 2)} px/min, Y {Signed(s.DriftYPerMin, 2)} px/min ({s.DriftPairs.ToString(Inv)} perechi){(r.ArcsecPerPixel is double a1 && s.DriftXPerMin is double dxm && s.DriftYPerMin is double dym ? $" = {Signed(dxm * a1, 1)} / {Signed(dym * a1, 1)} \"/min" : "")}"),
+            new("rotatie de camp", $"{(s.RotationTotalDeg is double rt ? RunReport.F(rt * 60, 1) + " arcmin in total" : "-")}{(s.RotationPerHourDeg is double rh ? ", " + RunReport.F(rh * 60, 1) + " arcmin/h" : "")}{(s.CornerShiftPerExposurePx is double cs ? "; in colt, intr-o expunere: " + RunReport.F(cs, 2) + " px" : "")}"),
+        ];
+    }
+
+    internal static IReadOnlyList<ReportRow> DitherRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        SeriesAnalysis s = r.Series;
+        DitherAnalysis d = r.Dither;
+        (string verdict, string text) = DitherVerdict(d);
+        return
+        [
+            new($"pauze > {RunReport.F(Th.DitherPause, 0)} s", $"{d.Pauses.ToString(Inv)}; miscari >= {RunReport.F(Th.DitherStep, 0)} px: {d.Moves.ToString(Inv)}; pauze fara miscare: {d.PausesWithoutMove.ToString(Inv)}; miscari fara pauza: {d.MovesWithoutPause.ToString(Inv)}; cadre inregistrate: {d.Registered.ToString(Inv)} din {r.Frames.Count.ToString(Inv)}"),
+            new("cat de des", HowOften(d)),
+            new("cel mai lung interval intre doua miscari", $"cadrele {d.LongestStretchFirst.ToString(Inv)}-{d.LongestStretchLast.ToString(Inv)} ({d.LongestStretchFrames.ToString(Inv)} cadre de la o miscare la urmatoarea{Minutes(r, d.LongestStretchFirst, d.LongestStretchLast)})"),
+            new("cat de mult", $"median {Px(d.MedianMove, r)}; " + string.Join("; ", d.Sizes.Select(c => $"{RunReport.F(c.Lower, 0)}{(c.Upper is double u ? "-" + RunReport.F(u, 0) : "+")} px: {c.Count.ToString(Inv)}"))),
+            new("directie", $"numai X: {d.MovesOnXOnly.ToString(Inv)}; numai Y: {d.MovesOnYOnly.ToString(Inv)}; ambele: {d.MovesOnBoth.ToString(Inv)}; semn X: +{d.MovesXPlus.ToString(Inv)} / -{d.MovesXMinus.ToString(Inv)}; semn Y: +{d.MovesYPlus.ToString(Inv)} / -{d.MovesYMinus.ToString(Inv)}; {AxisLine(s)}"),
+            new("acoperire", $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; sub {RunReport.F(Th.CoverageTight, 0)} px: {d.WithinTight.ToString(Inv)}, sub {RunReport.F(Th.CoverageMid, 0)}: {d.WithinMid.ToString(Inv)}, sub {RunReport.F(Th.CoverageLoose, 0)}: {d.WithinLoose.ToString(Inv)}; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}"),
+            new("pozitii distincte", $"{d.DistinctMid.ToString(Inv)} la {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} la {RunReport.F(Th.CoverageLoose, 0)} px; intindere X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
+            new($"grupuri in {RunReport.F(Th.CoverageMid, 0)} px", Runs(d.RunsMid, r)),
+            new($"grupuri in {RunReport.F(Th.CoverageLoose, 0)} px", Runs(d.RunsLoose, r)),
+            new("verdict", text, verdict),
+        ];
+    }
+
+    internal static IReadOnlyList<RejectedRow> RejectedRows(SeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        List<RejectedRow> rows = [];
+        for (int i = 0; i < r.Frames.Count; i++)
+        {
+            if (r.Series.Classes[i] is FrameClass.Bad or FrameClass.Unknown)
+            {
+                rows.Add(new RejectedRow(r.Frames[i].Info.Index, r.Frames[i].Info.FileName, Reasons(r.Series.Flags[i])));
+            }
+        }
+
+        return rows;
+    }
+
+    // ------------------------------------------------------------------ the words
 
     /// <summary>The words of a flag: the kind, the figure and the threshold.</summary>
     internal static string Reason(FrameFlag f)
@@ -138,7 +275,11 @@ internal static class SeriesReport
         };
     }
 
-    internal static string Reasons(IReadOnlyList<FrameFlag> flags) => flags.Count == 0 ? "" : string.Join("; ", flags.Select(Reason));
+    internal static string Reasons(IReadOnlyList<FrameFlag> flags)
+    {
+        ArgumentNullException.ThrowIfNull(flags);
+        return flags.Count == 0 ? "" : string.Join("; ", flags.Select(Reason));
+    }
 
     internal static string ClassWord(FrameClass c) => c switch
     {
@@ -148,40 +289,39 @@ internal static class SeriesReport
         _ => "necitit",
     };
 
-    private static string Focus(SeriesAnalysis s, SeriesResult r)
+    private static (string Verdict, string Text) Focus(SeriesAnalysis s, SeriesResult r)
     {
         if (s.SessionFwhm is null)
         {
-            return "nedeterminat (niciun cadru bun)";
+            return ("NEDETERMINAT", "niciun cadru bun");
         }
 
         string held = s.FocusHeld is bool h ? (h ? "a tinut toata sesiunea" : "s-a miscat") : "prea putine cadre bune pentru tendinta";
-        return $"{(s.FocusHeld is false ? "ATENTIE" : "BUN")} - FWHM median {Px(s.SessionFwhm, r)} pe cadrele bune, {TrendPx(s.Fwhm, r)} la inceput / sfarsit: {held}";
+        return (s.FocusHeld is false ? "ATENTIE" : "BUN", $"FWHM median {Px(s.SessionFwhm, r)} pe cadrele bune, {TrendPx(s.Fwhm)} la inceput / sfarsit: {held}");
     }
 
-    private static string Exposure(SeriesAnalysis s, SeriesResult r)
+    private static (string Verdict, string Text) Exposure(SeriesAnalysis s, SeriesResult r)
     {
         string bg = s.Background.First is double bf && s.Background.Last is double bl ? $"fond G {RunReport.F(bf, 0)} -> {RunReport.F(bl, 0)} ADU" : "fond necunoscut";
         if (s.Swamping is null || s.Swamping.Count == 0)
         {
-            return bg + "; zgomotul de citire nemasurat (fara bias-uri)";
+            return ("NEMASURAT", bg + "; zgomotul de citire nemasurat (fara bias-uri)");
         }
 
         ChannelNoise? worst = s.Swamping.SelectMany(x => x).Where(c => !double.IsNaN(c.SwampingRatio) && !double.IsInfinity(c.SwampingRatio)).MinBy(c => c.SwampingRatio);
         if (worst is null)
         {
-            return bg + "; raportul shot/citire nu s-a putut masura (fereastra de zgomot prea mica)";
+            return ("NEMASURAT", bg + "; raportul shot/citire nu s-a putut masura (fereastra de zgomot prea mica)");
         }
 
-        string verdict = worst.SwampingRatio >= Th.SwampingRatioOk ? "BUNA" : "LA LIMITA";
-        return $"{verdict} - {bg}; canalul cel mai slab {worst.Name}: shot/citire {RunReport.F(worst.SwampingRatio, 1)}, penalizare {RunReport.F(worst.PenaltyPct, 0)} %";
+        return (worst.SwampingRatio >= Th.SwampingRatioOk ? "BUNA" : "LA LIMITA", $"{bg}; canalul cel mai slab {worst.Name}: shot/citire {RunReport.F(worst.SwampingRatio, 1)}, penalizare {RunReport.F(worst.PenaltyPct, 0)} %");
     }
 
-    private static string Dew(SeriesAnalysis s) => s.DewSuspected switch
+    private static (string Verdict, string Text) Dew(SeriesAnalysis s) => s.DewSuspected switch
     {
-        true => $"POSIBIL - FWHM a crescut cu {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} % si halo-ul cu {Signed(s.Halo.Change ?? 0, 3)}",
-        false => $"NU - FWHM {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, halo {Signed(s.Halo.Change ?? 0, 3)}",
-        null => "nedeterminat (prea putine cadre bune)",
+        true => ("POSIBIL", $"FWHM a crescut cu {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} % si halo-ul cu {Signed(s.Halo.Change ?? 0, 3)}"),
+        false => ("NU", $"FWHM {Signed(100 * (s.Fwhm.RelativeChange ?? 0), 0)} %, halo {Signed(s.Halo.Change ?? 0, 3)}"),
+        null => ("NEDETERMINAT", "prea putine cadre bune"),
     };
 
     private static string AxisLine(SeriesAnalysis s) => s.RaAxis switch
@@ -191,16 +331,16 @@ internal static class SeriesReport
         _ => "axa RA nedeterminata",
     };
 
-    private static string DitherVerdict(DitherAnalysis d)
+    private static (string Verdict, string Text) DitherVerdict(DitherAnalysis d)
     {
         if (d.Registered < 2)
         {
-            return "nedeterminat (cadre neinregistrate)";
+            return ("NEDETERMINAT", "cadre neinregistrate");
         }
 
         string hot = d.HotPixelsOk ? "OK pentru pixeli calzi" : $"ATENTIE la pixeli calzi (peste {Th.HotPixelRunMax.ToString(Inv)} cadre consecutive in {RunReport.F(Th.CoverageTight, 0)} px)";
         string walk = d.WalkingNoiseOk ? "OK pentru walking noise" : "INSUFICIENT pentru walking noise";
-        return $"{walk}, {hot} - {d.Moves.ToString(Inv)} miscari la {d.Registered.ToString(Inv)} cadre, {d.DistinctLoose.ToString(Inv)} pozitii distincte la {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} izolate, {d.MovesOnBoth.ToString(Inv)} miscari pe ambele axe";
+        return ($"{walk}, {hot}", $"{d.Moves.ToString(Inv)} miscari la {d.Registered.ToString(Inv)} cadre, {d.DistinctLoose.ToString(Inv)} pozitii distincte la {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} izolate, {d.MovesOnBoth.ToString(Inv)} miscari pe ambele axe");
     }
 
     private static string Keep(SeriesResult r)
@@ -270,7 +410,7 @@ internal static class SeriesReport
     private static string Px(double? v, SeriesResult r)
         => v is double d ? RunReport.F(d, 2) + " px" + (r.ArcsecPerPixel is double a ? " = " + RunReport.F(d * a, 1) + "\"" : "") : "-";
 
-    private static string TrendPx(Trend t, SeriesResult r)
+    private static string TrendPx(Trend t)
         => $"{Opt(t.First, 2)} / {Opt(t.Last, 2)} px" + (t.RelativeChange is double rc ? " (" + Signed(100 * rc, 0) + " %)" : "");
 
     private static double? Median(IReadOnlyList<double?> v)

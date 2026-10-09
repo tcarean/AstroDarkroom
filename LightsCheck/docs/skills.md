@@ -10,8 +10,9 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 
 - At step 1: a console requirement also states the exit code (`docs/requirements.md` has the
   console contract block).
-- At step 2: the console and the core are tested in `tests/LightsCheck.Tests`; a console mode
-  also gets a golden scenario in `GoldenOutputTests` (the rule "Golden files"). A figure
+- At step 2: the console and the core are tested in `tests/LightsCheck.Tests`, the window in
+  `tests/LightsCheck.Wpf.Tests` (a tab with a result is rendered in `WindowSmokeTests`); a
+  console mode also gets a golden scenario in `GoldenOutputTests` (the rule "Golden files"). A figure
   measured on a real session goes to `docs/validation.json` as the skill says, with the session
   named relative to `LIGHTSCHECK_TESTDATA_LARGE`.
 - At step 3: measure on the real sessions before you design (`docs/validation.md` lists them;
@@ -39,7 +40,8 @@ Values (the solution, the folders, the publish list, what the auditor may also r
 ## /release
 
 - At step 5: the console is published as the single copyable `lightscheck.exe` under
-  `console/`, with the libraw DLLs embedded; the tag is `lightscheck-vX.Y.Z`.
+  `console/` and the window as `LightsCheck.Wpf.exe` under `wpf/`, both with the libraw DLLs
+  embedded; the tag is `lightscheck-vX.Y.Z`.
 
 ## /mutate
 

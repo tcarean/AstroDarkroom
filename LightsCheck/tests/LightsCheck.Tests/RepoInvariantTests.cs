@@ -104,15 +104,33 @@ public partial class RepoInvariantTests
         return result;
     }
 
-    /// <summary>Every test method in this assembly whose name starts with R### followed by an underscore.</summary>
+    /// <summary>
+    /// Every test method whose name starts with R### followed by an underscore: by reflection in
+    /// this assembly, and by reading the sources of the other test projects under tests/ (the
+    /// window's tests target net9.0-windows and cannot be referenced from here; ADR 0008).
+    /// </summary>
     private static HashSet<string> TestMethodIds()
     {
-        return typeof(RepoInvariantTests).Assembly.GetTypes()
+        HashSet<string> ids = typeof(RepoInvariantTests).Assembly.GetTypes()
             .SelectMany(t => t.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             .Select(m => TestName().Match(m.Name))
             .Where(m => m.Success)
             .Select(m => "R" + m.Groups[1].Value)
             .ToHashSet(StringComparer.Ordinal);
+
+        string tests = Path.Combine(TestData.FindRepoRoot(), "tests");
+        foreach (string project in Directory.GetDirectories(tests).Where(d => Path.GetFileName(d) != "LightsCheck.Tests"))
+        {
+            foreach (string file in Directory.GetFiles(project, "*.cs"))
+            {
+                foreach (Match m in TestMethodInSource().Matches(File.ReadAllText(file)))
+                {
+                    ids.Add("R" + m.Groups[1].Value);
+                }
+            }
+        }
+
+        return ids;
     }
 
     [GeneratedRegex(@"<Version>([^<]+)</Version>")]
@@ -123,4 +141,7 @@ public partial class RepoInvariantTests
 
     [GeneratedRegex(@"^R(\d{3})_")]
     private static partial Regex TestName();
+
+    [GeneratedRegex(@"\bpublic\s+(?:async\s+)?\w+\s+R(\d{3})_\w+\s*\(")]
+    private static partial Regex TestMethodInSource();
 }

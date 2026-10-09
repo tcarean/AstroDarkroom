@@ -8,7 +8,8 @@ Rules for entries:
 - IDs are `R-NNN`, assigned once, never reused. A dropped requirement keeps its ID with status
   `dropped`. Gaps in the numbering are deliberate: each block of ten is one area.
 - Status is one of `draft`, `accepted`, `implemented`, `dropped`. `implemented` means a test named
-  `R###_...` exists in `tests/LightsCheck.Tests` (`RepoInvariantTests` checks it both ways).
+  `R###_...` exists in a test project under `tests/` (`RepoInvariantTests` checks it both ways; it
+  reads the sources of the projects it cannot reference, ADR 0008).
 - Describe observable behaviour, with one concrete example that includes numbers. No adjectives.
 - Error behaviour and the exit code are requirements too.
 
@@ -66,6 +67,18 @@ are ADR 0007; the mechanics in `docs/design/series-analysis.md`.
 | R-026 | implemented | `lightscheck <folder>` measures every light in parallel (`--threads N`, default half the cores), registers them, reads the biases and prints the series report; the progress goes to stderr. The pixel scale uses the file's `XPIXSZ` when present, else `--pixel UM` (default 3.92, the D3300). A frame that fails is reported with its error and the run exits 1; the others are analysed. |
 | R-027 | implemented | The series report prints the session lines, then REZUMAT (focus, exposure, dew, trailed frames, dithering, what to drop), FOCUS, EXPUNERE SI ZGOMOT, ROUA, CADRE MISCATE, DRIFT SI ROTATIE, DITHERING (how often, how far, directions, coverage, verdict), RESPINSE (file and reasons) and a table with one row per frame. Example: the synthetic eight-frame pattern reads `cadre miscate : 2 slabe, 0 la limita, 6 bune (din 8)`. |
 | R-028 | implemented | `--out DIR` writes `lightscheck-raport.txt` (the report), `lightscheck-cadre.csv` (every figure per frame, invariant culture, header row) and `lightscheck-respinse.txt` (one file name per line: the bad and the unreadable frames, in order) into DIR, creating it; nothing is written into the session's `lights/` or `biases/`. |
+
+## The window
+
+`LightsCheck.Wpf.exe`, the same core as the console through `Runs/` (ADR 0008); the mechanics
+are in `docs/design/window.md`.
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-029 | implemented | `LightsCheck.Wpf.exe [folder]` opens the session folder given on the command line when it exists (any other argument is ignored), or asks for one at start; the whole series analysis of R-026 then runs by itself on a pool thread, with a progress bar over the frames measured and a stop button. A stopped run leaves no result; a folder that cannot be analysed shows the error message in place of the tabs; opening another folder drops the first result. The inputs the files do not carry are two fields in the top bar, read when a folder is opened: the pixel size in microns (the D3300's 3.92 when blank, not a number with `.` as separator, or not positive) and the thread count (half the cores when blank or not a positive integer). Example: `4,5` in the pixel field is not a number and 3.92 is used. |
+| R-030 | implemented | Six tabs. Rezumat: the session lines and the sections of R-027 as labelled rows, a row's verdict word shown as a coloured chip, nothing reworded. Cadre: one row per frame with index, file, time, class, median elongation, median FWHM, stars, green background, pause, step, position against the first frame and the reasons of R-022. Dithering: the map of positions relative to the first frame on a 10 px grid, each frame coloured by its class and joined to the next, the step per frame as bars with the move line at `Th.DitherStep` (5 px) and the 10 px line, the distance to the nearest other frame, and the DITHERING rows. Calitate: median FWHM, median elongation with the `Th.ElongationMarginal` (1.35) and `Th.ElongationBad` (1.6) lines, star count and green background, frame by frame. Respinse: the bad and the unreadable frames with their reasons; the marginal are not listed. Raport: the console's text, identical byte for byte to what `lightscheck <folder>` prints, whatever the Windows culture. Example: the synthetic eight-frame pattern lists frames 3 and 6 under Respinse and its Raport reads `cadre miscate : 2 slabe, 0 la limita, 6 bune (din 8)`. |
+| R-031 | implemented | Selecting a frame in Cadre decodes it again and shows up to six 25 x 25 px cut-outs of its green channel, each stretched from its own 5th percentile to its own maximum: the two brightest measured stars within the central two fifths of the frame and the brightest within each corner quarter (a corner without a measured star gives none). A frame without measured stars, or one that could not be read, shows a note instead; a later selection wins over an earlier decode still running. |
+| R-032 | implemented | The button `Scrie fisierele...` asks for a folder, proposing the session root, and writes the three files of R-028 into it; the paths written are shown under the top bar, and an error becomes a line there, not a crash. Nothing is written into `lights/` or `biases/`; without a result the button is disabled. |
 
 ## Repository and legal
 

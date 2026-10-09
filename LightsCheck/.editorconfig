@@ -40,3 +40,8 @@ dotnet_diagnostic.CA1031.severity = none
 csharp_style_namespace_declarations = block_scoped:silent
 csharp_prefer_braces = false:silent
 dotnet_analyzer_diagnostic.category-Style.severity = none
+
+# The window's view-models: a property WPF binds to must be an instance member even when it
+# only forwards a constant of the core (a banner, a heading), so CA1822 cannot apply there.
+[src/LightsCheck.Wpf/ViewModels/*.cs]
+dotnet_diagnostic.CA1822.severity = none

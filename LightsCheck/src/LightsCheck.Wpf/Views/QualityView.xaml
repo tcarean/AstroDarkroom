@@ -1,0 +1,66 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- QualityView: four figures over the night, frame by frame. -->
+
+<UserControl x:Class="LightsCheck.Wpf.QualityView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:LightsCheck.Wpf">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
+    <StackPanel>
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="FWHM MEDIAN (px)" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Focusul si seeing-ul; un cadru miscat creste si el, fiindca dara e mai lata." />
+          <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
+            <local:SeriesChart Height="180" Points="{Binding FwhmPoints}" />
+          </Border>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="ALUNGIREA MEDIANA" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="1 = stele rotunde; peste liniile punctate cadrul e la limita, apoi slab." />
+          <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
+            <local:SeriesChart Height="180" Points="{Binding ElongationPoints}" Guides="{Binding ElongationGuides}" Minimum="1" />
+          </Border>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="STELE DETECTATE" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Scad cu norii, cu ceata si cu roua; scad putin si cand fondul creste." />
+          <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
+            <local:SeriesChart Height="180" Points="{Binding StarPoints}" />
+          </Border>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="FOND DE CER PE VERDE (ADU peste black)" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" Text="Campul care coboara, luna, poluarea luminoasa; un salt pe un singur cadru e o lumina de moment sau o expunere diferita." />
+          <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
+            <local:SeriesChart Height="180" Points="{Binding BackgroundPoints}" />
+          </Border>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
