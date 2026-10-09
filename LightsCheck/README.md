@@ -11,9 +11,9 @@ aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acel
 versionare si aceeasi fereastra "Despre" ca FlatCheck, de unde sunt copiate si cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: in constructie.** Pasii 1-4 din 5 (planul e in `docs/plans/2026-10-09-build-lightscheck.md`):
-consola face inventarul, masoara fiecare cadru si analizeaza seria (dithering, drift, cadre
-de respins); fereastra arata aceleasi rezultate. Pasul 5 e validarea si lansarea 1.0.0.
+**Stadiu: prima versiune.** Consola face inventarul, masoara fiecare cadru si analizeaza seria
+(dithering, drift, cadre de respins); fereastra arata aceleasi rezultate. Cifrele sunt
+verificate pe sesiunea Veil din 2026-10-06 fata de analiza facuta de mana (`docs/validation.md`).
 
 > **Documentatia de utilizator sta aici, in acest fisier.** Nu o duplica in comentarii.
 

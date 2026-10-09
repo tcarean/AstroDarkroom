@@ -45,7 +45,8 @@ neither computes a number itself. It never modifies, moves or writes anything in
 - `src/LightsCheck.Wpf/` - the window, `LightsCheck.Wpf.exe`: the theme and the small pieces
   copied from FlatCheck (`Theme/`, `Presentation/`), the view-models (`ViewModels/`), the XAML
   (`Views/`, `MainWindow.xaml`). It binds the core's report rows and computes nothing (ADR
-  0008). `Icon/` holds the one icon of both executables, drawn per size by `make_icon.py`.
+  0008). `Icon/`, at the project root, holds the one icon of both executables, drawn per size
+  by `make_icon.py`.
 - `tests/LightsCheck.Tests/` - unit, acceptance (`AcceptanceTests`), golden texts
   (`GoldenOutputTests`, `Golden/`), figures (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `ThirdPartyTests`, `VersionTests`). Every frame
@@ -91,8 +92,10 @@ varies a kit rule names it.
   `THIRD-PARTY-NOTICES.md` with its GPLv3 compatibility argued, and one in `ThirdParty.cs`
   (`ThirdPartyTests` enforces both). The FITS reader and the PNG encoder stay hand-rolled.
 - **Measured on the sessions** (extends the kit's rule "Measured numbers"). Here the real data
-  are the sessions listed in `docs/validation.md`; a formula change re-runs `/validate` on them
-  before the task ends, with the drift table pasted.
+  are the sessions listed in `docs/validation.md`; a formula change, a changed constant of
+  `Thresholds.cs` included, re-runs `/validate` on them before the task ends, with the drift
+  table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
+  edited to pass"), and an ADR that states the old value gets a dated note.
 - **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
   reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, code comments
   of new files. Romanian in everything the user sees: console text, `--help`, window labels,

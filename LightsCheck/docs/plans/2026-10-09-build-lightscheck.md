@@ -85,3 +85,12 @@ Veil session equals the one in `docs/validation/2026-10-06-veil/raport.md`.
   0008). No `BusyOverlay`, `ReportPanel` or `MessagePanel` controls: the wait screen, the
   report and the problem card are plain XAML in `MainWindow.xaml`. A missing folder on the
   command line is ignored and the window asks for one, as FlatCheck does.
+- Step 5: no code changed. The eight V cases passed as recorded (no drift), and the console
+  also ran clean on a second session no case covers (Veil-broadband, 2026-07-31, full moon,
+  13 lights). The `/docs-health` audit found one missing design note (the session, the
+  inventory and the console), written as `docs/design/session-and-console.md`, two shipped
+  choices with their "why" only in this plan, now ADRs 0009 and 0010, and the CHANGELOG with
+  the step 1 to 3 features filed under `Changed` by the step 4 wrap-up, restructured as one
+  `Added` list for the first release. The audit's test-side gaps (a golden with a marginal
+  and a soft frame, numeric examples on R-007 and R-020 to R-026) are left as follow-ups.
+  The release itself runs on `main` after the merge, since `release.ps1` refuses a worktree.

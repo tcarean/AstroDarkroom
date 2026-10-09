@@ -8,6 +8,18 @@ is the hand report the tool reproduces, and V-008 pins its session figures.
 
 ## The chain (`SeriesRun`)
 
+The entry point both applications call is `SeriesRun.Run(folder, SeriesOptions(PixelSizeUm,
+Threads), progress, cancel)`: the options record carries the pixel size (default
+`D3300PixelUm`, 3.92 um) and the thread count (0 = half the cores), `progress` is an
+`IProgress<(int Done, int Total)>` reported once per measured frame, `cancel` a
+`CancellationToken`; the result is a `SeriesResult` with the session, the `AnalyzedFrame`
+list (each with its metadata, measurement, registration and any error), the cadence, the
+`DitherAnalysis`, the `SeriesAnalysis` (classes, trends, drift, axes, noise), the pixel size
+with its source, the arcseconds per pixel and the 1-based reference index; `HasErrors` says
+whether any frame could not be read.
+`FrameRun.Run(folder, index)` and `InventoryRun.Run(folder)` are the other two entry
+points (`frame-analysis.md`, `session-and-console.md`).
+
 1. Every light is decoded and measured in parallel (`Parallel.For`, half the cores by
    default; each frame holds about 400 MB at its peak, so four in flight is 1.6 GB). A frame
    that throws becomes an `AnalyzedFrame` with its error and the metadata read without pixels.
@@ -18,6 +30,19 @@ is the hand report the tool reproduces, and V-008 pins its session figures.
    `SeriesAnalyzer`.
 4. The pixel scale is `206.265 x pixel_um / focal_mm` from the first frame's focal length and
    the file's `XPIXSZ` or the option's pixel size.
+
+## The constants (`Th`)
+
+The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
+(`frame-analysis.md`), each with a doc comment, the value there only. Registration,
+`VoteStars`, `VoteRange`, `VoteBin`, `MatchToleranceCoarse`, `MatchToleranceFine`,
+`MatchIterations`, `MinMatches`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
+`AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
+`HotPixelRunMax`, `WalkingNoiseDistinctFraction`, `WalkingNoiseIsolatedFraction`,
+`TwoDAxisFraction`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
+`DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
+trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
 
 ## Registration (`Registration`)
 

@@ -49,6 +49,20 @@ mosaic, the green, the residual and the smoothed residual, about 400 MB).
 9. **Registration list**: the 600 brightest star components by flux, saturated ones included,
    with their centroids; step 3 registers frames with it.
 
+## The constants (`Th`)
+
+Every number above is a field of `Th` in `Thresholds.cs`, grouped by requirement, each with
+a doc comment that says what it bounds; the value lives there only (ADR 0006). The names, so
+a change is made by name: background and noise, `BackgroundTile`, `BackgroundSampleStep`,
+`NoiseWindowHalf`, `NoiseSampleStep`, `DetectionSmoothSigma`; detection and shape,
+`DetectionSigmas`, `MinStarArea`, `MaxStarArea`, `BrightPeakSigmas`, `ShapePeakSigmas`,
+`ShapePeakMaxFraction`, `ShapeStars`, `MomentRadius`, `MomentIterations`, `MinFwhm`,
+`MaxFwhm`, `ElongatedRatio`, `AngleVoteRatio`, `AngleVoteMin`, `CentreZoneFraction`,
+`MidZoneFraction`, `ZoneStarsMin`, `HaloStars`, `HaloCore`, `HaloInner`, `HaloOuter`,
+`SaturationMargin(top)`; trails, `TrailMinArea`, `TrailMinLength`, `TrailMaxFill`,
+`TrailFillSlack`; the star list for registration, `RegistrationStars`. The series' own
+constants are listed in `series-analysis.md`.
+
 ## What was measured
 
 On six Veil frames (1, 4, 17, 23, 72, 83) the C# figures equal the prototype's: the detected
