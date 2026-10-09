@@ -157,29 +157,48 @@ namespace AstroPhotoAnalyzer
             };
         }
 
-        /// <summary>
-        /// Statisticile L* ale unui raster, la pasul dat (implicit cel tonal). Publica
-        /// pentru simulator, care le recalculeaza pe un raster DEJA subesantionat si
-        /// ridicat - de aceea pasul e parametru: altfel s-ar subesantiona de doua ori.
-        /// </summary>
+        /// <summary>Statisticile L* ale unui raster, la pasul dat (implicit cel tonal).</summary>
         internal static (double Median, double PctBelowPaperBlack, double PctBelowLow, double PctAboveHigh, double[] HistPct)
             LstarStats(Raster r, double dmax, int stride = Thresholds.TonalStride)
+            => LstarStats(RasterOps.LstarPlane(r, stride), dmax);
+
+        /// <summary>Aceleasi statistici pe un plan L* gata facut (RasterOps.LstarPlane).</summary>
+        internal static (double Median, double PctBelowPaperBlack, double PctBelowLow, double PctAboveHigh, double[] HistPct)
+            LstarStats(float[] L, double dmax)
         {
-            float[] L = RasterOps.LstarPlane(r, stride);
             double black = ColorMath.PaperBlackLstar(dmax);
-            long nBlack = 0, nLow = 0, nHigh = 0;
+            long nBlack = 0;
             var hist = new double[101];
             for (int i = 0; i < L.Length; i++)
             {
                 float l = L[i];
                 if (l < black) nBlack++;
-                if (l < Thresholds.LowSeparationLstar) nLow++;
-                if (l > Thresholds.HighlightLstar) nHigh++;
                 hist[Math.Clamp((int)Math.Round(l), 0, 100)]++;
             }
             for (int i = 0; i < hist.Length; i++) hist[i] = 100.0 * hist[i] / L.Length;
             double median = Stats.Median(L);
-            return (median, 100.0 * nBlack / L.Length, 100.0 * nLow / L.Length, 100.0 * nHigh / L.Length, hist);
+            var (low, high) = LstarShares(L);
+            return (median, 100.0 * nBlack / L.Length, low, high, hist);
+        }
+
+        /// <summary>
+        /// Doar procentele de pixeli sub L* LowSeparationLstar si peste HighlightLstar ale unui
+        /// plan L*: ce poarta un rand al simularii. Publica pentru simulator, care le
+        /// recalculeaza pe randurile grilei din planul L* al subesantionului ridicat prin tabela
+        /// (RasterOps.LstarPlane cu LiftTable), fara raster ridicat si fara mediana si histograma,
+        /// pe care randul nu le arata si a caror sortare costa mai mult decat tot restul randului
+        /// (ADR 0035).
+        /// </summary>
+        internal static (double PctBelowLow, double PctAboveHigh) LstarShares(float[] L)
+        {
+            long nLow = 0, nHigh = 0;
+            for (int i = 0; i < L.Length; i++)
+            {
+                float l = L[i];
+                if (l < Thresholds.LowSeparationLstar) nLow++;
+                if (l > Thresholds.HighlightLstar) nHigh++;
+            }
+            return (100.0 * nLow / L.Length, 100.0 * nHigh / L.Length);
         }
     }
 }

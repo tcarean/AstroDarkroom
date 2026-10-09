@@ -31,8 +31,9 @@
 // (Thresholds.ExactTarget*), cu interpolare liniara intre doua trepte: aceeasi scara da
 // tinta exacta a prafului, a fiecarui nor (116 pe imaginea de referinta - o bisectie pe
 // fiecare ar fi 2500 de ridicari) si cele doua tinte la Dmax vecin, din aceleasi 56 de
-// ridicari. Ridicarea unei trepte trece printr-o tabela pe 16 biti, nu prin Math.Pow pe
-// fiecare esantion: pe o sursa de 16 biti e identic, pe float difera sub 1e-5.
+// ridicari. O treapta nu construieste un raster ridicat: ridica si liniarizeaza fiecare
+// esantion dintr-o singura tabela pe 16 biti (LiftTable, ADR 0035) si aduna direct
+// luminantele dalelor; randul "asa cum e" ramane pe calea exacta.
 
 using System;
 using System.Collections.Generic;
@@ -274,15 +275,17 @@ namespace AstroPhotoAnalyzer
                 {
                     double target = targets[i];
                     double gamma = RasterOps.GammaFor(bg, target);
-                    Raster lifted = RasterOps.Gamma(sub, gamma);
-                    DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(lifted), map, black);
+                    // Ridicarea si liniarizarea dintr-o singura tabela, fara un raster ridicat
+                    // (ADR 0035); dalele se remasoara pe aceeasi harta.
+                    var lift = new LiftTable(gamma);
+                    DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, lift), map, black);
                     dustAt[i] = d.LstarDust;
                     skyAt[i] = d.LstarSky;
                     cloudAt[i] = d.CloudLstars;
                     if (!tableRows.Contains(target)) continue;
-                    // Subesantionul e deja la pasul tonal; LstarStats primeste pasul 1 ca sa nu-l
-                    // subesantioneze inca o data.
-                    var (_, _, low, high, _) = TonalAnalyzer.LstarStats(lifted, p.Dmax, stride: 1);
+                    // Procentele de pixeli ale randului, pe planul L* al subesantionului ridicat
+                    // prin aceeasi tabela.
+                    var (low, high) = TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, lift));
                     rows.Add(new SimulationRow
                     {
                         Target = target,

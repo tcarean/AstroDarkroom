@@ -118,6 +118,29 @@ Memory: float planes cost `4 x W x H x planes` bytes - 277 MB for 23 MP RGB. Flo
 chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level exactly
 (`RasterOps.Level16` round-trips all 65536 values; tested).
 
+### Raster operations and the lift table (`Input/RasterOps.cs`, `Input/LiftTable.cs`)
+
+`RasterOps` returns new rasters and never modifies its input: `Subsample` (every n-th pixel,
+anchored top-left, `a[::s, ::s]`), `Crop`, `Gamma` (v^gamma on every channel through a
+65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`), `GammaFor` (ln(to) / ln(from)),
+`Level8` / `Level16`, `LstarPlane` (L\* per pixel of a subsample). `Interpolate(lut, s)` is
+the one reading of such a table, shared by `Gamma` and `LiftTable`: exact on a 16-bit level,
+linear between two neighbouring levels, a NaN sample taken as 0 (it would index the table at
+`int.MinValue`).
+
+The linearisation of a sample has two paths behind one interface, `ISrgbLinearizer`, and the
+two per-sample loops, `LstarPlane<T>` here and `DustAnalyzer.PatchLstars<T>`, are generic on
+it so that the JIT specialises each loop on its struct and inlines the call: no delegate per
+sample and one loop body for both paths. `ExactLinearizer` is `ColorMath.SrgbToLinear` on
+the sample as it is: every as-is measurement. `LiftTable` is built for one gamma and holds
+`SrgbToLinear(PowerLut(gamma)[k])` for every 16-bit level, interpolated linearly between two
+neighbouring levels **on the linear value**; the print simulation lifts and linearises each
+step of its ladder through one table and never builds the lifted raster (ADR 0035). Against
+the lifted-raster path it replaced, the table agrees to one float ulp of L\* per patch on the
+reference images (7.6e-6 at L\* 32 to 64) and to 2e-7 in luminance at an exact level; the
+two interpolations differ most in the first 16-bit steps at a small gamma, where the power
+curve's own step is widest, and no real sample sits there (`LiftTableTests`).
+
 ### Refusal of linear data
 
 `RasterOps.LooksLinear`: median of the reference plane at stride 8 `< LinearMedianMax

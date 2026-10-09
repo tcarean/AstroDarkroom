@@ -189,6 +189,16 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-09 (ADR 0035, the lift table): the simulation linearises each lift through one
+  16-bit table instead of a lifted raster, and a grid row no longer sorts the L\* plane. No
+  figure moved: the twelve cases' `MEASURED` lines, 1365 figures, are identical before and
+  after, and the console report on the plate-solved FITS is byte-identical. Time on
+  `starless_rbf0.5_stretch0.17.fit` (Release, `--dmax 2.0`, the owner's machine, median of
+  three): the console run 27.2 s -> 14.6 s; the simulation alone (`PrintStretchSimulator.Simulate`,
+  a `Stopwatch` in a scratch test) 17.1 s -> 2.6 s, and on `de_printat.png` 15.7 s -> 2.75 s;
+  the twelve validation cases 3.7 min -> 2.5 min (V-004 26 s -> 13 s, V-001 24 s -> 11 s).
+  The scratch probe over every ladder step of both images: no patch moved by more than
+  7.63e-6 L\*, one float ulp.
 - 2026-10-06, after the code review of ADR 0033's branch: the sky-path thresholds became
   offsets from the model instead of the residual's median, and the Otsu split lost the peak
   patches and gained a floor of 5 % of the tail; the dust's source is decided once, as is. The

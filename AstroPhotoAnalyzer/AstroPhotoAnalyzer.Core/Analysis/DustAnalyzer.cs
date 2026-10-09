@@ -476,10 +476,17 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// L*-ul luminantei medii liniare al fiecarei dale intregi, in ordinea randurilor
-        /// hartii, pe un raster DEJA subesantionat la pasul hartii (si, in simulare, deja
-        /// ridicat). Grila e cea pe care o construieste Build pentru aceeasi imagine.
+        /// hartii, pe un raster DEJA subesantionat la pasul hartii, asa cum e: calea exacta.
+        /// Grila e cea pe care o construieste Build pentru aceeasi imagine.
         /// </summary>
-        internal static float[] PatchLstars(Raster sub)
+        internal static float[] PatchLstars(Raster sub) => PatchLstars(sub, new ExactLinearizer());
+
+        /// <summary>
+        /// Acelasi L* pe dale, cu esantioanele trecute prin <paramref name="lin"/>: exact, sau
+        /// ridicate cu o gamma si liniarizate din tabela (LiftTable), cum le remasoara
+        /// simularea la fiecare treapta, fara un raster ridicat intermediar (ADR 0035).
+        /// </summary>
+        internal static float[] PatchLstars<T>(Raster sub, T lin) where T : struct, ISrgbLinearizer
         {
             var (cols, rows, side) = SubsampleGrid(sub.W, sub.H);
             var o = new float[cols * rows];
@@ -496,8 +503,8 @@ namespace AstroPhotoAnalyzer
                         {
                             int i = row + x;
                             sum += color
-                                ? ColorMath.Luminance(ColorMath.SrgbToLinear(R[i]), ColorMath.SrgbToLinear(G[i]), ColorMath.SrgbToLinear(B[i]))
-                                : ColorMath.SrgbToLinear(R[i]);
+                                ? ColorMath.Luminance(lin.Linear(R[i]), lin.Linear(G[i]), lin.Linear(B[i]))
+                                : lin.Linear(R[i]);
                         }
                     }
                     o[by * cols + bx] = (float)ColorMath.LstarOfY(sum / (side * side));
