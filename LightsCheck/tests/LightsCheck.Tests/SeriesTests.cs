@@ -41,6 +41,35 @@ public class SeriesTests
         Assert.Equal([3, 6], SeriesReport.RejectedRows(r).Select(x => x.Index));
     }
 
+    /// <summary>Every class and flag of R-022, end to end on files: the golden series-classes.txt pins the words, this pins the kinds.</summary>
+    [Fact]
+    public void R022_EveryClassAndFlagAppearsOnTheSyntheticClassesSession()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(f.LightsDir, "DSC_0009.fit"), new byte[100]);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        SeriesAnalysis s = r.Series;
+
+        Assert.True(r.HasErrors);
+        Assert.Equal(
+            [FrameClass.Good, FrameClass.Good, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Marginal, FrameClass.Good, FrameClass.Bad, FrameClass.Good, FrameClass.Unknown, FrameClass.Good],
+            s.Classes);
+        Assert.Equal(FlagKind.MarginalTrail, Assert.Single(s.Flags[2]).Kind);
+        Assert.InRange(s.Flags[2][0].Value, Th.ElongationMarginal, Th.ElongationBad);
+        Assert.Equal(FlagKind.Soft, Assert.Single(s.Flags[3]).Kind);
+        Assert.Equal(Th.SoftFwhmFactor * s.SessionFwhm!.Value, s.Flags[3][0].Threshold, 0.01);
+        Assert.Equal(FlagKind.Clouds, Assert.Single(s.Flags[4]).Kind);
+        Assert.Equal(20, s.Flags[4][0].Value);
+        Assert.Equal(FlagKind.BackgroundJump, Assert.Single(s.Flags[5]).Kind);
+        Assert.InRange(s.Flags[5][0].Value, 25, 35);
+        Assert.Equal(FlagKind.Trailed, Assert.Single(s.Flags[6]).Kind);
+        Assert.Equal(FlagKind.Unreadable, Assert.Single(s.Flags[8]).Kind);
+        Assert.Equal(5, s.GoodCount);
+        Assert.Equal(3, s.MarginalCount);
+        Assert.Equal(1, s.BadCount);
+        Assert.Equal(1, s.UnknownCount);
+    }
+
     private static SeriesResult RunPattern(int biases = 0)
     {
         using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern, biases: biases);

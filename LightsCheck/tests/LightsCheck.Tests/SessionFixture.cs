@@ -24,6 +24,13 @@ namespace LightsCheck.Tests;
 /// converted raw (DATE-OBS, EXPTIME, ISOSPEED, INSTRUME, FOCALLEN, XPIXSZ), and optionally
 /// biases. Generated, not stored: the generator is simpler than the files would be large.
 /// </summary>
+/// <summary>
+/// One frame of a synthetic series: the shift from the reference, the drawn elongation (1 =
+/// round), the pause before it, and what varies per class: the FWHM, how many of the 40 grid
+/// stars are kept, the factor on the sky background.
+/// </summary>
+internal sealed record SeriesFrame(double Dx, double Dy, double Elongation, double PauseSeconds, double Fwhm = 3.0, int StarsKept = 40, double BackgroundFactor = 1.0);
+
 internal sealed class SessionFixture : IDisposable
 {
     private readonly TempWorkspace _ws = new();
@@ -74,7 +81,16 @@ internal sealed class SessionFixture : IDisposable
     internal static byte[] StarLight(DateTime start, double exposure, int seed) => StarLight(start, exposure, seed, 0, 0, 1.0);
 
     /// <summary>The same field shifted by (dx, dy) pixels and, when elongation is above 1, every star trailed along the vertical axis.</summary>
-    internal static byte[] StarLight(DateTime start, double exposure, int seed, double dx, double dy, double elongation)
+    internal static byte[] StarLight(DateTime start, double exposure, int seed, double dx, double dy, double elongation) =>
+        StarLight(start, exposure, new SeriesFrame(dx, dy, elongation, 0), seed);
+
+    /// <summary>
+    /// The field of <paramref name="frame"/>: the 40-star grid shifted by (Dx, Dy), the stars
+    /// trailed vertically when Elongation is above 1, drawn at Fwhm, only the first StarsKept
+    /// of the grid (the positions stay those of the reference, so the frame still registers),
+    /// the three backgrounds scaled by BackgroundFactor.
+    /// </summary>
+    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed)
     {
         SyntheticFrame f = new SyntheticFrame
         {
@@ -82,17 +98,21 @@ internal sealed class SessionFixture : IDisposable
             Height = 480,
             White = 65535,
             Seed = 100 + seed,
-            BackgroundR = 400,
-            BackgroundG = 2000,
-            BackgroundB = 2300,
+            BackgroundR = 400 * frame.BackgroundFactor,
+            BackgroundG = 2000 * frame.BackgroundFactor,
+            BackgroundB = 2300 * frame.BackgroundFactor,
             NoiseSigma = 40,
         }.WithStarGrid(40, 3.0, 3000, 30000);
         for (int i = 0; i < f.Stars.Count; i++)
         {
             SyntheticStar s = f.Stars[i];
-            f.Stars[i] = elongation > 1
-                ? SyntheticStar.Elongated(s.X + dx, s.Y + dy, s.Peak, 3.0, elongation, 90)
-                : SyntheticStar.Round(s.X + dx, s.Y + dy, s.Peak, 3.0);
+            f.Stars[i] = frame.Elongation > 1
+                ? SyntheticStar.Elongated(s.X + frame.Dx, s.Y + frame.Dy, s.Peak, frame.Fwhm, frame.Elongation, 90)
+                : SyntheticStar.Round(s.X + frame.Dx, s.Y + frame.Dy, s.Peak, frame.Fwhm);
+        }
+        if (frame.StarsKept < f.Stars.Count)
+        {
+            f.Stars.RemoveRange(frame.StarsKept, f.Stars.Count - frame.StarsKept);
         }
 
         Func<int, int, double> px = f.Pixel();
@@ -104,7 +124,11 @@ internal sealed class SessionFixture : IDisposable
     /// A series with a known dither pattern: one frame per entry, shifted by (Dx, Dy) px,
     /// trailed when Elongation is above 1, started PauseSeconds after the previous frame's end.
     /// </summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0)
+    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0) =>
+        WithStarSeries(frames.Select(f => new SeriesFrame(f.Dx, f.Dy, f.Elongation, f.PauseSeconds)).ToList(), exposure, biases);
+
+    /// <summary>The same series from <see cref="SeriesFrame"/> entries, which can also vary the FWHM, the star count and the background.</summary>
+    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0)
     {
         Directory.CreateDirectory(LightsDir);
         DateTime t = FirstStart;
@@ -115,7 +139,7 @@ internal sealed class SessionFixture : IDisposable
                 t = t.AddSeconds(exposure + frames[i].PauseSeconds);
             }
 
-            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, i, frames[i].Dx, frames[i].Dy, frames[i].Elongation));
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i));
         }
 
         if (biases > 0)
@@ -137,6 +161,19 @@ internal sealed class SessionFixture : IDisposable
     [
         (0, 0, 1.0, 0), (0.5, 0.2, 1.0, 1), (12, 0, 2.0, 30), (12.5, 0.3, 1.0, 1),
         (12, -15, 1.0, 30), (12.5, -15, 2.0, 1), (40, -15, 1.0, 30), (40.5, -15.3, 1.0, 1),
+    ];
+
+    /// <summary>
+    /// The ten-frame pattern of the classes golden: the dither of <see cref="Pattern"/> with
+    /// one frame of every class and flag, so the report's words for each are pinned: 3 a trail
+    /// at the limit, 4 soft, 5 half the stars (clouds), 6 a brighter sky (jump), 7 trailed,
+    /// 9 overwritten with junk by the test (unreadable).
+    /// </summary>
+    internal static readonly SeriesFrame[] ClassesPattern =
+    [
+        new(0, 0, 1.0, 0), new(0.5, 0.2, 1.0, 1), new(12, 0, 1.6, 30), new(12.5, 0.3, 1.0, 1, Fwhm: 4.6),
+        new(12, -15, 1.0, 30, StarsKept: 20), new(12.5, -15, 1.0, 1, BackgroundFactor: 1.3), new(40, -15, 2.0, 30), new(40.5, -15.3, 1.0, 1),
+        new(41, -15, 1.0, 30), new(41.5, -15.2, 1.0, 1),
     ];
 
     internal static string[] Cards(DateTime start, double exposure) =>

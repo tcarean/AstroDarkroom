@@ -57,6 +57,16 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void SeriesWithEveryClass_MatchesTheGoldenText()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0009.fit"), new byte[100]);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Contains("cadrul 10 / 10", stderr, StringComparison.Ordinal);
+        Compare("series-classes.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");
