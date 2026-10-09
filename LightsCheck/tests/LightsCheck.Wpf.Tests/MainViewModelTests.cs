@@ -426,6 +426,23 @@ public class MainViewModelTests
         Assert.Equal("verdict", vm.DitherRows[^1].Label);
     }
 
+    /// <summary>The Cadre column and the bar tooltips carry the move cell and the tip the core words (R-039).</summary>
+    [Fact]
+    public async Task R039_TheFramesCarryTheMoveAndTheStepBarsTheirTip()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(vm.Result!);
+        Assert.Equal(rows.Select(r => r.Move), vm.Frames.Select(r => r.Move));
+        Assert.Equal("RA 15 px", vm.Frames[4].Move);
+        Assert.Equal(rows.Select(r => r.StepTip), vm.StepPoints.Select(p => p.Tip));
+        Assert.Null(vm.StepPoints[0].Tip);
+        Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px", vm.StepPoints[4].Tip);
+    }
+
     [Fact]
     public void TheCropImageIsAGreyBitmap()
     {

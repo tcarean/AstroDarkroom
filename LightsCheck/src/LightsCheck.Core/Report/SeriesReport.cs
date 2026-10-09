@@ -32,7 +32,7 @@ internal sealed record ReportParagraph(string Text, bool Emphasis);
 internal sealed record ReportTable(string Title, IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyList<string>> Rows);
 
 /// <summary>One frame of the table, every cell already formatted; "-" where a figure is missing.</summary>
-internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Spot, string Reasons);
+internal sealed record FrameTableRow(int Index, string FileName, string Time, string Class, string Elongation, string Fwhm, string Stars, string Background, string Pause, string Step, string Dx, string Dy, string Move, string Spot, string Reasons, string? StepTip);
 
 /// <summary>
 /// The whole series as the console prints it (Romanian, R-027), built from labelled rows that
@@ -69,11 +69,11 @@ internal static class SeriesReport
 
         w.WriteLine();
         w.WriteLine("  TABEL PE CADRE");
-        w.WriteLine("     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  acelasi loc     motive");
+        w.WriteLine($"     nr  fisier                ora       clasa     alung  FWHM   stele   fond  pauza    pas     dX      dY  {"dithering",-38}  acelasi loc     motive");
         foreach (FrameTableRow f in FrameRows(r))
         {
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
-            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Spot,-14}  {f.Reasons}");
+            w.WriteLine($"    {f.Index.ToString(Inv),3}  {name,-20}  {f.Time,-8}  {f.Class,-8}  {f.Elongation,5}  {f.Fwhm,5}  {f.Stars,6}  {f.Background,5}  {f.Pause,5}  {f.Step,5}  {f.Dx,6}  {f.Dy,6}  {f.Move,-38}  {f.Spot,-14}  {f.Reasons}");
         }
     }
 
@@ -97,15 +97,65 @@ internal static class SeriesReport
             AnalyzedFrame f = r.Frames[i];
             FrameMeasurement? m = f.Measurement;
             RegistrationResult? g = f.Registration is { Ok: true } rg ? rg : null;
+            string step = Opt(d.Step[i], 1), move = MoveCell(s.MountMoves[i]);
             rows.Add(new FrameTableRow(f.Info.Index, f.Info.FileName,
                 f.Info.Timestamp is DateTime t ? t.ToString("HH:mm:ss", Inv) : "-",
                 ClassWord(s.Classes[i]), Opt(m?.ElongationMedian, 2), Opt(m?.FwhmMedian, 2),
                 m is null ? "-" : m.Detected.ToString(Inv), Opt(m?.BackgroundMedian, 0),
                 r.Cadence.PauseSeconds[i] is double p ? RunReport.F(p, 0) + " s" : "-",
-                Opt(d.Step[i], 1), Opt(g?.Dx, 1), Opt(g?.Dy, 1), SpotCell(d.SpotRun[i]), Reasons(s.Flags[i])));
+                step, Opt(g?.Dx, 1), Opt(g?.Dy, 1), move, SpotCell(d.SpotRun[i]), Reasons(s.Flags[i]),
+                d.Step[i] is null ? null : $"cadrul {f.Info.Index.ToString(Inv)}: pas {step} px; {move}"));
         }
 
         return rows;
+    }
+
+    /// <summary>
+    /// The `dithering` cell (R-038): the mount's move on each axis in pixels, with its sense
+    /// and the SynScan default arrow when the move is signed (`RA 15 px V (dreapta)`), the
+    /// pixels alone otherwise; a component under Th.AxisStep is left out; `-` for no move.
+    /// </summary>
+    internal static string MoveCell(MountMove? m)
+    {
+        if (m is null)
+        {
+            return "-";
+        }
+
+        List<string> parts = [];
+        if (Math.Abs(m.RaPx) >= Th.AxisStep)
+        {
+            parts.Add($"RA {RunReport.F(Math.Abs(m.RaPx), 0)} px" + (m.Signed ? (m.RaPx > 0 ? " E (stanga)" : " V (dreapta)") : ""));
+        }
+
+        if (Math.Abs(m.DecPx) >= Th.AxisStep)
+        {
+            parts.Add($"DEC {RunReport.F(Math.Abs(m.DecPx), 0)} px" + (m.Signed ? (m.DecPx > 0 ? " N (sus)" : " S (jos)") : ""));
+        }
+
+        return parts.Count == 0 ? "-" : string.Join(", ", parts);
+    }
+
+    /// <summary>The SynScan arrows of a signed move, `dreapta, jos`, for the CSV; empty otherwise (R-038).</summary>
+    internal static string MoveArrows(MountMove? m)
+    {
+        if (m is null || !m.Signed)
+        {
+            return "";
+        }
+
+        List<string> parts = [];
+        if (Math.Abs(m.RaPx) >= Th.AxisStep)
+        {
+            parts.Add(m.RaPx > 0 ? "stanga" : "dreapta");
+        }
+
+        if (Math.Abs(m.DecPx) >= Th.AxisStep)
+        {
+            parts.Add(m.DecPx > 0 ? "sus" : "jos");
+        }
+
+        return string.Join(", ", parts);
     }
 
     /// <summary>The cell `k/n de la f` of a frame's run at 10 px, `-` outside one (R-034).</summary>

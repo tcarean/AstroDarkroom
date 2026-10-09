@@ -78,6 +78,22 @@ public class ValidationTests
 
                 CheckTables(tables, e);
                 break;
+            case "moves":
+                IReadOnlyList<FrameTableRow> moveRows = SeriesReport.FrameRows(SeriesRun.Run(folder, new SeriesOptions()));
+                if (e.ValueKind == JsonValueKind.Null)
+                {
+                    Console.WriteLine($"{id}: unmeasured (expected is null); the moves measured, to record:");
+                    foreach (FrameTableRow row in moveRows.Where(x => x.Move != "-"))
+                    {
+                        Console.WriteLine($"  {row.Index}: {row.Move}");
+                    }
+
+                    Console.WriteLine($"  south {MovesWith(moveRows, " S (")}, north {MovesWith(moveRows, " N (")}, east {MovesWith(moveRows, " E (")}, west {MovesWith(moveRows, " V (")}");
+                    return;
+                }
+
+                CheckMoves(moveRows, e);
+                break;
             default:
                 CheckSeries(SeriesRun.Run(folder, new SeriesOptions()), e, t);
                 break;
@@ -149,6 +165,23 @@ public class ValidationTests
             string[] actual = table.Rows.Select(row => string.Join(" | ", row)).ToArray();
             Assert.True(expected.SequenceEqual(actual), $"{p.Name}: measured [{string.Join(" || ", actual)}], expected [{string.Join(" || ", expected)}]");
         }
+    }
+
+    private static int MovesWith(IReadOnlyList<FrameTableRow> rows, string sense) => rows.Count(r => r.Move.Contains(sense, StringComparison.Ordinal));
+
+    /// <summary>The dithering cells on the real session: the frames listed under `cells`, and how many moves went each way (R-038).</summary>
+    private static void CheckMoves(IReadOnlyList<FrameTableRow> rows, JsonElement e)
+    {
+        foreach (JsonProperty p in e.GetProperty("cells").EnumerateObject())
+        {
+            int index = int.Parse(p.Name, CultureInfo.InvariantCulture);
+            Assert.True(p.Value.GetString() == rows[index - 1].Move, $"frame {index}: cell '{rows[index - 1].Move}', expected '{p.Value.GetString()}'");
+        }
+
+        Assert.Equal(e.GetProperty("south").GetInt32(), MovesWith(rows, " S ("));
+        Assert.Equal(e.GetProperty("north").GetInt32(), MovesWith(rows, " N ("));
+        Assert.Equal(e.GetProperty("east").GetInt32(), MovesWith(rows, " E ("));
+        Assert.Equal(e.GetProperty("west").GetInt32(), MovesWith(rows, " V ("));
     }
 
     private static void CheckInventory(Inventory inv, JsonElement e, JsonElement t)

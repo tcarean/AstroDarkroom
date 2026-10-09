@@ -97,7 +97,7 @@ internal static class SeriesRun
         DitherAnalysis dither = DitherAnalyzer.Analyze(x, y, cadence.PauseSeconds);
 
         IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
-        Axis wcs = WcsRaAxis(session.Root);
+        Wcs? wcs = ReadWcs(session.Root);
         SeriesAnalysis series = SeriesAnalyzer.Analyze(frames, cadence, dither, readNoise, wcs);
 
         // The pixel scale: the file's pixel size when it says it, else the option's.
@@ -136,12 +136,15 @@ internal static class SeriesRun
         }
     }
 
+    /// <summary>Which image axis RA runs along, from the plate-solved FITS <see cref="ReadWcs"/> finds; unknown without one (R-025).</summary>
+    internal static Axis WcsRaAxis(string root) => ReadWcs(root)?.RaAxis ?? Axis.Unknown;
+
     /// <summary>
-    /// Which image axis RA runs along, from a plate-solved FITS at the session root (Siril's
-    /// stacked result): the PC matrix row of RA (world axis 1) is dominated by the pixel axis
-    /// RA varies along. Unknown without such a file.
+    /// The WCS of the first plate-solved FITS at the session root (Siril's stacked result, by
+    /// name): the scale and the PC matrix, or the CD matrix when the file carries that form
+    /// (then the scale is 1 and the matrix holds it). Null without such a file (R-025, R-038).
     /// </summary>
-    internal static Axis WcsRaAxis(string root)
+    internal static Wcs? ReadWcs(string root)
     {
         foreach (string f in Directory.GetFiles(root).Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
         {
@@ -153,14 +156,16 @@ internal static class SeriesRun
                     continue;
                 }
 
-                double pc11 = FitsReader.HDbl(h, "PC1_1", FitsReader.HDbl(h, "CD1_1", 0));
-                double pc12 = FitsReader.HDbl(h, "PC1_2", FitsReader.HDbl(h, "CD1_2", 0));
-                if (pc11 == 0 && pc12 == 0)
+                bool pc = FitsReader.HDbl(h, "PC1_1", double.NaN) is double p11 && !double.IsNaN(p11) || FitsReader.HDbl(h, "PC1_2", double.NaN) is double p12 && !double.IsNaN(p12);
+                Wcs w = pc
+                    ? new Wcs(FitsReader.HDbl(h, "CDELT1", 1), FitsReader.HDbl(h, "CDELT2", 1), FitsReader.HDbl(h, "PC1_1", 0), FitsReader.HDbl(h, "PC1_2", 0), FitsReader.HDbl(h, "PC2_1", 0), FitsReader.HDbl(h, "PC2_2", 0))
+                    : new Wcs(1, 1, FitsReader.HDbl(h, "CD1_1", 0), FitsReader.HDbl(h, "CD1_2", 0), FitsReader.HDbl(h, "CD2_1", 0), FitsReader.HDbl(h, "CD2_2", 0));
+                if (w.Pc11 == 0 && w.Pc12 == 0)
                 {
                     continue;
                 }
 
-                return Math.Abs(pc12) > Math.Abs(pc11) ? Axis.Y : Axis.X;
+                return w;
             }
             catch (Exception e) when (e is IOException or InvalidDataException)
             {
@@ -168,6 +173,6 @@ internal static class SeriesRun
             }
         }
 
-        return Axis.Unknown;
+        return null;
     }
 }

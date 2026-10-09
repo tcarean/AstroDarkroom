@@ -77,15 +77,24 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   grupuri de cadre consecutive in acelasi loc) si verdictul pentru pixeli calzi si walking
   noise, cu cifrele lui.
 - **RESPINSE**: fiecare cadru slab cu motivul, pragul si axa darei.
-- **TABEL PE CADRE**: o linie pe cadru. Coloana `acelasi loc` spune al catelea cadru
+- **TABEL PE CADRE**: o linie pe cadru. Coloana `dithering` spune ce a facut montura la
+  fiecare miscare de dithering: pe ce axa, cati pixeli, in ce sens pe cer si ce sageata din
+  SynScan e aceea, de exemplu `RA 15 px V (dreapta), DEC 12 px S (jos)`. Sensul vine din
+  `result.fit` plate-solvat (Siril scrie FITS-ul cu randurile de jos in sus fata de raw, si
+  programul tine cont de asta; verificat pe sesiunea Veil cu plate solve pe doua cadre brute);
+  fara el ramane doar `RA 15 px, DEC 12 px`. Sagetile sunt tastele implicite ale aplicatiei
+  SynScan: stanga = est, dreapta = vest, sus = nord, jos = sud; daca le-ai inversat din
+  setarile ei, citeste-le invers. Coloana `acelasi loc` spune al catelea cadru
   consecutiv e in acelasi loc (la 10 px), din cate si de la care: `7/10 de la 61` e al
   saptelea din zece cadre ramase pe loc de la cadrul 61. Sirurile astea fac walking noise,
   dar cadrul ramane bun si in stiva: leacul e dithering mai des data viitoare, nu mai putine
   cadre.
 
 `--out DIR` scrie in DIR raportul (`lightscheck-raport.txt`), un CSV cu toate cifrele pe
-cadru (`lightscheck-cadre.csv`, cu axa darei in `trail_on` si sirul din `acelasi loc` in
-`spot_run_index`, `spot_run_frames`, `spot_run_first`) si lista numelor de respins (`lightscheck-respinse.txt`),
+cadru (`lightscheck-cadre.csv`, cu axa darei in `trail_on`, sirul din `acelasi loc` in
+`spot_run_index`, `spot_run_frames`, `spot_run_first`, si miscarea de dithering in
+`move_ra_px`, `move_dec_px`, pixeli cu semn, plus spre est si spre nord, si `move_arrows`) si
+lista numelor de respins (`lightscheck-respinse.txt`),
 cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
 `--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
 cu focala din raw da scara in "/px.
@@ -161,12 +170,13 @@ rezultatul apare in sase taburi:
 
 - **Rezumat**: sectiunile raportului, rand cu rand, cu verdictul colorat.
 - **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitia
-  `dX (DEC)` / `dY (RA)` cand se stie axa, `acelasi loc`, motive). Alege un cadru si in dreapta
+  `dX (DEC)` / `dY (RA)` cand se stie axa, `dithering`, `acelasi loc`, motive). Alege un cadru si in dreapta
   apar decupajele stelelor lui (centru si colturi, pe canalul verde): asa vezi cu ochiul dara
   pe care o raporteaza alungirea.
 - **Dithering**: harta pozitiilor fata de primul cadru (grila la 10 px, culoarea e clasa
   cadrului, inel in loc de punct = cadru dintr-un sir de 3 sau mai multe in acelasi loc),
-  pasul fata de cadrul anterior (galben = miscare >= 5 px), distanta la cel mai apropiat alt
+  pasul fata de cadrul anterior (galben = miscare >= 5 px; tine mouse-ul pe o bara si vezi
+  cadrul, pasul si miscarea monturii din coloana `dithering`), distanta la cel mai apropiat alt
   cadru, si in dreapta cifrele DITHERING: pauzele si miscarile, cel mai lung interval,
   acoperirea, intinderea si verdictul ca randuri, iar cat de des, cat de mult, directia,
   acoperirea pe raze si grupurile ca tabele.

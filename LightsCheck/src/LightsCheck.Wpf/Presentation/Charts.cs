@@ -17,12 +17,14 @@
 
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace LightsCheck.Wpf;
 
 /// <summary>A point of a chart: x, y (NaN = missing), a label, the colour it is drawn in, and whether the map draws it as a ring (a frame of a run at 10 px, R-035).</summary>
-public sealed record ChartPoint(double X, double Y, string Label, Color Colour, bool Ring = false);
+public sealed record ChartPoint(double X, double Y, string Label, Color Colour, bool Ring = false, string? Tip = null);
 
 /// <summary>A horizontal guide line at a value, with its label.</summary>
 public sealed record GuideLine(double Value, string Label, Color Colour);
@@ -90,6 +92,58 @@ public sealed class SeriesChart : ChartElement
     /// <summary>The y axis starts here when set; otherwise at the smallest value (or 0 for bars).</summary>
     public double Minimum { get => (double)GetValue(MinimumProperty); set => SetValue(MinimumProperty, value); }
 
+    // The last layout, for the hover: which point sits under the mouse (R-039).
+    private double _xMin, _xMax = 1, _plotW;
+    private IReadOnlyList<ChartPoint> _drawn = [];
+
+    public SeriesChart()
+    {
+        ToolTipService.SetInitialShowDelay(this, 200);
+        ToolTipService.SetShowDuration(this, 20000);
+    }
+
+    /// <summary>The point whose slot holds the x position, or null outside every slot; the tooltip shows its Tip.</summary>
+    internal ChartPoint? PointAt(double x)
+    {
+        if (_drawn.Count == 0 || _plotW <= 0)
+        {
+            return null;
+        }
+
+        double slot = _plotW / Math.Max(1, _xMax - _xMin);
+        ChartPoint? hit = null;
+        double best = double.MaxValue;
+        foreach (ChartPoint p in _drawn)
+        {
+            if (double.IsNaN(p.X))
+            {
+                continue;
+            }
+
+            double dx = Math.Abs(MarginLeft + (p.X - _xMin) / (_xMax - _xMin) * _plotW - x);
+            if (dx < best && dx <= slot / 2)
+            {
+                best = dx;
+                hit = p;
+            }
+        }
+
+        return hit;
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        ArgumentNullException.ThrowIfNull(e);
+        ToolTip = PointAt(e.GetPosition(this).X)?.Tip;
+    }
+
+    protected override void OnMouseLeave(MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        ToolTip = null;
+    }
+
     protected override void OnRender(DrawingContext drawingContext)
     {
         double w = ActualWidth, h = ActualHeight;
@@ -125,6 +179,7 @@ public sealed class SeriesChart : ChartElement
 
         double X(double x) => MarginLeft + (x - xMin) / (xMax - xMin) * plotW;
         double Y(double y) => MarginTop + (yMax - y) / (yMax - yMin) * plotH;
+        (_xMin, _xMax, _plotW, _drawn) = (xMin, xMax, plotW, pts);
 
         // Axes and ticks.
         Pen axis = FrozenPen(Color.FromArgb(0x66, 0x6E, 0x6E, 0x77), 1);

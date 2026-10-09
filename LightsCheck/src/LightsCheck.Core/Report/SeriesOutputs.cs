@@ -73,7 +73,7 @@ internal static class SeriesOutputs
         StringBuilder sb = new();
         sb.Append("index,file,time,exposure_s,iso,fnumber,focal_mm,class,reasons,pause_s,step_px,step_x,step_y,dx,dy,rotation_deg,matches,rms,")
           .Append("detected,bright,saturated_stars,measured,fwhm_med,fwhm_p90,fwhm_centre,fwhm_mid,fwhm_edge,elong_med,elong_p90,elongated_frac,angle_deg,coherence,trail_on,halo,")
-          .Append("bg_median,bg_centre,bg_min,bg_max,sigma_green,ch0_name,ch0_median,ch0_sat,ch0_hp_sigma,ch1_name,ch1_median,ch1_sat,ch1_hp_sigma,ch2_name,ch2_median,ch2_sat,ch2_hp_sigma,ch3_name,ch3_median,ch3_sat,ch3_hp_sigma,trails,nearest_other_px,spot_run_index,spot_run_frames,spot_run_first,error\n");
+          .Append("bg_median,bg_centre,bg_min,bg_max,sigma_green,ch0_name,ch0_median,ch0_sat,ch0_hp_sigma,ch1_name,ch1_median,ch1_sat,ch1_hp_sigma,ch2_name,ch2_median,ch2_sat,ch2_hp_sigma,ch3_name,ch3_median,ch3_sat,ch3_hp_sigma,trails,nearest_other_px,spot_run_index,spot_run_frames,spot_run_first,move_ra_px,move_dec_px,move_arrows,error\n");
         for (int i = 0; i < r.Frames.Count; i++)
         {
             AnalyzedFrame f = r.Frames[i];
@@ -106,6 +106,10 @@ internal static class SeriesOutputs
             cells.Add(spot is null ? "" : spot.Ordinal.ToString(inv));
             cells.Add(spot is null ? "" : spot.Frames.ToString(inv));
             cells.Add(spot is null ? "" : spot.FirstIndex.ToString(inv));
+            MountMove? move = r.Series.MountMoves[i];
+            cells.Add(move is { Signed: true } ? N(move.RaPx) : "");
+            cells.Add(move is { Signed: true } ? N(move.DecPx) : "");
+            cells.Add(SeriesReport.MoveArrows(move));
             cells.Add(Q(f.Error ?? f.Info.Error ?? ""));
             sb.Append(string.Join(",", cells)).Append('\n');
         }

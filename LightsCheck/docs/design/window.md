@@ -47,8 +47,9 @@ bug and propagates.
   from `FrameMeasurement`; a frame without a figure is `NaN` and the chart leaves a gap. The
   guide lines quote `Th` (the move threshold, the 10 px coverage radius, the two elongation
   classes) so a change there moves the lines; a map point whose frame sits in a run at 10 px
-  (`DitherAnalysis.SpotRun`) carries `Ring`, and the map's axis labels are
-  `SeriesReport.AxisLabels`;
+  (`DitherAnalysis.SpotRun`) carries `Ring`, the map's axis labels are
+  `SeriesReport.AxisLabels`, and each step point carries the table row's `StepTip` as its
+  `Tip`; the frames table shows the row's `Move` as the `dithering` column;
 
 `Report` is `RunReport.WriteBanner` plus `SeriesReport.Write` into a `StringWriter`: the
 console's text. `Export(dir)` calls `SeriesOutputs.WriteAll` and shows the paths in `Status`.
@@ -74,7 +75,10 @@ bar chart over the frame index with optional guide lines and a minimum; `DitherM
 positions on a 10 px grid, equal scales on both axes, each point coloured by its class, joined
 to the next and numbered, a `Ring` point drawn as a hollow circle in the same colour. Both
 redraw when `Points` changes (the dependency properties call
-`InvalidateVisual`) and draw nothing under a minimum size.
+`InvalidateVisual`) and draw nothing under a minimum size. `SeriesChart` keeps its last
+layout (`_xMin`, `_xMax`, `_plotW`, the points drawn) and on `OnMouseMove` sets its own
+`ToolTip` to the `Tip` of the point whose slot holds the cursor (`PointAt`), clearing it on
+leave: one tooltip per element, re-pointed as the mouse moves, no per-bar visuals.
 
 ## Culture, title bar, icon
 

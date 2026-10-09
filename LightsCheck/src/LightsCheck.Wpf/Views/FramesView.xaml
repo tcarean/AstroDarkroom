@@ -38,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="36" />
-          <ColumnDefinition Width="150" />
+          <ColumnDefinition Width="130" />
           <ColumnDefinition Width="70" />
           <ColumnDefinition Width="78" />
           <ColumnDefinition Width="52" />
@@ -49,8 +49,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="52" />
           <ColumnDefinition Width="60" />
           <ColumnDefinition Width="60" />
+          <ColumnDefinition Width="200" />
           <ColumnDefinition Width="100" />
-          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="280" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource Cell}" Text="{Binding Index}" />
         <TextBlock Grid.Column="1" Style="{StaticResource Cell}" Text="{Binding File}" TextTrimming="CharacterEllipsis" />
@@ -64,8 +65,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Step}" />
         <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Dx}" />
         <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Dy}" />
-        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Spot}" />
-        <TextBlock Grid.Column="13" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
+        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Move}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Move}" />
+        <TextBlock Grid.Column="13" Style="{StaticResource Cell}" Text="{Binding Spot}" />
+        <TextBlock Grid.Column="14" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
       </Grid>
     </DataTemplate>
   </UserControl.Resources>
@@ -77,6 +79,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid.ColumnDefinitions>
 
     <Border Grid.Column="0" Style="{StaticResource Card}" Padding="14,10">
+      <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
       <Grid>
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto" />
@@ -85,7 +88,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Grid Grid.Row="0" Margin="4,0,0,6">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="36" />
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="130" />
             <ColumnDefinition Width="70" />
             <ColumnDefinition Width="78" />
             <ColumnDefinition Width="52" />
@@ -96,8 +99,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="52" />
             <ColumnDefinition Width="60" />
             <ColumnDefinition Width="60" />
+            <ColumnDefinition Width="200" />
             <ColumnDefinition Width="100" />
-            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="280" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" />
           <TextBlock Grid.Column="1" Style="{StaticResource Head}" Text="fisier" />
@@ -111,8 +115,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="pas" ToolTip="deplasarea fata de cadrul anterior, px" />
           <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding DxHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
           <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding DyHeader}" ToolTip="pozitia fata de cadrul 1, px, pe axa imaginii si a monturii" />
-          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="acelasi loc" ToolTip="al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise" />
-          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="motive" />
+          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="dithering" ToolTip="miscarea monturii la dithering: pe ce axa, cati pixeli, in ce sens pe cer si sageata SynScan (tastele implicite: stanga = est, dreapta = vest, sus = nord, jos = sud)" />
+          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="acelasi loc" ToolTip="al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise" />
+          <TextBlock Grid.Column="14" Style="{StaticResource Head}" Text="motive" />
         </Grid>
         <ListBox Grid.Row="1" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
                  ItemTemplate="{StaticResource FrameRow}" Background="Transparent" BorderThickness="0"
@@ -144,6 +149,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           </ListBox.ItemContainerStyle>
         </ListBox>
       </Grid>
+      </ScrollViewer>
     </Border>
 
     <Border Grid.Column="1" Style="{StaticResource Card}" Margin="14,0,0,0">

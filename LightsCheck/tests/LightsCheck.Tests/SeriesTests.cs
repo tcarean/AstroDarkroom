@@ -164,7 +164,7 @@ public class SeriesTests
         Assert.StartsWith("index,file,time,exposure_s", csv[0], StringComparison.Ordinal);
         // The header and a row without quoted commas (a good frame, no reasons) have the same number of columns.
         int columns = csv[0].Split(',').Length;
-        Assert.Equal(61, columns);   // 57 before R-033 (trail_on) and R-034 (the three spot_run_* columns)
+        Assert.Equal(64, columns);   // 57 before R-033 (trail_on), R-034 (three spot_run_*) and R-038 (three move_*)
         Assert.Equal(columns, csv[1].Split(',').Length);
         Assert.StartsWith("3,\"DSC_0003.fit\",", csv[3], StringComparison.Ordinal);
         Assert.Contains("SLAB", csv[3], StringComparison.Ordinal);
@@ -222,7 +222,7 @@ public class SeriesTests
         using StringWriter sw = new();
         SeriesReport.Write(r, sw);
         string text = sw.ToString();
-        Assert.Contains("      dY  acelasi loc     motive", text, StringComparison.Ordinal);
+        Assert.Matches("      dY  dithering {29}  acelasi loc     motive", text);   // the dithering column of R-038 sits between dY and acelasi loc
         Assert.Contains("  3/3 de la 1    ", text, StringComparison.Ordinal);
 
         string[] csv = SeriesOutputs.Csv(r).Split('\n');
@@ -297,6 +297,53 @@ public class SeriesTests
     }
 
     private static string[] Rows(ReportTable t) => t.Rows.Select(row => string.Join(" | ", row)).ToArray();
+
+    /// <summary>With a plate-solved FITS at the root the moves carry their sense and the arrows; without it, the components alone (R-038).</summary>
+    [Fact]
+    public void R038_TheFrameTableAndTheCsvCarryTheMoveOnTheSky()
+    {
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        string[] wcs =
+        [
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
+            FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+        ];
+        File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        SeriesResult r = SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2));
+
+        IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
+        Assert.Equal("-", rows[0].Move);
+        Assert.Equal("-", rows[1].Move);
+        Assert.Matches("^DEC 1[12] px S \\(jos\\)$", rows[2].Move);   // frame 3: stars +11.5 px in X -> the mount went south
+        Assert.Equal("-", rows[3].Move);
+        Assert.Equal("RA 15 px V (dreapta)", rows[4].Move);      // frame 5: stars -15.3 px in Y -> the mount went west
+        Assert.StartsWith("DEC 2", rows[6].Move, StringComparison.Ordinal);
+        Assert.EndsWith(" px S (jos)", rows[6].Move, StringComparison.Ordinal);
+        Assert.Null(rows[0].StepTip);
+        Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px V (dreapta)", rows[4].StepTip);
+        Assert.Equal("cadrul 2: pas 0.5 px; -", rows[1].StepTip);
+
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        Assert.Matches("      dY  dithering {29}  acelasi loc", sw.ToString());
+
+        string[] csv = SeriesOutputs.Csv(r).Split('\n');
+        string[] head = CsvCells(csv[0]);
+        int ra = Array.IndexOf(head, "move_ra_px"), dec = Array.IndexOf(head, "move_dec_px"), arrows = Array.IndexOf(head, "move_arrows");
+        Assert.True(ra > 0 && dec == ra + 1 && arrows == ra + 2, "move_* columns missing or out of order");
+        Assert.Equal(-15.3, double.Parse(CsvCells(csv[5])[ra], System.Globalization.CultureInfo.InvariantCulture), 0.5);
+        Assert.Equal("dreapta", CsvCells(csv[5])[arrows]);
+        Assert.Equal(-11.5, double.Parse(CsvCells(csv[3])[dec], System.Globalization.CultureInfo.InvariantCulture), 0.5);
+        Assert.Equal("", CsvCells(csv[1])[ra]);
+
+        // Without the FITS: the axis from the trails, the components without a sense.
+        File.Delete(Path.Combine(s.Root, "result.fit"));
+        IReadOnlyList<FrameTableRow> plain = SeriesReport.FrameRows(SeriesRun.Run(s.Root, new SeriesOptions(Threads: 2)));
+        Assert.Matches("^DEC 1[12] px$", plain[2].Move);
+        Assert.Equal("RA 15 px", plain[4].Move);
+    }
 
     /// <summary>One CSV line into its cells, the quoted ones unquoted (a reason holds commas).</summary>
     private static string[] CsvCells(string line)
