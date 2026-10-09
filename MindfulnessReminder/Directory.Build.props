@@ -28,6 +28,8 @@
          member (394 of them on 2026-10-09). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- Nothing reads the XML files at run time, so a publish does not ship them. -->
+    <PublishDocumentationFiles>false</PublishDocumentationFiles>
   </PropertyGroup>
 
   <!-- Reproducibility (ADR 0003): the same sources, the same bytes; every package version once,

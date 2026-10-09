@@ -29,7 +29,9 @@ working.
   `DefaultRetrySeconds` (20), from `MinRetrySeconds` (5) to `MaxRetrySeconds` (300), one value
   shared by both pauses and editable while either is ticked.
 - An unlock reminder that would be held back is **skipped**: `HandleUnlock` returns without a
-  window and without a retry, and the countdown the unlock restarted runs on.
+  window and without a retry, and the countdown the unlock restarted runs on. With the periodic
+  reminder off there is no countdown to refresh the reason, so the skip keeps none (the code
+  review of 2026-10-09).
 - There is no cap on how long a reminder is held back.
 - The reason is kept in `ReminderCoordinator.Suppression`, and the tray tooltip shows it, "paused
   while your mic is on" or "paused for full screen", in place of the countdown (ADR 0025). When

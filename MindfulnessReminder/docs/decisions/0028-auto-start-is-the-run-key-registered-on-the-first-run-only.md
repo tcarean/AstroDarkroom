@@ -38,7 +38,10 @@ tab "does not delete the value, it records a veto in Explorer\StartupApproved\Ru
   value under `HKCU\Software\MindfulnessReminder`, it enables auto-start and writes `"1"` there,
   and the tray says so in a balloon. On every later launch it only calls `RepairPathIfNeeded`,
   which rewrites a Run value whose path differs, ignoring case, from the running executable's,
-  registers nothing that is not registered, and "Never lifts a Task Manager block".
+  registers nothing that is not registered, and "Never lifts a Task Manager block". If Windows
+  refuses a write in either case (`UnauthorizedAccessException`, `SecurityException`), the
+  refusal is caught: nothing is registered, no marker is written, and the next start tries
+  again (the code review of 2026-10-09).
 
 ## Alternatives rejected
 

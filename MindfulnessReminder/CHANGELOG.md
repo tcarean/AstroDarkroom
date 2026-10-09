@@ -6,13 +6,24 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- With the periodic reminder off, an unlock during a call no longer leaves the tray tooltip
+  saying "paused" after the call has ended (R-060).
+- A registry key the account may not read or write no longer stops the application at start:
+  the settings fall back to their defaults, and auto-start is registered at a later start
+  (R-003, R-051).
+- An error in a tray-menu action now ends the application with its own "Mindfulness Reminder
+  stopped" dialog, instead of the Windows Forms error dialog (R-076).
+
 ### Internal
 
 - The project follows the ClaudeCodeStarterKit process (ADR 0001 to 0006): `scripts/verify.ps1`
   is the gate (the kit's scripts, skills, agent and rules synced, `kit.json`, the test data
   manifest, `dotnet format`, warnings as errors, the tests), package versions live once in
   `Directory.Packages.props` with lock files, and the strictness every project builds with
-  moved from the three csproj files to `Directory.Build.props`. `CLAUDE.md` was split into
+  moved from the three csproj files to `Directory.Build.props`; `global.json` pins the SDK to
+  9.0.318 or a later 9.0.3xx (the projects stay on .NET 8). `CLAUDE.md` was split into
   `docs/requirements.md` (55 rows with IDs), `docs/decisions/` (34 ADRs, 28 of them
   retroactive) and `docs/design/` (9 notes, moved unchanged); `CLAUDE.md` holds only the
   project's rules. `RepoInvariantTests` ties `implemented` rows to tests named `R###_...`

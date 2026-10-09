@@ -41,7 +41,8 @@ needed no change":
 
 - **Reading is forgiving.** `Load` "Never throws and never returns null; anything unreadable
   falls back to the defaults" (`ISettingsStore`): a missing value, a flag other than `"1"` or
-  `"0"`, and a number that does not parse each read as the default. The result then goes through
+  `"0"`, and a number that does not parse each read as the default, and a key the account may
+  not read gives all the defaults. The result then goes through
   `ReminderSettings.Normalize`: the interval is clamped into 1 to 480 minutes and the retry gap
   into 5 to 300 seconds, "clamped rather than rejected", and a blank or over-long message becomes
   the default text or the text cut at 50 characters (ADR 0023).

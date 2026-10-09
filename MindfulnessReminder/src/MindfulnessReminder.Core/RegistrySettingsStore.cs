@@ -60,6 +60,20 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
     public ReminderSettings Load()
     {
+        try
+        {
+            return Read();
+        }
+        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        {
+            // A key this account may not read (a policy, security software) is no more a
+            // reason to fail to start than a missing one: the defaults stand.
+            return ReminderSettings.Default;
+        }
+    }
+
+    private ReminderSettings Read()
+    {
         var defaults = ReminderSettings.Default;
 
         var enabled = ReadFlag(EnabledValueName, defaults.PeriodicEnabled);

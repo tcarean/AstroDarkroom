@@ -37,6 +37,32 @@ public class StartupRegistrarTests
         Assert.Equal("1", _registry.GetString(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
     }
 
+    /// <summary>
+    /// A policy that refuses the Run key, or the app's own key, must not stop the app from
+    /// starting: nothing is registered and no marker is written, so the next start tries again.
+    /// </summary>
+    [Fact]
+    public void R003_A_refused_registration_does_not_stop_the_app()
+    {
+        _registry.WriteRefusal = new UnauthorizedAccessException();
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.False(_registry.Contains(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    [Fact]
+    public void R006_A_refused_repair_does_not_stop_the_app()
+    {
+        new StartupRegistrar(_registry, new RegistryAutoStartManager(_registry, ValueName, @"D:\Old\App.exe"))
+            .EnsureRegisteredOnFirstRun();
+        _registry.WriteRefusal = new System.Security.SecurityException();
+
+        var moved = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.False(new StartupRegistrar(_registry, moved).EnsureRegisteredOnFirstRun());
+    }
+
     [Fact]
     public void R003_Later_runs_do_not_re_register_after_the_user_turned_auto_start_off()
     {

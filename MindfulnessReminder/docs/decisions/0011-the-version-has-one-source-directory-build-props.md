@@ -52,7 +52,7 @@ since, each step an edit of that one element (ADR 0006).
   version string leaves less room in it (ADR 0025).
 - Guards: `VersionTests` (a three-part number, equal to `<Version>` in `Directory.Build.props`,
   with no `+` suffix and no fourth part; `R090_No_project_overrides_the_shared_version` over every
-  `.csproj` under the project folder; the banner is the name and the version; About's text opens
+  `.csproj` under the project folder outside `.claude/`, where task worktrees live; the banner is the name and the version; About's text opens
   with the banner). Where the banner reaches the screen (the tooltip, the About window, the crash
   dialog, the `--detect` report) is App wiring: none by test; launch the application from the
   tray.

@@ -58,13 +58,16 @@ asks; it was the only source file with one. No behaviour changed: the 215 tests 
 - **Leaving the strictness in each csproj.** Three copies to keep in step, and a fourth project
   would start without them.
 - **CRLF.** Every source file is LF in the repository and on disk (the kit's ADR 0014, the root
-  `.gitattributes`); the project's `.gitattributes` and `.editorconfig` say so again.
+  `.gitattributes`); the project's `.editorconfig` says so again. The project keeps no
+  `.gitattributes` of its own: a `*` line in it would override the root's CRLF rule for `.cmd`
+  and `.bat` files (the code review of 2026-10-09).
 
 ## Consequences
 
 - A warning anywhere in the three projects fails the gate, and so does an unused using, at
   build and at format.
-- The build writes an XML documentation file beside each assembly; a malformed XML comment
+- The build writes an XML documentation file beside each assembly, and a publish leaves it out
+  (`PublishDocumentationFiles` false); a malformed XML comment
   (CS1570) or a `cref` that does not resolve (CS1574) now fails the build.
 - A new package changes `Directory.Packages.props` and the lock files together; CI restores in
   locked mode and fails on a lock file that does not match.

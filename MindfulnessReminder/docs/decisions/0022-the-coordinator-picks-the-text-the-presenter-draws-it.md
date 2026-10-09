@@ -47,8 +47,9 @@ while a periodic reminder is open.
 - Guards: `ReminderCoordinatorTests` (the unlock reminder says the unlock message, the periodic
   one the periodic message, a periodic reminder due over the unlock one raises it without
   changing its text, new messages take effect on the next reminder). The queue that keeps its
-  message is in `WpfReminderPresenter`, with no test: launch the application with `--preview`,
-  or from the tray.
+  message is in `WpfReminderPresenter`, with no test, and `--preview` does not run it: it creates
+  the window directly (ADR 0026). It is seen only in a full tray start, on an unlock or a due
+  reminder, which the owner looks at in their own copy (`docs/skills.md`).
 
 Source: CLAUDE.md ("Two reminders, two switches, two messages", "Structure");
 src/MindfulnessReminder.Core/IReminderPresenter.cs;

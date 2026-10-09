@@ -72,6 +72,9 @@ public class VersionTests
 
         var offenders = Directory
             .EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories)
+            // Task worktrees live under .claude/worktrees/, each a whole copy of the repository
+            // with projects of its own; they are not this solution's.
+            .Where(f => !Path.GetRelativePath(root, f).Split('/', '\\').Contains(".claude"))
             .Where(f => Regex.IsMatch(File.ReadAllText(f), "<Version>"))
             .Select(f => Path.GetRelativePath(root, f))
             .ToList();

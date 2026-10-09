@@ -4,15 +4,16 @@ A tray-resident break reminder for Windows. It shows an always-on-top reminder w
 every workstation unlock, and at a configurable interval while the user works -- unless the
 user is on a call or in a full-screen application, in which case it waits. The two reminders
 have a switch and a message each, and both say "Ground yourself" until changed. .NET 8,
-**zero external dependencies**: WPF for the windows, Windows Forms purely for `NotifyIcon`,
-both from the WindowsDesktop shared framework (ADR 0007).
+**zero external dependencies**: WPF for the windows, Windows Forms for the tray icon, its menu
+and `Screen`, both from the WindowsDesktop shared framework (ADR 0007).
 
 ## Commands
 
 - Gate (what pre-commit, pre-merge-commit and the Claude commit hook run, about 20 s):
   `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify.ps1`
 - Fast loop, no tests: `... scripts/verify.ps1 -SkipTests`
-- Build: `dotnet build MindfulnessReminder.sln -c Release --nologo` (Windows only: WPF)
+- Build: `dotnet build MindfulnessReminder.sln -c Release --nologo` (Windows only: WPF). The
+  SDK is 9.0.318 or a later 9.0.3xx, pinned in `global.json`; the projects target .NET 8
 - Test: `dotnet test MindfulnessReminder.sln -c Release --nologo`
 - One test: `dotnet test MindfulnessReminder.sln --filter "FullyQualifiedName~R024"`
 - Format: `dotnet format MindfulnessReminder.sln` (check only: `--verify-no-changes`)
@@ -114,9 +115,11 @@ extends or varies a kit rule names it.
 
 The kit's workflow in `.claude/rules/kit/process.md` applies. Mindfulness Reminder adds:
 
-- `/wrap-up` checks `README.md`, the user documentation, and launches the application with
-  `--preview` when a file under `src/MindfulnessReminder.App/` changed (the App layer is not
-  unit-tested, ADR 0008).
+- `/wrap-up` checks `README.md`, the user documentation. A change under
+  `src/MindfulnessReminder.App/` is looked at with `--preview` (the reminder window only) or
+  `--detect` (the activity monitor only); anything else of the App runs only in a full tray
+  start, which from a worktree build repairs the auto-start entry to that build (R-006), so it
+  is listed for the owner to look at in their own copy after the merge (ADR 0008).
 - A release is tagged `mindfulnessreminder-vX.Y.Z`, the name `scripts/release.ps1` prints; it
   publishes the application framework-dependent into `artifacts/X.Y.Z/` (ADR 0002).
 - The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.

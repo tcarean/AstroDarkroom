@@ -200,6 +200,9 @@ dotnet build -c Release
 dotnet test -c Release
 ```
 
+Both need the .NET SDK 9.0.318 or a later 9.0.3xx, which `global.json` pins; the projects
+themselves target .NET 8.
+
 The full gate, the one the `pre-commit` hook runs, is `scripts/verify.ps1` (see
 "Development" below).
 

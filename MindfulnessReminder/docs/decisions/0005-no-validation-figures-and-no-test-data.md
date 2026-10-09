@@ -12,8 +12,8 @@ data manifest. Mindfulness Reminder has no numeric output and no input data: it 
 keeps a deadline on the wall clock and reads two registry keys. Every one of its 215 tests of the code
 runs on fakes (`FakeRegistryStore`, and the clock, timer, session monitor, presenter and activity
 monitor inside `ReminderCoordinatorTests`); the seven `RepoInvariantTests` the migration added
-read the repository's own documents, not test data. The numbers its code carries are constants, each
-pinned by a unit test: `TrayTooltip.MaxLength` (63), `ReminderSettings.MaxMessageLength` (50),
+read the repository's own documents, not test data. The numbers its code carries are constants, which
+the unit tests use by name, not by value: `TrayTooltip.MaxLength` (63), `ReminderSettings.MaxMessageLength` (50),
 the interval bounds 1 to 480 minutes and the retry bounds 5 to 300 seconds,
 `ReminderCoordinator.DefaultDebounce` (2 s), `DefaultTickInterval` (1 s),
 `DefaultActivityRefresh` (10 s), `WpfReminderPresenter.DefaultShowDelay` (600 ms). The kit's
@@ -34,8 +34,9 @@ skills `/validate`, `/release` (its step 3) and `/wrap-up` (its step 2) look for
 
 - **A `ValidationTests` class with no cases.** A theory with no data, which xUnit reports as a
   test that runs nothing.
-- **A case per constant.** It would restate a unit test, with a tolerance where the test is
-  exact.
+- **A case per constant.** It would measure a value the code states outright, with a tolerance
+  where the code is exact. A changed value is caught by the kit's rule "Requirements first",
+  which changes its row before the code, not by a test.
 - **A case on the `--detect 60` timeline.** It needs a person to start a game and a call; no
   test host can produce the state it measures.
 

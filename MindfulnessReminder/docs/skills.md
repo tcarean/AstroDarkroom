@@ -18,8 +18,12 @@ are in `kit.json`, not here.
   if it cannot be tested there, it is in the wrong project (the rule "Logic in Core, adapters
   in App"). Test names are sentences with underscores, `R###_` first.
 - At step 5: `MindfulnessReminder.Core` first, then the adapter or the window. A change under
-  `src/MindfulnessReminder.App/` is not done until the application was launched (`--preview`
-  for the reminder window, the copy in the tray for Settings and About) and looked at.
+  `src/MindfulnessReminder.App/` is not done until it was looked at: `--preview` runs the
+  reminder window and `--detect` the activity monitor, and nothing else of the App. Anything
+  else (the tray menu, Settings, About, the presenter, the timers, the session monitor) runs
+  only in a full tray start, and a full start of a worktree build repairs the auto-start entry
+  to that build (R-006): do not start one; list the change for the owner to look at in their
+  own copy after the merge.
 - At step 6: there is no numeric code and no validation case (ADR 0005); skip, unless the
   feature measures something on a machine, in which case the first case and `ValidationTests`
   are written then.
@@ -30,9 +34,11 @@ are in `kit.json`, not here.
 ## /wrap-up
 
 - At step 2: there is no numeric code and no golden file; nothing to do.
-- At step 9: a change under `src/MindfulnessReminder.App/` also launches the application once
-  with `--preview` before the commit; a change to the tray menu, Settings or About is looked
-  at in the copy in the tray (no switch opens them).
+- At step 9: a change to the reminder window is looked at with `--preview`, one to the activity
+  monitor with `--detect`, before the commit. Any other change under
+  `src/MindfulnessReminder.App/` is listed in the wrap-up report for the owner to look at in
+  their own copy after the merge: a full tray start of the worktree's build would repair the
+  auto-start entry to it (R-006).
 
 ## /validate
 

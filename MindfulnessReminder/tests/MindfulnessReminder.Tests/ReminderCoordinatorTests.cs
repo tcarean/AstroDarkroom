@@ -770,6 +770,27 @@ public class ReminderCoordinatorTests
     }
 
     /// <summary>
+    /// With the periodic reminder off there is no countdown, so no tick reads the monitor
+    /// again, and a reason kept from a skipped unlock would sit in the tooltip long after
+    /// the call ended. Nothing is held back either: the unlock reminder was skipped.
+    /// </summary>
+    [Fact]
+    public void R060_With_the_periodic_reminder_off_a_skipped_unlock_leaves_no_reason_behind()
+    {
+        using var coordinator = CreateCoordinator(
+            settings: ReminderSettings.Default with { PeriodicEnabled = false });
+        coordinator.Start();
+
+        _activity.Snapshot = ActivitySnapshot.Idle with { MicrophoneInUse = true };
+
+        _monitor.RaiseUnlocked();
+
+        Assert.Equal(0, _presenter.ShowCount);
+        Assert.Null(coordinator.Remaining);
+        Assert.Equal(ReminderSuppression.None, coordinator.Suppression);
+    }
+
+    /// <summary>
     /// UserAway is what Windows reports behind a lock screen, and it can still be the answer
     /// in the instant after an unlock. If it suppressed, the unlock reminder -- the oldest
     /// behaviour this app has -- would go missing on exactly the event it exists for.

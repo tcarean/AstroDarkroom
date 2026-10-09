@@ -1,4 +1,4 @@
-# 0025. TrayTooltip is a pure type because the tray throws above 63 characters; minutes round up, a pause shows its reason, and only a change is written
+# 0025. TrayTooltip is a pure type that keeps the tooltip within 63 characters, clear of where NotifyIcon.Text throws; minutes round up, a pause shows its reason, and only a change is written
 
 Date: 2026-10-09
 Status: accepted 2026-10-09
@@ -16,12 +16,15 @@ tray icon lost to an exception is a poor trade for a countdown" (`TrayIconHost.S
 countdown is redrawn off the one-second tick (ADR 0012) but changes once a minute, and "every
 write is a `Shell_NotifyIcon` call". Since 89de6c8 a reminder can be held back for as long as a
 call lasts (ADR 0018), and what is counted meanwhile is the retry gap, "seconds rather than
-minutes".
+minutes". The 63 is the limit of .NET Framework and .NET 5: on .NET 6 and later
+`NotifyIcon.Text` throws above 127 characters (its reference documentation; the runtime says
+"Text length must be less than 128 characters long."). The code keeps 63, clear of the new
+limit (the code review of 2026-10-09).
 
 ## Decision
 
 - `TrayTooltip.Format(banner, remaining, suppression)`, in Core, builds the whole hover text as
-  a pure function, and `TrayTooltip.MaxLength` (63) is the tray's limit. The limit is the only
+  a pure function, and `TrayTooltip.MaxLength` (63) is the length it keeps to. The limit is the only
   reason it is a type of its own: "the one thing worth testing is that the longest string the
   app can produce still fits".
 - With a countdown the text is `<banner> - next in N min`, N rounded **up** and never below 1, so

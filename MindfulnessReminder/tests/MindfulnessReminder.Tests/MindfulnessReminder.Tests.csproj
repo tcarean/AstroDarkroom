@@ -3,6 +3,11 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <IsPackable>false</IsPackable>
+    <!-- VersionTests, LicenseHeaderTests and RepoInvariantTests find the project folder from
+         [CallerFilePath]. A CI build (ContinuousIntegrationBuild, Directory.Build.props) maps
+         source paths to /_/ by default, and those tests would then read from a folder that
+         does not exist; the shipped assemblies keep the mapping. -->
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
   </PropertyGroup>
 
   <ItemGroup>

@@ -45,6 +45,21 @@ public class ReminderSettingsStoreTests
         Assert.Equal(ReminderSettings.Default, Store().Load());
     }
 
+    /// <summary>
+    /// A key the account may not read (a policy, security software) is no more a reason to
+    /// fail to start than a missing one: the defaults stand.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(System.Security.SecurityException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(IOException))]
+    public void R051_A_registry_that_refuses_to_be_read_gives_the_defaults(Type refusal)
+    {
+        var registry = new FakeRegistryStore { ReadRefusal = (Exception)Activator.CreateInstance(refusal)! };
+
+        Assert.Equal(ReminderSettings.Default, new RegistrySettingsStore(registry).Load());
+    }
+
     [Theory]
     [InlineData(true, 15)]
     [InlineData(false, 30)]

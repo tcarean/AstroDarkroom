@@ -29,7 +29,10 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public static class TrayTooltip
 {
-    /// <summary>The Shell_NotifyIcon tooltip limit that NotifyIcon.Text enforces.</summary>
+    /// <summary>
+    /// The length the tooltip keeps to. NotifyIcon.Text throws above 127 characters on .NET 6
+    /// and later, and above 63 on .NET Framework, whose limit this is.
+    /// </summary>
     public const int MaxLength = 63;
 
     /// <summary>

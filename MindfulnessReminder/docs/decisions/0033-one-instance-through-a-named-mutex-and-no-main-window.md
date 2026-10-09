@@ -27,7 +27,8 @@ app that dies silently just vanishes".
   closing the reminder would quit". Closing a window ends nothing; the application calls
   `Shutdown()` itself, on Exit in the tray menu, when the `--preview` window closes, after the
   `--detect` report, in a second copy, and from the crash handler.
-- The crash handler, `DispatcherUnhandledException`, attached once the mutex is held, shows a
+- The crash handler, `DispatcherUnhandledException` and, for an error in a tray-menu action,
+  Windows Forms' `Application.ThreadException`, attached once the mutex is held, shows a
   `MessageBox` titled "Mindfulness Reminder stopped" with the error's message and then
   `VersionInfo.Banner`, marks the exception handled and shuts down. The banner is there because
   "a screenshot of this dialog is often all a bug report has, and it has to say which version

@@ -4,11 +4,12 @@ In the projects made from the kit this file is the memory of "how well it works,
 what": every case lives in `validation.json`, read by `ValidationTests`, and is explained here.
 Mindfulness Reminder has no such case (ADR 0005). The application shows a window, keeps a
 deadline on the wall clock and reads two registry keys; it has no numeric output and no input
-data to measure on. The numbers it carries are constants, each pinned by a unit test:
+data to measure on. The numbers it carries are constants in the code, which the tests use by name:
 `TrayTooltip.MaxLength` (63), `ReminderSettings.MaxMessageLength` (50), the interval bounds 1
 to 480 minutes, the retry bounds 5 to 300 seconds, `ReminderCoordinator.DefaultDebounce`
 (2 s), `DefaultTickInterval` (1 s), `DefaultActivityRefresh` (10 s),
-`WpfReminderPresenter.DefaultShowDelay` (600 ms). A case here would restate a test.
+`WpfReminderPresenter.DefaultShowDelay` (600 ms). A case here would measure a value the code
+states outright; a changed value changes its requirement row first, not a figure.
 
 `validation.json` therefore lists no case. `/validate` stops after its first step, `/release`
 skips its figures step, and `RepoInvariantTests` checks only that the file parses and that case

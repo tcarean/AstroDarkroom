@@ -106,6 +106,10 @@ public partial class App : WpfApplication
 
         DispatcherUnhandledException += OnDispatcherUnhandledException;
 
+        // The tray menu is Windows Forms, whose window procedure catches an error in a menu
+        // action and would show its own dialog; this sends it to the same one as the rest.
+        WinFormsApplication.ThreadException += (_, e) => ReportCrash(e.Exception);
+
         // Both stacks share one process-wide DPI mode; setting it before any window exists
         // keeps the tray menu and the reminder crisp on mixed-DPI setups.
         WinFormsApplication.SetHighDpiMode(System.Windows.Forms.HighDpiMode.PerMonitorV2);
@@ -381,16 +385,21 @@ public partial class App : WpfApplication
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        e.Handled = true;
+        ReportCrash(e.Exception);
+    }
+
+    private void ReportCrash(Exception exception)
+    {
         // A tray app that dies silently just vanishes; say so before going. The banner goes
         // along: a screenshot of this dialog is often all a bug report has, and it has to say
         // which version broke.
         MessageBox.Show(
-            e.Exception.Message + "\n\n" + VersionInfo.Banner,
+            exception.Message + "\n\n" + VersionInfo.Banner,
             VersionInfo.Name + " stopped",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
 
-        e.Handled = true;
         Shutdown();
     }
 

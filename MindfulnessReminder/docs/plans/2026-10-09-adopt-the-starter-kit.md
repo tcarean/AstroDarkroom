@@ -1012,6 +1012,26 @@ commits, one per layer, each with the gate green.
   documentation contradicts: R-031 no longer says it, ADR 0017 says it is unverified. The README
   still says it; that is gap 2 of the docs-health report below.
 - **The audit ran before commit 3**, so the three commits the owner asked for carry it.
+- **A code review followed** (`/code-review`, maximum effort, ten finder angles and a verifier
+  per finding), and the owner had its fifteen findings applied on the branch, in a fourth
+  commit. Three fixed behaviour the code had before the migration, each with a failing test
+  first: a skipped unlock no longer leaves "paused" in the tooltip when there is no countdown
+  (R-060); a registry the account may not read or write no longer stops the start (R-003,
+  R-006, R-051); a tray-menu error reaches the application's own crash dialog (R-076). The
+  others: `R090_No_project_overrides_the_shared_version` no longer scans `.claude/`, where it
+  found two projects of a task worktree and would have refused the owner's merge; the test
+  project keeps real source paths in a CI build (`DeterministicSourcePaths` false), which would
+  otherwise have failed 14 tests; `RepoInvariantTests` reads test IDs from the compiled test
+  methods and fails on a row with a mis-written status; a publish leaves out the XML
+  documentation files; the project's `.gitattributes` is gone, since its `*` line overrode the
+  root's CRLF rule for `.cmd` and `.bat`; `.claude/settings.json` no longer allows `dotnet run`
+  or the executable without asking, and `docs/skills.md` no longer sends a session to start a
+  tray copy of a worktree build, which would repoint the owner's auto-start entry (R-006);
+  `CLAUDE.md`, `docs/skills.md` and ADR 0022 say what `--preview` does and does not run; and
+  five documents were corrected: the SDK requirement (README, `CLAUDE.md`), the 127-character
+  limit of `NotifyIcon.Text` (R-062, ADR 0025, the note), Windows Forms' uses (`CLAUDE.md`),
+  and the constants, which the tests use by name, not by value (`docs/requirements.md`,
+  `docs/validation.md`, ADR 0005).
 
 ## The docs-health report of 2026-10-09
 

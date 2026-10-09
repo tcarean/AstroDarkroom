@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -24,7 +25,7 @@ namespace MindfulnessReminder.Tests;
 /// <summary>
 /// Tests about the repository itself: things a rule asks for and a test can enforce instead
 /// (ADR 0001). Cheap, and never forgotten in a long session. The requirement-to-test link is
-/// read from the test sources, by the method names a reader sees, as in the sibling projects.
+/// read from the compiled test methods, by their names, as the kit's own tests read it.
 /// Version and copyright plumbing is in <see cref="VersionTests"/>, the licence notice in
 /// <see cref="LicenseHeaderTests"/>.
 /// </summary>
@@ -32,13 +33,14 @@ public class RepoInvariantTests
 {
     private static readonly string Root = RepoDir();
 
-    private static readonly string[] TestProjects = { Path.Combine("tests", "MindfulnessReminder.Tests") };
-
     private static readonly Regex RequirementRow =
         new(@"^\|\s*R-(\d{3})\s*\|\s*(draft|accepted|implemented|dropped)\s*\|", RegexOptions.Compiled);
 
-    private static readonly Regex TestMethod =
-        new(@"public\s+(?:async\s+)?(?:void|Task)\s+R(\d{3})_\w+\s*\(", RegexOptions.Compiled);
+    /// <summary>Any table row that starts with a requirement ID, whatever its status says.</summary>
+    private static readonly Regex AnyRequirementRow =
+        new(@"^\|\s*R-(\d{3})\s*\|", RegexOptions.Compiled);
+
+    private static readonly Regex TestMethodName = new(@"^R(\d{3})_", RegexOptions.Compiled);
 
     /// <summary>The project folder (the one holding MindfulnessReminder.sln), from this file's own path.</summary>
     private static string RepoDir([CallerFilePath] string thisFile = "")
@@ -92,7 +94,7 @@ public class RepoInvariantTests
         var ids = new List<string>();
         foreach (var line in File.ReadLines(Path.Combine(Root, "docs", "requirements.md")))
         {
-            var m = RequirementRow.Match(line);
+            var m = AnyRequirementRow.Match(line);
             if (m.Success)
             {
                 ids.Add("R" + m.Groups[1].Value);
@@ -147,6 +149,7 @@ public class RepoInvariantTests
     private static Dictionary<string, string> ReadRequirements()
     {
         var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var malformed = new List<string>();
         foreach (var line in File.ReadLines(Path.Combine(Root, "docs", "requirements.md")))
         {
             var m = RequirementRow.Match(line);
@@ -154,25 +157,38 @@ public class RepoInvariantTests
             {
                 result["R" + m.Groups[1].Value] = m.Groups[2].Value;
             }
+            else if (AnyRequirementRow.IsMatch(line))
+            {
+                // A status written any other way would drop the row out of every check.
+                malformed.Add(line.Length > 30 ? line[..30] : line);
+            }
         }
 
+        Assert.True(
+            malformed.Count == 0,
+            "Requirement rows whose status is not draft, accepted, implemented or dropped: "
+            + string.Join(" / ", malformed));
         Assert.NotEmpty(result);
         return result;
     }
 
-    /// <summary>Every test method whose name starts with R, three digits and an underscore.</summary>
+    /// <summary>
+    /// Every test method of this assembly whose name starts with R, three digits and an
+    /// underscore, read from the compiled tests: one in a subfolder, or a static one, counts.
+    /// </summary>
     private static HashSet<string> TestIdsInSources()
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var project in TestProjects)
+        var tests = typeof(RepoInvariantTests).Assembly.GetTypes()
+            .SelectMany(t => t.GetMethods(
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            .Where(m => m.IsDefined(typeof(FactAttribute), inherit: true));
+        foreach (var test in tests)
         {
-            var dir = Path.Combine(Root, project);
-            foreach (var file in Directory.EnumerateFiles(dir, "*.cs", SearchOption.TopDirectoryOnly))
+            var m = TestMethodName.Match(test.Name);
+            if (m.Success)
             {
-                foreach (Match m in TestMethod.Matches(File.ReadAllText(file)))
-                {
-                    ids.Add("R" + m.Groups[1].Value);
-                }
+                ids.Add("R" + m.Groups[1].Value);
             }
         }
 

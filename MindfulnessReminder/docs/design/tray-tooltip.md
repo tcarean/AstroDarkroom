@@ -8,7 +8,8 @@
 
 ## The tray tooltip
 
-`NotifyIcon.Text` is capped at 63 characters and **throws** above it. That is the only
+`NotifyIcon.Text` is capped at 63 characters and **throws** above it (127 on .NET 6 and later;
+the code keeps 63: ADR 0025). That is the only
 reason `TrayTooltip` is a separate pure type: the one thing worth testing is that the longest
 string the app can produce still fits, and
 `R062_The_longest_tooltip_the_app_can_produce_fits_the_tray_limit` pins it.
