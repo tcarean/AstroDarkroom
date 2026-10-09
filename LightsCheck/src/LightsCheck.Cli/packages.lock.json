@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net9.0": {
+      "lightscheck.core": {
+        "type": "Project",
+        "dependencies": {
+          "Sdcb.LibRaw": "[0.21.1.7, )",
+          "Sdcb.LibRaw.runtime.linux64": "[0.21.1, )",
+          "Sdcb.LibRaw.runtime.win64": "[0.21.1, )"
+        }
+      },
+      "Sdcb.LibRaw": {
+        "type": "CentralTransitive",
+        "requested": "[0.21.1.7, )",
+        "resolved": "0.21.1.7",
+        "contentHash": "474JG/VAWOJ9rJaBZK8B+tN1S8BsPPZptQoGnwmzOa7fFuSASm+gLotuH+FxNfmCnJ1diRfxRrGTTW1uLY5Dfw=="
+      },
+      "Sdcb.LibRaw.runtime.linux64": {
+        "type": "CentralTransitive",
+        "requested": "[0.21.1, )",
+        "resolved": "0.21.1",
+        "contentHash": "1Ka8mTfQnb8kyhaFwr7zQlBi/awTEFCoPrItby5+oNZrB4ZO+WX/U6FwXQbzOlCpP9T+7ntk6dagUrM3TAMlhw=="
+      },
+      "Sdcb.LibRaw.runtime.win64": {
+        "type": "CentralTransitive",
+        "requested": "[0.21.1, )",
+        "resolved": "0.21.1",
+        "contentHash": "KFiLy91bR/4oMiIZ8S4ZYos22SY3QouqImsF2DbCnCIPYYTD2cAVX8RtUNRdax7HLuV4Wgtb68DPYKyF7rDYzA=="
+      }
+    },
+    "net9.0/win-x64": {
+      "Sdcb.LibRaw.runtime.linux64": {
+        "type": "CentralTransitive",
+        "requested": "[0.21.1, )",
+        "resolved": "0.21.1",
+        "contentHash": "1Ka8mTfQnb8kyhaFwr7zQlBi/awTEFCoPrItby5+oNZrB4ZO+WX/U6FwXQbzOlCpP9T+7ntk6dagUrM3TAMlhw=="
+      },
+      "Sdcb.LibRaw.runtime.win64": {
+        "type": "CentralTransitive",
+        "requested": "[0.21.1, )",
+        "resolved": "0.21.1",
+        "contentHash": "KFiLy91bR/4oMiIZ8S4ZYos22SY3QouqImsF2DbCnCIPYYTD2cAVX8RtUNRdax7HLuV4Wgtb68DPYKyF7rDYzA=="
+      }
+    }
+  }
+}

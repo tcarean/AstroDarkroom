@@ -1,0 +1,28 @@
+{
+  "$comment": "What the shared scripts, skills and agent need to know about LightsCheck. With docs/skills.md, the only file edited here to use them; scripts/, .claude/skills/, .claude/agents/ and .claude/rules/kit/ are byte-identical with ../ClaudeCodeStarterKit's (scripts/sync.ps1 keeps them so; the kit's ADRs 0017, 0018 and 0028). The validation cases run on whole sessions outside git and stay out of the gate (ADR 0004). See scripts/kit-config.ps1 for every key.",
+  "solution": "LightsCheck.sln",
+  "testFilter": "Category!=Validation",
+  "codeFolders": ["src/"],
+  "codeFiles": [],
+  "testFolders": ["tests/"],
+  "testData": {
+    "folder": "tests/testdata/",
+    "largeEnv": "LIGHTSCHECK_TESTDATA_LARGE"
+  },
+  "mutate": {
+    "testProject": "tests/LightsCheck.Tests/"
+  },
+  "release": {
+    "publish": [
+      {
+        "project": "src/LightsCheck.Cli/LightsCheck.Cli.csproj",
+        "output": "console",
+        "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
+      }
+    ]
+  },
+  "audit": {
+    "alsoRead": ["THIRD-PARTY-NOTICES.md", "tests/LightsCheck.Tests/Golden/"]
+  },
+  "kit": "../ClaudeCodeStarterKit"
+}

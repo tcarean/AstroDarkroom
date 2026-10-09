@@ -1,0 +1,21 @@
+{
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "cases": [
+    {
+      "id": "V-001",
+      "session": "Veil/2026-10-06-3h",
+      "measuredOn": "2026-10-09",
+      "expected": {
+        "lights": 87,
+        "biases": 30,
+        "camera": "Nikon D3300",
+        "exposureSeconds": 120.2,
+        "iso": 1600,
+        "firstStart": "2026-10-06T23:35:03",
+        "spanSeconds": 12166.2,
+        "dutyPct": 86.06
+      },
+      "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "dutyPct": 0.05 }
+    }
+  ]
+}

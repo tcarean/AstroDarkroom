@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The console, lightscheck.exe: options, dispatch, exit code. Everything that computes or
+       formats is in LightsCheck.Core; Program.Run(args, stdout, stderr) is what the tests drive. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>LightsCheck.Cli</RootNamespace>
+    <AssemblyName>lightscheck</AssemblyName>
+    <!-- Read from lightscheck.runtimeconfig.json at run time: the console formats numbers with
+         "." whatever the Windows culture (R-005). -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LightsCheck.Core\LightsCheck.Core.csproj" />
+    <InternalsVisibleTo Include="LightsCheck.Tests" />
+  </ItemGroup>
+</Project>
