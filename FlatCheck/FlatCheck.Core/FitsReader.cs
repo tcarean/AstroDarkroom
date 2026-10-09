@@ -58,7 +58,10 @@ namespace FlatCheck
         /// <summary>
         /// Doar headerul HDU-ului primar, fara pixeli: blocurile de 2880 pana la END. Pentru
         /// cine vrea FOCALLEN sau INSTRUME dintr-un master de 96 MB fara sa-l citeasca (tabul
-        /// Sintetic, la deschiderea sesiunii). Dictionar gol daca fisierul nu incepe cu SIMPLE.
+        /// Sintetic, la deschiderea sesiunii). Un fisier care nu incepe cu cardul SIMPLE (gol,
+        /// mai scurt decat un card, sau cu altceva in primul card) arunca InvalidDataException,
+        /// cum esueaza si incarcarea completa pe el; un header gol ar fi un raspuns, nu o
+        /// eroare, si fiecare apelant ar trebui sa-l recunoasca dupa numarul de carduri (ADR 0057).
         /// </summary>
         internal static IReadOnlyDictionary<string, string> LoadHeader(string path)
         {
@@ -71,9 +74,12 @@ namespace FlatCheck
                 while (got < block.Length)
                 {
                     int n = fs.Read(block, got, block.Length - got);
-                    if (n <= 0) return hdr;
+                    if (n <= 0) break;
                     got += n;
                 }
+                if (b == 0 && (got < 8 || Encoding.ASCII.GetString(block, 0, 8).Trim() != "SIMPLE"))
+                    throw new InvalidDataException("FITS: fisierul nu incepe cu SIMPLE.");
+                if (got < block.Length) return hdr;
                 for (int c = 0; c < 36; c++)
                 {
                     string card = Encoding.ASCII.GetString(block, c * 80, 80);
@@ -129,8 +135,8 @@ namespace FlatCheck
         /// <summary>
         /// Doar ce spune headerul: focala, aparatul, planurile, BITPIX, ordinea CFA. Fara
         /// pixeli si fara cardurile brute (LoadHeader nu le pastreaza; cine scrie un fisier
-        /// inapoi incarca oricum tot). Un fisier care nu incepe cu SIMPLE da un header gol,
-        /// nu o eroare - la fel ca LoadHeader.
+        /// inapoi incarca oricum tot). Un fisier care nu incepe cu SIMPLE arunca
+        /// InvalidDataException, din LoadHeader (ADR 0057).
         /// </summary>
         public LoadedFrame LoadInfo(string path)
         {

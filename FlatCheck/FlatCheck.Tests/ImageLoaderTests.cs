@@ -215,4 +215,27 @@ public class ImageLoaderTests
         Assert.Null(info.Image);
         Assert.Equal(20, info.FocalMm);
     }
+
+    /// <summary>
+    /// R-008: the metadata-only read refuses a file that does not begin with the SIMPLE
+    /// card, as the full load refuses such a file, instead of answering with an empty
+    /// header that every caller would have to recognise by its count (ADR 0057). Three
+    /// shapes: an empty file, one shorter than a card, and a whole header block whose
+    /// first card is something else.
+    /// </summary>
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("acesta nu e un fisier FITS", 100)]
+    [InlineData("NAXIS   =                    2", 2880)]
+    public void R008_LoadInfoRefusesAFileThatDoesNotBeginWithSimple(string start, int length)
+    {
+        using var ws = new TempWorkspace();
+        byte[] bytes = Enumerable.Repeat((byte)' ', length).ToArray();
+        System.Text.Encoding.ASCII.GetBytes(start, 0, start.Length, bytes, 0);
+        string path = ws.WriteFile("bad.fit", bytes);
+
+        var ex = Assert.Throws<InvalidDataException>(() => ImageLoader.LoadInfo(path));
+
+        Assert.Contains("SIMPLE", ex.Message);
+    }
 }

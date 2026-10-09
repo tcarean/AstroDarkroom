@@ -34,7 +34,13 @@ a library extraction and not a copy is ADR 0011.
     cards out of a header dictionary with a default, so a missing card is never an error - which
     is what lets `--light` and `--ratio` degrade instead of throwing on a raw, which has no
     FITS header at all. `LoadHeader(path)` reads the header blocks alone, for the window's
-    Sintetic tab, which wants `FOCALLEN` and `INSTRUME` out of a 96 MB master at open.
+    Sintetic tab, which wants `FOCALLEN` and `INSTRUME` out of a 96 MB master at open. It
+    checks the first 8 bytes before parsing a card: a file that does not begin with the
+    keyword `SIMPLE` (empty, shorter than a keyword, or a block whose first card is something
+    else) throws `InvalidDataException`, as the full load fails on it, rather than answering
+    with an empty dictionary that every caller would have to recognise by its count (R-008,
+    ADR 0057). A header that begins with `SIMPLE` but ends before `END` still returns what it
+    read.
   - `FitsWriter.cs` - the hand-rolled FITS writer, with one consumer: `--smooth`. One primary
     2-D HDU, `BITPIX -32` or `16` (with `BZERO 32768`), the input's raw cards copied minus the
     structural ones it rewrites, `HISTORY` at the end. Writes into a `Stream` for the same

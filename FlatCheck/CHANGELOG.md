@@ -28,6 +28,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- A metadata-only read (`ImageLoader.LoadInfo`) of a file that does not begin with the `SIMPLE`
+  card throws `InvalidDataException` with `FITS: fisierul nu incepe cu SIMPLE.` instead of
+  answering with an empty header (R-008, ADR 0057). The window's Sintetic tab now says why its
+  prefill failed on a master that is not a FITS; the console is unaffected.
 - `--help` names `--out` beside `-o` for the output map, as the README and R-006 do; the
   golden `help.txt` was re-approved for that one line.
 - The Python prototype is frozen at 2.2.0 and no longer maintained (ADR 0047, supersedes 0005
