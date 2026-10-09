@@ -72,13 +72,15 @@ internal static class SeriesOutputs
         CultureInfo inv = CultureInfo.InvariantCulture;
         StringBuilder sb = new();
         sb.Append("index,file,time,exposure_s,iso,fnumber,focal_mm,class,reasons,pause_s,step_px,step_x,step_y,dx,dy,rotation_deg,matches,rms,")
-          .Append("detected,bright,saturated_stars,measured,fwhm_med,fwhm_p90,fwhm_centre,fwhm_mid,fwhm_edge,elong_med,elong_p90,elongated_frac,angle_deg,coherence,halo,")
-          .Append("bg_median,bg_centre,bg_min,bg_max,sigma_green,ch0_name,ch0_median,ch0_sat,ch0_hp_sigma,ch1_name,ch1_median,ch1_sat,ch1_hp_sigma,ch2_name,ch2_median,ch2_sat,ch2_hp_sigma,ch3_name,ch3_median,ch3_sat,ch3_hp_sigma,trails,nearest_other_px,error\n");
+          .Append("detected,bright,saturated_stars,measured,fwhm_med,fwhm_p90,fwhm_centre,fwhm_mid,fwhm_edge,elong_med,elong_p90,elongated_frac,angle_deg,coherence,trail_on,halo,")
+          .Append("bg_median,bg_centre,bg_min,bg_max,sigma_green,ch0_name,ch0_median,ch0_sat,ch0_hp_sigma,ch1_name,ch1_median,ch1_sat,ch1_hp_sigma,ch2_name,ch2_median,ch2_sat,ch2_hp_sigma,ch3_name,ch3_median,ch3_sat,ch3_hp_sigma,trails,nearest_other_px,spot_run_index,spot_run_frames,spot_run_first,error\n");
         for (int i = 0; i < r.Frames.Count; i++)
         {
             AnalyzedFrame f = r.Frames[i];
             FrameMeasurement? m = f.Measurement;
             RegistrationResult? g = f.Registration is { Ok: true } rg ? rg : null;
+            FrameFlag? trail = r.Series.Flags[i].FirstOrDefault(fl => fl.Kind is FlagKind.Trailed or FlagKind.MarginalTrail);
+            SpotRun? spot = r.Dither.SpotRun[i];
             List<string> cells =
             [
                 f.Info.Index.ToString(inv), Q(f.Info.FileName), f.Info.Timestamp?.ToString("yyyy-MM-ddTHH:mm:ss", inv) ?? "",
@@ -87,7 +89,7 @@ internal static class SeriesOutputs
                 N(r.Cadence.PauseSeconds[i]), N(r.Dither.Step[i]), N(r.Dither.StepX[i]), N(r.Dither.StepY[i]),
                 N(g?.Dx), N(g?.Dy), N(g?.RotationDeg), g is null ? "" : g.Matches.ToString(inv), N(g?.Rms),
                 m is null ? "" : m.Detected.ToString(inv), m is null ? "" : m.DetectedBright.ToString(inv), m is null ? "" : m.SaturatedStars.ToString(inv), m is null ? "" : m.Shapes.Count.ToString(inv),
-                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), N(m?.Halo),
+                N(m?.FwhmMedian), N(m?.FwhmP90), N(m?.Centre.Fwhm), N(m?.Mid.Fwhm), N(m?.Edge.Fwhm), N(m?.ElongationMedian), N(m?.ElongationP90), N(m?.ElongatedFraction), N(m?.AngleDeg), N(m?.AngleCoherence), TrailWord(trail?.On ?? TrailAxis.Unknown), N(m?.Halo),
                 N(m?.BackgroundMedian), N(m?.BackgroundCentre), N(m?.BackgroundMin), N(m?.BackgroundMax), N(m?.NoiseSigma),
             ];
             for (int c = 0; c < 4; c++)
@@ -101,6 +103,9 @@ internal static class SeriesOutputs
 
             cells.Add(m is null ? "" : m.Trails.Count.ToString(inv));
             cells.Add(N(r.Dither.NearestOther[i]));
+            cells.Add(spot is null ? "" : spot.Ordinal.ToString(inv));
+            cells.Add(spot is null ? "" : spot.Frames.ToString(inv));
+            cells.Add(spot is null ? "" : spot.FirstIndex.ToString(inv));
             cells.Add(Q(f.Error ?? f.Info.Error ?? ""));
             sb.Append(string.Join(",", cells)).Append('\n');
         }
@@ -111,4 +116,13 @@ internal static class SeriesOutputs
     private static string N(double? v) => v is double d && !double.IsNaN(d) ? d.ToString("R", CultureInfo.InvariantCulture) : "";
 
     private static string Q(string s) => "\"" + s.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+
+    /// <summary>The `trail_on` cell: the axis word without the preposition, empty when unknown (R-033).</summary>
+    private static string TrailWord(TrailAxis on) => on switch
+    {
+        TrailAxis.Ra => "RA",
+        TrailAxis.Dec => "DEC",
+        TrailAxis.Oblique => "oblic",
+        _ => "",
+    };
 }

@@ -164,7 +164,7 @@ public class SeriesTests
         Assert.StartsWith("index,file,time,exposure_s", csv[0], StringComparison.Ordinal);
         // The header and a row without quoted commas (a good frame, no reasons) have the same number of columns.
         int columns = csv[0].Split(',').Length;
-        Assert.Equal(57, columns);
+        Assert.Equal(61, columns);   // 57 before R-033 (trail_on) and R-034 (the three spot_run_* columns)
         Assert.Equal(columns, csv[1].Split(',').Length);
         Assert.StartsWith("3,\"DSC_0003.fit\",", csv[3], StringComparison.Ordinal);
         Assert.Contains("SLAB", csv[3], StringComparison.Ordinal);
@@ -184,5 +184,96 @@ public class SeriesTests
         ];
         File.WriteAllBytes(Path.Combine(s.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
         Assert.Equal(Axis.Y, SeriesRun.WcsRaAxis(s.Root));
+    }
+
+    /// <summary>The pattern's trails run along Y, the axis the series takes for RA: the reason, the row and the CSV say so.</summary>
+    [Fact]
+    public void R033_TrailedFramesNameTheAxisOfTheirTrail()
+    {
+        SeriesResult r = RunPattern();
+        SeriesAnalysis s = r.Series;
+        Assert.Equal(Axis.Y, s.RaAxis);
+        FrameFlag flag = Assert.Single(s.Flags[2]);
+        Assert.Equal(TrailAxis.Ra, flag.On);
+        Assert.Equal($"alungire {RunReport.F(flag.Value, 2)} (prag 1.60), dara pe RA (-90 grade)", SeriesReport.Reasons(s.Flags[2]));
+        Assert.Equal(TrailAxis.Ra, s.TrailOn);
+        Assert.Contains("= pe RA", SeriesReport.TrailRows(r).Single(x => x.Label == "directia darelor").Value, StringComparison.Ordinal);
+
+        string[] csv = SeriesOutputs.Csv(r).Split('\n');
+        int col = Array.IndexOf(CsvCells(csv[0]), "trail_on");
+        Assert.True(col > 0, "no trail_on column");
+        Assert.Equal("RA", CsvCells(csv[3])[col]);
+        Assert.Equal("", CsvCells(csv[1])[col]);
+    }
+
+    /// <summary>Three frames within 10 px of the first make a run; the table cell names the frame's place in it, the class does not change.</summary>
+    [Fact]
+    public void R034_EveryRegisteredFrameNamesItsRunAtTenPixels()
+    {
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] pattern = [(0, 0, 1.0, 0), (1, 0.5, 1.0, 1), (0.5, 1.5, 1.0, 1), (30, 0, 1.0, 30), (30.5, 0.2, 1.0, 1)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(pattern);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+
+        IReadOnlyList<FrameTableRow> rows = SeriesReport.FrameRows(r);
+        Assert.Equal(["1/3 de la 1", "2/3 de la 1", "3/3 de la 1", "-", "-"], rows.Select(x => x.Spot));
+        Assert.All(r.Series.Classes, c => Assert.Equal(FrameClass.Good, c));
+        Assert.All(r.Series.Flags, fl => Assert.Empty(fl));
+
+        using StringWriter sw = new();
+        SeriesReport.Write(r, sw);
+        string text = sw.ToString();
+        Assert.Contains("      dY  acelasi loc     motive", text, StringComparison.Ordinal);
+        Assert.Contains("  3/3 de la 1    ", text, StringComparison.Ordinal);
+
+        string[] csv = SeriesOutputs.Csv(r).Split('\n');
+        string[] head = CsvCells(csv[0]);
+        int index = Array.IndexOf(head, "spot_run_index"), frames = Array.IndexOf(head, "spot_run_frames"), first = Array.IndexOf(head, "spot_run_first");
+        Assert.True(index > 0 && frames == index + 1 && first == index + 2, "spot_run columns missing or out of order");
+        Assert.Equal(["2", "3", "1"], CsvCells(csv[2])[index..(index + 3)]);
+        Assert.Equal(["", "", ""], CsvCells(csv[4])[index..(index + 3)]);
+    }
+
+    /// <summary>One CSV line into its cells, the quoted ones unquoted (a reason holds commas).</summary>
+    private static string[] CsvCells(string line)
+    {
+        List<string> cells = [];
+        string cur = "";
+        bool quoted = false;
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+            if (quoted)
+            {
+                if (c == '"' && i + 1 < line.Length && line[i + 1] == '"')
+                {
+                    cur += '"';
+                    i++;
+                }
+                else if (c == '"')
+                {
+                    quoted = false;
+                }
+                else
+                {
+                    cur += c;
+                }
+            }
+            else if (c == '"')
+            {
+                quoted = true;
+            }
+            else if (c == ',')
+            {
+                cells.Add(cur);
+                cur = "";
+            }
+            else
+            {
+                cur += c;
+            }
+        }
+
+        cells.Add(cur);
+        return cells.ToArray();
     }
 }

@@ -21,8 +21,8 @@ using System.Windows.Media;
 
 namespace LightsCheck.Wpf;
 
-/// <summary>A point of a chart: x, y (NaN = missing), a label, and the colour it is drawn in.</summary>
-public sealed record ChartPoint(double X, double Y, string Label, Color Colour);
+/// <summary>A point of a chart: x, y (NaN = missing), a label, the colour it is drawn in, and whether the map draws it as a ring (a frame of a run at 10 px, R-035).</summary>
+public sealed record ChartPoint(double X, double Y, string Label, Color Colour, bool Ring = false);
 
 /// <summary>A horizontal guide line at a value, with its label.</summary>
 public sealed record GuideLine(double Value, string Label, Color Colour);
@@ -260,7 +260,15 @@ public sealed class DitherMap : ChartElement
         foreach (ChartPoint p in pts)
         {
             Point here = new(X(p.X), Y(p.Y));
-            drawingContext.DrawEllipse(Frozen(p.Colour), null, here, 4, 4);
+            if (p.Ring)
+            {
+                drawingContext.DrawEllipse(null, FrozenPen(p.Colour, 1.5), here, 4, 4);
+            }
+            else
+            {
+                drawingContext.DrawEllipse(Frozen(p.Colour), null, here, 4, 4);
+            }
+
             FormattedText t = Text(p.Label, 9, TickBrush);
             drawingContext.DrawText(t, new Point(here.X + 5, here.Y - t.Height / 2));
         }

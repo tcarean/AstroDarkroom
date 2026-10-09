@@ -65,17 +65,26 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
 - **ROUA**: halo-ul si numarul de stele la inceput si la sfarsit.
 - **CADRE MISCATE**: cadrele slabe (alungire >= 1.6) si la limita (1.35..1.6), directia
   darelor si care axa a imaginii e RA (din `result.fit` plate-solvat din folderul sesiunii,
-  daca exista, altfel din directia darelor).
+  daca exista, altfel din directia darelor). Cand axa RA se stie si stelele cadrului sunt de
+  acord intre ele (coerenta peste 0.8), motivul fiecarui cadru cu dara spune si pe ce axa a
+  monturii cade ea: `dara pe RA (-90 grade)` inseamna urmarirea (eroare periodica, viteza,
+  backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
+  amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
 - **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, rotatia de camp.
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
   grupuri de cadre consecutive in acelasi loc) si verdictul pentru pixeli calzi si walking
   noise, cu cifrele lui.
-- **RESPINSE**: fiecare cadru slab cu motivul si pragul.
-- **TABEL PE CADRE**: o linie pe cadru.
+- **RESPINSE**: fiecare cadru slab cu motivul, pragul si axa darei.
+- **TABEL PE CADRE**: o linie pe cadru. Coloana `acelasi loc` spune al catelea cadru
+  consecutiv e in acelasi loc (la 10 px), din cate si de la care: `7/10 de la 61` e al
+  saptelea din zece cadre ramase pe loc de la cadrul 61. Sirurile astea fac walking noise,
+  dar cadrul ramane bun si in stiva: leacul e dithering mai des data viitoare, nu mai putine
+  cadre.
 
 `--out DIR` scrie in DIR raportul (`lightscheck-raport.txt`), un CSV cu toate cifrele pe
-cadru (`lightscheck-cadre.csv`) si lista numelor de respins (`lightscheck-respinse.txt`),
+cadru (`lightscheck-cadre.csv`, cu axa darei in `trail_on` si sirul din `acelasi loc` in
+`spot_run_index`, `spot_run_frames`, `spot_run_first`) si lista numelor de respins (`lightscheck-respinse.txt`),
 cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
 `--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
 cu focala din raw da scara in "/px.
@@ -138,7 +147,7 @@ Decodeaza al N-lea cadru din `lights/` (1 = primul) si il masoara:
 - `alungire`: raportul axelor (1 = rotund); `% peste 1.3` cate stele sunt vizibil alungite;
   `unghi` e directia axei mari fata de orizontala, `coerenta` cat de bine se aliniaza stelele
   (aproape de 1 = toate in aceeasi directie, deci urmarirea; mic = fara directie, deci optica
-  sau zgomot).
+  sau zgomot). Peste 0.8, raportul seriei leaga unghiul de axa monturii (vezi CADRE MISCATE).
 - `halo`: cat din lumina unei stele luminoase sta intr-un inel de 5-10 px fata de nucleul de
   3 px; creste cu roua sau ceata.
 - `dare`: urme de sateliti sau avioane, cu lungimea si coltul din stanga-sus.
@@ -151,14 +160,16 @@ rezultatul apare in sase taburi:
 
 - **Rezumat**: sectiunile raportului, rand cu rand, cu verdictul colorat.
 - **Cadre**: un rand pe cadru (ora, clasa, alungire, FWHM, stele, fond, pauza, pas, pozitie,
-  motive). Alege un cadru si in dreapta apar decupajele stelelor lui (centru si colturi, pe
-  canalul verde): asa vezi cu ochiul dara pe care o raporteaza alungirea.
+  `acelasi loc`, motive). Alege un cadru si in dreapta apar decupajele stelelor lui (centru si
+  colturi, pe canalul verde): asa vezi cu ochiul dara pe care o raporteaza alungirea.
 - **Dithering**: harta pozitiilor fata de primul cadru (grila la 10 px, culoarea e clasa
-  cadrului), pasul fata de cadrul anterior (galben = miscare >= 5 px), distanta la cel mai
-  apropiat alt cadru, si randurile DITHERING din raport.
+  cadrului, inel in loc de punct = cadru dintr-un sir de 3 sau mai multe in acelasi loc),
+  pasul fata de cadrul anterior (galben = miscare >= 5 px), distanta la cel mai apropiat alt
+  cadru, si randurile DITHERING din raport.
 - **Calitate**: FWHM, alungire (cu liniile 1.35 si 1.6), stele si fond de cer, cadru cu cadru.
-- **Respinse**: cadrele slabe si cele necitite, cu motivul si pragul; cele la limita raman la
-  alegerea ta.
+- **Respinse**: cadrele slabe si cele necitite, cu motivul si pragul, sub o explicatie a
+  cuvintelor (alungirea, dara si axa ei, RA fata de DEC); cele la limita raman la alegerea ta,
+  lista lor e in CADRE MISCATE.
 - **Raport**: textul consolei, identic.
 
 In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300) si

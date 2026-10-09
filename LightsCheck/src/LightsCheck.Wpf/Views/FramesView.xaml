@@ -49,6 +49,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="52" />
           <ColumnDefinition Width="60" />
           <ColumnDefinition Width="60" />
+          <ColumnDefinition Width="100" />
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource Cell}" Text="{Binding Index}" />
@@ -63,7 +64,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Step}" />
         <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Dx}" />
         <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Dy}" />
-        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
+        <TextBlock Grid.Column="12" Style="{StaticResource Cell}" Text="{Binding Spot}" />
+        <TextBlock Grid.Column="13" Style="{StaticResource Cell}" Text="{Binding Reasons}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Reasons}" />
       </Grid>
     </DataTemplate>
   </UserControl.Resources>
@@ -94,6 +96,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="52" />
             <ColumnDefinition Width="60" />
             <ColumnDefinition Width="60" />
+            <ColumnDefinition Width="100" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
           <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" />
@@ -108,7 +111,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="pas" ToolTip="deplasarea fata de cadrul anterior, px" />
           <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="dX" ToolTip="pozitia fata de cadrul 1, px" />
           <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="dY" />
-          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="motive" />
+          <TextBlock Grid.Column="12" Style="{StaticResource Head}" Text="acelasi loc" ToolTip="al catelea cadru consecutiv in acelasi loc (10 px), din cate, de la care cadru; sirurile astea fac walking noise" />
+          <TextBlock Grid.Column="13" Style="{StaticResource Head}" Text="motive" />
         </Grid>
         <ListBox Grid.Row="1" ItemsSource="{Binding Frames}" SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
                  ItemTemplate="{StaticResource FrameRow}" Background="Transparent" BorderThickness="0"

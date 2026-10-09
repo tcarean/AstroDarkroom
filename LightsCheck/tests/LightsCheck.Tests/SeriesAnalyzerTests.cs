@@ -22,12 +22,12 @@ namespace LightsCheck.Tests;
 /// <summary>The classes, flags and trends on hand-made measurements (R-022, R-023).</summary>
 public class SeriesAnalyzerTests
 {
-    private static FrameMeasurement Measurement(double fwhm, double elongation, int stars, double background, double halo = 0.02, int trails = 0)
+    private static FrameMeasurement Measurement(double fwhm, double elongation, int stars, double background, double halo = 0.02, int trails = 0, double coherence = 0.95)
     {
         ZoneShape z = new(fwhm, elongation, 10);
         List<ChannelLevel> ch = [new("R", 'R', 30, 0, 0, 5), new("G1", 'G', background, 0, 0, 10), new("G2", 'G', background, 0, 0, 10), new("B", 'B', 40, 0, 0, 6)];
         return new FrameMeasurement(4016, 6016, new AduScale(4095, 150, "t"), ch, background, background - 5, background + 5, background, [background, background, background, background], 12,
-            stars, stars / 10, 0, [], fwhm, fwhm + 0.5, elongation, elongation + 0.2, elongation > 1.3 ? 0.9 : 0.1, elongation > 1.3 ? 88 : null, elongation > 1.3 ? 0.95 : null,
+            stars, stars / 10, 0, [], fwhm, fwhm + 0.5, elongation, elongation + 0.2, elongation > 1.3 ? 0.9 : 0.1, elongation > 1.3 ? 88 : null, elongation > 1.3 ? coherence : null,
             z, z, z, halo, Enumerable.Repeat(new Trail(100, 300, 0, 0), trails).ToList(), []);
     }
 
@@ -35,7 +35,9 @@ public class SeriesAnalyzerTests
         => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, error), m,
             m is null ? null : new RegistrationResult(true, 300, 200, 0, 0, 0, 1, 0.3), error);
 
-    private static SeriesAnalysis Analyze(params AnalyzedFrame[] frames)
+    private static SeriesAnalysis Analyze(params AnalyzedFrame[] frames) => Analyze(Axis.Unknown, frames);
+
+    private static SeriesAnalysis Analyze(Axis wcsRaAxis, params AnalyzedFrame[] frames)
     {
         List<FrameInfo> infos = frames.Select(f => f.Info).ToList();
         Cadence c = CadenceAnalyzer.Analyze(infos);
@@ -45,7 +47,46 @@ public class SeriesAnalyzerTests
             zeros[i] = frames[i].Measurement is null ? null : 0;
         }
 
-        return SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), null, Axis.Unknown);
+        return SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), null, wcsRaAxis);
+    }
+
+    [Fact]
+    public void R033_TheTrailAxisIsTheImageAxisWithinTheTolerance()
+    {
+        Assert.Equal(TrailAxis.Ra, SeriesAnalyzer.TrailAxisOf(-88, Axis.Y));
+        Assert.Equal(TrailAxis.Ra, SeriesAnalyzer.TrailAxisOf(70, Axis.Y));       // 20 degrees from vertical, within 25
+        Assert.Equal(TrailAxis.Dec, SeriesAnalyzer.TrailAxisOf(10, Axis.Y));
+        Assert.Equal(TrailAxis.Oblique, SeriesAnalyzer.TrailAxisOf(45, Axis.Y));
+        Assert.Equal(TrailAxis.Ra, SeriesAnalyzer.TrailAxisOf(10, Axis.X));
+        Assert.Equal(TrailAxis.Dec, SeriesAnalyzer.TrailAxisOf(-80, Axis.X));
+        Assert.Equal(TrailAxis.Unknown, SeriesAnalyzer.TrailAxisOf(88, Axis.Unknown));
+    }
+
+    /// <summary>With the RA axis known, a trailed and a marginal frame name the axis; a frame whose stars disagree, or a session without an axis, gives the angle alone.</summary>
+    [Fact]
+    public void R033_TheFlagsCarryTheTrailAxisWhenTheStarsAgreeAndTheAxisIsKnown()
+    {
+        SeriesAnalysis s = Analyze(Axis.Y,
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.7, 9000, 121)),                       // bad, coherent: pe RA
+            Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: pe RA
+            Frame(4, Measurement(3.0, 1.7, 9000, 121, coherence: 0.5)));      // bad, the stars disagree: angle alone
+        Assert.Equal(TrailAxis.Ra, s.Flags[1][0].On);
+        Assert.Equal("alungire 1.70 (prag 1.60), dara pe RA (88 grade)", SeriesReport.Reason(s.Flags[1][0]));
+        Assert.Equal(TrailAxis.Ra, s.Flags[2][0].On);
+        Assert.Equal("alungire 1.40 la limita (prag 1.35), dara pe RA (88 grade)", SeriesReport.Reason(s.Flags[2][0]));
+        Assert.Equal(TrailAxis.Unknown, s.Flags[3][0].On);
+        Assert.Equal("alungire 1.70 (prag 1.60), dara la 88 grade", SeriesReport.Reason(s.Flags[3][0]));
+
+        // One bad frame cannot set the axis from the trails (Th.TrailAxisMinFrames is 2): no axis, the angle alone.
+        SeriesAnalysis u = Analyze(
+            Frame(1, Measurement(3.0, 1.1, 10000, 120)),
+            Frame(2, Measurement(3.0, 1.7, 9000, 121)),
+            Frame(3, Measurement(3.1, 1.4, 10000, 122)));
+        Assert.Equal(Axis.Unknown, u.RaAxis);
+        Assert.Equal(TrailAxis.Unknown, u.TrailOn);
+        Assert.Equal("alungire 1.70 (prag 1.60), dara la 88 grade", SeriesReport.Reason(u.Flags[1][0]));
+        Assert.Equal("alungire 1.40 la limita (prag 1.35), dara la 88 grade", SeriesReport.Reason(u.Flags[2][0]));
     }
 
     [Fact]
