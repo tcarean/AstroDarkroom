@@ -35,7 +35,7 @@ public class UserNotificationStateTests
     [InlineData(UserNotificationState.PresentationMode, ForegroundState.Presenting)]
     [InlineData(UserNotificationState.QuietTime, ForegroundState.QuietHours)]
     [InlineData(UserNotificationState.NotPresent, ForegroundState.UserAway)]
-    public void Each_documented_state_maps_to_the_reading_the_app_acts_on(
+    public void R031_Each_documented_state_maps_to_the_reading_the_app_acts_on(
         int shell,
         ForegroundState expected)
     {
@@ -52,14 +52,14 @@ public class UserNotificationStateTests
     [InlineData(8)]
     [InlineData(-1)]
     [InlineData(int.MaxValue)]
-    public void Anything_outside_the_documented_range_reads_as_unknown(int shell)
+    public void R031_Anything_outside_the_documented_range_reads_as_unknown(int shell)
     {
         Assert.Equal(ForegroundState.Unknown, UserNotificationState.FromShellState(shell));
     }
 
     /// <summary>The values come from ShellAPI.h; pinning them is the point of the table above.</summary>
     [Fact]
-    public void The_constants_match_the_windows_header()
+    public void R031_The_constants_match_the_windows_header()
     {
         Assert.Equal(1, UserNotificationState.NotPresent);
         Assert.Equal(2, UserNotificationState.Busy);

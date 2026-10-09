@@ -20,8 +20,8 @@ message. `UnlockEnabled`, `UnlockMessage` and `PeriodicMessage` on `ReminderSett
 init-only, all with the old behaviour as their default.
 
 **The two are independent, and the tests say so from both sides.**
-`Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone` and
-`Switching_the_unlock_reminder_off_shows_nothing_on_unlock`. Nothing about one switch is
+`R027_Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone` and
+`R013_Switching_the_unlock_reminder_off_shows_nothing_on_unlock`. Nothing about one switch is
 allowed to read the other.
 
 **The unlock gate sits AFTER the schedule restart and BEFORE everything else** in

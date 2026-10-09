@@ -9,9 +9,10 @@ In the kit, `docs/validation.json` holds acceptance figures measured on real dat
 `ValidationTests` (trait `Category=Validation`) reads them; FlatCheck, AstroPhotoAnalyzer and
 ImageVisualCompare each measure on images kept outside git, listed with their hashes in a test
 data manifest. Mindfulness Reminder has no numeric output and no input data: it shows a window,
-keeps a deadline on the wall clock and reads two registry keys. Every one of its 215 tests runs
-on fakes (`FakeRegistryStore`, and the clock, timer, session monitor, presenter and activity
-monitor inside `ReminderCoordinatorTests`). The numbers its code carries are constants, each
+keeps a deadline on the wall clock and reads two registry keys. Every one of its 215 tests of the code
+runs on fakes (`FakeRegistryStore`, and the clock, timer, session monitor, presenter and activity
+monitor inside `ReminderCoordinatorTests`); the seven `RepoInvariantTests` the migration added
+read the repository's own documents, not test data. The numbers its code carries are constants, each
 pinned by a unit test: `TrayTooltip.MaxLength` (63), `ReminderSettings.MaxMessageLength` (50),
 the interval bounds 1 to 480 minutes and the retry bounds 5 to 300 seconds,
 `ReminderCoordinator.DefaultDebounce` (2 s), `DefaultTickInterval` (1 s),

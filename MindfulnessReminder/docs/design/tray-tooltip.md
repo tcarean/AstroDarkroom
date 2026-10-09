@@ -11,7 +11,7 @@
 `NotifyIcon.Text` is capped at 63 characters and **throws** above it. That is the only
 reason `TrayTooltip` is a separate pure type: the one thing worth testing is that the longest
 string the app can produce still fits, and
-`The_longest_tooltip_the_app_can_produce_fits_the_tray_limit` pins it.
+`R062_The_longest_tooltip_the_app_can_produce_fits_the_tray_limit` pins it.
 
 Minutes are rounded **up**, never below 1, so a 30-minute countdown reads "30 min" the
 instant it restarts and never reads "0 min" through its last minute.

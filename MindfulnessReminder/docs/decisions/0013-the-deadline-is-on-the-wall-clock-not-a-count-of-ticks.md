@@ -60,7 +60,7 @@ says "a whole interval", as does the summary of the backwards-jump test in
   tests move a `MutableClock`.
 - Guards: `IntervalScheduleTests` (a deadline passed during sleep fires on the first tick after;
   a backwards jump restarts the countdown, also during a postponement;
-  `A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump`; `Remaining` never
+  `R025_A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump`; `Remaining` never
   negative) and `ReminderCoordinatorTests` (the same regression through the coordinator, with a
   1-minute interval and a 300 s retry gap).
 

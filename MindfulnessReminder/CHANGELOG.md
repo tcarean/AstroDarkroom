@@ -15,8 +15,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   moved from the three csproj files to `Directory.Build.props`. `CLAUDE.md` was split into
   `docs/requirements.md` (55 rows with IDs), `docs/decisions/` (34 ADRs, 28 of them
   retroactive) and `docs/design/` (9 notes, moved unchanged); `CLAUDE.md` holds only the
-  project's rules. There are no validation figures, and `docs/validation.md` says why. No
-  behaviour changed; one `dotnet format` pass removed six unused usings in five files.
+  project's rules. `RepoInvariantTests` ties `implemented` rows to tests named `R###_...`
+  (176 test methods renamed for 42 rows). There are no validation figures, and
+  `docs/validation.md` says why. No behaviour changed; one `dotnet format` pass removed six
+  unused usings in five files.
 
 ## [1.4.0] - 2026-09-14
 

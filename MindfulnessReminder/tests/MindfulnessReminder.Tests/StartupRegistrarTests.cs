@@ -27,7 +27,7 @@ public class StartupRegistrarTests
     private readonly FakeRegistryStore _registry = new();
 
     [Fact]
-    public void First_run_registers_auto_start_and_records_the_marker()
+    public void R003_First_run_registers_auto_start_and_records_the_marker()
     {
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
 
@@ -38,7 +38,7 @@ public class StartupRegistrarTests
     }
 
     [Fact]
-    public void Later_runs_do_not_re_register_after_the_user_turned_auto_start_off()
+    public void R003_Later_runs_do_not_re_register_after_the_user_turned_auto_start_off()
     {
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
         var registrar = new StartupRegistrar(_registry, autoStart);
@@ -51,7 +51,7 @@ public class StartupRegistrarTests
     }
 
     [Fact]
-    public void Later_runs_repair_the_path_when_the_app_has_moved()
+    public void R006_Later_runs_repair_the_path_when_the_app_has_moved()
     {
         new StartupRegistrar(_registry, new RegistryAutoStartManager(_registry, ValueName, @"D:\Old\App.exe"))
             .EnsureRegisteredOnFirstRun();
@@ -63,7 +63,7 @@ public class StartupRegistrarTests
     }
 
     [Fact]
-    public void Later_runs_do_not_lift_a_Task_Manager_veto()
+    public void R006_Later_runs_do_not_lift_a_Task_Manager_veto()
     {
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
         var registrar = new StartupRegistrar(_registry, autoStart);

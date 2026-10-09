@@ -34,7 +34,7 @@ public class SuppressionPolicyTests
         };
 
     [Fact]
-    public void An_idle_desktop_suppresses_nothing()
+    public void R030_An_idle_desktop_suppresses_nothing()
     {
         Assert.Equal(
             ReminderSuppression.None,
@@ -42,7 +42,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void A_live_microphone_holds_the_reminder_back()
+    public void R030_A_live_microphone_holds_the_reminder_back()
     {
         var activity = ActivitySnapshot.Idle with { MicrophoneInUse = true };
 
@@ -53,7 +53,7 @@ public class SuppressionPolicyTests
 
     /// <summary>A camera on with the microphone muted in hardware is still a call.</summary>
     [Fact]
-    public void A_live_camera_counts_the_same_as_a_microphone()
+    public void R030_A_live_camera_counts_the_same_as_a_microphone()
     {
         var activity = ActivitySnapshot.Idle with { CameraInUse = true };
 
@@ -65,7 +65,7 @@ public class SuppressionPolicyTests
     [Theory]
     [InlineData(ForegroundState.FullScreen)]
     [InlineData(ForegroundState.Presenting)]
-    public void A_full_screen_or_presenting_desktop_holds_the_reminder_back(ForegroundState state)
+    public void R031_A_full_screen_or_presenting_desktop_holds_the_reminder_back(ForegroundState state)
     {
         var activity = ActivitySnapshot.Idle with { Foreground = state };
 
@@ -84,7 +84,7 @@ public class SuppressionPolicyTests
     [InlineData(ForegroundState.QuietHours)]
     [InlineData(ForegroundState.Unknown)]
     [InlineData(ForegroundState.Normal)]
-    public void No_other_foreground_state_holds_anything_back(ForegroundState state)
+    public void R031_No_other_foreground_state_holds_anything_back(ForegroundState state)
     {
         var activity = ActivitySnapshot.Idle with { Foreground = state };
 
@@ -94,7 +94,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void The_microphone_switch_turns_off_only_the_microphone_check()
+    public void R032_The_microphone_switch_turns_off_only_the_microphone_check()
     {
         var settings = Settings(microphone: false, fullScreen: true);
         var activity = new ActivitySnapshot(true, true, ForegroundState.FullScreen);
@@ -103,7 +103,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void The_full_screen_switch_turns_off_only_the_full_screen_check()
+    public void R032_The_full_screen_switch_turns_off_only_the_full_screen_check()
     {
         var settings = Settings(microphone: true, fullScreen: false);
         var activity = new ActivitySnapshot(true, false, ForegroundState.FullScreen);
@@ -112,7 +112,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void With_both_switches_off_nothing_is_ever_held_back()
+    public void R032_With_both_switches_off_nothing_is_ever_held_back()
     {
         var settings = Settings(microphone: false, fullScreen: false);
         var activity = new ActivitySnapshot(true, true, ForegroundState.Presenting);
@@ -125,7 +125,7 @@ public class SuppressionPolicyTests
     /// the same one every time rather than flickering between the two.
     /// </summary>
     [Fact]
-    public void When_both_apply_the_microphone_is_the_reason_given()
+    public void R032_When_both_apply_the_microphone_is_the_reason_given()
     {
         var activity = new ActivitySnapshot(true, false, ForegroundState.FullScreen);
 
@@ -136,7 +136,7 @@ public class SuppressionPolicyTests
 
     /// <summary>The pauses are not part of the periodic reminder: the unlock one obeys them too.</summary>
     [Fact]
-    public void The_pauses_apply_even_with_the_periodic_reminder_switched_off()
+    public void R032_The_pauses_apply_even_with_the_periodic_reminder_switched_off()
     {
         var settings = ReminderSettings.Default with { PeriodicEnabled = false };
         var activity = ActivitySnapshot.Idle with { MicrophoneInUse = true };
@@ -145,7 +145,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void Both_pauses_ship_switched_on()
+    public void R032_Both_pauses_ship_switched_on()
     {
         Assert.True(ReminderSettings.Default.PauseWhileMicrophoneInUse);
         Assert.True(ReminderSettings.Default.PauseWhileFullScreen);
@@ -153,7 +153,7 @@ public class SuppressionPolicyTests
     }
 
     [Fact]
-    public void With_both_pauses_off_the_monitor_is_not_worth_asking()
+    public void R032_With_both_pauses_off_the_monitor_is_not_worth_asking()
     {
         Assert.False(Settings(microphone: false, fullScreen: false).PausesForAnything);
     }

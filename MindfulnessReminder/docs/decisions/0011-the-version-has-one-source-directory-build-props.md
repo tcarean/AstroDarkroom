@@ -15,7 +15,7 @@ on, so the app identifies itself in the three places a user can actually see it"
 three says on its own which version produced it" (the `VersionInfo` summary). The solution builds
 three assemblies, and "A `<Version>` in any project file would override the shared one for that
 assembly, and the three would silently drift" (the summary of
-`No_project_overrides_the_shared_version`). The version has gone to 1.1.0, 1.2.0, 1.3.0 and 1.4.0
+`R090_No_project_overrides_the_shared_version`). The version has gone to 1.1.0, 1.2.0, 1.3.0 and 1.4.0
 since, each step an edit of that one element (ADR 0006).
 
 ## Decision
@@ -51,7 +51,7 @@ since, each step an edit of that one element (ADR 0006).
 - The banner is part of the tooltip, which `NotifyIcon` caps at 63 characters, so a longer
   version string leaves less room in it (ADR 0025).
 - Guards: `VersionTests` (a three-part number, equal to `<Version>` in `Directory.Build.props`,
-  with no `+` suffix and no fourth part; `No_project_overrides_the_shared_version` over every
+  with no `+` suffix and no fourth part; `R090_No_project_overrides_the_shared_version` over every
   `.csproj` under the project folder; the banner is the name and the version; About's text opens
   with the banner). Where the banner reaches the screen (the tooltip, the About window, the crash
   dialog, the `--detect` report) is App wiring: none by test; launch the application from the

@@ -22,13 +22,13 @@ namespace MindfulnessReminder.Tests;
 public class TrayTooltipTests
 {
     [Fact]
-    public void Without_a_countdown_the_tooltip_is_just_the_banner()
+    public void R060_Without_a_countdown_the_tooltip_is_just_the_banner()
     {
         Assert.Equal(VersionInfo.Banner, TrayTooltip.Format(VersionInfo.Banner, null));
     }
 
     [Fact]
-    public void With_a_countdown_the_tooltip_says_how_many_minutes_are_left()
+    public void R060_With_a_countdown_the_tooltip_says_how_many_minutes_are_left()
     {
         var text = TrayTooltip.Format(VersionInfo.Banner, TimeSpan.FromMinutes(12));
 
@@ -40,14 +40,14 @@ public class TrayTooltipTests
     /// Rounding down would show 29 for the first 59 seconds of every interval.
     /// </summary>
     [Fact]
-    public void Part_minutes_round_up()
+    public void R061_Part_minutes_round_up()
     {
         Assert.Contains("30 min", TrayTooltip.Format("x", TimeSpan.FromSeconds(1799)));
         Assert.Contains("29 min", TrayTooltip.Format("x", TimeSpan.FromSeconds(1740)));
     }
 
     [Fact]
-    public void The_last_minute_reads_as_one_rather_than_zero()
+    public void R061_The_last_minute_reads_as_one_rather_than_zero()
     {
         Assert.Contains("1 min", TrayTooltip.Format("x", TimeSpan.FromSeconds(4)));
         Assert.Contains("1 min", TrayTooltip.Format("x", TimeSpan.Zero));
@@ -60,7 +60,7 @@ public class TrayTooltipTests
     /// that is a few characters too long would take the tray icon down with it.
     /// </summary>
     [Fact]
-    public void The_longest_tooltip_the_app_can_produce_fits_the_tray_limit()
+    public void R062_The_longest_tooltip_the_app_can_produce_fits_the_tray_limit()
     {
         var candidates = new List<string>
         {
@@ -91,7 +91,7 @@ public class TrayTooltipTests
     [Theory]
     [InlineData(ReminderSuppression.MicrophoneInUse, "mic")]
     [InlineData(ReminderSuppression.FullScreen, "full screen")]
-    public void A_held_back_reminder_says_why_instead_of_counting_down(
+    public void R060_A_held_back_reminder_says_why_instead_of_counting_down(
         ReminderSuppression suppression,
         string expected)
     {
@@ -103,7 +103,7 @@ public class TrayTooltipTests
     }
 
     [Fact]
-    public void Nothing_held_back_leaves_the_countdown_exactly_as_it_was()
+    public void R060_Nothing_held_back_leaves_the_countdown_exactly_as_it_was()
     {
         Assert.Equal(
             TrayTooltip.Format("x", TimeSpan.FromMinutes(12)),
@@ -111,7 +111,7 @@ public class TrayTooltipTests
     }
 
     [Fact]
-    public void An_over_long_banner_is_truncated_rather_than_allowed_to_throw()
+    public void R062_An_over_long_banner_is_truncated_rather_than_allowed_to_throw()
     {
         var text = TrayTooltip.Format(new string('x', 200), TimeSpan.FromMinutes(5));
 

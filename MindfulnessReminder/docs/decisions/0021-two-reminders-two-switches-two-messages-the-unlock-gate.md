@@ -65,8 +65,8 @@ pause holds it back (ADR 0018).
   (ADR 0027); a registry an older build wrote has none of them and reads as the defaults, the
   old behaviour. Who picks a message is ADR 0022, how it is normalized ADR 0023.
 - Guards: `ReminderCoordinatorTests`, from both sides as `CLAUDE.md` says:
-  `Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone` and
-  `Switching_the_unlock_reminder_off_shows_nothing_on_unlock`, with the countdown still
+  `R027_Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone` and
+  `R013_Switching_the_unlock_reminder_off_shows_nothing_on_unlock`, with the countdown still
   restarted on unlock, no activity read and an open window left where it is while the unlock
   reminder is off, and nothing at all with both off; `ReminderSettingsStoreTests` (the defaults,
   the round trip, a registry without the new values); `SuppressionPolicyTests` (each pause

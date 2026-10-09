@@ -65,7 +65,7 @@ minutes".
   README's "within ten seconds" true.
 - The banner carries the version (ADR 0011), so hovering the icon says which build is running.
 - Guards: `TrayTooltipTests`, with
-  `The_longest_tooltip_the_app_can_produce_fits_the_tray_limit`, the test `CLAUDE.md` names; the
+  `R062_The_longest_tooltip_the_app_can_produce_fits_the_tray_limit`, the test `CLAUDE.md` names; the
   class also pins the rounding, the reason in place of the countdown and the cut of an over-long
   banner. The comparison in `App.UpdateTooltip` and the cut in `TrayIconHost.SetTooltip`: none
   by test; launch the application from the tray and hover the icon (`--preview` has no tray

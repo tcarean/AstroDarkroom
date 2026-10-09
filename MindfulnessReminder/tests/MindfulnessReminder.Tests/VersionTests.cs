@@ -33,7 +33,7 @@ public class VersionTests
         => Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(thisFile)))!;
 
     [Fact]
-    public void The_version_is_a_three_part_number()
+    public void R090_The_version_is_a_three_part_number()
     {
         Assert.Matches(@"^\d+\.\d+\.\d+$", VersionInfo.Value);
     }
@@ -43,7 +43,7 @@ public class VersionTests
     /// &lt;Version&gt;, or MSBuild stops propagating InformationalVersion, it shows up here.
     /// </summary>
     [Fact]
-    public void The_version_comes_from_the_build_props()
+    public void R090_The_version_comes_from_the_build_props()
     {
         var props = File.ReadAllText(Path.Combine(RepoDir(), "Directory.Build.props"));
 
@@ -55,7 +55,7 @@ public class VersionTests
 
     /// <summary>Neither "1.0.0.0" nor "1.0.0+abc123" is meant to survive out of the assembly.</summary>
     [Fact]
-    public void The_version_is_not_the_four_part_or_source_tagged_form()
+    public void R090_The_version_is_not_the_four_part_or_source_tagged_form()
     {
         Assert.DoesNotContain("+", VersionInfo.Value);
         Assert.Equal(3, VersionInfo.Value.Split('.').Length);
@@ -66,7 +66,7 @@ public class VersionTests
     /// override the shared one for that assembly, and the three would silently drift.
     /// </summary>
     [Fact]
-    public void No_project_overrides_the_shared_version()
+    public void R090_No_project_overrides_the_shared_version()
     {
         var root = RepoDir();
 
@@ -82,7 +82,7 @@ public class VersionTests
     }
 
     [Fact]
-    public void The_banner_is_the_name_and_the_version()
+    public void R090_The_banner_is_the_name_and_the_version()
     {
         Assert.Equal("Mindfulness Reminder " + VersionInfo.Value, VersionInfo.Banner);
     }
@@ -93,7 +93,7 @@ public class VersionTests
     /// header lines the command-line tools print on every run.
     /// </summary>
     [Fact]
-    public void About_opens_with_the_banner_and_the_copyright()
+    public void R091_About_opens_with_the_banner_and_the_copyright()
     {
         var lines = LicenseInfo.AboutText.Replace("\r\n", "\n").Split('\n');
 

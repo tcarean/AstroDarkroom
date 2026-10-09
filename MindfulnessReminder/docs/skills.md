@@ -53,7 +53,7 @@ are in `kit.json`, not here.
 
 ## /mutate
 
-- At step 1: Core is small (23 source files, 215 tests on 2026-10-09), so a whole-core run is
+- At step 1: Core is small (23 source files; 222 tests on 2026-10-09, 7 of them `RepoInvariantTests`), so a whole-core run is
   reasonable; `scripts/mutate.ps1 -Mutate "**/IntervalSchedule.cs"` is the shape for one
   file. No run has been measured yet; write the first one's time and score here.
 

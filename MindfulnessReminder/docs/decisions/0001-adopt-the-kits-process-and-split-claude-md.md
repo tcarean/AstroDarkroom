@@ -45,7 +45,7 @@ proiect existent") describes it for an existing project, in three layers, one co
   everywhere, the README included (ADR 0004); no validation figures and no test data (ADR
   0005); `CHANGELOG.md` (ADR 0006).
 - **The documentation.** `CLAUDE.md` is split by what each part is: the conventions and the
-  feature sections become decision records (ADR 0007 to ADR 0033, retroactive) and design notes
+  feature sections become decision records (ADR 0007 to ADR 0034, retroactive) and design notes
   in `docs/design/`, moved unchanged; "Structure" becomes `docs/design/code-map.md`; the
   behaviour the README and the code describe becomes `docs/requirements.md`, with IDs.
   `CLAUDE.md` keeps only the project's rules, the commands and the pointers; the process rules
@@ -85,4 +85,5 @@ own, as FlatCheck's ADR 0051 was two days after its migration.
 - From layer 3 on, `RepoInvariantTests` ties the `implemented` rows to `R###_` test names both
   ways.
 - The owner's approval of the plan, which listed ADR 0007 to ADR 0033 by title and source, is
-  their acceptance; their text is what the owner reads in the diff.
+  their acceptance; their text is what the owner reads in the diff. ADR 0034, which the plan did
+  not list, was found while they were written; the plan's "What deviated" says so.

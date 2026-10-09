@@ -9,7 +9,8 @@ Until 2026-10-09 these notes were sections of `CLAUDE.md` ("Structure", "The per
 reminder", "Pausing for what the user is doing", "Two reminders, two switches, two messages",
 "The tray tooltip", "Windows the app shows", "The dark theme", "Settings storage",
 "Versioning", "Licensing"); they were moved here unchanged (ADR 0001), with a pointer to the
-decision record after each paragraph that became one. Its other sections went elsewhere: the
+decision record after each paragraph that became one, and a pointer in brackets beside the
+three phrases the code had outgrown before the move. Its other sections went elsewhere: the
 opening paragraphs and "Conventions" are the rules of the new `CLAUDE.md` and ADR 0004, ADR
 0007 to ADR 0009; "Build & test" is its "Commands"; "Committing" is quoted in ADR 0001, which
 it superseded. The behaviour the notes describe is also stated, with IDs, in

@@ -41,7 +41,7 @@ public class ReminderCoordinatorTests
             ReminderCoordinator.DefaultActivityRefresh);
 
     [Fact]
-    public void Start_starts_the_monitor()
+    public void R010_Start_starts_the_monitor()
     {
         using var coordinator = CreateCoordinator();
 
@@ -51,7 +51,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Start_twice_subscribes_only_once()
+    public void R010_Start_twice_subscribes_only_once()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -63,7 +63,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void An_unlock_shows_the_reminder()
+    public void R010_An_unlock_shows_the_reminder()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -74,7 +74,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_duplicate_unlock_within_the_debounce_window_is_ignored()
+    public void R011_A_duplicate_unlock_within_the_debounce_window_is_ignored()
     {
         using var coordinator = CreateCoordinator(TimeSpan.FromSeconds(2));
         coordinator.Start();
@@ -88,7 +88,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_later_unlock_shows_the_reminder_again()
+    public void R011_A_later_unlock_shows_the_reminder_again()
     {
         using var coordinator = CreateCoordinator(TimeSpan.FromSeconds(2));
         coordinator.Start();
@@ -102,7 +102,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void An_unlock_while_a_reminder_is_open_raises_it_instead_of_opening_a_second()
+    public void R012_An_unlock_while_a_reminder_is_open_raises_it_instead_of_opening_a_second()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -116,7 +116,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Unlocks_are_ignored_before_Start()
+    public void R010_Unlocks_are_ignored_before_Start()
     {
         using var coordinator = CreateCoordinator();
 
@@ -126,7 +126,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Dispose_unsubscribes_and_disposes_the_monitor()
+    public void R010_Dispose_unsubscribes_and_disposes_the_monitor()
     {
         var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -139,7 +139,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Dispose_stops_and_disposes_the_timer()
+    public void R021_Dispose_stops_and_disposes_the_timer()
     {
         var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -153,7 +153,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Dispose_is_idempotent()
+    public void R010_Dispose_is_idempotent()
     {
         var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -167,7 +167,7 @@ public class ReminderCoordinatorTests
     // ---------------------------------------------------------------- periodic reminders
 
     [Fact]
-    public void The_countdown_starts_with_the_app()
+    public void R020_The_countdown_starts_with_the_app()
     {
         using var coordinator = CreateCoordinator();
 
@@ -178,7 +178,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_tick_before_the_interval_shows_nothing()
+    public void R021_A_tick_before_the_interval_shows_nothing()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -190,7 +190,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_reminder_appears_once_the_interval_has_passed()
+    public void R021_The_reminder_appears_once_the_interval_has_passed()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -202,7 +202,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_periodic_reminder_repeats_every_interval()
+    public void R021_The_periodic_reminder_repeats_every_interval()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -222,7 +222,7 @@ public class ReminderCoordinatorTests
     /// subsequent tick would find a deadline still in the past and hammer BringToFront.
     /// </summary>
     [Fact]
-    public void A_due_reminder_over_an_open_one_raises_it_and_still_re_arms()
+    public void R023_A_due_reminder_over_an_open_one_raises_it_and_still_re_arms()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -239,7 +239,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void An_unlock_restarts_the_countdown()
+    public void R024_An_unlock_restarts_the_countdown()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -256,7 +256,7 @@ public class ReminderCoordinatorTests
     /// shown along the way is the unlock reminder, not a periodic one.
     /// </summary>
     [Fact]
-    public void A_lock_longer_than_the_interval_postpones_the_reminder_to_a_full_interval_after_unlock()
+    public void R024_A_lock_longer_than_the_interval_postpones_the_reminder_to_a_full_interval_after_unlock()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -283,7 +283,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Many_lock_unlock_cycles_leave_a_full_interval_after_the_last_unlock()
+    public void R024_Many_lock_unlock_cycles_leave_a_full_interval_after_the_last_unlock()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -302,7 +302,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_lock_stops_the_timer_and_clears_the_countdown()
+    public void R024_A_lock_stops_the_timer_and_clears_the_countdown()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -314,7 +314,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_lock_never_shows_a_reminder_by_itself()
+    public void R016_A_lock_never_shows_a_reminder_by_itself()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -325,7 +325,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_disabled_feature_never_shows_a_periodic_reminder_and_runs_no_timer()
+    public void R027_A_disabled_feature_never_shows_a_periodic_reminder_and_runs_no_timer()
     {
         using var coordinator = CreateCoordinator(settings: new ReminderSettings(false, 30));
         coordinator.Start();
@@ -340,7 +340,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>The two switches are independent; this is one half of that, the other is below.</summary>
     [Fact]
-    public void Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone()
+    public void R027_Switching_the_periodic_reminder_off_leaves_the_unlock_reminder_alone()
     {
         using var coordinator = CreateCoordinator(settings: new ReminderSettings(false, 30));
         coordinator.Start();
@@ -352,7 +352,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Applying_settings_restarts_the_countdown_from_zero()
+    public void R026_Applying_settings_restarts_the_countdown_from_zero()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -365,7 +365,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Switching_the_feature_off_stops_the_timer()
+    public void R026_Switching_the_feature_off_stops_the_timer()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -376,7 +376,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Switching_the_feature_back_on_starts_the_timer_again()
+    public void R026_Switching_the_feature_back_on_starts_the_timer_again()
     {
         using var coordinator = CreateCoordinator(settings: new ReminderSettings(false, 30));
         coordinator.Start();
@@ -388,7 +388,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_countdown_change_event_fires_on_every_tick_and_on_every_reset()
+    public void R021_The_countdown_change_event_fires_on_every_tick_and_on_every_reset()
     {
         using var coordinator = CreateCoordinator();
 
@@ -405,7 +405,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>A periodic reminder counts as shown, so an unlock right after it does not stack.</summary>
     [Fact]
-    public void An_unlock_just_after_a_periodic_reminder_is_debounced()
+    public void R011_An_unlock_just_after_a_periodic_reminder_is_debounced()
     {
         using var coordinator = CreateCoordinator(TimeSpan.FromSeconds(2));
         coordinator.Start();
@@ -428,7 +428,7 @@ public class ReminderCoordinatorTests
     };
 
     [Fact]
-    public void The_unlock_reminder_says_the_unlock_message()
+    public void R010_The_unlock_reminder_says_the_unlock_message()
     {
         using var coordinator = CreateCoordinator(settings: TwoMessages);
         coordinator.Start();
@@ -439,7 +439,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_periodic_reminder_says_the_periodic_message()
+    public void R021_The_periodic_reminder_says_the_periodic_message()
     {
         using var coordinator = CreateCoordinator(settings: TwoMessages);
         coordinator.Start();
@@ -452,7 +452,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>The other half of independence: the unlock switch alone silences the unlock.</summary>
     [Fact]
-    public void Switching_the_unlock_reminder_off_shows_nothing_on_unlock()
+    public void R013_Switching_the_unlock_reminder_off_shows_nothing_on_unlock()
     {
         using var coordinator = CreateCoordinator(
             settings: ReminderSettings.Default with { UnlockEnabled = false });
@@ -469,7 +469,7 @@ public class ReminderCoordinatorTests
     /// next reminder is still a whole interval after the unlock.
     /// </summary>
     [Fact]
-    public void Switching_the_unlock_reminder_off_still_restarts_the_countdown_on_unlock()
+    public void R013_Switching_the_unlock_reminder_off_still_restarts_the_countdown_on_unlock()
     {
         using var coordinator = CreateCoordinator(
             settings: ReminderSettings.Default with { UnlockEnabled = false });
@@ -491,7 +491,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>A reminder that is not going to appear has no reason to walk the registry.</summary>
     [Fact]
-    public void An_unlock_with_the_unlock_reminder_off_does_not_read_the_activity_monitor()
+    public void R013_An_unlock_with_the_unlock_reminder_off_does_not_read_the_activity_monitor()
     {
         using var coordinator = CreateCoordinator(
             settings: ReminderSettings.Default with { UnlockEnabled = false });
@@ -508,7 +508,7 @@ public class ReminderCoordinatorTests
     /// the switch is off. The window is still there; it is simply not touched.
     /// </summary>
     [Fact]
-    public void An_unlock_with_the_unlock_reminder_off_leaves_an_open_reminder_where_it_is()
+    public void R013_An_unlock_with_the_unlock_reminder_off_leaves_an_open_reminder_where_it_is()
     {
         using var coordinator = CreateCoordinator(
             settings: ReminderSettings.Default with { UnlockEnabled = false });
@@ -522,7 +522,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void With_both_reminders_off_nothing_ever_appears_and_no_timer_runs()
+    public void R027_With_both_reminders_off_nothing_ever_appears_and_no_timer_runs()
     {
         using var coordinator = CreateCoordinator(
             settings: new ReminderSettings(false, 30) { UnlockEnabled = false });
@@ -546,7 +546,7 @@ public class ReminderCoordinatorTests
     /// either way.
     /// </summary>
     [Fact]
-    public void A_periodic_reminder_due_over_the_unlock_reminder_raises_it_without_changing_its_text()
+    public void R023_A_periodic_reminder_due_over_the_unlock_reminder_raises_it_without_changing_its_text()
     {
         using var coordinator = CreateCoordinator(settings: TwoMessages);
         coordinator.Start();
@@ -560,7 +560,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Applying_settings_that_switch_the_unlock_reminder_off_takes_effect_on_the_next_unlock()
+    public void R013_Applying_settings_that_switch_the_unlock_reminder_off_takes_effect_on_the_next_unlock()
     {
         using var coordinator = CreateCoordinator(TimeSpan.Zero);
         coordinator.Start();
@@ -576,7 +576,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Applying_new_messages_takes_effect_on_the_next_reminder()
+    public void R044_Applying_new_messages_takes_effect_on_the_next_reminder()
     {
         using var coordinator = CreateCoordinator(TimeSpan.Zero);
         coordinator.Start();
@@ -598,7 +598,7 @@ public class ReminderCoordinatorTests
     // ------------------------------------------------------- pausing for what the user is doing
 
     [Fact]
-    public void A_due_reminder_is_held_back_while_the_microphone_is_live()
+    public void R030_A_due_reminder_is_held_back_while_the_microphone_is_live()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -614,7 +614,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>The retry gap, not another whole interval: the point is to come back soon.</summary>
     [Fact]
-    public void A_held_back_reminder_is_looked_at_again_after_the_retry_gap()
+    public void R033_A_held_back_reminder_is_looked_at_again_after_the_retry_gap()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -628,7 +628,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_reminder_stays_held_back_for_as_long_as_the_call_lasts()
+    public void R033_A_reminder_stays_held_back_for_as_long_as_the_call_lasts()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -650,7 +650,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_reminder_appears_on_the_first_retry_after_the_call_ends()
+    public void R033_The_reminder_appears_on_the_first_retry_after_the_call_ends()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -675,7 +675,7 @@ public class ReminderCoordinatorTests
     /// back to normal, and a countdown left on 20 seconds would fire again immediately.
     /// </summary>
     [Fact]
-    public void The_full_interval_returns_once_a_held_back_reminder_has_been_shown()
+    public void R033_The_full_interval_returns_once_a_held_back_reminder_has_been_shown()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -692,7 +692,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_due_reminder_is_held_back_by_a_full_screen_application()
+    public void R031_A_due_reminder_is_held_back_by_a_full_screen_application()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -712,7 +712,7 @@ public class ReminderCoordinatorTests
     /// the postponement -- so the reminder appeared in the middle of the call after all.
     /// </summary>
     [Fact]
-    public void A_retry_gap_longer_than_the_interval_is_not_mistaken_for_a_clock_jump()
+    public void R025_A_retry_gap_longer_than_the_interval_is_not_mistaken_for_a_clock_jump()
     {
         var settings = new ReminderSettings(true, ReminderSettings.MinIntervalMinutes)
         {
@@ -738,7 +738,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void The_unlock_reminder_is_skipped_while_the_microphone_is_live()
+    public void R014_The_unlock_reminder_is_skipped_while_the_microphone_is_live()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -756,7 +756,7 @@ public class ReminderCoordinatorTests
     /// reminder is already coming, and a one-shot retry beside it would be a second deadline.
     /// </summary>
     [Fact]
-    public void A_skipped_unlock_reminder_still_leaves_a_full_interval_running()
+    public void R014_A_skipped_unlock_reminder_still_leaves_a_full_interval_running()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -775,7 +775,7 @@ public class ReminderCoordinatorTests
     /// behaviour this app has -- would go missing on exactly the event it exists for.
     /// </summary>
     [Fact]
-    public void An_unlock_still_shows_its_reminder_when_windows_says_the_user_is_away()
+    public void R015_An_unlock_still_shows_its_reminder_when_windows_says_the_user_is_away()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -793,7 +793,7 @@ public class ReminderCoordinatorTests
     /// a stale reason would sit in the tooltip beside a countdown that is actually running.
     /// </summary>
     [Fact]
-    public void An_unlock_forgets_that_a_reminder_was_being_held_back()
+    public void R035_An_unlock_forgets_that_a_reminder_was_being_held_back()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -811,7 +811,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void A_lock_forgets_that_a_reminder_was_being_held_back()
+    public void R035_A_lock_forgets_that_a_reminder_was_being_held_back()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -827,7 +827,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Applying_settings_forgets_that_a_reminder_was_being_held_back()
+    public void R035_Applying_settings_forgets_that_a_reminder_was_being_held_back()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -843,7 +843,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void With_both_pauses_switched_off_nothing_is_ever_held_back()
+    public void R032_With_both_pauses_switched_off_nothing_is_ever_held_back()
     {
         var settings = ReminderSettings.Default with
         {
@@ -867,7 +867,7 @@ public class ReminderCoordinatorTests
     /// at is not worth a walk through the registry.
     /// </summary>
     [Fact]
-    public void With_both_pauses_switched_off_the_monitor_is_never_read()
+    public void R032_With_both_pauses_switched_off_the_monitor_is_never_read()
     {
         var settings = ReminderSettings.Default with
         {
@@ -896,7 +896,7 @@ public class ReminderCoordinatorTests
     /// would be 1800 registry walks per reminder.
     /// </summary>
     [Fact]
-    public void Idle_ticks_refresh_the_reading_at_the_refresh_interval_not_on_every_tick()
+    public void R034_Idle_ticks_refresh_the_reading_at_the_refresh_interval_not_on_every_tick()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -917,7 +917,7 @@ public class ReminderCoordinatorTests
     /// arrive, and the feature would be invisible until the interval happened to elapse.
     /// </summary>
     [Fact]
-    public void Joining_a_call_shows_up_in_the_tooltip_without_waiting_for_a_reminder()
+    public void R034_Joining_a_call_shows_up_in_the_tooltip_without_waiting_for_a_reminder()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -932,7 +932,7 @@ public class ReminderCoordinatorTests
     }
 
     [Fact]
-    public void Leaving_a_call_clears_the_tooltip_without_waiting_for_a_reminder()
+    public void R034_Leaving_a_call_clears_the_tooltip_without_waiting_for_a_reminder()
     {
         using var coordinator = CreateCoordinator();
         coordinator.Start();
@@ -951,7 +951,7 @@ public class ReminderCoordinatorTests
 
     /// <summary>Switching a pause on has to show in the tooltip at once, not a refresh later.</summary>
     [Fact]
-    public void Applying_settings_takes_a_fresh_reading_on_the_next_tick()
+    public void R035_Applying_settings_takes_a_fresh_reading_on_the_next_tick()
     {
         var off = ReminderSettings.Default with
         {

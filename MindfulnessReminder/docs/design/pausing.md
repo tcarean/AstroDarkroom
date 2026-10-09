@@ -50,7 +50,7 @@ Rules that are easy to break:
 - **`IntervalSchedule` compares the backwards-clock guard against `_armedSpan`, not against
   the interval.** A retry gap longer than the interval -- 300 s against a 1-minute interval --
   would otherwise look like a clock jump, reset the schedule and throw the postponement away.
-  `A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump` pins it.
+  `R025_A_postponement_longer_than_the_interval_is_not_read_as_a_clock_jump` pins it.
 - **The activity monitor is read when a reminder is due, once per retry, and otherwise once
   every `DefaultActivityRefresh` (10 s) to keep the tooltip current.** Never on the
   one-second tick: that would be 1800 registry walks per reminder. The idle refresh is not

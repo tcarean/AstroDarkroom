@@ -13,7 +13,7 @@
 
 `<Version>` in `Directory.Build.props` is the single source of truth. `Version.cs` does
 **not** hardcode it — `VersionInfo.Value` reads `AssemblyInformationalVersion` back out of
-the assembly and trims any `+sourcerevision` suffix. `No_project_overrides_the_shared_version`
+the assembly and trims any `+sourcerevision` suffix. `R090_No_project_overrides_the_shared_version`
 fails if a `<Version>` appears in any `.csproj`.
 
 See ADR 0011.

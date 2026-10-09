@@ -294,7 +294,7 @@ next to `<Copyright>`. `src/MindfulnessReminder.Core/Version.cs` does **not** ha
 `VersionInfo.Value` reads the assembly's `AssemblyInformationalVersion`, which MSBuild derives
 from `<Version>`, and trims the `+sourcerevision` suffix the build appends. Windows reads the
 same property for the executable's file version. Don't reintroduce a literal, and don't add a
-`<Version>` to a project file: `No_project_overrides_the_shared_version` fails if you do.
+`<Version>` to a project file: `R090_No_project_overrides_the_shared_version` fails if you do.
 
 **The version is bumped manually**, per feature or fix, with the increment chosen deliberately.
 **Never bump it as a side effect of another change.** If a change looks like it warrants a bump,

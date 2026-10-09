@@ -33,14 +33,14 @@ public class ReminderSettingsStoreTests
     private RegistrySettingsStore Store() => new(_registry);
 
     [Fact]
-    public void The_defaults_are_on_and_thirty_minutes()
+    public void R051_The_defaults_are_on_and_thirty_minutes()
     {
         Assert.True(ReminderSettings.Default.PeriodicEnabled);
         Assert.Equal(30, ReminderSettings.Default.IntervalMinutes);
     }
 
     [Fact]
-    public void An_empty_registry_gives_the_defaults()
+    public void R051_An_empty_registry_gives_the_defaults()
     {
         Assert.Equal(ReminderSettings.Default, Store().Load());
     }
@@ -50,7 +50,7 @@ public class ReminderSettingsStoreTests
     [InlineData(false, 30)]
     [InlineData(true, ReminderSettings.MinIntervalMinutes)]
     [InlineData(true, ReminderSettings.MaxIntervalMinutes)]
-    public void Settings_round_trip(bool enabled, int minutes)
+    public void R052_Settings_round_trip(bool enabled, int minutes)
     {
         var settings = new ReminderSettings(enabled, minutes);
 
@@ -60,7 +60,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void The_settings_live_under_the_key_the_autostart_marker_already_uses()
+    public void R050_The_settings_live_under_the_key_the_autostart_marker_already_uses()
     {
         Store().Save(new ReminderSettings(true, 15));
 
@@ -70,7 +70,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void Saving_the_settings_does_not_disturb_the_autostart_marker()
+    public void R050_Saving_the_settings_does_not_disturb_the_autostart_marker()
     {
         _registry.SetString(
             StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName, "1");
@@ -84,7 +84,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void A_corrupt_interval_falls_back_to_the_default_rather_than_failing()
+    public void R051_A_corrupt_interval_falls_back_to_the_default_rather_than_failing()
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath, RegistrySettingsStore.IntervalValueName, "half an hour");
@@ -93,7 +93,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void An_unrecognised_enabled_flag_falls_back_to_the_default()
+    public void R051_An_unrecognised_enabled_flag_falls_back_to_the_default()
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath, RegistrySettingsStore.EnabledValueName, "yes please");
@@ -108,7 +108,7 @@ public class ReminderSettingsStoreTests
     [InlineData("0", ReminderSettings.MinIntervalMinutes)]
     [InlineData("-5", ReminderSettings.MinIntervalMinutes)]
     [InlineData("99999", ReminderSettings.MaxIntervalMinutes)]
-    public void An_out_of_range_interval_in_the_registry_is_clamped(string stored, int expected)
+    public void R051_An_out_of_range_interval_in_the_registry_is_clamped(string stored, int expected)
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath, RegistrySettingsStore.IntervalValueName, stored);
@@ -117,7 +117,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void Saving_clamps_too_so_the_registry_never_holds_an_impossible_value()
+    public void R051_Saving_clamps_too_so_the_registry_never_holds_an_impossible_value()
     {
         Store().Save(new ReminderSettings(true, 0));
 
@@ -128,7 +128,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void The_enabled_flag_survives_a_disabled_save()
+    public void R052_The_enabled_flag_survives_a_disabled_save()
     {
         Store().Save(new ReminderSettings(false, 30));
 
@@ -140,7 +140,7 @@ public class ReminderSettingsStoreTests
     [InlineData(ReminderSettings.MinIntervalMinutes, true)]
     [InlineData(ReminderSettings.MaxIntervalMinutes, true)]
     [InlineData(ReminderSettings.MaxIntervalMinutes + 1, false)]
-    public void The_dialog_range_check_matches_the_clamp(int minutes, bool inRange)
+    public void R043_The_dialog_range_check_matches_the_clamp(int minutes, bool inRange)
     {
         Assert.Equal(inRange, ReminderSettings.IsIntervalInRange(minutes));
     }
@@ -148,7 +148,7 @@ public class ReminderSettingsStoreTests
     // ------------------------------------------------------------------- the two pauses
 
     [Fact]
-    public void Both_pauses_and_the_retry_gap_survive_a_round_trip()
+    public void R052_Both_pauses_and_the_retry_gap_survive_a_round_trip()
     {
         var store = new RegistrySettingsStore(_registry);
 
@@ -166,7 +166,7 @@ public class ReminderSettingsStoreTests
 
     /// <summary>An upgrade from a version that never wrote them: both on, 20 seconds.</summary>
     [Fact]
-    public void A_registry_without_the_pause_values_lands_on_the_defaults()
+    public void R051_A_registry_without_the_pause_values_lands_on_the_defaults()
     {
         var store = new RegistrySettingsStore(_registry);
         store.Save(new ReminderSettings(true, 30));
@@ -186,7 +186,7 @@ public class ReminderSettingsStoreTests
     [InlineData("yes")]
     [InlineData("")]
     [InlineData("2")]
-    public void A_hand_edited_pause_flag_falls_back_to_the_default(string written)
+    public void R051_A_hand_edited_pause_flag_falls_back_to_the_default(string written)
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath,
@@ -199,7 +199,7 @@ public class ReminderSettingsStoreTests
     [Theory]
     [InlineData("nonsense")]
     [InlineData("")]
-    public void A_corrupt_retry_gap_falls_back_to_the_default(string written)
+    public void R051_A_corrupt_retry_gap_falls_back_to_the_default(string written)
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath,
@@ -220,7 +220,7 @@ public class ReminderSettingsStoreTests
     [InlineData("1", ReminderSettings.MinRetrySeconds)]
     [InlineData("-40", ReminderSettings.MinRetrySeconds)]
     [InlineData("99999", ReminderSettings.MaxRetrySeconds)]
-    public void An_out_of_range_retry_gap_is_clamped(string written, int expected)
+    public void R051_An_out_of_range_retry_gap_is_clamped(string written, int expected)
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath,
@@ -231,7 +231,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void Saving_clamps_the_retry_gap_before_it_reaches_the_registry()
+    public void R051_Saving_clamps_the_retry_gap_before_it_reaches_the_registry()
     {
         var store = new RegistrySettingsStore(_registry);
 
@@ -245,7 +245,7 @@ public class ReminderSettingsStoreTests
     // ------------------------------------------------- the unlock switch and the two messages
 
     [Fact]
-    public void The_defaults_have_the_unlock_reminder_on_and_the_same_message_on_both()
+    public void R040_The_defaults_have_the_unlock_reminder_on_and_the_same_message_on_both()
     {
         Assert.True(ReminderSettings.Default.UnlockEnabled);
         Assert.Equal(ReminderSettings.DefaultMessage, ReminderSettings.Default.UnlockMessage);
@@ -253,7 +253,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void The_unlock_switch_and_both_messages_survive_a_round_trip()
+    public void R052_The_unlock_switch_and_both_messages_survive_a_round_trip()
     {
         var saved = new ReminderSettings(true, 30)
         {
@@ -269,7 +269,7 @@ public class ReminderSettingsStoreTests
 
     /// <summary>An upgrade from a build that never wrote them: on, and the old text on both.</summary>
     [Fact]
-    public void A_registry_without_the_unlock_values_lands_on_the_defaults()
+    public void R051_A_registry_without_the_unlock_values_lands_on_the_defaults()
     {
         Store().Save(new ReminderSettings(true, 30)
         {
@@ -293,7 +293,7 @@ public class ReminderSettingsStoreTests
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("\r\n")]
-    public void A_blank_message_in_the_registry_reads_as_the_default(string written)
+    public void R051_A_blank_message_in_the_registry_reads_as_the_default(string written)
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath, RegistrySettingsStore.PeriodicMessageValueName, written);
@@ -303,7 +303,7 @@ public class ReminderSettingsStoreTests
 
     /// <summary>Cut, not rejected: a hand-edited message cannot push the text into the Close button.</summary>
     [Fact]
-    public void An_over_long_message_in_the_registry_is_cut_at_the_limit()
+    public void R051_An_over_long_message_in_the_registry_is_cut_at_the_limit()
     {
         _registry.SetString(
             RegistrySettingsStore.KeyPath,
@@ -316,7 +316,7 @@ public class ReminderSettingsStoreTests
     }
 
     [Fact]
-    public void Saving_normalizes_the_messages_before_they_reach_the_registry()
+    public void R041_Saving_normalizes_the_messages_before_they_reach_the_registry()
     {
         Store().Save(new ReminderSettings(true, 30)
         {
@@ -337,14 +337,14 @@ public class ReminderSettingsStoreTests
     [InlineData("  Breathe  ", "Breathe")]
     [InlineData("one\ttwo", "one two")]
     [InlineData(null, "Ground yourself")]
-    public void Message_normalization_keeps_what_it_can(string? written, string expected)
+    public void R041_Message_normalization_keeps_what_it_can(string? written, string expected)
     {
         Assert.Equal(expected, ReminderSettings.NormalizeMessage(written));
     }
 
     /// <summary>A message cut at the limit does not end in the space it was cut after.</summary>
     [Fact]
-    public void A_message_cut_at_the_limit_is_trimmed_after_the_cut()
+    public void R041_A_message_cut_at_the_limit_is_trimmed_after_the_cut()
     {
         var written = new string('x', ReminderSettings.MaxMessageLength - 1) + " yyyy";
 
@@ -359,20 +359,20 @@ public class ReminderSettingsStoreTests
     [InlineData("   ", false)]
     [InlineData("x", true)]
     [InlineData("  x  ", true)]
-    public void The_dialog_message_check_refuses_blank_and_accepts_text(string? message, bool acceptable)
+    public void R043_The_dialog_message_check_refuses_blank_and_accepts_text(string? message, bool acceptable)
     {
         Assert.Equal(acceptable, ReminderSettings.IsMessageAcceptable(message));
     }
 
     [Fact]
-    public void The_dialog_message_check_matches_the_length_limit()
+    public void R043_The_dialog_message_check_matches_the_length_limit()
     {
         Assert.True(ReminderSettings.IsMessageAcceptable(new string('x', ReminderSettings.MaxMessageLength)));
         Assert.False(ReminderSettings.IsMessageAcceptable(new string('x', ReminderSettings.MaxMessageLength + 1)));
     }
 
     [Fact]
-    public void The_unlock_switch_is_written_as_the_same_one_and_zero_strings_as_the_others()
+    public void R050_The_unlock_switch_is_written_as_the_same_one_and_zero_strings_as_the_others()
     {
         Store().Save(new ReminderSettings(true, 30) { UnlockEnabled = false });
 
@@ -383,7 +383,7 @@ public class ReminderSettingsStoreTests
 
     /// <summary>Strings, not DWORDs, so IRegistryStore stays the four methods it had.</summary>
     [Fact]
-    public void The_pause_flags_are_written_as_the_same_one_and_zero_strings_as_the_others()
+    public void R050_The_pause_flags_are_written_as_the_same_one_and_zero_strings_as_the_others()
     {
         var store = new RegistrySettingsStore(_registry);
 

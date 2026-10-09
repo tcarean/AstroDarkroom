@@ -32,8 +32,8 @@ for a moment after an unlock -- long enough to swallow the unlock reminder" (`CL
   covers presentation settings and cannot be told apart from them; both suppress, so it is named
   after "the commoner cause".
 - With `PauseWhileFullScreen` on, `SuppressionPolicy` holds a reminder back for `FullScreen`
-  and `Presenting` only. `UserAway` must not suppress; `QuietHours` (Focus Assist) is mapped and
-  unused; `Unknown` holds nothing back, so neither a state a future Windows adds nor a shell that
+  and `Presenting` only. `UserAway` must not suppress; `QuietHours` (which the sources call Focus Assist) is
+  mapped and unused; `Unknown` holds nothing back, so neither a state a future Windows adds nor a shell that
   will not answer can switch the reminder off.
 - If the reading ever proves lossy on borderless-fullscreen windows, the fallback is
   `GetForegroundWindow` plus `GetWindowRect` against the monitor bounds, and `--detect` is how
@@ -59,8 +59,11 @@ for a moment after an unlock -- long enough to swallow the unlock reminder" (`CL
 
 - The unlock reminder appears even while the shell still answers `QUNS_NOT_PRESENT` just after
   an unlock.
-- Focus Assist does not hold a reminder back: `QuietHours` is "Read and mapped, but nothing acts
-  on it yet" (the enum's comment).
+- `QuietHours` does not hold a reminder back: it is "Read and mapped, but nothing acts on it
+  yet" (the enum's comment). The sources call it Focus Assist, and no reading is on record:
+  Microsoft documents `QUNS_QUIET_TIME` as the first hour after a user's first sign-in that
+  follows an upgrade or a clean installation. Whether Focus Assist reads as 6 is for a
+  `--detect` run with Focus Assist switched on to settle (the docs-health report of 2026-10-09).
 - Guards: `UserNotificationStateTests` (each documented state's mapping, anything outside the
   documented range read as `Unknown`, the constants equal to the Windows header's),
   `SuppressionPolicyTests` (`FullScreen` and `Presenting` hold a reminder back; `UserAway`,

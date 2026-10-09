@@ -908,12 +908,195 @@ the move of three properties contradicts; say so). Commit 2.
 
 ## What deviated
 
-(Filled by the implementing session at wrap-up.)
+Implemented on 2026-10-09 in one session, the one that wrote the plan, after the owner approved
+it and switched the session's model; on `claude/Adopt-the-starter-kit-process`, in three
+commits, one per layer, each with the gate green.
+
+- **The format pass also dropped a byte order mark.** Rewriting `App.xaml.cs` to remove its two
+  unused usings saved it as UTF-8 without the mark it had, as `charset = utf-8` asks; it was the
+  only source file with one (`MindfulnessReminder.sln` keeps its own, which `dotnet format` does
+  not touch). The plan made any format change other than a removed using a checkpoint; this one
+  changes no character of the file's text, so it was kept and recorded in ADR 0003 and here
+  rather than stopping the task. Putting the mark back is one byte, if the owner wants it.
+- **The gate takes about 20 s**, not 30: 18 to 19 s measured. `CLAUDE.md` and the README say
+  so.
+- **The settings comment** is the kit's text with "the project's" made "MindfulnessReminder's",
+  `ADR 0002` added to its last citation and one sentence on the two `allow` entries of the
+  project's own, rather than ImageVisualCompare's text, whose last sentence lost its verb.
+- **Documents were written with the Write tool, not shell heredocs.** The shell this session
+  runs through passes the command through a Windows layer that expands `%...%` pairs
+  (`%LOCALAPPDATA%` in the README's deployment note, Python's `%` formatting), mangles quotes
+  after a backslash and collapses a doubled backslash; three heredocs failed to parse and did
+  nothing. No file was damaged.
+- **The design notes' Covers sentences name only what each note describes** (the kit's ADR
+  0032), which differs from the table in section 2.3: `pausing.md` leaves out
+  `ActivitySnapshot.cs`; `two-reminders.md` adds `RegistrySettingsStore.cs` ("the registry goes
+  through it silently") and `BreakWindow.xaml.cs` (`OnSourceInitialized`); `windows.md` leaves
+  out `AboutWindow.xaml.cs` and `WindowPlacement.cs`; `dark-theme.md` adds
+  `SettingsWindow.xaml.cs` (`OnSourceInitialized`); `settings-storage.md` leaves out
+  `ISettingsStore.cs` and `WindowsRegistryStore.cs` and adds `SettingsWindow.xaml.cs` (the
+  dialog that refuses); `code-map.md` names the two code folders, the test csproj and
+  `Directory.Build.props`, since its test line describes the project, not each file. A script cut
+  the nine notes out of the old `CLAUDE.md` and confirmed that, pointers aside, they are its
+  lines unchanged, and that the lines in no note are exactly the title and opening paragraphs,
+  "Conventions", "Build & test" and "Committing". The pointers are "See ADR NNNN." sentences
+  after the paragraphs; `code-map.md`'s header also says which note each section it names in
+  quotation marks is now. Two moved phrases the code had outgrown before today carry a pointer
+  beside them: the dark theme "merged into `SettingsWindow` **alone**" (`AboutWindow` too since
+  432edfd, ADR 0030), and the capture record under `HKCU` (`HKLM` is read too, ADR 0016).
+- **`CLAUDE.md` is 151 lines.** Two rule names differ from Appendix A so that `docs/skills.md`
+  can cite them: "The reminder window is light and swallows Enter" and "Settings are strings,
+  read forgivingly". Its Commands keep the one fact of "Build & test" no other line held: neither
+  switch claims the single-instance mutex.
+- **Requirements: 55 rows, as planned.** Checking them against the code changed three details
+  of the plan's sketch: R-002 is one copy per Windows session (the mutex is `Local\`), R-030
+  reads both `HKEY_CURRENT_USER` and `HKEY_LOCAL_MACHINE`, and R-070's clamp keeps both the left
+  and the top edge inside the work area.
+- **ADRs 0001 to 0006 and 0034 were written by this session, 0007 to 0033 by three
+  subagents** from the plan's table, the old `CLAUDE.md` and README, the code and `git log`,
+  then read against their sources by this session. No row was merged or split; where two rows overlap, the ADRs cite each
+  other.
+- **ADR 0034 was added, so there are 34 ADRs, 28 of them retroactive.** The subagent that wrote
+  ADR 0007 to ADR 0015 found one decision of the old `CLAUDE.md` that no row held: `README.md`
+  as the user documentation and its single source ("Structure"). The plan says such a decision
+  is added at the end; `CLAUDE.md`'s rule "User documentation lives in `README.md`, and only
+  there" cites it.
+- **ADR 0004 is dated from the right commit.** It said `CLAUDE.md` had carried the English
+  convention since the base version; `CLAUDE.md` was first written in b6554d5 (2026-09-08), and
+  the README has been English since 61a0121. Corrected before commit 2. The plan's decision 4
+  says the same and is left as approved.
+- **176 test methods renamed for 42 rows; 13 rows stay `accepted`**: R-001, R-002, R-042,
+  R-045, R-063, R-071 to R-076, R-080 and R-082, all in the App layer, which has no unit tests
+  (ADR 0008). A script applied the plan's mapping, which covered every test method once; the
+  test files' diff is the 176 renames and nothing else. `RepoInvariantTests` has seven tests and
+  fails, as it should, when a tested row is set back to `accepted` (tried on R-024, then
+  restored). The suite is 222 tests.
+- **The renamed tests are named in nine documents**, not only in the five sentences the plan
+  listed: ADR 0011, 0013, 0021 and 0025, four design notes, and the README's "Versioning", which
+  names `No_project_overrides_the_shared_version`. All nine carry the new names; that sentence
+  is the one README change besides the development section and the gate sentence.
+- **The application was launched once** from the worktree, with `--preview "Adopted the kit"`:
+  the light card, the dot, the text and the Close button, 440 x 260 at 740, 390 on a 1920 x 1040
+  working area, R-070's own example. Only that window was captured.
+- **Findings, left for tasks of their own** (the ADRs state what the code does, and say so):
+  - comments that describe an earlier state of the code: the summary of `IActivityMonitor`
+    (read "ONLY" when a reminder is due; the idle refresh reads it every 10 s, ADR 0019), the
+    summary of `RegistrySettingsStore` ("Both values"; there are eight, ADR 0027), the header of
+    `DarkTheme.xaml` (merged into `SettingsWindow` "ALONE"; About too, ADR 0030), the comment on
+    `ReminderSettings.MaxMessageLength` (50 characters are "two lines"; they can be three, which
+    the `Viewbox` shrinks, ADR 0024), the comment on `IntervalSchedule.Restart` ("the only place
+    a deadline is ever set"; `Postpone` sets one too, ADR 0014), the summary of `IPeriodicTimer`
+    ("The one timer the whole app owns"; the presenter and `--detect` have their own, ADR 0012),
+    the comment on the fallback in `LicenseInfo` ("the csproj is the truth"; it is
+    `Directory.Build.props`, ADR 0010), the summary of the backwards-jump test in
+    `IntervalScheduleTests` ("a whole interval"; the armed span, ADR 0013), and the App csproj's
+    "Windows Forms purely for NotifyIcon" (`BreakWindow` also takes `Screen` from it, ADR 0007);
+  - the README: the 10 s refresh is "200× cheaper than every tick" (ten times fewer reads, ADR
+    0019); the `--detect 60` example pads its columns, starts at 0:00 and counts 61 readings, where
+    the code pads nothing and takes its first reading after one second (R-081); the capture
+    record is named under `HKCU` only (`HKLM` is read too, ADR 0016);
+  - `ReminderSettings.IsRetryInRange` has no test, although R-043 is `implemented` through the
+    tests of the interval and message checks;
+  - 2be5361 also moved the default message within the window (centred between the dot and the
+    Close button), where the sources say it is drawn "exactly as before"; not compared on screen
+    with an older build (ADR 0024);
+  - three small choices are explained only in code comments and have no ADR: the per-monitor DPI
+    mode set before any window exists, `EnableVisualStyles` for the tray menu, and hiding the
+    tray icon before disposing it;
+  - a few small rules sit in the App with no test (ADR 0008 lists them).
+- **The audit corrected six statements of this task's own text**: ADR 0001 named ADR 0007 to
+  ADR 0033 as the retroactive ones (0034 now); `docs/design/README.md` said the notes were moved
+  unchanged without the bracketed pointers; `docs/skills.md` counted 215 tests (222); ADR 0005
+  said every test runs on fakes (the seven `RepoInvariantTests` read the documents); and R-031
+  and ADR 0017 called `QUNS_QUIET_TIME` Focus Assist, which no reading shows and Microsoft's
+  documentation contradicts: R-031 no longer says it, ADR 0017 says it is unverified. The README
+  still says it; that is gap 2 of the docs-health report below.
+- **The audit ran before commit 3**, so the three commits the owner asked for carry it.
 
 ## The docs-health report of 2026-10-09
 
-(Filled by the implementing session: the verdict, the gaps table, the top three, what is good.
-None of the gaps is closed in this task; each is a task of its own, `/docs-health` step 4.)
+Run once, before commit 3, through `general-purpose` with the text of
+`.claude/agents/docs-auditor.md` (the agent type registers only at the next session start). Its
+list of files opened holds nothing under `src/` and no test source; the audit is valid. The
+small change it planned from the docs alone: a third pause, "Pause while Focus Assist is on",
+behind its own switch.
+
+Verdict: **mostly**. From the docs alone a fresh model understands the project and can place
+every file of that change; it cannot write the first test without opening the test fakes, and
+the change rests on a claim no document shows was measured.
+
+Gaps (what is missing, where it should go, effort):
+
+1. How the tests are built: how `ReminderCoordinator` is constructed with its fakes, how a test
+   raises an unlock, ticks the timer, moves the clock, sets an `ActivitySnapshot` and reads what
+   the presenter was asked; the signatures of `SuppressionPolicy.Evaluate`, `ActivitySnapshot`,
+   `DetectionLog.Render` and `WindowPlacement.CenterIn`. A new note in `docs/design/` whose
+   Covers names `ReminderCoordinatorTests.cs` and `FakeRegistryStore.cs`, pointed to from
+   `docs/skills.md` (/new-feature step 2). An hour.
+2. No reading shows that Focus Assist is `QUNS_QUIET_TIME` (6); Microsoft documents that state as
+   the first hour after a first sign-in following an upgrade. A `--detect 60` run while switching
+   Focus Assist on and off, recorded as a dated note in ADR 0017; the README corrected if the
+   claim is wrong. Minutes, a session if it is wrong. (This task removed the claim from R-031 and
+   marked it unverified in ADR 0017; the README still makes it.)
+3. Which sentences of an `implemented` row a test proves: R-005, R-030, R-031, R-040, R-043, R-044,
+   R-070 and R-081 hold App-only parts no test covers, and R-043's retry check
+   (`IsRetryInRange`) has no test at all. Split each into a Core `implemented` row and an App
+   `accepted` row; add the missing retry test. `docs/requirements.md`, an hour.
+4. Where the App's small rules live is stated two ways: `CLAUDE.md` "Layout" says the App decides
+   nothing, ADR 0008 lists four exceptions and misses two more (the tray item's click rule, ADR
+   0028; the greying in Settings). `CLAUDE.md`, a dated note in ADR 0008. Minutes.
+5. How to look at a change "in the copy in the tray" (`docs/skills.md`) while the owner's
+   auto-started copy holds `Local\MindfulnessReminder.SingleInstance`, so a worktree build exits
+   silently (R-002): exit the owner's copy, or ask first. `docs/skills.md`. Minutes.
+6. Known errors with no follow-up: the README's "200× cheaper", and the stale comments ADR 0019
+   and ADR 0027 record. The README; this plan's findings list (they are under "What deviated").
+   Minutes.
+7. This plan's "What deviated" was still empty when the audit ran (34 ADRs, the Covers lists, the
+   bracketed pointers in three "moved unchanged" notes). Filled at wrap-up, above. Minutes.
+8. 27 of the 55 rows have no `Example:` with numbers; it matters for R-034 (its ten seconds are
+   tested as 10 or 11 reads in 100 idle ticks, a bound only ADR 0019 gives), R-082, R-032 (both
+   conditions at once) and R-005 (a click per status). `docs/requirements.md`, an hour.
+9. The design notes repeat their ADRs nearly paragraph by paragraph (`periodic-reminder.md`
+   against ADR 0012 to 0014, `tray-tooltip.md` against ADR 0025), against the kit's rule "Design
+   notes"; ADR 0001 and `docs/design/README.md` already defer it. `docs/design/`, a session.
+10. Two `RepoInvariantTests` rules are stated only in this plan: `Claude_md_stays_short` (200
+    lines) and `The_design_notes_have_their_index`. `CLAUDE.md` "Style" or the README's
+    "Development". Minutes.
+11. "Eight" settings values is written in four places (the `CLAUDE.md` rule "Settings are strings,
+    read forgivingly", R-050, `settings-storage.md`, ADR 0027), so a new setting edits all four.
+    Drop the count from `CLAUDE.md`. Minutes.
+12. Dated counts went stale with layer 3: `docs/skills.md` /mutate said 215 tests, and ADR 0005
+    said every test runs on fakes. (Both corrected in this task.)
+13. The Settings window's layout: whether it grows with a new row, and whether the greying is
+    bound in XAML or set in code. `docs/design/windows.md`. Minutes.
+14. `CLAUDE.md` "Workflow" repeats `docs/skills.md` (/wrap-up step 9, /release step 5).
+    `docs/skills.md` only. Minutes.
+
+Top three, in the auditor's words: no document says how to build or drive the coordinator's
+fakes, so the first failing test of any change needs the code; the Focus Assist change depends
+entirely on `QUNS_QUIET_TIME` meaning Focus Assist, which three documents assert with no reading
+on record; and a reader cannot tell which sentences a green suite proves, or where the App-side
+rules live.
+
+Guesses it made (each a gap by definition), in short: that the plan's appendices are what was
+applied; how `RepoInvariantTests` reads the IDs and the status column; that the moved notes
+differ only by pointers; the signature of `IsMessageAcceptable`; how `--preview` collects its
+text; whether the greying is bound or coded; how the presenter keeps the text of a window still
+in its delay; and, for the Focus Assist change, that the adapter needs no change, where the check
+and its precedence go in `SuppressionPolicy`, that `PausesForAnything` must gain the third
+switch, the names, that the tooltip's length test covers the new reason, which tests a default of
+"on" would break, how the fake reports quiet time, where the checkbox goes, and how to see the
+tray copy while the owner's holds the mutex.
+
+What is good: requirements and tests match both ways (42 `implemented` rows, each with an `R###_`
+test; 13 `accepted` rows, none with one; no test names an unknown ID), and the core rows' examples
+check by hand (R-024, R-025, R-033, R-070, R-081); the ADRs name members, constants, the
+alternatives, the guards and how to extend each decision, enough to place every file of the
+change; `CLAUDE.md` is 151 lines, every rule cites its ADR and names the kit rule it extends; no
+ADR is `proposed`, and `docs/validation.md` says plainly why there are no figures.
+
+None of the gaps is closed in this task beyond the corrections to its own text (gaps 2, 7 and 12,
+and ADR 0001's range); each is a task of its own (`/docs-health` step 4).
 
 ---
 
