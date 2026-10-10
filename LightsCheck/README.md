@@ -79,12 +79,14 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
 - **RESPINSE**: fiecare cadru slab cu motivul, pragul si axa darei.
 - **TABEL PE CADRE**: o linie pe cadru. Coloana `dithering` spune ce a facut montura la
   fiecare miscare de dithering: pe ce axa, cati pixeli, in ce sens pe cer si ce sageata din
-  SynScan e aceea, de exemplu `RA 15 px V (dreapta), DEC 12 px S (jos)`. Sensul vine din
-  `result.fit` plate-solvat (Siril scrie FITS-ul cu randurile de jos in sus fata de raw, si
-  programul tine cont de asta; verificat pe sesiunea Veil cu plate solve pe doua cadre brute);
-  fara el ramane doar `RA 15 px, DEC 12 px`. Sagetile sunt tastele implicite ale aplicatiei
-  SynScan: stanga = est, dreapta = vest, sus = nord, jos = sud; daca le-ai inversat din
-  setarile ei, citeste-le invers. Coloana `acelasi loc` spune al catelea cadru
+  SynScan e aceea, de exemplu `RA 15 px ← V, DEC 12 px ↓ S`: sageata apasata, apoi sensul pe
+  cer (E/V, N/S). Sensul vine din `result.fit` plate-solvat (Siril scrie FITS-ul cu randurile
+  de jos in sus fata de raw, si programul tine cont de asta; verificat pe sesiunea Veil cu plate
+  solve pe doua cadre brute); fara el ramane doar `RA 15 px, DEC 12 px`. Care sageata muta
+  montura spre est si care spre nord depinde de setarile aplicatiei SynScan: implicit `→` est
+  (deci `←` vest) si `↑` nord (deci `↓` sud); le schimbi cu `--est stanga|dreapta` si
+  `--nord sus|jos`, iar in fereastra din selectoarele EST si NORD, tinute minte intre porniri
+  in `%LOCALAPPDATA%\LightsCheck\settings.json`. Coloana `acelasi loc` spune al catelea cadru
   consecutiv e in acelasi loc (la 10 px), din cate si de la care: `7/10 de la 61` e al
   saptelea din zece cadre ramase pe loc de la cadrul 61. Sirurile astea fac walking noise,
   dar cadrul ramane bun si in stiva: leacul e dithering mai des data viitoare, nu mai putine
@@ -97,7 +99,8 @@ cadru (`lightscheck-cadre.csv`, cu axa darei in `trail_on`, sirul din `acelasi l
 lista numelor de respins (`lightscheck-respinse.txt`),
 cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
 `--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
-cu focala din raw da scara in "/px.
+cu focala din raw da scara in "/px. `--est stanga|dreapta` si `--nord sus|jos` spun care
+sageata SynScan muta montura spre est si care spre nord, pentru coloana `dithering`.
 
 ### Doar inventarul: `--inventory`
 
@@ -186,8 +189,11 @@ rezultatul apare in sase taburi:
   separat, ingrosat); cele la limita raman la alegerea ta, lista lor e in CADRE MISCATE.
 - **Raport**: textul consolei, identic.
 
-In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300) si
-`FIRE` (cate cadre se masoara in paralel; gol = jumatate din nuclee). `Scrie fisierele...`
+In bara de sus: `PIXEL (um)` (marimea pixelului cand fisierele n-o spun; 3.92 la D3300),
+`FIRE` (cate cadre se masoara in paralel; gol = jumatate din nuclee) si `EST` / `NORD`, sagetile
+SynScan care muta montura spre est si spre nord (implicit `→` si `↑`), citite la deschiderea
+folderului si tinute minte intre porniri in `%LOCALAPPDATA%\LightsCheck\settings.json`, singurul
+lucru pe care programul il scrie acolo. `Scrie fisierele...`
 scrie, intr-un folder la alegere (propus: folderul sesiunii), aceleasi trei fisiere ca
 `--out`. `Despre` (F1) arata versiunea, licenta si componentele terte. Nimic nu se scrie in
 `lights/` sau `biases/`.

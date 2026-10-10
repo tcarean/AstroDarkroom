@@ -33,6 +33,7 @@ internal sealed class Options
     internal string? Out { get; private set; }
     internal int Threads { get; private set; }
     internal double PixelSizeUm { get; private set; } = SeriesOptions.D3300PixelUm;
+    internal ArrowKeys Arrows { get; private set; } = ArrowKeys.Default;
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -61,7 +62,7 @@ internal sealed class Options
                 continue;
             }
 
-            if (a is "--frame" or "--threads" or "--pixel" or "--out")
+            if (a is "--frame" or "--threads" or "--pixel" or "--out" or "--est" or "--nord")
             {
                 if (i + 1 >= args.Length)
                 {
@@ -98,6 +99,24 @@ internal sealed class Options
                         }
 
                         o.PixelSizeUm = p;
+                        break;
+                    case "--est":
+                        if (v is not ("stanga" or "dreapta"))
+                        {
+                            o.Error = "--est cere stanga sau dreapta: sageata SynScan care muta montura spre est";
+                            return o;
+                        }
+
+                        o.Arrows = o.Arrows with { East = v == "stanga" ? Arrow.Left : Arrow.Right };
+                        break;
+                    case "--nord":
+                        if (v is not ("sus" or "jos"))
+                        {
+                            o.Error = "--nord cere sus sau jos: sageata SynScan care muta montura spre nord";
+                            return o;
+                        }
+
+                        o.Arrows = o.Arrows with { North = v == "sus" ? Arrow.Up : Arrow.Down };
                         break;
                     default:
                         if (string.IsNullOrWhiteSpace(v))

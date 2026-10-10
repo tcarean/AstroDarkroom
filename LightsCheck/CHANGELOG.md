@@ -82,3 +82,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   Veil session with two plate-solved raws; the step bars of the Dithering tab show it as a
   tooltip; the CSV gets `move_ra_px`, `move_dec_px`, `move_arrows`. V-011 checks the cells on
   the Veil session.
+- The SynScan arrow keys as a setting (R-040, R-041, ADR 0014): `--est stanga|dreapta` and
+  `--nord sus|jos` in the console, the selectors `EST` and `NORD` in the window's top bar,
+  remembered in `%LOCALAPPDATA%\LightsCheck\settings.json`.
+
+### Changed
+
+- The arrows of the `dithering` cell are symbols after the pixels, `RA 15 px ← V, DEC 12 px ↓ S`
+  instead of `RA 15 px V (dreapta), DEC 12 px S (jos)`, and the default mapping is the owner's
+  SynScan, right east and up north, the reverse of the forum default of ADR 0013 (ADR 0014);
+  the console prints UTF-8 so the symbols show.

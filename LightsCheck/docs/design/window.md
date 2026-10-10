@@ -82,6 +82,17 @@ that point changes, closes the tip and reopens it with the point's `Tip` (none f
 without one), closing it on leave. It opens and closes the tip itself because a tooltip the
 framework opens shows once per entry into the element and then stays shut.
 
+## The one stored setting (`UserSettings`)
+
+The SynScan arrow keys (R-041, ADR 0014) are the window's only setting that outlives a run:
+`UserSettings.Load` reads `%LOCALAPPDATA%\LightsCheck\settings.json` (two symbols, `east` and
+`north`; defaults on a missing or unreadable file or an unknown symbol) and `Save` writes it
+through `System.Text.Json`, swallowing IO errors. `MainViewModel` loads them in its
+constructor into `EastArrow` / `NorthArrow`, saves on every change, and `Options` turns the
+symbols into the core's `ArrowKeys` through `ArrowKeys.FromSymbol`, so the window maps
+nothing itself. `UserSettings.Path` lets the tests point at a file of their own. The pixel
+size and the thread count stay per run, as before.
+
 ## Culture, title bar, icon
 
 `App.ForceInvariantNumbers` sets the default and current cultures to the invariant one at

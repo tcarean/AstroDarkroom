@@ -36,7 +36,7 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | V-008 | same, the whole session | series | 48 good / 17 marginal / 22 bad, the bad frames 1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76; 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.48 px/min along Y; session FWHM 3.12 px; read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, walking noise insufficient | 2026-10-09 |
 | V-009 | same, the whole session | words | the trail axis word `RA` on all 22 bad and all 17 marginal frames (angles 77 to 89 degrees in absolute value, coherence 0.94 and 0.86 or more); the `acelasi loc` cells `1/4 de la 57` to `4/4 de la 57` on 57 to 60, `1/10 de la 61` to `10/10 de la 61` on 61 to 70, `-` on 71 and 72 | 2026-10-09 |
 | V-010 | same, the whole session | tables | the five dithering tables of R-036, cell by cell: how often (every 1 frame 12 times, 2 frames 22, 3 once, 4 three times, 5 and 6 once each), how far (median 13.29 px = 79.6", 10 moves of 5-10 px, 23 of 10-20, 8 of 20+), direction (X = DEC: 6 alone, 11 plus, 2 minus; Y = RA: 28 alone, 11 plus, 24 minus; both 7), coverage (70 frames within 3 px of another, 79 within 5 with 38 distinct spots and 8 runs, 86 within 10 with 25 and 11), the 8 runs at 5 px and the 11 at 10 px with their minutes (61-70, 10 frames, 22 min) | 2026-10-09 |
-| V-011 | same, the whole session | moves | the `dithering` cells of R-038 on ten frames (3: `DEC 13 px S (jos)`, 17: `DEC 28 px S (jos)`, 61: `RA 17 px V (dreapta)`, 6: `RA 12 px E (stanga)`, 5 and 19 and 80 with both components, 1 and 62 `-`) and, over the 41 moves, 24 components west, 11 east, 11 south, 2 north; the nine DEC jumps of 12 px or more the hand analysis counted are all south | 2026-10-09 |
+| V-011 | same, the whole session | moves | the `dithering` cells of R-038 on ten frames, in the symbol form of R-040 (3: `DEC 13 px ↓ S`, 17: `DEC 28 px ↓ S`, 61: `RA 17 px ← V`, 6: `RA 12 px → E`, 5 and 19 and 80 with both components, 1 and 62 `-`) and, over the 41 moves, 24 components west, 11 east, 11 south, 2 north; the nine DEC jumps of 12 px or more the hand analysis counted are all south | 2026-10-10 |
 
 The series figures are the console's run of 2026-10-09 (88 s on 4 threads) and equal the hand
 report's: the same 22 bad and 17 marginal frames, 47 pauses and 9 presses without effect, the
@@ -95,3 +95,7 @@ drift instead of editing the figures.
   analysis: its nine DEC jumps of 12 to 29 px, all `+X`, are the nine `S (jos)` cells of 12 px
   or more; two small DEC components (8 and 6 px) read north, which the hand analysis did not
   count. The ten earlier cases were re-measured with it.
+- 2026-10-10: V-011's cells re-worded for R-040 (ADR 0014): `V (dreapta)` became `← V`,
+  `S (jos)` `↓ S`, `E (stanga)` `→ E`, `N (sus)` `↑ N`, the default keys being right east and
+  up north; the pixels and the four counts did not move. Re-measured on the Veil session with
+  the other ten cases.

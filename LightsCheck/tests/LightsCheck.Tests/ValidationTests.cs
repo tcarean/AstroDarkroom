@@ -88,7 +88,7 @@ public class ValidationTests
                         Console.WriteLine($"  {row.Index}: {row.Move}");
                     }
 
-                    Console.WriteLine($"  south {MovesWith(moveRows, " S (")}, north {MovesWith(moveRows, " N (")}, east {MovesWith(moveRows, " E (")}, west {MovesWith(moveRows, " V (")}");
+                    Console.WriteLine($"  south {MovesWith(moveRows, " S")}, north {MovesWith(moveRows, " N")}, east {MovesWith(moveRows, " E")}, west {MovesWith(moveRows, " V")}");
                     return;
                 }
 
@@ -178,10 +178,10 @@ public class ValidationTests
             Assert.True(p.Value.GetString() == rows[index - 1].Move, $"frame {index}: cell '{rows[index - 1].Move}', expected '{p.Value.GetString()}'");
         }
 
-        Assert.Equal(e.GetProperty("south").GetInt32(), MovesWith(rows, " S ("));
-        Assert.Equal(e.GetProperty("north").GetInt32(), MovesWith(rows, " N ("));
-        Assert.Equal(e.GetProperty("east").GetInt32(), MovesWith(rows, " E ("));
-        Assert.Equal(e.GetProperty("west").GetInt32(), MovesWith(rows, " V ("));
+        Assert.Equal(e.GetProperty("south").GetInt32(), MovesWith(rows, " S"));
+        Assert.Equal(e.GetProperty("north").GetInt32(), MovesWith(rows, " N"));
+        Assert.Equal(e.GetProperty("east").GetInt32(), MovesWith(rows, " E"));
+        Assert.Equal(e.GetProperty("west").GetInt32(), MovesWith(rows, " V"));
     }
 
     private static void CheckInventory(Inventory inv, JsonElement e, JsonElement t)

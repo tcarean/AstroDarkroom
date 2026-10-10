@@ -22,7 +22,12 @@ namespace LightsCheck.Cli;
 
 internal static class Program
 {
-    private static int Main(string[] args) => Run(args, Console.Out, Console.Error);
+    private static int Main(string[] args)
+    {
+        // The report carries the SynScan arrows as symbols (R-040); the console's default code page would print them as '?'.
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        return Run(args, Console.Out, Console.Error);
+    }
 
     /// <summary>
     /// The whole console, testable: the tests call this with a StringWriter and compare the
@@ -67,7 +72,7 @@ internal static class Program
             // Progress on stderr, one line rewritten, so stdout stays the report alone. Written
             // synchronously on the reporting thread (Progress<T> would post to the thread pool and
             // could print after the report), under a lock since the frames finish in parallel.
-            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads), new ConsoleProgress(stderr));
+            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads, o.Arrows), new ConsoleProgress(stderr));
             stderr.Write("\r                        \r");
             SeriesReport.Write(r, stdout);
             if (o.Out is not null)
@@ -106,7 +111,7 @@ internal static class Program
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();
-        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]");
+        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos]");
         w.WriteLine("          lightscheck <folder sesiune> --inventory");
         w.WriteLine("          lightscheck <folder sesiune> --frame N");
         w.WriteLine();
@@ -120,6 +125,8 @@ internal static class Program
         w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
         w.WriteLine("  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).");
         w.WriteLine("  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.");
+        w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.");
         w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");
         w.WriteLine("  --frame N     masoara un singur cadru (1 = primul din lights\\).");
         w.WriteLine("  -h, --help    acest text");
