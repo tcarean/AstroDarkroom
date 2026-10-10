@@ -426,6 +426,26 @@ public class MainViewModelTests
         Assert.Equal("verdict", vm.DitherRows[^1].Label);
     }
 
+    /// <summary>The Dithering card carries the core's explanation, one paragraph bold, and the new rows of R-043, R-044 and R-046 reach the window untouched (R-047).</summary>
+    [Fact]
+    public async Task R047_TheDitherExplanationAndTheNewRowsReachTheWindow()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, darks: 2);
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(f.Root);
+
+        Assert.Equal(SeriesReport.DitherExplanation.Select(p => p.Text), vm.DitherExplanation.Select(p => p.Text));
+        Assert.Single(vm.DitherExplanation, p => p.Emphasis);
+        Assert.Contains(vm.DitherRows, r => r.Label == "scara");
+        Assert.Contains(vm.DitherRows, r => r.Label == "pattern fix" && r.Value.Contains("dark-uri", StringComparison.Ordinal));
+        Assert.Contains(vm.DitherRows, r => r.Label == "pattern in stiva");
+        Assert.Contains(vm.DriftRows, r => r.Label == "drift intr-o expunere");
+        Assert.Contains(vm.SessionRows, r => r.Label == "darks" && r.Value.Contains("2 cadre", StringComparison.Ordinal));
+        Assert.Equal(0, VerdictPalette.Severity("FARA walking noise, OK pentru pixeli calzi"));
+        Assert.Equal(2, VerdictPalette.Severity("ATENTIE la pixeli calzi, FARA walking noise"));
+    }
+
     /// <summary>The Cadre column and the bar tooltips carry the move cell and the tip the core words (R-039).</summary>
     [Fact]
     public async Task R039_TheFramesCarryTheMoveAndTheStepBarsTheirTip()

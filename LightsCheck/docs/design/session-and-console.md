@@ -17,9 +17,11 @@ camera raws (`RawReader.IsRawPath`) when there are any, else the FITS files
 (`FitsReader.IsFitsPath`), sorted by file name with an ordinal case-insensitive compare, so
 `DSC_0010` follows `DSC_0009` and a lower-case extension changes nothing. No frames at all
 throws `InvalidOperationException` naming the folder and the extensions looked for.
-`biases/` goes through the same `FramesIn`; `BiasesDir` is null when the folder is absent or
-empty, and the report prints `(lipsa)`. The record exposes `Root`, `LightsDir`, `BiasesDir`,
-`Lights` and `Biases` as full paths; nothing here writes.
+`biases/` and `darks/` go through the same `FramesIn`; `BiasesDir` and `DarksDir` are null
+when the folder is absent or empty, and the report prints `(lipsa)`. The darks are only
+counted (R-042): the `pattern fix` row of the series report says whether Siril will subtract
+the sensor's pattern, and no dark is ever opened. The record exposes `Root`, `LightsDir`,
+`BiasesDir`, `DarksDir`, `Lights`, `Biases` and `Darks` as full paths; nothing here writes.
 
 ## The metadata of a frame (`FrameInfo`)
 

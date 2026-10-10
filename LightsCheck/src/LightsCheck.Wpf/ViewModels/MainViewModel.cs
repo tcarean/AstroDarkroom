@@ -265,6 +265,9 @@ public sealed class MainViewModel : ObservableObject
     public string RejectedHeading { get; private set; } = "";
     public IReadOnlyList<ParagraphVm> RejectedExplanation { get; } = SeriesReport.RejectedExplanation.Select(p => new ParagraphVm(p.Text, p.Emphasis)).ToList();
 
+    /// <summary>What the Dithering card says under its rows and tables: the core's paragraphs, one bold (R-047).</summary>
+    public IReadOnlyList<ParagraphVm> DitherExplanation { get; } = SeriesReport.DitherExplanation.Select(p => new ParagraphVm(p.Text, p.Emphasis)).ToList();
+
     public FrameRowVm? SelectedFrame
     {
         get => _selectedFrame;

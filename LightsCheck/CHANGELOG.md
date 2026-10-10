@@ -75,6 +75,23 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The SynScan arrow keys as a setting (R-040, R-041, ADR 0014): `--est stanga|dreapta` and
   `--nord sus|jos` in the console, the selectors `EST` and `NORD` in the window's top bar,
   remembered in `%LOCALAPPDATA%\LightsCheck\settings.json`.
+- The session's `darks/` folder is counted, never read, and printed after `biases` in the
+  session lines (R-042).
+- The walking-noise verdict reads the drift (R-043, ADR 0015): DRIFT SI ROTATIE gains
+  `drift intr-o expunere`, the drift over one exposure and the dash of walking noise, the
+  span of the widest stretch of consecutive frames at one spot; a dash under 3 px is `FARA walking noise` whatever the
+  dithering, as on the Smida session at 20 mm, where the same drift as Veil's is a seventh of
+  a pixel per frame. `INSUFICIENT` and `FARA` say the dash, the drift and the run.
+- DITHERING gains `scara`, what a move of 5 and 10 px is in arcseconds at the session's focal
+  length (R-044); `pattern in stiva`, how much of one frame's pattern the mean of the stack
+  keeps against the ideal of one over the frames (R-048); and `pattern fix`, the sensor's
+  pattern read from the lights' own median, its sigma per channel in ADU and as a share of a
+  frame's noise and its hot pixels per megapixel, with whether the session's darks will take
+  it out (R-046, ADR 0015).
+- The Dithering tab explains walking noise, the focal length, what breaks it and how to take
+  darks without touching the lens, in five paragraphs worded in the core (R-045, R-047);
+  `README.md` says the same.
+- V-012 and V-013 add the Smida session of 2026-08-12 (20 mm) to the validation cases.
 
 ### Changed
 
@@ -82,6 +99,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (prag 1.35), dara la -90 grade`), as the bad frames' did.
 - FOCUS closes with a `verdict` row, as ROUA does: the console prints it and the window's
   FOCUS card shows the chip it lacked (R-036, ADR 0012).
+- The dithering verdict prints its two parts worst first (`ATENTIE la pixeli calzi, FARA
+  walking noise ...`), so the window's chip takes the colour of the worse one (R-043); a chip
+  opening with `OK` or `FARA` is now the good colour, where `OK pentru walking noise, OK
+  pentru pixeli calzi` was the fair one.
 - The arrows of the `dithering` cell are symbols after the pixels, `RA 15 px ← V, DEC 12 px ↓ S`
   instead of `RA 15 px V (dreapta), DEC 12 px S (jos)`, and the default mapping is the owner's
   SynScan, right east and up north, the reverse of the forum default of ADR 0013 (ADR 0014);

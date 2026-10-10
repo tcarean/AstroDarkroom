@@ -20,26 +20,34 @@ namespace LightsCheck.Core;
 /// <summary>
 /// A Siril session folder as LightsCheck reads it (R-002, ADR 0004): the lights in
 /// <c>lights/</c>, or in the folder itself when it holds frames directly; the biases in
-/// <c>biases/</c>, optional. Nothing is ever written into it.
+/// <c>biases/</c>, optional; the darks in <c>darks/</c>, optional and only counted, never read
+/// (R-042). Nothing is ever written into it.
 /// </summary>
 internal sealed class SessionFolder
 {
     internal const string LightsName = "lights";
     internal const string BiasesName = "biases";
+    internal const string DarksName = "darks";
 
     internal string Root { get; }
     internal string LightsDir { get; }
     internal string? BiasesDir { get; }
+    internal string? DarksDir { get; }
     internal IReadOnlyList<string> Lights { get; }
     internal IReadOnlyList<string> Biases { get; }
 
-    private SessionFolder(string root, string lightsDir, string? biasesDir, IReadOnlyList<string> lights, IReadOnlyList<string> biases)
+    /// <summary>The frames of darks/, listed so the report can say whether Siril will subtract the sensor's pattern; none is ever read.</summary>
+    internal IReadOnlyList<string> Darks { get; }
+
+    private SessionFolder(string root, string lightsDir, string? biasesDir, string? darksDir, IReadOnlyList<string> lights, IReadOnlyList<string> biases, IReadOnlyList<string> darks)
     {
         Root = root;
         LightsDir = lightsDir;
         BiasesDir = biasesDir;
+        DarksDir = darksDir;
         Lights = lights;
         Biases = biases;
+        Darks = darks;
     }
 
     /// <summary>
@@ -74,7 +82,9 @@ internal sealed class SessionFolder
 
         string biasesDir = Path.Combine(root, BiasesName);
         IReadOnlyList<string> biases = Directory.Exists(biasesDir) ? FramesIn(biasesDir) : [];
-        return new SessionFolder(root, lightsDir, biases.Count > 0 ? biasesDir : null, lights, biases);
+        string darksDir = Path.Combine(root, DarksName);
+        IReadOnlyList<string> darks = Directory.Exists(darksDir) ? FramesIn(darksDir) : [];
+        return new SessionFolder(root, lightsDir, biases.Count > 0 ? biasesDir : null, darks.Count > 0 ? darksDir : null, lights, biases, darks);
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ Copyright (C) 2026 Tudor Carean
 === SESIUNE: <sesiune> ===
     lights             : lights\ (6 cadre .fit)
     biases             : biases\ (3 cadre .fit)
+    darks              : (lipsa)
     aparat             : NIKON D3300
     obiectiv           : 135 mm (poza)
     expunere           : 120.2 s la ISO 1600 (toate cadrele)

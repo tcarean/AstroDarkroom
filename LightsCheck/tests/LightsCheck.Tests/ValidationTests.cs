@@ -128,6 +128,21 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("dew").GetBoolean(), s.DewSuspected);
         Assert.Equal(e.GetProperty("hotPixelsOk").GetBoolean(), d.HotPixelsOk);
         Assert.Equal(e.GetProperty("walkingNoiseOk").GetBoolean(), d.WalkingNoiseOk);
+        // The drift over one exposure, the dash and the word it gives, the darks and the pattern (R-042, R-043, R-046).
+        AssertWithin("driftPerExposurePx", e.GetProperty("driftPerExposurePx").GetDouble(), Figure(s.DriftPerExposurePx, "driftPerExposure"), t.GetProperty("px").GetDouble());
+        AssertWithin("walkingStreakPx", e.GetProperty("walkingStreakPx").GetDouble(), Figure(s.WalkingStreakPx, "walkingStreak"), t.GetProperty("px").GetDouble());
+        Assert.Equal(e.GetProperty("walkingNoise").GetString(), s.WalkingNoise.ToString());
+        Assert.Equal(e.GetProperty("darks").GetInt32(), r.Session.Darks.Count);
+        Assert.Equal(e.GetProperty("patternStatus").GetString(), r.Pattern.Status.ToString());
+        AssertWithin("patternHotPerMpx", e.GetProperty("patternHotPerMpx").GetDouble(), r.Pattern.HotPerMpx, t.GetProperty("perMpx").GetDouble());
+        double[] sigmas = e.GetProperty("patternSigmaAdu").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+        Assert.True(sigmas.Length == r.Pattern.PatternSigma.Count, $"patternSigmaAdu: {sigmas.Length} recorded, {r.Pattern.PatternSigma.Count} measured ({r.Pattern.Status})");
+        for (int p = 0; p < sigmas.Length; p++)
+        {
+            AssertWithin($"patternSigmaAdu[{p}]", sigmas[p], r.Pattern.PatternSigma[p], t.GetProperty("adu").GetDouble());
+        }
+
+        AssertWithin("patternSurvivingPct", e.GetProperty("patternSurvivingPct").GetDouble(), Figure(d.PatternSurviving, "patternSurviving") * 100, t.GetProperty("pct").GetDouble());
     }
 
     /// <summary>The words per frame on the real session: the trail axis of every frame with a trailing flag, by class, and the run cell of the frames listed (R-033, R-034).</summary>
@@ -188,6 +203,7 @@ public class ValidationTests
     {
         Assert.Equal(e.GetProperty("lights").GetInt32(), inv.Lights.Count);
         Assert.Equal(e.GetProperty("biases").GetInt32(), inv.Session.Biases.Count);
+        Assert.Equal(e.GetProperty("darks").GetInt32(), inv.Session.Darks.Count);
         Assert.False(inv.HasErrors, string.Join("; ", inv.Lights.Where(f => f.Error is not null).Select(f => f.FileName + ": " + f.Error)));
         Assert.Equal(e.GetProperty("camera").GetString(), inv.Lights[0].Camera);
         Assert.Equal(e.GetProperty("exposureSeconds").GetDouble(), inv.Lights[0].ExposureSeconds!.Value, t.GetProperty("exposureSeconds").GetDouble());

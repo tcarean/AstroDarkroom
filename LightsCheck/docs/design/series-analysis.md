@@ -1,8 +1,8 @@
 # Analysing the series
 
-**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
+**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PatternAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
 
-The behaviour is R-018 to R-028; the dither definitions and the verdicts are ADR 0007. The
+The behaviour is R-018 to R-028 and R-042 to R-046; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015. The
 prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
 is the hand report the tool reproduces, and V-008 pins its session figures.
 
@@ -23,11 +23,13 @@ points (`frame-analysis.md`, `session-and-console.md`).
 1. Every light is decoded and measured in parallel (`Parallel.For`, half the cores by
    default; each frame holds about 400 MB at its peak, so four in flight is 1.6 GB). A frame
    that throws becomes an `AnalyzedFrame` with its error and the metadata read without pixels.
+   `FrameRun.Measure` also hands back the frame's `PatternCrop` (1 MB), kept in an array
+   beside the frames until the pattern is read.
 2. The reference is the first measured frame; every measured frame is registered to its
    600-star list, in parallel.
-3. `CadenceAnalyzer` (pauses), `DitherAnalyzer` (positions and pauses), the read noise from
-   the first two biases, the RA axis from a plate-solved FITS at the root, then
-   `SeriesAnalyzer`.
+3. `CadenceAnalyzer` (pauses), `DitherAnalyzer` (positions and pauses), `PatternAnalyzer` on
+   the crops (then the crops are dropped), the read noise from the first two biases, the RA
+   axis from a plate-solved FITS at the root, then `SeriesAnalyzer`.
 4. The pixel scale is `206.265 x pixel_um / focal_mm` from the first frame's focal length and
    the file's `XPIXSZ` or the option's pixel size.
 
@@ -39,7 +41,9 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `MatchIterations`, `MinMatches`; dithering, `DitherStep`, `DitherPause`, `DitherSizeBounds`,
 `AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
 `HotPixelRunMax`, `WalkingNoiseDistinctFraction`, `WalkingNoiseIsolatedFraction`,
-`TwoDAxisFraction`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`TwoDAxisFraction`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
+`PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
+`PatternSharePx`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -64,7 +68,59 @@ frame no earlier seed covers; it is the prototype's, order-dependent by design (
 frame of a spot names it). Runs at a radius are stretches of 3 or more consecutive frames
 within the radius of the stretch's first frame. `SpotRun` is the per-frame view of the runs at
 10 px, filled from `runsLoose` (the ordinal in the run, its length, its first frame; null
-outside a run), for the table cell and the map ring of R-034 (ADR 0011).
+outside a run), for the table cell and the map ring of R-034 (ADR 0011). `Clusters` is the
+greedy clustering behind the distinct counts; its sizes also give `LargestClusterTight`, the
+biggest group of frames at 3 px, which the pattern analyzer reads to know whether a pixel can
+have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
+closer than `Th.PatternSharePx`, and `PatternSurviving` is `(n + 2 pairs) / n^2`, how much of
+one frame's pattern the mean of the stack keeps (R-048): the n copies of 1/n each, plus the
+pairs that put the same pixels on the same pixels.
+
+## The drift over an exposure and the walking verdict (`SeriesAnalyzer`, R-043)
+
+After the drift per minute, `SeriesAnalyzer` takes the median exposure of the frames that
+carry one and turns the drift vector into `DriftPerExposurePx`; `DriftAxis` is the image axis
+with the larger component (the report words it RA or DEC through `RaAxis`, else X or Y).
+`MedianExposureSeconds` is kept for the report. The dash, `WalkingStreakPx`, is the drift
+per exposure times the frames minus one of `DitherAnalysis.WalkingStretch`, which
+`DitherAnalyzer` takes as the longest result of `Runs` with a minimum of two frames at
+`Th.CoverageLoose`; a pair of frames at one spot with a large drift between them counts,
+which the runs of three did not. `WalkingNoise` reads both: `Ok` when `DitherAnalysis.WalkingNoiseOk` (the
+dither rule is untouched), else `Static` when the dash is known and under
+`Th.WalkingStreakVisible`, else `Insufficient`; `Unknown` under two registered frames. The
+`Static` word is the one Smida gets: a drift of a seventh of a pixel per exposure moves no
+pattern, however the map looks. The report's `DitherVerdict` orders the walking and the
+hot-pixel words worst first, so the chip's colour is the worse of the two.
+
+## The sensor's pattern (`PatternAnalyzer`, R-046)
+
+`PatternCrop.Cut` takes the central `Th.PatternCrop` square of the float raster above black
+(the shorter side rounded down to even on a small frame), starting at an even row and column
+so the crop's CFA phase is the frame's. `PatternAnalyzer.Analyze` keeps the crops of the first
+crop's size, refuses with a status under `Th.PatternMinFrames` crops, under two registered
+frames, or when `DitherAnalysis.LargestClusterTight` reaches `Th.PatternClusterFraction` of
+the registered frames (the frames stayed put: a star would sit on the same pixels in half the
+frames and the median would read it as pattern), and otherwise builds the per-pixel median
+across the crops with `Raster.Median` on a reused buffer. The frames are not registered on
+purpose: the sky and the stars move with the dither and the drift, the sensor does not, and
+the median of n frames carries about 1.25 / sqrt(n) of one frame's noise, so a warm pixel of 3
+sigma stands clear of it from 7 frames on. Per CFA position the median goes through
+`NoiseAnalyzer.HighPass`, the residuals behind `HighPassSigma` (pixel minus the 5 x 5 median of
+its own position, in the central window of that position, which on a 512 px crop is the whole
+position plane minus a 2 px border); the position's one-frame sigma is the median over the
+frames of `ChannelLevel.HighPassSigma`. The pattern's sigma is the clipped standard deviation
+of those residuals with the median's own noise taken out in quadrature. That noise is
+measured, not assumed: the medians of the odd and the even frames differ by the noise of two
+half-medians and by no pattern, and `Var(median of n) = Var(odd - even) / (n (1 / n_odd +
+1 / n_even))`; the analytic `sqrt(pi / 2) / sqrt(n)` of a Gaussian median was tried first and
+over-subtracted on eight frames, where the small-n median is tighter than the formula. On 87
+Veil frames about 3 of the 21 ADU of green noise survive in the median and the measured
+3.7 ADU become 2.1 of pattern. A residual above `Th.PatternHotSigma` sigmas of the frame's noise is hot.
+`SensorPattern` holds the position names, the sigmas, the frame sigmas, the hot count and
+the pixels read; `FractionOfFrame` and `HotPerMpx` derive the fraction and the rate. There
+is no count at a low threshold on purpose (ADR 0015: it sat on the steep tail). The raws carry the pattern whether
+or not the session has darks; the report's `pattern fix` row adds what the `darks/` folder says
+(`SessionFolder.Darks`, counted and never read, R-042).
 
 ## Classes, trends, drift, axes (`SeriesAnalyzer`)
 
@@ -141,7 +197,14 @@ from the same `DitherAnalysis` figures the `DitherRows` print, through the helpe
 no-move words) so a wording lives once; the runs table has its own `RunRows` and
 `MinutesCell` beside the rows' `Runs` and `Minutes`, which differ in shape, not in words.
 `DitherScalarRows` is the DITHERING rows that are not tables, plus the `axe` row that names
-the RA axis and its source, which the console carries on its `directie` row. FOCUS closes with a
+the RA axis and its source, which the console carries on its `directie` row; both end with
+`ScaleRow` (what a move of `Th.DitherStep` and `Th.CoverageLoose` is in arcseconds at the
+session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048),
+`PatternRow` (the `SensorPattern` by its status, the sigmas with their fractions, the hot
+rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
+exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `nicio dara` without a run.
+`DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
+tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
 `verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
 and never the tables.
 

@@ -59,7 +59,10 @@ public class GoldenOutputTests
     [Fact]
     public void SeriesWithEveryClass_MatchesTheGoldenText()
     {
-        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2);
+        // With darks, so the other branch of the `pattern fix` row's darks clause (R-042, R-046)
+        // is pinned beside series.txt's; the measured pattern itself is pinned by R046 in
+        // SeriesTests, since hot pixels on the lights would change the frame figures here.
+        using SessionFixture s = new SessionFixture().WithStarSeries(SessionFixture.ClassesPattern, biases: 2, darks: 2);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "DSC_0009.fit"), new byte[100]);
         (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
         Assert.Contains("cadrul 10 / 10", stderr, StringComparison.Ordinal);

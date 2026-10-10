@@ -13,7 +13,9 @@ of those frames.
 `FrameRun` decodes the file (`ImageLoader.Load`), takes the scale the file carries or assumes
 one from BITPIX, and hands `FrameAnalyzer` the double `Img`, which becomes a float `Raster`
 above black at once (a 24 MP frame is 96 MB as floats; four rasters live at the peak: the
-mosaic, the green, the residual and the smoothed residual, about 400 MB).
+mosaic, the green, the residual and the smoothed residual, about 400 MB). Before the
+mosaic goes, `FrameRun.Measure` cuts its central `PatternCrop` for the series' sensor
+pattern (`series-analysis.md`); the single-frame run drops it.
 
 1. **Channel levels** (`ChannelLevels`): the four CFA positions read as the prototype's
    `a[i::2, j::2][::4, ::4]`: the median of every 4th row and column of the position, the
@@ -52,8 +54,9 @@ mosaic, the green, the residual and the smoothed residual, about 400 MB).
 ## The constants (`Th`)
 
 Every number above is a field of `Th` in `Thresholds.cs`, grouped by requirement, each with
-a doc comment that says what it bounds; the value lives there only (ADR 0006). The names, so
-a change is made by name: background and noise, `BackgroundTile`, `BackgroundSampleStep`,
+a doc comment that says what it bounds; the value lives there only (ADR 0006). The series'
+constants, the drift-aware walking verdict's and the pattern's included, are listed in
+`series-analysis.md`. The names here, so a change is made by name: background and noise, `BackgroundTile`, `BackgroundSampleStep`,
 `NoiseWindowHalf`, `NoiseSampleStep`, `DetectionSmoothSigma`; detection and shape,
 `DetectionSigmas`, `MinStarArea`, `MaxStarArea`, `BrightPeakSigmas`, `ShapePeakSigmas`,
 `ShapePeakMaxFraction`, `ShapeStars`, `MomentRadius`, `MomentIterations`, `MinFwhm`,

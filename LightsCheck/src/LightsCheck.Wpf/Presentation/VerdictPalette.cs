@@ -45,6 +45,12 @@ internal static class VerdictPalette
             return v == "DA" ? 2 : 0;
         }
 
+        // The dithering verdict opens with its worst part; FARA (no walking noise) is as good as OK.
+        if (v.StartsWith("FARA", StringComparison.Ordinal) || v.StartsWith("OK", StringComparison.Ordinal))
+        {
+            return 0;
+        }
+
         if (v.StartsWith("LA LIMITA", StringComparison.Ordinal) || v.StartsWith("POSIBIL", StringComparison.Ordinal) || v.StartsWith("ATENTIE", StringComparison.Ordinal))
         {
             return 2;

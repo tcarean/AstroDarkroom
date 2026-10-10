@@ -148,6 +148,25 @@ public class DitheringTests
     }
 
     /// <summary>The per-frame view of the runs at 10 px: ordinal, length and first frame, null outside a run (R-034).</summary>
+    /// <summary>Four frames at one spot keep the whole pattern (1.0); four frames 20 px apart keep 1/4; a pair at one spot among four keeps (4 + 2) / 16 (R-048).</summary>
+    [Fact]
+    public void R048_ThePatternSurvivingIsOneOverFramesPlusTheSharingPairs()
+    {
+        DitherAnalysis same = DitherAnalyzer.Analyze([0, 0.5, 0.2, 0.9], [0, 0.3, 0.1, 0.4], new double?[4]);
+        Assert.Equal(6, same.SharingPairs);
+        Assert.Equal(1.0, same.PatternSurviving!.Value, 1e-9);
+
+        DitherAnalysis apart = DitherAnalyzer.Analyze([0, 20, 40, 60], [0, 0, 0, 0], new double?[4]);
+        Assert.Equal(0, apart.SharingPairs);
+        Assert.Equal(0.25, apart.PatternSurviving!.Value, 1e-9);
+
+        DitherAnalysis pair = DitherAnalyzer.Analyze([0, 1.0, 40, 60], [0, 0.5, 0, 0], new double?[4]);
+        Assert.Equal(1, pair.SharingPairs);
+        Assert.Equal(6.0 / 16, pair.PatternSurviving!.Value, 1e-9);
+
+        Assert.Null(DitherAnalyzer.Analyze(new double?[3], new double?[3], new double?[3]).PatternSurviving);
+    }
+
     [Fact]
     public void R034_EachFrameKnowsItsRunAtTenPixels()
     {

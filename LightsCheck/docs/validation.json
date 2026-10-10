@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory), 'frame' (one light measured) or 'series' (the whole session analyzed). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder LIGHTSCHECK_TESTDATA_LARGE names (ADR 0004). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory), 'frame' (one light measured) or 'series' (the whole session analyzed), 'words', 'tables' and 'moves' (the report's cells on the whole session). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",
@@ -9,6 +9,7 @@
       "expected": {
         "lights": 87,
         "biases": 30,
+        "darks": 0,
         "camera": "Nikon D3300",
         "exposureSeconds": 120.2,
         "iso": 1600,
@@ -84,9 +85,11 @@
         "distinctMid": 38, "distinctLoose": 25, "isolated": 1, "longestRunLoose": 10,
         "medianMove": 13.29, "rotationArcmin": 8.5, "driftYPerMin": -0.48, "sessionFwhm": 3.12,
         "readNoiseG1": 2.9, "swampingRFrame1": 9.4,
-        "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true, "walkingNoiseOk": false
+        "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true, "walkingNoiseOk": false,
+        "driftPerExposurePx": 1.10, "walkingStreakPx": 9.9, "walkingNoise": "Insufficient",
+        "darks": 0, "patternStatus": "Measured", "patternHotPerMpx": 4, "patternSigmaAdu": [1.4, 2.1, 2.1, 2.3], "patternSurvivingPct": 1.6
       },
-      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3 }
+      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
     },
     {
       "id": "V-009",
@@ -133,6 +136,42 @@
         "south": 11, "north": 2, "east": 11, "west": 24
       },
       "tolerance": {}
+    },
+    {
+      "id": "V-012",
+      "kind": "inventory",
+      "session": "Milkyway-Core/2026-08-12-Smida",
+      "measuredOn": "2026-10-10",
+      "expected": {
+        "lights": 32,
+        "biases": 30,
+        "darks": 20,
+        "camera": "Nikon D3300",
+        "exposureSeconds": 119.2,
+        "iso": 400,
+        "firstStart": "2026-08-12T23:22:25",
+        "spanSeconds": 4996,
+        "dutyPct": 76.3
+      },
+      "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "dutyPct": 0.05 }
+    },
+    {
+      "id": "V-013",
+      "kind": "series",
+      "session": "Milkyway-Core/2026-08-12-Smida",
+      "measuredOn": "2026-10-10",
+      "expected": {
+        "good": 32, "marginal": 0, "bad": 0,
+        "badFrames": [],
+        "registered": 32, "moves": 2, "pauses": 31, "pausesWithoutMove": 29,
+        "distinctMid": 3, "distinctLoose": 3, "isolated": 0, "longestRunLoose": 12,
+        "medianMove": 15.52, "rotationArcmin": -6.3, "driftYPerMin": -0.07, "sessionFwhm": 4.17,
+        "readNoiseG1": 1.3, "swampingRFrame1": 10.1,
+        "raAxis": "Unknown", "focusHeld": true, "dew": false, "hotPixelsOk": false, "walkingNoiseOk": false,
+        "driftPerExposurePx": 0.17, "walkingStreakPx": 1.9, "walkingNoise": "Static",
+        "darks": 20, "patternStatus": "Measured", "patternHotPerMpx": 55, "patternSigmaAdu": [1.1, 1.2, 1.2, 0.9], "patternSurvivingPct": 23.4
+      },
+      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
     }
   ]
 }

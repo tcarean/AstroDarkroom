@@ -61,6 +61,10 @@ internal sealed record DitherAnalysis(
     int IsolatedLoose,
     int DistinctMid,
     int DistinctLoose,
+    int LargestClusterTight,
+    int SharingPairs,
+    double? PatternSurviving,
+    FrameStretch? WalkingStretch,
     IReadOnlyList<FrameStretch> RunsMid,
     IReadOnlyList<FrameStretch> RunsLoose,
     IReadOnlyList<SpotRun?> SpotRun,
@@ -254,6 +258,12 @@ internal static class DitherAnalyzer
         double spanX = reg.Count > 0 ? reg.Max(i => x[i]!.Value) - reg.Min(i => x[i]!.Value) : 0;
         double spanY = reg.Count > 0 ? reg.Max(i => y[i]!.Value) - reg.Min(i => y[i]!.Value) : 0;
         List<FrameStretch> runsMid = Runs(x, y, Th.CoverageMid), runsLoose = Runs(x, y, Th.CoverageLoose);
+
+        // The frames that share the dash of walking noise (R-043): the longest stretch of two
+        // or more consecutive registered frames within CoverageLoose of its first. A pair
+        // counts: two frames at one spot with a large drift between them draw a dash as long
+        // as that drift, which the runs of RunMinFrames above would miss.
+        FrameStretch? walkingStretch = Runs(x, y, Th.CoverageLoose, 2).MaxBy(st => st.Frames);
         SpotRun?[] spot = new SpotRun?[n];
         foreach (FrameStretch run in runsLoose)
         {
@@ -264,7 +274,26 @@ internal static class DitherAnalyzer
         }
 
         int longestTight = Runs(x, y, Th.CoverageTight).Select(r => r.Frames).DefaultIfEmpty(1).Max();
-        int distinctMid = Distinct(x, y, reg, Th.CoverageMid), distinctLoose = Distinct(x, y, reg, Th.CoverageLoose);
+        int distinctMid = Clusters(x, y, reg, Th.CoverageMid).Count, distinctLoose = Clusters(x, y, reg, Th.CoverageLoose).Count;
+        int largestTight = Clusters(x, y, reg, Th.CoverageTight).DefaultIfEmpty(0).Max();
+
+        // How much of one frame's pattern the mean of the stack keeps (R-048): every frame adds
+        // its own copy (1/n of the mean), and every pair closer than PatternSharePx adds the
+        // same pixels twice more, so (n + 2 pairs) / n^2; 1/n with no pair, 1 with every frame
+        // at one spot.
+        int sharing = 0;
+        for (int a = 0; a < reg.Count; a++)
+        {
+            for (int b = a + 1; b < reg.Count; b++)
+            {
+                if (Dist(x, y, reg[a], reg[b]) < Th.PatternSharePx)
+                {
+                    sharing++;
+                }
+            }
+        }
+
+        double? surviving = reg.Count > 0 ? (reg.Count + 2.0 * sharing) / ((double)reg.Count * reg.Count) : null;
 
         bool hotOk = longestTight <= Th.HotPixelRunMax;
         bool twoD = moves > 0 && (xOnly + both) >= Th.TwoDAxisFraction * moves && (yOnly + both) >= Th.TwoDAxisFraction * moves;
@@ -275,7 +304,7 @@ internal static class DitherAnalyzer
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, walkingStretch, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)
@@ -284,8 +313,8 @@ internal static class DitherAnalyzer
         return Math.Sqrt(dx * dx + dy * dy);
     }
 
-    /// <summary>Stretches of Th.RunMinFrames or more consecutive registered frames within <paramref name="radius"/> of the stretch's first frame.</summary>
-    private static List<FrameStretch> Runs(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius)
+    /// <summary>Stretches of <paramref name="minFrames"/> (Th.RunMinFrames by default) or more consecutive registered frames within <paramref name="radius"/> of the stretch's first frame.</summary>
+    private static List<FrameStretch> Runs(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius, int minFrames = Th.RunMinFrames)
     {
         List<FrameStretch> runs = [];
         int n = x.Count, s = 0;
@@ -294,7 +323,7 @@ internal static class DitherAnalyzer
             bool breaks = i == n || x[i] is null || y[i] is null || x[s] is null || y[s] is null || Dist(x, y, i, s) > radius;
             if (breaks)
             {
-                if (i - s >= Th.RunMinFrames && x[s] is not null)
+                if (i - s >= minFrames && x[s] is not null)
                 {
                     runs.Add(new FrameStretch(s + 1, i, i - s));
                 }
@@ -306,18 +335,29 @@ internal static class DitherAnalyzer
         return runs;
     }
 
-    /// <summary>Greedy clustering: a frame joins the first cluster whose seed is within <paramref name="radius"/>, else seeds a new one.</summary>
-    private static int Distinct(IReadOnlyList<double?> x, IReadOnlyList<double?> y, List<int> reg, double radius)
+    /// <summary>
+    /// Greedy clustering: a frame joins the first cluster whose seed is within
+    /// <paramref name="radius"/>, else seeds a new one. The sizes, one per cluster, in the
+    /// order the seeds appeared; the count is the distinct positions.
+    /// </summary>
+    private static List<int> Clusters(IReadOnlyList<double?> x, IReadOnlyList<double?> y, List<int> reg, double radius)
     {
         List<int> seeds = [];
+        List<int> sizes = [];
         foreach (int i in reg)
         {
-            if (!seeds.Any(s => Dist(x, y, i, s) <= radius))
+            int k = seeds.FindIndex(s => Dist(x, y, i, s) <= radius);
+            if (k < 0)
             {
                 seeds.Add(i);
+                sizes.Add(1);
+            }
+            else
+            {
+                sizes[k]++;
             }
         }
 
-        return seeds.Count;
+        return sizes;
     }
 }

@@ -80,9 +80,25 @@ internal enum Axis
 }
 
 /// <summary>
-/// The series as a whole (R-022 to R-025): every frame's class and flags, the session's
-/// medians, the trends, the drift and the field rotation, the RA axis, and the noise against
-/// the read noise when the biases gave one.
+/// The walking-noise verdict (R-043): Ok by the dither rule of R-021; Static when that rule
+/// fails but the dash the drift draws across DitherAnalysis.WalkingStretch (the longest
+/// stretch of two or more consecutive frames within Th.CoverageLoose) is under
+/// Th.WalkingStreakVisible, so the pattern does not move between the frames that share a
+/// spot; Insufficient otherwise; Unknown with fewer than two registered frames.
+/// </summary>
+internal enum WalkingNoise
+{
+    Unknown,
+    Ok,
+    Static,
+    Insufficient,
+}
+
+/// <summary>
+/// The series as a whole (R-022 to R-025, R-043): every frame's class and flags, the
+/// session's medians, the trends, the drift and the field rotation, the drift per exposure
+/// with the walking-noise dash and verdict it gives, the RA axis, and the noise against the
+/// read noise when the biases gave one.
 /// </summary>
 internal sealed record SeriesAnalysis(
     IReadOnlyList<FrameClass> Classes,
@@ -102,6 +118,11 @@ internal sealed record SeriesAnalysis(
     double? DriftXPerMin,
     double? DriftYPerMin,
     int DriftPairs,
+    double? MedianExposureSeconds,
+    double? DriftPerExposurePx,
+    Axis DriftAxis,
+    double? WalkingStreakPx,
+    WalkingNoise WalkingNoise,
     double? RotationTotalDeg,
     double? RotationPerHourDeg,
     double? CornerShiftPerExposurePx,
@@ -249,6 +270,20 @@ internal static class SeriesAnalyzer
 
         double? driftX = minutes > 0 ? sumX / minutes : null, driftY = minutes > 0 ? sumY / minutes : null;
 
+        // The drift over one exposure (the median exposure of the session) and the image axis
+        // it mostly runs along; the dash is that drift times the frames minus one of the
+        // longest stretch of consecutive frames at one spot (DitherAnalyzer.WalkingStretch,
+        // two frames or more), and the walking-noise verdict reads it (R-043, ADR 0015).
+        List<double> exposures = frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => e!.Value).ToList();
+        double? medianExposure = exposures.Count > 0 ? Raster.Percentile(exposures, 50) : null;
+        double? driftPerExposure = driftX is double dx && driftY is double dy && medianExposure is double me ? Math.Sqrt(dx * dx + dy * dy) * me / 60 : null;
+        Axis driftAxis = driftX is double ax && driftY is double ay ? (Math.Abs(ax) >= Math.Abs(ay) ? Axis.X : Axis.Y) : Axis.Unknown;
+        double? streak = driftPerExposure is double dpe ? dpe * ((dither.WalkingStretch?.Frames ?? 1) - 1) : null;
+        WalkingNoise walking = dither.Registered < 2 ? WalkingNoise.Unknown
+            : dither.WalkingNoiseOk ? WalkingNoise.Ok
+            : streak is double st && st < Th.WalkingStreakVisible ? WalkingNoise.Static
+            : WalkingNoise.Insufficient;
+
         // Rotation between the first and the last registered frame.
         AnalyzedFrame? firstReg = frames.FirstOrDefault(f => f.Registration is { Ok: true }), lastReg = frames.LastOrDefault(f => f.Registration is { Ok: true });
         double? rotTotal = null, rotPerHour = null, corner = null;
@@ -362,7 +397,7 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames);
+            driftX, driftY, pairs, medianExposure, driftPerExposure, driftAxis, streak, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames);
     }
 
     /// <summary>

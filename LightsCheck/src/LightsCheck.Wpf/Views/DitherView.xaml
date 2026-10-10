@@ -19,8 +19,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 <!-- DitherView: the map of positions, the steps per frame, the nearest-other-frame distance,
      and the DITHERING card: the report's scalar rows (pauses and moves, the longest stretch,
-     coverage, spans, axes, verdict) and its five tables (how often, how far, direction,
-     coverage per radius, runs), laid out as fixed-width cells. -->
+     coverage, spans, axes, scale, pattern, verdict), its five tables (how often, how far,
+     direction, coverage per radius, runs), laid out as fixed-width cells, and under them the
+     core's explanation of walking noise, the focal length and the darks (R-047). -->
 
 <UserControl x:Class="LightsCheck.Wpf.DitherView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -127,6 +128,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                 </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <ItemsControl ItemsSource="{Binding DitherExplanation}" Margin="0,14,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <TextBlock TextWrapping="Wrap" Margin="0,0,0,6" Text="{Binding Text}">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock" BasedOn="{StaticResource Muted}">
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding Emphasis}" Value="True">
+                          <Setter Property="FontWeight" Value="Bold" />
+                          <Setter Property="Foreground" Value="{StaticResource TextBr}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>

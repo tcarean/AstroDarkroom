@@ -173,6 +173,36 @@ internal static class Th
     /// <summary>... and each axis carries at least this fraction of the moves.</summary>
     internal const double TwoDAxisFraction = 0.25;
 
+    // ---- walking noise against the drift, and the sensor's pattern (R-043, R-046)
+
+    /// <summary>
+    /// The dash the drift draws inside the longest run at CoverageLoose (the drift per exposure
+    /// times the run's frames minus one) under which nothing walks, whatever the dithering: a
+    /// rule of thumb placed between the 1.9 px of the Smida session (20 mm, a clean stack) and
+    /// the 11 px of Veil (135 mm, worms), measured on 2026-10-10 (ADR 0015); to tune on more sessions.
+    /// </summary>
+    internal const double WalkingStreakVisible = 3.0;
+
+    /// <summary>The side of the central square of the raw mosaic kept from every light for the sensor's pattern (R-046); the whole frame when it is smaller.</summary>
+    internal const int PatternCrop = 512;
+
+    /// <summary>
+    /// A pixel of the pattern above this many sigmas of one frame's high-pass noise is hot:
+    /// sigma clipping rejects it when the frames moved. The pattern below that is reported as
+    /// a sigma, not a count: a count at 3 sigma sat on the steep tail of the Veil pattern, where
+    /// a 20 % change of the noise estimate moved it four times (ADR 0015).
+    /// </summary>
+    internal const double PatternHotSigma = 10.0;
+
+    /// <summary>Two frames closer than this share the sensor's pattern pixel for pixel: their pattern adds up instead of averaging out (R-048).</summary>
+    internal const double PatternSharePx = 1.5;
+
+    /// <summary>The per-pixel median across fewer frames than this still carries too much of the frames' own noise to read the pattern.</summary>
+    internal const int PatternMinFrames = 7;
+
+    /// <summary>The median is clean of stars while the largest cluster of frames at CoverageTight holds under this fraction of the registered frames.</summary>
+    internal const double PatternClusterFraction = 0.5;
+
     // ---- frame classes (R-022)
 
     /// <summary>Median elongation at or above which a frame is bad, and above which it is marginal.</summary>

@@ -41,7 +41,9 @@ bug and propagates.
 - the Dithering tab's card takes `SeriesReport.DitherScalarRows` as `DitherRows` and
   `SeriesReport.DitherTables` as `TableVm`s; `DitherView` lays a table out as its title, a
   header row and the rows, each row an `ItemsControl` with a horizontal panel of fixed-width
-  `TextBlock` cells, no grid control and no column logic;
+  `TextBlock` cells, no grid control and no column logic; under the tables it lists
+  `DitherExplanation`, `SeriesReport.DitherExplanation` as `ParagraphVm`s with the same
+  `DataTrigger` on `Emphasis` as the Respinse tab (R-047);
 - the charts take `ChartPoint(X, Y, Label, Colour)` lists: the map from the registration's
   `Dx`/`Dy`, the steps and nearest distances from `DitherAnalysis`, the four quality series
   from `FrameMeasurement`; a frame without a figure is `NaN` and the chart leaves a gap. The
