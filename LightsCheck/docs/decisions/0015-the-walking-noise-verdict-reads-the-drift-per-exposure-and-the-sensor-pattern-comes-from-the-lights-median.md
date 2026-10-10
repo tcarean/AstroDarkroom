@@ -18,7 +18,7 @@ are in the plan `docs/plans/2026-10-10-judge-walking-noise-by-the-drift-and-meas
 | drift, arcseconds | -1.6 / -2.9 "/min | -2.2 / -2.8 "/min |
 | drift per 2 min exposure | 1.1 to 1.3 px | 0.15 px |
 | longest run at 10 px | 10 frames (61-70) | 12 frames (9-20) |
-| dash = drift per exposure x (run - 1) | ~11 px | ~1.9 px |
+| dash = drift per exposure x (frames of the longest stretch at one spot - 1) | ~11 px | ~1.9 px |
 | darks in the session | none | 20, a master dark subtracted |
 | warm pixels in the calibrated frames above 3 sigma of one frame | 1162 / Mpx | the master dark removed held 34 / Mpx |
 | autocorrelation anisotropy of the stack's background, G, lags 3 to 48 | 1.45 along Y = RA | 1.15 along X |
@@ -33,9 +33,13 @@ positions alone and cannot tell these two sessions apart.
 ## Decision
 
 - **The walking-noise verdict reads the drift.** `SeriesAnalyzer` adds the drift over one
-  exposure (the drift vector of R-023 times the median exposure), the dash it draws inside the
-  longest run at `Th.CoverageLoose` (drift per exposure times the run's frames minus one), and a
-  three-way verdict: `Ok` by the dither rule of ADR 0007, unchanged; else `Static` when the dash is
+  exposure (the drift vector of R-023 times the median exposure), the dash it draws across the
+  longest stretch of two or more consecutive frames within `Th.CoverageLoose` of its first
+  (drift per exposure times the frames minus one; a stretch of two counts, since a pair with a
+  large drift between them draws a dash too, which the runs of three of ADR 0007 missed, the
+  review of 2026-10-10; the measured span of a stretch was tried and rejected, since a dither
+  of 9 px inside the stretch is two dots, not a dash, and the registration's 0.5 px wobble
+  reads as drift), and a three-way verdict: `Ok` by the dither rule of ADR 0007, unchanged; else `Static` when the dash is
   under `Th.WalkingStreakVisible`; else `Insufficient`. The threshold is 3 px, a rule of thumb
   placed between Smida's 1.9 px (nothing visible) and Veil's 11 px (worms), to tune on more
   sessions. The dither rule stays as it was, so a well-dithered session is still `OK` without

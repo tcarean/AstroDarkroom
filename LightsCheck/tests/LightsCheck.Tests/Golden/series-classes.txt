@@ -17,7 +17,7 @@ Copyright (C) 2026 Tudor Carean
     expunere           : BUNA - fond G 2000 -> 2000 ADU; canalul cel mai slab B: shot/citire 10.0, penalizare 5 %
     roua               : NU - FWHM +0 %, halo +0.002
     cadre miscate      : 1 slabe, 3 la limita, 5 bune, 1 necitite (din 10); axa RA nedeterminata
-    dithering          : FARA walking noise, OK pentru pixeli calzi - nicio dara de walking noise: drift 0.50 px pe expunere, niciun grup de 3+ cadre consecutive la 10 px; 3 miscari la 9 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 9 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
     de scos din stiva  : 2 cadre (lista la RESPINSE); raman 8 = 16 min
 
   FOCUS
@@ -45,7 +45,7 @@ Copyright (C) 2026 Tudor Carean
 
   DRIFT SI ROTATIE
     drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi) = +1.5 / +0.2 "/min
-    drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe X; nicio dara de walking noise (niciun grup de 3+ cadre consecutive la 10 px)
+    drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe X; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la 10 px)
     rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
 
   DITHERING
@@ -61,7 +61,7 @@ Copyright (C) 2026 Tudor Carean
     scara              : 1 px = 5.99"; o miscare de 5 px (pragul) cere 30" pe cer, una de 10 px 60"
     pattern in stiva   : 23.5 % din al unui cadru ramane in medie (ideal 11.1 % la 9 cadre; perechi de cadre la sub 1.5 px: 5)
     pattern fix        : sigma 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.0 pe B (0 %); 0 pixeli fierbinti / Mpx peste 10 sigma (mediana a 9 cadre neinregistrate, 480 x 480 px din centru); 2 dark-uri in darks\, Siril le scade
-    verdict            : FARA walking noise, OK pentru pixeli calzi - nicio dara de walking noise: drift 0.50 px pe expunere, niciun grup de 3+ cadre consecutive la 10 px; 3 miscari la 9 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    verdict            : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 9 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
 
   RESPINSE (1 cadre slabe, 1 necitite; cele la limita raman la alegerea ta)
       7  DSC_0007.fit          alungire 1.76 (prag 1.60), dara la 90 grade

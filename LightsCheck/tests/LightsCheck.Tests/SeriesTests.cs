@@ -146,8 +146,7 @@ public class SeriesTests
         Assert.Equal(PatternStatus.Measured, p.Status);
         Assert.Equal(8, p.Frames);
         Assert.Equal(480, p.CropSize);            // the 640 x 480 frame's shorter side
-        // The crop reads the central 480 x 480 minus a 2 px border per CFA position: the pattern's pixels inside it.
-        int inside = SessionFixture.SensorPattern.Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
+        // The crop reads the central 480 x 480 minus a 2 px border per CFA position: the hot pixels inside it.
         int hotInside = SessionFixture.SensorPattern.Skip(SessionFixture.WarmPixels).Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
         Assert.InRange(p.Hot, hotInside - 1, hotInside + 1);
         Assert.InRange(p.HotPerMpx, 60, 110);

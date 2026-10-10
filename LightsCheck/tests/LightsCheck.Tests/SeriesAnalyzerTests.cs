@@ -44,7 +44,7 @@ public class SeriesAnalyzerTests
         return (frames, DitherAnalyzer.Analyze(x, y, c.PauseSeconds));
     }
 
-    /// <summary>12 frames drifting 1 px along Y per frame: 0.43 px/min, 0.85 px per 120 s exposure, a run of 11 at 10 px, a dash of 8.5 px, INSUFICIENT (R-043).</summary>
+    /// <summary>12 frames drifting 1 px along Y per frame: 0.43 px/min, 0.85 px per 120 s exposure, a stretch of 11 frames within 10 px of the first, a dash of 8.5 px, INSUFICIENT (R-043).</summary>
     [Fact]
     public void R043_TheDriftOverOneExposureDrawsTheDashOfTheLongestRunAndTheVerdictReadsIt()
     {
@@ -56,13 +56,14 @@ public class SeriesAnalyzerTests
         Assert.Equal(1.0 / 2.35, s.DriftYPerMin!.Value, 0.01);
         Assert.Equal(0.851, s.DriftPerExposurePx!.Value, 0.01);
         Assert.Equal(Axis.Y, s.DriftAxis);
-        Assert.Equal(11, s.LongestRunLoose);        // frames 1-11 within 10 px of frame 1
+        Assert.Equal(120, s.MedianExposureSeconds);
+        Assert.Equal(new FrameStretch(1, 11, 11), d.WalkingStretch);   // frames 1-11 within 10 px of frame 1
         Assert.Equal(8.51, s.WalkingStreakPx!.Value, 0.05);
         Assert.False(d.WalkingNoiseOk);
         Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
     }
 
-    /// <summary>The same 12 frames drifting 0.1 px per frame: the dash is under 3 px, so nothing walks whatever the dither rule says (R-043).</summary>
+    /// <summary>The same 12 frames drifting 0.1 px per frame: the dash is 0.9 px, under 3, so nothing walks whatever the dither rule says (R-043).</summary>
     [Fact]
     public void R043_ADashUnderThreePixelsIsNoWalkingNoiseEvenWithoutDithering()
     {
@@ -72,10 +73,28 @@ public class SeriesAnalyzerTests
         SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
 
         Assert.Equal(Axis.X, s.DriftAxis);
-        Assert.Equal(12, s.LongestRunLoose);
+        Assert.Equal(new FrameStretch(1, 12, 12), d.WalkingStretch);
         Assert.InRange(s.WalkingStreakPx!.Value, 0.9, 1.0);
         Assert.False(d.WalkingNoiseOk);
         Assert.Equal(WalkingNoise.Static, s.WalkingNoise);
+    }
+
+    /// <summary>Two frames at one spot with a 4.5 px drift between them draw a dash of the drift per exposure: a pair counts, not only a run of three (R-043, the review of 2026-10-10).</summary>
+    [Fact]
+    public void R043_APairOfFramesAtOneSpotDrawsADashOfTheDriftBetweenThem()
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 6).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        // Pairs 4.5 px apart along Y (under the 5 px move threshold), then a 30 px dither: no three frames within 10 px.
+        double?[] x = [0, 0, 30, 30, 60, 60], y = [0, 4.5, 0, 4.5, 0, 4.5];
+        DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
+        Assert.Empty(d.RunsLoose);
+        Assert.Equal(new FrameStretch(1, 2, 2), d.WalkingStretch);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(4.5 / 2.35 * 2, s.DriftPerExposurePx!.Value, 0.01);   // the three 4.5 px steps over 2.35 min, times a 120 s exposure
+        Assert.Equal(s.DriftPerExposurePx.Value, s.WalkingStreakPx!.Value, 0.001);
+        Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
     }
 
     /// <summary>A session the dither rule of R-021 accepts is OK whatever the drift; one without a registered pair is unknown (R-043).</summary>
@@ -91,6 +110,7 @@ public class SeriesAnalyzerTests
         SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
         Assert.Equal(WalkingNoise.Ok, s.WalkingNoise);
         Assert.Null(s.DriftPerExposurePx);      // every step was a move: no drift pair
+        Assert.Null(d.WalkingStretch);          // no two consecutive frames within 10 px
         Assert.Null(s.WalkingStreakPx);
 
         DitherAnalysis none = DitherAnalyzer.Analyze(new double?[8], new double?[8], c.PauseSeconds);

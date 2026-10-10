@@ -64,6 +64,7 @@ internal sealed record DitherAnalysis(
     int LargestClusterTight,
     int SharingPairs,
     double? PatternSurviving,
+    FrameStretch? WalkingStretch,
     IReadOnlyList<FrameStretch> RunsMid,
     IReadOnlyList<FrameStretch> RunsLoose,
     IReadOnlyList<SpotRun?> SpotRun,
@@ -257,6 +258,12 @@ internal static class DitherAnalyzer
         double spanX = reg.Count > 0 ? reg.Max(i => x[i]!.Value) - reg.Min(i => x[i]!.Value) : 0;
         double spanY = reg.Count > 0 ? reg.Max(i => y[i]!.Value) - reg.Min(i => y[i]!.Value) : 0;
         List<FrameStretch> runsMid = Runs(x, y, Th.CoverageMid), runsLoose = Runs(x, y, Th.CoverageLoose);
+
+        // The frames that share the dash of walking noise (R-043): the longest stretch of two
+        // or more consecutive registered frames within CoverageLoose of its first. A pair
+        // counts: two frames at one spot with a large drift between them draw a dash as long
+        // as that drift, which the runs of RunMinFrames above would miss.
+        FrameStretch? walkingStretch = Runs(x, y, Th.CoverageLoose, 2).MaxBy(st => st.Frames);
         SpotRun?[] spot = new SpotRun?[n];
         foreach (FrameStretch run in runsLoose)
         {
@@ -297,7 +304,7 @@ internal static class DitherAnalyzer
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, walkingStretch, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)
@@ -306,8 +313,8 @@ internal static class DitherAnalyzer
         return Math.Sqrt(dx * dx + dy * dy);
     }
 
-    /// <summary>Stretches of Th.RunMinFrames or more consecutive registered frames within <paramref name="radius"/> of the stretch's first frame.</summary>
-    private static List<FrameStretch> Runs(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius)
+    /// <summary>Stretches of <paramref name="minFrames"/> (Th.RunMinFrames by default) or more consecutive registered frames within <paramref name="radius"/> of the stretch's first frame.</summary>
+    private static List<FrameStretch> Runs(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius, int minFrames = Th.RunMinFrames)
     {
         List<FrameStretch> runs = [];
         int n = x.Count, s = 0;
@@ -316,7 +323,7 @@ internal static class DitherAnalyzer
             bool breaks = i == n || x[i] is null || y[i] is null || x[s] is null || y[s] is null || Dist(x, y, i, s) > radius;
             if (breaks)
             {
-                if (i - s >= Th.RunMinFrames && x[s] is not null)
+                if (i - s >= minFrames && x[s] is not null)
                 {
                     runs.Add(new FrameStretch(s + 1, i, i - s));
                 }

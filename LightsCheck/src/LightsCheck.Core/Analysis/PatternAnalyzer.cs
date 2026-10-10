@@ -89,7 +89,8 @@ internal static class PatternAnalyzer
 {
     /// <summary>
     /// <paramref name="crops"/> and <paramref name="channels"/> are per frame (null where the
-    /// frame was not measured); only the crops of the first crop's size count. The median is
+    /// frame was not measured); only the crops of registered frames of the first crop's size
+    /// count, since the rule below reads the registered positions. The median is
     /// read only when at least Th.PatternMinFrames frames give it and the largest cluster of
     /// frames at Th.CoverageTight holds under Th.PatternClusterFraction of the registered
     /// frames, so no pixel sees a star in half the frames or more.
@@ -105,16 +106,16 @@ internal static class PatternAnalyzer
             return SensorPattern.Empty(PatternStatus.NoCrops, 0);
         }
 
+        if (dither.Registered < 2)
+        {
+            return SensorPattern.Empty(PatternStatus.Unregistered, 0);
+        }
+
         int size = first.Size;
-        List<int> used = Enumerable.Range(0, crops.Count).Where(i => crops[i] is { } c && c.Size == size).ToList();
+        List<int> used = Enumerable.Range(0, crops.Count).Where(i => crops[i] is { } c && c.Size == size && i < dither.NearestOther.Count && dither.NearestOther[i] is not null).ToList();
         if (used.Count < Th.PatternMinFrames)
         {
             return SensorPattern.Empty(PatternStatus.TooFewFrames, used.Count);
-        }
-
-        if (dither.Registered < 2)
-        {
-            return SensorPattern.Empty(PatternStatus.Unregistered, used.Count);
         }
 
         if (dither.LargestClusterTight >= Th.PatternClusterFraction * dither.Registered)
@@ -122,12 +123,12 @@ internal static class PatternAnalyzer
             return SensorPattern.Empty(PatternStatus.FramesDidNotMove, used.Count);
         }
 
-        Raster median = Median(crops, used, size, 1, 0);
+        Raster median = Median(crops, used, size);
         // The medians of the odd and the even frames: their difference holds the noise of a
         // half-median twice and none of the pattern.
         List<int> odd = used.Where((_, k) => k % 2 == 0).ToList(), even = used.Where((_, k) => k % 2 == 1).ToList();
-        Raster diff = Median(crops, odd, size, 1, 0);
-        Raster evenMedian = Median(crops, even, size, 1, 0);
+        Raster diff = Median(crops, odd, size);
+        Raster evenMedian = Median(crops, even, size);
         for (int i = 0; i < diff.D.Length; i++)
         {
             diff.D[i] -= evenMedian.D[i];
@@ -136,21 +137,22 @@ internal static class PatternAnalyzer
         // Var(odd - even) = c / na + c / nb and Var(median of n) = c / n, for the same c.
         double noiseShare = 1.0 / used.Count / (1.0 / odd.Count + 1.0 / even.Count);
 
+        List<IReadOnlyList<ChannelLevel>> with = used.Select(i => channels[i]).Where(c => c is not null).Select(c => c!).ToList();
         List<string> names = [];
         List<double> patternSigma = [], frameSigma = [];
         int pixels = 0, hot = 0;
         for (int p = 0; p < 4; p++)
         {
-            List<IReadOnlyList<ChannelLevel>> with = used.Select(i => channels[i]).Where(c => c is not null && c.Count > p).Select(c => c!).ToList();
-            List<double> sigmas = with.Select(c => c[p].HighPassSigma).Where(v => !double.IsNaN(v)).ToList();
+            List<double> sigmas = with.Where(c => c.Count > p).Select(c => c[p].HighPassSigma).Where(v => !double.IsNaN(v)).ToList();
             double fs = sigmas.Count > 0 ? Raster.Percentile(sigmas, 50) : double.NaN;
             List<double> hp = NoiseAnalyzer.HighPass(median, p / 2, p % 2);
             double measured = hp.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hp, 4.0, 5);
             List<double> hpDiff = NoiseAnalyzer.HighPass(diff, p / 2, p % 2);
             double diffSigma = hpDiff.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hpDiff, 4.0, 5);
-            double noise2 = double.IsNaN(diffSigma) ? 0 : diffSigma * diffSigma * noiseShare;
-            names.Add(with.Count > 0 ? with[0][p].Name : $"CFA[{p / 2},{p % 2}]");
-            patternSigma.Add(double.IsNaN(measured) ? double.NaN : Math.Sqrt(Math.Max(0, measured * measured - noise2)));
+            // Without the noise estimate the sigma would still hold the median's own noise: no figure then.
+            double noise2 = diffSigma * diffSigma * noiseShare;
+            names.Add(with.Count > 0 && with[0].Count > p ? with[0][p].Name : $"CFA[{p / 2},{p % 2}]");
+            patternSigma.Add(double.IsNaN(measured) || double.IsNaN(noise2) ? double.NaN : Math.Sqrt(Math.Max(0, measured * measured - noise2)));
             frameSigma.Add(fs);
             if (double.IsNaN(fs) || fs <= 0)
             {
@@ -165,11 +167,11 @@ internal static class PatternAnalyzer
     }
 
     /// <summary>The per-pixel median of the crops at the given indices, as a raster of the crop's size.</summary>
-    private static Raster Median(IReadOnlyList<PatternCrop?> crops, List<int> indices, int size, int stride, int offset)
+    private static Raster Median(IReadOnlyList<PatternCrop?> crops, List<int> indices, int size)
     {
         Raster m = new(size, size);
         float[] buf = new float[indices.Count];
-        for (int i = offset; i < size * size; i += stride)
+        for (int i = 0; i < size * size; i++)
         {
             for (int k = 0; k < indices.Count; k++)
             {

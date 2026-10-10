@@ -136,6 +136,7 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("patternStatus").GetString(), r.Pattern.Status.ToString());
         AssertWithin("patternHotPerMpx", e.GetProperty("patternHotPerMpx").GetDouble(), r.Pattern.HotPerMpx, t.GetProperty("perMpx").GetDouble());
         double[] sigmas = e.GetProperty("patternSigmaAdu").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+        Assert.True(sigmas.Length == r.Pattern.PatternSigma.Count, $"patternSigmaAdu: {sigmas.Length} recorded, {r.Pattern.PatternSigma.Count} measured ({r.Pattern.Status})");
         for (int p = 0; p < sigmas.Length; p++)
         {
             AssertWithin($"patternSigmaAdu[{p}]", sigmas[p], r.Pattern.PatternSigma[p], t.GetProperty("adu").GetDouble());

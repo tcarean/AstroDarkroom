@@ -78,8 +78,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The session's `darks/` folder is counted, never read, and printed after `biases` in the
   session lines (R-042).
 - The walking-noise verdict reads the drift (R-043, ADR 0015): DRIFT SI ROTATIE gains
-  `drift intr-o expunere`, the drift over one exposure and the dash it draws inside the
-  longest run of frames at one spot; a dash under 3 px is `FARA walking noise` whatever the
+  `drift intr-o expunere`, the drift over one exposure and the dash of walking noise, the
+  span of the widest stretch of consecutive frames at one spot; a dash under 3 px is `FARA walking noise` whatever the
   dithering, as on the Smida session at 20 mm, where the same drift as Veil's is a seventh of
   a pixel per frame. `INSUFICIENT` and `FARA` say the dash, the drift and the run.
 - DITHERING gains `scara`, what a move of 5 and 10 px is in arcseconds at the session's focal
@@ -100,7 +100,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - FOCUS closes with a `verdict` row, as ROUA does: the console prints it and the window's
   FOCUS card shows the chip it lacked (R-036, ADR 0012).
 - The dithering verdict prints its two parts worst first (`ATENTIE la pixeli calzi, FARA
-  walking noise ...`), so the window's chip takes the colour of the worse one (R-043).
+  walking noise ...`), so the window's chip takes the colour of the worse one (R-043); a chip
+  opening with `OK` or `FARA` is now the good colour, where `OK pentru walking noise, OK
+  pentru pixeli calzi` was the fair one.
 - The arrows of the `dithering` cell are symbols after the pixels, `RA 15 px ← V, DEC 12 px ↓ S`
   instead of `RA 15 px V (dreapta), DEC 12 px S (jos)`, and the default mapping is the owner's
   SynScan, right east and up north, the reverse of the forum default of ADR 0013 (ADR 0014);

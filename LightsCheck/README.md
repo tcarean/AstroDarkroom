@@ -73,8 +73,8 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
   amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
 - **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, driftul intr-o
-  expunere (pe ce axa a monturii si ce dara de walking noise lasa in cel mai lung grup de
-  cadre ramase in acelasi loc la 10 px), rotatia de camp.
+  expunere (pe ce axa a monturii) si dara de walking noise pe care o lasa in cel mai lung grup
+  de cadre consecutive ramase in acelasi loc la 10 px, de la 2 cadre in sus, rotatia de camp.
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
   grupuri de cadre consecutive in acelasi loc), `scara` (cat inseamna pe cer, in secunde de

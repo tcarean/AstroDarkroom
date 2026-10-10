@@ -94,8 +94,8 @@ public class PatternAnalyzerTests
         Assert.InRange(p.Hot, 5, 6);
         Assert.Equal(["R", "G1", "G2", "B"], p.Names);
         Assert.All(p.FrameSigma, v => Assert.Equal(FrameSigma, v));
-        // The crops hold noise and 36 pattern pixels only: the median's own noise (1.25 * 10 / sqrt(12) = 3.6)
-        // is taken out, and what is left is the pattern's few pixels spread over 28 x 28, under 2 sigma.
+        // The crops hold noise and 36 pattern pixels only: the median's own noise, measured from the odd and
+        // the even frames' medians, is taken out, and what is left is the pattern's few pixels spread over 28 x 28, under 2 sigma.
         Assert.All(p.PatternSigma, v => Assert.InRange(v, 0.0, 2.0));
         Assert.All(Enumerable.Range(0, 4), i => Assert.InRange(p.FractionOfFrame(i), 0.0, 0.2));
     }

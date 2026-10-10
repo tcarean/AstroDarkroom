@@ -212,3 +212,11 @@ Small commits on the branch after each step with the gate green.
   measurement was on the debayered green channel of the calibrated frames); Smida `ATENTIE la
   pixeli calzi ..., FARA walking noise (dare de cel mult 1.9 px: drift 0.17 px pe expunere,
   grupul cel mai lung la 10 px 12 cadre)`, pattern 744 warm and 55 hot per megapixel, 20 darks. After the owner's choice of the sigma: Veil `sigma 1.4 ADU pe R (12 %), 2.1 pe G1 (10 %), 2.1 pe G2 (10 %), 2.3 pe B (10 %)`, 1.6 % of the pattern in the stack (16 pairs); Smida `1.1 / 1.2 / 1.2 / 0.9 ADU (21 / 19 / 18 / 16 %)`, 23.4 % (104 pairs). The median's noise is measured from the odd and even medians, not from the Gaussian formula, which over-subtracted on the eight-frame fixture.
+- After `/code-review` (ten findings, all fixed in the third commit): the dash is the drift per
+  exposure across the longest stretch of two or more consecutive frames within 10 px, not of
+  the longest run of three, so a pair of frames with a large drift between them counts (the
+  measured span of the stretch was tried first and read Smida's 9 px dither inside a stretch
+  as an 11.6 px dash); only registered frames enter the pattern median; the median exposure lives on
+  `SeriesAnalysis`; a NaN noise estimate yields no pattern sigma and prints `-`; the validation
+  test checks the sigma list's length before indexing; the recolouring of the `OK, OK` chip is
+  in the CHANGELOG; dead test code and a stale comment went.

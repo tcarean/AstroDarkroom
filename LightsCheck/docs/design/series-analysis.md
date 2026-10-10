@@ -81,9 +81,11 @@ pairs that put the same pixels on the same pixels.
 After the drift per minute, `SeriesAnalyzer` takes the median exposure of the frames that
 carry one and turns the drift vector into `DriftPerExposurePx`; `DriftAxis` is the image axis
 with the larger component (the report words it RA or DEC through `RaAxis`, else X or Y).
-`LongestRunLoose` is the longest run of `DitherAnalysis.RunsLoose` in frames (1 without a
-run), and `WalkingStreakPx` the dash the drift draws across it: drift per exposure times the
-frames minus one. `WalkingNoise` reads both: `Ok` when `DitherAnalysis.WalkingNoiseOk` (the
+`MedianExposureSeconds` is kept for the report. The dash, `WalkingStreakPx`, is the drift
+per exposure times the frames minus one of `DitherAnalysis.WalkingStretch`, which
+`DitherAnalyzer` takes as the longest result of `Runs` with a minimum of two frames at
+`Th.CoverageLoose`; a pair of frames at one spot with a large drift between them counts,
+which the runs of three did not. `WalkingNoise` reads both: `Ok` when `DitherAnalysis.WalkingNoiseOk` (the
 dither rule is untouched), else `Static` when the dash is known and under
 `Th.WalkingStreakVisible`, else `Insufficient`; `Unknown` under two registered frames. The
 `Static` word is the one Smida gets: a drift of a seventh of a pixel per exposure moves no
