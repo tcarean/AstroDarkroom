@@ -42,8 +42,8 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `AxisStep`, `CoverageTight`, `CoverageMid`, `CoverageLoose`, `RunMinFrames`,
 `HotPixelRunMax`, `WalkingNoiseDistinctFraction`, `WalkingNoiseIsolatedFraction`,
 `TwoDAxisFraction`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
-`PatternCrop`, `PatternWarmSigma`, `PatternHotSigma`, `PatternMinFrames`,
-`PatternClusterFraction`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
+`PatternSharePx`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -71,7 +71,10 @@ within the radius of the stretch's first frame. `SpotRun` is the per-frame view 
 outside a run), for the table cell and the map ring of R-034 (ADR 0011). `Clusters` is the
 greedy clustering behind the distinct counts; its sizes also give `LargestClusterTight`, the
 biggest group of frames at 3 px, which the pattern analyzer reads to know whether a pixel can
-have seen a star in half the frames.
+have seen a star in half the frames. `SharingPairs` counts the pairs of registered frames
+closer than `Th.PatternSharePx`, and `PatternSurviving` is `(n + 2 pairs) / n^2`, how much of
+one frame's pattern the mean of the stack keeps (R-048): the n copies of 1/n each, plus the
+pairs that put the same pixels on the same pixels.
 
 ## The drift over an exposure and the walking verdict (`SeriesAnalyzer`, R-043)
 
@@ -103,10 +106,17 @@ sigma stands clear of it from 7 frames on. Per CFA position the median goes thro
 `NoiseAnalyzer.HighPass`, the residuals behind `HighPassSigma` (pixel minus the 5 x 5 median of
 its own position, in the central window of that position, which on a 512 px crop is the whole
 position plane minus a 2 px border); the position's one-frame sigma is the median over the
-frames of `ChannelLevel.HighPassSigma`, and a residual above `Th.PatternWarmSigma` sigmas is
-warm, above `Th.PatternHotSigma` hot (the hot ones count among the warm). `SensorPattern`
-holds the counts, the pixels read, the pattern's own clipped sigma per position and the
-frame sigmas; `WarmPerMpx` and `HotPerMpx` scale the counts. The raws carry the pattern whether
+frames of `ChannelLevel.HighPassSigma`. The pattern's sigma is the clipped standard deviation
+of those residuals with the median's own noise taken out in quadrature. That noise is
+measured, not assumed: the medians of the odd and the even frames differ by the noise of two
+half-medians and by no pattern, and `Var(median of n) = Var(odd - even) / (n (1 / n_odd +
+1 / n_even))`; the analytic `sqrt(pi / 2) / sqrt(n)` of a Gaussian median was tried first and
+over-subtracted on eight frames, where the small-n median is tighter than the formula. On 87
+Veil frames about 3 of the 21 ADU of green noise survive in the median and the measured
+3.7 ADU become 2.1 of pattern. A residual above `Th.PatternHotSigma` sigmas of the frame's noise is hot.
+`SensorPattern` holds the position names, the sigmas, the frame sigmas, the hot count and
+the pixels read; `FractionOfFrame` and `HotPerMpx` derive the fraction and the rate. There
+is no count at a low threshold on purpose (ADR 0015: it sat on the steep tail). The raws carry the pattern whether
 or not the session has darks; the report's `pattern fix` row adds what the `darks/` folder says
 (`SessionFolder.Darks`, counted and never read, R-042).
 
@@ -187,8 +197,9 @@ no-move words) so a wording lives once; the runs table has its own `RunRows` and
 `DitherScalarRows` is the DITHERING rows that are not tables, plus the `axe` row that names
 the RA axis and its source, which the console carries on its `directie` row; both end with
 `ScaleRow` (what a move of `Th.DitherStep` and `Th.CoverageLoose` is in arcseconds at the
-session's scale, R-044), `PatternRow` (the `SensorPattern` by its status and the darks
-clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
+session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048),
+`PatternRow` (the `SensorPattern` by its status, the sigmas with their fractions, the hot
+rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
 exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `nicio dara` without a run.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a

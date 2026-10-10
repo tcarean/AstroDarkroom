@@ -83,9 +83,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   dithering, as on the Smida session at 20 mm, where the same drift as Veil's is a seventh of
   a pixel per frame. `INSUFICIENT` and `FARA` say the dash, the drift and the run.
 - DITHERING gains `scara`, what a move of 5 and 10 px is in arcseconds at the session's focal
-  length (R-044), and `pattern fix`, the sensor's warm and hot pixels per megapixel read from
-  the lights' own median, with whether the session's darks will take them out (R-046, ADR
-  0015).
+  length (R-044); `pattern in stiva`, how much of one frame's pattern the mean of the stack
+  keeps against the ideal of one over the frames (R-048); and `pattern fix`, the sensor's
+  pattern read from the lights' own median, its sigma per channel in ADU and as a share of a
+  frame's noise and its hot pixels per megapixel, with whether the session's darks will take
+  it out (R-046, ADR 0015).
 - The Dithering tab explains walking noise, the focal length, what breaks it and how to take
   darks without touching the lens, in five paragraphs worded in the core (R-045, R-047);
   `README.md` says the same.

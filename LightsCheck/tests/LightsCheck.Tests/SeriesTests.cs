@@ -135,7 +135,7 @@ public class SeriesTests
         Assert.Contains("capacul de body", p[3].Text, StringComparison.Ordinal);
     }
 
-    /// <summary>The 8-frame pattern with the synthetic sensor: its 200 warm and 20 hot pixels come back from the lights' median, and the darks line says what Siril will do (R-046, R-042).</summary>
+    /// <summary>The 8-frame pattern with the synthetic sensor: its bulk field of 8 ADU and its 20 hot pixels come back from the lights' median, and the darks line says what Siril will do (R-046, R-042).</summary>
     [Fact]
     public void R046_TheSensorPatternIsReadFromTheLightsAndTheDarksAreNoticed()
     {
@@ -149,19 +149,36 @@ public class SeriesTests
         // The crop reads the central 480 x 480 minus a 2 px border per CFA position: the pattern's pixels inside it.
         int inside = SessionFixture.SensorPattern.Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
         int hotInside = SessionFixture.SensorPattern.Skip(SessionFixture.WarmPixels).Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
-        Assert.InRange(p.Warm, inside - 3, inside + 6);    // a star core under a warm pixel in a quarter of the frames costs nothing; the median's noise adds a few
         Assert.InRange(p.Hot, hotInside - 1, hotInside + 1);
-        Assert.InRange(p.WarmPerMpx, 700, 1100);
+        Assert.InRange(p.HotPerMpx, 60, 110);
+        // The bulk pattern is a fixed field of 8 ADU on every light (the spikes are clipped out of the sigma): 8 against the 40 of a frame.
+        Assert.All(p.PatternSigma, v => Assert.InRange(v, 6.0, 10.5));
+        Assert.All(Enumerable.Range(0, 4), i => Assert.InRange(p.FractionOfFrame(i), 0.14, 0.27));
         Assert.Equal(3, r.Session.Darks.Count);
 
         ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "pattern fix");
-        Assert.Contains("pixeli calzi / Mpx peste 3 sigma", row.Value, StringComparison.Ordinal);
+        Assert.StartsWith("sigma ", row.Value, StringComparison.Ordinal);
+        Assert.Contains(" ADU pe R (", row.Value, StringComparison.Ordinal);
+        Assert.Contains(" % din zgomotul unui cadru)", row.Value, StringComparison.Ordinal);
+        Assert.Contains("pixeli fierbinti / Mpx peste 10 sigma", row.Value, StringComparison.Ordinal);
         Assert.EndsWith("3 dark-uri in darks\\, Siril le scade", row.Value, StringComparison.Ordinal);
 
         using SessionFixture g = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(4).ToList());
         SeriesResult q = SeriesRun.Run(g.Root, new SeriesOptions(Threads: 2));
         Assert.Equal(PatternStatus.TooFewFrames, q.Pattern.Status);
         Assert.EndsWith("fara dark-uri in sesiune: raman in cadre", Assert.Single(SeriesReport.DitherRows(q), x => x.Label == "pattern fix").Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>The eight-frame pattern: four pairs at one spot, so 4 sharing pairs and (8 + 8) / 64 = 25 % of one frame's pattern in the mean, against 12.5 % ideal (R-048).</summary>
+    [Fact]
+    public void R048_ThePatternSurvivingInTheStackReadsThePairsAtOneSpot()
+    {
+        SeriesResult r = RunPattern();
+        Assert.Equal(4, r.Dither.SharingPairs);
+        Assert.Equal(0.25, r.Dither.PatternSurviving!.Value, 0.001);
+        ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "pattern in stiva");
+        Assert.Equal("25.0 % din al unui cadru ramane in medie (ideal 12.5 % la 8 cadre; perechi de cadre la sub 1.5 px: 4)", row.Value);
+        Assert.Equal(row.Value, Assert.Single(SeriesReport.DitherScalarRows(r), x => x.Label == "pattern in stiva").Value);
     }
 
     [Fact]
@@ -323,7 +340,7 @@ public class SeriesTests
         Assert.Equal(["5 px | niciunul | - | -", "10 px | niciunul | - | -"], Rows(t[4]));
 
         // The scalar rows of R-036 plus the `scara` and `pattern fix` rows of R-044 and R-046, the verdict last.
-        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "scara", "pattern fix", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
+        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "scara", "pattern in stiva", "pattern fix", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
         Assert.Equal("X 40 px, Y 16 px", SeriesReport.DitherScalarRows(r)[3].Value);
         Assert.StartsWith("axa Y a imaginii = RA, X = DEC", SeriesReport.DitherScalarRows(r)[4].Value, StringComparison.Ordinal);
     }

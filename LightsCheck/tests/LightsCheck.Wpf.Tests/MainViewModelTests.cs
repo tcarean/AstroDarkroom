@@ -439,6 +439,7 @@ public class MainViewModelTests
         Assert.Single(vm.DitherExplanation, p => p.Emphasis);
         Assert.Contains(vm.DitherRows, r => r.Label == "scara");
         Assert.Contains(vm.DitherRows, r => r.Label == "pattern fix" && r.Value.Contains("dark-uri", StringComparison.Ordinal));
+        Assert.Contains(vm.DitherRows, r => r.Label == "pattern in stiva");
         Assert.Contains(vm.DriftRows, r => r.Label == "drift intr-o expunere");
         Assert.Contains(vm.SessionRows, r => r.Label == "darks" && r.Value.Contains("2 cadre", StringComparison.Ordinal));
         Assert.Equal(0, VerdictPalette.Severity("FARA walking noise, OK pentru pixeli calzi"));

@@ -87,9 +87,9 @@
         "readNoiseG1": 2.9, "swampingRFrame1": 9.4,
         "raAxis": "Y", "focusHeld": true, "dew": false, "hotPixelsOk": true, "walkingNoiseOk": false,
         "driftPerExposurePx": 1.10, "walkingStreakPx": 9.9, "walkingNoise": "Insufficient",
-        "darks": 0, "patternStatus": "Measured", "patternWarmPerMpx": 126, "patternHotPerMpx": 4
+        "darks": 0, "patternStatus": "Measured", "patternHotPerMpx": 4, "patternSigmaAdu": [1.4, 2.1, 2.1, 2.3], "patternSurvivingPct": 1.6
       },
-      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8 }
+      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
     },
     {
       "id": "V-009",
@@ -169,9 +169,9 @@
         "readNoiseG1": 1.3, "swampingRFrame1": 10.1,
         "raAxis": "Unknown", "focusHeld": true, "dew": false, "hotPixelsOk": false, "walkingNoiseOk": false,
         "driftPerExposurePx": 0.17, "walkingStreakPx": 1.9, "walkingNoise": "Static",
-        "darks": 20, "patternStatus": "Measured", "patternWarmPerMpx": 744, "patternHotPerMpx": 55
+        "darks": 20, "patternStatus": "Measured", "patternHotPerMpx": 55, "patternSigmaAdu": [1.1, 1.2, 1.2, 0.9], "patternSurvivingPct": 23.4
       },
-      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8 }
+      "tolerance": { "px": 0.1, "arcmin": 0.3, "fwhm": 0.05, "adu": 0.1, "ratio": 0.3, "perMpx": 8, "pct": 0.2 }
     }
   ]
 }

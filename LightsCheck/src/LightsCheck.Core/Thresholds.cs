@@ -186,11 +186,16 @@ internal static class Th
     /// <summary>The side of the central square of the raw mosaic kept from every light for the sensor's pattern (R-046); the whole frame when it is smaller.</summary>
     internal const int PatternCrop = 512;
 
-    /// <summary>A pixel of the pattern above this many sigmas of one frame's high-pass noise is warm (sigma clipping keeps it, and it walks) ...</summary>
-    internal const double PatternWarmSigma = 3.0;
-
-    /// <summary>... and above this many, hot (sigma clipping rejects it when the frames moved).</summary>
+    /// <summary>
+    /// A pixel of the pattern above this many sigmas of one frame's high-pass noise is hot:
+    /// sigma clipping rejects it when the frames moved. The pattern below that is reported as
+    /// a sigma, not a count: a count at 3 sigma sat on the steep tail of the Veil pattern, where
+    /// a 20 % change of the noise estimate moved it four times (ADR 0015).
+    /// </summary>
     internal const double PatternHotSigma = 10.0;
+
+    /// <summary>Two frames closer than this share the sensor's pattern pixel for pixel: their pattern adds up instead of averaging out (R-048).</summary>
+    internal const double PatternSharePx = 1.5;
 
     /// <summary>The per-pixel median across fewer frames than this still carries too much of the frames' own noise to read the pattern.</summary>
     internal const int PatternMinFrames = 7;

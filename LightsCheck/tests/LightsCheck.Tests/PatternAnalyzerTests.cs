@@ -78,7 +78,7 @@ public class PatternAnalyzerTests
     ];
 
     [Fact]
-    public void R046_TheWarmAndHotPixelsOfTheMedianAreCountedAndTheMovingStarIsNot()
+    public void R046_ThePatternSigmaAndTheHotPixelsOfTheMedianAreReadAndTheMovingStarIsNot()
     {
         int n = 12;
         PatternCrop?[] crops = Enumerable.Range(0, n).Select(i => (PatternCrop?)Crop(i, Pattern, dx: 4 * i)).ToArray();
@@ -91,12 +91,13 @@ public class PatternAnalyzerTests
         Assert.Equal(Size, p.CropSize);
         // The window of a CFA position of a 64 px crop is 32 x 32, minus the 2 px border: 28 x 28, four positions.
         Assert.Equal(4 * 28 * 28, p.Pixels);
-        HashSet<(int, int)> distinct = Pattern.Select(q => (q.X, q.Y)).ToHashSet();
-        int inside = distinct.Count(q => q.Item1 >= 4 && q.Item1 < 60 && q.Item2 >= 4 && q.Item2 < 60);
-        Assert.InRange(p.Warm, inside - 2, inside + 2);       // the median of 12 frames leaves no noise above 3 sigma
         Assert.InRange(p.Hot, 5, 6);
+        Assert.Equal(["R", "G1", "G2", "B"], p.Names);
         Assert.All(p.FrameSigma, v => Assert.Equal(FrameSigma, v));
-        Assert.All(p.PatternSigma, v => Assert.InRange(v, 2.0, 5.0));   // 1.25 * 10 / sqrt(12) = 3.6, the median's own noise
+        // The crops hold noise and 36 pattern pixels only: the median's own noise (1.25 * 10 / sqrt(12) = 3.6)
+        // is taken out, and what is left is the pattern's few pixels spread over 28 x 28, under 2 sigma.
+        Assert.All(p.PatternSigma, v => Assert.InRange(v, 0.0, 2.0));
+        Assert.All(Enumerable.Range(0, 4), i => Assert.InRange(p.FractionOfFrame(i), 0.0, 0.2));
     }
 
     [Fact]

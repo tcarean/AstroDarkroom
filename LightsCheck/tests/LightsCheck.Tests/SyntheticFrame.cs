@@ -52,6 +52,11 @@ internal sealed class SyntheticFrame
     /// <summary>Pixels of the sensor's fixed pattern: each adds its ADU to the pixel, on top of the field and the noise.</summary>
     internal IReadOnlyList<(int X, int Y, double Adu)> HotPixels { get; init; } = [];
 
+    /// <summary>The sensor's bulk pattern: a Gaussian field of this sigma, drawn from FixedPatternSeed, the same in every frame that shares the seed; 0 for none.</summary>
+    internal double FixedPatternSigma { get; init; }
+
+    internal int FixedPatternSeed { get; init; } = 998;
+
     internal static CfaPattern Rggb => CfaPattern.Parse("RGGB", "test")!;
 
     internal AduScale Scale => new(White, 0, "test");
@@ -148,6 +153,16 @@ internal sealed class SyntheticFrame
             if (hx >= 0 && hx < Width && hy >= 0 && hy < Height)
             {
                 hot[hy * Width + hx] += adu;
+            }
+        }
+
+        if (FixedPatternSigma > 0)
+        {
+            Random prng = new(FixedPatternSeed);
+            for (int i = 0; i < hot.Length; i++)
+            {
+                double u1 = 1.0 - prng.NextDouble(), u2 = prng.NextDouble();
+                hot[i] += Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2) * FixedPatternSigma;
             }
         }
 

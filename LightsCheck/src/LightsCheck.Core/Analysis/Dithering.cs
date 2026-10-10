@@ -62,6 +62,8 @@ internal sealed record DitherAnalysis(
     int DistinctMid,
     int DistinctLoose,
     int LargestClusterTight,
+    int SharingPairs,
+    double? PatternSurviving,
     IReadOnlyList<FrameStretch> RunsMid,
     IReadOnlyList<FrameStretch> RunsLoose,
     IReadOnlyList<SpotRun?> SpotRun,
@@ -268,6 +270,24 @@ internal static class DitherAnalyzer
         int distinctMid = Clusters(x, y, reg, Th.CoverageMid).Count, distinctLoose = Clusters(x, y, reg, Th.CoverageLoose).Count;
         int largestTight = Clusters(x, y, reg, Th.CoverageTight).DefaultIfEmpty(0).Max();
 
+        // How much of one frame's pattern the mean of the stack keeps (R-048): every frame adds
+        // its own copy (1/n of the mean), and every pair closer than PatternSharePx adds the
+        // same pixels twice more, so (n + 2 pairs) / n^2; 1/n with no pair, 1 with every frame
+        // at one spot.
+        int sharing = 0;
+        for (int a = 0; a < reg.Count; a++)
+        {
+            for (int b = a + 1; b < reg.Count; b++)
+            {
+                if (Dist(x, y, reg[a], reg[b]) < Th.PatternSharePx)
+                {
+                    sharing++;
+                }
+            }
+        }
+
+        double? surviving = reg.Count > 0 ? (reg.Count + 2.0 * sharing) / ((double)reg.Count * reg.Count) : null;
+
         bool hotOk = longestTight <= Th.HotPixelRunMax;
         bool twoD = moves > 0 && (xOnly + both) >= Th.TwoDAxisFraction * moves && (yOnly + both) >= Th.TwoDAxisFraction * moves;
         bool walkingOk = reg.Count > 0 && distinctLoose >= Th.WalkingNoiseDistinctFraction * reg.Count
@@ -277,7 +297,7 @@ internal static class DitherAnalyzer
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)

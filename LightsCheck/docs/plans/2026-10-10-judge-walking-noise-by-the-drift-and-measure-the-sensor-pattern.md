@@ -200,9 +200,15 @@ Small commits on the branch after each step with the gate green.
 - The verdict words stay short (`INSUFICIENT pentru walking noise, OK pentru pixeli calzi`),
   since the window's chip shows them whole and a parenthesis of 80 characters did not fit;
   the dash, the drift, the run and the hot-pixel rule open the verdict's text instead.
+- The `pattern fix` row reports the pattern's sigma per channel (ADU and share of a frame's
+  noise) and the hot pixels, not a count of warm pixels at 3 sigma: measured on the Veil raws
+  after the first commit, that count moved from 575 to 126 per megapixel with the noise
+  estimator (MAD against the clipped standard deviation) and read 1162 on the debayered
+  green channel, because it sat on the pattern's steep tail; the owner chose the sigma. A row
+  `pattern in stiva` with the surviving fraction of R-048 was added at the owner's request.
 - Measured on the real sessions (the console of this branch): Veil `INSUFICIENT ... dare de
   pana la 9.9 px pe RA: drift 1.10 px pe expunere, grupul cel mai lung la 10 px 10 cadre`,
   pattern 126 warm and 4 hot pixels per megapixel from the raws (the 1162 of the scratch
   measurement was on the debayered green channel of the calibrated frames); Smida `ATENTIE la
   pixeli calzi ..., FARA walking noise (dare de cel mult 1.9 px: drift 0.17 px pe expunere,
-  grupul cel mai lung la 10 px 12 cadre)`, pattern 744 warm and 55 hot per megapixel, 20 darks.
+  grupul cel mai lung la 10 px 12 cadre)`, pattern 744 warm and 55 hot per megapixel, 20 darks. After the owner's choice of the sigma: Veil `sigma 1.4 ADU pe R (12 %), 2.1 pe G1 (10 %), 2.1 pe G2 (10 %), 2.3 pe B (10 %)`, 1.6 % of the pattern in the stack (16 pairs); Smida `1.1 / 1.2 / 1.2 / 0.9 ADU (21 / 19 / 18 / 16 %)`, 23.4 % (104 pairs). The median's noise is measured from the odd and even medians, not from the Gaussian formula, which over-subtracted on the eight-frame fixture.

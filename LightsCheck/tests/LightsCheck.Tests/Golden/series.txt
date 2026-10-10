@@ -58,7 +58,8 @@ Copyright (C) 2026 Tudor Carean
     grupuri in 5 px    : niciunul
     grupuri in 10 px   : niciunul
     scara              : 1 px = 5.99"; o miscare de 5 px (pragul) cere 30" pe cer, una de 10 px 60"
-    pattern fix        : 0 pixeli calzi / Mpx peste 3 sigma, 0 fierbinti peste 10 (mediana a 8 cadre neinregistrate, 480 x 480 px din centru); fara dark-uri in sesiune: raman in cadre
+    pattern in stiva   : 25.0 % din al unui cadru ramane in medie (ideal 12.5 % la 8 cadre; perechi de cadre la sub 1.5 px: 4)
+    pattern fix        : sigma 0.0 ADU pe R (0 % din zgomotul unui cadru), 0.0 pe G1 (0 %), 0.0 pe G2 (0 %), 0.8 pe B (2 %); 0 pixeli fierbinti / Mpx peste 10 sigma (mediana a 8 cadre neinregistrate, 480 x 480 px din centru); fara dark-uri in sesiune: raman in cadre
     verdict            : FARA walking noise, OK pentru pixeli calzi - nicio dara de walking noise: drift 0.50 px pe expunere, niciun grup de 3+ cadre consecutive la 10 px; 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
 
   RESPINSE (2 cadre slabe; cele la limita raman la alegerea ta)

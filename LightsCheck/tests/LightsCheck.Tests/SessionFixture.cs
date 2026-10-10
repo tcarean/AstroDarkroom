@@ -121,6 +121,7 @@ internal sealed class SessionFixture : IDisposable
             BackgroundB = 2300 * frame.BackgroundFactor,
             NoiseSigma = 40,
             HotPixels = sensorPattern ? SensorPattern : [],
+            FixedPatternSigma = sensorPattern ? PatternSigmaAdu : 0,
         }.WithStarGrid(40, 3.0, 3000, 30000);
         for (int i = 0; i < f.Stars.Count; i++)
         {
@@ -204,10 +205,14 @@ internal sealed class SessionFixture : IDisposable
     internal const int WarmPixels = 200, HotPixels = 20;
     internal const double WarmAdu = 200, HotAdu = 1600;
 
+    /// <summary>The sigma of the synthetic sensor's bulk pattern, a fixed Gaussian field on every light: a fifth of the 40 ADU noise.</summary>
+    internal const double PatternSigmaAdu = 8;
+
     /// <summary>
-    /// The fixed pattern of the synthetic sensor (R-046): 200 warm pixels of +200 ADU (5 sigma
-    /// of the 40 ADU noise) and 20 hot ones of +1600 ADU (40 sigma), at fixed positions inside
-    /// the central 480 x 480 of the 640 x 480 frame, the square the pattern analyzer reads.
+    /// The spikes of the synthetic sensor's pattern (R-046): 200 warm pixels of +200 ADU (5
+    /// sigma of the 40 ADU noise) and 20 hot ones of +1600 ADU (40 sigma), at fixed positions
+    /// inside the central 480 x 480 of the 640 x 480 frame, the square the pattern analyzer
+    /// reads; the bulk is the field of <see cref="PatternSigmaAdu"/>.
     /// </summary>
     internal static readonly IReadOnlyList<(int X, int Y, double Adu)> SensorPattern = MakeSensorPattern();
 

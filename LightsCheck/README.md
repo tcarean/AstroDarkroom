@@ -78,9 +78,12 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
   grupuri de cadre consecutive in acelasi loc), `scara` (cat inseamna pe cer, in secunde de
-  arc, o miscare de 5 si de 10 px la focala sesiunii), `pattern fix` (cati pixeli calzi pe
-  megapixel are senzorul, cititi din mediana cadrelor neinregistrate, si daca sesiunea are
-  dark-uri care sa-i scoata) si verdictul pentru pixeli calzi si walking noise, cu cifrele lui.
+  arc, o miscare de 5 si de 10 px la focala sesiunii), `pattern in stiva` (cat din pattern-ul
+  unui cadru ramane in medie dupa stivuire, fata de 1 / cadre, idealul in care niciun cadru nu
+  sta peste altul), `pattern fix` (cat de mare e pattern-ul fix al senzorului, citit din
+  mediana cadrelor neinregistrate: sigma pe fiecare canal, in ADU si ca procent din zgomotul
+  unui cadru, pixelii fierbinti pe megapixel, si daca sesiunea are dark-uri care sa-l scoata)
+  si verdictul pentru pixeli calzi si walking noise, cu cifrele lui.
   Verdictul de walking noise citeste si driftul: `OK` cand dithering-ul e des, pe ambele axe
   si cu pozitii distincte; `FARA walking noise` cand dara pe care o trage driftul in cel mai
   lung grup de cadre la 10 px e sub 3 px, oricum ar arata harta (la 20 mm, un drift de 3"/min

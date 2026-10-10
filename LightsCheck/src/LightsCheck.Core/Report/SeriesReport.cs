@@ -358,6 +358,7 @@ internal static class SeriesReport
             new($"grupuri in {RunReport.F(Th.CoverageMid, 0)} px", Runs(d.RunsMid, r)),
             new($"grupuri in {RunReport.F(Th.CoverageLoose, 0)} px", Runs(d.RunsLoose, r)),
             ScaleRow(r),
+            SurvivingRow(r),
             PatternRow(r),
             new("verdict", text, verdict),
         ];
@@ -377,6 +378,7 @@ internal static class SeriesReport
             new("intindere", $"X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
             new("axe", AxisLine(r.Series)),
             ScaleRow(r),
+            SurvivingRow(r),
             PatternRow(r),
             new("verdict", text, verdict),
         ];
@@ -389,10 +391,23 @@ internal static class SeriesReport
             : "necunoscuta (fara focala)");
 
     /// <summary>
+    /// How much of one frame's pattern the mean of the stack keeps (R-048): `1.6 % din al unui
+    /// cadru (ideal 1.1 % la 87 cadre; perechi de cadre la sub 1.5 px: 27)`.
+    /// </summary>
+    private static ReportRow SurvivingRow(SeriesResult r)
+    {
+        DitherAnalysis d = r.Dither;
+        return new("pattern in stiva", d.PatternSurviving is double f
+            ? $"{RunReport.F(100 * f, 1)} % din al unui cadru ramane in medie (ideal {RunReport.F(100.0 / d.Registered, 1)} % la {FramesWord(d.Registered)}; perechi de cadre la sub {RunReport.F(Th.PatternSharePx, 1)} px: {d.SharingPairs.ToString(Inv)})"
+            : "- (cadre neinregistrate)");
+    }
+
+    /// <summary>
     /// The sensor's pattern read from the lights, and whether the session's darks will take it
-    /// out of the stack (R-046, R-042): `1162 pixeli calzi / Mpx peste 3 sigma, 7 fierbinti
-    /// peste 10 (mediana a 87 cadre neinregistrate, 512 x 512 px din centru); fara dark-uri in
-    /// sesiune: raman in cadre`.
+    /// out of the stack (R-046, R-042): `sigma 1.4 ADU pe R (12 % din zgomotul unui cadru), 2.1
+    /// pe G1 (10 %), 2.1 pe G2 (10 %), 2.3 pe B (10 %); 4 pixeli fierbinti / Mpx peste 10 sigma
+    /// (mediana a 87 cadre neinregistrate, 512 x 512 px din centru); fara dark-uri in sesiune:
+    /// raman in cadre`.
     /// </summary>
     private static ReportRow PatternRow(SeriesResult r)
     {
@@ -402,7 +417,7 @@ internal static class SeriesReport
             : $"{r.Session.Darks.Count.ToString(Inv)} dark-uri in {SessionFolder.DarksName}\\, Siril le scade";
         string value = p.Status switch
         {
-            PatternStatus.Measured => $"{RunReport.F(p.WarmPerMpx, 0)} pixeli calzi / Mpx peste {RunReport.F(Th.PatternWarmSigma, 0)} sigma, {RunReport.F(p.HotPerMpx, 0)} fierbinti peste {RunReport.F(Th.PatternHotSigma, 0)} (mediana a {FramesWord(p.Frames)} neinregistrate, {p.CropSize.ToString(Inv)} x {p.CropSize.ToString(Inv)} px din centru)",
+            PatternStatus.Measured => $"sigma {string.Join(", ", Enumerable.Range(0, p.PatternSigma.Count).Select(i => $"{RunReport.F(p.PatternSigma[i], 1)}{(i == 0 ? " ADU" : "")} pe {p.Names[i]} ({(double.IsNaN(p.FractionOfFrame(i)) ? "-" : RunReport.F(100 * p.FractionOfFrame(i), 0) + " %")}{(i == 0 ? " din zgomotul unui cadru" : "")})"))}; {RunReport.F(p.HotPerMpx, 0)} pixeli fierbinti / Mpx peste {RunReport.F(Th.PatternHotSigma, 0)} sigma (mediana a {FramesWord(p.Frames)} neinregistrate, {p.CropSize.ToString(Inv)} x {p.CropSize.ToString(Inv)} px din centru)",
             PatternStatus.TooFewFrames => $"nedeterminat (sub {Th.PatternMinFrames.ToString(Inv)} cadre masurate)",
             PatternStatus.Unregistered => "nedeterminat (cadre neinregistrate)",
             PatternStatus.FramesDidNotMove => $"nedeterminat (cadrele au stat pe loc: stelele raman in mediana; grupul cel mai mare la {RunReport.F(Th.CoverageTight, 0)} px are {FramesWord(r.Dither.LargestClusterTight)} din {r.Dither.Registered.ToString(Inv)})",
@@ -423,7 +438,7 @@ internal static class SeriesReport
         new("Aceeasi deriva a monturii si aceeasi miscare de dithering inseamna de atatea ori mai multi pixeli cu cat focala e mai lunga: la 20 mm un drift de 3\"/min sta sub un pixel pe toata sesiunea si nimic nu merge, la 135 mm e peste un pixel pe expunere. Focala scurta iarta; focala lunga cere dithering la fiecare cadru.", false),
         new($"Ce rupe walking noise-ul: o miscare la fiecare cadru, pe ambele axe, in directie aleatoare. Frecventa conteaza mai mult decat marimea: {RunReport.F(Th.DitherStep, 0)} px ajung cand doua cadre vecine nu mai impart acelasi loc; un salt mare la 2 cadre lasa grupuri in care driftul trage liniute.", true),
         new("Dark-urile scot pattern-ul inainte sa apuce sa mearga, si nu cer demontarea obiectivului sau a filtrului: scoti obiectivul cu tot cu filtru, pui capacul de body, inchizi ocularul vizorului si tragi 20 de cadre la acelasi ISO, acelasi timp si aceeasi temperatura, la finalul sesiunii. Flat-urile raman valabile.", false),
-        new($"Cifrele: randul 'drift intr-o expunere' din DRIFT SI ROTATIE da driftul pe un cadru si dara pe care o lasa in grupul cel mai lung la {RunReport.F(Th.CoverageLoose, 0)} px; sub {RunReport.F(Th.WalkingStreakVisible, 0)} px nu e walking noise, oricum ar arata harta. Randul 'pattern fix' spune cati pixeli calzi are senzorul (peste {RunReport.F(Th.PatternWarmSigma, 0)} sigma fata de zgomotul unui cadru) si daca sesiunea are dark-uri care sa-i scoata.", false),
+        new($"Cifrele: randul 'drift intr-o expunere' din DRIFT SI ROTATIE da driftul pe un cadru si dara pe care o lasa in grupul cel mai lung la {RunReport.F(Th.CoverageLoose, 0)} px; sub {RunReport.F(Th.WalkingStreakVisible, 0)} px nu e walking noise, oricum ar arata harta. Randul 'pattern in stiva' spune cat din pattern-ul unui cadru ramane in medie dupa stivuire (1 / cadre cand niciun cadru nu sta peste altul), iar 'pattern fix' cat de mare e pattern-ul senzorului fata de zgomotul unui cadru si daca sesiunea are dark-uri care sa-l scoata.", false),
     ];
 
     /// <summary>The DITHERING figures that are tables, for the window (R-036): how often, how far, direction, coverage, runs; the console keeps its rows (ADR 0012).</summary>

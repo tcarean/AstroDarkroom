@@ -134,8 +134,14 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("walkingNoise").GetString(), s.WalkingNoise.ToString());
         Assert.Equal(e.GetProperty("darks").GetInt32(), r.Session.Darks.Count);
         Assert.Equal(e.GetProperty("patternStatus").GetString(), r.Pattern.Status.ToString());
-        AssertWithin("patternWarmPerMpx", e.GetProperty("patternWarmPerMpx").GetDouble(), r.Pattern.WarmPerMpx, t.GetProperty("perMpx").GetDouble());
         AssertWithin("patternHotPerMpx", e.GetProperty("patternHotPerMpx").GetDouble(), r.Pattern.HotPerMpx, t.GetProperty("perMpx").GetDouble());
+        double[] sigmas = e.GetProperty("patternSigmaAdu").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+        for (int p = 0; p < sigmas.Length; p++)
+        {
+            AssertWithin($"patternSigmaAdu[{p}]", sigmas[p], r.Pattern.PatternSigma[p], t.GetProperty("adu").GetDouble());
+        }
+
+        AssertWithin("patternSurvivingPct", e.GetProperty("patternSurvivingPct").GetDouble(), Figure(d.PatternSurviving, "patternSurviving") * 100, t.GetProperty("pct").GetDouble());
     }
 
     /// <summary>The words per frame on the real session: the trail axis of every frame with a trailing flag, by class, and the run cell of the frames listed (R-033, R-034).</summary>

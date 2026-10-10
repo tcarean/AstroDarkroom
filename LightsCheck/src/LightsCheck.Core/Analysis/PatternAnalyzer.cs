@@ -51,34 +51,39 @@ internal enum PatternStatus
 }
 
 /// <summary>
-/// The sensor's fixed pattern as the lights carry it (R-046): how many pixels per megapixel
-/// stand above Th.PatternWarmSigma (warm) and Th.PatternHotSigma (hot) sigmas of one
-/// frame's noise in the per-pixel median of the crops, and the pattern's own sigma per CFA
-/// position against the frames' median high-pass sigma. The counts are over the pixels
-/// measured; Frames and CropSize say on what.
+/// The sensor's fixed pattern as the lights carry it (R-046): per CFA position, the sigma of
+/// the per-pixel median of the crops after the high-pass, with the median's own noise (measured
+/// from the odd and the even frames' medians) taken out, against the frames' median high-pass
+/// sigma (FrameSigma); and how many pixels per
+/// megapixel stand above Th.PatternHotSigma sigmas of that noise. The counts are over the
+/// pixels measured; Frames and CropSize say on what.
 /// </summary>
 internal sealed record SensorPattern(
     PatternStatus Status,
     int Frames,
     int CropSize,
     int Pixels,
-    int Warm,
     int Hot,
+    IReadOnlyList<string> Names,
     IReadOnlyList<double> PatternSigma,
     IReadOnlyList<double> FrameSigma)
 {
-    internal double WarmPerMpx => Pixels > 0 ? 1e6 * Warm / Pixels : 0;
-
     internal double HotPerMpx => Pixels > 0 ? 1e6 * Hot / Pixels : 0;
 
-    internal static SensorPattern Empty(PatternStatus status, int frames) => new(status, frames, 0, 0, 0, 0, [], []);
+    /// <summary>The pattern's sigma as a fraction of one frame's noise, per position; NaN where either is unknown.</summary>
+    internal double FractionOfFrame(int p) => p < PatternSigma.Count && p < FrameSigma.Count && FrameSigma[p] > 0 ? PatternSigma[p] / FrameSigma[p] : double.NaN;
+
+    internal static SensorPattern Empty(PatternStatus status, int frames) => new(status, frames, 0, 0, 0, [], [], []);
 }
 
 /// <summary>
 /// Reads the sensor's pattern out of the lights themselves: the frames are not registered,
 /// so the sky and the stars move with the dither while the warm pixels stay put, and the
-/// per-pixel median across the frames keeps what stayed. A warm pixel of one frame is lost
-/// in that frame's noise, but the median of n frames carries about 1.25 / sqrt(n) of it.
+/// per-pixel median across the frames keeps what stayed. The pattern of one frame is lost in
+/// that frame's noise, but the median of n frames carries only a fraction of it; that
+/// remainder is measured on the same crops, as the difference of the medians of the odd and
+/// the even frames (the pattern cancels, the noise stays), and taken out of the pattern's
+/// sigma in quadrature.
 /// </summary>
 internal static class PatternAnalyzer
 {
@@ -117,26 +122,35 @@ internal static class PatternAnalyzer
             return SensorPattern.Empty(PatternStatus.FramesDidNotMove, used.Count);
         }
 
-        Raster median = new(size, size);
-        float[] buf = new float[used.Count];
-        for (int i = 0; i < size * size; i++)
+        Raster median = Median(crops, used, size, 1, 0);
+        // The medians of the odd and the even frames: their difference holds the noise of a
+        // half-median twice and none of the pattern.
+        List<int> odd = used.Where((_, k) => k % 2 == 0).ToList(), even = used.Where((_, k) => k % 2 == 1).ToList();
+        Raster diff = Median(crops, odd, size, 1, 0);
+        Raster evenMedian = Median(crops, even, size, 1, 0);
+        for (int i = 0; i < diff.D.Length; i++)
         {
-            for (int k = 0; k < used.Count; k++)
-            {
-                buf[k] = crops[used[k]]!.Data[i];
-            }
-
-            median.D[i] = Raster.Median(buf, used.Count);
+            diff.D[i] -= evenMedian.D[i];
         }
 
+        // Var(odd - even) = c / na + c / nb and Var(median of n) = c / n, for the same c.
+        double noiseShare = 1.0 / used.Count / (1.0 / odd.Count + 1.0 / even.Count);
+
+        List<string> names = [];
         List<double> patternSigma = [], frameSigma = [];
-        int pixels = 0, warm = 0, hot = 0;
+        int pixels = 0, hot = 0;
         for (int p = 0; p < 4; p++)
         {
-            List<double> sigmas = used.Select(i => channels[i]).Where(c => c is not null && c.Count > p).Select(c => c![p].HighPassSigma).Where(v => !double.IsNaN(v)).ToList();
+            List<IReadOnlyList<ChannelLevel>> with = used.Select(i => channels[i]).Where(c => c is not null && c.Count > p).Select(c => c!).ToList();
+            List<double> sigmas = with.Select(c => c[p].HighPassSigma).Where(v => !double.IsNaN(v)).ToList();
             double fs = sigmas.Count > 0 ? Raster.Percentile(sigmas, 50) : double.NaN;
             List<double> hp = NoiseAnalyzer.HighPass(median, p / 2, p % 2);
-            patternSigma.Add(hp.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hp, 4.0, 5));
+            double measured = hp.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hp, 4.0, 5);
+            List<double> hpDiff = NoiseAnalyzer.HighPass(diff, p / 2, p % 2);
+            double diffSigma = hpDiff.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hpDiff, 4.0, 5);
+            double noise2 = double.IsNaN(diffSigma) ? 0 : diffSigma * diffSigma * noiseShare;
+            names.Add(with.Count > 0 ? with[0][p].Name : $"CFA[{p / 2},{p % 2}]");
+            patternSigma.Add(double.IsNaN(measured) ? double.NaN : Math.Sqrt(Math.Max(0, measured * measured - noise2)));
             frameSigma.Add(fs);
             if (double.IsNaN(fs) || fs <= 0)
             {
@@ -144,20 +158,27 @@ internal static class PatternAnalyzer
             }
 
             pixels += hp.Count;
-            foreach (double v in hp)
-            {
-                if (v > Th.PatternWarmSigma * fs)
-                {
-                    warm++;
-                }
-
-                if (v > Th.PatternHotSigma * fs)
-                {
-                    hot++;
-                }
-            }
+            hot += hp.Count(v => v > Th.PatternHotSigma * fs);
         }
 
-        return new SensorPattern(PatternStatus.Measured, used.Count, size, pixels, warm, hot, patternSigma, frameSigma);
+        return new SensorPattern(PatternStatus.Measured, used.Count, size, pixels, hot, names, patternSigma, frameSigma);
+    }
+
+    /// <summary>The per-pixel median of the crops at the given indices, as a raster of the crop's size.</summary>
+    private static Raster Median(IReadOnlyList<PatternCrop?> crops, List<int> indices, int size, int stride, int offset)
+    {
+        Raster m = new(size, size);
+        float[] buf = new float[indices.Count];
+        for (int i = offset; i < size * size; i += stride)
+        {
+            for (int k = 0; k < indices.Count; k++)
+            {
+                buf[k] = crops[indices[k]]!.Data[i];
+            }
+
+            m.D[i] = Raster.Median(buf, indices.Count);
+        }
+
+        return m;
     }
 }
