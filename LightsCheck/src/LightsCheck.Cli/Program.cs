@@ -16,13 +16,49 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using System.Text;
 using LightsCheck.Core;
 
 namespace LightsCheck.Cli;
 
 internal static class Program
 {
-    private static int Main(string[] args) => Run(args, Console.Out, Console.Error);
+    private static int Main(string[] args)
+    {
+        // The report carries the SynScan arrows as symbols (R-040). A console window's own code
+        // page would print them as '?', so it is switched to UTF-8 for the run and put back
+        // after (the code page outlives the process otherwise); a run without a console, or
+        // with its output in a file or a pipe, writes UTF-8 bytes either way.
+        Encoding? previous = null;
+        try
+        {
+            previous = Console.OutputEncoding;
+            Console.OutputEncoding = new UTF8Encoding(false);
+        }
+        catch (IOException)
+        {
+            // no console attached: nothing to switch
+        }
+
+        try
+        {
+            return Run(args, Console.Out, Console.Error);
+        }
+        finally
+        {
+            if (previous is not null)
+            {
+                try
+                {
+                    Console.OutputEncoding = previous;
+                }
+                catch (IOException)
+                {
+                    // the console went away during the run
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// The whole console, testable: the tests call this with a StringWriter and compare the
@@ -67,7 +103,7 @@ internal static class Program
             // Progress on stderr, one line rewritten, so stdout stays the report alone. Written
             // synchronously on the reporting thread (Progress<T> would post to the thread pool and
             // could print after the report), under a lock since the frames finish in parallel.
-            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads), new ConsoleProgress(stderr));
+            SeriesResult r = SeriesRun.Run(o.Folder!, new SeriesOptions(o.PixelSizeUm, o.Threads, o.Arrows), new ConsoleProgress(stderr));
             stderr.Write("\r                        \r");
             SeriesReport.Write(r, stdout);
             if (o.Out is not null)
@@ -106,7 +142,7 @@ internal static class Program
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();
-        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]");
+        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos]");
         w.WriteLine("          lightscheck <folder sesiune> --inventory");
         w.WriteLine("          lightscheck <folder sesiune> --frame N");
         w.WriteLine();
@@ -120,6 +156,8 @@ internal static class Program
         w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
         w.WriteLine("  --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).");
         w.WriteLine("  --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.");
+        w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.");
         w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");
         w.WriteLine("  --frame N     masoara un singur cadru (1 = primul din lights\\).");
         w.WriteLine("  -h, --help    acest text");

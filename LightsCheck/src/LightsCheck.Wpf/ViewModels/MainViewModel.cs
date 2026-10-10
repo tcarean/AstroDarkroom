@@ -101,6 +101,16 @@ public sealed class MainViewModel : ObservableObject
     private string _report = "";
     private string _pixelText = SeriesOptions.D3300PixelUm.ToString("F2", CultureInfo.InvariantCulture);
     private string _threadsText = "";
+    private string _eastArrow;
+    private string _northArrow;
+
+    public MainViewModel()
+    {
+        // The stored strings count only when they are one of the two arrows of their axis; the core's default otherwise.
+        (string? east, string? north) = UserSettings.Load();
+        _eastArrow = ArrowKeys.FromSymbol(east) is Arrow.Left or Arrow.Right ? east! : ArrowKeys.Symbol(ArrowKeys.Default.East);
+        _northArrow = ArrowKeys.FromSymbol(north) is Arrow.Up or Arrow.Down ? north! : ArrowKeys.Symbol(ArrowKeys.Default.North);
+    }
     private string? _status;
     private FrameRowVm? _selectedFrame;
     private IReadOnlyList<CropVm> _crops = [];
@@ -190,9 +200,39 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
 
+    /// <summary>The SynScan arrows that move the mount east and north, as symbols; the other two follow (R-041). Remembered in <see cref="UserSettings"/>.</summary>
+    public IReadOnlyList<string> EastChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.East), ArrowKeys.Symbol(ArrowKeys.Default.West)];
+
+    public IReadOnlyList<string> NorthChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.North), ArrowKeys.Symbol(ArrowKeys.Default.South)];
+
+    public string EastArrow
+    {
+        get => _eastArrow;
+        set
+        {
+            if (Set(ref _eastArrow, value))
+            {
+                UserSettings.Save(_eastArrow, _northArrow);
+            }
+        }
+    }
+
+    public string NorthArrow
+    {
+        get => _northArrow;
+        set
+        {
+            if (Set(ref _northArrow, value))
+            {
+                UserSettings.Save(_eastArrow, _northArrow);
+            }
+        }
+    }
+
     internal SeriesOptions Options => new(
         PixelIsValid ? double.Parse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture) : SeriesOptions.D3300PixelUm,
-        int.TryParse(_threadsText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) && t > 0 ? t : 0);
+        int.TryParse(_threadsText, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) && t > 0 ? t : 0,
+        new ArrowKeys(ArrowKeys.FromSymbol(_eastArrow) ?? ArrowKeys.Default.East, ArrowKeys.FromSymbol(_northArrow) ?? ArrowKeys.Default.North));
 
     internal SeriesResult? Result => _result;
 

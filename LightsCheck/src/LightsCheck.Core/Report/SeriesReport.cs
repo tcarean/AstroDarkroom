@@ -97,7 +97,7 @@ internal static class SeriesReport
             AnalyzedFrame f = r.Frames[i];
             FrameMeasurement? m = f.Measurement;
             RegistrationResult? g = f.Registration is { Ok: true } rg ? rg : null;
-            string step = Opt(d.Step[i], 1), move = MoveCell(s.MountMoves[i]);
+            string step = Opt(d.Step[i], 1), move = MoveCell(s.MountMoves[i], r.Arrows);
             rows.Add(new FrameTableRow(f.Info.Index, f.Info.FileName,
                 f.Info.Timestamp is DateTime t ? t.ToString("HH:mm:ss", Inv) : "-",
                 ClassWord(s.Classes[i]), Opt(m?.ElongationMedian, 2), Opt(m?.FwhmMedian, 2),
@@ -111,40 +111,41 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The `dithering` cell (R-038): the mount's move on each axis in pixels, with its sense
-    /// and the SynScan default arrow when the move is signed (`RA 15 px V (dreapta)`), the
-    /// pixels alone otherwise; a component under Th.AxisStep is left out; `-` for no move.
+    /// The `dithering` cell (R-038, R-040): the mount's move on each axis in pixels, with the
+    /// SynScan arrow under the given keys and the sense letter when the move is signed
+    /// (`RA 15 px ← V`), the pixels alone otherwise; a component under Th.AxisStep is left
+    /// out; `-` for no move.
     /// </summary>
-    internal static string MoveCell(MountMove? m)
+    internal static string MoveCell(MountMove? m, ArrowKeys keys)
     {
         if (m is null)
         {
             return "-";
         }
 
-        List<string> parts = MoveComponents(m).Select(c => $"{c.Axis} {RunReport.F(c.Px, 0)} px" + (m.Signed ? $" {c.Sense} ({c.Arrow})" : "")).ToList();
+        List<string> parts = MoveComponents(m, keys).Select(c => $"{c.Axis} {RunReport.F(c.Px, 0)} px" + (m.Signed ? $" {c.Arrow} {c.Sense}" : "")).ToList();
         return parts.Count == 0 ? "-" : string.Join(", ", parts);
     }
 
-    /// <summary>The SynScan arrows of a signed move, `dreapta, jos`, for the CSV; empty otherwise (R-038).</summary>
-    internal static string MoveArrows(MountMove? m)
-        => m is null || !m.Signed ? "" : string.Join(", ", MoveComponents(m).Select(c => c.Arrow));
+    /// <summary>The SynScan arrows of a signed move, `←, ↓`, for the CSV; empty otherwise (R-038, R-040).</summary>
+    internal static string MoveArrows(MountMove? m, ArrowKeys keys)
+        => m is null || !m.Signed ? "" : string.Join(", ", MoveComponents(m, keys).Select(c => c.Arrow));
 
     /// <summary>
     /// The components of a move that clear Th.AxisStep, each with its axis word, its pixels,
-    /// its sense letter and the SynScan default arrow (stanga east, dreapta west, sus north,
-    /// jos south, ADR 0013); the sense and the arrow mean nothing when the move is unsigned.
+    /// its sense letter and the SynScan arrow that moves the mount that way under the given
+    /// keys (ADR 0014); the sense and the arrow mean nothing when the move is unsigned.
     /// </summary>
-    private static IEnumerable<(string Axis, double Px, string Sense, string Arrow)> MoveComponents(MountMove m)
+    private static IEnumerable<(string Axis, double Px, string Sense, string Arrow)> MoveComponents(MountMove m, ArrowKeys keys)
     {
         if (Math.Abs(m.RaPx) >= Th.AxisStep)
         {
-            yield return ("RA", Math.Abs(m.RaPx), m.RaPx > 0 ? "E" : "V", m.RaPx > 0 ? "stanga" : "dreapta");
+            yield return ("RA", Math.Abs(m.RaPx), m.RaPx > 0 ? "E" : "V", ArrowKeys.Symbol(m.RaPx > 0 ? keys.East : keys.West));
         }
 
         if (Math.Abs(m.DecPx) >= Th.AxisStep)
         {
-            yield return ("DEC", Math.Abs(m.DecPx), m.DecPx > 0 ? "N" : "S", m.DecPx > 0 ? "sus" : "jos");
+            yield return ("DEC", Math.Abs(m.DecPx), m.DecPx > 0 ? "N" : "S", ArrowKeys.Symbol(m.DecPx > 0 ? keys.North : keys.South));
         }
     }
 

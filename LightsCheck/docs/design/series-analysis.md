@@ -124,10 +124,12 @@ angle. `RejectedExplanation` is the list of `ReportParagraph`s the window shows 
 RESPINSE, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
 quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or empty), the
 three `spot_run_*` columns and the three `move_*` columns (signed pixels east and north, and
-the arrow words). `MoveCell` words a `MountMove` as `RA 15 px V (dreapta), DEC 12 px S (jos)`:
-a component under `Th.AxisStep` is dropped, the sense letter and the SynScan default arrow
-appear only when the move is signed, `MoveArrows` gives the arrows alone for the CSV (quoted
-there, two arrows being joined with a comma); both read the one `MoveComponents` rule;
+the arrow symbols). `MoveCell` words a `MountMove` as `RA 15 px ← V, DEC 12 px ↓ S` under
+an `ArrowKeys` (which SynScan arrow moves the mount east and which north, the other two
+following; `SeriesOptions.Arrows`, carried by the result, `ArrowKeys.Default` = right east and
+up north, ADR 0014): a component under `Th.AxisStep` is dropped, the arrow symbol and the sense
+letter appear only when the move is signed, `MoveArrows` gives the symbols alone for the CSV
+(quoted there, two being joined with a comma); both read the one `MoveComponents` rule;
 `FrameRows` also fills `StepTip`, the bar tooltip `cadrul 5: pas 15.3 px; <cell>`, null when
 the frame has no step.
 

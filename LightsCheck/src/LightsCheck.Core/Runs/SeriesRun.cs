@@ -18,10 +18,51 @@
 namespace LightsCheck.Core;
 
 /// <summary>What a run of the whole series takes from the user: the pixel size when the files do not say it, the parallelism.</summary>
-internal sealed record SeriesOptions(double PixelSizeUm = SeriesOptions.D3300PixelUm, int Threads = 0)
+internal sealed record SeriesOptions(double PixelSizeUm = SeriesOptions.D3300PixelUm, int Threads = 0, ArrowKeys? Arrows = null)
 {
     /// <summary>The Nikon D3300's pixel pitch: 23.5 mm over 6000 pixels.</summary>
     internal const double D3300PixelUm = 3.92;
+}
+
+/// <summary>A direction key of the SynScan app (R-040).</summary>
+internal enum Arrow
+{
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
+/// <summary>
+/// Which SynScan arrow moves the mount east and which north; the other two follow. The
+/// default is the owner's app, right east and up north (R-040, ADR 0014).
+/// </summary>
+internal sealed record ArrowKeys(Arrow East, Arrow North)
+{
+    internal static readonly ArrowKeys Default = new(Arrow.Right, Arrow.Up);
+
+    internal Arrow West => East == Arrow.Left ? Arrow.Right : Arrow.Left;
+
+    internal Arrow South => North == Arrow.Up ? Arrow.Down : Arrow.Up;
+
+    /// <summary>The symbol the reports print for a key.</summary>
+    internal static string Symbol(Arrow a) => a switch
+    {
+        Arrow.Left => "←",
+        Arrow.Right => "→",
+        Arrow.Up => "↑",
+        _ => "↓",
+    };
+
+    /// <summary>The key a symbol stands for, null for anything else.</summary>
+    internal static Arrow? FromSymbol(string? symbol) => symbol switch
+    {
+        "←" => Arrow.Left,
+        "→" => Arrow.Right,
+        "↑" => Arrow.Up,
+        "↓" => Arrow.Down,
+        _ => null,
+    };
 }
 
 /// <summary>
@@ -37,7 +78,8 @@ internal sealed record SeriesResult(
     double PixelSizeUm,
     string PixelSizeSource,
     double? ArcsecPerPixel,
-    int ReferenceIndex)
+    int ReferenceIndex,
+    ArrowKeys Arrows)
 {
     internal bool HasErrors => Frames.Any(f => f.Error is not null);
 }
@@ -107,7 +149,7 @@ internal static class SeriesRun
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 
-        return new SeriesResult(session, frames, cadence, dither, series, pixel, pixelSource, scale, refIndex + 1);
+        return new SeriesResult(session, frames, cadence, dither, series, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
     }
 
     /// <summary>The read noise from the first two biases, or null without two readable ones.</summary>

@@ -443,6 +443,69 @@ public class MainViewModelTests
         Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px", vm.StepPoints[4].Tip);
     }
 
+    /// <summary>The two arrow selectors start at the defaults, are remembered in the settings file, survive a broken file, and the cells follow them (R-041).</summary>
+    [Fact]
+    public async Task R041_TheArrowSelectorsAreRememberedAndTheCellsFollowThem()
+    {
+        using TempWorkspace ws = new();
+        string file = Path.Combine(ws.Dir, "settings.json");
+        string? previous = UserSettings.Path;
+        UserSettings.Path = file;
+        try
+        {
+            MainViewModel fresh = new();
+            Assert.Equal("→", fresh.EastArrow);
+            Assert.Equal("↑", fresh.NorthArrow);
+            Assert.Equal(["→", "←"], fresh.EastChoices);
+            Assert.Equal(["↑", "↓"], fresh.NorthChoices);
+            Assert.Equal(ArrowKeys.Default, fresh.Options.Arrows);
+            Assert.False(File.Exists(file));
+
+            fresh.EastArrow = "←";
+            fresh.NorthArrow = "↓";
+            Assert.True(File.Exists(file));
+            MainViewModel again = new();
+            Assert.Equal("←", again.EastArrow);
+            Assert.Equal("↓", again.NorthArrow);
+            Assert.Equal(new ArrowKeys(Arrow.Left, Arrow.Down), again.Options.Arrows);
+
+            using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+            string[] wcs =
+            [
+                FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+                FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
+                FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-0.99999"),
+                FitsTestData.Card("PC2_1", "0.99999"), FitsTestData.Card("PC2_2", "0.0037"),
+            ];
+            File.WriteAllBytes(Path.Combine(f.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+            await again.OpenAsync(f.Root);
+            Assert.Equal("RA 15 px → V", again.Frames[4].Move);
+            Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px → V", again.StepPoints[4].Tip);
+
+            // The exported files follow the selection too: frame 5's arrow in the CSV.
+            again.Export(ws.Dir);
+            string[] csv = File.ReadAllLines(Path.Combine(ws.Dir, "lightscheck-cadre.csv"));
+            int col = Array.IndexOf(csv[0].Split(','), "move_arrows");
+            Assert.Equal("→", csv[5].Split(',')[col].Trim('"'));   // the cell is quoted, like every text cell of the CSV
+            Assert.Equal("{\"east\":\"←\",\"north\":\"↓\"}", File.ReadAllText(file));   // the symbols themselves, as the README says
+
+            File.WriteAllText(file, "{ not json");
+            MainViewModel broken = new();
+            Assert.Equal("→", broken.EastArrow);
+            Assert.Equal("↑", broken.NorthArrow);
+
+            // A path that cannot be written (a directory in its place): the selection still changes, the next start reads the defaults.
+            UserSettings.Path = ws.Dir;
+            MainViewModel blocked = new() { EastArrow = "←" };
+            Assert.Equal("←", blocked.EastArrow);
+            Assert.Equal("→", new MainViewModel().EastArrow);
+        }
+        finally
+        {
+            UserSettings.Path = previous;
+        }
+    }
+
     [Fact]
     public void TheCropImageIsAGreyBitmap()
     {

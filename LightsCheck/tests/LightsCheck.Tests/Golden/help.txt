@@ -1,7 +1,7 @@
 lightscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]
+Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos]
           lightscheck <folder sesiune> --inventory
           lightscheck <folder sesiune> --frame N
 
@@ -15,6 +15,8 @@ Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]
                 (lightscheck-raport.txt, lightscheck-cadre.csv, lightscheck-respinse.txt).
   --threads N   cate cadre se masoara in paralel (implicit jumatate din nuclee).
   --pixel UM    marimea pixelului in microni, cand fisierele n-o spun (implicit 3.92, Nikon D3300).
+  --est stanga|dreapta  sageata SynScan care muta montura spre est (implicit dreapta); cealalta e vest.
+  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.
   --frame N     masoara un singur cadru (1 = primul din lights\).
   -h, --help    acest text

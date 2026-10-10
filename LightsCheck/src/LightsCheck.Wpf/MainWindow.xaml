@@ -78,6 +78,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <TextBlock Style="{StaticResource Faint}" Text="FIRE" ToolTip="Cate cadre se masoara in paralel; gol = jumatate din nuclee" />
             <TextBox Style="{StaticResource Field}" Width="48" Margin="0,3,0,0" Text="{Binding ThreadsText, UpdateSourceTrigger=PropertyChanged}" />
           </StackPanel>
+          <StackPanel Margin="12,0,0,0">
+            <TextBlock Style="{StaticResource Faint}" Text="EST" ToolTip="Sageata SynScan care muta montura spre est; cealalta e vest. Tinuta minte intre porniri." />
+            <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding EastChoices}" SelectedItem="{Binding EastArrow}" />
+          </StackPanel>
+          <StackPanel Margin="12,0,0,0">
+            <TextBlock Style="{StaticResource Faint}" Text="NORD" ToolTip="Sageata SynScan care muta montura spre nord; cealalta e sud. Tinuta minte intre porniri." />
+            <ComboBox Width="52" Margin="0,3,0,0" ItemsSource="{Binding NorthChoices}" SelectedItem="{Binding NorthArrow}" />
+          </StackPanel>
         </StackPanel>
 
         <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
