@@ -118,6 +118,21 @@
         ]
       },
       "tolerance": {}
+    },
+    {
+      "id": "V-011",
+      "kind": "moves",
+      "session": "Veil/2026-10-06-3h",
+      "measuredOn": "2026-10-09",
+      "expected": {
+        "cells": {
+          "1": "-", "2": "RA 5 px V (dreapta)", "3": "DEC 13 px S (jos)", "5": "RA 4 px V (dreapta), DEC 8 px N (sus)",
+          "6": "RA 12 px E (stanga)", "17": "DEC 28 px S (jos)", "19": "RA 10 px V (dreapta), DEC 26 px S (jos)",
+          "61": "RA 17 px V (dreapta)", "62": "-", "80": "RA 4 px E (stanga), DEC 12 px S (jos)"
+        },
+        "south": 11, "north": 2, "east": 11, "west": 24
+      },
+      "tolerance": {}
     }
   ]
 }

@@ -75,3 +75,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   headers read `dX (DEC)` / `dY (RA)` when the RA axis is known; the Respinse explanation is
   one paragraph per line with the RA-against-DEC sentence in bold (R-036, R-037, ADR 0012).
   V-010 checks the tables on the Veil session.
+- The mount's move behind each dither (R-038, R-039, ADR 0013): the column `dithering` of the
+  frame table and the Cadre tab says on which mount axis, how many pixels, in which sense on
+  the sky and which SynScan arrow (`RA 15 px V (dreapta), DEC 12 px S (jos)`), the sense from
+  the plate-solved FITS at the root with Siril's bottom-up rows accounted for, measured on the
+  Veil session with two plate-solved raws; the step bars of the Dithering tab show it as a
+  tooltip; the CSV gets `move_ra_px`, `move_dec_px`, `move_arrows`. V-011 checks the cells on
+  the Veil session.

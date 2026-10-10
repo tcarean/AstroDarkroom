@@ -58,6 +58,7 @@ public sealed class FrameRowVm
         Step = row.Step;
         Dx = row.Dx;
         Dy = row.Dy;
+        Move = row.Move;
         Spot = row.Spot;
         Reasons = row.Reasons;
         Path = path;
@@ -75,6 +76,7 @@ public sealed class FrameRowVm
     public string Step { get; }
     public string Dx { get; }
     public string Dy { get; }
+    public string Move { get; }
     public string Spot { get; }
     public string Reasons { get; }
     public string? Path { get; }
@@ -395,7 +397,7 @@ public sealed class MainViewModel : ObservableObject
             string label = f.Info.Index.ToString(CultureInfo.InvariantCulture);
             frames.Add(new FrameRowVm(table[i], m is null ? null : f.Info.Path));
             map.Add(new ChartPoint(g?.Dx ?? double.NaN, g?.Dy ?? double.NaN, label, colour, Ring: d.SpotRun[i] is not null));
-            steps.Add(new ChartPoint(f.Info.Index, d.Step[i] ?? double.NaN, label, d.IsMove[i] ? VerdictPalette.Warn : VerdictPalette.Neutral));
+            steps.Add(new ChartPoint(f.Info.Index, d.Step[i] ?? double.NaN, label, d.IsMove[i] ? VerdictPalette.Warn : VerdictPalette.Neutral, Tip: table[i].StepTip));
             nearest.Add(new ChartPoint(f.Info.Index, d.NearestOther[i] ?? double.NaN, label, Color.FromRgb(0x4E, 0xA8, 0xDE)));
             fwhm.Add(new ChartPoint(f.Info.Index, m?.FwhmMedian ?? double.NaN, label, colour));
             elong.Add(new ChartPoint(f.Info.Index, m?.ElongationMedian ?? double.NaN, label, colour));

@@ -1,6 +1,6 @@
 # Analysing the series
 
-**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
+**Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
 
 The behaviour is R-018 to R-028; the dither definitions and the verdicts are ADR 0007. The
 prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
@@ -86,6 +86,17 @@ its own word (`TrailOn`); the flag keeps the angle as its `Detail`, so a frame w
 still reads its angle (R-033, ADR 0011). The per-frame axis is derived, not measured again: a
 change of the axis rule moves every frame's word with it.
 
+The solved FITS is read whole by `SeriesRun.ReadWcs` into a `Wcs` (`CDELT` and the `PC`
+matrix, or the `CD` matrix with unit scales, the matrix then holding the scale); `RaAxis` is
+the old rule on the matrix, `RaScaleDeg` and `DecScaleDeg` are each scale times the length of
+its matrix row, so both forms give the same pixels. Each move (R-019) then gets a `MountMove`
+(R-038): the pointing moved by minus the stars' shift, and because Siril writes its FITS rows
+bottom-up while the raws are read top-down, the WCS is applied to `(-StepX, +StepY)`, giving
+degrees of RA (scaled by cos DEC, as the matrix is) and DEC, each divided by its own scale
+into pixels, positive east and north (ADR 0013, measured on Veil with two plate-solved raws). Without a WCS but with the axis from the trails, the move
+keeps the magnitudes along the two axes with `Signed` false; without an axis it is null, as
+is every non-move.
+
 ## Noise (`NoiseAnalyzer`)
 
 The prototype's `noise2.py`. The read noise per CFA position is the clipped standard
@@ -111,8 +122,14 @@ words). `Reason` words a trailing flag as `alungire v (prag t)` plus `TrailSuffi
 RA (a grade)` when the flag has an axis (`AxisWord`), `, dara la a grade` when it has only the
 angle. `RejectedExplanation` is the list of `ReportParagraph`s the window shows under
 RESPINSE, one with `Emphasis` for the bold line, built once from `Th` so the thresholds it
-quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or empty) and the
-three `spot_run_*` columns.
+quotes follow a change there. The CSV adds `trail_on` (`RA`, `DEC`, `oblic` or empty), the
+three `spot_run_*` columns and the three `move_*` columns (signed pixels east and north, and
+the arrow words). `MoveCell` words a `MountMove` as `RA 15 px V (dreapta), DEC 12 px S (jos)`:
+a component under `Th.AxisStep` is dropped, the sense letter and the SynScan default arrow
+appear only when the move is signed, `MoveArrows` gives the arrows alone for the CSV (quoted
+there, two arrows being joined with a comma); both read the one `MoveComponents` rule;
+`FrameRows` also fills `StepTip`, the bar tooltip `cadrul 5: pas 15.3 px; <cell>`, null when
+the frame has no step.
 
 Beside the rows, the report gives the window shapes it cannot derive from prose (ADR 0012):
 `AxisLabels` and `PositionHeaders` word the RA/DEC axis for the map and the table headers;

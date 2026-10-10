@@ -35,9 +35,12 @@ public class SeriesAnalyzerTests
         => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, error), m,
             m is null ? null : new RegistrationResult(true, 300, 200, 0, 0, 0, 1, 0.3), error);
 
-    private static SeriesAnalysis Analyze(params AnalyzedFrame[] frames) => Analyze(Axis.Unknown, frames);
+    /// <summary>The Veil plate solve's shape: RA along Y, east towards -Y of the solved frame, north towards +X (R-025, R-038).</summary>
+    private static readonly Wcs VeilWcs = new(-0.00172, 0.00172, 0.0037, -1, 1, 0.0037);
 
-    private static SeriesAnalysis Analyze(Axis wcsRaAxis, params AnalyzedFrame[] frames)
+    private static SeriesAnalysis Analyze(params AnalyzedFrame[] frames) => Analyze(null, frames);
+
+    private static SeriesAnalysis Analyze(Wcs? wcs, params AnalyzedFrame[] frames)
     {
         List<FrameInfo> infos = frames.Select(f => f.Info).ToList();
         Cadence c = CadenceAnalyzer.Analyze(infos);
@@ -47,7 +50,62 @@ public class SeriesAnalyzerTests
             zeros[i] = frames[i].Measurement is null ? null : 0;
         }
 
-        return SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), null, wcsRaAxis);
+        return SeriesAnalyzer.Analyze(frames, c, DitherAnalyzer.Analyze(zeros, zeros, c.PauseSeconds), null, wcs);
+    }
+
+    /// <summary>The Veil measurement of R-038: stars shifted (+128.2, -142.2) px, the plate solves said the centre went 0.2431 deg west and 0.2208 deg south.</summary>
+    [Fact]
+    public void R038_AMoveMapsToTheSkyThroughTheWcsWithSirilsRowsFlipped()
+    {
+        AnalyzedFrame[] frames = [Frame(1, Measurement(3.0, 1.1, 10000, 120)), Frame(2, Measurement(3.0, 1.1, 10000, 120))];
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        DitherAnalysis d = DitherAnalyzer.Analyze([0, 128.2], [0, -142.2], c.PauseSeconds);
+        Assert.True(d.IsMove[1]);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, VeilWcs);
+        Assert.Equal(Axis.Y, s.RaAxis);
+        Assert.Null(s.MountMoves[0]);
+        MountMove m = Assert.IsType<MountMove>(s.MountMoves[1]);
+        Assert.True(m.Signed);
+        Assert.Equal(-142.2, m.RaPx, 1.0);     // west
+        Assert.Equal(-128.2, m.DecPx, 1.0);    // south
+        Assert.Equal("RA 142 px V (dreapta), DEC 129 px S (jos)", SeriesReport.MoveCell(m));   // 128.7 px through the matrix's 0.0037 shear
+
+        // The same step with the axis from the trails only: the components without their sense.
+        SeriesAnalysis u = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Null(u.MountMoves[1]);   // no axis at all: nothing
+        Assert.Equal("-", SeriesReport.MoveCell(null));
+        Assert.Equal("RA 142 px, DEC 128 px", SeriesReport.MoveCell(new MountMove(142.2, 128.2, false)));
+        Assert.Equal("RA 15 px V (dreapta)", SeriesReport.MoveCell(new MountMove(-15.3, 0.5, true)));   // DEC under Th.AxisStep left out
+        Assert.Equal("RA 4 px E (stanga), DEC 20 px N (sus)", SeriesReport.MoveCell(new MountMove(4.0, 20.0, true)));
+    }
+
+    [Fact]
+    public void R038_TheWcsSignsAndTheRaAxisComeFromTheMatrix()
+    {
+        Assert.Equal(Axis.Y, VeilWcs.RaAxis);
+        Assert.Equal(Axis.X, new Wcs(-0.00172, 0.00172, 1, 0.003, 0.003, 1).RaAxis);
+        (double ra, double dec) = VeilWcs.SkyOffsetDeg(0, -100);   // +100 px up the solved frame
+        Assert.Equal(-0.172, ra, 0.001);
+        Assert.Equal(0, dec, 0.001);
+        Assert.Equal(0.00172, VeilWcs.RaScaleDeg, 0.00001);
+        Assert.Equal(0.00172, VeilWcs.DecScaleDeg, 0.00001);
+
+        // The same solve written as a CD matrix (unit scales, the matrix holds them): the same pixels and senses.
+        Wcs cd = new(1, 1, -0.00172 * 0.0037, 0.00172, 0.00172, 0.00172 * 0.0037);
+        Assert.Equal(Axis.Y, cd.RaAxis);
+        Assert.Equal(0.00172, cd.RaScaleDeg, 0.00001);
+        Assert.Equal(0.00172, cd.DecScaleDeg, 0.00001);
+        (double cdRa, double cdDec) = cd.SkyOffsetDeg(0, -100);
+        Assert.Equal(ra, cdRa, 0.0001);
+        Assert.Equal(dec, cdDec, 0.0001);
+        Assert.Equal(-100, cdRa / cd.RaScaleDeg, 0.1);
+
+        // A move on both axes words both, in a cell and as arrows, through one rule.
+        MountMove both = new(-15.3, 12.0, true);
+        Assert.Equal("RA 15 px V (dreapta), DEC 12 px N (sus)", SeriesReport.MoveCell(both));
+        Assert.Equal("dreapta, sus", SeriesReport.MoveArrows(both));
+        Assert.Equal("", SeriesReport.MoveArrows(new MountMove(15.3, 12.0, false)));
     }
 
     [Fact]
@@ -78,7 +136,7 @@ public class SeriesAnalyzerTests
     [Fact]
     public void R033_TheFlagsCarryTheTrailAxisWhenTheStarsAgreeAndTheAxisIsKnown()
     {
-        SeriesAnalysis s = Analyze(Axis.Y,
+        SeriesAnalysis s = Analyze(VeilWcs,
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
             Frame(2, Measurement(3.0, 1.7, 9000, 121)),                       // bad, coherent: pe RA
             Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: pe RA

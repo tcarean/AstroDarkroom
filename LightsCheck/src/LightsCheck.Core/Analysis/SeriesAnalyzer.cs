@@ -57,6 +57,13 @@ internal enum TrailAxis
     Oblique,
 }
 
+/// <summary>
+/// The mount's move behind a dither, in pixels of the plate scale: RA positive to the east
+/// and DEC to the north when Signed (a WCS was at hand), the magnitudes along the two axes
+/// when not (the axis came from the trails) (R-038).
+/// </summary>
+internal sealed record MountMove(double RaPx, double DecPx, bool Signed);
+
 /// <summary>Medians of the first and the last <see cref="Count"/> good frames, for the trends (R-023).</summary>
 internal sealed record Trend(double? First, double? Last, int Count)
 {
@@ -102,13 +109,14 @@ internal sealed record SeriesAnalysis(
     string AxisSource,
     double? TrailAngleDeg,
     TrailAxis TrailOn,
+    IReadOnlyList<MountMove?> MountMoves,
     IReadOnlyList<ReadNoise>? ReadNoise,
     IReadOnlyList<IReadOnlyList<ChannelNoise>>? Swamping,
     IReadOnlyList<int> SwampingFrames);
 
 internal static class SeriesAnalyzer
 {
-    internal static SeriesAnalysis Analyze(IReadOnlyList<AnalyzedFrame> frames, Cadence cadence, DitherAnalysis dither, IReadOnlyList<ReadNoise>? readNoise, Axis wcsRaAxis)
+    internal static SeriesAnalysis Analyze(IReadOnlyList<AnalyzedFrame> frames, Cadence cadence, DitherAnalysis dither, IReadOnlyList<ReadNoise>? readNoise, Wcs? wcs)
     {
         ArgumentNullException.ThrowIfNull(frames);
         ArgumentNullException.ThrowIfNull(cadence);
@@ -261,8 +269,8 @@ internal static class SeriesAnalyzer
         }
 
         // The RA axis: from a plate solve when one is at hand, else from the trails of the bad frames.
-        Axis ra = wcsRaAxis;
-        string source = wcsRaAxis == Axis.Unknown ? "necunoscut" : "plate solve (WCS)";
+        Axis ra = wcs?.RaAxis ?? Axis.Unknown;
+        string source = wcs is null ? "necunoscut" : "plate solve (WCS)";
         double? trailAngle = null;
         List<double> angles = Enumerable.Range(0, n)
             .Where(i => classes[i] == FrameClass.Bad && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
@@ -308,6 +316,32 @@ internal static class SeriesAnalyzer
             }
         }
 
+        // The mount's move behind each dither (R-038): the pointing moved by minus the stars'
+        // shift, and Siril's solved FITS has its rows flipped against the raws, so the WCS is
+        // applied to (-StepX, +StepY) (ADR 0013). Without a WCS, the magnitudes along the axes.
+        MountMove?[] moves = new MountMove?[n];
+        for (int i = 0; i < n; i++)
+        {
+            if (!dither.IsMove[i] || dither.StepX[i] is not double sx || dither.StepY[i] is not double sy)
+            {
+                continue;
+            }
+
+            if (wcs is not null)
+            {
+                (double raDeg, double decDeg) = wcs.SkyOffsetDeg(-sx, sy);
+                moves[i] = new MountMove(raDeg / wcs.RaScaleDeg, decDeg / wcs.DecScaleDeg, true);
+            }
+            else if (ra == Axis.Y)
+            {
+                moves[i] = new MountMove(Math.Abs(sy), Math.Abs(sx), false);
+            }
+            else if (ra == Axis.X)
+            {
+                moves[i] = new MountMove(Math.Abs(sx), Math.Abs(sy), false);
+            }
+        }
+
         // Swamping on the first, the middle and the last measured frames.
         List<IReadOnlyList<ChannelNoise>>? swamping = null;
         List<int> swampingFrames = [];
@@ -328,7 +362,7 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, readNoise, swamping, swampingFrames);
+            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames);
     }
 
     /// <summary>
