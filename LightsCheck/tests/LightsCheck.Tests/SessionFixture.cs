@@ -44,9 +44,10 @@ internal sealed class SessionFixture : IDisposable
     /// <summary>
     /// Writes <paramref name="lights"/> frames of <paramref name="exposure"/> seconds into
     /// lights/, one every <paramref name="cadence"/> seconds from <see cref="FirstStart"/>,
-    /// and <paramref name="biases"/> frames into biases/ when asked.
+    /// and <paramref name="biases"/> frames into biases/ and <paramref name="darks"/> into
+    /// darks/ when asked.
     /// </summary>
-    internal SessionFixture WithLights(int lights, double exposure = 120.2, double cadence = 141, int biases = 0, bool inSubfolder = true, bool withStars = false)
+    internal SessionFixture WithLights(int lights, double exposure = 120.2, double cadence = 141, int biases = 0, bool inSubfolder = true, bool withStars = false, int darks = 0)
     {
         string dir = inSubfolder ? LightsDir : Root;
         Directory.CreateDirectory(dir);
@@ -66,7 +67,24 @@ internal sealed class SessionFixture : IDisposable
             }
         }
 
+        WriteDarks(darks, exposure);
         return this;
+    }
+
+    /// <summary>Darks are only counted by the session (R-042), so the flat 32 x 24 frame of <see cref="Light"/> is enough.</summary>
+    private void WriteDarks(int darks, double exposure)
+    {
+        if (darks <= 0)
+        {
+            return;
+        }
+
+        string dir = Path.Combine(Root, "darks");
+        Directory.CreateDirectory(dir);
+        for (int i = 0; i < darks; i++)
+        {
+            File.WriteAllBytes(Path.Combine(dir, $"dark_{i + 1:0000}.fit"), Light(FirstStart, exposure));
+        }
     }
 
     /// <summary>A frame with the metadata cards and a flat 300 ADU field (no stars; the inventory reads no pixel).</summary>
@@ -90,7 +108,7 @@ internal sealed class SessionFixture : IDisposable
     /// of the grid (the positions stay those of the reference, so the frame still registers),
     /// the three backgrounds scaled by BackgroundFactor.
     /// </summary>
-    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed)
+    internal static byte[] StarLight(DateTime start, double exposure, SeriesFrame frame, int seed, bool sensorPattern = false)
     {
         SyntheticFrame f = new SyntheticFrame
         {
@@ -102,6 +120,7 @@ internal sealed class SessionFixture : IDisposable
             BackgroundG = 2000 * frame.BackgroundFactor,
             BackgroundB = 2300 * frame.BackgroundFactor,
             NoiseSigma = 40,
+            HotPixels = sensorPattern ? SensorPattern : [],
         }.WithStarGrid(40, 3.0, 3000, 30000);
         for (int i = 0; i < f.Stars.Count; i++)
         {
@@ -124,11 +143,15 @@ internal sealed class SessionFixture : IDisposable
     /// A series with a known dither pattern: one frame per entry, shifted by (Dx, Dy) px,
     /// trailed when Elongation is above 1, started PauseSeconds after the previous frame's end.
     /// </summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0) =>
-        WithStarSeries(frames.Select(f => new SeriesFrame(f.Dx, f.Dy, f.Elongation, f.PauseSeconds)).ToList(), exposure, biases);
+    internal SessionFixture WithStarSeries(IReadOnlyList<(double Dx, double Dy, double Elongation, double PauseSeconds)> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false) =>
+        WithStarSeries(frames.Select(f => new SeriesFrame(f.Dx, f.Dy, f.Elongation, f.PauseSeconds)).ToList(), exposure, biases, darks, sensorPattern);
 
-    /// <summary>The same series from <see cref="SeriesFrame"/> entries, which can also vary the FWHM, the star count and the background.</summary>
-    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0)
+    /// <summary>
+    /// The same series from <see cref="SeriesFrame"/> entries, which can also vary the FWHM,
+    /// the star count and the background; with <paramref name="sensorPattern"/> every light
+    /// carries the same warm and hot pixels (<see cref="SensorPattern"/>), as a sensor does.
+    /// </summary>
+    internal SessionFixture WithStarSeries(IReadOnlyList<SeriesFrame> frames, double exposure = 120, int biases = 0, int darks = 0, bool sensorPattern = false)
     {
         Directory.CreateDirectory(LightsDir);
         DateTime t = FirstStart;
@@ -139,7 +162,7 @@ internal sealed class SessionFixture : IDisposable
                 t = t.AddSeconds(exposure + frames[i].PauseSeconds);
             }
 
-            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i));
+            File.WriteAllBytes(Path.Combine(LightsDir, $"DSC_{i + 1:0000}.fit"), StarLight(t, exposure, frames[i], i, sensorPattern));
         }
 
         if (biases > 0)
@@ -153,6 +176,7 @@ internal sealed class SessionFixture : IDisposable
             }
         }
 
+        WriteDarks(darks, exposure);
         return this;
     }
 
@@ -175,6 +199,34 @@ internal sealed class SessionFixture : IDisposable
         new(12, -15, 1.0, 30, StarsKept: 20), new(12.5, -15, 1.0, 1, BackgroundFactor: 1.3), new(40, -15, 2.0, 30), new(40.5, -15.3, 1.0, 1),
         new(41, -15, 1.0, 30), new(41.5, -15.2, 1.0, 1),
     ];
+
+    /// <summary>How many warm and hot pixels <see cref="SensorPattern"/> puts on a light, and how high above the 40 ADU noise.</summary>
+    internal const int WarmPixels = 200, HotPixels = 20;
+    internal const double WarmAdu = 200, HotAdu = 1600;
+
+    /// <summary>
+    /// The fixed pattern of the synthetic sensor (R-046): 200 warm pixels of +200 ADU (5 sigma
+    /// of the 40 ADU noise) and 20 hot ones of +1600 ADU (40 sigma), at fixed positions inside
+    /// the central 480 x 480 of the 640 x 480 frame, the square the pattern analyzer reads.
+    /// </summary>
+    internal static readonly IReadOnlyList<(int X, int Y, double Adu)> SensorPattern = MakeSensorPattern();
+
+    private static List<(int X, int Y, double Adu)> MakeSensorPattern()
+    {
+        Random rng = new(999);
+        HashSet<(int, int)> taken = [];
+        List<(int X, int Y, double Adu)> list = [];
+        while (list.Count < WarmPixels + HotPixels)
+        {
+            (int x, int y) = (80 + rng.Next(480), rng.Next(480));
+            if (taken.Add((x, y)))
+            {
+                list.Add((x, y, list.Count < WarmPixels ? WarmAdu : HotAdu));
+            }
+        }
+
+        return list;
+    }
 
     internal static string[] Cards(DateTime start, double exposure) =>
     [

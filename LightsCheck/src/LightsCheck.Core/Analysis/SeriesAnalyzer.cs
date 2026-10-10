@@ -80,9 +80,24 @@ internal enum Axis
 }
 
 /// <summary>
-/// The series as a whole (R-022 to R-025): every frame's class and flags, the session's
-/// medians, the trends, the drift and the field rotation, the RA axis, and the noise against
-/// the read noise when the biases gave one.
+/// The walking-noise verdict (R-043): Ok by the dither rule of R-021; Static when that rule
+/// fails but the drift draws a dash under Th.WalkingStreakVisible inside the longest run at
+/// Th.CoverageLoose, so the pattern does not move between the frames that share a spot;
+/// Insufficient otherwise; Unknown with fewer than two registered frames.
+/// </summary>
+internal enum WalkingNoise
+{
+    Unknown,
+    Ok,
+    Static,
+    Insufficient,
+}
+
+/// <summary>
+/// The series as a whole (R-022 to R-025, R-043): every frame's class and flags, the
+/// session's medians, the trends, the drift and the field rotation, the drift per exposure
+/// with the walking-noise dash and verdict it gives, the RA axis, and the noise against the
+/// read noise when the biases gave one.
 /// </summary>
 internal sealed record SeriesAnalysis(
     IReadOnlyList<FrameClass> Classes,
@@ -102,6 +117,11 @@ internal sealed record SeriesAnalysis(
     double? DriftXPerMin,
     double? DriftYPerMin,
     int DriftPairs,
+    double? DriftPerExposurePx,
+    Axis DriftAxis,
+    double? WalkingStreakPx,
+    int LongestRunLoose,
+    WalkingNoise WalkingNoise,
     double? RotationTotalDeg,
     double? RotationPerHourDeg,
     double? CornerShiftPerExposurePx,
@@ -249,6 +269,19 @@ internal static class SeriesAnalyzer
 
         double? driftX = minutes > 0 ? sumX / minutes : null, driftY = minutes > 0 ? sumY / minutes : null;
 
+        // The drift over one exposure (the median exposure of the session), the image axis
+        // it mostly runs along, the dash it draws inside the longest run at CoverageLoose,
+        // and the walking-noise verdict that reads it (R-043, ADR 0015).
+        List<double> exposures = frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => e!.Value).ToList();
+        double? driftPerExposure = driftX is double dx && driftY is double dy && exposures.Count > 0 ? Math.Sqrt(dx * dx + dy * dy) * Raster.Percentile(exposures, 50) / 60 : null;
+        Axis driftAxis = driftX is double ax && driftY is double ay ? (Math.Abs(ax) >= Math.Abs(ay) ? Axis.X : Axis.Y) : Axis.Unknown;
+        int longestRun = dither.RunsLoose.Select(r => r.Frames).DefaultIfEmpty(1).Max();
+        double? streak = driftPerExposure is double dpe ? dpe * (longestRun - 1) : null;
+        WalkingNoise walking = dither.Registered < 2 ? WalkingNoise.Unknown
+            : dither.WalkingNoiseOk ? WalkingNoise.Ok
+            : streak is double st && st < Th.WalkingStreakVisible ? WalkingNoise.Static
+            : WalkingNoise.Insufficient;
+
         // Rotation between the first and the last registered frame.
         AnalyzedFrame? firstReg = frames.FirstOrDefault(f => f.Registration is { Ok: true }), lastReg = frames.LastOrDefault(f => f.Registration is { Ok: true });
         double? rotTotal = null, rotPerHour = null, corner = null;
@@ -362,7 +395,7 @@ internal static class SeriesAnalyzer
         return new SeriesAnalysis(classes, flags.Select(l => (IReadOnlyList<FrameFlag>)l).ToList(),
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
-            driftX, driftY, pairs, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames);
+            driftX, driftY, pairs, driftPerExposure, driftAxis, streak, longestRun, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames);
     }
 
     /// <summary>

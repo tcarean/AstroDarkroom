@@ -111,6 +111,59 @@ public class SeriesTests
         Assert.Empty(s.Flags[0]);
     }
 
+    /// <summary>The `scara` row of DITHERING words the move thresholds in arcseconds at the fixture's 5.99 "/px (R-044).</summary>
+    [Fact]
+    public void R044_TheScaleRowSaysWhatAMoveIsOnTheSky()
+    {
+        SeriesResult r = RunPattern();
+        ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "scara");
+        Assert.Equal("1 px = 5.99\"; o miscare de 5 px (pragul) cere 30\" pe cer, una de 10 px 60\"", row.Value);
+        Assert.Equal(row.Value, Assert.Single(SeriesReport.DitherScalarRows(r), x => x.Label == "scara").Value);
+        Assert.Equal("verdict", SeriesReport.DitherScalarRows(r)[^1].Label);
+    }
+
+    /// <summary>The explanation under the Dithering card: five paragraphs, the one on what breaks walking noise in bold, the thresholds of Th quoted (R-045).</summary>
+    [Fact]
+    public void R045_TheDitherExplanationQuotesTheThresholds()
+    {
+        IReadOnlyList<ReportParagraph> p = SeriesReport.DitherExplanation;
+        Assert.Equal(5, p.Count);
+        Assert.Single(p, x => x.Emphasis);
+        Assert.StartsWith("Ce rupe walking noise-ul", p.Single(x => x.Emphasis).Text, StringComparison.Ordinal);
+        Assert.Contains($"sub {Th.WalkingStreakVisible:0} px", p[4].Text, StringComparison.Ordinal);
+        Assert.Contains($"{Th.DitherStep:0} px ajung", p[2].Text, StringComparison.Ordinal);
+        Assert.Contains("capacul de body", p[3].Text, StringComparison.Ordinal);
+    }
+
+    /// <summary>The 8-frame pattern with the synthetic sensor: its 200 warm and 20 hot pixels come back from the lights' median, and the darks line says what Siril will do (R-046, R-042).</summary>
+    [Fact]
+    public void R046_TheSensorPatternIsReadFromTheLightsAndTheDarksAreNoticed()
+    {
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, darks: 3, sensorPattern: true);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        SensorPattern p = r.Pattern;
+
+        Assert.Equal(PatternStatus.Measured, p.Status);
+        Assert.Equal(8, p.Frames);
+        Assert.Equal(480, p.CropSize);            // the 640 x 480 frame's shorter side
+        // The crop reads the central 480 x 480 minus a 2 px border per CFA position: the pattern's pixels inside it.
+        int inside = SessionFixture.SensorPattern.Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
+        int hotInside = SessionFixture.SensorPattern.Skip(SessionFixture.WarmPixels).Count(q => q.X >= 84 && q.X < 556 && q.Y >= 4 && q.Y < 476);
+        Assert.InRange(p.Warm, inside - 3, inside + 6);    // a star core under a warm pixel in a quarter of the frames costs nothing; the median's noise adds a few
+        Assert.InRange(p.Hot, hotInside - 1, hotInside + 1);
+        Assert.InRange(p.WarmPerMpx, 700, 1100);
+        Assert.Equal(3, r.Session.Darks.Count);
+
+        ReportRow row = Assert.Single(SeriesReport.DitherRows(r), x => x.Label == "pattern fix");
+        Assert.Contains("pixeli calzi / Mpx peste 3 sigma", row.Value, StringComparison.Ordinal);
+        Assert.EndsWith("3 dark-uri in darks\\, Siril le scade", row.Value, StringComparison.Ordinal);
+
+        using SessionFixture g = new SessionFixture().WithStarSeries(SessionFixture.Pattern.Take(4).ToList());
+        SeriesResult q = SeriesRun.Run(g.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(PatternStatus.TooFewFrames, q.Pattern.Status);
+        Assert.EndsWith("fara dark-uri in sesiune: raman in cadre", Assert.Single(SeriesReport.DitherRows(q), x => x.Label == "pattern fix").Value, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R019_TheDitherPatternIsReadBack()
     {
@@ -269,7 +322,8 @@ public class SeriesTests
         Assert.Equal(["raza", "cadre", "cate", "minute"], t[4].Columns);
         Assert.Equal(["5 px | niciunul | - | -", "10 px | niciunul | - | -"], Rows(t[4]));
 
-        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
+        // The scalar rows of R-036 plus the `scara` and `pattern fix` rows of R-044 and R-046, the verdict last.
+        Assert.Equal(["pauze > 5 s", "cel mai lung interval intre doua miscari", "acoperire", "intindere", "axe", "scara", "pattern fix", "verdict"], SeriesReport.DitherScalarRows(r).Select(x => x.Label));
         Assert.Equal("X 40 px, Y 16 px", SeriesReport.DitherScalarRows(r)[3].Value);
         Assert.StartsWith("axa Y a imaginii = RA, X = DEC", SeriesReport.DitherScalarRows(r)[4].Value, StringComparison.Ordinal);
     }

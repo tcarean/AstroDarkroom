@@ -61,6 +61,7 @@ internal sealed record DitherAnalysis(
     int IsolatedLoose,
     int DistinctMid,
     int DistinctLoose,
+    int LargestClusterTight,
     IReadOnlyList<FrameStretch> RunsMid,
     IReadOnlyList<FrameStretch> RunsLoose,
     IReadOnlyList<SpotRun?> SpotRun,
@@ -264,7 +265,8 @@ internal static class DitherAnalyzer
         }
 
         int longestTight = Runs(x, y, Th.CoverageTight).Select(r => r.Frames).DefaultIfEmpty(1).Max();
-        int distinctMid = Distinct(x, y, reg, Th.CoverageMid), distinctLoose = Distinct(x, y, reg, Th.CoverageLoose);
+        int distinctMid = Clusters(x, y, reg, Th.CoverageMid).Count, distinctLoose = Clusters(x, y, reg, Th.CoverageLoose).Count;
+        int largestTight = Clusters(x, y, reg, Th.CoverageTight).DefaultIfEmpty(0).Max();
 
         bool hotOk = longestTight <= Th.HotPixelRunMax;
         bool twoD = moves > 0 && (xOnly + both) >= Th.TwoDAxisFraction * moves && (yOnly + both) >= Th.TwoDAxisFraction * moves;
@@ -275,7 +277,7 @@ internal static class DitherAnalyzer
             longest, longestFirst, longestLast,
             moveSizes.Count > 0 ? Raster.Percentile(moveSizes, 50) : null, sizes,
             xOnly, yOnly, both, xPlus, xMinus, yPlus, yMinus,
-            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
+            nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)
@@ -306,18 +308,29 @@ internal static class DitherAnalyzer
         return runs;
     }
 
-    /// <summary>Greedy clustering: a frame joins the first cluster whose seed is within <paramref name="radius"/>, else seeds a new one.</summary>
-    private static int Distinct(IReadOnlyList<double?> x, IReadOnlyList<double?> y, List<int> reg, double radius)
+    /// <summary>
+    /// Greedy clustering: a frame joins the first cluster whose seed is within
+    /// <paramref name="radius"/>, else seeds a new one. The sizes, one per cluster, in the
+    /// order the seeds appeared; the count is the distinct positions.
+    /// </summary>
+    private static List<int> Clusters(IReadOnlyList<double?> x, IReadOnlyList<double?> y, List<int> reg, double radius)
     {
         List<int> seeds = [];
+        List<int> sizes = [];
         foreach (int i in reg)
         {
-            if (!seeds.Any(s => Dist(x, y, i, s) <= radius))
+            int k = seeds.FindIndex(s => Dist(x, y, i, s) <= radius);
+            if (k < 0)
             {
                 seeds.Add(i);
+                sizes.Add(1);
+            }
+            else
+            {
+                sizes[k]++;
             }
         }
 
-        return seeds.Count;
+        return sizes;
     }
 }

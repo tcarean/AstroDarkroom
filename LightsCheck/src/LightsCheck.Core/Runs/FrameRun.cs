@@ -17,8 +17,8 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>One light of a session, decoded and measured.</summary>
-internal sealed record MeasuredFrame(FrameInfo Info, FrameMeasurement Measurement);
+/// <summary>One light of a session, decoded and measured, with the central crop the series keeps for the sensor's pattern (R-046).</summary>
+internal sealed record MeasuredFrame(FrameInfo Info, FrameMeasurement Measurement, PatternCrop Crop);
 
 /// <summary>
 /// Chains open, decode and measure for one frame (R-017): the session folder gives the file,
@@ -50,7 +50,7 @@ internal static class FrameRun
         Raster raw = Raster.FromImg(f.Image, scale.Black);
         f.Image = null;
         FrameMeasurement m = FrameAnalyzer.Analyze(raw, scale, f.Cfa);
-        return new MeasuredFrame(info, m);
+        return new MeasuredFrame(info, m, PatternCrop.Cut(raw));
     }
 
     /// <summary>The scale a FITS is assumed to use, from its BITPIX: never a guess from the data.</summary>

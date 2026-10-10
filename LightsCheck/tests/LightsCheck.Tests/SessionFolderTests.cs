@@ -46,6 +46,32 @@ public class SessionFolderTests
         Assert.Equal(["a.fit", "b.fits", "c.fts"], SessionFolder.FramesIn(ws.Dir).Select(f => Path.GetFileName(f)).ToArray());
     }
 
+    /// <summary>darks/ is listed like biases/ and never read: a folder of junk bytes counts, and no file is opened (R-042).</summary>
+    [Fact]
+    public void R042_DarksAreCountedNeverRead()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2, biases: 1, darks: 3);
+        File.WriteAllBytes(Path.Combine(s.Root, "darks", "dark_0004.fit"), [1, 2, 3]);   // not a FITS: counted all the same
+
+        SessionFolder f = SessionFolder.Open(s.Root);
+
+        Assert.Equal(Path.Combine(s.Root, "darks"), f.DarksDir);
+        Assert.Equal(["dark_0001.fit", "dark_0002.fit", "dark_0003.fit", "dark_0004.fit"], f.Darks.Select(Path.GetFileName));
+        Assert.Equal(2, f.Lights.Count);
+    }
+
+    [Fact]
+    public void R042_WithoutDarksTheFolderIsNullAndTheListEmpty()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2);
+        Directory.CreateDirectory(Path.Combine(s.Root, "darks"));   // empty: as good as absent
+
+        SessionFolder f = SessionFolder.Open(s.Root);
+
+        Assert.Null(f.DarksDir);
+        Assert.Empty(f.Darks);
+    }
+
     /// <summary>A session root holds result.fit and friends: an empty lights/ must not fall back to them.</summary>
     [Fact]
     public void R002_AnEmptyLightsSubfolderIsAnErrorNotAFallbackToTheRoot()

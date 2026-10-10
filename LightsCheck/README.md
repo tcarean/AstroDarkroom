@@ -21,12 +21,13 @@ verificate pe sesiunea Veil din 2026-10-06 fata de analiza facuta de mana (`docs
 
 ## Ce folder ii dai
 
-Folderul sesiunii Siril, cel care are `lights/` si, optional, `biases/`:
+Folderul sesiunii Siril, cel care are `lights/` si, optional, `biases/` si `darks/`:
 
 ```
 2026-10-06-3h\
     lights\     DSC_0001.NEF ... DSC_0087.NEF     <- obligatoriu (sau cadrele direct in folder)
     biases\     DSC_0128.NEF ...                  <- optional
+    darks\      DSC_0160.NEF ...                  <- optional, doar numarate, niciodata citite
     flats\      ...                               <- neatins
     process\    ...                               <- neatins
 ```
@@ -71,11 +72,32 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   monturii cade ea: `dara pe RA (-90 grade)` inseamna urmarirea (eroare periodica, viteza,
   backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
   amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
-- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, rotatia de camp.
+- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, driftul intr-o
+  expunere (pe ce axa a monturii si ce dara de walking noise lasa in cel mai lung grup de
+  cadre ramase in acelasi loc la 10 px), rotatia de camp.
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
-  grupuri de cadre consecutive in acelasi loc) si verdictul pentru pixeli calzi si walking
-  noise, cu cifrele lui.
+  grupuri de cadre consecutive in acelasi loc), `scara` (cat inseamna pe cer, in secunde de
+  arc, o miscare de 5 si de 10 px la focala sesiunii), `pattern fix` (cati pixeli calzi pe
+  megapixel are senzorul, cititi din mediana cadrelor neinregistrate, si daca sesiunea are
+  dark-uri care sa-i scoata) si verdictul pentru pixeli calzi si walking noise, cu cifrele lui.
+  Verdictul de walking noise citeste si driftul: `OK` cand dithering-ul e des, pe ambele axe
+  si cu pozitii distincte; `FARA walking noise` cand dara pe care o trage driftul in cel mai
+  lung grup de cadre la 10 px e sub 3 px, oricum ar arata harta (la 20 mm, un drift de 3"/min
+  e a cincisprezecea parte dintr-un pixel pe cadru si pattern-ul nu merge nicaieri);
+  `INSUFICIENT` altfel, cu dara in pixeli si pe ce axa.
+
+  Walking noise-ul e pattern-ul fix al senzorului (pixelii calzi, restul de dark) tras in
+  dare: driftul il muta de la un cadru la altul si stiva aduna copiile pe traseul lui, in
+  grupurile de cadre consecutive ramase in acelasi loc. Aceeasi deriva a monturii si aceeasi
+  miscare de dithering sunt de atatea ori mai multi pixeli cu cat focala e mai lunga: focala
+  scurta iarta, focala lunga cere dithering la fiecare cadru, pe ambele axe, in directie
+  aleatoare; frecventa conteaza mai mult decat marimea, 5 px ajung cand doua cadre vecine nu
+  mai impart acelasi loc. Dark-urile scot pattern-ul inainte sa apuce sa mearga si nu cer
+  demontarea obiectivului sau a filtrului: scoti obiectivul cu tot cu filtru, pui capacul de
+  body, inchizi ocularul vizorului si tragi 20 de cadre la acelasi ISO, acelasi timp si aceeasi
+  temperatura, la finalul sesiunii; flat-urile raman valabile. Fereastra spune acelasi lucru
+  sub cardul DITHERING.
 - **RESPINSE**: fiecare cadru slab cu motivul, pragul si axa darei.
 - **TABEL PE CADRE**: o linie pe cadru. Coloana `dithering` spune ce a facut montura la
   fiecare miscare de dithering: pe ce axa, cati pixeli, in ce sens pe cer si ce sageata din

@@ -196,7 +196,7 @@ internal static class SeriesReport
         (string fv, string ft) = Focus(s, r);
         (string ev, string et) = Exposure(s, r);
         (string dv, string dt) = Dew(s);
-        (string dither, string ditherText) = DitherVerdict(d);
+        (string dither, string ditherText) = DitherVerdict(r);
         return
         [
             new("focus", ft, fv),
@@ -301,16 +301,51 @@ internal static class SeriesReport
         return
         [
             new("drift intre cadre consecutive fara dithering", $"X {Signed(s.DriftXPerMin, 2)} px/min, Y {Signed(s.DriftYPerMin, 2)} px/min ({s.DriftPairs.ToString(Inv)} perechi){(r.ArcsecPerPixel is double a1 && s.DriftXPerMin is double dxm && s.DriftYPerMin is double dym ? $" = {Signed(dxm * a1, 1)} / {Signed(dym * a1, 1)} \"/min" : "")}"),
+            new("drift intr-o expunere", DriftPerExposure(r)),
             new("rotatie de camp", $"{(s.RotationTotalDeg is double rt ? RunReport.F(rt * 60, 1) + " arcmin in total" : "-")}{(s.RotationPerHourDeg is double rh ? ", " + RunReport.F(rh * 60, 1) + " arcmin/h" : "")}{(s.CornerShiftPerExposurePx is double cs ? "; in colt, intr-o expunere: " + RunReport.F(cs, 2) + " px" : "")}"),
         ];
     }
+
+    /// <summary>The drift over one exposure and the walking-noise dash it draws inside the longest run at 10 px (R-043).</summary>
+    private static string DriftPerExposure(SeriesResult r)
+    {
+        SeriesAnalysis s = r.Series;
+        if (s.DriftPerExposurePx is not double d)
+        {
+            return "- (fara perechi de cadre consecutive fara dithering)";
+        }
+
+        List<double> exposures = r.Frames.Select(f => f.Info.ExposureSeconds).Where(e => e is > 0).Select(e => e!.Value).ToList();
+        string exposure = exposures.Count > 0 ? RunReport.F(Raster.Percentile(exposures, 50), 0) + " s" : "o expunere";
+        return $"{Px(d, r)} pe {exposure}, pe {DriftAxisWord(s)}; {Streak(r)}";
+    }
+
+    /// <summary>`dare de walking noise de pana la 11 px (grupul cel mai lung la 10 px: 10 cadre)`, the dash of R-043; without a run there is no dash.</summary>
+    private static string Streak(SeriesResult r)
+    {
+        SeriesAnalysis s = r.Series;
+        return s.WalkingStreakPx is not double st ? "dara de walking noise necunoscuta"
+            : s.LongestRunLoose < Th.RunMinFrames ? $"nicio dara de walking noise ({NoRun()})"
+            : $"dare de walking noise de pana la {RunReport.F(st, 1)} px (grupul cel mai lung la {RunReport.F(Th.CoverageLoose, 0)} px: {FramesWord(s.LongestRunLoose)})";
+    }
+
+    /// <summary>`niciun grup de 3+ cadre consecutive la 10 px`: the frames that would share the dash do not exist.</summary>
+    private static string NoRun() => $"niciun grup de {Th.RunMinFrames.ToString(Inv)}+ cadre consecutive la {RunReport.F(Th.CoverageLoose, 0)} px";
+
+    /// <summary>The axis the drift mostly runs along: RA or DEC when the RA axis is known, else the image axis.</summary>
+    private static string DriftAxisWord(SeriesAnalysis s) => s.DriftAxis switch
+    {
+        Axis.Unknown => "-",
+        _ when s.RaAxis == Axis.Unknown => s.DriftAxis == Axis.X ? "X" : "Y",
+        _ => s.DriftAxis == s.RaAxis ? "RA" : "DEC",
+    };
 
     internal static IReadOnlyList<ReportRow> DitherRows(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         SeriesAnalysis s = r.Series;
         DitherAnalysis d = r.Dither;
-        (string verdict, string text) = DitherVerdict(d);
+        (string verdict, string text) = DitherVerdict(r);
         return
         [
             PausesRow(r, d),
@@ -322,6 +357,8 @@ internal static class SeriesReport
             new("pozitii distincte", $"{d.DistinctMid.ToString(Inv)} la {RunReport.F(Th.CoverageMid, 0)} px, {d.DistinctLoose.ToString(Inv)} la {RunReport.F(Th.CoverageLoose, 0)} px; intindere X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
             new($"grupuri in {RunReport.F(Th.CoverageMid, 0)} px", Runs(d.RunsMid, r)),
             new($"grupuri in {RunReport.F(Th.CoverageLoose, 0)} px", Runs(d.RunsLoose, r)),
+            ScaleRow(r),
+            PatternRow(r),
             new("verdict", text, verdict),
         ];
     }
@@ -331,7 +368,7 @@ internal static class SeriesReport
     {
         ArgumentNullException.ThrowIfNull(r);
         DitherAnalysis d = r.Dither;
-        (string verdict, string text) = DitherVerdict(d);
+        (string verdict, string text) = DitherVerdict(r);
         return
         [
             PausesRow(r, d),
@@ -339,9 +376,55 @@ internal static class SeriesReport
             new("acoperire", $"cel mai apropiat alt cadru median {Opt(Median(d.NearestOther), 1)} px; izolate (>= {RunReport.F(Th.CoverageLoose, 0)} px de orice): {d.IsolatedLoose.ToString(Inv)}"),
             new("intindere", $"X {RunReport.F(d.SpanX, 0)} px, Y {RunReport.F(d.SpanY, 0)} px"),
             new("axe", AxisLine(r.Series)),
+            ScaleRow(r),
+            PatternRow(r),
             new("verdict", text, verdict),
         ];
     }
+
+    /// <summary>What a move means on the sky at this focal length: `1 px = 5.99"; o miscare de 5 px (pragul) cere 30" pe cer, una de 10 px 60"` (R-044).</summary>
+    private static ReportRow ScaleRow(SeriesResult r)
+        => new("scara", r.ArcsecPerPixel is double a
+            ? $"1 px = {RunReport.F(a, 2)}\"; o miscare de {RunReport.F(Th.DitherStep, 0)} px (pragul) cere {RunReport.F(Th.DitherStep * a, 0)}\" pe cer, una de {RunReport.F(Th.CoverageLoose, 0)} px {RunReport.F(Th.CoverageLoose * a, 0)}\""
+            : "necunoscuta (fara focala)");
+
+    /// <summary>
+    /// The sensor's pattern read from the lights, and whether the session's darks will take it
+    /// out of the stack (R-046, R-042): `1162 pixeli calzi / Mpx peste 3 sigma, 7 fierbinti
+    /// peste 10 (mediana a 87 cadre neinregistrate, 512 x 512 px din centru); fara dark-uri in
+    /// sesiune: raman in cadre`.
+    /// </summary>
+    private static ReportRow PatternRow(SeriesResult r)
+    {
+        SensorPattern p = r.Pattern;
+        string darks = r.Session.DarksDir is null
+            ? "fara dark-uri in sesiune: raman in cadre"
+            : $"{r.Session.Darks.Count.ToString(Inv)} dark-uri in {SessionFolder.DarksName}\\, Siril le scade";
+        string value = p.Status switch
+        {
+            PatternStatus.Measured => $"{RunReport.F(p.WarmPerMpx, 0)} pixeli calzi / Mpx peste {RunReport.F(Th.PatternWarmSigma, 0)} sigma, {RunReport.F(p.HotPerMpx, 0)} fierbinti peste {RunReport.F(Th.PatternHotSigma, 0)} (mediana a {FramesWord(p.Frames)} neinregistrate, {p.CropSize.ToString(Inv)} x {p.CropSize.ToString(Inv)} px din centru)",
+            PatternStatus.TooFewFrames => $"nedeterminat (sub {Th.PatternMinFrames.ToString(Inv)} cadre masurate)",
+            PatternStatus.Unregistered => "nedeterminat (cadre neinregistrate)",
+            PatternStatus.FramesDidNotMove => $"nedeterminat (cadrele au stat pe loc: stelele raman in mediana; grupul cel mai mare la {RunReport.F(Th.CoverageTight, 0)} px are {FramesWord(r.Dither.LargestClusterTight)} din {r.Dither.Registered.ToString(Inv)})",
+            _ => "nedeterminat (niciun cadru decodat)",
+        };
+        return new("pattern fix", $"{value}; {darks}");
+    }
+
+    /// <summary>
+    /// What the Dithering tab says under its card: what walking noise is, why the focal
+    /// length decides how much the same drift and the same dither are in pixels, what breaks
+    /// it (bold), how to take darks without touching the lens, and where the figures come from
+    /// (R-045). Built from Th so the thresholds it quotes follow a change there.
+    /// </summary>
+    internal static IReadOnlyList<ReportParagraph> DitherExplanation { get; } =
+    [
+        new($"Walking noise-ul e pattern-ul fix al senzorului (pixelii calzi, restul de dark) tras in dare: driftul il muta de la un cadru la altul, iar stiva aduna copiile pe traseul lui. Rezulta un zgomot corelat, alungit pe directia driftului, in grupurile de cadre consecutive ramase in acelasi loc la {RunReport.F(Th.CoverageLoose, 0)} px.", false),
+        new("Aceeasi deriva a monturii si aceeasi miscare de dithering inseamna de atatea ori mai multi pixeli cu cat focala e mai lunga: la 20 mm un drift de 3\"/min sta sub un pixel pe toata sesiunea si nimic nu merge, la 135 mm e peste un pixel pe expunere. Focala scurta iarta; focala lunga cere dithering la fiecare cadru.", false),
+        new($"Ce rupe walking noise-ul: o miscare la fiecare cadru, pe ambele axe, in directie aleatoare. Frecventa conteaza mai mult decat marimea: {RunReport.F(Th.DitherStep, 0)} px ajung cand doua cadre vecine nu mai impart acelasi loc; un salt mare la 2 cadre lasa grupuri in care driftul trage liniute.", true),
+        new("Dark-urile scot pattern-ul inainte sa apuce sa mearga, si nu cer demontarea obiectivului sau a filtrului: scoti obiectivul cu tot cu filtru, pui capacul de body, inchizi ocularul vizorului si tragi 20 de cadre la acelasi ISO, acelasi timp si aceeasi temperatura, la finalul sesiunii. Flat-urile raman valabile.", false),
+        new($"Cifrele: randul 'drift intr-o expunere' din DRIFT SI ROTATIE da driftul pe un cadru si dara pe care o lasa in grupul cel mai lung la {RunReport.F(Th.CoverageLoose, 0)} px; sub {RunReport.F(Th.WalkingStreakVisible, 0)} px nu e walking noise, oricum ar arata harta. Randul 'pattern fix' spune cati pixeli calzi are senzorul (peste {RunReport.F(Th.PatternWarmSigma, 0)} sigma fata de zgomotul unui cadru) si daca sesiunea are dark-uri care sa-i scoata.", false),
+    ];
 
     /// <summary>The DITHERING figures that are tables, for the window (R-036): how often, how far, direction, coverage, runs; the console keeps its rows (ADR 0012).</summary>
     internal static IReadOnlyList<ReportTable> DitherTables(SeriesResult r)
@@ -515,16 +598,36 @@ internal static class SeriesReport
         _ => "axa RA nedeterminata",
     };
 
-    private static (string Verdict, string Text) DitherVerdict(DitherAnalysis d)
+    /// <summary>
+    /// The two dithering verdicts in one word pair, the worse first so the chip takes its
+    /// colour (R-021, R-043): walking noise `OK` by the dither rule, `FARA` when the drift
+    /// draws a dash under Th.WalkingStreakVisible in the longest run at 10 px, `INSUFICIENT`
+    /// otherwise; hot pixels `OK` or `ATENTIE`. The words stay short for the chip; the dash,
+    /// the drift, the run and the hot-pixel rule open the text.
+    /// </summary>
+    private static (string Verdict, string Text) DitherVerdict(SeriesResult r)
     {
+        DitherAnalysis d = r.Dither;
+        SeriesAnalysis s = r.Series;
         if (d.Registered < 2)
         {
             return ("NEDETERMINAT", "cadre neinregistrate");
         }
 
-        string hot = d.HotPixelsOk ? "OK pentru pixeli calzi" : $"ATENTIE la pixeli calzi (peste {Th.HotPixelRunMax.ToString(Inv)} cadre consecutive in {RunReport.F(Th.CoverageTight, 0)} px)";
-        string walk = d.WalkingNoiseOk ? "OK pentru walking noise" : "INSUFICIENT pentru walking noise";
-        return ($"{walk}, {hot}", $"{d.Moves.ToString(Inv)} miscari la {d.Registered.ToString(Inv)} cadre, {d.DistinctLoose.ToString(Inv)} pozitii distincte la {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} izolate, {d.MovesOnBoth.ToString(Inv)} miscari pe ambele axe");
+        (int Severity, string Word, string? Detail) hot = d.HotPixelsOk
+            ? (0, "OK pentru pixeli calzi", null)
+            : (2, "ATENTIE la pixeli calzi", $"pixeli calzi: peste {Th.HotPixelRunMax.ToString(Inv)} cadre consecutive in {RunReport.F(Th.CoverageTight, 0)} px");
+        string run = s.LongestRunLoose < Th.RunMinFrames ? NoRun() : $"grupul cel mai lung la {RunReport.F(Th.CoverageLoose, 0)} px {FramesWord(s.LongestRunLoose)}";
+        string drift = s.DriftPerExposurePx is double dpe ? $"drift {RunReport.F(dpe, 2)} px pe expunere, {run}" : "drift nemasurat";
+        (int Severity, string Word, string? Detail) walk = s.WalkingNoise switch
+        {
+            WalkingNoise.Ok => (0, "OK pentru walking noise", null),
+            WalkingNoise.Static => (0, "FARA walking noise", s.LongestRunLoose < Th.RunMinFrames ? $"nicio dara de walking noise: {drift}" : $"dare de walking noise de cel mult {RunReport.F(s.WalkingStreakPx ?? 0, 1)} px: {drift}"),
+            _ => (3, "INSUFICIENT pentru walking noise", s.WalkingStreakPx is double st ? $"dare de walking noise de pana la {RunReport.F(st, 1)} px pe {DriftAxisWord(s)}: {drift}" : $"walking noise: {drift}"),
+        };
+        (var first, var second) = walk.Severity >= hot.Severity ? (walk, hot) : (hot, walk);
+        string counts = $"{d.Moves.ToString(Inv)} miscari la {d.Registered.ToString(Inv)} cadre, {d.DistinctLoose.ToString(Inv)} pozitii distincte la {RunReport.F(Th.CoverageLoose, 0)} px, {d.IsolatedLoose.ToString(Inv)} izolate, {d.MovesOnBoth.ToString(Inv)} miscari pe ambele axe";
+        return ($"{first.Word}, {second.Word}", string.Join("; ", new[] { first.Detail, second.Detail, counts }.Where(x => x is not null)));
     }
 
     private static string Keep(SeriesResult r)

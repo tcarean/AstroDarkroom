@@ -44,13 +44,24 @@ internal static class NoiseAnalyzer
     /// </summary>
     internal static double HighPassSigma(Raster raw, int py, int px)
     {
+        List<double> hp = HighPass(raw, py, px);
+        return hp.Count == 0 ? double.NaN : ClippedStd(hp, 4.0, 5);
+    }
+
+    /// <summary>
+    /// The residuals behind <see cref="HighPassSigma"/>: every pixel of the central window of
+    /// the CFA position minus the 5 x 5 median of its own position, row by row, the two-pixel
+    /// border of the window left out; empty when the window is under 7 pixels a side.
+    /// </summary>
+    internal static List<double> HighPass(Raster raw, int py, int px)
+    {
         ArgumentNullException.ThrowIfNull(raw);
         int ch = (raw.H - py + 1) / 2, cw = (raw.W - px + 1) / 2;
         int half = Math.Min(WindowHalf, Math.Min(ch, cw) / 2);
         int y0 = ch / 2 - half, x0 = cw / 2 - half, n = 2 * half;
         if (n < 7)
         {
-            return double.NaN;
+            return [];
         }
 
         float[] c = new float[n * n];
@@ -81,7 +92,7 @@ internal static class NoiseAnalyzer
             }
         }
 
-        return ClippedStd(hp, 4.0, 5);
+        return hp;
     }
 
     /// <summary>astropy's sigma_clipped_stats: clip at <paramref name="sigmas"/> around the median, <paramref name="iterations"/> times, then the standard deviation.</summary>

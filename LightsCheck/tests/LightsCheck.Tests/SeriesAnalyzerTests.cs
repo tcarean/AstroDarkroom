@@ -35,6 +35,68 @@ public class SeriesAnalyzerTests
         => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, SessionFixture.FirstStart.AddSeconds(i * 141.0), null, null, null, null, null, error), m,
             m is null ? null : new RegistrationResult(true, 300, 200, 0, 0, 0, 1, 0.3), error);
 
+    /// <summary>n good frames 141 s apart (120 s exposures), the k-th registered at (dx * k, dy * k), with the dithering read from those positions.</summary>
+    private static (AnalyzedFrame[] Frames, DitherAnalysis Dither) Drifting(int n, double dx, double dy)
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, n).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
+        double?[] x = frames.Select((f, k) => (double?)(dx * k)).ToArray(), y = frames.Select((f, k) => (double?)(dy * k)).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        return (frames, DitherAnalyzer.Analyze(x, y, c.PauseSeconds));
+    }
+
+    /// <summary>12 frames drifting 1 px along Y per frame: 0.43 px/min, 0.85 px per 120 s exposure, a run of 11 at 10 px, a dash of 8.5 px, INSUFICIENT (R-043).</summary>
+    [Fact]
+    public void R043_TheDriftOverOneExposureDrawsTheDashOfTheLongestRunAndTheVerdictReadsIt()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d) = Drifting(12, 0, 1.0);
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, VeilWcs);
+
+        Assert.Equal(1.0 / 2.35, s.DriftYPerMin!.Value, 0.01);
+        Assert.Equal(0.851, s.DriftPerExposurePx!.Value, 0.01);
+        Assert.Equal(Axis.Y, s.DriftAxis);
+        Assert.Equal(11, s.LongestRunLoose);        // frames 1-11 within 10 px of frame 1
+        Assert.Equal(8.51, s.WalkingStreakPx!.Value, 0.05);
+        Assert.False(d.WalkingNoiseOk);
+        Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);
+    }
+
+    /// <summary>The same 12 frames drifting 0.1 px per frame: the dash is under 3 px, so nothing walks whatever the dither rule says (R-043).</summary>
+    [Fact]
+    public void R043_ADashUnderThreePixelsIsNoWalkingNoiseEvenWithoutDithering()
+    {
+        (AnalyzedFrame[] frames, DitherAnalysis d) = Drifting(12, 0.1, 0);
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+
+        Assert.Equal(Axis.X, s.DriftAxis);
+        Assert.Equal(12, s.LongestRunLoose);
+        Assert.InRange(s.WalkingStreakPx!.Value, 0.9, 1.0);
+        Assert.False(d.WalkingNoiseOk);
+        Assert.Equal(WalkingNoise.Static, s.WalkingNoise);
+    }
+
+    /// <summary>A session the dither rule of R-021 accepts is OK whatever the drift; one without a registered pair is unknown (R-043).</summary>
+    [Fact]
+    public void R043_TheDitherRuleWinsAndTwoRegisteredFramesAreNeeded()
+    {
+        AnalyzedFrame[] frames = Enumerable.Range(1, 8).Select(i => Frame(i, Measurement(3.0, 1.1, 10000, 120))).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        // Every frame 15 px from every other, on both axes: distinct, isolated, two-dimensional.
+        double?[] x = [0, 15, 0, 15, 30, 45, 30, 45], y = [0, 15, 30, 45, 0, 15, 30, 45];
+        DitherAnalysis d = DitherAnalyzer.Analyze(x, y, c.PauseSeconds);
+        Assert.True(d.WalkingNoiseOk);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(WalkingNoise.Ok, s.WalkingNoise);
+        Assert.Null(s.DriftPerExposurePx);      // every step was a move: no drift pair
+        Assert.Null(s.WalkingStreakPx);
+
+        DitherAnalysis none = DitherAnalyzer.Analyze(new double?[8], new double?[8], c.PauseSeconds);
+        Assert.Equal(WalkingNoise.Unknown, SeriesAnalyzer.Analyze(frames, c, none, null, null).WalkingNoise);
+    }
+
     /// <summary>The Veil plate solve's shape: RA along Y, east towards -Y of the solved frame, north towards +X (R-025, R-038).</summary>
     private static readonly Wcs VeilWcs = new(-0.00172, 0.00172, 0.0037, -1, 1, 0.0037);
 

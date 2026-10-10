@@ -67,7 +67,8 @@ internal sealed record ArrowKeys(Arrow East, Arrow North)
 
 /// <summary>
 /// The whole series measured: the session, every frame, the cadence, the dithering, the
-/// series analysis, and the pixel scale in arcseconds per pixel when the focal length is known.
+/// series analysis, the sensor's pattern, and the pixel scale in arcseconds per pixel when
+/// the focal length is known.
 /// </summary>
 internal sealed record SeriesResult(
     SessionFolder Session,
@@ -75,6 +76,7 @@ internal sealed record SeriesResult(
     Cadence Cadence,
     DitherAnalysis Dither,
     SeriesAnalysis Series,
+    SensorPattern Pattern,
     double PixelSizeUm,
     string PixelSizeSource,
     double? ArcsecPerPixel,
@@ -87,8 +89,8 @@ internal sealed record SeriesResult(
 /// <summary>
 /// Chains the whole analysis (R-026): opens the session, measures every light in parallel,
 /// registers each to the reference (the first measured frame), reads the read noise from
-/// the first two biases, and runs the cadence, dithering and series analyzers. Nothing is
-/// written here; SeriesOutputs does that on request.
+/// the first two biases, and runs the cadence, dithering, pattern and series analyzers.
+/// Nothing is written here; SeriesOutputs does that on request.
 /// </summary>
 internal static class SeriesRun
 {
@@ -98,6 +100,7 @@ internal static class SeriesRun
         SessionFolder session = SessionFolder.Open(folder);
         int n = session.Lights.Count;
         AnalyzedFrame[] frames = new AnalyzedFrame[n];
+        PatternCrop?[] crops = new PatternCrop?[n];
         int done = 0;
         int threads = options.Threads > 0 ? options.Threads : Math.Max(1, Environment.ProcessorCount / 2);
         ParallelOptions po = new() { MaxDegreeOfParallelism = threads, CancellationToken = cancel };
@@ -108,6 +111,7 @@ internal static class SeriesRun
             {
                 MeasuredFrame m = FrameRun.Measure(i + 1, path);
                 frames[i] = new AnalyzedFrame(m.Info, m.Measurement, null, null);
+                crops[i] = m.Crop;
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
@@ -137,6 +141,9 @@ internal static class SeriesRun
         double?[] x = frames.Select(f => f.Registration is { Ok: true } r ? r.Dx : (double?)null).ToArray();
         double?[] y = frames.Select(f => f.Registration is { Ok: true } r ? r.Dy : (double?)null).ToArray();
         DitherAnalysis dither = DitherAnalyzer.Analyze(x, y, cadence.PauseSeconds);
+        // The crops (1 MB apiece) are dropped once the pattern is read.
+        SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither);
+        Array.Clear(crops);
 
         IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
         Wcs? wcs = ReadWcs(session.Root);
@@ -149,7 +156,7 @@ internal static class SeriesRun
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
 
-        return new SeriesResult(session, frames, cadence, dither, series, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
+        return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
     }
 
     /// <summary>The read noise from the first two biases, or null without two readable ones.</summary>

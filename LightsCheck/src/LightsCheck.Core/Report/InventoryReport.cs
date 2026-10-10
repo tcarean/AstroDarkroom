@@ -38,6 +38,7 @@ internal static class InventoryReport
         w.WriteLine($"=== SESIUNE: {s.Root} ===");
         w.WriteLine($"    lights             : {FolderLine(s.Root, s.LightsDir, s.Lights)}");
         w.WriteLine($"    biases             : {(s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases))}");
+        w.WriteLine($"    darks              : {(s.DarksDir is null ? "(lipsa)" : FolderLine(s.Root, s.DarksDir, s.Darks))}");
         w.WriteLine($"    aparat             : {Distinct(inv.Lights.Select(f => f.Camera))}");
         w.WriteLine($"    obiectiv           : {Lens(inv.Lights)}");
         w.WriteLine($"    expunere           : {Exposure(inv.Lights)}");
