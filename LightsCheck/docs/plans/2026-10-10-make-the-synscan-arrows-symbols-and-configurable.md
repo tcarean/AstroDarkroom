@@ -97,3 +97,11 @@ Followed as written. The symbol-to-key map is `ArrowKeys.FromSymbol` in the core
 `Symbol`, so the view-model passes symbols through. V-011's cells were re-worded by the
 known rule (`V (dreapta)` to `← V` and so on) and then re-measured on Veil, the counts
 unchanged. The goldens changed in `help.txt` only: the usage line and the two option lines.
+
+The subagent review (nine findings, all applied): the console's code page is switched for
+the run only and put back, guarded for a run without a console, and the UTF-8 claim is
+limited to the console window with `--out` for files; the symbols and the default live in
+the core alone (`UserSettings` stores strings, the view-model validates through
+`ArrowKeys`); `TestSettings` isolates every Wpf test from the developer's settings file;
+`settings.json` holds the arrows unescaped; R-038, R-039, the `MoveCell` comment and the
+CHANGELOG headings were brought in line; `R041` covers the export and the failed write.

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using System.Text;
 using LightsCheck.Core;
 
 namespace LightsCheck.Cli;
@@ -24,9 +25,39 @@ internal static class Program
 {
     private static int Main(string[] args)
     {
-        // The report carries the SynScan arrows as symbols (R-040); the console's default code page would print them as '?'.
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-        return Run(args, Console.Out, Console.Error);
+        // The report carries the SynScan arrows as symbols (R-040). A console window's own code
+        // page would print them as '?', so it is switched to UTF-8 for the run and put back
+        // after (the code page outlives the process otherwise); a run without a console, or
+        // with its output in a file or a pipe, writes UTF-8 bytes either way.
+        Encoding? previous = null;
+        try
+        {
+            previous = Console.OutputEncoding;
+            Console.OutputEncoding = new UTF8Encoding(false);
+        }
+        catch (IOException)
+        {
+            // no console attached: nothing to switch
+        }
+
+        try
+        {
+            return Run(args, Console.Out, Console.Error);
+        }
+        finally
+        {
+            if (previous is not null)
+            {
+                try
+                {
+                    Console.OutputEncoding = previous;
+                }
+                catch (IOException)
+                {
+                    // the console went away during the run
+                }
+            }
+        }
     }
 
     /// <summary>

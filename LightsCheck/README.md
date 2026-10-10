@@ -100,7 +100,10 @@ lista numelor de respins (`lightscheck-respinse.txt`),
 cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
 `--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
 cu focala din raw da scara in "/px. `--est stanga|dreapta` si `--nord sus|jos` spun care
-sageata SynScan muta montura spre est si care spre nord, pentru coloana `dithering`.
+sageata SynScan muta montura spre est si care spre nord, pentru coloana `dithering`. Sagetile
+sunt caractere Unicode: in fereastra consolei se vad (programul o trece pe UTF-8 cat ruleaza);
+daca trimiti iesirea intr-un fisier cu `>` din Windows PowerShell 5.1, ele ies stricate, asa ca
+pentru fisiere foloseste `--out`, ale carui fisiere sunt UTF-8.
 
 ### Doar inventarul: `--inventory`
 

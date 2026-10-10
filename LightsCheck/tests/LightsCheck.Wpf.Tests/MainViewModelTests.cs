@@ -449,6 +449,7 @@ public class MainViewModelTests
     {
         using TempWorkspace ws = new();
         string file = Path.Combine(ws.Dir, "settings.json");
+        string? previous = UserSettings.Path;
         UserSettings.Path = file;
         try
         {
@@ -481,14 +482,27 @@ public class MainViewModelTests
             Assert.Equal("RA 15 px → V", again.Frames[4].Move);
             Assert.Equal("cadrul 5: pas 15.3 px; RA 15 px → V", again.StepPoints[4].Tip);
 
+            // The exported files follow the selection too: frame 5's arrow in the CSV.
+            again.Export(ws.Dir);
+            string[] csv = File.ReadAllLines(Path.Combine(ws.Dir, "lightscheck-cadre.csv"));
+            int col = Array.IndexOf(csv[0].Split(','), "move_arrows");
+            Assert.Equal("→", csv[5].Split(',')[col].Trim('"'));   // the cell is quoted, like every text cell of the CSV
+            Assert.Equal("{\"east\":\"←\",\"north\":\"↓\"}", File.ReadAllText(file));   // the symbols themselves, as the README says
+
             File.WriteAllText(file, "{ not json");
             MainViewModel broken = new();
             Assert.Equal("→", broken.EastArrow);
             Assert.Equal("↑", broken.NorthArrow);
+
+            // A path that cannot be written (a directory in its place): the selection still changes, the next start reads the defaults.
+            UserSettings.Path = ws.Dir;
+            MainViewModel blocked = new() { EastArrow = "←" };
+            Assert.Equal("←", blocked.EastArrow);
+            Assert.Equal("→", new MainViewModel().EastArrow);
         }
         finally
         {
-            UserSettings.Path = null;
+            UserSettings.Path = previous;
         }
     }
 

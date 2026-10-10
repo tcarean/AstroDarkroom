@@ -60,16 +60,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   defect of the frame.
 - The Respinse tab explains its words under the heading: the elongation and its thresholds,
   the trail and its axis, what RA against DEC points to, where the marginal frames are listed.
-
-### Changed
-
-- The reason of a frame at the limit carries the trail angle too (`alungire 1.49 la limita
-  (prag 1.35), dara la -90 grade`), as the bad frames' did.
-- FOCUS closes with a `verdict` row, as ROUA does: the console prints it and the window's
-  FOCUS card shows the chip it lacked (R-036, ADR 0012).
-
-### Added (window)
-
 - The Dithering tab shows the DITHERING figures as five tables (how often, how far,
   direction, coverage per radius, runs) beside the rows that are not tables; the Cadre
   headers read `dX (DEC)` / `dY (RA)` when the RA axis is known; the Respinse explanation is
@@ -88,7 +78,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The reason of a frame at the limit carries the trail angle too (`alungire 1.49 la limita
+  (prag 1.35), dara la -90 grade`), as the bad frames' did.
+- FOCUS closes with a `verdict` row, as ROUA does: the console prints it and the window's
+  FOCUS card shows the chip it lacked (R-036, ADR 0012).
 - The arrows of the `dithering` cell are symbols after the pixels, `RA 15 px ← V, DEC 12 px ↓ S`
   instead of `RA 15 px V (dreapta), DEC 12 px S (jos)`, and the default mapping is the owner's
   SynScan, right east and up north, the reverse of the forum default of ADR 0013 (ADR 0014);
-  the console prints UTF-8 so the symbols show.
+  the console window is switched to UTF-8 for the run so the symbols show, and `--out` stays
+  the way to a file.

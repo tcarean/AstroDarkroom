@@ -111,9 +111,10 @@ internal static class SeriesReport
     }
 
     /// <summary>
-    /// The `dithering` cell (R-038): the mount's move on each axis in pixels, with its sense
-    /// and the SynScan default arrow when the move is signed (`RA 15 px V (dreapta)`), the
-    /// pixels alone otherwise; a component under Th.AxisStep is left out; `-` for no move.
+    /// The `dithering` cell (R-038, R-040): the mount's move on each axis in pixels, with the
+    /// SynScan arrow under the given keys and the sense letter when the move is signed
+    /// (`RA 15 px ← V`), the pixels alone otherwise; a component under Th.AxisStep is left
+    /// out; `-` for no move.
     /// </summary>
     internal static string MoveCell(MountMove? m, ArrowKeys keys)
     {

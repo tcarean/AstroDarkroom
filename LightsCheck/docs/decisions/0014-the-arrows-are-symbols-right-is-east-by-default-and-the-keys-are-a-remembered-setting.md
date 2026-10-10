@@ -20,7 +20,10 @@ The arrows are the symbols `←`, `→`, `↑`, `↓`, written after the pixels 
 letter: `RA 15 px ← V, DEC 12 px ↓ S`. Which arrow moves the mount east and which north are
 two values of a setting, `ArrowKeys`, the other two following; the default is the owner's app,
 `→` east and `↑` north. The console takes them as `--est stanga|dreapta` and `--nord sus|jos`
-and prints UTF-8 so the symbols survive the console; the window has two selectors in the top
+and switches the console window to UTF-8 for the run (put back after) so the symbols show
+there; a redirected output gets UTF-8 bytes, which Windows PowerShell 5.1's `>` re-decodes
+with its own code page, so a report meant for a file goes through `--out`, whose files are
+UTF-8; the window has two selectors in the top
 bar and remembers them in `%LOCALAPPDATA%\LightsCheck\settings.json`, the program's first and
 only stored setting, read at start and written on change, defaults when absent or unreadable.
 The sense letter stays in the cell because it is measured, while the arrow depends on the

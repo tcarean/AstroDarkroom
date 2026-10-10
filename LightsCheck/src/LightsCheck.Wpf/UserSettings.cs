@@ -15,21 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace LightsCheck.Wpf;
 
 /// <summary>
 /// The window's one stored setting, the SynScan arrow keys (R-041, ADR 0014):
-/// <c>%LOCALAPPDATA%\LightsCheck\settings.json</c>, two symbols. A missing or unreadable
-/// file, or an unknown symbol, means the defaults; a failed write is ignored. The tests
-/// point <see cref="Path"/> at a file of their own.
+/// <c>%LOCALAPPDATA%\LightsCheck\settings.json</c>, two strings the view-model reads as
+/// symbols through the core's <c>ArrowKeys</c>. This class stores and fetches text and
+/// judges nothing: a missing or unreadable file gives nulls, a failed write is ignored. The
+/// tests point <see cref="Path"/> at a file of their own.
 /// </summary>
 public static class UserSettings
 {
-    private const string DefaultEast = "→";
-    private const string DefaultNorth = "↑";
-
     /// <summary>The file read and written; null = the default location under the local application data.</summary>
     public static string? Path { get; set; }
 
@@ -38,23 +37,22 @@ public static class UserSettings
 
     private sealed record Stored(string? East, string? North);
 
-    public static (string East, string North) Load()
+    /// <summary>The two stored strings, null each when the file is missing, unreadable or lacks them.</summary>
+    public static (string? East, string? North) Load()
     {
         try
         {
             if (!File.Exists(FilePath))
             {
-                return (DefaultEast, DefaultNorth);
+                return (null, null);
             }
 
             Stored? s = JsonSerializer.Deserialize<Stored>(File.ReadAllText(FilePath), Json);
-            string east = s?.East is "→" or "←" ? s.East : DefaultEast;
-            string north = s?.North is "↑" or "↓" ? s.North : DefaultNorth;
-            return (east, north);
+            return (s?.East, s?.North);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
-            return (DefaultEast, DefaultNorth);
+            return (null, null);
         }
     }
 
@@ -72,9 +70,15 @@ public static class UserSettings
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // A setting that cannot be written is typed again next time; nothing else depends on it.
+            // A setting that cannot be written is picked again next time; nothing else depends on it.
         }
     }
 
-    private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+    // The arrows are written as themselves, not as \u escapes, so the file reads as the README says.
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 }

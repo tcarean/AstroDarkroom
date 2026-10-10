@@ -106,7 +106,10 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
-        (_eastArrow, _northArrow) = UserSettings.Load();
+        // The stored strings count only when they are one of the two arrows of their axis; the core's default otherwise.
+        (string? east, string? north) = UserSettings.Load();
+        _eastArrow = ArrowKeys.FromSymbol(east) is Arrow.Left or Arrow.Right ? east! : ArrowKeys.Symbol(ArrowKeys.Default.East);
+        _northArrow = ArrowKeys.FromSymbol(north) is Arrow.Up or Arrow.Down ? north! : ArrowKeys.Symbol(ArrowKeys.Default.North);
     }
     private string? _status;
     private FrameRowVm? _selectedFrame;
@@ -198,9 +201,9 @@ public sealed class MainViewModel : ObservableObject
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }
 
     /// <summary>The SynScan arrows that move the mount east and north, as symbols; the other two follow (R-041). Remembered in <see cref="UserSettings"/>.</summary>
-    public IReadOnlyList<string> EastChoices { get; } = ["→", "←"];
+    public IReadOnlyList<string> EastChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.East), ArrowKeys.Symbol(ArrowKeys.Default.West)];
 
-    public IReadOnlyList<string> NorthChoices { get; } = ["↑", "↓"];
+    public IReadOnlyList<string> NorthChoices { get; } = [ArrowKeys.Symbol(ArrowKeys.Default.North), ArrowKeys.Symbol(ArrowKeys.Default.South)];
 
     public string EastArrow
     {

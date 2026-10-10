@@ -85,13 +85,17 @@ framework opens shows once per entry into the element and then stays shut.
 ## The one stored setting (`UserSettings`)
 
 The SynScan arrow keys (R-041, ADR 0014) are the window's only setting that outlives a run:
-`UserSettings.Load` reads `%LOCALAPPDATA%\LightsCheck\settings.json` (two symbols, `east` and
-`north`; defaults on a missing or unreadable file or an unknown symbol) and `Save` writes it
-through `System.Text.Json`, swallowing IO errors. `MainViewModel` loads them in its
-constructor into `EastArrow` / `NorthArrow`, saves on every change, and `Options` turns the
-symbols into the core's `ArrowKeys` through `ArrowKeys.FromSymbol`, so the window maps
-nothing itself. `UserSettings.Path` lets the tests point at a file of their own. The pixel
-size and the thread count stay per run, as before.
+`UserSettings.Load` reads `%LOCALAPPDATA%\LightsCheck\settings.json` (two strings, `east` and
+`north`, written as the symbols themselves; nulls on a missing or unreadable file) and `Save`
+writes it through `System.Text.Json`, swallowing IO errors; the class judges nothing.
+`MainViewModel` loads them in its constructor into `EastArrow` / `NorthArrow`, keeping a
+stored string only when `ArrowKeys.FromSymbol` says it is an arrow of that axis and taking
+`ArrowKeys.Default`'s symbol otherwise, offers `EastChoices` / `NorthChoices` built from the
+core's default and its derived opposite, saves on every change, and `Options` turns the
+symbols back into `ArrowKeys`, so the symbols and the default live in the core alone.
+`UserSettings.Path` lets the tests point at a file of their own, and `TestSettings` in the
+test project does so for the whole run before any test, so no test touches the developer's
+file. The pixel size and the thread count stay per run, as before.
 
 ## Culture, title bar, icon
 

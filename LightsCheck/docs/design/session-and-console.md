@@ -81,8 +81,10 @@ um), the thread count to 0, which `SeriesRun` reads as half the cores, and the a
 `ArrowKeys.Default` (right east, up north), each option replacing one key of the record.
 
 `Program.Run(args, stdout, stderr)` is the whole console, called by `Main` with the real
-streams (after setting the console's output encoding to UTF-8, since the report carries the
-arrow symbols of R-040) and by the tests with `StringWriter`s: it writes the banner, parses,
+streams (after switching the console's output encoding to UTF-8 for the run, since the report
+carries the arrow symbols of R-040, and putting the previous one back in a `finally`, the code
+page outliving the process otherwise; a process without a console throws `IOException` on the
+setter, which `Main` swallows) and by the tests with `StringWriter`s: it writes the banner, parses,
 and dispatches to `FrameRun` + `FrameReport` for `--frame`, to `InventoryRun` +
 `InventoryReport` for `--inventory`, and otherwise to `SeriesRun.Run(folder,
 SeriesOptions(pixel, threads, arrows), progress)` + `SeriesReport.Write`, then
