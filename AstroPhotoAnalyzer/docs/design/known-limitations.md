@@ -40,9 +40,12 @@
   mixes its patches with the sky around it. The disc no longer sets the verdict (ADR 0026).
 - The classes (band, sky model, dust under the band's local level) are for wide fields with the
   galactic band and plain sky both in the frame. The winter band is a few L\* above the sky and
-  its dark clouds lie outside |b| < 10°; a deep-sky field is wholly in or wholly out of the band.
+  its dark clouds lie outside |b| < 10°; a deep-sky field is wholly in or wholly out of the band,
+  or, inside it, too narrow to show it as a strip (under 20° of galactic latitude, ADR 0037).
   Those frames take the classes relative to the modelled sky (ADR 0033), named in the report. A
-  horizon corner darker than the modelled sky counts as dust on either path.
+  Milky Way landscape at a long focal length (85 mm spans about 16° held horizontal, 28° on the
+  diagonal) falls on either side of that gate by its orientation. A horizon corner darker than
+  the modelled sky counts as dust on either path.
 - On the sky path the Great Rift is not found: without geometry the band is the sky's level and
   only its darkest knots fall under the model, so on `de_printat.png` the dust is the darkest sky
   (L\* 4.2), not the Rift's 25 % percentile (7.9 with the band). A plate-solved FITS, or `--wcs`

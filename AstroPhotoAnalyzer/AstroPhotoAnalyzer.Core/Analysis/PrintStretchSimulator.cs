@@ -196,12 +196,13 @@ namespace AstroPhotoAnalyzer
                 ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
                 : "mediana dalelor de cer (clase relative la cerul modelat)";
 
-        /// <summary>De ce nu s-au facut clasele benzii: "fara WCS", "fara banda galactica in cadru", "cadrul e in intregime in banda"; null cu banda.</summary>
+        /// <summary>De ce nu s-au facut clasele benzii: "fara WCS", "fara banda galactica in cadru", "cadrul e in intregime in banda", "camp prea ingust pentru banda (11.0 grade de latitudine galactica, sub 20)"; null cu banda.</summary>
         internal string MethodNote => Map.SkyReason switch
         {
             SkyReason.NoWcs => "fara WCS",
             SkyReason.NoBand => "fara banda galactica in cadru",
             SkyReason.AllBand => "cadrul e in intregime in banda",
+            SkyReason.NarrowField => $"camp prea ingust pentru banda ({Fmt.F1(Map.LatitudeSpanDeg)} grade de latitudine galactica, sub {Fmt.F0(Thresholds.BandMinLatitudeSpanDeg)})",
             _ => null,
         };
 

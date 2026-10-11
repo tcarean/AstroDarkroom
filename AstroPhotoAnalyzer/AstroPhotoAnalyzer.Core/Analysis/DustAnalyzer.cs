@@ -27,7 +27,9 @@
 //     e o mediana pe fereastra; praful e dala cu DustDepthLstar sub nivelul local (sau sub
 //     cerul modelat), norii luminosi cu BrightCloudLstar peste nivelul local, varfurile cele
 //     mai luminoase PeakFraction dale, cerul restul din afara benzii;
-//   - altfel (fara WCS, sau cadru fara banda ori in intregime in ea; ADR 0033): cerul e un
+//   - altfel (fara WCS, cadru fara banda ori in intregime in ea, sau cadru care acopera mai
+//     putin de BandMinLatitudeSpanDeg grade de latitudine galactica, deep-sky in banda; ADR
+//     0033, ADR 0037): cerul e un
 //     model neted din TOATE dalele, cu percentila SkyModelLowPercentile pe celula; pragurile
 //     vin din imagine: nebuloasa e dala cu mai mult de SkyNoiseK sigma ale cerului peste
 //     model, praful cu la fel de mult sub el, nebuloasa stralucitoare peste pragul Otsu al
@@ -74,6 +76,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>WCS, dar cerul din afara benzii e sub BandMinFraction din cadru (deep-sky in plan).</summary>
         AllBand,
+
+        /// <summary>WCS, banda si cer de ambele parti ale lui |b| = 10, dar dalele acopera sub BandMinLatitudeSpanDeg grade de latitudine galactica: un cadru deep-sky in banda, nu un peisaj cu ea (ADR 0037).</summary>
+        NarrowField,
     }
 
     /// <summary>Un nor catalogat cu cel putin o dala in cadru: care dale sunt ale lui, si unde e pe imagine.</summary>
@@ -124,6 +129,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>Latitudinea galactica a centrului fiecarei dale; null fara WCS.</summary>
         internal float[] GalacticLatitude;
+
+        /// <summary>Cate grade de latitudine galactica acopera centrele dalelor (maxim minus minim); NaN fara WCS.</summary>
+        internal double LatitudeSpanDeg = double.NaN;
 
         /// <summary>Cerul modelat, L* pe dala, asa cum e.</summary>
         internal float[] SkyModel;
@@ -245,6 +253,7 @@ namespace AstroPhotoAnalyzer
                     vx[i] = v.X; vy[i] = v.Y; vz[i] = v.Z;
                     map.GalacticLatitude[i] = (float)Astrometry.GalacticLatitude(ra, dec);
                 }
+            map.LatitudeSpanDeg = map.GalacticLatitude.Max() - map.GalacticLatitude.Min();
 
             map.Clouds = FindClouds(map, wcs, catalogue, w, h, vx, vy, vz);
             Classify(map, asIsPatchLstars);
@@ -294,7 +303,7 @@ namespace AstroPhotoAnalyzer
             return clouds;
         }
 
-        /// <summary>Clasele benzii (ADR 0026) pe L*-urile asa cum e; sau calea cerului, cu motivul, cand banda ori cerul din afara ei lipsesc.</summary>
+        /// <summary>Clasele benzii (ADR 0026) pe L*-urile asa cum e; sau calea cerului, cu motivul, cand banda ori cerul din afara ei lipsesc, sau cand campul e mai ingust decat banda (ADR 0037).</summary>
         static void Classify(DustMap map, float[] L)
         {
             int cols = map.Cols, rows = map.Rows, n = cols * rows;
@@ -307,6 +316,7 @@ namespace AstroPhotoAnalyzer
             }
             if (inBand < Thresholds.BandMinFraction * n) { ClassifyBySky(map, L, SkyReason.NoBand); return; }
             if (n - inBand < Thresholds.BandMinFraction * n) { ClassifyBySky(map, L, SkyReason.AllBand); return; }
+            if (map.LatitudeSpanDeg < Thresholds.BandMinLatitudeSpanDeg) { ClassifyBySky(map, L, SkyReason.NarrowField); return; }
 
             float[] sky = SkyModel(L, band, cols, rows, 50);
             float[] level = Smooth(MedianFilter(L, cols, rows, Thresholds.BandLocalWindowPatches), cols, rows, Thresholds.BandLocalSmoothPatches);
