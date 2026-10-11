@@ -67,7 +67,7 @@ public class GoldenOutputTests
             return;
         }
 
-        Assert.True(File.Exists(path), $"golden lipsa: {path}; genereaza-l cu DARKSCHECK_UPDATE_GOLDEN=1");
+        Assert.True(File.Exists(path), $"golden missing: {path}; generate it with DARKSCHECK_UPDATE_GOLDEN=1");
         Assert.Equal(File.ReadAllText(path).ReplaceLineEndings("\n"), actual);
     }
 }

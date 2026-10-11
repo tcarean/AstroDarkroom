@@ -195,6 +195,66 @@ public class AcceptanceTests
         Assert.Contains("interval lights    : 2026-08-12 23:43:53 -> 2026-08-12 23:48:22 (4 min); 2 cadre la 150.0 s; 1 pauza peste 5 s (31 s inainte de cadrul 2)", stdout, StringComparison.Ordinal);
     }
 
+    /// <summary>EXIF times have a 1 s granularity: a 120.2 s dark started 120 s after the previous one has no pause, not a negative one.</summary>
+    [Fact]
+    public void R006_APauseBelowZeroFromTheTimeGranularityIsZero()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(2, exposure: 120.2, cadence: 120);
+        (_, string stdout, _) = Cli.Run(s.Root);
+        Assert.Contains("  2  DSC_0002.fit          00:50:53     120.2    400     0 s", stdout, StringComparison.Ordinal);
+        Assert.DoesNotContain("-0 s", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R006_SeveralLongPausesNameTheLongestOne()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(2, exposure: 119.2, cadence: 120);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0003.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(300), 119.2, 400));
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0004.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(600), 119.2, 400));
+        (_, string stdout, _) = Cli.Run(s.Root);
+        // Starts at 0, 120, 300 and 600 s (median interval 180 s); pauses 0.8 s, 300 - 239.2 = 61 s, 600 - 419.2 = 181 s.
+        Assert.Contains("4 cadre la 180.0 s; 2 pauze peste 5 s (cea mai lunga 181 s inainte de cadrul 4)", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R006_FramesWithoutATimeOrAnExposureLeaveTheIntervalUnknown()
+    {
+        using TempWorkspace ws = new();
+        File.WriteAllBytes(ws.PathTo("DSC_0001.fit"), SessionFixture.Frame(SessionFixture.FirstStart, null, 400));
+        File.WriteAllBytes(ws.PathTo("DSC_0002.fit"), SessionFixture.Frame(null, 119.2, 400));
+        (_, string stdout, _) = Cli.Run(ws.Dir);
+        Assert.Contains("interval darks     : necunoscut (cadrele nu au ora sau expunerea)", stdout, StringComparison.Ordinal);
+        Assert.Contains("  1  DSC_0001.fit          00:48:53         -    400       -", stdout, StringComparison.Ordinal);
+        Assert.Contains("  2  DSC_0002.fit          -            119.2    400       -", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R007_WithoutExposuresOrIsoTheMatchIsUnmeasured()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(2, lights: 1);
+        File.WriteAllBytes(Path.Combine(s.LightsDir, "light_0002.fit"), SessionFixture.Frame(SessionFixture.FirstStart, 119.2, null));
+        File.Delete(Path.Combine(s.LightsDir, "light_0001.fit"));
+        (_, string stdout, _) = Cli.Run(s.Root);
+        Assert.Contains("expunere lights    : 119.2 s (toate cadrele)", stdout, StringComparison.Ordinal);
+        Assert.Contains("potrivire          : NEMASURAT: cadrele nu spun expunerea sau ISO-ul", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R007_AGroupOfUnreadableFramesHasUnknownSettingsAndTheCountIsPlural()
+    {
+        using SessionFixture s = new SessionFixture().WithDarks(1);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0002.fit"), new byte[100]);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0003.fit"), new byte[100]);
+        (int code, string stdout, _) = Cli.Run(s.Root);
+        Assert.Equal(1, code);
+        Assert.Contains("ATENTIE            : 2 cadre nu s-au putut citi (vezi tabelele)", stdout, StringComparison.Ordinal);
+        Directory.CreateDirectory(s.BiasesDir);
+        File.WriteAllBytes(Path.Combine(s.BiasesDir, "bias_0001.fit"), new byte[100]);
+        (_, stdout, _) = Cli.Run(s.Root);
+        Assert.Contains("expunere biases    : necunoscuta", stdout, StringComparison.Ordinal);
+        Assert.Contains("bias               : NEMASURAT: cadrele nu spun expunerea", stdout, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R007_DarksThatMatchTheLightsAreOk()
     {
@@ -218,7 +278,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithDarks(2);
         (_, string stdout, _) = Cli.Run(s.Root);
-        Assert.Contains("potrivire          : NEMASURAT: sesiunea nu are lights", stdout, StringComparison.Ordinal);
+        Assert.Contains("potrivire          : NEMASURAT: nu exista lights", stdout, StringComparison.Ordinal);
         Assert.Contains("bias               : (lipsa)", stdout, StringComparison.Ordinal);
     }
 

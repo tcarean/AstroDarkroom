@@ -76,7 +76,10 @@ internal static class CadenceAnalyzer
             timed++;
             if (previousEnd is DateTime p)
             {
-                double pause = (t - p).TotalSeconds;
+                // EXIF times have a 1 s granularity and the D3300 records 120.2 s for a 120 s
+                // setting, so a start 120 s after the previous start comes out 0.2 s before
+                // the previous end: a pause below zero is no pause.
+                double pause = Math.Max(0, (t - p).TotalSeconds);
                 pauses[i] = pause;
                 if (pause > Th.PauseSeconds)
                 {

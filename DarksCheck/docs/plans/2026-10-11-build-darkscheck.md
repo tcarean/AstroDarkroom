@@ -145,4 +145,11 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   (ADR 0003). The step's review (`/code-review high`) found six points, all fixed before
   the commit: an unknown ISO counted as a match, an unmeasured timing in the README, the
   wording of mixed groups, a `pauza` header on the biases table, a plural for one frame, a
-  duplicated banner test.
+  duplicated banner test. A second review by a subagent after the commit found twelve more,
+  fixed in a follow-up commit: a pause of -0.2 s from the 1 s EXIF granularity printed as
+  `-0 s` on the library (now clamped to 0, R-006), the dominant exposure of a group taken from
+  the frame that opened the cluster instead of the most frequent one (R-007), a wrong `0.0002`
+  for a 1/4000 s exposure in the design note, LightsCheck's Veil timing cited in `imaging.md`,
+  a Romanian assertion in an English test, missing tests for several console texts, and
+  wording of the unmeasured verdicts; the unused lens fields of `FrameInfo` were left as they
+  came from LightsCheck.

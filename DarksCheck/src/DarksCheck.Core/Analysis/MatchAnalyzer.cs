@@ -82,22 +82,46 @@ internal static class MatchAnalyzer
         }
 
         // Group by ISO and by exposure within the tolerance: the first frame of a cluster
-        // names it, the next frames join the cluster whose exposure they match.
-        List<(double? Exposure, double? Iso, int Count)> clusters = [];
+        // opens it, the next frames join the cluster whose exposure they match. The cluster
+        // is named by its most frequent exact exposure, not by the frame that opened it: a
+        // session whose first light is the odd 118.5 s one still reads 119.2 s.
+        List<Cluster> clusters = [];
         foreach (FrameInfo f in readable)
         {
-            int at = clusters.FindIndex(c => c.Iso == f.Iso && (c.Exposure is double ce && f.ExposureSeconds is double fe ? SameExposure(ce, fe) : c.Exposure == f.ExposureSeconds));
-            if (at < 0)
+            Cluster? c = clusters.Find(c => c.Iso == f.Iso && (c.Exposure is double ce && f.ExposureSeconds is double fe ? SameExposure(ce, fe) : c.Exposure == f.ExposureSeconds));
+            if (c is null)
             {
-                clusters.Add((f.ExposureSeconds, f.Iso, 1));
+                c = new Cluster(f.ExposureSeconds, f.Iso);
+                clusters.Add(c);
             }
-            else
+
+            c.Add(f.ExposureSeconds);
+        }
+
+        Cluster best = clusters.MaxBy(c => c.Count)!;
+        return new GroupSettings(best.ModeExposure, best.Iso, best.Count, readable.Count, best.Count == readable.Count);
+    }
+
+    /// <summary>The frames of one (exposure within the tolerance, ISO) setting, with the count of each exact exposure.</summary>
+    private sealed class Cluster(double? exposure, double? iso)
+    {
+        private readonly Dictionary<double, int> _exact = [];
+
+        internal double? Exposure { get; } = exposure;
+        internal double? Iso { get; } = iso;
+        internal int Count { get; private set; }
+
+        /// <summary>One more frame of the cluster; a frame without an exposure counts but names nothing.</summary>
+        internal void Add(double? exact)
+        {
+            Count++;
+            if (exact is double e)
             {
-                clusters[at] = (clusters[at].Exposure, clusters[at].Iso, clusters[at].Count + 1);
+                _exact[e] = _exact.GetValueOrDefault(e) + 1;
             }
         }
 
-        (double? exposure, double? iso, int count) = clusters.OrderByDescending(c => c.Count).First();
-        return new GroupSettings(exposure, iso, count, readable.Count, count == readable.Count);
+        /// <summary>The most frequent exact exposure of the cluster; the first seen wins a tie (Dictionary keeps insertion order).</summary>
+        internal double? ModeExposure => _exact.Count == 0 ? null : _exact.MaxBy(kv => kv.Value).Key;
     }
 }

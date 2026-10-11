@@ -99,7 +99,7 @@ internal static class InventoryReport
         }
     }
 
-    /// <summary>An exposure as the user set it: "120.2 s", "0.05 s", "0.0002 s"; "-" when unknown.</summary>
+    /// <summary>An exposure as the user set it: "120.2", "0.05", a 1/4000 s "0.0003"; "-" when unknown.</summary>
     internal static string Exposure(double? seconds)
     {
         if (seconds is not double s)
@@ -144,7 +144,7 @@ internal static class InventoryReport
     {
         if (c.Start is not DateTime start || c.End is not DateTime end)
         {
-            return "necunoscut (cadrele nu au ora)";
+            return "necunoscut (cadrele nu au ora sau expunerea)";
         }
 
         string interval = c.MedianIntervalSeconds is double mi ? $"; {Frames(c.TimedFrames)} la {RunReport.F(mi, 1)} s" : $"; {Frames(c.TimedFrames)}";
@@ -169,7 +169,7 @@ internal static class InventoryReport
         switch (m.DarksVsLights)
         {
             case Verdict.Unmeasured:
-                return m.Lights is null ? "NEMASURAT: sesiunea nu are lights" : "NEMASURAT: cadrele nu spun expunerea sau ISO-ul";
+                return m.Lights is null ? "NEMASURAT: nu exista lights" : "NEMASURAT: cadrele nu spun expunerea sau ISO-ul";
             case Verdict.Ok:
                 return $"OK: dark-urile au expunerea ({Exposure(m.Darks!.ExposureSeconds)} s) si ISO-ul ({Opt(m.Darks.Iso, 0)}) lights-urilor";
             default:

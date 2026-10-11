@@ -79,17 +79,30 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
-    /// <summary>A frame with the metadata cards and a flat 300 ADU field (no pixel is read by the inventory).</summary>
-    internal static byte[] Frame(DateTime start, double exposure, double iso) =>
+    /// <summary>A frame with the metadata cards and a flat 300 ADU field (no pixel is read by the inventory); a null field leaves its card out.</summary>
+    internal static byte[] Frame(DateTime? start, double? exposure, double? iso) =>
         FitsTestData.BuildFits(32, 24, (x, y) => 300, bitpix: 16, extraCards: Cards(start, exposure, iso));
 
-    internal static string[] Cards(DateTime start, double exposure, double iso) =>
-    [
-        FitsTestData.Card("DATE-OBS", "'" + start.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "'"),
-        FitsTestData.Card("EXPTIME", exposure.ToString("0.####", CultureInfo.InvariantCulture)),
-        FitsTestData.Card("ISOSPEED", iso.ToString("0", CultureInfo.InvariantCulture)),
-        FitsTestData.Card("INSTRUME", "'NIKON D3300'"),
-    ];
+    internal static string[] Cards(DateTime? start, double? exposure, double? iso)
+    {
+        List<string> cards = [FitsTestData.Card("INSTRUME", "'NIKON D3300'")];
+        if (start is DateTime s)
+        {
+            cards.Add(FitsTestData.Card("DATE-OBS", "'" + s.ToString("yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture) + "'"));
+        }
+
+        if (exposure is double e)
+        {
+            cards.Add(FitsTestData.Card("EXPTIME", e.ToString("0.####", CultureInfo.InvariantCulture)));
+        }
+
+        if (iso is double i)
+        {
+            cards.Add(FitsTestData.Card("ISOSPEED", i.ToString("0", CultureInfo.InvariantCulture)));
+        }
+
+        return [.. cards];
+    }
 
     public void Dispose() => _ws.Dispose();
 }

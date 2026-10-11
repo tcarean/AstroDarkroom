@@ -48,7 +48,7 @@ anything into the frames' folders.
   (`GoldenOutputTests`, `Golden/`), figures (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `ThirdPartyTests`, `VersionTests`). Every frame
   is generated in the tests (`SessionFixture`, `FitsTestData`, `SyntheticFrame`);
-  `tests/testdata/` holds only the manifest. The real sessions stay outside git
+  `tests/testdata/` holds only the manifest and its README. The real sessions stay outside git
   (`docs/validation.md`).
 - `prototype/` - the Python scripts of the 2026-10-11 analysis of the Smida session, frozen:
   the numeric oracle of the validation figures, neither maintained nor run by the gate

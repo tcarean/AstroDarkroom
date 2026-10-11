@@ -117,6 +117,7 @@ public class SessionFolderTests
         ];
         Cadence c = CadenceAnalyzer.Analyze(frames);
         Assert.Equal([null, 30, 1, null, null], c.PauseSeconds);
+        Assert.Equal(0, CadenceAnalyzer.Analyze([Frame(1, SessionFixture.FirstStart, 120.2), Frame(2, SessionFixture.FirstStart.AddSeconds(120), 120.2)]).PauseSeconds[1]);
         Assert.Equal(SessionFixture.FirstStart, c.Start);
         Assert.Equal(SessionFixture.FirstStart.AddSeconds(660), c.End);
         Assert.Equal(660, c.SpanSeconds);
@@ -154,6 +155,17 @@ public class SessionFolderTests
         Assert.Equal(4, g.Readable);
         Assert.False(g.Uniform);
         Assert.Null(MatchAnalyzer.Settings([]));
+    }
+
+    /// <summary>The cluster is named by its most frequent exact exposure, not by the frame that opened it.</summary>
+    [Fact]
+    public void R007_TheOddFrameFirstDoesNotNameTheGroup()
+    {
+        FrameInfo[] frames = [Frame(1, SessionFixture.FirstStart, 118.5), Frame(2, SessionFixture.FirstStart, 119.2), Frame(3, SessionFixture.FirstStart, 119.2)];
+        GroupSettings g = MatchAnalyzer.Settings(frames)!;
+        Assert.Equal(119.2, g.ExposureSeconds);
+        Assert.Equal(3, g.Frames);
+        Assert.True(g.Uniform);
     }
 
     [Fact]

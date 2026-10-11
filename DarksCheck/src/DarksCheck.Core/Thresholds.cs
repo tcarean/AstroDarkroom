@@ -19,7 +19,8 @@ namespace DarksCheck.Core;
 
 /// <summary>
 /// Every constant a verdict depends on, in one place, so a change is one edit and the design
-/// notes can point at it. The reasons are in <c>docs/design/</c> and the ADRs, not here.
+/// notes can point at it. Each constant carries the one-line fact that set its value; the
+/// measurements behind the facts are in <c>docs/validation/</c> and the ADRs.
 /// </summary>
 internal static class Th
 {

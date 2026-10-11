@@ -1,6 +1,6 @@
 # The readers copied from LightsCheck
 
-**Covers:** `src/DarksCheck.Core/Imaging/RawReader.cs`, `src/DarksCheck.Core/Imaging/ImageLoader.cs`, `src/DarksCheck.Core/Imaging/FitsReader.cs`, `src/DarksCheck.Core/Imaging/CfaPattern.cs`, `src/DarksCheck.Core/Imaging/Img.cs`, `src/DarksCheck.Core/Imaging/Mosaic.cs`, `src/DarksCheck.Core/Imaging/Stats.cs`, `src/DarksCheck.Core/Imaging/PngWriter.cs`, `src/DarksCheck.Core/Imaging/BitmapFont.cs`.
+**Covers:** `src/DarksCheck.Core/Imaging/RawReader.cs`, `src/DarksCheck.Core/Imaging/ImageLoader.cs`, `src/DarksCheck.Core/Imaging/IFrameReader.cs`, `src/DarksCheck.Core/Imaging/FitsReader.cs`, `src/DarksCheck.Core/Imaging/CfaPattern.cs`, `src/DarksCheck.Core/Imaging/Img.cs`, `src/DarksCheck.Core/Imaging/Mosaic.cs`, `src/DarksCheck.Core/Imaging/Stats.cs`, `src/DarksCheck.Core/Imaging/PngWriter.cs`, `src/DarksCheck.Core/Imaging/BitmapFont.cs`.
 
 The decision and the reasons are ADR 0003; the files are LightsCheck's
 (`E:\Photografie\Code\LightsCheck\src\LightsCheck.Core\Imaging`, `main` 6cc0078), unchanged but for
@@ -21,8 +21,8 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   black level as the median of the four channel blacks, the white as `color.maximum`, the
   colour order from `filters` and `cdesc` evaluated at the visible origin, and the shot
   fields from `imgother` (`Shutter`, `IsoSpeed`, `Timestamp`, `FocalLength`, `Aperture`) and
-  `LensInfo`. `LoadInfo` opens the file without `Unpack`: tens of milliseconds per NEF (the
-  87 frames of the Veil session in 1.2 s), which is what the inventory uses.
+  `LensInfo`. `LoadInfo` opens the file without `Unpack`: milliseconds per NEF (the 82 raws
+  of the Smida session in 0.3 s, measured on 2026-10-11), which is what the inventory uses.
 - `FitsReader` parses the header and the first 2D HDU; `LoadInfo` reads the header only.
   Its `FillShootingInfo` also reads `EXPTIME`, `ISOSPEED`, `DATE-OBS` and `XPIXSZ`.
 - `CfaPattern` names the four Bayer positions from `filters`+`cdesc` or `BAYERPAT`, shifted

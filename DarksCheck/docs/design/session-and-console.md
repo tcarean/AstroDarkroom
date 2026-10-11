@@ -27,7 +27,10 @@ check in `Read`; it goes when the copy is refreshed from LightsCheck (ADR 0003).
 ## The cadence
 
 `CadenceAnalyzer.Analyze` walks the frames in list order and keeps a pause per position, so a
-filtered list works too. A frame without a time or an exposure breaks the chain: it gets no
+filtered list works too. A pause below zero is clamped to 0: the EXIF time has a 1 s
+granularity and the camera records 120.2 s for a 120 s setting, so back-to-back frames
+started 120 s apart would otherwise read -0.2 s (printed `-0 s`, seen on the library of
+2026-10-10). A frame without a time or an exposure breaks the chain: it gets no
 pause, and neither does the next one, and no interval is counted across it. The median
 interval is over consecutive timed starts; a long pause is one over `Th.PauseSeconds`,
 recorded with the index of the frame it precedes. The darks and the lights each get a
@@ -37,7 +40,9 @@ recorded with the index of the frame it precedes. The darks and the lights each 
 
 `MatchAnalyzer.Settings` clusters the readable frames of a group by ISO and by exposure, two
 exposures within `Th.ExposureTolerance` of the longer joining one cluster, and returns the
-largest cluster as the group's settings with whether it holds every readable frame. The two
+largest cluster as the group's settings, named by its most frequent exact exposure (so the
+odd 118.5 s frame never names a 119.2 s group, whatever its position), with whether it holds
+every readable frame. The two
 verdicts compare clusters: darks against lights on exposure (same tolerance) and ISO, and the
 bias against `Th.BiasMaxExposureSeconds`. `Verdict.Unmeasured` stands for a missing group or
 missing exposures; the report, not the analyzer, turns it into words.
@@ -46,7 +51,7 @@ missing exposures; the report, not the analyzer, turns it into words.
 
 `InventoryReport` prints the session lines in a 19-column label field, then one table per
 non-empty group; the exposure is printed with one decimal from 1 s up and up to four below,
-so a 1/20 s bias reads `0.05` and the D3300's 1/4000 s reads `0.0002`. `RunReport` holds the
+so a 1/20 s bias reads `0.05` and a 1/4000 s one `0.0003` (0.00025 rounded). `RunReport` holds the
 banner, the copyright and the warranty lines of `--help`; `VersionInfo` reads the version and
 the copyright from the assembly attributes `Directory.Build.props` sets. `Program.Run` is the
 console behind `Main`: banner first, then the options, then one run, with the exceptions a
