@@ -11,11 +11,15 @@ Calculează:
 Valorile implicite sunt pentru Nikon D3300 + Samyang 135 mm.
 Rulare:  python dither_calculator.py   (Enter = păstrezi valoarea implicită)
 
-Presupunere: treapta 1 din aplicația SynScan = 1x viteza siderală, iar
-butonul mișcă montura cu această viteză față de stele (pe RA, butonul
-de est oprește practic urmărirea, cel de vest o dublează - în ambele
-cazuri imaginea se deplasează cu 1x față de cer). Peste 1x, butonul de
-est inversează motorul RA, deci și RA pierde timp în backlash.
+Treptele de viteză (0-8) sunt cele din manualul aplicației (SynScan App
+User's Manual, 2023-05-25, p. 8), în multipli ai vitezei siderale:
+0 = 0,5x, 1 = 1x, 2 = 8x, 3 = 16x, 4 = 32x, 5 = 64x, 6 = 128x, 7 = 400x, 8 = 600x.
+
+Presupunere (manualul nu o spune): butonul mișcă montura cu această viteză
+față de stele (pe RA, la 1x butonul de est oprește practic urmărirea, cel
+de vest o dublează - în ambele cazuri imaginea se deplasează cu 1x față de
+cer). Peste 1x, butonul de est inversează motorul RA, deci și RA pierde
+timp în backlash.
 """
 
 import math
@@ -24,10 +28,14 @@ import sys
 # O rotație completă (360°) într-o zi siderală (23 h 56 min 4 s)
 VITEZA_SIDERALA = 360 * 3600 / 86164.0905  # ≈ 15,04 secunde de arc pe secundă
 
+# Treptele butoanelor din SynScan, în multipli siderali (manualul aplicației, p. 8);
+# aplicația arată numărul treptei. Treapta 9 = Max nu are un multiplu fix.
+TREPTE_SYNSCAN = (0.5, 1, 8, 16, 32, 64, 128, 400, 600)
+
 # Valori implicite: Nikon D3300 (senzor 23,5 mm, 6000 px lățime) + Samyang 135 mm
 IMPLICIT_FOCALA_MM = 135.0
 IMPLICIT_PIXEL_UM = 3.92      # 23,5 mm / 6000 px ≈ 3,92 µm
-IMPLICIT_VITEZA_X = 1.0       # treapta 1 din SynScan = 1x sideral
+IMPLICIT_TREAPTA = 1          # 1x sideral
 IMPLICIT_DECLINATIE = 0.0     # grade
 IMPLICIT_DITHER_PX = 15.0
 
@@ -91,8 +99,13 @@ def secunde_pentru(pixeli, px_pe_s):
     return pixeli / px_pe_s
 
 
-def text_secunde(secunde, pe_ra=True):
-    sfat = "mărește viteza sau folosește Dec" if pe_ra else "mărește viteza"
+def text_treapta(treapta):
+    """Ex.: treapta 2 (8x)."""
+    return f"treapta {treapta} ({fmt_scurt(TREPTE_SYNSCAN[treapta])}x)"
+
+
+def text_secunde(secunde, sfat):
+    """Secundele de ținut apăsat; sfatul apare când axa nu ajunge."""
     if secunde is None:
         return f"nu mișcă practic imaginea - {sfat}"
     if secunde > SECUNDE_MAX:
@@ -109,9 +122,14 @@ def calcul(implicit):
     pixel = citeste_numar(
         "Dimensiunea pixelului (µm)", implicit["pixel"],
         lambda v: v > 0, "Pixelul trebuie să fie mai mare ca 0.")
-    viteza = citeste_numar(
-        "Viteza din SynScan, ca multiplu sideral (treapta 1 = 1x)", implicit["viteza"],
-        lambda v: v > 0, "Viteza trebuie să fie mai mare ca 0.")
+    ultima = len(TREPTE_SYNSCAN) - 1
+    treapta = int(citeste_numar(
+        f"Treapta de viteză din SynScan (numărul dintre butoane, 0-{ultima})",
+        implicit["treapta"],
+        lambda v: v == int(v) and 0 <= v <= ultima,
+        f"Treapta trebuie să fie un număr întreg de la 0 la {ultima} "
+        f"({ultima + 1} = Max nu are o viteză fixă)."))
+    viteza = TREPTE_SYNSCAN[treapta]
     dec = citeste_numar(
         "Declinația țintei în grade (ex. M31 ≈ 41, M42 ≈ -5)", implicit["dec"],
         lambda v: -90 <= v <= 90, "Declinația trebuie să fie între -90 și 90.")
@@ -125,11 +143,16 @@ def calcul(implicit):
     px_ra = pixeli_pe_secunda(viteza, scala, dec)
     sec_dec = secunde_pentru(dither, px_dec)
     sec_ra = secunde_pentru(dither, px_ra)
+    if treapta < ultima:
+        urca = f"urcă la {text_treapta(treapta + 1)}"
+        sfat_dec, sfat_ra = urca, f"{urca} sau folosește Dec"
+    else:
+        sfat_dec, sfat_ra = "alege un dither mai mic", "folosește Dec"
 
     print("\n=== Rezultate ===")
     print(f'Scala imaginii: {fmt(scala, 2)}"/pixel')
 
-    print(f"\nDeplasare la {fmt_scurt(viteza)}x sideral:")
+    print(f"\nDeplasare la treapta {treapta} ({fmt_scurt(viteza)}x sideral):")
     print(f"  Dec:                {fmt(px_dec, 2)} px/s")
     eticheta_ra = f"  RA (la dec {fmt_scurt(dec)}°):"
     print(f"{eticheta_ra:<21} {fmt(px_ra, 2)} px/s")  # minim un spațiu după etichetă
@@ -144,28 +167,38 @@ def calcul(implicit):
               "și aștepți puțin mai mult să se stabilizeze stelele.")
 
     print(f"\nCât să ții apăsat pentru {fmt_scurt(dither)} px:")
-    print(f"  Dec:  {text_secunde(sec_dec, pe_ra=False)}"
-          + ("  (+ timpul pierdut în backlash dacă schimbi sensul)"
+    print(f"  Dec:  {text_secunde(sec_dec, sfat_dec)}"
+          + ("  (+ backlash dacă schimbi sensul; "
+             "îl poate compensa Settings > Backlash din SynScan)"
              if sec_dec is not None else ""))
-    print(f"  RA:   {text_secunde(sec_ra)}"
+    print(f"  RA:   {text_secunde(sec_ra, sfat_ra)}"
           + ("  (spre est, peste 1x motorul se inversează: + backlash)"
              if sec_ra is not None and viteza > 1 else ""))
 
     scurte = [s for s in (sec_dec, sec_ra) if s is not None and s < 1]
     if scurte:
-        print("  Atenție: sub ~1 s, întârzierea aplicației prin Wi-Fi contează. "
-              "Folosește o viteză mai mică.")
+        coboara = (f"Coboară la {text_treapta(treapta - 1)}." if treapta > 0
+                   else "Treapta 0 e cea mai mică; alege un dither mai mare.")
+        print("  Atenție: sub ~1 s, întârzierea aplicației prin Wi-Fi contează. " + coboara)
 
     print(f"\nPe RA, la alte declinații (secunde pentru {fmt_scurt(dither)} px):")
     for d in DECLINATII_TABEL:
         s = secunde_pentru(dither, pixeli_pe_secunda(viteza, scala, d))
-        print(f"  dec {d:>2}°:  {text_secunde(s)}")
+        print(f"  dec {d:>2}°:  {text_secunde(s, sfat_ra)}")
     print("  (la fel pentru declinațiile negative)")
 
-    print("\nNotă: calculul presupune că treapta 1 din SynScan = 1x sideral.")
-    print("Verifică o dată: ține apăsat 10 s și măsoară cât s-a mutat o stea în pixeli.")
+    print("\nNotă: treptele sunt cele din manualul aplicației SynScan (treapta 1 = 1x sideral).")
+    print("Manualul nu spune dacă viteza butonului e față de cer cât timp montura urmărește.")
+    # Testul e la treapta 1: acolo niciun buton nu inversează motorul RA (fără backlash)
+    test_px = 10 * pixeli_pe_secunda(TREPTE_SYNSCAN[1], scala, dec)
+    if test_px >= 1:
+        print("Verifică o dată pe RA, la treapta 1: 10 s spre est și 10 s spre vest trebuie "
+              f"să mute steaua cu câte ~{fmt(test_px, 0)} px.")
+    else:
+        print("Verifică o dată pe RA, la treapta 1, pe o țintă mai departe de pol "
+              "(aici RA abia mișcă imaginea).")
 
-    return {"focala": focala, "pixel": pixel, "viteza": viteza,
+    return {"focala": focala, "pixel": pixel, "treapta": treapta,
             "dec": dec, "dither": dither}
 
 
@@ -175,7 +208,7 @@ def main():
     print("Calculator dithering manual - Star Adventurer GTi")
     print("Apasă Enter ca să păstrezi valoarea dintre paranteze.")
     valori = {"focala": IMPLICIT_FOCALA_MM, "pixel": IMPLICIT_PIXEL_UM,
-              "viteza": IMPLICIT_VITEZA_X, "dec": IMPLICIT_DECLINATIE,
+              "treapta": IMPLICIT_TREAPTA, "dec": IMPLICIT_DECLINATIE,
               "dither": IMPLICIT_DITHER_PX}
     try:
         while True:
