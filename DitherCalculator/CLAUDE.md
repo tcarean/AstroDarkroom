@@ -3,9 +3,10 @@
 `dither_calculator.py` tells the owner how long to hold a SynScan arrow so that the image moves
 the wanted number of pixels: manual dithering between exposures on a Sky-Watcher Star Adventurer
 GTi driven from the SynScan app. It asks for the focal length, the pixel size, the SynScan speed
-(a multiple of sidereal), the target's declination and the wanted dither, and prints the image
-scale, the image speed on each axis, the press time on each axis and the RA press times for
-declinations 0 to 75. The defaults are the owner's Nikon D3300 (3.92 µm) on the Samyang 135 mm.
+step (0-8, the number the app shows between the arrows), the target's declination and the wanted
+dither, and prints the image scale, the image speed on each axis, the press time on each axis
+and the RA press times for declinations 0 to 75. The defaults are the owner's Nikon D3300
+(3.92 µm) on the Samyang 135 mm, at step 1.
 
 One interactive console script in Romanian, Python 3 standard library only (`math`, `sys`). Not
 a kit project: no `scripts/verify.ps1`, no tests, no `docs/`, no `.claude/settings.json`, so no
@@ -22,18 +23,27 @@ gate and no Claude Code hook runs here. The rules below are kept by hand.
   `PYTHONIOENCODING=utf-8:surrogateescape` for its own shells and hides that crash.
 
   ```bash
-  printf '\n\n\n41.269\n\nd\n\ninf\n\n2\n89.95\n8\nd\n\n\n0.0001\n-0\n\nn\n' | python dither_calculator.py
+  printf '\n\n\n41.269\n\nd\n\ninf\n\n2\n89.95\n8\nd\n0.1\n\n0.0001\n9\n0\n-0\n\nd\n135\n\n\n\n1\nn\n' | python dither_calculator.py
   ```
 
-  Expected, in order (the review of 2026-10-11 reproduced each of these before its fix):
-  - round 1, the defaults at dec 41.269: `Scala imaginii: 5,99"/pixel`, `Dec: 2,51 px/s`,
-    `RA (la dec 41,269°): 1,89 px/s` with one space after the colon, `Dec:  6,0 s` with the
-    backlash note, `RA:   7,9 s`, and the table 6,0 / 6,2 / 6,9 / 8,4 / 11,9 / 23,1 s;
-  - round 2: the declination prompt shows `[41,269]`; `inf` gets `Nu e un număr valid`; at 2x
-    and dec 89.95 `RA:   1825,2 s - prea mult, mărește viteza sau folosește Dec`, followed by
-    `(spre est, peste 1x motorul se inversează: + backlash)`;
-  - round 3, speed 0.0001 and dec -0: `RA (la dec 0°)` and
-    `Dec:  nu mișcă practic imaginea - mărește viteza` (no "folosește Dec" on the Dec line);
+  Expected, in order:
+  - round 1, the defaults at dec 41.269: `Scala imaginii: 5,99"/pixel`,
+    `Deplasare la treapta 1 (1x sideral):`, `Dec: 2,51 px/s`, `RA (la dec 41,269°): 1,89 px/s`
+    with one space after the colon, `Dec:  6,0 s` with the backlash note that names
+    `Settings > Backlash`, `RA:   7,9 s`, the table 6,0 / 6,2 / 6,9 / 8,4 / 11,9 / 23,1 s, and
+    the closing test `~19 px`;
+  - round 2: the declination prompt shows `[41,269]`; `inf` gets `Nu e un număr valid`; step 2
+    prints `8x sideral`; at dec 89.95 `Dec:  0,4 s`,
+    `RA:   456,3 s - prea mult, urcă la treapta 3 (16x) sau folosește Dec` followed by
+    `(spre est, peste 1x motorul se inversează: + backlash)`, the under-1-s warning ending
+    `Coboară la treapta 1 (1x).`, and a closing test that asks for a target farther from the pole;
+  - round 3, focal 0.1 (an absurd scale, 8085,59"/px, to reach the path where an axis does not
+    move): `0.0001` and `9` each get
+    `Treapta trebuie să fie un număr întreg de la 0 la 8 (9 = Max nu are o viteză fixă).`;
+    step 0 prints `0,5x sideral`; dec -0 prints `RA (la dec 0°)`;
+    `Dec:  nu mișcă practic imaginea - urcă la treapta 1 (1x)`, with no "folosește Dec";
+  - round 4, step 0 and dither 1: `Dec:  0,8 s` and the warning ending
+    `Treapta 0 e cea mai mică; alege un dither mai mare.`; the closing test `~25 px`;
   - exit code 0, no traceback.
 - Windows PowerShell 5.1 puts a BOM in front of the text it pipes. Check that the first answer
   still counts (PowerShell tool):
@@ -49,32 +59,40 @@ gate and no Claude Code hook runs here. The rules below are kept by hand.
 
 - Sidereal rate `VITEZA_SIDERALA = 360 * 3600 / 86164.0905` = 15.041 "/s, one turn per sidereal
   day.
+- Speed: the step the app shows, mapped by `TREPTE_SYNSCAN = (0.5, 1, 8, 16, 32, 64, 128, 400,
+  600)` to a multiple of sidereal. Step 9 (Max) has no fixed multiple and is refused.
 - Image scale `206.265 * pixel_um / focala_mm` in "/px: 5.99 for the defaults.
-- DEC: px/s = speed x 15.041 / scale (2.51 px/s for the defaults at 1x).
+- DEC: px/s = multiple x 15.041 / scale (2.51 px/s for the defaults at step 1).
 - RA: the same times cos(dec). Turning the RA axis by an angle moves the sky by that angle times
   cos(dec): the same for -dec, zero at the poles.
 - Seconds = dither px / px/s. `secunde_pentru` returns `None` under 1e-3 px/s (the axis does not
-  move the image); `text_secunde` adds "prea mult" above `SECUNDE_MAX` (60 s) and offers Dec as
-  the way out only on the RA lines (`pe_ra`).
-- Under 1 s a warning: the app's Wi-Fi latency is then a large part of the press.
+  move the image); `text_secunde` adds "prea mult" above `SECUNDE_MAX` (60 s). The advice then
+  names the next step up (`sfat_dec`; `sfat_ra` adds Dec as the way out); a press under 1 s
+  names the next step down, because the app's Wi-Fi latency is then a large part of the press.
 
-## What the script assumes about the mount
+## What the manual says, and what the script still assumes
 
-Not measured on the owner's GTi. The formulas do not depend on these; the texts do.
+Source: SynScan App User's Manual, 2023-05-25 (Sky-Watcher; the owner's copy is
+`synscan_app_manual_en_20230525.pdf`).
 
-1. SynScan speed step 1 = 1x sidereal. The closing note asks the user to hold an arrow 10 s and
-   measure the star's move. If step 1 is something else, every text that equates step 1 with 1x
-   changes: the speed prompt, the comment on `IMPLICIT_VITEZA_X`, the docstring, the closing note.
-2. An arrow moves the mount at the chosen speed relative to the sky, added to or taken from the
-   tracking. At 1x east stops the RA motor and west doubles it: the image moves at 1x either way
-   and nothing reverses on RA. Above 1x east reverses the RA motor, so RA also loses time to
-   backlash; the RA backlash note shows only when the speed is above 1.
+1. Documented (p. 8, "Slewing the mount"): steps 0 to 9 are 0.5x, 1x, 8x, 16x, 32x, 64x, 128x,
+   400x, 600x and Max, in multiples of the sidereal rate, and the app shows the step's number at
+   the center of the direction buttons. `TREPTE_SYNSCAN` is that table.
+2. Assumed, not in the manual: an arrow moves the mount at that speed relative to the sky, added
+   to or taken from the tracking. At 1x east stops the RA motor and west doubles it, so the image
+   moves at 1x either way and nothing reverses on RA. Above 1x east reverses the RA motor, so RA
+   also loses time to backlash; the RA backlash note shows only above 1x. The closing note's test
+   checks this at step 1: 10 s east and 10 s west should each move a star by the printed pixels.
+   If west moves nothing and east twice as much, the app sets the axis speed instead, and the RA
+   texts change.
 3. DEC backlash is large on this mount: on the Veil session of 2026-10-06, 47 pauses gave only 38
-   visible moves (LightsCheck, `docs/decisions/0007`). Hence the note on the Dec line, and a
-   pattern that reverses DEC every time moves less than planned.
+   visible moves (LightsCheck, `docs/decisions/0007`), and a pattern that reverses DEC every time
+   moves less than planned. The manual (pp. 21-22) describes Settings > Backlash: when an axis
+   reverses, the app first turns it quickly by the set amount to take up the slack. With it set
+   right, the printed press times hold after a reversal too.
 
 LightsCheck's dithering table measures each step between frames, in pixels and per axis, from the
-lights. A session with known press times read there is the way to check 1 and 2.
+lights. A session with known press times read there is another way to check 2.
 
 ## Facts from the rest of the repo, for when the script grows
 
@@ -83,7 +101,15 @@ lights. A session with known press times read there is the way to check 1 and 2.
 - 10-20 px is a DSLR rule of thumb, not a measurement. LightsCheck's walking-noise verdict uses
   the same kind of threshold: 10 px or more, random, on both axes (its `docs/decisions/0007`).
 
-## Invariants (each one fixed a bug reproduced in the review of 2026-10-11)
+## Decisions
+
+- 2026-10-11, the owner: the speed is asked as the step the app shows (0-8), not as a multiple.
+  The app shows the step, and step 2 is 8x: typing 2 for step 2 gave a press four times too long.
+  The advice names the step to move to.
+- 2026-10-11, the owner: the Dec backlash note says that SynScan can compensate it (Settings >
+  Backlash), after the Veil DEC presses that moved nothing.
+
+## Invariants (each one fixed a bug reproduced on 2026-10-11)
 
 - `sys.stdout.reconfigure(encoding="utf-8")` is the first statement of `main()`. Without a
   console (a pipe, an editor's run pane) Windows writes cp1252 and the first `ă` raised
@@ -95,11 +121,13 @@ lights. A session with known press times read there is the way to check 1 and 2.
   `+ 0.0` turns `-0` into `0` (it printed `-0°`).
 - `calcul(implicit)` returns the values it read and `main` passes them to the next round: the
   banner promises that Enter keeps the value in brackets.
-- "folosește Dec" only on the RA lines (`pe_ra=True`); the Dec line says "mărește viteza".
+- Only `sfat_ra` offers Dec as the way out; the Dec line never tells the user to use Dec.
 - The RA label is padded to 21 characters and followed by one space, so values start in column 22
   like the Dec line's and never touch the colon (at dec 41,269 they did).
-- A text that quotes a threshold uses its constant (`DITHER_MIN_PX`, `DITHER_MAX_PX`), never the
-  number.
+- A text that quotes a limit uses its constant (`DITHER_MIN_PX`, `DITHER_MAX_PX`, the last step
+  from `len(TREPTE_SYNSCAN)`), never the number.
+- The closing test is computed at step 1 (`TREPTE_SYNSCAN[1]`) whatever the round's step: above
+  1x an east press reverses the RA motor and the backlash would spoil the test.
 
 ## Conventions
 
@@ -119,7 +147,7 @@ lights. A session with known press times read there is the way to check 1 and 2.
 
 - `SECUNDE_MAX = 60` was chosen in the review as the longest press that is still practical
   between frames.
-- Assumptions 1 and 2 above are unmeasured.
+- Assumption 2 above is unmeasured.
 - Ideas not done: the backlash time as an input, the declination in degrees and minutes, naming
   the arrow to press, a dither pattern that never reverses DEC.
 
