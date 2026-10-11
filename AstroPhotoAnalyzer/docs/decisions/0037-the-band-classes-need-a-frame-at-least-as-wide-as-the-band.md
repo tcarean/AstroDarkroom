@@ -47,13 +47,16 @@ both paths. The curves' anchors move from a "banda" that was sky to the nebula's
 
 The band path has a third condition, tested after the two fractions: the patch centres must
 span at least `BandMinLatitudeSpanDeg` (20°) of galactic latitude, the band's full width
-(2 x `BandGalacticLatitudeDeg`). A narrower frame cannot show the band as a strip with sky
-beside it, whatever the share of patches on each side of |b| = 10°, and takes the sky path with
-the reason `SkyReason.NarrowField`, which the report, the Tonuri tab, the map and the Curbe tab
-name with the frame's own span: `camp prea ingust pentru banda (10.9 grade de latitudine
-galactica, sub 20)`. The span is the maximum minus the minimum galactic latitude of the patch
-centres (`DustMap.LatitudeSpanDeg`), known from the WCS before any patch is measured: a fact
-of the frame, not a measurement of the image. The owner chose 20° on 2026-10-11.
+(2 x `BandGalacticLatitudeDeg`). A narrower frame cannot show the whole band with sky on both
+sides of it, and on the frames measured its band is a gradient, not a strip, whatever the share
+of patches on each side of |b| = 10°; it takes the sky path with the reason
+`SkyReason.NarrowField`, which the report, the Tonuri tab, the map and the Curbe tab name with
+the frame's own span: `camp prea ingust pentru banda: 10.9 grade de latitudine galactica, sub
+20`. The span is the maximum minus the minimum galactic latitude of the patch centres
+(`DustMap.LatitudeSpanDeg`), known from the WCS before any patch is measured: a fact of the
+frame, not a measurement of the image. It is half a patch short of the frame's corners on each
+side: the Veil's corners span 11.0° (the table above), its patch centres 10.9°, the figure the
+sentence and V-013 carry. The owner chose 20° on 2026-10-11.
 
 ## Alternatives rejected
 

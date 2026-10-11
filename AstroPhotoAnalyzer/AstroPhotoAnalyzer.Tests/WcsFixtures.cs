@@ -88,8 +88,9 @@ internal static class WcsFixtures
     /// <summary>
     /// A deep-sky field inside the band: 512 px at 0.02 deg/px (10 degrees), centred near the
     /// Veil nebula (RA 312, Dec +31: l = 74.5, b = -8.5), so that |b| &lt; 10 degrees covers about
-    /// two thirds of the frame and the rest lies outside it, as on `Veil_Starless.fit`, while
-    /// the frame spans about 10 degrees of galactic latitude, under `BandMinLatitudeSpanDeg`.
+    /// three quarters of the patches and the rest lies outside it, as on `Veil_Starless.fit`,
+    /// while the patch centres span about 13 degrees of galactic latitude (b -14.6 to -1.1: the
+    /// plane runs diagonally across the equatorial frame), under `BandMinLatitudeSpanDeg`.
     /// </summary>
     internal const double DeepSkyScale = 0.02;
     internal static Wcs NearTheVeil() => SyntheticWcs(512, 512, 312.0, 31.0, DeepSkyScale);

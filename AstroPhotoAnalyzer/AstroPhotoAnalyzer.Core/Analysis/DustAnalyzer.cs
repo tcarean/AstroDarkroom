@@ -29,11 +29,11 @@
 //     mai luminoase PeakFraction dale, cerul restul din afara benzii;
 //   - altfel (fara WCS, cadru fara banda ori in intregime in ea, sau cadru care acopera mai
 //     putin de BandMinLatitudeSpanDeg grade de latitudine galactica, deep-sky in banda; ADR
-//     0033, ADR 0037): cerul e un
-//     model neted din TOATE dalele, cu percentila SkyModelLowPercentile pe celula; pragurile
-//     vin din imagine: nebuloasa e dala cu mai mult de SkyNoiseK sigma ale cerului peste
-//     model, praful cu la fel de mult sub el, nebuloasa stralucitoare peste pragul Otsu al
-//     cozii de nebuloasa (fara varfuri), varfurile ca mai sus, cerul restul.
+//     0033, ADR 0037): cerul e un model neted din TOATE dalele, cu percentila
+//     SkyModelLowPercentile pe celula; pragurile vin din imagine: nebuloasa e dala cu mai mult
+//     de SkyNoiseK sigma ale cerului peste model, praful cu la fel de mult sub el, nebuloasa
+//     stralucitoare peste pragul Otsu al cozii de nebuloasa (fara varfuri), varfurile ca mai
+//     sus, cerul restul.
 // Pe orice cale, verdictul masoara la fel (Measure): cerul e mediana clasei cer; praful e zona
 // intinsa cea mai intunecata, decisa O DATA pe imaginea asa cum e (DecideDustSource): percentila
 // DustClassFraction a clasei praf cand clasa are DustClassMinFraction din dale (sub atat sunt

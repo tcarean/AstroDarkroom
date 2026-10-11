@@ -282,6 +282,10 @@ public class ValidationTests
 
         SimulationResult s = a.Simulation;
         f["simulation.method"] = s.Method.ToString();
+        f["simulation.skyReason"] = s.Map.SkyReason.ToString();
+        f["simulation.latitudeSpanDeg"] = double.IsNaN(s.Map.LatitudeSpanDeg) ? "n/a" : R(s.Map.LatitudeSpanDeg);
+        foreach (PatchClass c in new[] { PatchClass.Dust, PatchClass.Sky, PatchClass.Band, PatchClass.BrightCloud, PatchClass.Peak })
+            f["simulation.pctPatches." + c] = R(100 * s.Map.FractionOf(c));
         f["simulation.patchCount"] = s.PatchCount;
         f["simulation.cloudCount"] = s.CloudCount;
         f["simulation.dustPatchCount"] = s.DustPatchCount;

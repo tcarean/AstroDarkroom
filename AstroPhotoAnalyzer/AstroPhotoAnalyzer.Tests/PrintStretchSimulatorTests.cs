@@ -289,8 +289,8 @@ public class PrintStretchSimulatorTests
         var s = Simulate(WcsFixtures.BandScene(WcsFixtures.NearTheVeil(), withDust: true));
 
         Assert.Equal(DustMethod.Sky, s.Method);
-        Assert.StartsWith("camp prea ingust pentru banda (", s.MethodNote);
-        Assert.EndsWith(" grade de latitudine galactica, sub 20)", s.MethodNote);
+        Assert.InRange(s.Map.LatitudeSpanDeg, 8, Thresholds.BandMinLatitudeSpanDeg - 1);
+        Assert.Equal($"camp prea ingust pentru banda: {s.Map.LatitudeSpanDeg:F1} grade de latitudine galactica, sub {Thresholds.BandMinLatitudeSpanDeg:F0}", s.MethodNote);
         Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
         Assert.Contains(", nebuloasa ", s.ClassFractions);
     }

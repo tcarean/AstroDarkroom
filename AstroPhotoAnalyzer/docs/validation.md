@@ -66,7 +66,7 @@ stops on a drift instead of editing them.
 | V-010 | the Rosetta FITS; none | measured 2026-10-06 (ADR 0033): the sky-relative classes on a deep-sky frame without a WCS: 8325 patches, no cloud; the dust class 18 patches (0.2 %, under the 5 % floor), so the dust is the darkest sky, L\* 6.1, and the sky 8.1; paper black 3.6 on baryta; the recommended row 0.16 (the sky reaches L\* 15 at 0.154), the exact target 0.067 (0.079 at Dmax 2.3, 0.055 at 2.5), passes as is from Dmax 2.17; the overall verdict ATENTIE; and every other figure of the run |
 | V-011 | the Rosetta FITS; kind `curves` | measured 2026-10-06: the curves anchored on the sky-relative classes: anchors 0.077, 0.093, 0.272, 0.419, 0.603; four suggestions, `Puternica` with the points 0.409, 0.628, 0.793 and the five L\* from 6.1, 8.1, 30.2, 46.0, 63.5 to 6.2, 8.3, 42.9, 61.2, 77.6, a gain of 1.06; `Maxima` to 0.920 with 0.72 % clipped against 0.17 %; one paper check on each (the sky at L\* 8.1); the noise figure n/a (too little flat sky) |
 | V-012 | the Orion FITS; kind `curves` | measured 2026-10-06: a frame at the ceiling: anchors 0.114, 0.137, 0.365, 0.738, 0.971; the peaks over `CurvePeakTarget`, so no suggestion and the problem sentence naming the anchor, 0.971 and the target 0.92 |
-| V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky`, 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 1 patch, so the dust is the darkest sky, L\* 6.3, and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074, passes as is from Dmax 2.16; no smooth tile for the noise; 22 485 stars at FWHM 2.18 px; and every other figure of the run |
+| V-013 | the Veil FITS; none | measured 2026-10-11 (ADR 0037): the sky path on a frame inside the band but narrower than it: method `Sky` for the reason `NarrowField`, the patch centres spanning 10.9 degrees of latitude; sky 96.4 %, nebula 2.9 %, bright nebula 0.5 %, peaks 0.1 %; 20 125 patches, 6 clouds named (LDN 873 first, 68 patches, L\* 7.6), the dust class 1 patch, so the dust is the darkest sky, L\* 6.3, and the sky 9.3; the recommended row 0.16 (the sky reaches L\* 15 at 0.155), the exact target 0.074, passes as is from Dmax 2.16; no smooth tile for the noise; 22 485 stars at FWHM 2.18 px; and every other figure of the run |
 | V-014 | the Veil FITS; kind `curves` | measured 2026-10-11: the curves anchored on the nebula's own classes: anchors 0.078, 0.102, 0.166, 0.359, 0.498; four suggestions, `Puternica` taking the five L\* from 6.3, 9.3, 17.2, 38.8, 53.2 to 6.3, 10.0, 23.1, 49.4, 63.6 with a noise gain of 1.20, `Maxima` the peaks to 0.92 with a gain of 1.47; one paper check (the sky under L\* 15); the save keeps all 93 cards and the WCS |
 
 The figures recorded for each case are in `validation.json`; the table below, from the reference
@@ -201,7 +201,11 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   L\* 7.1 from the darkest sky, sky 9.5, the recommended row 0.16); on the new one the sky
   path, dust 6.3, sky 9.3, the same row, and the curves' anchors on the nebula's classes. The
   twelve earlier cases did not move: the reference image spans 68 degrees of latitude, the
-  others have no band in the frame. The fourteen cases pass.
+  others have no band in the frame. The fourteen cases pass. After the code review the
+  analysis cases also record why the path was taken and what the map holds:
+  `simulation.skyReason`, `simulation.latitudeSpanDeg` (`n/a` without a WCS) and the five
+  `simulation.pctPatches.*` shares, added to V-001 to V-005, V-010 and V-013 from their
+  `MEASURED` lines, every other figure unchanged.
 - 2026-10-09 (ADR 0035, the lift table): the simulation linearises each lift through one
   16-bit table instead of a lifted raster, and a grid row no longer sorts the L\* plane. No
   figure moved: the twelve cases' `MEASURED` lines, 1365 figures, are identical before and
