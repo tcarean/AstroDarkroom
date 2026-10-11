@@ -264,6 +264,38 @@ public class DustAnalyzerTests
     }
 
     [Fact]
+    public void R044_AFrameNarrowerThanTheBandTakesTheSkyPathAndSaysWhy()
+    {
+        // The same scene as the band scene (a brighter strip where |b| < 10, a dark blob, a
+        // bright blob, a peak), drawn on a 10 degree field near the Veil: both sides of |b| = 10
+        // hold over 10 % of the patches, so only the frame's span in galactic latitude (about
+        // 13 degrees) says this is a deep-sky frame inside the band and not a landscape with
+        // it (ADR 0037).
+        Raster r = WcsFixtures.BandScene(WcsFixtures.NearTheVeil(), withDust: true);
+        DustMap map = Build(r, WcsFixtures.NearTheVeil());
+        float[] L = Patches(r);
+
+        int inBand = map.GalacticLatitude.Count(b => Math.Abs(b) < Thresholds.BandGalacticLatitudeDeg);
+        Assert.InRange(inBand / (double)map.PatchCount, Thresholds.BandMinFraction, 1 - Thresholds.BandMinFraction);
+        Assert.InRange(map.LatitudeSpanDeg, 8, Thresholds.BandMinLatitudeSpanDeg - 1);
+
+        Assert.Equal(DustMethod.Sky, map.Method);
+        Assert.Equal(SkyReason.NarrowField, map.SkyReason);
+        Assert.Null(map.BandLevel);
+        Assert.Equal(new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" }, map.ClassNames);
+        // On the sky path the strip is nebula over the modelled sky, not a class of its own by geometry.
+        for (int i = 0; i < map.PatchCount; i++)
+            if (map.Classes[i] == PatchClass.Sky)
+                Assert.True(L[i] <= map.SkyModel[i] + map.NoiseThreshold);
+
+        // The wide band scene keeps the band path: on its 31 degree field the patch centres
+        // span about 37 degrees of latitude, the plane again running diagonally.
+        DustMap wide = Build(WcsFixtures.BandScene(), WcsFixtures.OnThePlane());
+        Assert.InRange(wide.LatitudeSpanDeg, Thresholds.BandMinLatitudeSpanDeg, 90);
+        Assert.Equal(DustMethod.Band, wide.Method);
+    }
+
+    [Fact]
     public void R044_TheCatalogueNamesTheCloudsInTheFrame()
     {
         Raster ldn = WcsFixtures.Ldn42Scene();

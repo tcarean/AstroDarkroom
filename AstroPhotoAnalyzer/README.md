@@ -115,12 +115,14 @@ nivelul local; vârfurile, cele mai luminoase 0,1 % din dale. L\*-ul prafului e 
 de cer. Catalogul Lynds al nebuloaselor întunecate, îmbarcat în unealtă, spune ce nori sunt în
 cadru și unde: fiecare nor cu cel puțin 9 dale primește un rând cu L\*-ul lui și cu fundalul
 la care ajunge el pe negru — ca să citești care rămân negri la nivelul recomandat. Clasele cer
-bandă și cer în afara ei, fiecare cu cel puțin 10 % din dale: metoda e făcută pentru cadre
-largi cu Calea Lactee; pe un cadru deep-sky (în întregime în bandă, sau fără bandă) raportul
-spune de ce și ia cealaltă cale. Un TIFF sau PNG exportat din
+bandă și cer în afara ei, fiecare cu cel puțin 10 % din dale, și un cadru care acoperă cel
+puțin 20° de latitudine galactică, lățimea benzii: metoda e făcută pentru cadre largi cu Calea
+Lactee, unde banda e o fâșie cu cer pe lângă ea. Pe un cadru deep-sky (în întregime în bandă,
+fără bandă, sau prea îngust ca banda să fie altceva decât un gradient, cum e Veil la 10°)
+raportul spune de ce și ia cealaltă cale. Un TIFF sau PNG exportat din
 Siril nu poartă antetul, dar stack-ul din care a ieșit îl are: dă-l cu `--wcs` (consola) sau în
-câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Pe cealaltă cale, fără WCS
-sau fără bandă, clasele sunt relative la cerul modelat din toate dalele (percentila 25 a
+câmpul „WCS din FITS" (fereastra); mărimea trebuie să fie identică. Pe cealaltă cale, fără WCS,
+fără bandă sau pe un cadru prea îngust, clasele sunt relative la cerul modelat din toate dalele (percentila 25 a
 fiecărei celule, ca un obiect să nu-l ridice), cu praguri scoase din imagine: nebuloasa e dala
 cu mai mult de 4 sigma ale cerului peste model, praful cu la fel de mult sub el, nebuloasa
 strălucitoare cea de peste pragul Otsu al nebuloasei, vârfurile ca mai sus; raportul dă

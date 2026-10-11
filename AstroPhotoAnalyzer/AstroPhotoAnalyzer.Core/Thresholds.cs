@@ -110,6 +110,18 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const double BandMinFraction = 0.10;
 
+        /// <summary>
+        /// Clasele benzii cer si un camp larg: dalele trebuie sa acopere cel putin atatea grade de
+        /// latitudine galactica, latimea intreaga a benzii (2 x BandGalacticLatitudeDeg). Sub atat
+        /// banda nu poate aparea ca fasie cu cer pe langa ea, oricate dale ar fi de fiecare parte
+        /// a lui |b| = 10: pe Veil_Starless.fit (9.6 x 6.4 grade, b de la -14.6 la -3.6, 65 % din
+        /// dale "banda") profilul L* dupa |b| e plat (9.1-10.5 in fiecare bin de 2 grade) si
+        /// banda geometrica e cu 0.5 L* peste cerul din afara ei, 0.6 sigma; pe imaginea de
+        /// referinta (68 grade de latitudine) urca de la 15 la 25.8 L*, cu 4.1 L* peste cer.
+        /// Un asemenea cadru e deep-sky in banda si ia calea cerului (ADR 0037).
+        /// </summary>
+        internal const double BandMinLatitudeSpanDeg = 20;
+
         // ---- clasele relative la cerul modelat, fara banda (ADR 0033)
 
         /// <summary>

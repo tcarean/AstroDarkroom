@@ -105,6 +105,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A deep-sky frame inside the galactic band (the Veil at a 10 degree field) is no longer classed
+  on the band path, with a band map over the nebula and the curves anchored on a "banda" that
+  was plain sky: the band classes now also need the frame to span at least 20 degrees of
+  galactic latitude, the band's width, and a narrower frame takes the sky-relative classes with
+  the reason named in the report (R-044; ADR 0037).
 - The level-L\* ladder of the Tonuri tab marks the paper in use: an explicit Dmax that is another
   medium's (canvas with Dmax 2.2) no longer marks that other medium as the chosen one (R-042).
 - The report's header line and Anexa F print a Dmax with its second decimal: `--dmax 2.35` read

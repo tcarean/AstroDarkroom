@@ -93,9 +93,13 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   under the sky model anywhere, `BrightCloud` when in the band and `BrightCloudLstar` over the
   local level, `Peak` when over the `PeakFraction` percentile, `Band` otherwise in the band (or
   outside it when `BrightCloudLstar` over the sky model), `Sky` otherwise. `Method` is `Band`.
-  Without a WCS, or with the band under `BandMinFraction` of the patches (`SkyReason.NoBand`)
-  or the outside sky under it (`AllBand`), `ClassifyBySky` makes the classes instead (ADR
-  0033, `Method` `Sky`): the sky model from all patches at `SkyModelLowPercentile` per cell;
+  Without a WCS, with the band under `BandMinFraction` of the patches (`SkyReason.NoBand`)
+  or the outside sky under it (`AllBand`), or with the patch centres spanning under
+  `BandMinLatitudeSpanDeg` of galactic latitude (`LatitudeSpanDeg`, the maximum minus the
+  minimum of `GalacticLatitude`, set in `Build` before the classes; `NarrowField`, tested
+  after the two fractions so that a frame far from the plane still says `NoBand`),
+  `ClassifyBySky` makes the classes instead (ADR 0033, ADR 0037, `Method` `Sky`): the sky
+  model from all patches at `SkyModelLowPercentile` per cell;
   the residual patch minus model, with `Stats.RobustSigma` (1.4826 x MAD about the median),
   one clipping pass at `SkyNoiseClipK` sigmas and sigma taken again on what is kept; `Dust`
   under the model by `SkyNoiseK` sigmas (`NoiseThreshold`), `Band` (nebula) over it by as

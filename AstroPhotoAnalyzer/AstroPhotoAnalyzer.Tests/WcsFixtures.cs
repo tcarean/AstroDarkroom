@@ -85,6 +85,16 @@ internal static class WcsFixtures
     internal const double WideScale = 0.06;
     internal static Wcs OnThePlane() => SyntheticWcs(512, 512, 281.4, -1.95, WideScale);
 
+    /// <summary>
+    /// A deep-sky field inside the band: 512 px at 0.02 deg/px (10 degrees), centred near the
+    /// Veil nebula (RA 312, Dec +31: l = 74.5, b = -8.5), so that |b| &lt; 10 degrees covers about
+    /// three quarters of the patches and the rest lies outside it, as on `Veil_Starless.fit`,
+    /// while the patch centres span about 13 degrees of galactic latitude (b -14.6 to -1.1: the
+    /// plane runs diagonally across the equatorial frame), under `BandMinLatitudeSpanDeg`.
+    /// </summary>
+    internal const double DeepSkyScale = 0.02;
+    internal static Wcs NearTheVeil() => SyntheticWcs(512, 512, 312.0, 31.0, DeepSkyScale);
+
     /// <summary>The dust blob's centre (the frame's centre, on the plane) and the bright blob's, 100 px to the right, still in the band.</summary>
     internal const int DustX = 255, DustY = 255, BrightX = 355, BrightY = 255;
 
@@ -95,9 +105,11 @@ internal static class WcsFixtures
     /// blob (0.6, radius 40 px) in the band, and one 32 px patch at 1.0 inside the bright blob,
     /// the peak. The WCS is on the source.
     /// </summary>
-    internal static Raster BandScene(bool withDust = true)
+    internal static Raster BandScene(bool withDust = true) => BandScene(OnThePlane(), withDust);
+
+    /// <summary>The band scene drawn under another WCS: the same blobs and peak, the band strip where that WCS puts |b| &lt; 10 degrees.</summary>
+    internal static Raster BandScene(Wcs wcs, bool withDust)
     {
-        Wcs wcs = OnThePlane();
         var inBand = new bool[512 * 512];
         for (int y = 0; y < 512; y++)
             for (int x = 0; x < 512; x++)

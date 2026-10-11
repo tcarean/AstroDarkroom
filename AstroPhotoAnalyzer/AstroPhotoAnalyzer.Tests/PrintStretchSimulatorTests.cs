@@ -284,6 +284,18 @@ public class PrintStretchSimulatorTests
     }
 
     [Fact]
+    public void R044_AFrameNarrowerThanTheBandNamesItsSpanAsTheReason()
+    {
+        var s = Simulate(WcsFixtures.BandScene(WcsFixtures.NearTheVeil(), withDust: true));
+
+        Assert.Equal(DustMethod.Sky, s.Method);
+        Assert.InRange(s.Map.LatitudeSpanDeg, 8, Thresholds.BandMinLatitudeSpanDeg - 1);
+        Assert.Equal($"camp prea ingust pentru banda: {s.Map.LatitudeSpanDeg:F1} grade de latitudine galactica, sub {Thresholds.BandMinLatitudeSpanDeg:F0}", s.MethodNote);
+        Assert.Equal("mediana dalelor de cer (clase relative la cerul modelat)", s.SkyDescription);
+        Assert.Contains(", nebuloasa ", s.ClassFractions);
+    }
+
+    [Fact]
     public void R044_AFrameWhollyInsideTheBandTakesTheSkyPathAndStillNamesItsClouds()
     {
         var s = Simulate(WcsFixtures.Ldn42Scene());
