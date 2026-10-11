@@ -1,0 +1,21 @@
+<Project>
+  <!-- Central Package Management: every package version lives here, once. The kit's rule
+       "Packages": no new package without asking, and every package gets a one-line "why" here,
+       an entry in THIRD-PARTY-NOTICES.md and one in ThirdParty.cs (ThirdPartyTests binds the
+       three; ADR 0003). -->
+  <ItemGroup>
+    <!-- Camera raw files: the undebayered Bayer mosaic, the exact black and white levels and
+         the shot metadata (exposure, ISO, time). The same libraw that rawpy binds, so the
+         figures match the Python prototype in prototype/. Native DLLs come from the two
+         runtime packages; the versions are FlatCheck's (ADR 0003). -->
+    <PackageVersion Include="Sdcb.LibRaw" Version="0.21.1.7" />
+    <PackageVersion Include="Sdcb.LibRaw.runtime.win64" Version="0.21.1" />
+    <PackageVersion Include="Sdcb.LibRaw.runtime.linux64" Version="0.21.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Test host and runner. -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+</Project>

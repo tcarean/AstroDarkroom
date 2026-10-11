@@ -1,0 +1,14 @@
+# Bitbucket Pipelines: the same gate as pre-commit. Linux runner, so PowerShell Core runs the script.
+image: mcr.microsoft.com/dotnet/sdk:9.0
+
+pipelines:
+  default:
+    - step:
+        name: verify
+        caches:
+          - dotnetcore
+        script:
+          - export CI=true
+          - apt-get update && apt-get install -y --no-install-recommends wget apt-transport-https
+          - wget -q https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb && dpkg -i packages-microsoft-prod.deb && apt-get update && apt-get install -y powershell
+          - pwsh -NoProfile -File scripts/verify.ps1

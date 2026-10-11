@@ -1,0 +1,47 @@
+{
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "cases": [
+    {
+      "id": "V-001",
+      "kind": "inventory",
+      "session": "Milkyway-Core/2026-08-12-Smida",
+      "measuredOn": "2026-10-11",
+      "expected": {
+        "darks": 20,
+        "biases": 30,
+        "lights": 32,
+        "camera": "Nikon D3300",
+        "darksExposureSeconds": 119.2,
+        "darksIso": 400,
+        "firstDarkStart": "2026-08-13T00:48:53",
+        "darksSpanSeconds": 2399.2,
+        "darksIntervalSeconds": 120.0,
+        "darksLongPauses": 0,
+        "darksVsLights": "Ok",
+        "bias": "Ok"
+      },
+      "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "intervalSeconds": 0.1 }
+    },
+    {
+      "id": "V-002",
+      "kind": "inventory",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "measuredOn": "2026-10-11",
+      "expected": {
+        "darks": 30,
+        "biases": 0,
+        "lights": 0,
+        "camera": "Nikon D3300",
+        "darksExposureSeconds": 120.2,
+        "darksIso": 1600,
+        "firstDarkStart": "2026-10-10T23:03:24",
+        "darksSpanSeconds": 3628.2,
+        "darksIntervalSeconds": 121.0,
+        "darksLongPauses": 0,
+        "darksVsLights": "Unmeasured",
+        "bias": "Unmeasured"
+      },
+      "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "intervalSeconds": 0.1 }
+    }
+  ]
+}
