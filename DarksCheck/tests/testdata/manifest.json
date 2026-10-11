@@ -1,0 +1,4 @@
+{
+  "$comment": "Every test data file, in repo or outside it. 'location' is 'repo' (under fixtures/) or 'large' (under the folder DARKSCHECK_TESTDATA_LARGE names, git-ignored). scripts/check-testdata.ps1 verifies presence and SHA-256 of every entry; a 'large' entry that is missing is a warning locally and an error in CI only when 'requiredInCi' is true. DarksCheck has no repo fixtures: every frame is generated in the tests (SessionFixture, FitsTestData, SyntheticFrame). The real sessions the validation cases read are whole folders of raws; they are named in docs/validation.json and not hashed here.",
+  "files": []
+}
