@@ -158,9 +158,14 @@ chat assumed EQ mode, the Wi-Fi link and step 2 = 8x.
   is to align with the directions of the GOTO's final approach: against the load, and with the
   tracking on the tracking axis. Sky-Watcher's final GOTO direction was not found, so that reason
   is not confirmed for SynScan, and the chat could not check whether RIGHT is the tracking
-  direction. From this repo (a deduction from the Facts below and assumption 2): on the owner's
-  app `→` is east, which at step 1 stops the RA motor and above 1x reverses it, so RIGHT is
-  against the tracking here.
+  direction. Checked on 2026-10-12: an east press is against the tracking (the V4 manual's note on
+  rates 0/1, p. 5; PHD2's developer: at a 0.5x guide speed the RA motor runs at 1.5x to move west
+  and at 0.5x to move east; PHD2's log-analysis guide: at 1x or less the RA drive slows or pauses
+  and never reverses), so east stops the RA motor at step 1 and reverses it above 1x. That RIGHT
+  is east rests only on the owner's reading of the Veil session (Facts below): no Sky-Watcher
+  document says which way RIGHT turns RA, and both the forum default that LightsCheck first took
+  and an EQMOD user on Stargazers Lounge say right = west. RIGHT is against the tracking only if
+  `→` is east, which is unverified.
 - A dither stores nothing in the model, so the rule's reason does not apply, and a dither that
   always ends with RIGHT and UP walks the frame in one direction, the opposite of a dither.
 
@@ -234,10 +239,25 @@ chat assumed EQ mode, the Wi-Fi link and step 2 = 8x.
 - Astro Pixel Processor forum:
   `https://www.astropixelprocessor.com/community/main-forum/streaks-in-integrated-output-of-ha-lights/`
 
+Read for the check of `→` = east on 2026-10-12: the V4 hand-control manual above (section 1.3,
+p. 5: left/right turn RA, and the rates 0/1 note; section 3.7, p. 18: end with UP and RIGHT); the
+SharpCap thread above (`?p=25884`, the Sky-Watcher reply relayed in November 2021); PHD2's
+developer, `https://groups.google.com/g/open-phd-guiding/c/a63qU_9UWIM` (2021-02-21); PHD2's
+"Analyzing PHD2 Guiding Results", `https://openphdguiding.org/Analyzing_PHD2_Guide_Logs.pdf`;
+Stargazers Lounge, EQMOD's buttons:
+`https://stargazerslounge.com/topic/376153-mount-north-s-e-and-w`.
+
 ## Facts from the rest of the repo, for when the script grows
 
 - On the owner's SynScan `→` moves the mount east and `↑` north (LightsCheck
-  `docs/decisions/0014`; a forum default with left = east was wrong for this app).
+  `docs/decisions/0014`; a forum default with left = east was wrong for this app). This is the
+  owner's reading of the Veil session, not a measurement; checked on 2026-10-12, no source
+  confirms or refutes it. The app's manual (2023) and the V4 hand-control manual say only that
+  left/right turn RA and up/down Dec, and the app's manual lists no setting that reverses the
+  buttons. Two tests settle it: by day, with the camera lowered from the pole, `→` at step 8 for
+  2-3 s swings the lens toward the east or the west horizon; at night, a lone `→` press between
+  two frames shows in LightsCheck's dithering cell for the next frame, whose letter (`E` or `V`)
+  comes from the plate solve, not from the arrow setting.
 - 10-20 px is a DSLR rule of thumb, not a measurement. LightsCheck's walking-noise verdict uses
   the same kind of threshold: 10 px or more, random, on both axes (its `docs/decisions/0007`).
 
@@ -300,6 +320,8 @@ chat assumed EQ mode, the Wi-Fi link and step 2 = 8x.
     east and 7x west, not 8x (1/multiple, 12.5 % at step 2): small for a dither, unmeasured, and
     a deduction;
   - the 5-10 s pause after the press is not printed.
+- `→` = east on the owner's app is unverified (Facts below); naming the arrow to press (an idea
+  below) needs one of its two tests first.
 - Ideas not done: the backlash time as an input, the declination in degrees and minutes, naming
   the arrow to press, a dither pattern that never reverses DEC.
 
