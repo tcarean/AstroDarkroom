@@ -18,7 +18,10 @@ pointing's move `(-dx, -dy)` gives the wrong RA sign; applying it to `(-dx, +dy)
 -0.2440 and -0.2216 degrees, the measurement. So the Y axis is flipped between the two
 frames, and in LightsCheck's pixels `+X` is north and `+Y` is west. The drift of Veil,
 -0.48 px/min along Y, is then stars sliding east, what a mount that lags the sky does; and
-the nine DEC presses of the night were all to the south. Which arrow moves the mount which
+the nine DEC presses of the night were all to the south. (Corrected 2026-10-12: stars sliding
+east in the frame are the camera moving west against them; a mount that lags the sky makes them
+slide west, so the drift is not a lag. The senses stand: four more plate-solved frames agree
+with them, `docs/validation.md`, History, 2026-10-12.) Which arrow moves the mount which
 way is a setting of the SynScan app; its default, pasted by the owner from a user forum, is
 up = north, down = south, left = east, right = west.
 

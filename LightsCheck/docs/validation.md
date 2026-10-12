@@ -123,3 +123,14 @@ drift instead of editing the figures.
   `S (jos)` `↓ S`, `E (stanga)` `→ E`, `N (sus)` `↑ N`, the default keys being right east and
   up north; the pixels and the four counts did not move. Re-measured on the Veil session with
   the other ten cases.
+- 2026-10-12: the senses of V-011 cross-checked on four more plate-solved frames, around the
+  run 61-70 (`siril-cli` 1.4.4, `platesolve 314.43,31.61 -focal=130.1 -pixelsize=3.91
+  -noflip` on Siril's `process/pp_light_000NN.fit`, online Tycho-2, a private copy of Siril's
+  settings; 6.198"/px). The centre moved 111.8" west and 1.7" north from 60 to 61 (V-011's
+  move of 17 px west on RA), 23.2" west and 16.2" south from 61 to 64, 21.2" east and 25.9"
+  north from 64 to 66, and 2.0" west and 9.8" north from 61 to 66 (10 min 49 s). The WCS rule
+  of ADR 0013 on the console's own `dx` and `dy` of the same day (`--out`) gives 107.9" west
+  1.5" north, 20.6" west 16.4" south, 19.0" east 25.9" north and 1.6" west 9.5" north: the
+  same sense on every component, within 4" on RA and 0.3" on DEC. A cross-check: no case
+  re-run, no figure changed; it corrects ADR 0013's reading of the drift as a lag (a dated
+  note there).
