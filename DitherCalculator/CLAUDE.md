@@ -247,6 +247,36 @@ developer, `https://groups.google.com/g/open-phd-guiding/c/a63qU_9UWIM` (2021-02
 Stargazers Lounge, EQMOD's buttons:
 `https://stargazerslounge.com/topic/376153-mount-north-s-e-and-w`.
 
+## Measured on the Veil session: plate solves of 2026-10-12
+
+Siril 1.4.4 `platesolve` (online Tycho-2, a private copy of Siril's settings) on Siril's
+calibrated frames 60, 61, 64 and 66 of the Veil session of 2026-10-06
+(`E:\Photografie\Astro\Veil\2026-10-06-3h\process\pp_light_000NN.fit`). LightsCheck records the
+same check in its `docs/validation.md` (History, 2026-10-12).
+
+- The image scale is 6.198"/px (solved focal length 130.1 mm at 3.91 µm), not the 5.99"/px of the
+  defaults (135 mm, 3.92 µm, 5.989"/px): 3.5 % larger, so for this lens the printed presses are
+  3.4 % short (Open).
+- The centre of the frame moved:
+
+  | Frames | Time | RA | Dec |
+  | --- | --- | --- | --- |
+  | 60 to 61, a dither | 2 min 16 s | 112" west (18 px) | 2" north |
+  | 61 to 64, a pause before 63 | 6 min 21 s | 23" west | 16" south |
+  | 64 to 66, a pause before 65 | 4 min 28 s | 21" east | 26" north |
+  | 61 to 66 | 10 min 49 s | 2" west | 10" north |
+
+- LightsCheck's sky senses of each move (east or west, north or south, from its WCS rule) agree
+  with every leg, within 4" on RA and 0.3" on Dec, so its dithering table gives the direction of a
+  move as well as its size (the check of assumption 2 from LightsCheck, above).
+- From 61 to 66 the sky turned 2.31 degrees west and the centre stayed within 2" of the same RA:
+  the stars move east to west and the tracking follows them. What shows in the frame is only the
+  tracking error, and it goes either way: without a dither RA wandered about 20" (3-4 px) west
+  and back over a few minutes (61 to 64 to 66), the GTi's periodic error. The closing test
+  (10 s each way at step 1) carries that much noise.
+- The pauses before 63 and 65 moved the camera only 16" and 26" (3 and 4 px) along Dec; their
+  press times are not known.
+
 ## Facts from the rest of the repo, for when the script grows
 
 - On the owner's SynScan `→` moves the mount east and `↑` north (LightsCheck
@@ -320,6 +350,9 @@ Stargazers Lounge, EQMOD's buttons:
     east and 7x west, not 8x (1/multiple, 12.5 % at step 2): small for a dither, unmeasured, and
     a deduction;
   - the 5-10 s pause after the press is not printed.
+- The defaults (135 mm, 3.92 µm) give 5.99"/px; the plate solves of the Veil session measure
+  6.198"/px (130.1 mm at 3.91 µm). Changing `IMPLICIT_FOCALA_MM` changes the expected outputs of
+  the checks above too.
 - `→` = east on the owner's app is unverified (Facts below); naming the arrow to press (an idea
   below) needs one of its two tests first.
 - Ideas not done: the backlash time as an input, the declination in degrees and minutes, naming
