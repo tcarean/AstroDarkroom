@@ -1,6 +1,6 @@
 # The dark series: the stack, the masters, checks 2 to 8
 
-**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
+**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
 
 The behaviour is R-020 to R-041; the decisions are ADR 0007 (the stack in memory, the FITS
 black, the verdict thresholds) and ADR 0004 (the normalisation). This note says how the
@@ -17,11 +17,18 @@ those rasters pile up (14 GB of working set measured before the collection and t
 is decoded alone and sets the geometry and the scale (the files are tried in order until one
 decodes); the others decode in parallel and must match its size, its ISO and its exposure
 (each on its own, within `Th.ExposureTolerance`). A float FITS on 0 .. 1 is brought to 0 ..
-65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black level, so the black of a FITS stack is the median of
+65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black
+level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
 dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
-normalisation factor of ADR 0004, read from the first frame's ISO and exposure.
+normalisation factor of ADR 0004, read from the first frame's ISO and exposure through the
+`Normalisation` the caller hands in (`Normalisation.Default` when none): the record of the
+two settings of ADR 0009, the gain per ISO stop (`NormOf`: `gain ^ log2(ISO / 400)`, the
+linear `ISO / 400` when the gain is 2, times `exposure / 120`) and the degrees per doubling
+(`Degrees`: `D x log2(ratio)`, NaN for a ratio that is not positive). The stack keeps the
+record, `DarkSeriesAnalysis` carries it on, and the warming, the lights' and the partner's
+degrees all read it, so a setting changed in the window moves every degree in the report.
 `FrameStack.DecodeOne` is the single-file form for a group that is never stacked (the
 lights): the same decode and 16-bit conversion, the frame listed with `dimensiune diferita`
 when its size is not the darks', and the file's own black and white returned (NaN black for a
@@ -110,6 +117,27 @@ failure of the lights or of the partner is an error carried in the result (`Ligh
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
 lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs` writes
 `darkscheck-lights.csv`. How the two analyzers work is in `lights-and-index.md`.
+
+## The report as rows
+
+`DarkReport` builds the report as data first (ADR 0009): `HeaderLine` is the `=== DARK-URI`
+line, `HeaderRows` the rows under it (`normalizare`, `cuantizare`, the biases' warnings),
+`Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
+`LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
+`FrameTableHeader` and `LightTableHeader` as the header lines. `Write` prints exactly those:
+a row as `    {label,-19}: {value}`, a table row with the console's column widths, a file name
+cut to 20 characters at print time only. A `ReportRow` reads its own verdict word off the
+value (`Verdict`: OK, ATENTIE or NEMASURAT when the value opens with it as a word, or ATENTIE
+when that is the row's label, the warnings about frames that failed; `Rest` the value without
+a leading word and the `: ` or space after it, the whole value otherwise), so the window shows
+the chip and the rest without parsing prose; the word list and the split live here, in
+`ReportRows.cs`. `InventoryReport.HeaderRows` gives the session lines the same way and
+`WriteHeader` prints them. Every sentence stays in the reports' private helpers, unchanged by
+the refactor; the goldens pin the text. The two figures the window charts and the tables both
+need are properties of the records, not of the window: `ResidualFigures.RowBandingRatio` and
+`NoiseVerdict.OutlierLimitAdu`. `DarkOutputs.MapRaster` is the grey raster of a binned map (each block a
+`MapScale` square stretched from the 1st to the 99th percentile), what `WriteMap` encodes as
+PNG and what the window shows as an image.
 
 ## Measured
 

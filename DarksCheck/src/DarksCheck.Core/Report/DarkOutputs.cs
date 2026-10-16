@@ -228,6 +228,19 @@ internal static class DarkOutputs
     internal static string? WriteMap(string path, BinnedMap m)
     {
         ArgumentNullException.ThrowIfNull(m);
+        if (MapRaster(m) is not (byte[] grey, int w, int h))
+        {
+            return null;
+        }
+
+        File.WriteAllBytes(path, PngWriter.EncodeGrey(grey, w, h));
+        return path;
+    }
+
+    /// <summary>The map as an 8-bit grey raster, each block a <see cref="MapScale"/> x <see cref="MapScale"/> square stretched from the 1st to the 99th percentile (what the PNG holds and what the window shows); null for a map without blocks.</summary>
+    internal static (byte[] Grey, int W, int H)? MapRaster(BinnedMap m)
+    {
+        ArgumentNullException.ThrowIfNull(m);
         if (m.W == 0 || m.H == 0)
         {
             return null;
@@ -251,8 +264,7 @@ internal static class DarkOutputs
             }
         }
 
-        File.WriteAllBytes(path, PngWriter.EncodeGrey(grey, w, h));
-        return path;
+        return (grey, w, h);
     }
 
     private static string N(double? v) => v is double d && !double.IsNaN(d) ? d.ToString("R", CultureInfo.InvariantCulture) : "";

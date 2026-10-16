@@ -105,7 +105,7 @@ internal static class LightsAnalyzer
                     // a light that does not say its ISO or exposure is taken at the darks' settings, the
                     // usual case and the one check 1 verifies, and the light is marked
                     bool assumed = frame.Info.Iso is not double || frame.Info.ExposureSeconds is not double;
-                    double normL = assumed ? darks.Norm : FrameStack.NormOf(frame.Info);
+                    double normL = assumed ? darks.Norm : darks.Normalisation.NormOf(frame.Info);
                     (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
                     frames[i] = f;
                     lock (gate)
@@ -176,7 +176,7 @@ internal static class LightsAnalyzer
         }
 
         LightFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
-        MatchFigures match = IndexAnalyzer.Match(ok.Select(f => (float)f.AmpRatioMedian).ToArray());
+        MatchFigures match = IndexAnalyzer.Match(ok.Select(f => (float)f.AmpRatioMedian).ToArray(), darks.Normalisation);
         return new LightsAnalysis(used, frames.Count(f => f.AssumedSettings), frames, threshold, persistent, hist, overlap, missedExcess.Count,
             missedExcess.Count == 0 ? double.NaN : Planes.Median([.. missedExcess]), ampIdx.Count, match,
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian);

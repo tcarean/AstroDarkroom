@@ -30,43 +30,58 @@ internal static class InventoryReport
         WriteTable(inv, "LIGHTS", inv.Lights, inv.LightsCadence, w);
     }
 
-    /// <summary>The session lines: folders, camera, the settings of each group, the cadences, the two verdicts.</summary>
+    /// <summary>The session lines: the `=== SESIUNE` line, then <see cref="HeaderRows"/> as the console prints them.</summary>
     internal static void WriteHeader(Inventory inv, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(inv);
         ArgumentNullException.ThrowIfNull(w);
+        w.WriteLine();
+        w.WriteLine($"=== SESIUNE: {inv.Session.Root} ===");
+        foreach (ReportRow row in HeaderRows(inv))
+        {
+            w.WriteLine($"    {row.Label,-19}: {row.Value}");
+        }
+    }
+
+    /// <summary>The session rows (ADR 0009): folders, camera, the settings of each group, the cadences, the two verdicts, the unreadable frames.</summary>
+    internal static IReadOnlyList<ReportRow> HeaderRows(Inventory inv)
+    {
+        ArgumentNullException.ThrowIfNull(inv);
         SessionFolder s = inv.Session;
         MatchAnalysis m = inv.Match;
-        w.WriteLine();
-        w.WriteLine($"=== SESIUNE: {s.Root} ===");
-        w.WriteLine($"    darks              : {FolderLine(s.Root, s.DarksDir, s.Darks)}");
-        w.WriteLine($"    biases             : {(s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases))}");
-        w.WriteLine($"    lights             : {(s.LightsDir is null ? "(lipsa)" : FolderLine(s.Root, s.LightsDir, s.Lights))}");
-        w.WriteLine($"    aparat             : {Distinct(inv.Darks.Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))}");
-        w.WriteLine($"    expunere darks     : {Settings(m.Darks)}");
+        List<ReportRow> rows =
+        [
+            new("darks", FolderLine(s.Root, s.DarksDir, s.Darks)),
+            new("biases", s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases)),
+            new("lights", s.LightsDir is null ? "(lipsa)" : FolderLine(s.Root, s.LightsDir, s.Lights)),
+            new("aparat", Distinct(inv.Darks.Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
+            new("expunere darks", Settings(m.Darks)),
+        ];
         if (m.Biases is not null)
         {
-            w.WriteLine($"    expunere biases    : {Settings(m.Biases)}");
+            rows.Add(new("expunere biases", Settings(m.Biases)));
         }
 
         if (m.Lights is not null)
         {
-            w.WriteLine($"    expunere lights    : {Settings(m.Lights)}");
+            rows.Add(new("expunere lights", Settings(m.Lights)));
         }
 
-        w.WriteLine($"    interval darks     : {Interval(inv.DarksCadence)}");
+        rows.Add(new("interval darks", Interval(inv.DarksCadence)));
         if (m.Lights is not null)
         {
-            w.WriteLine($"    interval lights    : {Interval(inv.LightsCadence)}");
+            rows.Add(new("interval lights", Interval(inv.LightsCadence)));
         }
 
-        w.WriteLine($"    potrivire          : {DarksVsLights(m)}");
-        w.WriteLine($"    bias               : {Bias(m)}");
+        rows.Add(new("potrivire", DarksVsLights(m)));
+        rows.Add(new("bias", Bias(m)));
         if (inv.HasErrors)
         {
             int n = inv.ErrorCount;
-            w.WriteLine($"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelele)");
+            rows.Add(new("ATENTIE", $"{n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelele)"));
         }
+
+        return rows;
     }
 
     /// <summary>One row per frame of a group: the metadata and the pause before it; nothing for an empty group.</summary>

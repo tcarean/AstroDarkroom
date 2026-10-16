@@ -37,7 +37,11 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
 internal sealed record DriftVerdict(Verdict Verdict, double DeltaCelsius, double Minutes, double FirstRatio, double LastRatio);
 
 /// <summary>Check 4: the per-frame residual noise on the reference plane, the frames that stand out, the read noise and the temporal noise over it (dark current and quantisation), the banding against white noise (R-022).</summary>
-internal sealed record NoiseVerdict(Verdict Verdict, double MedianSigma, IReadOnlyList<int> OutlierFrames, double? ReadNoise, double? NoiseOverRead, double RowBandingAdu, double RowBandingRatio, double ColBandingRatio);
+internal sealed record NoiseVerdict(Verdict Verdict, double MedianSigma, IReadOnlyList<int> OutlierFrames, double? ReadNoise, double? NoiseOverRead, double RowBandingAdu, double RowBandingRatio, double ColBandingRatio)
+{
+    /// <summary>The residual sigma over which a frame is an outlier: <see cref="Th.NoiseOutlierFactor"/> x the median.</summary>
+    internal double OutlierLimitAdu => Th.NoiseOutlierFactor * MedianSigma;
+}
 
 /// <summary>Check 6: the structured banding of the master and the glow at its edges (R-040).</summary>
 internal sealed record PatternVerdict(Verdict Verdict, double BandingP2pAdu, double GlowAdu);

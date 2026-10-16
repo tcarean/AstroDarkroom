@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The window. The same core as darkscheck.exe, through DarksCheck.Core: it computes no
+       figure and writes no sentence of its own; it calls Runs/ and shows the report's rows
+       (ADR 0009). net9.0-windows + UseWPF makes this project Windows-only, so the solution
+       builds on Windows only; the console alone builds anywhere.
+       No <InvariantGlobalization> here: WPF needs culture data to bind anything and would
+       throw while loading XAML (FlatCheck's ADR 0037); App.ForceInvariantNumbers pins the
+       number culture instead. runtimeconfig.template.json beside this file carries the same
+       GC knob as the console's (ADR 0007). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>DarksCheck.Wpf</RootNamespace>
+    <AssemblyName>DarksCheck.Wpf</AssemblyName>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <!-- The executable's icon (Explorer, the taskbar); the window takes the same file through
+         the <Resource> below and Icon= in MainWindow.xaml. Drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\darkscheck.ico</ApplicationIcon>
+    <!-- DarkTitleBar's LibraryImport (DwmSetWindowAttribute) is source-generated as unsafe
+         code; nothing else in the project is unsafe. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <!-- A WPF project gets no System.IO in its implicit usings (Path would collide with
+       System.Windows.Shapes.Path); the view-models read files, so it is added here. -->
+  <ItemGroup>
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DarksCheck.Core\DarksCheck.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="..\..\Icon\darkscheck.ico" Link="Icon\darkscheck.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DarksCheck.Wpf.Tests" />
+  </ItemGroup>
+</Project>

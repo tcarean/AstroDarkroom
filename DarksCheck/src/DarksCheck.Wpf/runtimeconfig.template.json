@@ -1,0 +1,6 @@
+{
+  "$comment": "Merged into DarksCheck.Wpf.runtimeconfig.json: the same knob as the console's (src/DarksCheck.Cli/runtimeconfig.template.json). The analysis allocates and drops a 24 MP raster per frame and per plane; without System.GC.ConserveMemory=9 the collector let that garbage pile up to 14 GB of working set (ADR 0007).",
+  "configProperties": {
+    "System.GC.ConserveMemory": 9
+  }
+}

@@ -21,7 +21,11 @@ namespace DarksCheck.Core;
 internal sealed record PlaneFigures(string Name, double Median, double Sigma, double Mean, double P999, IReadOnlyList<int> Above, int Saturated, int Low, int Min, int Max);
 
 /// <summary>One CFA position of one frame against the median master (R-022): the residual's noise and the banding of its row and column means against white noise.</summary>
-internal sealed record ResidualFigures(string Name, double Sigma, double Median, double Mean, double RowStd, double RowExpected, double ColStd, double ColExpected);
+internal sealed record ResidualFigures(string Name, double Sigma, double Median, double Mean, double RowStd, double RowExpected, double ColStd, double ColExpected)
+{
+    /// <summary>The row banding against white noise: the deviation of the row means over what white noise would give (1 = no banding); NaN without an expectation.</summary>
+    internal double RowBandingRatio => RowExpected > 0 ? RowStd / RowExpected : double.NaN;
+}
 
 /// <summary>The edges of a frame's binned reference plane relative to its centre, in ADU (R-021).</summary>
 internal sealed record EdgeFigures(double Left, double Right, double Top, double Bottom, double TopLeft);
@@ -95,6 +99,7 @@ internal sealed record DarkSeriesAnalysis(
     string ScaleSource,
     string? CfaLetters,
     double Norm,
+    Normalisation Normalisation,
     int QuantStep,
     int UniqueValues,
     IReadOnlyList<DarkFrameFigures> Frames,
@@ -201,8 +206,8 @@ internal static class DarkSeriesAnalyzer
         // the hot pixels of the master and their stability over the frames; the RTS limit is
         // set by the typical frame noise of the reference plane, as the prototype did
         HotStability hot = Stability(decoded, excess, tstd, w, h, black, hotT, refPlane, noise.SigmaFrame);
-        Warming warming = WarmingOf(frames, ampIdx.Count);
-        return new DarkSeriesAnalysis(w, h, black, stack.White, stack.ScaleSource, stack.Cfa?.Letters, norm, quantStep, unique,
+        Warming warming = WarmingOf(frames, ampIdx.Count, stack.Normalisation);
+        return new DarkSeriesAnalysis(w, h, black, stack.White, stack.ScaleSource, stack.Cfa?.Letters, norm, stack.Normalisation, quantStep, unique,
             frames, n, master, median, mean, hot, noise, maps, banding, warming);
     }
 
@@ -653,7 +658,7 @@ internal static class DarkSeriesAnalyzer
         return [.. d];
     }
 
-    private static Warming WarmingOf(DarkFrameFigures[] frames, int pixels)
+    private static Warming WarmingOf(DarkFrameFigures[] frames, int pixels, Normalisation nz)
     {
         DarkFrameFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         if (ok.Length < 2 || pixels == 0)
@@ -662,7 +667,7 @@ internal static class DarkSeriesAnalyzer
         }
 
         double first = ok[0].AmpRatioMedian, last = ok[^1].AmpRatioMedian;
-        double dT = first > 0 && last > 0 ? Th.DoublingCelsius * Math.Log2(last / first) : double.NaN;
+        double dT = first > 0 && last > 0 ? nz.Degrees(last / first) : double.NaN;
         double minutes = ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 ? (t1 - t0).TotalMinutes : double.NaN;
         return new Warming(first, last, dT, minutes, pixels);
     }

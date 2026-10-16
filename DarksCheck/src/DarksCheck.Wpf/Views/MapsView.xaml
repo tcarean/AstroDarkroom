@@ -1,0 +1,58 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- MapsView: the three binned maps of check 2 (the dark master, the bias master, dark minus
+     bias), each the same raster the PNG of the export holds, with the report's row under it. -->
+
+<UserControl x:Class="DarksCheck.Wpf.MapsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DarksCheck.Wpf">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
+    <StackPanel>
+      <TextBlock Style="{StaticResource Muted}" Text="{Binding MapsLead}" MaxWidth="1200" HorizontalAlignment="Left" Margin="0,0,0,14" />
+      <ItemsControl ItemsSource="{Binding Maps}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Style="{StaticResource Card}" Margin="0,0,14,14" Width="400">
+              <StackPanel>
+                <TextBlock Style="{StaticResource Heading}" Text="{Binding Title}" />
+                <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6" MinHeight="120">
+                  <Grid>
+                    <Image Source="{Binding Image}" MaxHeight="260" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"
+                           Visibility="{Binding HasImage, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock Style="{StaticResource Faint}" VerticalAlignment="Center" TextAlignment="Center" Text="{Binding EmptyText}"
+                               Visibility="{Binding HasImage, Converter={StaticResource NotBoolToVis}}" />
+                  </Grid>
+                </Border>
+                <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding Note}"
+                           Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

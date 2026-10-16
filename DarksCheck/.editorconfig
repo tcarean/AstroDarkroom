@@ -33,6 +33,11 @@ dotnet_diagnostic.IDE0055.severity = warning
 # catch general exception: allowed at the CLI boundary, filtered there
 dotnet_diagnostic.CA1031.severity = none
 
+# A bound property must be an instance member even when it only forwards a constant of the
+# core (a banner, a heading), so CA1822 cannot apply to the view-models (LightsCheck's ADR 0008).
+[src/DarksCheck.Wpf/ViewModels/*.cs]
+dotnet_diagnostic.CA1822.severity = none
+
 # The files copied from FlatCheck keep its style (block namespaces, no braces around one-line
 # ifs, Romanian comments), so a diff against their source stays readable (ADR 0003). The
 # compiler's own warnings still apply to them.
