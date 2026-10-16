@@ -60,3 +60,9 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   the estimator from the spatial sigma over sqrt(N) (a mean master) to 1.25 x the temporal
   sigma over sqrt(N) (the median master actually built): 0.339 → 0.400 on Smida, 1.04 → 1.105 on
   the library; the library's warming figures re-recorded as the console measures them.
+- 2026-10-16: at plan step 5, V-001 to V-006 re-run on the two sessions after the window step
+  (the report as rows, the `Normalisation` record): every case passes within its tolerance and
+  the console's figures are the recorded ones to the printed decimals (Smida: 2283 / 443 / 111 /
+  24 / 0, warming 0.83 → 1.07, read noise 1.56 / 1.26 / 1.26 / 1.45, master noise 0.40, 86
+  persistent, 1.00 / 0.72 / 0.94, idx25, 0.42 on 434 pixels, -7.5 degrees; the library:
+  5608 / 3940 / 528 / 176 / 13, 0.73 → 1.09, one saturated, 1.11, idx67); no figure moved.

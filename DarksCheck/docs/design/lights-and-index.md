@@ -10,6 +10,11 @@ and the file `darkscheck-lights.csv` are described with the rest of the run in
 `dark-analysis.md`. The oracle is the lights loop of `prototype/analyze_darks.py`
 (`local_excess`, `neighbour_max`) and `docs/validation/2026-08-12-smida/report.md`, section 9.
 
+`Analysis/LightsAnalyzer.cs` declares `LightFigures`, `OverlapAtLevel` and `LightsAnalysis`;
+`Analysis/IndexAnalyzer.cs` the enum `MatchVerdict`, `IndexFigures`, `MatchFigures` and
+`PartnerAnalysis` (the partner itself is built by `MatchPartner` in `Runs/DarkSeriesRun.cs`,
+`dark-analysis.md`, which also describes `darkscheck-lights.csv`).
+
 ## The lights, one at a time
 
 `LightsAnalyzer.Analyze` takes the paths of the lights and the darks' analysis (its median

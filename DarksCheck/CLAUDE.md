@@ -7,9 +7,9 @@ analysis of the Smida session of 2026-08-12 (metadata and cadence, light leaks, 
 noise, hot pixels, fixed pattern, dead pixels, how many darks, the lights against the dark),
 and computes the index: a number for how warm the sensor ran, on darks, on a library and on
 lights, so a library master can be matched to a session, with the label the owner puts in the
-folder name. Two applications, a console (`darkscheck.exe`) and a WPF window (plan step 4),
-over one core library; neither computes a number itself. It never modifies, moves or writes
-anything into the frames' folders.
+folder name. Two applications, a console (`darkscheck.exe`) and a WPF window
+(`DarksCheck.Wpf.exe`), over one core library; neither computes a number itself. It never
+modifies, moves or writes anything into the frames' folders.
 
 ## Commands
 
@@ -44,6 +44,11 @@ anything into the frames' folders.
   decides numbers, `Thresholds.cs` holds every constant a verdict depends on, `Report/`
   decides words (Romanian), `Runs/` chains them; both applications call `Runs/` only.
 - `src/DarksCheck.Cli/` - the console, `darkscheck.exe`: options, dispatch, exit code.
+- `src/DarksCheck.Wpf/` - the window, `DarksCheck.Wpf.exe`: the theme and presentation pieces
+  copied from LightsCheck, one view-model fed by the report's rows, the views (ADR 0009).
+  `Icon/` - the one icon of both executables and the script that draws it.
+- `tests/DarksCheck.Wpf.Tests/` - the window's tests (view-model, rendering of every tab,
+  culture, icon), a project of their own since they need `net9.0-windows`.
 - `tests/DarksCheck.Tests/` - unit, acceptance (`AcceptanceTests`), golden texts
   (`GoldenOutputTests`, `Golden/`), figures (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `ThirdPartyTests`, `VersionTests`). Every frame
@@ -71,8 +76,8 @@ The process rules every project made from the kit follows are in `.claude/rules/
 loaded with this file (the kit's ADR 0028). These are DarksCheck's own; one that extends or
 varies a kit rule names it.
 
-- **Core has no UI.** `DarksCheck.Core` never references Console, WPF, file dialogs or
-  anything with a UI.
+- **Core has no UI** (the kit's ADR 0002). `DarksCheck.Core` never references Console, WPF,
+  file dialogs or anything with a UI.
 - **Computed only in the core.** Nothing is computed outside `DarksCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never
   in a view-model or the console.

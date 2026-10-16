@@ -99,7 +99,10 @@ start, for the UI thread and the pool threads; a WPF project cannot use
 to the console's under `ro-RO`. `DarkTitleBar` asks DWM for the dark title bar through one
 `LibraryImport`. `AppIcon.Largest` picks the 256 px frame of the one `.ico` for the About
 window; `IconTests` tie both executables' `ApplicationIcon` to `Icon/darkscheck.ico`.
-`Icon/make_icon.py` draws the icon per size with Pillow (a charcoal frame with a faint pixel
+The window project carries its own `runtimeconfig.template.json` with the same
+`System.GC.ConserveMemory=9` knob as the console's (ADR 0007), so the decoded rasters are
+collected as eagerly under the window as under `darkscheck.exe`. `Icon/make_icon.py` draws the
+icon per size with Pillow (a charcoal frame with a faint pixel
 grid and amber hot pixels, the strongest with a halo; the small sizes drop the grid and draw
 fewer, larger dots) and saves the 256 px frame as the base image, since Pillow drops every
 size above it.

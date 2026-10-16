@@ -7,6 +7,23 @@ black, the verdict thresholds) and ADR 0004 (the normalisation). This note says 
 pieces fit and what was measured against the prototype (`prototype/analyze_darks.py`,
 `supplementary.py`, the figures in `docs/validation/2026-08-12-smida/`).
 
+## The records of the run
+
+Every record the notes name has one home. `Runs/DarkSeriesRun.cs` declares `DarkOptions`
+(what a run takes from the user: `Threads`, `MaxFrames`, `Against`, `IsoFactorPerStop`,
+`DoublingCelsius`; the run builds its `Normalisation` from the last two, and `EffectiveThreads`
+is half the cores when `Threads` is 0), `RunProgress(Phase, Done, Total)` (the phase word is
+Romanian and both applications print it as it is) and `DarkSeriesResult`, the whole result.
+`Analysis/DarkSeriesAnalyzer.cs` declares `DarkSeriesAnalysis` and its parts (`PlaneFigures`,
+`ResidualFigures`, `DarkFrameFigures`, `MasterFigures`, `HotStability`, `NoisePoint`,
+`NoiseVsN`, `Regions`, `BinnedMap`, `BandingFigures`, `Warming`); `Analysis/BiasAnalyzer.cs`
+`BiasAnalysis` and `DarkCurrent`; `Analysis/DarkVerdicts.cs` the six verdict records and
+`DarkVerdicts`; `Analysis/FrameStack.cs` `StackFrame`; `Analysis/Normalisation.cs` the
+settings record, whose defaults are the record's parameter defaults (`IsoFactorPerStop = 2`,
+`DoublingCelsius = Th.DoublingCelsius`). The console builds `DarkOptions` in `Program.Run` from
+its options and leaves the two settings at their defaults; the window builds it in
+`MainViewModel.Options` (`window.md`).
+
 ## The stack
 
 `FrameStack.Load` decodes a group of files into 16-bit mosaics, `threads` at a time. The
@@ -115,8 +132,11 @@ normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
-lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs` writes
-`darkscheck-lights.csv`. How the two analyzers work is in `lights-and-index.md`.
+lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs.LightsCsv`
+writes `darkscheck-lights.csv` beside the darks' and biases' writers, with the columns `index,
+file, time, exposure_s, iso, error, skipped`, then per plane `<P>_sky_median, <P>_sky_sigma,
+<P>_local_sigma`, then `candidates, isolated_hot, amp_ratio_median, amp_ratio_q25,
+amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 
 ## The report as rows
 

@@ -14,11 +14,11 @@ aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acel
 si aceeasi fereastra "Despre" ca FlatCheck si LightsCheck, de unde sunt copiate cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: pasul 4 din 5 al planului.** Consola si fereastra fac inventarul si verificarea 1
-(metadate, cadenta, potrivirea dark-urilor cu lights-urile), verificarile 2-8 pe dark-uri si
-bias-uri, verificarea 9 (lights-urile fata de dark), indexul, eticheta si potrivirea cu alt
-folder de dark-uri (`--against`). Pasul 5 e validarea si versiunea 1.0.0; dupa el, o sesiune cu
-lights dar fara dark-uri va putea fi comparata cu o biblioteca
+**Stadiu: planul de constructie e implementat (pasii 1-5), versiunea 1.0.0 e prima.** Consola
+si fereastra fac inventarul si verificarea 1 (metadate, cadenta, potrivirea dark-urilor cu
+lights-urile), verificarile 2-8 pe dark-uri si bias-uri, verificarea 9 (lights-urile fata de
+dark), indexul, eticheta si potrivirea cu alt folder de dark-uri (`--against`). Urmeaza, ca
+sarcina separata, o sesiune cu lights dar fara dark-uri comparata cu o biblioteca
 (`docs/plans/2026-10-11-build-darkscheck.md`). Analiza de mana de la care porneste unealta, cu
 cifrele ei, e in `docs/validation/2026-08-12-smida/report.md`.
 
@@ -284,9 +284,11 @@ castigul 2 si 6 grade pe dublare, fara optiuni pentru ele.
 
 ## Compilare
 
-.NET SDK 9.0.3xx (`global.json`). `dotnet build DarksCheck.sln -c Release`. Gate-ul complet
-(format, build strict, teste): `scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie
-`darkscheck.exe`, un singur fisier cu DLL-urile libraw inglobate, in `artifacts/`.
+.NET SDK 9.0.3xx (`global.json`). `dotnet build DarksCheck.sln -c Release` (fereastra cere
+Windows; consola singura se compileaza oriunde). Gate-ul complet (format, build strict, teste):
+`scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie `darkscheck.exe` in
+`artifacts/<versiune>/console/` si `DarksCheck.Wpf.exe` in `artifacts/<versiune>/wpf/`, fiecare
+un singur fisier cu DLL-urile libraw inglobate.
 
 ## Pentru cine dezvolta
 
