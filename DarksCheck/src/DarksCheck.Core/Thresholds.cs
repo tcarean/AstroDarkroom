@@ -124,4 +124,47 @@ internal static class Th
 
     /// <summary>The noise of a median over many frames against the mean's: sqrt(pi / 2), the asymptotic value for Gaussian noise (measured 1.40 at 10 frames on Smida, quantisation included).</summary>
     internal const double MedianNoiseFactor = 1.2533;
+
+    // --- the lights against the dark (R-050, check 9) ---
+
+    /// <summary>A light's pixel this many sigmas above the median of its eight same-colour neighbours is a hot-pixel candidate; 6 keeps the sky's noise out on the Smida lights (sigma 6 ADU).</summary>
+    internal const double LightHotSigmas = 6;
+
+    /// <summary>A candidate whose eight immediate neighbours all stay under this many sigmas is isolated, a hot pixel; a star lights its neighbours too.</summary>
+    internal const double LightIsolationSigmas = 3;
+
+    /// <summary>A light's pixel above this fraction of white is too close to saturation to be a hot pixel or to carry an amplitude (4000 of 4095 on the D3300).</summary>
+    internal const double LightSaturationFraction = 0.977;
+
+    /// <summary>A pixel flagged in at least this fraction of the lights is persistent, a hot pixel of the sensor rather than a star that stayed put.</summary>
+    internal const double PersistentFraction = 0.8;
+
+    // --- the index and the matching (R-060, ADR 0004) ---
+
+    /// <summary>The index reads the median amplitude of the pixels ranked from here per megapixel, by descending excess on the median master.</summary>
+    internal const double IndexRankLowPerMpx = 5;
+
+    /// <summary>... to here per megapixel: on the D3300's 24.2 Mpx the 122nd to the 483rd strongest pixel, 25.2 ADU-eq on Smida, 67.4 on the library.</summary>
+    internal const double IndexRankHighPerMpx = 20;
+
+    /// <summary>The overlap of the lights' persistent pixels with the master is read at these levels of the master, in ADU equivalent (the first four hot levels).</summary>
+    internal static readonly double[] OverlapLevelsAdu = [10, 20, 50, 100];
+
+    /// <summary>Under this many degrees either way, two sets are said to be at the same temperature.</summary>
+    internal const double SameTemperatureCelsius = 0.05;
+
+    /// <summary>The overlap of two sets of darks is read at this level, in ADU equivalent: how many of the session's pixels above it the partner has above it too, and how many of the partner's above it the session has above <see cref="HotAdu"/> (the hand analysis of 2026-10-11).</summary>
+    internal const double PartnerOverlapAdu = 50;
+
+    /// <summary>Two masters are matched on the pixels both have above this, in ADU equivalent (the hot threshold; ADR 0008); a set of lights is matched on the dark master's pixels above it.</summary>
+    internal const double MatchMinAdu = 20;
+
+    /// <summary>Lights-over-master amplitude ratio within these bounds: the dark can be subtracted as it is.</summary>
+    internal const double MatchDirectLow = 0.9, MatchDirectHigh = 1.1;
+
+    /// <summary>Within these bounds: subtract with Siril's -opt, which scales the dark (the owner's margin rule of 2026-10-10: ±5 °C).</summary>
+    internal const double MatchOptLow = 0.7, MatchOptHigh = 1.4;
+
+    /// <summary>Down to here a colder set of lights can still take the warmer dark's hot-pixel positions, cosmetic correction only (-cc=dark sees every hot pixel); under it, or above MatchOptHigh, the dark is unmatched.</summary>
+    internal const double MatchCosmeticLow = 0.4;
 }

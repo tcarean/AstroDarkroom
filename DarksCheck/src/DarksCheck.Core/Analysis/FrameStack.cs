@@ -184,6 +184,22 @@ internal sealed class FrameStack
         return stack;
     }
 
+    /// <summary>
+    /// One file decoded on its own, for a group that is never stacked (the lights): the frame
+    /// with its 16-bit mosaic, or with the error when its size is not <paramref name="w"/> x
+    /// <paramref name="h"/>; the file's black (NaN for a FITS) and white. Throws what the
+    /// readers throw.
+    /// </summary>
+    internal static (StackFrame Frame, double Black, double White) DecodeOne(int index, string path, int w, int h)
+    {
+        LoadedFrame f = ImageLoader.Load(path);
+        FrameInfo info = FrameInfo.From(index, path, f);
+        (ushort[] px, double black, double white, _) = ToUshort(f);
+        return f.Image.W == w && f.Image.H == h
+            ? (new StackFrame(info, px, null), black, white)
+            : (new StackFrame(info, null, $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}"), black, white);
+    }
+
     private static string Fmt(double? v) => v is double d ? d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "?";
 
     /// <summary>The same ISO (when both say it) and an exposure within <see cref="Th.ExposureTolerance"/> of the first frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO 400 at 120 s.</summary>

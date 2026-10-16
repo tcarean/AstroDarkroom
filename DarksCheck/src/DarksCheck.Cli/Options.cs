@@ -22,7 +22,8 @@ namespace DarksCheck.Cli;
 /// <summary>
 /// The console's arguments: one folder, the mode (the darks analysis by default,
 /// <c>--inventory</c> for the metadata alone), <c>--out DIR</c>, <c>--threads N</c>,
-/// <c>--max-frames N</c>, or --help. Anything else is an error naming the argument (R-004).
+/// <c>--max-frames N</c>, <c>--against DIR</c>, or --help. Anything else is an error naming
+/// the argument (R-004).
 /// </summary>
 internal sealed class Options
 {
@@ -31,6 +32,7 @@ internal sealed class Options
     internal string? Out { get; private set; }
     internal int Threads { get; private set; }
     internal int MaxFrames { get; private set; } = DarksCheck.Core.Th.MaxFramesInMemory;
+    internal string? Against { get; private set; }
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -59,7 +61,7 @@ internal sealed class Options
                 continue;
             }
 
-            if (a is "--out" or "--threads" or "--max-frames")
+            if (a is "--out" or "--threads" or "--max-frames" or "--against")
             {
                 if (i + 1 >= args.Length)
                 {
@@ -87,6 +89,16 @@ internal sealed class Options
                     }
 
                     o.MaxFrames = m;
+                }
+                else if (a == "--against")
+                {
+                    if (string.IsNullOrWhiteSpace(v))
+                    {
+                        o.Error = "--against cere un folder de dark-uri";
+                        return o;
+                    }
+
+                    o.Against = v;
                 }
                 else
                 {
@@ -127,9 +139,9 @@ internal sealed class Options
         {
             o.Error = "lipseste folderul sesiunii sau al dark-urilor";
         }
-        else if (o.Inventory && o.Out is not null)
+        else if (o.Inventory && (o.Out is not null || o.Against is not null))
         {
-            o.Error = "--inventory si --out nu merg impreuna";
+            o.Error = "--inventory nu merge cu --out sau --against";
         }
 
         return o;

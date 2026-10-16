@@ -14,9 +14,10 @@ cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acelasi mod d
 si aceeasi fereastra "Despre" ca FlatCheck si LightsCheck, de unde sunt copiate cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: pasul 2 din 5 al planului.** Consola face inventarul si verificarea 1 (metadate,
-cadenta, potrivirea dark-urilor cu lights-urile) si verificarile 2-8 pe dark-uri si bias-uri.
-Verificarea 9 (lights-urile fata de dark), indexul si fereastra vin in pasii urmatori
+**Stadiu: pasul 3 din 5 al planului.** Consola face inventarul si verificarea 1 (metadate,
+cadenta, potrivirea dark-urilor cu lights-urile), verificarile 2-8 pe dark-uri si bias-uri,
+verificarea 9 (lights-urile fata de dark), indexul, eticheta si potrivirea cu alt folder de
+dark-uri (`--against`). Fereastra vine in pasul urmator
 (`docs/plans/2026-10-11-build-darkscheck.md`). Analiza de mana de la care porneste unealta, cu
 cifrele ei, e in `docs/validation/2026-08-12-smida/report.md`.
 
@@ -52,7 +53,7 @@ doua nu se amesteca. Ordinea e cea a numelor de fisier.
 ## Folosire
 
 ```
-darkscheck <folder sesiune sau folder de dark-uri> [--out DIR] [--threads N] [--max-frames N]
+darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]
 darkscheck <folder> --inventory
 darkscheck --help
 ```
@@ -66,11 +67,14 @@ poate citi sau decoda; cadrul e listat cu `eroare:` si restul sunt analizate in 
 Decodeaza bias-urile (daca sunt) si apoi dark-urile, `--threads N` deodata (implicit jumatate
 din nuclee; progresul apare pe stderr), le tine in memorie ca mozaicuri pe 16 biti (48 MB un
 cadru de 24 MP; peste 60 de cadre, sau peste `--max-frames N`, se decodeaza unul din k si
-restul sunt listate ca sarite, fara sa fie erori) si tipareste, dupa liniile
-inventarului, cate o sectiune pe verificare, fiecare cu cifrele ei si un rand `verdict` care
-incepe cu `OK`, `ATENTIE` sau `NEMASURAT`. Pe sesiunea Smida (20 dark-uri, 30 bias-uri)
+restul sunt listate ca sarite, fara sa fie erori), apoi lights-urile, unul cate unul, fara sa
+le tina (acelasi plafon), si tipareste, dupa liniile inventarului, cate o sectiune pe
+verificare, fiecare cu cifrele ei si un rand `verdict` care incepe cu `OK`, `ATENTIE` sau
+`NEMASURAT`, apoi sectiunea `INDEX`. Pe sesiunea Smida (20 dark-uri, 30 bias-uri, fara sa masoare lights-urile)
 dureaza 35 s si urca la 4.5-4.7 GB de memorie; pe biblioteca de 30 de dark-uri, 24-26 s si
-2.9-3.3 GB (masurat pe 2026-10-11 si 2026-10-16, 4 fire).
+2.9-3.3 GB (masurat pe 2026-10-11 si 2026-10-16, 4 fire); cele 32 de lights ale sesiunii Smida
+adauga 28 s (63 s in total), iar biblioteca drept partener (`--against`) inca 27 s (90 s;
+masurat pe 2026-10-16, 4 fire).
 
 Cifrele sunt in ADU peste negru. Cand dark-urile nu sunt la ISO 400 si 120 s, pragurile si
 cifrele etichetate `ADU-eq` sunt impartite la factorul ISO / 400 x expunere / 120 s, ca sa
@@ -129,9 +133,64 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   ele ca un cadru ciudat sa n-o traga. Peste pas, `ATENTIE` cu numarul de cadre de la care ar
   cobori sub el. Altfel `OK`: zgomotul masterului intra in cuadratura in fiecare light
   calibrat, iar sub pas e cat de mic poate fi pentru fisierul asta.
+- **9. Lights-urile fata de dark**: in fiecare light, pixelii fierbinti se cauta local: un
+  pixel cu peste 6 sigma peste mediana celor 8 vecini de aceeasi culoare, sub saturatie, caruia
+  niciun vecin imediat nu-i trece de 3 sigma (o stea isi lumineaza vecinii, un pixel fierbinte
+  nu). Un pixel gasit in cel putin 80 % din lights e persistent. Sectiunea spune cati
+  persistenti are masterul peste 10 / 20 / 50 / 100 ADU-eq si cati din pixelii fierbinti ai
+  masterului apar in lights (in amandoua sensurile), cati persistenti nu-s in master
+  (`nepotriviti`: o stea care n-a miscat intre cadre, sau un pixel pe care dark-ul nu-l are),
+  si amplitudinea: cat de tari sunt pixelii fierbinti ai masterului in fiecare light fata de
+  master, normalizata la ISO si expunere, mediana pe noapte cu primul si ultimul cadru (primele
+  lights ale unei nopti sunt reci: 0.72 pe Smida, 1.0 de la minutul 15). Verdictul, pe raportul
+  lights / dark: `OK: scadere directa` intre 0.9 si 1.1; `ATENTIE: scade cu -opt` intre 0.7 si
+  1.4 (optiunea Siril care scaleaza dark-ul); `ATENTIE: doar corectie cosmetica (-cc=dark)`
+  intre 0.4 si 0.7 (dark-ul e mult mai cald: vede toti pixelii fierbinti, dar scaderea ar
+  supracorecta); altfel `ATENTIE: nepotrivit`. Gradele vin din regula dublarii la 6 grade.
+- **Index**: `idx<NN>`, mediana amplitudinii pixelilor de pe rangurile 5-20 pe megapixel ai
+  masterului (al 122-lea .. al 483-lea cel mai tare din 24 MP), in ADU-eq, un numar pentru cat
+  de cald a rulat senzorul: 25 pe Smida, 67 pe biblioteca din 2026-10-10 (ISO 1600, 15.8
+  grade in camera). `eticheta` e numele folderului plus `-idx<NN>` (folderul-parinte cand
+  dark-urile stau in `darks\`): o afiseaza, tu redenumesti folderul daca vrei; nimic nu e scris
+  sau redenumit. Cu lights, `lights` da indexul echivalent al noptii (indexul dark-urilor x
+  raportul lights / dark) si gradele fata de dark.
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, pixelii peste 20 ADU-eq, pe
   planul G1; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
+- **Tabel pe lights**: ora, cerul peste negru, sigma locala (scara detectorului), candidatii,
+  pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1. Un light care nu
+  spune ISO-ul sau expunerea e luat la setarile dark-urilor, cu o linie `ATENTIE`.
+
+```
+  9. LIGHTS FATA DE DARK
+    pixeli fierbinti   : 86 persistenti in lights (izolati, peste 6 sigma locale, in cel putin 26 din 32 cadre)
+    in masterul dark   : peste 10: 85 din 86 (99 %); peste 20: 85 din 86 (99 %); peste 50: 70 din 86 (81 %); peste 100: 16 din 86 (19 %)  [ADU-eq]
+    din master in lights: peste 10: 85 din 2283 (4 %); peste 20: 85 din 443 (19 %); peste 50: 70 din 111 (63 %); peste 100: 16 din 24 (67 %)
+    nepotriviti        : 1 pixel persistent in lights sub 20 ADU-eq in master (mediana lor in master 3 ADU-eq)
+    amplitudine        : lights / dark 1.00 pe noapte (mediana pe 32 cadre; primul 0.72, ultimul 0.94; 443 pixeli)
+    verdict            : OK: scadere directa (raport 1.00, in 0.9 .. 1.1; dark-ul e la aceeasi temperatura)
+
+  INDEX
+    dark-uri           : idx25 (25.2 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 122-lea .. al 483-lea din 24.2 Mpx, normalizat la ISO 400 si 120 s)
+    eticheta           : 2026-08-12-Smida-idx25
+    lights             : echivalent idx25 (dark x 1.00, adica +0.0 grade fata de dark)
+```
+
+`--against DIR` compara dark-urile sesiunii cu alt folder de dark-uri, o biblioteca sau alta
+sesiune (dark-urile lui se decodeaza la fel, masterul lor median se compara cu al sesiunii):
+indexul si eticheta partenerului, raportul dark-uri / partener pe pixelii fierbinti in amandoua
+masterele (peste 20 ADU-eq in fiecare), cu quartilele, numarul de pixeli si gradele, cati din
+pixelii peste 50 ADU-eq ai sesiunii ii are si partenerul peste 50 si cati din ai partenerului
+peste 50 ii are sesiunea peste 20, si `lights / partener`, raportul lights-urilor fata de
+partener prin dark-urile sesiunii, cu `verdict partener` dupa aceleasi praguri (fara lights,
+verdictul e al dark-urilor fata de partener). Pe Smida fata de biblioteca: 0.42 pe 434 pixeli,
+adica biblioteca e cu 7.5 grade mai calda, doar corectie cosmetica. Un folder partener care nu
+se poate deschide e refuzat cu `EROARE` inainte de orice decodare; unul cu alta dimensiune sau
+fara niciun dark decodabil da o linie `ATENTIE` si iesire `1`, restul raportului ramane; un
+dark al partenerului care nu se poate folosi e numarat intr-o linie `ATENTIE` (iesire `1`).
+`--out` nu poate fi nici in folderul partenerului. Un raport in jurul lui zero (lights-urile nu
+arata deloc pixelii fierbinti ai masterului: reducere de zgomot in aparat, alt aparat, alta
+orientare a FITS-ului) e `nepotrivit`, cu propozitia lui.
 
 Un FITS nu spune nivelul de negru (un FITS convertit de Siril pastreaza piedestalul aparatului,
 150 la D3300), asa ca pentru FITS negrul e mediana primului bias cand exista bias-uri, altfel a
@@ -142,7 +201,8 @@ primul e lasat deoparte cu `setari diferite`; un singur dark nu e o serie: verif
 si 8 raman `NEMASURAT`.
 
 `--out DIR` scrie in DIR raportul (`darkscheck-raport.txt`), cate un CSV cu toate cifrele pe
-cadru si pe plan (`darkscheck-darks.csv`, `darkscheck-biases.csv`) si hartile planului G1 ca
+cadru si pe plan (`darkscheck-darks.csv`, `darkscheck-biases.csv`, `darkscheck-lights.csv`
+cand sesiunea are lights) si hartile planului G1 ca
 PNG (`darkscheck-harta-dark.png`, `-bias.png`, `-dark-minus-bias.png`; un bloc = 4 x 4 px,
 intins intre percentilele 1 si 99). Nimic nu se scrie in folderul sesiunii: un `DIR` care e
 folderul sesiunii sau unul din el e refuzat cu `EROARE`.

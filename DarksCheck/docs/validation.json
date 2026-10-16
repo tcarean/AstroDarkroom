@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1) or 'darks' (checks 2 to 8 on the darks and the biases). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1), 'darks' (checks 2 to 8 on the darks and the biases) or 'match' (check 9, the index, the label and the partner named by 'against', relative to the same folder). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",
@@ -85,6 +85,40 @@
         "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
       },
       "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
+    },
+    {
+      "id": "V-005",
+      "kind": "match",
+      "session": "Milkyway-Core/2026-08-12-Smida",
+      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "measuredOn": "2026-10-16",
+      "expected": {
+        "index": 25.2, "rankLow": 121, "rankHigh": 483, "label": "2026-08-12-Smida-idx25",
+        "lights": {
+          "used": 32, "persistentThreshold": 26, "persistent": 86,
+          "overlapLevels": [10, 20, 50, 100], "overlapBoth": [85, 85, 70, 16], "overlapDark": [2283, 443, 111, 24],
+          "missed": 1, "missedMedian": 3,
+          "ampPixels": 443, "ratio": 1.00, "ratioFirst": 0.72, "ratioLast": 0.94, "verdict": "Direct"
+        },
+        "partner": {
+          "frames": 30, "used": 30, "norm": 4.0067, "index": 67.4, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
+          "pixels": 434, "ratio": 0.422, "q25": 0.381, "q75": 0.443, "deltaCelsius": -7.5, "verdict": "CosmeticOnly",
+          "ownHot50": 111, "ownHot50InPartner50": 111, "partnerHot50": 528, "partnerHot50InOwn20": 425
+        }
+      },
+      "tolerance": { "index": 0.2, "ratio": 0.01, "counts": 2, "celsius": 0.1 }
+    },
+    {
+      "id": "V-006",
+      "kind": "match",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "measuredOn": "2026-10-16",
+      "expected": {
+        "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
+        "lights": null,
+        "partner": null
+      },
+      "tolerance": { "index": 0.2, "ratio": 0.01, "counts": 2, "celsius": 0.1 }
     }
   ]
 }

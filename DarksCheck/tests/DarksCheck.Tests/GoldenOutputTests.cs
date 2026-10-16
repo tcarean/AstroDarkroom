@@ -49,6 +49,20 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void Lights_MatchesTheGoldenText()
+    {
+        // a session with lights 1.3 x warmer than its darks, against a partner library 2 x warmer
+        using SessionFixture s = new SessionFixture()
+            .WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice })
+            .WithLights(5, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
+        using SessionFixture p = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--against", p.Root);
+        Assert.Contains("masurare lights: 5 / 5", stderr, StringComparison.Ordinal);
+        string actual = Scrub(stdout, s.Root).Replace(p.Root, "<partener>", StringComparison.Ordinal).Replace(Path.GetFileName(p.Root), "<partener>", StringComparison.Ordinal);
+        Compare("lights.txt", actual + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");
@@ -64,7 +78,7 @@ public class GoldenOutputTests
         }
 
         string joined = string.Join("\n", lines);
-        return root.Length == 0 ? joined : joined.Replace(root, "<sesiune>", StringComparison.Ordinal);
+        return root.Length == 0 ? joined : joined.Replace(root, "<sesiune>", StringComparison.Ordinal).Replace(Path.GetFileName(root), "<sesiune>", StringComparison.Ordinal);
     }
 
     private static void Compare(string name, string actual)

@@ -237,6 +237,21 @@ internal static class DarkSeriesAnalyzer
         return (step, all.Count);
     }
 
+    /// <summary>The median master alone, for a partner set of darks (R-063).</summary>
+    internal static float[] MedianMaster(FrameStack stack, int threads)
+    {
+        ArgumentNullException.ThrowIfNull(stack);
+        IReadOnlyList<StackFrame> decoded = stack.Decoded;
+        if (decoded.Count == 0)
+        {
+            throw new InvalidOperationException("niciun dark al partenerului nu s-a putut decoda" + FrameStack.FirstErrors(stack));
+        }
+
+        float[] median = new float[stack.Width * stack.Height];
+        Masters(decoded, stack.Width, stack.Height, median, new float[median.Length], new float[median.Length], new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, threads) });
+        return median;
+    }
+
     private static void Masters(IReadOnlyList<StackFrame> decoded, int w, int h, float[] median, float[] mean, float[] tstd, ParallelOptions po)
     {
         int n = decoded.Count;

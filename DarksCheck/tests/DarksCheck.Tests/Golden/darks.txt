@@ -53,6 +53,13 @@ Copyright (C) 2026 Tudor Carean
     master             : 4 cadre -> 1.87 ADU zgomot al masterului median (1.25 x sigma temporala 2.99 / sqrt(4)); mediana a 2 fata de media a 2: 3.06
     verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)
 
+  9. LIGHTS FATA DE DARK
+    verdict            : NEMASURAT: sesiunea nu are lights
+
+  INDEX
+    dark-uri           : idx145 (145.0 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 2-lea .. al 2-lea din 0.05 Mpx, normalizat la ISO 400 si 120 s)
+    eticheta           : <sesiune>-idx145
+
   TABEL PE CADRE
      nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master]
       1  DSC_0001.fit          00:48:53    0.00    3.01    2.64     1.0    0.888     1

@@ -22,6 +22,10 @@ the first decoded frame's reference plane, or the black the biases' stack establ
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
 dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
 normalisation factor of ADR 0004, read from the first frame's ISO and exposure.
+`FrameStack.DecodeOne` is the single-file form for a group that is never stacked (the
+lights): the same decode and 16-bit conversion, the frame listed with `dimensiune diferita`
+when its size is not the darks', and the file's own black and white returned (NaN black for a
+FITS, which the caller replaces).
 
 ## The planes and the estimators
 
@@ -82,6 +86,30 @@ bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bia
 is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
 With a single frame the residual, the stability, the warming and the noise curve have nothing
 to measure and the report says `NEMASURAT` rather than printing zeros.
+
+## The lights, the index and the partner in the run
+
+After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master
+(`IndexAnalyzer.RankIndex`, `Label`), then, when the session has lights, hands their paths and
+the darks' analysis to `LightsAnalyzer.Analyze` (the lights are decoded one at a time and
+dropped), and, with `--against`, opens the partner folder, loads its darks into a `FrameStack`,
+reduces them to a median master (`DarkSeriesAnalyzer.MedianMaster`) and matches the session's
+master against it (`MatchPartner`): the partner is opened with `SessionFolder.Open` like the
+input, so a session or a bare folder both work; a partner with no decodable frame is reported
+by its file errors, one of another size by the two sizes, and a frame that fails or has other
+settings is counted (`Failed`, `FirstError`) and makes the result an error; its
+`PartnerAnalysis` carries the
+first decoded frame's settings and the stack's normalisation, the index and label of its
+master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
+the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at
+`Th.PartnerOverlapAdu` (50 ADU-eq): the session's pixels above 50 that the partner has above
+50, and the partner's above 50 that the session has above `Th.HotAdu`, each at its own
+normalisation. Each group is released before the next is decoded. A
+failure of the lights or of the partner is an error carried in the result (`LightsError`,
+`PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
+writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
+lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs` writes
+`darkscheck-lights.csv`. How the two analyzers work is in `lights-and-index.md`.
 
 ## Measured
 

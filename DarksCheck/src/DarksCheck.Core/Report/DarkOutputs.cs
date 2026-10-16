@@ -31,6 +31,7 @@ internal static class DarkOutputs
     internal const string ReportName = "darkscheck-raport.txt";
     internal const string DarksCsvName = "darkscheck-darks.csv";
     internal const string BiasesCsvName = "darkscheck-biases.csv";
+    internal const string LightsCsvName = "darkscheck-lights.csv";
     internal const string DarkMapName = "darkscheck-harta-dark.png";
     internal const string BiasMapName = "darkscheck-harta-bias.png";
     internal const string DarkMinusBiasMapName = "darkscheck-harta-dark-minus-bias.png";
@@ -40,6 +41,11 @@ internal static class DarkOutputs
     {
         ArgumentNullException.ThrowIfNull(r);
         CheckOutDir(r.Inventory.Session.Root, dir);
+        if (r.Partner is PartnerAnalysis partner)
+        {
+            CheckOutDir(partner.Folder, dir, "partenerului");
+        }
+
         Directory.CreateDirectory(dir);
         List<string> written = [];
 
@@ -63,6 +69,13 @@ internal static class DarkOutputs
             written.Add(biasesCsv);
         }
 
+        if (r.Lights is LightsAnalysis l)
+        {
+            string lightsCsv = Path.Combine(dir, LightsCsvName);
+            File.WriteAllText(lightsCsv, LightsCsv(l, r.Darks.PlaneNames), new UTF8Encoding(false));
+            written.Add(lightsCsv);
+        }
+
         int rp = r.ReferencePlane;
         Add(written, WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]));
         if (r.Biases is BiasAnalysis bb)
@@ -82,7 +95,7 @@ internal static class DarkOutputs
     /// The rule "Read-only input": the output folder may not be the session folder or one under
     /// it. Called before the analysis runs (the console) and again by <see cref="WriteAll"/>.
     /// </summary>
-    internal static void CheckOutDir(string sessionRoot, string dir)
+    internal static void CheckOutDir(string sessionRoot, string dir, string whose = "sesiunii")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
@@ -90,7 +103,7 @@ internal static class DarkOutputs
         string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic");
+            throw new InvalidOperationException($"--out nu poate fi folderul {whose} sau unul din el ({root}): acolo nu se scrie nimic");
         }
     }
 
@@ -152,6 +165,40 @@ internal static class DarkOutputs
                 {
                     row.AddRange([N(pf.Median), N(pf.Sigma), N(pf.Mean), N(pf.P999), pf.Saturated.ToString(CultureInfo.InvariantCulture), pf.Low.ToString(CultureInfo.InvariantCulture), pf.Min.ToString(CultureInfo.InvariantCulture), pf.Max.ToString(CultureInfo.InvariantCulture)]);
                 }
+            }
+
+            Pad(row, head.Count);
+            sb.AppendLine(string.Join(",", row));
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>One row per light: the metadata, the sky per plane, the candidates, the isolated hot pixels, the amplitude ratio and its quartiles.</summary>
+    internal static string LightsCsv(LightsAnalysis l, IReadOnlyList<string> planeNames)
+    {
+        ArgumentNullException.ThrowIfNull(l);
+        ArgumentNullException.ThrowIfNull(planeNames);
+        StringBuilder sb = new();
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "skipped"];
+        foreach (string p in planeNames)
+        {
+            head.AddRange([$"{p}_sky_median", $"{p}_sky_sigma", $"{p}_local_sigma"]);
+        }
+
+        head.AddRange(["candidates", "isolated_hot", "amp_ratio_median", "amp_ratio_q25", "amp_ratio_q75"]);
+        sb.AppendLine(string.Join(",", head));
+        foreach (LightFigures f in l.Frames)
+        {
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Skipped ? "" : f.Error ?? ""), Q(f.Skipped ? f.Error ?? "" : "")];
+            if (f.Error is null)
+            {
+                for (int p = 0; p < f.SkyMedian.Count; p++)
+                {
+                    row.AddRange([N(f.SkyMedian[p]), N(f.SkySigma[p]), N(f.LocalSigma[p])]);
+                }
+
+                row.AddRange([f.Candidates.ToString(CultureInfo.InvariantCulture), f.IsolatedHot.ToString(CultureInfo.InvariantCulture), N(f.AmpRatioMedian), N(f.AmpRatioQ25), N(f.AmpRatioQ75)]);
             }
 
             Pad(row, head.Count);
