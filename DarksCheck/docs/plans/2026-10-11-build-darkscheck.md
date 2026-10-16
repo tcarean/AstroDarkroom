@@ -174,3 +174,30 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   check comparing ISO x exposure instead of each setting, float FITS converted blind, `--out`
   refused only after the analysis, a PNG of an empty map, unit labels and doc figures; the
   median factor sqrt(pi / 2) is kept knowingly under the 1.35-1.40 measured at 10 frames.
+- Step 3: the lights are decoded one at a time and dropped, not stacked, since no figure of
+  check 9 needs two lights at once (ADR 0008). The matching of two masters is read on the
+  pixels hot in both masters, not on the partner's pixels above 20 ADU-eq as ADR 0004 said:
+  measured on Smida against the library, the partner's weak pixels alone gave 3.1 (-9.8
+  degrees) where the pixels hot in both give 2.4 (-7.5), the prototype's 2.2 on the strongest
+  (ADR 0004 carries a dated note). The lights' figures reproduce the prototype exactly (86
+  persistent, 85 in the master, 1.00 over the night, 0.72 at the first light); the library's
+  index reads 67.4 (`idx67`) against the prototype's 66.5, by the median master. The report
+  gained the overlap of the two hot-pixel sets at 50 ADU-eq, the lights' equivalent index and
+  the chained lights-over-partner ratio, which the plan only implied; the label takes the
+  parent's name when the darks sit in `darks\`. One hot pixel in a hundred per light fails the
+  isolation test by noise in a neighbour, as in the prototype; the tests allow it. The step's
+  own review (`/code-review high`) found seven points, five fixed before the commit: a partner
+  whose frames all fail reported as `0 x 0 px` instead of by its file errors, the lights'
+  equivalent index and the chained lights-over-partner ratio computed in the report (now in the
+  run, carried in the result for the window), the overlap level 50 as a literal (now
+  `Th.PartnerOverlapAdu`), the frame cap on lights without a stated reason (now in ADR 0008: a
+  bound on time, not memory), a redundant count in the overlap record; the full-size excess
+  raster kept per light in flight (96 MB at 24 MP) was left as is. A Fable subagent review
+  then traced every numeric path against the prototype and found no divergence; its eleven
+  points were documentation and wording, seven fixed before the commit (the `--out` help text
+  without the lights CSV, the rank band said three ways, three XML references, the partner's
+  mechanics described in the wrong design note, two tests pinned to a count the isolation noise
+  can move, an example in R-064 that no run shows, a README phrase), the rest noted: the
+  saturation and amplitude edges differ from the prototype by one ADU (0.977 x 4095 = 4000.8
+  against `a < 4000`; 0.73 x 4095 = 2989 against `< 3000`), the band's median is the upper
+  middle element, the partner stack lives until the overlap loop ends.

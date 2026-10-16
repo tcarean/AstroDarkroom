@@ -68,7 +68,7 @@ internal static class Program
                 DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!).Root, o.Out);
             }
 
-            DarkSeriesResult r = DarkSeriesRun.Run(o.Folder!, new DarkOptions(o.Threads, o.MaxFrames), progress);
+            DarkSeriesResult r = DarkSeriesRun.Run(o.Folder!, new DarkOptions(o.Threads, o.MaxFrames, o.Against), progress);
             progress.Clear();
             DarkReport.Write(r, stdout);
             if (o.Out is not null)
@@ -126,7 +126,7 @@ internal static class Program
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();
-        w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--out DIR] [--threads N] [--max-frames N]");
+        w.WriteLine("Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--out DIR] [--threads N] [--max-frames N]");
         w.WriteLine("          darkscheck <folder> --inventory");
         w.WriteLine();
         w.WriteLine("  Folderul sesiunii Siril: dark-urile se iau din darks\\ (sau direct din folder,");
@@ -134,12 +134,15 @@ internal static class Program
         w.WriteLine("  si lights-urile din lights\\, amandoua optionale. Raw de aparat");
         w.WriteLine("  (" + string.Join(", ", RawReader.RawExtensions) + ") sau FITS. Nimic nu e scris in folder.");
         w.WriteLine();
-        w.WriteLine("  Fara optiuni: decodeaza dark-urile (si bias-urile) si tipareste raportul:");
+        w.WriteLine("  Fara optiuni: decodeaza bias-urile, dark-urile si lights-urile si tipareste raportul:");
         w.WriteLine("                scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti,");
-        w.WriteLine("                model fix, pixeli morti, cate dark-uri ajung, un tabel pe cadre.");
-        w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri si");
-        w.WriteLine("                pe bias-uri si hartile (" + DarkOutputs.ReportName + ", " + DarkOutputs.DarksCsvName + ",");
-        w.WriteLine("                " + DarkOutputs.BiasesCsvName + ", " + DarkOutputs.DarkMapName + ", ...).");
+        w.WriteLine("                model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de");
+        w.WriteLine("                dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.");
+        w.WriteLine("  --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si");
+        w.WriteLine("                raportul dark-urilor sesiunii fata de el, in grade echivalente.");
+        w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
+        w.WriteLine("                bias-uri si pe lights si hartile (" + DarkOutputs.ReportName + ", " + DarkOutputs.DarksCsvName + ",");
+        w.WriteLine("                " + DarkOutputs.BiasesCsvName + ", " + DarkOutputs.LightsCsvName + ", " + DarkOutputs.DarkMapName + ", ...).");
         w.WriteLine("  --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).");
         w.WriteLine("  --max-frames N  cate cadre se tin in memorie (implicit " + Th.MaxFramesInMemory.ToString(CultureInfo.InvariantCulture) + ", 48 MB fiecare la 24 MP);");
         w.WriteLine("                peste, se decodeaza unul din k si restul sunt listate ca sarite.");

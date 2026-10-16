@@ -33,13 +33,24 @@ public class ValidationTests
 {
     [Theory]
     [MemberData(nameof(Cases))]
-    public void ValidationCase_MatchesRecordedFigures(string id, string kind, string session, string expectedJson, string toleranceJson)
+    public void ValidationCase_MatchesRecordedFigures(string id, string kind, string session, string against, string expectedJson, string toleranceJson)
     {
         string? folder = TestData.Large(session);
         if (folder is null)
         {
             Console.WriteLine($"{id}: session {session} is absent under DARKSCHECK_TESTDATA_LARGE; nothing checked");
             return;
+        }
+
+        string? partner = null;
+        if (against.Length > 0)
+        {
+            partner = TestData.Large(against);
+            if (partner is null)
+            {
+                Console.WriteLine($"{id}: partner {against} is absent under DARKSCHECK_TESTDATA_LARGE; nothing checked");
+                return;
+            }
         }
 
         using JsonDocument expected = JsonDocument.Parse(expectedJson);
@@ -53,6 +64,9 @@ public class ValidationTests
                 break;
             case "darks":
                 CheckDarks(DarkSeriesRun.Run(folder, new DarkOptions()), e, t);
+                break;
+            case "match":
+                CheckMatch(DarkSeriesRun.Run(folder, new DarkOptions(Against: partner)), e, t);
                 break;
             default:
                 Assert.Fail($"{id}: unknown kind {kind}");
@@ -158,12 +172,81 @@ public class ValidationTests
         Assert.Equal(v.GetProperty("enough").GetString(), r.Verdicts.Enough.Verdict.ToString());
     }
 
+    /// <summary>Check 9, the index, the label and the partner (R-050 to R-064).</summary>
+    private static void CheckMatch(DarkSeriesResult r, JsonElement e, JsonElement t)
+    {
+        double index = t.GetProperty("index").GetDouble(), ratio = t.GetProperty("ratio").GetDouble(), counts = t.GetProperty("counts").GetDouble(), celsius = t.GetProperty("celsius").GetDouble();
+        Assert.False(r.HasErrors, "a frame could not be read or decoded, or the lights or the partner could not be used: " + r.LightsError + r.PartnerError);
+        AssertWithin("index", e.GetProperty("index").GetDouble(), r.Index.Index, index);
+        Assert.Equal(e.GetProperty("rankLow").GetInt32(), r.Index.RankLow);
+        Assert.Equal(e.GetProperty("rankHigh").GetInt32(), r.Index.RankHigh);
+        Assert.Equal(e.GetProperty("label").GetString(), r.Label);
+
+        JsonElement l = e.GetProperty("lights");
+        if (l.ValueKind == JsonValueKind.Null)
+        {
+            Assert.Null(r.Lights);
+        }
+        else
+        {
+            Assert.NotNull(r.Lights);
+            LightsAnalysis lights = r.Lights!;
+            Assert.Equal(l.GetProperty("used").GetInt32(), lights.Used);
+            Assert.Equal(l.GetProperty("persistentThreshold").GetInt32(), lights.PersistentThreshold);
+            AssertWithin("persistent", l.GetProperty("persistent").GetInt32(), lights.Persistent, counts);
+            double[] levels = l.GetProperty("overlapLevels").EnumerateArray().Select(x => x.GetDouble()).ToArray();
+            int[] both = l.GetProperty("overlapBoth").EnumerateArray().Select(x => x.GetInt32()).ToArray();
+            int[] dark = l.GetProperty("overlapDark").EnumerateArray().Select(x => x.GetInt32()).ToArray();
+            Assert.Equal(levels, lights.Overlap.Select(o => o.LevelAdu));
+            for (int k = 0; k < levels.Length; k++)
+            {
+                AssertWithin($"overlapBoth[{k}]", both[k], lights.Overlap[k].Both, counts);
+                AssertWithin($"overlapDark[{k}]", dark[k], lights.Overlap[k].DarkCount, counts);
+            }
+
+            AssertWithin("missed", l.GetProperty("missed").GetInt32(), lights.Missed, counts);
+            AssertWithin("missedMedian", l.GetProperty("missedMedian").GetDouble(), lights.MissedDarkExcessMedian, 1.0);
+            AssertWithin("ampPixels", l.GetProperty("ampPixels").GetInt32(), lights.AmpPixels, counts);
+            AssertWithin("ratio", l.GetProperty("ratio").GetDouble(), lights.LightsOverDark.Ratio, ratio);
+            AssertWithin("ratioFirst", l.GetProperty("ratioFirst").GetDouble(), lights.RatioFirst, ratio);
+            AssertWithin("ratioLast", l.GetProperty("ratioLast").GetDouble(), lights.RatioLast, ratio);
+            Assert.Equal(l.GetProperty("verdict").GetString(), lights.LightsOverDark.Verdict.ToString());
+        }
+
+        JsonElement p = e.GetProperty("partner");
+        if (p.ValueKind == JsonValueKind.Null)
+        {
+            Assert.Null(r.Partner);
+        }
+        else
+        {
+            Assert.NotNull(r.Partner);
+            PartnerAnalysis partner = r.Partner!;
+            Assert.Equal(p.GetProperty("frames").GetInt32(), partner.Frames);
+            Assert.Equal(p.GetProperty("used").GetInt32(), partner.Used);
+            AssertWithin("partner norm", p.GetProperty("norm").GetDouble(), partner.Norm, 0.005);
+            AssertWithin("partner index", p.GetProperty("index").GetDouble(), partner.Index.Index, index);
+            Assert.Equal(p.GetProperty("label").GetString(), partner.Label);
+            MatchFigures m = partner.OwnOverPartner;
+            AssertWithin("partner pixels", p.GetProperty("pixels").GetInt32(), m.Pixels, counts);
+            AssertWithin("partner ratio", p.GetProperty("ratio").GetDouble(), m.Ratio, ratio);
+            AssertWithin("partner q25", p.GetProperty("q25").GetDouble(), m.Q25, ratio);
+            AssertWithin("partner q75", p.GetProperty("q75").GetDouble(), m.Q75, ratio);
+            AssertWithin("partner deltaCelsius", p.GetProperty("deltaCelsius").GetDouble(), m.DeltaCelsius, celsius);
+            Assert.Equal(p.GetProperty("verdict").GetString(), m.Verdict.ToString());
+            AssertWithin("ownHot50", p.GetProperty("ownHot50").GetInt32(), partner.OwnHot50, counts);
+            AssertWithin("ownHot50InPartner50", p.GetProperty("ownHot50InPartner50").GetInt32(), partner.OwnHot50InPartner50, counts);
+            AssertWithin("partnerHot50", p.GetProperty("partnerHot50").GetInt32(), partner.PartnerHot50, counts);
+            AssertWithin("partnerHot50InOwn20", p.GetProperty("partnerHot50InOwn20").GetInt32(), partner.PartnerHot50InOwn20, counts);
+        }
+    }
+
     private static void AssertWithin(string what, double expected, double actual, double tolerance)
         => Assert.True(Math.Abs(expected - actual) <= tolerance, $"{what}: expected {expected} +- {tolerance}, measured {actual}");
 
-    public static TheoryData<string, string, string, string, string> Cases()
+    public static TheoryData<string, string, string, string, string, string> Cases()
     {
-        TheoryData<string, string, string, string, string> data = [];
+        TheoryData<string, string, string, string, string, string> data = [];
         // From the source tree, not the build output's copy: `dotnet test --no-build` after an
         // edit of the figures would otherwise compare the stale copy.
         string path = Path.Combine(TestData.FindRepoRoot(), "docs", "validation.json");
@@ -174,6 +257,7 @@ public class ValidationTests
                 c.GetProperty("id").GetString()!,
                 c.GetProperty("kind").GetString()!,
                 c.GetProperty("session").GetString()!,
+                c.TryGetProperty("against", out JsonElement against) ? against.GetString()! : "",
                 c.GetProperty("expected").GetRawText(),
                 c.GetProperty("tolerance").GetRawText());
         }

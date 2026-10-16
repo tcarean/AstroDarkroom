@@ -115,7 +115,17 @@ internal static class DarkReport
         w.WriteLine($"    master             : {Enough(d, v.Enough)}");
         w.WriteLine($"    verdict            : {EnoughVerdictText(v.Enough)}");
 
-        // the table
+        // 9
+        w.WriteLine();
+        w.WriteLine("  9. LIGHTS FATA DE DARK");
+        WriteLights(r, w, eq);
+
+        // the index
+        w.WriteLine();
+        w.WriteLine("  INDEX");
+        WriteIndex(r, w);
+
+        // the tables
         w.WriteLine();
         w.WriteLine("  TABEL PE CADRE");
         w.WriteLine($"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  >{F(Th.HotAdu, 0)}   [{g}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master]");
@@ -138,6 +148,120 @@ internal static class DarkReport
             ResidualFigures res = f.Residuals[rp];
             double bands = res.RowExpected > 0 ? res.RowStd / res.RowExpected : double.NaN;
             w.WriteLine($"    {f.Info.Index,3}  {name,-20}  {Time(f.Info.Timestamp),-8}  {F(f.MeanAboveBlack, 2),6}  {F(p.Sigma, 2),6}  {F(res.Sigma, 2),6}  {F(bands, 1),6}  {Ratio(f.AmpRatioMedian),7}  {p.Above[Th.HotLevelIndex],4}");
+        }
+
+        if (r.Lights is LightsAnalysis lights)
+        {
+            WriteLightsTable(lights, w, g, rp);
+        }
+    }
+
+    private static void WriteLights(DarkSeriesResult r, TextWriter w, string eq)
+    {
+        if (r.Lights is not LightsAnalysis l)
+        {
+            w.WriteLine($"    verdict            : {(r.LightsError is null ? "NEMASURAT: sesiunea nu are lights" : "NEMASURAT: lights-urile nu s-au putut folosi: " + r.LightsError)}");
+            return;
+        }
+
+        LightFigures[] bad = l.Frames.Where(f => f.Error is not null && !f.Skipped).ToArray();
+        if (bad.Length > 0)
+        {
+            w.WriteLine($"    ATENTIE            : {bad.Length} {(bad.Length == 1 ? "light nu s-a putut decoda" : "lights nu s-au putut decoda")} (primul: {bad[0].Info.FileName}: {bad[0].Error}); vezi tabelul");
+        }
+
+        int skipped = l.Frames.Count(f => f.Skipped);
+        if (skipped > 0)
+        {
+            w.WriteLine($"    lights sarite      : {skipped} din {l.Frames.Count} (plafonul de cadre; folosite {l.Used})");
+        }
+
+        w.WriteLine($"    pixeli fierbinti   : {l.Persistent} persistenti in lights (izolati, peste {F(Th.LightHotSigmas, 0)} sigma locale, in cel putin {l.PersistentThreshold} din {l.Used} cadre)");
+        w.WriteLine($"    in masterul dark   : {string.Join("; ", l.Overlap.Select(o => $"peste {F(o.LevelAdu, 0)}: {o.Both} din {l.Persistent}" + (l.Persistent > 0 ? $" ({F(100.0 * o.Both / l.Persistent, 0)} %)" : "")))}  [{eq}]");
+        w.WriteLine($"    din master in lights: {string.Join("; ", l.Overlap.Select(o => $"peste {F(o.LevelAdu, 0)}: {o.Both} din {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))}");
+        w.WriteLine($"    nepotriviti        : {(l.Missed == 0 ? "niciun pixel persistent in lights sub pragul masterului" : $"{l.Missed} {(l.Missed == 1 ? "pixel persistent" : "pixeli persistenti")} in lights sub {F(Th.HotAdu, 0)} {eq} in master (mediana lor in master {F(l.MissedDarkExcessMedian, 0)} {eq})")}");
+        MatchFigures m = l.LightsOverDark;
+        w.WriteLine($"    amplitudine        : {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel fierbinte sub saturatie in master" : $"lights / dark {F(m.Ratio, 2)} pe noapte (mediana pe {m.Pixels} cadre; primul {F(l.RatioFirst, 2)}, ultimul {F(l.RatioLast, 2)}; {l.AmpPixels} pixeli)")}");
+        w.WriteLine($"    verdict            : {MatchText(m, "dark-ul")}");
+    }
+
+    private static void WriteIndex(DarkSeriesResult r, TextWriter w)
+    {
+        DarkSeriesAnalysis d = r.Darks;
+        IndexFigures ix = r.Index;
+        double mpx = d.Width * (double)d.Height / 1e6;
+        w.WriteLine($"    dark-uri           : {ix.Tag} ({F(ix.Index, 1)} ADU-eq: mediana pixelilor de pe rangurile {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe Mpx, al {ix.RankLow + 1}-lea .. al {ix.RankHigh}-lea din {F(mpx, mpx < 1 ? 2 : 1)} Mpx, normalizat la ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)");
+        w.WriteLine($"    eticheta           : {r.Label}");
+        if (r.Lights is LightsAnalysis l && !double.IsNaN(r.LightsIndex))
+        {
+            w.WriteLine($"    lights             : echivalent idx{F(Math.Round(r.LightsIndex, MidpointRounding.AwayFromZero), 0)} (dark x {F(l.LightsOverDark.Ratio, 2)}, adica {Signed(l.LightsOverDark.DeltaCelsius, 1)} grade fata de dark)");
+        }
+
+        if (r.PartnerError is not null)
+        {
+            w.WriteLine($"    partener           : ATENTIE: {r.PartnerError}");
+        }
+
+        if (r.Partner is PartnerAnalysis p)
+        {
+            MatchFigures m = p.OwnOverPartner;
+            string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : "setari necunoscute";
+            w.WriteLine($"    partener           : {p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; {RunReport.Frames(p.Used)} din {p.Frames}, {settings}); eticheta {p.Label}");
+            w.WriteLine($"    dark-uri / partener: {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel comun" : $"{F(m.Ratio, 2)} (q25 {F(m.Q25, 2)}, q75 {F(m.Q75, 2)}, {m.Pixels} pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu {Signed(m.DeltaCelsius, 1)} grade fata de partener")}");
+            string lvl = F(Th.PartnerOverlapAdu, 0);
+            w.WriteLine($"    pixeli comuni      : {p.OwnHot50InPartner50} din {p.OwnHot50} ai sesiunii peste {lvl} ADU-eq sunt peste {lvl} si la partener{(p.OwnHot50 > 0 ? $" ({F(100.0 * p.OwnHot50InPartner50 / p.OwnHot50, 0)} %)" : "")}; {p.PartnerHot50InOwn20} din {p.PartnerHot50} ai partenerului peste {lvl} sunt peste {F(Th.HotAdu, 0)} in sesiune{(p.PartnerHot50 > 0 ? $" ({F(100.0 * p.PartnerHot50InOwn20 / p.PartnerHot50, 0)} %)" : "")}");
+            if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
+            {
+                // lights over the partner, through the session's darks: (lights / dark) x (dark / partner)
+                MatchFigures chained = p.LightsOverPartner;
+                w.WriteLine($"    lights / partener  : {F(chained.Ratio, 2)} (prin dark-urile sesiunii), adica lights-urile sunt cu {Signed(chained.DeltaCelsius, 1)} grade fata de partener");
+                w.WriteLine($"    verdict partener   : {MatchText(chained, "partenerul")}");
+            }
+            else
+            {
+                w.WriteLine($"    verdict partener   : {MatchText(m, "partenerul")} (dark-urile sesiunii fata de partener)");
+            }
+        }
+    }
+
+    /// <summary>The words of a match verdict, <paramref name="master"/> being "dark-ul" or "partenerul": what Siril can do with it.</summary>
+    internal static string MatchText(MatchFigures m, string master)
+    {
+        ArgumentNullException.ThrowIfNull(m);
+        string where = Math.Abs(m.DeltaCelsius) < 0.05
+            ? $"{master} e la aceeasi temperatura"
+            : $"{master} e {(m.DeltaCelsius < 0 ? "mai cald" : "mai rece")} cu {F(Math.Abs(m.DeltaCelsius), 1)} grade";
+        return m.Verdict switch
+        {
+            MatchVerdict.Unmeasured => "NEMASURAT",
+            MatchVerdict.Direct => $"OK: scadere directa (raport {F(m.Ratio, 2)}, in {F(Th.MatchDirectLow, 1)} .. {F(Th.MatchDirectHigh, 1)}; {where})",
+            MatchVerdict.WithOpt => $"ATENTIE: scade cu -opt (raport {F(m.Ratio, 2)}, in {F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)}; {where}, -opt scaleaza amplitudinea)",
+            MatchVerdict.CosmeticOnly => $"ATENTIE: doar corectie cosmetica (-cc=dark): raport {F(m.Ratio, 2)}, {where} si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta",
+            _ => $"ATENTIE: nepotrivit (raport {F(m.Ratio, 2)}: {where}; {(m.Ratio > 1 ? "prea rece, pierde pixelii fierbinti slabi" : "prea cald")})",
+        };
+    }
+
+    private static void WriteLightsTable(LightsAnalysis l, TextWriter w, string g, int rp)
+    {
+        w.WriteLine();
+        w.WriteLine("  TABEL PE LIGHTS");
+        w.WriteLine($"     nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [{g}; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]");
+        foreach (LightFigures f in l.Frames)
+        {
+            string name = f.Info.FileName.Length > 20 ? f.Info.FileName[..20] : f.Info.FileName;
+            if (f.Skipped)
+            {
+                w.WriteLine($"    {f.Info.Index,3}  {name,-20}  {f.Error}");
+                continue;
+            }
+
+            if (f.Error is not null)
+            {
+                w.WriteLine($"    {f.Info.Index,3}  {name,-20}  eroare: {f.Error}");
+                continue;
+            }
+
+            w.WriteLine($"    {f.Info.Index,3}  {name,-20}  {Time(f.Info.Timestamp),-8}  {F(f.SkyMedian[rp], 1),6}  {F(f.LocalSigma[rp], 2),6}  {f.Candidates,9}  {f.IsolatedHot,7}  {Ratio(f.AmpRatioMedian),7}  {Ratio(f.AmpRatioQ25),5}  {Ratio(f.AmpRatioQ75),5}");
         }
     }
 

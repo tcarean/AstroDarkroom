@@ -47,6 +47,17 @@ is warmer and sees every hot pixel), unmatched otherwise; the four bounds live i
 - **One index for both sorting and matching.** The two differ by about 15 % on the measured
   pair; naming them keeps a reader from comparing a label to a ratio.
 
+## Note of 2026-10-16
+
+ADR 0008 changes the pixels two masters are compared on, from the pixels the partner master
+has above 20 ADU equivalent to the pixels both masters have above it: measured on the Smida
+darks against the library, the partner's weak pixels alone gave a ratio of 3.1 (-9.8 degrees)
+where the pixels hot in both give 2.4 (-7.5 degrees), the prototype's 2.2 on the strongest
+ones. The rank index, the normalisation, the lights' measurement and the verdict bounds stand;
+the band on the D3300's 24.2 Mpx is the 122nd to the 483rd strongest pixel (the 0-based ranks
+121 to 482), and the console reads 25.2 on Smida and 67.4 on the library with the median
+master (R-060).
+
 ## Consequences
 
 Plan step 3 implements the index, the matching, `--against` and the label (requirement block

@@ -35,6 +35,18 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (60 by default; above it every k-th frame is read). A FITS without a black level takes the
   biases' median as black. V-003 checks the Smida darks against the Python prototype's figures;
   V-004 pins the 2026-10-10 library run (the prototype has only its master, regions and warming).
+- Check 9, the index and the matching (R-050 to R-065, ADR 0008): the lights are decoded one
+  by one and searched for isolated hot pixels (6 sigma over the median of the eight same-colour
+  neighbours, no immediate neighbour over 3 sigma), the pixels persistent in 80 % of the lights
+  are compared with the master's hot pixels both ways, and the lights' amplitude at the
+  master's hot pixels gives the lights-over-dark ratio per light and over the night, the
+  degrees and the verdict (direct subtraction, `-opt`, cosmetic only, unmatched). `INDEX`
+  prints the rank index of the darks' master (`idx25` on Smida, `idx67` on the library), the
+  label to put in the folder's name, the lights' equivalent index, and with `--against DIR` a
+  partner folder's index and label, the session's darks over it on the pixels hot in both
+  masters, the overlap of the two hot-pixel sets and the lights against the partner. `--out`
+  also writes `darkscheck-lights.csv`; the report gets `TABEL PE LIGHTS`. V-005 checks the Smida
+  lights and the library as partner against the prototype's section 9, V-006 the library's index.
 - `prototype/`: the Python scripts of the 2026-10-11 analysis of the Smida session of
   2026-08-12, frozen, and their report, figures and CSV files under
   `docs/validation/2026-08-12-smida/`; V-001 checks the inventory of that session and V-002

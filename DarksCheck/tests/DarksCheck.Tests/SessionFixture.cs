@@ -84,13 +84,14 @@ internal sealed class SessionFixture : IDisposable
     /// the 0-based index), one every 120 s from <see cref="FirstStart"/>, and
     /// <paramref name="biases"/> biases built by <paramref name="bias"/> an hour earlier.
     /// </summary>
-    internal SessionFixture WithDarkSeries(int darks, Func<int, SyntheticDark> dark, int biases = 0, Func<int, SyntheticDark>? bias = null, double exposure = 120, double iso = 400)
+    internal SessionFixture WithDarkSeries(int darks, Func<int, SyntheticDark> dark, int biases = 0, Func<int, SyntheticDark>? bias = null, double exposure = 120, double iso = 400, bool inSubfolder = true)
     {
         ArgumentNullException.ThrowIfNull(dark);
-        Directory.CreateDirectory(DarksDir);
+        string dir = inSubfolder ? DarksDir : Root;
+        Directory.CreateDirectory(dir);
         for (int i = 0; i < darks; i++)
         {
-            File.WriteAllBytes(Path.Combine(DarksDir, $"DSC_{i + 1:0000}.fit"), dark(i).Build(FirstStart.AddSeconds(i * 120), exposure, iso));
+            File.WriteAllBytes(Path.Combine(dir, $"DSC_{i + 1:0000}.fit"), dark(i).Build(FirstStart.AddSeconds(i * 120), exposure, iso));
         }
 
         if (biases > 0)
@@ -101,6 +102,23 @@ internal sealed class SessionFixture : IDisposable
                 SyntheticDark b = bias?.Invoke(i) ?? new SyntheticDark { Seed = 500 + i, Noise = 2 };
                 File.WriteAllBytes(Path.Combine(BiasesDir, $"bias_{i + 1:0000}.fit"), b.Build(FirstStart.AddSeconds(-3600 + i), 0.0002, iso));
             }
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    /// Writes <paramref name="lights"/> synthetic lights built by <paramref name="light"/>
+    /// (given the 0-based index) into lights/, one every 150 s, ending an hour before the darks.
+    /// </summary>
+    internal SessionFixture WithLights(int lights, Func<int, SyntheticLight> light, double exposure = 120, double iso = 400)
+    {
+        ArgumentNullException.ThrowIfNull(light);
+        Directory.CreateDirectory(LightsDir);
+        DateTime start = FirstStart.AddSeconds(-3600 - lights * 150);
+        for (int i = 0; i < lights; i++)
+        {
+            File.WriteAllBytes(Path.Combine(LightsDir, $"light_{i + 1:0000}.fit"), light(i).Build(start.AddSeconds(i * 150), exposure, iso));
         }
 
         return this;
