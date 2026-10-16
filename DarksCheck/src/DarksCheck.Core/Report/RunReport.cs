@@ -42,6 +42,9 @@ internal static class RunReport
         "sau la <" + LicenseUrl + ">.",
     ];
 
+    /// <summary>"1 cadru", "20 cadre".</summary>
+    internal static string Frames(int n) => n == 1 ? "1 cadru" : n.ToString(CultureInfo.InvariantCulture) + " cadre";
+
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
     internal static string F(double v, int decimals) => v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
 

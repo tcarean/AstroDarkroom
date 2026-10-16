@@ -1,7 +1,7 @@
 darkscheck <versiune>
 Copyright (C) 2026 Tudor Carean
 
-Folosire: darkscheck <folder sesiune sau folder de dark-uri>
+Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--out DIR] [--threads N] [--max-frames N]
           darkscheck <folder> --inventory
 
   Folderul sesiunii Siril: dark-urile se iau din darks\ (sau direct din folder,
@@ -9,9 +9,18 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri>
   si lights-urile din lights\, amandoua optionale. Raw de aparat
   (.nef, .cr2, .cr3, .arw, .dng, .raf) sau FITS. Nimic nu e scris in folder.
 
+  Fara optiuni: decodeaza dark-urile (si bias-urile) si tipareste raportul:
+                scurgeri de lumina, deriva termica, zgomot, pixeli fierbinti,
+                model fix, pixeli morti, cate dark-uri ajung, un tabel pe cadre.
+  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri si
+                pe bias-uri si hartile (darkscheck-raport.txt, darkscheck-darks.csv,
+                darkscheck-biases.csv, darkscheck-harta-dark.png, ...).
+  --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).
+  --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP);
+                peste, se decodeaza unul din k si restul sunt listate ca sarite.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO,
                 pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu
-                lights-urile. Fara optiuni, deocamdata, acelasi lucru.
+                lights-urile.
   -h, --help    acest text
 
 Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.

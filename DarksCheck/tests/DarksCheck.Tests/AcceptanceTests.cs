@@ -86,7 +86,7 @@ public class AcceptanceTests
     {
         using TempWorkspace ws = new();
         File.WriteAllText(ws.PathTo("notite.txt"), "nimic");
-        (int code, _, string stderr) = Cli.Run(ws.Dir);
+        (int code, _, string stderr) = Cli.Run(ws.Dir, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("niciun cadru", stderr, StringComparison.Ordinal);
     }
@@ -97,7 +97,7 @@ public class AcceptanceTests
         using TempWorkspace ws = new();
         Directory.CreateDirectory(ws.PathTo("lights"));
         File.WriteAllBytes(ws.PathTo("result.fit"), SessionFixture.Frame(SessionFixture.FirstStart, 10, 400));
-        (int code, _, string stderr) = Cli.Run(ws.Dir);
+        (int code, _, string stderr) = Cli.Run(ws.Dir, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("nu are darks", stderr, StringComparison.Ordinal);
     }
@@ -118,7 +118,7 @@ public class AcceptanceTests
     public void R002_FramesDirectlyInTheFolderAreTheDarks()
     {
         using SessionFixture s = new SessionFixture().WithDarks(2, inSubfolder: false);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(0, code);
         Assert.Contains("darks              : . (2 cadre .fit)", stdout, StringComparison.Ordinal);
         Assert.Contains("biases             : (lipsa)", stdout, StringComparison.Ordinal);
@@ -146,7 +146,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithDarks(2, biases: 1);
         File.WriteAllBytes(Path.Combine(s.BiasesDir, "bias_0002.fit"), new byte[100]);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("  2  bias_0002.fit         eroare:", stdout, StringComparison.Ordinal);
         Assert.Contains("ATENTIE            : 1 cadru nu s-a putut citi", stdout, StringComparison.Ordinal);
@@ -158,7 +158,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithDarks(1);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0002.NEF"), new byte[4096]);
-        (int code, string stdout, string stderr) = Cli.Run(s.DarksDir);
+        (int code, string stdout, string stderr) = Cli.Run(s.DarksDir, "--inventory");
         Assert.Equal(1, code);
         Assert.Equal(string.Empty, stderr);
         Assert.Contains("  1  DSC_0002.NEF          eroare:", stdout, StringComparison.Ordinal);
@@ -166,10 +166,109 @@ public class AcceptanceTests
     }
 
     [Fact]
+    public void R025_TheDefaultRunPrintsTheDarksReportWithItsSectionsAndTable_Exit0()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel }, biases: 2);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(0, code);
+        Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
+        Assert.Contains("=== DARK-URI: 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 din bias-uri), CFA RGGB ===", stdout, StringComparison.Ordinal);
+        foreach (string section in new[] { "  2. SCURGERI DE LUMINA SI GRADIENT", "  3. DERIVA TERMICA IN SERIE", "  4. ZGOMOT PE CADRU", "  5. PIXELI FIERBINTI", "  6. MODEL FIX", "  7. PIXELI MORTI SI SATURATI", "  8. CATE DARK-URI AJUNG", "  TABEL PE CADRE" })
+        {
+            Assert.Contains(section + "\n", stdout, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("master peste nivel : 10: 5; 20: 4; 50: 3; 100: 2; 500: 1  [ADU peste negru, mediana seriei, toate planurile]", stdout, StringComparison.Ordinal);
+        Assert.Contains("verdict            : OK: niciun pixel mort sau saturat pe master", stdout, StringComparison.Ordinal);
+        Assert.Contains("  1  DSC_0001.fit          00:48:53 ", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R025_ADarkThatCannotBeDecodedIsListedAndTheRunExits1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i });
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0004.fit"), new byte[100]);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(1, code);
+        Assert.Contains("=== DARK-URI: 3 cadre decodate din 4", stdout, StringComparison.Ordinal);
+        Assert.Contains("  4  DSC_0004.fit          eroare:", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R026_OutWritesTheReportTheCsvFilesAndTheMaps()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2);
+        using TempWorkspace outDir = new();
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
+        Assert.Equal(0, code);
+        foreach (string name in new[] { "darkscheck-raport.txt", "darkscheck-darks.csv", "darkscheck-biases.csv", "darkscheck-harta-dark.png", "darkscheck-harta-bias.png", "darkscheck-harta-dark-minus-bias.png" })
+        {
+            Assert.Contains("-> scris: " + Path.Combine(outDir.Dir, name), stdout, StringComparison.Ordinal);
+            Assert.True(File.Exists(Path.Combine(outDir.Dir, name)), name);
+        }
+
+        string report = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-raport.txt")).ReplaceLineEndings("\n");
+        Assert.Contains("  8. CATE DARK-URI AJUNG\n", report, StringComparison.Ordinal);
+        string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
+        Assert.Equal(4, csv.Length);
+        Assert.StartsWith("index,file,time,exposure_s,iso,error,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);
+        Assert.Equal(csv[0].Split(',').Length, csv[1].Split(',').Length);
+        Assert.Equal(PngWriterSignature, File.ReadAllBytes(Path.Combine(outDir.Dir, "darkscheck-harta-dark.png")).Take(8));
+    }
+
+    private static readonly byte[] PngWriterSignature = [137, 80, 78, 71, 13, 10, 26, 10];
+
+    [Fact]
+    public void R026_OutInsideTheSessionIsRefused_Exit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
+        foreach (string dir in new[] { s.Root, s.DarksDir, Path.Combine(s.Root, "rapoarte") })
+        {
+            (int code, _, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
+            Assert.Equal(1, code);
+            Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el", stderr, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
+        }
+    }
+
+    [Fact]
+    public void R026_TheBiasesCsvHasOneRowPerBiasAndTheRawColumns()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i }, biases: 3);
+        using TempWorkspace outDir = new();
+        Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
+        string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-biases.csv"));
+        Assert.Equal(4, csv.Length);
+        Assert.StartsWith("index,file,time,exposure_s,iso,error,R_median,R_sigma,R_mean,R_p999,R_saturated,R_low,R_min,R_max,G1_median", csv[0], StringComparison.Ordinal);
+        Assert.All(csv.Skip(1), row => Assert.Equal(csv[0].Split(',').Length, row.Split(',').Length));
+    }
+
+    [Fact]
+    public void R027_SkippedFramesPrintTheirReasonWithoutErrorAndTheRunExits0()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i });
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--max-frames", "2");
+        Assert.Equal(0, code);
+        Assert.Contains("=== DARK-URI: 2 cadre decodate din 5", stdout, StringComparison.Ordinal);
+        Assert.Contains("  2  DSC_0002.fit          sarit (peste 2 cadre, se decodeaza unul din 3)", stdout, StringComparison.Ordinal);
+        Assert.DoesNotContain("eroare:", stdout, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("--threads", "0")]
+    [InlineData("--out", "")]
+    public void R004_ABadOptionValueNamesTheOption_Exit1(string option, string value)
+    {
+        (int code, _, string stderr) = Cli.Run("folder", option, value);
+        Assert.Equal(1, code);
+        Assert.Contains(option, stderr, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R005_NumbersUseTheDotWhateverTheCulture()
     {
         using SessionFixture s = new SessionFixture().WithDarks(1, exposure: 0.5);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("0.5 s la ISO 400", stdout, StringComparison.Ordinal);
         Assert.DoesNotContain("0,5", stdout, StringComparison.Ordinal);
     }
@@ -179,7 +278,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithDarks(3, exposure: 119.2, cadence: 120);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0004.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(600), 119.2, 400));
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         // Starts at 0, 120, 240 and 600 s; the last ends at 719.2 s (11 whole minutes); the pause before frame 4 is 600 - 359.2 = 241 s.
         Assert.Contains("interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 01:00:52 (11 min); 4 cadre la 120.0 s; 1 pauza peste 5 s (241 s inainte de cadrul 4)", stdout, StringComparison.Ordinal);
         Assert.Contains("  4  DSC_0004.fit          00:58:53     119.2    400   241 s", stdout, StringComparison.Ordinal);
@@ -189,7 +288,7 @@ public class AcceptanceTests
     public void R006_BackToBackDarksHaveNoLongPause()
     {
         using SessionFixture s = new SessionFixture().WithDarks(3, lights: 2, lightsCadence: 150);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         // Three darks of 119.2 s started 120 s apart span 359.2 s: 5 whole minutes.
         Assert.Contains("interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:54:52 (5 min); 3 cadre la 120.0 s; fara pauze peste 5 s", stdout, StringComparison.Ordinal);
         Assert.Contains("interval lights    : 2026-08-12 23:43:53 -> 2026-08-12 23:48:22 (4 min); 2 cadre la 150.0 s; 1 pauza peste 5 s (31 s inainte de cadrul 2)", stdout, StringComparison.Ordinal);
@@ -200,7 +299,7 @@ public class AcceptanceTests
     public void R006_APauseBelowZeroFromTheTimeGranularityIsZero()
     {
         using SessionFixture s = new SessionFixture().WithDarks(2, exposure: 120.2, cadence: 120);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("  2  DSC_0002.fit          00:50:53     120.2    400     0 s", stdout, StringComparison.Ordinal);
         Assert.DoesNotContain("-0 s", stdout, StringComparison.Ordinal);
     }
@@ -211,7 +310,7 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarks(2, exposure: 119.2, cadence: 120);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0003.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(300), 119.2, 400));
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0004.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(600), 119.2, 400));
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         // Starts at 0, 120, 300 and 600 s (median interval 180 s); pauses 0.8 s, 300 - 239.2 = 61 s, 600 - 419.2 = 181 s.
         Assert.Contains("4 cadre la 180.0 s; 2 pauze peste 5 s (cea mai lunga 181 s inainte de cadrul 4)", stdout, StringComparison.Ordinal);
     }
@@ -222,7 +321,7 @@ public class AcceptanceTests
         using TempWorkspace ws = new();
         File.WriteAllBytes(ws.PathTo("DSC_0001.fit"), SessionFixture.Frame(SessionFixture.FirstStart, null, 400));
         File.WriteAllBytes(ws.PathTo("DSC_0002.fit"), SessionFixture.Frame(null, 119.2, 400));
-        (_, string stdout, _) = Cli.Run(ws.Dir);
+        (_, string stdout, _) = Cli.Run(ws.Dir, "--inventory");
         Assert.Contains("interval darks     : necunoscut (cadrele nu au ora sau expunerea)", stdout, StringComparison.Ordinal);
         Assert.Contains("  1  DSC_0001.fit          00:48:53         -    400       -", stdout, StringComparison.Ordinal);
         Assert.Contains("  2  DSC_0002.fit          -            119.2    400       -", stdout, StringComparison.Ordinal);
@@ -234,7 +333,7 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarks(2, lights: 1);
         File.WriteAllBytes(Path.Combine(s.LightsDir, "light_0002.fit"), SessionFixture.Frame(SessionFixture.FirstStart, 119.2, null));
         File.Delete(Path.Combine(s.LightsDir, "light_0001.fit"));
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("expunere lights    : 119.2 s (toate cadrele)", stdout, StringComparison.Ordinal);
         Assert.Contains("potrivire          : NEMASURAT: cadrele nu spun expunerea sau ISO-ul", stdout, StringComparison.Ordinal);
     }
@@ -245,12 +344,12 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarks(1);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0002.fit"), new byte[100]);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0003.fit"), new byte[100]);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("ATENTIE            : 2 cadre nu s-au putut citi (vezi tabelele)", stdout, StringComparison.Ordinal);
         Directory.CreateDirectory(s.BiasesDir);
         File.WriteAllBytes(Path.Combine(s.BiasesDir, "bias_0001.fit"), new byte[100]);
-        (_, stdout, _) = Cli.Run(s.Root);
+        (_, stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("expunere biases    : necunoscuta", stdout, StringComparison.Ordinal);
         Assert.Contains("bias               : NEMASURAT: cadrele nu spun expunerea", stdout, StringComparison.Ordinal);
     }
@@ -259,7 +358,7 @@ public class AcceptanceTests
     public void R007_DarksThatMatchTheLightsAreOk()
     {
         using SessionFixture s = new SessionFixture().WithDarks(2, lights: 2, biases: 1);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("potrivire          : OK: dark-urile au expunerea (119.2 s) si ISO-ul (400) lights-urilor", stdout, StringComparison.Ordinal);
         Assert.Contains("bias               : OK: 0.0002 s", stdout, StringComparison.Ordinal);
     }
@@ -268,7 +367,7 @@ public class AcceptanceTests
     public void R007_DarksAtAnotherIsoOrExposureAreAWarning()
     {
         using SessionFixture s = new SessionFixture().WithDarks(2, exposure: 120.2, iso: 1600, lights: 2, lightsExposure: 119.2, lightsIso: 400);
-        (int code, string stdout, _) = Cli.Run(s.Root);
+        (int code, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Equal(0, code);
         Assert.Contains("potrivire          : ATENTIE: dark-uri de 120.2 s la ISO 1600, lights de 119.2 s la ISO 400", stdout, StringComparison.Ordinal);
     }
@@ -277,7 +376,7 @@ public class AcceptanceTests
     public void R007_WithoutLightsTheMatchIsUnmeasuredAndTheBiasAbsent()
     {
         using SessionFixture s = new SessionFixture().WithDarks(2);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("potrivire          : NEMASURAT: nu exista lights", stdout, StringComparison.Ordinal);
         Assert.Contains("bias               : (lipsa)", stdout, StringComparison.Ordinal);
     }
@@ -286,7 +385,7 @@ public class AcceptanceTests
     public void R007_ABiasLongerThanASecondIsAWarning()
     {
         using SessionFixture s = new SessionFixture().WithDarks(1, biases: 2, biasExposure: 2);
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("bias               : ATENTIE: 2.0 s nu e un bias (peste 1 s)", stdout, StringComparison.Ordinal);
     }
 
@@ -295,7 +394,7 @@ public class AcceptanceTests
     {
         using SessionFixture s = new SessionFixture().WithDarks(3);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0004.fit"), SessionFixture.Frame(SessionFixture.FirstStart.AddSeconds(360), 60, 400));
-        (_, string stdout, _) = Cli.Run(s.Root);
+        (_, string stdout, _) = Cli.Run(s.Root, "--inventory");
         Assert.Contains("expunere darks     : 119.2 s la ISO 400 (3 din 4 cadre; expuneri sau ISO diferite)", stdout, StringComparison.Ordinal);
     }
 }

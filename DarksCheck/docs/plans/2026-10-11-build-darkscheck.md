@@ -153,3 +153,19 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   a Romanian assertion in an English test, missing tests for several console texts, and
   wording of the unmeasured verdicts; the unused lens fields of `FrameInfo` were left as they
   came from LightsCheck.
+- Step 2: the darks are held in memory as planned, but the readers' doubles made the working
+  set reach 14 GB on 50 frames until a forced collection per decoded frame and the runtime
+  knob `System.GC.ConserveMemory=9` brought it to 4.5 GB (ADR 0007); the cap is 60 frames.
+  The biases are decoded before the darks, not after, because a FITS carries no black level
+  and the biases' median is the pedestal (a Siril-converted FITS keeps the camera's 150). The
+  hot-pixel levels are in ADU equivalent, so the Smida master counts 443 pixels above 20
+  ADU-eq (19.9 ADU at 119.2 s) where the prototype's raw threshold gave 433; the banding
+  profiles clamp the hot pixels, which the prototype did not (one 600 ADU pixel lifted a row of
+  a small synthetic frame by 4.7 ADU). Every other figure reproduces the prototype (V-003,
+  V-004). The step's own review (`/code-review high`) found eight points, fixed before the
+  commit; a subagent review then found sixteen more, the serious ones being check 8 saying OK
+  for a single dark with the spatial sigma of a mean master (now at least 10 frames and the
+  median master's noise from the temporal sigma), the dead limit and the biases' levels scaled
+  by the normalisation (now raw), skipped frames counted as errors, `--out` accepted inside the
+  session, a crash on frames under one block, and a corner over the threshold passing check 2
+  (the fifth rule is gone); `--max-frames` became an option.

@@ -134,11 +134,8 @@ internal static class InventoryReport
         string combo = (g.ExposureSeconds is double e ? Exposure(e) + " s" : "? s") + (g.Iso is double i ? " la ISO " + RunReport.F(i, 0) : "");
         return g.Uniform
             ? combo + " (toate cadrele)"
-            : combo + $" ({g.Frames} din {Frames(g.Readable)}; expuneri sau ISO diferite)";
+            : combo + $" ({g.Frames} din {RunReport.Frames(g.Readable)}; expuneri sau ISO diferite)";
     }
-
-    /// <summary>"1 cadru", "20 cadre".</summary>
-    private static string Frames(int n) => n == 1 ? "1 cadru" : n.ToString(CultureInfo.InvariantCulture) + " cadre";
 
     private static string Interval(Cadence c)
     {
@@ -147,7 +144,7 @@ internal static class InventoryReport
             return "necunoscut (cadrele nu au ora sau expunerea)";
         }
 
-        string interval = c.MedianIntervalSeconds is double mi ? $"; {Frames(c.TimedFrames)} la {RunReport.F(mi, 1)} s" : $"; {Frames(c.TimedFrames)}";
+        string interval = c.MedianIntervalSeconds is double mi ? $"; {RunReport.Frames(c.TimedFrames)} la {RunReport.F(mi, 1)} s" : $"; {RunReport.Frames(c.TimedFrames)}";
         string pauses = c.LongPauses.Count switch
         {
             0 => $"fara pauze peste {RunReport.F(Th.PauseSeconds, 0)} s",

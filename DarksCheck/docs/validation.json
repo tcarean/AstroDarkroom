@@ -1,5 +1,5 @@
 {
-  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
+  "$comment": "Acceptance figures, machine-readable, measured on whole sessions under the folder DARKSCHECK_TESTDATA_LARGE names (ADR 0006). ValidationTests reads this file; docs/validation.md explains each entry. 'kind' is 'inventory' (the session's inventory and check 1) or 'darks' (checks 2 to 8 on the darks and the biases). Change a number here only after re-measuring and recording why in validation.md and CHANGELOG.md.",
   "cases": [
     {
       "id": "V-001",
@@ -42,6 +42,49 @@
         "bias": "Unmeasured"
       },
       "tolerance": { "exposureSeconds": 0.01, "spanSeconds": 1.0, "intervalSeconds": 0.1 }
+    },
+    {
+      "id": "V-003",
+      "kind": "darks",
+      "session": "Milkyway-Core/2026-08-12-Smida",
+      "measuredOn": "2026-10-11",
+      "expected": {
+        "used": 20, "quantStep": 2, "referencePlane": "G1", "norm": 0.9933,
+        "hotAbove": [2283, 443, 111, 24, 0], "hotAlways": 412, "hotFlicker": 19, "hotP50": 33,
+        "hotTemporalStd": 5.58, "quietTemporalStd": 1.45, "rts": 92, "dead": 0, "saturated": 0,
+        "sigmaFrame": 1.514, "residualSigmaFirst": 1.474, "masterSigma": 0.628, "rowBandingRatio": 4.1,
+        "noiseCurve": [[1, 1.426], [2, 1.016], [4, 0.725], [5, 0.652], [10, 0.467]],
+        "masterNoise": 0.400, "medianHalfVsMeanHalf": 0.786,
+        "darkCentre": -0.551, "darkBottom": -0.174,
+        "warmFirst": 0.826, "warmLast": 1.068, "driftCelsius": 2.2,
+        "bandingRowP2pMax": 0.387, "bandingColP2pMax": 0.169,
+        "leakOffset": 0.09, "leakWhere": "TopLeft",
+        "readNoise": [1.563, 1.257, 1.257, 1.447],
+        "dcMedian": 0.140, "dcCentre": 0.126, "dcTopLeft": 0.219, "biasFractionBelowBlack": 0.578,
+        "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
+      },
+      "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
+    },
+    {
+      "id": "V-004",
+      "kind": "darks",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "measuredOn": "2026-10-11",
+      "expected": {
+        "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
+        "hotAbove": [5608, 3940, 528, 176, 13], "hotAlways": 3759, "hotFlicker": 71, "hotP50": 33,
+        "hotTemporalStd": 23.64, "quietTemporalStd": 5.23, "rts": 291, "dead": 0, "saturated": 1,
+        "sigmaFrame": 5.70, "residualSigmaFirst": 4.94, "masterSigma": 2.081, "rowBandingRatio": 1.8,
+        "noiseCurve": [[1, 4.83], [2, 3.46], [4, 2.51], [5, 2.27], [10, 1.67]],
+        "masterNoise": 1.105, "medianHalfVsMeanHalf": 2.46,
+        "darkCentre": 1.141, "darkBottom": 1.443,
+        "warmFirst": 0.735, "warmLast": 1.086, "driftCelsius": 3.4,
+        "bandingRowP2pMax": 0.56, "bandingColP2pMax": 0.64,
+        "leakOffset": 0.22, "leakWhere": "TopLeft",
+        "readNoise": null,
+        "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
+      },
+      "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
     }
   ]
 }

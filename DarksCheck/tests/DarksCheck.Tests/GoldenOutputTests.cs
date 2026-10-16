@@ -39,6 +39,16 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void Darks_MatchesTheGoldenText()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticDark.OnePerLevel, HotFactor = 0.9 + 0.2 * i / 3 }, biases: 3);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2");
+        // The progress lines on stderr arrive in the order the threads finish: not golden material.
+        Assert.Contains("masurare dark-uri: 4 / 4", stderr, StringComparison.Ordinal);
+        Compare("darks.txt", Scrub(stdout, s.Root) + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");

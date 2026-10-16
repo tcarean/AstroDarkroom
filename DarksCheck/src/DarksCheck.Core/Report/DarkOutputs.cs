@@ -1,0 +1,183 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Copyright (C) 2026 Tudor Carean
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+using System.Globalization;
+using System.Text;
+
+namespace DarksCheck.Core;
+
+/// <summary>
+/// The files `--out DIR` writes (R-026): the report as the console prints it, a CSV per dark
+/// and one per bias with every figure, and the binned maps of the reference plane as PNG
+/// (the dark master, the bias master, dark minus bias), each block drawn as a 4 x 4 square,
+/// stretched between its 1st and 99th percentile. Nothing is written into the session.
+/// </summary>
+internal static class DarkOutputs
+{
+    internal const string ReportName = "darkscheck-raport.txt";
+    internal const string DarksCsvName = "darkscheck-darks.csv";
+    internal const string BiasesCsvName = "darkscheck-biases.csv";
+    internal const string DarkMapName = "darkscheck-harta-dark.png";
+    internal const string BiasMapName = "darkscheck-harta-bias.png";
+    internal const string DarkMinusBiasMapName = "darkscheck-harta-dark-minus-bias.png";
+    internal const int MapScale = 4;
+
+    internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        ArgumentException.ThrowIfNullOrWhiteSpace(dir);
+        string full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string root = r.Inventory.Session.Root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            // the rule "Read-only input": nothing is ever written into the session or under it
+            throw new InvalidOperationException($"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic");
+        }
+
+        Directory.CreateDirectory(dir);
+        List<string> written = [];
+
+        string report = Path.Combine(dir, ReportName);
+        using (StreamWriter w = new(report, false, new UTF8Encoding(false)))
+        {
+            RunReport.WriteBanner(w);
+            DarkReport.Write(r, w);
+        }
+
+        written.Add(report);
+
+        string darksCsv = Path.Combine(dir, DarksCsvName);
+        File.WriteAllText(darksCsv, DarksCsv(r), new UTF8Encoding(false));
+        written.Add(darksCsv);
+
+        if (r.Biases is BiasAnalysis b)
+        {
+            string biasesCsv = Path.Combine(dir, BiasesCsvName);
+            File.WriteAllText(biasesCsv, BiasesCsv(b), new UTF8Encoding(false));
+            written.Add(biasesCsv);
+        }
+
+        int rp = r.ReferencePlane;
+        written.Add(WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]));
+        if (r.Biases is BiasAnalysis bb)
+        {
+            written.Add(WriteMap(Path.Combine(dir, BiasMapName), bb.MeanMaps[rp]));
+        }
+
+        if (r.DarkCurrent is DarkCurrent dc)
+        {
+            written.Add(WriteMap(Path.Combine(dir, DarkMinusBiasMapName), dc.Maps[rp]));
+        }
+
+        return written;
+    }
+
+    /// <summary>One row per dark: the metadata, then per plane the levels and the residual figures, then the amplitude ratio and the edges.</summary>
+    internal static string DarksCsv(DarkSeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        DarkSeriesAnalysis d = r.Darks;
+        StringBuilder sb = new();
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "mean_above_black"];
+        foreach (string p in d.PlaneNames)
+        {
+            head.AddRange([$"{p}_median", $"{p}_sigma", $"{p}_mean", $"{p}_p999", $"{p}_above10", $"{p}_above20", $"{p}_above50", $"{p}_above100", $"{p}_above500", $"{p}_saturated", $"{p}_low", $"{p}_min", $"{p}_max",
+                $"{p}_resid_sigma", $"{p}_resid_median", $"{p}_resid_mean", $"{p}_row_std", $"{p}_row_expected", $"{p}_col_std", $"{p}_col_expected"]);
+        }
+
+        head.AddRange(["amp_ratio_median", "amp_ratio_q25", "amp_ratio_q75", "edge_left", "edge_right", "edge_top", "edge_bottom", "edge_top_left"]);
+        sb.AppendLine(string.Join(",", head));
+        foreach (DarkFrameFigures f in d.Frames)
+        {
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Error ?? ""), N(f.MeanAboveBlack)];
+            if (f.Error is null)
+            {
+                for (int p = 0; p < 4; p++)
+                {
+                    PlaneFigures pf = f.Planes[p];
+                    ResidualFigures rf = f.Residuals[p];
+                    row.AddRange([N(pf.Median), N(pf.Sigma), N(pf.Mean), N(pf.P999), .. pf.Above.Select(a => a.ToString(CultureInfo.InvariantCulture)), pf.Saturated.ToString(CultureInfo.InvariantCulture), pf.Low.ToString(CultureInfo.InvariantCulture), pf.Min.ToString(CultureInfo.InvariantCulture), pf.Max.ToString(CultureInfo.InvariantCulture),
+                        N(rf.Sigma), N(rf.Median), N(rf.Mean), N(rf.RowStd), N(rf.RowExpected), N(rf.ColStd), N(rf.ColExpected)]);
+                }
+
+                row.AddRange([N(f.AmpRatioMedian), N(f.AmpRatioQ25), N(f.AmpRatioQ75), N(f.Edges?.Left), N(f.Edges?.Right), N(f.Edges?.Top), N(f.Edges?.Bottom), N(f.Edges?.TopLeft)]);
+            }
+
+            sb.AppendLine(string.Join(",", row));
+        }
+
+        return sb.ToString();
+    }
+
+    internal static string BiasesCsv(BiasAnalysis b)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        StringBuilder sb = new();
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error"];
+        foreach (string p in b.PlaneNames)
+        {
+            head.AddRange([$"{p}_median", $"{p}_sigma", $"{p}_mean", $"{p}_p999", $"{p}_saturated", $"{p}_low", $"{p}_min", $"{p}_max"]);
+        }
+
+        sb.AppendLine(string.Join(",", head));
+        foreach (BiasFrameFigures f in b.Frames)
+        {
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Error ?? "")];
+            if (f.Error is null)
+            {
+                foreach (PlaneFigures pf in f.Planes)
+                {
+                    row.AddRange([N(pf.Median), N(pf.Sigma), N(pf.Mean), N(pf.P999), pf.Saturated.ToString(CultureInfo.InvariantCulture), pf.Low.ToString(CultureInfo.InvariantCulture), pf.Min.ToString(CultureInfo.InvariantCulture), pf.Max.ToString(CultureInfo.InvariantCulture)]);
+                }
+            }
+
+            sb.AppendLine(string.Join(",", row));
+        }
+
+        return sb.ToString();
+    }
+
+    /// <summary>A binned map as an 8-bit grey PNG, each block a MapScale x MapScale square, black at the 1st percentile and white at the 99th.</summary>
+    internal static string WriteMap(string path, BinnedMap m)
+    {
+        ArgumentNullException.ThrowIfNull(m);
+        float[] v = [.. m.Values];
+        double lo = Planes.Percentile(v, 1), hi = Planes.Percentile(v, 99);
+        if (hi <= lo)
+        {
+            hi = lo + 1;
+        }
+
+        int w = m.W * MapScale, h = m.H * MapScale;
+        byte[] grey = new byte[w * h];
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                double t = (m.Values[(y / MapScale) * m.W + x / MapScale] - lo) / (hi - lo);
+                grey[y * w + x] = (byte)Math.Clamp(Math.Round(t * 255), 0, 255);
+            }
+        }
+
+        File.WriteAllBytes(path, PngWriter.EncodeGrey(grey, w, h));
+        return path;
+    }
+
+    private static string N(double? v) => v is double d && !double.IsNaN(d) ? d.ToString("R", CultureInfo.InvariantCulture) : "";
+
+    private static string Q(string s) => "\"" + s.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+}

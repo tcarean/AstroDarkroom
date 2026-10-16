@@ -52,8 +52,13 @@ missing exposures; the report, not the analyzer, turns it into words.
 `InventoryReport` prints the session lines in a 19-column label field, then one table per
 non-empty group; the exposure is printed with one decimal from 1 s up and up to four below,
 so a 1/20 s bias reads `0.05` and a 1/4000 s one `0.0003` (0.00025 rounded). `RunReport` holds the
-banner, the copyright and the warranty lines of `--help`; `VersionInfo` reads the version and
-the copyright from the assembly attributes `Directory.Build.props` sets. `Program.Run` is the
-console behind `Main`: banner first, then the options, then one run, with the exceptions a
-bad folder can raise turned into `EROARE:` on stderr and exit 1. Until the analysis modes
-exist, a run without options is the inventory.
+banner, the copyright, the warranty lines of `--help` and the shared formatters (`F`,
+`Duration`, `Frames`); `VersionInfo` reads the version and the copyright from the assembly
+attributes `Directory.Build.props` sets. `Program.Run` is the console behind `Main`: banner
+first, then the options, then one run. Without options it is the darks analysis of
+`DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
+rewritten line by a synchronous `IProgress` (a `Progress<T>` would post to the thread pool and
+could print after the report) and wiped before the report or an error; `--inventory` is the
+metadata-only run; `--out`, `--threads` and `--max-frames` are passed through. The exceptions
+a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
+turned into `EROARE:` on stderr and exit 1.
