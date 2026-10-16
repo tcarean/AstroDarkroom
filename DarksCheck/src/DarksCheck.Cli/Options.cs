@@ -15,17 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+
 namespace DarksCheck.Cli;
 
 /// <summary>
-/// The console's arguments: one folder, <c>--inventory</c>, or --help. Anything else is an
-/// error naming the argument (R-004). The analysis modes of the later steps add their options
-/// here; the inventory stays the metadata-only run.
+/// The console's arguments: one folder, the mode (the darks analysis by default,
+/// <c>--inventory</c> for the metadata alone), <c>--out DIR</c>, <c>--threads N</c>,
+/// <c>--max-frames N</c>, or --help. Anything else is an error naming the argument (R-004).
 /// </summary>
 internal sealed class Options
 {
     internal string? Folder { get; private set; }
     internal bool Inventory { get; private set; }
+    internal string? Out { get; private set; }
+    internal int Threads { get; private set; }
+    internal int MaxFrames { get; private set; } = DarksCheck.Core.Th.MaxFramesInMemory;
     internal bool Help { get; private set; }
     internal string? Error { get; private set; }
 
@@ -39,8 +44,9 @@ internal sealed class Options
             return o;
         }
 
-        foreach (string a in args)
+        for (int i = 0; i < args.Length; i++)
         {
+            string a = args[i];
             if (a is "-h" or "--help")
             {
                 o.Help = true;
@@ -50,6 +56,49 @@ internal sealed class Options
             if (a == "--inventory")
             {
                 o.Inventory = true;
+                continue;
+            }
+
+            if (a is "--out" or "--threads" or "--max-frames")
+            {
+                if (i + 1 >= args.Length)
+                {
+                    o.Error = $"{a} cere o valoare";
+                    return o;
+                }
+
+                string v = args[++i];
+                if (a == "--threads")
+                {
+                    if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) || t < 1)
+                    {
+                        o.Error = "--threads cere un numar de fire, cel putin 1";
+                        return o;
+                    }
+
+                    o.Threads = t;
+                }
+                else if (a == "--max-frames")
+                {
+                    if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int m) || m < 1)
+                    {
+                        o.Error = "--max-frames cere un numar de cadre, cel putin 1";
+                        return o;
+                    }
+
+                    o.MaxFrames = m;
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(v))
+                    {
+                        o.Error = "--out cere un folder";
+                        return o;
+                    }
+
+                    o.Out = v;
+                }
+
                 continue;
             }
 
@@ -77,6 +126,10 @@ internal sealed class Options
         if (o.Folder is null)
         {
             o.Error = "lipseste folderul sesiunii sau al dark-urilor";
+        }
+        else if (o.Inventory && o.Out is not null)
+        {
+            o.Error = "--inventory si --out nu merg impreuna";
         }
 
         return o;

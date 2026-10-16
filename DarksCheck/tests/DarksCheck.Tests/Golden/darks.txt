@@ -1,0 +1,64 @@
+darkscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+=== SESIUNE: <sesiune> ===
+    darks              : darks\ (4 cadre .fit)
+    biases             : biases\ (3 cadre .fit)
+    lights             : (lipsa)
+    aparat             : NIKON D3300
+    expunere darks     : 120.0 s la ISO 400 (toate cadrele)
+    expunere biases    : 0.0002 s la ISO 400 (toate cadrele)
+    interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre la 120.0 s; fara pauze peste 5 s
+    potrivire          : NEMASURAT: nu exista lights
+    bias               : OK: 0.0002 s
+
+=== DARK-URI: 4 cadre decodate din 4, 256 x 192 px, scara 200 .. 65535 ADU (FITS (presupus din BITPIX 16), negru 200 din bias-uri), CFA RGGB ===
+    normalizare        : ISO 400, 120.0 s -> x1.00 fata de ISO 400 si 120 s (ADU-eq = ADU)
+    cuantizare         : pas 1 ADU langa negru; 24 valori distincte in primul cadru (G1)
+
+  2. SCURGERI DE LUMINA SI GRADIENT
+    master dark        : centru -0.02, colturi 0.01 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus 0.00 jos 0.00 stanga -0.03 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
+    master bias        : centru -0.07, colturi 0.10 / -0.01 / -0.05 / 0.13 (SS / DS / SJ / DJ), margini sus 0.05 jos -0.03 stanga -0.02 dreapta 0.03  [G1, ADU peste negru, media a 3 cadre]
+    dark - bias        : centru 0.05, colturi -0.09 / 0.13 / 0.08 / -0.04 (SS / DS / SJ / DJ), margini sus -0.04 jos 0.03 stanga -0.01 dreapta -0.06; mediana -0.03, -0.25 .. 0.23 (p1 .. p99)
+    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe -0.14 la stanga-sus, pe dark - bias)
+
+  3. DERIVA TERMICA IN SERIE
+    amplitudine        : pixelii fierbinti la 0.89 din master in primul cadru, 1.12 in ultimul (4 pixeli peste 20 ADU)
+    verdict            : ATENTIE: senzorul s-a incalzit cu 2.0 grade in 6 min (regula dublarii la 6 grade); masterul, mediana seriei, corespunde mijlocului ei
+
+  4. ZGOMOT PE CADRU
+    sigma rezidual     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (mediana 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, cadru - master]
+    zgomot de citire   : R 2.02  G1 2.02  G2 2.03  B 2.03 ADU (din 2 perechi de bias-uri consecutive); zgomot temporal peste citire pe G1 ~2.20 ADU (sqrt(sigma_t^2 - citire^2): curent de intuneric si cuantizare)
+    benzi aleatoare    : orizontale 0.242 ADU rms pe rand (de 1.0 ori zgomotul alb), verticale de 1.0 ori
+    verdict            : OK: niciun cadru cu zgomot peste 1.5 x mediana (2.66 ADU)
+
+  5. PIXELI FIERBINTI
+    master peste nivel : 10: 5; 20: 4; 50: 3; 100: 2; 500: 1  [ADU peste negru, mediana seriei, toate planurile]
+    pe plan la 20      : R 1  G1 1  G2 1  B 1
+    amplitudine        : mediana 102, p10 38, p90 465, p99 588 ADU (din 4)
+    stabilitate        : 4 din 4 peste jumatate din prag in toate cele 4 cadre, 0 lipsesc din 2 sau mai multe; sigma temporala 9.25 ADU la cei fierbinti, 2.38 la restul; 0 candidati RTS pe G1 (sigma temporala peste 6 x zgomotul unui cadru, 3.01)
+    verdict            : OK (informativ): 4 pixeli peste 20 ADU in 0.05 Mpx
+
+  6. MODEL FIX
+    benzi structurate  : randuri 0.146 ADU rms (0.80 varf la varf, R), coloane 0.171 (0.97, B)  [profilul masterului minus mediana glisanta pe 101]
+    glow               : -0.14 ADU la stanga-sus fata de centru (dark - bias)
+    verdict            : OK: benzi sub 2.0 ADU varf la varf si margini sub 1.0
+
+  7. PIXELI MORTI SI SATURATI
+    master             : 0 sub negru - 50 ADU, 0 la alb (65535)
+    verdict            : OK: niciun pixel mort sau saturat pe master
+
+  8. CATE DARK-URI AJUNG
+    zgomotul mediei    : n=1 2.99 (asteptat 3.01); n=2 2.16 (asteptat 2.13)  [G1, centrul de 192 px, ADU, sigma temporala = cadru fata de cadru]
+    master             : 4 cadre -> 1.87 ADU zgomot al masterului median (1.25 x sigma temporala 2.99 / sqrt(4)); mediana a 2 fata de media a 2: 3.06
+    verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)
+
+  TABEL PE CADRE
+     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master]
+      1  DSC_0001.fit          00:48:53    0.00    3.01    2.64     1.0    0.888     1
+      2  DSC_0002.fit          00:50:53    0.01    2.99    2.67     1.0    0.950     1
+      3  DSC_0003.fit          00:52:53    0.02    3.03    2.71     1.0    1.050     1
+      4  DSC_0004.fit          00:54:53    0.02    3.00    2.65     1.0    1.125     1
+--- stderr ---
+(progresul, omis)
+--- exit 0 ---

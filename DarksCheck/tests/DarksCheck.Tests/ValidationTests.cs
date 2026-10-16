@@ -51,6 +51,9 @@ public class ValidationTests
             case "inventory":
                 CheckInventory(InventoryRun.Run(folder), e, t);
                 break;
+            case "darks":
+                CheckDarks(DarkSeriesRun.Run(folder, new DarkOptions()), e, t);
+                break;
             default:
                 Assert.Fail($"{id}: unknown kind {kind}");
                 break;
@@ -75,6 +78,88 @@ public class ValidationTests
         Assert.Equal(e.GetProperty("darksVsLights").GetString(), inv.Match.DarksVsLights.ToString());
         Assert.Equal(e.GetProperty("bias").GetString(), inv.Match.Bias.ToString());
     }
+
+    /// <summary>The dark series (R-020 to R-041): the master, the hot pixels, the noise, the maps, the warming and the six verdicts.</summary>
+    private static void CheckDarks(DarkSeriesResult r, JsonElement e, JsonElement t)
+    {
+        DarkSeriesAnalysis d = r.Darks;
+        int rp = r.ReferencePlane;
+        double adu = t.GetProperty("adu").GetDouble(), ratio = t.GetProperty("ratio").GetDouble(), counts = t.GetProperty("counts").GetDouble();
+        Assert.False(r.HasErrors, "a frame could not be read or decoded");
+        Assert.Equal(e.GetProperty("used").GetInt32(), d.Used);
+        Assert.Equal(e.GetProperty("quantStep").GetInt32(), d.QuantStep);
+        Assert.Equal(e.GetProperty("referencePlane").GetString(), d.PlaneNames[rp]);
+        AssertWithin("norm", e.GetProperty("norm").GetDouble(), d.Norm, 0.005);
+
+        int[] above = e.GetProperty("hotAbove").EnumerateArray().Select(x => x.GetInt32()).ToArray();
+        for (int k = 0; k < above.Length; k++)
+        {
+            AssertWithin($"hotAbove[{k}]", above[k], d.Master.Sum(m => m.Above[k]), counts);
+        }
+
+        AssertWithin("hotAlways", e.GetProperty("hotAlways").GetInt32(), d.Hot.Always, counts);
+        AssertWithin("hotFlicker", e.GetProperty("hotFlicker").GetInt32(), d.Hot.Flicker, counts);
+        AssertWithin("hotP50", e.GetProperty("hotP50").GetDouble(), d.Hot.P50 / d.Norm, 1.0);
+        AssertWithin("hotTemporalStd", e.GetProperty("hotTemporalStd").GetDouble(), d.Hot.HotTemporalStd, adu);
+        AssertWithin("quietTemporalStd", e.GetProperty("quietTemporalStd").GetDouble(), d.Hot.QuietTemporalStd, adu);
+        AssertWithin("rts", e.GetProperty("rts").GetInt32(), d.Hot.RtsCandidates, counts);
+        Assert.Equal(e.GetProperty("dead").GetInt32(), r.Verdicts.DeadSat.Dead);
+        Assert.Equal(e.GetProperty("saturated").GetInt32(), r.Verdicts.DeadSat.Saturated);
+
+        AssertWithin("sigmaFrame", e.GetProperty("sigmaFrame").GetDouble(), d.Noise.SigmaFrame, adu);
+        AssertWithin("residualSigmaFirst", e.GetProperty("residualSigmaFirst").GetDouble(), d.Frames[0].Residuals[rp].Sigma, adu);
+        AssertWithin("masterSigma", e.GetProperty("masterSigma").GetDouble(), d.Master[rp].Sigma, adu);
+        AssertWithin("rowBandingRatio", e.GetProperty("rowBandingRatio").GetDouble(), r.Verdicts.Noise.RowBandingRatio, 0.3);
+        foreach (JsonElement point in e.GetProperty("noiseCurve").EnumerateArray())
+        {
+            int n = point[0].GetInt32();
+            NoisePoint measured = Assert.Single(d.Noise.Curve, p => p.N == n);
+            AssertWithin($"noiseCurve n={n}", point[1].GetDouble(), measured.Measured, adu);
+        }
+
+        AssertWithin("masterNoise", e.GetProperty("masterNoise").GetDouble(), d.Noise.MasterNoise, adu);
+        AssertWithin("medianHalfVsMeanHalf", e.GetProperty("medianHalfVsMeanHalf").GetDouble(), d.Noise.MedianHalfVsMeanHalf, adu);
+        AssertWithin("darkCentre", e.GetProperty("darkCentre").GetDouble(), d.MeanMaps[rp].Regions.Centre, adu);
+        AssertWithin("darkBottom", e.GetProperty("darkBottom").GetDouble(), d.MeanMaps[rp].Regions.Bottom, adu);
+        AssertWithin("warmFirst", e.GetProperty("warmFirst").GetDouble(), d.Warming.FirstRatio, ratio);
+        AssertWithin("warmLast", e.GetProperty("warmLast").GetDouble(), d.Warming.LastRatio, ratio);
+        AssertWithin("driftCelsius", e.GetProperty("driftCelsius").GetDouble(), d.Warming.DeltaCelsius, 0.1);
+        AssertWithin("bandingRowP2pMax", e.GetProperty("bandingRowP2pMax").GetDouble(), d.Banding.Max(b => b.RowP2p), adu);
+        AssertWithin("bandingColP2pMax", e.GetProperty("bandingColP2pMax").GetDouble(), d.Banding.Max(b => b.ColP2p), adu);
+        AssertWithin("leakOffset", e.GetProperty("leakOffset").GetDouble(), r.Verdicts.Leak.OffsetAdu, adu);
+        Assert.Equal(e.GetProperty("leakWhere").GetString(), r.Verdicts.Leak.Where.ToString());
+
+        if (e.TryGetProperty("readNoise", out JsonElement rn) && rn.ValueKind != JsonValueKind.Null)
+        {
+            Assert.NotNull(r.Biases);
+            double[] expectedRn = rn.EnumerateArray().Select(x => x.GetDouble()).ToArray();
+            for (int p = 0; p < 4; p++)
+            {
+                AssertWithin($"readNoise[{p}]", expectedRn[p], r.Biases!.ReadNoise[p], adu);
+            }
+
+            Assert.NotNull(r.DarkCurrent);
+            AssertWithin("dcMedian", e.GetProperty("dcMedian").GetDouble(), r.DarkCurrent!.Median, adu);
+            AssertWithin("dcCentre", e.GetProperty("dcCentre").GetDouble(), r.DarkCurrent.Maps[rp].Regions.Centre, adu);
+            AssertWithin("dcTopLeft", e.GetProperty("dcTopLeft").GetDouble(), r.DarkCurrent.Maps[rp].Regions.TopLeft, adu);
+            AssertWithin("biasFractionBelowBlack", e.GetProperty("biasFractionBelowBlack").GetDouble(), r.Biases.Clip.FractionBelowBlack, 0.01);
+        }
+        else
+        {
+            Assert.Null(r.Biases);
+        }
+
+        JsonElement v = e.GetProperty("verdicts");
+        Assert.Equal(v.GetProperty("leak").GetString(), r.Verdicts.Leak.Verdict.ToString());
+        Assert.Equal(v.GetProperty("drift").GetString(), r.Verdicts.Drift.Verdict.ToString());
+        Assert.Equal(v.GetProperty("noise").GetString(), r.Verdicts.Noise.Verdict.ToString());
+        Assert.Equal(v.GetProperty("pattern").GetString(), r.Verdicts.Pattern.Verdict.ToString());
+        Assert.Equal(v.GetProperty("deadSat").GetString(), r.Verdicts.DeadSat.Verdict.ToString());
+        Assert.Equal(v.GetProperty("enough").GetString(), r.Verdicts.Enough.Verdict.ToString());
+    }
+
+    private static void AssertWithin(string what, double expected, double actual, double tolerance)
+        => Assert.True(Math.Abs(expected - actual) <= tolerance, $"{what}: expected {expected} +- {tolerance}, measured {actual}");
 
     public static TheoryData<string, string, string, string, string> Cases()
     {

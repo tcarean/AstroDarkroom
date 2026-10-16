@@ -79,6 +79,33 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
+    /// <summary>
+    /// Writes <paramref name="darks"/> synthetic darks built by <paramref name="dark"/> (given
+    /// the 0-based index), one every 120 s from <see cref="FirstStart"/>, and
+    /// <paramref name="biases"/> biases built by <paramref name="bias"/> an hour earlier.
+    /// </summary>
+    internal SessionFixture WithDarkSeries(int darks, Func<int, SyntheticDark> dark, int biases = 0, Func<int, SyntheticDark>? bias = null, double exposure = 120, double iso = 400)
+    {
+        ArgumentNullException.ThrowIfNull(dark);
+        Directory.CreateDirectory(DarksDir);
+        for (int i = 0; i < darks; i++)
+        {
+            File.WriteAllBytes(Path.Combine(DarksDir, $"DSC_{i + 1:0000}.fit"), dark(i).Build(FirstStart.AddSeconds(i * 120), exposure, iso));
+        }
+
+        if (biases > 0)
+        {
+            Directory.CreateDirectory(BiasesDir);
+            for (int i = 0; i < biases; i++)
+            {
+                SyntheticDark b = bias?.Invoke(i) ?? new SyntheticDark { Seed = 500 + i, Noise = 2 };
+                File.WriteAllBytes(Path.Combine(BiasesDir, $"bias_{i + 1:0000}.fit"), b.Build(FirstStart.AddSeconds(-3600 + i), 0.0002, iso));
+            }
+        }
+
+        return this;
+    }
+
     /// <summary>A frame with the metadata cards and a flat 300 ADU field (no pixel is read by the inventory); a null field leaves its card out.</summary>
     internal static byte[] Frame(DateTime? start, double? exposure, double? iso) =>
         FitsTestData.BuildFits(32, 24, (x, y) => 300, bitpix: 16, extraCards: Cards(start, exposure, iso));

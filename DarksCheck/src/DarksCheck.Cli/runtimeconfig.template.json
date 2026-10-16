@@ -1,0 +1,6 @@
+{
+  "$comment": "Merged into darkscheck.runtimeconfig.json. The analysis allocates and drops a 24 MP raster per frame and per plane (hundreds of MB each); on a machine with memory to spare the collector let that garbage pile up to 14 GB of working set before running. System.GC.ConserveMemory=9 makes it collect and compact as soon as the heap grows: measured about 3 GB on the 30-frame library with no loss of speed (ADR 0007).",
+  "configProperties": {
+    "System.GC.ConserveMemory": 9
+  }
+}
