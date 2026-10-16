@@ -1,0 +1,56 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- HotPixelsView: the rows of check 5 (counts per level, amplitudes, stability) and the
+     noise curve of check 8, the measured points over the expected sigma / sqrt(n). -->
+
+<UserControl x:Class="DarksCheck.Wpf.HotPixelsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DarksCheck.Wpf">
+  <Grid Margin="20,18">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="1*" MinWidth="460" />
+      <ColumnDefinition Width="1*" MinWidth="420" />
+    </Grid.ColumnDefinitions>
+
+    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,14,0">
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="5. PIXELI FIERBINTI" />
+          <ItemsControl ItemsSource="{Binding HotRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" TextWrapping="Wrap" Text="{Binding HotTabLead}" />
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+
+    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="8. ZGOMOTUL MEDIEI A n CADRE (ADU)" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
+                     Text="Punctele: zgomotul masurat al mediei a n cadre; linia punctata: sigma / sqrt(n), cat ar da cadre independente. Punctul n = 1 e sigma temporala, cadru fata de cadru, fara modelul fix. Tine mouse-ul pe un punct ca sa vezi cifrele." />
+          <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
+            <local:SeriesChart Height="260" Points="{Binding NoisePoints}" Reference="{Binding NoiseExpected}" Minimum="0" Title="ADU" />
+          </Border>
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

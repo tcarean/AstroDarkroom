@@ -17,8 +17,8 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>What a run of the darks takes from the user: the parallelism, the cap on frames held in memory, and a partner folder of darks to match against (R-063).</summary>
-internal sealed record DarkOptions(int Threads = 0, int MaxFrames = Th.MaxFramesInMemory, string? Against = null)
+/// <summary>What a run of the darks takes from the user: the parallelism, the cap on frames held in memory, a partner folder of darks to match against (R-063), and the two settings of the normalisation (R-076): the gain per ISO stop and the degrees per doubling of the dark current.</summary>
+internal sealed record DarkOptions(int Threads = 0, int MaxFrames = Th.MaxFramesInMemory, string? Against = null, double IsoFactorPerStop = 2, double DoublingCelsius = Th.DoublingCelsius)
 {
     internal int EffectiveThreads => Threads > 0 ? Threads : Math.Max(1, Environment.ProcessorCount / 2);
 }
@@ -69,6 +69,7 @@ internal static class DarkSeriesRun
         ArgumentNullException.ThrowIfNull(options);
         Inventory inv = InventoryRun.Run(folder);
         int threads = options.EffectiveThreads;
+        Normalisation nz = new(options.IsoFactorPerStop, options.DoublingCelsius);
 
         // The biases first: a FITS carries no black level, and the biases' median is the camera's
         // pedestal, which the darks' median would overstate by the dark current (ADR 0007).
@@ -79,7 +80,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase("decodare bias-uri", progress), cancel: cancel);
+                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase("decodare bias-uri", progress), normalisation: nz, cancel: cancel);
                 biases = BiasAnalyzer.Analyze(bstack, threads);
                 biasBlack = bstack.BlackEstimated ? bstack.Black : null;
             }
@@ -96,7 +97,7 @@ internal static class DarkSeriesRun
         DarkSeriesAnalysis darks;
         int refPlane;
         {
-            FrameStack stack = FrameStack.Load(inv.Session.Darks, threads, options.MaxFrames, Phase("decodare dark-uri", progress), biasBlack, cancel);
+            FrameStack stack = FrameStack.Load(inv.Session.Darks, threads, options.MaxFrames, Phase("decodare dark-uri", progress), biasBlack, nz, cancel);
             darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase("masurare dark-uri", progress));
             refPlane = stack.ReferencePlane;
         }
@@ -160,7 +161,7 @@ internal static class DarkSeriesRun
     private static PartnerAnalysis MatchPartner(string folder, DarkSeriesAnalysis own, LightsAnalysis? lights, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress, CancellationToken cancel)
     {
         SessionFolder session = SessionFolder.Open(folder);
-        FrameStack stack = FrameStack.Load(session.Darks, threads, maxFrames, progress, null, cancel);
+        FrameStack stack = FrameStack.Load(session.Darks, threads, maxFrames, progress, null, own.Normalisation, cancel);
         if (stack.Decoded.Count == 0)
         {
             throw new InvalidOperationException("niciun dark al partenerului nu s-a putut decoda" + FrameStack.FirstErrors(stack));
@@ -174,8 +175,8 @@ internal static class DarkSeriesRun
         float[] median = DarkSeriesAnalyzer.MedianMaster(stack, threads);
         FrameInfo first = stack.Decoded[0].Info;
         IndexFigures index = IndexAnalyzer.RankIndex(median, stack.Black, stack.White, stack.Norm, stack.Width, stack.Height);
-        MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, stack.Norm));
-        MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match);
+        MatchFigures match = IndexAnalyzer.Match(IndexAnalyzer.SharedRatios(own.MedianMaster, own.Black, own.White, own.Norm, median, stack.Black, stack.White, stack.Norm), own.Normalisation);
+        MatchFigures lightsOverPartner = lights is null ? MatchFigures.None : IndexAnalyzer.Chain(lights.LightsOverDark, match, own.Normalisation);
 
         // the overlap of the two sets at 50 ADU-eq (the partner's) and 20 (ours), as the hand analysis read it
         double own50 = DarkSeriesAnalyzer.HotLevel(Th.PartnerOverlapAdu, own.Norm), own20 = DarkSeriesAnalyzer.HotLevel(Th.HotAdu, own.Norm);

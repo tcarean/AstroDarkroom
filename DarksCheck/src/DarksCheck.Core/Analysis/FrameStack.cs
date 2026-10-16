@@ -42,10 +42,13 @@ internal sealed class FrameStack
     internal string ScaleSource { get; }
     internal double Norm { get; }
 
+    /// <summary>The settings the normalisation was read with (R-076); the lights and the partner take the same.</summary>
+    internal Normalisation Normalisation { get; }
+
     /// <summary>True when the files carry no black level of their own (a FITS), so the stack's black is an estimate or a value handed in.</summary>
     internal bool BlackEstimated { get; }
 
-    private FrameStack(IReadOnlyList<StackFrame> frames, int w, int h, double black, double white, CfaPattern? cfa, string scaleSource, double norm, bool blackEstimated = false)
+    private FrameStack(IReadOnlyList<StackFrame> frames, int w, int h, double black, double white, CfaPattern? cfa, string scaleSource, double norm, Normalisation normalisation, bool blackEstimated = false)
     {
         Frames = frames;
         Width = w;
@@ -55,6 +58,7 @@ internal sealed class FrameStack
         Cfa = cfa;
         ScaleSource = scaleSource;
         Norm = norm;
+        Normalisation = normalisation;
         BlackEstimated = blackEstimated;
     }
 
@@ -89,10 +93,13 @@ internal sealed class FrameStack
     /// k-th file is decoded, so the memory stays bounded; the others are listed as skipped.
     /// <paramref name="fitsBlack"/> is the black level to use for a FITS, when a group read
     /// before (the biases) already established it; null estimates it from the first frame.
+    /// <paramref name="normalisation"/> is the settings the ADU-eq factor is read with
+    /// (<see cref="Normalisation.Default"/> when null).
     /// </summary>
-    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, CancellationToken cancel = default)
+    internal static FrameStack Load(IReadOnlyList<string> paths, int threads, int maxFrames, IProgress<(int Done, int Total)>? progress = null, double? fitsBlack = null, Normalisation? normalisation = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        Normalisation nz = normalisation ?? Normalisation.Default;
         int n = paths.Count;
         int step = n > maxFrames ? (int)Math.Ceiling(n / (double)maxFrames) : 1;
         StackFrame[] frames = new StackFrame[n];
@@ -121,7 +128,7 @@ internal sealed class FrameStack
                 (ushort[] px, double black, double white, string source) = ToUshort(f);
                 lock (gate)
                 {
-                    geometry ??= (f.Image.W, f.Image.H, black, white, f.Cfa, source, NormOf(info));
+                    geometry ??= (f.Image.W, f.Image.H, black, white, f.Cfa, source, nz.NormOf(info));
                     firstInfo ??= info;
                 }
 
@@ -160,24 +167,24 @@ internal sealed class FrameStack
 
         if (geometry is null)
         {
-            return new FrameStack(frames, 0, 0, 0, 0, null, "niciun cadru decodat", 1);
+            return new FrameStack(frames, 0, 0, 0, 0, null, "niciun cadru decodat", 1, nz);
         }
 
         (int gw, int gh, double gb, double gwhite, CfaPattern? gcfa, string gsource, double gnorm) = geometry.Value;
-        FrameStack stack = new(frames, gw, gh, gb, gwhite, gcfa, gsource, gnorm);
+        FrameStack stack = new(frames, gw, gh, gb, gwhite, gcfa, gsource, gnorm, nz);
         if (double.IsNaN(gb))
         {
             string fmt(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
             if (fitsBlack is double known)
             {
-                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + $", negru {fmt(known)} din bias-uri", gnorm, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, known, gwhite, gcfa, gsource + $", negru {fmt(known)} din bias-uri", gnorm, nz, blackEstimated: true);
             }
             else
             {
                 // no black level in the file: the median of the first decoded frame's reference plane
                 StackFrame first = frames.First(f => f.Pixels is not null);
                 double black = Planes.Median(Planes.Extract(first.Pixels!, gw, gh, stack.ReferencePlane));
-                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}", gnorm, blackEstimated: true);
+                stack = new FrameStack(frames, gw, gh, black, gwhite, gcfa, gsource + $", negru {fmt(black)} estimat din mediana cadrului {first.Info.Index}", gnorm, nz, blackEstimated: true);
             }
         }
 
@@ -220,14 +227,8 @@ internal sealed class FrameStack
         return errors.Length == 0 ? "" : ": " + string.Join("; ", errors);
     }
 
-    /// <summary>ISO / 400 times exposure / 120 s, or 1 when either is unknown (ADR 0004).</summary>
-    internal static double NormOf(FrameInfo info)
-    {
-        ArgumentNullException.ThrowIfNull(info);
-        return info.Iso is double iso && info.ExposureSeconds is double e && iso > 0 && e > 0
-            ? (iso / Th.NormIso) * (e / Th.NormExposureSeconds)
-            : 1.0;
-    }
+    /// <summary>ISO / 400 times exposure / 120 s with the default settings, or 1 when either is unknown (ADR 0004); <see cref="Normalisation.NormOf"/> takes the settings.</summary>
+    internal static double NormOf(FrameInfo info) => Normalisation.Default.NormOf(info);
 
     private static (ushort[] Pixels, double Black, double White, string Source) ToUshort(LoadedFrame f)
     {

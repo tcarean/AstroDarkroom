@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The window's tests. A project of its own, not a folder in DarksCheck.Tests: it must
+       target net9.0-windows to load WPF, and DarksCheck.Tests, which checks the core and the
+       goldens, stays portable (ADR 0009). What is tested: the view-model (the rules), the
+       window loading and rendering with real results and no binding error, the culture, the
+       icon. What is not: how it looks.
+       No <InvariantGlobalization>: WPF cannot bind without culture data (FlatCheck's ADR 0037);
+       the tests call App.ForceInvariantNumbers where the report's text matters. -->
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>DarksCheck.Wpf.Tests</RootNamespace>
+    <!-- CA1707: underscores in test names are the convention here, not a defect. CA1305: the
+         linked FitsTestData formats header cards with ToString(); DarksCheck.Tests is clean
+         because its InvariantGlobalization switch tells the analyzer the culture is fixed, and
+         this project cannot have that switch (see above), so the rule is silenced here only. -->
+    <NoWarn>$(NoWarn);CA1707;CA1305</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <!-- A WPF project gets no System.IO in its implicit usings (Path would collide with
+       System.Windows.Shapes.Path); the tests handle files, so it is added here. -->
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="System.IO" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DarksCheck.Wpf\DarksCheck.Wpf.csproj" />
+    <ProjectReference Include="..\..\src\DarksCheck.Core\DarksCheck.Core.csproj" />
+    <ProjectReference Include="..\..\src\DarksCheck.Cli\DarksCheck.Cli.csproj" />
+  </ItemGroup>
+  <!-- The session fixture and the synthetic frames are linked from DarksCheck.Tests, not
+       copied: two generators would mean a test here and one there work on slightly different
+       frames without anyone knowing. -->
+  <ItemGroup>
+    <Compile Include="..\DarksCheck.Tests\SessionFixture.cs" Link="Shared\SessionFixture.cs" />
+    <Compile Include="..\DarksCheck.Tests\SyntheticDarks.cs" Link="Shared\SyntheticDarks.cs" />
+    <Compile Include="..\DarksCheck.Tests\SyntheticLights.cs" Link="Shared\SyntheticLights.cs" />
+    <Compile Include="..\DarksCheck.Tests\SyntheticFrame.cs" Link="Shared\SyntheticFrame.cs" />
+    <Compile Include="..\DarksCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
+    <Compile Include="..\DarksCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
+    <Compile Include="..\DarksCheck.Tests\TestData.cs" Link="Shared\TestData.cs" />
+  </ItemGroup>
+</Project>

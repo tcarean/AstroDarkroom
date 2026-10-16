@@ -122,6 +122,15 @@ loaded until the first merge; the gate is run by hand before every commit.
    re-run, the design notes, `/docs-health`, CHANGELOG, `release.ps1 -Version 1.0.0` from
    `main` after the merge.
 
+### Follow-up agreed on 2026-10-16
+
+6. **Match a session without darks against a library** (after step 5): a folder with `lights\`
+   and no `darks\`, which R-002 refuses today, opened with `--against` or the window's partner,
+   its lights measured at the partner master's hot pixels (`LightsAnalyzer` takes any master)
+   and the verdict read on that ratio; the Veil session of 2026-10-06 is the case (ADR 0008's
+   open question, the owner's word: "vreau dupa sa implementam si cazul in care ai o sesiune
+   cu lights fara darks").
+
 ## Verification
 
 `scripts/verify.ps1` green at every step; `/validate` with `DARKSCHECK_TESTDATA_LARGE` set to
@@ -211,3 +220,27 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   contradicted its test, the console note without `--against`, two literals named in `Th`;
   the CFA / orientation check, the FITS white and the FITS partner's biases are recorded as
   known limits in ADR 0008, and a lights-only session against a library as an open question.
+- Step 4: the window took LightsCheck's pieces as planned (theme, converters, palette, title
+  bar, MVVM base, icon helper, raster bitmaps, `SeriesChart`, the About window, the STA test
+  fixture), with one addition to the chart, a dashed reference series for the noise curve. To
+  give the window something to bind, the report was refactored into rows first
+  (`DarkReport.Sections`, `HeaderRows`, `FrameRows`, `LightRows`), which `Write` prints
+  unchanged: the goldens did not move. The two settings ADR 0004 left for the window became a
+  record of the core, `Normalisation`, threaded through the stack, the analysis, the lights,
+  the partner and every degree in the report; the console keeps the defaults and gets no
+  option (ADR 0009). The settings file holds five texts, not two, the partner folder among
+  them, and the Index tab offers `Analizeaza din nou` so a partner chosen after a run is
+  applied without choosing the folder again. The icon is DarksCheck's own drawing (a dark
+  frame with amber hot pixels), by the same script shape as LightsCheck's. The step's own
+  review (`/code-review high`) found five points, four fixed (a chip for the rows labelled
+  ATENTIE, the table notes given by the report, a dead text, the thresholds quoted from
+  `Th` in the window's sentences); a Fable subagent review then found twelve, all taken
+  before the commit: the invalid-field cue R-075 promised but the XAML lacked, the banding
+  ratio and the outlier limit computed in the view-model (now properties of the core's
+  records), the session card parsing the console's header (now `InventoryReport.HeaderRows`),
+  an `AggregateException` from a parallel loop that the window would have lost (now the
+  problem card, as in the console), a superseded run's progress writing over the new one, two
+  languages in `Dark.xaml` (the DarksCheck templates moved to `Rows.xaml`), the lights chart
+  lead misnaming the cosmetic band's colour, every threshold literal in the window's texts
+  replaced by `Th`, stale sentences in the notes, the tests' shared settings file, the Index
+  tab's long label and its heading.

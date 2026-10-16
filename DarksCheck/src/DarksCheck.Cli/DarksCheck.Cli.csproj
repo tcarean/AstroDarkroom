@@ -8,9 +8,12 @@
     <!-- Read from darkscheck.runtimeconfig.json at run time: the console formats numbers with
          "." whatever the Windows culture (R-005). -->
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The same icon file as the window's, drawn per size by Icon/make_icon.py. -->
+    <ApplicationIcon>..\..\Icon\darkscheck.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DarksCheck.Core\DarksCheck.Core.csproj" />
     <InternalsVisibleTo Include="DarksCheck.Tests" />
+    <InternalsVisibleTo Include="DarksCheck.Wpf.Tests" />
   </ItemGroup>
 </Project>

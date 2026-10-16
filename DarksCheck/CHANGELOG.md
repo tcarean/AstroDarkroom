@@ -35,6 +35,25 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (60 by default; above it every k-th frame is read). A FITS without a black level takes the
   biases' median as black. V-003 checks the Smida darks against the Python prototype's figures;
   V-004 pins the 2026-10-10 library run (the prototype has only its master, regions and warming).
+- The window `DarksCheck.Wpf.exe` (R-070 to R-076, ADR 0009): the same analysis as the
+  console, started on a folder from the command line or chosen at start, with progress and a
+  stop button; seven tabs: Rezumat (every check as a card of the report's rows with the
+  verdict as a coloured chip), Cadre (the frames table with the warming, residual sigma and
+  banding charts), Harti (the three binned maps), Pixeli fierbinti (check 5 and the noise
+  curve over its expected line), Lights (check 9, the ratio per light with the verdict bounds,
+  the lights table), Index (the label with a copy button, the INDEX rows, the partner folder
+  of `--against`), Raport (the console's text, identical whatever the Windows culture); the
+  export writes the same files as `--out`. Four settings in the top bar, threads, frame cap,
+  gain per ISO stop and degrees per doubling, plus the partner, remembered in
+  `%LOCALAPPDATA%\DarksCheck\settings.json`; the gain and the degrees reach the core as the
+  normalisation's settings (the console keeps the defaults, 2 and 6). Dark theme, dark title
+  bar, "Despre" window and its own icon, drawn by `Icon/make_icon.py`.
+
+### Internal
+
+- The report is built as rows (`DarkReport.Sections`, `HeaderRows`, `FrameRows`, `LightRows`)
+  that `Write` prints and the window binds; the console's text is unchanged. The normalisation
+  is a record of the core (`Normalisation`) carried by `DarkOptions`.
 - Check 9, the index and the matching (R-050 to R-065, ADR 0008): the lights are decoded one
   by one and searched for isolated hot pixels (6 sigma over the median of the eight same-colour
   neighbours, no immediate neighbour over 3 sigma), the pixels persistent in 80 % of the lights

@@ -18,6 +18,11 @@
         "project": "src/DarksCheck.Cli/DarksCheck.Cli.csproj",
         "output": "console",
         "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
+      },
+      {
+        "project": "src/DarksCheck.Wpf/DarksCheck.Wpf.csproj",
+        "output": "wpf",
+        "args": ["-r", "win-x64", "--self-contained", "-p:PublishSingleFile=true", "-p:IncludeNativeLibrariesForSelfExtract=true"]
       }
     ]
   },

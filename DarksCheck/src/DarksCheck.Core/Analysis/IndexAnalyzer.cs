@@ -128,8 +128,8 @@ internal static class IndexAnalyzer
         return [.. ratios];
     }
 
-    /// <summary>The median and quartiles of the ratios, the temperature offset `D x log2(ratio)` and the verdict.</summary>
-    internal static MatchFigures Match(float[] ratios)
+    /// <summary>The median and quartiles of the ratios, the temperature offset `D x log2(ratio)` with the settings' D (the default when null) and the verdict.</summary>
+    internal static MatchFigures Match(float[] ratios, Normalisation? normalisation = null)
     {
         ArgumentNullException.ThrowIfNull(ratios);
         if (ratios.Length == 0)
@@ -138,7 +138,7 @@ internal static class IndexAnalyzer
         }
 
         double median = Planes.Median(ratios);
-        double dT = median > 0 ? Th.DoublingCelsius * Math.Log2(median) : double.NaN;
+        double dT = (normalisation ?? Normalisation.Default).Degrees(median);
         return new MatchFigures(ratios.Length, median, Planes.Percentile(ratios, 25), Planes.Percentile(ratios, 75), dT, Judge(median));
     }
 
@@ -151,13 +151,13 @@ internal static class IndexAnalyzer
     }
 
     /// <summary>Two ratios chained through a common master, (a / m) x (m / b) = a / b, judged as one (R-064); <see cref="MatchFigures.None"/> when either is not measured.</summary>
-    internal static MatchFigures Chain(MatchFigures aOverM, MatchFigures mOverB)
+    internal static MatchFigures Chain(MatchFigures aOverM, MatchFigures mOverB, Normalisation? normalisation = null)
     {
         ArgumentNullException.ThrowIfNull(aOverM);
         ArgumentNullException.ThrowIfNull(mOverB);
         return aOverM.Verdict == MatchVerdict.Unmeasured || mOverB.Verdict == MatchVerdict.Unmeasured
             ? MatchFigures.None
-            : Match([(float)(aOverM.Ratio * mOverB.Ratio)]);
+            : Match([(float)(aOverM.Ratio * mOverB.Ratio)], normalisation);
     }
 
     /// <summary>The verdict of a ratio: NaN is unmeasured; a ratio at or under 0 is a measurement, the set shows none of the master's hot pixels, and is unmatched.</summary>

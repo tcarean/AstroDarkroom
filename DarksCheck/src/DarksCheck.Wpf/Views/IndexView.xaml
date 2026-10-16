@@ -1,0 +1,67 @@
+<!--
+SPDX-License-Identifier: GPL-3.0-or-later
+
+Copyright (C) 2026 Tudor Carean
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+-->
+
+<!-- IndexView: the label with its copy button, the INDEX rows of the report, and the partner
+     folder to match against (chosen here, remembered between runs, applied on the next run). -->
+
+<UserControl x:Class="DarksCheck.Wpf.IndexView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:DarksCheck.Wpf">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,18">
+    <StackPanel MaxWidth="1200" HorizontalAlignment="Left">
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="ETICHETA" />
+          <Grid Margin="0,4,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding Label}" FontSize="22" FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" ToolTip="{Binding Label}" />
+            <Button Grid.Column="1" Content="Copiaza eticheta" Margin="16,0,0,0" VerticalAlignment="Center" Click="CopyLabel"
+                    ToolTip="Pune eticheta in clipboard, ca sa redenumesti folderul cu ea; programul nu redenumeste nimic" />
+          </Grid>
+          <TextBlock Style="{StaticResource Muted}" Margin="0,10,0,0" Text="{Binding IndexLead}" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="INDEX" />
+          <ItemsControl ItemsSource="{Binding IndexRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Style="{StaticResource Heading}" Text="PARTENER" />
+          <TextBlock Style="{StaticResource Muted}" Margin="0,4,0,8" TextWrapping="Wrap"
+                     Text="Alt folder de dark-uri, o biblioteca sau alta sesiune: dark-urile sesiunii se compara cu masterul lui pe pixelii fierbinti in amandoua, in grade echivalente, iar lights-urile prin dark-uri. Se tine minte intre porniri si se aplica la urmatoarea analiza." />
+          <TextBlock TextTrimming="CharacterEllipsis" Text="{Binding PartnerText}" ToolTip="{Binding PartnerText}" />
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0" IsEnabled="{Binding IsIdle}">
+            <Button Content="Alege partener..." Click="ChoosePartner" />
+            <Button Content="Fara partener" Click="ClearPartner" Margin="10,0,0,0" IsEnabled="{Binding HasPartner}" />
+            <Button Content="Analizeaza din nou" Click="Rerun" Margin="10,0,0,0" IsEnabled="{Binding HasFolder}"
+                    ToolTip="Ruleaza din nou folderul deschis, cu partenerul si setarile de acum" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

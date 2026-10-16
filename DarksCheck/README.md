@@ -9,15 +9,16 @@ rulat senzorul, pe dark-uri, pe o biblioteca si pe lights, ca sa potrivesti un m
 biblioteca cu o sesiune. Pozele sunt doar citite: nimic nu e modificat, mutat sau scris in
 folderele lor.
 
-Consola `darkscheck.exe` si fereastra (in lucru) stau peste acelasi nucleu si dau aceleasi
-cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acelasi mod de versionare
+Consola `darkscheck.exe` si fereastra `DarksCheck.Wpf.exe` stau peste acelasi nucleu si dau
+aceleasi cifre. Aceeasi licenta (GPLv3 sau ulterioara, [LICENSE](LICENSE)), acelasi mod de versionare
 si aceeasi fereastra "Despre" ca FlatCheck si LightsCheck, de unde sunt copiate cititoarele de
 raw si FITS (vezi [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
-**Stadiu: pasul 3 din 5 al planului.** Consola face inventarul si verificarea 1 (metadate,
-cadenta, potrivirea dark-urilor cu lights-urile), verificarile 2-8 pe dark-uri si bias-uri,
-verificarea 9 (lights-urile fata de dark), indexul, eticheta si potrivirea cu alt folder de
-dark-uri (`--against`). Fereastra vine in pasul urmator
+**Stadiu: pasul 4 din 5 al planului.** Consola si fereastra fac inventarul si verificarea 1
+(metadate, cadenta, potrivirea dark-urilor cu lights-urile), verificarile 2-8 pe dark-uri si
+bias-uri, verificarea 9 (lights-urile fata de dark), indexul, eticheta si potrivirea cu alt
+folder de dark-uri (`--against`). Pasul 5 e validarea si versiunea 1.0.0; dupa el, o sesiune cu
+lights dar fara dark-uri va putea fi comparata cu o biblioteca
 (`docs/plans/2026-10-11-build-darkscheck.md`). Analiza de mana de la care porneste unealta, cu
 cifrele ei, e in `docs/validation/2026-08-12-smida/report.md`.
 
@@ -244,6 +245,42 @@ Smida, masurat pe 2026-10-11):
 - `pauza` din tabele e timpul dintre sfarsitul expunerii anterioare si inceputul acesteia. Ora
   vine din EXIF (ora aparatului) pe un raw si din `DATE-OBS` (UTC, cum il scrie Siril) pe un
   FITS.
+
+## Fereastra
+
+`DarksCheck.Wpf.exe [folder]`. Fara argument, cere folderul la pornire: folderul sesiunii Siril
+(cel cu `darks\`) sau folderul unei biblioteci de dark-uri. Analiza porneste singura (aceeasi ca
+`darkscheck <folder>`, cu bara de progres si buton de oprire) si rezultatul apare in sapte
+taburi:
+
+- **Rezumat**: linia sesiunii, apoi fiecare verificare ca un card de randuri, cu verdictul
+  colorat (verde `OK`, galben `ATENTIE`, gri `NEMASURAT`) si restul textului langa el.
+- **Cadre**: tabelul pe cadre, iar alaturi trei grafice cadru cu cadru: amplitudinea pixelilor
+  fierbinti fata de master (incalzirea seriei), sigma reziduala (cu linia de 1.5 x mediana) si
+  benzile aleatoare.
+- **Harti**: cele trei harti ale verificarii 2 (master dark, master bias, dark - bias), aceleasi
+  ca PNG-urile din `--out`, fiecare cu randul ei din raport dedesubt.
+- **Pixeli fierbinti**: randurile verificarii 5 si curba zgomotului mediei a n cadre fata de
+  sigma / sqrt(n) (verificarea 8); tine mouse-ul pe un punct si vezi cifrele.
+- **Lights**: randurile verificarii 9, raportul lights / dark pe fiecare light cu liniile
+  pragurilor (0.9 si 1.1 verde, 0.7 si 1.4 galben, 0.4 rosu) si tabelul pe lights.
+- **Index**: eticheta, mare, cu butonul `Copiaza eticheta` (o pui in clipboard si redenumesti
+  tu folderul; programul nu redenumeste nimic), randurile INDEX si partenerul: `Alege
+  partener...` (o biblioteca sau alta sesiune), `Fara partener`, `Analizeaza din nou`. Partenerul
+  ales dupa o analiza se aplica la urmatoarea.
+- **Raport**: textul consolei, identic.
+
+In bara de sus: `FIRE` (cate cadre se decodeaza in paralel; gol = jumatate din nuclee), `CADRE
+MAX` (cate cadre se tin in memorie si cate lights se masoara; implicit 60), `CASTIG / TREAPTA
+ISO` (de cate ori creste semnalul la o treapta de ISO, pentru normalizarea la ISO 400; 2 =
+liniar, D3300) si `GRADE / DUBLARE` (la cate grade se dubleaza curentul de intuneric, pentru
+gradele din raport; 6). Toate patru si partenerul sunt citite la deschiderea folderului si
+tinute minte intre porniri in `%LOCALAPPDATA%\DarksCheck\settings.json`, singurul lucru pe care
+programul il scrie in afara folderului de export; o valoare care nu e un numar pozitiv cu `.`
+inseamna valoarea implicita. `Scrie fisierele...` scrie, intr-un folder la alegere (propus:
+folderul sesiunii; refuzat in folderul sesiunii sau al partenerului), aceleasi fisiere ca
+`--out`. `Despre` (F1) arata versiunea, licenta si componentele terte. Consola ruleaza cu
+castigul 2 si 6 grade pe dublare, fara optiuni pentru ele.
 
 ## Compilare
 
