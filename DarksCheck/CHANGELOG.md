@@ -49,11 +49,6 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   normalisation's settings (the console keeps the defaults, 2 and 6). Dark theme, dark title
   bar, "Despre" window and its own icon, drawn by `Icon/make_icon.py`.
 
-### Internal
-
-- The report is built as rows (`DarkReport.Sections`, `HeaderRows`, `FrameRows`, `LightRows`)
-  that `Write` prints and the window binds; the console's text is unchanged. The normalisation
-  is a record of the core (`Normalisation`) carried by `DarkOptions`.
 - Check 9, the index and the matching (R-050 to R-065, ADR 0008): the lights are decoded one
   by one and searched for isolated hot pixels (6 sigma over the median of the eight same-colour
   neighbours, no immediate neighbour over 3 sigma), the pixels persistent in 80 % of the lights
@@ -70,3 +65,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   2026-08-12, frozen, and their report, figures and CSV files under
   `docs/validation/2026-08-12-smida/`; V-001 checks the inventory of that session and V-002
   the library of darks of 2026-10-10.
+
+### Internal
+
+- The report is built as rows (`DarkReport.Sections`, `HeaderRows`, `FrameRows`, `LightRows`)
+  that `Write` prints and the window binds; the console's text is unchanged. The normalisation
+  is a record of the core (`Normalisation`) carried by `DarkOptions`.

@@ -7,6 +7,23 @@ black, the verdict thresholds) and ADR 0004 (the normalisation). This note says 
 pieces fit and what was measured against the prototype (`prototype/analyze_darks.py`,
 `supplementary.py`, the figures in `docs/validation/2026-08-12-smida/`).
 
+## The records of the run
+
+Every record the notes name has one home. `Runs/DarkSeriesRun.cs` declares `DarkOptions`
+(what a run takes from the user: `Threads`, `MaxFrames`, `Against`, `IsoFactorPerStop`,
+`DoublingCelsius`; the run builds its `Normalisation` from the last two, and `EffectiveThreads`
+is half the cores when `Threads` is 0), `RunProgress(Phase, Done, Total)` (the phase word is
+Romanian and both applications print it as it is) and `DarkSeriesResult`, the whole result.
+`Analysis/DarkSeriesAnalyzer.cs` declares `DarkSeriesAnalysis` and its parts (`PlaneFigures`,
+`ResidualFigures`, `DarkFrameFigures`, `MasterFigures`, `HotStability`, `NoisePoint`,
+`NoiseVsN`, `Regions`, `BinnedMap`, `BandingFigures`, `Warming`); `Analysis/BiasAnalyzer.cs`
+`BiasAnalysis` and `DarkCurrent`; `Analysis/DarkVerdicts.cs` the six verdict records and
+`DarkVerdicts`; `Analysis/FrameStack.cs` `StackFrame`; `Analysis/Normalisation.cs` the
+settings record, whose defaults are the record's parameter defaults (`IsoFactorPerStop = 2`,
+`DoublingCelsius = Th.DoublingCelsius`). The console builds `DarkOptions` in `Program.Run` from
+its options and leaves the two settings at their defaults; the window builds it in
+`MainViewModel.Options` (`window.md`).
+
 ## The stack
 
 `FrameStack.Load` decodes a group of files into 16-bit mosaics, `threads` at a time. The

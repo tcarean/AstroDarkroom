@@ -54,8 +54,18 @@ non-empty group; the exposure is printed with one decimal from 1 s up and up to 
 so a 1/20 s bias reads `0.05` and a 1/4000 s one `0.0003` (0.00025 rounded). `RunReport` holds the
 banner, the copyright, the warranty lines of `--help` and the shared formatters (`F`,
 `Duration`, `Frames`); `VersionInfo` reads the version and the copyright from the assembly
-attributes `Directory.Build.props` sets. `Program.Run` is the console behind `Main`: banner
-first, then the options, then one run. Without options it is the darks analysis of
+attributes `Directory.Build.props` sets. `Program.Run(args, stdout, stderr)` is the console
+behind `Main`: banner first, then the options, then one run. `Options.Parse(args)` walks the
+arguments once and returns an `Options` with `Folder`, `Inventory`, `Out`, `Threads`,
+`MaxFrames`, `Against`, `Help` and `Error`: the first word that is not an option is the
+folder, a second one is an error, an option that takes a value reads the next argument
+(`<option> cere o valoare` when there is none) and parses it with the invariant culture
+(`--threads` and `--max-frames` as positive integers, `--out` and `--against` as non-blank
+paths; no option takes a decimal today), the first problem fills `Error` and parsing stops.
+`Program.Run` prints `Error` as `EROARE: <message>` on stderr and exits 1, prints the usage
+for `Help` (the usage text is `Program.WriteHelp`, with `RunReport.WarrantyLines`), and
+otherwise builds `DarkOptions(Threads, MaxFrames, Against)` with the normalisation settings
+at their defaults (`dark-analysis.md`, "The records of the run"). Without options it is the darks analysis of
 `DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
 rewritten line by a synchronous `IProgress` (a `Progress<T>` would post to the thread pool and
 could print after the report) and wiped before the report or an error; `--inventory` is the

@@ -244,3 +244,15 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   lead misnaming the cosmetic band's colour, every threshold literal in the window's texts
   replaced by `Th`, stale sentences in the notes, the tests' shared settings file, the Index
   tab's long label and its heading.
+- Step 5: the validation cases were re-run (no drift, `docs/validation.md`) and the
+  documentation audit (`/docs-health`, the `docs-auditor` agent with a clean context) ran on
+  the docs alone: verdict "mostly", twelve gaps, all closed in this step rather than left for
+  the owner, since the plan made the notes part of the step: the files that declare the run's
+  records named in the notes, the console's option parser and usage text described, the two
+  settings' console side stated, `CLAUDE.md`'s layout completed with the window, its tests and
+  `Icon/`, the error texts of R-004 written out, the check-9 entry moved from `Internal` to
+  `Added` in the CHANGELOG, R-012's deliberate status explained, the check-1 constants given
+  their ADR (0010), the numbering rule told what to do with a full block, the window's GC
+  knob confirmed in its note, the gain's default named, the kit's ADR 0002 cited for "Core has
+  no UI". The release itself (`/release`, version 1.0.0) is cut from `main` in the main
+  checkout after this step's merge, the commit and the tag being the owner's.
