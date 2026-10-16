@@ -4,12 +4,12 @@ Copyright (C) 2026 Tudor Carean
 === SESIUNE: <sesiune> ===
     darks              : darks\ (4 cadre .fit)
     biases             : (lipsa)
-    lights             : lights\ (3 cadre .fit)
+    lights             : lights\ (5 cadre .fit)
     aparat             : NIKON D3300
     expunere darks     : 120.0 s la ISO 400 (toate cadrele)
     expunere lights    : 120.0 s la ISO 400 (toate cadrele)
     interval darks     : 2026-08-13 00:48:53 -> 2026-08-13 00:56:53 (8 min); 4 cadre la 120.0 s; fara pauze peste 5 s
-    interval lights    : 2026-08-12 23:41:23 -> 2026-08-12 23:48:23 (7 min); 3 cadre la 150.0 s; 2 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
+    interval lights    : 2026-08-12 23:36:23 -> 2026-08-12 23:48:23 (12 min); 5 cadre la 150.0 s; 4 pauze peste 5 s (cea mai lunga 30 s inainte de cadrul 2)
     potrivire          : OK: dark-urile au expunerea (120.0 s) si ISO-ul (400) lights-urilor
     bias               : (lipsa)
 
@@ -53,11 +53,11 @@ Copyright (C) 2026 Tudor Carean
     verdict            : ATENTIE: doar 4 cadre; mediana cere cel putin 10 ca un cadru ciudat sa n-o traga (zgomotul masterului ar fi 1.87 ADU)
 
   9. LIGHTS FATA DE DARK
-    pixeli fierbinti   : 20 persistenti in lights (izolati, peste 6 sigma locale, in cel putin 3 din 3 cadre)
+    pixeli fierbinti   : 20 pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 4 din 5 cadre)
     in masterul dark   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)  [ADU]
-    din master in lights: peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)
+    master in lights   : peste 10: 20 din 20 (100 %); peste 20: 20 din 20 (100 %); peste 50: 20 din 20 (100 %); peste 100: 20 din 20 (100 %)
     nepotriviti        : niciun pixel persistent in lights sub pragul masterului
-    amplitudine        : lights / dark 1.30 pe noapte (mediana pe 3 cadre; primul 1.33, ultimul 1.30; 20 pixeli)
+    amplitudine        : lights / dark 1.30 pe noapte (mediana pe 5 cadre; primul 1.33, ultimul 1.32; 20 pixeli)
     verdict            : ATENTIE: scade cu -opt (raport 1.30, in 0.7 .. 1.4; dark-ul e mai rece cu 2.3 grade, -opt scaleaza amplitudinea)
 
   INDEX
@@ -79,9 +79,11 @@ Copyright (C) 2026 Tudor Carean
 
   TABEL PE LIGHTS
      nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [G1; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]
-      1  light_0001.fit        23:41:23   500.0    6.79        239       20    1.328  1.277  1.355
-      2  light_0002.fit        23:43:53   500.0    6.70        240       20    1.288  1.260  1.337
-      3  light_0003.fit        23:46:23   500.0    6.41        245       20    1.301  1.274  1.370
+      1  light_0001.fit        23:36:23   500.0    6.79        239       20    1.328  1.277  1.355
+      2  light_0002.fit        23:38:53   500.0    6.70        240       20    1.288  1.260  1.337
+      3  light_0003.fit        23:41:23   500.0    6.41        245       20    1.301  1.274  1.370
+      4  light_0004.fit        23:43:53   500.0    6.72        241       19    1.286  1.259  1.315
+      5  light_0005.fit        23:46:23   500.0    6.50        240       20    1.322  1.271  1.365
 --- stderr ---
 (progresul, omis)
 --- exit 0 ---

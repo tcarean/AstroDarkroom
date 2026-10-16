@@ -41,6 +41,11 @@ internal static class DarkOutputs
     {
         ArgumentNullException.ThrowIfNull(r);
         CheckOutDir(r.Inventory.Session.Root, dir);
+        if (r.Partner is PartnerAnalysis partner)
+        {
+            CheckOutDir(partner.Folder, dir, "partenerului");
+        }
+
         Directory.CreateDirectory(dir);
         List<string> written = [];
 
@@ -90,7 +95,7 @@ internal static class DarkOutputs
     /// The rule "Read-only input": the output folder may not be the session folder or one under
     /// it. Called before the analysis runs (the console) and again by <see cref="WriteAll"/>.
     /// </summary>
-    internal static void CheckOutDir(string sessionRoot, string dir)
+    internal static void CheckOutDir(string sessionRoot, string dir, string whose = "sesiunii")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
         ArgumentException.ThrowIfNullOrWhiteSpace(dir);
@@ -98,7 +103,7 @@ internal static class DarkOutputs
         string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic");
+            throw new InvalidOperationException($"--out nu poate fi folderul {whose} sau unul din el ({root}): acolo nu se scrie nimic");
         }
     }
 

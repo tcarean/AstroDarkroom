@@ -200,4 +200,14 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   can move, an example in R-064 that no run shows, a README phrase), the rest noted: the
   saturation and amplitude edges differ from the prototype by one ADU (0.977 x 4095 = 4000.8
   against `a < 4000`; 0.73 x 4095 = 2989 against `< 3000`), the band's median is the upper
-  middle element, the partner stack lives until the overlap loop ends.
+  middle element, the partner stack lives until the overlap loop ends. A third review (Opus
+  subagent, at the owner's ask after the commit) found thirteen more, fixed in a second
+  commit: a lights ratio at or under zero read as "no hot pixel in the master" (now
+  `nepotrivit` with its own sentence), lights without ISO or exposure normalised as ISO 400 /
+  120 s in silence (now the darks' settings with an `ATENTIE` line), `--out` accepted inside
+  the partner folder, partner frames that fail dropped in silence (now counted, named, exit
+  1), the partner opened only after the run (now before), plurals for a count of one, two
+  tests and the golden pinned to counts the isolation noise can move, an R-060 example that
+  contradicted its test, the console note without `--against`, two literals named in `Th`;
+  the CFA / orientation check, the FITS white and the FITS partner's biases are recorded as
+  known limits in ADR 0008, and a lights-only session against a library as an open question.

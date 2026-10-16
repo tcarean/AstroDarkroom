@@ -19,7 +19,7 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
                 bias-uri si pe lights si hartile (darkscheck-raport.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-harta-dark.png, ...).
   --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).
-  --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP);
+  --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP) si cate lights se masoara;
                 peste, se decodeaza unul din k si restul sunt listate ca sarite.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO,
                 pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu

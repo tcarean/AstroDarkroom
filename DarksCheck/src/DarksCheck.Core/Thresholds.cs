@@ -147,6 +147,12 @@ internal static class Th
     /// <summary>... to here per megapixel: on the D3300's 24.2 Mpx the 122nd to the 483rd strongest pixel, 25.2 ADU-eq on Smida, 67.4 on the library.</summary>
     internal const double IndexRankHighPerMpx = 20;
 
+    /// <summary>The overlap of the lights' persistent pixels with the master is read at these levels of the master, in ADU equivalent (the first four hot levels).</summary>
+    internal static readonly double[] OverlapLevelsAdu = [10, 20, 50, 100];
+
+    /// <summary>Under this many degrees either way, two sets are said to be at the same temperature.</summary>
+    internal const double SameTemperatureCelsius = 0.05;
+
     /// <summary>The overlap of two sets of darks is read at this level, in ADU equivalent: how many of the session's pixels above it the partner has above it too, and how many of the partner's above it the session has above <see cref="HotAdu"/> (the hand analysis of 2026-10-11).</summary>
     internal const double PartnerOverlapAdu = 50;
 

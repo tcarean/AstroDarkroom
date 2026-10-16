@@ -52,7 +52,7 @@ internal sealed record DarkSeriesResult(
         || Darks.Frames.Any(f => f.Error is not null && !f.Skipped)
         || (Biases?.Frames.Any(f => f.Error is not null && !f.Skipped) ?? false) || BiasError is not null
         || (Lights?.Frames.Any(f => f.Error is not null && !f.Skipped) ?? false) || LightsError is not null
-        || PartnerError is not null;
+        || PartnerError is not null || (Partner?.Failed ?? 0) > 0;
 }
 
 /// <summary>
@@ -203,7 +203,9 @@ internal static class DarkSeriesRun
             }
         }
 
-        return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, ownHot50, ownIn, partnerHot50, partnerIn);
+        StackFrame[] failed = stack.Frames.Where(f => f.Error is not null && !f.Skipped).ToArray();
+        string? firstError = failed.Length == 0 ? null : failed[0].Info.FileName + ": " + failed[0].Error;
+        return new PartnerAnalysis(session.Root, stack.Frames.Count, stack.Decoded.Count, stack.Norm, first.Iso, first.ExposureSeconds, index, IndexAnalyzer.Label(session, index), match, lightsOverPartner, failed.Length, firstError, ownHot50, ownIn, partnerHot50, partnerIn);
     }
 
     private static PhaseProgress? Phase(string phase, IProgress<RunProgress>? progress)

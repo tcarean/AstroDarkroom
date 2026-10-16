@@ -59,6 +59,9 @@ first, then the options, then one run. Without options it is the darks analysis 
 `DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
 rewritten line by a synchronous `IProgress` (a `Progress<T>` would post to the thread pool and
 could print after the report) and wiped before the report or an error; `--inventory` is the
-metadata-only run; `--out`, `--threads` and `--max-frames` are passed through. The exceptions
+metadata-only run; `--out`, `--threads`, `--max-frames` and `--against` are passed through
+(`--against` does not go with `--inventory`); before the run the partner folder is opened and
+`--out` is checked against the session's root and the partner's, so a wrong folder costs no
+decoding. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
 turned into `EROARE:` on stderr and exit 1.

@@ -22,6 +22,10 @@ the first decoded frame's reference plane, or the black the biases' stack establ
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
 dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
 normalisation factor of ADR 0004, read from the first frame's ISO and exposure.
+`FrameStack.DecodeOne` is the single-file form for a group that is never stacked (the
+lights): the same decode and 16-bit conversion, the frame listed with `dimensiune diferita`
+when its size is not the darks', and the file's own black and white returned (NaN black for a
+FITS, which the caller replaces).
 
 ## The planes and the estimators
 
@@ -92,7 +96,9 @@ dropped), and, with `--against`, opens the partner folder, loads its darks into 
 reduces them to a median master (`DarkSeriesAnalyzer.MedianMaster`) and matches the session's
 master against it (`MatchPartner`): the partner is opened with `SessionFolder.Open` like the
 input, so a session or a bare folder both work; a partner with no decodable frame is reported
-by its file errors, one of another size by the two sizes; its `PartnerAnalysis` carries the
+by its file errors, one of another size by the two sizes, and a frame that fails or has other
+settings is counted (`Failed`, `FirstError`) and makes the result an error; its
+`PartnerAnalysis` carries the
 first decoded frame's settings and the stack's normalisation, the index and label of its
 master, the session's darks over it (`IndexAnalyzer.SharedRatios`, the partner as reference),
 the lights over it (`IndexAnalyzer.Chain`), and the overlap of the two hot-pixel sets at

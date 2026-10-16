@@ -60,7 +60,8 @@ near-noise value.
   the median over the lights, with the first and the last light named, since the first lights
   of a night run cold.
 - **Two masters match on the pixels both have above 20 ADU-eq**, not on the partner's alone:
-  this changes ADR 0004's wording, which gets a dated note. The ratio on those pixels (0.42 for
+  this changes ADR 0004's wording, which gets a dated note; the owner confirmed the choice on
+  2026-10-16 after seeing the table above. The ratio on those pixels (0.42 for
   Smida over the library, 434 pixels) reproduces the prototype's 2.2 on the strongest pixels
   within 7 % and does not depend on which master is the reference. The report also gives the
   overlap of the two hot-pixel sets: how many of the session's pixels above 50 ADU-eq the
@@ -97,3 +98,18 @@ eight neighbours crosses 3 sigma by noise, which the persistence threshold absor
 amplitude dependence of the ratio is a finding for the owner: a library much warmer than a
 session over-corrects its weak hot pixels more than its strong ones, which `-opt` cannot fix
 with one factor.
+
+Known limits, from the step's reviews (2026-10-16), not addressed here: the CFA pattern and
+the row order of the lights and of the partner are not compared with the darks' (a Siril
+BOTTOM-UP FITS against NEF darks would put the hot pixels elsewhere, which the verdict reads as
+"the lights do not show the master's hot pixels"); a FITS carries no white, so for a FITS the
+saturation guards of the index and the ratios work at the presumed 65535 (R-020); a FITS
+partner takes its black from its first dark's median and not from its own biases; the
+saturation and amplitude edges differ from the prototype by one ADU (0.977 x 4095 = 4000.8
+against `a < 4000`, 0.73 x 4095 = 2989 against `< 3000`).
+
+Open, for the owner: a session with lights and no darks (the Veil session of 2026-10-06)
+cannot be matched against a library, since R-002 refuses it and the lights are measured only
+at the session's own master; ADR 0004 meant the lights to be measured at the partner's master
+too. `LightsAnalyzer` takes any master, so the change is in the session rules and the run; a
+candidate for a follow-up task, not done in step 3.

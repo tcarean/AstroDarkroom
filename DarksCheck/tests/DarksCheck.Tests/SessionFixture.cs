@@ -111,7 +111,7 @@ internal sealed class SessionFixture : IDisposable
     /// Writes <paramref name="lights"/> synthetic lights built by <paramref name="light"/>
     /// (given the 0-based index) into lights/, one every 150 s, ending an hour before the darks.
     /// </summary>
-    internal SessionFixture WithLights(int lights, Func<int, SyntheticLight> light, double exposure = 120, double iso = 400)
+    internal SessionFixture WithLights(int lights, Func<int, SyntheticLight> light, double exposure = 120, double? iso = 400)
     {
         ArgumentNullException.ThrowIfNull(light);
         Directory.CreateDirectory(LightsDir);

@@ -176,13 +176,18 @@ internal static class DarkReport
             w.WriteLine($"    lights sarite      : {skipped} din {l.Frames.Count} (plafonul de cadre; folosite {l.Used})");
         }
 
-        w.WriteLine($"    pixeli fierbinti   : {l.Persistent} persistenti in lights (izolati, peste {F(Th.LightHotSigmas, 0)} sigma locale, in cel putin {l.PersistentThreshold} din {l.Used} cadre)");
+        if (l.AssumedSettings > 0)
+        {
+            w.WriteLine($"    ATENTIE            : {l.AssumedSettings} {(l.AssumedSettings == 1 ? "light nu spune ISO-ul sau expunerea; presupuse ale dark-urilor" : "lights nu spun ISO-ul sau expunerea; presupuse ale dark-urilor")} (normalizare x{F(r.Darks.Norm, 2)})");
+        }
+
+        w.WriteLine($"    pixeli fierbinti   : {Pixels(l.Persistent)} persistenti in lights (izolati, peste {F(Th.LightHotSigmas, 0)} sigma locale, in cel putin {l.PersistentThreshold} din {RunReport.Frames(l.Used)})");
         w.WriteLine($"    in masterul dark   : {string.Join("; ", l.Overlap.Select(o => $"peste {F(o.LevelAdu, 0)}: {o.Both} din {l.Persistent}" + (l.Persistent > 0 ? $" ({F(100.0 * o.Both / l.Persistent, 0)} %)" : "")))}  [{eq}]");
-        w.WriteLine($"    din master in lights: {string.Join("; ", l.Overlap.Select(o => $"peste {F(o.LevelAdu, 0)}: {o.Both} din {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))}");
+        w.WriteLine($"    master in lights   : {string.Join("; ", l.Overlap.Select(o => $"peste {F(o.LevelAdu, 0)}: {o.Both} din {o.DarkCount}" + (o.DarkCount > 0 ? $" ({F(100.0 * o.Both / o.DarkCount, 0)} %)" : "")))}");
         w.WriteLine($"    nepotriviti        : {(l.Missed == 0 ? "niciun pixel persistent in lights sub pragul masterului" : $"{l.Missed} {(l.Missed == 1 ? "pixel persistent" : "pixeli persistenti")} in lights sub {F(Th.HotAdu, 0)} {eq} in master (mediana lor in master {F(l.MissedDarkExcessMedian, 0)} {eq})")}");
         MatchFigures m = l.LightsOverDark;
-        w.WriteLine($"    amplitudine        : {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel fierbinte sub saturatie in master" : $"lights / dark {F(m.Ratio, 2)} pe noapte (mediana pe {m.Pixels} cadre; primul {F(l.RatioFirst, 2)}, ultimul {F(l.RatioLast, 2)}; {l.AmpPixels} pixeli)")}");
-        w.WriteLine($"    verdict            : {MatchText(m, "dark-ul")}");
+        w.WriteLine($"    amplitudine        : {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel fierbinte sub saturatie in master" : $"lights / dark {F(m.Ratio, 2)} pe noapte (mediana pe {RunReport.Frames(m.Pixels)}; primul {F(l.RatioFirst, 2)}, ultimul {F(l.RatioLast, 2)}; {Pixels(l.AmpPixels)})")}");
+        w.WriteLine($"    verdict            : {MatchText(m, "dark-ul", "lights-urile")}");
     }
 
     private static void WriteIndex(DarkSeriesResult r, TextWriter w)
@@ -207,28 +212,42 @@ internal static class DarkReport
             MatchFigures m = p.OwnOverPartner;
             string settings = p.Iso is double iso && p.ExposureSeconds is double e ? $"ISO {F(iso, 0)}, {InventoryReport.Exposure(e)} s" : "setari necunoscute";
             w.WriteLine($"    partener           : {p.Folder}: {p.Index.Tag} ({F(p.Index.Index, 1)} ADU-eq; {RunReport.Frames(p.Used)} din {p.Frames}, {settings}); eticheta {p.Label}");
-            w.WriteLine($"    dark-uri / partener: {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel comun" : $"{F(m.Ratio, 2)} (q25 {F(m.Q25, 2)}, q75 {F(m.Q75, 2)}, {m.Pixels} pixeli comuni) dupa normalizare, adica dark-urile sesiunii sunt cu {Signed(m.DeltaCelsius, 1)} grade fata de partener")}");
+            if (p.Failed > 0)
+            {
+                w.WriteLine($"    ATENTIE            : {p.Failed} {(p.Failed == 1 ? "dark al partenerului nu s-a putut folosi" : "dark-uri ale partenerului nu s-au putut folosi")} (primul: {p.FirstError})");
+            }
+
+            w.WriteLine($"    dark-uri / partener: {(m.Verdict == MatchVerdict.Unmeasured ? "NEMASURAT: niciun pixel comun" : $"{F(m.Ratio, 2)} (q25 {F(m.Q25, 2)}, q75 {F(m.Q75, 2)}, {(m.Pixels == 1 ? "1 pixel comun" : $"{m.Pixels} pixeli comuni")}) dupa normalizare, adica dark-urile sesiunii sunt cu {Degrees(m)} fata de partener")}");
             string lvl = F(Th.PartnerOverlapAdu, 0);
             w.WriteLine($"    pixeli comuni      : {p.OwnHot50InPartner50} din {p.OwnHot50} ai sesiunii peste {lvl} ADU-eq sunt peste {lvl} si la partener{(p.OwnHot50 > 0 ? $" ({F(100.0 * p.OwnHot50InPartner50 / p.OwnHot50, 0)} %)" : "")}; {p.PartnerHot50InOwn20} din {p.PartnerHot50} ai partenerului peste {lvl} sunt peste {F(Th.HotAdu, 0)} in sesiune{(p.PartnerHot50 > 0 ? $" ({F(100.0 * p.PartnerHot50InOwn20 / p.PartnerHot50, 0)} %)" : "")}");
             if (p.LightsOverPartner.Verdict != MatchVerdict.Unmeasured)
             {
                 // lights over the partner, through the session's darks: (lights / dark) x (dark / partner)
                 MatchFigures chained = p.LightsOverPartner;
-                w.WriteLine($"    lights / partener  : {F(chained.Ratio, 2)} (prin dark-urile sesiunii), adica lights-urile sunt cu {Signed(chained.DeltaCelsius, 1)} grade fata de partener");
-                w.WriteLine($"    verdict partener   : {MatchText(chained, "partenerul")}");
+                w.WriteLine($"    lights / partener  : {F(chained.Ratio, 2)} (prin dark-urile sesiunii), adica lights-urile sunt cu {Degrees(chained)} fata de partener");
+                w.WriteLine($"    verdict partener   : {MatchText(chained, "partenerul", "lights-urile")}");
             }
             else
             {
-                w.WriteLine($"    verdict partener   : {MatchText(m, "partenerul")} (dark-urile sesiunii fata de partener)");
+                w.WriteLine($"    verdict partener   : {MatchText(m, "partenerul", "dark-urile sesiunii")} (dark-urile sesiunii fata de partener)");
             }
         }
     }
 
-    /// <summary>The words of a match verdict, <paramref name="master"/> being "dark-ul" or "partenerul": what Siril can do with it.</summary>
-    internal static string MatchText(MatchFigures m, string master)
+    /// <summary>"+2.3 grade", or "0.0 grade" when the ratio is not positive (no degrees from a ratio of 0).</summary>
+    private static string Degrees(MatchFigures m) => double.IsNaN(m.DeltaCelsius) ? "0.0 grade" : Signed(m.DeltaCelsius, 1) + " grade";
+
+    /// <summary>The words of a match verdict, <paramref name="master"/> being "dark-ul" or "partenerul" and <paramref name="set"/> the set measured against it ("lights-urile", "dark-urile sesiunii"): what Siril can do with it.</summary>
+    internal static string MatchText(MatchFigures m, string master, string set)
     {
         ArgumentNullException.ThrowIfNull(m);
-        string where = Math.Abs(m.DeltaCelsius) < 0.05
+        if (m.Verdict == MatchVerdict.Unmatched && (m.Ratio <= 0 || m.Q25 <= 0))
+        {
+            // the ratios sit around zero: the set shows none of the master's hot pixels
+            return $"ATENTIE: nepotrivit: {set} nu arata pixelii fierbinti ai {(master == "dark-ul" ? "dark-ului" : "partenerului")} (raport {F(m.Ratio, 2)}; reducere de zgomot in aparat, alt aparat sau alta orientare?)";
+        }
+
+        string where = Math.Abs(m.DeltaCelsius) < Th.SameTemperatureCelsius
             ? $"{master} e la aceeasi temperatura"
             : $"{master} e {(m.DeltaCelsius < 0 ? "mai cald" : "mai rece")} cu {F(Math.Abs(m.DeltaCelsius), 1)} grade";
         return m.Verdict switch
@@ -454,7 +473,13 @@ internal static class DarkReport
 
     private static string Ratio(double v) => double.IsNaN(v) ? "-" : F(v, 3);
 
-    private static string Signed(double v, int decimals) => (v >= 0 ? "+" : "") + F(v, decimals);
+    private static string Signed(double v, int decimals)
+    {
+        double r = Math.Round(v, decimals, MidpointRounding.AwayFromZero);
+        return (r < 0 ? "-" : "+") + F(Math.Abs(r), decimals);
+    }
+
+    private static string Pixels(int n) => n == 1 ? "1 pixel" : n.ToString(CultureInfo.InvariantCulture) + " pixeli";
 
     private static string Time(DateTime? t) => t is DateTime d ? d.ToString("HH:mm:ss", CultureInfo.InvariantCulture) : "-";
 

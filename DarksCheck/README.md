@@ -158,7 +158,8 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, pixelii peste 20 ADU-eq, pe
   planul G1; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
 - **Tabel pe lights**: ora, cerul peste negru, sigma locala (scara detectorului), candidatii,
-  pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1.
+  pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1. Un light care nu
+  spune ISO-ul sau expunerea e luat la setarile dark-urilor, cu o linie `ATENTIE`.
 
 ```
   9. LIGHTS FATA DE DARK
@@ -183,9 +184,13 @@ pixelii peste 50 ADU-eq ai sesiunii ii are si partenerul peste 50 si cati din ai
 peste 50 ii are sesiunea peste 20, si `lights / partener`, raportul lights-urilor fata de
 partener prin dark-urile sesiunii, cu `verdict partener` dupa aceleasi praguri (fara lights,
 verdictul e al dark-urilor fata de partener). Pe Smida fata de biblioteca: 0.42 pe 434 pixeli,
-adica biblioteca e cu 7.5 grade mai calda, doar corectie cosmetica. Un partener care nu se
-poate deschide sau are alta dimensiune da o linie `ATENTIE` si iesire `1`; restul raportului
-ramane.
+adica biblioteca e cu 7.5 grade mai calda, doar corectie cosmetica. Un folder partener care nu
+se poate deschide e refuzat cu `EROARE` inainte de orice decodare; unul cu alta dimensiune sau
+fara niciun dark decodabil da o linie `ATENTIE` si iesire `1`, restul raportului ramane; un
+dark al partenerului care nu se poate folosi e numarat intr-o linie `ATENTIE` (iesire `1`).
+`--out` nu poate fi nici in folderul partenerului. Un raport in jurul lui zero (lights-urile nu
+arata deloc pixelii fierbinti ai masterului: reducere de zgomot in aparat, alt aparat, alta
+orientare a FITS-ului) e `nepotrivit`, cu propozitia lui.
 
 Un FITS nu spune nivelul de negru (un FITS convertit de Siril pastreaza piedestalul aparatului,
 150 la D3300), asa ca pentru FITS negrul e mediana primului bias cand exista bias-uri, altfel a

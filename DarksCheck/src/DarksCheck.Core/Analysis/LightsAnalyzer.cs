@@ -18,7 +18,7 @@
 namespace DarksCheck.Core;
 
 /// <summary>One light (R-050): the sky and its sigma per plane, the detector's sigma (of the local excess) per plane, the hot-pixel candidates and the isolated ones, its amplitude at the dark's hot pixels relative to the master, or why it has no figures.</summary>
-internal sealed record LightFigures(FrameInfo Info, string? Error, bool Skipped, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
+internal sealed record LightFigures(FrameInfo Info, string? Error, bool Skipped, bool AssumedSettings, IReadOnlyList<double> SkyMedian, IReadOnlyList<double> SkySigma, IReadOnlyList<double> LocalSigma, int Candidates, int IsolatedHot, double AmpRatioMedian, double AmpRatioQ25, double AmpRatioQ75);
 
 /// <summary>At one level of the dark master: how many pixels the master has above it, and how many of those are persistent in the lights (R-051); the persistent count itself is <see cref="LightsAnalysis.Persistent"/>.</summary>
 internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
@@ -31,6 +31,7 @@ internal sealed record OverlapAtLevel(double LevelAdu, int DarkCount, int Both);
 /// </summary>
 internal sealed record LightsAnalysis(
     int Used,
+    int AssumedSettings,
     IReadOnlyList<LightFigures> Frames,
     int PersistentThreshold,
     int Persistent,
@@ -86,7 +87,7 @@ internal static class LightsAnalyzer
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})", true, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})", true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -96,13 +97,16 @@ internal static class LightsAnalyzer
                 (StackFrame frame, double black, double white) = FrameStack.DecodeOne(i + 1, path, w, h);
                 if (frame.Pixels is null)
                 {
-                    frames[i] = new LightFigures(frame.Info, frame.Error, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                    frames[i] = new LightFigures(frame.Info, frame.Error, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 }
                 else
                 {
                     double lightBlack = double.IsNaN(black) ? darks.Black : black;
-                    double normL = FrameStack.NormOf(frame.Info);
-                    (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, excess, darks.Norm, ampIdx, darks.PlaneNames);
+                    // a light that does not say its ISO or exposure is taken at the darks' settings, the
+                    // usual case and the one check 1 verifies, and the light is marked
+                    bool assumed = frame.Info.Iso is not double || frame.Info.ExposureSeconds is not double;
+                    double normL = assumed ? darks.Norm : FrameStack.NormOf(frame.Info);
+                    (LightFigures f, List<int> isolated) = Measure(frame, w, h, lightBlack, white, normL, assumed, excess, darks.Norm, ampIdx);
                     frames[i] = f;
                     lock (gate)
                     {
@@ -118,7 +122,7 @@ internal static class LightsAnalyzer
             }
             catch (Exception e) when (e is not OperationCanceledException)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), e.Message, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), e.Message, false, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
             }
 
             progress?.Report((Interlocked.Increment(ref done), n));
@@ -143,7 +147,7 @@ internal static class LightsAnalyzer
         }
 
         List<OverlapAtLevel> overlap = [];
-        foreach (double level in Th.HotLevelsAdu.Take(4))
+        foreach (double level in Th.OverlapLevelsAdu)
         {
             double raw = DarkSeriesAnalyzer.HotLevel(level, darks.Norm);
             int dark = 0, both = 0;
@@ -173,7 +177,7 @@ internal static class LightsAnalyzer
 
         LightFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         MatchFigures match = IndexAnalyzer.Match(ok.Select(f => (float)f.AmpRatioMedian).ToArray());
-        return new LightsAnalysis(used, frames, threshold, persistent, hist, overlap, missedExcess.Count,
+        return new LightsAnalysis(used, frames.Count(f => f.AssumedSettings), frames, threshold, persistent, hist, overlap, missedExcess.Count,
             missedExcess.Count == 0 ? double.NaN : Planes.Median([.. missedExcess]), ampIdx.Count, match,
             ok.Length == 0 ? double.NaN : ok[0].AmpRatioMedian, ok.Length == 0 ? double.NaN : ok[^1].AmpRatioMedian);
     }
@@ -185,7 +189,7 @@ internal static class LightsAnalyzer
     }
 
     /// <summary>One light: the local excess per plane, its sigma, the candidates and the isolated hot pixels, the sky, the amplitude at the dark's hot pixels.</summary>
-    private static (LightFigures Figures, List<int> Isolated) Measure(StackFrame frame, int w, int h, double black, double white, double normL, float[] darkExcess, double normD, List<int> ampIdx, IReadOnlyList<string> planeNames)
+    private static (LightFigures Figures, List<int> Isolated) Measure(StackFrame frame, int w, int h, double black, double white, double normL, bool assumed, float[] darkExcess, double normD, List<int> ampIdx)
     {
         ushort[] px = frame.Pixels!;
         float[] e = new float[w * h];
@@ -274,7 +278,7 @@ internal static class LightsAnalyzer
         }
 
         bool any = ratio.Length > 0;
-        LightFigures f = new(frame.Info, null, false, skyMedian, skySigma, localSigma, candidates, isolated.Count,
+        LightFigures f = new(frame.Info, null, false, assumed, skyMedian, skySigma, localSigma, candidates, isolated.Count,
             any ? Planes.Median(ratio) : double.NaN, any ? Planes.Percentile(ratio, 25) : double.NaN, any ? Planes.Percentile(ratio, 75) : double.NaN);
         return (f, isolated);
     }

@@ -14,13 +14,14 @@ and the file `darkscheck-lights.csv` are described with the rest of the run in
 
 `LightsAnalyzer.Analyze` takes the paths of the lights and the darks' analysis (its median
 master, black, white, size, normalisation and plane names). The lights are never stacked:
-`FrameStack.DecodeOne` decodes one file, `Measure` reduces it to a `LightFigures` and the
-mosaic is dropped, with the same forced collection per frame as the stack (`dark-analysis.md`,
-"The stack"). `threads` lights are in flight at once; above the frame cap only every k-th is
+`FrameStack.DecodeOne` decodes one file (`dark-analysis.md`, "The stack"), `Measure` reduces
+it to a `LightFigures` and the mosaic is dropped, with the same forced collection per frame as
+the stack. `threads` lights are in flight at once; above the frame cap only every k-th is
 decoded and the others are listed as skipped, the same rule as the darks. A light of another
 size than the darks, or one that fails to decode, is listed with its error. A FITS light has no
 black level of its own and takes the darks' black (the pedestal is the camera's); a raw brings
-libraw's.
+libraw's. A light that does not say its ISO or its exposure is taken at the darks'
+normalisation and marked `AssumedSettings`.
 
 `Measure` works per CFA plane. The sky is the clipped sigma and median of the plane, read on
 every fourth row and column (`Subsample`), minus black. The **local excess** `LocalExcess` is
@@ -98,12 +99,6 @@ lights-over-dark ratio. Both are carried in the result (`DarkSeriesResult.Lights
 
 ## Measured
 
-On the Smida session (2026-10-16, the console): 86 persistent pixels, 85 above 10 and above
-20 ADU-eq in the master, 70 of the master's 111 above 50, 16 of its 24 above 100, one
-persistent pixel at 3 ADU-eq in the master; the lights at 1.00 of the master over the night,
-0.72 at the first light, 0.94 at the last, on 443 pixels; index 25.2, `idx25`. The library:
-index 67.4, `idx67`; Smida over the library 0.42 on 434 pixels (quartiles 0.38 .. 0.44),
--7.5 degrees, cosmetic correction only; all 111 Smida pixels above 50 are above 50 in the
-library, 425 of the library's 528 above 50 are above 20 in Smida. The prototype read 86, 85,
-1.00, 0.72, 0.94, 25 and 66.5, and 8.9 raw (2.2 after the ISO factor) on the Smida pixels above
-50. Recorded as V-005 and V-006.
+The figures on the Smida session and the library, and how they compare with the prototype's,
+are V-005 and V-006 in `docs/validation.md`; the pixel selections the matching was chosen on
+are the table of ADR 0008.

@@ -34,7 +34,7 @@ internal enum MatchVerdict
     /// <summary>Too far either way.</summary>
     Unmatched,
 
-    /// <summary>No shared pixel to measure on.</summary>
+    /// <summary>No pixel to measure on, or no ratio at all.</summary>
     Unmeasured,
 }
 
@@ -160,11 +160,17 @@ internal static class IndexAnalyzer
             : Match([(float)(aOverM.Ratio * mOverB.Ratio)]);
     }
 
+    /// <summary>The verdict of a ratio: NaN is unmeasured; a ratio at or under 0 is a measurement, the set shows none of the master's hot pixels, and is unmatched.</summary>
     internal static MatchVerdict Judge(double ratio)
     {
-        if (double.IsNaN(ratio) || ratio <= 0)
+        if (double.IsNaN(ratio))
         {
             return MatchVerdict.Unmeasured;
+        }
+
+        if (ratio <= 0)
+        {
+            return MatchVerdict.Unmatched;
         }
 
         if (ratio >= Th.MatchDirectLow && ratio <= Th.MatchDirectHigh)
@@ -205,7 +211,8 @@ internal static class IndexAnalyzer
 /// A second set of darks given with `--against` (R-063): its folder, frames and settings, its
 /// index, the session's darks over it on the shared pixels, the session's lights over it
 /// through the darks (<see cref="MatchFigures.None"/> without lights, R-064), and how the two
-/// hot-pixel sets overlap at <see cref="Th.PartnerOverlapAdu"/>.
+/// hot-pixel sets overlap at <see cref="Th.PartnerOverlapAdu"/>; its frames that failed to
+/// decode or had other settings (not the skipped ones) are counted with the first error.
 /// </summary>
 internal sealed record PartnerAnalysis(
     string Folder,
@@ -218,6 +225,8 @@ internal sealed record PartnerAnalysis(
     string Label,
     MatchFigures OwnOverPartner,
     MatchFigures LightsOverPartner,
+    int Failed,
+    string? FirstError,
     int OwnHot50,
     int OwnHot50InPartner50,
     int PartnerHot50,

@@ -44,7 +44,7 @@ internal sealed class SyntheticLight
     internal static readonly IReadOnlyList<(int X, int Y, double Peak, double SigmaPx)> ThreeStars =
         [(100, 60, 3000, 1.5), (200, 150, 300, 1.2), (60, 150, 70000, 2.0)];
 
-    internal byte[] Build(DateTime start, double exposure = 120, double iso = 400)
+    internal byte[] Build(DateTime start, double exposure = 120, double? iso = 400)
     {
         double[] field = new double[Width * Height];
         Random rng = new(Seed);
