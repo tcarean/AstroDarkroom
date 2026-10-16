@@ -135,7 +135,11 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
 
 Un FITS nu spune nivelul de negru (un FITS convertit de Siril pastreaza piedestalul aparatului,
 150 la D3300), asa ca pentru FITS negrul e mediana primului bias cand exista bias-uri, altfel a
-primului dark; linia `=== DARK-URI` spune de unde vine.
+primului dark; linia `=== DARK-URI` spune de unde vine. Nici albul nu-l spune: saturatia unui
+FITS se citeste la albul fisierului (65535 pe 16 biti), deci un aparat pe 12 biti care satureaza
+la 4095 intr-un FITS pe 16 biti nu apare ca saturat. Un dark cu alt ISO sau alta expunere decat
+primul e lasat deoparte cu `setari diferite`; un singur dark nu e o serie: verificarile 3, 4, 5
+si 8 raman `NEMASURAT`.
 
 `--out DIR` scrie in DIR raportul (`darkscheck-raport.txt`), cate un CSV cu toate cifrele pe
 cadru si pe plan (`darkscheck-darks.csv`, `darkscheck-biases.csv`) si hartile planului G1 ca

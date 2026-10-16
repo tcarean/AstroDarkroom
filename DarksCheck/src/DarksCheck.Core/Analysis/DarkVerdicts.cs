@@ -76,10 +76,13 @@ internal static class DarkVerdictAnalyzer
         int[] outliers = ok.Where(f => f.Residuals[refPlane].Sigma > Th.NoiseOutlierFactor * medianSigma).Select(f => f.Info.Index).ToArray();
         double? read = b is null || double.IsNaN(b.ReadNoise[refPlane]) ? null : b.ReadNoise[refPlane];
         double? overRead = read is double rn && !double.IsNaN(d.Noise.TemporalSigma) ? Math.Sqrt(Math.Max(d.Noise.TemporalSigma * d.Noise.TemporalSigma - rn * rn, 0)) : null;
-        double rowAdu = Med(ok.Select(f => f.Residuals[refPlane].RowStd));
-        double rowRatio = Med(ok.Select(f => f.Residuals[refPlane].RowExpected > 0 ? f.Residuals[refPlane].RowStd / f.Residuals[refPlane].RowExpected : double.NaN));
-        double colRatio = Med(ok.Select(f => f.Residuals[refPlane].ColExpected > 0 ? f.Residuals[refPlane].ColStd / f.Residuals[refPlane].ColExpected : double.NaN));
-        NoiseVerdict noise = new(residual.Length == 0 ? Verdict.Unmeasured : outliers.Length == 0 ? Verdict.Ok : Verdict.Warning, medianSigma, outliers, read, overRead, rowAdu, rowRatio, colRatio);
+        // One frame has no residual against its own median (it is zero by construction):
+        // check 4 is unmeasured, as checks 3 and 8 are.
+        bool series = residual.Length >= 2;
+        double rowAdu = series ? Med(ok.Select(f => f.Residuals[refPlane].RowStd)) : double.NaN;
+        double rowRatio = series ? Med(ok.Select(f => f.Residuals[refPlane].RowExpected > 0 ? f.Residuals[refPlane].RowStd / f.Residuals[refPlane].RowExpected : double.NaN)) : double.NaN;
+        double colRatio = series ? Med(ok.Select(f => f.Residuals[refPlane].ColExpected > 0 ? f.Residuals[refPlane].ColStd / f.Residuals[refPlane].ColExpected : double.NaN)) : double.NaN;
+        NoiseVerdict noise = new(!series ? Verdict.Unmeasured : outliers.Length == 0 ? Verdict.Ok : Verdict.Warning, series ? medianSigma : double.NaN, series ? outliers : [], read, overRead, rowAdu, rowRatio, colRatio);
 
         // 6. pattern: the worst structured banding over the planes, and the glow of the leak map
         double p2p = d.Banding.Max(x => Math.Max(x.RowP2p, x.ColP2p)) / norm;

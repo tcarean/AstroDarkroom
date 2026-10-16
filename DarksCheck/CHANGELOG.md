@@ -33,8 +33,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the report, a CSV per darks and per biases and the three maps of the reference plane as
   PNG; `--threads N` sets the parallel decoding, `--max-frames N` the frames held in memory
   (60 by default; above it every k-th frame is read). A FITS without a black level takes the
-  biases' median as black. V-003 and V-004 check the Smida darks and the 2026-10-10 library
-  against the Python prototype's figures.
+  biases' median as black. V-003 checks the Smida darks against the Python prototype's figures;
+  V-004 pins the 2026-10-10 library run (the prototype has only its master, regions and warming).
 - `prototype/`: the Python scripts of the 2026-10-11 analysis of the Smida session of
   2026-08-12, frozen, and their report, figures and CSV files under
   `docs/validation/2026-08-12-smida/`; V-001 checks the inventory of that session and V-002

@@ -168,4 +168,9 @@ ratio 2.2 ± 0.2 after the ISO factor and about +7 °C.
   median master's noise from the temporal sigma), the dead limit and the biases' levels scaled
   by the normalisation (now raw), skipped frames counted as errors, `--out` accepted inside the
   session, a crash on frames under one block, and a corner over the threshold passing check 2
-  (the fifth rule is gone); `--max-frames` became an option.
+  (the fifth rule is gone); `--max-frames` became an option. A third review (Fable, 2026-10-16)
+  found thirteen more, fixed in a follow-up commit: skipped biases counted as errors and failed
+  biases invisible in the console, a single dark printing zero noise as measured, the settings
+  check comparing ISO x exposure instead of each setting, float FITS converted blind, `--out`
+  refused only after the analysis, a PNG of an empty map, unit labels and doc figures; the
+  median factor sqrt(pi / 2) is kept knowingly under the 1.35-1.40 measured at 10 frames.

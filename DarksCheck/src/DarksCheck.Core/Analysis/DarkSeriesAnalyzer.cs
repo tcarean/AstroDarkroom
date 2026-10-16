@@ -59,16 +59,6 @@ internal sealed record NoiseVsN(IReadOnlyList<NoisePoint> Curve, double SigmaFra
 /// <summary>The mean of nine areas of a binned map, in ADU above black: the centre (40 .. 60 %), the four corners and the four edges (each a tenth of the map).</summary>
 internal sealed record Regions(double Centre, double TopLeft, double TopRight, double BottomLeft, double BottomRight, double Top, double Bottom, double Left, double Right)
 {
-    /// <summary>The largest departure of an edge or a corner from the centre, signed.</summary>
-    internal double MaxEdgeOffset
-    {
-        get
-        {
-            double[] d = [TopLeft - Centre, TopRight - Centre, BottomLeft - Centre, BottomRight - Centre, Top - Centre, Bottom - Centre, Left - Centre, Right - Centre];
-            return d.MaxBy(Math.Abs);
-        }
-    }
-
     internal static Regions Of(float[] map, int w, int h)
     {
         if (w <= 0 || h <= 0)
@@ -135,7 +125,7 @@ internal static class DarkSeriesAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun dark nu s-a putut decoda");
+            throw new InvalidOperationException("niciun dark nu s-a putut decoda" + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;

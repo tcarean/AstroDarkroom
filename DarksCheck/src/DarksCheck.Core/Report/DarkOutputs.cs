@@ -39,15 +39,7 @@ internal static class DarkOutputs
     internal static IReadOnlyList<string> WriteAll(DarkSeriesResult r, string dir)
     {
         ArgumentNullException.ThrowIfNull(r);
-        ArgumentException.ThrowIfNullOrWhiteSpace(dir);
-        string full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        string root = r.Inventory.Session.Root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-        {
-            // the rule "Read-only input": nothing is ever written into the session or under it
-            throw new InvalidOperationException($"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic");
-        }
-
+        CheckOutDir(r.Inventory.Session.Root, dir);
         Directory.CreateDirectory(dir);
         List<string> written = [];
 
@@ -72,27 +64,43 @@ internal static class DarkOutputs
         }
 
         int rp = r.ReferencePlane;
-        written.Add(WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]));
+        Add(written, WriteMap(Path.Combine(dir, DarkMapName), r.Darks.MeanMaps[rp]));
         if (r.Biases is BiasAnalysis bb)
         {
-            written.Add(WriteMap(Path.Combine(dir, BiasMapName), bb.MeanMaps[rp]));
+            Add(written, WriteMap(Path.Combine(dir, BiasMapName), bb.MeanMaps[rp]));
         }
 
         if (r.DarkCurrent is DarkCurrent dc)
         {
-            written.Add(WriteMap(Path.Combine(dir, DarkMinusBiasMapName), dc.Maps[rp]));
+            Add(written, WriteMap(Path.Combine(dir, DarkMinusBiasMapName), dc.Maps[rp]));
         }
 
         return written;
     }
 
-    /// <summary>One row per dark: the metadata, then per plane the levels and the residual figures, then the amplitude ratio and the edges.</summary>
+    /// <summary>
+    /// The rule "Read-only input": the output folder may not be the session folder or one under
+    /// it. Called before the analysis runs (the console) and again by <see cref="WriteAll"/>.
+    /// </summary>
+    internal static void CheckOutDir(string sessionRoot, string dir)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(dir);
+        string full = Path.GetFullPath(dir).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        string root = Path.GetFullPath(sessionRoot).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        if (full.Equals(root, StringComparison.OrdinalIgnoreCase) || full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"--out nu poate fi folderul sesiunii sau unul din el ({root}): acolo nu se scrie nimic");
+        }
+    }
+
+    /// <summary>One row per dark: the metadata, then per plane the levels and the residual figures, then the amplitude ratio and the edges; a row without figures is padded to the header's width.</summary>
     internal static string DarksCsv(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
         DarkSeriesAnalysis d = r.Darks;
         StringBuilder sb = new();
-        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "mean_above_black"];
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "skipped", "mean_above_black"];
         foreach (string p in d.PlaneNames)
         {
             head.AddRange([$"{p}_median", $"{p}_sigma", $"{p}_mean", $"{p}_p999", $"{p}_above10", $"{p}_above20", $"{p}_above50", $"{p}_above100", $"{p}_above500", $"{p}_saturated", $"{p}_low", $"{p}_min", $"{p}_max",
@@ -103,7 +111,7 @@ internal static class DarkOutputs
         sb.AppendLine(string.Join(",", head));
         foreach (DarkFrameFigures f in d.Frames)
         {
-            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Error ?? ""), N(f.MeanAboveBlack)];
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Skipped ? "" : f.Error ?? ""), Q(f.Skipped ? f.Error ?? "" : ""), N(f.MeanAboveBlack)];
             if (f.Error is null)
             {
                 for (int p = 0; p < 4; p++)
@@ -117,6 +125,7 @@ internal static class DarkOutputs
                 row.AddRange([N(f.AmpRatioMedian), N(f.AmpRatioQ25), N(f.AmpRatioQ75), N(f.Edges?.Left), N(f.Edges?.Right), N(f.Edges?.Top), N(f.Edges?.Bottom), N(f.Edges?.TopLeft)]);
             }
 
+            Pad(row, head.Count);
             sb.AppendLine(string.Join(",", row));
         }
 
@@ -127,7 +136,7 @@ internal static class DarkOutputs
     {
         ArgumentNullException.ThrowIfNull(b);
         StringBuilder sb = new();
-        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error"];
+        List<string> head = ["index", "file", "time", "exposure_s", "iso", "error", "skipped"];
         foreach (string p in b.PlaneNames)
         {
             head.AddRange([$"{p}_median", $"{p}_sigma", $"{p}_mean", $"{p}_p999", $"{p}_saturated", $"{p}_low", $"{p}_min", $"{p}_max"]);
@@ -136,7 +145,7 @@ internal static class DarkOutputs
         sb.AppendLine(string.Join(",", head));
         foreach (BiasFrameFigures f in b.Frames)
         {
-            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Error ?? "")];
+            List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Skipped ? "" : f.Error ?? ""), Q(f.Skipped ? f.Error ?? "" : "")];
             if (f.Error is null)
             {
                 foreach (PlaneFigures pf in f.Planes)
@@ -145,16 +154,38 @@ internal static class DarkOutputs
                 }
             }
 
+            Pad(row, head.Count);
             sb.AppendLine(string.Join(",", row));
         }
 
         return sb.ToString();
     }
 
-    /// <summary>A binned map as an 8-bit grey PNG, each block a MapScale x MapScale square, black at the 1st percentile and white at the 99th.</summary>
-    internal static string WriteMap(string path, BinnedMap m)
+    private static void Add(List<string> written, string? path)
+    {
+        if (path is not null)
+        {
+            written.Add(path);
+        }
+    }
+
+    private static void Pad(List<string> row, int columns)
+    {
+        while (row.Count < columns)
+        {
+            row.Add("");
+        }
+    }
+
+    /// <summary>A binned map as an 8-bit grey PNG, each block a MapScale x MapScale square, black at the 1st percentile and white at the 99th; null (nothing written) for a map without blocks.</summary>
+    internal static string? WriteMap(string path, BinnedMap m)
     {
         ArgumentNullException.ThrowIfNull(m);
+        if (m.W == 0 || m.H == 0)
+        {
+            return null;
+        }
+
         float[] v = [.. m.Values];
         double lo = Planes.Percentile(v, 1), hi = Planes.Percentile(v, 99);
         if (hi <= lo)

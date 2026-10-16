@@ -35,7 +35,7 @@ internal static class DarkReport
         double n = d.Norm;
 
         w.WriteLine();
-        w.WriteLine($"=== DARK-URI: {RunReport.Frames(d.Used)} decodate din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===");
+        w.WriteLine($"=== DARK-URI: {(d.Used == 1 ? "1 cadru decodat" : d.Used.ToString(CultureInfo.InvariantCulture) + " cadre decodate")} din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===");
         w.WriteLine($"    normalizare        : {Normalisation(d)}");
         w.WriteLine($"    cuantizare         : pas {d.QuantStep} ADU langa negru; {d.UniqueValues} valori distincte in primul cadru ({g})");
         if (r.BiasError is not null)
@@ -43,13 +43,25 @@ internal static class DarkReport
             w.WriteLine($"    ATENTIE            : bias-urile nu s-au putut folosi: {r.BiasError}");
         }
 
+        BiasFrameFigures[] badBiases = r.Biases?.Frames.Where(f => f.Error is not null && !f.Skipped).ToArray() ?? [];
+        if (badBiases.Length > 0)
+        {
+            w.WriteLine($"    ATENTIE            : {badBiases.Length} {(badBiases.Length == 1 ? "bias nu s-a putut decoda" : "bias-uri nu s-au putut decoda")} (primul: {badBiases[0].Info.FileName}: {badBiases[0].Error}); vezi {DarkOutputs.BiasesCsvName} cu --out");
+        }
+
+        int skippedBiases = r.Biases?.Frames.Count(f => f.Skipped) ?? 0;
+        if (skippedBiases > 0)
+        {
+            w.WriteLine($"    bias-uri sarite    : {skippedBiases} din {r.Biases!.Frames.Count} (plafonul de cadre; folosite {r.Biases.Used})");
+        }
+
         // 2
         w.WriteLine();
         w.WriteLine("  2. SCURGERI DE LUMINA SI GRADIENT");
-        w.WriteLine($"    master dark        : {RegionsLine(d.MeanMaps[rp].Regions, n)}  [{g}, {eq} peste negru, media a {d.Used} cadre, blocuri de {Th.BinPx * 2} px]");
+        w.WriteLine($"    master dark        : {RegionsLine(d.MeanMaps[rp].Regions, n)}  [{g}, {eq} peste negru, media a {RunReport.Frames(d.Used)}, blocuri de {Th.BinPx * 2} px]");
         if (r.Biases is BiasAnalysis b)
         {
-            w.WriteLine($"    master bias        : {RegionsLine(b.MeanMaps[rp].Regions, 1)}  [{g}, ADU peste negru, media a {b.Used} cadre]");
+            w.WriteLine($"    master bias        : {RegionsLine(b.MeanMaps[rp].Regions, 1)}  [{g}, ADU peste negru, media a {RunReport.Frames(b.Used)}]");
         }
 
         if (r.DarkCurrent is DarkCurrent dc)
@@ -57,7 +69,7 @@ internal static class DarkReport
             w.WriteLine($"    dark - bias        : {RegionsLine(dc.Maps[rp].Regions, n)}; mediana {F(dc.Median / n, 2)}, {F(dc.P1 / n, 2)} .. {F(dc.P99 / n, 2)} (p1 .. p99)");
         }
 
-        w.WriteLine($"    verdict            : {Leak(v.Leak)}");
+        w.WriteLine($"    verdict            : {Leak(v.Leak, eq)}");
 
         // 3
         w.WriteLine();
@@ -87,8 +99,8 @@ internal static class DarkReport
         w.WriteLine();
         w.WriteLine("  6. MODEL FIX");
         w.WriteLine($"    benzi structurate  : {StructuredBanding(d)}");
-        w.WriteLine($"    glow               : {Glow(v.Leak, v.Pattern)}");
-        w.WriteLine($"    verdict            : {Pattern(v.Pattern)}");
+        w.WriteLine($"    glow               : {Glow(v.Leak, v.Pattern, eq)}");
+        w.WriteLine($"    verdict            : {Pattern(v.Pattern, eq)}");
 
         // 7
         w.WriteLine();
@@ -166,14 +178,14 @@ internal static class DarkReport
     private static string RegionsLine(Regions r, double n) =>
         $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (SS / DS / SJ / DJ), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}";
 
-    private static string Leak(LeakVerdict l)
+    private static string Leak(LeakVerdict l, string eq)
     {
         string source = l.FromDarkMinusBias ? "pe dark - bias" : "pe masterul dark (fara bias)";
         return l.Verdict switch
         {
-            Verdict.Unmeasured => "NEMASURAT: harta nu are valori",
-            Verdict.Ok => $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} ADU-eq de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source})",
-            _ => $"ATENTIE: {RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} ADU-eq de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? "scurgere de lumina sau glow" : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}",
+            Verdict.Unmeasured => "NEMASURAT: harta nu are valori (cadre mai mici de un bloc)",
+            Verdict.Ok => $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source})",
+            _ => $"ATENTIE: {RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? "scurgere de lumina sau glow" : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}",
         };
     }
 
@@ -191,6 +203,11 @@ internal static class DarkReport
 
     private static string ResidualRange(DarkSeriesAnalysis d, int rp)
     {
+        if (d.Used < 2)
+        {
+            return "NEMASURAT: un singur cadru nu are rezidual fata de propria mediana";
+        }
+
         List<string> parts = [];
         for (int p = 0; p < 4; p++)
         {
@@ -253,7 +270,12 @@ internal static class DarkReport
         HotStability h = d.Hot;
         if (h.Hot == 0)
         {
-            return "NEMASURAT";
+            return "NEMASURAT: niciun pixel fierbinte";
+        }
+
+        if (d.Used < 2)
+        {
+            return "NEMASURAT: stabilitatea cere cel putin 2 cadre";
         }
 
         return $"{h.Always} din {h.Hot} peste jumatate din prag in toate cele {RunReport.Frames(d.Used)}, {h.Flicker} lipsesc din 2 sau mai multe; sigma temporala {F(h.HotTemporalStd, 2)} ADU la cei fierbinti, {F(h.QuietTemporalStd, 2)} la restul; {h.RtsCandidates} candidati RTS pe {d.PlaneNames[rp]} (sigma temporala peste {F(Th.RtsSigmaFactor, 0)} x zgomotul unui cadru, {F(d.Noise.SigmaFrame, 2)})";
@@ -267,14 +289,14 @@ internal static class DarkReport
         return $"randuri {F(worstRow.RowStd / n, 3)} {Eq(d)} rms ({F(worstRow.RowP2p / n, 2)} varf la varf, {worstRow.Name}), coloane {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, {worstCol.Name})  [profilul masterului minus mediana glisanta pe {Th.BandingWindow}]";
     }
 
-    private static string Glow(LeakVerdict l, PatternVerdict p) =>
-        double.IsNaN(p.GlowAdu) ? "NEMASURAT" : $"{Signed(p.GlowAdu, 2)} ADU-eq la {RegionName(l.Where)} fata de centru ({(l.FromDarkMinusBias ? "dark - bias" : "masterul dark")})";
+    private static string Glow(LeakVerdict l, PatternVerdict p, string eq) =>
+        double.IsNaN(p.GlowAdu) ? "NEMASURAT" : $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({(l.FromDarkMinusBias ? "dark - bias" : "masterul dark")})";
 
-    private static string Pattern(PatternVerdict p) => p.Verdict switch
+    private static string Pattern(PatternVerdict p, string eq) => p.Verdict switch
     {
         Verdict.Unmeasured => "NEMASURAT: harta sau profilele nu au valori",
-        Verdict.Ok => $"OK: benzi sub {F(Th.BandingAdu, 1)} ADU-eq varf la varf si margini sub {F(Th.LeakAdu, 1)}",
-        _ => $"ATENTIE: {(p.BandingP2pAdu > Th.BandingAdu ? $"benzi de {F(p.BandingP2pAdu, 2)} ADU-eq varf la varf" : "")}{(p.BandingP2pAdu > Th.BandingAdu && Math.Abs(p.GlowAdu) > Th.LeakAdu ? " si " : "")}{(Math.Abs(p.GlowAdu) > Th.LeakAdu ? $"glow de {Signed(p.GlowAdu, 2)} ADU-eq" : "")}; modelul ramane in lights fara dark-uri",
+        Verdict.Ok => $"OK: benzi sub {F(Th.BandingAdu, 1)} {eq} varf la varf si margini sub {F(Th.LeakAdu, 1)}",
+        _ => $"ATENTIE: {(p.BandingP2pAdu > Th.BandingAdu ? $"benzi de {F(p.BandingP2pAdu, 2)} {eq} varf la varf" : "")}{(p.BandingP2pAdu > Th.BandingAdu && Math.Abs(p.GlowAdu) > Th.LeakAdu ? " si " : "")}{(Math.Abs(p.GlowAdu) > Th.LeakAdu ? $"glow de {Signed(p.GlowAdu, 2)} {eq}" : "")}; modelul ramane in lights fara dark-uri",
     };
 
     private static string DeadSat(DeadSatVerdict v) => v.Verdict == Verdict.Ok
@@ -312,5 +334,15 @@ internal static class DarkReport
 
     private static string Time(DateTime? t) => t is DateTime d ? d.ToString("HH:mm:ss", CultureInfo.InvariantCulture) : "-";
 
-    private static string F(double v, int decimals) => double.IsNaN(v) ? "-" : RunReport.F(v, decimals);
+    /// <summary>A figure with fixed decimals; a value that rounds to zero prints without a minus sign.</summary>
+    private static string F(double v, int decimals)
+    {
+        if (double.IsNaN(v))
+        {
+            return "-";
+        }
+
+        double r = Math.Round(v, decimals);
+        return RunReport.F(r == 0 ? 0 : v, decimals);
+    }
 }

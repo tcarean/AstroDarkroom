@@ -14,8 +14,10 @@ readers return a raster of doubles (194 MB at 24 MP); it is converted to `ushort
 it lands and dropped, with a forced collection per frame, since the collector otherwise lets
 those rasters pile up (14 GB of working set measured before the collection and the
 `System.GC.ConserveMemory=9` knob of the console's runtime config). The first file in order
-is decoded alone and sets the geometry and the scale; the others decode in parallel and must
-match its size. A FITS carries no black level, so the black of a FITS stack is the median of
+is decoded alone and sets the geometry and the scale (the files are tried in order until one
+decodes); the others decode in parallel and must match its size, its ISO and its exposure
+(each on its own, within `Th.ExposureTolerance`). A float FITS on 0 .. 1 is brought to 0 ..
+65535, one already in ADU is kept with 65535 as the presumed white. A FITS carries no black level, so the black of a FITS stack is the median of
 the first decoded frame's reference plane, or the black the biases' stack established when
 `DarkSeriesRun` read the biases first (a dark's median would overstate the pedestal by the
 dark current). Above `Th.MaxFramesInMemory` only every k-th file is decoded. `Norm` is the
@@ -74,8 +76,12 @@ the median master's predicted noise (`Th.MedianNoiseFactor` x the temporal sigma
 under the quantisation step. The hot levels have a floor of `Th.MinHotAdu` raw ADU, the dead
 limit is raw, and the biases' plane figures are not normalised. `DarkReport` prints the
 words; `DarkOutputs` writes the report, two CSV files and three grey PNG maps of the
-reference plane, and refuses a folder inside the session. A frame the cap skipped is listed
-as `sarit`, not as an error, and the exit code ignores it.
+reference plane, refuses a folder inside the session (the console checks that before the
+decoding starts) and skips the PNG of a map without blocks. A frame the cap skipped, dark or
+bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bias that failed
+is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
+With a single frame the residual, the stability, the warming and the noise curve have nothing
+to measure and the report says `NEMASURAT` rather than printing zeros.
 
 ## Measured
 

@@ -211,8 +211,8 @@ public class AcceptanceTests
         Assert.Contains("  8. CATE DARK-URI AJUNG\n", report, StringComparison.Ordinal);
         string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
         Assert.Equal(4, csv.Length);
-        Assert.StartsWith("index,file,time,exposure_s,iso,error,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);
-        Assert.Equal(csv[0].Split(',').Length, csv[1].Split(',').Length);
+        Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);
+        Assert.Equal(CsvFields(csv[0]), CsvFields(csv[1]));
         Assert.Equal(PngWriterSignature, File.ReadAllBytes(Path.Combine(outDir.Dir, "darkscheck-harta-dark.png")).Take(8));
     }
 
@@ -224,10 +224,12 @@ public class AcceptanceTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(2, i => new SyntheticDark { Seed = 100 + i });
         foreach (string dir in new[] { s.Root, s.DarksDir, Path.Combine(s.Root, "rapoarte") })
         {
-            (int code, _, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
+            (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--out", dir);
             Assert.Equal(1, code);
             Assert.Contains("EROARE: --out nu poate fi folderul sesiunii sau unul din el", stderr, StringComparison.Ordinal);
             Assert.False(Directory.Exists(Path.Combine(s.Root, "rapoarte")));
+            // refused before the analysis: no report was printed
+            Assert.DoesNotContain("=== DARK-URI", stdout, StringComparison.Ordinal);
         }
     }
 
@@ -239,8 +241,49 @@ public class AcceptanceTests
         Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
         string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-biases.csv"));
         Assert.Equal(4, csv.Length);
-        Assert.StartsWith("index,file,time,exposure_s,iso,error,R_median,R_sigma,R_mean,R_p999,R_saturated,R_low,R_min,R_max,G1_median", csv[0], StringComparison.Ordinal);
-        Assert.All(csv.Skip(1), row => Assert.Equal(csv[0].Split(',').Length, row.Split(',').Length));
+        Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,R_median,R_sigma,R_mean,R_p999,R_saturated,R_low,R_min,R_max,G1_median", csv[0], StringComparison.Ordinal);
+        Assert.All(csv.Skip(1), row => Assert.Equal(CsvFields(csv[0]), CsvFields(row)));
+    }
+
+    /// <summary>Fields of a CSV row, a quoted field (an error text with commas) counting as one.</summary>
+    private static int CsvFields(string row)
+    {
+        int n = 1;
+        bool quoted = false;
+        foreach (char c in row)
+        {
+            if (c == '"')
+            {
+                quoted = !quoted;
+            }
+            else if (c == ',' && !quoted)
+            {
+                n++;
+            }
+        }
+
+        return n;
+    }
+
+    [Fact]
+    public void R026_SkippedAndFailedFramesFillTheirCsvRowsAndTinyFramesGetNoMap()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 100 + i }, biases: 2);
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), new byte[100]);
+        using TempWorkspace outDir = new();
+        (int code, _, _) = Cli.Run(s.Root, "--threads", "2", "--max-frames", "2", "--out", outDir.Dir);
+        Assert.Equal(1, code);
+        string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
+        int columns = CsvFields(csv[0]);
+        Assert.All(csv.Skip(1), row => Assert.Equal(columns, CsvFields(row)));
+        Assert.Contains(csv.Skip(1), row => row.Contains(",\"\",\"sarit (peste 2 cadre", StringComparison.Ordinal));
+
+        using SessionFixture tiny = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i, Width = 24, Height = 16 });
+        using TempWorkspace outTiny = new();
+        (int code2, string stdout, _) = Cli.Run(tiny.Root, "--threads", "2", "--out", outTiny.Dir);
+        Assert.Equal(0, code2);
+        Assert.DoesNotContain("harta-dark.png", stdout, StringComparison.Ordinal);
+        Assert.Empty(Directory.GetFiles(outTiny.Dir, "*.png"));
     }
 
     [Fact]
@@ -254,8 +297,30 @@ public class AcceptanceTests
         Assert.DoesNotContain("eroare:", stdout, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void R041_UnusableBiasesPrintTheirAttentionLine_Exit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, i => new SyntheticDark { Seed = 100 + i }, biases: 2, bias: i => new SyntheticDark { Seed = 500 + i, Width = 128, Height = 96 });
+        (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2");
+        Assert.Equal(1, code);
+        Assert.Contains("ATENTIE            : bias-urile nu s-au putut folosi: bias-urile au 128 x 96 px, dark-urile 256 x 192", stdout, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R025_WhenNoDarkDecodesTheErrorNamesTheFiles_Exit1()
+    {
+        using TempWorkspace ws = new();
+        File.WriteAllBytes(ws.PathTo("DSC_0001.fit"), new byte[100]);
+        File.WriteAllBytes(ws.PathTo("DSC_0002.fit"), new byte[100]);
+        (int code, _, string stderr) = Cli.Run(ws.Dir, "--threads", "2");
+        Assert.Equal(1, code);
+        Assert.Contains("EROARE: niciun dark nu s-a putut decoda: DSC_0001.fit: FITS", stderr, StringComparison.Ordinal);
+        Assert.Contains("DSC_0002.fit: FITS", stderr, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("--threads", "0")]
+    [InlineData("--max-frames", "0")]
     [InlineData("--out", "")]
     public void R004_ABadOptionValueNamesTheOption_Exit1(string option, string value)
     {

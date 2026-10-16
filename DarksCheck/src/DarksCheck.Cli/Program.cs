@@ -62,6 +62,12 @@ internal static class Program
                 return inv.HasErrors ? 1 : 0;
             }
 
+            if (o.Out is not null)
+            {
+                // refused before the minutes of decoding, not after (R-026)
+                DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!).Root, o.Out);
+            }
+
             DarkSeriesResult r = DarkSeriesRun.Run(o.Folder!, new DarkOptions(o.Threads, o.MaxFrames), progress);
             progress.Clear();
             DarkReport.Write(r, stdout);

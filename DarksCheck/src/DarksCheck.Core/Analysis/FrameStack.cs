@@ -61,8 +61,6 @@ internal sealed class FrameStack
     /// <summary>The frames that decoded, in file order.</summary>
     internal IReadOnlyList<StackFrame> Decoded => Frames.Where(f => f.Pixels is not null).ToList();
 
-    internal int Pixels => Width * Height;
-
     /// <summary>The name of CFA position p (R, G1, G2, B) from the file's colour order, or `CFA[r,c]` when unknown.</summary>
     internal string PlaneName(int p) => Mosaic.Label(Cfa, p);
 
@@ -99,6 +97,7 @@ internal sealed class FrameStack
         int step = n > maxFrames ? (int)Math.Ceiling(n / (double)maxFrames) : 1;
         StackFrame[] frames = new StackFrame[n];
         (int W, int H, double Black, double White, CfaPattern? Cfa, string Source, double Norm)? geometry = null;
+        FrameInfo? firstInfo = null;
         Lock gate = new();
         int done = 0;
         ParallelOptions po = new() { MaxDegreeOfParallelism = Math.Max(1, threads), CancellationToken = cancel };
@@ -123,13 +122,13 @@ internal sealed class FrameStack
                 lock (gate)
                 {
                     geometry ??= (f.Image.W, f.Image.H, black, white, f.Cfa, source, NormOf(info));
+                    firstInfo ??= info;
                 }
 
-                (int w, int h, _, _, _, _, double gnorm) = geometry.Value;
-                double norm = NormOf(info);
+                (int w, int h, _, _, _, _, _) = geometry.Value;
                 frames[i] = f.Image.W != w || f.Image.H != h
                     ? new StackFrame(info, null, $"dimensiune diferita: {f.Image.W} x {f.Image.H} fata de {w} x {h}")
-                    : Math.Abs(norm - gnorm) > Th.ExposureTolerance * gnorm
+                    : !SameSettings(info, firstInfo)
                         ? new StackFrame(info, null, $"setari diferite de primul cadru: ISO {Fmt(info.Iso)}, {Fmt(info.ExposureSeconds)} s")
                         : new StackFrame(info, px, null);
                 f = null!;
@@ -187,6 +186,24 @@ internal sealed class FrameStack
 
     private static string Fmt(double? v) => v is double d ? d.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) : "?";
 
+    /// <summary>The same ISO (when both say it) and an exposure within <see cref="Th.ExposureTolerance"/> of the first frame's (when both say it): each setting on its own, so ISO 800 at 60 s is not ISO 400 at 120 s.</summary>
+    internal static bool SameSettings(FrameInfo a, FrameInfo first)
+    {
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(first);
+        bool sameIso = a.Iso is not double ia || first.Iso is not double ib || ia == ib;
+        bool sameExposure = a.ExposureSeconds is not double ea || first.ExposureSeconds is not double eb || MatchAnalyzer.SameExposure(ea, eb);
+        return sameIso && sameExposure;
+    }
+
+    /// <summary>": file: error; file: error" for the first three frames that failed (not the skipped ones), or "" when none did.</summary>
+    internal static string FirstErrors(FrameStack stack)
+    {
+        ArgumentNullException.ThrowIfNull(stack);
+        string[] errors = stack.Frames.Where(f => f.Error is not null && !f.Skipped).Take(3).Select(f => f.Info.FileName + ": " + f.Error).ToArray();
+        return errors.Length == 0 ? "" : ": " + string.Join("; ", errors);
+    }
+
     /// <summary>ISO / 400 times exposure / 120 s, or 1 when either is unknown (ADR 0004).</summary>
     internal static double NormOf(FrameInfo info)
     {
@@ -204,12 +221,22 @@ internal sealed class FrameStack
         double white = f.Scale?.White ?? (f.Bitpix < 0 ? 1.0 : (1 << Math.Min(f.Bitpix, 16)) - 1);
         string source = f.Scale?.Source ?? $"FITS (presupus din BITPIX {f.Bitpix})";
         double factor = 1;
-        if (white <= 1.0)
+        if (f.Scale is null && f.Bitpix < 0)
         {
-            // a float frame on 0..1: brought to the 16-bit range so the stack stays integer
-            factor = 65535;
-            white *= factor;
-            source += ", adus la 0 .. 65535";
+            // a float frame: on 0..1 it is brought to the 16-bit range so the stack stays
+            // integer; already in ADU it is kept, with 65535 as the presumed white
+            double max = img.D.Length == 0 ? 0 : img.D.Max();
+            if (max <= 1.0)
+            {
+                factor = 65535;
+                white = 65535;
+                source += ", adus la 0 .. 65535";
+            }
+            else
+            {
+                white = 65535;
+                source += ", valori in ADU, alb presupus 65535";
+            }
         }
 
         ushort[] px = new ushort[img.D.Length];

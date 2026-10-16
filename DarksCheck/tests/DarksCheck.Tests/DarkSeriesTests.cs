@@ -69,6 +69,9 @@ public class DarkSeriesTests
         Assert.Contains(r.Verdicts.Leak.Where, new[] { MapRegion.Left, MapRegion.TopLeft, MapRegion.BottomLeft });
         Assert.InRange(r.Verdicts.Leak.OffsetAdu, 2.0, 4.0);
         Assert.InRange(r.DarkCurrent!.Median, -1.0, 1.0);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains(" ADU de centru (pe dark - bias); peste 1.0: scurgere de lumina sau glow", sw.ToString(), StringComparison.Ordinal);
 
         using SessionFixture flat = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
         DarkSeriesResult rf = Run(flat);
@@ -163,7 +166,8 @@ public class DarkSeriesTests
 
         Assert.InRange(nv.SigmaFrame, 1.8, 2.2);
         Assert.InRange(nv.TemporalSigma, 1.8, 2.2);
-        Assert.Equal(Th.MedianNoiseFactor * nv.TemporalSigma / Math.Sqrt(10), nv.MasterNoise, 1e-9);
+        // the median master of ten frames of noise 2: 1.25 x 2 / sqrt(10) = 0.79
+        Assert.InRange(nv.MasterNoise, 0.70, 0.90);
         Assert.Equal(192, nv.CropPx);
         Assert.Equal(Verdict.Ok, r.Verdicts.Enough.Verdict);
         Assert.Equal(1, r.Verdicts.Enough.QuantStep);
@@ -176,9 +180,18 @@ public class DarkSeriesTests
         Assert.True(e.TooFew);
         Assert.InRange(e.FramesNeeded, 50, 65);
 
-        // a single frame is no series: unmeasured, never OK
-        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1 });
-        Assert.Equal(Verdict.Unmeasured, Run(one).Verdicts.Enough.Verdict);
+        // a single frame is no series: unmeasured, never OK; the residual against its own median is zero by construction, so check 4 is unmeasured too
+        using SessionFixture one = new SessionFixture().WithDarkSeries(1, i => new SyntheticDark { Seed = 100 + i, Noise = 1, Hot = SyntheticDark.OnePerLevel });
+        DarkSeriesResult single = Run(one);
+        Assert.Equal(Verdict.Unmeasured, single.Verdicts.Enough.Verdict);
+        Assert.Equal(Verdict.Unmeasured, single.Verdicts.Noise.Verdict);
+        Assert.Equal(Verdict.Unmeasured, single.Verdicts.Drift.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(single, sw);
+        Assert.Contains("=== DARK-URI: 1 cadru decodat din 1", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("sigma rezidual     : NEMASURAT: un singur cadru", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("stabilitate        : NEMASURAT: stabilitatea cere cel putin 2 cadre", sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("0.00 .. 0.00", sw.ToString(), StringComparison.Ordinal);
 
         // ten quiet frames whose master would still sit over the step: warning with the frames that would do
         using SessionFixture noisy = new SessionFixture().WithDarkSeries(10, i => new SyntheticDark { Seed = 100 + i, Noise = 4 });
@@ -226,9 +239,60 @@ public class DarkSeriesTests
     {
         using SessionFixture s = new SessionFixture().WithDarkSeries(4, Plain);
         File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0005.fit"), new SyntheticDark { Seed = 9 }.Build(SessionFixture.FirstStart.AddSeconds(480), 60, 400));
+        // ISO 800 at 60 s has the first frame's ISO x exposure product: each setting is compared on its own
+        File.WriteAllBytes(Path.Combine(s.DarksDir, "DSC_0006.fit"), new SyntheticDark { Seed = 10 }.Build(SessionFixture.FirstStart.AddSeconds(600), 60, 800));
         DarkSeriesResult r = Run(s);
         Assert.Equal(4, r.Darks.Used);
         Assert.Contains("setari diferite de primul cadru: ISO 400, 60 s", r.Darks.Frames[4].Error, StringComparison.Ordinal);
+        Assert.Contains("setari diferite de primul cadru: ISO 800, 60 s", r.Darks.Frames[5].Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R027_SkippedBiasesAreNotErrorsEither()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, Plain, biases: 5);
+        DarkSeriesResult r = DarkSeriesRun.Run(s.Root, new DarkOptions(Threads: 2, MaxFrames: 2));
+        Assert.False(r.HasErrors);
+        Assert.Equal(3, r.Biases!.Frames.Count(f => f.Skipped));
+        Assert.Equal(2, r.Biases.Used);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("bias-uri sarite    : 3 din 5 (plafonul de cadre; folosite 2)", sw.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("ATENTIE            : ", sw.ToString().Split("=== DARK-URI")[1], StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R041_ABiasThatCannotBeDecodedIsCountedInTheHeaderAndMakesTheRunExit1()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(3, Plain, biases: 3);
+        File.WriteAllBytes(Path.Combine(s.BiasesDir, "bias_0004.fit"), new byte[100]);
+        DarkSeriesResult r = Run(s);
+        Assert.True(r.HasErrors);
+        Assert.Equal(3, r.Biases!.Used);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("ATENTIE            : 1 bias nu s-a putut decoda (primul: bias_0004.fit: ", sw.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R020_AFloatFitsIsBroughtToSixteenBitsOrKeptInAdu()
+    {
+        using TempWorkspace ws = new();
+        string[] cards = [.. SessionFixture.Cards(SessionFixture.FirstStart, 120, 400), .. FitsTestData.BayerCards("RGGB")];
+        Random rng = new(3);
+        File.WriteAllBytes(ws.PathTo("a.fit"), FitsTestData.BuildFits(64, 48, (x, y) => 0.3 + 0.001 * rng.NextDouble(), bitpix: -32, extraCards: cards));
+        File.WriteAllBytes(ws.PathTo("b.fit"), FitsTestData.BuildFits(64, 48, (x, y) => 0.3 + 0.001 * rng.NextDouble(), bitpix: -32, extraCards: cards));
+        FrameStack unit = FrameStack.Load(SessionFolder.Open(ws.Dir).Darks, 1, 60);
+        Assert.Equal(65535, unit.White);
+        Assert.InRange(unit.Black, 0.3 * 65535, 0.301 * 65535);
+        Assert.Contains("adus la 0 .. 65535", unit.ScaleSource, StringComparison.Ordinal);
+
+        using TempWorkspace ws2 = new();
+        File.WriteAllBytes(ws2.PathTo("a.fit"), FitsTestData.BuildFits(64, 48, (x, y) => 200 + rng.NextDouble(), bitpix: -32, extraCards: cards));
+        FrameStack adu = FrameStack.Load(SessionFolder.Open(ws2.Dir).Darks, 1, 60);
+        Assert.Equal(65535, adu.White);
+        Assert.InRange(adu.Black, 199.5, 201.5);
+        Assert.Contains("valori in ADU, alb presupus 65535", adu.ScaleSource, StringComparison.Ordinal);
     }
 
     [Fact]

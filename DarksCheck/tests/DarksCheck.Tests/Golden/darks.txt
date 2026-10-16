@@ -17,10 +17,10 @@ Copyright (C) 2026 Tudor Carean
     cuantizare         : pas 1 ADU langa negru; 24 valori distincte in primul cadru (G1)
 
   2. SCURGERI DE LUMINA SI GRADIENT
-    master dark        : centru -0.02, colturi 0.01 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus 0.00 jos -0.00 stanga -0.03 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
+    master dark        : centru -0.02, colturi 0.01 / 0.12 / 0.03 / 0.10 (SS / DS / SJ / DJ), margini sus 0.00 jos 0.00 stanga -0.03 dreapta -0.03  [G1, ADU peste negru, media a 4 cadre, blocuri de 32 px]
     master bias        : centru -0.07, colturi 0.10 / -0.01 / -0.05 / 0.13 (SS / DS / SJ / DJ), margini sus 0.05 jos -0.03 stanga -0.02 dreapta 0.03  [G1, ADU peste negru, media a 3 cadre]
     dark - bias        : centru 0.05, colturi -0.09 / 0.13 / 0.08 / -0.04 (SS / DS / SJ / DJ), margini sus -0.04 jos 0.03 stanga -0.01 dreapta -0.06; mediana -0.03, -0.25 .. 0.23 (p1 .. p99)
-    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU-eq de centru (cel mai departe -0.14 la stanga-sus, pe dark - bias)
+    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe -0.14 la stanga-sus, pe dark - bias)
 
   3. DERIVA TERMICA IN SERIE
     amplitudine        : pixelii fierbinti la 0.89 din master in primul cadru, 1.12 in ultimul (4 pixeli peste 20 ADU)
@@ -41,8 +41,8 @@ Copyright (C) 2026 Tudor Carean
 
   6. MODEL FIX
     benzi structurate  : randuri 0.146 ADU rms (0.80 varf la varf, R), coloane 0.171 (0.97, B)  [profilul masterului minus mediana glisanta pe 101]
-    glow               : -0.14 ADU-eq la stanga-sus fata de centru (dark - bias)
-    verdict            : OK: benzi sub 2.0 ADU-eq varf la varf si margini sub 1.0
+    glow               : -0.14 ADU la stanga-sus fata de centru (dark - bias)
+    verdict            : OK: benzi sub 2.0 ADU varf la varf si margini sub 1.0
 
   7. PIXELI MORTI SI SATURATI
     master             : 0 sub negru - 50 ADU, 0 la alb (65535)

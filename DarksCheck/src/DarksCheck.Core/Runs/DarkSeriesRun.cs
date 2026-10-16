@@ -34,7 +34,7 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 internal sealed record DarkSeriesResult(Inventory Inventory, DarkSeriesAnalysis Darks, BiasAnalysis? Biases, string? BiasError, DarkCurrent? DarkCurrent, DarkVerdicts Verdicts, int ReferencePlane)
 {
     /// <summary>A frame that could not be read or decoded, in any group; a frame the cap skipped is not one.</summary>
-    internal bool HasErrors => Inventory.HasErrors || Darks.Frames.Any(f => f.Error is not null && !f.Skipped) || (Biases?.Frames.Any(f => f.Error is not null) ?? false) || BiasError is not null;
+    internal bool HasErrors => Inventory.HasErrors || Darks.Frames.Any(f => f.Error is not null && !f.Skipped) || (Biases?.Frames.Any(f => f.Error is not null && !f.Skipped) ?? false) || BiasError is not null;
 }
 
 /// <summary>

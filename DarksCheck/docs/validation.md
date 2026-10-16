@@ -38,9 +38,12 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   line by line against `results.json` and `results_supplementary.json`: every figure the two
   define the same way agrees within the tolerances; the counts at the hot levels differ by the
   normalisation (ADU-eq against raw ADU), the library's counts by the master (median here, mean
-  in the prototype's streamed pass), the column banding by the clamp of the hot pixels, and the
-  library's RTS count (291) by the same median-master difference. The prototype's 0.628 master
-  sigma, 0.826 / 1.068 warming, 0.126 / 0.219 dark current and 1.257 read noise are reproduced.
+  in the prototype's streamed pass), and the column banding by the clamp of the hot pixels. The
+  prototype's 0.628 master sigma, 0.826 / 1.068 warming, 0.126 / 0.219 dark current and 1.257
+  read noise are reproduced. For the library the prototype streamed the frames and left only
+  the master's counts, its regions and the warming: V-004's stability, RTS, sigmas, noise curve,
+  banding and master noise are the console's own first run, pinned against drift, not
+  prototype figures.
 - 2026-10-16: the master noise of V-003 and V-004 re-recorded after the step's review changed
   the estimator from the spatial sigma over sqrt(N) (a mean master) to 1.25 x the temporal
   sigma over sqrt(N) (the median master actually built): 0.339 → 0.400 on Smida, 1.04 → 1.105 on

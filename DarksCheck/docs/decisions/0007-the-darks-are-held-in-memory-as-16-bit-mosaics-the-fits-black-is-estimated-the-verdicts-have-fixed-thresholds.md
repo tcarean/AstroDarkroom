@@ -12,9 +12,10 @@ decision 8 asked for a measurement before a cap was set. A FITS carries no black
 FITS Siril converts from a raw keeps the camera's pedestal (150 on the D3300): read as 0, every
 pixel would count as hot. The prototype's figures (`docs/validation/2026-08-12-smida/`) set
 the scale of what a good series looks like: edges within 0.2 ADU of the centre on
-dark-minus-bias, a warming of 2.3 and 3.4 °C over a series, residual sigmas within 17 % of
-each other, structured banding of 0.5 ADU peak to peak, a master noise of 0.34 ADU against a
-step of 2.
+dark-minus-bias, a warming of 2.2 and 3.4 °C over a series, residual sigmas within 17 % of
+each other, structured banding of 0.5 ADU peak to peak before the hot pixels are clamped, a
+median-master noise of 0.40 ADU (1.25 x the 1.43 ADU temporal sigma / sqrt(20)) against a step
+of 2.
 
 ## Decision
 
@@ -37,7 +38,10 @@ step of 2.
   any dead or saturated pixel, and enough frames when there are at least 10 and the median
   master's predicted noise, 1.25 x the temporal sigma / sqrt(N), is under one quantisation
   step (the temporal sigma is the frame-against-frame point of the noise curve, so the fixed
-  pattern does not inflate it; the median's factor is sqrt(pi / 2)). Hot-pixel levels are in
+  pattern does not inflate it; the median's factor is sqrt(pi / 2) = 1.25, the Gaussian
+  asymptote, knowingly under the 1.35 to 1.40 the Smida median-of-10 measures against its
+  mean-of-10, where quantisation adds its share: the prediction is about 10 % optimistic at
+  10 to 20 frames, and the owner may raise `Th.MedianNoiseFactor`). Hot-pixel levels are in
   ADU equivalent (ADR 0004) with a floor of 5 raw ADU, so the Smida master counts pixels
   above 19.9 ADU at 119.2 s (443) where the prototype counted above 20 (433): ten pixels sit
   at exactly 20.0; the dead limit stays raw, since a dead pixel does not respond, and the

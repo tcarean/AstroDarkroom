@@ -17,8 +17,8 @@
 
 namespace DarksCheck.Core;
 
-/// <summary>One bias frame: its metadata and figures per plane, or the error that kept it out.</summary>
-internal sealed record BiasFrameFigures(FrameInfo Info, string? Error, IReadOnlyList<PlaneFigures> Planes);
+/// <summary>One bias frame: its metadata and figures per plane, or why it has none: an error, or skipped by the frame cap (not an error).</summary>
+internal sealed record BiasFrameFigures(FrameInfo Info, string? Error, bool Skipped, IReadOnlyList<PlaneFigures> Planes);
 
 /// <summary>Whether the noise around black is clipped (R-041): the minimum, the share of pixels below black, and the share below black minus two sigma against the 2.28 % of a Gaussian.</summary>
 internal sealed record ClipCheck(int Min, double FractionBelowBlack, double FractionBelowMinusTwoSigma);
@@ -53,7 +53,7 @@ internal static class BiasAnalyzer
         IReadOnlyList<StackFrame> decoded = stack.Decoded;
         if (decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun bias nu s-a putut decoda");
+            throw new InvalidOperationException("niciun bias nu s-a putut decoda" + FrameStack.FirstErrors(stack));
         }
 
         int w = stack.Width, h = stack.Height, n = decoded.Count;
@@ -67,7 +67,7 @@ internal static class BiasAnalyzer
             StackFrame f = stack.Frames[i];
             if (f.Pixels is null)
             {
-                frames[i] = new BiasFrameFigures(f.Info, f.Error, []);
+                frames[i] = new BiasFrameFigures(f.Info, f.Error, f.Skipped, []);
                 return;
             }
 
@@ -79,7 +79,7 @@ internal static class BiasAnalyzer
                 planes[p] = DarkSeriesAnalyzer.PlaneFiguresOf(names[p], Planes.Extract(f.Pixels, w, h, p), black, stack.White, 1.0);
             }
 
-            frames[i] = new BiasFrameFigures(f.Info, null, planes);
+            frames[i] = new BiasFrameFigures(f.Info, null, false, planes);
         });
 
         // read noise: consecutive pairs, sigma of the difference over sqrt(2), the median over the pairs
