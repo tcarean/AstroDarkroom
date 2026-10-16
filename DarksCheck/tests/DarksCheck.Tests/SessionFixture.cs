@@ -107,6 +107,19 @@ internal sealed class SessionFixture : IDisposable
         return this;
     }
 
+    /// <summary>Writes <paramref name="biases"/> synthetic biases into biases/ an hour before <see cref="FirstStart"/>, for a session without darks.</summary>
+    internal SessionFixture WithBiases(int biases, Func<int, SyntheticDark>? bias = null)
+    {
+        Directory.CreateDirectory(BiasesDir);
+        for (int i = 0; i < biases; i++)
+        {
+            SyntheticDark b = bias?.Invoke(i) ?? new SyntheticDark { Seed = 500 + i, Noise = 2 };
+            File.WriteAllBytes(Path.Combine(BiasesDir, $"bias_{i + 1:0000}.fit"), b.Build(FirstStart.AddSeconds(-3600 + i), 0.0002, 400));
+        }
+
+        return this;
+    }
+
     /// <summary>
     /// Writes <paramref name="lights"/> synthetic lights built by <paramref name="light"/>
     /// (given the 0-based index) into lights/, one every 150 s, ending an hour before the darks.

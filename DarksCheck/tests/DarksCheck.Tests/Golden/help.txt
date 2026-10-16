@@ -14,7 +14,8 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
                 model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de
                 dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.
   --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si
-                raportul dark-urilor sesiunii fata de el, in grade echivalente.
+                raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune
+                cu lights dar fara dark-uri ia dark-urile lui drept ale ei.
   --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe
                 bias-uri si pe lights si hartile (darkscheck-raport.txt, darkscheck-darks.csv,
                 darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-harta-dark.png, ...).

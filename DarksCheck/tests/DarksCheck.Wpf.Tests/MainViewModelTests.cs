@@ -340,6 +340,46 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task R077_ASessionWithoutDarksIsAProblemUntilAPartnerIsChosenThenRunsWithIt()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture s = new SessionFixture().WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.3, Stars = SyntheticLight.ThreeStars });
+        using SessionFixture p = WindowFixture.Partner();
+        MainViewModel vm = new();
+
+        await vm.OpenAsync(s.Root);
+        Assert.True(vm.HasProblem);
+        Assert.False(vm.HasResult);
+        Assert.Contains("\"Alege partener...\" in fereastra", vm.ProblemText, StringComparison.Ordinal);
+
+        vm.Partner = p.Root;
+        Assert.Null(vm.Status);
+        await vm.RerunAsync();
+
+        Assert.True(vm.HasResult);
+        Assert.False(vm.HasProblem);
+        Assert.Equal(p.Root, vm.Result!.DarksFromPartner);
+        Assert.Contains(vm.IndexRows, row => row.Label == "dark-uri (partener)");
+        Assert.DoesNotContain(vm.IndexRows, row => row.Label == "partener");
+        Assert.Contains(vm.SessionRows, row => row.Label == "darks" && row.Value.StartsWith("(lipsa; se folosesc dark-urile partenerului", StringComparison.Ordinal));
+        Assert.StartsWith("=== DARK-URI (ale partenerului", vm.HeaderLine, StringComparison.Ordinal);
+        Assert.Equal(3, vm.Lights.Count);
+        Assert.Equal(3, vm.Frames.Count);
+        Assert.Contains(vm.SessionRows, row => row.Label == "aparat" && row.Value == "NIKON D3300");
+
+        // the export never writes into the partner whose darks the run took (R-074)
+        vm.Export(Path.Combine(p.Root, "rapoarte"));
+        Assert.StartsWith("EROARE: --out nu poate fi folderul partenerului", vm.Status, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(p.Root, "rapoarte")));
+
+        // a partner that does not open says so on the card
+        vm.Partner = Path.Combine(p.Root, "nu-exista");
+        await vm.RerunAsync();
+        Assert.True(vm.HasProblem);
+        Assert.StartsWith("partenerul: nu gasesc folderul", vm.ProblemText, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheNumbersAreParsedWithTheInvariantCulture()
     {
         using TestSettings.Own _ = new();

@@ -456,6 +456,57 @@ public class LightsAndIndexTests
     }
 
     [Fact]
+    public void R054_ASessionWithoutDarksTakesThePartnersDarksAsItsOwn()
+    {
+        // the same lights once in a session holding the darks, once alone against the same darks as a partner
+        using SessionFixture with = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, biases: 3).WithLights(4, i => Light(i, 1.3));
+        using SessionFixture alone = new SessionFixture().WithLights(4, i => Light(i, 1.3)).WithBiases(3);
+        using SessionFixture library = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, inSubfolder: false);
+        DarkSeriesResult a = Run(with);
+        DarkSeriesResult b = Run(alone, library.Root);
+
+        Assert.Null(a.DarksFromPartner);
+        Assert.Equal(library.Root, b.DarksFromPartner);
+        Assert.Null(b.Partner);
+        Assert.Null(b.PartnerError);
+        Assert.False(b.HasErrors);
+        Assert.Equal(a.Darks.Used, b.Darks.Used);
+        Assert.Equal(a.Index.Index, b.Index.Index, 1e-9);
+        Assert.Equal(Path.GetFileName(library.Root) + "-" + b.Index.Tag, b.Label);
+        Assert.Equal(a.Lights!.Persistent, b.Lights!.Persistent);
+        Assert.Equal(a.Lights.LightsOverDark.Ratio, b.Lights.LightsOverDark.Ratio, 1e-9);
+        Assert.Equal(a.Lights.LightsOverDark.Verdict, b.Lights.LightsOverDark.Verdict);
+        Assert.Equal(a.LightsIndex, b.LightsIndex, 1e-9);
+        Assert.NotNull(b.Biases);
+        Assert.Equal(Verdict.Ok, b.Inventory.Match.DarksVsLights);
+
+        string report = Report(b);
+        Assert.Contains($"=== DARK-URI (ale partenerului {library.Root}): 5 cadre decodate din 5", report, StringComparison.Ordinal);
+        Assert.Contains($"    darks              : (lipsa; se folosesc dark-urile partenerului {library.Root})", report, StringComparison.Ordinal);
+        Assert.Contains("    expunere partener  : 120.0 s la ISO 400 (toate cadrele)", report, StringComparison.Ordinal);
+        Assert.Contains("    interval darks     : (lipsa)", report, StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : OK: dark-urile partenerului au expunerea (120.0 s) si ISO-ul (400) lights-urilor", report, StringComparison.Ordinal);
+        Assert.Contains("    dark-uri (partener): idx", report, StringComparison.Ordinal);
+        Assert.Contains("    eticheta           : " + b.Label, report, StringComparison.Ordinal);
+        Assert.Contains("    lights             : echivalent idx", report, StringComparison.Ordinal);
+        Assert.Contains("    verdict            : ATENTIE: scade cu -opt (raport 1.3", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("    partener           :", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("dark-uri / partener", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("lights / partener", report, StringComparison.Ordinal);
+
+        // a partner at another ISO is flagged by check 1, as a session's own darks would be
+        using SessionFixture iso800 = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice }, iso: 800, inSubfolder: false);
+        DarkSeriesResult c = Run(alone, iso800.Root);
+        Assert.Equal(Verdict.Warning, c.Inventory.Match.DarksVsLights);
+        Assert.Contains("    potrivire          : ATENTIE: dark-uri ale partenerului de 120.0 s la ISO 800, lights de 120.0 s la ISO 400", Report(c), StringComparison.Ordinal);
+
+        // without a partner the run refuses, naming what to give
+        InvalidOperationException e = Assert.Throws<InvalidOperationException>(() => Run(alone));
+        Assert.Equal(RunReport.LightsOnlyNeedsPartner(alone.Root), e.Message);
+        Assert.Contains("--against DIR in consola", e.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void R065_AgainstTakesAFolderAndDoesNotGoWithInventory()
     {
         (int code, _, string stderr) = Cli.Run(@"E:\x", "--against");

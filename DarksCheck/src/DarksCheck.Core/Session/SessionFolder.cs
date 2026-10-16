@@ -38,6 +38,9 @@ internal sealed class SessionFolder
     internal IReadOnlyList<string> Biases { get; }
     internal IReadOnlyList<string> Lights { get; }
 
+    /// <summary>False for a session with lights and no darks (R-054), opened with <c>allowLightsOnly</c>: a partner's darks stand in for its own.</summary>
+    internal bool HasDarks => Darks.Count > 0;
+
     private SessionFolder(string root, string darksDir, string? biasesDir, string? lightsDir, IReadOnlyList<string> darks, IReadOnlyList<string> biases, IReadOnlyList<string> lights)
     {
         Root = root;
@@ -53,12 +56,13 @@ internal sealed class SessionFolder
     /// Opens the folder. When <c>darks/</c> exists it is the darks folder, empty or not. A
     /// folder with <c>lights/</c>, <c>biases/</c> or <c>flats/</c> but no <c>darks/</c> is a
     /// session without darks: an error, never a fallback to the root, which holds the stacked
-    /// results (<c>result.fit</c>). Without any session subfolder the folder itself must hold
-    /// the frames (a library of darks). A missing folder throws
-    /// <see cref="DirectoryNotFoundException"/>, a folder without frames
+    /// results (<c>result.fit</c>); with <paramref name="allowLightsOnly"/> a <c>lights/</c>
+    /// with frames opens as a session whose darks are empty (R-054). Without any session
+    /// subfolder the folder itself must hold the frames (a library of darks). A missing folder
+    /// throws <see cref="DirectoryNotFoundException"/>, a folder without frames
     /// <see cref="InvalidOperationException"/>, both with the path in the message.
     /// </summary>
-    internal static SessionFolder Open(string path)
+    internal static SessionFolder Open(string path, bool allowLightsOnly = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string root = Path.GetFullPath(path);
@@ -68,20 +72,28 @@ internal sealed class SessionFolder
         }
 
         string darksDir = Path.Combine(root, DarksName);
+        bool lightsOnly = false;
+        IReadOnlyList<string>? lightsFound = null;
         if (!Directory.Exists(darksDir))
         {
             string[] others = [LightsName, BiasesName, FlatsName];
             string? present = others.FirstOrDefault(n => Directory.Exists(Path.Combine(root, n)));
-            if (present is not null)
+            if (present == LightsName && allowLightsOnly && (lightsFound = FramesIn(Path.Combine(root, LightsName))).Count > 0)
+            {
+                lightsOnly = true;
+            }
+            else if (present is not null)
             {
                 throw new InvalidOperationException($"sesiunea {root} are {present}\\ dar nu are darks\\");
             }
-
-            darksDir = root;
+            else
+            {
+                darksDir = root;
+            }
         }
 
-        IReadOnlyList<string> darks = FramesIn(darksDir);
-        if (darks.Count == 0)
+        IReadOnlyList<string> darks = lightsOnly ? [] : FramesIn(darksDir);
+        if (darks.Count == 0 && !lightsOnly)
         {
             throw new InvalidOperationException(
                 $"niciun cadru in {darksDir} (raw: " + string.Join(", ", RawReader.RawExtensions)
@@ -91,7 +103,7 @@ internal sealed class SessionFolder
         string biasesDir = Path.Combine(root, BiasesName);
         IReadOnlyList<string> biases = darksDir != root && Directory.Exists(biasesDir) ? FramesIn(biasesDir) : [];
         string lightsDir = Path.Combine(root, LightsName);
-        IReadOnlyList<string> lights = darksDir != root && Directory.Exists(lightsDir) ? FramesIn(lightsDir) : [];
+        IReadOnlyList<string> lights = lightsFound ?? (darksDir != root && Directory.Exists(lightsDir) ? FramesIn(lightsDir) : []);
         return new SessionFolder(root, darksDir, biases.Count > 0 ? biasesDir : null, lights.Count > 0 ? lightsDir : null, darks, biases, lights);
     }
 

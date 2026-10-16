@@ -65,7 +65,10 @@ public partial class MainWindow : Window
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
 
     /// <summary>The partner folder (R-073): a library or another session; the current one proposed.</summary>
-    private void ChoosePartner(object sender, RoutedEventArgs e)
+    private void ChoosePartner(object sender, RoutedEventArgs e) => ChoosePartner();
+
+    /// <summary>Asks for the partner folder; true when one was chosen (the same one again counts).</summary>
+    private bool ChoosePartner()
     {
         Microsoft.Win32.OpenFolderDialog dlg = new() { Title = WindowTexts.ChoosePartnerTitle, Multiselect = false };
         if (_vm.Partner is string p && Directory.Exists(p))
@@ -73,13 +76,25 @@ public partial class MainWindow : Window
             dlg.InitialDirectory = p;
         }
 
-        if (dlg.ShowDialog(this) == true)
+        if (dlg.ShowDialog(this) != true)
         {
-            _vm.Partner = dlg.FolderName;
+            return false;
         }
+
+        _vm.Partner = dlg.FolderName;
+        return true;
     }
 
     private void ClearPartner(object sender, RoutedEventArgs e) => _vm.Partner = null;
+
+    /// <summary>The problem card's way out for a session without darks (R-077): choose the partner, run the same folder again.</summary>
+    private void ChoosePartnerAndRerun(object sender, RoutedEventArgs e)
+    {
+        if (ChoosePartner())
+        {
+            _ = _vm.RerunAsync();
+        }
+    }
 
     /// <summary>The label goes to the clipboard; the folder is the owner's to rename (ADR 0002).</summary>
     private void CopyLabel(object sender, RoutedEventArgs e)

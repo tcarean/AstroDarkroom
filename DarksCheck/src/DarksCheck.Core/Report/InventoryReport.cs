@@ -49,14 +49,24 @@ internal static class InventoryReport
         ArgumentNullException.ThrowIfNull(inv);
         SessionFolder s = inv.Session;
         MatchAnalysis m = inv.Match;
+        bool noDarks = !s.HasDarks;
+        string? partner = inv.DarksFromPartner;
         List<ReportRow> rows =
         [
-            new("darks", FolderLine(s.Root, s.DarksDir, s.Darks)),
+            new("darks", noDarks ? (partner is null ? "(lipsa)" : $"(lipsa; se folosesc dark-urile partenerului {partner})") : FolderLine(s.Root, s.DarksDir, s.Darks)),
             new("biases", s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases)),
             new("lights", s.LightsDir is null ? "(lipsa)" : FolderLine(s.Root, s.LightsDir, s.Lights)),
-            new("aparat", Distinct(inv.Darks.Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
-            new("expunere darks", Settings(m.Darks)),
+            new("aparat", Distinct(inv.Darks.Concat(inv.PartnerDarks ?? []).Concat(inv.Biases).Concat(inv.Lights).Select(f => f.Camera))),
         ];
+        if (noDarks && partner is null)
+        {
+            rows.Add(new("expunere darks", "(lipsa)"));
+        }
+        else
+        {
+            rows.Add(new(noDarks ? "expunere partener" : "expunere darks", Settings(m.Darks)));
+        }
+
         if (m.Biases is not null)
         {
             rows.Add(new("expunere biases", Settings(m.Biases)));
@@ -67,13 +77,13 @@ internal static class InventoryReport
             rows.Add(new("expunere lights", Settings(m.Lights)));
         }
 
-        rows.Add(new("interval darks", Interval(inv.DarksCadence)));
+        rows.Add(new("interval darks", noDarks ? "(lipsa)" : Interval(inv.DarksCadence)));
         if (m.Lights is not null)
         {
             rows.Add(new("interval lights", Interval(inv.LightsCadence)));
         }
 
-        rows.Add(new("potrivire", DarksVsLights(m)));
+        rows.Add(new("potrivire", DarksVsLights(m, partner is null ? "dark-urile" : "dark-urile partenerului")));
         rows.Add(new("bias", Bias(m)));
         if (inv.HasErrors)
         {
@@ -176,16 +186,17 @@ internal static class InventoryReport
         return $"{c.LongPauses.Count} pauze peste {RunReport.F(Th.PauseSeconds, 0)} s (cea mai lunga {RunReport.F(longest.Seconds, 0)} s inainte de cadrul {longest.FrameIndex})";
     }
 
-    private static string DarksVsLights(MatchAnalysis m)
+    /// <summary><paramref name="darks"/> is "dark-urile" or "dark-urile partenerului", whose settings the lights are compared with.</summary>
+    private static string DarksVsLights(MatchAnalysis m, string darks)
     {
         switch (m.DarksVsLights)
         {
             case Verdict.Unmeasured:
-                return m.Lights is null ? "NEMASURAT: nu exista lights" : "NEMASURAT: cadrele nu spun expunerea sau ISO-ul";
+                return m.Darks is null ? "NEMASURAT: nu exista darks" : m.Lights is null ? "NEMASURAT: nu exista lights" : "NEMASURAT: cadrele nu spun expunerea sau ISO-ul";
             case Verdict.Ok:
-                return $"OK: dark-urile au expunerea ({Exposure(m.Darks!.ExposureSeconds)} s) si ISO-ul ({Opt(m.Darks.Iso, 0)}) lights-urilor";
+                return $"OK: {darks} au expunerea ({Exposure(m.Darks!.ExposureSeconds)} s) si ISO-ul ({Opt(m.Darks.Iso, 0)}) lights-urilor";
             default:
-                return $"ATENTIE: dark-uri de {Exposure(m.Darks!.ExposureSeconds)} s la ISO {Opt(m.Darks.Iso, 0)}, lights de {Exposure(m.Lights!.ExposureSeconds)} s la ISO {Opt(m.Lights.Iso, 0)}";
+                return $"ATENTIE: {(darks == "dark-urile" ? "dark-uri" : "dark-uri ale partenerului")} de {Exposure(m.Darks!.ExposureSeconds)} s la ISO {Opt(m.Darks.Iso, 0)}, lights de {Exposure(m.Lights!.ExposureSeconds)} s la ISO {Opt(m.Lights.Iso, 0)}";
         }
     }
 

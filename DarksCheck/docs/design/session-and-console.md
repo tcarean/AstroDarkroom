@@ -16,6 +16,18 @@ present means a bare folder of darks, a library: the frames are at the root and 
 lights are looked for, even if such subfolders existed somewhere else. `FramesIn` lists one
 folder: raws when there are any, else FITS, sorted by file name ignoring case.
 
+`Open(path, allowLightsOnly)` has one more shape since ADR 0011: with the flag, a folder whose
+`lights\` holds frames and that has no `darks\` opens with an empty `Darks` (`HasDarks` false,
+`DarksDir` the absent `darks\` path), its biases and lights read as usual; without the flag,
+or with an empty `lights\`, it is the error it always was. The inventory opens every folder
+with the flag; the partner of `--against` without it (a partner must have darks).
+`Inventory.DarksFromPartner` is null unless the run filled the darks from a partner, in which
+case `InventoryReport.HeaderRows` prints `(lipsa; se folosesc dark-urile partenerului ...)`,
+`expunere partener`, `interval darks: (lipsa)` and compares the lights with the partner's
+darks in `potrivire`; a lights-only inventory without a partner prints `(lipsa)` three times
+and `NEMASURAT: nu exista darks`. The sentence that refuses a lights-only run without a
+partner is `RunReport.LightsOnlyNeedsPartner`, the same in the console and the window.
+
 ## The metadata
 
 `FrameInfo.Read` opens a file through `ImageLoader.LoadInfo` (no pixels: tens of milliseconds

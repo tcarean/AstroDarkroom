@@ -66,7 +66,7 @@ internal static class Program
             string? partnerRoot = o.Against is null ? null : SessionFolder.Open(o.Against).Root;
             if (o.Out is not null)
             {
-                DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!).Root, o.Out);
+                DarkOutputs.CheckOutDir(SessionFolder.Open(o.Folder!, allowLightsOnly: true).Root, o.Out);
                 if (partnerRoot is not null)
                 {
                     DarkOutputs.CheckOutDir(partnerRoot, o.Out, "partenerului");
@@ -144,7 +144,8 @@ internal static class Program
         w.WriteLine("                model fix, pixeli morti, cate dark-uri ajung, lights-urile fata de");
         w.WriteLine("                dark, indexul si eticheta, cate un tabel pe dark-uri si pe lights.");
         w.WriteLine("  --against DIR alt folder de dark-uri (o biblioteca sau o sesiune): indexul lui si");
-        w.WriteLine("                raportul dark-urilor sesiunii fata de el, in grade echivalente.");
+        w.WriteLine("                raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune");
+        w.WriteLine("                cu lights dar fara dark-uri ia dark-urile lui drept ale ei.");
         w.WriteLine("  --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe");
         w.WriteLine("                bias-uri si pe lights si hartile (" + DarkOutputs.ReportName + ", " + DarkOutputs.DarksCsvName + ",");
         w.WriteLine("                " + DarkOutputs.BiasesCsvName + ", " + DarkOutputs.LightsCsvName + ", " + DarkOutputs.DarkMapName + ", ...).");

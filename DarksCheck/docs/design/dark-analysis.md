@@ -113,7 +113,17 @@ to measure and the report says `NEMASURAT` rather than printing zeros.
 
 ## The lights, the index and the partner in the run
 
-After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master
+Before anything is decoded, `DarkSeriesRun` looks at the session's darks: none (a lights-only
+session, ADR 0011) and no `--against` is the refusal `RunReport.LightsOnlyNeedsPartner`; none
+and a partner opens the partner (`SessionFolder.Open` without the lights-only flag), takes its
+darks as `darkPaths`, recomputes check 1's match with the partner darks' metadata
+(`InventoryRun.ReadAll`, kept in `Inventory.PartnerDarks` so the `aparat` row counts their
+camera), records the partner's root in `Inventory.DarksFromPartner` and
+`DarkSeriesResult.DarksFromPartner` (which `DarkOutputs.WriteAll` refuses as an export folder,
+like the session), labels the master with the partner's folder and skips `MatchPartner` (the
+darks are the partner's); a partner that does not open fails the run with its own message
+prefixed `partenerul: `, so the window's problem card names the right folder. The progress phase then reads
+`decodare dark-uri (partener)`. After the verdicts, `DarkSeriesRun` computes the index and the label of the darks' master
 (`IndexAnalyzer.RankIndex`, `Label`), then, when the session has lights, hands their paths and
 the darks' analysis to `LightsAnalyzer.Analyze` (the lights are decoded one at a time and
 dropped), and, with `--against`, opens the partner folder, loads its darks into a `FrameStack`,

@@ -63,6 +63,20 @@ public class GoldenOutputTests
     }
 
     [Fact]
+    public void LightsOnly_MatchesTheGoldenText()
+    {
+        // a session with lights and biases but no darks, against a library 2 x warmer than the lights' sensor
+        using SessionFixture s = new SessionFixture()
+            .WithLights(3, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars })
+            .WithBiases(2);
+        using SessionFixture p = new SessionFixture().WithDarkSeries(4, i => new SyntheticDark { Seed = 700 + i, Hot = SyntheticLight.Lattice, HotFactor = 2 }, inSubfolder: false);
+        (int code, string stdout, string stderr) = Cli.Run(s.Root, "--threads", "2", "--against", p.Root);
+        Assert.Contains("decodare dark-uri (partener): 4 / 4", stderr, StringComparison.Ordinal);
+        string actual = Scrub(stdout, s.Root).Replace(p.Root, "<partener>", StringComparison.Ordinal).Replace(Path.GetFileName(p.Root), "<partener>", StringComparison.Ordinal);
+        Compare("lights-only.txt", actual + "--- stderr ---\n(progresul, omis)\n--- exit " + code + " ---\n");
+    }
+
+    [Fact]
     public void Help_MatchesTheGoldenText()
     {
         (int code, string stdout, string stderr) = Cli.Run("--help");

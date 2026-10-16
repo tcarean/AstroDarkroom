@@ -28,7 +28,9 @@ internal sealed record Inventory(
     IReadOnlyList<FrameInfo> Lights,
     Cadence DarksCadence,
     Cadence LightsCadence,
-    MatchAnalysis Match)
+    MatchAnalysis Match,
+    string? DarksFromPartner = null,
+    IReadOnlyList<FrameInfo>? PartnerDarks = null)
 {
     internal int ErrorCount => Darks.Count(f => f.Error is not null) + Biases.Count(f => f.Error is not null) + Lights.Count(f => f.Error is not null);
 
@@ -43,7 +45,7 @@ internal static class InventoryRun
 {
     internal static Inventory Run(string folder)
     {
-        SessionFolder session = SessionFolder.Open(folder);
+        SessionFolder session = SessionFolder.Open(folder, allowLightsOnly: true);
         FrameInfo[] darks = ReadAll(session.Darks);
         FrameInfo[] biases = ReadAll(session.Biases);
         FrameInfo[] lights = ReadAll(session.Lights);
@@ -51,7 +53,7 @@ internal static class InventoryRun
             CadenceAnalyzer.Analyze(darks), CadenceAnalyzer.Analyze(lights), MatchAnalyzer.Analyze(darks, biases, lights));
     }
 
-    private static FrameInfo[] ReadAll(IReadOnlyList<string> paths)
+    internal static FrameInfo[] ReadAll(IReadOnlyList<string> paths)
     {
         FrameInfo[] frames = new FrameInfo[paths.Count];
         for (int i = 0; i < frames.Length; i++)
