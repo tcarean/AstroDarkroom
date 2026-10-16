@@ -26,6 +26,9 @@ check in `Read`; it goes when the copy is refreshed from LightsCheck (ADR 0003).
 
 ## The cadence
 
+The constants of this section and the next (`Th.PauseSeconds`, `Th.ExposureTolerance`,
+`Th.BiasMaxExposureSeconds`) are set from the two measured sessions (ADR 0010).
+
 `CadenceAnalyzer.Analyze` walks the frames in list order and keeps a pause per position, so a
 filtered list works too. A pause below zero is clamped to 0: the EXIF time has a 1 s
 granularity and the camera records 120.2 s for a 120 s setting, so back-to-back frames
@@ -61,16 +64,18 @@ arguments once and returns an `Options` with `Folder`, `Inventory`, `Out`, `Thre
 folder, a second one is an error, an option that takes a value reads the next argument
 (`<option> cere o valoare` when there is none) and parses it with the invariant culture
 (`--threads` and `--max-frames` as positive integers, `--out` and `--against` as non-blank
-paths; no option takes a decimal today), the first problem fills `Error` and parsing stops.
-`Program.Run` prints `Error` as `EROARE: <message>` on stderr and exits 1, prints the usage
-for `Help` (the usage text is `Program.WriteHelp`, with `RunReport.WarrantyLines`), and
-otherwise builds `DarkOptions(Threads, MaxFrames, Against)` with the normalisation settings
-at their defaults (`dark-analysis.md`, "The records of the run"). Without options it is the darks analysis of
+paths; no option takes a decimal today), the first problem fills `Error` and parsing stops;
+after the loop two more checks fill it: no folder given (`lipseste folderul sesiunii sau al
+dark-urilor`) and `--inventory` with `--out` or `--against`. `Program.Run` prints `Error` as
+`EROARE: <message>` on stderr and exits 1, prints the usage for `Help` (the usage text is
+`Program.WriteUsage`, with `RunReport.WarrantyLines`), and otherwise builds
+`DarkOptions(Threads, MaxFrames, Against)` with the two normalisation settings at their
+defaults (`dark-analysis.md`, "The records of the run"). Without options it is the darks analysis of
 `DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
 rewritten line by a synchronous `IProgress` (a `Progress<T>` would post to the thread pool and
 could print after the report) and wiped before the report or an error; `--inventory` is the
 metadata-only run; `--out`, `--threads`, `--max-frames` and `--against` are passed through
-(`--against` does not go with `--inventory`); before the run the partner folder is opened and
+(neither `--out` nor `--against` goes with `--inventory`); before the run the partner folder is opened and
 `--out` is checked against the session's root and the partner's, so a wrong folder costs no
 decoding. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are

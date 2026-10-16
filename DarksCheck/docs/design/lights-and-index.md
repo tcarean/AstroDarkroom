@@ -13,10 +13,7 @@ and the file `darkscheck-lights.csv` are described with the rest of the run in
 `Analysis/LightsAnalyzer.cs` declares `LightFigures`, `OverlapAtLevel` and `LightsAnalysis`;
 `Analysis/IndexAnalyzer.cs` the enum `MatchVerdict`, `IndexFigures`, `MatchFigures` and
 `PartnerAnalysis` (the partner itself is built by `MatchPartner` in `Runs/DarkSeriesRun.cs`,
-`dark-analysis.md`). `darkscheck-lights.csv` is written by `DarkOutputs.LightsCsv` beside the
-darks' and biases' writers, with the columns `index, file, time, exposure_s, iso, error,
-skipped`, then per plane `<P>_sky_median, <P>_sky_sigma, <P>_local_sigma`, then `candidates,
-isolated_hot, amp_ratio_median, amp_ratio_q25, amp_ratio_q75`.
+`dark-analysis.md`, which also describes `darkscheck-lights.csv`).
 
 ## The lights, one at a time
 

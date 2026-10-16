@@ -132,8 +132,11 @@ normalisation. Each group is released before the next is decoded. A
 failure of the lights or of the partner is an error carried in the result (`LightsError`,
 `PartnerError`), printed in its section, and does not stop the rest of the report. `DarkReport`
 writes section 9, `INDEX` (the index, the label, the lights' equivalent index, the partner's
-lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs` writes
-`darkscheck-lights.csv`. How the two analyzers work is in `lights-and-index.md`.
+lines and the chained lights-over-partner ratio) and `TABEL PE LIGHTS`; `DarkOutputs.LightsCsv`
+writes `darkscheck-lights.csv` beside the darks' and biases' writers, with the columns `index,
+file, time, exposure_s, iso, error, skipped`, then per plane `<P>_sky_median, <P>_sky_sigma,
+<P>_local_sigma`, then `candidates, isolated_hot, amp_ratio_median, amp_ratio_q25,
+amp_ratio_q75`. How the two analyzers work is in `lights-and-index.md`.
 
 ## The report as rows
 

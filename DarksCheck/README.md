@@ -284,9 +284,11 @@ castigul 2 si 6 grade pe dublare, fara optiuni pentru ele.
 
 ## Compilare
 
-.NET SDK 9.0.3xx (`global.json`). `dotnet build DarksCheck.sln -c Release`. Gate-ul complet
-(format, build strict, teste): `scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie
-`darkscheck.exe`, un singur fisier cu DLL-urile libraw inglobate, in `artifacts/`.
+.NET SDK 9.0.3xx (`global.json`). `dotnet build DarksCheck.sln -c Release` (fereastra cere
+Windows; consola singura se compileaza oriunde). Gate-ul complet (format, build strict, teste):
+`scripts/verify.ps1`. Publicarea (`scripts/release.ps1`) scrie `darkscheck.exe` in
+`artifacts/<versiune>/console/` si `DarksCheck.Wpf.exe` in `artifacts/<versiune>/wpf/`, fiecare
+un singur fisier cu DLL-urile libraw inglobate.
 
 ## Pentru cine dezvolta
 
