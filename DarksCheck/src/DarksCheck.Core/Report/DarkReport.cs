@@ -103,7 +103,8 @@ internal static class DarkReport
     {
         ArgumentNullException.ThrowIfNull(r);
         DarkSeriesAnalysis d = r.Darks;
-        return $"=== DARK-URI: {(d.Used == 1 ? "1 cadru decodat" : d.Used.ToString(CultureInfo.InvariantCulture) + " cadre decodate")} din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===";
+        string whose = r.DarksFromPartner is string p ? $" (ale partenerului {p})" : "";
+        return $"=== DARK-URI{whose}: {(d.Used == 1 ? "1 cadru decodat" : d.Used.ToString(CultureInfo.InvariantCulture) + " cadre decodate")} din {d.Frames.Count}, {d.Width} x {d.Height} px, scara {F(d.Black, 0)} .. {F(d.White, 0)} ADU ({d.ScaleSource}), CFA {d.CfaLetters ?? "necunoscut"} ===";
     }
 
     /// <summary>The rows under the header line: the normalisation, the quantisation, the biases' warnings.</summary>
@@ -248,7 +249,7 @@ internal static class DarkReport
         double mpx = d.Width * (double)d.Height / 1e6;
         List<ReportRow> rows =
         [
-            new("dark-uri", $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: mediana pixelilor de pe rangurile {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe Mpx, al {ix.RankLow + 1}-lea .. al {ix.RankHigh}-lea din {F(mpx, mpx < 1 ? 2 : 1)} Mpx, normalizat la ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)"),
+            new(r.DarksFromPartner is null ? "dark-uri" : "dark-uri (partener)", $"{ix.Tag} ({F(ix.Index, 1)} ADU-eq: mediana pixelilor de pe rangurile {F(Th.IndexRankLowPerMpx, 0)}-{F(Th.IndexRankHighPerMpx, 0)} pe Mpx, al {ix.RankLow + 1}-lea .. al {ix.RankHigh}-lea din {F(mpx, mpx < 1 ? 2 : 1)} Mpx, normalizat la ISO {F(Th.NormIso, 0)} si {F(Th.NormExposureSeconds, 0)} s)"),
             new("eticheta", r.Label),
         ];
         if (r.Lights is LightsAnalysis l && !double.IsNaN(r.LightsIndex))

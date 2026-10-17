@@ -30,6 +30,7 @@ report delivered on 2026-10-11), with its figures in `results.json`,
 | V-003 | the Smida session | darks | 20 frames, step 2, norm 0.993; 2283 / 443 / 111 / 24 / 0 pixels above 10 / 20 / 50 / 100 / 500 ADU-eq (the prototype's 2086 / 433 / 107 / 24 / 0 above the raw levels: ten pixels sit at exactly 20.0 ADU, see ADR 0007), 412 always, 19 flicker, median 33, temporal sigma 5.58 hot and 1.45 quiet, 92 RTS; sigma 1.514 per frame, residual 1.474, master 0.628, rows 4.1 x white noise; the mean of 1 / 2 / 4 / 5 / 10 frames at 1.426 / 1.016 / 0.725 / 0.652 / 0.467 ADU, the median master 0.400 (1.25 x 1.426 / sqrt(20)), median-of-10 0.786; dark map centre -0.551, bottom -0.174; warming 0.826 → 1.068, +2.2 °C; banding 0.387 rows, 0.169 columns; leak +0.09 top-left on dark minus bias; read noise 1.563 / 1.257 / 1.257 / 1.447; dark current median 0.140, centre 0.126, top-left 0.219; 57.8 % of bias pixels below black; verdicts OK / ATENTIE (drift) / OK / OK / OK / OK | 2026-10-11 |
 | V-005 | the Smida session against the library | match | index 25.2 (`idx25`, ranks 121 .. 483 of 24.2 Mpx), label `2026-08-12-Smida-idx25`; 32 lights, 26 needed, 86 persistent, 85 / 85 / 70 / 16 of them above 10 / 20 / 50 / 100 ADU-eq in the master (of its 2283 / 443 / 111 / 24), 1 missed at 3 ADU-eq; the lights at 1.00 of the master over the night on 443 pixels, 0.72 at the first light, 0.94 at the last, `Direct`; the library: 30 frames, norm 4.007, index 67.4, label `2026-10-10-ISO1600-120s-15.8celsius-idx67`; Smida over the library 0.422 (0.381 .. 0.443) on 434 pixels hot in both, -7.5 degrees, `CosmeticOnly`; 111 of 111 Smida pixels above 50 are above 50 in the library, 425 of the library's 528 above 50 are above 20 in Smida | 2026-10-16 |
 | V-006 | the library alone | match | index 67.4, `idx67`, label `2026-10-10-ISO1600-120s-15.8celsius-idx67`; no lights, no partner | 2026-10-16 |
+| V-007 | `Veil/2026-10-06-3h` (87 lights of 120.2 s at ISO 1600, 30 biases of 0.2 s, no darks; Nikon D3300, Samyang 135) against the library, whose darks stand in for the session's (ADR 0011) | match | the library's index 67.4 and label; 44 lights measured (the cap of 60 on 87 takes one in two), 36 needed, 236 persistent, 225 / 224 / 214 / 117 of them above 10 / 20 / 50 / 100 ADU-eq in the library's master (of its 5608 / 3940 / 528 / 176), 12 missed at 3 ADU-eq; the lights at 0.43 of the master over the night on 3933 pixels, 0.41 at the first light, 0.37 at the last, `CosmeticOnly` (the library 7.2 degrees warmer than the night, which the owner's notes put at 8-10 degrees by the camera against the library's 15.8 degree room); no partner rows | 2026-10-16 |
 | V-004 | the library | darks | 30 frames, step 2, norm 4.007; 5608 / 3940 / 528 / 176 / 13 above the levels, 3759 always, 71 flicker, median 33 ADU-eq, temporal sigma 23.64 and 5.23, 291 RTS; one saturated pixel; sigma 5.70, residual 4.94, master 2.08, rows 1.8 x; curve 4.83 / 3.46 / 2.51 / 2.27 / 1.67, the median master 1.105, median-of-15 2.46; warming 0.735 → 1.086 (the console's, at the 80.1 ADU threshold; the prototype's 100 ADU set gave 0.736 → 1.085), +3.4 °C; leak +0.22 top-left on the dark master (no biases); verdicts OK / ATENTIE (drift) / OK / OK / ATENTIE (one saturated) / OK | 2026-10-11 |
 
 ## History
@@ -66,3 +67,39 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   24 / 0, warming 0.83 → 1.07, read noise 1.56 / 1.26 / 1.26 / 1.45, master noise 0.40, 86
   persistent, 1.00 / 0.72 / 0.94, idx25, 0.42 on 434 pixels, -7.5 degrees; the library:
   5608 / 3940 / 528 / 176 / 13, 0.73 → 1.09, one saturated, 1.11, idx67); no figure moved.
+- 2026-10-16: V-007 recorded from the console's first run of the lights-only session (task 6,
+  ADR 0011): the Veil lights against the 2026-10-10 library, 96 s at 4 threads. The run reads
+  `lights / dark 0.43 pe noapte (mediana pe 44 cadre; primul 0.41, ultimul 0.37; 3933 pixeli)`
+  and `echivalent idx29 (dark x 0.43, adica -7.2 grade fata de dark)`; no prototype figure
+  exists for this session, so the case pins the console's own first run against drift, as
+  V-004 does. The 7.2 degrees agree with the owner's estimate of the night (8-10 degrees by the
+  camera) against the library's room (15.8 degrees). The run's lines the case pins:
+
+  ```
+  === SESIUNE: E:\Photografie\Astro\Veil\2026-10-06-3h ===
+      darks              : (lipsa; se folosesc dark-urile partenerului E:\Photografie\Astro\Flats and Darks\Darks\2026-10-10-ISO1600-120s-15.8celsius\darks)
+      biases             : biases\ (30 cadre .NEF)
+      lights             : lights\ (87 cadre .NEF)
+      aparat             : Nikon D3300
+      expunere partener  : 120.2 s la ISO 1600 (toate cadrele)
+      expunere biases    : 0.2 s la ISO 1600 (toate cadrele)
+      expunere lights    : 120.2 s la ISO 1600 (86 din 87 cadre; expuneri sau ISO diferite)
+      interval lights    : 2026-10-06 23:35:03 -> 2026-10-07 02:57:49 (3 h 22 min); 87 cadre la 134.5 s; 47 pauze peste 5 s (cea mai lunga 141 s inainte de cadrul 76)
+      potrivire          : OK: dark-urile partenerului au expunerea (120.2 s) si ISO-ul (1600) lights-urilor
+      bias               : OK: 0.2 s
+  === DARK-URI (ale partenerului ...\2026-10-10-ISO1600-120s-15.8celsius\darks): 30 cadre decodate din 30, 6016 x 4016 px, scara 150 .. 4095 ADU (libraw (exact)), CFA RGGB ===
+    9. LIGHTS FATA DE DARK
+      pixeli fierbinti   : 236 pixeli persistenti in lights (izolati, peste 6 sigma locale, in cel putin 36 din 44 cadre)
+      in masterul dark   : peste 10: 225 din 236 (95 %); peste 20: 224 din 236 (95 %); peste 50: 214 din 236 (91 %); peste 100: 117 din 236 (50 %)  [ADU-eq]
+      master in lights   : peste 10: 225 din 5608 (4 %); peste 20: 224 din 3940 (6 %); peste 50: 214 din 528 (41 %); peste 100: 117 din 176 (66 %)
+      nepotriviti        : 12 pixeli persistenti in lights sub 20 ADU-eq in master (mediana lor in master 3 ADU-eq)
+      amplitudine        : lights / dark 0.43 pe noapte (mediana pe 44 cadre; primul 0.41, ultimul 0.37; 3933 pixeli)
+      verdict            : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.43, dark-ul e mai cald cu 7.2 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
+    INDEX
+      dark-uri (partener): idx67 (67.4 ADU-eq: mediana pixelilor de pe rangurile 5-20 pe Mpx, al 122-lea .. al 483-lea din 24.2 Mpx, normalizat la ISO 400 si 120 s)
+      eticheta           : 2026-10-10-ISO1600-120s-15.8celsius-idx67
+      lights             : echivalent idx29 (dark x 0.43, adica -7.2 grade fata de dark)
+  ```
+
+  The library's own checks 2 to 8 in that run are V-004's figures (the same 30 darks), with
+  the Veil biases giving the read noise (2.96 ADU on G1 at ISO 1600) and the dark current.

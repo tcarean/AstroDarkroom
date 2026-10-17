@@ -46,6 +46,12 @@ internal static class DarkOutputs
             CheckOutDir(partner.Folder, dir, "partenerului");
         }
 
+        if (r.DarksFromPartner is string darksPartner)
+        {
+            // a lights-only run: the partner's folder is the one whose darks were read (R-054)
+            CheckOutDir(darksPartner, dir, "partenerului");
+        }
+
         Directory.CreateDirectory(dir);
         List<string> written = [];
 

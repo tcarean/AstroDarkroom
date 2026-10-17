@@ -45,7 +45,8 @@ internal sealed record DarkSeriesResult(
     LightsAnalysis? Lights,
     string? LightsError,
     PartnerAnalysis? Partner,
-    string? PartnerError)
+    string? PartnerError,
+    string? DarksFromPartner = null)
 {
     /// <summary>A frame that could not be read or decoded, in any group, or a partner that could not be used; a frame the cap skipped is not one.</summary>
     internal bool HasErrors => Inventory.HasErrors
@@ -70,6 +71,37 @@ internal static class DarkSeriesRun
         Inventory inv = InventoryRun.Run(folder);
         int threads = options.EffectiveThreads;
         Normalisation nz = new(options.IsoFactorPerStop, options.DoublingCelsius);
+
+        // A session with lights and no darks takes the partner's darks as its own (R-054, ADR
+        // 0011): they fill the stack, take checks 2 to 8, check 9 and INDEX, and the match of
+        // check 1 reads their settings; the partner rows of INDEX are then meaningless and skipped.
+        IReadOnlyList<string> darkPaths = inv.Session.Darks;
+        SessionFolder labelSession = inv.Session;
+        string? darksFromPartner = null;
+        if (!inv.Session.HasDarks)
+        {
+            if (options.Against is null)
+            {
+                throw new InvalidOperationException(RunReport.LightsOnlyNeedsPartner(inv.Session.Root));
+            }
+
+            SessionFolder partnerSession;
+            try
+            {
+                partnerSession = SessionFolder.Open(options.Against);
+            }
+            catch (Exception e) when (e is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
+            {
+                // the window shows this on the problem card: it must say whose folder failed
+                throw new InvalidOperationException("partenerul: " + e.Message, e);
+            }
+
+            FrameInfo[] partnerDarks = InventoryRun.ReadAll(partnerSession.Darks);
+            darkPaths = partnerSession.Darks;
+            labelSession = partnerSession;
+            darksFromPartner = partnerSession.Root;
+            inv = inv with { Match = MatchAnalyzer.Analyze(partnerDarks, inv.Biases, inv.Lights), DarksFromPartner = partnerSession.Root, PartnerDarks = partnerDarks };
+        }
 
         // The biases first: a FITS carries no black level, and the biases' median is the camera's
         // pedestal, which the darks' median would overstate by the dark current (ADR 0007).
@@ -97,7 +129,7 @@ internal static class DarkSeriesRun
         DarkSeriesAnalysis darks;
         int refPlane;
         {
-            FrameStack stack = FrameStack.Load(inv.Session.Darks, threads, options.MaxFrames, Phase("decodare dark-uri", progress), biasBlack, nz, cancel);
+            FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? "decodare dark-uri" : "decodare dark-uri (partener)", progress), biasBlack, nz, cancel);
             darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase("masurare dark-uri", progress));
             refPlane = stack.ReferencePlane;
         }
@@ -119,7 +151,7 @@ internal static class DarkSeriesRun
 
         DarkVerdicts verdicts = DarkVerdictAnalyzer.Judge(darks, biases, dc, refPlane);
         IndexFigures index = IndexAnalyzer.RankIndex(darks.MedianMaster, darks.Black, darks.White, darks.Norm, darks.Width, darks.Height);
-        string label = IndexAnalyzer.Label(inv.Session, index);
+        string label = IndexAnalyzer.Label(labelSession, index);
 
         LightsAnalysis? lights = null;
         string? lightsError = null;
@@ -139,7 +171,7 @@ internal static class DarkSeriesRun
 
         PartnerAnalysis? partner = null;
         string? partnerError = null;
-        if (options.Against is not null)
+        if (options.Against is not null && darksFromPartner is null)
         {
             try
             {
@@ -154,7 +186,7 @@ internal static class DarkSeriesRun
         }
 
         double lightsIndex = lights is null ? double.NaN : IndexAnalyzer.EquivalentIndex(index, lights.LightsOverDark);
-        return new DarkSeriesResult(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError);
+        return new DarkSeriesResult(inv, darks, biases, biasError, dc, verdicts, refPlane, index, label, lightsIndex, lights, lightsError, partner, partnerError, darksFromPartner);
     }
 
     /// <summary>The partner folder (a session or a library) decoded to its median master: its index, the session's darks over it on the shared pixels, the lights over it through the darks, the overlap of the two hot-pixel sets at <see cref="Th.PartnerOverlapAdu"/>.</summary>

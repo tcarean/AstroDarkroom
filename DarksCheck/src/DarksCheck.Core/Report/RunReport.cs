@@ -45,6 +45,10 @@ internal static class RunReport
     /// <summary>"1 cadru", "20 cadre".</summary>
     internal static string Frames(int n) => n == 1 ? "1 cadru" : n.ToString(CultureInfo.InvariantCulture) + " cadre";
 
+    /// <summary>The refusal of a session with lights and no darks run without a partner (R-002, R-054): what to give, in both applications' words.</summary>
+    internal static string LightsOnlyNeedsPartner(string root) =>
+        $"sesiunea {root} are lights\\ dar nu are darks\\; da un partener de dark-uri (o biblioteca) ca sa compari lights-urile cu el: --against DIR in consola, \"Alege partener...\" in fereastra";
+
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
     internal static string F(double v, int decimals) => v.ToString("F" + decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture);
 

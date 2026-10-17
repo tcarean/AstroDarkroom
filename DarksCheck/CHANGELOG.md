@@ -61,6 +61,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   normalisation's settings (the console keeps the defaults, 2 and 6). Dark theme, dark title
   bar, "Despre" window and its own icon, drawn by `Icon/make_icon.py`.
 
+- A session with lights and no darks (R-002 refined, R-054, R-077, ADR 0011): opened with
+  `--against DIR` or the window's partner, the partner's darks stand in for the session's,
+  taking checks 2 to 8, check 9 against the session's lights and INDEX; the report says whose
+  darks they are and drops the rows that would compare the partner with itself. Without a
+  partner the folder is refused with a sentence naming what to give, and the window's problem
+  card offers `Alege partener...`; `--inventory` lists such a folder with `darks: (lipsa)`.
+  V-007 runs the Veil lights of 2026-10-06 against the 2026-10-10 library.
+
 ### Internal
 
 - `prototype/`: the Python scripts of the 2026-10-11 analysis of the Smida session of

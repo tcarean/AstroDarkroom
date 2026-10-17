@@ -137,7 +137,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <StackPanel>
           <TextBlock Text="{Binding ProblemTitle}" FontSize="15" FontWeight="SemiBold" Foreground="#F0857E" TextWrapping="Wrap" />
           <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" Text="{Binding ProblemText}" />
-          <Button Content="Alege alt folder..." Margin="0,20,0,0" HorizontalAlignment="Left" Click="ChooseFolder" />
+          <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+            <Button Content="Alege alt folder..." Click="ChooseFolder" />
+            <Button Content="Alege partener..." Margin="10,0,0,0" Click="ChoosePartnerAndRerun"
+                    ToolTip="O biblioteca sau alta sesiune de dark-uri; folderul deschis e analizat din nou cu ea (o sesiune cu lights fara dark-uri ia dark-urile partenerului)" />
+          </StackPanel>
         </StackPanel>
       </Border>
 

@@ -94,12 +94,32 @@ public class AcceptanceTests
     [Fact]
     public void R002_ASessionWithLightsButNoDarks_Exit1()
     {
+        // an empty lights folder, or biases alone: a session without darks, an error
         using TempWorkspace ws = new();
         Directory.CreateDirectory(ws.PathTo("lights"));
         File.WriteAllBytes(ws.PathTo("result.fit"), SessionFixture.Frame(SessionFixture.FirstStart, 10, 400));
         (int code, _, string stderr) = Cli.Run(ws.Dir, "--inventory");
         Assert.Equal(1, code);
         Assert.Contains("nu are darks", stderr, StringComparison.Ordinal);
+        using TempWorkspace biasesOnly = new();
+        Directory.CreateDirectory(biasesOnly.PathTo("biases"));
+        (int code1, _, string stderr1) = Cli.Run(biasesOnly.Dir);
+        Assert.Equal(1, code1);
+        Assert.Contains("are biases\\ dar nu are darks\\", stderr1, StringComparison.Ordinal);
+
+        // lights with frames: the inventory lists them, the analysis asks for a partner
+        using SessionFixture s = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i });
+        (int code2, string stdout2, _) = Cli.Run(s.Root, "--inventory");
+        Assert.Equal(0, code2);
+        Assert.Contains("    darks              : (lipsa)", stdout2, StringComparison.Ordinal);
+        Assert.Contains("    expunere darks     : (lipsa)", stdout2, StringComparison.Ordinal);
+        Assert.Contains("    interval darks     : (lipsa)", stdout2, StringComparison.Ordinal);
+        Assert.Contains("    potrivire          : NEMASURAT: nu exista darks", stdout2, StringComparison.Ordinal);
+        Assert.Contains("\n  LIGHTS\n", stdout2, StringComparison.Ordinal);
+        Assert.DoesNotContain("\n  DARKS\n", stdout2, StringComparison.Ordinal);
+        (int code3, _, string stderr3) = Cli.Run(s.Root);
+        Assert.Equal(1, code3);
+        Assert.Contains("EROARE: sesiunea " + s.Root + " are lights\\ dar nu are darks\\; da un partener de dark-uri (o biblioteca) ca sa compari lights-urile cu el: --against DIR in consola, \"Alege partener...\" in fereastra", stderr3, StringComparison.Ordinal);
     }
 
     [Fact]

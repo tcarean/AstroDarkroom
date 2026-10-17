@@ -28,6 +28,18 @@ cifrele ei, e in `docs/validation/2026-08-12-smida/report.md`.
 
 ## Ce folder ii dai
 
+O sesiune cu `lights\` dar fara `darks\` (lights-urile tale, dark-urile luate in alta zi sau
+o biblioteca) merge si ea, cu un partener: `--against <biblioteca>` in consola sau butonul
+`Alege partener...` din fereastra. Dark-urile partenerului tin locul dark-urilor sesiunii:
+verificarile 2-8 se fac pe ele (afli si cat de buna e biblioteca), verificarea 9 compara
+lights-urile cu masterul lor, iar indexul si eticheta sunt ale partenerului; raportul spune
+`DARK-URI (ale partenerului ...)` si `darks: (lipsa; se folosesc dark-urile partenerului ...)`, iar
+`darkscheck-darks.csv` si hartile din `--out` sunt ale dark-urilor partenerului.
+Fara partener, un asemenea folder e refuzat cu un mesaj care spune ce sa dai; `--inventory` il
+listeaza oricum, cu `darks: (lipsa)`. Pe sesiunea Veil din 2026-10-06 (87 lights, fara
+dark-uri) fata de biblioteca din 2026-10-10: lights / dark 0.43, biblioteca e cu 7.2 grade mai
+calda decat noaptea, doar corectie cosmetica.
+
 Folderul sesiunii Siril, cel care are `darks/` si, optional, `biases/` si `lights/`:
 
 ```
@@ -191,7 +203,9 @@ fara niciun dark decodabil da o linie `ATENTIE` si iesire `1`, restul raportului
 dark al partenerului care nu se poate folosi e numarat intr-o linie `ATENTIE` (iesire `1`).
 `--out` nu poate fi nici in folderul partenerului. Un raport in jurul lui zero (lights-urile nu
 arata deloc pixelii fierbinti ai masterului: reducere de zgomot in aparat, alt aparat, alta
-orientare a FITS-ului) e `nepotrivit`, cu propozitia lui.
+orientare a FITS-ului) e `nepotrivit`, cu propozitia lui. Pe o sesiune fara dark-uri,
+partenerul nu e comparat cu nimic: dark-urile lui sunt dark-urile rularii, iar randurile
+`partener`, `dark-uri / partener`, `pixeli comuni` si `lights / partener` lipsesc.
 
 Un FITS nu spune nivelul de negru (un FITS convertit de Siril pastreaza piedestalul aparatului,
 150 la D3300), asa ca pentru FITS negrul e mediana primului bias cand exista bias-uri, altfel a
@@ -267,7 +281,9 @@ taburi:
 - **Index**: eticheta, mare, cu butonul `Copiaza eticheta` (o pui in clipboard si redenumesti
   tu folderul; programul nu redenumeste nimic), randurile INDEX si partenerul: `Alege
   partener...` (o biblioteca sau alta sesiune), `Fara partener`, `Analizeaza din nou`. Partenerul
-  ales dupa o analiza se aplica la urmatoarea.
+  ales dupa o analiza se aplica la urmatoarea. O sesiune fara dark-uri deschisa fara partener
+  arata cardul de problema cu butonul `Alege partener...`: alegi biblioteca si analiza porneste
+  din nou cu dark-urile ei.
 - **Raport**: textul consolei, identic.
 
 In bara de sus: `FIRE` (cate cadre se decodeaza in paralel; gol = jumatate din nuclee), `CADRE

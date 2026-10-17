@@ -69,7 +69,10 @@ they are now.
   leaves a gap;
 - `Label` and `Tag` are the result's; `Partner` is the folder of `--against`.
 
-`Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session or the
+The problem card has a second button, `Alege partener...` (R-077): `MainWindow.ChoosePartnerAndRerun`
+runs the partner dialog and, when a folder was chosen (the same one again included), `RerunAsync`;
+a cancelled dialog does nothing. So a session with lights and no darks goes from the refusal
+to its run without choosing the folder again. `Export(dir)` calls `DarkOutputs.WriteAll`, which refuses a folder inside the session or the
 partner as `--out` does, and shows the paths or the error in `Status`. `LabelCopied` sets the
 status line after the window put the label in the clipboard.
 

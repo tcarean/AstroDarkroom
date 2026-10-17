@@ -69,6 +69,26 @@ public class SessionFolderTests
         Assert.Contains(subfolder + "\\ dar nu are darks\\", e.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>A lights-only session opens only when allowed (the run with a partner, the inventory); a lights folder without frames stays an error.</summary>
+    [Fact]
+    public void R002_ALightsOnlySessionOpensOnlyWhenAllowed()
+    {
+        using SessionFixture s = new SessionFixture().WithLights(2, i => new SyntheticLight { Seed = 300 + i }).WithBiases(2);
+        InvalidOperationException refused = Assert.Throws<InvalidOperationException>(() => SessionFolder.Open(s.Root));
+        Assert.Contains("are lights\\ dar nu are darks\\", refused.Message, StringComparison.Ordinal);
+
+        SessionFolder f = SessionFolder.Open(s.Root, allowLightsOnly: true);
+        Assert.False(f.HasDarks);
+        Assert.Empty(f.Darks);
+        Assert.Equal(2, f.Lights.Count);
+        Assert.Equal(2, f.Biases.Count);
+        Assert.Equal(s.Root, f.Root);
+
+        using TempWorkspace empty = new();
+        Directory.CreateDirectory(Path.Combine(empty.Dir, "lights"));
+        Assert.Contains("nu are darks", Assert.Throws<InvalidOperationException>(() => SessionFolder.Open(empty.Dir, allowLightsOnly: true)).Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R002_WithoutASessionSubfolderTheFolderItselfHoldsTheDarks()
     {
