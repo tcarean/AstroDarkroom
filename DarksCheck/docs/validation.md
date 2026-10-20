@@ -132,3 +132,7 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   three libraries' indexes, 67 / 47 / 33 for 15.8 / 13.3 / 9.5 °C, follow the doubling rule
   within a degree (67 → 33 is one halving for 6.3 °C). Their labels also double the suffix; the
   cases do not record a label.
+- 2026-10-20 (review): the span guard of R-029 (`Th.LeakFitMinSpan` 0.1), the cause read on the
+  side of the departure and the raw figures in the row were added after the code review; all
+  ten cases re-run, V-001 to V-004 and V-008 to V-010 pass with no figure moved (the measured
+  spans are 0.24 to 0.38, all over the guard), V-005 to V-007 still fail on the doubled label.

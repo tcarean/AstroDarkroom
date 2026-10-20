@@ -191,4 +191,10 @@ The tool never writes there, so this is the owner's move; the plan works either 
   the light there is not readout); its cause stays `Glow` for the top-left region, the light
   being in the lit frames. The owner also asked for the two other libraries he keeps (13.3 and
   9.5 °C, folders renamed on their labels) to be in the validation list: V-009 and V-010.
-
+- The code review (six findings) added, before the merge: a minimum ratio span under which the
+  split is unmeasured (the extrapolation to ratio 0 is noise on a series that did not warm),
+  the cause chosen on the side of the departure instead of by magnitude (a bias dip could
+  otherwise name a leak `Readout`), a test with a third of the frames lit at the warm end, the
+  region lookup shared by `Regions` / `EdgeFigures`, `Split` derived from `Splits`, R-029's
+  example figures taken from the console, and, at the owner's request, the raw ADU beside the
+  equivalent in the `glow / constant` row.

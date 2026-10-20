@@ -111,9 +111,14 @@ eight regions, fits the frame's offset to the centre on the ratio without clippi
 is the glow part (the value at ratio 1, the master's temperature), the intercept the constant
 part; with biases, the bias mean map's offset of the same region (the bias's own regions, raw
 ADU) is the readout part and the constant minus it the remainder, all divided by the
-normalisation. The cause is the part largest in absolute value, glow / readout / leak with
-biases and glow / constant without, since a leak that stays constant and a readout offset look
-the same in the darks alone. `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
+normalisation. The cause is the part that contributes most on the side the region departs to
+(the sign of glow + remainder, what dark minus bias shows, when that passes `Th.LeakAdu`; else the sign of glow + constant, the dark's own departure), glow / readout / leak with biases and glow / constant without,
+since a leak that stays constant and a readout offset look the same in the darks alone. The
+split is an extrapolation to ratio 0, so `FrameLight.RatioSpan`, the span of the ratios of the
+frames not lit, must reach `Th.LeakFitMinSpan`, else `EdgeSplitsOf` returns nothing and the row
+says the series did not warm enough. `Regions.OffsetOf` and `EdgeFigures.Of` map a `MapRegion`
+to its value for both the verdict and the split; `Planes.Median(IReadOnlyList<double>)` serves
+the fits. `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
 beside the eight and lets check 6's glow be the glow part of that region.
 
 ## The verdicts

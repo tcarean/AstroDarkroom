@@ -28,9 +28,9 @@ internal enum LeakCause
 }
 
 /// <summary>R-028: every frame's excess light over the Theil-Sen fit of the frame mean on the warming (the hot pixels' amplitude ratio), in ADU equivalent and aligned with the series' frames (NaN for a frame without figures); the fit's scale (1.4826 x the median absolute residual, ADU equivalent); the frames (1-based, the file's index) lit beyond <see cref="Th.LeakFrameSigmas"/> scales and <see cref="Th.LeakFrameAdu"/>; the fit in raw ADU per unit of ratio and how many frames it stands on.</summary>
-internal sealed record FrameLight(IReadOnlyList<double> ExcessAdu, double ScaleAdu, IReadOnlyList<int> LitFrames, IReadOnlyList<double> LitExcessAdu, double Slope, double Intercept, int FramesFitted);
+internal sealed record FrameLight(IReadOnlyList<double> ExcessAdu, double ScaleAdu, IReadOnlyList<int> LitFrames, IReadOnlyList<double> LitExcessAdu, double Slope, double Intercept, int FramesFitted, double RatioSpan);
 
-/// <summary>R-029: one region's offset to the centre split into the part that grows with the warming (the slope on the ratio, which is the value at ratio 1, the master's temperature), the constant part (the intercept), the biases' share of it when there are biases (null without) and what remains of the constant after it, all in ADU equivalent, with the cause the largest part names.</summary>
+/// <summary>R-029: one region's offset to the centre split into the part that grows with the warming (the slope on the ratio, which is the value at ratio 1, the master's temperature), the constant part (the intercept), the biases' share of it when there are biases (null without) and what remains of the constant after it, all in ADU equivalent, with the cause named by the largest part on the side of the total (the brighter side when the region is brighter than the centre).</summary>
 internal sealed record EdgeSplit(MapRegion Where, double GlowAdu, double ConstantAdu, double? ReadoutAdu, double RemainderAdu, LeakCause Cause);
 
 /// <summary>
@@ -90,6 +90,7 @@ internal static class LeakAnalyzer
         Array.Fill(excess, double.NaN);
         List<int> lit = [];
         List<double> litExcess = [];
+        double lo = double.PositiveInfinity, hi = double.NegativeInfinity;
         for (int k = 0; k < x.Length; k++)
         {
             double res = y[k] - intercept - slope * x[k];
@@ -99,16 +100,21 @@ internal static class LeakAnalyzer
                 lit.Add(frames[idx[k]].Info.Index);
                 litExcess.Add(res / norm);
             }
+            else
+            {
+                lo = Math.Min(lo, x[k]);
+                hi = Math.Max(hi, x[k]);
+            }
         }
 
-        return new FrameLight(excess, scale / norm, lit, litExcess, slope, intercept, x.Length);
+        return new FrameLight(excess, scale / norm, lit, litExcess, slope, intercept, x.Length, hi >= lo ? hi - lo : 0);
     }
 
-    /// <summary>The eight regions' offsets to the centre against the ratio, over the frames R-028 did not name (R-029); empty when R-028 is unmeasured or too few frames remain.</summary>
+    /// <summary>The eight regions' offsets to the centre against the ratio, over the frames R-028 did not name (R-029); empty when R-028 is unmeasured, when those frames' ratios span less than <see cref="Th.LeakFitMinSpan"/> (the line to ratio 0 would be noise) or when too few frames remain.</summary>
     internal static IReadOnlyList<EdgeSplit> EdgeSplitsOf(IReadOnlyList<DarkFrameFigures> frames, FrameLight? light, Regions? bias, double norm)
     {
         ArgumentNullException.ThrowIfNull(frames);
-        if (light is null)
+        if (light is null || light.RatioSpan < Th.LeakFitMinSpan)
         {
             return [];
         }
@@ -126,14 +132,20 @@ internal static class LeakAnalyzer
         List<EdgeSplit> splits = [];
         foreach (MapRegion where in Enum.GetValues<MapRegion>())
         {
-            double[] y = idx.Select(i => Offset(frames[i].Edges!, where)).ToArray();
+            double[] y = idx.Select(i => frames[i].Edges!.Of(where)).ToArray();
             (double slope, double intercept) = TheilSen(x, y, all);
             double glow = slope / norm, constant = intercept / norm;
-            double? readout = bias is null ? null : (Of(bias, where) - bias.Centre) / norm;
+            double? readout = bias is null ? null : bias.OffsetOf(where) / norm;
             double remainder = constant - (readout ?? 0);
+            // the cause is the largest part on the side the region departs to: the side of dark minus
+            // bias when that departs beyond the threshold (a brighter region is explained by what adds
+            // light, so a readout dip in the bias cannot name it), else the side of the dark's own
+            // departure (nothing to explain on dark minus bias; the dark's edge is described)
+            double judged = glow + remainder;
+            double side = (Math.Abs(judged) > Th.LeakAdu ? judged : glow + constant) >= 0 ? 1 : -1;
             LeakCause cause = readout is double ro
-                ? Largest((LeakCause.Glow, glow), (LeakCause.Readout, ro), (LeakCause.Leak, remainder))
-                : Largest((LeakCause.Glow, glow), (LeakCause.Constant, constant));
+                ? Largest(side, (LeakCause.Glow, glow), (LeakCause.Readout, ro), (LeakCause.Leak, remainder))
+                : Largest(side, (LeakCause.Glow, glow), (LeakCause.Constant, constant));
             splits.Add(new EdgeSplit(where, glow, constant, readout, remainder, cause));
         }
 
@@ -163,7 +175,7 @@ internal static class LeakAnalyzer
             }
         }
 
-        double slope = slopes.Count == 0 ? 0 : Median(slopes);
+        double slope = slopes.Count == 0 ? 0 : Planes.Median(slopes);
         List<double> offsets = [];
         for (int i = 0; i < x.Length; i++)
         {
@@ -173,7 +185,7 @@ internal static class LeakAnalyzer
             }
         }
 
-        return (slope, offsets.Count == 0 ? double.NaN : Median(offsets));
+        return (slope, Planes.Median(offsets));
     }
 
     /// <summary>The frames that carry figures and a ratio: decoded, not skipped, with hot pixels to read the warming from.</summary>
@@ -191,52 +203,21 @@ internal static class LeakAnalyzer
             }
         }
 
-        return abs.Count == 0 ? double.NaN : MadToSigma * Median(abs);
+        return MadToSigma * Planes.Median(abs);
     }
 
-    private static double Median(List<double> values)
+    /// <summary>The part that contributes most on the given side (+1 brighter, -1 darker); the first one on a tie.</summary>
+    private static LeakCause Largest(double side, params (LeakCause Cause, double Value)[] parts)
     {
-        double[] v = [.. values];
-        Array.Sort(v);
-        int n = v.Length;
-        return n % 2 == 1 ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
-    }
-
-    private static LeakCause Largest(params (LeakCause Cause, double Value)[] parts)
-    {
-        (LeakCause cause, double best) = (parts[0].Cause, Math.Abs(parts[0].Value));
+        (LeakCause cause, double best) = (parts[0].Cause, side * parts[0].Value);
         for (int i = 1; i < parts.Length; i++)
         {
-            if (Math.Abs(parts[i].Value) > best)
+            if (side * parts[i].Value > best)
             {
-                (cause, best) = (parts[i].Cause, Math.Abs(parts[i].Value));
+                (cause, best) = (parts[i].Cause, side * parts[i].Value);
             }
         }
 
         return cause;
     }
-
-    private static double Offset(EdgeFigures e, MapRegion where) => where switch
-    {
-        MapRegion.TopLeft => e.TopLeft,
-        MapRegion.TopRight => e.TopRight,
-        MapRegion.BottomLeft => e.BottomLeft,
-        MapRegion.BottomRight => e.BottomRight,
-        MapRegion.Top => e.Top,
-        MapRegion.Bottom => e.Bottom,
-        MapRegion.Left => e.Left,
-        _ => e.Right,
-    };
-
-    private static double Of(Regions r, MapRegion where) => where switch
-    {
-        MapRegion.TopLeft => r.TopLeft,
-        MapRegion.TopRight => r.TopRight,
-        MapRegion.BottomLeft => r.BottomLeft,
-        MapRegion.BottomRight => r.BottomRight,
-        MapRegion.Top => r.Top,
-        MapRegion.Bottom => r.Bottom,
-        MapRegion.Left => r.Left,
-        _ => r.Right,
-    };
 }

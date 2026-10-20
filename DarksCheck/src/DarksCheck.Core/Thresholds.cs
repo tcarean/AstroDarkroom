@@ -110,6 +110,9 @@ internal static class Th
     /// <summary>The fits of R-028 and R-029 (the frame mean and the edges against the warming) need at least this many frames with an amplitude ratio; under it the rows read NEMASURAT (the golden four-dark session does).</summary>
     internal const int LeakFitMinFrames = 6;
 
+    /// <summary>The split of R-029 extrapolates the per-frame line to ratio 0, so it needs the series to have warmed: the amplitude ratio of the frames not lit must span at least this much, else the split is unmeasured. The measured series span 0.24 (Smida), 0.35 (the library), 0.31 and 0.30 (the other two), 0.38 (the leak set); at 0.35 the library's left-edge slope is known to ±0.04 raw ADU, and under a third of that span the extrapolation is noise.</summary>
+    internal const double LeakFitMinSpan = 0.1;
+
     /// <summary>The passes of the Theil-Sen fit of R-028: each leaves out the frames over the limit and refits on the rest (the clipped sigma's three passes).</summary>
     internal const int LeakFitPasses = 3;
 

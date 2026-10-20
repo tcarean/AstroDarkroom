@@ -131,7 +131,10 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   desparte abaterea regiunii din verdict in partea care creste cu incalzirea (glow) si partea
   constanta; cu bias-uri, partea constanta se imparte in ce e si in bias (offset de citire) si
   ce ramane (scurgere); fara bias-uri, o scurgere constanta si un offset de citire arata la
-  fel, si raportul o spune. Ambele cer cel putin 6 cadre cu pixeli fierbinti. Pe D3300 glow-ul
+  fel, si raportul o spune. La ISO 1600 randul arata si valorile brute, in ADU, intre
+  paranteze. Ambele cer cel putin 6 cadre cu pixeli fierbinti, iar despartirea cere si o serie
+  care s-a incalzit (raportul de amplitudine sa se intinda pe cel putin 0.1; seriile D3300 de
+  o ora se intind pe 0.25-0.4), altfel spune ca nu o poate face. Pe D3300 glow-ul
   e in stanga-sus, 0.05 ADU-eq la Smida si 0.22 in biblioteca de la 16 grade; setul de proba
   cu ocularul descoperit si o lampa in camera (2026-10-20) a dat 5 cadre la +0.17 .. +0.47
   ADU-eq, pe care verdictul vechi, pe master, le ratase.

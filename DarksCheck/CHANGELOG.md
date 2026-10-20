@@ -15,7 +15,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   them out of `darks\`; the row `glow / constant` splits the verdict region's excess into the
   part that grows with the warming and the constant part, and with biases into the readout
   offset the biases hold and what remains; the verdict's words follow the cause (glow, leak,
-  readout offset, or undecidable without biases); check 6's `glow` row shows the glow part;
+  readout offset, or undecidable without biases; the split needs the series to have warmed by
+  0.1 of amplitude ratio, and shows the raw ADU beside the equivalent); check 6's `glow` row
+  shows the glow part;
   `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
   CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
   which the old check read as `OK`.

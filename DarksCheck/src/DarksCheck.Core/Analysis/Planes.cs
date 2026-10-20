@@ -130,6 +130,16 @@ internal static class Planes
         return Math.Sqrt(Math.Max(var, 0));
     }
 
+    /// <summary>The median of a short list of doubles (the mean of the two middle values when even), on a sorted copy: the fits of <see cref="LeakAnalyzer"/>; NaN when empty.</summary>
+    internal static double Median(IReadOnlyList<double> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        double[] v = [.. values];
+        Array.Sort(v);
+        int n = v.Length;
+        return n == 0 ? double.NaN : n % 2 == 1 ? v[n / 2] : 0.5 * (v[n / 2 - 1] + v[n / 2]);
+    }
+
     /// <summary>numpy's median: the middle value, or the mean of the two middle values; the array is copied.</summary>
     internal static double Median(float[] values)
     {

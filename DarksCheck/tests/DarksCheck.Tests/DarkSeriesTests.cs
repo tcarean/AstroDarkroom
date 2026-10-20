@@ -204,6 +204,24 @@ public class DarkSeriesTests
     }
 
     [Fact]
+    public void R028_TheFitIsNotTiltedByLitFramesAtTheWarmEnd()
+    {
+        // twelve frames warming 0.8 -> 1.2, the last four carrying +0.8 ADU: a third of the frames, all at the warm end,
+        // where an ordinary fit would read them as a steeper warming
+        static double Factor12(int i) => 0.8 + 0.4 * i / 11;
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = Factor12(i), Extra = i >= 8 ? (x, y) => 0.8 : null });
+        DarkSeriesResult r = Run(s);
+        FrameLight fl = r.Verdicts.Leak.Frames!;
+        Assert.Equal([9, 10, 11, 12], fl.LitFrames);
+        // the clean frames' mean does not depend on the warming (ten hot pixels in 49k), so the slope stays near zero
+        Assert.InRange(fl.Slope, -0.5, 0.5);
+        Assert.InRange(fl.ScaleAdu, 0, 0.05);
+        Assert.All(fl.LitExcessAdu, v => Assert.InRange(v, 0.6, 1.0));
+        Assert.All(Enumerable.Range(0, 8), k => Assert.InRange(fl.ExcessAdu[k], -0.1, 0.1));
+        Assert.InRange(fl.RatioSpan, 0.2, 0.35);
+    }
+
+    [Fact]
     public void R029_AnEdgeIsSplitIntoGlowAndConstantAndTheBiasNamesTheReadoutOffset()
     {
         MapRegion[] leftish = [MapRegion.Left, MapRegion.TopLeft, MapRegion.BottomLeft];
@@ -259,6 +277,38 @@ public class DarkSeriesTests
         DarkReport.Write(rk, swk);
         Assert.Contains("): scurgere de lumina sau offset de citire, fara bias-uri nu se pot deosebi", swk.ToString(), StringComparison.Ordinal);
         Assert.Contains(" ADU (fara bias: lumina sau offset de citire)", swk.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("(brut:", swk.ToString(), StringComparison.Ordinal);
+
+        // the cause is read on the brighter side: a readout dip of -3 in the bias under a dark edge of -1 leaves
+        // dark - bias at +2, light that the bias does not hold, so the cause is the leak, not the larger readout part
+        using SessionFixture dip = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? -1 : 0 }, biases: 4, bias: i => new SyntheticDark { Seed = 500 + i, Extra = (x, y) => x < 32 ? -3 : 0 });
+        DarkSeriesResult rd = Run(dip);
+        Assert.Equal(Verdict.Warning, rd.Verdicts.Leak.Verdict);
+        Assert.Contains(rd.Verdicts.Leak.Where, leftish);
+        EdgeSplit sd = rd.Verdicts.Leak.Split!;
+        Assert.InRange(sd.ReadoutAdu!.Value, -3.5, -2.5);
+        Assert.InRange(sd.RemainderAdu, 1.5, 2.5);
+        Assert.Equal(LeakCause.Leak, sd.Cause);
+    }
+
+    [Fact]
+    public void R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured()
+    {
+        // the same constant edge, the hot pixels at the same amplitude in every frame: the ratios span only their noise
+        using SessionFixture s = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, Extra = (x, y) => x < 32 ? 3 : 0 });
+        DarkSeriesResult r = Run(s);
+        FrameLight fl = r.Verdicts.Leak.Frames!;
+        Assert.True(fl.RatioSpan < 0.1, $"span {fl.RatioSpan}");
+        Assert.Empty(fl.LitFrames);
+        Assert.Empty(r.Verdicts.Leak.Splits);
+        Assert.Null(r.Verdicts.Leak.Split);
+        Assert.Equal(LeakCause.Unmeasured, r.Verdicts.Leak.Cause);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Leak.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        Assert.Contains("    glow / constant    : NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe 0.0", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("; peste 1.0: scurgere de lumina sau glow", sw.ToString(), StringComparison.Ordinal);
+        Assert.InRange(r.Verdicts.Pattern.GlowAdu, 2.5, 3.5);
     }
 
     [Fact]

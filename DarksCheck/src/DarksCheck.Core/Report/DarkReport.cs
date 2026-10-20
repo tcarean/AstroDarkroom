@@ -161,7 +161,7 @@ internal static class DarkReport
         }
 
         leak.Add(new("lumina pe cadre", FrameLightRow(v.Leak, eq)));
-        leak.Add(new("glow / constant", SplitRow(v.Leak, eq)));
+        leak.Add(new("glow / constant", SplitRow(v.Leak, eq, n)));
         leak.Add(new("verdict", Leak(v.Leak, eq)));
 
         return
@@ -519,17 +519,23 @@ internal static class DarkReport
         return $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)})";
     }
 
-    /// <summary>The row `glow / constant` (R-029): the verdict region's split.</summary>
-    private static string SplitRow(LeakVerdict l, string eq)
+    /// <summary>The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the equivalent when the two differ.</summary>
+    private static string SplitRow(LeakVerdict l, string eq, double norm)
     {
-        if (l.Split is not EdgeSplit s)
+        if (l.Frames is not FrameLight fl)
         {
             return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
         }
 
+        if (l.Split is not EdgeSplit s)
+        {
+            return $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})";
+        }
+
+        string raw = Math.Abs(norm - 1) < 1e-9 ? "" : $" (brut: glow {Signed(s.GlowAdu * norm, 2)}, constant {Signed(s.ConstantAdu * norm, 2)} ADU)";
         return s.ReadoutAdu is double ro
-            ? $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)}, din care in bias {Signed(ro, 2)}, ramane {Signed(s.RemainderAdu, 2)} {eq}"
-            : $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire)";
+            ? $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)}, din care in bias {Signed(ro, 2)}, ramane {Signed(s.RemainderAdu, 2)} {eq}{raw}"
+            : $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire){raw}";
     }
 
     private static string Amplitude(DarkSeriesAnalysis d, DriftVerdict v) =>

@@ -31,8 +31,11 @@ internal enum MapRegion
 }
 
 /// <summary>Check 2: the largest edge or corner offset from the centre, in ADU equivalent, on the dark-minus-bias map when there is one, else on the dark master (R-021); the frames' excess light over the warming (R-028, null under <see cref="Th.LeakFitMinFrames"/> frames); the eight regions' glow / constant splits and the verdict region's own (R-029, empty and null when unmeasured).</summary>
-internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion Where, bool FromDarkMinusBias, FrameLight? Frames, IReadOnlyList<EdgeSplit> Splits, EdgeSplit? Split)
+internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion Where, bool FromDarkMinusBias, FrameLight? Frames, IReadOnlyList<EdgeSplit> Splits)
 {
+    /// <summary>The verdict region's own split; null when R-029 is unmeasured.</summary>
+    internal EdgeSplit? Split => Splits.FirstOrDefault(s => s.Where == Where);
+
     /// <summary>What the verdict region's excess is made of; <see cref="LeakCause.Unmeasured"/> without a split.</summary>
     internal LeakCause Cause => Split?.Cause ?? LeakCause.Unmeasured;
 }
@@ -73,9 +76,8 @@ internal static class DarkVerdictAnalyzer
         // the frames' light over the warming and the glow / constant split of every region (R-028, R-029)
         FrameLight? light = LeakAnalyzer.FrameLightOf(d.Frames, norm);
         IReadOnlyList<EdgeSplit> splits = LeakAnalyzer.EdgeSplitsOf(d.Frames, light, b?.MeanMaps[refPlane].Regions, norm);
-        EdgeSplit? split = splits.FirstOrDefault(s => s.Where == where);
         bool lit = light is { LitFrames.Count: > 0 };
-        LeakVerdict leak = new(double.IsNaN(offset) ? Verdict.Unmeasured : Math.Abs(offset) <= Th.LeakAdu && !lit ? Verdict.Ok : Verdict.Warning, offset, where, dc is not null, light, splits, split);
+        LeakVerdict leak = new(double.IsNaN(offset) ? Verdict.Unmeasured : Math.Abs(offset) <= Th.LeakAdu && !lit ? Verdict.Ok : Verdict.Warning, offset, where, dc is not null, light, splits);
 
         // 3. drift
         Warming wm = d.Warming;
@@ -102,7 +104,7 @@ internal static class DarkVerdictAnalyzer
         double p2p = d.Banding.Max(x => Math.Max(x.RowP2p, x.ColP2p)) / norm;
         Verdict patternVerdict = double.IsNaN(p2p) || double.IsNaN(offset) ? Verdict.Unmeasured
             : p2p <= Th.BandingAdu && Math.Abs(offset) <= Th.LeakAdu ? Verdict.Ok : Verdict.Warning;
-        PatternVerdict pattern = new(patternVerdict, p2p, split?.GlowAdu ?? offset);
+        PatternVerdict pattern = new(patternVerdict, p2p, leak.Split?.GlowAdu ?? offset);
 
         // 7. dead and saturated
         int dead = d.Master.Sum(m => m.Low), sat = d.Master.Sum(m => m.Saturated);
@@ -131,13 +133,7 @@ internal static class DarkVerdictAnalyzer
     /// <summary>The largest departure from the centre over the four edges and the four corners, signed, with its region.</summary>
     private static (double Offset, MapRegion Where) Largest(Regions r)
     {
-        (double, MapRegion)[] d =
-        [
-            (r.Top - r.Centre, MapRegion.Top), (r.Bottom - r.Centre, MapRegion.Bottom),
-            (r.Left - r.Centre, MapRegion.Left), (r.Right - r.Centre, MapRegion.Right),
-            (r.TopLeft - r.Centre, MapRegion.TopLeft), (r.TopRight - r.Centre, MapRegion.TopRight),
-            (r.BottomLeft - r.Centre, MapRegion.BottomLeft), (r.BottomRight - r.Centre, MapRegion.BottomRight),
-        ];
-        return d.MaxBy(x => double.IsNaN(x.Item1) ? double.NegativeInfinity : Math.Abs(x.Item1));
+        MapRegion[] order = [MapRegion.Top, MapRegion.Bottom, MapRegion.Left, MapRegion.Right, MapRegion.TopLeft, MapRegion.TopRight, MapRegion.BottomLeft, MapRegion.BottomRight];
+        return order.Select(m => (r.OffsetOf(m), m)).MaxBy(x => double.IsNaN(x.Item1) ? double.NegativeInfinity : Math.Abs(x.Item1));
     }
 }

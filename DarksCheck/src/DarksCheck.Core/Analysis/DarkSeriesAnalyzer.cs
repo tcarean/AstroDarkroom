@@ -28,7 +28,21 @@ internal sealed record ResidualFigures(string Name, double Sigma, double Median,
 }
 
 /// <summary>The four edges and the four corners of a frame's binned reference plane relative to its centre, in raw ADU (R-021, R-029).</summary>
-internal sealed record EdgeFigures(double Left, double Right, double Top, double Bottom, double TopLeft, double TopRight, double BottomLeft, double BottomRight);
+internal sealed record EdgeFigures(double Left, double Right, double Top, double Bottom, double TopLeft, double TopRight, double BottomLeft, double BottomRight)
+{
+    /// <summary>The offset of one region.</summary>
+    internal double Of(MapRegion where) => where switch
+    {
+        MapRegion.TopLeft => TopLeft,
+        MapRegion.TopRight => TopRight,
+        MapRegion.BottomLeft => BottomLeft,
+        MapRegion.BottomRight => BottomRight,
+        MapRegion.Top => Top,
+        MapRegion.Bottom => Bottom,
+        MapRegion.Left => Left,
+        _ => Right,
+    };
+}
 
 /// <summary>One dark of the series: its metadata, its figures per plane and against the master, its hot-pixel amplitude relative to the master (R-023), or the error that kept it out.</summary>
 internal sealed record DarkFrameFigures(
@@ -63,6 +77,22 @@ internal sealed record NoiseVsN(IReadOnlyList<NoisePoint> Curve, double SigmaFra
 /// <summary>The mean of nine areas of a binned map, in ADU above black: the centre (40 .. 60 %), the four corners and the four edges (each a tenth of the map).</summary>
 internal sealed record Regions(double Centre, double TopLeft, double TopRight, double BottomLeft, double BottomRight, double Top, double Bottom, double Left, double Right)
 {
+    /// <summary>One edge or corner relative to the centre.</summary>
+    internal double OffsetOf(MapRegion where) => Of(where) - Centre;
+
+    /// <summary>The value of one edge or corner.</summary>
+    internal double Of(MapRegion where) => where switch
+    {
+        MapRegion.TopLeft => TopLeft,
+        MapRegion.TopRight => TopRight,
+        MapRegion.BottomLeft => BottomLeft,
+        MapRegion.BottomRight => BottomRight,
+        MapRegion.Top => Top,
+        MapRegion.Bottom => Bottom,
+        MapRegion.Left => Left,
+        _ => Right,
+    };
+
     internal static Regions Of(float[] map, int w, int h)
     {
         if (w <= 0 || h <= 0)

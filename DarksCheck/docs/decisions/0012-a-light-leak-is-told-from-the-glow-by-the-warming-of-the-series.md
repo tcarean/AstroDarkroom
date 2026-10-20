@@ -62,8 +62,16 @@ the leak set; the fits on the hot pixels' amplitude ratio of check 3, raw ADU):
    centre is fitted on the ratio; the glow part is the slope (the value at ratio 1, the
    master's temperature), the constant part the intercept; with biases, the bias mean map's
    offset of the region is the readout part and what remains is the leak. The cause is the
-   part largest in absolute value: `Glow`, `Readout` or `Leak` with biases, `Glow` or
-   `Constant` without, since a constant leak and a readout offset look the same in the darks.
+   part that contributes most on the side the region departs to, the side of dark minus bias
+   when that departs beyond `Th.LeakAdu` (a brighter region is explained by what adds light,
+   so a readout dip in the bias cannot name it) and the side of the dark's own departure
+   otherwise (nothing to explain on dark minus bias; the dark's edge is described): `Glow`,
+   `Readout` or `Leak` with biases, `Glow` or `Constant` without, since a constant leak and
+   a readout offset look the same in the darks. The split is an extrapolation of the line to
+   ratio 0, so it needs the series to have warmed: under `Th.LeakFitMinSpan` (0.1) of ratio
+   span over the frames not lit it is unmeasured and the words fall back to the old ones. The
+   measured series span 0.24 to 0.38; at 0.35 the library's left-edge slope is known to
+   ±0.04 raw ADU, and the error grows as noise over span.
 4. Check 2 goes `ATENTIE` on lit frames as well as on the master's offset, and its words for
    the offset follow the cause; check 6's `glow` row shows the glow part; `TABEL PE CADRE`
    shows every frame's excess light.
@@ -80,6 +88,9 @@ the leak set; the fits on the hot pixels' amplitude ratio of check 3, raw ADU):
   on the leak set), which then show at 3 sd instead of 35 and pull clean frames to -2 sd.
 - **A second exposure length as the discriminator.** Leak and glow both scale linearly with
   the exposure; only the temperature separates them.
+- **The cause by the largest part in absolute value.** A bias dip of -3 under a dark edge of
+  -1 leaves dark minus bias at +2 (light the bias does not hold), yet the readout part would
+  win by magnitude and the verdict would say `offset de citire, nu lumina`.
 - **A geometric test for the mirror's band.** The eyepiece leak has a sharp horizontal edge
   the glow never has, but a verdict on it needs a model of the shadow; the Harti tab shows it
   to the eye, and a moving source is caught by the per-frame test.
