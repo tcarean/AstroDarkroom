@@ -136,3 +136,10 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   side of the departure and the raw figures in the row were added after the code review; all
   ten cases re-run, V-001 to V-004 and V-008 to V-010 pass with no figure moved (the measured
   spans are 0.24 to 0.38, all over the guard), V-005 to V-007 still fail on the doubled label.
+- 2026-10-20 (label): the owner chose to strip an existing `-idx` and digits from the folder's
+  name before the tag is appended (R-061, ADR 0013), so the renamed library reads
+  `2026-10-10-ISO1600-120s-15.8celsius-idx67` again. All ten cases re-run with
+  `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Passed! - Failed: 0, Passed: 10, Skipped: 0,
+  Total: 10, Duration: 6 m 6 s`; V-005, V-006 and V-007 pass on the label with no change to
+  `validation.json`, no figure moved. The labels of V-009 and V-010 (not recorded) read
+  `...-13.3celsius-idx47` and `...-9.5celsius-idx33` by the same rule.

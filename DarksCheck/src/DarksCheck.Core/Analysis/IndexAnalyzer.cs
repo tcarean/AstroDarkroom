@@ -189,7 +189,9 @@ internal static class IndexAnalyzer
     /// <summary>
     /// The label the owner puts in the folder's name (R-061): the folder's name plus the tag,
     /// the folder being the darks' parent when the darks sit in a `darks` subfolder (a
-    /// library kept as `name/darks/`) and the darks folder itself otherwise.
+    /// library kept as `name/darks/`) and the darks folder itself otherwise. A name that
+    /// already ends in an earlier label's suffix (`-idx` and digits, the owner having renamed
+    /// the folder on it) loses that suffix first, so the label stays one suffix long (ADR 0013).
     /// </summary>
     internal static string Label(SessionFolder session, IndexFigures index)
     {
@@ -203,7 +205,23 @@ internal static class IndexAnalyzer
             name = parent is null ? name : Path.GetFileName(parent.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         }
 
-        return name + "-" + index.Tag;
+        return WithoutLabelSuffix(name) + "-" + index.Tag;
+    }
+
+    /// <summary>The name without one trailing `-idx` and digits; a name with none, or with `-idx` not at the end or without digits, as it is.</summary>
+    internal static string WithoutLabelSuffix(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        int end = name.Length;
+        while (end > 0 && char.IsAsciiDigit(name[end - 1]))
+        {
+            end--;
+        }
+
+        const string marker = "-idx";
+        bool hasDigits = end < name.Length;
+        bool hasMarker = end >= marker.Length && string.Compare(name, end - marker.Length, marker, 0, marker.Length, StringComparison.OrdinalIgnoreCase) == 0;
+        return hasDigits && hasMarker ? name[..(end - marker.Length)] : name;
     }
 }
 

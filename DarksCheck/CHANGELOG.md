@@ -6,6 +6,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Changed
+
+- The label of a folder already renamed to a label (its name ends in `-idx` and digits) loses
+  that suffix before the new one is appended, so `...-15.8celsius-idx67` reads `...-idx67`
+  again, not `...-idx67-idx67`, and a changed index shows as a changed number (R-061, ADR 0013).
+
 ### Added
 
 - Check 2 tells a light leak from the sensor's glow by the warming of the series (R-028,
