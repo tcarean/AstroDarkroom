@@ -232,6 +232,7 @@ public class AcceptanceTests
         string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
         Assert.Equal(4, csv.Length);
         Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);
+        Assert.EndsWith(",amp_ratio_median,amp_ratio_q25,amp_ratio_q75,edge_left,edge_right,edge_top,edge_bottom,edge_top_left,edge_top_right,edge_bottom_left,edge_bottom_right,excess_light", csv[0], StringComparison.Ordinal);
         Assert.Equal(CsvFields(csv[0]), CsvFields(csv[1]));
         Assert.Equal(PngWriterSignature, File.ReadAllBytes(Path.Combine(outDir.Dir, "darkscheck-harta-dark.png")).Take(8));
     }

@@ -66,7 +66,7 @@ internal static class DarkReport
             }
             else
             {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Above,4}");
+                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Light,6}  {f.Above,4}");
             }
         }
 
@@ -160,6 +160,8 @@ internal static class DarkReport
             leak.Add(new("dark - bias", $"{RegionsLine(dc.Maps[rp].Regions, n)}; mediana {F(dc.Median / n, 2)}, {F(dc.P1 / n, 2)} .. {F(dc.P99 / n, 2)} (p1 .. p99)"));
         }
 
+        leak.Add(new("lumina pe cadre", FrameLightRow(v.Leak, eq)));
+        leak.Add(new("glow / constant", SplitRow(v.Leak, eq, n)));
         leak.Add(new("verdict", Leak(v.Leak, eq)));
 
         return
@@ -295,14 +297,14 @@ internal static class DarkReport
     internal static string FrameTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
+        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
     }
 
     /// <summary>The unit note of the frames table: the plane and what the columns mean.</summary>
     internal static string FrameTableNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master]";
+        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = {Eq(r.Darks)} peste dreapta mediei pe incalzire]";
     }
 
     /// <summary>One row per dark, the cells formatted as the console prints them, on the reference plane.</summary>
@@ -311,23 +313,26 @@ internal static class DarkReport
         ArgumentNullException.ThrowIfNull(r);
         int rp = r.ReferencePlane;
         List<DarkTableRow> rows = [];
-        foreach (DarkFrameFigures f in r.Darks.Frames)
+        IReadOnlyList<double>? excess = r.Verdicts.Leak.Frames?.ExcessAdu;
+        for (int k = 0; k < r.Darks.Frames.Count; k++)
         {
+            DarkFrameFigures f = r.Darks.Frames[k];
             if (f.Skipped)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", ""));
                 continue;
             }
 
             if (f.Error is not null)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", ""));
                 continue;
             }
 
             PlaneFigures p = f.Planes[rp];
             ResidualFigures res = f.Residuals[rp];
-            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture)));
+            double light = excess is null ? double.NaN : excess[k];
+            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), double.IsNaN(light) ? "-" : Signed(light, 2), p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture)));
         }
 
         return rows;
@@ -445,12 +450,92 @@ internal static class DarkReport
     private static string Leak(LeakVerdict l, string eq)
     {
         string source = l.FromDarkMinusBias ? "pe dark - bias" : "pe masterul dark (fara bias)";
-        return l.Verdict switch
+        string framesTail = l.Frames is null ? "lumina pe cadre NEMASURATA" : "niciun cadru cu lumina peste incalzirea seriei";
+        if (l.Verdict == Verdict.Unmeasured)
         {
-            Verdict.Unmeasured => "NEMASURAT: harta nu are valori (cadre mai mici de un bloc)",
-            Verdict.Ok => $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source})",
-            _ => $"ATENTIE: {RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? "scurgere de lumina sau glow" : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}",
+            return "NEMASURAT: harta nu are valori (cadre mai mici de un bloc)";
+        }
+
+        if (l.Verdict == Verdict.Ok)
+        {
+            return $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source}); {framesTail}";
+        }
+
+        string? litPart = null;
+        if (l.Frames is FrameLight fl && fl.LitFrames.Count > 0)
+        {
+            int n = fl.LitFrames.Count;
+            litPart = $"{n} {(n == 1 ? "cadru are" : "cadre au")} lumina peste ce da incalzirea seriei ({LitList(fl, ": ")} {eq}); scoate-le din darks\\ sau refa seria";
+        }
+
+        string? offsetPart = Math.Abs(l.OffsetAdu) > Th.LeakAdu
+            ? $"{RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? CauseWords(l) : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}"
+            : null;
+        return "ATENTIE: " + (litPart is not null && offsetPart is not null ? $"{litPart}; in plus {offsetPart}" : litPart ?? offsetPart);
+    }
+
+    /// <summary>The words of R-021's brighter case, from R-029's cause of the verdict region.</summary>
+    private static string CauseWords(LeakVerdict l)
+    {
+        EdgeSplit? s = l.Split;
+        return l.Cause switch
+        {
+            LeakCause.Glow => $"creste cu incalzirea (glow {Signed(s!.GlowAdu, 2)}, constant {Signed(s.ConstantAdu, 2)}): glow al senzorului, dark-urile raman bune",
+            LeakCause.Leak => $"nu creste cu incalzirea si nu e in bias (constant {Signed(s!.RemainderAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): scurgere de lumina, refa dark-urile",
+            LeakCause.Readout => $"e si in bias (offset de citire {Signed(s!.ReadoutAdu!.Value, 2)}, glow {Signed(s.GlowAdu, 2)}): offset de citire, nu lumina",
+            LeakCause.Constant => $"nu creste cu incalzirea (constant {Signed(s!.ConstantAdu, 2)}, glow {Signed(s.GlowAdu, 2)}): scurgere de lumina sau offset de citire, fara bias-uri nu se pot deosebi",
+            _ => "scurgere de lumina sau glow",
         };
+    }
+
+    /// <summary>The lit frames with their excess, at most eight, then how many more.</summary>
+    private static string LitList(FrameLight fl, string sep)
+    {
+        const int shown = 8;
+        List<string> parts = [];
+        for (int k = 0; k < Math.Min(shown, fl.LitFrames.Count); k++)
+        {
+            parts.Add($"{fl.LitFrames[k].ToString(CultureInfo.InvariantCulture)}{sep}{Signed(fl.LitExcessAdu[k], 2)}");
+        }
+
+        int more = fl.LitFrames.Count - shown;
+        return string.Join(", ", parts) + (more > 0 ? $" si inca {more.ToString(CultureInfo.InvariantCulture)}" : "");
+    }
+
+    /// <summary>The row `lumina pe cadre` (R-028).</summary>
+    private static string FrameLightRow(LeakVerdict l, string eq)
+    {
+        if (l.Frames is not FrameLight fl)
+        {
+            return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
+        }
+
+        if (fl.LitFrames.Count == 0)
+        {
+            return $"niciun cadru peste {F(Th.LeakFrameSigmas, 0)} x abaterea tipica ({F(fl.ScaleAdu, 2)} {eq}) si peste {F(Th.LeakFrameAdu, 1)} {eq} fata de dreapta mediei pe incalzire";
+        }
+
+        int n = fl.LitFrames.Count;
+        return $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)})";
+    }
+
+    /// <summary>The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the equivalent when the two differ.</summary>
+    private static string SplitRow(LeakVerdict l, string eq, double norm)
+    {
+        if (l.Frames is not FrameLight fl)
+        {
+            return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
+        }
+
+        if (l.Split is not EdgeSplit s)
+        {
+            return $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})";
+        }
+
+        string raw = Math.Abs(norm - 1) < 1e-9 ? "" : $" (brut: glow {Signed(s.GlowAdu * norm, 2)}, constant {Signed(s.ConstantAdu * norm, 2)} ADU)";
+        return s.ReadoutAdu is double ro
+            ? $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)}, din care in bias {Signed(ro, 2)}, ramane {Signed(s.RemainderAdu, 2)} {eq}{raw}"
+            : $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire){raw}";
     }
 
     private static string Amplitude(DarkSeriesAnalysis d, DriftVerdict v) =>
@@ -553,8 +638,18 @@ internal static class DarkReport
         return $"randuri {F(worstRow.RowStd / n, 3)} {Eq(d)} rms ({F(worstRow.RowP2p / n, 2)} varf la varf, {worstRow.Name}), coloane {F(worstCol.ColStd / n, 3)} ({F(worstCol.ColP2p / n, 2)}, {worstCol.Name})  [profilul masterului minus mediana glisanta pe {Th.BandingWindow}]";
     }
 
-    private static string Glow(LeakVerdict l, PatternVerdict p, string eq) =>
-        double.IsNaN(p.GlowAdu) ? "NEMASURAT" : $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({(l.FromDarkMinusBias ? "dark - bias" : "masterul dark")})";
+    private static string Glow(LeakVerdict l, PatternVerdict p, string eq)
+    {
+        string source = l.FromDarkMinusBias ? "dark - bias" : "masterul dark";
+        if (double.IsNaN(p.GlowAdu))
+        {
+            return "NEMASURAT";
+        }
+
+        return l.Split is EdgeSplit s
+            ? $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)}, partea care creste cu incalzirea (constant {Signed(s.ConstantAdu, 2)} in afara ei; {source})"
+            : $"{Signed(p.GlowAdu, 2)} {eq} la {RegionName(l.Where)} fata de centru ({source})";
+    }
 
     private static string Pattern(PatternVerdict p, string eq) => p.Verdict switch
     {

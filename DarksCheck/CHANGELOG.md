@@ -8,6 +8,19 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- Check 2 tells a light leak from the sensor's glow by the warming of the series (R-028,
+  R-029, ADR 0012). The row `lumina pe cadre` fits every frame's mean on the hot pixels'
+  amplitude ratio (Theil-Sen, three clipping passes) and names the frames that carry light
+  over it (5 scales and 0.1 ADU-eq), which make the verdict `ATENTIE` with the advice to take
+  them out of `darks\`; the row `glow / constant` splits the verdict region's excess into the
+  part that grows with the warming and the constant part, and with biases into the readout
+  offset the biases hold and what remains; the verdict's words follow the cause (glow, leak,
+  readout offset, or undecidable without biases; the split needs the series to have warmed by
+  0.1 of amplitude ratio, and shows the raw ADU beside the equivalent); check 6's `glow` row
+  shows the glow part;
+  `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
+  CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
+  which the old check read as `OK`.
 - The project, started from `ClaudeCodeStarterKit` on 2026-10-11 (ADR 0001): the kit's gate,
   skills, hooks and documentation set; the raw and FITS readers, the PNG encoder and the
   bitmap font copied from LightsCheck, which holds FlatCheck 2.3.0's copies with the shot
