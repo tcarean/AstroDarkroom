@@ -301,6 +301,45 @@ public class LightsAndIndexTests
     }
 
     [Theory]
+    [InlineData("2026-10-10-ISO1600-120s-15.8celsius-idx67", true, "2026-10-10-ISO1600-120s-15.8celsius-idx67")]
+    [InlineData("2026-10-10-ISO1600-120s-15.8celsius-idx60", true, "2026-10-10-ISO1600-120s-15.8celsius-idx67")]
+    [InlineData("night-idx60", false, "night-idx67")]
+    [InlineData("night-idx67-b", false, "night-idx67-b-idx67")]
+    [InlineData("night-idx", false, "night-idx-idx67")]
+    [InlineData("night-IDX60", false, "night-idx67")]
+    [InlineData("night-idx-", false, "night-idx67")]
+    [InlineData("night-idx-60", false, "night-idx-60-idx67")]
+    [InlineData("-idx67", false, "-idx67-idx67")]
+    [InlineData("-idx-", false, "-idx--idx67")]
+    public void R061_AFolderAlreadyNamedWithALabelLosesItsOldSuffixBeforeTheNewOne(string folder, bool inSubfolder, string expected)
+    {
+        using SessionFixture fx = new SessionFixture().WithDarkSeries(1, Dark);
+        string root = Path.Combine(fx.Root, folder);
+        string dir = inSubfolder ? Path.Combine(root, "darks") : root;
+        Directory.CreateDirectory(dir);
+        File.Copy(Directory.GetFiles(fx.DarksDir)[0], Path.Combine(dir, "DSC_0001.fit"));
+
+        IndexFigures ix = new(66.5, 121, 483, 362, 24_000_000);
+        Assert.Equal(expected, IndexAnalyzer.Label(SessionFolder.Open(root), ix));
+        if (inSubfolder)
+        {
+            Assert.Equal(expected, IndexAnalyzer.Label(SessionFolder.Open(dir), ix));
+        }
+    }
+
+    [Fact]
+    public void R061_AFolderRenamedOnTheUnmeasuredTagKeepsThatLabelWhileTheIndexStaysUnmeasured()
+    {
+        using SessionFixture fx = new SessionFixture().WithDarkSeries(1, Dark);
+        string root = Path.Combine(fx.Root, "night-idx-");
+        Directory.CreateDirectory(root);
+        File.Copy(Directory.GetFiles(fx.DarksDir)[0], Path.Combine(root, "DSC_0001.fit"));
+
+        IndexFigures unmeasured = new(double.NaN, 0, 0, 0, 0);
+        Assert.Equal("night-idx-", IndexAnalyzer.Label(SessionFolder.Open(root), unmeasured));
+    }
+
+    [Theory]
     [InlineData(0.9, "Direct")]
     [InlineData(1.1, "Direct")]
     [InlineData(0.89, "WithOpt")]

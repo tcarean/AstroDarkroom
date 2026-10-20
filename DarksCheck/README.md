@@ -184,7 +184,11 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   de cald a rulat senzorul: 25 pe Smida, 67 pe biblioteca din 2026-10-10 (ISO 1600, 15.8
   grade in camera). `eticheta` e numele folderului plus `-idx<NN>` (folderul-parinte cand
   dark-urile stau in `darks\`): o afiseaza, tu redenumesti folderul daca vrei; nimic nu e scris
-  sau redenumit. Cu lights, `lights` da indexul echivalent al noptii (indexul dark-urilor x
+  sau redenumit. Un folder deja redenumit dupa eticheta (numele se termina in `-idx` si cifre,
+  sau in `-idx-` al unui index nemasurat) pastreaza eticheta la un singur sufix: cel vechi e
+  scos inainte sa fie pus cel nou, daca mai ramane un nume in fata lui, asa ca
+  `...-15.8celsius-idx67` ramane `...-15.8celsius-idx67`, nu `...-idx67-idx67`, iar un index
+  schimbat se vede ca numar schimbat. Cu lights, `lights` da indexul echivalent al noptii (indexul dark-urilor x
   raportul lights / dark) si gradele fata de dark.
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, lumina in plus fata de
