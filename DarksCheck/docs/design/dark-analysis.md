@@ -122,7 +122,9 @@ the fits. `SidesOf` reads the four sides (`MapSide`, an edge with its two corner
 `SideLight.RegionsOf`) the same way, on the same frames (`KeptForSplit`): the side's per-frame
 offset is the mean of its three regions (`SideOffset`), fitted on the ratio; the intercept is
 the constant with the standard error `scale x sqrt(1 / n + mean(x)^2 / Sxx)` of a line read at
-x = 0, and with biases the bias master's side offset is taken out. `LeakVerdict.ConstantLight`
+x = 0, and with biases the bias master's side offset is taken out. The sides need `Th.LeakSidesMinFrames` frames left after the lit ones, the split three;
+`DarkReport.SplitUnmeasured` turns the three reasons (too few frames with a ratio, too little
+warming, too few frames left) into the rows' `NEMASURAT` words. `LeakVerdict.ConstantLight`
 is the strongest side whose remainder passes `Th.LeakConstantAdu` and `Th.LeakConstantSigmas`
 times its error (ADR 0014); `WorstSide` is the side with the most light, which the frames
 table shows per frame (`latura`: the frame's side offset minus the bias's, over the

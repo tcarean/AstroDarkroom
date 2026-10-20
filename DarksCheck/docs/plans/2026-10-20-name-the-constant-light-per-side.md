@@ -105,3 +105,8 @@ Lights tables in the window has a hover hint.
   from the region splits, so the error is measured, not guessed.
 - The leak set's top side reads +0.20 ± 0.05 ADU-eq by the direct fit (the plan's table, from
   the mean of the three region intercepts, said +0.19).
+- The code review added, before the merge: the `OK` tail says no side passes both conditions
+  (it claimed all sides under 0.15 even when only the sigma test failed), the sides need five
+  frames left after the lit ones (`Th.LeakSidesMinFrames`), the rows' `NEMASURAT` reasons come
+  from one helper and include "too few frames left", and the `latura` column's hint, note and
+  README say the glow is in it.

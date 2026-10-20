@@ -28,7 +28,11 @@ internal enum LeakCause
 }
 
 /// <summary>R-028: every frame's excess light over the Theil-Sen fit of the frame mean on the warming (the hot pixels' amplitude ratio), in ADU equivalent and aligned with the series' frames (NaN for a frame without figures); the fit's scale (1.4826 x the median absolute residual, ADU equivalent); the frames (1-based, the file's index) lit beyond <see cref="Th.LeakFrameSigmas"/> scales and <see cref="Th.LeakFrameAdu"/>; the fit in raw ADU per unit of ratio and how many frames it stands on.</summary>
-internal sealed record FrameLight(IReadOnlyList<double> ExcessAdu, double ScaleAdu, IReadOnlyList<int> LitFrames, IReadOnlyList<double> LitExcessAdu, double Slope, double Intercept, int FramesFitted, double RatioSpan);
+internal sealed record FrameLight(IReadOnlyList<double> ExcessAdu, double ScaleAdu, IReadOnlyList<int> LitFrames, IReadOnlyList<double> LitExcessAdu, double Slope, double Intercept, int FramesFitted, double RatioSpan)
+{
+    /// <summary>The frames the split and the sides stand on: the fitted ones that are not lit.</summary>
+    internal int FramesKept => FramesFitted - LitFrames.Count;
+}
 
 /// <summary>A side of the frame: an edge with its two corners (R-029, ADR 0014).</summary>
 internal enum MapSide
@@ -173,7 +177,7 @@ internal static class LeakAnalyzer
     internal static IReadOnlyList<SideLight> SidesOf(IReadOnlyList<DarkFrameFigures> frames, FrameLight? light, Regions? bias, double norm)
     {
         ArgumentNullException.ThrowIfNull(frames);
-        if (KeptForSplit(frames, light) is not (int[] idx, double[] x))
+        if (KeptForSplit(frames, light) is not (int[] idx, double[] x) || idx.Length < Th.LeakSidesMinFrames)
         {
             return [];
         }

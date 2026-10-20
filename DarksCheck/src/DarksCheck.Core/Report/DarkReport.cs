@@ -307,7 +307,7 @@ internal static class DarkReport
         ArgumentNullException.ThrowIfNull(r);
         string eq = Eq(r.Darks);
         string side = r.Verdicts.Leak.WorstSide is SideLight w
-            ? $"latura = {SideName(w.Side)} - centru{(w.RemainderAdu is null ? " (fara bias)" : " dupa bias")}, {eq}"
+            ? $"latura = {SideName(w.Side)} - centru{(w.RemainderAdu is null ? " (fara bias, glow inclus)" : " dupa bias (glow inclus)")}, {eq}"
             : "latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)";
         return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
     }
@@ -467,7 +467,7 @@ internal static class DarkReport
 
         if (l.Verdict == Verdict.Ok)
         {
-            string sidesTail = l.SidesAfterBias ? $"; lumina constanta sub {F(Th.LeakConstantAdu, 2)} pe toate laturile" : "";
+            string sidesTail = l.SidesAfterBias ? $"; nicio latura cu lumina constanta peste {F(Th.LeakConstantAdu, 2)} si {F(Th.LeakConstantSigmas, 0)} x eroarea" : "";
             return $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}";
         }
 
@@ -495,14 +495,14 @@ internal static class DarkReport
     /// <summary>The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their constants without biases.</summary>
     private static string SidesRow(LeakVerdict l, string eq)
     {
-        if (l.Frames is not FrameLight fl)
+        if (SplitUnmeasured(l, Th.LeakSidesMinFrames) is string why)
         {
-            return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
+            return why;
         }
 
         if (l.Sides.Count == 0)
         {
-            return $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})";
+            return "NEMASURAT";
         }
 
         MapSide[] order = [MapSide.Top, MapSide.Bottom, MapSide.Left, MapSide.Right];
@@ -569,17 +569,38 @@ internal static class DarkReport
         return $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)})";
     }
 
-    /// <summary>The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the equivalent when the two differ.</summary>
-    private static string SplitRow(LeakVerdict l, string eq, double norm)
+    /// <summary>Why the split (or the sides, which need <paramref name="minFrames"/> frames left) is unmeasured, or null when it is measured (R-028, R-029).</summary>
+    private static string? SplitUnmeasured(LeakVerdict l, int minFrames)
     {
         if (l.Frames is not FrameLight fl)
         {
             return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
         }
 
-        if (l.Split is not EdgeSplit s)
+        if (fl.RatioSpan < Th.LeakFitMinSpan)
         {
             return $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})";
+        }
+
+        if (fl.FramesKept < minFrames)
+        {
+            return $"NEMASURAT: prea putine cadre ramase dupa cele luminate ({fl.FramesKept}, sub {minFrames})";
+        }
+
+        return null;
+    }
+
+    /// <summary>The row `glow / constant` (R-029): the verdict region's split, with the raw ADU beside the equivalent when the two differ.</summary>
+    private static string SplitRow(LeakVerdict l, string eq, double norm)
+    {
+        if (SplitUnmeasured(l, 3) is string why)
+        {
+            return why;
+        }
+
+        if (l.Split is not EdgeSplit s)
+        {
+            return "NEMASURAT";
         }
 
         string raw = Math.Abs(norm - 1) < 1e-9 ? "" : $" (brut: glow {Signed(s.GlowAdu * norm, 2)}, constant {Signed(s.ConstantAdu * norm, 2)} ADU)";

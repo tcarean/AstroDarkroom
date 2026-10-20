@@ -117,7 +117,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="benzi" ToolTip="deviatia mediilor pe randuri, de cate ori zgomotul alb" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="amplit." ToolTip="amplitudinea pixelilor fierbinti ai masterului in cadru, fata de master" />
           <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="latura" ToolTip="latura cu cea mai multa lumina constanta (margine plus cele doua colturi) fata de centru, dupa bias cand exista bias-uri, ADU-eq: lumina din toate cadrele (verificarea 2)" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="latura" ToolTip="abaterea fata de centru, in acel cadru, a laturii cu cea mai multa lumina constanta (margine plus cele doua colturi), dupa bias cand exista bias-uri, glow inclus, ADU-eq; partea ei constanta e lumina din toate cadrele (verificarea 2)" />
           <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
           <TextBlock Grid.Column="11" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
         </Grid>

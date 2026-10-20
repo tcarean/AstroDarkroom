@@ -320,7 +320,7 @@ public class DarkSeriesTests
         Assert.Contains(" ADU; peste 0.15 si peste 3 x eroarea la sus", text, StringComparison.Ordinal);
         Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
         Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
-        Assert.Contains("latura = sus - centru dupa bias, ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("latura = sus - centru dupa bias (glow inclus), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         // one frame, three regions of 256 synthetic pixels each: a noisy column, the band still in every frame
         Assert.All(rows, row => Assert.InRange(double.Parse(row.Side, CultureInfo.InvariantCulture), 1.0, 3.0));
@@ -335,7 +335,7 @@ public class DarkSeriesTests
         using StringWriter swr = new();
         DarkReport.Write(rr, swr);
         Assert.Contains("; niciuna peste 0.15 si peste 3 x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper", swr.ToString(), StringComparison.Ordinal);
-        Assert.Contains("; lumina constanta sub 0.15 pe toate laturile", swr.ToString(), StringComparison.Ordinal);
+        Assert.Contains("; nicio latura cu lumina constanta peste 0.15 si 3 x eroarea", swr.ToString(), StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(rr), row => Assert.InRange(double.Parse(row.Side, CultureInfo.InvariantCulture), -1.0, 1.0));
 
         // without biases the sides are constants only: nothing to judge, the row says why
@@ -348,7 +348,7 @@ public class DarkSeriesTests
         using StringWriter swn = new();
         DarkReport.Write(rn, swn);
         Assert.Contains("    lumina constanta   : fara bias nu se desparte de offsetul de citire: constant sus +", swn.ToString(), StringComparison.Ordinal);
-        Assert.Contains("latura = sus - centru (fara bias), ADU", DarkReport.FrameTableNote(rn), StringComparison.Ordinal);
+        Assert.Contains("latura = sus - centru (fara bias, glow inclus), ADU", DarkReport.FrameTableNote(rn), StringComparison.Ordinal);
 
         // under six frames: unmeasured, like the split
         using SessionFixture few = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
@@ -357,6 +357,35 @@ public class DarkSeriesTests
         Assert.Null(rf.Verdicts.Leak.WorstSide);
         Assert.Equal("-", DarkReport.FrameRows(rf)[0].Side);
         Assert.Contains("latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)", DarkReport.FrameTableNote(rf), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R029_TheSidesNeedFiveFramesLeftAfterTheLitOnes()
+    {
+        // six clean frames warming; the per-frame light is then told, by hand, that the last two are lit: four remain,
+        // enough for the split (three) but not for the sides' error (five). A synthetic series cannot produce this
+        // on its own: two lit frames of six would tilt the Theil-Sen line itself (8 of 15 pairs contaminated).
+        static double Factor6(int i) => 0.8 + 0.4 * i / 5;
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = Factor6(i) }, biases: 4);
+        DarkSeriesResult r = Run(s);
+        FrameLight measured = r.Verdicts.Leak.Frames!;
+        Assert.Empty(measured.LitFrames);
+        FrameLight twoLit = measured with { LitFrames = [5, 6], LitExcessAdu = [0.8, 0.8] };
+        Assert.Equal(4, twoLit.FramesKept);
+        Regions bias = r.Biases!.MeanMaps[r.ReferencePlane].Regions;
+        IReadOnlyList<EdgeSplit> splits = LeakAnalyzer.EdgeSplitsOf(r.Darks.Frames, twoLit, bias, r.Darks.Norm);
+        Assert.Equal(8, splits.Count);
+        Assert.Empty(LeakAnalyzer.SidesOf(r.Darks.Frames, twoLit, bias, r.Darks.Norm));
+
+        // the report says why, and the column has nothing to show
+        LeakVerdict leak = r.Verdicts.Leak with { Frames = twoLit, Splits = splits, Sides = [] };
+        DarkSeriesResult r2 = r with { Verdicts = r.Verdicts with { Leak = leak } };
+        Assert.Null(r2.Verdicts.Leak.WorstSide);
+        using StringWriter sw = new();
+        DarkReport.Write(r2, sw);
+        Assert.Contains("    lumina constanta   : NEMASURAT: prea putine cadre ramase dupa cele luminate (4, sub 5)", sw.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    glow / constant    : la ", sw.ToString(), StringComparison.Ordinal);
+        Assert.Equal("-", DarkReport.FrameRows(r2)[0].Side);
     }
 
     [Fact]

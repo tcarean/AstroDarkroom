@@ -199,8 +199,8 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, lumina in plus fata de
   dreapta mediei pe incalzire (ADU-eq, `-` sub 6 cadre), latura cu cea mai multa lumina
-  constanta fata de centru in acel cadru, dupa bias cand exista bias-uri (ADU-eq; nota
-  spune care latura), pixelii peste 20 ADU-eq, pe planul G1; in fereastra, fiecare coloana a
+  constanta fata de centru in acel cadru, dupa bias cand exista bias-uri, cu glow-ul inclus
+  (ADU-eq; nota spune care latura; doar partea constanta a ei e lumina), pixelii peste 20 ADU-eq, pe planul G1; in fereastra, fiecare coloana a
   celor doua tabele are o explicatie la trecerea mouse-ului peste antet; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
 - **Tabel pe lights**: ora, cerul peste negru, sigma locala (scara detectorului), candidatii,
   pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1. Un light care nu

@@ -119,6 +119,9 @@ internal static class Th
     /// <summary>... and above this many times its own standard error (the side's per-frame scatter around its line, carried to ratio 0), so a short or noisy series cannot name a leak it cannot resolve; the leak set's top side is 0.19 ± 0.01.</summary>
     internal const double LeakConstantSigmas = 3.0;
 
+    /// <summary>The sides of R-029 need at least this many frames left after the lit ones: the error of a two-parameter line read from three residuals is near zero by construction, so three frames could pass the sigma condition on noise; the split itself stands on three.</summary>
+    internal const int LeakSidesMinFrames = 5;
+
     /// <summary>The passes of the Theil-Sen fit of R-028: each leaves out the frames over the limit and refits on the rest (the clipped sigma's three passes).</summary>
     internal const int LeakFitPasses = 3;
 

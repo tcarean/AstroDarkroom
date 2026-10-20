@@ -50,8 +50,11 @@ Smida's 0.14 at a 4.7x lower index, so there is no uniform light on top of the b
    dated note here, the kit's ADR 0024). The error condition keeps a short or noisy series
    from naming what it cannot resolve: the synthetic test frames (256 x 192 px, regions of 256
    pixels) carry 0.1 .. 0.2 ADU of intercept error where the D3300's 2.4 Mpx regions carry
-   0.01. Without biases the sides are printed as constants and the row says they cannot be
-   told from a readout offset.
+   0.01. The sides need `Th.LeakSidesMinFrames` (5) frames left after the lit ones, since the
+   error of a two-parameter line read from three residuals is near zero by construction and
+   three frames could pass the sigma condition on noise (the code review of 2026-10-20).
+   Without biases the sides are printed as constants and the row says they cannot be told
+   from a readout offset.
 3. **The words.** A side over the threshold makes check 2 `ATENTIE` with `lumina constanta in
    toate cadrele: +0.19 ADU-eq pe latura de sus fata de centru, nu e in bias: scurgere de
    lumina (ocular, montura)`; the lit-frame sentence says `in plus fata de restul seriei` and
