@@ -307,6 +307,10 @@ public class LightsAndIndexTests
     [InlineData("night-idx67-b", false, "night-idx67-b-idx67")]
     [InlineData("night-idx", false, "night-idx-idx67")]
     [InlineData("night-IDX60", false, "night-idx67")]
+    [InlineData("night-idx-", false, "night-idx67")]
+    [InlineData("night-idx-60", false, "night-idx-60-idx67")]
+    [InlineData("-idx67", false, "-idx67-idx67")]
+    [InlineData("-idx-", false, "-idx--idx67")]
     public void R061_AFolderAlreadyNamedWithALabelLosesItsOldSuffixBeforeTheNewOne(string folder, bool inSubfolder, string expected)
     {
         using SessionFixture fx = new SessionFixture().WithDarkSeries(1, Dark);
@@ -321,6 +325,18 @@ public class LightsAndIndexTests
         {
             Assert.Equal(expected, IndexAnalyzer.Label(SessionFolder.Open(dir), ix));
         }
+    }
+
+    [Fact]
+    public void R061_AFolderRenamedOnTheUnmeasuredTagKeepsThatLabelWhileTheIndexStaysUnmeasured()
+    {
+        using SessionFixture fx = new SessionFixture().WithDarkSeries(1, Dark);
+        string root = Path.Combine(fx.Root, "night-idx-");
+        Directory.CreateDirectory(root);
+        File.Copy(Directory.GetFiles(fx.DarksDir)[0], Path.Combine(root, "DSC_0001.fit"));
+
+        IndexFigures unmeasured = new(double.NaN, 0, 0, 0, 0);
+        Assert.Equal("night-idx-", IndexAnalyzer.Label(SessionFolder.Open(root), unmeasured));
     }
 
     [Theory]

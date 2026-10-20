@@ -142,4 +142,6 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Passed! - Failed: 0, Passed: 10, Skipped: 0,
   Total: 10, Duration: 6 m 6 s`; V-005, V-006 and V-007 pass on the label with no change to
   `validation.json`, no figure moved. The labels of V-009 and V-010 (not recorded) read
-  `...-13.3celsius-idx47` and `...-9.5celsius-idx33` by the same rule.
+  `...-13.3celsius-idx47` and `...-9.5celsius-idx33` by the same rule. Re-run after the code
+  review's fixes (the unmeasured tag, a name that is only a tag, the pattern): `Passed! -
+  Failed: 0, Passed: 10, Total: 10, Duration: 6 m 23 s`, the same.

@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace DarksCheck.Core;
 
@@ -62,7 +63,7 @@ internal sealed record MatchFigures(int Pixels, double Ratio, double Q25, double
 /// both masters have above <see cref="Th.MatchMinAdu"/> (a set of lights is read at the dark
 /// master's pixels above it), both normalised to ISO 400 and 120 s.
 /// </summary>
-internal static class IndexAnalyzer
+internal static partial class IndexAnalyzer
 {
     internal static IndexFigures RankIndex(IReadOnlyList<float> median, double black, double white, double norm, int w, int h)
     {
@@ -208,21 +209,19 @@ internal static class IndexAnalyzer
         return WithoutLabelSuffix(name) + "-" + index.Tag;
     }
 
-    /// <summary>The name without one trailing `-idx` and digits; a name with none, or with `-idx` not at the end or without digits, as it is.</summary>
+    /// <summary>
+    /// The name without one trailing tag of an earlier label, `-idx` and digits or `-idx-` (the
+    /// unmeasured tag), whatever its case; a name with none, with `-idx` not at the end, or that
+    /// is nothing but the tag (nothing would remain in front of the new one) is kept as it is.
+    /// </summary>
     internal static string WithoutLabelSuffix(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        int end = name.Length;
-        while (end > 0 && char.IsAsciiDigit(name[end - 1]))
-        {
-            end--;
-        }
-
-        const string marker = "-idx";
-        bool hasDigits = end < name.Length;
-        bool hasMarker = end >= marker.Length && string.Compare(name, end - marker.Length, marker, 0, marker.Length, StringComparison.OrdinalIgnoreCase) == 0;
-        return hasDigits && hasMarker ? name[..(end - marker.Length)] : name;
+        return LabelSuffix().Replace(name, string.Empty);
     }
+
+    [GeneratedRegex("(?<=.)-idx(?:[0-9]+|-)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex LabelSuffix();
 }
 
 /// <summary>

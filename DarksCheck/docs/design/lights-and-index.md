@@ -77,11 +77,11 @@ tests see. `IndexFigures.Tag` is `idx` plus the index rounded half up (`idx25`, 
 
 `Label` is the folder's name plus `-` and the tag: the darks' parent when the darks sit in a
 `darks` subfolder (a session, or a library kept as `<name>\darks\`), the darks folder itself
-otherwise (R-061). The name goes through `WithoutLabelSuffix` first: it walks back over the
-trailing ASCII digits and, when there is at least one and `-idx` (any case) stands right before
-them, cuts from that `-idx`; otherwise the name is kept whole, so `night-idx67-b` and `night-idx`
-are not touched. No regular expression, no culture: one pass over the tail of the string
-(ADR 0013). It is only displayed (ADR 0002).
+otherwise (R-061). The name goes through `WithoutLabelSuffix` first, one `Regex.Replace` with
+the source-generated pattern `(?<=.)-idx(?:[0-9]+|-)$`, case-insensitive and culture-invariant:
+a trailing `-idx` and digits, or the unmeasured `-idx-`, is cut when at least one character
+stands before it (the lookbehind), and anything else, `night-idx67-b`, `night-idx`,
+`night-idx-60` or a bare `-idx67`, is kept whole (ADR 0013). It is only displayed (ADR 0002).
 
 ## The matching
 
