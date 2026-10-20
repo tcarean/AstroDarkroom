@@ -31,13 +31,25 @@ internal enum MapRegion
 }
 
 /// <summary>Check 2: the largest edge or corner offset from the centre, in ADU equivalent, on the dark-minus-bias map when there is one, else on the dark master (R-021); the frames' excess light over the warming (R-028, null under <see cref="Th.LeakFitMinFrames"/> frames); the eight regions' glow / constant splits and the verdict region's own (R-029, empty and null when unmeasured).</summary>
-internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion Where, bool FromDarkMinusBias, FrameLight? Frames, IReadOnlyList<EdgeSplit> Splits)
+internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion Where, bool FromDarkMinusBias, FrameLight? Frames, IReadOnlyList<EdgeSplit> Splits, IReadOnlyList<SideLight> Sides)
 {
     /// <summary>The verdict region's own split; null when R-029 is unmeasured.</summary>
     internal EdgeSplit? Split => Splits.FirstOrDefault(s => s.Where == Where);
 
     /// <summary>What the verdict region's excess is made of; <see cref="LeakCause.Unmeasured"/> without a split.</summary>
     internal LeakCause Cause => Split?.Cause ?? LeakCause.Unmeasured;
+
+    /// <summary>The side with the most constant light (the remainder with biases, the constant without); null when unmeasured.</summary>
+    internal SideLight? WorstSide => Sides.Count == 0 ? null : Sides.MaxBy(s => s.LightAdu);
+
+    /// <summary>The side whose light after the bias passes <see cref="Th.LeakConstantAdu"/> and <see cref="Th.LeakConstantSigmas"/> times its own error, the strongest when several; null without biases or under them (ADR 0014).</summary>
+    internal SideLight? ConstantLight => Sides.Where(IsConstantLight).OrderByDescending(s => s.LightAdu).FirstOrDefault();
+
+    /// <summary>Whether a side's light after the bias is a leak by ADR 0014's two conditions.</summary>
+    internal static bool IsConstantLight(SideLight s) => s.RemainderAdu is double x && x > Th.LeakConstantAdu && x > Th.LeakConstantSigmas * s.ErrorAdu;
+
+    /// <summary>Whether the sides were measured with biases, so the constant light could be judged.</summary>
+    internal bool SidesAfterBias => Sides.Count > 0 && Sides[0].RemainderAdu is not null;
 }
 
 /// <summary>Check 3: the temperature offset between the first and the last dark, read from the hot pixels (R-023).</summary>
@@ -76,8 +88,10 @@ internal static class DarkVerdictAnalyzer
         // the frames' light over the warming and the glow / constant split of every region (R-028, R-029)
         FrameLight? light = LeakAnalyzer.FrameLightOf(d.Frames, norm);
         IReadOnlyList<EdgeSplit> splits = LeakAnalyzer.EdgeSplitsOf(d.Frames, light, b?.MeanMaps[refPlane].Regions, norm);
+        IReadOnlyList<SideLight> sides = LeakAnalyzer.SidesOf(d.Frames, light, b?.MeanMaps[refPlane].Regions, norm);
         bool lit = light is { LitFrames.Count: > 0 };
-        LeakVerdict leak = new(double.IsNaN(offset) ? Verdict.Unmeasured : Math.Abs(offset) <= Th.LeakAdu && !lit ? Verdict.Ok : Verdict.Warning, offset, where, dc is not null, light, splits);
+        bool constantLight = sides.Any(LeakVerdict.IsConstantLight);
+        LeakVerdict leak = new(double.IsNaN(offset) ? Verdict.Unmeasured : Math.Abs(offset) <= Th.LeakAdu && !lit && !constantLight ? Verdict.Ok : Verdict.Warning, offset, where, dc is not null, light, splits, sides);
 
         // 3. drift
         Warming wm = d.Warming;

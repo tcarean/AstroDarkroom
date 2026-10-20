@@ -66,7 +66,7 @@ internal static class DarkReport
             }
             else
             {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Light,6}  {f.Above,4}");
+                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Light,6}  {f.Side,6}  {f.Above,4}");
             }
         }
 
@@ -162,6 +162,7 @@ internal static class DarkReport
 
         leak.Add(new("lumina pe cadre", FrameLightRow(v.Leak, eq)));
         leak.Add(new("glow / constant", SplitRow(v.Leak, eq, n)));
+        leak.Add(new("lumina constanta", SidesRow(v.Leak, eq)));
         leak.Add(new("verdict", Leak(v.Leak, eq)));
 
         return
@@ -297,14 +298,18 @@ internal static class DarkReport
     internal static string FrameTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
+        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
     }
 
     /// <summary>The unit note of the frames table: the plane and what the columns mean.</summary>
     internal static string FrameTableNote(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = {Eq(r.Darks)} peste dreapta mediei pe incalzire]";
+        string eq = Eq(r.Darks);
+        string side = r.Verdicts.Leak.WorstSide is SideLight w
+            ? $"latura = {SideName(w.Side)} - centru{(w.RemainderAdu is null ? " (fara bias)" : " dupa bias")}, {eq}"
+            : "latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)";
+        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
     }
 
     /// <summary>One row per dark, the cells formatted as the console prints them, on the reference plane.</summary>
@@ -314,25 +319,29 @@ internal static class DarkReport
         int rp = r.ReferencePlane;
         List<DarkTableRow> rows = [];
         IReadOnlyList<double>? excess = r.Verdicts.Leak.Frames?.ExcessAdu;
+        SideLight? worst = r.Verdicts.Leak.WorstSide;
+        Regions? biasRegions = r.Biases?.MeanMaps[rp].Regions;
+        double biasSide = worst is null || biasRegions is null ? 0 : LeakAnalyzer.SideOffset(biasRegions, worst.Side);
         for (int k = 0; k < r.Darks.Frames.Count; k++)
         {
             DarkFrameFigures f = r.Darks.Frames[k];
             if (f.Skipped)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", "", ""));
                 continue;
             }
 
             if (f.Error is not null)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", "", ""));
                 continue;
             }
 
             PlaneFigures p = f.Planes[rp];
             ResidualFigures res = f.Residuals[rp];
             double light = excess is null ? double.NaN : excess[k];
-            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), double.IsNaN(light) ? "-" : Signed(light, 2), p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture)));
+            string side = worst is null || f.Edges is null ? "-" : Signed((LeakAnalyzer.SideOffset(f.Edges, worst.Side) - biasSide) / r.Darks.Norm, 2);
+            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture)));
         }
 
         return rows;
@@ -458,21 +467,62 @@ internal static class DarkReport
 
         if (l.Verdict == Verdict.Ok)
         {
-            return $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source}); {framesTail}";
+            string sidesTail = l.SidesAfterBias ? $"; lumina constanta sub {F(Th.LeakConstantAdu, 2)} pe toate laturile" : "";
+            return $"OK: nicio margine sau colt la mai mult de {F(Th.LeakAdu, 1)} {eq} de centru (cel mai departe {Signed(l.OffsetAdu, 2)} la {RegionName(l.Where)}, {source}); {framesTail}{sidesTail}";
         }
 
-        string? litPart = null;
+        SideLight? constant = l.ConstantLight;
+        List<string> parts = [];
         if (l.Frames is FrameLight fl && fl.LitFrames.Count > 0)
         {
             int n = fl.LitFrames.Count;
-            litPart = $"{n} {(n == 1 ? "cadru are" : "cadre au")} lumina peste ce da incalzirea seriei ({LitList(fl, ": ")} {eq}); scoate-le din darks\\ sau refa seria";
+            parts.Add($"{n} {(n == 1 ? "cadru are" : "cadre au")} lumina in plus fata de restul seriei ({LitList(fl, ": ")} {eq}); {(constant is null ? "scoate-le din darks\\ sau refa seria" : "refa seria")}");
         }
 
-        string? offsetPart = Math.Abs(l.OffsetAdu) > Th.LeakAdu
-            ? $"{RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? CauseWords(l) : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}"
-            : null;
-        return "ATENTIE: " + (litPart is not null && offsetPart is not null ? $"{litPart}; in plus {offsetPart}" : litPart ?? offsetPart);
+        if (constant is SideLight c)
+        {
+            parts.Add($"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)");
+        }
+
+        if (Math.Abs(l.OffsetAdu) > Th.LeakAdu)
+        {
+            parts.Add($"{RegionName(l.Where)} e la {Signed(l.OffsetAdu, 2)} {eq} de centru ({source}); peste {F(Th.LeakAdu, 1)}: {(l.OffsetAdu > 0 ? CauseWords(l) : "margine mai intunecata decat centrul, offset de citire sau bias nepotrivit")}");
+        }
+
+        return "ATENTIE: " + string.Join("; in plus ", parts);
     }
+
+    /// <summary>The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their constants without biases.</summary>
+    private static string SidesRow(LeakVerdict l, string eq)
+    {
+        if (l.Frames is not FrameLight fl)
+        {
+            return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
+        }
+
+        if (l.Sides.Count == 0)
+        {
+            return $"NEMASURAT: seria s-a incalzit prea putin ca sa desparta glow-ul de constant (raportul de amplitudine se intinde pe {F(fl.RatioSpan, 2)}, sub {F(Th.LeakFitMinSpan, 1)})";
+        }
+
+        MapSide[] order = [MapSide.Top, MapSide.Bottom, MapSide.Left, MapSide.Right];
+        if (!l.SidesAfterBias)
+        {
+            return "fara bias nu se desparte de offsetul de citire: constant " + string.Join(", ", order.Select(s => $"{SideName(s)} {Signed(l.Sides.First(x => x.Side == s).ConstantAdu, 2)}")) + $" {eq}";
+        }
+
+        string sides = string.Join(", ", order.Select(s => l.Sides.First(x => x.Side == s)).Select(s => $"{SideName(s.Side)} {Signed(s.LightAdu, 2)} (±{F(s.ErrorAdu, 2)})"));
+        string over = l.ConstantLight is SideLight c ? $"peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea la {SideName(c.Side)}" : $"niciuna peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper";
+        return $"dupa bias, fata de centru: {sides} {eq}; {over}";
+    }
+
+    internal static string SideName(MapSide s) => s switch
+    {
+        MapSide.Top => "sus",
+        MapSide.Bottom => "jos",
+        MapSide.Left => "stanga",
+        _ => "dreapta",
+    };
 
     /// <summary>The words of R-021's brighter case, from R-029's cause of the verdict region.</summary>
     private static string CauseWords(LeakVerdict l)

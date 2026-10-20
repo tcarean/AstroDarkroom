@@ -60,7 +60,8 @@
         "bandingRowP2pMax": 0.387, "bandingColP2pMax": 0.169,
         "leakOffset": 0.09, "leakWhere": "TopLeft",
         "litFrames": [], "frameLightScale": 0.10, "glowPart": 0.05, "constantPart": 0.05, "leakCause": "Glow",
-        "readNoise": [1.563, 1.257, 1.257, 1.447],
+        "constantSide": "Right", "constantSideAdu": 0.08,
+                "readNoise": [1.563, 1.257, 1.257, 1.447],
         "dcMedian": 0.140, "dcCentre": 0.126, "dcTopLeft": 0.219, "biasFractionBelowBlack": 0.578,
         "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
       },
@@ -157,7 +158,8 @@
         "bandingRowP2pMax": 0.76, "bandingColP2pMax": 1.00,
         "leakOffset": 0.48, "leakWhere": "TopLeft",
         "litFrames": [26, 27, 28, 29, 30], "frameLightScale": 0.02, "glowPart": 0.32, "constantPart": 0.17, "leakCause": "Glow",
-        "readNoise": [3.38, 2.96, 2.95, 3.38], "dcMedian": 2.16, "dcCentre": 2.00, "dcTopLeft": 3.97, "biasFractionBelowBlack": 0.536,
+        "constantSide": "Top", "constantSideAdu": 0.20,
+                "readNoise": [3.38, 2.96, 2.95, 3.38], "dcMedian": 2.16, "dcCentre": 2.00, "dcTopLeft": 3.97, "biasFractionBelowBlack": 0.536,
         "verdicts": { "leak": "Warning", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
       },
       "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }

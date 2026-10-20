@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
 using DarksCheck.Core;
 
 namespace DarksCheck.Tests;
@@ -173,10 +174,10 @@ public class DarkSeriesTests
         using StringWriter sw = new();
         DarkReport.Write(r, sw);
         string text = sw.ToString();
-        Assert.Contains("ATENTIE: 2 cadre au lumina peste ce da incalzirea seriei (7: +0.", text, StringComparison.Ordinal);
+        Assert.Contains("ATENTIE: 2 cadre au lumina in plus fata de restul seriei (7: +0.", text, StringComparison.Ordinal);
         Assert.Contains(" ADU); scoate-le din darks\\ sau refa seria", text, StringComparison.Ordinal);
         Assert.Contains("    lumina pe cadre    : 2 cadre: 7 +0.", text, StringComparison.Ordinal);
-        Assert.Contains("  amplit.  lumina  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("lumina = ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.StartsWith("+0.", rows[6].Light, StringComparison.Ordinal);
@@ -289,6 +290,73 @@ public class DarkSeriesTests
         Assert.InRange(sd.ReadoutAdu!.Value, -3.5, -2.5);
         Assert.InRange(sd.RemainderAdu, 1.5, 2.5);
         Assert.Equal(LeakCause.Leak, sd.Cause);
+    }
+
+    [Fact]
+    public void R029_LightInEveryFrameIsReadPerSideAndTheBiasClearsAReadoutBand()
+    {
+        // a band of +2 ADU over the top 64 rows (the top third) of every dark, the raised mirror's shadow of an eyepiece leak
+        // (noise 1 ADU instead of the fixture's 3: a region of these 256 x 192 frames has 256 pixels, so at noise 3 the
+        // intercept error reaches 0.7 ADU and the band of 2 sits at the 3-sigma condition; the D3300's regions have 2.4 Mpx)
+        static double Band(int x, int y) => y < 64 ? 2 : 0;
+
+        // flat biases: light the bias does not hold, in every frame
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4);
+        DarkSeriesResult r = Run(leak);
+        Assert.Equal(4, r.Verdicts.Leak.Sides.Count);
+        SideLight top = r.Verdicts.Leak.Sides.Single(s => s.Side == MapSide.Top);
+        Assert.InRange(top.RemainderAdu!.Value, 1.5, 2.5);
+        Assert.InRange(top.ConstantAdu, 1.5, 2.5);
+        Assert.Equal(MapSide.Top, r.Verdicts.Leak.WorstSide!.Side);
+        Assert.NotNull(r.Verdicts.Leak.ConstantLight);
+        Assert.Empty(r.Verdicts.Leak.Frames!.LitFrames);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Leak.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        string text = sw.ToString();
+        Assert.Contains("lumina constanta in toate cadrele: +", text, StringComparison.Ordinal);
+        Assert.Contains(") pe latura de sus fata de centru, nu e in bias: scurgere de lumina (ocular, montura)", text, StringComparison.Ordinal);
+        Assert.Contains("    lumina constanta   : dupa bias, fata de centru: sus +", text, StringComparison.Ordinal);
+        Assert.Contains(" ADU; peste 0.15 si peste 3 x eroarea la sus", text, StringComparison.Ordinal);
+        Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
+        Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("latura = sus - centru dupa bias, ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
+        // one frame, three regions of 256 synthetic pixels each: a noisy column, the band still in every frame
+        Assert.All(rows, row => Assert.InRange(double.Parse(row.Side, CultureInfo.InvariantCulture), 1.0, 3.0));
+
+        // the same band in the biases: a readout structure, nothing remains after the bias
+        using SessionFixture readout = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 }, biases: 4, bias: i => new SyntheticDark { Seed = 500 + i, Extra = Band });
+        DarkSeriesResult rr = Run(readout);
+        SideLight topR = rr.Verdicts.Leak.Sides.Single(s => s.Side == MapSide.Top);
+        Assert.InRange(topR.RemainderAdu!.Value, -0.5, 0.5);
+        Assert.Null(rr.Verdicts.Leak.ConstantLight);
+        Assert.Equal(Verdict.Ok, rr.Verdicts.Leak.Verdict);
+        using StringWriter swr = new();
+        DarkReport.Write(rr, swr);
+        Assert.Contains("; niciuna peste 0.15 si peste 3 x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper", swr.ToString(), StringComparison.Ordinal);
+        Assert.Contains("; lumina constanta sub 0.15 pe toate laturile", swr.ToString(), StringComparison.Ordinal);
+        Assert.All(DarkReport.FrameRows(rr), row => Assert.InRange(double.Parse(row.Side, CultureInfo.InvariantCulture), -1.0, 1.0));
+
+        // without biases the sides are constants only: nothing to judge, the row says why
+        using SessionFixture nobias = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = Band, Noise = 1 });
+        DarkSeriesResult rn = Run(nobias);
+        SideLight topN = rn.Verdicts.Leak.Sides.Single(s => s.Side == MapSide.Top);
+        Assert.Null(topN.RemainderAdu);
+        Assert.InRange(topN.ConstantAdu, 1.5, 2.5);
+        Assert.Null(rn.Verdicts.Leak.ConstantLight);
+        using StringWriter swn = new();
+        DarkReport.Write(rn, swn);
+        Assert.Contains("    lumina constanta   : fara bias nu se desparte de offsetul de citire: constant sus +", swn.ToString(), StringComparison.Ordinal);
+        Assert.Contains("latura = sus - centru (fara bias), ADU", DarkReport.FrameTableNote(rn), StringComparison.Ordinal);
+
+        // under six frames: unmeasured, like the split
+        using SessionFixture few = new SessionFixture().WithDarkSeries(4, Plain, biases: 3);
+        DarkSeriesResult rf = Run(few);
+        Assert.Empty(rf.Verdicts.Leak.Sides);
+        Assert.Null(rf.Verdicts.Leak.WorstSide);
+        Assert.Equal("-", DarkReport.FrameRows(rf)[0].Side);
+        Assert.Contains("latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)", DarkReport.FrameTableNote(rf), StringComparison.Ordinal);
     }
 
     [Fact]

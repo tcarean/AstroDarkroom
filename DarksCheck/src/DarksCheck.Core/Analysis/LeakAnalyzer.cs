@@ -30,6 +30,31 @@ internal enum LeakCause
 /// <summary>R-028: every frame's excess light over the Theil-Sen fit of the frame mean on the warming (the hot pixels' amplitude ratio), in ADU equivalent and aligned with the series' frames (NaN for a frame without figures); the fit's scale (1.4826 x the median absolute residual, ADU equivalent); the frames (1-based, the file's index) lit beyond <see cref="Th.LeakFrameSigmas"/> scales and <see cref="Th.LeakFrameAdu"/>; the fit in raw ADU per unit of ratio and how many frames it stands on.</summary>
 internal sealed record FrameLight(IReadOnlyList<double> ExcessAdu, double ScaleAdu, IReadOnlyList<int> LitFrames, IReadOnlyList<double> LitExcessAdu, double Slope, double Intercept, int FramesFitted, double RatioSpan);
 
+/// <summary>A side of the frame: an edge with its two corners (R-029, ADR 0014).</summary>
+internal enum MapSide
+{
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
+/// <summary>R-029: one side's constant light: the side's offset to the centre (the mean of its edge and two corners) fitted on the ratio over the frames not lit, its constant part (the intercept) with the standard error of that intercept, and, with biases, what remains of it after the bias (null without biases), in ADU equivalent.</summary>
+internal sealed record SideLight(MapSide Side, double ConstantAdu, double ErrorAdu, double? RemainderAdu)
+{
+    /// <summary>What is judged: the remainder with biases, the constant without.</summary>
+    internal double LightAdu => RemainderAdu ?? ConstantAdu;
+
+    /// <summary>The three regions of a side.</summary>
+    internal static IReadOnlyList<MapRegion> RegionsOf(MapSide side) => side switch
+    {
+        MapSide.Top => [MapRegion.TopLeft, MapRegion.Top, MapRegion.TopRight],
+        MapSide.Bottom => [MapRegion.BottomLeft, MapRegion.Bottom, MapRegion.BottomRight],
+        MapSide.Left => [MapRegion.TopLeft, MapRegion.Left, MapRegion.BottomLeft],
+        _ => [MapRegion.TopRight, MapRegion.Right, MapRegion.BottomRight],
+    };
+}
+
 /// <summary>R-029: one region's offset to the centre split into the part that grows with the warming (the slope on the ratio, which is the value at ratio 1, the master's temperature), the constant part (the intercept), the biases' share of it when there are biases (null without) and what remains of the constant after it, all in ADU equivalent, with the cause named by the largest part on the side of the total (the brighter side when the region is brighter than the centre).</summary>
 internal sealed record EdgeSplit(MapRegion Where, double GlowAdu, double ConstantAdu, double? ReadoutAdu, double RemainderAdu, LeakCause Cause);
 
@@ -114,19 +139,11 @@ internal static class LeakAnalyzer
     internal static IReadOnlyList<EdgeSplit> EdgeSplitsOf(IReadOnlyList<DarkFrameFigures> frames, FrameLight? light, Regions? bias, double norm)
     {
         ArgumentNullException.ThrowIfNull(frames);
-        if (light is null || light.RatioSpan < Th.LeakFitMinSpan)
+        if (KeptForSplit(frames, light) is not (int[] idx, double[] x))
         {
             return [];
         }
 
-        HashSet<int> litFrames = [.. light.LitFrames];
-        int[] idx = Fitted(frames).Where(i => frames[i].Edges is not null && !litFrames.Contains(frames[i].Info.Index)).ToArray();
-        if (idx.Length < MinKept)
-        {
-            return [];
-        }
-
-        double[] x = idx.Select(i => frames[i].AmpRatioMedian).ToArray();
         bool[] all = new bool[x.Length];
         Array.Fill(all, true);
         List<EdgeSplit> splits = [];
@@ -150,6 +167,60 @@ internal static class LeakAnalyzer
         }
 
         return splits;
+    }
+
+    /// <summary>The four sides (R-029, ADR 0014): each side's per-frame offset to the centre, the mean of its edge and two corners, fitted on the ratio over the frames R-028 did not name, like the regions; the constant part comes with the standard error of the intercept (the residual scale x sqrt(1 / n + mean(x)^2 / Sxx)), and with biases the bias master's offset of the side is taken out of it. Empty when the split is unmeasured.</summary>
+    internal static IReadOnlyList<SideLight> SidesOf(IReadOnlyList<DarkFrameFigures> frames, FrameLight? light, Regions? bias, double norm)
+    {
+        ArgumentNullException.ThrowIfNull(frames);
+        if (KeptForSplit(frames, light) is not (int[] idx, double[] x))
+        {
+            return [];
+        }
+
+        bool[] all = new bool[x.Length];
+        Array.Fill(all, true);
+        double meanX = x.Average();
+        double sxx = x.Sum(v => (v - meanX) * (v - meanX));
+        List<SideLight> sides = [];
+        foreach (MapSide side in Enum.GetValues<MapSide>())
+        {
+            double[] y = idx.Select(i => SideOffset(frames[i].Edges!, side)).ToArray();
+            (double slope, double intercept) = TheilSen(x, y, all);
+            double scale = Scale(x, y, all, slope, intercept);
+            double error = sxx > 0 ? scale * Math.Sqrt(1.0 / x.Length + meanX * meanX / sxx) : double.NaN;
+            double? remainder = bias is null ? null : (intercept - SideOffset(bias, side)) / norm;
+            sides.Add(new SideLight(side, intercept / norm, error / norm, remainder));
+        }
+
+        return sides;
+    }
+
+    /// <summary>The frames the split and the sides stand on: those with figures and a ratio, not lit, when R-028 is measured and their ratios span <see cref="Th.LeakFitMinSpan"/>; null otherwise.</summary>
+    private static (int[] Idx, double[] X)? KeptForSplit(IReadOnlyList<DarkFrameFigures> frames, FrameLight? light)
+    {
+        if (light is null || light.RatioSpan < Th.LeakFitMinSpan)
+        {
+            return null;
+        }
+
+        HashSet<int> litFrames = [.. light.LitFrames];
+        int[] idx = Fitted(frames).Where(i => frames[i].Edges is not null && !litFrames.Contains(frames[i].Info.Index)).ToArray();
+        return idx.Length < MinKept ? null : (idx, idx.Select(i => frames[i].AmpRatioMedian).ToArray());
+    }
+
+    /// <summary>A side's offset to the centre in one frame: the mean of its three regions, raw ADU.</summary>
+    internal static double SideOffset(EdgeFigures edges, MapSide side)
+    {
+        ArgumentNullException.ThrowIfNull(edges);
+        return SideLight.RegionsOf(side).Average(edges.Of);
+    }
+
+    /// <summary>A side's offset to the centre on a binned map (the bias master's), raw ADU.</summary>
+    internal static double SideOffset(Regions regions, MapSide side)
+    {
+        ArgumentNullException.ThrowIfNull(regions);
+        return SideLight.RegionsOf(side).Average(regions.OffsetOf);
     }
 
     /// <summary>The Theil-Sen line over the kept points: the slope is the median of the pairwise slopes (0 under two distinct x), the intercept the median of y - slope x.</summary>

@@ -128,16 +128,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="56" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" />
-          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="fisier" />
-          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="ora" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" ToolTip="numarul light-ului in folderul lights, in ordinea fisierelor" />
+          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="fisier" ToolTip="numele fisierului" />
+          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="ora" ToolTip="ora de start a expunerii, din metadatele fisierului" />
           <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="cer" ToolTip="mediana cerului peste negru, ADU" />
           <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="sigma" ToolTip="sigma excesului local, scara detectorului, ADU" />
           <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="candidati" ToolTip="{Binding DataContext.CandidatesTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
           <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="izolati" ToolTip="{Binding DataContext.IsolatedTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="amplit." ToolTip="lights / dark la pixelii fierbinti ai masterului, mediana" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="q25" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="q75" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="q25" ToolTip="quartila de jos a raportului lights / dark pe pixelii fierbinti" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="q75" ToolTip="quartila de sus a raportului lights / dark pe pixelii fierbinti" />
           <TextBlock Grid.Column="10" Style="{StaticResource LeftHead}" Text="{Binding LightTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding LightTableNote}" />
         </Grid>
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">

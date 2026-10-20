@@ -56,6 +56,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="56" />
           <ColumnDefinition Width="64" />
           <ColumnDefinition Width="56" />
+          <ColumnDefinition Width="56" />
           <ColumnDefinition Width="48" />
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
@@ -68,10 +69,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Bands}" />
         <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Amp}" />
         <TextBlock Grid.Column="8" Style="{StaticResource Cell}" Text="{Binding Light}" />
-        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Above}" />
-        <TextBlock Grid.Column="10" Style="{StaticResource LeftCell}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" Text="{Binding Skipped}" ToolTip="{Binding Skipped}"
+        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Side}" />
+        <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Above}" />
+        <TextBlock Grid.Column="11" Style="{StaticResource LeftCell}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" Text="{Binding Skipped}" ToolTip="{Binding Skipped}"
                    Visibility="{Binding Skipped, Converter={StaticResource NotNullToVis}}" />
-        <TextBlock Grid.Column="10" Style="{StaticResource LeftCell}" Foreground="{StaticResource BadBr}" TextTrimming="CharacterEllipsis" Text="{Binding Error}" ToolTip="{Binding Error}"
+        <TextBlock Grid.Column="11" Style="{StaticResource LeftCell}" Foreground="{StaticResource BadBr}" TextTrimming="CharacterEllipsis" Text="{Binding Error}" ToolTip="{Binding Error}"
                    Visibility="{Binding Error, Converter={StaticResource NotNullToVis}}" />
       </Grid>
     </DataTemplate>
@@ -102,20 +104,22 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="56" />
             <ColumnDefinition Width="64" />
             <ColumnDefinition Width="56" />
+            <ColumnDefinition Width="56" />
             <ColumnDefinition Width="48" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" />
-          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="fisier" />
-          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="ora" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" ToolTip="numarul cadrului in folderul de dark-uri, in ordinea fisierelor" />
+          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="fisier" ToolTip="numele fisierului" />
+          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="ora" ToolTip="ora de start a expunerii, din metadatele fisierului" />
           <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="medie" ToolTip="media cadrului peste negru, ADU" />
           <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="sigma" ToolTip="sigma cadrului pe planul de referinta, ADU" />
           <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="rezid." ToolTip="sigma reziduului cadru - master, ADU" />
           <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="benzi" ToolTip="deviatia mediilor pe randuri, de cate ori zgomotul alb" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="amplit." ToolTip="amplitudinea pixelilor fierbinti ai masterului in cadru, fata de master" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq (verificarea 2)" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
-          <TextBlock Grid.Column="10" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="latura" ToolTip="latura cu cea mai multa lumina constanta (margine plus cele doua colturi) fata de centru, dupa bias cand exista bias-uri, ADU-eq: lumina din toate cadrele (verificarea 2)" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
+          <TextBlock Grid.Column="11" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
         </Grid>
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
           <ItemsControl ItemsSource="{Binding Frames}" ItemTemplate="{StaticResource FrameRow}" Margin="4,0,0,0" />

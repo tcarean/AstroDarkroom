@@ -18,6 +18,7 @@
 using System.Diagnostics;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using DarksCheck.Tests;
@@ -115,6 +116,40 @@ public class WindowSmokeTests
     /// The "Despre" window: its own XAML, a template of the theme, the icon through a decoder
     /// and links bound to properties, all of which compile with a wrong name.
     /// </summary>
+    [Fact]
+    public async Task R071_EveryColumnHeaderOfTheTablesHasAHint()
+    {
+        await _sta.InvokeAsync(() =>
+        {
+            MainViewModel vm = new();
+            foreach (FrameworkElement view in new FrameworkElement[] { new FramesView { DataContext = vm }, new LightsView { DataContext = vm } })
+            {
+                Render(view);
+                Style head = (Style)view.FindResource("Head"), leftHead = (Style)view.FindResource("LeftHead");
+                // the header TextBlocks: the two header styles, with a text (the table note's header is empty without a result)
+                List<TextBlock> headers = Descendants(view).OfType<TextBlock>().Where(t => (t.Style == head || t.Style == leftHead) && !string.IsNullOrEmpty(t.Text)).ToList();
+                Assert.True(headers.Count >= 10, $"{view.GetType().Name}: {headers.Count} headers");
+                Assert.All(headers, t => Assert.False(string.IsNullOrWhiteSpace(t.ToolTip as string), $"{view.GetType().Name}: column '{t.Text}' has no hint"));
+            }
+
+            return Task.CompletedTask;
+        });
+    }
+
+    private static IEnumerable<DependencyObject> Descendants(DependencyObject d)
+    {
+        int n = VisualTreeHelper.GetChildrenCount(d);
+        for (int i = 0; i < n; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(d, i);
+            yield return child;
+            foreach (DependencyObject grandchild in Descendants(child))
+            {
+                yield return grandchild;
+            }
+        }
+    }
+
     [Fact]
     public void TheAboutWindowLoadsAndRenders()
         => _sta.Invoke(() =>

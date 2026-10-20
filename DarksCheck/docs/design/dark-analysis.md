@@ -118,7 +118,15 @@ split is an extrapolation to ratio 0, so `FrameLight.RatioSpan`, the span of the
 frames not lit, must reach `Th.LeakFitMinSpan`, else `EdgeSplitsOf` returns nothing and the row
 says the series did not warm enough. `Regions.OffsetOf` and `EdgeFigures.Of` map a `MapRegion`
 to its value for both the verdict and the split; `Planes.Median(IReadOnlyList<double>)` serves
-the fits. `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
+the fits. `SidesOf` reads the four sides (`MapSide`, an edge with its two corners,
+`SideLight.RegionsOf`) the same way, on the same frames (`KeptForSplit`): the side's per-frame
+offset is the mean of its three regions (`SideOffset`), fitted on the ratio; the intercept is
+the constant with the standard error `scale x sqrt(1 / n + mean(x)^2 / Sxx)` of a line read at
+x = 0, and with biases the bias master's side offset is taken out. `LeakVerdict.ConstantLight`
+is the strongest side whose remainder passes `Th.LeakConstantAdu` and `Th.LeakConstantSigmas`
+times its error (ADR 0014); `WorstSide` is the side with the most light, which the frames
+table shows per frame (`latura`: the frame's side offset minus the bias's, over the
+normalisation). `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
 beside the eight and lets check 6's glow be the glow part of that region.
 
 ## The verdicts
