@@ -143,7 +143,7 @@
     {
       "id": "V-008",
       "kind": "darks",
-      "session": "Flats and Darks/Darks/Lightleaks/darks",
+      "session": "Flats and Darks/Darks/Lightleaks",
       "measuredOn": "2026-10-20",
       "expected": {
         "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
@@ -157,8 +157,52 @@
         "bandingRowP2pMax": 0.76, "bandingColP2pMax": 1.00,
         "leakOffset": 0.48, "leakWhere": "TopLeft",
         "litFrames": [26, 27, 28, 29, 30], "frameLightScale": 0.02, "glowPart": 0.32, "constantPart": 0.17, "leakCause": "Glow",
-        "readNoise": null,
+        "readNoise": [3.38, 2.96, 2.95, 3.38], "dcMedian": 2.16, "dcCentre": 2.00, "dcTopLeft": 3.97, "biasFractionBelowBlack": 0.536,
         "verdicts": { "leak": "Warning", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
+      },
+      "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
+    },
+    {
+      "id": "V-009",
+      "kind": "darks",
+      "session": "Flats and Darks/Darks/2026-10-11-ISO1600-120s-13.3celsius-idx47/darks",
+      "measuredOn": "2026-10-20",
+      "expected": {
+        "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
+        "hotAbove": [4531, 2538, 286, 87, 4], "hotAlways": 2362, "hotFlicker": 42, "hotP50": 25,
+        "hotTemporalStd": 19.21, "quietTemporalStd": 4.55, "rts": 228, "dead": 0, "saturated": 0,
+        "sigmaFrame": 4.89, "residualSigmaFirst": 4.5, "masterSigma": 1.782, "rowBandingRatio": 2.1,
+        "noiseCurve": [[1, 4.42], [2, 3.13], [4, 2.22], [5, 2.00], [10, 1.46]],
+        "masterNoise": 1.01, "medianHalfVsMeanHalf": 2.23,
+        "darkCentre": 0.8, "darkBottom": 1.2,
+        "warmFirst": 0.79, "warmLast": 1.1, "driftCelsius": 2.9,
+        "bandingRowP2pMax": 0.6, "bandingColP2pMax": 0.56,
+        "leakOffset": 0.19, "leakWhere": "BottomLeft",
+        "litFrames": [], "frameLightScale": 0.01, "glowPart": 0.05, "constantPart": 0.15, "leakCause": "Constant",
+        "readNoise": null,
+        "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
+      },
+      "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
+    },
+    {
+      "id": "V-010",
+      "kind": "darks",
+      "session": "Flats and Darks/Darks/2026-10-11-ISO1600-120s-9.5celsius-idx33/darks",
+      "measuredOn": "2026-10-20",
+      "expected": {
+        "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
+        "hotAbove": [3757, 738, 174, 45, 0], "hotAlways": 663, "hotFlicker": 43, "hotP50": 30,
+        "hotTemporalStd": 22.26, "quietTemporalStd": 4.08, "rts": 233, "dead": 0, "saturated": 0,
+        "sigmaFrame": 4.33, "residualSigmaFirst": 4.08, "masterSigma": 1.58, "rowBandingRatio": 2.5,
+        "noiseCurve": [[1, 3.99], [2, 2.84], [4, 2.01], [5, 1.81], [10, 1.30]],
+        "masterNoise": 0.91, "medianHalfVsMeanHalf": 2.04,
+        "darkCentre": 0.64, "darkBottom": 1.08,
+        "warmFirst": 0.78, "warmLast": 1.08, "driftCelsius": 2.8,
+        "bandingRowP2pMax": 0.6, "bandingColP2pMax": 0.52,
+        "leakOffset": 0.19, "leakWhere": "BottomLeft",
+        "litFrames": [], "frameLightScale": 0.02, "glowPart": 0.02, "constantPart": 0.17, "leakCause": "Constant",
+        "readNoise": null,
+        "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
       },
       "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
     }

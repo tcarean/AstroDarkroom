@@ -186,7 +186,9 @@ The tool never writes there, so this is the owner's move; the plan works either 
   change (`docs/validation.md`, History 2026-10-20).
 - The golden `lights.txt` scenario has four darks, not six, so all three goldens read
   `NEMASURAT` on the two new rows; the measured rows are seen on the real sessions only.
-- The Veil biases were not copied into the leak set's folder (the owner's move); V-008 runs
-  without biases and its cause is `Glow` for the top-left region, the light being in the lit
-  frames.
+- The owner copied the Veil biases into the leak set's folder right after the first commit, so
+  V-008 runs on the session root with biases (the split's bias part is -0.01 ADU-eq top-left:
+  the light there is not readout); its cause stays `Glow` for the top-left region, the light
+  being in the lit frames. The owner also asked for the two other libraries he keeps (13.3 and
+  9.5 °C, folders renamed on their labels) to be in the validation list: V-009 and V-010.
 
