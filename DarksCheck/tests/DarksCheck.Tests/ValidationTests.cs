@@ -142,6 +142,19 @@ public class ValidationTests
         AssertWithin("bandingColP2pMax", e.GetProperty("bandingColP2pMax").GetDouble(), d.Banding.Max(b => b.ColP2p), adu);
         AssertWithin("leakOffset", e.GetProperty("leakOffset").GetDouble(), r.Verdicts.Leak.OffsetAdu, adu);
         Assert.Equal(e.GetProperty("leakWhere").GetString(), r.Verdicts.Leak.Where.ToString());
+        if (e.TryGetProperty("litFrames", out JsonElement lit) && lit.ValueKind != JsonValueKind.Null)
+        {
+            FrameLight fl = r.Verdicts.Leak.Frames!;
+            Assert.NotNull(fl);
+            Assert.Equal(lit.EnumerateArray().Select(x => x.GetInt32()), fl.LitFrames);
+            AssertWithin("frameLightScale", e.GetProperty("frameLightScale").GetDouble(), fl.ScaleAdu, adu);
+            EdgeSplit sp = r.Verdicts.Leak.Split!;
+            Assert.NotNull(sp);
+            AssertWithin("glowPart", e.GetProperty("glowPart").GetDouble(), sp.GlowAdu, adu);
+            AssertWithin("constantPart", e.GetProperty("constantPart").GetDouble(), sp.ConstantAdu, adu);
+            Assert.Equal(e.GetProperty("leakCause").GetString(), sp.Cause.ToString());
+        }
+
 
         if (e.TryGetProperty("readNoise", out JsonElement rn) && rn.ValueKind != JsonValueKind.Null)
         {

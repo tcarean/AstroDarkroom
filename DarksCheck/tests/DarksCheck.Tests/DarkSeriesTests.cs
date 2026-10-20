@@ -152,6 +152,115 @@ public class DarkSeriesTests
         Assert.Equal(Verdict.Ok, Run(flat).Verdicts.Drift.Verdict);
     }
 
+    private static readonly (int X, int Y, double Adu)[] TenHot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 100.0)).ToArray();
+
+    /// <summary>Eight frames whose hot pixels climb from 0.8 to 1.2 of the master's: the warming of R-023, the x axis of R-028 and R-029.</summary>
+    private static double WarmFactor(int i) => 0.8 + 0.4 * i / 7;
+
+    [Fact]
+    public void R028_FramesWithLightOverTheWarmingAreNamedAndTheTableShowsEachFramesExcess()
+    {
+        // the last two frames carry +0.6 ADU everywhere: a lamp that came on while the series warmed
+        using SessionFixture s = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = i >= 6 ? (x, y) => 0.6 : null });
+        DarkSeriesResult r = Run(s);
+        FrameLight fl = r.Verdicts.Leak.Frames!;
+        Assert.Equal([7, 8], fl.LitFrames);
+        Assert.InRange(fl.ExcessAdu[6], 0.4, 0.8);
+        Assert.InRange(fl.ExcessAdu[7], 0.4, 0.8);
+        Assert.InRange(fl.ExcessAdu[0], -0.1, 0.1);
+        Assert.InRange(fl.ScaleAdu, 0, 0.05);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Leak.Verdict);
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        string text = sw.ToString();
+        Assert.Contains("ATENTIE: 2 cadre au lumina peste ce da incalzirea seriei (7: +0.", text, StringComparison.Ordinal);
+        Assert.Contains(" ADU); scoate-le din darks\\ sau refa seria", text, StringComparison.Ordinal);
+        Assert.Contains("    lumina pe cadre    : 2 cadre: 7 +0.", text, StringComparison.Ordinal);
+        Assert.Contains("  amplit.  lumina  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("lumina = ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
+        Assert.StartsWith("+0.", rows[6].Light, StringComparison.Ordinal);
+        Assert.Matches("^[+-]0\\.0[0-9]$", rows[0].Light);
+
+        // the same warming without the lamp: no frame is lit
+        using SessionFixture clean = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i) });
+        DarkSeriesResult rc = Run(clean);
+        Assert.Empty(rc.Verdicts.Leak.Frames!.LitFrames);
+        Assert.Equal(Verdict.Ok, rc.Verdicts.Leak.Verdict);
+        using StringWriter swc = new();
+        DarkReport.Write(rc, swc);
+        Assert.Contains("; niciun cadru cu lumina peste incalzirea seriei", swc.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    lumina pe cadre    : niciun cadru peste 5 x abaterea tipica (", swc.ToString(), StringComparison.Ordinal);
+
+        // under six frames the fit has nothing to stand on
+        using SessionFixture few = new SessionFixture().WithDarkSeries(4, Plain);
+        DarkSeriesResult rf = Run(few);
+        Assert.Null(rf.Verdicts.Leak.Frames);
+        Assert.Equal("-", DarkReport.FrameRows(rf)[0].Light);
+        using StringWriter swf = new();
+        DarkReport.Write(rf, swf);
+        Assert.Contains("    lumina pe cadre    : NEMASURAT: sub 6 cadre cu pixeli fierbinti", swf.ToString(), StringComparison.Ordinal);
+        Assert.Contains("; lumina pe cadre NEMASURATA", swf.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R029_AnEdgeIsSplitIntoGlowAndConstantAndTheBiasNamesTheReadoutOffset()
+    {
+        MapRegion[] leftish = [MapRegion.Left, MapRegion.TopLeft, MapRegion.BottomLeft];
+
+        // glow: the left 32 columns carry 3 x the frame's hot factor, so the edge grows with the warming
+        using SessionFixture glow = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 * WarmFactor(i) : 0 });
+        DarkSeriesResult rg = Run(glow);
+        Assert.Equal(Verdict.Warning, rg.Verdicts.Leak.Verdict);
+        Assert.Contains(rg.Verdicts.Leak.Where, leftish);
+        EdgeSplit sg = rg.Verdicts.Leak.Split!;
+        Assert.Equal(rg.Verdicts.Leak.Where, sg.Where);
+        Assert.InRange(sg.GlowAdu, 2.6, 3.4);
+        Assert.InRange(sg.ConstantAdu, -0.5, 0.5);
+        Assert.Null(sg.ReadoutAdu);
+        Assert.Equal(LeakCause.Glow, sg.Cause);
+        Assert.Equal(8, rg.Verdicts.Leak.Splits.Count);
+        using StringWriter swg = new();
+        DarkReport.Write(rg, swg);
+        Assert.Contains("): glow al senzorului, dark-urile raman bune", swg.ToString(), StringComparison.Ordinal);
+        Assert.Contains("    glow / constant    : la ", swg.ToString(), StringComparison.Ordinal);
+        Assert.Contains(", partea care creste cu incalzirea (constant ", swg.ToString(), StringComparison.Ordinal);
+        Assert.InRange(rg.Verdicts.Pattern.GlowAdu, 2.6, 3.4);
+
+        // leak: the same edge constant on every dark and absent from flat biases
+        using SessionFixture leak = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 }, biases: 4);
+        DarkSeriesResult rl = Run(leak);
+        Assert.Equal(Verdict.Warning, rl.Verdicts.Leak.Verdict);
+        EdgeSplit sl = rl.Verdicts.Leak.Split!;
+        Assert.InRange(sl.GlowAdu, -0.5, 0.5);
+        Assert.InRange(sl.ConstantAdu, 2.5, 3.5);
+        Assert.InRange(sl.ReadoutAdu!.Value, -0.5, 0.5);
+        Assert.InRange(sl.RemainderAdu, 2.5, 3.5);
+        Assert.Equal(LeakCause.Leak, sl.Cause);
+        using StringWriter swl = new();
+        DarkReport.Write(rl, swl);
+        Assert.Contains("): scurgere de lumina, refa dark-urile", swl.ToString(), StringComparison.Ordinal);
+        Assert.Contains(", din care in bias ", swl.ToString(), StringComparison.Ordinal);
+
+        // readout: the same edge in the biases too; dark - bias is flat, so the verdict is OK and the left edge's split says readout
+        using SessionFixture readout = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 }, biases: 4, bias: i => new SyntheticDark { Seed = 500 + i, Extra = (x, y) => x < 32 ? 3 : 0 });
+        DarkSeriesResult rr = Run(readout);
+        Assert.Equal(Verdict.Ok, rr.Verdicts.Leak.Verdict);
+        EdgeSplit sr = rr.Verdicts.Leak.Splits.Single(x => x.Where == MapRegion.Left);
+        Assert.InRange(sr.ReadoutAdu!.Value, 2.5, 3.5);
+        Assert.InRange(sr.RemainderAdu, -0.5, 0.5);
+        Assert.Equal(LeakCause.Readout, sr.Cause);
+
+        // without biases a constant edge cannot be told from a readout offset
+        using SessionFixture constant = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = TenHot, HotFactor = WarmFactor(i), Extra = (x, y) => x < 32 ? 3 : 0 });
+        DarkSeriesResult rk = Run(constant);
+        Assert.Equal(LeakCause.Constant, rk.Verdicts.Leak.Split!.Cause);
+        using StringWriter swk = new();
+        DarkReport.Write(rk, swk);
+        Assert.Contains("): scurgere de lumina sau offset de citire, fara bias-uri nu se pot deosebi", swk.ToString(), StringComparison.Ordinal);
+        Assert.Contains(" ADU (fara bias: lumina sau offset de citire)", swk.ToString(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R024_TheNoiseOfTheMeanFollowsSqrtNAndTenCleanFramesAreEnough()
     {

@@ -105,7 +105,9 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
     master dark        : centru -0.55, colturi -0.44 / -0.49 / -0.10 / -0.31 (SS / DS / SJ / DJ), margini sus -0.48 jos -0.18 stanga -0.41 dreapta -0.50  [G1, ...]
     master bias        : centru -0.68, ...
     dark - bias        : centru 0.13, colturi 0.22 / 0.17 / 0.15 / 0.13 (SS / DS / SJ / DJ), ...; mediana 0.14, 0.05 .. 0.27 (p1 .. p99)
-    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU-eq de centru (cel mai departe +0.09 la stanga-sus, pe dark - bias)
+    lumina pe cadre    : niciun cadru peste 5 x abaterea tipica (0.10 ADU-eq) si peste 0.1 ADU-eq fata de dreapta mediei pe incalzire
+    glow / constant    : la stanga-sus: glow +0.05 (creste cu incalzirea), constant +0.05, din care in bias +0.02, ramane +0.04 ADU-eq
+    verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU-eq de centru (cel mai departe +0.09 la stanga-sus, pe dark - bias); niciun cadru cu lumina peste incalzirea seriei
 
   3. DERIVA TERMICA IN SERIE
     amplitudine        : pixelii fierbinti la 0.83 din master in primul cadru, 1.07 in ultimul (443 pixeli peste 20 ADU-eq)
@@ -118,8 +120,21 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   patru margini, pe planul verde G1. Verdictul se da pe `dark - bias` cand exista bias-uri
   (un offset care apare si in bias e citire, nu lumina), altfel pe masterul dark: `OK` cand
   nicio regiune nu se departeaza de centru cu mai mult de 1 ADU-eq, `ATENTIE` cu regiunea cea
-  mai departata peste: mai luminoasa, scurgere de lumina sau glow; mai intunecata, offset de
-  citire sau bias nepotrivit.
+  mai departata peste: mai luminoasa, cu cauza ei (glow al senzorului, scurgere de lumina,
+  offset de citire, sau nedecis fara bias-uri); mai intunecata, offset de citire sau bias
+  nepotrivit. Doua randuri spun de unde vine lumina, pe principiul ca glow-ul e curent de
+  intuneric si creste cu incalzirea seriei (amplitudinea pixelilor fierbinti, verificarea 3),
+  pe cand lumina de afara nu. `lumina pe cadre` potriveste media fiecarui cadru pe incalzire
+  (o dreapta robusta, Theil-Sen) si numeste cadrele care au lumina in plus fata de ea, peste
+  5 x abaterea tipica si peste 0.1 ADU-eq; asemenea cadre dau `ATENTIE` si sfatul de a le
+  scoate din `darks\` sau de a reface seria (o lampa aprinsa, luna, zorii). `glow / constant`
+  desparte abaterea regiunii din verdict in partea care creste cu incalzirea (glow) si partea
+  constanta; cu bias-uri, partea constanta se imparte in ce e si in bias (offset de citire) si
+  ce ramane (scurgere); fara bias-uri, o scurgere constanta si un offset de citire arata la
+  fel, si raportul o spune. Ambele cer cel putin 6 cadre cu pixeli fierbinti. Pe D3300 glow-ul
+  e in stanga-sus, 0.05 ADU-eq la Smida si 0.22 in biblioteca de la 16 grade; setul de proba
+  cu ocularul descoperit si o lampa in camera (2026-10-20) a dat 5 cadre la +0.17 .. +0.47
+  ADU-eq, pe care verdictul vechi, pe master, le ratase.
 - **3. Deriva termica in serie**: amplitudinea pixelilor fierbinti ai masterului in primul si
   in ultimul cadru, fata de master; raportul lor da gradele dupa regula "curentul se dubleaza
   la 6 grade". Peste 1 grad, `ATENTIE`: masterul (mediana seriei) corespunde mijlocului
@@ -135,8 +150,9 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   prag in toate cadrele si cati palpaie, sigma temporala a celor fierbinti fata de restul,
   candidatii RTS (pixeli a caror valoare sare de la un cadru la altul). Informativ.
 - **6. Model fix**: benzile structurate ale masterului (profilul pe randuri si pe coloane
-  minus mediana lui glisanta, rms si varf la varf, cel mai rau plan) si glow-ul (offsetul de
-  la verificarea 2). `ATENTIE` peste 2 ADU-eq varf la varf sau 1 ADU-eq la margini.
+  minus mediana lui glisanta, rms si varf la varf, cel mai rau plan) si glow-ul (partea
+  abaterii de la verificarea 2 care creste cu incalzirea; toata abaterea cand nu se poate
+  desparti). `ATENTIE` peste 2 ADU-eq varf la varf sau 1 ADU-eq la margini.
 - **7. Pixeli morti si saturati**: sub negru - 50 ADU si la alb pe master; orice pixel da
   `ATENTIE`.
 - **8. Cate dark-uri ajung**: zgomotul mediei a n cadre fata de sigma / sqrt(n) (cadrele
@@ -168,7 +184,8 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   sau redenumit. Cu lights, `lights` da indexul echivalent al noptii (indexul dark-urilor x
   raportul lights / dark) si gradele fata de dark.
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
-  zgomotul alb), amplitudinea pixelilor fierbinti fata de master, pixelii peste 20 ADU-eq, pe
+  zgomotul alb), amplitudinea pixelilor fierbinti fata de master, lumina in plus fata de
+  dreapta mediei pe incalzire (ADU-eq, `-` sub 6 cadre), pixelii peste 20 ADU-eq, pe
   planul G1; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
 - **Tabel pe lights**: ora, cerul peste negru, sigma locala (scara detectorului), candidatii,
   pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1. Un light care nu

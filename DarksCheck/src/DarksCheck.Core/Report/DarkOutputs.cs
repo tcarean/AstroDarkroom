@@ -126,10 +126,12 @@ internal static class DarkOutputs
                 $"{p}_resid_sigma", $"{p}_resid_median", $"{p}_resid_mean", $"{p}_row_std", $"{p}_row_expected", $"{p}_col_std", $"{p}_col_expected"]);
         }
 
-        head.AddRange(["amp_ratio_median", "amp_ratio_q25", "amp_ratio_q75", "edge_left", "edge_right", "edge_top", "edge_bottom", "edge_top_left"]);
+        head.AddRange(["amp_ratio_median", "amp_ratio_q25", "amp_ratio_q75", "edge_left", "edge_right", "edge_top", "edge_bottom", "edge_top_left", "edge_top_right", "edge_bottom_left", "edge_bottom_right", "excess_light"]);
         sb.AppendLine(string.Join(",", head));
-        foreach (DarkFrameFigures f in d.Frames)
+        IReadOnlyList<double>? excess = r.Verdicts.Leak.Frames?.ExcessAdu;
+        for (int k = 0; k < d.Frames.Count; k++)
         {
+            DarkFrameFigures f = d.Frames[k];
             List<string> row = [f.Info.Index.ToString(CultureInfo.InvariantCulture), Q(f.Info.FileName), f.Info.Timestamp is DateTime t ? t.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture) : "", N(f.Info.ExposureSeconds), N(f.Info.Iso), Q(f.Skipped ? "" : f.Error ?? ""), Q(f.Skipped ? f.Error ?? "" : ""), N(f.MeanAboveBlack)];
             if (f.Error is null)
             {
@@ -141,7 +143,7 @@ internal static class DarkOutputs
                         N(rf.Sigma), N(rf.Median), N(rf.Mean), N(rf.RowStd), N(rf.RowExpected), N(rf.ColStd), N(rf.ColExpected)]);
                 }
 
-                row.AddRange([N(f.AmpRatioMedian), N(f.AmpRatioQ25), N(f.AmpRatioQ75), N(f.Edges?.Left), N(f.Edges?.Right), N(f.Edges?.Top), N(f.Edges?.Bottom), N(f.Edges?.TopLeft)]);
+                row.AddRange([N(f.AmpRatioMedian), N(f.AmpRatioQ25), N(f.AmpRatioQ75), N(f.Edges?.Left), N(f.Edges?.Right), N(f.Edges?.Top), N(f.Edges?.Bottom), N(f.Edges?.TopLeft), N(f.Edges?.TopRight), N(f.Edges?.BottomLeft), N(f.Edges?.BottomRight), N(excess?[k])]);
             }
 
             Pad(row, head.Count);

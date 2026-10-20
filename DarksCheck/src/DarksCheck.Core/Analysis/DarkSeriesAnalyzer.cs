@@ -27,8 +27,8 @@ internal sealed record ResidualFigures(string Name, double Sigma, double Median,
     internal double RowBandingRatio => RowExpected > 0 ? RowStd / RowExpected : double.NaN;
 }
 
-/// <summary>The edges of a frame's binned reference plane relative to its centre, in ADU (R-021).</summary>
-internal sealed record EdgeFigures(double Left, double Right, double Top, double Bottom, double TopLeft);
+/// <summary>The four edges and the four corners of a frame's binned reference plane relative to its centre, in raw ADU (R-021, R-029).</summary>
+internal sealed record EdgeFigures(double Left, double Right, double Top, double Bottom, double TopLeft, double TopRight, double BottomLeft, double BottomRight);
 
 /// <summary>One dark of the series: its metadata, its figures per plane and against the master, its hot-pixel amplitude relative to the master (R-023), or the error that kept it out.</summary>
 internal sealed record DarkFrameFigures(
@@ -329,7 +329,7 @@ internal static class DarkSeriesAnalyzer
 
                 float[] bm = Planes.BlockMean(plane, pw, ph, Th.BinPx, out int bw, out int bh);
                 Regions r = Regions.Of(bm, bw, bh);
-                edges = new EdgeFigures(r.Left - r.Centre, r.Right - r.Centre, r.Top - r.Centre, r.Bottom - r.Centre, r.TopLeft - r.Centre);
+                edges = new EdgeFigures(r.Left - r.Centre, r.Right - r.Centre, r.Top - r.Centre, r.Bottom - r.Centre, r.TopLeft - r.Centre, r.TopRight - r.Centre, r.BottomLeft - r.Centre, r.BottomRight - r.Centre);
             }
         }
 

@@ -25,7 +25,7 @@
     {
       "id": "V-002",
       "kind": "inventory",
-      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-11",
       "expected": {
         "darks": 30,
@@ -59,6 +59,7 @@
         "warmFirst": 0.826, "warmLast": 1.068, "driftCelsius": 2.2,
         "bandingRowP2pMax": 0.387, "bandingColP2pMax": 0.169,
         "leakOffset": 0.09, "leakWhere": "TopLeft",
+        "litFrames": [], "frameLightScale": 0.10, "glowPart": 0.05, "constantPart": 0.05, "leakCause": "Glow",
         "readNoise": [1.563, 1.257, 1.257, 1.447],
         "dcMedian": 0.140, "dcCentre": 0.126, "dcTopLeft": 0.219, "biasFractionBelowBlack": 0.578,
         "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Ok", "enough": "Ok" }
@@ -68,7 +69,7 @@
     {
       "id": "V-004",
       "kind": "darks",
-      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-11",
       "expected": {
         "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
@@ -81,6 +82,7 @@
         "warmFirst": 0.735, "warmLast": 1.086, "driftCelsius": 3.4,
         "bandingRowP2pMax": 0.56, "bandingColP2pMax": 0.64,
         "leakOffset": 0.22, "leakWhere": "TopLeft",
+        "litFrames": [], "frameLightScale": 0.02, "glowPart": 0.22, "constantPart": 0.01, "leakCause": "Glow",
         "readNoise": null,
         "verdicts": { "leak": "Ok", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
       },
@@ -90,7 +92,7 @@
       "id": "V-005",
       "kind": "match",
       "session": "Milkyway-Core/2026-08-12-Smida",
-      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-16",
       "expected": {
         "index": 25.2, "rankLow": 121, "rankHigh": 483, "label": "2026-08-12-Smida-idx25",
@@ -111,7 +113,7 @@
     {
       "id": "V-006",
       "kind": "match",
-      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "session": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-16",
       "expected": {
         "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
@@ -124,7 +126,7 @@
       "id": "V-007",
       "kind": "match",
       "session": "Veil/2026-10-06-3h",
-      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius/darks",
+      "against": "Flats and Darks/Darks/2026-10-10-ISO1600-120s-15.8celsius-idx67/darks",
       "measuredOn": "2026-10-16",
       "expected": {
         "index": 67.4, "rankLow": 121, "rankHigh": 483, "label": "2026-10-10-ISO1600-120s-15.8celsius-idx67",
@@ -137,6 +139,28 @@
         "partner": null
       },
       "tolerance": { "index": 0.2, "ratio": 0.01, "counts": 2, "celsius": 0.1 }
+    },
+    {
+      "id": "V-008",
+      "kind": "darks",
+      "session": "Flats and Darks/Darks/Lightleaks/darks",
+      "measuredOn": "2026-10-20",
+      "expected": {
+        "used": 30, "quantStep": 2, "referencePlane": "G1", "norm": 4.0067,
+        "hotAbove": [7759, 5443, 3135, 400, 31], "hotAlways": 5246, "hotFlicker": 65, "hotP50": 53,
+        "hotTemporalStd": 34.63, "quietTemporalStd": 6.90, "rts": 439, "dead": 0, "saturated": 10,
+        "sigmaFrame": 7.34, "residualSigmaFirst": 6.51, "masterSigma": 2.999, "rowBandingRatio": 1.6,
+        "noiseCurve": [[1, 6.26], [2, 4.48], [4, 3.24], [5, 2.92], [10, 2.12]],
+        "masterNoise": 1.43, "medianHalfVsMeanHalf": 3.17,
+        "darkCentre": 2.08, "darkBottom": 2.16,
+        "warmFirst": 0.74, "warmLast": 1.13, "driftCelsius": 3.6,
+        "bandingRowP2pMax": 0.76, "bandingColP2pMax": 1.00,
+        "leakOffset": 0.48, "leakWhere": "TopLeft",
+        "litFrames": [26, 27, 28, 29, 30], "frameLightScale": 0.02, "glowPart": 0.32, "constantPart": 0.17, "leakCause": "Glow",
+        "readNoise": null,
+        "verdicts": { "leak": "Warning", "drift": "Warning", "noise": "Ok", "pattern": "Ok", "deadSat": "Warning", "enough": "Ok" }
+      },
+      "tolerance": { "adu": 0.02, "ratio": 0.01, "counts": 2 }
     }
   ]
 }

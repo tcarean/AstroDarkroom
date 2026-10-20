@@ -141,6 +141,7 @@ public class MainViewModelTests
         Assert.Equal(DarkReport.FrameRows(r).Select(FrameRowVm.From), vm.Frames);
         Assert.Equal(DarkReport.LightRows(r).Select(LightRowVm.From), vm.Lights);
         Assert.Equal(DarkReport.FrameRows(r)[1].Residual, vm.Frames[1].Residual);
+        Assert.Equal(DarkReport.FrameRows(r)[1].Light, vm.Frames[1].Light);
         Assert.StartsWith("[G1;", vm.FrameTableNote, StringComparison.Ordinal);
         Assert.StartsWith("[G1;", vm.LightTableNote, StringComparison.Ordinal);
 

@@ -1,6 +1,6 @@
 # The dark series: the stack, the masters, checks 2 to 8
 
-**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
+**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
 
 The behaviour is R-020 to R-041; the decisions are ADR 0007 (the stack in memory, the FITS
 black, the verdict thresholds) and ADR 0004 (the normalisation). This note says how the
@@ -75,8 +75,8 @@ the hot threshold so one 600 ADU pixel does not lift its row, gives the structur
 (profile minus a running median over `Th.BandingWindow`). Every frame then gets its
 `PlaneFigures`, its residual against the median master with the row and column banding
 against white noise, the median and quartiles of its amplitude at the master's hot pixels
-(above the threshold and below `Th.AmplitudeMaxFraction` of white), and the edges of its
-binned reference plane against the centre. The stability of the hot pixels counts, per hot
+(above the threshold and below `Th.AmplitudeMaxFraction` of white), and the eight regions
+(four edges, four corners) of its binned reference plane against the centre, in raw ADU. The stability of the hot pixels counts, per hot
 pixel, the frames where it stays above half the threshold; the random-telegraph candidates
 are the reference plane's pixels whose temporal std exceeds `Th.RtsSigmaFactor` times the
 median per-frame sigma (the prototype's `sig1`). The noise curve averages the first n frames
@@ -92,11 +92,36 @@ plane. `DarkMinusBias` subtracts the two binned mean maps: the dark current per 
 in regions; its median on the Smida session is 0.14 ADU, below one quantisation step, which
 is why a dark's value lies in its hot pixels (the report of 2026-10-11).
 
+## The light and the glow
+
+`LeakAnalyzer` reads two per-frame figures against the frame's hot-pixel amplitude ratio
+(the warming of check 3), on which dark current, glow included, is proportional and light
+from outside is not (ADR 0012). `FrameLightOf` takes the frames that have a ratio (at least
+`Th.LeakFitMinFrames`), fits the frame mean above black on the ratio by Theil-Sen (`TheilSen`:
+the slope is the median of the pairwise slopes, 0 under two distinct ratios; the intercept the
+median of y - slope x), reads the scale as 1.4826 x the median absolute residual, and in up to
+`Th.LeakFitPasses` passes leaves out the frames whose residual exceeds the limit (the larger
+of `Th.LeakFrameSigmas` scales and `Th.LeakFrameAdu` x the normalisation, in raw ADU) and
+refits on the rest, stopping when the kept set no longer changes or would fall under three
+frames. Every frame's final residual against the last fit, divided by the normalisation, is its
+excess light (`FrameLight.ExcessAdu`, aligned with the series' frames, NaN without figures);
+the frames over the limit on the positive side are lit (`LitFrames`, the file index, with their
+excess beside them). `EdgeSplitsOf` then takes the frames that are not lit and, for each of the
+eight regions, fits the frame's offset to the centre on the ratio without clipping: the slope
+is the glow part (the value at ratio 1, the master's temperature), the intercept the constant
+part; with biases, the bias mean map's offset of the same region (the bias's own regions, raw
+ADU) is the readout part and the constant minus it the remainder, all divided by the
+normalisation. The cause is the part largest in absolute value, glow / readout / leak with
+biases and glow / constant without, since a leak that stays constant and a readout offset look
+the same in the darks alone. `DarkVerdictAnalyzer.Judge` keeps the verdict region's split
+beside the eight and lets check 6's glow be the glow part of that region.
+
 ## The verdicts
 
 `DarkVerdictAnalyzer.Judge` turns the figures into six verdicts with the constants of
 `Th`: the leak from the largest region departure of the dark-minus-bias map (or the dark
-master without biases), its sign telling light from a readout offset; the drift from the
+master without biases), its sign telling light from a readout offset, `ATENTIE` also when a
+frame is lit, and the words of the brighter case from the cause of the split; the drift from the
 warming of the series; the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
 the dead and saturated counts; and whether the frames are enough: at least `Th.MinDarks`, and

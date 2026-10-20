@@ -107,6 +107,18 @@ internal static class Th
     /// <summary>An edge or corner that departs from the centre by more than this, in ADU equivalent on the dark-minus-bias map, is a leak or a glow when brighter and a readout or bias offset when darker; the Smida map departs by 0.09 and the library's edges by 0.22.</summary>
     internal const double LeakAdu = 1.0;
 
+    /// <summary>The fits of R-028 and R-029 (the frame mean and the edges against the warming) need at least this many frames with an amplitude ratio; under it the rows read NEMASURAT (the golden four-dark session does).</summary>
+    internal const int LeakFitMinFrames = 6;
+
+    /// <summary>The passes of the Theil-Sen fit of R-028: each leaves out the frames over the limit and refits on the rest (the clipped sigma's three passes).</summary>
+    internal const int LeakFitPasses = 3;
+
+    /// <summary>A frame whose mean exceeds the warming fit by more than this many scales (1.4826 x the median absolute residual) carries light; the clean residuals of the three measured series stay under 2.2 scales (the Smida, library and 2026-10-20 leak series, ADR 0012).</summary>
+    internal const double LeakFrameSigmas = 5.0;
+
+    /// <summary>... and by more than this, in ADU equivalent: the floor under which a bump is quantisation, not light. The library's scale is 0.017 ADU-eq and Smida's 0.10; on the leak series of 2026-10-20 the lamp's weak positions at 0.06 stay out, 0.17 and 0.45 come in.</summary>
+    internal const double LeakFrameAdu = 0.1;
+
     /// <summary>A series that warms or cools by more than this many degrees, read from its hot pixels, is flagged; the two measured series moved 2.2 and 3.4 °C.</summary>
     internal const double DriftCelsius = 1.0;
 
