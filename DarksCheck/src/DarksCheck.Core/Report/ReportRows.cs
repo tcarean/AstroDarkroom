@@ -65,7 +65,7 @@ internal sealed record ReportRow(string Label, string Value)
 internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows);
 
 /// <summary>One dark of the frames table, every cell already formatted; Skipped or Error set when the frame has no figures.</summary>
-internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Above);
+internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Side, string Above);
 
 /// <summary>One light of the lights table, every cell already formatted; Skipped or Error set when the light has no figures.</summary>
 internal sealed record LightTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75);

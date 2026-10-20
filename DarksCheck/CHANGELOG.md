@@ -27,6 +27,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
   CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
   which the old check read as `OK`.
+- Check 2 also names the light that is in every frame (R-029, ADR 0014): with biases, the row
+  `lumina constanta` reads the four sides (an edge with its two corners) after the bias, with
+  the error of each, and a side over 0.15 ADU-eq and three times its error makes the verdict
+  `ATENTIE: lumina constanta in toate cadrele: ... scurgere de lumina (ocular, montura)`; the
+  lit-frame sentence says `in plus fata de restul seriei`; `TABEL PE CADRE` and the Cadre tab
+  gain the column `latura`, the worst side frame by frame; every column header of the Cadre
+  and Lights tables has a hover hint. On the leak set the eyepiece band of frames 1 to 25
+  (+0.20 ADU-eq on the top side) is now named beside the five frames lit from the front.
 - The project, started from `ClaudeCodeStarterKit` on 2026-10-11 (ADR 0001): the kit's gate,
   skills, hooks and documentation set; the raw and FITS readers, the PNG encoder and the
   bitmap font copied from LightsCheck, which holds FlatCheck 2.3.0's copies with the shot

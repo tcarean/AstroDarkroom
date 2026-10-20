@@ -132,7 +132,13 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   constanta; cu bias-uri, partea constanta se imparte in ce e si in bias (offset de citire) si
   ce ramane (scurgere); fara bias-uri, o scurgere constanta si un offset de citire arata la
   fel, si raportul o spune. La ISO 1600 randul arata si valorile brute, in ADU, intre
-  paranteze. Ambele cer cel putin 6 cadre cu pixeli fierbinti, iar despartirea cere si o serie
+  paranteze. `lumina constanta` face acelasi lucru pe cele patru laturi (marginea cu cele
+  doua colturi ale ei), unde o scurgere prin ocular sau prin montura lasa o banda: cu
+  bias-uri, ce ramane dupa bias pe o latura, peste 0.15 ADU-eq si peste de trei ori eroarea
+  lui, e lumina din toate cadrele, pe care testul pe cadre n-o poate vedea (el vede doar ce
+  se schimba de la un cadru la altul), si verdictul o numeste: `lumina constanta in toate
+  cadrele: +0.20 ADU-eq pe latura de sus ... scurgere de lumina (ocular, montura)`; o lumina
+  uniforma pe tot cadrul, in toate cadrele, nu are reper si raportul o spune. Ambele cer cel putin 6 cadre cu pixeli fierbinti, iar despartirea cere si o serie
   care s-a incalzit (raportul de amplitudine sa se intinda pe cel putin 0.1; seriile D3300 de
   o ora se intind pe 0.25-0.4), altfel spune ca nu o poate face. Pe D3300 glow-ul
   e in stanga-sus, 0.05 ADU-eq la Smida si 0.22 in biblioteca de la 16 grade; setul de proba
@@ -192,8 +198,10 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   raportul lights / dark) si gradele fata de dark.
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, lumina in plus fata de
-  dreapta mediei pe incalzire (ADU-eq, `-` sub 6 cadre), pixelii peste 20 ADU-eq, pe
-  planul G1; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
+  dreapta mediei pe incalzire (ADU-eq, `-` sub 6 cadre), latura cu cea mai multa lumina
+  constanta fata de centru in acel cadru, dupa bias cand exista bias-uri, cu glow-ul inclus
+  (ADU-eq; nota spune care latura; doar partea constanta a ei e lumina), pixelii peste 20 ADU-eq, pe planul G1; in fereastra, fiecare coloana a
+  celor doua tabele are o explicatie la trecerea mouse-ului peste antet; un cadru sarit de plafon apare cu `sarit (...)`, unul necitit cu `eroare:`.
 - **Tabel pe lights**: ora, cerul peste negru, sigma locala (scara detectorului), candidatii,
   pixelii izolati, amplitudinea fata de master cu quartilele, pe planul G1. Un light care nu
   spune ISO-ul sau expunerea e luat la setarile dark-urilor, cu o linie `ATENTIE`.

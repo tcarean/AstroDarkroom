@@ -31,9 +31,9 @@ public sealed record RowVm(string Label, string Value, string Rest, string? Verd
 public sealed record SectionVm(string Title, IReadOnlyList<RowVm> Rows);
 
 /// <summary>One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set when the frame has no figures.</summary>
-public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Above)
+public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Side, string Above)
 {
-    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Light, r.Above);
+    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Light, r.Side, r.Above);
 }
 
 /// <summary>One light of the lights table (R-071): the console's cells as they are.</summary>

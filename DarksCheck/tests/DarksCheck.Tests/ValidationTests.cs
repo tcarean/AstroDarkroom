@@ -155,6 +155,14 @@ public class ValidationTests
             Assert.Equal(e.GetProperty("leakCause").GetString(), sp.Cause.ToString());
         }
 
+        if (e.TryGetProperty("constantSide", out JsonElement cs) && cs.ValueKind != JsonValueKind.Null)
+        {
+            SideLight w = r.Verdicts.Leak.WorstSide!;
+            Assert.NotNull(w);
+            Assert.Equal(cs.GetString(), w.Side.ToString());
+            AssertWithin("constantSideAdu", e.GetProperty("constantSideAdu").GetDouble(), w.LightAdu, adu);
+        }
+
 
         if (e.TryGetProperty("readNoise", out JsonElement rn) && rn.ValueKind != JsonValueKind.Null)
         {

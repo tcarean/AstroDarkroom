@@ -24,6 +24,7 @@ Copyright (C) 2026 Tudor Carean
     dark - bias        : centru 0.23, colturi -0.17 / -0.05 / -0.04 / -0.14 (SS / DS / SJ / DJ), margini sus -0.08 jos 0.05 stanga -0.01 dreapta -0.07; mediana -0.03, -0.31 .. 0.23 (p1 .. p99)
     lumina pe cadre    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
     glow / constant    : NEMASURAT: sub 6 cadre cu pixeli fierbinti
+    lumina constanta   : NEMASURAT: sub 6 cadre cu pixeli fierbinti
     verdict            : OK: nicio margine sau colt la mai mult de 1.0 ADU de centru (cel mai departe -0.40 la stanga-sus, pe dark - bias); lumina pe cadre NEMASURATA
 
   3. DERIVA TERMICA IN SERIE
@@ -71,11 +72,11 @@ Copyright (C) 2026 Tudor Carean
     lights             : echivalent idx121 (dark x 0.50, adica -5.9 grade fata de dark)
 
   TABEL PE CADRE
-     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = ADU peste dreapta mediei pe incalzire]
-      1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -     0
-      2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -     0
-      3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -     0
-      4  DSC_0004.fit          00:54:53    0.08    3.01    2.68     1.0    1.002       -     0
+     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
+      1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -     0
+      2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -     0
+      3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -     0
+      4  DSC_0004.fit          00:54:53    0.08    3.01    2.68     1.0    1.002       -       -     0
 
   TABEL PE LIGHTS
      nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [G1; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]
