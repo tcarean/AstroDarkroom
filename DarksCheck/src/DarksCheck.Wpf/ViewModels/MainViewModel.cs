@@ -287,6 +287,11 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<GuideLine> LightGuides { get; private set; } = [];
     public IReadOnlyList<RowVm> LightRows { get; private set; } = [];
     public IReadOnlyList<RowVm> IndexRows { get; private set; } = [];
+
+    /// <summary>The scale rows and paragraphs of R-080, for the tab of R-078; the title is the core's.</summary>
+    public IReadOnlyList<RowVm> ScaleRows { get; private set; } = [];
+    public IReadOnlyList<string> ScaleParagraphs { get; private set; } = [];
+    public string ScaleTitle => ScaleReport.Title;
     public string Label { get; private set; } = "";
     public string Tag { get; private set; } = "";
 
@@ -404,7 +409,8 @@ public sealed class MainViewModel : ObservableObject
     {
         _result = null;
         Report = "";
-        SessionRows = HotRows = LightRows = IndexRows = [];
+        SessionRows = HotRows = LightRows = IndexRows = ScaleRows = [];
+        ScaleParagraphs = [];
         HeaderLine = Label = Tag = FrameTableNote = LightTableNote = "";
         Sections = [];
         Frames = [];
@@ -433,6 +439,8 @@ public sealed class MainViewModel : ObservableObject
         HotRows = Rows(sections, "5.");
         LightRows = Rows(sections, "9.");
         IndexRows = Rows(sections, "INDEX");
+        ScaleRows = ScaleReport.Rows(r).Select(Row).ToList();
+        ScaleParagraphs = ScaleReport.Paragraphs(r);
         Frames = DarkReport.FrameRows(r).Select(FrameRowVm.From).ToList();
         Lights = DarkReport.LightRows(r).Select(LightRowVm.From).ToList();
         FrameTableNote = DarkReport.FrameTableNote(r);
@@ -503,7 +511,7 @@ public sealed class MainViewModel : ObservableObject
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
             nameof(FrameTableNote), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
-            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(Label), nameof(Tag),
+            nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag),
         })
         {
             Raise(name);

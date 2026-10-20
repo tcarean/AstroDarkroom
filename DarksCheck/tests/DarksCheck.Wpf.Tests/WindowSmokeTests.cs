@@ -193,6 +193,7 @@ public class WindowSmokeTests
             Render(new HotPixelsView { DataContext = vm }, name: "tab-hot");
             Render(new LightsView { DataContext = vm }, h: 1000, name: "tab-lights");
             Render(new IndexView { DataContext = vm }, name: "tab-index");
+            Render(new ScaleView { DataContext = vm }, h: 1400, name: "tab-scale");
 
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });

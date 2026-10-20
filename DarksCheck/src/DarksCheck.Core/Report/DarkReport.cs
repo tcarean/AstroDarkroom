@@ -92,6 +92,8 @@ internal static class DarkReport
                 }
             }
         }
+
+        ScaleReport.Write(r, w);
     }
 
     private static void WriteRow(TextWriter w, ReportRow row) => w.WriteLine($"    {row.Label,-19}: {row.Value}");

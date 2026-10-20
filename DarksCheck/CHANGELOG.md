@@ -27,6 +27,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
   CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
   which the old check read as `OK`.
+- A help on the ADU scale, computed on the open set (R-078, R-080, ADR 0015): the tab
+  `Explicatii scara ADU` and the section `EXPLICATII SCARA ADU` at the end of the report show
+  the file's scale, the normalisation, the quantisation step, the read noise, the dark
+  current, the checks' thresholds in raw ADU on this set, what check 2 found, the lights' sky
+  and the stack's noise, the saturation, in ADU, ADU-eq and electrons (the D3300's published
+  gain from photonstophotos.net, with its provenance), and four paragraphs on why a fraction
+  of an ADU in the master matters.
 - Check 2 also names the light that is in every frame (R-029, ADR 0014): with biases, the row
   `lumina constanta` reads the four sides (an edge with its two corners) after the bias, with
   the error of each, and a side over 0.15 ADU-eq and three times its error makes the verdict

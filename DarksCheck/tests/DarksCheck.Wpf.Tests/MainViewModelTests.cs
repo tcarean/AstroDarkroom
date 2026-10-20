@@ -110,6 +110,21 @@ public class MainViewModelTests
     }
 
     [Fact]
+    public async Task R078_TheScaleTabIsEmptyBeforeAResultAndFilledAfter()
+    {
+        using TestSettings.Own _ = new();
+        using SessionFixture f = WindowFixture.Session();
+        MainViewModel vm = new();
+        Assert.Empty(vm.ScaleRows);
+        Assert.Empty(vm.ScaleParagraphs);
+        await vm.OpenAsync(f.Root);
+        Assert.True(vm.HasResult);
+        Assert.Equal(11, vm.ScaleRows.Count);
+        Assert.Equal(4, vm.ScaleParagraphs.Count);
+        Assert.Equal("fisier", vm.ScaleRows[0].Label);
+    }
+
+    [Fact]
     public async Task R071_TheTabsHoldTheSectionsTheTablesTheMapsAndTheCharts()
     {
         using SessionFixture f = WindowFixture.Session();
@@ -168,6 +183,12 @@ public class MainViewModelTests
         Assert.Equal(vm.Sections[3].Rows, vm.HotRows);
         Assert.Equal(vm.Sections[7].Rows, vm.LightRows);
         Assert.Equal(vm.Sections[8].Rows, vm.IndexRows);
+
+        // R-078: the tab "Explicatii scara ADU" shows the core's scale rows and paragraphs, nothing reworded
+        Assert.Equal(ScaleReport.Rows(r).Select(row => row.Label), vm.ScaleRows.Select(row => row.Label));
+        Assert.Equal(ScaleReport.Rows(r).Select(row => row.Value), vm.ScaleRows.Select(row => row.Value));
+        Assert.Equal(ScaleReport.Paragraphs(r), vm.ScaleParagraphs);
+        Assert.Equal("EXPLICATII SCARA ADU", vm.ScaleTitle);
         Assert.Equal(r.Label, vm.Label);
         Assert.Equal(r.Index.Tag, vm.Tag);
         Assert.EndsWith("-" + vm.Tag, vm.Label, StringComparison.Ordinal);
