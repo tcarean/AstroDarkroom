@@ -23,9 +23,12 @@ namespace DarksCheck.Core;
 /// it is one of the three verdict words, or ATENTIE when that is the row's label (the
 /// warnings about frames that failed); <see cref="Rest"/> is the value without a leading word.
 /// </summary>
-internal sealed record ReportRow(string Label, string Value)
+internal sealed record ReportRow(string Label, string Value, IReadOnlyList<string>? Bold = null)
 {
     private static readonly string[] Words = ["NEMASURAT", "ATENTIE", "OK"];
+
+    /// <summary>The value's substrings the window renders bold (ADR 0016): the masters' noise and the light found; empty for most rows. The console prints the value as it is.</summary>
+    internal IReadOnlyList<string> BoldParts => Bold ?? [];
 
     internal string? Verdict => VerdictOf(Value) ?? (Label == "ATENTIE" ? "ATENTIE" : null);
 

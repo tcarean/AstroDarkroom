@@ -1,6 +1,6 @@
 # The dark series: the stack, the masters, checks 2 to 8
 
-**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ScaleReport.cs`, `src/DarksCheck.Core/Analysis/CameraFacts.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
+**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ScaleReport.cs`, `src/DarksCheck.Core/Analysis/CameraFacts.cs`, `src/DarksCheck.Core/Analysis/StackNoise.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
 
 The behaviour is R-020 to R-041; the decisions are ADR 0007 (the stack in memory, the FITS
 black, the verdict thresholds) and ADR 0004 (the normalisation). This note says how the
@@ -163,7 +163,15 @@ a camera name to its published figures (one entry, the D3300; a name containing 
 case) and `GainAt` interpolates the gain on the log2 scale between the listed ISO stops,
 returning null outside them, so a row never guesses. The console writes the rows as
 `label : value` and the paragraphs through `ScaleReport.Wrap` at 96 columns with a four-space
-indent; the window binds `Rows` and `Paragraphs` as they are.
+indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
+sky median, sky sigma and count on the reference plane with the mean and median stack's noise,
+the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (the master is
+subtracted from every light alike, so its noise does not average out);
+`ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
+ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
+`zgomot in master` and `gasit` rows and by check 2's `lumina pe cadre`, `lumina constanta` and
+verdict rows in `DarkReport`. A `ReportRow` carries `Bold`, the value's substrings the window
+emphasises (ADR 0016); the console ignores it.
 
 ## The lights, the index and the partner in the run
 

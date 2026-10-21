@@ -202,6 +202,11 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   pe cadru si curentul de intuneric, pragurile verificarilor in ADU brut pe acest set, ce s-a
   gasit la verificarea 2, cerul unui light si zgomotul stack-ului (cu lights), saturatia; apoi
   patru paragrafe despre de ce o fractiune de ADU din master conteaza, cu numerele setului.
+  Reperul e zgomotul ramas in mastere: randul `zgomot in master` da zgomotul pe pixel al
+  masterului dark (cel din verificarea 8) si al stack-ului de lights (cu media si cu mediana),
+  iar fiecare lumina gasita de verificarea 2 e scrisa si ca fractiune din ele (`+0.79 ADU e
+  0.55 din zgomotul pe pixel al masterului dark (1.43 ADU)`); in fereastra, zgomotul masterelor
+  si lumina gasita apar cu litere ingrosate.
   Electronii vin dintr-o sursa publicata, nu masurata de aplicatie: photonstophotos.net
   (Bill Claff), din curbele DxOMark, pentru Nikon D3300 (castig 2.07 e-/ADU la ISO 400,
   0.53 la ISO 1600, full well 34446 e-, QE 56 %), cu avertismentul sursei ca metoda

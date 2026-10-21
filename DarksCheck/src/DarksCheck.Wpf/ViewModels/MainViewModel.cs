@@ -22,7 +22,7 @@ using DarksCheck.Core;
 namespace DarksCheck.Wpf;
 
 /// <summary>One labelled line of a section (R-071): the label, the whole value as the console prints it, the value without its verdict word, and the word, shown as a chip.</summary>
-public sealed record RowVm(string Label, string Value, string Rest, string? Verdict)
+public sealed record RowVm(string Label, string Value, string Rest, string? Verdict, IReadOnlyList<string> Bold)
 {
     public bool HasVerdict => Verdict is not null;
 }
@@ -495,7 +495,7 @@ public sealed class MainViewModel : ObservableObject
         RaiseAll();
     }
 
-    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict);
+    private static RowVm Row(ReportRow r) => new(r.Label, r.Value, r.Rest, r.Verdict, r.BoldParts);
 
     private static List<RowVm> Rows(IReadOnlyList<ReportSection> sections, string titleStart) =>
         sections.Where(s => s.Title.StartsWith(titleStart, StringComparison.Ordinal)).SelectMany(s => s.Rows).Select(Row).ToList();

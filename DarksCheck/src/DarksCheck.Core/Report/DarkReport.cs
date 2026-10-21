@@ -151,6 +151,8 @@ internal static class DarkReport
         double n = d.Norm;
         double mpx = d.Width * (double)d.Height / 1e6;
 
+        double masterNoise = d.Noise.MasterNoise;
+        StackNoise? stack = StackNoise.Of(r.Lights, rp, masterNoise);
         List<ReportRow> leak = [new("master dark", $"{RegionsLine(d.MeanMaps[rp].Regions, n)}  [{g}, {eq} peste negru, media a {RunReport.Frames(d.Used)}, blocuri de {Th.BinPx * 2} px]")];
         if (r.Biases is BiasAnalysis b)
         {
@@ -162,10 +164,10 @@ internal static class DarkReport
             leak.Add(new("dark - bias", $"{RegionsLine(dc.Maps[rp].Regions, n)}; mediana {F(dc.Median / n, 2)}, {F(dc.P1 / n, 2)} .. {F(dc.P99 / n, 2)} (p1 .. p99)"));
         }
 
-        leak.Add(new("lumina pe cadre", FrameLightRow(v.Leak, eq)));
+        leak.Add(FrameLightRow(v.Leak, eq, n, masterNoise, stack));
         leak.Add(new("glow / constant", SplitRow(v.Leak, eq, n)));
-        leak.Add(new("lumina constanta", SidesRow(v.Leak, eq)));
-        leak.Add(new("verdict", Leak(v.Leak, eq)));
+        leak.Add(SidesRow(v.Leak, eq, n, masterNoise, stack));
+        leak.Add(LeakVerdictRow(v.Leak, eq, n, masterNoise));
 
         return
         [
@@ -204,7 +206,7 @@ internal static class DarkReport
             new("8. CATE DARK-URI AJUNG",
             [
                 new("zgomotul mediei", $"{Curve(d.Noise)}  [{g}, centrul de {d.Noise.CropPx} px, ADU, sigma temporala = cadru fata de cadru]"),
-                new("master", Enough(d, v.Enough)),
+                new("master", Enough(d, v.Enough), double.IsNaN(v.Enough.MasterNoise) ? null : [$"{F(v.Enough.MasterNoise, 2)} ADU"]),
                 new("verdict", EnoughVerdictText(v.Enough)),
             ]),
             new("9. LIGHTS FATA DE DARK", LightsRows(r, eq)),
@@ -458,7 +460,23 @@ internal static class DarkReport
     private static string RegionsLine(Regions r, double n) =>
         $"centru {F(r.Centre / n, 2)}, colturi {F(r.TopLeft / n, 2)} / {F(r.TopRight / n, 2)} / {F(r.BottomLeft / n, 2)} / {F(r.BottomRight / n, 2)} (SS / DS / SJ / DJ), margini sus {F(r.Top / n, 2)} jos {F(r.Bottom / n, 2)} stanga {F(r.Left / n, 2)} dreapta {F(r.Right / n, 2)}";
 
-    private static string Leak(LeakVerdict l, string eq)
+    /// <summary>Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the master's noise marked bold when the verdict names them (ADR 0016).</summary>
+    private static ReportRow LeakVerdictRow(LeakVerdict l, string eq, double norm, double masterNoise)
+    {
+        string against = "";
+        List<string> bold = [];
+        if (l.Verdict == Verdict.Warning && l.ConstantLight is SideLight c)
+        {
+            (against, IReadOnlyList<string> b) = ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, null);
+            bold.Add($"{Signed(c.LightAdu, 2)} {eq}");
+            bold.AddRange(b);
+        }
+
+        return new("verdict", Leak(l, eq, against), bold.Count == 0 ? null : bold);
+    }
+
+    /// <summary>The verdict's words; <paramref name="against"/> is the constant light's ratio to the master's noise, already worded, or empty.</summary>
+    private static string Leak(LeakVerdict l, string eq, string against)
     {
         string source = l.FromDarkMinusBias ? "pe dark - bias" : "pe masterul dark (fara bias)";
         string framesTail = l.Frames is null ? "lumina pe cadre NEMASURATA" : "niciun cadru cu lumina peste incalzirea seriei";
@@ -483,7 +501,7 @@ internal static class DarkReport
 
         if (constant is SideLight c)
         {
-            parts.Add($"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)");
+            parts.Add($"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)" + (against.Length == 0 ? "" : $"; adica {against}"));
         }
 
         if (Math.Abs(l.OffsetAdu) > Th.LeakAdu)
@@ -494,28 +512,35 @@ internal static class DarkReport
         return "ATENTIE: " + string.Join("; in plus ", parts);
     }
 
-    /// <summary>The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their constants without biases.</summary>
-    private static string SidesRow(LeakVerdict l, string eq)
+    /// <summary>The row `lumina constanta` (R-029, ADR 0014): the four sides after the bias, or their constants without biases; a side over the threshold against the masters' noise, bold (ADR 0016).</summary>
+    private static ReportRow SidesRow(LeakVerdict l, string eq, double norm, double masterNoise, StackNoise? stack)
     {
+        const string label = "lumina constanta";
         if (SplitUnmeasured(l, Th.LeakSidesMinFrames) is string why)
         {
-            return why;
+            return new(label, why);
         }
 
         if (l.Sides.Count == 0)
         {
-            return "NEMASURAT";
+            return new(label, "NEMASURAT");
         }
 
         MapSide[] order = [MapSide.Top, MapSide.Bottom, MapSide.Left, MapSide.Right];
         if (!l.SidesAfterBias)
         {
-            return "fara bias nu se desparte de offsetul de citire: constant " + string.Join(", ", order.Select(s => $"{SideName(s)} {Signed(l.Sides.First(x => x.Side == s).ConstantAdu, 2)}")) + $" {eq}";
+            return new(label, "fara bias nu se desparte de offsetul de citire: constant " + string.Join(", ", order.Select(s => $"{SideName(s)} {Signed(l.Sides.First(x => x.Side == s).ConstantAdu, 2)}")) + $" {eq}");
         }
 
         string sides = string.Join(", ", order.Select(s => l.Sides.First(x => x.Side == s)).Select(s => $"{SideName(s.Side)} {Signed(s.LightAdu, 2)} (±{F(s.ErrorAdu, 2)})"));
-        string over = l.ConstantLight is SideLight c ? $"peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea la {SideName(c.Side)}" : $"niciuna peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper";
-        return $"dupa bias, fata de centru: {sides} {eq}; {over}";
+        if (l.ConstantLight is not SideLight c)
+        {
+            return new(label, $"dupa bias, fata de centru: {sides} {eq}; niciuna peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea; o lumina uniforma pe tot cadrul, in toate cadrele, nu are reper");
+        }
+
+        (string against, IReadOnlyList<string> bold) = ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, stack);
+        string tail = against.Length == 0 ? "" : $"; {against}";
+        return new(label, $"dupa bias, fata de centru: {sides} {eq}; peste {F(Th.LeakConstantAdu, 2)} si peste {F(Th.LeakConstantSigmas, 0)} x eroarea la {SideName(c.Side)}{tail}", [$"{Signed(c.LightAdu, 2)} (±{F(c.ErrorAdu, 2)})", .. bold]);
     }
 
     internal static string SideName(MapSide s) => s switch
@@ -554,21 +579,25 @@ internal static class DarkReport
         return string.Join(", ", parts) + (more > 0 ? $" si inca {more.ToString(CultureInfo.InvariantCulture)}" : "");
     }
 
-    /// <summary>The row `lumina pe cadre` (R-028).</summary>
-    private static string FrameLightRow(LeakVerdict l, string eq)
+    /// <summary>The row `lumina pe cadre` (R-028); with lit frames, the largest excess against the masters' noise, both bold (ADR 0016).</summary>
+    private static ReportRow FrameLightRow(LeakVerdict l, string eq, double norm, double masterNoise, StackNoise? stack)
     {
+        const string label = "lumina pe cadre";
         if (l.Frames is not FrameLight fl)
         {
-            return $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti";
+            return new(label, $"NEMASURAT: sub {Th.LeakFitMinFrames} cadre cu pixeli fierbinti");
         }
 
         if (fl.LitFrames.Count == 0)
         {
-            return $"niciun cadru peste {F(Th.LeakFrameSigmas, 0)} x abaterea tipica ({F(fl.ScaleAdu, 2)} {eq}) si peste {F(Th.LeakFrameAdu, 1)} {eq} fata de dreapta mediei pe incalzire";
+            return new(label, $"niciun cadru peste {F(Th.LeakFrameSigmas, 0)} x abaterea tipica ({F(fl.ScaleAdu, 2)} {eq}) si peste {F(Th.LeakFrameAdu, 1)} {eq} fata de dreapta mediei pe incalzire");
         }
 
         int n = fl.LitFrames.Count;
-        return $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)})";
+        double max = fl.LitExcessAdu.Max();
+        (string against, IReadOnlyList<string> bold) = ScaleReport.AgainstMasters(max * norm, masterNoise, stack);
+        string tail = against.Length == 0 ? "" : $"; cel mai luminat, {Signed(max, 2)} {eq}: {against}";
+        return new(label, $"{n} {(n == 1 ? "cadru" : "cadre")}: {LitList(fl, " ")} {eq} peste dreapta mediei pe incalzire (abaterea tipica {F(fl.ScaleAdu, 2)}){tail}", bold.Count == 0 ? null : [$"{Signed(max, 2)} {eq}", .. bold]);
     }
 
     /// <summary>Why the split (or the sides, which need <paramref name="minFrames"/> frames left) is unmeasured, or null when it is measured (R-028, R-029).</summary>
