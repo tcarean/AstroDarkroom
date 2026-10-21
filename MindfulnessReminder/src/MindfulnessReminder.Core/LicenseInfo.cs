@@ -32,7 +32,9 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public static class LicenseInfo
 {
-    /// <summary>Used only if the assembly attribute is missing; the csproj is the truth.</summary>
+    /// <summary>
+    /// Used only if the assembly attribute is missing; Directory.Build.props is the truth.
+    /// </summary>
     private const string Fallback = "Copyright (C) 2026 Tudor Carean";
 
     /// <summary>

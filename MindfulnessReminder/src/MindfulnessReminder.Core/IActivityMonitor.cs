@@ -23,9 +23,9 @@ namespace MindfulnessReminder.Core;
 /// indicator, plus SHQueryUserNotificationState; both live in the App layer, and this
 /// interface is what keeps the rules that act on them testable off a real machine.
 ///
-/// It is asked ONLY at the moment a reminder is due, and once per retry while one is being
-/// held back -- never on the one-second tick. A reminder every 30 minutes means two registry
-/// reads an hour.
+/// It is asked at the moment a reminder is due, once per retry while one is being held
+/// back, and otherwise at most every <see cref="ReminderCoordinator.DefaultActivityRefresh"/>
+/// so that the tooltip stays current -- never on every one-second tick.
 /// </summary>
 public interface IActivityMonitor
 {

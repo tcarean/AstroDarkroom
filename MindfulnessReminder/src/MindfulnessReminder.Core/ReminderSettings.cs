@@ -72,10 +72,10 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     public const string DefaultMessage = "Ground yourself";
 
     /// <summary>
-    /// Fifty characters: two lines at the reminder window's 30 px type, which is what fits
-    /// between the dot and the Close button. The window is a fixed size on purpose -- it is
-    /// placed by hand on the primary monitor -- so a longer message would run into the
-    /// button rather than grow the window.
+    /// Fifty characters. At the reminder window's 30 px type they can wrap to three lines, one
+    /// more than fits between the dot and the Close button. The window is a fixed size on
+    /// purpose -- it is placed by hand on the primary monitor -- so such a message is scaled
+    /// down to fit rather than growing the window.
     /// </summary>
     public const int MaxMessageLength = 50;
 

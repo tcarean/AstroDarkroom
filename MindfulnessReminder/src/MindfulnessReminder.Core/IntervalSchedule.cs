@@ -66,9 +66,11 @@ public sealed class IntervalSchedule
     public bool IsSuspended => _suspended;
 
     /// <summary>
-    /// Puts the full interval back on the clock. This is the only place a deadline is ever
-    /// set, so "the countdown restarts" means exactly one thing everywhere it happens: at
-    /// startup, on every unlock, after each reminder, and when settings are applied.
+    /// Puts the full interval back on the clock. Every restart of the countdown comes through
+    /// here, so "the countdown restarts" means exactly one thing everywhere it happens: at
+    /// startup, on every unlock, after each reminder, after the clock jumps back, and when
+    /// settings are applied. The one other place a deadline is set is <see cref="Postpone"/>,
+    /// with the retry gap.
     /// </summary>
     /// <param name="now">The current time, from which the interval is counted.</param>
     public void Restart(DateTimeOffset now)

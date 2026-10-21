@@ -23,9 +23,9 @@ namespace MindfulnessReminder.Core;
 /// Settings in HKCU, under the same key the auto-start marker already uses -- one key for
 /// everything this app remembers.
 ///
-/// Both values are written as strings even though the interval is a number, so that
+/// All eight values are written as strings, the two numbers included, so that
 /// <see cref="IRegistryStore"/> stays the four methods it already had; a DWORD would have
-/// meant a wider interface for the sake of one value. Reading is deliberately forgiving: a
+/// meant a wider interface for the sake of two values. Reading is deliberately forgiving: a
 /// missing value is a fresh machine and a corrupt one is a hand-edited registry, and neither
 /// is a reason to fail to start. Both land on the defaults.
 /// </summary>
