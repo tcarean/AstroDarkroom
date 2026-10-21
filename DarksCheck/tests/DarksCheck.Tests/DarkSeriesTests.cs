@@ -135,23 +135,128 @@ public class DarkSeriesTests
     }
 
     [Fact]
-    public void R023_TheWarmingOfTheSeriesIsReadFromTheHotPixels()
+    public void R023_TheSeriesIsFittedToAPlateauAndTheFramesOffItAreNamed()
     {
-        // ten hot pixels of 100 ADU whose amplitude climbs from 0.8 to 1.2 of the master's (the median frame)
-        (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 100.0)).ToArray();
-        using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 0.8 + 0.4 * i / 6 });
+        // ten hot pixels of 300 ADU whose amplitude approaches 1.2 as 1.2 - 0.4 exp(-i / 3): the median
+        // frame (the master) sits near 1.135, so the plateau reads about 1.06 of the master and the
+        // first two frames are more than two degrees under it (their ratio under 1.06 x 0.79 = 0.84)
+        using SessionFixture s = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         DarkSeriesResult r = Run(s);
         Warming w = r.Darks.Warming;
         Assert.Equal(10, w.Pixels);
-        Assert.InRange(w.FirstRatio, 0.75, 0.85);
-        Assert.InRange(w.LastRatio, 1.15, 1.25);
+        Assert.InRange(w.FirstRatio, 0.68, 0.73);
+        Assert.InRange(w.LastRatio, 1.03, 1.07);
         Assert.InRange(w.DeltaCelsius, 3.0, 4.0);
-        Assert.Equal(12, w.Minutes, 0.01);
-        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        Assert.Equal(22, w.Minutes, 0.01);
+        Assert.InRange(w.Plateau, 1.02, 1.10);
+        Assert.InRange(w.TauMinutes, 4, 9);
+        Assert.InRange(w.PlateauCelsius, -0.8, -0.2);
+        Assert.InRange(Math.Abs(w.SettleCelsius), 0, 0.3);
+        Assert.Equal([1, 2], w.OffPlateauFrames);
+        Assert.Equal(Math.Sqrt(12.0 / 10), w.NoiseFactorWithoutOff, 1e-9);
+        Assert.Equal(w.Plateau * Math.Pow(2, -Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauLow, 1e-9);
+        Assert.Equal(w.Plateau * Math.Pow(2, Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauHigh, 1e-9);
+        Assert.InRange(w.MasterWithoutOffCelsius, -0.7, -0.2);
+        Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
 
-        using SessionFixture flat = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = hot });
-        Assert.Equal(Verdict.Ok, Run(flat).Verdicts.Drift.Verdict);
+        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+        Assert.Equal(["amplitudine", "platou", "de aruncat", "verdict"], check3.Rows.Select(x => x.Label));
+        Assert.StartsWith("seria se apropie de un platou la 1.0", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Contains("masterul, mediana seriei, e cu 0.", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.Contains("la ultimul cadru mai are +0.", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.StartsWith("2 cadre (1, 2) la peste 2.0 grade de platou (amplit. sub 0.8", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.Contains("; fara ele masterul ar fi cu 0.", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.EndsWith(", dar cu 10 % mai mult zgomot", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.StartsWith("OK: seria s-a asezat (la ultimul cadru mai are +0.", check3.Rows[3].Value, StringComparison.Ordinal);
+        Assert.Contains("si toate cadrele stau in 0.7 .. 1.4 din master; incalzirea de 3.", check3.Rows[3].Value, StringComparison.Ordinal);
+        Assert.EndsWith("cadrele de aruncat sunt in randul de mai sus", check3.Rows[3].Value, StringComparison.Ordinal);
+
+        // the table: the degrees from the plateau per frame, the note on the frames off it
+        IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
+        Assert.StartsWith("-3.", rows[0].Plateau, StringComparison.Ordinal);
+        Assert.StartsWith("de aruncat: amplit. 0.7", rows[0].Note, StringComparison.Ordinal);
+        Assert.Contains(" sub 0.8", rows[0].Note, StringComparison.Ordinal);
+        Assert.Contains("(peste 2.0 grade sub platoul 1.0", rows[0].Note, StringComparison.Ordinal);
+        Assert.NotNull(rows[1].Note);
+        Assert.Null(rows[2].Note);
+        Assert.Null(rows[11].Note);
+        Assert.StartsWith("-0.", rows[11].Plateau, StringComparison.Ordinal);
+        Assert.Contains("platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3)", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
+        Assert.Contains("platou", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        string line = DarkReport.FrameLine(rows[0]);
+        Assert.EndsWith(rows[0].Note, line, StringComparison.Ordinal);
+        Assert.DoesNotContain("de aruncat", DarkReport.FrameLine(rows[11]), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void R023_ASeriesStillClimbingAtTheEndIsNotSettled()
+    {
+        // a straight climb of 0.05 per frame: the fit extrapolates a plateau far above the last frame
+        using SessionFixture s = new SessionFixture().WithDarkSeries(8, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.05 * i });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.True(w.SettleCelsius > Th.SettledCelsius, $"settle {w.SettleCelsius}");
+        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
+        Assert.StartsWith("ATENTIE: seria inca se incalzeste la ultimul cadru (mai are +", verdict, StringComparison.Ordinal);
+        Assert.Contains("grade pana la platou, peste 1.0, platoul e extrapolat): masterul nu apartine unei temperaturi; continua seria", verdict, StringComparison.Ordinal);
+        Assert.True(w.TauAtGridTop);
+        Assert.Contains("constanta de timp de cel putin ", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[1].Value, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R023_AFrameOutsideTheOptMarginOfTheMasterFailsTheSpan()
+    {
+        // the first frame at half the master's hot pixels, the other six flat: settled, but outside 0.7 .. 1.4
+        using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
+        DarkSeriesResult r = Run(s);
+        Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
+        Assert.Equal([1], r.Darks.Warming.OffPlateauFrames);
+        string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
+        Assert.StartsWith("ATENTIE: 1 cadru (1) iese din 0.7 .. 1.4 din master (cel mai departe 0.5", verdict, StringComparison.Ordinal);
+        Assert.EndsWith("): seria a pornit rece; arunca-l", verdict, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void R023_AFlatSeriesHasNoFrameOffThePlateau()
+    {
+        using SessionFixture s = new SessionFixture().WithDarkSeries(7, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.InRange(w.Plateau, 0.97, 1.03);
+        Assert.Empty(w.OffPlateauFrames);
+        Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
+        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+        Assert.StartsWith("seria e plata: platoul la ", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.EndsWith(" din master, primul cadru la mai putin de 1.0 grade de el", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.StartsWith("niciun cadru la peste 2.0 grade de platou (amplit. intre ", check3.Rows[2].Value, StringComparison.Ordinal);
+        Assert.All(DarkReport.FrameRows(r), row => Assert.Null(row.Note));
+    }
+
+    [Fact]
+    public void R023_UnderSixFramesThereIsNoPlateauAndTheVerdictRestsOnTheSpan()
+    {
+        // five frames climbing 0.8 → 1.2 of the master: the first-to-last degrees, no fit
+        using SessionFixture s = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = 0.8 + 0.4 * i / 4 });
+        DarkSeriesResult r = Run(s);
+        Warming w = r.Darks.Warming;
+        Assert.InRange(w.DeltaCelsius, 3.0, 4.0);
+        Assert.Equal(8, w.Minutes, 0.01);
+        Assert.True(double.IsNaN(w.Plateau));
+        Assert.Empty(w.OffPlateauFrames);
+        Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
+        ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
+        Assert.Equal("NEMASURAT: sub 6 cadre cu pixeli fierbinti", check3.Rows[1].Value);
+        Assert.Equal("NEMASURAT: sub 6 cadre cu pixeli fierbinti", check3.Rows[2].Value);
+        Assert.Equal("OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)", check3.Rows[3].Value);
+        Assert.All(DarkReport.FrameRows(r), row => Assert.Equal("-", row.Plateau));
+
+        using SessionFixture cold = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = StrongHot, HotFactor = i == 0 ? 0.5 : 1.0 });
+        Assert.Equal(Verdict.Warning, Run(cold).Verdicts.Drift.Verdict);
+    }
+
+    /// <summary>Ten hot pixels of 300 ADU: strong enough for a frame's amplitude ratio to be read to half a percent.</summary>
+    private static readonly (int X, int Y, double Adu)[] StrongHot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
 
     private static readonly (int X, int Y, double Adu)[] TenHot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 100.0)).ToArray();
 
@@ -181,7 +286,7 @@ public class DarkSeriesTests
         ReportRow litRow = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "lumina pe cadre");
         Assert.Contains($"{r.Darks.Noise.MasterNoise:F2} ADU", litRow.BoldParts);
         Assert.All(litRow.BoldParts, b => Assert.Contains(b, litRow.Value, StringComparison.Ordinal));
-        Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("  amplit.  platou  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("lumina = ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         Assert.StartsWith("+0.", rows[6].Light, StringComparison.Ordinal);
@@ -345,7 +450,7 @@ public class DarkSeriesTests
         Assert.Equal([masterNoise], enough.BoldParts);
         Assert.Contains(masterNoise, enough.Value, StringComparison.Ordinal);
         Assert.Empty(sections[0].Rows.Single(x => x.Label == "master dark").BoldParts);
-        Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
+        Assert.Contains("  amplit.  platou  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("latura = sus - centru dupa bias (glow inclus), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
         // one frame, three regions of 256 synthetic pixels each: a noisy column, the band still in every frame

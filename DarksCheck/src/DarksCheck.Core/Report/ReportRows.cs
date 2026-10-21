@@ -67,8 +67,8 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 /// <summary>A titled group of rows: one check of the report, or its INDEX block.</summary>
 internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows);
 
-/// <summary>One dark of the frames table, every cell already formatted; Skipped or Error set when the frame has no figures.</summary>
-internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Side, string Above);
+/// <summary>One dark of the frames table, every cell already formatted; Skipped or Error set when the frame has no figures; Plateau is the frame's degrees from the plateau of R-023 (`-` without a fit) and Note the reason a frame off the plateau is one to discard (null for every other frame), printed after the last column and shown by the window in the attention colour.</summary>
+internal sealed record DarkTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, string? Note = null);
 
 /// <summary>One light of the lights table, every cell already formatted; Skipped or Error set when the light has no figures.</summary>
 internal sealed record LightTableRow(int Index, string FileName, string? Skipped, string? Error, string Time, string Sky, string LocalSigma, string Candidates, string Isolated, string Amp, string Q25, string Q75);

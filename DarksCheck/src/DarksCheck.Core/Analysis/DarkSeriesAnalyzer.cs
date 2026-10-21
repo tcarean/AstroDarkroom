@@ -117,8 +117,28 @@ internal sealed record BinnedMap(string Name, IReadOnlyList<float> Values, int W
 /// <summary>The structured banding of the master on one CFA position (R-040): the row and column profiles minus their running median, as a standard deviation and peak to peak.</summary>
 internal sealed record BandingFigures(string Name, double RowStd, double ColStd, double RowP2p, double ColP2p);
 
-/// <summary>The warming of the series read from its hot pixels (R-023): the amplitude ratio to the master at the first and the last frame, and the temperature offset between them.</summary>
-internal sealed record Warming(double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels);
+/// <summary>
+/// The warming of the series read from its hot pixels (R-023): the amplitude ratio to the
+/// master at the first and the last frame and the degrees between them; then the fit of the
+/// ratios on the time as `Plateau - drop x exp(-t / TauMinutes)` (NaN under
+/// <see cref="Th.WarmingFitMinFrames"/> frames; the time in minutes from the first frame when
+/// <see cref="TimeFromStamps"/>, else the frame's position; <see cref="TauAtGridTop"/> when the
+/// time constant sits at the top of the grid, three times the span, so the plateau is an
+/// extrapolation), its rms residual, the master's
+/// degrees to the plateau (negative under it), the degrees left between the fitted last frame
+/// and the plateau, the frames more than <see cref="Th.OffPlateauCelsius"/> from the plateau
+/// with the two bounds of that band, the master's degrees to the plateau without them and the
+/// factor by which the master's noise would grow without them (sqrt of frames over frames left).
+/// </summary>
+internal sealed record Warming(
+    double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels,
+    double Plateau, double TauMinutes, bool TimeFromStamps, bool TauAtGridTop, double FitScale, double PlateauCelsius, double SettleCelsius,
+    IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff)
+{
+    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN, double.NaN);
+
+    internal bool HasFit => !double.IsNaN(Plateau);
+}
 
 /// <summary>Everything measured on a series of darks; the words are the report's.</summary>
 internal sealed record DarkSeriesAnalysis(
@@ -693,12 +713,135 @@ internal static class DarkSeriesAnalyzer
         DarkFrameFigures[] ok = frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
         if (ok.Length < 2 || pixels == 0)
         {
-            return new Warming(double.NaN, double.NaN, double.NaN, 0, pixels);
+            return Warming.None with { Minutes = 0, Pixels = pixels };
         }
 
         double first = ok[0].AmpRatioMedian, last = ok[^1].AmpRatioMedian;
         double dT = first > 0 && last > 0 ? nz.Degrees(last / first) : double.NaN;
         double minutes = ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 ? (t1 - t0).TotalMinutes : double.NaN;
-        return new Warming(first, last, dT, minutes, pixels);
+        Warming w = Warming.None with { FirstRatio = first, LastRatio = last, DeltaCelsius = dT, Minutes = minutes, Pixels = pixels };
+        if (ok.Length < Th.WarmingFitMinFrames)
+        {
+            return w;
+        }
+
+        (double[] t, bool stamps) = TimeAxis(ok);
+        double[] y = ok.Select(f => f.AmpRatioMedian).ToArray();
+        (double plateau, double drop, double tau, double rms) = PlateauFit(t, y);
+        if (double.IsNaN(plateau) || plateau <= 0)
+        {
+            return w;
+        }
+
+        double fittedLast = plateau - drop * Math.Exp(-t[^1] / tau);
+        if (fittedLast <= 0)
+        {
+            return w;
+        }
+
+        double settle = nz.Degrees(plateau / fittedLast);
+        double low = plateau * Math.Pow(2, -Th.OffPlateauCelsius / nz.DoublingCelsius);
+        double high = plateau * Math.Pow(2, Th.OffPlateauCelsius / nz.DoublingCelsius);
+        List<int> off = [];
+        List<float> left = [];
+        foreach (DarkFrameFigures f in ok)
+        {
+            if (f.AmpRatioMedian < low || f.AmpRatioMedian > high)
+            {
+                off.Add(f.Info.Index);
+            }
+            else
+            {
+                left.Add((float)f.AmpRatioMedian);
+            }
+        }
+
+        double without = left.Count == 0 ? double.NaN : nz.Degrees(Planes.Median([.. left]) / plateau);
+        return w with
+        {
+            Plateau = plateau,
+            TauMinutes = tau,
+            TimeFromStamps = stamps,
+            TauAtGridTop = tau >= 3 * (t[^1] - t[0]) - 1e-9,
+            FitScale = rms,
+            PlateauCelsius = nz.Degrees(1 / plateau),
+            SettleCelsius = settle,
+            OffPlateauFrames = off,
+            OffPlateauLow = low,
+            OffPlateauHigh = high,
+            MasterWithoutOffCelsius = without,
+            NoiseFactorWithoutOff = left.Count == 0 ? double.NaN : Math.Sqrt((double)ok.Length / left.Count),
+        };
+    }
+
+    /// <summary>The time axis of the fit: minutes from the first frame when every frame has a timestamp, the stamps never go back in series order and the span is positive; else the frame's position in the series (a stamp out of order would throw the exponentials off).</summary>
+    private static (double[] T, bool FromStamps) TimeAxis(DarkFrameFigures[] ok)
+    {
+        if (ok.All(f => f.Info.Timestamp is not null) && ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 && t1 > t0)
+        {
+            double[] minutes = ok.Select(f => (f.Info.Timestamp!.Value - t0).TotalMinutes).ToArray();
+            if (Enumerable.Range(1, minutes.Length - 1).All(i => minutes[i] >= minutes[i - 1]))
+            {
+                return (minutes, true);
+            }
+        }
+
+        return (Enumerable.Range(0, ok.Length).Select(i => (double)i).ToArray(), false);
+    }
+
+    /// <summary>
+    /// The least-squares fit of y = plateau - drop x exp(-t / tau): tau on a grid from a fiftieth
+    /// of the span to three times it (step a two-hundredth), the two linear coefficients solved
+    /// for each, the best by the residual sum of squares. Returns NaN when nothing fits (a zero
+    /// span, or every exponential degenerate).
+    /// </summary>
+    internal static (double Plateau, double Drop, double Tau, double Rms) PlateauFit(double[] t, double[] y)
+    {
+        ArgumentNullException.ThrowIfNull(t);
+        ArgumentNullException.ThrowIfNull(y);
+        int n = t.Length;
+        double span = t[^1] - t[0];
+        if (n < 3 || span <= 0)
+        {
+            return (double.NaN, double.NaN, double.NaN, double.NaN);
+        }
+
+        double bestRss = double.PositiveInfinity, bestPlateau = double.NaN, bestDrop = double.NaN, bestTau = double.NaN;
+        double step = span / 200;
+        for (int k = 0; k <= 596; k++)
+        {
+            double tau = span / 50 + k * step;
+            double sx = 0, sy = 0, sxx = 0, sxy = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double x = Math.Exp(-(t[i] - t[0]) / tau);
+                sx += x;
+                sy += y[i];
+                sxx += x * x;
+                sxy += x * y[i];
+            }
+
+            double den = n * sxx - sx * sx;
+            if (den <= 1e-12)
+            {
+                continue;
+            }
+
+            double c = (n * sxy - sx * sy) / den;
+            double a = (sy - c * sx) / n;
+            double rss = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double e = y[i] - a - c * Math.Exp(-(t[i] - t[0]) / tau);
+                rss += e * e;
+            }
+
+            if (rss < bestRss)
+            {
+                (bestRss, bestPlateau, bestDrop, bestTau) = (rss, a, -c, tau);
+            }
+        }
+
+        return double.IsNaN(bestPlateau) ? (double.NaN, double.NaN, double.NaN, double.NaN) : (bestPlateau, bestDrop, bestTau, Math.Sqrt(bestRss / n));
     }
 }

@@ -52,8 +52,8 @@ internal sealed record LeakVerdict(Verdict Verdict, double OffsetAdu, MapRegion 
     internal bool SidesAfterBias => Sides.Count > 0 && Sides[0].RemainderAdu is not null;
 }
 
-/// <summary>Check 3: the temperature offset between the first and the last dark, read from the hot pixels (R-023).</summary>
-internal sealed record DriftVerdict(Verdict Verdict, double DeltaCelsius, double Minutes, double FirstRatio, double LastRatio);
+/// <summary>Check 3: the warming of the series and its plateau (R-023): whether the series has settled (the fitted curve within <see cref="Th.SettledCelsius"/> of the plateau at the last frame; true without a fit), the frames whose ratio to the master is outside <see cref="Th.MatchOptLow"/> .. <see cref="Th.MatchOptHigh"/> and, of those, the ratio farthest from 1 (NaN when none).</summary>
+internal sealed record DriftVerdict(Verdict Verdict, Warming Warming, bool Settled, IReadOnlyList<int> OutsideFrames, double FarthestRatio);
 
 /// <summary>Check 4: the per-frame residual noise on the reference plane, the frames that stand out, the read noise and the temporal noise over it (dark current and quantisation), the banding against white noise (R-022).</summary>
 internal sealed record NoiseVerdict(Verdict Verdict, double MedianSigma, IReadOnlyList<int> OutlierFrames, double? ReadNoise, double? NoiseOverRead, double RowBandingAdu, double RowBandingRatio, double ColBandingRatio)
@@ -95,8 +95,12 @@ internal static class DarkVerdictAnalyzer
 
         // 3. drift
         Warming wm = d.Warming;
-        DriftVerdict drift = new(double.IsNaN(wm.DeltaCelsius) ? Verdict.Unmeasured : Math.Abs(wm.DeltaCelsius) <= Th.DriftCelsius ? Verdict.Ok : Verdict.Warning,
-            wm.DeltaCelsius, wm.Minutes, wm.FirstRatio, wm.LastRatio);
+        DarkFrameFigures[] withRatio = d.Frames.Where(f => f.Error is null && !double.IsNaN(f.AmpRatioMedian)).ToArray();
+        DarkFrameFigures[] outside = withRatio.Where(f => f.AmpRatioMedian < Th.MatchOptLow || f.AmpRatioMedian > Th.MatchOptHigh).ToArray();
+        double farthest = outside.Length == 0 ? double.NaN : outside.Select(f => f.AmpRatioMedian).MaxBy(x => x > 0 ? Math.Abs(Math.Log(x)) : double.PositiveInfinity);
+        bool settled = !wm.HasFit || double.IsNaN(wm.SettleCelsius) || Math.Abs(wm.SettleCelsius) <= Th.SettledCelsius;
+        DriftVerdict drift = new(double.IsNaN(wm.DeltaCelsius) ? Verdict.Unmeasured : settled && outside.Length == 0 ? Verdict.Ok : Verdict.Warning,
+            wm, settled, outside.Select(f => f.Info.Index).ToArray(), farthest);
 
         // 4. noise
         DarkFrameFigures[] ok = d.Frames.Where(f => f.Error is null).ToArray();

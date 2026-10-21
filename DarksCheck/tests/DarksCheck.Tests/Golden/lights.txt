@@ -26,7 +26,9 @@ Copyright (C) 2026 Tudor Carean
 
   3. DERIVA TERMICA IN SERIE
     amplitudine        : pixelii fierbinti la 1.00 din master in primul cadru, 1.00 in ultimul (20 pixeli peste 20 ADU)
-    verdict            : OK: senzorul s-a miscat cu +0.0 grade in 6 min (regula dublarii la 6 grade), sub 1.0
+    platou             : NEMASURAT: sub 6 cadre cu pixeli fierbinti
+    de aruncat         : NEMASURAT: sub 6 cadre cu pixeli fierbinti
+    verdict            : OK: toate cadrele stau in 0.7 .. 1.4 din master (sub 6 cadre, fara platou)
 
   4. ZGOMOT PE CADRU
     sigma rezidual     : R 2.64 .. 2.75; G1 2.64 .. 2.71 (mediana 2.66); G2 2.63 .. 2.74; B 2.61 .. 2.72  [ADU, cadru - master]
@@ -74,11 +76,11 @@ Copyright (C) 2026 Tudor Carean
     verdict partener   : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.65, partenerul e mai cald cu 3.7 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
 
   TABEL PE CADRE
-     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
-      1  DSC_0001.fit          00:48:53    0.03    3.01    2.64     1.0    0.996       -       -     0
-      2  DSC_0002.fit          00:50:53    0.04    2.99    2.67     1.0    1.008       -       -     0
-      3  DSC_0003.fit          00:52:53    0.05    3.03    2.71     1.0    1.000       -       -     0
-      4  DSC_0004.fit          00:54:53    0.05    3.00    2.65     1.0    0.998       -       -     0
+     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
+      1  DSC_0001.fit          00:48:53    0.03    3.01    2.64     1.0    0.996       -       -       -     0
+      2  DSC_0002.fit          00:50:53    0.04    2.99    2.67     1.0    1.008       -       -       -     0
+      3  DSC_0003.fit          00:52:53    0.05    3.03    2.71     1.0    1.000       -       -       -     0
+      4  DSC_0004.fit          00:54:53    0.05    3.00    2.65     1.0    0.998       -       -       -     0
 
   TABEL PE LIGHTS
      nr  fisier                ora         cer   sigma  candidati  izolati  amplit.    q25    q75   [G1; cer = ADU peste negru; sigma = a excesului local, scara detectorului; amplit. = lights / dark la pixelii fierbinti ai masterului]

@@ -55,19 +55,7 @@ internal static class DarkReport
         w.WriteLine(FrameTableHeader(r));
         foreach (DarkTableRow f in FrameRows(r))
         {
-            string name = Trim20(f.FileName);
-            if (f.Skipped is not null)
-            {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Skipped}");
-            }
-            else if (f.Error is not null)
-            {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  eroare: {f.Error}");
-            }
-            else
-            {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Light,6}  {f.Side,6}  {f.Above,4}");
-            }
+            w.WriteLine(FrameLine(f));
         }
 
         if (r.Lights is not null)
@@ -174,7 +162,9 @@ internal static class DarkReport
             new("2. SCURGERI DE LUMINA SI GRADIENT", leak),
             new("3. DERIVA TERMICA IN SERIE",
             [
-                new("amplitudine", Amplitude(d, v.Drift)),
+                new("amplitudine", Amplitude(d)),
+                new("platou", PlateauRow(d.Warming, d.Normalisation)),
+                new("de aruncat", OffPlateauRow(d.Warming)),
                 new("verdict", Drift(v.Drift, d.Normalisation)),
             ]),
             new("4. ZGOMOT PE CADRU",
@@ -302,7 +292,26 @@ internal static class DarkReport
     internal static string FrameTableHeader(DarkSeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
-        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
+        return $"     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >{F(Th.HotAdu, 0)}   {FrameTableNote(r)}";
+    }
+
+    /// <summary>One line of the frames table as the console prints it: the cells in their columns, the note of a frame off the plateau after the last one; a skipped or failed frame prints its reason instead of cells.</summary>
+    internal static string FrameLine(DarkTableRow f)
+    {
+        ArgumentNullException.ThrowIfNull(f);
+        string name = Trim20(f.FileName);
+        if (f.Skipped is not null)
+        {
+            return $"    {f.Index,3}  {name,-20}  {f.Skipped}";
+        }
+
+        if (f.Error is not null)
+        {
+            return $"    {f.Index,3}  {name,-20}  eroare: {f.Error}";
+        }
+
+        string note = f.Note is null ? "" : $"   {f.Note}";
+        return $"    {f.Index,3}  {name,-20}  {f.Time,-8}  {f.Mean,6}  {f.Sigma,6}  {f.Residual,6}  {f.Bands,6}  {f.Amp,7}  {f.Plateau,6}  {f.Light,6}  {f.Side,6}  {f.Above,4}{note}";
     }
 
     /// <summary>The unit note of the frames table: the plane and what the columns mean.</summary>
@@ -313,7 +322,21 @@ internal static class DarkReport
         string side = r.Verdicts.Leak.WorstSide is SideLight w
             ? $"latura = {SideName(w.Side)} - centru{(w.RemainderAdu is null ? " (fara bias, glow inclus)" : " dupa bias (glow inclus)")}, {eq}"
             : "latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)";
-        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
+        return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de platou (verificarea 3); lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
+    }
+
+    /// <summary>The hover hint of the frames table's `platou` column (R-071): what the figure is and when a frame is one to discard.</summary>
+    internal static readonly string PlateauColumnTip = $"gradele cadrului fata de platoul seriei, citite din pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub celule (verificarea 3)";
+
+    /// <summary>The sentence under the window's warming chart (R-071): what the points are, and with a fit the plateau and the band outside which a frame is one to discard.</summary>
+    internal static string WarmingChartNote(DarkSeriesResult r)
+    {
+        ArgumentNullException.ThrowIfNull(r);
+        Warming w = r.Darks.Warming;
+        const string what = "Amplitudinea pixelilor fierbinti ai masterului in fiecare cadru, fata de master: panta e incalzirea camerei in timpul seriei (verificarea 3).";
+        return w.HasFit
+            ? $"{what} Platoul seriei e la {F(w.Plateau, 2)} din master; cadrele sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)} (la peste {F(Th.OffPlateauCelsius, 1)} grade de platou) sunt de aruncat si apar in culoarea de atentie."
+            : $"{what} Sub {Th.WarmingFitMinFrames} cadre cu pixeli fierbinti nu se potriveste un platou.";
     }
 
     /// <summary>One row per dark, the cells formatted as the console prints them, on the reference plane.</summary>
@@ -326,18 +349,20 @@ internal static class DarkReport
         SideLight? worst = r.Verdicts.Leak.WorstSide;
         Regions? biasRegions = r.Biases?.MeanMaps[rp].Regions;
         double biasSide = worst is null || biasRegions is null ? 0 : LeakAnalyzer.SideOffset(biasRegions, worst.Side);
+        Warming wm = r.Darks.Warming;
+        Normalisation nz = r.Darks.Normalisation;
         for (int k = 0; k < r.Darks.Frames.Count; k++)
         {
             DarkFrameFigures f = r.Darks.Frames[k];
             if (f.Skipped)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, f.Error, null, "", "", "", "", "", "", "", "", "", ""));
                 continue;
             }
 
             if (f.Error is not null)
             {
-                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", "", ""));
+                rows.Add(new(f.Info.Index, f.Info.FileName, null, f.Error, "", "", "", "", "", "", "", "", "", ""));
                 continue;
             }
 
@@ -345,7 +370,16 @@ internal static class DarkReport
             ResidualFigures res = f.Residuals[rp];
             double light = excess is null ? double.NaN : excess[k];
             string side = worst is null || f.Edges is null ? "-" : Signed((LeakAnalyzer.SideOffset(f.Edges, worst.Side) - biasSide) / r.Darks.Norm, 2);
-            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture)));
+            bool measured = wm.HasFit && !double.IsNaN(f.AmpRatioMedian) && f.AmpRatioMedian > 0;
+            string plateau = measured ? Signed(nz.Degrees(f.AmpRatioMedian / wm.Plateau), 1) : "-";
+            string? note = null;
+            if (measured && (f.AmpRatioMedian < wm.OffPlateauLow || f.AmpRatioMedian > wm.OffPlateauHigh))
+            {
+                bool under = f.AmpRatioMedian < wm.OffPlateauLow;
+                note = $"de aruncat: amplit. {Ratio(f.AmpRatioMedian)} {(under ? "sub" : "peste")} {F(under ? wm.OffPlateauLow : wm.OffPlateauHigh, 2)} (peste {F(Th.OffPlateauCelsius, 1)} grade {(under ? "sub" : "peste")} platoul {F(wm.Plateau, 2)})";
+            }
+
+            rows.Add(new(f.Info.Index, f.Info.FileName, null, null, Time(f.Info.Timestamp), F(f.MeanAboveBlack, 2), F(p.Sigma, 2), F(res.Sigma, 2), F(res.RowBandingRatio, 1), Ratio(f.AmpRatioMedian), plateau, double.IsNaN(light) ? "-" : Signed(light, 2), side, p.Above[Th.HotLevelIndex].ToString(CultureInfo.InvariantCulture), note));
         }
 
         return rows;
@@ -640,17 +674,128 @@ internal static class DarkReport
             : $"la {RegionName(s.Where)}: glow {Signed(s.GlowAdu, 2)} (creste cu incalzirea), constant {Signed(s.ConstantAdu, 2)} {eq} (fara bias: lumina sau offset de citire){raw}";
     }
 
-    private static string Amplitude(DarkSeriesAnalysis d, DriftVerdict v) =>
-        double.IsNaN(v.FirstRatio)
+    private static string Amplitude(DarkSeriesAnalysis d) =>
+        double.IsNaN(d.Warming.FirstRatio)
             ? "NEMASURAT: prea putine cadre sau niciun pixel fierbinte"
-            : $"pixelii fierbinti la {F(v.FirstRatio, 2)} din master in primul cadru, {F(v.LastRatio, 2)} in ultimul ({d.Warming.Pixels} pixeli peste {F(Th.HotAdu, 0)} {Eq(d)})";
+            : $"pixelii fierbinti la {F(d.Warming.FirstRatio, 2)} din master in primul cadru, {F(d.Warming.LastRatio, 2)} in ultimul ({d.Warming.Pixels} pixeli peste {F(Th.HotAdu, 0)} {Eq(d)})";
 
-    private static string Drift(DriftVerdict v, Normalisation nz) => v.Verdict switch
+    private static readonly string NoPlateau = $"NEMASURAT: sub {Th.WarmingFitMinFrames} cadre cu pixeli fierbinti";
+
+    /// <summary>The `platou` row of check 3: the plateau, the time constant, the master's and the last frame's distance to it; a flat series says so.</summary>
+    private static string PlateauRow(Warming w, Normalisation nz)
     {
-        Verdict.Unmeasured => "NEMASURAT",
-        Verdict.Ok => $"OK: senzorul s-a miscat cu {Signed(v.DeltaCelsius, 1)} grade in {F(v.Minutes, 0)} min (regula dublarii la {F(nz.DoublingCelsius, 0)} grade), sub {F(Th.DriftCelsius, 1)}",
-        _ => $"ATENTIE: senzorul s-a {(v.DeltaCelsius > 0 ? "incalzit" : "racit")} cu {F(Math.Abs(v.DeltaCelsius), 1)} grade in {F(v.Minutes, 0)} min (regula dublarii la {F(nz.DoublingCelsius, 0)} grade); masterul, mediana seriei, corespunde mijlocului ei",
-    };
+        if (!w.HasFit)
+        {
+            return NoPlateau;
+        }
+
+        double firstOffset = Math.Abs(nz.Degrees(w.FirstRatio / w.Plateau));
+        if (firstOffset < Th.SettledCelsius && Math.Abs(w.SettleCelsius) < Th.SettledCelsius)
+        {
+            return $"seria e plata: platoul la {F(w.Plateau, 2)} din master, primul cadru la mai putin de {F(Th.SettledCelsius, 1)} grade de el";
+        }
+
+        string unit = w.TimeFromStamps ? "min" : "cadre";
+        string tau = w.TauAtGridTop
+            ? $"constanta de timp de cel putin {F(w.TauMinutes, 0)} {unit}, seria e prea scurta ca s-o masoare"
+            : $"constanta de timp {F(w.TauMinutes, 0)} {unit}";
+        return $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou";
+    }
+
+    /// <summary>The `de aruncat` row of check 3: the frames more than Th.OffPlateauCelsius from the plateau, the band's bounds, and where the master would sit without them.</summary>
+    private static string OffPlateauRow(Warming w)
+    {
+        if (!w.HasFit)
+        {
+            return NoPlateau;
+        }
+
+        string deg = F(Th.OffPlateauCelsius, 1);
+        if (w.OffPlateauFrames.Count == 0)
+        {
+            return $"niciun cadru la peste {deg} grade de platou (amplit. intre {F(w.OffPlateauLow, 2)} si {F(w.OffPlateauHigh, 2)})";
+        }
+
+        string without = double.IsNaN(w.MasterWithoutOffCelsius) ? "fara ele nu ramane niciun cadru" : $"fara ele masterul ar fi {FromPlateau(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot";
+        return $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) la peste {deg} grade de platou (amplit. sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)}; platoul {F(w.Plateau, 2)}); {without}";
+    }
+
+    private static string Drift(DriftVerdict v, Normalisation nz)
+    {
+        Warming w = v.Warming;
+        string span = $"{F(Th.MatchOptLow, 1)} .. {F(Th.MatchOptHigh, 1)} din master";
+        if (v.Verdict == Verdict.Unmeasured)
+        {
+            return "NEMASURAT";
+        }
+
+        if (v.Verdict == Verdict.Ok)
+        {
+            if (!w.HasFit)
+            {
+                return $"OK: toate cadrele stau in {span} (sub {Th.WarmingFitMinFrames} cadre, fara platou)";
+            }
+
+            string rule = $"regula dublarii la {F(nz.DoublingCelsius, 0)} grade";
+            string minutes = double.IsNaN(w.Minutes) ? "" : $" in {F(w.Minutes, 0)} min";
+            string warmup = Math.Abs(w.DeltaCelsius) < 0.05
+                ? $"seria e plata ({rule})"
+                : $"{(w.DeltaCelsius > 0 ? "incalzirea" : "racirea")} de {F(Math.Abs(w.DeltaCelsius), 1)} grade{minutes} e la inceput ({rule})";
+            string off = w.OffPlateauFrames.Count == 0 ? "niciun cadru de aruncat" : "cadrele de aruncat sunt in randul de mai sus";
+            return $"OK: seria s-a asezat (la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, sub {F(Th.SettledCelsius, 1)}) si toate cadrele stau in {span}; {warmup}, {off}";
+        }
+
+        List<string> parts = [];
+        if (!v.Settled)
+        {
+            string extrapolated = w.TauAtGridTop ? ", platoul e extrapolat" : "";
+            string advice = w.OffPlateauFrames.Count > 0 ? "continua seria sau arunca cadrele din randul de mai sus" : "continua seria";
+            parts.Add($"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}{extrapolated}): masterul nu apartine unei temperaturi; {advice}");
+        }
+
+        if (v.OutsideFrames.Count > 0)
+        {
+            int n = v.OutsideFrames.Count;
+            parts.Add($"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "iese" : "ies")} din {span} (cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}");
+        }
+
+        return "ATENTIE: " + string.Join("; ", parts);
+    }
+
+    private static string FromPlateau(double degrees) =>
+        Math.Abs(degrees) < 0.05 ? "la platou" : $"cu {F(Math.Abs(degrees), 1)} grade {(degrees < 0 ? "sub" : "peste")} platou";
+
+    /// <summary>Frame numbers as ranges: `1 .. 11`, `1 .. 3, 7`; a run of two prints both numbers.</summary>
+    internal static string Ranges(IReadOnlyList<int> frames)
+    {
+        ArgumentNullException.ThrowIfNull(frames);
+        List<string> parts = [];
+        int i = 0;
+        while (i < frames.Count)
+        {
+            int j = i;
+            while (j + 1 < frames.Count && frames[j + 1] == frames[j] + 1)
+            {
+                j++;
+            }
+
+            if (j - i >= 2)
+            {
+                parts.Add($"{frames[i].ToString(CultureInfo.InvariantCulture)} .. {frames[j].ToString(CultureInfo.InvariantCulture)}");
+            }
+            else
+            {
+                for (int k = i; k <= j; k++)
+                {
+                    parts.Add(frames[k].ToString(CultureInfo.InvariantCulture));
+                }
+            }
+
+            i = j + 1;
+        }
+
+        return string.Join(", ", parts);
+    }
 
     private static string ResidualRange(DarkSeriesAnalysis d, int rp)
     {

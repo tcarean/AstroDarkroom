@@ -111,7 +111,9 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
 
   3. DERIVA TERMICA IN SERIE
     amplitudine        : pixelii fierbinti la 0.83 din master in primul cadru, 1.07 in ultimul (443 pixeli peste 20 ADU-eq)
-    verdict            : ATENTIE: senzorul s-a incalzit cu 2.2 grade in 38 min (regula dublarii la 6 grade); masterul, mediana seriei, corespunde mijlocului ei
+    platou             : seria se apropie de un platou la 1.10 din master (constanta de timp 15 min); masterul, mediana seriei, e cu 0.8 grade sub platou; la ultimul cadru mai are +0.2 grade pana la platou
+    de aruncat         : 2 cadre (1, 2) la peste 2.0 grade de platou (amplit. sub 0.87 sau peste 1.38; platoul 1.10); fara ele masterul ar fi cu 0.7 grade sub platou, dar cu 5 % mai mult zgomot
+    verdict            : OK: seria s-a asezat (la ultimul cadru mai are +0.2 grade pana la platou, sub 1.0) si toate cadrele stau in 0.7 .. 1.4 din master; incalzirea de 2.2 grade in 38 min e la inceput (regula dublarii la 6 grade), cadrele de aruncat sunt in randul de mai sus
 ```
 
 - **2. Scurgeri de lumina si gradient**: masterul dark (media cadrelor), masterul bias si
@@ -144,11 +146,27 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   e in stanga-sus, 0.05 ADU-eq la Smida si 0.22 in biblioteca de la 16 grade; setul de proba
   cu ocularul descoperit si o lampa in camera (2026-10-20) a dat 5 cadre la +0.17 .. +0.47
   ADU-eq, pe care verdictul vechi, pe master, le ratase.
-- **3. Deriva termica in serie**: amplitudinea pixelilor fierbinti ai masterului in primul si
-  in ultimul cadru, fata de master; raportul lor da gradele dupa regula "curentul se dubleaza
-  la 6 grade". Peste 1 grad, `ATENTIE`: masterul (mediana seriei) corespunde mijlocului
-  seriei, nu inceputului sau sfarsitului. Camera se incalzeste singura cand trage cadru dupa
-  cadru: 2.2 grade in 38 min pe Smida, 3.4 in 58 min pe biblioteca.
+- **3. Deriva termica in serie**: amplitudinea pixelilor fierbinti ai masterului in fiecare
+  cadru, fata de master; raportul ultimului la primul da gradele dupa regula "curentul se
+  dubleaza la 6 grade". Camera se incalzeste singura cand trage cadru dupa cadru, pe o curba
+  care se apropie de un platou: pornita rece, pleaca de la vreo 10 grade sub platou si il
+  atinge in 15 min afara, 20 .. 30 in casa (constanta de timp); 2.2 grade in 38 min pe Smida,
+  2.8 .. 3.6 in 58 min pe biblioteci, chiar dupa 20 de minute de cadre aruncate. De la 6 cadre
+  in sus, `platou` potriveste curba si spune unde e platoul, cat de departe sub el e masterul
+  (mediana seriei, 0.8 .. 1.4 grade pe seriile masurate) si cat mai are seria de urcat la
+  ultimul cadru (cu semn: + mai urca, - mai coboara); `de aruncat` numeste cadrele la peste 2
+  grade de platou (pornirea rece, cu curentul de intuneric cu 21 % sub al seriei; pe biblioteci
+  3 .. 5 din 30, pe Smida 2 din 20), unde ar ajunge masterul fara ele si cu cat i-ar creste
+  zgomotul (radacina din cadre pe cadre ramase); tu le muti in `aruncate`, programul nu scrie
+  nimic in folder, si nu le arunca daca pretul in zgomot nu merita jumatatea de grad. Verdictul e `ATENTIE` doar cand
+  seria inca urca la ultimul cadru (mai are peste 1 grad pana la platou: masterul nu apartine
+  niciunei temperaturi, continua seria) sau cand un cadru iese din 0.7 .. 1.4 din master
+  (marginea `-opt`, seria a pornit rece); incalzirea de la inceput e doar spusa. Sub 6 cadre nu
+  se potriveste un platou si verdictul se da numai pe marginea 0.7 .. 1.4. In tabelul pe cadre,
+  coloana `platou` da gradele fiecarui cadru fata de platou, iar un cadru de aruncat are
+  motivul la capatul randului (`de aruncat: amplit. 0.826 sub 0.87 ...`); in fereastra, tabul
+  Cadre arata randul, valoarea si motivul in culoarea de atentie, iar graficul are platoul si
+  cele doua limite.
 - **4. Zgomot pe cadru**: sigma reziduului (cadru minus master) pe fiecare plan, zgomotul de
   citire din perechile de bias-uri consecutive si zgomotul temporal peste el (curentul de
   intuneric si cuantizarea, din sigma cadru-fata-de-cadru a verificarii 8), benzile aleatoare

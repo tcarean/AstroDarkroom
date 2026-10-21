@@ -21,6 +21,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using DarksCheck.Core;
 using DarksCheck.Tests;
 
 namespace DarksCheck.Wpf.Tests;
@@ -229,6 +230,51 @@ public class WindowSmokeTests
             Render(new IndexView { DataContext = vm }, name: "tab-index-library");
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
+    }
+
+    /// <summary>A series with frames off the plateau: the tinted rows, the bold `platou` cells and the notes under them render without a binding error (R-071, R-023).</summary>
+    [Fact]
+    public async Task R071_TheFramesOffThePlateauRenderWithTheirNotes()
+    {
+        using TestSettings.Own _ = new();
+        (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
+        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
+        MainViewModel vm = new();
+
+        await _sta.InvokeAsync(async () =>
+        {
+            await vm.OpenAsync(f.Root);
+            Assert.True(vm.HasResult);
+            Assert.Equal(2, vm.Frames.Count(r => r.Off));
+
+            using BindingErrors errors = new();
+            FramesView view = new() { DataContext = vm };
+            Render(view, name: "tab-frames-off");
+            TextBlock[] notes = Descendants<TextBlock>(view).Where(t => t.Text.StartsWith("de aruncat: amplit.", StringComparison.Ordinal) && t.Visibility == Visibility.Visible).ToArray();
+            Assert.Equal(2, notes.Length);
+            Grid row = (Grid)notes[0].Parent;
+            Assert.Equal(vm.Frames[0].Note, row.ToolTip);
+            Assert.Equal(DarkReport.PlateauColumnTip, vm.PlateauHeaderTip);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
+        });
+    }
+
+    private static IEnumerable<T> Descendants<T>(DependencyObject root) where T : DependencyObject
+    {
+        int n = System.Windows.Media.VisualTreeHelper.GetChildrenCount(root);
+        for (int i = 0; i < n; i++)
+        {
+            DependencyObject child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
+            if (child is T t)
+            {
+                yield return t;
+            }
+
+            foreach (T d in Descendants<T>(child))
+            {
+                yield return d;
+            }
+        }
     }
 
     /// <summary>The problem card, when the folder cannot be analysed (R-070).</summary>
