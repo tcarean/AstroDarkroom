@@ -53,8 +53,9 @@ they are now.
   title starts with `5.`, `9.` and `INDEX`, for the tabs that show one check beside a chart;
 - the shared `ReportRow` template draws the rest of a row's text through `Emphasis`, an
   attached property in `Presentation/` that rebuilds the `TextBlock`'s inlines from `Rest` and
-  `RowVm.Bold` (`Emphasis.Segments`: every occurrence of every bold substring, longest first,
-  never overlapping) as plain and bold runs (ADR 0016);
+  `RowVm.Bold` (`Emphasis.Segments`: every occurrence of every bold substring that stands as a figure of its
+  own, longest first, never overlapping; the rebuild is deferred to the end of the binding
+  pass so the two properties cost one) as plain and bold runs (ADR 0016);
 - the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;

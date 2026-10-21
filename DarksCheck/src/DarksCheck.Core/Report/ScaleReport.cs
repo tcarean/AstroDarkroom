@@ -67,7 +67,7 @@ internal static class ScaleReport
             double? biasIso = r.Biases?.Frames.FirstOrDefault(b => b.Error is null && !b.Skipped)?.Info.Iso;
             return new Figures(d, rp, d.PlaneNames[rp], d.Norm, DarkReport.Eq(d),
                 d.White >= MinIntegerWhite ? (int)Math.Ceiling(Math.Log2(d.White + 1)) : null,
-                first, settings, known, facts, gain, biasIso, StackNoise.Of(r.Lights, rp), d.Noise.MasterNoise);
+                first, settings, known, facts, gain, biasIso, StackNoise.Of(r.Lights, rp, d.Noise.MasterNoise), d.Noise.MasterNoise);
         }
     }
 
@@ -119,7 +119,7 @@ internal static class ScaleReport
             + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; dar raportul dintre o abatere si zgomot creste cu radacina numarului de pixeli priviti impreuna: pe un petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel, si o treapta de 1 ADU cu margine dreapta se vede la o intindere tare pe cer intunecat.";
         string p3 = g.Stack is StackNoise st && st.SkyAdu > 0
             ? $"Fata de cer: un light al acestei sesiuni are {F(st.SkyAdu, 1)} ADU peste negru, deci 1 ADU e {F(100 / st.SkyAdu, 2)} % din cer, cam cat eroarea unui flat; "
-                + $"in stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.SkySigmaAdu, 1)} / sqrt({st.Lights}) = {F(st.MeanStackAdu, 2)} ADU cu media ({F(st.MedianStackAdu, 2)} cu mediana), iar un offset de 1 ADU din master ramane 1 ADU."
+                + $"in stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.MeanStackAdu, 2)} ADU cu media ({F(st.MedianStackAdu, 2)} cu mediana): {F(st.SkySigmaAdu, 1)} / sqrt({st.Lights}) de la lights, plus zgomotul masterului dark ({F(st.MasterNoiseAdu, 2)} ADU) in cuadratura, care nu se mediaza; iar un offset de 1 ADU din master ramane 1 ADU."
             : "Fata de cer: sesiunea nu are lights, deci raportul nu poate spune cat e 1 ADU fata de cerul tau si cat ramane zgomotul in stack; deschide sesiunea cu lights si randurile `zgomot in master` si `cer` se completeaza.";
         string p4 = $"Pragurile: {F(Th.HotAdu, 0)} ADU-eq pentru un pixel fierbinte; {F(Th.LeakAdu, 1)} ADU-eq pe harta pentru o scurgere evidenta (nivelul analizei de mana); "
             + $"{F(Th.LeakConstantAdu, 2)} ADU-eq si de {F(Th.LeakConstantSigmas, 0)} ori eroarea pentru lumina constanta pe o latura; {F(Th.LeakFrameAdu, 1)} ADU-eq si de {F(Th.LeakFrameSigmas, 0)} ori abaterea tipica pentru lumina pe un cadru. "
@@ -215,7 +215,7 @@ internal static class ScaleReport
         {
             string mean = $"{F(st.MeanStackAdu, 1)} ADU";
             bold.Add(mean);
-            stackWords = $"stack lights: {mean} pe pixel cu media, {F(st.MedianStackAdu, 1)} cu mediana ({st.Lights} lights)";
+            stackWords = $"stack lights: {mean} pe pixel cu media, {F(st.MedianStackAdu, 1)} cu mediana ({st.Lights} lights; cu zgomotul masterului dark inclus)";
         }
         else
         {

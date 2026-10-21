@@ -200,6 +200,8 @@ public class WindowSmokeTests
             List<string> boldParts = ["1.43 ADU"];
             Emphasis.SetBold(block, boldParts);
             Emphasis.SetText(block, "30 cadre -> 1.43 ADU zgomot");
+            // the rebuild is deferred to the end of the binding pass, so the two properties cost one rebuild
+            block.Dispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.Background);
             Assert.Equal(3, block.Inlines.Count);
             Assert.Equal(FontWeights.Bold, ((System.Windows.Documents.Run)block.Inlines.ElementAt(1)).FontWeight);
             Assert.Equal("1.43 ADU", ((System.Windows.Documents.Run)block.Inlines.ElementAt(1)).Text);

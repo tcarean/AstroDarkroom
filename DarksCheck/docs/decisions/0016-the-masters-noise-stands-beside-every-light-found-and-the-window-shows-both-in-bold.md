@@ -21,11 +21,17 @@ the light figures to be bold in the window.
    window renders bold; the console prints the value as it is, so the goldens and the saved
    report carry no markers. The window's `Emphasis` attached property rebuilds a `TextBlock`'s
    inlines as plain and bold runs from `Rest` and `Bold`; every tab that lists rows uses it
-   through the shared `ReportRow` template (R-071).
+   through the shared `ReportRow` template (R-071). A substring is marked only where it stands
+   as a figure of its own (not the tail of a longer number, not glued to a sign) and a row's
+   runs are rebuilt once per binding pass.
 2. **The stack's noise is one figure in `Analysis`**: `StackNoise.Of` gives the lights' sky
-   median and sigma on the reference plane, their count, the mean stack's noise and the median
-   stack's (`Th.MedianNoiseFactor`), for `DarkReport` and `ScaleReport` alike. The dark
-   master's noise is `NoiseVsN.MasterNoise`, already check 8's.
+   median and sigma on the reference plane, their count, and the mean and median stack's
+   per-pixel noise as the lights' share (sigma / sqrt(N), x `Th.MedianNoiseFactor` for the
+   median) plus the dark master's noise in quadrature, since the master is subtracted from
+   every light alike and does not average out (the code review of 2026-10-21 caught the
+   omission: at Smida 3.34 becomes 3.36 ADU, on a 30-light session at ISO 1600 with the leak
+   set's master 3.65 would become 3.92). The dark master's noise is `NoiseVsN.MasterNoise`,
+   already check 8's.
 3. **Where the ratios go.** Check 2's `lumina constanta` and `lumina pe cadre` rows, its
    verdict's constant-light sentence and the scale's `gasit` end with the light in raw ADU as a
    fraction of the dark master's noise and, with lights, of the stack's

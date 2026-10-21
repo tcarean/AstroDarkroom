@@ -20,20 +20,25 @@ namespace DarksCheck.Core;
 /// <summary>
 /// What is left of the noise in a stack of the session's lights (R-080, ADR 0016): the median
 /// over the decoded lights of the sky median and the sky sigma on the reference plane, their
-/// count, and the per-pixel noise of a mean stack (sigma / sqrt(N)) and of a median stack
-/// (<see cref="Th.MedianNoiseFactor"/> times that). The reference an offset in the master is
-/// read against: the offset stays whole in the stack, the noise falls to these.
+/// count, and the per-pixel noise of a mean stack and of a median stack: the lights' share,
+/// sigma / sqrt(N) (x <see cref="Th.MedianNoiseFactor"/> for the median), plus the dark
+/// master's own noise in quadrature, since the master is subtracted identically from every
+/// light and does not average out. The reference an offset in the master is read against:
+/// the offset stays whole in the stack, the noise falls to these.
 /// </summary>
-internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights)
+internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights, double MasterNoiseAdu)
 {
-    /// <summary>The per-pixel noise of the mean of the lights.</summary>
-    internal double MeanStackAdu => SkySigmaAdu / Math.Sqrt(Lights);
+    /// <summary>The lights' share of the mean stack's per-pixel noise, sigma / sqrt(N).</summary>
+    internal double LightsShareAdu => SkySigmaAdu / Math.Sqrt(Lights);
 
-    /// <summary>The per-pixel noise of the median of the lights.</summary>
-    internal double MedianStackAdu => Th.MedianNoiseFactor * MeanStackAdu;
+    /// <summary>The per-pixel noise of the mean of the calibrated lights: the lights' share and the master's noise in quadrature.</summary>
+    internal double MeanStackAdu => Math.Sqrt(LightsShareAdu * LightsShareAdu + MasterNoiseAdu * MasterNoiseAdu);
 
-    /// <summary>The figures of a session's lights on the reference plane; null without lights or without a decoded one.</summary>
-    internal static StackNoise? Of(LightsAnalysis? lights, int referencePlane)
+    /// <summary>The per-pixel noise of the median of the calibrated lights.</summary>
+    internal double MedianStackAdu => Math.Sqrt(Math.Pow(Th.MedianNoiseFactor * LightsShareAdu, 2) + MasterNoiseAdu * MasterNoiseAdu);
+
+    /// <summary>The figures of a session's lights on the reference plane, with the dark master's noise (0 when unmeasured); null without lights or without a decoded one.</summary>
+    internal static StackNoise? Of(LightsAnalysis? lights, int referencePlane, double masterNoiseAdu)
     {
         if (lights is null)
         {
@@ -50,6 +55,6 @@ internal sealed record StackNoise(double SkyAdu, double SkySigmaAdu, int Lights)
             }
         }
 
-        return sky.Count == 0 ? null : new StackNoise(Planes.Median(sky), Planes.Median(sigma), sky.Count);
+        return sky.Count == 0 ? null : new StackNoise(Planes.Median(sky), Planes.Median(sigma), sky.Count, double.IsNaN(masterNoiseAdu) ? 0 : masterNoiseAdu);
     }
 }

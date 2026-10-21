@@ -164,7 +164,9 @@ case) and `GainAt` interpolates the gain on the log2 scale between the listed IS
 returning null outside them, so a row never guesses. The console writes the rows as
 `label : value` and the paragraphs through `ScaleReport.Wrap` at 96 columns with a four-space
 indent; the window binds `Rows` and `Paragraphs` as they are. `StackNoise.Of` holds the lights'
-sky median, sky sigma and count on the reference plane with the mean and median stack's noise;
+sky median, sky sigma and count on the reference plane with the mean and median stack's noise,
+the lights' share sigma / sqrt(N) plus the dark master's noise in quadrature (the master is
+subtracted from every light alike, so its noise does not average out);
 `ScaleReport.AgainstMasters` turns a light in raw ADU into the words and the bold parts of its
 ratio to the dark master's noise (`NoiseVsN.MasterNoise`) and to the stack's, used by the
 `zgomot in master` and `gasit` rows and by check 2's `lumina pe cadre`, `lumina constanta` and

@@ -152,7 +152,7 @@ internal static class DarkReport
         double mpx = d.Width * (double)d.Height / 1e6;
 
         double masterNoise = d.Noise.MasterNoise;
-        StackNoise? stack = StackNoise.Of(r.Lights, rp);
+        StackNoise? stack = StackNoise.Of(r.Lights, rp, masterNoise);
         List<ReportRow> leak = [new("master dark", $"{RegionsLine(d.MeanMaps[rp].Regions, n)}  [{g}, {eq} peste negru, media a {RunReport.Frames(d.Used)}, blocuri de {Th.BinPx * 2} px]")];
         if (r.Biases is BiasAnalysis b)
         {
@@ -463,17 +463,20 @@ internal static class DarkReport
     /// <summary>Check 2's verdict row: the words of <see cref="Leak"/>, with the constant light and the master's noise marked bold when the verdict names them (ADR 0016).</summary>
     private static ReportRow LeakVerdictRow(LeakVerdict l, string eq, double norm, double masterNoise)
     {
+        string against = "";
         List<string> bold = [];
         if (l.Verdict == Verdict.Warning && l.ConstantLight is SideLight c)
         {
+            (against, IReadOnlyList<string> b) = ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, null);
             bold.Add($"{Signed(c.LightAdu, 2)} {eq}");
-            bold.AddRange(ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, null).Bold);
+            bold.AddRange(b);
         }
 
-        return new("verdict", Leak(l, eq, norm, masterNoise), bold.Count == 0 ? null : bold);
+        return new("verdict", Leak(l, eq, against), bold.Count == 0 ? null : bold);
     }
 
-    private static string Leak(LeakVerdict l, string eq, double norm, double masterNoise)
+    /// <summary>The verdict's words; <paramref name="against"/> is the constant light's ratio to the master's noise, already worded, or empty.</summary>
+    private static string Leak(LeakVerdict l, string eq, string against)
     {
         string source = l.FromDarkMinusBias ? "pe dark - bias" : "pe masterul dark (fara bias)";
         string framesTail = l.Frames is null ? "lumina pe cadre NEMASURATA" : "niciun cadru cu lumina peste incalzirea seriei";
@@ -498,7 +501,6 @@ internal static class DarkReport
 
         if (constant is SideLight c)
         {
-            (string against, _) = ScaleReport.AgainstMasters(c.LightAdu * norm, masterNoise, null);
             parts.Add($"lumina constanta in toate cadrele: {Signed(c.LightAdu, 2)} {eq} (±{F(c.ErrorAdu, 2)}) pe latura de {SideName(c.Side)} fata de centru, nu e in bias: scurgere de lumina (ocular, montura)" + (against.Length == 0 ? "" : $"; adica {against}"));
         }
 

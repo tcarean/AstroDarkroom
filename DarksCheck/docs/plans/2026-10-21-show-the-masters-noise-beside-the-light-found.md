@@ -89,4 +89,8 @@ shows the same words without emphasis.
   were the only fixes after.
 - The second paragraph of the scale explanation also names the dark master's own noise, not
   only the 50 x 50 patch, since that is the figure the owner compares with.
-
+- The code review added, before the merge: the stack's noise carries the dark master's noise
+  in quadrature (it is subtracted from every light alike, so it does not average out), the
+  emphasis marks a figure only where it stands on its own and rebuilds once per binding pass,
+  the verdict row computes its ratio once, and the tests pin the ratio's value against the
+  synthetic master's noise.

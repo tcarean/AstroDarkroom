@@ -332,6 +332,12 @@ public class DarkSeriesTests
         Assert.Contains(masterNoise, constantRow.BoldParts);
         Assert.Contains(constantRow.BoldParts, b => b.StartsWith('+') && b.EndsWith(" ADU", StringComparison.Ordinal));
         Assert.All(constantRow.BoldParts, b => Assert.Contains(b, constantRow.Value, StringComparison.Ordinal));
+        // the ratio's value is the light in raw ADU over the master's noise (the normalisation is 1 here)
+        System.Text.RegularExpressions.Match ratio = System.Text.RegularExpressions.Regex.Match(constantRow.Value, @"; ([+-][0-9.]+) ADU e ([0-9.]+) din zgomotul pe pixel al masterului dark \(([0-9.]+) ADU\)$");
+        Assert.True(ratio.Success, constantRow.Value);
+        Assert.Equal(top.LightAdu, double.Parse(ratio.Groups[1].Value, CultureInfo.InvariantCulture), 2);
+        Assert.Equal(top.LightAdu / r.Darks.Noise.MasterNoise, double.Parse(ratio.Groups[2].Value, CultureInfo.InvariantCulture), 1);
+        Assert.Equal(r.Darks.Noise.MasterNoise, double.Parse(ratio.Groups[3].Value, CultureInfo.InvariantCulture), 2);
         ReportRow verdictRow = sections[0].Rows.Single(x => x.Label == "verdict");
         Assert.Contains(masterNoise, verdictRow.BoldParts);
         Assert.Contains("; adica +", verdictRow.Value, StringComparison.Ordinal);
@@ -426,15 +432,21 @@ public class DarkSeriesTests
         Assert.Equal("pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU", Value("praguri pe set"));
         Assert.Equal("nimic peste praguri", Value("gasit"));
         Assert.Matches(@"^mediana [0-9.]+ ADU peste negru pe un light \(G1, 4 lights\), sigma [0-9.]+ ADU pe pixel$", Value("cer"));
-        Assert.Matches(@"^dark: [0-9.]+ ADU pe pixel \(mediana a 6 cadre\); stack lights: [0-9.]+ ADU pe pixel cu media, [0-9.]+ cu mediana \(4 lights\)$", Value("zgomot in master"));
+        Assert.Matches(@"^dark: [0-9.]+ ADU pe pixel \(mediana a 6 cadre\); stack lights: [0-9.]+ ADU pe pixel cu media, [0-9.]+ cu mediana \(4 lights; cu zgomotul masterului dark inclus\)$", Value("zgomot in master"));
         ReportRow masterRow = rows.Single(x => x.Label == "zgomot in master");
         Assert.Equal(2, masterRow.BoldParts.Count);
         Assert.All(masterRow.BoldParts, b => Assert.Contains(b, masterRow.Value, StringComparison.Ordinal));
-        StackNoise stack = StackNoise.Of(r.Lights, r.ReferencePlane)!;
+        StackNoise stack = StackNoise.Of(r.Lights, r.ReferencePlane, r.Darks.Noise.MasterNoise)!;
         Assert.Equal(4, stack.Lights);
-        Assert.Equal(stack.SkySigmaAdu / 2, stack.MeanStackAdu, 6);
-        Assert.Equal(Th.MedianNoiseFactor * stack.MeanStackAdu, stack.MedianStackAdu, 6);
-        Assert.Null(StackNoise.Of(null, 0));
+        Assert.Equal(stack.SkySigmaAdu / 2, stack.LightsShareAdu, 6);
+        Assert.Equal(r.Darks.Noise.MasterNoise, stack.MasterNoiseAdu, 6);
+        // the master's noise is subtracted from every light alike, so it adds in quadrature and does not average out
+        Assert.Equal(Math.Sqrt(stack.LightsShareAdu * stack.LightsShareAdu + stack.MasterNoiseAdu * stack.MasterNoiseAdu), stack.MeanStackAdu, 6);
+        Assert.Equal(Math.Sqrt(Math.Pow(Th.MedianNoiseFactor * stack.LightsShareAdu, 2) + stack.MasterNoiseAdu * stack.MasterNoiseAdu), stack.MedianStackAdu, 6);
+        Assert.Equal(0, StackNoise.Of(r.Lights, r.ReferencePlane, double.NaN)!.MasterNoiseAdu);
+        Assert.Null(StackNoise.Of(null, 0, 1));
+        Assert.Contains("cu zgomotul masterului dark inclus)", Value("zgomot in master"), StringComparison.Ordinal);
+        Assert.Contains("plus zgomotul masterului dark (", ScaleReport.Paragraphs(r)[2], StringComparison.Ordinal);
         Assert.Equal("65535 ADU (34446 e- full well dupa sursa)", Value("saturatie"));
         IReadOnlyList<string> paragraphs = ScaleReport.Paragraphs(r);
         Assert.Equal(4, paragraphs.Count);

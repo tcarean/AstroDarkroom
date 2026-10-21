@@ -44,7 +44,7 @@ public static class Emphasis
 
     public static void SetBold(DependencyObject d, IEnumerable<string>? value) => d?.SetValue(BoldProperty, value);
 
-    /// <summary>The text cut into plain and bold pieces: every occurrence of every bold substring is bold, the longest substring first at a position, pieces never overlap.</summary>
+    /// <summary>The text cut into plain and bold pieces: every occurrence of every bold substring that stands as a figure of its own (not preceded by a digit, a sign or a point, not followed by a digit) is bold, the longest substring first at a position, pieces never overlap.</summary>
     public static IReadOnlyList<(string Text, bool Bold)> Segments(string? text, IEnumerable<string>? bold)
     {
         text ??= "";
@@ -66,12 +66,16 @@ public static class Emphasis
                     break;
                 }
 
-                for (int i = at; i < at + mark.Length; i++)
+                bool wholeFigure = (at == 0 || !IsFigureChar(text[at - 1])) && (at + mark.Length == text.Length || !char.IsAsciiDigit(text[at + mark.Length]));
+                if (wholeFigure)
                 {
-                    isBold[i] = true;
+                    for (int i = at; i < at + mark.Length; i++)
+                    {
+                        isBold[i] = true;
+                    }
                 }
 
-                from = at + mark.Length;
+                from = at + 1;
             }
         }
 
@@ -89,13 +93,29 @@ public static class Emphasis
         return pieces;
     }
 
+    private static readonly DependencyProperty PendingProperty = DependencyProperty.RegisterAttached(
+        "Pending", typeof(bool), typeof(Emphasis), new PropertyMetadata(false));
+
+    private static bool IsFigureChar(char c) => char.IsAsciiDigit(c) || c is '.' or '+' or '-';
+
+    /// <summary>One rebuild per binding pass: the two properties arrive one after the other, so the first schedules it and the second finds it pending.</summary>
     private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not TextBlock block)
+        if (d is not TextBlock block || (bool)block.GetValue(PendingProperty))
         {
             return;
         }
 
+        block.SetValue(PendingProperty, true);
+        block.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.DataBind, () =>
+        {
+            block.SetValue(PendingProperty, false);
+            Rebuild(block);
+        });
+    }
+
+    private static void Rebuild(TextBlock block)
+    {
         block.Inlines.Clear();
         foreach ((string piece, bool isBold) in Segments(GetText(block), GetBold(block)))
         {

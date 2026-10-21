@@ -95,7 +95,7 @@ Copyright (C) 2026 Tudor Carean
     electroni          : 1 ADU = 2.07 e- la ISO 400 (Nikon D3300, photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %
     zgomot de citire   : NEMASURAT: fara bias-uri (sursa da 2.0 e- pentru Nikon D3300)
     zgomot pe cadru    : sigma 3.01 ADU pe pixel pe un dark; curentul de intuneric cere bias-uri
-    zgomot in master   : dark: 1.87 ADU pe pixel (mediana a 4 cadre); stack lights: 2.8 ADU pe pixel cu media, 3.6 cu mediana (5 lights)
+    zgomot in master   : dark: 1.87 ADU pe pixel (mediana a 4 cadre); stack lights: 3.4 ADU pe pixel cu media, 4.0 cu mediana (5 lights; cu zgomotul masterului dark inclus)
     praguri pe set     : pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU
     gasit              : nimic peste praguri
     cer                : mediana 500.0 ADU peste negru pe un light (G1, 5 lights), sigma 6.3 ADU pe pixel
@@ -116,8 +116,9 @@ Copyright (C) 2026 Tudor Carean
     dreapta se vede la o intindere tare pe cer intunecat.
 
     Fata de cer: un light al acestei sesiuni are 500.0 ADU peste negru, deci 1 ADU e 0.20 % din
-    cer, cam cat eroarea unui flat; in stack-ul celor 5 lights zgomotul pe pixel scade la 6.3 /
-    sqrt(5) = 2.84 ADU cu media (3.56 cu mediana), iar un offset de 1 ADU din master ramane 1
+    cer, cam cat eroarea unui flat; in stack-ul celor 5 lights zgomotul pe pixel scade la 3.40
+    ADU cu media (4.02 cu mediana): 6.3 / sqrt(5) de la lights, plus zgomotul masterului dark
+    (1.87 ADU) in cuadratura, care nu se mediaza; iar un offset de 1 ADU din master ramane 1
     ADU.
 
     Pragurile: 20 ADU-eq pentru un pixel fierbinte; 1.0 ADU-eq pe harta pentru o scurgere
