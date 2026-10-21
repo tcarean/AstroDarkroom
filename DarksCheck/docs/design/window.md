@@ -51,6 +51,10 @@ they are now.
   Rest, Verdict)`, the chip being `Verdict` and the text `Rest`, both read in the core
   (`ReportRow`); `HotRows`, `LightRows` and `IndexRows` are the rows of the sections whose
   title starts with `5.`, `9.` and `INDEX`, for the tabs that show one check beside a chart;
+- the shared `ReportRow` template draws the rest of a row's text through `Emphasis`, an
+  attached property in `Presentation/` that rebuilds the `TextBlock`'s inlines from `Rest` and
+  `RowVm.Bold` (`Emphasis.Segments`: every occurrence of every bold substring, longest first,
+  never overlapping) as plain and bold runs (ADR 0016);
 - the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
   `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;

@@ -189,6 +189,16 @@ public class MainViewModelTests
         Assert.Equal(ScaleReport.Rows(r).Select(row => row.Value), vm.ScaleRows.Select(row => row.Value));
         Assert.Equal(ScaleReport.Paragraphs(r), vm.ScaleParagraphs);
         Assert.Equal("EXPLICATII SCARA ADU", vm.ScaleTitle);
+
+        // R-071 / ADR 0016: every row carries the core's bold parts, and the emphasis splits the text where they are
+        Assert.Equal(DarkReport.Sections(r).SelectMany(s => s.Rows).Select(row => row.BoldParts), vm.Sections.SelectMany(s => s.Rows).Select(row => row.Bold));
+        Assert.Equal(ScaleReport.Rows(r).Select(row => row.BoldParts), vm.ScaleRows.Select(row => row.Bold));
+        RowVm master = vm.Sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(row => row.Label == "master");
+        Assert.Single(master.Bold);
+        Assert.Equal([("30 cadre -> ", false), (master.Bold[0], true), (" zgomot", false)], Emphasis.Segments("30 cadre -> " + master.Bold[0] + " zgomot", master.Bold).Select(p => (p.Text, p.Bold)).Take(3).ToList()[..3]);
+        Assert.Equal([("a ", false), ("1.43 ADU", true), (" b ", false), ("1.43 ADU", true)], Emphasis.Segments("a 1.43 ADU b 1.43 ADU", ["1.43 ADU"]));
+        Assert.Equal([("plain", false)], Emphasis.Segments("plain", []));
+        Assert.Empty(Emphasis.Segments("", ["x"]));
         Assert.Equal(r.Label, vm.Label);
         Assert.Equal(r.Index.Tag, vm.Tag);
         Assert.EndsWith("-" + vm.Tag, vm.Label, StringComparison.Ordinal);

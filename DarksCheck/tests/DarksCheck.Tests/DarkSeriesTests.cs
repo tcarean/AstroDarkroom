@@ -177,6 +177,10 @@ public class DarkSeriesTests
         Assert.Contains("ATENTIE: 2 cadre au lumina in plus fata de restul seriei (7: +0.", text, StringComparison.Ordinal);
         Assert.Contains(" ADU); scoate-le din darks\\ sau refa seria", text, StringComparison.Ordinal);
         Assert.Contains("    lumina pe cadre    : 2 cadre: 7 +0.", text, StringComparison.Ordinal);
+        Assert.Contains("; cel mai luminat, +0.", text, StringComparison.Ordinal);
+        ReportRow litRow = DarkReport.Sections(r)[0].Rows.Single(x => x.Label == "lumina pe cadre");
+        Assert.Contains($"{r.Darks.Noise.MasterNoise:F2} ADU", litRow.BoldParts);
+        Assert.All(litRow.BoldParts, b => Assert.Contains(b, litRow.Value, StringComparison.Ordinal));
         Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("lumina = ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
@@ -317,8 +321,24 @@ public class DarkSeriesTests
         Assert.Contains("lumina constanta in toate cadrele: +", text, StringComparison.Ordinal);
         Assert.Contains(") pe latura de sus fata de centru, nu e in bias: scurgere de lumina (ocular, montura)", text, StringComparison.Ordinal);
         Assert.Contains("    lumina constanta   : dupa bias, fata de centru: sus +", text, StringComparison.Ordinal);
-        Assert.Contains(" ADU; peste 0.15 si peste 3 x eroarea la sus", text, StringComparison.Ordinal);
+        Assert.Contains(" ADU; peste 0.15 si peste 3 x eroarea la sus; +", text, StringComparison.Ordinal);
+        Assert.Contains(" ADU e ", text, StringComparison.Ordinal);
+        Assert.Contains(" din zgomotul pe pixel al masterului dark (", text, StringComparison.Ordinal);
         Assert.True(top.ErrorAdu > 0 && top.ErrorAdu < 0.4, $"error {top.ErrorAdu}");
+        // the row and the verdict mark the light and the master's noise bold (ADR 0016); check 8's master row marks its noise
+        IReadOnlyList<ReportSection> sections = DarkReport.Sections(r);
+        ReportRow constantRow = sections[0].Rows.Single(x => x.Label == "lumina constanta");
+        string masterNoise = $"{r.Darks.Noise.MasterNoise:F2} ADU";
+        Assert.Contains(masterNoise, constantRow.BoldParts);
+        Assert.Contains(constantRow.BoldParts, b => b.StartsWith('+') && b.EndsWith(" ADU", StringComparison.Ordinal));
+        Assert.All(constantRow.BoldParts, b => Assert.Contains(b, constantRow.Value, StringComparison.Ordinal));
+        ReportRow verdictRow = sections[0].Rows.Single(x => x.Label == "verdict");
+        Assert.Contains(masterNoise, verdictRow.BoldParts);
+        Assert.Contains("; adica +", verdictRow.Value, StringComparison.Ordinal);
+        ReportRow enough = sections.Single(s => s.Title.StartsWith("8.", StringComparison.Ordinal)).Rows.Single(x => x.Label == "master");
+        Assert.Equal([masterNoise], enough.BoldParts);
+        Assert.Contains(masterNoise, enough.Value, StringComparison.Ordinal);
+        Assert.Empty(sections[0].Rows.Single(x => x.Label == "master dark").BoldParts);
         Assert.Contains("  amplit.  lumina  latura  >20   [G1;", DarkReport.FrameTableHeader(r), StringComparison.Ordinal);
         Assert.Contains("latura = sus - centru dupa bias (glow inclus), ADU", DarkReport.FrameTableNote(r), StringComparison.Ordinal);
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
@@ -395,7 +415,7 @@ public class DarkSeriesTests
         using SessionFixture s = new SessionFixture().WithDarkSeries(6, Plain, biases: 3).WithLights(4, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars });
         DarkSeriesResult r = Run(s);
         IReadOnlyList<ReportRow> rows = ScaleReport.Rows(r);
-        Assert.Equal(["fisier", "1 ADU-eq", "cuantizare", "electroni", "zgomot de citire", "zgomot pe cadru", "praguri pe set", "gasit", "cer", "zgomotul stack-ului", "saturatie"], rows.Select(x => x.Label));
+        Assert.Equal(["fisier", "1 ADU-eq", "cuantizare", "electroni", "zgomot de citire", "zgomot pe cadru", "zgomot in master", "praguri pe set", "gasit", "cer", "saturatie"], rows.Select(x => x.Label));
         string Value(string label) => rows.Single(x => x.Label == label).Value;
         Assert.Equal("16 biti, 0 .. 65535 ADU; negrul la 200, albul la 65535: semnal util 0 .. 65335 ADU", Value("fisier"));
         Assert.Equal("1 ADU brut: setul e la ISO 400, 120.0 s, scara de referinta (ISO 400 si 120 s)", Value("1 ADU-eq"));
@@ -406,12 +426,22 @@ public class DarkSeriesTests
         Assert.Equal("pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU", Value("praguri pe set"));
         Assert.Equal("nimic peste praguri", Value("gasit"));
         Assert.Matches(@"^mediana [0-9.]+ ADU peste negru pe un light \(G1, 4 lights\), sigma [0-9.]+ ADU pe pixel$", Value("cer"));
-        Assert.Matches(@"^sigma pe pixel [0-9.]+ / sqrt\(4\) = [0-9.]+ ADU; un offset din master ramane intreg in stack$", Value("zgomotul stack-ului"));
+        Assert.Matches(@"^dark: [0-9.]+ ADU pe pixel \(mediana a 6 cadre\); stack lights: [0-9.]+ ADU pe pixel cu media, [0-9.]+ cu mediana \(4 lights\)$", Value("zgomot in master"));
+        ReportRow masterRow = rows.Single(x => x.Label == "zgomot in master");
+        Assert.Equal(2, masterRow.BoldParts.Count);
+        Assert.All(masterRow.BoldParts, b => Assert.Contains(b, masterRow.Value, StringComparison.Ordinal));
+        StackNoise stack = StackNoise.Of(r.Lights, r.ReferencePlane)!;
+        Assert.Equal(4, stack.Lights);
+        Assert.Equal(stack.SkySigmaAdu / 2, stack.MeanStackAdu, 6);
+        Assert.Equal(Th.MedianNoiseFactor * stack.MeanStackAdu, stack.MedianStackAdu, 6);
+        Assert.Null(StackNoise.Of(null, 0));
         Assert.Equal("65535 ADU (34446 e- full well dupa sursa)", Value("saturatie"));
         IReadOnlyList<string> paragraphs = ScaleReport.Paragraphs(r);
         Assert.Equal(4, paragraphs.Count);
         Assert.StartsWith("ADU e unitatea fisierului: pe 16 biti, de la 0 la 65535, cu negrul camerei la 200.", paragraphs[0], StringComparison.Ordinal);
         Assert.Contains("in stack-ul celor 4 lights zgomotul pe pixel scade la ", paragraphs[2], StringComparison.Ordinal);
+        Assert.Contains("pe un petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel", paragraphs[1], StringComparison.Ordinal);
+        Assert.Contains($"Masterul dark, mediana a 6 cadre, mai are {r.Darks.Noise.MasterNoise:F2} ADU pe pixel", paragraphs[1], StringComparison.Ordinal);
         Assert.Contains("0.15 ADU-eq si de 3 ori eroarea pentru lumina constanta pe o latura", paragraphs[3], StringComparison.Ordinal);
 
         // the console: the block at the end, the paragraphs wrapped under 96 columns
@@ -430,7 +460,7 @@ public class DarkSeriesTests
         IReadOnlyList<ReportRow> bareRows = ScaleReport.Rows(Run(bare));
         Assert.Equal("NEMASURAT: fara bias-uri (sursa da 2.0 e- pentru Nikon D3300)", bareRows.Single(x => x.Label == "zgomot de citire").Value);
         Assert.Equal("fara lights in sesiune", bareRows.Single(x => x.Label == "cer").Value);
-        Assert.Equal("fara lights: nu se poate estima", bareRows.Single(x => x.Label == "zgomotul stack-ului").Value);
+        Assert.EndsWith("; stack lights: fara lights", bareRows.Single(x => x.Label == "zgomot in master").Value, StringComparison.Ordinal);
         Assert.StartsWith("Fata de cer: sesiunea nu are lights", ScaleReport.Paragraphs(Run(bare))[2], StringComparison.Ordinal);
 
         // the camera table: the D3300 by any spelling, the log2 interpolation, nothing outside it, no other camera

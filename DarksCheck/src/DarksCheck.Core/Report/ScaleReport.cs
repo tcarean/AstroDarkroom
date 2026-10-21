@@ -20,10 +20,11 @@ using System.Text;
 namespace DarksCheck.Core;
 
 /// <summary>
-/// The scale section (R-080, ADR 0015): what an ADU is on the open set, as rows the console
-/// prints and the window binds, and four paragraphs that say why a fraction of an ADU in the
-/// master can matter. Every figure comes from the result; the electrons come from
-/// <see cref="CameraFacts"/>, with their provenance in the words.
+/// The scale section (R-080, ADR 0015, ADR 0016): what an ADU is on the open set, as rows the
+/// console prints and the window binds, and four paragraphs that say why a fraction of an ADU
+/// in the master can matter. Every figure comes from the result; the electrons come from
+/// <see cref="CameraFacts"/>, with their provenance in the words; the masters' noise and the
+/// light found are marked bold for the window.
 /// </summary>
 internal static class ScaleReport
 {
@@ -49,9 +50,8 @@ internal static class ScaleReport
         CameraFacts? Facts,
         double? Gain,
         double? BiasIso,
-        double? Sky,
-        double? SkySigma,
-        int Lights)
+        StackNoise? Stack,
+        double MasterNoise)
     {
         internal static Figures Of(DarkSeriesResult r)
         {
@@ -65,31 +65,9 @@ internal static class ScaleReport
             CameraFacts? facts = CameraFacts.For(first?.Camera);
             double? gain = first?.Iso is double iso ? facts?.GainAt(iso) : null;
             double? biasIso = r.Biases?.Frames.FirstOrDefault(b => b.Error is null && !b.Skipped)?.Info.Iso;
-            (double? sky, double? sigma, int n) = SkyOf(r, rp);
             return new Figures(d, rp, d.PlaneNames[rp], d.Norm, DarkReport.Eq(d),
                 d.White >= MinIntegerWhite ? (int)Math.Ceiling(Math.Log2(d.White + 1)) : null,
-                first, settings, known, facts, gain, biasIso, sky, sigma, n);
-        }
-
-        /// <summary>The median over the decoded lights of the sky median and of the sky sigma on the reference plane, with their count.</summary>
-        private static (double? Sky, double? Sigma, int Count) SkyOf(DarkSeriesResult r, int rp)
-        {
-            if (r.Lights is not LightsAnalysis la)
-            {
-                return (null, null, 0);
-            }
-
-            List<double> sky = [], sigma = [];
-            foreach (LightFigures f in la.Frames)
-            {
-                if (f.Error is null && !f.Skipped && rp < f.SkyMedian.Count && !double.IsNaN(f.SkyMedian[rp]))
-                {
-                    sky.Add(f.SkyMedian[rp]);
-                    sigma.Add(f.SkySigma[rp]);
-                }
-            }
-
-            return sky.Count == 0 ? (null, null, 0) : (Planes.Median(sky), Planes.Median(sigma), sky.Count);
+                first, settings, known, facts, gain, biasIso, StackNoise.Of(r.Lights, rp), d.Noise.MasterNoise);
         }
     }
 
@@ -113,14 +91,12 @@ internal static class ScaleReport
             new("electroni", Electrons(g)),
             new("zgomot de citire", ReadNoise(r, g)),
             new("zgomot pe cadru", FrameNoise(r, g)),
+            MasterNoiseRow(g),
             new("praguri pe set", $"pixel fierbinte {F(Th.HotAdu, 0)} ADU-eq = {F(Th.HotAdu * g.Norm, 0)} ADU; scurgere pe harta {F(Th.LeakAdu, 1)} ADU-eq = {F(Th.LeakAdu * g.Norm, 1)} ADU; lumina constanta pe o latura {F(Th.LeakConstantAdu, 2)} ADU-eq = {F(Th.LeakConstantAdu * g.Norm, 2)} ADU; lumina pe un cadru {F(Th.LeakFrameAdu, 1)} ADU-eq = {F(Th.LeakFrameAdu * g.Norm, 2)} ADU"),
-            new("gasit", Found(r, g)),
-            new("cer", g.Sky is double s && g.SkySigma is double ss
-                ? $"mediana {F(s, 1)} ADU peste negru pe un light ({g.Plane}, {g.Lights} lights), sigma {F(ss, 1)} ADU pe pixel"
+            Found(r, g),
+            new("cer", g.Stack is StackNoise st
+                ? $"mediana {F(st.SkyAdu, 1)} ADU peste negru pe un light ({g.Plane}, {st.Lights} lights), sigma {F(st.SkySigmaAdu, 1)} ADU pe pixel"
                 : "fara lights in sesiune"),
-            new("zgomotul stack-ului", g.SkySigma is double sig && g.Lights > 0
-                ? $"sigma pe pixel {F(sig, 1)} / sqrt({g.Lights}) = {F(sig / Math.Sqrt(g.Lights), 2)} ADU; un offset din master ramane intreg in stack"
-                : "fara lights: nu se poate estima"),
             new("saturatie", $"{F(d.White, 0)} ADU" + (g.Facts is null ? "" : $" ({F(g.Facts.FullWellElectrons, 0)} e- full well dupa sursa)")),
         ];
     }
@@ -137,12 +113,14 @@ internal static class ScaleReport
         string p1 = $"ADU e unitatea fisierului: {scale}. "
             + $"ADU-eq e ADU brut adus la ISO 400 si 120 s, ca seriile cu setari diferite sa se compare intre ele: pe acest set 1 ADU-eq = {F(g.Norm, 2)} ADU brut. "
             + $"Un pas de cuantizare are {d.QuantStep} ADU, dar o medie pe multi pixeli se masoara mult sub el, pentru ca zgomotul amesteca treptele.";
-        string p2 = "O abatere din masterul dark (o scurgere de lumina, un offset) nu e zgomot: masterul se scade din fiecare light, deci abaterea ramane intreaga in stack, oricate cadre ai aduna, pe cand zgomotul aleator scade cu radacina numarului de cadre. "
-            + $"Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; pe mii de pixeli, o treapta de 1 ADU cu margine dreapta se vede la o intindere tare pe cer intunecat.";
-        string p3 = g.Sky is double s && g.SkySigma is double ss && s > 0 && g.Lights > 0
-            ? $"Fata de cer: un light al acestei sesiuni are {F(s, 1)} ADU peste negru, deci 1 ADU e {F(100 / s, 2)} % din cer, cam cat eroarea unui flat; "
-                + $"in stack-ul celor {g.Lights} lights zgomotul pe pixel scade la {F(ss, 1)} / sqrt({g.Lights}) = {F(ss / Math.Sqrt(g.Lights), 2)} ADU, iar un offset de 1 ADU din master ramane 1 ADU."
-            : "Fata de cer: sesiunea nu are lights, deci raportul nu poate spune cat e 1 ADU fata de cerul tau si cat ramane zgomotul in stack; deschide sesiunea cu lights si randurile `cer` si `zgomotul stack-ului` se completeaza.";
+        string masterWords = double.IsNaN(g.MasterNoise) ? "" : $" Masterul dark, mediana a {d.Used} cadre, mai are {F(g.MasterNoise, 2)} ADU pe pixel; cu el se compara o abatere, nu cu zgomotul unui cadru.";
+        string p2 = "O abatere din masterul dark (o scurgere de lumina, un offset) nu e zgomot: masterul se scade din fiecare light, deci abaterea ramane intreaga in stack, oricate cadre ai aduna, pe cand zgomotul aleator scade cu radacina numarului de cadre."
+            + masterWords
+            + $" Pe un singur pixel, cei {F(d.Noise.SigmaFrame, 1)} ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; dar raportul dintre o abatere si zgomot creste cu radacina numarului de pixeli priviti impreuna: pe un petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel, si o treapta de 1 ADU cu margine dreapta se vede la o intindere tare pe cer intunecat.";
+        string p3 = g.Stack is StackNoise st && st.SkyAdu > 0
+            ? $"Fata de cer: un light al acestei sesiuni are {F(st.SkyAdu, 1)} ADU peste negru, deci 1 ADU e {F(100 / st.SkyAdu, 2)} % din cer, cam cat eroarea unui flat; "
+                + $"in stack-ul celor {st.Lights} lights zgomotul pe pixel scade la {F(st.SkySigmaAdu, 1)} / sqrt({st.Lights}) = {F(st.MeanStackAdu, 2)} ADU cu media ({F(st.MedianStackAdu, 2)} cu mediana), iar un offset de 1 ADU din master ramane 1 ADU."
+            : "Fata de cer: sesiunea nu are lights, deci raportul nu poate spune cat e 1 ADU fata de cerul tau si cat ramane zgomotul in stack; deschide sesiunea cu lights si randurile `zgomot in master` si `cer` se completeaza.";
         string p4 = $"Pragurile: {F(Th.HotAdu, 0)} ADU-eq pentru un pixel fierbinte; {F(Th.LeakAdu, 1)} ADU-eq pe harta pentru o scurgere evidenta (nivelul analizei de mana); "
             + $"{F(Th.LeakConstantAdu, 2)} ADU-eq si de {F(Th.LeakConstantSigmas, 0)} ori eroarea pentru lumina constanta pe o latura; {F(Th.LeakFrameAdu, 1)} ADU-eq si de {F(Th.LeakFrameSigmas, 0)} ori abaterea tipica pentru lumina pe un cadru. "
             + $"Ultimele doua spun 'e lumina reala, masurata', nu 'se vede in imagine': la {F(Th.LeakConstantAdu * g.Norm, 2)} ADU brut efectul e la marginea vizibilului, la {F(Th.LeakAdu * g.Norm, 1)} ADU brut se vede; remedierea (ocularul acoperit, seria refacuta) costa la fel in ambele cazuri.";
@@ -200,6 +178,53 @@ internal static class ScaleReport
         return lines;
     }
 
+    /// <summary>The words that set a light in raw ADU against the masters' noise, and the figures to mark bold; empty without a master noise (one frame).</summary>
+    internal static (string Words, IReadOnlyList<string> Bold) AgainstMasters(double rawAdu, double masterNoise, StackNoise? stack)
+    {
+        if (double.IsNaN(masterNoise) || masterNoise <= 0)
+        {
+            return ("", []);
+        }
+
+        string raw = $"{Signed(rawAdu)} ADU";
+        string master = $"{F(masterNoise, 2)} ADU";
+        List<string> bold = [raw, master];
+        string words = $"{raw} e {F(rawAdu / masterNoise, 2)} din zgomotul pe pixel al masterului dark ({master})";
+        if (stack is StackNoise st && st.MeanStackAdu > 0)
+        {
+            string stackWords = $"{F(st.MeanStackAdu, 1)} ADU";
+            bold.Add(stackWords);
+            words += $" si {F(rawAdu / st.MeanStackAdu, 2)} din al stack-ului de lights ({stackWords})";
+        }
+
+        return (words, bold);
+    }
+
+    private static ReportRow MasterNoiseRow(Figures g)
+    {
+        if (double.IsNaN(g.MasterNoise))
+        {
+            return new("zgomot in master", "NEMASURAT: un singur cadru nu are master cu zgomot de masurat");
+        }
+
+        string dark = $"{F(g.MasterNoise, 2)} ADU";
+        List<string> bold = [dark];
+        string darkWords = $"dark: {dark} pe pixel (mediana a {g.Darks.Used} cadre" + (Math.Abs(g.Norm - 1) < 1e-9 ? ")" : $"; {F(g.MasterNoise / g.Norm, 2)} ADU-eq)");
+        string stackWords;
+        if (g.Stack is StackNoise st)
+        {
+            string mean = $"{F(st.MeanStackAdu, 1)} ADU";
+            bold.Add(mean);
+            stackWords = $"stack lights: {mean} pe pixel cu media, {F(st.MedianStackAdu, 1)} cu mediana ({st.Lights} lights)";
+        }
+        else
+        {
+            stackWords = "stack lights: fara lights";
+        }
+
+        return new("zgomot in master", $"{darkWords}; {stackWords}", bold);
+    }
+
     private static string Electrons(Figures g)
     {
         if (g.Facts is not CameraFacts facts)
@@ -241,19 +266,30 @@ internal static class ScaleReport
         return $"{sigma}; curentul de intuneric median {F(dc.Median, 2)} ADU{eq} la {g.Settings}";
     }
 
-    private static string Found(DarkSeriesResult r, Figures g)
+    private static ReportRow Found(DarkSeriesResult r, Figures g)
     {
         LeakVerdict l = r.Verdicts.Leak;
         List<string> parts = [];
+        List<string> bold = [];
         if (l.ConstantLight is SideLight c)
         {
-            parts.Add($"lumina constanta {Signed(c.LightAdu)} {g.Eq} pe latura de {DarkReport.SideName(c.Side)} = {Signed(c.LightAdu * g.Norm)} ADU" + (g.Gain is double gain ? $" = {Signed(c.LightAdu * g.Norm * gain)} e- pe pixel" : ""));
+            double raw = c.LightAdu * g.Norm;
+            (string against, IReadOnlyList<string> b) = AgainstMasters(raw, g.MasterNoise, g.Stack);
+            string eq = $"{Signed(c.LightAdu)} {g.Eq}";
+            bold.Add(eq);
+            bold.AddRange(b);
+            parts.Add($"lumina constanta {eq} pe latura de {DarkReport.SideName(c.Side)} = {Signed(raw)} ADU" + (g.Gain is double gain ? $" = {Signed(raw * gain)} e- pe pixel" : "") + (against.Length == 0 ? "" : $"; {against}"));
         }
 
         if (l.Frames is FrameLight fl && fl.LitFrames.Count > 0)
         {
             double max = fl.LitExcessAdu.Max();
-            parts.Add($"lumina pe cadre pana la {Signed(max)} {g.Eq} = {Signed(max * g.Norm)} ADU in {fl.LitFrames.Count} {(fl.LitFrames.Count == 1 ? "cadru" : "cadre")}" + (g.Gain is double gain2 ? $" ({Signed(max * g.Norm * gain2)} e- pe pixel)" : ""));
+            double raw = max * g.Norm;
+            (string against, IReadOnlyList<string> b) = AgainstMasters(raw, g.MasterNoise, g.Stack);
+            string eq = $"{Signed(max)} {g.Eq}";
+            bold.Add(eq);
+            bold.AddRange(b);
+            parts.Add($"lumina pe cadre pana la {eq} = {Signed(raw)} ADU in {fl.LitFrames.Count} {(fl.LitFrames.Count == 1 ? "cadru" : "cadre")}" + (g.Gain is double gain2 ? $" ({Signed(raw * gain2)} e- pe pixel)" : "") + (against.Length == 0 ? "" : $"; {against}"));
         }
 
         if (!double.IsNaN(l.OffsetAdu) && Math.Abs(l.OffsetAdu) > Th.LeakAdu)
@@ -261,7 +297,7 @@ internal static class ScaleReport
             parts.Add($"{DarkReport.RegionName(l.Where)} la {Signed(l.OffsetAdu)} {g.Eq} de centru = {Signed(l.OffsetAdu * g.Norm)} ADU");
         }
 
-        return parts.Count == 0 ? "nimic peste praguri" : string.Join("; ", parts);
+        return parts.Count == 0 ? new("gasit", "nimic peste praguri") : new("gasit", string.Join("; ", parts), bold);
     }
 
     private static string F(double v, int decimals) => DarkReport.F(v, decimals);

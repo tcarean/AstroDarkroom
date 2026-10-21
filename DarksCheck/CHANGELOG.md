@@ -27,6 +27,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   `TABEL PE CADRE`, the Cadre tab and the darks CSV carry every frame's excess light, and the
   CSV the four corners' offsets. Measured on the owner's deliberate leak set of 2026-10-20,
   which the old check read as `OK`.
+- The masters' noise beside every light found (R-024, R-029, R-080, ADR 0016): the scale
+  section's row `zgomot in master` gives the dark master's per-pixel noise and the lights
+  stack's (mean and median); check 2's `lumina constanta`, `lumina pe cadre`, its verdict and
+  the scale's `gasit` state each light in raw ADU as a fraction of those noises; the window
+  shows the noises and the light found in bold, through a per-row list of emphasised figures
+  the console ignores.
 - A help on the ADU scale, computed on the open set (R-078, R-080, ADR 0015): the tab
   `Explicatii scara ADU` and the section `EXPLICATII SCARA ADU` at the end of the report show
   the file's scale, the normalisation, the quantisation step, the read noise, the dark

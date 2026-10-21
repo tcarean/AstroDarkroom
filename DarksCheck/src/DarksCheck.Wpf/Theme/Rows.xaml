@@ -23,7 +23,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
      that dictionary merges, not in the one that imports it. -->
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:DarksCheck.Wpf">
   <ResourceDictionary.MergedDictionaries>
     <ResourceDictionary Source="Dark.xaml" />
   </ResourceDictionary.MergedDictionaries>
@@ -41,7 +42,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <ContentControl Grid.Column="1" Content="{Binding Verdict}" ContentTemplate="{StaticResource VerdictChip}"
                       Margin="0,0,10,0" VerticalAlignment="Top"
                       Visibility="{Binding HasVerdict, Converter={StaticResource BoolToVis}}" />
-      <TextBlock Grid.Column="2" Text="{Binding Rest}" TextWrapping="Wrap" />
+      <!-- the rest of the text, the row's bold parts (the masters' noise, the light found, ADR 0016) as bold runs -->
+      <TextBlock Grid.Column="2" local:Emphasis.Text="{Binding Rest}" local:Emphasis.Bold="{Binding Bold}" TextWrapping="Wrap" />
     </Grid>
   </DataTemplate>
 

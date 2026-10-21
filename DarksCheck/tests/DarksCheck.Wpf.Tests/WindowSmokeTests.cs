@@ -195,6 +195,15 @@ public class WindowSmokeTests
             Render(new IndexView { DataContext = vm }, name: "tab-index");
             Render(new ScaleView { DataContext = vm }, h: 1400, name: "tab-scale");
 
+            // the emphasis draws a row's bold parts as bold runs (R-071, ADR 0016)
+            TextBlock block = new();
+            List<string> boldParts = ["1.43 ADU"];
+            Emphasis.SetBold(block, boldParts);
+            Emphasis.SetText(block, "30 cadre -> 1.43 ADU zgomot");
+            Assert.Equal(3, block.Inlines.Count);
+            Assert.Equal(FontWeights.Bold, ((System.Windows.Documents.Run)block.Inlines.ElementAt(1)).FontWeight);
+            Assert.Equal("1.43 ADU", ((System.Windows.Documents.Run)block.Inlines.ElementAt(1)).Text);
+
             Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }

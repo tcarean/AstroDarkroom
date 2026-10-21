@@ -91,10 +91,10 @@ Copyright (C) 2026 Tudor Carean
     electroni          : 1 ADU = 2.07 e- la ISO 400 (Nikon D3300, photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %
     zgomot de citire   : 2.03 ADU pe pixel (G1, din bias-uri) = 4.2 e-
     zgomot pe cadru    : sigma 3.01 ADU pe pixel pe un dark; curentul de intuneric median -0.03 ADU la ISO 400, 120.0 s
+    zgomot in master   : dark: 1.89 ADU pe pixel (mediana a 4 cadre); stack lights: 3.7 ADU pe pixel cu media, 4.6 cu mediana (3 lights)
     praguri pe set     : pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU
     gasit              : nimic peste praguri
     cer                : mediana 500.0 ADU peste negru pe un light (G1, 3 lights), sigma 6.4 ADU pe pixel
-    zgomotul stack-ului: sigma pe pixel 6.4 / sqrt(3) = 3.70 ADU; un offset din master ramane intreg in stack
     saturatie          : 65535 ADU (34446 e- full well dupa sursa)
 
     ADU e unitatea fisierului: pe 16 biti, de la 0 la 65535, cu negrul camerei la 200. ADU-eq e
@@ -104,13 +104,17 @@ Copyright (C) 2026 Tudor Carean
 
     O abatere din masterul dark (o scurgere de lumina, un offset) nu e zgomot: masterul se scade
     din fiecare light, deci abaterea ramane intreaga in stack, oricate cadre ai aduna, pe cand
-    zgomotul aleator scade cu radacina numarului de cadre. Pe un singur pixel, cei 3.0 ADU de
-    zgomot ai unui dark acopera orice abatere sub 1 ADU; pe mii de pixeli, o treapta de 1 ADU cu
-    margine dreapta se vede la o intindere tare pe cer intunecat.
+    zgomotul aleator scade cu radacina numarului de cadre. Masterul dark, mediana a 4 cadre, mai
+    are 1.89 ADU pe pixel; cu el se compara o abatere, nu cu zgomotul unui cadru. Pe un singur
+    pixel, cei 3.0 ADU de zgomot ai unui dark acopera orice abatere sub 1 ADU; dar raportul
+    dintre o abatere si zgomot creste cu radacina numarului de pixeli priviti impreuna: pe un
+    petic de 50 x 50 e de 50 de ori mai mare decat pe un pixel, si o treapta de 1 ADU cu margine
+    dreapta se vede la o intindere tare pe cer intunecat.
 
     Fata de cer: un light al acestei sesiuni are 500.0 ADU peste negru, deci 1 ADU e 0.20 % din
     cer, cam cat eroarea unui flat; in stack-ul celor 3 lights zgomotul pe pixel scade la 6.4 /
-    sqrt(3) = 3.70 ADU, iar un offset de 1 ADU din master ramane 1 ADU.
+    sqrt(3) = 3.70 ADU cu media (4.64 cu mediana), iar un offset de 1 ADU din master ramane 1
+    ADU.
 
     Pragurile: 20 ADU-eq pentru un pixel fierbinte; 1.0 ADU-eq pe harta pentru o scurgere
     evidenta (nivelul analizei de mana); 0.15 ADU-eq si de 3 ori eroarea pentru lumina constanta
