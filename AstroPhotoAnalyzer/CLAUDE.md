@@ -94,12 +94,16 @@ or varies a kit rule names it.
   plate-solved FITS `starless_rbf0.5_stretch0.17.fit` (ADR 0025); a claim about a measurement
   on a real image comes with the pasted output, and the synthetic scenes of `Scenes.cs` are no
   substitute for it.
-- **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
-  reads or writes about the process: docs, tests of invariants, scripts, commits, CHANGELOG.
-  Romanian in everything the user sees (CLI text, `--help`, window labels, the report,
-  `README.md`, `THIRD-PARTY-NOTICES.md`) and in the code comments, which stay as they are:
-  without diacritics in code and messages, with diacritics in Markdown for people. Never leave a
-  file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADR 0005, and for a file not yet translated
+  the kit's rule "Documentation comments"). English in everything the model reads or writes
+  about the process: docs, tests of invariants, scripts, commits, CHANGELOG. Romanian in
+  everything the user sees (CLI text, `--help`, window labels, the report, `README.md`,
+  `THIRD-PARTY-NOTICES.md`): without diacritics in code and messages, with diacritics in
+  Markdown for people. Comments in the C# files are English too (the kit's ADR 0035), but most
+  of them still carry Romanian ones: a file's comments are translated when it gets its
+  documentation comments, in a task of its own, and until then a comment added to it is
+  Romanian, without diacritics. The comments of the csproj files and `Directory.Build.props`
+  stay Romanian (ADR 0005). Never leave a file in two languages.
 - **Computed only in the core.** Nothing is computed outside `AstroPhotoAnalyzer.Core`: a new
   number, threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`,
   never in a view-model or the console (ADR 0007).

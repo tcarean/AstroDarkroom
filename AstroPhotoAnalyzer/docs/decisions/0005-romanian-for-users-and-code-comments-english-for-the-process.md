@@ -1,7 +1,7 @@
 # 0005. Romanian for what the user sees and for the code comments; English for the process files
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; Romanian comments in the C# files superseded by the kit's ADR 0035
 
 ## Context
 
