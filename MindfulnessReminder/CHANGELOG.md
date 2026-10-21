@@ -32,9 +32,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   unused usings in five files.
 - Every type and method in the code has an XML documentation comment, with a `<param>` for
   each parameter and a `<returns>` for each value (the kit's rule "Documentation comments",
-  the kit's ADR 0035): 8 types and 150 methods documented or completed, 13 of them through
-  `<inheritdoc/>`. Seven comments that no longer matched the code were corrected. No code
-  changed.
+  the kit's ADR 0035): 8 types and 150 methods documented or completed, 12 of them through
+  `<inheritdoc/>`. Comments that no longer matched the code were corrected along the way. No
+  code changed.
 
 ## [1.4.0] - 2026-09-14
 

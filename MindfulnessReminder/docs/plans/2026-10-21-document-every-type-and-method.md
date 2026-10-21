@@ -23,8 +23,9 @@ The outcome: every type and method under `src/` documented, no code changed, the
   - properties, indexers and events: 57, of which 33 have no comment (not required).
   - That is 8 types and 150 methods to touch: 7 and 71 in Core (23 files), 1 and 79 in App (12).
 - **The existing comments are `<summary>` only.** There is no `<param>`, `<returns>`,
-  `<inheritdoc/>`, `<exception>` or `<remarks>` in `src/`. No code comment cites an ADR or a
-  requirement. `<c>true</c>` appears twice; `langword` never.
+  `<inheritdoc/>`, `<exception>` or `<remarks>` in `src/`. No C# comment cites an ADR or a
+  requirement; one XAML comment does (`AboutWindow.xaml`, ADR 0030). `<c>true</c>` appears
+  twice; `langword` never.
 - **The compiler already checks a wrong comment.** `GenerateDocumentationFile` is on for all three
   projects and warnings are errors. So CS1570 (malformed XML), CS1572 (a `<param>` naming no
   parameter), CS1573 (a parameter untagged while another is tagged), CS1574 (a `cref` that does
@@ -130,7 +131,7 @@ The outcome: every type and method under `src/` documented, no code changed, the
    - A non-nullable parameter is not marked "not null": the signature says so.
    - In the voice of the file: English, `--` as the dash, `<see cref>`, `<paramref>`, and
      `<c>true</c>` / `<c>null</c>` as the code already writes them.
-   - No ADR or requirement IDs: no code comment cites one.
+   - No ADR or requirement IDs: no C# comment cites one.
    - Wrapped at 100 columns like the comments around it.
    - An overloaded name in a `cref` gets its parameter list (`Describe()`), or CS0419 fails the
      build.
@@ -246,7 +247,7 @@ branch. I give you a prompt to paste, since a chip would open at the checkout ro
 
   `Holders`' summary described the raw key names (backslashes written as '#'), while the method
   returns them made readable by `LeafName`; the new text says both.
-- **Assumption 2's throws are said in more places than its two examples:**
+- **Assumption 2's throws are said in these places, its two examples among them:**
   - `IRegistryStore`'s four methods and the `IAutoStartManager` summary, since their callers
     catch a refusal;
   - `ISettingsStore.Save`, and `ReminderCoordinator.Start` and `ApplySettings`;
@@ -258,7 +259,9 @@ branch. I give you a prompt to paste, since a chip would open at the checkout ro
   `OnDispatcherUnhandledException`. Who raises `SystemEvents.SessionSwitch` and
   `Application.DispatcherUnhandledException` was not checked, so neither tag names a sender.
 - **30 new lines first ran past 100 columns,** 18 in Core and 12 in App, and were wrapped before
-  their commits. `main` holds 14 doc lines over 100 columns, up to 111; they were left alone.
+  their commits. `main` holds 14 doc lines over 100 columns, up to 111. Two were rewrapped with
+  the summaries they belong to, `ISettingsStore.Load` and `IRegistryStore.DeleteValue`, and a
+  third, `VersionInfo`'s `Fallback`, in the code review below; the other 11 were left alone.
 - **Measured on 2026-10-21:**
 
   | Commit | What | Gate | Tests |
@@ -287,3 +290,63 @@ branch. I give you a prompt to paste, since a chip would open at the checkout ro
   - **No document quotes a changed comment text,** apart from ADR Contexts and plans. A stale
     sentence there is history (the kit's ADR 0024).
   - **Not run:** `--preview` and `--detect` (Assumption 9).
+
+## Code review
+
+`/code-review main...claude/Document-every-type-and-method` ran at maximum effort on 2026-10-21:
+ten finder angles, one verifier per candidate, then a sweep for gaps. Of 28 verified
+candidates, 27 held up and 1 was refuted; the report carried the 15 most severe. The owner had
+every comment-only error fixed ("fix the comment only errors too"), in 2479d99.
+
+- **Comments made true about the code,** including the same wrong fact where another comment
+  repeated it:
+  - `TrayIconHost.LoadTrayIcon` throws `IOException` for a missing icon, not
+    `InvalidOperationException`;
+  - `WindowPlacement.CenterIn` keeps the top-left corner in the area, not the Close button (the
+    summary and the inline comment);
+  - `NormalizeMessage`, `IsMessageAcceptable` and the two message comments in
+    `SettingsWindow.xaml` no longer say that the length cut keeps the text out of the Close
+    button, that the cap is what the window can show, or that the dialog always refuses;
+  - `HandleUnlock`: an open reminder is raised before the debounce and the activity check;
+  - `IActivityMonitor`: the coordinator's reads, with the fresh reading after a lock or a
+    settings change, and `--detect`'s reading once a second;
+  - `TrayTooltip.Format`: the retry gap is counted only while a reminder is held back, and a
+    null countdown with a reason is not the banner alone; the class summary and `SetTooltip`
+    give 127 characters on .NET 6 and later, not 63;
+  - `TryConsumeDue`: true once per retry gap after `Postpone`, and the backwards-clock reset
+    stated as the guard compares;
+  - `DarkMenuRenderer`: a disabled item's text is drawn in GrayText whatever is set; a
+    selection by the keyboard gets the hover fill too;
+  - the coordinator's constructor (`ApplySettings` before `Start`), `Start` (it starts the
+    monitor), `CountdownChanged` and `TrayIconHost`'s summary (the App sets the tooltip);
+  - `IRegistryStore.DeleteValue` throws for a write-protected key even with no value, and
+    `GetString` expands a REG_EXPAND_SZ; `ReadText` says so;
+  - `DetectionLog.Describe`, `VersionInfo.Read` and its `Fallback`, `LicenseInfo`'s fallback,
+    `FromShellState`'s parameter, `RepairPathIfNeeded`, `ResolveExecutablePath` (`dotnet run`
+    starts the apphost), `BreakWindow`'s message, and `SystemEventsSessionMonitor`'s summary.
+- **`SystemEventsSessionMonitor.Start` has its own text now.** It throws after `Dispose`, which
+  `ISessionMonitor.Start` does not promise, so it no longer meets Assumption 3. 12 members use
+  `<inheritdoc/>`, and the CHANGELOG line says 12.
+- **Two findings are code gaps, put to the owner as questions and not fixed.** Their comments
+  now say what the code does:
+  - `EnsureRegisteredOnFirstRun`: a refusal after the Run value is written leaves the app
+    registered without a marker, so it registers again at every start, undoing an untick.
+    R-003 and ADR 0028 say "nothing is registered".
+  - `TrayIconHost`: a refused read in `RefreshAutoStartItem` (after a click, on menu open, in
+    the constructor) is not caught and ends in the crash dialog. R-005 covers a refused change
+    only.
+- **Left as they are:**
+  - ADR 0028's Decision, with its "as under `dotnet run`" example and its "nothing is
+    registered";
+  - the summary of a test in `ReminderSettingsStoreTests` that gives the Close-button reason for
+    the cut;
+  - the README's padded `--detect` example;
+  - the review's cleanup suggestions: text repeated from the design notes, and tags that
+    restate a parameter's name.
+- **Measured after 2479d99:**
+  - the gate at the commit: `== OK in 22s`, 228 tests;
+  - the scratch counter: 0 types and 0 methods undocumented or incomplete;
+  - 12 `<inheritdoc/>`;
+  - 11 doc lines over 100 columns, against `main`'s 14;
+  - in `git diff main...HEAD -- src` (36 files, +750/-84), every changed line is a `///` or
+    `//` line, apart from four lines inside the two XAML comments of `SettingsWindow.xaml`.
