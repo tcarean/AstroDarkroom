@@ -82,8 +82,8 @@
                     IsEnabled="{Binding IsChecked, ElementName=UnlockCheck}">
             <!--
                 One line of input: the window wraps for itself, and a line break typed here
-                would only be turned into a space on save. MaxLength is the one limit the
-                window can show, read from Core so the dialog and the registry clamp agree.
+                would only be turned into a space on save. MaxLength is the longest message
+                allowed, read from Core so the dialog and the registry clamp agree.
             -->
             <Grid Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>
@@ -149,8 +149,8 @@
 
             <!--
                 One line of input: the window wraps for itself, and a line break typed here
-                would only be turned into a space on save. MaxLength is the one limit the
-                window can show, read from Core so the dialog and the registry clamp agree.
+                would only be turned into a space on save. MaxLength is the longest message
+                allowed, read from Core so the dialog and the registry clamp agree.
             -->
             <Grid Margin="0,12,0,0">
                 <Grid.ColumnDefinitions>

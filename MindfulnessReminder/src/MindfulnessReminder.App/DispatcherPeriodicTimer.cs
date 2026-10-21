@@ -36,6 +36,11 @@ internal sealed class DispatcherPeriodicTimer : IPeriodicTimer
     private readonly DispatcherTimer _timer;
     private bool _disposed;
 
+    /// <summary>
+    /// A stopped timer; once started, it ticks on the thread of <paramref name="dispatcher"/>.
+    /// </summary>
+    /// <param name="dispatcher">The dispatcher whose thread receives the ticks.</param>
+    /// <param name="interval">The time between ticks.</param>
     public DispatcherPeriodicTimer(Dispatcher dispatcher, TimeSpan interval)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -61,6 +66,7 @@ internal sealed class DispatcherPeriodicTimer : IPeriodicTimer
         }
     }
 
+    /// <inheritdoc/>
     public void Stop()
     {
         if (_timer.IsEnabled)
@@ -69,8 +75,15 @@ internal sealed class DispatcherPeriodicTimer : IPeriodicTimer
         }
     }
 
+    /// <summary>Raises <see cref="Tick"/> for each tick of the inner timer.</summary>
+    /// <param name="sender">The inner timer; not read.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnTick(object? sender, EventArgs e) => Tick?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>
+    /// Stops the timer and lets go of it; <see cref="Start"/> does nothing afterwards. Calling
+    /// it again does nothing.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

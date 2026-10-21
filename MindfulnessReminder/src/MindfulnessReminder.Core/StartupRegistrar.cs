@@ -33,6 +33,11 @@ public sealed class StartupRegistrar
     private readonly IRegistryStore _registry;
     private readonly IAutoStartManager _autoStart;
 
+    /// <summary>A registrar that keeps its marker under <see cref="SettingsKeyPath"/>.</summary>
+    /// <param name="registry">The per-user registry, which holds the marker.</param>
+    /// <param name="autoStart">
+    /// The auto-start entry to register on the first run and repair after it.
+    /// </param>
     public StartupRegistrar(IRegistryStore registry, IAutoStartManager autoStart)
     {
         ArgumentNullException.ThrowIfNull(registry);
@@ -43,8 +48,13 @@ public sealed class StartupRegistrar
     }
 
     /// <summary>
-    /// Returns <c>true</c> when this call performed the initial registration.
+    /// On the first run, registers auto-start and writes the marker; on every later run, only
+    /// repairs a stale path. A key this account may not write is not an error: no marker is
+    /// written, and the next start tries again. A refusal that comes after the Run value was
+    /// written leaves that value in place, so the app is then registered without a marker and
+    /// registers again at the next start.
     /// </summary>
+    /// <returns><c>true</c> when this call performed the initial registration.</returns>
     public bool EnsureRegisteredOnFirstRun()
     {
         try
@@ -62,8 +72,8 @@ public sealed class StartupRegistrar
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
         {
             // A key this account may not write (a policy, security software) is not a reason
-            // to fail to start: nothing is registered and no marker is written, so the next
-            // start tries again. The tray checkbox reports the same refusal when clicked.
+            // to fail to start: no marker is written, so the next start tries again. The tray
+            // checkbox reports the same refusal when clicked.
             return false;
         }
     }

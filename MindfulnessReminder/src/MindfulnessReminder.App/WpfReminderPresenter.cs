@@ -41,6 +41,12 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
     /// <summary>What the window queued by <see cref="Show"/> is going to say, once the delay is up.</summary>
     private string? _pendingMessage;
 
+    /// <summary>A presenter with no window open or queued.</summary>
+    /// <param name="dispatcher">The UI thread's dispatcher, which the show delay runs on.</param>
+    /// <param name="showDelay">
+    /// How long a reminder waits before its window opens; <c>null</c> is
+    /// <see cref="DefaultShowDelay"/>.
+    /// </param>
     public WpfReminderPresenter(Dispatcher dispatcher, TimeSpan? showDelay = null)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -52,6 +58,12 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
     /// <summary>A queued show counts as showing, so a burst cannot queue two windows.</summary>
     public bool IsShowing => _window is not null || _pendingShow is not null;
 
+    /// <summary>
+    /// Queues a window that says <paramref name="message"/>, to open after the show delay.
+    /// While a window is open it is raised instead, and keeps its text; while one is queued,
+    /// nothing changes.
+    /// </summary>
+    /// <param name="message">What the reminder says, drawn as given.</param>
     public void Show(string message)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -74,6 +86,9 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
         _pendingShow.Start();
     }
 
+    /// <summary>Opens the queued window once the show delay is up.</summary>
+    /// <param name="sender">The delay's timer; not read.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnPendingShowElapsed(object? sender, EventArgs e)
     {
         var message = _pendingMessage ?? ReminderSettings.DefaultMessage;
@@ -85,6 +100,10 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
         window.Show();
     }
 
+    /// <summary>
+    /// Restores the open window if it is minimized and brings it to the front. Does nothing
+    /// when no window is open, which includes while one is still queued.
+    /// </summary>
     public void BringToFront()
     {
         if (_window is not { } window)
@@ -101,6 +120,11 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
         window.Activate();
     }
 
+    /// <summary>
+    /// Forgets the window once it has closed, so that the next reminder opens a new one.
+    /// </summary>
+    /// <param name="sender">The window that closed.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnWindowClosed(object? sender, EventArgs e)
     {
         if (sender is BreakWindow window)
@@ -111,6 +135,9 @@ internal sealed class WpfReminderPresenter : IReminderPresenter
         _window = null;
     }
 
+    /// <summary>
+    /// Stops the show delay and forgets the queued message, when a window is queued.
+    /// </summary>
     private void CancelPendingShow()
     {
         if (_pendingShow is not { } timer)

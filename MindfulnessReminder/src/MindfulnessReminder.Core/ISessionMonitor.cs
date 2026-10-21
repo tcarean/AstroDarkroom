@@ -35,5 +35,9 @@ public interface ISessionMonitor : IDisposable
     /// </summary>
     event EventHandler? Locked;
 
+    /// <summary>
+    /// Starts raising <see cref="Unlocked"/> and <see cref="Locked"/>. Calling it again does
+    /// nothing.
+    /// </summary>
     void Start();
 }

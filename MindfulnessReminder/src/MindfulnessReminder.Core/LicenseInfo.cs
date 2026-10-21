@@ -28,11 +28,14 @@ namespace MindfulnessReminder.Core;
 /// The copyright string has a single source of truth, <c>&lt;Copyright&gt;</c> in
 /// Directory.Build.props, which MSBuild turns into AssemblyCopyrightAttribute. Don't
 /// hardcode it anywhere: the literal below is a fallback for the case where the attribute
-/// goes missing, not a second place to edit.
+/// goes missing or blank, not a second place to edit.
 /// </summary>
 public static class LicenseInfo
 {
-    /// <summary>Used only if the assembly attribute is missing; the csproj is the truth.</summary>
+    /// <summary>
+    /// Used only if the assembly attribute is missing or blank; Directory.Build.props is the
+    /// truth.
+    /// </summary>
     private const string Fallback = "Copyright (C) 2026 Tudor Carean";
 
     /// <summary>
@@ -60,6 +63,12 @@ public static class LicenseInfo
     public static string AboutText =>
         VersionInfo.Banner + "\n" + Copyright + "\n\n" + Warranty;
 
+    /// <summary>
+    /// Reads the copyright notice from the assembly's <see cref="AssemblyCopyrightAttribute"/>.
+    /// </summary>
+    /// <returns>
+    /// The notice, or <see cref="Fallback"/> when the attribute is missing or blank.
+    /// </returns>
     private static string ReadCopyright()
     {
         var copyright = typeof(LicenseInfo).Assembly

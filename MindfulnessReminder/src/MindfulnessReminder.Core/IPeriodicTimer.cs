@@ -18,10 +18,11 @@
 namespace MindfulnessReminder.Core;
 
 /// <summary>
-/// The one timer the whole app owns. It ticks at a short, fixed cadence -- it is *not* set
-/// to the reminder interval -- because two separate things need it: deciding whether the
-/// deadline has passed, and keeping the tray tooltip's countdown current. A one-shot timer
-/// armed for the interval would need a second timer for the tooltip.
+/// The one timer the reminder schedule runs on; the reminder window's show delay and
+/// <c>--detect</c> have timers of their own. It ticks at a short, fixed cadence -- it is *not*
+/// set to the reminder interval -- because two separate things need it: deciding whether
+/// the deadline has passed, and keeping the tray tooltip's countdown current. A one-shot
+/// timer armed for the interval would need a second timer for the tooltip.
 ///
 /// The production implementation is a DispatcherTimer, which lives in the App layer;
 /// keeping it behind this interface is what lets the whole schedule be tested instantly.
@@ -35,5 +36,6 @@ public interface IPeriodicTimer : IDisposable
     /// <summary>Idempotent: starting an already-running timer must not restart its period.</summary>
     void Start();
 
+    /// <summary>Stops the ticks. Does nothing when the timer is not running.</summary>
     void Stop();
 }

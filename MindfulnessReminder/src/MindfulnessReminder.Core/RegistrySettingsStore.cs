@@ -23,9 +23,9 @@ namespace MindfulnessReminder.Core;
 /// Settings in HKCU, under the same key the auto-start marker already uses -- one key for
 /// everything this app remembers.
 ///
-/// Both values are written as strings even though the interval is a number, so that
+/// All eight values are written as strings, the two numbers included, so that
 /// <see cref="IRegistryStore"/> stays the four methods it already had; a DWORD would have
-/// meant a wider interface for the sake of one value. Reading is deliberately forgiving: a
+/// meant a wider interface for the sake of two values. Reading is deliberately forgiving: a
 /// missing value is a fresh machine and a corrupt one is a hand-edited registry, and neither
 /// is a reason to fail to start. Both land on the defaults.
 /// </summary>
@@ -52,12 +52,15 @@ public sealed class RegistrySettingsStore : ISettingsStore
 
     private readonly IRegistryStore _registry;
 
+    /// <summary>A store that keeps the settings under <see cref="KeyPath"/>.</summary>
+    /// <param name="registry">The per-user registry to read and write.</param>
     public RegistrySettingsStore(IRegistryStore registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
         _registry = registry;
     }
 
+    /// <inheritdoc/>
     public ReminderSettings Load()
     {
         try
@@ -72,6 +75,11 @@ public sealed class RegistrySettingsStore : ISettingsStore
         }
     }
 
+    /// <summary>
+    /// Reads the eight values, each falling back to its default when absent or unparseable,
+    /// and normalizes the result. A registry error is left for <see cref="Load"/> to catch.
+    /// </summary>
+    /// <returns>The settings as stored, normalized.</returns>
     private ReminderSettings Read()
     {
         var defaults = ReminderSettings.Default;
@@ -96,6 +104,7 @@ public sealed class RegistrySettingsStore : ISettingsStore
         }.Normalize();
     }
 
+    /// <inheritdoc/>
     public void Save(ReminderSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -113,9 +122,17 @@ public sealed class RegistrySettingsStore : ISettingsStore
     }
 
     /// <summary>
+    /// Reads a switch, stored as "0" or "1".
+    ///
     /// Absent on a first run, so the default stands. Anything other than the two strings
     /// Save writes came from somewhere else, and the default is the safer reading of it.
     /// </summary>
+    /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
+    /// <param name="fallback">What an absent or unrecognised value reads as.</param>
+    /// <returns>
+    /// <c>false</c> for "0", <c>true</c> for "1", and <paramref name="fallback"/> for anything
+    /// else.
+    /// </returns>
     private bool ReadFlag(string valueName, bool fallback)
         => _registry.GetString(KeyPath, valueName) switch
         {
@@ -125,14 +142,29 @@ public sealed class RegistrySettingsStore : ISettingsStore
         };
 
     /// <summary>
-    /// Only absence falls back here. What the value SAYS is left to
-    /// <see cref="ReminderSettings.NormalizeMessage"/>, which is where "empty means the
-    /// default" and the length cap live, so that the rule is written once for the registry
+    /// Reads a message.
+    ///
+    /// Only a missing value, or one that is not a string, falls back here. What the value SAYS
+    /// is left to <see cref="ReminderSettings.NormalizeMessage"/>, which is where "empty means
+    /// the default" and the length cap live, so that the rule is written once for the registry
     /// and the dialog alike.
     /// </summary>
+    /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
+    /// <param name="fallback">What a missing or non-string value reads as.</param>
+    /// <returns>
+    /// The text as <see cref="IRegistryStore.GetString"/> returns it, not yet normalized, or
+    /// <paramref name="fallback"/>.
+    /// </returns>
     private string ReadText(string valueName, string fallback)
         => _registry.GetString(KeyPath, valueName) ?? fallback;
 
+    /// <summary>
+    /// Reads a whole number, stored as an invariant-culture string. Its range is left to
+    /// <see cref="ReminderSettings.Normalize"/>.
+    /// </summary>
+    /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
+    /// <param name="fallback">What an absent or unparseable value reads as.</param>
+    /// <returns>The number as stored, or <paramref name="fallback"/>.</returns>
     private int ReadNumber(string valueName, int fallback)
         => int.TryParse(
             _registry.GetString(KeyPath, valueName),
@@ -142,9 +174,15 @@ public sealed class RegistrySettingsStore : ISettingsStore
             ? parsed
             : fallback;
 
+    /// <summary>Writes a switch as "1" or "0".</summary>
+    /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
+    /// <param name="value">The switch to store.</param>
     private void WriteFlag(string valueName, bool value)
         => _registry.SetString(KeyPath, valueName, value ? "1" : "0");
 
+    /// <summary>Writes a whole number as an invariant-culture string.</summary>
+    /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
+    /// <param name="value">The number to store.</param>
     private void WriteNumber(string valueName, int value)
         => _registry.SetString(KeyPath, valueName, value.ToString(CultureInfo.InvariantCulture));
 }

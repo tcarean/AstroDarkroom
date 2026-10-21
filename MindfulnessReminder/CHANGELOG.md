@@ -30,6 +30,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (176 test methods renamed for 42 rows). There are no validation figures, and
   `docs/validation.md` says why. No behaviour changed; one `dotnet format` pass removed six
   unused usings in five files.
+- Every type and method in the code has an XML documentation comment, with a `<param>` for
+  each parameter and a `<returns>` for each value (the kit's rule "Documentation comments",
+  the kit's ADR 0035): 8 types and 150 methods documented or completed, 12 of them through
+  `<inheritdoc/>`. Comments that no longer matched the code were corrected along the way. No
+  code changed.
 
 ## [1.4.0] - 2026-09-14
 

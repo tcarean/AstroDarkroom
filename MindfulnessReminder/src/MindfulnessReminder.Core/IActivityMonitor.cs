@@ -23,13 +23,21 @@ namespace MindfulnessReminder.Core;
 /// indicator, plus SHQueryUserNotificationState; both live in the App layer, and this
 /// interface is what keeps the rules that act on them testable off a real machine.
 ///
-/// It is asked ONLY at the moment a reminder is due, and once per retry while one is being
-/// held back -- never on the one-second tick. A reminder every 30 minutes means two registry
-/// reads an hour.
+/// The coordinator asks it when a reminder is due, once per retry while one is being held
+/// back, and otherwise when its last reading is older than
+/// <see cref="ReminderCoordinator.DefaultActivityRefresh"/>, or was let go by a lock or a
+/// settings change, so that the tooltip stays current -- not on every one-second tick.
+/// <c>--detect</c> with a duration reads it once a second.
 /// </summary>
 public interface IActivityMonitor
 {
-    /// <summary>Never throws: anything unreadable reads as "nothing going on".</summary>
+    /// <summary>
+    /// Reads what the user is in the middle of at this moment. Never throws: anything
+    /// unreadable reads as "nothing going on".
+    /// </summary>
+    /// <returns>
+    /// Whether the microphone and the camera are live, and what the desktop is doing.
+    /// </returns>
     ActivitySnapshot Read();
 }
 
@@ -41,5 +49,7 @@ public sealed class IdleActivityMonitor : IActivityMonitor
 {
     public static readonly IdleActivityMonitor Instance = new();
 
+    /// <summary>Reads nothing.</summary>
+    /// <returns><see cref="ActivitySnapshot.Idle"/>, every time.</returns>
     public ActivitySnapshot Read() => ActivitySnapshot.Idle;
 }

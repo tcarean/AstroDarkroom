@@ -35,6 +35,10 @@ namespace MindfulnessReminder.App;
 /// </summary>
 public partial class SettingsWindow : Window
 {
+    /// <summary>
+    /// A Settings window filled in from <paramref name="current"/>, not yet shown.
+    /// </summary>
+    /// <param name="current">The settings in force, which the boxes start from.</param>
     public SettingsWindow(ReminderSettings current)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -64,6 +68,7 @@ public partial class SettingsWindow : Window
     /// separately. This is the first moment there is an HWND to ask about, and it is still
     /// before the first paint, so the caption is never seen light.
     /// </summary>
+    /// <param name="e">Passed on to the base class.</param>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -71,6 +76,12 @@ public partial class SettingsWindow : Window
         ImmersiveDarkMode.Apply(this);
     }
 
+    /// <summary>
+    /// Reads every box and, when what is needed is usable, raises <see cref="Accepted"/> with
+    /// the settings, normalized, and closes. Otherwise says what is wrong and stays open.
+    /// </summary>
+    /// <param name="sender">The Save button; not read.</param>
+    /// <param name="e">The click; not read.</param>
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
         var unlockEnabled = UnlockCheck.IsChecked == true;
@@ -158,6 +169,9 @@ public partial class SettingsWindow : Window
         Close();
     }
 
+    /// <summary>Closes the window without saving anything.</summary>
+    /// <param name="sender">The Cancel button; not read.</param>
+    /// <param name="e">The click; not read.</param>
     private void OnCancelClick(object sender, RoutedEventArgs e) => Close();
 
     /// <summary>
@@ -165,8 +179,13 @@ public partial class SettingsWindow : Window
     /// An OR of two checkboxes is not something a plain binding can express, and a
     /// MultiBinding would mean a converter class for one line of logic.
     /// </summary>
+    /// <param name="sender">The pause checkbox that changed; not read.</param>
+    /// <param name="e">The change; not read.</param>
     private void OnPauseToggled(object sender, RoutedEventArgs e) => SyncRetryAvailability();
 
+    /// <summary>
+    /// Enables the retry gap's row while either pause is ticked, and greys it out otherwise.
+    /// </summary>
     private void SyncRetryAvailability()
         => RetryPanel.IsEnabled =
             PauseMicrophoneCheck.IsChecked == true || PauseFullScreenCheck.IsChecked == true;
@@ -177,16 +196,24 @@ public partial class SettingsWindow : Window
            + " characters.";
 
     /// <summary>
-    /// The text as typed; trimming and the rest are Normalize's job on the way out. Only
+    /// Reads a message box. Trimming and the rest are Normalize's job on the way out. Only
     /// whether it is acceptable is decided here, because that is the part with a user to
     /// tell.
     /// </summary>
+    /// <param name="box">The message box to read.</param>
+    /// <param name="message">The text as typed, acceptable or not.</param>
+    /// <returns><c>true</c> when the dialog may save the text.</returns>
     private static bool TryReadMessage(TextBox box, out string message)
     {
         message = box.Text;
         return ReminderSettings.IsMessageAcceptable(message);
     }
 
+    /// <summary>Reads the interval box.</summary>
+    /// <param name="minutes">
+    /// The number typed, when it is a whole number, in range or not; 0 when it is not.
+    /// </param>
+    /// <returns><c>true</c> when the box holds a whole number of minutes in range.</returns>
     private bool TryReadInterval(out int minutes)
         => int.TryParse(
                IntervalBox.Text.Trim(),
@@ -195,6 +222,11 @@ public partial class SettingsWindow : Window
                out minutes)
            && ReminderSettings.IsIntervalInRange(minutes);
 
+    /// <summary>Reads the retry box.</summary>
+    /// <param name="seconds">
+    /// The number typed, when it is a whole number, in range or not; 0 when it is not.
+    /// </param>
+    /// <returns><c>true</c> when the box holds a whole number of seconds in range.</returns>
     private bool TryReadRetry(out int seconds)
         => int.TryParse(
                RetryBox.Text.Trim(),
@@ -204,6 +236,8 @@ public partial class SettingsWindow : Window
            && ReminderSettings.IsRetryInRange(seconds);
 
     /// <summary>Says what is wrong and puts the cursor where it can be fixed.</summary>
+    /// <param name="message">What is wrong, as the window shows it.</param>
+    /// <param name="box">The box at fault; it gets the focus, with its text selected.</param>
     private void Refuse(string message, TextBox box)
     {
         ShowError(message);
@@ -215,18 +249,27 @@ public partial class SettingsWindow : Window
     /// Keeps non-digits out of the box. This is a convenience, not the validation: a paste
     /// goes around it, which is why Save parses the text again rather than trusting this.
     /// </summary>
+    /// <param name="sender">The interval box or the retry box; not read.</param>
+    /// <param name="e">
+    /// The text being typed; marked handled, and so dropped, when it holds a non-digit.
+    /// </param>
     private void OnIntervalPreviewTextInput(object sender, TextCompositionEventArgs e)
         => e.Handled = !e.Text.All(char.IsAsciiDigit);
 
     /// <summary>Shared by every box: any edit clears the complaint about any of them.</summary>
+    /// <param name="sender">The box that changed; not read.</param>
+    /// <param name="e">The change; not read.</param>
     private void OnAnyTextChanged(object sender, TextChangedEventArgs e) => ClearError();
 
+    /// <summary>Shows a complaint in the window's error line.</summary>
+    /// <param name="message">What is wrong.</param>
     private void ShowError(string message)
     {
         ErrorText.Text = message;
         ErrorText.Visibility = Visibility.Visible;
     }
 
+    /// <summary>Hides the complaint, if one is showing.</summary>
     private void ClearError()
     {
         // ErrorText is null while the constructor is still running InitializeComponent and

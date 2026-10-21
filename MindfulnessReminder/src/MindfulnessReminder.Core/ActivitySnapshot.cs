@@ -24,6 +24,9 @@ namespace MindfulnessReminder.Core;
 /// belongs in an adapter, while deciding what it means is a rule and belongs in
 /// <see cref="SuppressionPolicy"/>. This type is the line between the two.
 /// </summary>
+/// <param name="MicrophoneInUse">True while an application has the microphone open.</param>
+/// <param name="CameraInUse">True while an application has the camera open.</param>
+/// <param name="Foreground">What the desktop is doing, as the shell reports it.</param>
 public readonly record struct ActivitySnapshot(
     bool MicrophoneInUse,
     bool CameraInUse,

@@ -48,12 +48,17 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
 
     private static readonly Color SeparatorColor = Color.FromArgb(0x33, 0x3B, 0x38);
 
+    /// <summary>
+    /// A renderer whose colour table is dark too, for whatever the overrides below do not
+    /// paint.
+    /// </summary>
     public DarkMenuRenderer()
         : base(new DarkColorTable())
     {
     }
 
     /// <summary>Applies the renderer and the two colours the renderer does not reach.</summary>
+    /// <param name="menu">The menu to paint dark.</param>
     public static void Apply(ToolStripDropDown menu)
     {
         ArgumentNullException.ThrowIfNull(menu);
@@ -63,6 +68,8 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         menu.Renderer = new DarkMenuRenderer();
     }
 
+    /// <summary>Fills the menu with the dark background.</summary>
+    /// <param name="e">What to paint on.</param>
     protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -70,6 +77,8 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         e.Graphics.Clear(Background);
     }
 
+    /// <summary>Draws a one-pixel border round the menu.</summary>
+    /// <param name="e">What to paint on, and the menu's bounds.</param>
     protected override void OnRenderToolStripBorder(ToolStripRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -85,6 +94,7 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
     /// gutter of the stock menu, which is the single most obvious tell that a dark menu was
     /// only half done.
     /// </summary>
+    /// <param name="e">What to paint on, and the strip's bounds.</param>
     protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -93,6 +103,11 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         e.Graphics.FillRectangle(brush, e.AffectedBounds);
     }
 
+    /// <summary>
+    /// Fills an item with the hover colour while it is selected, by the mouse or the keyboard,
+    /// and enabled, and with the background otherwise.
+    /// </summary>
+    /// <param name="e">The item, and what to paint on.</param>
     protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -105,6 +120,11 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         e.Graphics.FillRectangle(brush, new Rectangle(Point.Empty, e.Item.Size));
     }
 
+    /// <summary>
+    /// Draws an item's text in the light text colour. The base renderer draws a disabled
+    /// item's text in <see cref="SystemColors.GrayText"/>, whatever colour is set here.
+    /// </summary>
+    /// <param name="e">The item and its text; an enabled item's colour is set here.</param>
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -119,6 +139,7 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
     /// rounded plate that reads as a hole in a dark menu, so the plate becomes the accent
     /// and the glyph becomes white on top of it.
     /// </summary>
+    /// <param name="e">What to paint on, and where the tick goes.</param>
     protected override void OnRenderItemCheck(ToolStripItemImageRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
@@ -131,6 +152,8 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         ControlPaint.DrawMenuGlyph(e.Graphics, bounds, MenuGlyph.Checkmark, Color.White, Accent);
     }
 
+    /// <summary>Draws a separator as a thin line across the item, 4 px in from each side.</summary>
+    /// <param name="e">The separator, and what to paint on.</param>
     protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);

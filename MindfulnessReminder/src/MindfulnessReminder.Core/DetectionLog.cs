@@ -21,6 +21,11 @@ using System.Text;
 namespace MindfulnessReminder.Core;
 
 /// <summary>One reading, and how long after the start of the run it was taken.</summary>
+/// <param name="Elapsed">The time from the start of the run to this reading.</param>
+/// <param name="Activity">What the activity monitor read.</param>
+/// <param name="Suppression">
+/// What <see cref="SuppressionPolicy"/> made of it, with the settings of the run.
+/// </param>
 public readonly record struct DetectionSample(
     TimeSpan Elapsed,
     ActivitySnapshot Activity,
@@ -40,6 +45,12 @@ public readonly record struct DetectionSample(
 /// </summary>
 public static class DetectionLog
 {
+    /// <summary>
+    /// Writes the readings as a timeline: one line per run of identical readings, then a line
+    /// saying how many of them would have held a reminder back.
+    /// </summary>
+    /// <param name="samples">The readings, in the order they were taken; may be empty.</param>
+    /// <returns>The report, ready to show; "No readings taken." when there are none.</returns>
     public static string Render(IReadOnlyList<DetectionSample> samples)
     {
         ArgumentNullException.ThrowIfNull(samples);
@@ -79,9 +90,25 @@ public static class DetectionLog
         return report.ToString();
     }
 
+    /// <summary>Whether two readings belong on the same line of the timeline.</summary>
+    /// <param name="a">One reading.</param>
+    /// <param name="b">The other reading.</param>
+    /// <returns>
+    /// <c>true</c> when the activity and the verdict are both the same; the times are not
+    /// compared.
+    /// </returns>
     private static bool SameReading(DetectionSample a, DetectionSample b)
         => a.Activity == b.Activity && a.Suppression == b.Suppression;
 
+    /// <summary>
+    /// One line of the timeline: the span a run of identical readings covers, what they read,
+    /// and the verdict.
+    /// </summary>
+    /// <param name="first">The first reading of the run.</param>
+    /// <param name="last">
+    /// The last reading of the run; <paramref name="first"/> again for a run of one.
+    /// </param>
+    /// <returns>A line such as "0:01 - 0:05   mic off, camera off, Normal   ->  None".</returns>
     private static string Line(DetectionSample first, DetectionSample last)
         => Clock(first.Elapsed)
            + " - "
@@ -91,6 +118,12 @@ public static class DetectionLog
            + "   ->  "
            + first.Suppression;
 
+    /// <summary>The middle of a line: the two devices, then the desktop state.</summary>
+    /// <param name="activity">The reading to describe.</param>
+    /// <returns>
+    /// Text such as "mic off, camera off, Normal"; "ON" is padded to the width of "off", so
+    /// the two device readings always take the same width. The desktop state is not padded.
+    /// </returns>
     private static string Describe(ActivitySnapshot activity)
         => (activity.MicrophoneInUse ? "mic ON " : "mic off")
            + ", "
@@ -103,6 +136,8 @@ public static class DetectionLog
     /// the reader wants to line up against is what they were doing at the time, and they were
     /// counting from when they started the switch.
     /// </summary>
+    /// <param name="elapsed">The time from the start of the run.</param>
+    /// <returns>Whole minutes, a colon and two-digit seconds, such as "1:05".</returns>
     private static string Clock(TimeSpan elapsed)
         => ((int)elapsed.TotalMinutes).ToString(CultureInfo.InvariantCulture)
            + ":"

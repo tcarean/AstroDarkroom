@@ -24,8 +24,17 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public interface ISettingsStore
 {
-    /// <summary>Never throws and never returns null; anything unreadable falls back to the defaults.</summary>
+    /// <summary>
+    /// Reads the saved settings. Never throws and never returns null; anything unreadable falls
+    /// back to the defaults.
+    /// </summary>
+    /// <returns>The settings, normalized: both numbers in range, both messages in shape.</returns>
     ReminderSettings Load();
 
+    /// <summary>
+    /// Keeps <paramref name="settings"/> for the next run, normalized first. Throws when the
+    /// store cannot be written.
+    /// </summary>
+    /// <param name="settings">The settings to keep.</param>
     void Save(ReminderSettings settings);
 }

@@ -28,7 +28,11 @@ public interface IReminderPresenter
     /// text, because the coordinator is what knows which of the two reminders this is;
     /// the presenter only draws what it is handed.
     /// </summary>
+    /// <param name="message">What the reminder says, drawn as given.</param>
     void Show(string message);
 
+    /// <summary>
+    /// Raises the reminder that is already showing. It keeps the text it opened with.
+    /// </summary>
     void BringToFront();
 }

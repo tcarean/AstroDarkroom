@@ -43,9 +43,12 @@ internal static class ImmersiveDarkMode
     private const int UseImmersiveDarkModeBefore20H1 = 19;
 
     /// <summary>
+    /// Asks for a dark title bar on <paramref name="window"/>.
+    ///
     /// Call once the window has an HWND -- SourceInitialized is the earliest such moment,
     /// and it is before the first paint, so the caption is never seen light first.
     /// </summary>
+    /// <param name="window">The window to darken; nothing happens while it has no handle.</param>
     public static void Apply(Window window)
     {
         ArgumentNullException.ThrowIfNull(window);
@@ -65,6 +68,15 @@ internal static class ImmersiveDarkMode
         }
     }
 
+    /// <summary>
+    /// dwmapi's DwmSetWindowAttribute: sets one attribute of how the desktop window manager
+    /// draws a window.
+    /// </summary>
+    /// <param name="hwnd">The window's handle.</param>
+    /// <param name="attribute">The attribute's number.</param>
+    /// <param name="value">The value to set; 1 switches the dark title bar on.</param>
+    /// <param name="size">The size of <paramref name="value"/>, in bytes.</param>
+    /// <returns>An HRESULT: 0 when the attribute was set.</returns>
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(
         IntPtr hwnd, int attribute, ref int value, int size);

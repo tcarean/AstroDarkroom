@@ -37,6 +37,17 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     private readonly string _valueName;
     private readonly string _executablePath;
 
+    /// <summary>
+    /// A manager for the Run value <paramref name="valueName"/>, which starts
+    /// <paramref name="executablePath"/>. Neither string may be blank.
+    /// </summary>
+    /// <param name="registry">The per-user registry to read and write.</param>
+    /// <param name="valueName">
+    /// The value's name under the Run key, which Task Manager also shows.
+    /// </param>
+    /// <param name="executablePath">
+    /// The full path of the executable; written between quotes.
+    /// </param>
     public RegistryAutoStartManager(IRegistryStore registry, string valueName, string executablePath)
     {
         ArgumentNullException.ThrowIfNull(registry);
@@ -51,6 +62,7 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     /// <summary>The exact string this manager writes to the Run key.</summary>
     public string Command => Quote(_executablePath);
 
+    /// <inheritdoc/>
     public AutoStartStatus GetStatus()
     {
         var command = _registry.GetString(RunKeyPath, _valueName);
@@ -62,6 +74,7 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
         return IsApprovalRevoked() ? AutoStartStatus.BlockedByWindows : AutoStartStatus.Enabled;
     }
 
+    /// <inheritdoc/>
     public void Enable()
     {
         _registry.SetString(RunKeyPath, _valueName, Command);
@@ -72,8 +85,10 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
         _registry.DeleteValue(StartupApprovedKeyPath, _valueName);
     }
 
+    /// <inheritdoc/>
     public void Disable() => _registry.DeleteValue(RunKeyPath, _valueName);
 
+    /// <inheritdoc/>
     public bool RepairPathIfNeeded()
     {
         var command = _registry.GetString(RunKeyPath, _valueName);
@@ -92,15 +107,24 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     }
 
     /// <summary>
+    /// Whether Task Manager has switched the entry off.
+    ///
     /// The approval value is a 12-byte blob whose first byte carries the flag: an even
     /// value means enabled (0x02), an odd one means the user disabled it (0x03).
     /// A missing value means the entry was never vetoed.
     /// </summary>
+    /// <returns>
+    /// <c>true</c> when the first byte of the approval value is odd; <c>false</c> when it is
+    /// even, or the value is empty or missing.
+    /// </returns>
     private bool IsApprovalRevoked()
     {
         var approval = _registry.GetBinary(StartupApprovedKeyPath, _valueName);
         return approval is { Length: > 0 } && (approval[0] & 0x01) != 0;
     }
 
+    /// <summary>Puts a path between double quotes, so one with spaces stays one command.</summary>
+    /// <param name="path">The executable's path.</param>
+    /// <returns>The path between double quotes.</returns>
     private static string Quote(string path) => $"\"{path}\"";
 }

@@ -79,6 +79,31 @@ public sealed class ReminderCoordinator : IDisposable
     private bool _started;
     private bool _disposed;
 
+    /// <summary>
+    /// A coordinator that hears no lock, unlock or tick until <see cref="Start"/>; an
+    /// <see cref="ApplySettings"/> before it already restarts the countdown and starts the
+    /// timer. It owns <paramref name="monitor"/> and <paramref name="timer"/>:
+    /// <see cref="Dispose"/> disposes both.
+    /// </summary>
+    /// <param name="monitor">Raises the lock and the unlock.</param>
+    /// <param name="presenter">Shows the reminder window.</param>
+    /// <param name="timer">
+    /// Ticks the schedule; the app's ticks every <see cref="DefaultTickInterval"/>.
+    /// </param>
+    /// <param name="settings">The settings to start with; normalized before they are kept.</param>
+    /// <param name="activity">
+    /// What the user is in the middle of; <c>null</c> sees nothing, ever.
+    /// </param>
+    /// <param name="clock">The time; <c>null</c> is the system clock.</param>
+    /// <param name="debounce">
+    /// How soon after a reminder was shown an unlock shows none, which collapses the two
+    /// unlock events Windows can raise for one unlock; <c>null</c> is
+    /// <see cref="DefaultDebounce"/>.
+    /// </param>
+    /// <param name="activityRefresh">
+    /// How often the activity monitor is read on ticks when no reminder is due; <c>null</c> is
+    /// <see cref="DefaultActivityRefresh"/>.
+    /// </param>
     public ReminderCoordinator(
         ISessionMonitor monitor,
         IReminderPresenter presenter,
@@ -106,7 +131,7 @@ public sealed class ReminderCoordinator : IDisposable
 
     /// <summary>
     /// Raised whenever the time to the next reminder may have changed -- on every tick, and
-    /// on anything that restarts or stops the countdown. The tray host turns it into the
+    /// on anything that restarts or stops the countdown. The App turns it into the tray
     /// tooltip; it carries no text, because the coordinator has no opinion on wording.
     /// </summary>
     public event EventHandler? CountdownChanged;
@@ -132,6 +157,11 @@ public sealed class ReminderCoordinator : IDisposable
     /// </summary>
     public ReminderSuppression Suppression { get; private set; }
 
+    /// <summary>
+    /// Subscribes to and starts the session monitor, subscribes to the timer, and starts the
+    /// countdown, which raises <see cref="CountdownChanged"/>. Calling it again does nothing;
+    /// calling it after <see cref="Dispose"/> throws <see cref="ObjectDisposedException"/>.
+    /// </summary>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -160,8 +190,9 @@ public sealed class ReminderCoordinator : IDisposable
     /// Takes settings edited in the dialog. The countdown restarts from zero rather than
     /// keeping the time already elapsed: changing 30 minutes to 10 while 25 remain would
     /// otherwise either fire at once or leave the tooltip showing a number the new setting
-    /// cannot explain.
+    /// cannot explain. Throws <see cref="ObjectDisposedException"/> after <see cref="Dispose"/>.
     /// </summary>
+    /// <param name="settings">The settings to apply; normalized before they are kept.</param>
     public void ApplySettings(ReminderSettings settings)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -180,12 +211,34 @@ public sealed class ReminderCoordinator : IDisposable
         CountdownChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Hands the monitor's <see cref="ISessionMonitor.Unlocked"/> to <see cref="HandleUnlock"/>.
+    /// </summary>
+    /// <param name="sender">The session monitor; not read.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnUnlocked(object? sender, EventArgs e) => HandleUnlock();
 
+    /// <summary>
+    /// Hands the monitor's <see cref="ISessionMonitor.Locked"/> to <see cref="HandleLock"/>.
+    /// </summary>
+    /// <param name="sender">The session monitor; not read.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnLocked(object? sender, EventArgs e) => HandleLock();
 
+    /// <summary>
+    /// Hands the timer's <see cref="IPeriodicTimer.Tick"/> to <see cref="HandleTick"/>.
+    /// </summary>
+    /// <param name="sender">The timer; not read.</param>
+    /// <param name="e">Empty; not read.</param>
     private void OnTick(object? sender, EventArgs e) => HandleTick();
 
+    /// <summary>
+    /// What an unlock does. The countdown restarts in full first. Then, with the unlock
+    /// reminder switched on, a reminder already open is raised, whatever the debounce and the
+    /// activity monitor would say. Otherwise one is shown with the unlock message, unless a
+    /// reminder was shown within the debounce or what the user is in the middle of holds it
+    /// back.
+    /// </summary>
     internal void HandleUnlock()
     {
         // The countdown restarts on EVERY unlock, before anything decides whether a window
@@ -249,6 +302,10 @@ public sealed class ReminderCoordinator : IDisposable
         _presenter.Show(Settings.UnlockMessage);
     }
 
+    /// <summary>
+    /// What a lock does: the countdown is suspended and the timer stopped until the unlock.
+    /// Nothing is shown on a lock.
+    /// </summary>
     internal void HandleLock()
     {
         _schedule.Suspend();
@@ -262,6 +319,13 @@ public sealed class ReminderCoordinator : IDisposable
         CountdownChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// What a tick does. Once the deadline has passed, the periodic reminder is shown, or the
+    /// one already open is raised; if what the user is in the middle of holds it back, it is
+    /// postponed by the retry gap instead. On any other tick, <see cref="Suppression"/> is
+    /// refreshed when the last reading is older than the refresh interval. Either way
+    /// <see cref="CountdownChanged"/> is raised.
+    /// </summary>
     internal void HandleTick()
     {
         var now = _clock.UtcNow;
@@ -311,6 +375,10 @@ public sealed class ReminderCoordinator : IDisposable
     /// can say so. Nothing is read when both switches are off: an answer nobody would look at
     /// is not worth a walk through the registry.
     /// </summary>
+    /// <returns>
+    /// Why a reminder may not appear now, as also kept in <see cref="Suppression"/>;
+    /// <see cref="ReminderSuppression.None"/> when it may, or when both pauses are off.
+    /// </returns>
     private ReminderSuppression Evaluate()
     {
         if (!Settings.PausesForAnything)
@@ -331,6 +399,7 @@ public sealed class ReminderCoordinator : IDisposable
     /// The read is cheap but not free, and a tray application that walks the registry once a
     /// second forever has stopped being unobtrusive.
     /// </summary>
+    /// <param name="now">The current time, compared with the time of the last reading.</param>
     private void RefreshSuppression(DateTimeOffset now)
     {
         if (!Settings.PausesForAnything)
@@ -363,6 +432,10 @@ public sealed class ReminderCoordinator : IDisposable
         }
     }
 
+    /// <summary>
+    /// Unsubscribes, stops and disposes the timer, and disposes the session monitor. The
+    /// presenter and the activity monitor are not disposed. Calling it again does nothing.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
