@@ -42,12 +42,13 @@ public interface IAutoStartManager
     void Disable();
 
     /// <summary>
-    /// Rewrites the registered command when the executable has moved since it was registered.
-    /// Never lifts a Task Manager block.
+    /// Rewrites the registered command when it is not this executable's: the executable has
+    /// moved since it was registered, or the entry was edited. Never lifts a Task Manager
+    /// block.
     /// </summary>
     /// <returns>
     /// <c>true</c> when a repair was made; <c>false</c> when there is no entry, or it already
-    /// points at this executable.
+    /// holds exactly this executable's command, compared without regard to case.
     /// </returns>
     bool RepairPathIfNeeded();
 }

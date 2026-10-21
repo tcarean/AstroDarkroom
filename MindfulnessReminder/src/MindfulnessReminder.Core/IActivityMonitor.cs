@@ -23,9 +23,11 @@ namespace MindfulnessReminder.Core;
 /// indicator, plus SHQueryUserNotificationState; both live in the App layer, and this
 /// interface is what keeps the rules that act on them testable off a real machine.
 ///
-/// It is asked at the moment a reminder is due, once per retry while one is being held
-/// back, and otherwise at most every <see cref="ReminderCoordinator.DefaultActivityRefresh"/>
-/// so that the tooltip stays current -- never on every one-second tick.
+/// The coordinator asks it when a reminder is due, once per retry while one is being held
+/// back, and otherwise when its last reading is older than
+/// <see cref="ReminderCoordinator.DefaultActivityRefresh"/>, or was let go by a lock or a
+/// settings change, so that the tooltip stays current -- not on every one-second tick.
+/// <c>--detect</c> with a duration reads it once a second.
 /// </summary>
 public interface IActivityMonitor
 {

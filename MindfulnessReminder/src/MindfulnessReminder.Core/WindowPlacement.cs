@@ -35,8 +35,8 @@ public static class WindowPlacement
 {
     /// <summary>
     /// Centres a window of the given size in <paramref name="area"/>. A window wider or taller
-    /// than the area is pinned to its left or top edge instead, so the Close button stays on
-    /// screen.
+    /// than the area is pinned to its left or top edge instead, so that its top-left corner
+    /// stays in the area.
     /// </summary>
     /// <param name="area">The work area to centre in.</param>
     /// <param name="width">The window's width, in the area's units.</param>
@@ -48,7 +48,7 @@ public static class WindowPlacement
         var top = area.Top + (area.Height - height) / 2;
 
         // A window wider or taller than the work area would be centred with its top-left off
-        // screen, putting the Close button out of reach. Pin it to the corner instead.
+        // screen. Pin that corner to the area's instead.
         return (Math.Max(left, area.Left), Math.Max(top, area.Top));
     }
 }

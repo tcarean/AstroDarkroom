@@ -389,8 +389,9 @@ public partial class App : WpfApplication
 
     /// <summary>
     /// Finds the path to record for auto-start. <see cref="Environment.ProcessPath"/> is the
-    /// right answer for a normal launch (single-file publish included); under "dotnet run" it
-    /// points at the shared host instead, so the apphost next to the assembly is used.
+    /// right answer for a normal launch (single-file publish and "dotnet run" included); when
+    /// the app is started through the shared host, as "dotnet MindfulnessReminder.dll", it
+    /// points at dotnet.exe instead, so the apphost next to the assembly is used.
     /// </summary>
     /// <returns>The full path of the executable to start with Windows.</returns>
     private static string ResolveExecutablePath()

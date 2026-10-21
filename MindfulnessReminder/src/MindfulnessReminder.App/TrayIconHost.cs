@@ -28,7 +28,8 @@ namespace MindfulnessReminder.App;
 /// user can change auto-start behind our back from Task Manager's Startup tab.
 ///
 /// The tooltip is not static any more -- it carries the countdown to the next reminder, so
-/// the coordinator drives it through <see cref="SetTooltip"/>.
+/// the App sets it through <see cref="SetTooltip"/> whenever the coordinator's countdown
+/// changes.
 /// </summary>
 internal sealed class TrayIconHost : IDisposable
 {
@@ -104,7 +105,7 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// Replaces the hover text. Truncated rather than trusted: NotifyIcon.Text throws above
-    /// 63 characters, and a tray icon lost to an exception is a poor trade for a countdown.
+    /// 127 characters, and a tray icon lost to an exception is a poor trade for a countdown.
     /// <see cref="TrayTooltip"/> already keeps within the limit; this is the belt to its braces.
     /// </summary>
     /// <param name="text">
@@ -132,7 +133,8 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// Switches auto-start off when it works and on otherwise, then refreshes the item. A
-    /// refusal from Windows becomes a notification rather than an error.
+    /// change Windows refuses becomes a notification rather than an error; a refused read in
+    /// the refresh that follows is not caught.
     /// </summary>
     /// <param name="sender">The menu item; not read.</param>
     /// <param name="e">The click; not read.</param>
@@ -174,7 +176,8 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// Loads the app icon at the shell's small icon size. Throws
-    /// <see cref="InvalidOperationException"/> when the resource is missing.
+    /// <see cref="System.IO.IOException"/> when the icon is not among the assembly's
+    /// resources: WPF throws it before the null check below can.
     /// </summary>
     /// <returns>The icon, which the caller disposes.</returns>
     private static Icon LoadTrayIcon()

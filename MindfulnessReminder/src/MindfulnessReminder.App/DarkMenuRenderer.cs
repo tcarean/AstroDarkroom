@@ -104,8 +104,8 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
     }
 
     /// <summary>
-    /// Fills an item with the hover colour while the mouse is over it and it is enabled, and
-    /// with the background otherwise.
+    /// Fills an item with the hover colour while it is selected, by the mouse or the keyboard,
+    /// and enabled, and with the background otherwise.
     /// </summary>
     /// <param name="e">The item, and what to paint on.</param>
     protected override void OnRenderMenuItemBackground(ToolStripItemRenderEventArgs e)
@@ -120,10 +120,11 @@ internal sealed class DarkMenuRenderer : ToolStripProfessionalRenderer
         e.Graphics.FillRectangle(brush, new Rectangle(Point.Empty, e.Item.Size));
     }
 
-    /// <summary>Draws an item's text light, or dimmed when the item is disabled.</summary>
-    /// <param name="e">
-    /// The item and its text; the text colour is set here before it is drawn.
-    /// </param>
+    /// <summary>
+    /// Draws an item's text in the light text colour. The base renderer draws a disabled
+    /// item's text in <see cref="SystemColors.GrayText"/>, whatever colour is set here.
+    /// </summary>
+    /// <param name="e">The item and its text; an enabled item's colour is set here.</param>
     protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);

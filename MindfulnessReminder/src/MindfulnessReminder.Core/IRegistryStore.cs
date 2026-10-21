@@ -29,7 +29,7 @@ public interface IRegistryStore
     /// <param name="valueName">The value under the key.</param>
     /// <returns>
     /// The string, or <c>null</c> when the key or the value is missing, or the value is not a
-    /// string.
+    /// string. A REG_EXPAND_SZ value comes back with its environment variables expanded.
     /// </returns>
     string? GetString(string keyPath, string valueName);
 
@@ -52,8 +52,9 @@ public interface IRegistryStore
     void SetString(string keyPath, string valueName, string value);
 
     /// <summary>
-    /// Removes the value if present; does nothing when the key or value is missing. Throws
-    /// when this account may not write the key.
+    /// Removes the value if present; does nothing when the key is missing, or when the value
+    /// is missing from a key this account may write. Throws when this account may not write
+    /// the key, whether or not the value is there.
     /// </summary>
     /// <param name="keyPath">The key, relative to HKEY_CURRENT_USER.</param>
     /// <param name="valueName">The value to remove.</param>

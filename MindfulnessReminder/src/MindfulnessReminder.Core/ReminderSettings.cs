@@ -161,8 +161,8 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     /// spaces, because the box has one line of input and the window wraps for itself;
     /// surrounding space is dropped; nothing at all -- a wiped registry value, or a box the
     /// user cleared with that reminder switched off -- means the default; and anything past
-    /// the limit is cut at it, so a hand-edited registry cannot push the text into the
-    /// Close button.
+    /// the limit is cut at it, so a hand-edited registry cannot hand the window a longer text
+    /// than the dialog lets anyone type.
     /// </summary>
     /// <param name="message">The text as written; <c>null</c> reads as the default.</param>
     /// <returns>
@@ -219,15 +219,16 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
         => seconds is >= MinRetrySeconds and <= MaxRetrySeconds;
 
     /// <summary>
-    /// Checks a message typed in the dialog. The dialog refuses rather than falling back,
-    /// because there is a user standing there to tell; the fallback in
-    /// <see cref="NormalizeMessage"/> is for the registry, where there is not.
+    /// Checks a message typed in the dialog. For a reminder that is switched on, the dialog
+    /// refuses an unacceptable message rather than falling back, because there is a user
+    /// standing there to tell; for one that is off it saves the default instead. The fallback
+    /// in <see cref="NormalizeMessage"/> is for the registry, where there is nobody to tell.
     /// </summary>
     /// <param name="message">The text as typed; <c>null</c> is refused.</param>
     /// <returns>
     /// <c>true</c> when <paramref name="message"/> is something the dialog may accept:
-    /// something other than whitespace, and no longer than the window can show
-    /// (<see cref="MaxMessageLength"/> characters once trimmed).
+    /// something other than whitespace, and at most <see cref="MaxMessageLength"/> characters
+    /// once trimmed.
     /// </returns>
     public static bool IsMessageAcceptable(string? message)
     {

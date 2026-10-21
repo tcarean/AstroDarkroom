@@ -24,8 +24,8 @@ namespace MindfulnessReminder.App;
 /// <summary>
 /// Lock and unlock detection through <see cref="SystemEvents.SessionSwitch"/>.
 ///
-/// SystemEvents raises its callbacks on a private worker thread, not on ours, so every
-/// notification is marshalled onto the WPF dispatcher before it reaches the coordinator.
+/// Every notification is passed on through the WPF dispatcher, so the coordinator hears it on
+/// the UI thread, whichever thread SystemEvents raised it on.
 /// Only the two workstation reasons are forwarded: SessionLogon would pop the window during
 /// sign-in, and the remote/console connect reasons belong to RDP reconnects rather than to a
 /// real unlock.
@@ -48,7 +48,11 @@ internal sealed class SystemEventsSessionMonitor : ISessionMonitor
 
     public event EventHandler? Locked;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Starts raising <see cref="Unlocked"/> and <see cref="Locked"/>. Calling it again does
+    /// nothing; calling it after <see cref="Dispose"/> throws
+    /// <see cref="ObjectDisposedException"/>.
+    /// </summary>
     public void Start()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

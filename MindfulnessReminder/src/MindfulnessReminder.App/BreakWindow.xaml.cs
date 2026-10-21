@@ -33,9 +33,10 @@ public partial class BreakWindow : Window
 {
     /// <summary>A reminder window that says <paramref name="message"/>, not yet shown.</summary>
     /// <param name="message">
-    /// What the window says. It comes from the coordinator, which is the one thing that knows
-    /// whether this is the unlock reminder or the periodic one, or from <c>--preview</c>; the
-    /// window itself has no idea, and does not need one.
+    /// What the window says. In the tray it comes from the coordinator, which is the one thing
+    /// that knows whether this is the unlock reminder or the periodic one; under
+    /// <c>--preview</c> it comes from the command line. The window itself has no idea, and does
+    /// not need one.
     /// </param>
     public BreakWindow(string message)
     {

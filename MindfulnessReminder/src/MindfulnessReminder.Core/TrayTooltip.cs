@@ -24,8 +24,9 @@ namespace MindfulnessReminder.Core;
 /// until the next reminder or why one is being held back.
 ///
 /// It is a pure function rather than a line inside the tray host because of the length
-/// limit. NotifyIcon.Text is capped at 63 characters and THROWS above it, so the one thing
-/// really worth testing here is that the longest string this can produce still fits.
+/// limit. NotifyIcon.Text THROWS above 127 characters on .NET 6 and later (63 on .NET
+/// Framework, the limit <see cref="MaxLength"/> keeps to), so the one thing really worth
+/// testing here is that the longest string this can produce still fits.
 /// </summary>
 public static class TrayTooltip
 {
@@ -40,16 +41,17 @@ public static class TrayTooltip
     /// being held back.
     ///
     /// A <paramref name="suppression"/> other than None replaces the countdown rather than
-    /// joining it. What is being counted at that point is the retry gap, seconds rather than
-    /// minutes, and a countdown stuck at "1 min" through an hour-long call is the one thing
-    /// that would make a working feature look broken. The reason is also the only way to
-    /// tell a held-back reminder from a stopped one without opening anything.
+    /// joining it. While a reminder is held back, what is being counted is the retry gap,
+    /// seconds rather than minutes, and a countdown stuck at "1 min" through an hour-long call
+    /// is the one thing that would make a working feature look broken. The reason is also the
+    /// only way to tell a held-back reminder from a stopped one without opening anything.
     /// </summary>
     /// <param name="banner">The name and version, which the tooltip starts with.</param>
     /// <param name="remaining">
     /// The time to the next reminder. It is null when nothing is being counted -- the feature
     /// is off, or the workstation is locked -- and the tooltip is then just the banner, the
-    /// same as it read before this feature existed.
+    /// same as it read before this feature existed, unless <paramref name="suppression"/>
+    /// gives a reason.
     /// </param>
     /// <param name="suppression">Why a reminder is being held back, or None.</param>
     /// <returns>

@@ -122,7 +122,7 @@ public static class DetectionLog
     /// <param name="activity">The reading to describe.</param>
     /// <returns>
     /// Text such as "mic off, camera off, Normal"; "ON" is padded to the width of "off", so
-    /// the columns of consecutive lines stay aligned.
+    /// the two device readings always take the same width. The desktop state is not padded.
     /// </returns>
     private static string Describe(ActivitySnapshot activity)
         => (activity.MicrophoneInUse ? "mic ON " : "mic off")

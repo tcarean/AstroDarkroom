@@ -142,17 +142,18 @@ public sealed class RegistrySettingsStore : ISettingsStore
         };
 
     /// <summary>
-    /// Reads a message, as stored.
+    /// Reads a message.
     ///
-    /// Only absence falls back here. What the value SAYS is left to
-    /// <see cref="ReminderSettings.NormalizeMessage"/>, which is where "empty means the
-    /// default" and the length cap live, so that the rule is written once for the registry
+    /// Only a missing value, or one that is not a string, falls back here. What the value SAYS
+    /// is left to <see cref="ReminderSettings.NormalizeMessage"/>, which is where "empty means
+    /// the default" and the length cap live, so that the rule is written once for the registry
     /// and the dialog alike.
     /// </summary>
     /// <param name="valueName">The value under <see cref="KeyPath"/>.</param>
-    /// <param name="fallback">What an absent value reads as.</param>
+    /// <param name="fallback">What a missing or non-string value reads as.</param>
     /// <returns>
-    /// The stored text unchanged, or <paramref name="fallback"/> when the value is absent.
+    /// The text as <see cref="IRegistryStore.GetString"/> returns it, not yet normalized, or
+    /// <paramref name="fallback"/>.
     /// </returns>
     private string ReadText(string valueName, string fallback)
         => _registry.GetString(KeyPath, valueName) ?? fallback;

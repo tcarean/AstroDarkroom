@@ -39,7 +39,10 @@ public static class VersionInfo
     /// <summary>The product name, spelled the way the user sees it everywhere.</summary>
     public const string Name = "Mindfulness Reminder";
 
-    /// <summary>Used only if the assembly attribute is missing; the build props are the truth.</summary>
+    /// <summary>
+    /// Used only if the informational version is there but blank; without one the assembly
+    /// version is used instead. The build props are the truth.
+    /// </summary>
     private const string Fallback = "0.0.0";
 
     public static string Value { get; } = Read();
@@ -52,7 +55,9 @@ public static class VersionInfo
     /// assembly version, without the "+revision" some builds append.
     /// </summary>
     /// <returns>
-    /// The version, such as "1.4.0"; <see cref="Fallback"/> when the assembly carries none.
+    /// The version, such as "1.4.0"; the four-part assembly version, such as "1.4.0.0", when
+    /// there is no informational version; <see cref="Fallback"/> when there is one but it is
+    /// blank.
     /// </returns>
     private static string Read()
     {

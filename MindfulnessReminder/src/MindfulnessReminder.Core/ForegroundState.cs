@@ -72,7 +72,8 @@ public static class UserNotificationState
     /// one must not be able to switch the reminder off by accident.
     /// </summary>
     /// <param name="state">
-    /// The number SHQueryUserNotificationState returned; 0 when the call failed.
+    /// The state SHQueryUserNotificationState wrote to its out parameter; 0 when the call
+    /// failed.
     /// </param>
     /// <returns>
     /// The state it stands for; <see cref="ForegroundState.Unknown"/> for any other number.

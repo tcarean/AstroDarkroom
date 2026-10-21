@@ -49,8 +49,10 @@ public sealed class StartupRegistrar
 
     /// <summary>
     /// On the first run, registers auto-start and writes the marker; on every later run, only
-    /// repairs a stale path. A key this account may not write is not an error: nothing is
-    /// registered, and the next start tries again.
+    /// repairs a stale path. A key this account may not write is not an error: no marker is
+    /// written, and the next start tries again. A refusal that comes after the Run value was
+    /// written leaves that value in place, so the app is then registered without a marker and
+    /// registers again at the next start.
     /// </summary>
     /// <returns><c>true</c> when this call performed the initial registration.</returns>
     public bool EnsureRegisteredOnFirstRun()
@@ -70,8 +72,8 @@ public sealed class StartupRegistrar
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
         {
             // A key this account may not write (a policy, security software) is not a reason
-            // to fail to start: nothing is registered and no marker is written, so the next
-            // start tries again. The tray checkbox reports the same refusal when clicked.
+            // to fail to start: no marker is written, so the next start tries again. The tray
+            // checkbox reports the same refusal when clicked.
             return false;
         }
     }

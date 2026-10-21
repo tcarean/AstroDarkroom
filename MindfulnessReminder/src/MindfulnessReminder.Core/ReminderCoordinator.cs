@@ -80,9 +80,10 @@ public sealed class ReminderCoordinator : IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// A coordinator that does nothing until <see cref="Start"/>. It owns
-    /// <paramref name="monitor"/> and <paramref name="timer"/>: <see cref="Dispose"/> disposes
-    /// both.
+    /// A coordinator that hears no lock, unlock or tick until <see cref="Start"/>; an
+    /// <see cref="ApplySettings"/> before it already restarts the countdown and starts the
+    /// timer. It owns <paramref name="monitor"/> and <paramref name="timer"/>:
+    /// <see cref="Dispose"/> disposes both.
     /// </summary>
     /// <param name="monitor">Raises the lock and the unlock.</param>
     /// <param name="presenter">Shows the reminder window.</param>
@@ -130,7 +131,7 @@ public sealed class ReminderCoordinator : IDisposable
 
     /// <summary>
     /// Raised whenever the time to the next reminder may have changed -- on every tick, and
-    /// on anything that restarts or stops the countdown. The tray host turns it into the
+    /// on anything that restarts or stops the countdown. The App turns it into the tray
     /// tooltip; it carries no text, because the coordinator has no opinion on wording.
     /// </summary>
     public event EventHandler? CountdownChanged;
@@ -157,9 +158,9 @@ public sealed class ReminderCoordinator : IDisposable
     public ReminderSuppression Suppression { get; private set; }
 
     /// <summary>
-    /// Subscribes to the session monitor and the timer and starts the countdown, which raises
-    /// <see cref="CountdownChanged"/>. Calling it again does nothing; calling it after
-    /// <see cref="Dispose"/> throws <see cref="ObjectDisposedException"/>.
+    /// Subscribes to and starts the session monitor, subscribes to the timer, and starts the
+    /// countdown, which raises <see cref="CountdownChanged"/>. Calling it again does nothing;
+    /// calling it after <see cref="Dispose"/> throws <see cref="ObjectDisposedException"/>.
     /// </summary>
     public void Start()
     {
@@ -233,9 +234,10 @@ public sealed class ReminderCoordinator : IDisposable
 
     /// <summary>
     /// What an unlock does. The countdown restarts in full first. Then, with the unlock
-    /// reminder switched on, a reminder already open is raised, or one is shown with the
-    /// unlock message -- unless a reminder was shown within the debounce, or what the user is
-    /// in the middle of holds it back, in which case none is shown.
+    /// reminder switched on, a reminder already open is raised, whatever the debounce and the
+    /// activity monitor would say. Otherwise one is shown with the unlock message, unless a
+    /// reminder was shown within the debounce or what the user is in the middle of holds it
+    /// back.
     /// </summary>
     internal void HandleUnlock()
     {

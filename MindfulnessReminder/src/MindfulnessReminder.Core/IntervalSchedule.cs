@@ -145,9 +145,11 @@ public sealed class IntervalSchedule
     /// </summary>
     /// <param name="now">The current time, compared with the deadline.</param>
     /// <returns>
-    /// <c>true</c> once per elapsed interval, with the next whole interval armed. <c>false</c>
-    /// when nothing is being counted, when the deadline is still ahead, and when the clock has
-    /// gone back further than the deadline was set out, which starts the countdown over.
+    /// <c>true</c> once the deadline has passed -- once per interval, or once per retry gap
+    /// after <see cref="Postpone"/> -- with the next whole interval armed. <c>false</c> when
+    /// nothing is being counted, when the deadline is still ahead, and when the deadline is
+    /// further away than the span it was armed with, which means the clock was moved back and
+    /// starts the countdown over.
     /// </returns>
     public bool TryConsumeDue(DateTimeOffset now)
     {
