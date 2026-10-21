@@ -21,9 +21,11 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- IDE0005 (unused usings, .editorconfig) only runs at build when the documentation file is
          generated; without it the build stops on EnableGenerateDocumentationFile. CS1591
-         (missing XML comment) and CS1573 (a parameter without a param tag while another has
-         one) are muted: comments are for the "why", not for every member, and a comment here
-         documents the one parameter that needs it (ADR 0003; the kit mutes CS1591 too). -->
+         (missing XML comment) stays muted: the rule "Documentation comments" asks for a comment
+         on every type and method, private ones included, and nothing checks it; CS1591 would
+         ask only for public members, properties and fields included (the kit's ADR 0035).
+         CS1573 (a parameter without a param tag while another has one) stays muted until the
+         comments written before that rule tag every parameter (ADR 0003). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
     <!-- A 21 MP pair needs ~300 MB at peak; a 32-bit process cannot host that. -->

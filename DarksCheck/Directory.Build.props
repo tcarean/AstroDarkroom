@@ -26,7 +26,9 @@
     <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
 
     <!-- IDE0005 (unused usings) only runs at build when the doc file is generated. CS1591
-         (missing XML comment) is muted: comments are for the "why", not for every member. -->
+         (missing XML comment) stays muted: the rule "Documentation comments" asks for a comment
+         on every type and method, private ones included, and nothing checks it; CS1591 would
+         ask only for public members, properties and fields included (the kit's ADR 0035). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>

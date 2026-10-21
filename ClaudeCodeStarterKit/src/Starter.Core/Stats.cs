@@ -7,6 +7,10 @@ namespace Starter.Core;
 public static class Stats
 {
     /// <summary>R-001: median of a non-empty sequence; the mean of the two middle values when even.</summary>
+    /// <param name="values">The sample, in any order; not null and not empty. It is not changed.</param>
+    /// <returns>
+    /// The middle value of the sorted sample; for an even count, the mean of the two middle values.
+    /// </returns>
     public static double Median(IReadOnlyList<double> values)
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -22,6 +26,10 @@ public static class Stats
     }
 
     /// <summary>R-002: median absolute deviation scaled by 1.4826, so it estimates sigma for a normal.</summary>
+    /// <param name="values">The sample, in any order; not null and not empty. It is not changed.</param>
+    /// <returns>
+    /// 1.4826 times the median of the absolute deviations from the median, in the sample's unit.
+    /// </returns>
     public static double RobustSigma(IReadOnlyList<double> values)
     {
         double median = Median(values);

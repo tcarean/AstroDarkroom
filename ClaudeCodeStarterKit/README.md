@@ -133,9 +133,10 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 - Un release in afara lui `main`, cu o versiune deja publicata, nu peste cel mai nou titlu din
   CHANGELOG sau sub `<Version>`: `release.ps1` il refuza inainte sa schimbe ceva (ADR 0029).
 
-Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata, daca o
-nota de design mai descrie codul pe care il acopera si daca ghidul si README-ul mai explica
-corect ce fac scripturile (pasi din `/wrap-up`).
+Ce ramane pe judecata: daca o schimbare merita ADR, daca o cerinta e bine formulata, daca
+fiecare tip si metoda din cod are comentariul XML (ADR 0035), daca o nota de design mai descrie
+codul pe care il acopera si daca ghidul si README-ul mai explica corect ce fac scripturile
+(pasi din `/wrap-up`).
 
 ## Standalone sau folder intr-un monorepo
 

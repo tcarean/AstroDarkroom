@@ -1,7 +1,7 @@
 # 0006. Romanian for what the user sees and for the existing code comments; English for the process files
 
 Date: 2026-09-25
-Status: accepted 2026-09-25
+Status: accepted 2026-09-25; Romanian comments in the source files superseded by the kit's ADR 0035
 
 ## Context
 

@@ -1,7 +1,7 @@
 # 0003. Gate strictness: what is on stays on, in Directory.Build.props; dotnet format adds whitespace and IDE0005; the kit's code style and the analyzers stay off
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; comments for the "why" only superseded by the kit's ADR 0035
 
 ## Context
 

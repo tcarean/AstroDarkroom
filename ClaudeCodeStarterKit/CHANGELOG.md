@@ -7,6 +7,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The kit's rule "Documentation comments" (ADR 0035): every type and every method in the code,
+  private ones included, has an XML documentation comment in English, with a `<param>` for each
+  parameter, a `<typeparam>` for each type parameter and a `<returns>` for a value. Tests are
+  exempt, and nothing checks it; `/wrap-up` step 3 looks for it in the diff. The sample code is
+  documented, and `Directory.Build.props` keeps CS1591 muted for that reason.
 - ADR 0034: a project whose release publishes for a runtime declares it in
   `Directory.Build.props` (`RuntimeIdentifiers` on every project but the test projects) and, for
   a single-file publish, turns off the single-file analyzer, so the release's publish leaves the
