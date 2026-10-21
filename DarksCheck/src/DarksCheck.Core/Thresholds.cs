@@ -131,8 +131,14 @@ internal static class Th
     /// <summary>... and by more than this, in ADU equivalent: the floor under which a bump is quantisation, not light. The library's scale is 0.017 ADU-eq and Smida's 0.10; on the leak series of 2026-10-20 the lamp's weak positions at 0.06 stay out, 0.17 and 0.45 come in.</summary>
     internal const double LeakFrameAdu = 0.1;
 
-    /// <summary>A series that warms or cools by more than this many degrees, read from its hot pixels, is flagged; the two measured series moved 2.2 and 3.4 °C.</summary>
-    internal const double DriftCelsius = 1.0;
+    /// <summary>The fit of R-023 (every frame's amplitude ratio on the minutes, as an approach to a plateau) needs at least this many frames with a ratio; under it the plateau rows read NEMASURAT and the verdict rests on the span alone (the same count as LeakFitMinFrames, a limit of its own).</summary>
+    internal const int WarmingFitMinFrames = 6;
+
+    /// <summary>A frame whose hot pixels sit more than this many degrees from the plateau of the series (under it in a warm-up, over it in a cool-down) is one to discard: the series' temperature is the plateau's, not the frame's. Measured 2026-10-21 on the five series: 10 .. 18 of 30 frames on the libraries and the leak set, 6 of 20 at Smida (ADR 0017).</summary>
+    internal const double OffPlateauCelsius = 1.0;
+
+    /// <summary>A series whose fitted curve still has more than this many degrees to climb (or fall) at its last frame has not settled: its master belongs to no temperature. The seven series measured 2026-10-21 had 0.1 .. 0.4 °C left; a series cut mid-warm-up has 1.5 and more (ADR 0017).</summary>
+    internal const double SettledCelsius = 1.0;
 
     /// <summary>A frame whose residual noise exceeds the series' median by this factor is an outlier (the Smida frames span 1.17).</summary>
     internal const double NoiseOutlierFactor = 1.5;

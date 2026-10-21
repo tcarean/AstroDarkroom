@@ -29,6 +29,49 @@ namespace DarksCheck.Wpf.Tests;
 public class MainViewModelTests
 {
     [Fact]
+    public async Task R071_TheFramesOffThePlateauAreMarkedInTheTableAndTheChart()
+    {
+        // twelve darks approaching a plateau: the first four are more than a degree under it (R-023)
+        (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
+        using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        DarkSeriesResult r = vm.Result!;
+        Warming w = r.Darks.Warming;
+        Assert.Equal([1, 2, 3, 4], w.OffPlateauFrames);
+
+        // the table: the core's cells, the flag and the note on the frames off the plateau
+        IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);
+        Assert.Equal(rows.Select(FrameRowVm.From), vm.Frames);
+        Assert.True(vm.Frames[0].Off);
+        Assert.Equal(rows[0].Plateau, vm.Frames[0].Plateau);
+        Assert.Equal(rows[0].Note, vm.Frames[0].Note);
+        Assert.StartsWith("de aruncat: amplit. ", vm.Frames[0].Note, StringComparison.Ordinal);
+        Assert.False(vm.Frames[11].Off);
+        Assert.Null(vm.Frames[11].Note);
+
+        // the chart: the frames off the plateau in the attention colour, guides at 1, the plateau and its two bounds
+        Assert.Equal(VerdictPalette.Warn, vm.WarmingPoints[0].Colour);
+        Assert.Equal(VerdictPalette.Accent, vm.WarmingPoints[11].Colour);
+        Assert.Equal([1.0, w.Plateau, w.OffPlateauLow, w.OffPlateauHigh], vm.WarmingGuides.Select(g => g.Value));
+        Assert.Equal(VerdictPalette.Warn, vm.WarmingGuides[2].Colour);
+        Assert.Equal(DarkReport.WarmingChartNote(r), vm.WarmingNote);
+        Assert.Contains("platou", vm.WarmingNote, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task R071_WithoutAFitTheWarmingChartKeepsTheOneGuide()
+    {
+        // five darks: under the six the fit of R-023 needs
+        using SessionFixture f = new SessionFixture().WithDarkSeries(5, i => new SyntheticDark { Seed = 100 + i, Hot = SyntheticLight.Lattice });
+        MainViewModel vm = new();
+        await vm.OpenAsync(f.Root);
+        Assert.Equal([1.0], vm.WarmingGuides.Select(g => g.Value));
+        Assert.All(vm.Frames, row => Assert.False(row.Off));
+        Assert.Equal(DarkReport.WarmingChartNote(vm.Result!), vm.WarmingNote);
+    }
+
+    [Fact]
     public async Task R070_OpeningAFolderRunsTheWholeAnalysisByItself()
     {
         using SessionFixture f = WindowFixture.Session();

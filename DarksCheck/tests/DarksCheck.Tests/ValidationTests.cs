@@ -138,6 +138,10 @@ public class ValidationTests
         AssertWithin("warmFirst", e.GetProperty("warmFirst").GetDouble(), d.Warming.FirstRatio, ratio);
         AssertWithin("warmLast", e.GetProperty("warmLast").GetDouble(), d.Warming.LastRatio, ratio);
         AssertWithin("driftCelsius", e.GetProperty("driftCelsius").GetDouble(), d.Warming.DeltaCelsius, 0.1);
+        AssertWithin("plateau", e.GetProperty("plateau").GetDouble(), d.Warming.Plateau, ratio);
+        AssertWithin("tauMinutes", e.GetProperty("tauMinutes").GetDouble(), d.Warming.TauMinutes, 1.0);
+        AssertWithin("settleCelsius", e.GetProperty("settleCelsius").GetDouble(), d.Warming.SettleCelsius, 0.1);
+        Assert.Equal(e.GetProperty("offPlateauFrames").GetInt32(), d.Warming.OffPlateauFrames.Count);
         AssertWithin("bandingRowP2pMax", e.GetProperty("bandingRowP2pMax").GetDouble(), d.Banding.Max(b => b.RowP2p), adu);
         AssertWithin("bandingColP2pMax", e.GetProperty("bandingColP2pMax").GetDouble(), d.Banding.Max(b => b.ColP2p), adu);
         AssertWithin("leakOffset", e.GetProperty("leakOffset").GetDouble(), r.Verdicts.Leak.OffsetAdu, adu);

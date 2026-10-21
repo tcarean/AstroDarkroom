@@ -30,10 +30,10 @@ public sealed record RowVm(string Label, string Value, string Rest, string? Verd
 /// <summary>One check of the report as a card: its title and its rows, the core's.</summary>
 public sealed record SectionVm(string Title, IReadOnlyList<RowVm> Rows);
 
-/// <summary>One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set when the frame has no figures.</summary>
-public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Light, string Side, string Above)
+/// <summary>One dark of the frames table (R-071): the console's cells as they are; Skipped or Error set when the frame has no figures; Off and Note mark a frame off the plateau of R-023, with the core's reason.</summary>
+public sealed record FrameRowVm(int Index, string FileName, string? Skipped, string? Error, string Time, string Mean, string Sigma, string Residual, string Bands, string Amp, string Plateau, string Light, string Side, string Above, bool Off, string? Note)
 {
-    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Light, r.Side, r.Above);
+    internal static FrameRowVm From(DarkTableRow r) => new(r.Index, r.FileName, r.Skipped, r.Error, r.Time, r.Mean, r.Sigma, r.Residual, r.Bands, r.Amp, r.Plateau, r.Light, r.Side, r.Above, r.Note is not null, r.Note);
 }
 
 /// <summary>One light of the lights table (R-071): the console's cells as they are.</summary>
@@ -277,6 +277,9 @@ public sealed class MainViewModel : ObservableObject
     public IReadOnlyList<RowVm> HotRows { get; private set; } = [];
     public IReadOnlyList<ChartPoint> WarmingPoints { get; private set; } = [];
     public IReadOnlyList<GuideLine> WarmingGuides { get; private set; } = [];
+
+    /// <summary>The core's sentence under the warming chart: what the points are, the plateau and the band of the frames to discard (R-071).</summary>
+    public string WarmingNote { get; private set; } = "";
     public IReadOnlyList<ChartPoint> ResidualPoints { get; private set; } = [];
     public IReadOnlyList<GuideLine> ResidualGuides { get; private set; } = [];
     public IReadOnlyList<ChartPoint> BandingPoints { get; private set; } = [];
@@ -411,7 +414,7 @@ public sealed class MainViewModel : ObservableObject
         Report = "";
         SessionRows = HotRows = LightRows = IndexRows = ScaleRows = [];
         ScaleParagraphs = [];
-        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = "";
+        HeaderLine = Label = Tag = FrameTableNote = LightTableNote = WarmingNote = "";
         Sections = [];
         Frames = [];
         Lights = [];
@@ -460,18 +463,30 @@ public sealed class MainViewModel : ObservableObject
 
         // the charts: one point per dark, NaN where the frame has no figure
         HashSet<int> outliers = r.Verdicts.Noise.OutlierFrames.ToHashSet();
+        HashSet<int> off = d.Warming.OffPlateauFrames.ToHashSet();
         List<ChartPoint> warming = [], residual = [], banding = [];
         foreach (DarkFrameFigures f in d.Frames)
         {
             string label = f.Info.Index.ToString(CultureInfo.InvariantCulture);
             bool ok = f.Error is null;
-            warming.Add(new ChartPoint(f.Info.Index, ok ? f.AmpRatioMedian : double.NaN, label, VerdictPalette.Accent));
+            warming.Add(new ChartPoint(f.Info.Index, ok ? f.AmpRatioMedian : double.NaN, label, off.Contains(f.Info.Index) ? VerdictPalette.Warn : VerdictPalette.Accent));
             residual.Add(new ChartPoint(f.Info.Index, ok ? f.Residuals[rp].Sigma : double.NaN, label, outliers.Contains(f.Info.Index) ? VerdictPalette.Warn : VerdictPalette.Good));
             banding.Add(new ChartPoint(f.Info.Index, ok ? f.Residuals[rp].RowBandingRatio : double.NaN, label, VerdictPalette.Neutral));
         }
 
         WarmingPoints = warming;
-        WarmingGuides = [new GuideLine(1.0, "masterul (mediana seriei)", VerdictPalette.Neutral)];
+        Warming wm = d.Warming;
+        GuideLine master = new(1.0, "masterul (mediana seriei)", VerdictPalette.Neutral);
+        WarmingGuides = wm.HasFit
+            ?
+            [
+                master,
+                new GuideLine(wm.Plateau, $"platoul {RunReport.F(wm.Plateau, 2)}", VerdictPalette.Neutral),
+                new GuideLine(wm.OffPlateauLow, $"{RunReport.F(wm.OffPlateauLow, 2)} de aruncat", VerdictPalette.Warn),
+                new GuideLine(wm.OffPlateauHigh, $"{RunReport.F(wm.OffPlateauHigh, 2)} de aruncat", VerdictPalette.Warn),
+            ]
+            : [master];
+        WarmingNote = DarkReport.WarmingChartNote(r);
         ResidualPoints = residual;
         ResidualGuides = double.IsNaN(r.Verdicts.Noise.OutlierLimitAdu) ? [] : [new GuideLine(r.Verdicts.Noise.OutlierLimitAdu, $"{RunReport.F(Th.NoiseOutlierFactor, 1)} x mediana", VerdictPalette.Warn)];
         BandingPoints = banding;
@@ -509,7 +524,7 @@ public sealed class MainViewModel : ObservableObject
         foreach (string name in new[]
         {
             nameof(HasResult), nameof(SessionRows), nameof(HeaderLine), nameof(Sections), nameof(Frames), nameof(Lights), nameof(HasLights),
-            nameof(FrameTableNote), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides),
+            nameof(FrameTableNote), nameof(LightTableNote), nameof(Maps), nameof(HotRows), nameof(WarmingPoints), nameof(WarmingGuides), nameof(WarmingNote),
             nameof(ResidualPoints), nameof(ResidualGuides), nameof(BandingPoints), nameof(BandingGuides), nameof(NoisePoints), nameof(NoiseExpected),
             nameof(LightPoints), nameof(LightGuides), nameof(LightRows), nameof(IndexRows), nameof(ScaleRows), nameof(ScaleParagraphs), nameof(Label), nameof(Tag),
         })

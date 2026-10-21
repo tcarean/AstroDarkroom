@@ -8,6 +8,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- Check 3 judges the plateau of the series instead of the first frame against the last
+  (R-023, ADR 0017). The hot-pixel amplitude of every frame is fitted on the minutes as an
+  approach to a plateau; the rows `platou` and `de aruncat` give the plateau, the time
+  constant, how far under the plateau the master sits and which frames are more than a degree
+  from it (to move to `aruncate` by hand), and the verdict is `ATENTIE` only when the series
+  has not settled at its end or a frame leaves the `-opt` band of 0.7 .. 1.4 of the master; the
+  warm-up at the start is stated, not flagged. The frames table gains the column `platou`
+  (degrees from the plateau) and a note on every frame to discard, and the window's Cadre tab
+  shows those rows, the note and the chart's plateau and bounds in the attention colour
+  (R-025, R-071). The five real series now read `OK` where they read `ATENTIE` before.
+
 - The label of a folder already renamed to a label (its name ends in `-idx` and digits) loses
   that suffix before the new one is appended, so `...-15.8celsius-idx67` reads `...-idx67`
   again, not `...-idx67-idx67`, and a changed index shows as a changed number (R-061, ADR 0013).

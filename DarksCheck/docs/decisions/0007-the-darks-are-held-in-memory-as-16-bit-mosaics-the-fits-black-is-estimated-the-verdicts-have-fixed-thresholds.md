@@ -1,7 +1,7 @@
 # 0007. The darks are held in memory as 16-bit mosaics, a FITS black is estimated, and the verdicts of checks 2 to 8 have fixed thresholds
 
 Date: 2026-10-11
-Status: accepted 2026-10-11
+Status: accepted 2026-10-11; the drift verdict (1 °C first to last) superseded by 0017
 
 ## Context
 
@@ -33,7 +33,9 @@ of 2.
   report says so (`negru 150 estimat din mediana cadrului 1`).
 - The six verdicts use the constants of `Thresholds.cs`: a leak or glow at 1 ADU-eq of
   edge-to-centre departure (the largest over the eight regions, brighter read as light,
-  darker as a readout or bias offset), a drift at 1 °C by the 6 °C doubling rule, a noise
+  darker as a readout or bias offset), a drift at 1 °C by the 6 °C doubling rule (superseded
+  2026-10-21 by ADR 0017: check 3 fits the series to a plateau and flags only a series that
+  has not settled or leaves the `-opt` band; `Th.DriftCelsius` is gone), a noise
   outlier at 1.5 x the median residual sigma, a pattern at 2 ADU-eq of structured banding,
   any dead or saturated pixel, and enough frames when there are at least 10 and the median
   master's predicted noise, 1.25 x the temporal sigma / sqrt(N), is under one quantisation

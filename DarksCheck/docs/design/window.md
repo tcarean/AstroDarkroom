@@ -61,13 +61,19 @@ they are now.
   wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
 - the two tables take `DarkReport.FrameRows` and `LightRows` as `FrameRowVm` / `LightRowVm`,
   the console's cells as they are, with the unit note of the table header (`[G1; ...]`) as
-  the last column's header;
+  the last column's header; a dark row's `Off` is set when the core gave it a `Note` (a frame
+  off the plateau, R-023), and `FramesView` then tints the row (`FrameRowGrid`, the note as
+  its tooltip), colours the `platou` cell bold (`PlateauCell`) and shows the note on a second
+  row of the row's grid, under the cells and spanning them, all in the attention colour of
+  `VerdictPalette.Warn` as local brushes;
 - the Harti tab takes the three `BinnedMap`s of the reference plane through
   `DarkOutputs.MapRaster` and `RasterBitmaps.Grey`, each with the section-2 row of the same
   name as its note; a map without blocks, or an absent group, is a `MapVm` without image and
   the card says so;
 - the charts take `ChartPoint(X, Y, Label, Colour, Tip)` lists: the warming (every dark's
-  `AmpRatioMedian`, guide at 1), the residual sigma (`Residuals[rp].Sigma`, the outlier
+  `AmpRatioMedian`, the frames of `Warming.OffPlateauFrames` in the attention colour, guide
+  at 1 and, with a fit, at `Plateau`, `OffPlateauLow` and `OffPlateauHigh`; the card's
+  sentence is `DarkReport.WarmingChartNote`, as `WarmingNote`), the residual sigma (`Residuals[rp].Sigma`, the outlier
   frames of `NoiseVerdict.OutlierFrames` in the attention colour, guide at
   `NoiseVerdict.OutlierLimitAdu`), the random banding (`ResidualFigures.RowBandingRatio`,
   guide at 1), the noise curve (`NoiseVsN.Curve` measured as points, expected as the dashed

@@ -92,6 +92,26 @@ plane. `DarkMinusBias` subtracts the two binned mean maps: the dark current per 
 in regions; its median on the Smida session is 0.14 ADU, below one quantisation step, which
 is why a dark's value lies in its hot pixels (the report of 2026-10-11).
 
+## The warming and the plateau
+
+`DarkSeriesAnalyzer.WarmingOf` reads check 3 from every frame's amplitude ratio (the median,
+over the master's hot pixels under `Th.AmplitudeMaxFraction` of white, of the frame's
+amplitude over the master's). The `Warming` record keeps the first and last ratio and their
+degrees, then the fit of ADR 0017 when at least `Th.WarmingFitMinFrames` frames have a ratio:
+`TimeAxis` gives the minutes from the first frame (`TimeFromStamps`) or, when a timestamp is
+missing or the span is zero, the frame's position; `PlateauFit` tries every time constant on
+a grid from a fiftieth of the span to three times it, in steps of a two-hundredth, solves the
+two linear coefficients of `plateau - drop x exp(-t / tau)` by least squares for each and
+keeps the smallest residual sum of squares (`FitScale` is the rms). From the fit: the master's
+degrees to the plateau (`Degrees(1 / plateau)`, negative under it), the degrees left between
+the fitted last frame and the plateau (`SettleCelsius`), the band `OffPlateauLow` ..
+`OffPlateauHigh` of `Th.OffPlateauCelsius` around the plateau, the frames outside it
+(`OffPlateauFrames`) and where the median ratio of the frames left would put the master
+(`MasterWithoutOffCelsius`). A fit whose plateau is not positive counts as none.
+`DarkVerdictAnalyzer` adds the frames whose ratio leaves `Th.MatchOptLow` .. `Th.MatchOptHigh`
+of the master and the ratio farthest from 1 among them; the series is settled when there is
+no fit or `|SettleCelsius|` is within `Th.SettledCelsius`.
+
 ## The light and the glow
 
 `LeakAnalyzer` reads two per-frame figures against the frame's hot-pixel amplitude ratio
@@ -136,8 +156,10 @@ beside the eight and lets check 6's glow be the glow part of that region.
 `DarkVerdictAnalyzer.Judge` turns the figures into six verdicts with the constants of
 `Th`: the leak from the largest region departure of the dark-minus-bias map (or the dark
 master without biases), its sign telling light from a readout offset, `ATENTIE` also when a
-frame is lit, and the words of the brighter case from the cause of the split; the drift from the
-warming of the series; the noise from the residual sigma outliers, with the temporal noise
+frame is lit, and the words of the brighter case from the cause of the split; the drift as
+`ATENTIE` only when the series has not settled or a frame leaves the `-opt` band of the master
+(the frames off the plateau are information, in the `de aruncat` row, the table's `platou`
+column and a note on their rows); the noise from the residual sigma outliers, with the temporal noise
 over the read noise beside it; the pattern from the worst structured banding and the glow;
 the dead and saturated counts; and whether the frames are enough: at least `Th.MinDarks`, and
 the median master's predicted noise (`Th.MedianNoiseFactor` x the temporal sigma / sqrt(N))
@@ -217,8 +239,12 @@ line, `HeaderRows` the rows under it (`normalizare`, `cuantizare`, the biases' w
 `Sections` the nine `ReportSection(Title, Rows)` of checks 2 to 9 and INDEX, `FrameRows` and
 `LightRows` the two tables as `DarkTableRow` / `LightTableRow` of formatted cells, with
 `FrameTableHeader` and `LightTableHeader` as the header lines. `Write` prints exactly those:
-a row as `    {label,-19}: {value}`, a table row with the console's column widths, a file name
-cut to 20 characters at print time only. A `ReportRow` reads its own verdict word off the
+a row as `    {label,-19}: {value}`, a table row with the console's column widths
+(`FrameLine` for a dark: the cells, then the row's `Note` after the last column when the frame
+is off the plateau, `Plateau` being its degrees from the plateau or `-` without a fit), a file
+name cut to 20 characters at print time only. `WarmingChartNote` is the sentence the window
+puts under its warming chart: the plateau and the band of the frames to discard, when there
+is a fit. A `ReportRow` reads its own verdict word off the
 value (`Verdict`: OK, ATENTIE or NEMASURAT when the value opens with it as a word, or ATENTIE
 when that is the row's label, the warnings about frames that failed; `Rest` the value without
 a leading word and the `: ` or space after it, the whole value otherwise), so the window shows

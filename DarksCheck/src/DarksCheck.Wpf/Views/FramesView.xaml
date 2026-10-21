@@ -44,8 +44,29 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Setter Property="HorizontalAlignment" Value="Left" />
       <Setter Property="TextWrapping" Value="NoWrap" />
     </Style>
+    <!-- the attention colour of VerdictPalette.Warn, for a frame off the plateau (R-071) -->
+    <SolidColorBrush x:Key="WarnBr" Color="#E3B341" />
+    <SolidColorBrush x:Key="WarnBg" Color="#26E3B341" />
+    <Style x:Key="FrameRowGrid" TargetType="Grid">
+      <Setter Property="Margin" Value="0,0,0,3" />
+      <Setter Property="Background" Value="Transparent" />
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Off}" Value="True">
+          <Setter Property="Background" Value="{StaticResource WarnBg}" />
+          <Setter Property="ToolTip" Value="{Binding Note}" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="PlateauCell" TargetType="TextBlock" BasedOn="{StaticResource Cell}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Off}" Value="True">
+          <Setter Property="Foreground" Value="{StaticResource WarnBr}" />
+          <Setter Property="FontWeight" Value="Bold" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
     <DataTemplate x:Key="FrameRow">
-      <Grid Margin="0,0,0,3">
+      <Grid Style="{StaticResource FrameRowGrid}">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="36" />
           <ColumnDefinition Width="170" />
@@ -57,9 +78,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <ColumnDefinition Width="64" />
           <ColumnDefinition Width="56" />
           <ColumnDefinition Width="56" />
+          <ColumnDefinition Width="56" />
           <ColumnDefinition Width="48" />
           <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto" />
+          <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <TextBlock Grid.Column="0" Style="{StaticResource Cell}" Text="{Binding Index}" />
         <TextBlock Grid.Column="1" Style="{StaticResource LeftCell}" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FileName}" />
         <TextBlock Grid.Column="2" Style="{StaticResource LeftCell}" Text="{Binding Time}" />
@@ -68,12 +94,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TextBlock Grid.Column="5" Style="{StaticResource Cell}" Text="{Binding Residual}" />
         <TextBlock Grid.Column="6" Style="{StaticResource Cell}" Text="{Binding Bands}" />
         <TextBlock Grid.Column="7" Style="{StaticResource Cell}" Text="{Binding Amp}" />
-        <TextBlock Grid.Column="8" Style="{StaticResource Cell}" Text="{Binding Light}" />
-        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Side}" />
-        <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Above}" />
-        <TextBlock Grid.Column="11" Style="{StaticResource LeftCell}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" Text="{Binding Skipped}" ToolTip="{Binding Skipped}"
+        <TextBlock Grid.Column="8" Style="{StaticResource PlateauCell}" Text="{Binding Plateau}" />
+        <TextBlock Grid.Column="9" Style="{StaticResource Cell}" Text="{Binding Light}" />
+        <TextBlock Grid.Column="10" Style="{StaticResource Cell}" Text="{Binding Side}" />
+        <TextBlock Grid.Column="11" Style="{StaticResource Cell}" Text="{Binding Above}" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="12" Style="{StaticResource LeftCell}" Foreground="{StaticResource WarnBr}" TextWrapping="Wrap" Text="{Binding Note}"
+                   Visibility="{Binding Note, Converter={StaticResource NotNullToVis}}" />
+        <TextBlock Grid.Column="12" Style="{StaticResource LeftCell}" Foreground="{StaticResource MutedBr}" TextTrimming="CharacterEllipsis" Text="{Binding Skipped}" ToolTip="{Binding Skipped}"
                    Visibility="{Binding Skipped, Converter={StaticResource NotNullToVis}}" />
-        <TextBlock Grid.Column="11" Style="{StaticResource LeftCell}" Foreground="{StaticResource BadBr}" TextTrimming="CharacterEllipsis" Text="{Binding Error}" ToolTip="{Binding Error}"
+        <TextBlock Grid.Column="12" Style="{StaticResource LeftCell}" Foreground="{StaticResource BadBr}" TextTrimming="CharacterEllipsis" Text="{Binding Error}" ToolTip="{Binding Error}"
                    Visibility="{Binding Error, Converter={StaticResource NotNullToVis}}" />
       </Grid>
     </DataTemplate>
@@ -105,6 +134,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="64" />
             <ColumnDefinition Width="56" />
             <ColumnDefinition Width="56" />
+            <ColumnDefinition Width="56" />
             <ColumnDefinition Width="48" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
@@ -116,10 +146,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="rezid." ToolTip="sigma reziduului cadru - master, ADU" />
           <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="benzi" ToolTip="deviatia mediilor pe randuri, de cate ori zgomotul alb" />
           <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="amplit." ToolTip="amplitudinea pixelilor fierbinti ai masterului in cadru, fata de master" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="latura" ToolTip="abaterea fata de centru, in acel cadru, a laturii cu cea mai multa lumina constanta (margine plus cele doua colturi), dupa bias cand exista bias-uri, glow inclus, ADU-eq; partea ei constanta e lumina din toate cadrele (verificarea 2)" />
-          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
-          <TextBlock Grid.Column="11" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="platou" ToolTip="gradele cadrului fata de platoul seriei, citite din pixelii fierbinti; un cadru la peste 1 grad de platou e de aruncat si are motivul in ultima coloana (verificarea 3)" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="latura" ToolTip="abaterea fata de centru, in acel cadru, a laturii cu cea mai multa lumina constanta (margine plus cele doua colturi), dupa bias cand exista bias-uri, glow inclus, ADU-eq; partea ei constanta e lumina din toate cadrele (verificarea 2)" />
+          <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
+          <TextBlock Grid.Column="12" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
         </Grid>
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
           <ItemsControl ItemsSource="{Binding Frames}" ItemTemplate="{StaticResource FrameRow}" Margin="4,0,0,0" />
@@ -132,8 +163,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Style="{StaticResource Heading}" Text="PIXELII FIERBINTI FATA DE MASTER" />
-            <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Amplitudinea pixelilor fierbinti ai masterului in fiecare cadru, fata de master: panta e incalzirea camerei in timpul seriei (verificarea 3)." />
+            <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{Binding WarmingNote}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="180" Points="{Binding WarmingPoints}" Guides="{Binding WarmingGuides}" />
             </Border>
