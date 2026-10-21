@@ -77,6 +77,12 @@ public partial class App : WpfApplication
     /// </summary>
     private string? _tooltip;
 
+    /// <summary>
+    /// Runs <c>--preview</c> or <c>--detect</c> when one is given; each quits when it is done.
+    /// Otherwise claims the single-instance mutex, so that a second copy quits at once, and
+    /// starts the tray icon, the reminders and, on the very first run, auto-start.
+    /// </summary>
+    /// <param name="e">The command line, in <see cref="StartupEventArgs.Args"/>.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -145,11 +151,13 @@ public partial class App : WpfApplication
     }
 
     /// <summary>
-    /// The message <c>--preview</c> should show, or null when the switch was not given. The
-    /// argument after the switch is the text; it goes through the same normalization the
-    /// saved setting does, so the preview shows what the app would actually show, and an
-    /// empty or missing one is the default message.
+    /// Finds the message <c>--preview</c> should show. The argument after the switch is the
+    /// text; it goes through the same normalization the saved setting does, so the preview
+    /// shows what the app would actually show, and an empty or missing one is the default
+    /// message.
     /// </summary>
+    /// <param name="args">The command-line arguments, without the program's name.</param>
+    /// <returns>The message, or <c>null</c> when the switch was not given.</returns>
     private static string? PreviewMessage(string[] args)
     {
         var index = Array.FindIndex(
@@ -164,6 +172,8 @@ public partial class App : WpfApplication
         return ReminderSettings.NormalizeMessage(index + 1 < args.Length ? args[index + 1] : null);
     }
 
+    /// <summary>Shows the reminder window, and quits when it is closed.</summary>
+    /// <param name="message">What the window says, already normalized.</param>
     private void ShowPreview(string message)
     {
         var window = new BreakWindow(message);
@@ -172,11 +182,15 @@ public partial class App : WpfApplication
     }
 
     /// <summary>
-    /// How long <c>--detect</c> should watch for, or null when the switch was not given.
-    /// Zero means the one-shot reading; "--detect 30" and "--detect=30" both mean thirty
-    /// seconds. Anything unparseable is a zero rather than a complaint: a diagnostic that
-    /// refuses to run because its argument was mistyped is no help to anybody.
+    /// Finds how long <c>--detect</c> should watch for: "--detect 30" and "--detect=30" both
+    /// mean thirty seconds. Anything unparseable is a zero rather than a complaint: a
+    /// diagnostic that refuses to run because its argument was mistyped is no help to anybody.
     /// </summary>
+    /// <param name="args">The command-line arguments, without the program's name.</param>
+    /// <returns>
+    /// The duration, at most <see cref="MaxDetectDuration"/>; zero for the one-shot reading;
+    /// <c>null</c> when the switch was not given.
+    /// </returns>
     private static TimeSpan? DetectDuration(string[] args)
     {
         for (var i = 0; i < args.Length; i++)
@@ -222,6 +236,9 @@ public partial class App : WpfApplication
     /// down OnStartup. That is deliberate here: the point is to watch what the copy already
     /// sitting in the tray would be seeing, so it has to run alongside it.
     /// </summary>
+    /// <param name="duration">
+    /// How long to take a reading once a second; zero or less takes a single reading.
+    /// </param>
     private void ShowDetection(TimeSpan duration)
     {
         var monitor = new WindowsActivityMonitor();
@@ -268,6 +285,10 @@ public partial class App : WpfApplication
         timer.Start();
     }
 
+    /// <summary>
+    /// Shows what <c>--detect</c> found, with the banner, in a message box, then quits.
+    /// </summary>
+    /// <param name="body">The report to show.</param>
     private void Report(string body)
     {
         MessageBox.Show(
@@ -367,10 +388,11 @@ public partial class App : WpfApplication
     }
 
     /// <summary>
-    /// The path to record for auto-start. <see cref="Environment.ProcessPath"/> is the right
-    /// answer for a normal launch (single-file publish included); under "dotnet run" it points
-    /// at the shared host instead, so the apphost next to the assembly is used.
+    /// Finds the path to record for auto-start. <see cref="Environment.ProcessPath"/> is the
+    /// right answer for a normal launch (single-file publish included); under "dotnet run" it
+    /// points at the shared host instead, so the apphost next to the assembly is used.
     /// </summary>
+    /// <returns>The full path of the executable to start with Windows.</returns>
     private static string ResolveExecutablePath()
     {
         var processPath = Environment.ProcessPath;
@@ -383,12 +405,19 @@ public partial class App : WpfApplication
         return Path.GetFullPath(Path.ChangeExtension(Environment.GetCommandLineArgs()[0], ".exe"));
     }
 
+    /// <summary>
+    /// Ends the app through its own crash dialog when an exception escapes on the UI thread.
+    /// </summary>
+    /// <param name="sender">Not read.</param>
+    /// <param name="e">The exception, which is marked handled.</param>
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
         ReportCrash(e.Exception);
     }
 
+    /// <summary>Shows the error and the banner in a message box, then shuts the app down.</summary>
+    /// <param name="exception">What went wrong; its message is what the dialog shows.</param>
     private void ReportCrash(Exception exception)
     {
         // A tray app that dies silently just vanishes; say so before going. The banner goes
@@ -403,6 +432,11 @@ public partial class App : WpfApplication
         Shutdown();
     }
 
+    /// <summary>
+    /// Disposes the coordinator and the tray icon, and releases and disposes the
+    /// single-instance mutex -- whichever of them this run created.
+    /// </summary>
+    /// <param name="e">Passed on to the base class.</param>
     protected override void OnExit(ExitEventArgs e)
     {
         _coordinator?.Dispose();

@@ -36,6 +36,10 @@ public partial class AboutWindow : Window
 {
     private const string IconResourceUri = "pack://application:,,,/Assets/app.ico";
 
+    /// <summary>
+    /// An About window holding <see cref="LicenseInfo.AboutText"/> and the app icon, not yet
+    /// shown.
+    /// </summary>
     public AboutWindow()
     {
         InitializeComponent();
@@ -49,6 +53,7 @@ public partial class AboutWindow : Window
     /// client area and the caption has to be asked for separately. This is the first moment
     /// there is an HWND to ask about, and it is still before the first paint.
     /// </summary>
+    /// <param name="e">Passed on to the base class.</param>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -62,6 +67,7 @@ public partial class AboutWindow : Window
     /// About icon look like a mistake, so the biggest frame is picked and WPF scales down.
     /// The tray does the same thing in the other direction; see TrayIconHost.LoadTrayIcon.
     /// </summary>
+    /// <returns>The icon's widest frame.</returns>
     private static ImageSource LoadAppIcon()
     {
         var decoder = BitmapDecoder.Create(
@@ -72,5 +78,8 @@ public partial class AboutWindow : Window
         return decoder.Frames.OrderByDescending(frame => frame.PixelWidth).First();
     }
 
+    /// <summary>Closes the window.</summary>
+    /// <param name="sender">The Close button; not read.</param>
+    /// <param name="e">The click; not read.</param>
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 }

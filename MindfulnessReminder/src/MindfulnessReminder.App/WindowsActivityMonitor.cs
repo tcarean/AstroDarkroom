@@ -72,6 +72,7 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
     /// </summary>
     private static readonly RegistryKey[] Hives = { Registry.CurrentUser, Registry.LocalMachine };
 
+    /// <inheritdoc/>
     public ActivitySnapshot Read() => new(
         InUse(MicrophoneCapability),
         InUse(CameraCapability),
@@ -83,6 +84,10 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
     /// see the raw readings -- which application is holding the microphone, and what number
     /// the shell actually returned.
     /// </summary>
+    /// <returns>
+    /// Lines saying who holds the microphone and the camera, then the shell's number and what
+    /// it maps to.
+    /// </returns>
     public string Describe()
     {
         var shell = ShellState();
@@ -98,6 +103,9 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
         return report.ToString();
     }
 
+    /// <summary>Says whether a capture device is open, and by which applications.</summary>
+    /// <param name="capability">The ConsentStore key: "microphone" or "webcam".</param>
+    /// <returns>"no", or "yes -- " followed by the holders' names, comma-separated.</returns>
     private string Describe(string capability)
     {
         var holders = Holders(capability);
@@ -107,6 +115,11 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
             : "yes -- " + string.Join(", ", holders);
     }
 
+    /// <summary>
+    /// Asks the shell whether it would show a notification now. A failed call, or a Windows
+    /// without the function, answers 0.
+    /// </summary>
+    /// <returns>The QUERY_USER_NOTIFICATION_STATE number, or 0.</returns>
     private static int ShellState()
     {
         try
@@ -126,12 +139,20 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
         }
     }
 
+    /// <summary>Whether any application has a capture device open now.</summary>
+    /// <param name="capability">The ConsentStore key: "microphone" or "webcam".</param>
+    /// <returns><c>true</c> when a key in either hive reports it open.</returns>
     private bool InUse(string capability) => Holders(capability).Count > 0;
 
     /// <summary>
-    /// The names of the keys reporting the device open right now -- an executable path with
-    /// backslashes written as '#', or a package family name.
+    /// Finds the keys, in both hives, reporting the device open right now. A key's name is an
+    /// executable path with backslashes written as '#', or a package family name.
     /// </summary>
+    /// <param name="capability">The ConsentStore key: "microphone" or "webcam".</param>
+    /// <returns>
+    /// The name of each, made readable by <see cref="LeafName"/>; empty when none is open, or
+    /// none could be read.
+    /// </returns>
     private static List<string> Holders(string capability)
     {
         var holders = new List<string>();
@@ -163,6 +184,14 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
         return holders;
     }
 
+    /// <summary>
+    /// Adds <paramref name="key"/>'s name when it reports the device open, then does the same
+    /// for its subkeys, <paramref name="depth"/> levels down. A subkey that cannot be read is
+    /// skipped.
+    /// </summary>
+    /// <param name="key">The key to look at.</param>
+    /// <param name="depth">How many levels below the key to walk; 0 looks at the key alone.</param>
+    /// <param name="holders">The list the names are added to.</param>
     private static void Collect(RegistryKey key, int depth, List<string> holders)
     {
         if (IsOpenNow(key))
@@ -206,22 +235,41 @@ internal sealed class WindowsActivityMonitor : IActivityMonitor
     /// back is what turns it from a mangled string into something readable. Package family
     /// names, which is what Store apps get, contain no '#' and come through unchanged.
     /// </summary>
+    /// <param name="key">A key under a capability.</param>
+    /// <returns>
+    /// The last segment of the key's name, with each '#' turned back into a backslash.
+    /// </returns>
     private static string LeafName(RegistryKey key)
         => key.Name[(key.Name.LastIndexOf('\\') + 1)..].Replace('#', '\\');
 
     /// <summary>
+    /// Whether the key reports the device open right now.
+    ///
     /// A start time on record and a stop time of exactly zero. Both halves matter: an app
     /// that has never touched the device has neither value, and requiring the stop time to be
     /// PRESENT and zero -- rather than treating a missing one as "still running" -- is what
     /// stops a half-written key, or one left behind by an application that crashed holding
     /// the microphone, from suppressing every reminder from then on.
     /// </summary>
+    /// <param name="key">A key under a capability.</param>
+    /// <returns>
+    /// <c>true</c> when LastUsedTimeStart is above zero and LastUsedTimeStop is present and
+    /// zero.
+    /// </returns>
     private static bool IsOpenNow(RegistryKey key)
         => key.GetValue(StartValueName) is long start
            && start > 0
            && key.GetValue(StopValueName) is long stop
            && stop == 0;
 
+    /// <summary>
+    /// shell32's SHQueryUserNotificationState: whether the shell would show a notification
+    /// now.
+    /// </summary>
+    /// <param name="state">
+    /// The QUERY_USER_NOTIFICATION_STATE; undefined when the call fails.
+    /// </param>
+    /// <returns>An HRESULT: 0 when <paramref name="state"/> was written.</returns>
     [DllImport("shell32.dll")]
     private static extern int SHQueryUserNotificationState(out int state);
 }

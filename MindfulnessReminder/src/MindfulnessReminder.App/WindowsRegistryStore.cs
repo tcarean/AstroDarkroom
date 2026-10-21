@@ -23,24 +23,28 @@ namespace MindfulnessReminder.App;
 /// <summary>The real HKEY_CURRENT_USER behind <see cref="IRegistryStore"/>.</summary>
 internal sealed class WindowsRegistryStore : IRegistryStore
 {
+    /// <inheritdoc/>
     public string? GetString(string keyPath, string valueName)
     {
         using var key = Registry.CurrentUser.OpenSubKey(keyPath);
         return key?.GetValue(valueName) as string;
     }
 
+    /// <inheritdoc/>
     public byte[]? GetBinary(string keyPath, string valueName)
     {
         using var key = Registry.CurrentUser.OpenSubKey(keyPath);
         return key?.GetValue(valueName) as byte[];
     }
 
+    /// <inheritdoc/>
     public void SetString(string keyPath, string valueName, string value)
     {
         using var key = Registry.CurrentUser.CreateSubKey(keyPath, writable: true);
         key.SetValue(valueName, value, RegistryValueKind.String);
     }
 
+    /// <inheritdoc/>
     public void DeleteValue(string keyPath, string valueName)
     {
         using var key = Registry.CurrentUser.OpenSubKey(keyPath, writable: true);

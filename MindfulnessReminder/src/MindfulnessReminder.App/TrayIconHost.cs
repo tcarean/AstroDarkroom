@@ -41,6 +41,8 @@ internal sealed class TrayIconHost : IDisposable
 
     private bool _disposed;
 
+    /// <summary>Puts the icon and its menu in the tray, visible at once.</summary>
+    /// <param name="autoStart">What the "Run at Windows startup" item reads and sets.</param>
     public TrayIconHost(IAutoStartManager autoStart)
     {
         ArgumentNullException.ThrowIfNull(autoStart);
@@ -105,6 +107,9 @@ internal sealed class TrayIconHost : IDisposable
     /// 63 characters, and a tray icon lost to an exception is a poor trade for a countdown.
     /// <see cref="TrayTooltip"/> already keeps within the limit; this is the belt to its braces.
     /// </summary>
+    /// <param name="text">
+    /// The new hover text; cut to <see cref="TrayTooltip.MaxLength"/> characters.
+    /// </param>
     public void SetTooltip(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -114,6 +119,9 @@ internal sealed class TrayIconHost : IDisposable
             : text[..TrayTooltip.MaxLength];
     }
 
+    /// <summary>Shows a notification from the tray icon.</summary>
+    /// <param name="title">The notification's title.</param>
+    /// <param name="text">The notification's text.</param>
     public void ShowBalloon(string title, string text)
     {
         _notifyIcon.BalloonTipTitle = title;
@@ -122,6 +130,12 @@ internal sealed class TrayIconHost : IDisposable
         _notifyIcon.ShowBalloonTip(5000);
     }
 
+    /// <summary>
+    /// Switches auto-start off when it works and on otherwise, then refreshes the item. A
+    /// refusal from Windows becomes a notification rather than an error.
+    /// </summary>
+    /// <param name="sender">The menu item; not read.</param>
+    /// <param name="e">The click; not read.</param>
     private void OnAutoStartClick(object? sender, EventArgs e)
     {
         try
@@ -147,6 +161,7 @@ internal sealed class TrayIconHost : IDisposable
         RefreshAutoStartItem();
     }
 
+    /// <summary>Sets the item's tick and text from the auto-start status as it is now.</summary>
     private void RefreshAutoStartItem()
     {
         var status = _autoStart.GetStatus();
@@ -157,6 +172,11 @@ internal sealed class TrayIconHost : IDisposable
             : "Run at Windows startup";
     }
 
+    /// <summary>
+    /// Loads the app icon at the shell's small icon size. Throws
+    /// <see cref="InvalidOperationException"/> when the resource is missing.
+    /// </summary>
+    /// <returns>The icon, which the caller disposes.</returns>
     private static Icon LoadTrayIcon()
     {
         var resource = WpfApplication.GetResourceStream(new Uri(IconResourceUri))
@@ -169,6 +189,10 @@ internal sealed class TrayIconHost : IDisposable
         return new Icon(stream, SystemInformation.SmallIconSize);
     }
 
+    /// <summary>
+    /// Takes the icon out of the tray and disposes it, its menu and the icon image. Calling it
+    /// again does nothing.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)

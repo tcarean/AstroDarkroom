@@ -25,13 +25,18 @@ using WinFormsControl = System.Windows.Forms.Control;
 
 namespace MindfulnessReminder.App;
 
+/// <summary>
+/// The reminder window: a light card with the message and a Close button, topmost, centred on
+/// the primary monitor's work area. The button, Esc and Space close it; Enter does not.
+/// </summary>
 public partial class BreakWindow : Window
 {
-    /// <summary>
-    /// <paramref name="message"/> is what the window says. It comes from the coordinator,
-    /// which is the one thing that knows whether this is the unlock reminder or the
-    /// periodic one; the window itself has no idea, and does not need one.
-    /// </summary>
+    /// <summary>A reminder window that says <paramref name="message"/>, not yet shown.</summary>
+    /// <param name="message">
+    /// What the window says. It comes from the coordinator, which is the one thing that knows
+    /// whether this is the unlock reminder or the periodic one; the window itself has no idea,
+    /// and does not need one.
+    /// </param>
     public BreakWindow(string message)
     {
         ArgumentNullException.ThrowIfNull(message);
@@ -41,6 +46,11 @@ public partial class BreakWindow : Window
         MessageText.Text = message;
     }
 
+    /// <summary>
+    /// Once the window has a handle and before it is first drawn: puts it on the primary
+    /// monitor, brings it to the front and gives the focus to Close.
+    /// </summary>
+    /// <param name="e">Passed on to the base class.</param>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -89,6 +99,9 @@ public partial class BreakWindow : Window
         Top = top;
     }
 
+    /// <summary>Closes the window.</summary>
+    /// <param name="sender">The Close button; not read.</param>
+    /// <param name="e">The click; not read.</param>
     private void OnCloseClick(object sender, RoutedEventArgs e) => Close();
 
     /// <summary>
@@ -103,6 +116,7 @@ public partial class BreakWindow : Window
     /// Esc and Space still close -- Esc deliberately, Space because a focused button responds
     /// to it. Both are far less likely mid-sentence than Enter.
     /// </summary>
+    /// <param name="e">The key; Enter is marked handled, and every other key goes on.</param>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
@@ -113,6 +127,8 @@ public partial class BreakWindow : Window
         }
     }
 
+    /// <summary>Closes the window on Esc.</summary>
+    /// <param name="e">The key that was pressed.</param>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
