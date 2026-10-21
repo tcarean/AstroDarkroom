@@ -21,6 +21,8 @@ using ImageVisualCompare.Core;
 namespace ImageVisualCompare.Wpf.Imaging;
 
 /// <summary>The two images being compared, on the canvas they share.</summary>
+/// <param name="Before">Image A, shown left of the divider.</param>
+/// <param name="After">Image B, shown right of the divider.</param>
 /// <param name="Pad">
 /// The common canvas. Equal to both images when they agree; the larger extent on each axis
 /// when they do not, in which case the smaller one is shown padded with black. The padding
@@ -36,6 +38,7 @@ public sealed record ImagePair(LoadedImage Before, LoadedImage After, PadPlan Pa
     public long DisplayBytes => Before.Info.DisplayBytes + After.Info.DisplayBytes;
 }
 
+/// <summary>How far the load of a pair has got, for the progress overlay.</summary>
 /// <param name="Fraction">Overall progress in the range 0 to 1.</param>
 /// <param name="FileName">The file currently being decoded, or null when finished.</param>
 public readonly record struct ImageLoadProgress(double Fraction, string? FileName);
@@ -45,12 +48,25 @@ public readonly record struct ImageLoadProgress(double Fraction, string? FileNam
 /// answered a question, so there is nothing to report back to them and the caller can go
 /// straight back to picking files.
 /// </summary>
+/// <param name="Pair">The loaded pair; null unless the load succeeded.</param>
+/// <param name="Error">
+/// What went wrong, worded for the user; null on success and when the user declined.
+/// </param>
+/// <param name="WasDeclined">
+/// True when the user declined the padding; there is then neither a pair nor an error.
+/// </param>
 public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool WasDeclined = false)
 {
     public bool IsSuccess => Pair is not null;
 
+    /// <summary>Wraps a loaded pair.</summary>
+    /// <param name="pair">The pair, both images decoded.</param>
+    /// <returns>A result whose <see cref="IsSuccess"/> is true.</returns>
     public static ImagePairLoadResult Success(ImagePair pair) => new(pair, null);
 
+    /// <summary>Wraps a load that failed, with what the user is told.</summary>
+    /// <param name="error">What went wrong, worded for the user.</param>
+    /// <returns>A result with no pair and this error.</returns>
     public static ImagePairLoadResult Failure(string error) => new(null, error);
 
     public static ImagePairLoadResult Declined { get; } = new(null, null, WasDeclined: true);
@@ -59,14 +75,33 @@ public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool Wa
 /// <summary>
 /// Loads a pair of images, refusing anything the comparison could not honestly display.
 /// </summary>
+/// <param name="loader">The decoder each file goes through.</param>
 public sealed class ImagePairLoader(IImageLoader loader)
 {
+    /// <summary>
+    /// Loads a pair: both headers first, then, if their sizes differ, the question whether to
+    /// pad, and only then the two decodes, one after the other.
+    /// </summary>
+    /// <param name="beforePath">Image A's file, shown left of the divider.</param>
+    /// <param name="afterPath">Image B's file, shown right of the divider.</param>
+    /// <param name="progress">
+    /// Told 0 and A's file name as A's decode starts, 0.5 and B's as B's starts, and 1 with no
+    /// name at the end; null for no reports.
+    /// </param>
     /// <param name="confirmPadding">
     /// Asked, and only asked, when the two images differ in size: answering yes pads them to
     /// a common canvas, no abandons the load. It is invoked on a thread pool thread, so a UI
     /// implementation has to marshal. Leaving it null means a mismatched pair is refused
     /// outright, which is the right default for anything without a user attached.
     /// </param>
+    /// <param name="cancellationToken">
+    /// Stops the load between its steps, and inside a decode that can stop; a stopped load
+    /// throws <see cref="OperationCanceledException"/> rather than returning a result.
+    /// </param>
+    /// <returns>
+    /// The pair; or a failure whose message names the file that could not be read, or the
+    /// mismatch when there was no one to ask; or <see cref="ImagePairLoadResult.Declined"/>.
+    /// </returns>
     public async Task<ImagePairLoadResult> LoadAsync(
         string beforePath,
         string afterPath,
@@ -132,10 +167,16 @@ public sealed class ImagePairLoader(IImageLoader loader)
     }
 
     /// <summary>
-    /// A file the user picked can be missing, locked, truncated or in a format no codec
-    /// handles, and it can simply be too large for the machine. None of those are defects in
-    /// this program, so all of them become a message rather than a crash dialog.
+    /// Tells a failure of the file from a defect of the program. A file the user picked can be
+    /// missing, locked, truncated or in a format no codec handles, and it can simply be too
+    /// large for the machine. None of those are defects in this program, so all of them become
+    /// a message rather than a crash dialog.
     /// </summary>
+    /// <param name="ex">What the probe or the decode threw.</param>
+    /// <returns>
+    /// True for an I/O or access error, an unsupported or damaged format, a bad argument, or
+    /// running out of memory.
+    /// </returns>
     private static bool IsExpectedLoadFailure(Exception ex) => ex
         is IOException
         or UnauthorizedAccessException

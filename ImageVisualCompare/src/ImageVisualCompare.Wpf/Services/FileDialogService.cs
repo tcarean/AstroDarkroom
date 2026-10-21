@@ -20,16 +20,29 @@ using Microsoft.Win32;
 
 namespace ImageVisualCompare.Wpf.Services;
 
+/// <summary>Asks the user for the two files of a pair.</summary>
 public interface IFileDialogService
 {
-    /// <summary>
-    /// Asks for the two images in turn. Returns null if the user cancels either dialog.
-    /// </summary>
+    /// <summary>Asks for the two images in turn.</summary>
+    /// <param name="initialDirectory">
+    /// The folder the first dialog opens in; null, or a folder that is gone, leaves the choice
+    /// to Windows.
+    /// </param>
+    /// <returns>The two files, or null if the user cancels either dialog.</returns>
     ImagePairSelection? PickImagePair(string? initialDirectory = null);
 }
 
+/// <summary>
+/// The two files of a pair, as the user picked them or named them on the command line.
+/// </summary>
+/// <param name="BeforePath">Image A's file, shown left of the divider.</param>
+/// <param name="AfterPath">Image B's file, shown right of the divider.</param>
 public sealed record ImagePairSelection(string BeforePath, string AfterPath);
 
+/// <summary>
+/// Asks through the Windows common open dialogs, the one part of the application that follows
+/// the system theme rather than its own.
+/// </summary>
 public sealed class FileDialogService : IFileDialogService
 {
     // TIFF comes free with the WIC codec set and Siril exports it, so there is no reason to
@@ -41,6 +54,7 @@ public sealed class FileDialogService : IFileDialogService
         "FITS (*.fit;*.fits;*.fts)|*.fit;*.fits;*.fts|" +
         "All files (*.*)|*.*";
 
+    /// <inheritdoc/>
     public ImagePairSelection? PickImagePair(string? initialDirectory = null)
     {
         string? before = Pick("Select image A  —  shown left of the divider", initialDirectory);
@@ -60,6 +74,12 @@ public sealed class FileDialogService : IFileDialogService
         return new ImagePairSelection(before, after);
     }
 
+    /// <summary>Shows one open dialog for an existing file, with the image formats first.</summary>
+    /// <param name="title">The dialog's title, which says which image is being picked.</param>
+    /// <param name="initialDirectory">
+    /// The folder to open in; not used when null, empty or gone.
+    /// </param>
+    /// <returns>The picked file, or null when the dialog was cancelled.</returns>
     private static string? Pick(string title, string? initialDirectory)
     {
         var dialog = new OpenFileDialog

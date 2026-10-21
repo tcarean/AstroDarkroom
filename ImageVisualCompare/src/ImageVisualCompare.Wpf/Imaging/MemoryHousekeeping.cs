@@ -19,17 +19,26 @@ using System.Diagnostics;
 
 namespace ImageVisualCompare.Wpf.Imaging;
 
+/// <summary>
+/// The memory the process holds at one moment, in bytes, as the status bar shows it.
+/// </summary>
 /// <param name="ManagedBytes">Managed heap in use.</param>
 /// <param name="PrivateBytes">Private bytes of the whole process (<c>Process.PrivateMemorySize64</c>), not its working set.</param>
 public readonly record struct MemorySnapshot(long ManagedBytes, long PrivateBytes)
 {
+    /// <summary>Words the snapshot for the status bar.</summary>
+    /// <returns>"managed N MB, process N MB", in whole megabytes.</returns>
     public string Describe() =>
         $"managed {Megabytes(ManagedBytes)}, process {Megabytes(PrivateBytes)}";
 
+    /// <summary>Words a byte count in whole megabytes.</summary>
+    /// <param name="bytes">The count, in bytes.</param>
+    /// <returns>The count over 1048576, rounded, then " MB".</returns>
     private static string Megabytes(long bytes) =>
         $"{bytes / (1024.0 * 1024.0):F0} MB";
 }
 
+/// <summary>Gives back the memory of a replaced pair, and reads what the process holds.</summary>
 public static class MemoryHousekeeping
 {
     /// <summary>
@@ -50,6 +59,11 @@ public static class MemoryHousekeeping
         GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true);
     }
 
+    /// <summary>Reads the memory the process holds now.</summary>
+    /// <returns>
+    /// The managed heap in use, read without forcing a collection, and the process's private
+    /// bytes.
+    /// </returns>
     public static MemorySnapshot Snapshot()
     {
         using var process = Process.GetCurrentProcess();
