@@ -89,10 +89,13 @@ a kit rule names it.
 - **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
   choice with more than one reasonable answer, goes to the owner first: the measured facts, the
   decisions to take and a recommendation; then wait (the owner's standing instruction).
-- **Languages** (varies the kit's rule "Languages", ADR 0006). English in everything the model
-  reads or writes about the process: docs, tests of invariants, scripts, commits, CHANGELOG.
-  Romanian in everything the user sees: CLI text, `--help`, window labels, `README.md`, and in
-  the existing code comments, which stay as they are. Never leave a file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADR 0006, and for a file not yet translated
+  the kit's rule "Documentation comments"). English in everything the model reads or writes
+  about the process: docs, tests of invariants, scripts, commits, CHANGELOG. Romanian in
+  everything the user sees: CLI text, `--help`, window labels, `README.md`. Code comments are
+  English too (the kit's ADR 0035), but most source files still carry Romanian ones: a file's
+  comments are translated when it gets its documentation comments, in a task of its own, and
+  until then a comment added to it is Romanian. Never leave a file in two languages.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.
