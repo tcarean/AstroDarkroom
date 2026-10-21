@@ -156,7 +156,7 @@ public class DarkSeriesTests
         Assert.Equal(Math.Sqrt(12.0 / 10), w.NoiseFactorWithoutOff, 1e-9);
         Assert.Equal(w.Plateau * Math.Pow(2, -Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauLow, 1e-9);
         Assert.Equal(w.Plateau * Math.Pow(2, Th.OffPlateauCelsius / Th.DoublingCelsius), w.OffPlateauHigh, 1e-9);
-        Assert.InRange(w.MasterWithoutOffCelsius, -0.5, 0.0);
+        Assert.InRange(w.MasterWithoutOffCelsius, -0.7, -0.2);
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
 
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
@@ -199,7 +199,9 @@ public class DarkSeriesTests
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
         Assert.StartsWith("ATENTIE: seria inca se incalzeste la ultimul cadru (mai are +", verdict, StringComparison.Ordinal);
-        Assert.Contains("grade pana la platou, peste 1.0): masterul nu apartine unei temperaturi; continua seria sau arunca cadrele din randul de mai sus", verdict, StringComparison.Ordinal);
+        Assert.Contains("grade pana la platou, peste 1.0, platoul e extrapolat): masterul nu apartine unei temperaturi; continua seria", verdict, StringComparison.Ordinal);
+        Assert.True(w.TauAtGridTop);
+        Assert.Contains("constanta de timp de cel putin ", DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[1].Value, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -211,8 +213,8 @@ public class DarkSeriesTests
         Assert.Equal(Verdict.Warning, r.Verdicts.Drift.Verdict);
         Assert.Equal([1], r.Darks.Warming.OffPlateauFrames);
         string verdict = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal)).Rows[^1].Value;
-        Assert.StartsWith("ATENTIE: 1 cadru iese din 0.7 .. 1.4 din master (cel mai departe 0.5", verdict, StringComparison.Ordinal);
-        Assert.EndsWith("): seria a pornit rece; arunca cadrele din randul de mai sus", verdict, StringComparison.Ordinal);
+        Assert.StartsWith("ATENTIE: 1 cadru (1) iese din 0.7 .. 1.4 din master (cel mai departe 0.5", verdict, StringComparison.Ordinal);
+        Assert.EndsWith("): seria a pornit rece; arunca-l", verdict, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -226,7 +228,7 @@ public class DarkSeriesTests
         Assert.Equal(Verdict.Ok, r.Verdicts.Drift.Verdict);
         ReportSection check3 = DarkReport.Sections(r).Single(x => x.Title.StartsWith("3.", StringComparison.Ordinal));
         Assert.StartsWith("seria e plata: platoul la ", check3.Rows[1].Value, StringComparison.Ordinal);
-        Assert.EndsWith(" din master, primul cadru la mai putin de 2.0 grade de el", check3.Rows[1].Value, StringComparison.Ordinal);
+        Assert.EndsWith(" din master, primul cadru la mai putin de 1.0 grade de el", check3.Rows[1].Value, StringComparison.Ordinal);
         Assert.StartsWith("niciun cadru la peste 2.0 grade de platou (amplit. intre ", check3.Rows[2].Value, StringComparison.Ordinal);
         Assert.All(DarkReport.FrameRows(r), row => Assert.Null(row.Note));
     }

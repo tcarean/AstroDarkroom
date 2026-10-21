@@ -160,3 +160,11 @@ owner moves them to `aruncate` by hand.
   library): `Th.OffPlateauCelsius` went to 2 °C, the `de aruncat` row gained the noise the
   master would gain without the frames, and the degrees left at the last frame read "la
   ultimul cadru", signed, in the `platou` row and the verdict.
+- A subagent review (13 findings) led to: the `platou` header hint built in the core from
+  `Th.OffPlateauCelsius`; the flat-series wording keyed to `Th.SettledCelsius`; the verdict
+  naming the frames outside the `-opt` band and pointing at the `de aruncat` row only when it
+  lists frames; stamps that go back in series order fall back to the position axis; a fit whose
+  last frame is not positive counts as none; `TauAtGridTop` and the words "platoul e
+  extrapolat"; a render test of the rows off the plateau. Left open for the owner: the settle
+  test on a slow linear drift (an extrapolated plateau can read as unsettled; needs a
+  measurement) and whether the CSV of R-026 should carry the per-frame `platou` figure.

@@ -325,6 +325,9 @@ internal static class DarkReport
         return $"[{r.Darks.PlaneNames[r.ReferencePlane]}; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste {F(Th.OffPlateauCelsius, 1)} grade de platou (verificarea 3); lumina = {eq} peste dreapta mediei pe incalzire; {side}]";
     }
 
+    /// <summary>The hover hint of the frames table's `platou` column (R-071): what the figure is and when a frame is one to discard.</summary>
+    internal static readonly string PlateauColumnTip = $"gradele cadrului fata de platoul seriei, citite din pixelii fierbinti; un cadru la peste {F(Th.OffPlateauCelsius, 1)} grade de platou e de aruncat si are motivul pe randul de sub celule (verificarea 3)";
+
     /// <summary>The sentence under the window's warming chart (R-071): what the points are, and with a fit the plateau and the band outside which a frame is one to discard.</summary>
     internal static string WarmingChartNote(DarkSeriesResult r)
     {
@@ -687,13 +690,13 @@ internal static class DarkReport
         }
 
         double firstOffset = Math.Abs(nz.Degrees(w.FirstRatio / w.Plateau));
-        if (firstOffset < Th.OffPlateauCelsius && Math.Abs(w.SettleCelsius) < Th.OffPlateauCelsius)
+        if (firstOffset < Th.SettledCelsius && Math.Abs(w.SettleCelsius) < Th.SettledCelsius)
         {
-            return $"seria e plata: platoul la {F(w.Plateau, 2)} din master, primul cadru la mai putin de {F(Th.OffPlateauCelsius, 1)} grade de el";
+            return $"seria e plata: platoul la {F(w.Plateau, 2)} din master, primul cadru la mai putin de {F(Th.SettledCelsius, 1)} grade de el";
         }
 
         string unit = w.TimeFromStamps ? "min" : "cadre";
-        string tau = w.TimeFromStamps && w.TauMinutes >= 3 * w.Minutes - 1e-9
+        string tau = w.TauAtGridTop
             ? $"constanta de timp de cel putin {F(w.TauMinutes, 0)} {unit}, seria e prea scurta ca s-o masoare"
             : $"constanta de timp {F(w.TauMinutes, 0)} {unit}";
         return $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou";
@@ -745,14 +748,15 @@ internal static class DarkReport
         List<string> parts = [];
         if (!v.Settled)
         {
-            parts.Add($"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}): masterul nu apartine unei temperaturi; continua seria sau arunca cadrele din randul de mai sus");
+            string extrapolated = w.TauAtGridTop ? ", platoul e extrapolat" : "";
+            string advice = w.OffPlateauFrames.Count > 0 ? "continua seria sau arunca cadrele din randul de mai sus" : "continua seria";
+            parts.Add($"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}{extrapolated}): masterul nu apartine unei temperaturi; {advice}");
         }
 
         if (v.OutsideFrames.Count > 0)
         {
             int n = v.OutsideFrames.Count;
-            string discard = w.HasFit ? "arunca cadrele din randul de mai sus" : "arunca-le";
-            parts.Add($"{RunReport.Frames(n)} {(n == 1 ? "iese" : "ies")} din {span} (cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; {discard}");
+            parts.Add($"{RunReport.Frames(n)} ({Ranges(v.OutsideFrames)}) {(n == 1 ? "iese" : "ies")} din {span} (cel mai departe {F(v.FarthestRatio, 2)}): seria a pornit {(v.FarthestRatio < 1 ? "rece" : "calda")}; arunca-{(n == 1 ? "l" : "le")}");
         }
 
         return "ATENTIE: " + string.Join("; ", parts);

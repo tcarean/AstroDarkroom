@@ -122,7 +122,9 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// master at the first and the last frame and the degrees between them; then the fit of the
 /// ratios on the time as `Plateau - drop x exp(-t / TauMinutes)` (NaN under
 /// <see cref="Th.WarmingFitMinFrames"/> frames; the time in minutes from the first frame when
-/// <see cref="TimeFromStamps"/>, else the frame's position), its rms residual, the master's
+/// <see cref="TimeFromStamps"/>, else the frame's position; <see cref="TauAtGridTop"/> when the
+/// time constant sits at the top of the grid, three times the span, so the plateau is an
+/// extrapolation), its rms residual, the master's
 /// degrees to the plateau (negative under it), the degrees left between the fitted last frame
 /// and the plateau, the frames more than <see cref="Th.OffPlateauCelsius"/> from the plateau
 /// with the two bounds of that band, the master's degrees to the plateau without them and the
@@ -130,10 +132,10 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// </summary>
 internal sealed record Warming(
     double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels,
-    double Plateau, double TauMinutes, bool TimeFromStamps, double FitScale, double PlateauCelsius, double SettleCelsius,
+    double Plateau, double TauMinutes, bool TimeFromStamps, bool TauAtGridTop, double FitScale, double PlateauCelsius, double SettleCelsius,
     IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff)
 {
-    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN, double.NaN);
+    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN, double.NaN);
 
     internal bool HasFit => !double.IsNaN(Plateau);
 }
@@ -732,7 +734,12 @@ internal static class DarkSeriesAnalyzer
         }
 
         double fittedLast = plateau - drop * Math.Exp(-t[^1] / tau);
-        double settle = fittedLast > 0 ? nz.Degrees(plateau / fittedLast) : double.NaN;
+        if (fittedLast <= 0)
+        {
+            return w;
+        }
+
+        double settle = nz.Degrees(plateau / fittedLast);
         double low = plateau * Math.Pow(2, -Th.OffPlateauCelsius / nz.DoublingCelsius);
         double high = plateau * Math.Pow(2, Th.OffPlateauCelsius / nz.DoublingCelsius);
         List<int> off = [];
@@ -755,6 +762,7 @@ internal static class DarkSeriesAnalyzer
             Plateau = plateau,
             TauMinutes = tau,
             TimeFromStamps = stamps,
+            TauAtGridTop = tau >= 3 * (t[^1] - t[0]) - 1e-9,
             FitScale = rms,
             PlateauCelsius = nz.Degrees(1 / plateau),
             SettleCelsius = settle,
@@ -766,12 +774,16 @@ internal static class DarkSeriesAnalyzer
         };
     }
 
-    /// <summary>The time axis of the fit: minutes from the first frame when every frame has a timestamp and the span is positive, else the frame's position in the series.</summary>
+    /// <summary>The time axis of the fit: minutes from the first frame when every frame has a timestamp, the stamps never go back in series order and the span is positive; else the frame's position in the series (a stamp out of order would throw the exponentials off).</summary>
     private static (double[] T, bool FromStamps) TimeAxis(DarkFrameFigures[] ok)
     {
         if (ok.All(f => f.Info.Timestamp is not null) && ok[0].Info.Timestamp is DateTime t0 && ok[^1].Info.Timestamp is DateTime t1 && t1 > t0)
         {
-            return (ok.Select(f => (f.Info.Timestamp!.Value - t0).TotalMinutes).ToArray(), true);
+            double[] minutes = ok.Select(f => (f.Info.Timestamp!.Value - t0).TotalMinutes).ToArray();
+            if (Enumerable.Range(1, minutes.Length - 1).All(i => minutes[i] >= minutes[i - 1]))
+            {
+                return (minutes, true);
+            }
         }
 
         return (Enumerable.Range(0, ok.Length).Select(i => (double)i).ToArray(), false);
@@ -796,8 +808,9 @@ internal static class DarkSeriesAnalyzer
 
         double bestRss = double.PositiveInfinity, bestPlateau = double.NaN, bestDrop = double.NaN, bestTau = double.NaN;
         double step = span / 200;
-        for (double tau = span / 50; tau <= 3 * span + step / 2; tau += step)
+        for (int k = 0; k <= 596; k++)
         {
+            double tau = span / 50 + k * step;
             double sx = 0, sy = 0, sxx = 0, sxy = 0;
             for (int i = 0; i < n; i++)
             {

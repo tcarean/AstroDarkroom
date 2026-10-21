@@ -99,7 +99,7 @@ over the master's hot pixels under `Th.AmplitudeMaxFraction` of white, of the fr
 amplitude over the master's). The `Warming` record keeps the first and last ratio and their
 degrees, then the fit of ADR 0017 when at least `Th.WarmingFitMinFrames` frames have a ratio:
 `TimeAxis` gives the minutes from the first frame (`TimeFromStamps`) or, when a timestamp is
-missing or the span is zero, the frame's position; `PlateauFit` tries every time constant on
+missing, a stamp goes back in series order or the span is zero, the frame's position; `PlateauFit` tries every time constant on
 a grid from a fiftieth of the span to three times it, in steps of a two-hundredth, solves the
 two linear coefficients of `plateau - drop x exp(-t / tau)` by least squares for each and
 keeps the smallest residual sum of squares (`FitScale` is the rms). From the fit: the master's
@@ -107,7 +107,9 @@ degrees to the plateau (`Degrees(1 / plateau)`, negative under it), the degrees 
 the fitted last frame and the plateau (`SettleCelsius`), the band `OffPlateauLow` ..
 `OffPlateauHigh` of `Th.OffPlateauCelsius` around the plateau, the frames outside it
 (`OffPlateauFrames`) and where the median ratio of the frames left would put the master
-(`MasterWithoutOffCelsius`). A fit whose plateau is not positive counts as none.
+(`MasterWithoutOffCelsius`) and the noise factor sqrt(frames / frames left). A fit whose
+plateau or fitted last frame is not positive counts as none; `TauAtGridTop` marks a time
+constant at three times the span, where the plateau is extrapolated and the report says so.
 `DarkVerdictAnalyzer` adds the frames whose ratio leaves `Th.MatchOptLow` .. `Th.MatchOptHigh`
 of the master and the ratio farthest from 1 among them; the series is settled when there is
 no fit or `|SettleCelsius|` is within `Th.SettledCelsius`.

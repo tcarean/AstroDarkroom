@@ -152,6 +152,8 @@ public sealed class MainViewModel : ObservableObject
 
     public string HotHeaderTip => WindowTexts.HotHeaderTip;
 
+    public string PlateauHeaderTip => DarkReport.PlateauColumnTip;
+
     public string HotTabLead => WindowTexts.HotTabLead;
 
     public string CandidatesTip => WindowTexts.CandidatesTip;
