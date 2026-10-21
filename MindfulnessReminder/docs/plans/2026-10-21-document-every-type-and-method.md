@@ -220,3 +220,70 @@ branch. I give you a prompt to paste, since a chip would open at the checkout ro
   done.
 - **Left for later:** the three stale comments that are not doc comments, and the why-paragraphs
   of the existing summaries if you want them moved.
+
+## What deviated
+
+- **One session was enough.** The plan was approved as written, commit 4 included. The work
+  took one commit more than planned: the fifth below.
+- **A seventh correction, found at wrap-up.** Reading the whole diff back:
+  - the sentence moved from `BreakWindow`'s summary into its `<param name="message">` said
+    the text "comes from the coordinator";
+  - `--preview` builds the window too, from the command line (`App.ShowPreview`);
+  - the tag now names both, in a commit of its own (942cc90).
+- **Commit 4 completed a list as well as correcting it.** `IntervalSchedule.Restart`'s list of
+  restarts gained "after the clock jumps back", where `TryConsumeDue` restarts too, beside the
+  correction ADR 0014 records.
+- **`Postpone` kept its summary sentence.** Assumption 6 named its `<paramref>` as one to move.
+  The sentence says what the method does, so it stays; the new `<param name="by">` gives the
+  exact meaning (the new deadline is `now` plus the gap).
+- **Assumption 6 reached more summaries than its examples.** These moved their return or
+  parameter sentence into the tag:
+  - `TryConsumeDue` and `Remaining`;
+  - `NormalizeMessage` (its "Returns the SAME instance" paragraph), `IsIntervalInRange`,
+    `IsRetryInRange` and `IsMessageAcceptable`;
+  - `PreviewMessage`, `DetectDuration` and `ResolveExecutablePath`;
+  - `TryReadMessage`, `Holders` and the `BreakWindow` constructor.
+
+  `Holders`' summary described the raw key names (backslashes written as '#'), while the method
+  returns them made readable by `LeafName`; the new text says both.
+- **Assumption 2's throws are said in more places than its two examples:**
+  - `IRegistryStore`'s four methods and the `IAutoStartManager` summary, since their callers
+    catch a refusal;
+  - `ISettingsStore.Save`, and `ReminderCoordinator.Start` and `ApplySettings`;
+  - `SystemEventsSessionMonitor.Dispose`, and `TrayIconHost.LoadTrayIcon`.
+
+  `ISessionMonitor.Start` promises no `ObjectDisposedException`, because the test fake throws
+  none.
+- **Two `sender` tags say only "Not read."** They are on `OnSessionSwitch` and
+  `OnDispatcherUnhandledException`. Who raises `SystemEvents.SessionSwitch` and
+  `Application.DispatcherUnhandledException` was not checked, so neither tag names a sender.
+- **30 new lines first ran past 100 columns,** 18 in Core and 12 in App, and were wrapped before
+  their commits. `main` holds 14 doc lines over 100 columns, up to 111; they were left alone.
+- **Measured on 2026-10-21:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | 03184fa | the plan | `== OK in 18s` | 228 |
+  | 6f1902b | Core: 23 files, +409/-39 by the end of the branch | `== OK in 18s` | 228 |
+  | f1e5ac7 | App: 12 files, +284/-19 by the end of the branch | `== OK in 18s` | 228 |
+  | d9f51a0 | the six stale doc comments | `== OK in 18s` | 228 |
+  | 942cc90 | the seventh correction | `== OK in 18s` | 228 |
+  | (none) | wrap-up step 1 | `== OK in 22s` | 228 |
+
+  - **The scratch counter, `code` group.** On `main` (2b2235f): types 42, with 4 undocumented
+    and 4 missing a `<param>`; methods 158, with 99 undocumented and 51 incomplete. On the
+    branch: types 0 and 0; methods 0 undocumented, 0 missing a `<param>`, 0 missing a
+    `<returns>`. Properties, indexers and events: 57, of which 33 still have no comment, as
+    planned.
+  - **The XML documentation files the build writes:**
+    - Core: 99 `<param>`, 35 `<returns>`, 6 `<inheritdoc/>`.
+    - App: 80 `<param>`, 17 `<returns>`, 7 `<inheritdoc/>`.
+    - Their 52 `<returns>` and the 6 inherited members that return a value make the 58
+      methods with a value.
+  - **Only comments changed:** in `git diff main...HEAD -- src`, all 35 files, every `+` and
+    `-` line is a `///` line (0 others).
+  - **`check-design.ps1 -Since main`** listed all nine notes. Each was read against the change,
+    and none changed.
+  - **No document quotes a changed comment text,** apart from ADR Contexts and plans. A stale
+    sentence there is history (the kit's ADR 0024).
+  - **Not run:** `--preview` and `--detect` (Assumption 9).
