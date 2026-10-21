@@ -218,3 +218,66 @@ plan and the branch (I give a prompt to paste; a chip would open at the checkout
   `E:\Photografie\Code` and ask who runs it. After the merge: `git worktree remove`, then
   `git branch -d`.
 - Memory: `documentation-comments-rule.md` marks ImageVisualCompare done, CS1573 mute dropped.
+
+## What deviated
+
+- **One session was enough.** The plan was approved as written, commit 5 included, and the
+  seven commits are the seven planned.
+- **The real files were copied, not reached through `IVC_TESTDATA_LARGE`.** Assumption 10 said
+  the variable. ADR 0005's Decision says nobody sets it, and its Consequences say a worktree
+  gets copies, so the five files were copied into the worktree's `tests/testdata/large/` (5 s;
+  `check-testdata.ps1` found every hash). `CLAUDE.md`, "Workflow", said "the three files";
+  `docs/skills.md` lists five since 2026-10-05, and the line now points there instead of
+  counting.
+- **The counter flags one member by design.** `MainWindow.OpenPairAsync` returns a plain
+  `Task`. The kit task's counter treats every non-void return as a value and lists it as
+  missing a `<returns>`; the rule asks for none (Assumption 2).
+- **Four members sit under an ordinary comment:** `FitsHeader.Number`,
+  `FitsRowDecoder.IsAboveThreshold`, `FitsImageLoader.OpenRead` and
+  `RoutingImageLoader.LoadAsync`. Their `///` block went between that `//` line and the
+  member, so that only `///` lines changed; the XML documentation file shows each block on its
+  member.
+- **Wrapping.** 67 new one-line tags ran past 100 columns and went into the block form by a
+  scratch script that touched only the branch's added lines. Twelve `Viewport` tags were then
+  shortened by hand to "in screen space (physical pixels)", which the class summary defines.
+  The 16 doc lines over 100 columns that the branch did not otherwise touch stay as on `main`.
+- **ADR 0025, judged and kept.** `CompareView.OnKeyDown` and `OnMouseWheel` and
+  `MainWindow.OnPreviewKeyDown` name their keys, which the README's "Controale" table lists
+  too. ADR 0025 keeps the user documentation out of the comments; as the kit task judged of
+  this ADR, a member's contract is not user documentation, and the keys are what these
+  handlers do.
+- **CS1573 proved on twice more.** Besides the gate after commit 6: a non-incremental rebuild of
+  the three projects (0 warnings, 0 errors, every assembly rewritten), and a scratch class whose
+  method tags one of its two parameters, built against this `Directory.Build.props`, which
+  stopped on `error CS1573`.
+- **Measured on 2026-10-21:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | a2548ef | the plan | `== OK in 22s` | 256 |
+  | 6414187 | Core: 13 files, +459/-37 | `== OK in 20s` | 256 |
+  | 65e2cbd | Wpf without a window: 9 files | `== OK in 20s` | 256 |
+  | 34834a3 | the visual layer: 5 files (Wpf in all: 14 files, +453/-15) | `== OK in 19s` | 256 |
+  | 269b802 | the two stale doc comments | `== OK in 20s` | 256 |
+  | 9eaa539 | CS1573 no longer muted | `== OK in 20s` | 256 |
+  | (none) | wrap-up step 1 | `== OK in 20s` | 256 |
+
+  - **The scratch counter, `code` group.** On `main` (2b2235f): types 45, 18 undocumented and
+    12 missing a `<param>`; methods 147, 96 undocumented and 47 incomplete (46 missing a
+    `<param>`, 33 the `<returns>`). On the branch: types 0 and 0; methods 0 undocumented, 0
+    missing a `<param>`, and the one plain `Task` above. Properties, indexers and events: 46,
+    of which 30 still have no comment, as planned.
+  - **The XML documentation files the build writes:** Core 193 `<param>`, 38 `<returns>`, 8
+    `<exception>`; Wpf 127 `<param>`, 33 `<returns>`, 7 `<inheritdoc/>`. Their 71 `<returns>`
+    and the 7 inherited members, all of which return a value, make the 78 methods with one.
+  - **Only comments changed:** in `git diff main...HEAD -- src`, 27 files, 0 changed lines that
+    are not `///` lines.
+  - **`check-design.ps1 -Since main`** listed six notes: `code-map.md`, `imaging.md`,
+    `rendering.md`, `shell.md`, `testing.md` and `versioning-and-licence.md`. Each was read
+    against the change; none states anything the comments contradict, and none changed.
+  - **`/validate`:** the four cases passed, with no drift; the figures are in
+    `../validation.md`, History, 2026-10-21.
+  - **The launch,** from the worktree's build, on `de_printat.png` against
+    `de_printat_PRINT_preview_16bit.tif`: the pair at fit (24%), the divider and its handle, the
+    minimap, the status bar `5938 × 3888 · A 16-bit RGB · B 16-bit RGB` with the version and the
+    copyright, the dark caption; closed with exit code 0.

@@ -138,3 +138,8 @@ files above. They are kept here as they were written, as the history of the figu
   passed against the figures above, which were left as they are: V-003 decoded in 1.55 s (2.75
   and 2.55 before), +201.5 MB and 25.5 MB after the release; V-004 in 2.06 s, +172.4 and -4.2 MB;
   V-001 in 2.71 s, +178.3 and 0.7 MB; V-002 in 1.82 s, +171.3 and -0.3 MB.
+- 2026-10-21: after the documentation comments of every type and method (only `///` lines
+  changed), all four cases ran again in the task's worktree and passed against the figures
+  above, left as they are: V-001 decoded in 2.63 s, +177.9 MB and 0.2 MB after the release;
+  V-002 in 1.78 s, +171.4 and 0.2 MB; V-003 in 1.67 s, +201.4 and 25.3 MB; V-004 in 2.10 s,
+  +173.3 and -2.9 MB.

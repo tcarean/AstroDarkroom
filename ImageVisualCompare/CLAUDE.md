@@ -120,8 +120,8 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. ImageVisualCompare
 - A release is tagged `imagevisualcompare-vX.Y.Z`, the name `scripts/release.ps1` prints; it
   publishes the application self-contained for win-x64 into `artifacts/X.Y.Z/`.
 - The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.
-  A worktree has no copy of the real pair; a task that runs `/validate` copies the three files
-  into the worktree's `tests/testdata/large/` first (ADR 0005).
+  A worktree has no copy of the real pair; a task that runs `/validate` copies the files that
+  `docs/skills.md` lists for it into the worktree's `tests/testdata/large/` first (ADR 0005).
 
 ## Read before touching
 
