@@ -111,4 +111,9 @@ between Index and Raport; both show the same rows and paragraphs, computed in th
   label column; the dark current's ADU-eq is shown only when the normalisation is not 1.
 - No validation case was added: every row is arithmetic on figures the cases already pin, and
   the gain is a published figure recorded in ADR 0015, not a measurement.
-
+- The code review added, before the merge: the read noise's electrons use the biases' own ISO
+  (named when it differs from the darks'), a float FITS scale (white under 255) reads no bit
+  depth, unknown settings say ADU-eq equals raw ADU instead of claiming the reference scale,
+  the set's figures are computed once (`Figures`) for the rows and the paragraphs, and the
+  helpers `F` / `Signed` are `DarkReport`'s. The first three have no synthetic fixture (the
+  fixtures share one ISO and write 16-bit FITS); they are covered by reading the code.

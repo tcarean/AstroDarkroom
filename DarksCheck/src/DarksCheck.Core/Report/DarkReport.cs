@@ -762,7 +762,7 @@ internal static class DarkReport
 
     private static string Ratio(double v) => double.IsNaN(v) ? "-" : F(v, 3);
 
-    private static string Signed(double v, int decimals)
+    internal static string Signed(double v, int decimals)
     {
         double r = Math.Round(v, decimals, MidpointRounding.AwayFromZero);
         return (r < 0 ? "-" : "+") + F(Math.Abs(r), decimals);
@@ -773,7 +773,7 @@ internal static class DarkReport
     private static string Time(DateTime? t) => t is DateTime d ? d.ToString("HH:mm:ss", CultureInfo.InvariantCulture) : "-";
 
     /// <summary>A figure with fixed decimals; a value that rounds to zero prints without a minus sign.</summary>
-    private static string F(double v, int decimals)
+    internal static string F(double v, int decimals)
     {
         if (double.IsNaN(v))
         {
