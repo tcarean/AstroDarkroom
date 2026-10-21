@@ -111,9 +111,9 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
 
   3. DERIVA TERMICA IN SERIE
     amplitudine        : pixelii fierbinti la 0.83 din master in primul cadru, 1.07 in ultimul (443 pixeli peste 20 ADU-eq)
-    platou             : seria se apropie de un platou la 1.10 din master (constanta de timp 15 min); masterul, mediana seriei, e cu 0.8 grade sub platou; la ultimul cadru mai are 0.2 grade pana la platou
-    de aruncat         : 6 cadre (1 .. 6) la peste 1.0 grade de platou (amplit. sub 0.98 sau peste 1.23; platoul 1.10); fara ele masterul ar fi cu 0.4 grade sub platou
-    verdict            : OK: seria s-a asezat (la sfarsit mai are 0.2 grade pana la platou, sub 1.0) si toate cadrele stau in 0.7 .. 1.4 din master; incalzirea de 2.2 grade in 38 min e la inceput (regula dublarii la 6 grade), cadrele de aruncat sunt in randul de mai sus
+    platou             : seria se apropie de un platou la 1.10 din master (constanta de timp 15 min); masterul, mediana seriei, e cu 0.8 grade sub platou; la ultimul cadru mai are +0.2 grade pana la platou
+    de aruncat         : 2 cadre (1, 2) la peste 2.0 grade de platou (amplit. sub 0.87 sau peste 1.38; platoul 1.10); fara ele masterul ar fi cu 0.7 grade sub platou, dar cu 5 % mai mult zgomot
+    verdict            : OK: seria s-a asezat (la ultimul cadru mai are +0.2 grade pana la platou, sub 1.0) si toate cadrele stau in 0.7 .. 1.4 din master; incalzirea de 2.2 grade in 38 min e la inceput (regula dublarii la 6 grade), cadrele de aruncat sunt in randul de mai sus
 ```
 
 - **2. Scurgeri de lumina si gradient**: masterul dark (media cadrelor), masterul bias si
@@ -154,15 +154,17 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   2.8 .. 3.6 in 58 min pe biblioteci, chiar dupa 20 de minute de cadre aruncate. De la 6 cadre
   in sus, `platou` potriveste curba si spune unde e platoul, cat de departe sub el e masterul
   (mediana seriei, 0.8 .. 1.4 grade pe seriile masurate) si cat mai are seria de urcat la
-  ultimul cadru; `de aruncat` numeste cadrele la peste 1 grad de platou (cele din incalzire;
-  pe biblioteci 10 .. 18 din 30, pe Smida 6 din 20) si unde ar ajunge masterul fara ele; tu le
-  muti in `aruncate`, programul nu scrie nimic in folder. Verdictul e `ATENTIE` doar cand
-  seria inca urca la sfarsit (mai are peste 1 grad pana la platou: masterul nu apartine
+  ultimul cadru (cu semn: + mai urca, - mai coboara); `de aruncat` numeste cadrele la peste 2
+  grade de platou (pornirea rece, cu curentul de intuneric cu 21 % sub al seriei; pe biblioteci
+  3 .. 5 din 30, pe Smida 2 din 20), unde ar ajunge masterul fara ele si cu cat i-ar creste
+  zgomotul (radacina din cadre pe cadre ramase); tu le muti in `aruncate`, programul nu scrie
+  nimic in folder, si nu le arunca daca pretul in zgomot nu merita jumatatea de grad. Verdictul e `ATENTIE` doar cand
+  seria inca urca la ultimul cadru (mai are peste 1 grad pana la platou: masterul nu apartine
   niciunei temperaturi, continua seria) sau cand un cadru iese din 0.7 .. 1.4 din master
   (marginea `-opt`, seria a pornit rece); incalzirea de la inceput e doar spusa. Sub 6 cadre nu
   se potriveste un platou si verdictul se da numai pe marginea 0.7 .. 1.4. In tabelul pe cadre,
   coloana `platou` da gradele fiecarui cadru fata de platou, iar un cadru de aruncat are
-  motivul la capatul randului (`de aruncat: amplit. 0.826 sub 0.98 ...`); in fereastra, tabul
+  motivul la capatul randului (`de aruncat: amplit. 0.826 sub 0.87 ...`); in fereastra, tabul
   Cadre arata randul, valoarea si motivul in culoarea de atentie, iar graficul are platoul si
   cele doua limite.
 - **4. Zgomot pe cadru**: sigma reziduului (cadru minus master) pe fiecare plan, zgomotul de

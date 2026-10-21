@@ -134,8 +134,8 @@ internal static class Th
     /// <summary>The fit of R-023 (every frame's amplitude ratio on the minutes, as an approach to a plateau) needs at least this many frames with a ratio; under it the plateau rows read NEMASURAT and the verdict rests on the span alone (the same count as LeakFitMinFrames, a limit of its own).</summary>
     internal const int WarmingFitMinFrames = 6;
 
-    /// <summary>A frame whose hot pixels sit more than this many degrees from the plateau of the series (under it in a warm-up, over it in a cool-down) is one to discard: the series' temperature is the plateau's, not the frame's. Measured 2026-10-21 on the five series: 10 .. 18 of 30 frames on the libraries and the leak set, 6 of 20 at Smida (ADR 0017).</summary>
-    internal const double OffPlateauCelsius = 1.0;
+    /// <summary>A frame whose hot pixels sit more than this many degrees from the plateau of the series (under it in a warm-up, over it in a cool-down) is one to discard: at two degrees its dark current is 21 % off the series'. Measured 2026-10-21 on the five series: at 1 °C the band named 10 .. 18 of 30 frames (half the master's frames, 26 .. 58 % more noise for half a degree of plateau), at 2 °C it names the cold start only, 3 .. 5 of 30 on the libraries, 8 on the leak set, 2 of 20 at Smida (ADR 0017).</summary>
+    internal const double OffPlateauCelsius = 2.0;
 
     /// <summary>A series whose fitted curve still has more than this many degrees to climb (or fall) at its last frame has not settled: its master belongs to no temperature. The seven series measured 2026-10-21 had 0.1 .. 0.4 °C left; a series cut mid-warm-up has 1.5 and more (ADR 0017).</summary>
     internal const double SettledCelsius = 1.0;

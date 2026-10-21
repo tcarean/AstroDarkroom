@@ -696,7 +696,7 @@ internal static class DarkReport
         string tau = w.TimeFromStamps && w.TauMinutes >= 3 * w.Minutes - 1e-9
             ? $"constanta de timp de cel putin {F(w.TauMinutes, 0)} {unit}, seria e prea scurta ca s-o masoare"
             : $"constanta de timp {F(w.TauMinutes, 0)} {unit}";
-        return $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {F(Math.Abs(w.SettleCelsius), 1)} grade pana la platou";
+        return $"seria se apropie de un platou la {F(w.Plateau, 2)} din master ({tau}); masterul, mediana seriei, e {FromPlateau(w.PlateauCelsius)}; la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou";
     }
 
     /// <summary>The `de aruncat` row of check 3: the frames more than Th.OffPlateauCelsius from the plateau, the band's bounds, and where the master would sit without them.</summary>
@@ -713,7 +713,7 @@ internal static class DarkReport
             return $"niciun cadru la peste {deg} grade de platou (amplit. intre {F(w.OffPlateauLow, 2)} si {F(w.OffPlateauHigh, 2)})";
         }
 
-        string without = double.IsNaN(w.MasterWithoutOffCelsius) ? "fara ele nu ramane niciun cadru" : $"fara ele masterul ar fi {FromPlateau(w.MasterWithoutOffCelsius)}";
+        string without = double.IsNaN(w.MasterWithoutOffCelsius) ? "fara ele nu ramane niciun cadru" : $"fara ele masterul ar fi {FromPlateau(w.MasterWithoutOffCelsius)}, dar cu {F((w.NoiseFactorWithoutOff - 1) * 100, 0)} % mai mult zgomot";
         return $"{RunReport.Frames(w.OffPlateauFrames.Count)} ({Ranges(w.OffPlateauFrames)}) la peste {deg} grade de platou (amplit. sub {F(w.OffPlateauLow, 2)} sau peste {F(w.OffPlateauHigh, 2)}; platoul {F(w.Plateau, 2)}); {without}";
     }
 
@@ -739,13 +739,13 @@ internal static class DarkReport
                 ? $"seria e plata ({rule})"
                 : $"{(w.DeltaCelsius > 0 ? "incalzirea" : "racirea")} de {F(Math.Abs(w.DeltaCelsius), 1)} grade{minutes} e la inceput ({rule})";
             string off = w.OffPlateauFrames.Count == 0 ? "niciun cadru de aruncat" : "cadrele de aruncat sunt in randul de mai sus";
-            return $"OK: seria s-a asezat (la sfarsit mai are {F(Math.Abs(w.SettleCelsius), 1)} grade pana la platou, sub {F(Th.SettledCelsius, 1)}) si toate cadrele stau in {span}; {warmup}, {off}";
+            return $"OK: seria s-a asezat (la ultimul cadru mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, sub {F(Th.SettledCelsius, 1)}) si toate cadrele stau in {span}; {warmup}, {off}";
         }
 
         List<string> parts = [];
         if (!v.Settled)
         {
-            parts.Add($"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la sfarsit (mai are {F(Math.Abs(w.SettleCelsius), 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}): masterul nu apartine unei temperaturi; continua seria sau arunca cadrele din randul de mai sus");
+            parts.Add($"seria inca se {(w.SettleCelsius > 0 ? "incalzeste" : "raceste")} la ultimul cadru (mai are {Signed(w.SettleCelsius, 1)} grade pana la platou, peste {F(Th.SettledCelsius, 1)}): masterul nu apartine unei temperaturi; continua seria sau arunca cadrele din randul de mai sus");
         }
 
         if (v.OutsideFrames.Count > 0)

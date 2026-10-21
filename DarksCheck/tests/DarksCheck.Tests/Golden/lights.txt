@@ -76,7 +76,7 @@ Copyright (C) 2026 Tudor Carean
     verdict partener   : ATENTIE: doar corectie cosmetica (-cc=dark): raport 0.65, partenerul e mai cald cu 3.7 grade si vede toti pixelii fierbinti, dar scaderea l-ar supracorecta
 
   TABEL PE CADRE
-     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 1.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
+     nr  fisier                ora       medie   sigma  rezid.   benzi  amplit.  platou  lumina  latura  >20   [G1; medie = ADU peste negru; benzi = randuri / zgomot alb; amplit. = pixelii fierbinti fata de master; platou = grade fata de platoul seriei; de aruncat = la peste 2.0 grade de platou (verificarea 3); lumina = ADU peste dreapta mediei pe incalzire; latura = latura cu cea mai multa lumina constanta - centru (NEMASURAT)]
       1  DSC_0001.fit          00:48:53    0.03    3.01    2.64     1.0    0.996       -       -       -     0
       2  DSC_0002.fit          00:50:53    0.04    2.99    2.67     1.0    1.008       -       -       -     0
       3  DSC_0003.fit          00:52:53    0.05    3.03    2.71     1.0    1.000       -       -       -     0

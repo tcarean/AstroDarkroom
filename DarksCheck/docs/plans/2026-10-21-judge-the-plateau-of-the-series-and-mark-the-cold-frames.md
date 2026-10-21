@@ -156,3 +156,7 @@ owner moves them to `aruncate` by hand.
 - The time constant is printed in frames when a timestamp is missing (`TimeFromStamps`), and
   as "at least" when it sits at the top of the grid (a series too short to measure it).
 - Two existing assertions of R-028 and R-029 on the table header gained the `platou` column.
+- After the first commit the owner judged the 1 °C band too costly (half the frames of every
+  library): `Th.OffPlateauCelsius` went to 2 °C, the `de aruncat` row gained the noise the
+  master would gain without the frames, and the degrees left at the last frame read "la
+  ultimul cadru", signed, in the `platou` row and the verdict.

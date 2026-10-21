@@ -28,11 +28,16 @@ fiftieth of the span to three times it; at least `Th.WarmingFitMinFrames` = 6 fr
 judges three things: the series has settled when the fitted curve is within
 `Th.SettledCelsius` = 1 °C of the plateau at the last frame; every frame's ratio stays in the
 `-opt` band of the master, `Th.MatchOptLow` .. `Th.MatchOptHigh` (0.7 .. 1.4); and the frames
-more than `Th.OffPlateauCelsius` = 1 °C from the plateau, measured against the plateau and not
-against the master (the owner's choice of 2026-10-21: 10 .. 18 of 30 frames on the present
-libraries, 6 of 20 at Smida, against 2 .. 6 the master would have named), are listed as the
-ones to discard, in the `de aruncat` row, in the table's `platou` column with a note on the
-row, and in the window's Cadre tab in the attention colour. `ATENTIE` only when the series has
+more than `Th.OffPlateauCelsius` = 2 °C from the plateau, measured against the plateau and not
+against the master (the owner's choice of 2026-10-21), are listed as the ones to discard, in
+the `de aruncat` row with the noise the master would gain without them (the square root of
+the frames over the frames left), in the table's `platou` column with a note on the row, and
+in the window's Cadre tab in the attention colour. The band was first 1 °C, which named 10 ..
+18 of 30 frames on the libraries, 6 of 20 at Smida: half the master for half a degree of
+plateau, at 26 .. 58 % more noise; the owner judged that too much, and at 2 °C (a dark current
+21 % off the series') the row names the cold start only, 3 .. 5 of 30 on the libraries, 8 of 30 on
+the leak set, 2 of 20 at Smida. The degrees left at the last frame are printed signed,
+positive while the series still climbs. `ATENTIE` only when the series has
 not settled or a frame leaves the `-opt` band; the warm-up at the start is information, not a
 fault. `Th.DriftCelsius` is gone.
 
@@ -42,8 +47,10 @@ fault. `Th.DriftCelsius` is gone.
   series and pass a series cut mid-warm-up, the one case where the master's temperature is
   undefined; the shape of the curve, not its span, is what tells the two apart.
 - **Discard against the master, not the plateau.** Fewer frames named (2 .. 6), but the master
-  stays 0.8 .. 1.5 °C under the plateau, where the lights of the same night run; discarding
-  against the plateau brings it within about half a degree (`fara ele masterul ar fi ...`).
+  stays 0.8 .. 1.5 °C under the plateau, where the lights of the same night run; the plateau is
+  the series' temperature, and the row says where the master would sit without the frames.
+- **A 1 °C band.** Names half the frames of every present library for half a degree of plateau
+  and a quarter more noise in the master; the owner's call, the same day, was 2 °C.
 - **The last third's rise as the settle test.** On seven frames the last third is one step and
   understates a slow climb; the degrees left between the fitted last frame and the plateau
   read the same thing from the whole curve.

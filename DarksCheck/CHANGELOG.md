@@ -11,8 +11,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - Check 3 judges the plateau of the series instead of the first frame against the last
   (R-023, ADR 0017). The hot-pixel amplitude of every frame is fitted on the minutes as an
   approach to a plateau; the rows `platou` and `de aruncat` give the plateau, the time
-  constant, how far under the plateau the master sits and which frames are more than a degree
-  from it (to move to `aruncate` by hand), and the verdict is `ATENTIE` only when the series
+  constant, how far under the plateau the master sits and which frames are more than two
+  degrees from it (to move to `aruncate` by hand, with the noise the master would gain), and the verdict is `ATENTIE` only when the series
   has not settled at its end or a frame leaves the `-opt` band of 0.7 .. 1.4 of the master; the
   warm-up at the start is stated, not flagged. The frames table gains the column `platou`
   (degrees from the plateau) and a note on every frame to discard, and the window's Cadre tab

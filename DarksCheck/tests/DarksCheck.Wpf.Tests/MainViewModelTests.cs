@@ -31,14 +31,14 @@ public class MainViewModelTests
     [Fact]
     public async Task R071_TheFramesOffThePlateauAreMarkedInTheTableAndTheChart()
     {
-        // twelve darks approaching a plateau: the first four are more than a degree under it (R-023)
+        // twelve darks approaching a plateau: the first two are more than two degrees under it (R-023)
         (int X, int Y, double Adu)[] hot = Enumerable.Range(0, 10).Select(k => (60 + 7 * k, 100 + 5 * k, 300.0)).ToArray();
         using SessionFixture f = new SessionFixture().WithDarkSeries(12, i => new SyntheticDark { Seed = 100 + i, Hot = hot, HotFactor = 1.2 - 0.4 * Math.Exp(-i / 3.0) });
         MainViewModel vm = new();
         await vm.OpenAsync(f.Root);
         DarkSeriesResult r = vm.Result!;
         Warming w = r.Darks.Warming;
-        Assert.Equal([1, 2, 3, 4], w.OffPlateauFrames);
+        Assert.Equal([1, 2], w.OffPlateauFrames);
 
         // the table: the core's cells, the flag and the note on the frames off the plateau
         IReadOnlyList<DarkTableRow> rows = DarkReport.FrameRows(r);

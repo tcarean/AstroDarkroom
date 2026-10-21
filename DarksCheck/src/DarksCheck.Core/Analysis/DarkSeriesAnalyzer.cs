@@ -125,14 +125,15 @@ internal sealed record BandingFigures(string Name, double RowStd, double ColStd,
 /// <see cref="TimeFromStamps"/>, else the frame's position), its rms residual, the master's
 /// degrees to the plateau (negative under it), the degrees left between the fitted last frame
 /// and the plateau, the frames more than <see cref="Th.OffPlateauCelsius"/> from the plateau
-/// with the two bounds of that band, and the master's degrees to the plateau without them.
+/// with the two bounds of that band, the master's degrees to the plateau without them and the
+/// factor by which the master's noise would grow without them (sqrt of frames over frames left).
 /// </summary>
 internal sealed record Warming(
     double FirstRatio, double LastRatio, double DeltaCelsius, double Minutes, int Pixels,
     double Plateau, double TauMinutes, bool TimeFromStamps, double FitScale, double PlateauCelsius, double SettleCelsius,
-    IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius)
+    IReadOnlyList<int> OffPlateauFrames, double OffPlateauLow, double OffPlateauHigh, double MasterWithoutOffCelsius, double NoiseFactorWithoutOff)
 {
-    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN);
+    internal static readonly Warming None = new(double.NaN, double.NaN, double.NaN, double.NaN, 0, double.NaN, double.NaN, false, double.NaN, double.NaN, double.NaN, [], double.NaN, double.NaN, double.NaN, double.NaN);
 
     internal bool HasFit => !double.IsNaN(Plateau);
 }
@@ -761,6 +762,7 @@ internal static class DarkSeriesAnalyzer
             OffPlateauLow = low,
             OffPlateauHigh = high,
             MasterWithoutOffCelsius = without,
+            NoiseFactorWithoutOff = left.Count == 0 ? double.NaN : Math.Sqrt((double)ok.Length / left.Count),
         };
     }
 
