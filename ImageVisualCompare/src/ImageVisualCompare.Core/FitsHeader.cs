@@ -179,7 +179,9 @@ public static class FitsHeader
     /// </summary>
     /// <param name="cards">The unit's header, keyword to value.</param>
     /// <param name="axes">NAXIS of the unit, 0 to 999.</param>
-    /// <returns>The bytes, a whole number of 2880-byte blocks; 0 for a unit with no axes.</returns>
+    /// <returns>
+    /// The bytes, rounded up to whole 2880-byte blocks; a unit with no axes counts no samples.
+    /// </returns>
     /// <exception cref="NotSupportedException">
     /// The header is not valid: a count that is not a whole number, or a product that overflows.
     /// </exception>

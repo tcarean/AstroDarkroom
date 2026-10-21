@@ -193,8 +193,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Reads the display's scale again when the window moves to a monitor scaled differently, or
-    /// when the scaling of its own monitor changes.
+    /// Reads the display's scale again when WPF reports that the scale this control is drawn at
+    /// has changed.
     /// </summary>
     /// <param name="oldDpi">The scale before; not read.</param>
     /// <param name="newDpi">

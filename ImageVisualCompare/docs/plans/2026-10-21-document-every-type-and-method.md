@@ -221,8 +221,8 @@ plan and the branch (I give a prompt to paste; a chip would open at the checkout
 
 ## What deviated
 
-- **One session was enough.** The plan was approved as written, commit 5 included, and the
-  seven commits are the seven planned.
+- **One session was enough.** The plan was approved as written, commit 5 included. The seven
+  planned commits were followed by an eighth, the two corrections below.
 - **The real files were copied, not reached through `IVC_TESTDATA_LARGE`.** Assumption 10 said
   the variable. ADR 0005's Decision says nobody sets it, and its Consequences say a worktree
   gets copies, so the five files were copied into the worktree's `tests/testdata/large/` (5 s;
@@ -246,6 +246,12 @@ plan and the branch (I give a prompt to paste; a chip would open at the checkout
   too. ADR 0025 keeps the user documentation out of the comments; as the kit task judged of
   this ADR, a member's contract is not user documentation, and the keys are what these
   handlers do.
+- **Two claims corrected after the wrap-up commit.** MindfulnessReminder's review found doc
+  claims about framework behaviour that only checking the API shows, so every such claim was
+  read again against the code. Two said more than it does: `DataBlockBytes` returned "0 for a
+  unit with no axes", but such a unit still counts its PCOUNT; and `OnDpiChanged` named the
+  monitor changes that raise it, which depends on a DPI awareness nothing here declares. Each
+  now says only what holds: no samples for a unit with no axes, and the event's own contract.
 - **CS1573 proved on twice more.** Besides the gate after commit 6: a non-incremental rebuild of
   the three projects (0 warnings, 0 errors, every assembly rewritten), and a scratch class whose
   method tags one of its two parameters, built against this `Directory.Build.props`, which
