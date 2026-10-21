@@ -21,6 +21,10 @@ using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Wpf;
 
+/// <summary>
+/// The application. It keeps a pair named on the command line for the main window, which opens
+/// it in place of the dialogs.
+/// </summary>
 public partial class App : Application
 {
     /// <summary>
@@ -30,6 +34,10 @@ public partial class App : Application
     private static ImagePairSelection? _startupSelection;
 
     /// <summary>Hands over the command line pair, once. Later opens go through the dialogs.</summary>
+    /// <returns>
+    /// The pair the command line named, the first time; null after that, and when the command
+    /// line named no two existing files.
+    /// </returns>
     public static ImagePairSelection? TakeStartupSelection()
     {
         ImagePairSelection? selection = _startupSelection;
@@ -37,6 +45,11 @@ public partial class App : Application
         return selection;
     }
 
+    /// <summary>
+    /// Keeps the first two arguments as the pair to open when both are existing files; anything
+    /// else leaves the choice to the dialogs.
+    /// </summary>
+    /// <param name="e">The startup event; its arguments are image A's path, then image B's.</param>
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);

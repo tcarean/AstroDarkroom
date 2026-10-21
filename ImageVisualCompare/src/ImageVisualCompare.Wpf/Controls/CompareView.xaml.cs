@@ -59,6 +59,10 @@ public partial class CompareView : UserControl
     private bool _updatingScrollBars;
     private PointD? _cursorContentPoint;
 
+    /// <summary>
+    /// Builds the surface: puts the one shared transform on both images and both backdrops, and
+    /// wires the minimap, the scrollbars, the first layout and every resize to the viewport.
+    /// </summary>
     public CompareView()
     {
         InitializeComponent();
@@ -108,6 +112,11 @@ public partial class CompareView : UserControl
     /// </summary>
     public event EventHandler<PointD?>? CursorContentPointChanged;
 
+    /// <summary>
+    /// Shows a loaded pair: each image at its own pixel size on the shared canvas, zoomed to
+    /// fit, the divider back in the middle, and the minimap's thumbnail drawn.
+    /// </summary>
+    /// <param name="pair">The pair, both images frozen Bgra32.</param>
     public void SetPair(ImagePair pair)
     {
         ArgumentNullException.ThrowIfNull(pair);
@@ -146,6 +155,10 @@ public partial class CompareView : UserControl
         Sync();
     }
 
+    /// <summary>
+    /// Takes the pair off the surface, so that nothing here refers to its bitmaps any more, and
+    /// empties the viewport.
+    /// </summary>
     public void Clear()
     {
         BeforeImage.Source = null;
@@ -157,28 +170,50 @@ public partial class CompareView : UserControl
         Sync();
     }
 
+    /// <summary>Steps up to the next zoom stop, anchored at the centre of the view.</summary>
     public void ZoomIn() => ZoomAtCentre(step: 1);
 
+    /// <summary>Steps down to the previous zoom stop, anchored at the centre of the view.</summary>
     public void ZoomOut() => ZoomAtCentre(step: -1);
 
+    /// <summary>Zooms so the whole canvas is visible, and centres it.</summary>
     public void ZoomToFit()
     {
         Viewport.ZoomToFit();
         Sync();
     }
 
+    /// <summary>
+    /// Zooms to one image pixel per physical screen pixel, anchored at the centre of the view.
+    /// </summary>
     public void ZoomToActualSize()
     {
         Viewport.ZoomToActualSize();
         Sync();
     }
 
+    /// <summary>
+    /// Reads the display's scale again when the window moves to a monitor scaled differently, or
+    /// when the scaling of its own monitor changes.
+    /// </summary>
+    /// <param name="oldDpi">The scale before; not read.</param>
+    /// <param name="newDpi">
+    /// The scale after; not read: the control asks <see cref="VisualTreeHelper"/>.
+    /// </param>
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
         ReadDeviceScale();
     }
 
+    /// <summary>
+    /// Zooms by a fixed factor per notch, anchored at the cursor; with Shift held, pans sideways
+    /// instead. Does nothing until a pair is shown.
+    /// </summary>
+    /// <param name="e">
+    /// The wheel event: the sign of its delta is the direction, and its position the anchor. It
+    /// is marked handled.
+    /// </param>
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
         base.OnMouseWheel(e);
@@ -208,6 +243,13 @@ public partial class CompareView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// Takes the keyboard focus and, once a pair is shown, starts a drag: of the divider when the
+    /// press is on it, otherwise a pan.
+    /// </summary>
+    /// <param name="e">
+    /// The press; its position decides which drag, and it is marked handled.
+    /// </param>
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
@@ -237,6 +279,11 @@ public partial class CompareView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// Moves the divider or pans while a drag is on; otherwise shows the resize cursor over the
+    /// divider and reports the image pixel under the pointer.
+    /// </summary>
+    /// <param name="e">The move; its position is read.</param>
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
@@ -265,24 +312,37 @@ public partial class CompareView : UserControl
         UpdateCursorContentPoint(position);
     }
 
+    /// <summary>
+    /// Reports that the pointer is off the image, which clears the pixel readout.
+    /// </summary>
+    /// <param name="e">The event; not read.</param>
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
         SetCursorContentPoint(null);
     }
 
+    /// <summary>Ends a divider drag or a pan.</summary>
+    /// <param name="e">The release; not read.</param>
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);
         EndDrag();
     }
 
+    /// <summary>Ends a drag whose mouse capture was taken away, by a dialog for instance.</summary>
+    /// <param name="e">The event; not read.</param>
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         base.OnLostMouseCapture(e);
         EndDrag();
     }
 
+    /// <summary>
+    /// Handles the surface's keys: Ctrl+0 fits, Ctrl+1 shows 100%, + and - step the zoom, and
+    /// the left and right arrows nudge the divider by 1 device-independent pixel, 10 with Shift.
+    /// </summary>
+    /// <param name="e">The key; marked handled when it is one of these.</param>
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
@@ -319,6 +379,13 @@ public partial class CompareView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// Sizes an element in WPF units equal to its image pixels; the shared transform does all of
+    /// the scaling.
+    /// </summary>
+    /// <param name="element">An image or a backdrop.</param>
+    /// <param name="width">The width, in image pixels.</param>
+    /// <param name="height">The height, in image pixels.</param>
     private static void SetPixelSize(FrameworkElement element, double width, double height)
     {
         element.Width = width;
@@ -334,6 +401,15 @@ public partial class CompareView : UserControl
     /// rectangle against the content size, so a padded pair whose thumbnail had the image's own
     /// aspect ratio would put that rectangle in the wrong place.
     /// </remarks>
+    /// <param name="source">Image A, drawn at the canvas's top-left corner.</param>
+    /// <param name="contentWidth">The canvas width, in image pixels.</param>
+    /// <param name="contentHeight">The canvas height, in image pixels.</param>
+    /// <param name="maxWidth">The widest the thumbnail may be, in pixels.</param>
+    /// <param name="maxHeight">The tallest the thumbnail may be, in pixels.</param>
+    /// <returns>
+    /// A frozen bitmap of the canvas at the largest size that fits, at least 1 pixel each way,
+    /// black where image A does not reach.
+    /// </returns>
     private static BitmapSource CreateThumbnail(
         BitmapSource source, double contentWidth, double contentHeight, int maxWidth, int maxHeight)
     {
@@ -357,6 +433,10 @@ public partial class CompareView : UserControl
         return target;
     }
 
+    /// <summary>
+    /// Ends a divider drag or a pan, if one is on: releases the mouse and puts the arrow cursor
+    /// back.
+    /// </summary>
     private void EndDrag()
     {
         if (!_draggingDivider && _panAnchor is null)
@@ -370,6 +450,10 @@ public partial class CompareView : UserControl
         Cursor = Cursors.Arrow;
     }
 
+    /// <summary>
+    /// Pans to where a scrollbar was dragged; ignored while <see cref="UpdateScrollBars"/> sets
+    /// the bars itself.
+    /// </summary>
     private void OnScrollBarMoved()
     {
         if (_updatingScrollBars)
@@ -381,6 +465,8 @@ public partial class CompareView : UserControl
         Sync();
     }
 
+    /// <summary>Steps the zoom ladder, anchored at the centre of the view.</summary>
+    /// <param name="step">Above 0 steps up a stop; 0 or below steps down one.</param>
     private void ZoomAtCentre(int step)
     {
         double centreX = ActualWidth * _deviceScale / 2;
@@ -398,10 +484,22 @@ public partial class CompareView : UserControl
         Sync();
     }
 
+    /// <summary>Works out the image pixel under a pointer position, and reports it.</summary>
+    /// <param name="position">
+    /// The pointer, in device-independent pixels from the surface's top-left corner.
+    /// </param>
     private void UpdateCursorContentPoint(Point position) =>
         SetCursorContentPoint(
             Viewport.ContentPointInsideAt(position.X * _deviceScale, position.Y * _deviceScale));
 
+    /// <summary>
+    /// Raises <see cref="CursorContentPointChanged"/> when the pointer has moved onto another
+    /// whole pixel, onto the image or off it.
+    /// </summary>
+    /// <param name="point">
+    /// The image point under the pointer, in image pixels; null when the pointer is off the
+    /// image.
+    /// </param>
     private void SetCursorContentPoint(PointD? point)
     {
         // Only report whole-pixel changes: the readout cannot show more than that, and a
@@ -422,9 +520,16 @@ public partial class CompareView : UserControl
         };
     }
 
+    /// <summary>Converts a WPF position to physical pixels.</summary>
+    /// <param name="deviceIndependent">The position, in device-independent pixels.</param>
+    /// <returns>The same position, in physical screen pixels.</returns>
     private Point ToDevice(Point deviceIndependent) =>
         new(deviceIndependent.X * _deviceScale, deviceIndependent.Y * _deviceScale);
 
+    /// <summary>
+    /// Reads the display's scale, physical pixels per device-independent pixel, then gives the
+    /// viewport its size again and redraws.
+    /// </summary>
     private void ReadDeviceScale()
     {
         _deviceScale = VisualTreeHelper.GetDpi(this).DpiScaleX;
@@ -432,9 +537,14 @@ public partial class CompareView : UserControl
         Sync();
     }
 
+    /// <summary>Gives the viewport the surface's size, converted to physical pixels.</summary>
     private void UpdateViewportSize() =>
         Viewport.SetViewportSize(ActualWidth * _deviceScale, ActualHeight * _deviceScale);
 
+    /// <summary>
+    /// Puts the viewport's state on screen: the shared transform and the resampling mode, the
+    /// overlay, the scrollbars and the minimap; then raises <see cref="ViewChanged"/>.
+    /// </summary>
     private void Sync()
     {
         RenderPlan plan = RenderPlanner.For(Viewport, _deviceScale);
@@ -456,6 +566,10 @@ public partial class CompareView : UserControl
         ViewChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Sets both scrollbars from the viewport, without their own events panning the viewport
+    /// back.
+    /// </summary>
     private void UpdateScrollBars()
     {
         _updatingScrollBars = true;
@@ -479,6 +593,11 @@ public partial class CompareView : UserControl
         }
     }
 
+    /// <summary>
+    /// Lays out what is drawn over the images: the zoom badge, the divider line and its handle,
+    /// and the clip that shows image A left of the line. Does nothing before the surface has a
+    /// size.
+    /// </summary>
     private void UpdateOverlay()
     {
         if (ActualWidth <= 0 || ActualHeight <= 0)
@@ -506,5 +625,8 @@ public partial class CompareView : UserControl
         Canvas.SetTop(DividerHandle, layout.Handle.Y);
     }
 
+    /// <summary>Converts a Core rectangle to a WPF one.</summary>
+    /// <param name="rect">The rectangle, in any unit; the unit is kept.</param>
+    /// <returns>The same rectangle, as a <see cref="Rect"/>.</returns>
     private static Rect ToRect(RectD rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
 }

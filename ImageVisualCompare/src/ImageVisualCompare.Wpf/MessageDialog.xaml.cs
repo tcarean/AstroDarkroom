@@ -32,6 +32,9 @@ namespace ImageVisualCompare.Wpf;
 /// </summary>
 public partial class MessageDialog : Window
 {
+    /// <summary>
+    /// Builds an empty dialog with a dark caption, for <see cref="Create"/> to fill.
+    /// </summary>
     private MessageDialog()
     {
         InitializeComponent();
@@ -41,6 +44,9 @@ public partial class MessageDialog : Window
     }
 
     /// <summary>Says something and waits for it to be acknowledged.</summary>
+    /// <param name="owner">The window the dialog is centred on and blocks until it closes.</param>
+    /// <param name="title">The dialog's caption.</param>
+    /// <param name="message">The text; it may run over several lines.</param>
     public static void Show(Window owner, string title, string message)
     {
         MessageDialog dialog = Create(owner, title, message);
@@ -49,6 +55,10 @@ public partial class MessageDialog : Window
     }
 
     /// <summary>Asks a yes or no question. Escape and the close button both count as no.</summary>
+    /// <param name="owner">The window the dialog is centred on and blocks until it closes.</param>
+    /// <param name="title">The dialog's caption.</param>
+    /// <param name="message">The question; it may run over several lines.</param>
+    /// <returns>True for yes; false for no, Escape or the close button.</returns>
     public static bool Confirm(Window owner, string title, string message)
     {
         MessageDialog dialog = Create(owner, title, message);
@@ -59,6 +69,8 @@ public partial class MessageDialog : Window
         return dialog.ShowDialog() == true;
     }
 
+    /// <summary>Answers no and closes the dialog when Escape is pressed.</summary>
+    /// <param name="e">The key; marked handled when it is Escape.</param>
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         base.OnPreviewKeyDown(e);
@@ -73,6 +85,14 @@ public partial class MessageDialog : Window
         }
     }
 
+    /// <summary>
+    /// Builds a dialog with its owner, caption and text; its first button closes it with true,
+    /// the second with false.
+    /// </summary>
+    /// <param name="owner">The window the dialog is centred on and blocks until it closes.</param>
+    /// <param name="title">The dialog's caption.</param>
+    /// <param name="message">The text; it may run over several lines.</param>
+    /// <returns>The dialog, not shown yet; the caller labels its buttons.</returns>
     private static MessageDialog Create(Window owner, string title, string message)
     {
         ArgumentNullException.ThrowIfNull(owner);

@@ -27,6 +27,10 @@ using ImageVisualCompare.Wpf.Services;
 
 namespace ImageVisualCompare.Wpf;
 
+/// <summary>
+/// The shell: the toolbar, the comparison surface, the status bar with the pixel readout from
+/// both images, and the open, error and retry flow around a load.
+/// </summary>
 public partial class MainWindow : Window
 {
     private readonly IFileDialogService _dialogs = new FileDialogService();
@@ -36,6 +40,10 @@ public partial class MainWindow : Window
     private ImagePair? _pair;
     private string? _lastDirectory;
 
+    /// <summary>
+    /// Builds the window, makes its caption dark, wires the toolbar and the readouts, and asks
+    /// for a pair once the window has loaded.
+    /// </summary>
     public MainWindow()
     {
         InitializeComponent();
@@ -65,6 +73,9 @@ public partial class MainWindow : Window
         PreviewKeyDown += OnPreviewKeyDown;
     }
 
+    /// <summary>Opens another pair on Ctrl+O, wherever the focus is.</summary>
+    /// <param name="sender">The window itself; not read.</param>
+    /// <param name="e">The key; marked handled when it is Ctrl+O.</param>
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
     {
         if (e.Key == Key.O && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
@@ -74,6 +85,11 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Asks for a pair, the command line's the first time, and shows it once it loads. A failure
+    /// is shown and a declined padding is not, and both ask again. Cancelling the first prompt
+    /// closes the window; cancelling a later one keeps the pair on screen.
+    /// </summary>
     private async Task OpenPairAsync()
     {
         // A pair given on the command line is used once, then the dialogs take over as normal.
@@ -115,6 +131,12 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Loads a pair behind the progress overlay, which shows the file being decoded and comes
+    /// down again whatever happens.
+    /// </summary>
+    /// <param name="selection">The two files.</param>
+    /// <returns>The loader's result: the pair, a failure with its message, or declined.</returns>
     private async Task<ImagePairLoadResult> LoadWithOverlayAsync(ImagePairSelection selection)
     {
         LoadingOverlay.Visibility = Visibility.Visible;
@@ -142,6 +164,10 @@ public partial class MainWindow : Window
     /// Asks before padding a mismatched pair. Called from a thread pool thread, and reached
     /// before either file has been decoded, so this is the last cheap moment to back out.
     /// </summary>
+    /// <param name="request">
+    /// Both files with their sizes, the canvas, and the question worded.
+    /// </param>
+    /// <returns>True when the user agrees to the padding.</returns>
     private Task<bool> ConfirmPaddingAsync(PadRequest request) => Dispatcher.InvokeAsync(() =>
     {
         // The overlay is up at this point and a dialog sitting on top of a progress bar that
@@ -159,6 +185,11 @@ public partial class MainWindow : Window
         }
     }).Task;
 
+    /// <summary>
+    /// Puts a loaded pair on screen in place of the one shown, whose memory is given back first,
+    /// and fills the title, the toolbar and the status bar.
+    /// </summary>
+    /// <param name="pair">The pair just loaded.</param>
     private void ShowPair(ImagePair pair)
     {
         if (_pair is not null)
@@ -191,6 +222,7 @@ public partial class MainWindow : Window
         _memoryTimer.Start();
     }
 
+    /// <summary>Shows the current zoom in the toolbar, as a whole percentage.</summary>
     private void UpdateZoomReadout() => ZoomLabel.Text = $"{Compare.Viewport.Scale * 100:F0}%";
 
     /// <summary>
@@ -198,6 +230,10 @@ public partial class MainWindow : Window
     /// frames the interesting differences are often below what the eye picks out of a dark
     /// field, and the numbers settle it.
     /// </summary>
+    /// <param name="point">
+    /// The image point under the pointer, in image pixels; null when the pointer is off the
+    /// image, which clears the readout.
+    /// </param>
     private void UpdatePixelReadout(PointD? point)
     {
         if (_pair is null || point is not { } content)
@@ -216,6 +252,14 @@ public partial class MainWindow : Window
         StatusAfter.Text = $"B {Describe(_pair.After.Bitmap, x, y)}";
     }
 
+    /// <summary>Reads one pixel of an image for the readout.</summary>
+    /// <param name="bitmap">The image, Bgra32 as every loaded image is.</param>
+    /// <param name="x">The pixel's column, in image pixels.</param>
+    /// <param name="y">The pixel's row, in image pixels.</param>
+    /// <returns>
+    /// Its red, green and blue, 0 to 255, each three wide; a dash when the pixel is outside this
+    /// image, in the padding of the smaller one.
+    /// </returns>
     private static string Describe(BitmapSource bitmap, int x, int y)
     {
         if (x < 0 || y < 0 || x >= bitmap.PixelWidth || y >= bitmap.PixelHeight)
