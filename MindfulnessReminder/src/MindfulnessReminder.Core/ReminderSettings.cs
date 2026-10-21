@@ -40,6 +40,11 @@ namespace MindfulnessReminder.Core;
 /// "new ReminderSettings(true, 30)" goes on meaning exactly what it meant before they
 /// existed.
 /// </summary>
+/// <param name="PeriodicEnabled">Whether the periodic reminder runs.</param>
+/// <param name="IntervalMinutes">
+/// The minutes between periodic reminders; <see cref="Normalize"/> clamps it to
+/// <see cref="MinIntervalMinutes"/> to <see cref="MaxIntervalMinutes"/>.
+/// </param>
 public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
 {
     public const int MinIntervalMinutes = 1;
@@ -119,6 +124,10 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     /// Clamps both numbers into range and both messages into shape. Everything that builds
     /// settings goes through this.
     /// </summary>
+    /// <returns>
+    /// These settings with both numbers clamped and both messages normalized; this same
+    /// instance when nothing needed changing.
+    /// </returns>
     public ReminderSettings Normalize()
     {
         var normalized = IntervalMinutes switch
@@ -154,10 +163,12 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
     /// user cleared with that reminder switched off -- means the default; and anything past
     /// the limit is cut at it, so a hand-edited registry cannot push the text into the
     /// Close button.
-    ///
-    /// Returns the SAME instance when nothing needed doing, which is what lets
-    /// <see cref="Normalize"/> avoid copying the record for nothing.
     /// </summary>
+    /// <param name="message">The text as written; <c>null</c> reads as the default.</param>
+    /// <returns>
+    /// The text the rule makes of it. The SAME instance when nothing needed doing, which is
+    /// what lets <see cref="Normalize"/> avoid copying the record for nothing.
+    /// </returns>
     public static string NormalizeMessage(string? message)
     {
         if (message is null)
@@ -189,20 +200,35 @@ public sealed record ReminderSettings(bool PeriodicEnabled, int IntervalMinutes)
             : trimmed.ToString();
     }
 
-    /// <summary>True when <paramref name="minutes"/> is something the dialog may accept.</summary>
+    /// <summary>Checks an interval typed in the dialog against the bounds.</summary>
+    /// <param name="minutes">The interval, in minutes.</param>
+    /// <returns>
+    /// <c>true</c> when <paramref name="minutes"/> is something the dialog may accept: from
+    /// <see cref="MinIntervalMinutes"/> to <see cref="MaxIntervalMinutes"/>.
+    /// </returns>
     public static bool IsIntervalInRange(int minutes)
         => minutes is >= MinIntervalMinutes and <= MaxIntervalMinutes;
 
-    /// <summary>True when <paramref name="seconds"/> is something the dialog may accept.</summary>
+    /// <summary>Checks a retry gap typed in the dialog against the bounds.</summary>
+    /// <param name="seconds">The retry gap, in seconds.</param>
+    /// <returns>
+    /// <c>true</c> when <paramref name="seconds"/> is something the dialog may accept: from
+    /// <see cref="MinRetrySeconds"/> to <see cref="MaxRetrySeconds"/>.
+    /// </returns>
     public static bool IsRetryInRange(int seconds)
         => seconds is >= MinRetrySeconds and <= MaxRetrySeconds;
 
     /// <summary>
-    /// True when <paramref name="message"/> is something the dialog may accept: something
-    /// other than whitespace, and no longer than the window can show. The dialog refuses
-    /// rather than falling back, because there is a user standing there to tell; the
-    /// fallback in <see cref="NormalizeMessage"/> is for the registry, where there is not.
+    /// Checks a message typed in the dialog. The dialog refuses rather than falling back,
+    /// because there is a user standing there to tell; the fallback in
+    /// <see cref="NormalizeMessage"/> is for the registry, where there is not.
     /// </summary>
+    /// <param name="message">The text as typed; <c>null</c> is refused.</param>
+    /// <returns>
+    /// <c>true</c> when <paramref name="message"/> is something the dialog may accept:
+    /// something other than whitespace, and no longer than the window can show
+    /// (<see cref="MaxMessageLength"/> characters once trimmed).
+    /// </returns>
     public static bool IsMessageAcceptable(string? message)
     {
         if (message is null)

@@ -24,12 +24,38 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public interface IRegistryStore
 {
+    /// <summary>Reads a string value. Throws when this account may not read the key.</summary>
+    /// <param name="keyPath">The key, relative to HKEY_CURRENT_USER.</param>
+    /// <param name="valueName">The value under the key.</param>
+    /// <returns>
+    /// The string, or <c>null</c> when the key or the value is missing, or the value is not a
+    /// string.
+    /// </returns>
     string? GetString(string keyPath, string valueName);
 
+    /// <summary>Reads a binary value. Throws when this account may not read the key.</summary>
+    /// <param name="keyPath">The key, relative to HKEY_CURRENT_USER.</param>
+    /// <param name="valueName">The value under the key.</param>
+    /// <returns>
+    /// The bytes, or <c>null</c> when the key or the value is missing, or the value is not
+    /// binary.
+    /// </returns>
     byte[]? GetBinary(string keyPath, string valueName);
 
+    /// <summary>
+    /// Writes a string value, creating the key when it is missing. Throws when this account may
+    /// not write the key.
+    /// </summary>
+    /// <param name="keyPath">The key, relative to HKEY_CURRENT_USER.</param>
+    /// <param name="valueName">The value under the key; replaced when it exists.</param>
+    /// <param name="value">The text to store.</param>
     void SetString(string keyPath, string valueName, string value);
 
-    /// <summary>Removes the value if present; does nothing when the key or value is missing.</summary>
+    /// <summary>
+    /// Removes the value if present; does nothing when the key or value is missing. Throws
+    /// when this account may not write the key.
+    /// </summary>
+    /// <param name="keyPath">The key, relative to HKEY_CURRENT_USER.</param>
+    /// <param name="valueName">The value to remove.</param>
     void DeleteValue(string keyPath, string valueName);
 }

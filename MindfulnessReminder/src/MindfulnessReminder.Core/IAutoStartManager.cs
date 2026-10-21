@@ -17,17 +17,37 @@
 
 namespace MindfulnessReminder.Core;
 
+/// <summary>
+/// Whether the app starts with Windows: what the tray checkbox reads and sets, and what each
+/// launch repairs. Each member may throw when Windows refuses the access (a policy, security
+/// software).
+/// </summary>
 public interface IAutoStartManager
 {
+    /// <summary>Reads whether Windows will start the app at sign-in.</summary>
+    /// <returns>
+    /// <see cref="AutoStartStatus.Disabled"/> when there is no entry,
+    /// <see cref="AutoStartStatus.BlockedByWindows"/> when there is one but Task Manager has
+    /// switched it off, and <see cref="AutoStartStatus.Enabled"/> otherwise.
+    /// </returns>
     AutoStartStatus GetStatus();
 
+    /// <summary>
+    /// Registers the app to start with Windows, lifting a Task Manager block too, so that
+    /// <see cref="GetStatus"/> reads <see cref="AutoStartStatus.Enabled"/> afterwards.
+    /// </summary>
     void Enable();
 
+    /// <summary>Removes the entry, so the app no longer starts with Windows.</summary>
     void Disable();
 
     /// <summary>
     /// Rewrites the registered command when the executable has moved since it was registered.
-    /// Returns <c>true</c> when a repair was made. Never lifts a Task Manager block.
+    /// Never lifts a Task Manager block.
     /// </summary>
+    /// <returns>
+    /// <c>true</c> when a repair was made; <c>false</c> when there is no entry, or it already
+    /// points at this executable.
+    /// </returns>
     bool RepairPathIfNeeded();
 }

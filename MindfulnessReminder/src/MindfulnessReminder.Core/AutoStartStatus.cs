@@ -17,6 +17,9 @@
 
 namespace MindfulnessReminder.Core;
 
+/// <summary>
+/// Whether the app starts with Windows, as <see cref="IAutoStartManager.GetStatus"/> reads it.
+/// </summary>
 public enum AutoStartStatus
 {
     /// <summary>No Run entry exists: the app will not start with Windows.</summary>

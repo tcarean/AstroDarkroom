@@ -18,6 +18,10 @@
 namespace MindfulnessReminder.Core;
 
 /// <summary>A screen work area, in device-independent units.</summary>
+/// <param name="Left">The x coordinate of its left edge on the desktop.</param>
+/// <param name="Top">The y coordinate of its top edge on the desktop.</param>
+/// <param name="Width">How wide it is.</param>
+/// <param name="Height">How tall it is.</param>
 public readonly record struct WorkArea(double Left, double Top, double Width, double Height);
 
 /// <summary>
@@ -29,6 +33,15 @@ public readonly record struct WorkArea(double Left, double Top, double Width, do
 /// </summary>
 public static class WindowPlacement
 {
+    /// <summary>
+    /// Centres a window of the given size in <paramref name="area"/>. A window wider or taller
+    /// than the area is pinned to its left or top edge instead, so the Close button stays on
+    /// screen.
+    /// </summary>
+    /// <param name="area">The work area to centre in.</param>
+    /// <param name="width">The window's width, in the area's units.</param>
+    /// <param name="height">The window's height, in the area's units.</param>
+    /// <returns>Where the window's left and top edges go.</returns>
     public static (double Left, double Top) CenterIn(WorkArea area, double width, double height)
     {
         var left = area.Left + (area.Width - width) / 2;

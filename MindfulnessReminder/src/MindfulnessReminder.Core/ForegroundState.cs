@@ -65,10 +65,18 @@ public static class UserNotificationState
     public const int RunningWindowsStoreApp = 7;
 
     /// <summary>
+    /// Maps a QUERY_USER_NOTIFICATION_STATE to the state this app acts on.
+    ///
     /// Anything outside the documented range maps to <see cref="ForegroundState.Unknown"/>,
     /// which suppresses nothing. Windows has added states to this enum before, and a future
     /// one must not be able to switch the reminder off by accident.
     /// </summary>
+    /// <param name="state">
+    /// The number SHQueryUserNotificationState returned; 0 when the call failed.
+    /// </param>
+    /// <returns>
+    /// The state it stands for; <see cref="ForegroundState.Unknown"/> for any other number.
+    /// </returns>
     public static ForegroundState FromShellState(int state) => state switch
     {
         AcceptsNotifications => ForegroundState.Normal,

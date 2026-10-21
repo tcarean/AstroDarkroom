@@ -60,6 +60,12 @@ public static class LicenseInfo
     public static string AboutText =>
         VersionInfo.Banner + "\n" + Copyright + "\n\n" + Warranty;
 
+    /// <summary>
+    /// Reads the copyright notice from the assembly's <see cref="AssemblyCopyrightAttribute"/>.
+    /// </summary>
+    /// <returns>
+    /// The notice, or <see cref="Fallback"/> when the attribute is missing or blank.
+    /// </returns>
     private static string ReadCopyright()
     {
         var copyright = typeof(LicenseInfo).Assembly

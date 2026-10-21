@@ -23,6 +23,7 @@ public interface IClock
     DateTimeOffset UtcNow { get; }
 }
 
+/// <summary>The real clock: <see cref="UtcNow"/> is <see cref="DateTimeOffset.UtcNow"/>.</summary>
 public sealed class SystemClock : IClock
 {
     public static readonly SystemClock Instance = new();

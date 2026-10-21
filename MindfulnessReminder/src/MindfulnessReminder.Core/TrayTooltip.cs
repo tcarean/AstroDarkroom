@@ -36,9 +36,8 @@ public static class TrayTooltip
     public const int MaxLength = 63;
 
     /// <summary>
-    /// <paramref name="remaining"/> is null when nothing is being counted -- the feature is
-    /// off, or the workstation is locked -- and the tooltip is then just the banner, the
-    /// same as it read before this feature existed.
+    /// Builds the tooltip: the banner, then the minutes to the next reminder or why one is
+    /// being held back.
     ///
     /// A <paramref name="suppression"/> other than None replaces the countdown rather than
     /// joining it. What is being counted at that point is the retry gap, seconds rather than
@@ -46,6 +45,17 @@ public static class TrayTooltip
     /// that would make a working feature look broken. The reason is also the only way to
     /// tell a held-back reminder from a stopped one without opening anything.
     /// </summary>
+    /// <param name="banner">The name and version, which the tooltip starts with.</param>
+    /// <param name="remaining">
+    /// The time to the next reminder. It is null when nothing is being counted -- the feature
+    /// is off, or the workstation is locked -- and the tooltip is then just the banner, the
+    /// same as it read before this feature existed.
+    /// </param>
+    /// <param name="suppression">Why a reminder is being held back, or None.</param>
+    /// <returns>
+    /// Text such as "Mindfulness Reminder 1.4.0 - next in 30 min", cut to
+    /// <see cref="MaxLength"/> characters.
+    /// </returns>
     public static string Format(
         string banner,
         TimeSpan? remaining,
@@ -69,10 +79,14 @@ public static class TrayTooltip
     }
 
     /// <summary>
+    /// The minutes left, as the tooltip shows them.
+    ///
     /// Rounded UP, and never below 1. A countdown reading "0 min" through its last minute
     /// looks broken, and the ceiling is what makes it read "30 min" the instant it restarts
     /// rather than "29".
     /// </summary>
+    /// <param name="left">The time to the next reminder; zero or more.</param>
+    /// <returns>A whole number of minutes, 1 or more, in invariant culture.</returns>
     private static string MinutesLeft(TimeSpan left)
         => Math.Max(1, (int)Math.Ceiling(left.TotalMinutes)).ToString(CultureInfo.InvariantCulture);
 }

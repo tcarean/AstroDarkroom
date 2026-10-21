@@ -40,6 +40,15 @@ public enum ReminderSuppression
 /// </summary>
 public static class SuppressionPolicy
 {
+    /// <summary>Whether a reminder may appear now, and if not, why.</summary>
+    /// <param name="settings">The settings whose two pause switches apply.</param>
+    /// <param name="activity">What the user is in the middle of.</param>
+    /// <returns>
+    /// <see cref="ReminderSuppression.MicrophoneInUse"/> when that pause is on and a capture
+    /// device is live; otherwise <see cref="ReminderSuppression.FullScreen"/> when that pause is
+    /// on and a full-screen application or presentation mode has the desktop; otherwise
+    /// <see cref="ReminderSuppression.None"/>.
+    /// </returns>
     public static ReminderSuppression Evaluate(ReminderSettings settings, ActivitySnapshot activity)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -72,6 +81,11 @@ public static class SuppressionPolicy
     /// asked for, and a state Windows adds in a future build must not be able to switch the
     /// reminder off by accident.
     /// </summary>
+    /// <param name="state">The desktop state the shell reported.</param>
+    /// <returns>
+    /// <c>true</c> for <see cref="ForegroundState.FullScreen"/> and
+    /// <see cref="ForegroundState.Presenting"/>; <c>false</c> for every other state.
+    /// </returns>
     private static bool Occupies(ForegroundState state)
         => state is ForegroundState.FullScreen or ForegroundState.Presenting;
 }

@@ -29,7 +29,13 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public interface IActivityMonitor
 {
-    /// <summary>Never throws: anything unreadable reads as "nothing going on".</summary>
+    /// <summary>
+    /// Reads what the user is in the middle of at this moment. Never throws: anything
+    /// unreadable reads as "nothing going on".
+    /// </summary>
+    /// <returns>
+    /// Whether the microphone and the camera are live, and what the desktop is doing.
+    /// </returns>
     ActivitySnapshot Read();
 }
 
@@ -41,5 +47,7 @@ public sealed class IdleActivityMonitor : IActivityMonitor
 {
     public static readonly IdleActivityMonitor Instance = new();
 
+    /// <summary>Reads nothing.</summary>
+    /// <returns><see cref="ActivitySnapshot.Idle"/>, every time.</returns>
     public ActivitySnapshot Read() => ActivitySnapshot.Idle;
 }

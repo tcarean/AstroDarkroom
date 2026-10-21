@@ -47,6 +47,13 @@ public static class VersionInfo
     /// <summary>Name and version, exactly as they appear on the first line of About.</summary>
     public static string Banner => Name + " " + Value;
 
+    /// <summary>
+    /// Reads the version from the assembly's informational version, or failing that its
+    /// assembly version, without the "+revision" some builds append.
+    /// </summary>
+    /// <returns>
+    /// The version, such as "1.4.0"; <see cref="Fallback"/> when the assembly carries none.
+    /// </returns>
     private static string Read()
     {
         var assembly = typeof(VersionInfo).Assembly;

@@ -35,5 +35,6 @@ public interface IPeriodicTimer : IDisposable
     /// <summary>Idempotent: starting an already-running timer must not restart its period.</summary>
     void Start();
 
+    /// <summary>Stops the ticks. Does nothing when the timer is not running.</summary>
     void Stop();
 }

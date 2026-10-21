@@ -47,6 +47,10 @@ public sealed class IntervalSchedule
     /// </summary>
     private TimeSpan _armedSpan;
 
+    /// <summary>
+    /// A schedule with nothing counted yet: the first deadline is set by <see cref="Restart"/>.
+    /// </summary>
+    /// <param name="settings">The settings to schedule by; normalized before they are kept.</param>
     public IntervalSchedule(ReminderSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -66,6 +70,7 @@ public sealed class IntervalSchedule
     /// set, so "the countdown restarts" means exactly one thing everywhere it happens: at
     /// startup, on every unlock, after each reminder, and when settings are applied.
     /// </summary>
+    /// <param name="now">The current time, from which the interval is counted.</param>
     public void Restart(DateTimeOffset now)
     {
         _dueAt = _settings.PeriodicEnabled && !_suspended ? now + _settings.Interval : null;
@@ -82,6 +87,10 @@ public sealed class IntervalSchedule
     /// deadline -- but a postponement that quietly invented one would be a countdown running
     /// with the feature switched off.
     /// </summary>
+    /// <param name="now">The current time.</param>
+    /// <param name="by">
+    /// The retry gap: the new deadline is <paramref name="now"/> plus this.
+    /// </param>
     public void Postpone(DateTimeOffset now, TimeSpan by)
     {
         if (_dueAt is null)
@@ -109,6 +118,7 @@ public sealed class IntervalSchedule
     /// which is the requirement, and is why no time is carried across it. Safe to call
     /// without a matching lock: an unlock always restarts the countdown.
     /// </summary>
+    /// <param name="now">The current time, from which the whole interval is counted.</param>
     public void Resume(DateTimeOffset now)
     {
         _suspended = false;
@@ -116,6 +126,8 @@ public sealed class IntervalSchedule
     }
 
     /// <summary>Applies edited settings and restarts the countdown from zero.</summary>
+    /// <param name="settings">The edited settings; normalized before they are kept.</param>
+    /// <param name="now">The current time, from which the new interval is counted.</param>
     public void Apply(ReminderSettings settings, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -125,10 +137,16 @@ public sealed class IntervalSchedule
     }
 
     /// <summary>
-    /// True once per elapsed interval, and it re-arms as it says yes -- so a caller that
+    /// Asks whether the deadline has passed, and re-arms as it says yes -- so a caller that
     /// cannot act on it, because a reminder is already on screen, still leaves the schedule
     /// in a sane state rather than a deadline stuck in the past that fires on every tick.
     /// </summary>
+    /// <param name="now">The current time, compared with the deadline.</param>
+    /// <returns>
+    /// <c>true</c> once per elapsed interval, with the next whole interval armed. <c>false</c>
+    /// when nothing is being counted, when the deadline is still ahead, and when the clock has
+    /// gone back further than the deadline was set out, which starts the countdown over.
+    /// </returns>
     public bool TryConsumeDue(DateTimeOffset now)
     {
         if (_dueAt is not { } due)
@@ -156,10 +174,15 @@ public sealed class IntervalSchedule
     }
 
     /// <summary>
-    /// Time left, or null when nothing is being counted. Never negative: a deadline in the
-    /// past reads as zero, so the tooltip cannot show a minus sign in the moment between the
-    /// deadline passing and the tick that acts on it.
+    /// The time left to the deadline. Never negative: a deadline in the past reads as zero,
+    /// so the tooltip cannot show a minus sign in the moment between the deadline passing and
+    /// the tick that acts on it.
     /// </summary>
+    /// <param name="now">The current time.</param>
+    /// <returns>
+    /// The time left, zero once the deadline has passed, or <c>null</c> when nothing is being
+    /// counted.
+    /// </returns>
     public TimeSpan? Remaining(DateTimeOffset now)
     {
         if (_dueAt is not { } due)
