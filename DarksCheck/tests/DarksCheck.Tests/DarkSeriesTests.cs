@@ -389,6 +389,63 @@ public class DarkSeriesTests
     }
 
     [Fact]
+    public void R080_TheScaleSectionExplainsTheAduOfTheOpenSet()
+    {
+        // the fixture's FITS name the camera NIKON D3300 at ISO 400 and 120 s: the reference scale, the gain from the table
+        using SessionFixture s = new SessionFixture().WithDarkSeries(6, Plain, biases: 3).WithLights(4, i => new SyntheticLight { Seed = 300 + i, Hot = SyntheticLight.Lattice, HotFactor = 1.0, Stars = SyntheticLight.ThreeStars });
+        DarkSeriesResult r = Run(s);
+        IReadOnlyList<ReportRow> rows = ScaleReport.Rows(r);
+        Assert.Equal(["fisier", "1 ADU-eq", "cuantizare", "electroni", "zgomot de citire", "zgomot pe cadru", "praguri pe set", "gasit", "cer", "zgomotul stack-ului", "saturatie"], rows.Select(x => x.Label));
+        string Value(string label) => rows.Single(x => x.Label == label).Value;
+        Assert.Equal("16 biti, 0 .. 65535 ADU; negrul la 200, albul la 65535: semnal util 0 .. 65335 ADU", Value("fisier"));
+        Assert.Equal("1 ADU brut: setul e la ISO 400, 120.0 s, scara de referinta (ISO 400 si 120 s)", Value("1 ADU-eq"));
+        Assert.Equal("pas 1 ADU langa negru", Value("cuantizare"));
+        Assert.StartsWith("1 ADU = 2.07 e- la ISO 400 (Nikon D3300, photonstophotos.net din curbele DxOMark, citit 2026-10-20; metoda supraestimeaza castigul pe senzorii mici); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %", Value("electroni"), StringComparison.Ordinal);
+        Assert.Matches(@"^[0-9.]+ ADU pe pixel \(G1, din bias-uri\) = [0-9.]+ e-$", Value("zgomot de citire"));
+        Assert.Contains("; curentul de intuneric median ", Value("zgomot pe cadru"), StringComparison.Ordinal);
+        Assert.Equal("pixel fierbinte 20 ADU-eq = 20 ADU; scurgere pe harta 1.0 ADU-eq = 1.0 ADU; lumina constanta pe o latura 0.15 ADU-eq = 0.15 ADU; lumina pe un cadru 0.1 ADU-eq = 0.10 ADU", Value("praguri pe set"));
+        Assert.Equal("nimic peste praguri", Value("gasit"));
+        Assert.Matches(@"^mediana [0-9.]+ ADU peste negru pe un light \(G1, 4 lights\), sigma [0-9.]+ ADU pe pixel$", Value("cer"));
+        Assert.Matches(@"^sigma pe pixel [0-9.]+ / sqrt\(4\) = [0-9.]+ ADU; un offset din master ramane intreg in stack$", Value("zgomotul stack-ului"));
+        Assert.Equal("65535 ADU (34446 e- full well dupa sursa)", Value("saturatie"));
+        IReadOnlyList<string> paragraphs = ScaleReport.Paragraphs(r);
+        Assert.Equal(4, paragraphs.Count);
+        Assert.StartsWith("ADU e unitatea fisierului: pe 16 biti, de la 0 la 65535, cu negrul camerei la 200.", paragraphs[0], StringComparison.Ordinal);
+        Assert.Contains("in stack-ul celor 4 lights zgomotul pe pixel scade la ", paragraphs[2], StringComparison.Ordinal);
+        Assert.Contains("0.15 ADU-eq si de 3 ori eroarea pentru lumina constanta pe o latura", paragraphs[3], StringComparison.Ordinal);
+
+        // the console: the block at the end, the paragraphs wrapped under 96 columns
+        using StringWriter sw = new();
+        DarkReport.Write(r, sw);
+        string text = sw.ToString().ReplaceLineEndings("\n");
+        int at = text.IndexOf("\n  EXPLICATII SCARA ADU\n", StringComparison.Ordinal);
+        Assert.True(at > text.IndexOf("TABEL PE LIGHTS", StringComparison.Ordinal), "the block comes after the tables");
+        string block = text[at..];
+        Assert.Contains("    electroni          : 1 ADU = 2.07 e-", block, StringComparison.Ordinal);
+        Assert.All(block.Split('\n'), line => Assert.True(line.Length <= 96 || line.Contains(':', StringComparison.Ordinal), $"wrapped line too long: {line}"));
+        Assert.Contains("\n    ADU e unitatea fisierului", block, StringComparison.Ordinal);
+
+        // without biases and lights: the rows say what is missing
+        using SessionFixture bare = new SessionFixture().WithDarkSeries(4, Plain);
+        IReadOnlyList<ReportRow> bareRows = ScaleReport.Rows(Run(bare));
+        Assert.Equal("NEMASURAT: fara bias-uri (sursa da 2.0 e- pentru Nikon D3300)", bareRows.Single(x => x.Label == "zgomot de citire").Value);
+        Assert.Equal("fara lights in sesiune", bareRows.Single(x => x.Label == "cer").Value);
+        Assert.Equal("fara lights: nu se poate estima", bareRows.Single(x => x.Label == "zgomotul stack-ului").Value);
+        Assert.StartsWith("Fata de cer: sesiunea nu are lights", ScaleReport.Paragraphs(Run(bare))[2], StringComparison.Ordinal);
+
+        // the camera table: the D3300 by any spelling, the log2 interpolation, nothing outside it, no other camera
+        CameraFacts d3300 = CameraFacts.For("NIKON D3300")!;
+        Assert.NotNull(d3300);
+        Assert.Equal(0.526, d3300.GainAt(1600)!.Value, 3);
+        Assert.InRange(d3300.GainAt(1131)!.Value, 0.72, 0.76);
+        Assert.Null(d3300.GainAt(50));
+        Assert.Null(d3300.GainAt(51200));
+        Assert.Null(CameraFacts.For("Canon EOS 6D"));
+        Assert.Null(CameraFacts.For(null));
+        Assert.Equal(["a b c", "dd e"], ScaleReport.Wrap("a b c dd e", 5));
+    }
+
+    [Fact]
     public void R029_ASeriesThatDidNotWarmLeavesTheSplitUnmeasured()
     {
         // the same constant edge, the hot pixels at the same amplitude in every frame: the ratios span only their noise

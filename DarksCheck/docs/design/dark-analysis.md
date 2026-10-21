@@ -1,6 +1,6 @@
 # The dark series: the stack, the masters, checks 2 to 8
 
-**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
+**Covers:** `src/DarksCheck.Core/Analysis/Planes.cs`, `src/DarksCheck.Core/Analysis/FrameStack.cs`, `src/DarksCheck.Core/Analysis/Normalisation.cs`, `src/DarksCheck.Core/Analysis/DarkSeriesAnalyzer.cs`, `src/DarksCheck.Core/Analysis/BiasAnalyzer.cs`, `src/DarksCheck.Core/Analysis/DarkVerdicts.cs`, `src/DarksCheck.Core/Analysis/LeakAnalyzer.cs`, `src/DarksCheck.Core/Runs/DarkSeriesRun.cs`, `src/DarksCheck.Core/Report/DarkReport.cs`, `src/DarksCheck.Core/Report/ScaleReport.cs`, `src/DarksCheck.Core/Analysis/CameraFacts.cs`, `src/DarksCheck.Core/Report/ReportRows.cs`, `src/DarksCheck.Core/Report/DarkOutputs.cs`, `src/DarksCheck.Cli/runtimeconfig.template.json`.
 
 The behaviour is R-020 to R-041; the decisions are ADR 0007 (the stack in memory, the FITS
 black, the verdict thresholds) and ADR 0004 (the normalisation). This note says how the
@@ -150,6 +150,20 @@ bias, is listed as `sarit`, not as an error, and the exit code ignores it; a bia
 is counted in an `ATENTIE` line of the darks header, since the darks run prints no bias table.
 With a single frame the residual, the stability, the warming and the noise curve have nothing
 to measure and the report says `NEMASURAT` rather than printing zeros.
+
+## The scale section
+
+`ScaleReport` ends the report with `EXPLICATII SCARA ADU` (R-080, ADR 0015): eleven rows and
+four paragraphs built from the result alone. The bits come from the white level
+(`ceil(log2(white + 1))`), the settings from the first decoded dark's `FrameInfo`, the sky and
+the stack noise from the median over the decoded lights of `SkyMedian` and `SkySigma` on the
+reference plane (`sigma / sqrt(N)`), the thresholds from `Th` times the normalisation, what was
+found from `LeakVerdict` (`ConstantLight`, the lit frames, the offset). `CameraFacts.For` maps
+a camera name to its published figures (one entry, the D3300; a name containing `D3300` in any
+case) and `GainAt` interpolates the gain on the log2 scale between the listed ISO stops,
+returning null outside them, so a row never guesses. The console writes the rows as
+`label : value` and the paragraphs through `ScaleReport.Wrap` at 96 columns with a four-space
+indent; the window binds `Rows` and `Paragraphs` as they are.
 
 ## The lights, the index and the partner in the run
 

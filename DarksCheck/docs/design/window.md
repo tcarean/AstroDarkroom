@@ -51,6 +51,9 @@ they are now.
   Rest, Verdict)`, the chip being `Verdict` and the text `Rest`, both read in the core
   (`ReportRow`); `HotRows`, `LightRows` and `IndexRows` are the rows of the sections whose
   title starts with `5.`, `9.` and `INDEX`, for the tabs that show one check beside a chart;
+- the tab `Explicatii scara ADU` (`ScaleView`) binds `ScaleRows` (`ScaleReport.Rows` as
+  `RowVm`, the `ReportRow` template) and `ScaleParagraphs` (`ScaleReport.Paragraphs`, one
+  wrapped `TextBlock` each) under `ScaleTitle`, the core's title;
 - the two tables take `DarkReport.FrameRows` and `LightRows` as `FrameRowVm` / `LightRowVm`,
   the console's cells as they are, with the unit note of the table header (`[G1; ...]`) as
   the last column's header;

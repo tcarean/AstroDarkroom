@@ -196,6 +196,16 @@ sau la ISO mic sa nu numere zgomotul drept pixeli fierbinti; pragul de pixeli mo
   `...-15.8celsius-idx67` ramane `...-15.8celsius-idx67`, nu `...-idx67-idx67`, iar un index
   schimbat se vede ca numar schimbat. Cu lights, `lights` da indexul echivalent al noptii (indexul dark-urilor x
   raportul lights / dark) si gradele fata de dark.
+- **Explicatii scara ADU** (sectiunea `EXPLICATII SCARA ADU` de la sfarsitul raportului si
+  tab-ul cu acelasi nume): cat valoreaza un ADU pe setul deschis, in ADU brut, ADU-eq si
+  electroni: scara fisierului, normalizarea, pasul de cuantizare, zgomotul de citire, zgomotul
+  pe cadru si curentul de intuneric, pragurile verificarilor in ADU brut pe acest set, ce s-a
+  gasit la verificarea 2, cerul unui light si zgomotul stack-ului (cu lights), saturatia; apoi
+  patru paragrafe despre de ce o fractiune de ADU din master conteaza, cu numerele setului.
+  Electronii vin dintr-o sursa publicata, nu masurata de aplicatie: photonstophotos.net
+  (Bill Claff), din curbele DxOMark, pentru Nikon D3300 (castig 2.07 e-/ADU la ISO 400,
+  0.53 la ISO 1600, full well 34446 e-, QE 56 %), cu avertismentul sursei ca metoda
+  supraestimeaza castigul pe senzorii mici; pentru alt aparat randul spune `necunoscut`.
 - **Tabel pe cadre**: ora, media peste negru, sigma, sigma reziduului, benzile (de cate ori
   zgomotul alb), amplitudinea pixelilor fierbinti fata de master, lumina in plus fata de
   dreapta mediei pe incalzire (ADU-eq, `-` sub 6 cadre), latura cu cea mai multa lumina

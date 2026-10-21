@@ -175,6 +175,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <TabItem Header="Index">
           <local:IndexView />
         </TabItem>
+        <TabItem Header="Explicatii scara ADU">
+          <local:ScaleView />
+        </TabItem>
         <TabItem Header="Raport">
           <Border Style="{StaticResource Card}" Margin="20" Padding="0">
             <TextBox Text="{Binding Report, Mode=OneWay}" IsReadOnly="True"
