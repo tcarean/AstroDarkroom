@@ -24,6 +24,9 @@ adds project-specific steps and says where they go.
    `CLAUDE.md` says (the kit's ADR 0033).
 3. `git diff` the whole change. Read it back. Write a three-sentence plain-language summary:
    what changed for the user, what changed inside, what did not change that someone might expect.
+   Every type and method the diff adds or edits in the code has its documentation comment, with
+   a tag for each parameter and for the return; add what is missing (the kit's rule
+   "Documentation comments").
 4. `CHANGELOG.md`: a change a reader of the version history cares about (behaviour added,
    changed or removed, a fix, a figure that moved, a refactor worth knowing about) has a line
    under `[Unreleased]`, in the right subsection (Added, Changed, Fixed, Removed; Internal). A
