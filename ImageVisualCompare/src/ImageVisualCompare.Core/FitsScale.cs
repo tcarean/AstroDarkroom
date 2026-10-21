@@ -43,7 +43,18 @@ public static class FitsScale
 
     private const double SixteenBitMax = 65535;
 
-    /// <summary>The value that is white, for a sample type; for floats, by what <see cref="IsRescaled"/> found.</summary>
+    /// <summary>Gives the value shown as white for a sample type.</summary>
+    /// <param name="bitPix">
+    /// The FITS sample type: 8, 16 or 32 for integers, -32 or -64 for floats.
+    /// </param>
+    /// <param name="rescaled">
+    /// For a float file, what <see cref="IsRescaled"/> found: true when it counts in 0 to 65535;
+    /// not read for integers.
+    /// </param>
+    /// <returns>
+    /// The value that is white, for a sample type: 255, 65535 or 4294967295 for 8, 16 or 32-bit
+    /// integers; for floats, 1, or 65535 when <paramref name="rescaled"/>.
+    /// </returns>
     public static double FullScale(int bitPix, bool rescaled = false) => bitPix switch
     {
         8 => 255,
@@ -52,22 +63,49 @@ public static class FitsScale
         _ => rescaled ? SixteenBitMax : 1,
     };
 
+    /// <summary>
+    /// Decides, once every sample of a float file has been read, whether the file counts in 0
+    /// to 65535 rather than in 0 to 1.
+    /// </summary>
+    /// <param name="bitPix">
+    /// The FITS sample type; only a float type, -32 or -64, can be rescaled.
+    /// </param>
     /// <param name="samplesAbove">How many finite samples of the file are above <see cref="RescaleThreshold"/>.</param>
     /// <param name="samples">How many samples the file has, all planes.</param>
+    /// <returns>
+    /// True for a float file in which more than <see cref="RescaleFraction"/> of the samples are
+    /// above the threshold.
+    /// </returns>
     public static bool IsRescaled(int bitPix, long samplesAbove, long samples) =>
         bitPix < 0 && samplesAbove > samples * RescaleFraction;
 
-    /// <summary>What a value is multiplied by to count in 0 to 65535, given the value that is white.</summary>
+    /// <summary>Gives the factor that brings a value to 0 to 65535.</summary>
+    /// <param name="fullScale">The value that is white (<see cref="FullScale"/>); above 0.</param>
+    /// <returns>
+    /// What a value is multiplied by to count in 0 to 65535, given the value that is white.
+    /// </returns>
     public static double ToSixteenBits(double fullScale) => SixteenBitMax / fullScale;
 
-    /// <summary>The level of a value on a scale whose white is <paramref name="fullScale"/>.</summary>
+    /// <summary>
+    /// Converts a value to the level it is shown at, by the rule of <see cref="Level"/>.
+    /// </summary>
+    /// <param name="value">A sample after BZERO and BSCALE, on the file's own scale.</param>
+    /// <param name="fullScale">The value that is white (<see cref="FullScale"/>); above 0.</param>
+    /// <returns>
+    /// The level of a value on a scale whose white is <paramref name="fullScale"/>, 0 to 255.
+    /// </returns>
     public static byte ToByte(double value, double fullScale) => Level(value * ToSixteenBits(fullScale));
 
     /// <summary>
-    /// The level of a value already brought to 0 to 65535: rounded to a 16-bit sample, then the
-    /// high byte, which is what WIC keeps of one (measured on all 65536 values). NaN, which
-    /// Siril leaves behind after some float operations, is black.
+    /// Converts a value already brought to 0 to 65535 into a level: rounded to a 16-bit sample,
+    /// then the high byte, which is what WIC keeps of one (measured on all 65536 values). NaN,
+    /// which Siril leaves behind after some float operations, is black.
     /// </summary>
+    /// <param name="sixteenBit">
+    /// The value on the 0 to 65535 scale; anything below 0, and NaN, is black, anything from
+    /// 65535 up is white.
+    /// </param>
+    /// <returns>The level, 0 to 255.</returns>
     public static byte Level(double sixteenBit)
     {
         if (!(sixteenBit > 0))

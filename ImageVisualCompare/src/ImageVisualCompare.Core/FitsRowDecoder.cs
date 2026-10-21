@@ -24,6 +24,7 @@ namespace ImageVisualCompare.Core;
 /// plane after another, so a row of the image is read from as many places as there are
 /// planes; the image is never held as floats, only the row in hand is.
 /// </summary>
+/// <param name="layout">Where the image's samples are in the file and how they are stored.</param>
 /// <param name="stream">Seekable, and left where the last row read ended.</param>
 /// <param name="fullScale">The value shown as white (<see cref="FitsScale.FullScale"/>).</param>
 public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double fullScale)
@@ -43,6 +44,14 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// <paramref name="bgra"/>, four bytes a pixel. Where the row belongs in the image is
     /// <see cref="FitsImageLayout.DisplayRow"/>.
     /// </summary>
+    /// <param name="fileRow">
+    /// The row's place in the file, from 0 to the layout's height less one.
+    /// </param>
+    /// <param name="bgra">
+    /// Receives the row: the layout's width in pixels, blue, green, red, alpha, with alpha at
+    /// 255; a single plane is written to all three colours.
+    /// </param>
+    /// <exception cref="EndOfStreamException">The file ends before the row does.</exception>
     public void ReadFileRow(int fileRow, Span<byte> bgra)
     {
         for (int plane = 0; plane < layout.Planes; plane++)
@@ -73,6 +82,8 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     /// The row in hand into one channel. One loop per sample type, so that nothing is decided
     /// per sample: an image of 23 megapixels in three planes passes here 69 million times.
     /// </summary>
+    /// <param name="bgra">The row being built, four bytes a pixel.</param>
+    /// <param name="channel">The byte of each pixel to write: 0 blue, 1 green, 2 red.</param>
     private void Convert(Span<byte> bgra, int channel)
     {
         ReadOnlySpan<byte> row = _row;
@@ -135,6 +146,13 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
     }
 
     // An infinity says nothing about the scale of the file; NaN fails the first comparison.
+    /// <summary>
+    /// Tells whether a float sample counts towards <see cref="SamplesAboveThreshold"/>.
+    /// </summary>
+    /// <param name="value">The sample, after BZERO and BSCALE.</param>
+    /// <returns>
+    /// True when it is finite and above <see cref="FitsScale.RescaleThreshold"/>.
+    /// </returns>
     private static bool IsAboveThreshold(double value) =>
         value > FitsScale.RescaleThreshold && value <= double.MaxValue;
 }

@@ -77,7 +77,16 @@ public sealed class Viewport
 
     public bool CanScrollVertically => MaxOffsetY > 0;
 
-    /// <summary>Sets the size of the loaded image pair. The caller normally follows with <see cref="ZoomToFit"/>.</summary>
+    /// <summary>
+    /// Sets the size of the loaded image pair. The caller normally follows with
+    /// <see cref="ZoomToFit"/>.
+    /// </summary>
+    /// <param name="width">
+    /// The canvas width, in image pixels, 0 when nothing is shown; not negative.
+    /// </param>
+    /// <param name="height">
+    /// The canvas height, in image pixels, 0 when nothing is shown; not negative.
+    /// </param>
     public void SetContentSize(double width, double height)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(width);
@@ -93,6 +102,8 @@ public sealed class Viewport
     /// Tracks a window resize. The content point at the centre of the viewport is held
     /// stationary, so growing or shrinking the window does not appear to pan the image.
     /// </summary>
+    /// <param name="width">The viewport's width, in physical screen pixels; not negative.</param>
+    /// <param name="height">The viewport's height, in physical screen pixels; not negative.</param>
     public void SetViewportSize(double width, double height)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(width);
@@ -116,16 +127,31 @@ public sealed class Viewport
         ClampOffsets();
     }
 
+    /// <summary>Converts a viewport position to the image point drawn there.</summary>
+    /// <param name="screenX">The position, in screen space (physical pixels).</param>
+    /// <param name="screenY">The position, in screen space (physical pixels).</param>
+    /// <returns>The point, in image pixels; it may lie off the image.</returns>
     public PointD ScreenToContent(double screenX, double screenY) =>
         new(screenX / _scale + OffsetX, screenY / _scale + OffsetY);
 
+    /// <summary>Converts an image point to the viewport position it is drawn at.</summary>
+    /// <param name="contentX">The point, in image pixels from the image's left edge.</param>
+    /// <param name="contentY">The point, in image pixels from the image's top edge.</param>
+    /// <returns>
+    /// The position, in physical pixels from the viewport's top-left corner; it may lie outside
+    /// the viewport.
+    /// </returns>
     public PointD ContentToScreen(double contentX, double contentY) =>
         new((contentX - OffsetX) * _scale, (contentY - OffsetY) * _scale);
 
-    /// <summary>
-    /// The image pixel under a screen position, or null when that position falls on the empty
-    /// margin around the image rather than on the image itself.
-    /// </summary>
+    /// <summary>Finds the image pixel under a viewport position.</summary>
+    /// <param name="screenX">The position, in screen space (physical pixels).</param>
+    /// <param name="screenY">The position, in screen space (physical pixels).</param>
+    /// <returns>
+    /// The point, in image pixels with their fraction; the far edge of the image belongs to no
+    /// pixel. Null when the position falls on the empty margin around the image rather than on
+    /// the image itself, or when there is no content.
+    /// </returns>
     public PointD? ContentPointInsideAt(double screenX, double screenY)
     {
         if (!HasContent)
@@ -144,8 +170,15 @@ public sealed class Viewport
     /// <summary>
     /// Zooms to <paramref name="scale"/> while holding the content point currently under the
     /// anchor fixed on screen. Anchoring at the mouse is what makes wheel zoom feel like the
-    /// image is being pulled towards the cursor rather than towards its own centre.
+    /// image is being pulled towards the cursor rather than towards its own centre. Does
+    /// nothing while there is no content; the offsets are clamped afterwards.
     /// </summary>
+    /// <param name="scale">
+    /// The new scale, 1 being one image pixel per physical screen pixel; clamped to
+    /// <see cref="MinScale"/> and <see cref="MaxScale"/>.
+    /// </param>
+    /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
+    /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
     public void ZoomTo(double scale, double anchorScreenX, double anchorScreenY)
     {
         if (!HasContent)
@@ -160,13 +193,33 @@ public sealed class Viewport
         ClampOffsets();
     }
 
+    /// <summary>
+    /// Multiplies the scale by <paramref name="factor"/>, holding the anchor still as
+    /// <see cref="ZoomTo"/> does.
+    /// </summary>
+    /// <param name="factor">
+    /// The new scale over the current one: above 1 zooms in, below 1 out.
+    /// </param>
+    /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
+    /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
     public void ZoomBy(double factor, double anchorScreenX, double anchorScreenY) =>
         ZoomTo(_scale * factor, anchorScreenX, anchorScreenY);
 
-    /// <summary>Steps up to the next stop on <see cref="ZoomLadder"/>.</summary>
+    /// <summary>
+    /// Steps up to the next stop on <see cref="ZoomLadder"/>, holding the anchor still as
+    /// <see cref="ZoomTo"/> does.
+    /// </summary>
+    /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
+    /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
     public void ZoomIn(double anchorScreenX, double anchorScreenY) =>
         ZoomTo(ZoomLadder.Next(_scale), anchorScreenX, anchorScreenY);
 
+    /// <summary>
+    /// Steps down to the previous stop on <see cref="ZoomLadder"/>, holding the anchor still as
+    /// <see cref="ZoomTo"/> does.
+    /// </summary>
+    /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
+    /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
     public void ZoomOut(double anchorScreenX, double anchorScreenY) =>
         ZoomTo(ZoomLadder.Previous(_scale), anchorScreenX, anchorScreenY);
 
@@ -187,8 +240,15 @@ public sealed class Viewport
 
     /// <summary>
     /// Pans by a screen-space drag delta. Dragging right moves the image right, which means
-    /// the content offset moves left — hence the subtraction.
+    /// the content offset moves left — hence the subtraction. The image stops at its edges;
+    /// nothing moves while there is no content.
     /// </summary>
+    /// <param name="screenDeltaX">
+    /// How far the pointer moved right, in physical pixels; negative for left.
+    /// </param>
+    /// <param name="screenDeltaY">
+    /// How far the pointer moved down, in physical pixels; negative for up.
+    /// </param>
     public void PanBy(double screenDeltaX, double screenDeltaY)
     {
         if (!HasContent)
@@ -202,6 +262,13 @@ public sealed class Viewport
     }
 
     /// <summary>Sets the offsets directly, for scrollbar and minimap driven panning.</summary>
+    /// <param name="offsetX">
+    /// The image x to draw at the viewport's left edge, in image pixels; clamped like every
+    /// other movement.
+    /// </param>
+    /// <param name="offsetY">
+    /// The image y to draw at the viewport's top edge, in image pixels; clamped too.
+    /// </param>
     public void SetOffset(double offsetX, double offsetY)
     {
         OffsetX = offsetX;
@@ -209,10 +276,19 @@ public sealed class Viewport
         ClampOffsets();
     }
 
-    /// <summary>Centres the viewport on a content point, used when the minimap is clicked.</summary>
+    /// <summary>
+    /// Centres the viewport on a content point, used when the minimap is clicked. Near an edge
+    /// the offsets are clamped, so the point ends up off centre.
+    /// </summary>
+    /// <param name="contentX">The point's x, in image pixels.</param>
+    /// <param name="contentY">The point's y, in image pixels.</param>
     public void CentreOn(double contentX, double contentY) =>
         SetOffset(contentX - VisibleContentWidth / 2, contentY - VisibleContentHeight / 2);
 
+    /// <summary>
+    /// Brings the scale back between <see cref="MinScale"/> and <see cref="MaxScale"/> after a
+    /// size changed; leaves it alone while there is no content.
+    /// </summary>
     private void ClampScale()
     {
         if (HasContent)
@@ -221,6 +297,11 @@ public sealed class Viewport
         }
     }
 
+    /// <summary>
+    /// Keeps the offsets inside the image on each axis: an axis on which the whole image fits
+    /// is centred, with equal margins either side; on any other no edge of the image comes
+    /// inside the view.
+    /// </summary>
     private void ClampOffsets()
     {
         OffsetX = ClampAxis(OffsetX, ContentWidth, VisibleContentWidth);

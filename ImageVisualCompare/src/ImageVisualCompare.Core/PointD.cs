@@ -22,4 +22,6 @@ namespace ImageVisualCompare.Core;
 /// <c>System.Windows.Point</c> so the zoom/pan maths carries no UI framework dependency
 /// and stays testable without a WPF host.
 /// </summary>
+/// <param name="X">The horizontal coordinate, growing to the right.</param>
+/// <param name="Y">The vertical coordinate, growing downwards.</param>
 public readonly record struct PointD(double X, double Y);

@@ -17,6 +17,7 @@
 
 namespace ImageVisualCompare.Core;
 
+/// <summary>How the bitmaps are resampled on screen at the current zoom.</summary>
 public enum ImageScalingMode
 {
     /// <summary>Interpolated. Correct everywhere the user is looking at the picture.</summary>
@@ -26,6 +27,10 @@ public enum ImageScalingMode
     Pixelated,
 }
 
+/// <summary>
+/// What the view puts on its shared transform and on both images for one state of the
+/// viewport.
+/// </summary>
 /// <param name="TranslateX">Translation to apply before scaling, in content units.</param>
 /// <param name="TranslateY">Translation to apply before scaling, in content units.</param>
 /// <param name="RenderScale">Scale in device-independent units, ready to hand to the UI.</param>
@@ -36,6 +41,10 @@ public readonly record struct RenderPlan(
     double RenderScale,
     ImageScalingMode ScalingMode);
 
+/// <summary>
+/// Turns the viewport's state, counted in physical pixels, into the numbers the view needs in
+/// device-independent pixels.
+/// </summary>
 public static class RenderPlanner
 {
     /// <summary>
@@ -52,6 +61,16 @@ public static class RenderPlanner
     /// pixel per screen pixel, while the UI lays out in device-independent pixels. Getting
     /// that conversion backwards is invisible on an unscaled display and wrong everywhere else.
     /// </summary>
+    /// <param name="viewport">The zoom and pan, counted in physical screen pixels.</param>
+    /// <param name="deviceScale">
+    /// Physical pixels per device-independent pixel: 1 at 100% display scaling, 1.5 at 150%;
+    /// greater than 0.
+    /// </param>
+    /// <returns>
+    /// The negated offsets as the translation, in image pixels; the viewport's scale divided by
+    /// <paramref name="deviceScale"/>; and <see cref="ImageScalingMode.Pixelated"/> from
+    /// <see cref="PixelatedThreshold"/> up.
+    /// </returns>
     public static RenderPlan For(Viewport viewport, double deviceScale)
     {
         ArgumentNullException.ThrowIfNull(viewport);
