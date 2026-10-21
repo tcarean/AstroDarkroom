@@ -307,6 +307,9 @@ behind it, or the guide says why it stays judgement.
     it, each time.
 14. One language for everything the model reads or writes; the owner's language only in the
     people-facing documents.
+15. Every type and every function or method in the code, private ones included, has a
+    documentation comment in the stack's standard form: what it does, each parameter, the
+    return value. Tests are exempt.
 
 ## Workflow to encode
 
