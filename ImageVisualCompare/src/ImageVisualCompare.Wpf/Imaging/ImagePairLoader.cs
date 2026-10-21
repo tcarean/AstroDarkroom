@@ -34,7 +34,7 @@ public sealed record ImagePair(LoadedImage Before, LoadedImage After, PadPlan Pa
 
     public int PixelHeight => Pad.Height;
 
-    /// <summary>Combined footprint of both Bgra32 buffers, for the memory readout.</summary>
+    /// <summary>Combined footprint of both Bgra32 buffers, in bytes.</summary>
     public long DisplayBytes => Before.Info.DisplayBytes + After.Info.DisplayBytes;
 }
 
@@ -73,7 +73,9 @@ public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool Wa
 }
 
 /// <summary>
-/// Loads a pair of images, refusing anything the comparison could not honestly display.
+/// Loads the two images of a pair onto the canvas they share. Nothing is decoded before that
+/// canvas is settled, and a pair whose sizes differ is padded only once the caller agrees; a
+/// file that cannot be read, or a mismatch with no one to ask, comes back as a message.
 /// </summary>
 /// <param name="loader">The decoder each file goes through.</param>
 public sealed class ImagePairLoader(IImageLoader loader)
