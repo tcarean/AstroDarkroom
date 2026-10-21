@@ -27,7 +27,11 @@ tests hold 300 types and 3,027 methods, 2,234 of them test methods. StyleCop.Ana
 analyzer for this, has shipped only betas since its stable 1.1.118 of 2019-04-29.
 
 In plan mode the owner chose the rule in prose, with no check; the code folders only; and the kit
-now, with each project's existing code documented in a task of its own.
+now, with each project's existing code documented in a task of its own. At wrap-up a new fact
+went back to the owner as a question. In two of the six projects a rule of their own keeps the
+code comments in Romanian, and both they and the kit forbid a file in two languages: 95 of their
+103 and 53 of their 62 source files with `///` comments carry Romanian ones. The owner chose
+English everywhere, with each file's comments translated when it gets its documentation.
 
 ## Decision
 
@@ -55,6 +59,11 @@ now, with each project's existing code documented in a task of its own.
   0035` on its Status (ADR 0025).
 - The code written before the rule gets its comments in a task of its own per project, by area
   where the project is large. The kit's sample code is documented with this ADR.
+- English everywhere, also where a project's rule kept its code comments in Romanian. There, a
+  file's comments are translated to English when the file gets its documentation comments, in
+  that project's own task. Until then a comment added to such a file follows its language, so no
+  file is left in two languages. That project's rule "Languages" says so, and the ADR behind it
+  gets `; <part> superseded by the kit's ADR 0035` on its Status.
 
 ## Alternatives rejected
 
@@ -72,6 +81,11 @@ now, with each project's existing code documented in a task of its own.
 - **Every project in this task.** About 2,670 comments in one change: written in bulk they come
   out thin, and nobody reads a diff of that size.
 - **Keep "comments are for the 'why'".** The owner asked for the opposite.
+- **Documentation comments in the project's comment language.** Romanian where a project keeps
+  Romanian code comments, with nothing to translate. It was put to the owner, recommended, and
+  the owner chose English everywhere.
+- **English documentation comments beside Romanian ordinary comments.** A file in two
+  languages, which the kit's rule "Languages" forbids.
 
 ## Consequences
 
@@ -83,5 +97,6 @@ now, with each project's existing code documented in a task of its own.
   - malformed XML (CS1570);
   - a `cref` that does not resolve (CS1574).
 - Each project has a backfill task ahead. Its size is in the plan of this ADR's task,
-  `docs/plans/2026-10-21-add-the-documentation-comments-rule.md`.
+  `docs/plans/2026-10-21-add-the-documentation-comments-rule.md`. Where the comments are
+  Romanian, the backfill translates them as well.
 - Guards: none.

@@ -294,4 +294,67 @@ each project a commit touches.
 
 ## What deviated
 
-(filled at wrap-up)
+- **A new question at wrap-up, answered by the owner.** Step 9 read the projects' own rules and
+  found what the plan missed: FlatCheck's and AstroPhotoAnalyzer's rule "Languages" (their ADRs
+  0006 and 0005) keeps the code comments in Romanian and forbids a file in two languages, and 95
+  of 103 and 53 of 62 of their source files with `///` comments carry Romanian ones. It went to
+  the owner as a new question (the rule "Questions to the owner"), with "the project's comment
+  language" recommended. The owner chose English everywhere. So:
+  - the kit's rule text is unchanged;
+  - ADR 0035 records the fact, the answer and the two options set aside, and the guide gains
+    one sentence;
+  - in FlatCheck and APA, the rule "Languages" now says a file's comments are translated when it
+    gets its documentation comments, in a task of its own, and that until then a comment added
+    to it is Romanian; their ADRs 0006 and 0005 get "; Romanian comments in the source files
+    (the C# files in APA) superseded by the kit's ADR 0035";
+  - APA's csproj and `Directory.Build.props` comments stay Romanian (ADR 0005): they never get
+    documentation comments;
+  - three more commits: one in the kit, one each in FlatCheck and APA.
+- **Judged and left as they are.** Two texts say code comments explain "why the code is the way
+  it is": ImageVisualCompare's rule "User documentation lives in `README.md`" with its ADR 0025,
+  and FlatCheck's `docs/design/process.md`. MindfulnessReminder's ADR 0034 says the comments say
+  "what the code does and why". All three keep the user documentation out of the comments;
+  none forbids a member's contract, so none changed.
+- **The wrap-up that ran was the main checkout's.** The skill loaded from
+  `E:\Photografie\Code\ClaudeCodeStarterKit\.claude\skills\`, which still has the old step 3.
+  The new sentence was applied by hand to the only code the branch changed, the kit's sample.
+  The scratch counter on the worktree's kit finds 3 types and 5 methods: 0 undocumented and 0
+  incomplete.
+- **The counter first skipped the whole worktree.** Its skip list matched `/.claude/` anywhere in
+  the absolute path, and the worktree lives under `.claude/worktrees/`, so the first count read
+  0 files. It now matches paths relative to the project root. The counts on `main`, taken from
+  the main checkout, did not change.
+- **Measured on 2026-10-21,** at each commit and again at wrap-up, on the committed trees:
+
+  | Project | Commit | Gate at the commit | Gate at wrap-up | Tests | ADRs |
+  |---|---|---|---|---|---|
+  | kit | f72eac1 | `== OK in 161s` | `== OK in 127s` | 131 | 35 |
+  | AstroPhotoAnalyzer | 74791d1 | `== OK in 48s` | `== OK in 44s` | 351 + 54 | 37 |
+  | DarksCheck | 2598f23 | `== OK in 57s` | `== OK in 42s` | 242 + 66 | 16 |
+  | FlatCheck | 7ac42bb | `== OK in 115s` | `== OK in 119s` | 951 + 331 | 58 |
+  | ImageVisualCompare | 6067efd | `== OK in 19s` | `== OK in 21s` | 256 | 30 |
+  | LightsCheck | fe50783 | `== OK in 52s` | `== OK in 56s` | 238 + 76 | 15 |
+  | MindfulnessReminder | 6a77780 | `== OK in 18s` | `== OK in 19s` | 228 | 34 |
+
+  - In each adopter, `sync.ps1` copied exactly `process.md` and the wrap-up skill.
+  - `sync.ps1 -Check` is identical in all six.
+  - The adopters' ADR counts equal `main`'s.
+  - No golden file changed.
+  - `check-design.ps1 -Since main` lists no note in any of the seven.
+  - The grep for the old reason finds only history: ADR 0035's quotes, this plan,
+    MindfulnessReminder's adoption plan, and the two ADR 0003s, whose Status says that part is
+    superseded.
+- **Wording only.** The guide quotes the owner's request from "toate metodele" on, leaving out
+  its opening clause.
+
+## Known and left out
+
+- **Six backfill tasks,** one per adopter, sized in "Facts checked". FlatCheck and APA translate
+  each file's Romanian comments in the same pass.
+- **The copied `Imaging/` files** of DarksCheck and LightsCheck (8 files each with Romanian
+  `///`) get their comments from their source, by the rule "Copied files stay copies". So they
+  follow FlatCheck's backfill, and their rule "Languages", which keeps FlatCheck's Romanian
+  comments in those copies, changes then.
+- **FlatCheck's `docs/design/process.md`** says not to restate the modes or thresholds in a
+  docstring. Its backfill keeps that: a comment states the contract, not the user's view.
+- **ImageVisualCompare's CS1573 mute** goes in its own backfill, once every parameter is tagged.
