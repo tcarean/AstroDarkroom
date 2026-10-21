@@ -24,8 +24,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- IDE0005 (unused usings) only runs at build when the documentation file is generated.
-         CS1591 (missing XML comment) is muted: comments here are for the "why", not for every
-         member (394 of them on 2026-10-09). -->
+         CS1591 (missing XML comment) stays muted: the rule "Documentation comments" asks for a
+         comment on every type and method, private ones included, and nothing checks it; CS1591
+         would ask only for public members, properties and fields included (394 of them on
+         2026-10-09; the kit's ADR 0035). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- Nothing reads the XML files at run time, so a publish does not ship them. -->

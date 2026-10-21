@@ -49,6 +49,18 @@ name in quotes, never by a number: the kit's rule "Gate". The reasons behind the
   decision the kit made is cited as "the kit's ADR NNNN" and not written again; a project ADR
   records a deviation or a value of its own (the kit's ADR 0025). An ADR merged into `main`
   changes only in the three ways the kit's ADR 0024 lists.
+- **Documentation comments.** Every type and every method in the code (the folders and files
+  `kit.json` lists as code; tests are exempt), constructors and operators included, private
+  ones too, has an XML documentation comment in English: a `<summary>`, a `<param>` for each
+  parameter (a primary constructor's go on its type), a `<typeparam>` for each type parameter,
+  and a `<returns>` when it returns a value (not for `void` or a plain `Task`). An override or
+  an interface implementation may use `<inheritdoc/>`. The comment says what a caller needs:
+  what the member does, what each parameter means (unit, range, whether null is allowed) and
+  what comes back, not its name again. How an area's parts fit stays in its design note, and
+  a line's "why" in an ordinary comment. A property, field or event may have one but need not.
+  Code written before this rule gets its comments in a task of its own; until then a change
+  documents every type and method it adds or edits. Judgment, not a gate: nothing checks it
+  (the kit's ADR 0035).
 - **Design notes.** Any file may name the project's code (the folders and files `kit.json` lists
   as code and tests) and say what a test or a check enforces. How that code works and how its
   parts fit go only in the design note of its area: a note in `docs/design/` whose `Covers:`
