@@ -86,7 +86,8 @@ public sealed class StartupRegistrar
         {
             // Enable may have written the Run value before the Task Manager key or the marker's
             // key refused. Left there without its marker, it would be registered again at every
-            // start, undoing an untick. The tray checkbox reports the same refusal when clicked.
+            // start, undoing an untick. A click on the tray item reports a refusal of the Run or
+            // Task Manager key.
             if (!foundEntry)
             {
                 TryDisable();

@@ -141,3 +141,25 @@ Today's behaviour, measured by reading the code on `main` (3326fe4):
   the owner's own copy: on a test account, deny Read on `StartupApproved\Run`, then open the
   menu. The item shows, and no crash dialog appears.
 - **`/code-review` is suggested before the merge.**
+
+## What deviated
+
+- **Fix 2 went first.** The first run now reads the status before it registers, and until fix 2
+  that read would itself throw a refused read. So fix 2 is ff4a33b and fix 1 is 29a50aa, and
+  ADR 0035 went into fix 1's commit, not fix 2's.
+- **The red runs, then the green ones:**
+  - fix 2: the six cases of the two R004 theories failed, each on the refusal exception thrown
+    out of `GetStatus`; they passed after the fix, 234 tests in the gate;
+  - fix 1: `Failed: 2, Passed: 7, Total: 9` for `StartupRegistrarTests`, both cases of the
+    theory on the `Assert.False` for the Run value, while the guard test passed before the fix,
+    as planned; after it the 32 tests of the two classes passed, 237 in the gate.
+- **ADR 0035 names another found entry.** The plan's example, "a copy registered before the
+  marker existed", does not happen: the marker is as old as the base version (ADR 0028). The ADR
+  names the case that does: while the marker's key refuses writes every start is a first run,
+  and an entry the user ticked on in the tray must survive it.
+- **`EnsureRegisteredOnFirstRun`'s summary says "read or write".** Its first catch also takes a
+  refused read of the marker. The catch comment that said the tray "reports the same refusal"
+  now names the keys a click touches, the Run key and the Task Manager key: never the marker's.
+- **One case stays as it was.** While the marker's key refuses writes, every start is a first
+  run, and `Enable` rewrites a found entry and lifts its Task Manager veto each time. It did so
+  before this task too; changing what a first run does with a found entry is outside this plan.

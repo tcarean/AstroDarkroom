@@ -15,6 +15,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (R-003, R-051).
 - An error in a tray-menu action now ends the application with its own "Mindfulness Reminder
   stopped" dialog, instead of the Windows Forms error dialog (R-076).
+- A first run that Windows cuts short after writing the startup entry no longer leaves that
+  entry behind without its record, which made every later start register it again and undid
+  an untick; an entry that was there before the first run stays (R-003).
+- A startup entry or a Task Manager veto the account may not read no longer ends the
+  application at start or when the tray menu opens: such an entry counts as off, such a veto as
+  no veto (R-004).
 
 ### Internal
 
