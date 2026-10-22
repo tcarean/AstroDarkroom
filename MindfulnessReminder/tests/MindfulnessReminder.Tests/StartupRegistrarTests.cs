@@ -104,19 +104,40 @@ public class StartupRegistrarTests
     }
 
     /// <summary>
-    /// A Run value that was there before the first run was not written by it, so a refusal
-    /// of the marker must not take it away.
+    /// The first run registers only where there is no entry. One already there is repaired and
+    /// keeps its veto, the marker is written, and the call reports no registration, so no
+    /// balloon claims that the app now starts with Windows.
     /// </summary>
     [Fact]
-    public void R003_A_refused_first_run_leaves_an_entry_it_found_in_place()
+    public void R003_A_first_run_that_finds_an_entry_repairs_it_and_keeps_its_veto()
     {
         _registry.SetString(RegistryAutoStartManager.RunKeyPath, ValueName, @"""D:\Old\App.exe""");
+        SetApproval(0x03);
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.Equal(autoStart.Command, _registry.GetString(RegistryAutoStartManager.RunKeyPath, ValueName));
+        Assert.Equal(AutoStartStatus.BlockedByWindows, autoStart.GetStatus());
+        Assert.Equal("1", _registry.GetString(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    /// <summary>
+    /// A Run value that was there before the first run was not written by it, so a refusal of
+    /// the marker must not take it away, nor lift its veto. While that key refuses writes,
+    /// every start is a first run, and a switch-off in Task Manager must survive each one.
+    /// </summary>
+    [Fact]
+    public void R003_A_refused_first_run_repairs_an_entry_it_found_and_keeps_its_veto()
+    {
+        _registry.SetString(RegistryAutoStartManager.RunKeyPath, ValueName, @"""D:\Old\App.exe""");
+        SetApproval(0x03);
         _registry.WriteRefusal = new UnauthorizedAccessException();
         _registry.RefusedKeyPath = StartupRegistrar.SettingsKeyPath;
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
 
         Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
-        Assert.True(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
+        Assert.Equal(autoStart.Command, _registry.GetString(RegistryAutoStartManager.RunKeyPath, ValueName));
+        Assert.Equal(AutoStartStatus.BlockedByWindows, autoStart.GetStatus());
     }
 
     /// <summary>

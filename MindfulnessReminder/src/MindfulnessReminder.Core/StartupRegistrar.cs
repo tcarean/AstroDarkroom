@@ -23,7 +23,8 @@ namespace MindfulnessReminder.Core;
 /// The requirement is that the app registers itself for Windows startup, but that must not
 /// mean "re-register on every launch" -- that would silently undo the user unticking the
 /// tray checkbox. So registration happens once, on the very first run, and is recorded by a
-/// marker value. Later launches only repair a stale executable path.
+/// marker value. Later launches only repair a stale executable path, and so does a first run
+/// that finds an entry already there.
 /// </summary>
 public sealed class StartupRegistrar
 {
@@ -48,13 +49,16 @@ public sealed class StartupRegistrar
     }
 
     /// <summary>
-    /// On the first run, registers auto-start and writes the marker; on every later run, only
-    /// repairs a stale path. A key this account may not read or write is not an error: nothing
-    /// is registered, no marker is written, and the next start tries again. A Run value this
-    /// run wrote before the refusal is deleted again; one that was there before the first run
-    /// stays.
+    /// On the first run, registers auto-start and writes the marker. An entry the first run
+    /// finds already there is only repaired, as every later run repairs a stale path, and the
+    /// marker is written. A key this account may not read or write is not an error: nothing is
+    /// registered, no marker is written, and the next start tries again. A Run value this run
+    /// wrote before the refusal is deleted again.
     /// </summary>
-    /// <returns><c>true</c> when this call performed the initial registration.</returns>
+    /// <returns>
+    /// <c>true</c> when this call performed the initial registration; <c>false</c> on a later
+    /// run, when an entry was already there, or when Windows refused an access.
+    /// </returns>
     public bool EnsureRegisteredOnFirstRun()
     {
         // Set once this run may write a Run value that a refusal must take back.
@@ -68,10 +72,17 @@ public sealed class StartupRegistrar
                 return false;
             }
 
-            // An entry that was there before the first run was not written by it, so a refusal
-            // below must not take it away.
-            undoOnRefusal = _autoStart.GetStatus() is AutoStartStatus.Disabled;
+            if (_autoStart.GetStatus() is not AutoStartStatus.Disabled)
+            {
+                // An entry that was there before the first run was not written by it: it is
+                // treated as a later run treats it, its path repaired and a Task Manager veto
+                // kept. The marker ends the first run; nothing was registered, so no balloon.
+                _autoStart.RepairPathIfNeeded();
+                _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
+                return false;
+            }
 
+            undoOnRefusal = true;
             _autoStart.Enable();
             _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
             return true;
