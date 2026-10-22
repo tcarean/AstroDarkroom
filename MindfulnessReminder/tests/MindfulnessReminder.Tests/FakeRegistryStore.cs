@@ -33,19 +33,25 @@ internal sealed class FakeRegistryStore : IRegistryStore
     /// <summary>When set, every write throws it, as a key the account may not write does.</summary>
     public Exception? WriteRefusal { get; set; }
 
+    /// <summary>
+    /// When set, <see cref="ReadRefusal"/> and <see cref="WriteRefusal"/> apply to this key
+    /// only, compared without regard to case; when null, to every key.
+    /// </summary>
+    public string? RefusedKeyPath { get; set; }
+
     public string? GetString(string keyPath, string valueName) =>
-        ReadRefusal is { } refusal
+        RefusalFor(ReadRefusal, keyPath) is { } refusal
             ? throw refusal
             : _values.TryGetValue((keyPath, valueName), out var value) ? value as string : null;
 
     public byte[]? GetBinary(string keyPath, string valueName) =>
-        ReadRefusal is { } refusal
+        RefusalFor(ReadRefusal, keyPath) is { } refusal
             ? throw refusal
             : _values.TryGetValue((keyPath, valueName), out var value) ? value as byte[] : null;
 
     public void SetString(string keyPath, string valueName, string value)
     {
-        if (WriteRefusal is { } refusal)
+        if (RefusalFor(WriteRefusal, keyPath) is { } refusal)
         {
             throw refusal;
         }
@@ -62,6 +68,11 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public bool Contains(string keyPath, string valueName) =>
         _values.ContainsKey((keyPath, valueName));
+
+    private Exception? RefusalFor(Exception? refusal, string keyPath) =>
+        RefusedKeyPath is null || string.Equals(RefusedKeyPath, keyPath, StringComparison.OrdinalIgnoreCase)
+            ? refusal
+            : null;
 
     private sealed class CaseInsensitivePathComparer : IEqualityComparer<(string Key, string Value)>
     {

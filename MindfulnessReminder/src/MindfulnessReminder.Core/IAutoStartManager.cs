@@ -19,12 +19,16 @@ namespace MindfulnessReminder.Core;
 
 /// <summary>
 /// Whether the app starts with Windows: what the tray checkbox reads and sets, and what each
-/// launch repairs. Each member may throw when Windows refuses the access (a policy, security
-/// software).
+/// launch repairs. <see cref="GetStatus"/> never fails for a refused read; the other members
+/// may throw when Windows refuses the access (a policy, security software).
 /// </summary>
 public interface IAutoStartManager
 {
-    /// <summary>Reads whether Windows will start the app at sign-in.</summary>
+    /// <summary>
+    /// Reads whether Windows will start the app at sign-in. A value this account may not read
+    /// counts as missing: an unreadable entry is <see cref="AutoStartStatus.Disabled"/>, and an
+    /// unreadable Task Manager veto is no veto.
+    /// </summary>
     /// <returns>
     /// <see cref="AutoStartStatus.Disabled"/> when there is no entry,
     /// <see cref="AutoStartStatus.BlockedByWindows"/> when there is one but Task Manager has

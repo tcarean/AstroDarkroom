@@ -87,6 +87,41 @@ public class RegistryAutoStartManagerTests
         Assert.Equal(AutoStartStatus.BlockedByWindows, manager.GetStatus());
     }
 
+    /// <summary>
+    /// A Run key the account may not read (a policy, security software) must not stop the tray
+    /// menu from opening: the entry it cannot see counts as missing.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(System.Security.SecurityException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(IOException))]
+    public void R004_GetStatus_reads_a_run_value_it_may_not_read_as_missing(Type refusal)
+    {
+        _registry.ReadRefusal = (Exception)Activator.CreateInstance(refusal)!;
+        _registry.RefusedKeyPath = RegistryAutoStartManager.RunKeyPath;
+
+        Assert.Equal(AutoStartStatus.Disabled, CreateManager().GetStatus());
+    }
+
+    /// <summary>
+    /// A veto the account may not read counts as no veto, so the Run value it can read is
+    /// Enabled, and a click on the ticked item can still remove it.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(System.Security.SecurityException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(IOException))]
+    public void R004_GetStatus_reads_an_approval_value_it_may_not_read_as_no_veto(Type refusal)
+    {
+        var manager = CreateManager();
+        manager.Enable();
+        SetApproval(0x03);
+        _registry.ReadRefusal = (Exception)Activator.CreateInstance(refusal)!;
+        _registry.RefusedKeyPath = RegistryAutoStartManager.StartupApprovedKeyPath;
+
+        Assert.Equal(AutoStartStatus.Enabled, manager.GetStatus());
+    }
+
     [Fact]
     public void R004_GetStatus_ignores_a_Task_Manager_veto_when_no_run_entry_exists()
     {

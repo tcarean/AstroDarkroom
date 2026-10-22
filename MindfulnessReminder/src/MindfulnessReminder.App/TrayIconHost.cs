@@ -133,8 +133,7 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// Switches auto-start off when it works and on otherwise, then refreshes the item. A
-    /// change Windows refuses becomes a notification rather than an error; a refused read in
-    /// the refresh that follows is not caught.
+    /// change Windows refuses becomes a notification rather than an error.
     /// </summary>
     /// <param name="sender">The menu item; not read.</param>
     /// <param name="e">The click; not read.</param>
