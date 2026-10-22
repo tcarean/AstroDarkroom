@@ -265,6 +265,66 @@ Each message one line, under 100 characters, saying why.
 - **Left for later, not this task:** the tests' Romanian comments, the XAML comments (ADR 0005),
   and the parked branch, which is the owner's call.
 
+## Folded in after approval: the planning review
+
+A planning agent read the draft against the code while it was put to the owner; its report came
+after the approval. What it changes, for every area:
+
+- **Facts it added:** no file in the five projects has a preprocessor directive; the only
+  caller-info attribute in the code is `[CallerMemberName]` (`ObservableObject.cs`); there are no
+  operators, explicit interface implementations, delegates, indexers or static constructors;
+  one `/* */` comment exists (`FitsWriter.cs:68`); the code has at least nine local functions
+  (`CurveAdvisor`, `TonalAnalyzer`, `PrintSizeAnalyzer`, `PrintStretchSimulator`, `CurveCanvas`,
+  `MapViewModel`, `ResultTabs`), which the rule exempts and the counter does not count.
+- **Rules it added:**
+  - A local function keeps `//`: `///` on one is CS1587.
+  - A `cref` is written fully qualified rather than by adding a `using`, which would change
+    the code the token proof compares.
+  - A doc block goes above a member's attributes (`[DllImport]` in `DarkTitleBar.cs`).
+  - `ImageSharpReader` has a nested `FileFacts` class, which captures a `cref` meant for
+    `Analysis/FileFacts.cs` from inside that file.
+- **Checks it added,** run with the others in every area:
+  - `facts`, a mode of the scratch tool: every number, ADR and requirement ID and identifier of
+    a file's old comments is found again in its new ones, the misses listed and judged (a
+    Romanian `20.000` is an English `20,000`);
+  - every added line is ASCII, as all 71 files are today;
+  - the branch changes only the area's `.cs` files, the plan and `CHANGELOG.md` (area 1 also
+    the documentation file's set);
+  - an added directive would show in `tokens`, which compares directives too.
+- **The parked branch** is to be rewritten on `main`, never merged or cherry-picked (its plan,
+  `docs/plans/2026-10-02-detect-dust-and-sky-from-a-plate-solved-fits-and-a-dark-nebula-catalogue.md`),
+  so it constrains nothing here.
+- **Set aside:** doing area 4 first, in the planning session, as the lightest; the approved
+  order was already under way, and the glossary below gives the later areas the vocabulary
+  `Thresholds.cs` would have.
+- **For area 5:** once the code is English, the rule "Languages" in `CLAUDE.md` still describes
+  files "not yet translated"; what it says then about the tests' Romanian comments (29 of 54
+  files) is the owner's call, put at area 5's wrap-up.
+
+## Glossary: one English word per Romanian term, in every area
+
+| Romanian | English | Where, and the identifiers that fix it |
+|---|---|---|
+| fundal | background | its level (`BackgroundMedian`, "Nivelul fundalului") and its colour (`BackgroundResult`, "Culoarea fundalului"); ADR 0013 |
+| cer | sky | the class and the modelled sky (`SkyModel*`); ADR 0025, ADR 0033; never "background" |
+| praf | dust | `Dust*` |
+| nor, nori; nori luminosi | cloud, clouds; bright clouds | `DustCloud*`; the classes of ADR 0026 |
+| banda | band | the Milky Way band, `BandGalacticLatitudeDeg` |
+| varfuri | peaks | the fifth class |
+| dala, dale | patch | the dust, sky, class and map code (`DustPatchPx`, `PatchClass`, `PatchLstars`) |
+| dala, dale | tile | the noise, plateau and quantization code (`NoiseTile`, `PlateauTiles`, `PctTilesBelowBanding`) |
+| negrul hartiei; hartie; mediu | paper black; paper; medium | `PaperBlackLstar`, `--medium` |
+| prag; tinta; tinta exacta | threshold; target; exact target | `Thresholds`, R-043 |
+| scara (the simulation's); treapta | ladder; step | the lifts of ADR 0025 and ADR 0035 |
+| ridica, ridicare; liniarizare | lift; linearisation | `LiftTable`, ADR 0035 |
+| esantion; subesantion; nivel; plan; rand; cadru | sample; subsample; level; plane; row; frame | `Raster`, `RasterOps` |
+| stea; colt; centru | star; corner; centre | `StarAnalyzer`, `CornerToCenterRatio` |
+| raport; recomandare; harta; simulare | report; recommendation; map; simulation | `Report/`, `MapViewModel` |
+
+- Quoted output and every string literal stay Romanian.
+- British spelling where the docs use it (colour, centre, normalise, linearise); "analyzer" and
+  "quantization" as the types and the docs write them.
+
 ## What deviated
 
 (Filled in by each area at its wrap-up.)
