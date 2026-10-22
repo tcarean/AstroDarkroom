@@ -15,23 +15,35 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RasterOps.cs - transformarile pure pe un Raster: subesantionare, decupare, curba
-// gamma, cuantizare, L* pe tot planul, si garda pentru date liniare.
+// RasterOps.cs - the pure transformations of a Raster: subsampling, cropping, the gamma curve,
+// quantization, L* over the whole plane, and the guard against linear data.
 //
-// Toate intorc rastere noi; niciuna nu modifica intrarea. Analizoarele pot deci lucra
-// pe acelasi raster in orice ordine.
+// All of them return new rasters; none modifies its input. The analyzers can therefore work on
+// the same raster in any order.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The operations on rasters and samples that the measurements share; none modifies its
+    /// input.
+    /// </summary>
     internal static class RasterOps
     {
         /// <summary>
-        /// Fiecare al <paramref name="stride"/>-lea pixel pe ambele axe, ancorat sus-stanga
-        /// - exact a[::s, ::s] din numpy, cu care s-au masurat cifrele de acceptanta. Nu
-        /// e o medie de bloc: distributiile tonale vor pixeli reali, nu pixeli netezi.
+        /// Every <paramref name="stride"/>-th pixel on both axes, anchored at the top left -
+        /// exactly numpy's a[::s, ::s], with which the acceptance figures were measured. Not a
+        /// block average: the tonal distributions want real pixels, not smoothed ones.
         /// </summary>
+        /// <param name="r">The raster.</param>
+        /// <param name="stride">
+        /// The step, in pixels; 1 or less returns <paramref name="r"/> itself.
+        /// </param>
+        /// <returns>
+        /// A raster of ceil(H / stride) rows of ceil(W / stride) pixels, with the same planes and
+        /// <see cref="Raster.Source"/>.
+        /// </returns>
         internal static Raster Subsample(Raster r, int stride)
         {
             if (stride <= 1) return r;
@@ -50,6 +62,17 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
+        /// <summary>
+        /// A copy of the rectangle <paramref name="w"/> x <paramref name="h"/> at (x0, y0).
+        /// </summary>
+        /// <param name="r">The raster.</param>
+        /// <param name="x0">The rectangle's left column, from 0.</param>
+        /// <param name="y0">The rectangle's top row, from 0 at the top.</param>
+        /// <param name="w">
+        /// The width, in pixels; at least 1, the rectangle wholly inside <paramref name="r"/>.
+        /// </param>
+        /// <param name="h">The height, in pixels; at least 1.</param>
+        /// <returns>A new raster with the same planes and <see cref="Raster.Source"/>.</returns>
         internal static Raster Crop(Raster r, int x0, int y0, int w, int h)
         {
             if (x0 < 0 || y0 < 0 || x0 + w > r.W || y0 + h > r.H || w <= 0 || h <= 0)
@@ -62,20 +85,24 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// v^gamma pe fiecare canal, identic pe toate - deci un gri neutru ramane neutru.
-        /// E curba simularii de print: gamma = ln(tinta)/ln(fundal) duce fundalul masurat
-        /// exact in tinta si ridica restul proportional. Nu e un stretch adevarat si
-        /// raportul o numeste simulare.
+        /// v^gamma on every channel, the same on all - so a neutral grey stays neutral. It is the
+        /// print simulation's curve: gamma = ln(target)/ln(background) takes the measured
+        /// background exactly to the target and lifts the rest in proportion. Not a real
+        /// stretch, and the report calls it a simulation.
         /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="gamma">The exponent, positive, as <see cref="GammaFor"/> gives it.</param>
+        /// <returns>A new raster, every sample raised to <paramref name="gamma"/>.</returns>
         internal static Raster Gamma(Raster r, double gamma)
         {
-            // Printr-o tabela pe cele 65536 de niveluri de 16 biti, nu prin Math.Pow pe fiecare
-            // esantion: pe un raster de 4 milioane de esantioane Pow ar fi secunde. Pe o sursa
-            // de 16 biti valoarea cade exact pe un nivel al tabelei si rezultatul e cel al lui
-            // Pow; pe float (FITS) se interpoleaza liniar intre cele doua niveluri vecine, cu o
-            // eroare sub 1e-6 pe orice gamma dintre 0.3 si 3. Simularea de print nu mai trece
-            // pe aici: ridica si liniarizeaza dintr-o singura tabela (LiftTable, ADR 0035);
-            // aici raman preview-ul si harta ferestrei, care au nevoie de rasterul ridicat.
+            // Through a table on the 65536 levels of 16 bits, not through Math.Pow on every
+            // sample: on a raster of 4 million samples Pow would take seconds. On a 16-bit source
+            // the value falls exactly on a level of the table and the result is Pow's; on float
+            // (FITS) it is interpolated linearly between the two neighbouring levels, with an
+            // error under 1e-6 for any gamma between 0.3 and 3. The print simulation no longer
+            // goes through here: it lifts and linearises from a single table (LiftTable,
+            // ADR 0035); what stays here is the preview and the window's map, which need the
+            // lifted raster.
             double[] lut = PowerLut(gamma);
             var o = new Raster(r.H, r.W, r.Planes.Length) { Source = r.Source };
             for (int p = 0; p < r.Planes.Length; p++)
@@ -87,11 +114,16 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Valoarea unei tabele pe cele 65536 de niveluri de 16 biti (PowerLut, LiftTable) la
-        /// esantionul <paramref name="s"/>: exact pe un nivel, liniar intre doua niveluri vecine.
-        /// Un NaN se ia ca 0: ar da (int)NaN = int.MinValue, un indice imposibil; cititorii nu
-        /// lasa NaN sa treaca (R-013), dar un raster facut in memorie poate.
+        /// The value of a table on the 65536 levels of 16 bits (PowerLut, LiftTable) at the
+        /// sample <paramref name="s"/>: exact on a level, linear between two neighbouring levels.
+        /// A NaN is taken as 0: it would give (int)NaN = int.MinValue, an impossible index; the
+        /// readers do not let NaN through (R-013), but a raster made in memory can.
         /// </summary>
+        /// <param name="lut">
+        /// The table: 65537 entries, the value at the level k / 65535 at index k.
+        /// </param>
+        /// <param name="s">The sample, 0..1; clamped to that range.</param>
+        /// <returns>The table's value at the sample.</returns>
         internal static double Interpolate(double[] lut, float s)
         {
             double v = (float.IsNaN(s) ? 0 : Math.Clamp(s, 0f, 1f)) * 65535.0;
@@ -101,9 +133,12 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Tabela curbei v^gamma pe cele 65536 de niveluri de 16 biti, plus nivelul 65536 ca
-        /// interpolarea sa aiba vecin si la 1.0: aceeasi pentru Gamma si pentru LiftTable.
+        /// The table of the curve v^gamma on the 65536 levels of 16 bits, plus the level 65536 so
+        /// that the interpolation has a neighbour at 1.0 too: the same for Gamma and for
+        /// LiftTable.
         /// </summary>
+        /// <param name="gamma">The exponent.</param>
+        /// <returns>65537 entries, (k / 65535)^gamma at index k.</returns>
         internal static double[] PowerLut(double gamma)
         {
             var lut = new double[65537];
@@ -111,7 +146,12 @@ namespace AstroPhotoAnalyzer
             return lut;
         }
 
-        /// <summary>Gamma care duce fundalul <paramref name="from"/> in <paramref name="to"/>.</summary>
+        /// <summary>
+        /// The gamma that takes the background <paramref name="from"/> to <paramref name="to"/>.
+        /// </summary>
+        /// <param name="from">The measured background level, 0..1, both ends excluded.</param>
+        /// <param name="to">The target level, 0..1, both ends excluded.</param>
+        /// <returns>ln(to) / ln(from): under 1 lifts, over 1 lowers.</returns>
         internal static double GammaFor(double from, double to)
         {
             if (from <= 0 || from >= 1 || to <= 0 || to >= 1)
@@ -119,25 +159,40 @@ namespace AstroPhotoAnalyzer
             return Math.Log(to) / Math.Log(from);
         }
 
-        /// <summary>Nivelul pe 8 biti, prin rotunjire - ce ar scrie un export 8-bit.</summary>
+        /// <summary>The 8-bit level, by rounding - what an 8-bit export would write.</summary>
+        /// <param name="v">The sample; clamped to 0..1.</param>
+        /// <returns>The level, 0..255.</returns>
         internal static int Level8(float v) => (int)Math.Round(Math.Clamp(v, 0f, 1f) * 255.0);
 
-        /// <summary>Nivelul pe 16 biti. Pe o sursa de 16 biti intoarce exact ce era in fisier.</summary>
+        /// <summary>
+        /// The 16-bit level. On a 16-bit source it returns exactly what was in the file.
+        /// </summary>
+        /// <param name="v">The sample; clamped to 0..1.</param>
+        /// <returns>The level, 0..65535.</returns>
         internal static int Level16(float v) => (int)Math.Round(Math.Clamp(v, 0f, 1f) * 65535.0);
 
         /// <summary>
-        /// L* pentru fiecare pixel, pe rasterul subesantionat cu <paramref name="stride"/>.
-        /// Pe color trece prin luminanta Rec. 709 a componentelor liniarizate; pe mono
-        /// e L*-ul valorii. Vectorul e in ordinea pixelilor, bun de sortat.
+        /// L* for every pixel, on the raster subsampled with <paramref name="stride"/>. On colour
+        /// it goes through the Rec. 709 luminance of the linearised components; on mono it is the
+        /// L* of the value. The vector is in pixel order, ready to sort.
         /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="stride">The subsampling step, as in <see cref="Subsample"/>.</param>
+        /// <returns>One L* (0..100) per pixel of the subsample.</returns>
         internal static float[] LstarPlane(Raster r, int stride)
             => LstarPlane(Subsample(r, stride), new ExactLinearizer());
 
         /// <summary>
-        /// L* pentru fiecare pixel al unui raster DEJA subesantionat, cu esantioanele trecute
-        /// prin <paramref name="lin"/>: exact, sau ridicate cu o gamma si liniarizate din
-        /// tabela (LiftTable), cum le vrea simularea pe randurile grilei.
+        /// L* for every pixel of an ALREADY subsampled raster, with the samples passed through
+        /// <paramref name="lin"/>: exact, or lifted with a gamma and linearised from the table
+        /// (LiftTable), as the simulation wants them on the rows of its grid.
         /// </summary>
+        /// <typeparam name="T">The path, a struct the JIT specialises the loop on.</typeparam>
+        /// <param name="s">The subsampled raster, 0..1.</param>
+        /// <param name="lin">
+        /// The path: an <see cref="ExactLinearizer"/> or a <see cref="LiftTable"/>.
+        /// </param>
+        /// <returns>One L* (0..100) per pixel, in pixel order.</returns>
         internal static float[] LstarPlane<T>(Raster s, T lin) where T : struct, ISrgbLinearizer
         {
             var o = new float[s.H * s.W];
@@ -157,12 +212,18 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Pare imaginea LINIARA, nu stretch-uita? Un stack liniar are mediana la o mie de
-        /// fundal, aproape totul in primele procente ale scalei; o imagine finita are
-        /// fundalul la 0.1-0.25. Pragul e in Thresholds. Garda exista ca unealta sa refuze
-        /// cu un mesaj, nu sa raporteze "99% sub negrul hartiei" pe un fisier pe care
-        /// nimeni nu-l printeaza asa.
+        /// Does the image look LINEAR, not stretched? A linear stack has its median at about a
+        /// thousandth, almost everything in the first percents of the scale; a finished image has
+        /// its background at 0.1-0.25. The threshold is
+        /// <see cref="Thresholds.LinearMedianMax"/>. The guard exists so that the tool refuses
+        /// with a message, rather than report "99% under paper black" on a file nobody prints
+        /// like that.
         /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="median">
+        /// The median of the reference plane, subsampled at stride 8, 0..1.
+        /// </param>
+        /// <returns><c>true</c> when the median is under the threshold.</returns>
         internal static bool LooksLinear(Raster r, out double median)
         {
             median = Stats.Median(Subsample(r, 8).Reference);

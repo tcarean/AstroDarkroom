@@ -15,25 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Stats.cs - mediana, percentile, medie, deviatie, si un generator de numere aleatoare
-// cu samanta fixa.
+// Stats.cs - median, percentiles, mean, deviation, and a random number generator with a fixed
+// seed.
 //
-// PERCENTILA E CEA A LUI NUMPY (interpolare liniara intre ranguri, metoda implicita
-// 'linear'). Cifrele de acceptanta din docs/validation.md au fost masurate cu
-// numpy, si o percentila definita altfel (nearest, lower) ar fi dat diferente mici pe
-// care nimeni nu le-ar fi putut explica.
+// THE PERCENTILE IS NUMPY'S (linear interpolation between ranks, the default method 'linear').
+// The acceptance figures in docs/validation.md were measured with numpy, and a percentile
+// defined otherwise (nearest, lower) would have given small differences nobody could have
+// explained.
 //
-// GENERATORUL E AL NOSTRU, nu System.Random: dalele de zgomot se aleg aleator, si
-// rezultatul trebuie sa fie acelasi pe orice runtime si in orice an. System.Random cu
-// samanta e determinist doar in cadrul aceleiasi versiuni de .NET.
+// THE GENERATOR IS OUR OWN, not System.Random: the noise tiles are chosen at random, and the
+// result must be the same on any runtime and in any year. System.Random with a seed is
+// deterministic only within one version of .NET.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The statistics the measurements share, on vectors of samples: numpy's percentile, the
+    /// median, a robust sigma, Otsu's threshold, the mean, the standard deviation, min and max.
+    /// </summary>
     internal static class Stats
     {
-        /// <summary>Percentila p (0..100) pe un vector DEJA SORTAT, ca np.percentile.</summary>
+        /// <summary>
+        /// The percentile <paramref name="p"/> of an ALREADY SORTED vector, as np.percentile.
+        /// </summary>
+        /// <param name="sorted">The values, sorted in ascending order; at least one.</param>
+        /// <param name="p">The percentile, 0..100.</param>
+        /// <returns>
+        /// The value at rank p / 100 x (n - 1), interpolated linearly between the two ranks around
+        /// it.
+        /// </returns>
         internal static double PercentileSorted(float[] sorted, double p)
         {
             if (sorted.Length == 0) throw new ArgumentException("percentila pe un vector gol");
@@ -45,7 +57,12 @@ namespace AstroPhotoAnalyzer
             return sorted[lo] + (sorted[hi] - sorted[lo]) * frac;
         }
 
-        /// <summary>Copiaza, sorteaza, si intoarce vectorul sortat - pentru cine vrea mai multe percentile.</summary>
+        /// <summary>
+        /// Copies, sorts, and returns the sorted vector - for a caller that wants several
+        /// percentiles.
+        /// </summary>
+        /// <param name="values">The values; left as they are.</param>
+        /// <returns>A sorted copy, in ascending order.</returns>
         internal static float[] Sorted(float[] values)
         {
             var copy = (float[])values.Clone();
@@ -53,12 +70,19 @@ namespace AstroPhotoAnalyzer
             return copy;
         }
 
+        /// <summary>The median, as the 50th percentile of <see cref="PercentileSorted"/>.</summary>
+        /// <param name="values">The values, in any order; at least one.</param>
+        /// <returns>The median; for an even count, halfway between the two middle values.</returns>
         internal static double Median(float[] values) => PercentileSorted(Sorted(values), 50);
 
         /// <summary>
-        /// Sigma robusta: 1.4826 x mediana abaterilor absolute de la mediana (MAD), egala cu
-        /// deviatia standard pe o gaussiana si insensibila la coada. Da si mediana.
+        /// Robust sigma: 1.4826 x the median of the absolute deviations from the median (MAD),
+        /// equal to the standard deviation on a Gaussian and insensitive to the tail. Gives the
+        /// median too.
         /// </summary>
+        /// <param name="values">The values, in any order; at least one.</param>
+        /// <param name="median">The median of <paramref name="values"/>.</param>
+        /// <returns>The robust sigma, in the unit of the values.</returns>
         internal static double RobustSigma(float[] values, out double median)
         {
             median = Median(values);
@@ -69,12 +93,20 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Pragul Otsu pe un vector DEJA SORTAT: valoarea la care impartirea in doua clase are
-        /// varianta intre clase maxima; cele la sau sub prag sunt clasa de jos. Clasa de sus
-        /// are cel putin <paramref name="minAbove"/> valori: cateva valori extreme (stele pe o
-        /// nebuloasa slaba) ar castiga altfel orice impartire. NaN cu mai putin de
-        /// minAbove + 1 valori; cu toate valorile egale, cea mai mica (si nimic nu e peste ea).
+        /// Otsu's threshold on an ALREADY SORTED vector: the value at which the split into two
+        /// classes has the largest variance between the classes; the values at or under the
+        /// threshold are the lower class. The upper class has at least
+        /// <paramref name="minAbove"/> values: a few extreme values (stars on a faint nebula)
+        /// would win any split otherwise.
         /// </summary>
+        /// <param name="sorted">The values, sorted in ascending order.</param>
+        /// <param name="minAbove">
+        /// The fewest values the upper class may hold; under 1 is taken as 1.
+        /// </param>
+        /// <returns>
+        /// The threshold, one of the values; NaN with fewer than minAbove + 1 values; with all
+        /// the values equal, the smallest (and nothing is above it).
+        /// </returns>
         internal static double OtsuThreshold(float[] sorted, int minAbove = 1)
         {
             minAbove = Math.Max(1, minAbove);
@@ -93,6 +125,9 @@ namespace AstroPhotoAnalyzer
             return threshold;
         }
 
+        /// <summary>The arithmetic mean.</summary>
+        /// <param name="values">The values.</param>
+        /// <returns>The mean; NaN for an empty vector.</returns>
         internal static double Mean(float[] values)
         {
             double s = 0;
@@ -100,7 +135,13 @@ namespace AstroPhotoAnalyzer
             return s / values.Length;
         }
 
-        /// <summary>Deviatia standard a populatiei (impartire la N), ca np.std implicit.</summary>
+        /// <summary>
+        /// The population standard deviation (divided by N), as np.std by default.
+        /// </summary>
+        /// <param name="values">The values.</param>
+        /// <returns>
+        /// The standard deviation, in the unit of the values; NaN for an empty vector.
+        /// </returns>
         internal static double StdDev(float[] values)
         {
             double m = Mean(values), s = 0;
@@ -108,6 +149,9 @@ namespace AstroPhotoAnalyzer
             return Math.Sqrt(s / values.Length);
         }
 
+        /// <summary>The smallest value; a NaN is never taken.</summary>
+        /// <param name="values">The values.</param>
+        /// <returns>The smallest value; positive infinity for an empty vector.</returns>
         internal static float Min(float[] values)
         {
             float m = float.PositiveInfinity;
@@ -115,6 +159,9 @@ namespace AstroPhotoAnalyzer
             return m;
         }
 
+        /// <summary>The largest value; a NaN is never taken.</summary>
+        /// <param name="values">The values.</param>
+        /// <returns>The largest value; negative infinity for an empty vector.</returns>
         internal static float Max(float[] values)
         {
             float m = float.NegativeInfinity;
@@ -124,20 +171,24 @@ namespace AstroPhotoAnalyzer
     }
 
     /// <summary>
-    /// xorshift64*, cu samanta fixa. Suficient de bun pentru a alege dale si a genera
-    /// zgomot de test; important e ca da ACELEASI numere oriunde ruleaza.
+    /// xorshift64*, with a fixed seed. Good enough to pick tiles and to generate test noise; what
+    /// matters is that it gives THE SAME numbers wherever it runs.
     /// </summary>
     internal sealed class SeededRandom
     {
         ulong _s;
 
+        /// <summary>Starts the sequence of one seed.</summary>
+        /// <param name="seed">Any value; the same seed gives the same sequence everywhere.</param>
         internal SeededRandom(int seed)
         {
-            // Samanta 0 ar bloca xorshift-ul pe zero; se amesteca cu o constanta.
+            // A seed of 0 would lock xorshift on zero; it is mixed with a constant.
             _s = 0x9E3779B97F4A7C15UL ^ (ulong)(uint)seed;
             if (_s == 0) _s = 1;
         }
 
+        /// <summary>The next 64 bits of the sequence.</summary>
+        /// <returns>A uniform 64-bit value.</returns>
         internal ulong NextUInt64()
         {
             _s ^= _s >> 12;
@@ -146,13 +197,17 @@ namespace AstroPhotoAnalyzer
             return _s * 0x2545F4914F6CDD1DUL;
         }
 
-        /// <summary>Intreg uniform in [0, maxExclusive).</summary>
+        /// <summary>A uniform integer in [0, maxExclusive).</summary>
+        /// <param name="maxExclusive">The bound, excluded; positive.</param>
+        /// <returns>A value from 0 to maxExclusive - 1.</returns>
         internal int Next(int maxExclusive) => (int)(NextUInt64() % (ulong)maxExclusive);
 
-        /// <summary>Real uniform in [0, 1).</summary>
+        /// <summary>A uniform real in [0, 1).</summary>
+        /// <returns>A value in [0, 1), from the top 53 bits of the next value.</returns>
         internal double NextDouble() => (NextUInt64() >> 11) * (1.0 / (1UL << 53));
 
-        /// <summary>Normal standard, prin Box-Muller.</summary>
+        /// <summary>A standard normal value, by Box-Muller.</summary>
+        /// <returns>A normal value, of mean 0 and standard deviation 1.</returns>
         internal double NextGaussian()
         {
             double u1 = 1.0 - NextDouble(), u2 = NextDouble();

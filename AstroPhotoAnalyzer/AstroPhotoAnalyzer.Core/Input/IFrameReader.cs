@@ -15,29 +15,48 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IFrameReader.cs - contractul pe care il implementeaza fiecare format de intrare.
+// IFrameReader.cs - the contract every input format implements.
 //
-// Implementarile sunt singurele care stiu un format anume. ImageLoader alege intre ele
-// prin contractul asta si nu cunoaste niciuna pe nume, deci un format nou se adauga fara
-// sa se atinga dispecerul - si, mai important, fara ca vreo diferenta de comportament
-// intre formate sa se poata strecura in el.
+// The implementations are the only code that knows a particular format. ImageLoader chooses
+// among them through this contract and knows none of them by name, so a new format is added
+// without touching the dispatcher - and, more importantly, without any difference in behaviour
+// between formats being able to slip into it.
 
 using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// A reader of one family of image formats, chosen by <see cref="ImageLoader"/> through
+    /// <see cref="Handles"/>.
+    /// </summary>
     internal interface IFrameReader
     {
         /// <summary>
-        /// Revendica fisierul? Decizia e pe EXTENSIE, nu pe continut. Daca s-ar adulmeca
-        /// octetii, un fisier stricat ar putea cadea tacut pe alt cititor si ar iesi de
-        /// acolo ca zgomot, in loc de eroare.
+        /// Whether this reader claims the file. The decision is on the EXTENSION, not on the
+        /// content: if the bytes were sniffed, a damaged file could fall silently to another
+        /// reader and come out of it as noise instead of an error.
         /// </summary>
+        /// <param name="path">
+        /// The file's path; only its extension is read, in any case. Null or empty is claimed by
+        /// no reader.
+        /// </param>
+        /// <returns><c>true</c> when the extension is one of <see cref="Extensions"/>.</returns>
         bool Handles(string path);
 
-        /// <summary>Extensiile revendicate, cu punct, cu minuscule - pentru mesaje si pentru filtrele de fisiere ale ferestrei.</summary>
+        /// <summary>
+        /// The extensions claimed, with the dot, in lower case: for the messages and for the
+        /// window's file filters.
+        /// </summary>
         IReadOnlyList<string> Extensions { get; }
 
+        /// <summary>
+        /// Reads the image into a raster normalised to 0..1, with its <see cref="Raster.Source"/>
+        /// filled in. Throws when the file cannot be read or holds no image the reader accepts,
+        /// with a message for the user.
+        /// </summary>
+        /// <param name="path">A file this reader handles.</param>
+        /// <returns>The raster: 1 or 3 planes, row 0 at the top.</returns>
         Raster Load(string path);
     }
 }

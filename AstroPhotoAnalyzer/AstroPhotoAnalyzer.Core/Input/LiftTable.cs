@@ -15,46 +15,55 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LiftTable.cs - liniarizarea unui esantion sRGB, pe doua cai: exact (ColorMath.SrgbToLinear)
-// sau ridicat cu o gamma si liniarizat printr-o singura tabela pe cele 65536 de niveluri de
-// 16 biti (ADR 0035).
+// LiftTable.cs - the linearisation of an sRGB sample, by two paths: exact
+// (ColorMath.SrgbToLinear), or lifted with a gamma and linearised through a single table on the
+// 65536 levels of 16 bits (ADR 0035).
 //
-// Simularea de print ridica subesantionul de ~56 de ori (scara tintei exacte, ADR 0025) si
-// remasoara de fiecare data L*-ul dalelor: liniarizarea fiecarui esantion ridicat cu
-// Math.Pow(x, 2.4) insemna 250 de milioane de Pow pe o imagine de 23 MP, 11 secunde din
-// cele 17 ale simularii. Tabela tine lin(pow(k / 65535, gamma)) pentru fiecare nivel k si
-// interpoleaza liniar intre doua niveluri vecine - PE VALOAREA LINIARA, nu pe cea ridicata:
-// rasterul ridicat intermediar (RasterOps.Gamma, aceeasi indexare si aceeasi interpolare, pe
-// valoarea ridicata) nu se mai construieste deloc. Masurat pe imaginile de referinta
-// (docs/validation.md, 2026-10-09): nicio dala nu se misca cu mai mult de un ulp de float al
-// L*-ului ei (7.6e-6 la L* 32..64); pe un esantion izolat cele doua interpolari difera cel
-// mai mult in primul pas de 16 biti la gamma mica, unde si interpolarea curbei de putere
-// era grosiera. Randul "asa cum e" nu trece prin tabela: ramane pe calea exacta.
+// The print simulation lifts the subsample ~56 times (the ladder of the exact target, ADR 0025)
+// and re-measures the patches' L* each time: linearising every lifted sample with
+// Math.Pow(x, 2.4) meant 250 million Pow calls on a 23 MP image, 11 seconds of the
+// simulation's 17. The table holds lin(pow(k / 65535, gamma)) for every level k and
+// interpolates linearly between two neighbouring levels - ON THE LINEAR VALUE, not on the
+// lifted one: the intermediate lifted raster (RasterOps.Gamma, the same indexing and the same
+// interpolation, on the lifted value) is no longer built at all. Measured on the reference
+// images (docs/validation.md, 2026-10-09): no patch moves by more than one float ulp of its L*
+// (7.6e-6 at L* 32..64); on an isolated sample the two interpolations differ most in the first
+// 16-bit step at a small gamma, where the interpolation of the power curve was coarse too. The
+// "as is" row does not go through the table: it stays on the exact path.
 //
-// Cele doua cai sunt structuri care implementeaza aceeasi interfata, iar buclele peste
-// esantioane (DustAnalyzer.PatchLstars, RasterOps.LstarPlane) sunt generice pe ea: JIT-ul
-// specializeaza bucla pe structura si inlineaza apelul, deci nu e un delegat pe esantion si
-// nici doua copii ale buclei.
+// The two paths are structs that implement the same interface, and the loops over the samples
+// (DustAnalyzer.PatchLstars, RasterOps.LstarPlane) are generic on it: the JIT specialises the
+// loop on the struct and inlines the call, so there is no delegate per sample and no second
+// copy of the loop.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Un esantion sRGB codat (0..1) -> luminanta lui liniara, pe una din cele doua cai.</summary>
+    /// <summary>
+    /// An encoded sRGB sample (0..1) -> its linear luminance, by one of the two paths.
+    /// </summary>
     internal interface ISrgbLinearizer
     {
+        /// <summary>Linearises one encoded sample by this path.</summary>
+        /// <param name="s">The encoded sRGB sample, 0..1.</param>
+        /// <returns>The linear luminance, 0..1.</returns>
         double Linear(float s);
     }
 
-    /// <summary>Calea exacta: ColorMath.SrgbToLinear pe esantionul asa cum e. Masuratorile "asa cum e" trec pe aici.</summary>
+    /// <summary>
+    /// The exact path: <see cref="ColorMath.SrgbToLinear"/> on the sample as it is. The "as is"
+    /// measurements go this way.
+    /// </summary>
     internal readonly struct ExactLinearizer : ISrgbLinearizer
     {
+        /// <inheritdoc/>
         public double Linear(float s) => ColorMath.SrgbToLinear(s);
     }
 
     /// <summary>
-    /// Esantionul ridicat cu <see cref="Gamma"/> si liniarizat, printr-o tabela pe nivelurile
-    /// de 16 biti cu interpolare liniara intre doua niveluri vecine, pe valoarea liniara.
+    /// The sample lifted with <see cref="Gamma"/> and linearised, through a table on the 16-bit
+    /// levels with linear interpolation between two neighbouring levels, on the linear value.
     /// </summary>
     internal readonly struct LiftTable : ISrgbLinearizer
     {
@@ -62,11 +71,18 @@ namespace AstroPhotoAnalyzer
 
         internal double Gamma { get; }
 
+        /// <summary>
+        /// Builds the table of one lift: <see cref="RasterOps.PowerLut"/> of the gamma, every
+        /// entry linearised.
+        /// </summary>
+        /// <param name="gamma">
+        /// The lift's exponent, positive and finite, as <see cref="RasterOps.GammaFor"/> gives it.
+        /// </param>
         internal LiftTable(double gamma)
         {
-            // RasterOps.GammaFor da intotdeauna o gamma pozitiva si finita; orice altceva ar
-            // umple tabela cu NaN sau infinit si ar iesi din simulare ca tinte NaN, fara nicio
-            // eroare la sursa.
+            // RasterOps.GammaFor always gives a positive, finite gamma; anything else would fill
+            // the table with NaN or infinity and come out of the simulation as NaN targets, with
+            // no error at the source.
             if (!(gamma > 0) || double.IsInfinity(gamma))
                 throw new ArgumentException("gamma trebuie sa fie un numar pozitiv finit");
             Gamma = gamma;
@@ -75,7 +91,14 @@ namespace AstroPhotoAnalyzer
             for (int k = 0; k < pow.Length; k++) _lin[k] = ColorMath.SrgbToLinear(pow[k]);
         }
 
-        /// <summary>Aceeasi indexare si interpolare ca RasterOps.Gamma, pe tabela liniarizata.</summary>
+        /// <summary>
+        /// The sample lifted and linearised: the same indexing and interpolation as
+        /// <see cref="RasterOps.Gamma"/>, on the linearised table.
+        /// </summary>
+        /// <param name="s">
+        /// The encoded sRGB sample, 0..1; clamped to that range, and NaN taken as 0.
+        /// </param>
+        /// <returns>The linear luminance of the lifted sample, 0..1.</returns>
         public double Linear(float s) => RasterOps.Interpolate(_lin, s);
     }
 }
