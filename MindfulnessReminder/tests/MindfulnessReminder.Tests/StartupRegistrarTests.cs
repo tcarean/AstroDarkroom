@@ -52,15 +52,17 @@ public class StartupRegistrarTests
     }
 
     /// <summary>
-    /// The Run key may take the write while the Task Manager key or the app's own key refuses
-    /// the next one. The value already written must not stay behind without its marker: every
-    /// later start would then register it again, undoing an untick.
+    /// The Run key may take the write while the next one is refused: the Task Manager key's,
+    /// lifting a veto left without its Run value, or the marker's. The value already written
+    /// must not stay behind without its marker: every later start would then register it
+    /// again, undoing an untick.
     /// </summary>
     [Theory]
     [InlineData(StartupRegistrar.SettingsKeyPath)]
     [InlineData(RegistryAutoStartManager.StartupApprovedKeyPath)]
     public void R003_A_refusal_after_the_run_value_is_written_leaves_nothing_registered(string refusedKey)
     {
+        SetApproval(0x03);
         _registry.WriteRefusal = new UnauthorizedAccessException();
         _registry.RefusedKeyPath = refusedKey;
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
@@ -68,6 +70,37 @@ public class StartupRegistrarTests
         Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
         Assert.False(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
         Assert.False(_registry.Contains(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    /// <summary>
+    /// An approval key the account may not read is no veto (R-004), and Enable leaves it alone
+    /// (R-005), so the first run registers although that key refuses every access.
+    /// </summary>
+    [Fact]
+    public void R003_A_Task_Manager_key_the_account_may_not_read_does_not_stop_the_registration()
+    {
+        _registry.ReadRefusal = new System.Security.SecurityException();
+        _registry.RefusedKeyPath = RegistryAutoStartManager.StartupApprovedKeyPath;
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.True(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.Equal(AutoStartStatus.Enabled, autoStart.GetStatus());
+        Assert.Equal("1", _registry.GetString(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    /// <summary>
+    /// A Task Manager key that refuses writes is no obstacle while there is no veto to lift:
+    /// Enable touches it only to delete a veto it can read.
+    /// </summary>
+    [Fact]
+    public void R003_A_Task_Manager_key_that_refuses_writes_does_not_stop_the_registration_without_a_veto()
+    {
+        _registry.WriteRefusal = new UnauthorizedAccessException();
+        _registry.RefusedKeyPath = RegistryAutoStartManager.StartupApprovedKeyPath;
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.True(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.Equal(AutoStartStatus.Enabled, autoStart.GetStatus());
     }
 
     /// <summary>
@@ -176,4 +209,10 @@ public class StartupRegistrarTests
 
         Assert.Equal(AutoStartStatus.BlockedByWindows, autoStart.GetStatus());
     }
+
+    private void SetApproval(byte flag) =>
+        _registry.SetBinary(
+            RegistryAutoStartManager.StartupApprovedKeyPath,
+            ValueName,
+            [flag, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
 }

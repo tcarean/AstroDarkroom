@@ -37,8 +37,9 @@ public interface IAutoStartManager
     AutoStartStatus GetStatus();
 
     /// <summary>
-    /// Registers the app to start with Windows, lifting a Task Manager block too, so that
-    /// <see cref="GetStatus"/> reads <see cref="AutoStartStatus.Enabled"/> afterwards.
+    /// Registers the app to start with Windows and lifts a Task Manager block this account can
+    /// read, so that <see cref="GetStatus"/> reads <see cref="AutoStartStatus.Enabled"/>
+    /// afterwards. A block it may not read is left alone, and already reads as none.
     /// </summary>
     void Enable();
 

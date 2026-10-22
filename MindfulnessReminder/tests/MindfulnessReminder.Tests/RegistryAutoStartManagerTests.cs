@@ -143,6 +143,39 @@ public class RegistryAutoStartManagerTests
         Assert.Equal(AutoStartStatus.Enabled, manager.GetStatus());
     }
 
+    /// <summary>
+    /// Only a veto it can read is lifted. An approval value the account may not read, which it
+    /// may not delete either, is left alone, and the entry is still written.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(System.Security.SecurityException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(IOException))]
+    public void R005_Enable_leaves_an_approval_value_it_may_not_read_alone(Type refusal)
+    {
+        SetApproval(0x03);
+        _registry.ReadRefusal = (Exception)Activator.CreateInstance(refusal)!;
+        _registry.RefusedKeyPath = RegistryAutoStartManager.StartupApprovedKeyPath;
+        var manager = CreateManager();
+
+        manager.Enable();
+
+        Assert.True(_registry.Contains(RegistryAutoStartManager.StartupApprovedKeyPath, ValueName));
+        Assert.Equal(AutoStartStatus.Enabled, manager.GetStatus());
+    }
+
+    [Fact]
+    public void R005_Enable_leaves_an_approval_value_that_is_no_veto_in_place()
+    {
+        SetApproval(0x02);
+        var manager = CreateManager();
+
+        manager.Enable();
+
+        Assert.True(_registry.Contains(RegistryAutoStartManager.StartupApprovedKeyPath, ValueName));
+        Assert.Equal(AutoStartStatus.Enabled, manager.GetStatus());
+    }
+
     [Fact]
     public void R005_Disable_removes_the_run_entry()
     {

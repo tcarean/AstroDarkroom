@@ -27,7 +27,10 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public int WriteCount { get; private set; }
 
-    /// <summary>When set, every read throws it, as a key the account may not read does.</summary>
+    /// <summary>
+    /// When set, every read throws it, as a key the account may not read does. A write to such
+    /// a key throws it too: the real store opens a key it writes with read access as well.
+    /// </summary>
     public Exception? ReadRefusal { get; set; }
 
     /// <summary>When set, every write throws it, as a key the account may not write does.</summary>
@@ -51,7 +54,7 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public void SetString(string keyPath, string valueName, string value)
     {
-        if (RefusalFor(WriteRefusal, keyPath) is { } refusal)
+        if (WriteRefusalFor(keyPath) is { } refusal)
         {
             throw refusal;
         }
@@ -65,7 +68,7 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public void DeleteValue(string keyPath, string valueName)
     {
-        if (RefusalFor(WriteRefusal, keyPath) is { } refusal)
+        if (WriteRefusalFor(keyPath) is { } refusal)
         {
             throw refusal;
         }
@@ -75,6 +78,9 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public bool Contains(string keyPath, string valueName) =>
         _values.ContainsKey((keyPath, valueName));
+
+    private Exception? WriteRefusalFor(string keyPath) =>
+        RefusalFor(WriteRefusal, keyPath) ?? RefusalFor(ReadRefusal, keyPath);
 
     private Exception? RefusalFor(Exception? refusal, string keyPath) =>
         RefusedKeyPath is null || string.Equals(RefusedKeyPath, keyPath, StringComparison.OrdinalIgnoreCase)

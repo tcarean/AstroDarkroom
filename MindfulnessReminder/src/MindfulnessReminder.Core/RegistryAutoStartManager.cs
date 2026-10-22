@@ -81,8 +81,13 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
 
         // Turning the checkbox back on has to clear a Task Manager veto too, otherwise the
         // entry is written and still ignored. Deleting the approval value is what Windows
-        // treats as "never vetoed".
-        _registry.DeleteValue(StartupApprovedKeyPath, _valueName);
+        // treats as "never vetoed". Only a veto it can read is deleted: an approval value that
+        // is no veto needs nothing, and an approval key this account may not read, it may not
+        // write either, while GetStatus already counts its value as no veto.
+        if (IsApprovalRevoked())
+        {
+            _registry.DeleteValue(StartupApprovedKeyPath, _valueName);
+        }
     }
 
     /// <inheritdoc/>
