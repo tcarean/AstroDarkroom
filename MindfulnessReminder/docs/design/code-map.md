@@ -45,6 +45,9 @@
     production.
   - `RegistryAutoStartManager.cs` / `StartupRegistrar.cs` — auto-start over `HKCU\...\Run`,
     plus the once-only registration on first run.
+  - `RegistryRefusal.cs` — which exceptions count as Windows refusing a registry read or
+    write, so the settings store, auto-start and the tray item all treat the same ones as a
+    refusal rather than an error.
   - `WindowPlacement.cs`, `Version.cs`, `LicenseInfo.cs`, `AutoStartStatus.cs`.
 - `src/MindfulnessReminder.App/` — `net8.0-windows`, `WinExe`, `AssemblyName` is
   `MindfulnessReminder`, so the binary is `MindfulnessReminder.exe`. A **thin adapter layer**:

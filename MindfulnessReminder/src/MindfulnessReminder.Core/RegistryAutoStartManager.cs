@@ -124,8 +124,9 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     }
 
     /// <summary>
-    /// Reads the Run value. A value this account may not read counts as missing, as the
-    /// settings store reads its own values.
+    /// Reads the Run value. A value this account may not read
+    /// (<see cref="RegistryRefusal.IsReadRefusal"/>) counts as missing, as the settings store
+    /// reads its own values.
     /// </summary>
     /// <returns>The registered command, or <c>null</c> when it is missing or unreadable.</returns>
     private string? ReadRunValue()
@@ -134,7 +135,7 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
         {
             return _registry.GetString(RunKeyPath, _valueName);
         }
-        catch (Exception ex) when (IsRefusedRead(ex))
+        catch (Exception ex) when (RegistryRefusal.IsReadRefusal(ex))
         {
             return null;
         }
@@ -152,21 +153,11 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
         {
             return _registry.GetBinary(StartupApprovedKeyPath, _valueName);
         }
-        catch (Exception ex) when (IsRefusedRead(ex))
+        catch (Exception ex) when (RegistryRefusal.IsReadRefusal(ex))
         {
             return null;
         }
     }
-
-    /// <summary>Whether a registry read failed because this account may not read the key.</summary>
-    /// <param name="exception">What the read threw.</param>
-    /// <returns>
-    /// <c>true</c> for the exceptions a refused registry read raises: a
-    /// <see cref="System.Security.SecurityException"/>, an
-    /// <see cref="UnauthorizedAccessException"/> or an <see cref="IOException"/>.
-    /// </returns>
-    private static bool IsRefusedRead(Exception exception) =>
-        exception is System.Security.SecurityException or UnauthorizedAccessException or IOException;
 
     /// <summary>Puts a path between double quotes, so one with spaces stays one command.</summary>
     /// <param name="path">The executable's path.</param>

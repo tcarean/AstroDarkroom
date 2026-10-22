@@ -67,7 +67,7 @@ public sealed class RegistrySettingsStore : ISettingsStore
         {
             return Read();
         }
-        catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+        catch (Exception ex) when (RegistryRefusal.IsReadRefusal(ex))
         {
             // A key this account may not read (a policy, security software) is no more a
             // reason to fail to start than a missing one: the defaults stand.

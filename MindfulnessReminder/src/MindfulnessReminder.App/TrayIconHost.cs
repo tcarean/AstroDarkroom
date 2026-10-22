@@ -152,7 +152,7 @@ internal sealed class TrayIconHost : IDisposable
                 _autoStart.Enable();
             }
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
+        catch (Exception ex) when (RegistryRefusal.IsWriteRefusal(ex))
         {
             ShowBalloon(
                 VersionInfo.Name,

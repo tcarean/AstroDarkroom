@@ -57,6 +57,9 @@ public sealed class StartupRegistrar
     /// <returns><c>true</c> when this call performed the initial registration.</returns>
     public bool EnsureRegisteredOnFirstRun()
     {
+        // Set once this run may write a Run value that a refusal must take back.
+        var undoOnRefusal = false;
+
         try
         {
             if (_registry.GetString(SettingsKeyPath, RegisteredMarkerValueName) is not null)
@@ -64,31 +67,24 @@ public sealed class StartupRegistrar
                 _autoStart.RepairPathIfNeeded();
                 return false;
             }
-        }
-        catch (Exception ex) when (IsRefusal(ex))
-        {
-            // A key this account may not read or write (a policy, security software) is not a
-            // reason to fail to start: the next start tries again.
-            return false;
-        }
 
-        // An entry that was there before the first run was not written by it, so a refusal
-        // below must not take it away. GetStatus does not throw for a value it may not read.
-        var foundEntry = _autoStart.GetStatus() is not AutoStartStatus.Disabled;
+            // An entry that was there before the first run was not written by it, so a refusal
+            // below must not take it away.
+            undoOnRefusal = _autoStart.GetStatus() is AutoStartStatus.Disabled;
 
-        try
-        {
             _autoStart.Enable();
             _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
             return true;
         }
         catch (Exception ex) when (IsRefusal(ex))
         {
+            // A key this account may not read or write (a policy, security software) is not a
+            // reason to fail to start: no marker is written, so the next start tries again.
             // Enable may have written the Run value before the Task Manager key or the marker's
             // key refused. Left there without its marker, it would be registered again at every
             // start, undoing an untick. A click on the tray item reports a refusal of the Run or
             // Task Manager key.
-            if (!foundEntry)
+            if (undoOnRefusal)
             {
                 TryDisable();
             }
@@ -113,12 +109,15 @@ public sealed class StartupRegistrar
         }
     }
 
-    /// <summary>Whether a registry access failed because this account may not make it.</summary>
+    /// <summary>
+    /// Whether a registry access of the registration failed because this account may not make
+    /// it. The registration reads and writes in one block, so either refusal counts.
+    /// </summary>
     /// <param name="exception">What the access threw.</param>
     /// <returns>
-    /// <c>true</c> for an <see cref="UnauthorizedAccessException"/> or a
-    /// <see cref="System.Security.SecurityException"/>.
+    /// <c>true</c> for a refused read or a refused write, as <see cref="RegistryRefusal"/>
+    /// defines them.
     /// </returns>
     private static bool IsRefusal(Exception exception) =>
-        exception is UnauthorizedAccessException or System.Security.SecurityException;
+        RegistryRefusal.IsReadRefusal(exception) || RegistryRefusal.IsWriteRefusal(exception);
 }
