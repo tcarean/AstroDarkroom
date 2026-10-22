@@ -18,7 +18,8 @@
   - `DividerModel.cs` — the split line as a fraction of viewport width, plus hit testing.
   - `ZoomLadder.cs` — the discrete stops the `+`/`−` buttons step through. The wheel zooms
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
-    therefore search rather than index. See ADR 0020.
+    therefore search rather than index. See ADR 0020. Where `Previous` would step up, under
+    the lowest stop, `Viewport.ZoomOut` goes to the floor instead (ADR 0033).
   - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on. See ADR 0022.
   - `FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs` — the project's own FITS reader:
     where the image is in the file and how it is stored (`FitsImageLayout`), how a value

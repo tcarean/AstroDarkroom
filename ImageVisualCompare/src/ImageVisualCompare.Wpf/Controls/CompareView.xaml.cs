@@ -182,7 +182,7 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Zooms out one step as <see cref="Core.Viewport.ZoomOut"/> does, anchored at the centre of
-    /// the view; below the lowest stop that step zooms in.
+    /// the view; when no stop is below the scale it goes to the fit, never in.
     /// </summary>
     public void ZoomOut() => ZoomAtCentre(step: -1);
 

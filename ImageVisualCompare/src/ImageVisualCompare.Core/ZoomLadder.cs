@@ -62,7 +62,8 @@ public static class ZoomLadder
     /// </param>
     /// <returns>
     /// The highest stop strictly below <paramref name="scale"/>, or the lowest stop when none
-    /// is, which for a scale under the ladder is a step up.
+    /// is, which for a scale under the ladder is a step up; <see cref="Viewport.ZoomOut"/> does
+    /// not take that step, and goes to its floor instead.
     /// </returns>
     public static double Previous(double scale)
     {
