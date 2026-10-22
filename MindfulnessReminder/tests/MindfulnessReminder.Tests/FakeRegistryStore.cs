@@ -63,8 +63,15 @@ internal sealed class FakeRegistryStore : IRegistryStore
     public void SetBinary(string keyPath, string valueName, byte[] value) =>
         _values[(keyPath, valueName)] = value;
 
-    public void DeleteValue(string keyPath, string valueName) =>
+    public void DeleteValue(string keyPath, string valueName)
+    {
+        if (RefusalFor(WriteRefusal, keyPath) is { } refusal)
+        {
+            throw refusal;
+        }
+
         _values.Remove((keyPath, valueName));
+    }
 
     public bool Contains(string keyPath, string valueName) =>
         _values.ContainsKey((keyPath, valueName));

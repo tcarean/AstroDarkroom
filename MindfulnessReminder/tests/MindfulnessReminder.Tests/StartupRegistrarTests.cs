@@ -51,6 +51,41 @@ public class StartupRegistrarTests
         Assert.False(_registry.Contains(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
     }
 
+    /// <summary>
+    /// The Run key may take the write while the Task Manager key or the app's own key refuses
+    /// the next one. The value already written must not stay behind without its marker: every
+    /// later start would then register it again, undoing an untick.
+    /// </summary>
+    [Theory]
+    [InlineData(StartupRegistrar.SettingsKeyPath)]
+    [InlineData(RegistryAutoStartManager.StartupApprovedKeyPath)]
+    public void R003_A_refusal_after_the_run_value_is_written_leaves_nothing_registered(string refusedKey)
+    {
+        _registry.WriteRefusal = new UnauthorizedAccessException();
+        _registry.RefusedKeyPath = refusedKey;
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.False(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
+        Assert.False(_registry.Contains(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    /// <summary>
+    /// A Run value that was there before the first run was not written by it, so a refusal
+    /// of the marker must not take it away.
+    /// </summary>
+    [Fact]
+    public void R003_A_refused_first_run_leaves_an_entry_it_found_in_place()
+    {
+        _registry.SetString(RegistryAutoStartManager.RunKeyPath, ValueName, @"""D:\Old\App.exe""");
+        _registry.WriteRefusal = new UnauthorizedAccessException();
+        _registry.RefusedKeyPath = StartupRegistrar.SettingsKeyPath;
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.True(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
+    }
+
     [Fact]
     public void R006_A_refused_repair_does_not_stop_the_app()
     {
