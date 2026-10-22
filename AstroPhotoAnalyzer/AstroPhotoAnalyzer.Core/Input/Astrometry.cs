@@ -15,30 +15,43 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Astrometry.cs - geometria sferei: vectori unitate, distanta unghiulara, precesia
-// B1950 -> J2000 a catalogului.
+// Astrometry.cs - the geometry of the sphere: unit vectors, angular distance, the B1950 -> J2000
+// precession of the catalogue.
 //
-// Atat si nimic mai mult: unealta nu rezolva campuri, nu cauta stele, nu corecteaza
-// nimic. Primeste un WCS gata facut de Siril (Wcs.cs) si un catalog cu coordonate din
-// 1950 (DarkNebulaCatalogue.cs), si trebuie doar sa spuna daca centrul unei dale cade in
-// discul unui nor. La 42"/pixel si dale de 32 px, o eroare de un minut de arc nu se vede.
+// That and nothing more: the tool does not solve fields, does not look for stars, does not
+// correct anything. It gets a WCS made by Siril (Wcs.cs) and a catalogue with coordinates from
+// 1950 (DarkNebulaCatalogue.cs), and it only has to say whether the centre of a patch falls in a
+// cloud's disc. At 42"/pixel and 32 px patches, an error of a minute of arc does not show.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The geometry of the sphere that the catalogue and the band need: directions, distances,
+    /// discs, the galactic latitude and the precession, all in degrees.
+    /// </summary>
     internal static class Astrometry
     {
         internal const double Deg = Math.PI / 180;
 
-        /// <summary>Vectorul unitate al directiei (RA, Dec), in grade.</summary>
+        /// <summary>The unit vector of the direction (RA, Dec), in degrees.</summary>
+        /// <param name="raDeg">The right ascension, in degrees.</param>
+        /// <param name="decDeg">The declination, in degrees.</param>
+        /// <returns>
+        /// (X, Y, Z): X towards RA 0 on the equator, Y towards RA 90, Z towards the pole.
+        /// </returns>
         internal static (double X, double Y, double Z) UnitVector(double raDeg, double decDeg)
         {
             double ra = raDeg * Deg, dec = decDeg * Deg, c = Math.Cos(dec);
             return (c * Math.Cos(ra), c * Math.Sin(ra), Math.Sin(dec));
         }
 
-        /// <summary>(RA, Dec) in grade, RA in [0, 360), din orice vector nenul.</summary>
+        /// <summary>(RA, Dec) in degrees, RA in [0, 360), from any non-zero vector.</summary>
+        /// <param name="x">The component towards RA 0 on the equator.</param>
+        /// <param name="y">The component towards RA 90 on the equator.</param>
+        /// <param name="z">The component towards the north pole.</param>
+        /// <returns>RA in [0, 360) and Dec in [-90, 90], in degrees.</returns>
         internal static (double Ra, double Dec) FromVector(double x, double y, double z)
         {
             double ra = Math.Atan2(y, x) / Deg;
@@ -47,7 +60,12 @@ namespace AstroPhotoAnalyzer
             return (ra, dec);
         }
 
-        /// <summary>Distanta unghiulara intre doua directii, in grade.</summary>
+        /// <summary>The angular distance between two directions, in degrees.</summary>
+        /// <param name="ra1">The first direction's right ascension, in degrees.</param>
+        /// <param name="dec1">The first direction's declination, in degrees.</param>
+        /// <param name="ra2">The second direction's right ascension, in degrees.</param>
+        /// <param name="dec2">The second direction's declination, in degrees.</param>
+        /// <returns>The distance, 0..180 degrees.</returns>
         internal static double SeparationDeg(double ra1, double dec1, double ra2, double dec2)
         {
             var a = UnitVector(ra1, dec1);
@@ -56,13 +74,19 @@ namespace AstroPhotoAnalyzer
             return Math.Acos(dot) / Deg;
         }
 
-        /// <summary>Raza, in grade, a discului cu aria data in grade patrate.</summary>
+        /// <summary>
+        /// The radius, in degrees, of the disc with the given area in square degrees.
+        /// </summary>
+        /// <param name="areaDeg2">The area, in square degrees; a negative one counts as 0.</param>
+        /// <returns>
+        /// sqrt(area / pi), in degrees: the flat disc, close enough at a cloud's size.
+        /// </returns>
         internal static double RadiusOfArea(double areaDeg2) => Math.Sqrt(Math.Max(0, areaDeg2) / Math.PI);
 
-        // Matricea de rotatie FK4 (B1950) -> FK5 (J2000), fara termenii E si fara miscare
-        // proprie (Aoki et al. 1983, forma uzuala din SLALIB/astropy). Fata de coloanele ICRS
-        // calculate de VizieR pentru acelasi catalog, abaterea e sub 0.02' pe toate cele 1787
-        // de randuri (masurat pe 2026-10-02, ADR 0025).
+        // The rotation matrix FK4 (B1950) -> FK5 (J2000), without the E-terms and without proper
+        // motion (Aoki et al. 1983, the usual form of SLALIB/astropy). Against the ICRS columns
+        // VizieR computes for the same catalogue, the deviation is under 0.02' on all 1787 rows
+        // (measured on 2026-10-02, ADR 0025).
         static readonly double[,] B1950ToJ2000Matrix =
         {
             { 0.9999256782, -0.0111820611, -0.0048579477 },
@@ -70,9 +94,10 @@ namespace AstroPhotoAnalyzer
             { 0.0048579479, -0.0000271474, 0.9999881997 },
         };
 
-        // Rotatia ecuatorial J2000 -> galactic (polul nord galactic la RA 192.859, Dec 27.128,
-        // originea longitudinii la RA 266.405, Dec -28.936): matricea standard, aceeasi in
-        // astropy si SLALIB. Unealta foloseste doar latitudinea b: banda Caii Lactee e |b| mic.
+        // The rotation equatorial J2000 -> galactic (the north galactic pole at RA 192.859, Dec
+        // 27.128, the origin of longitude at RA 266.405, Dec -28.936): the standard matrix, the
+        // same in astropy and SLALIB. The tool uses only the latitude b: the Milky Way's band is
+        // small |b|.
         static readonly double[,] EquatorialToGalacticMatrix =
         {
             { -0.0548755604, -0.8734370902, -0.4838350155 },
@@ -80,7 +105,10 @@ namespace AstroPhotoAnalyzer
             { -0.8676661490, -0.1980763734, 0.4559837762 },
         };
 
-        /// <summary>Latitudinea galactica, in grade, a directiei (RA, Dec) J2000.</summary>
+        /// <summary>The galactic latitude, in degrees, of the J2000 direction (RA, Dec).</summary>
+        /// <param name="raDeg">The right ascension, J2000, in degrees.</param>
+        /// <param name="decDeg">The declination, J2000, in degrees.</param>
+        /// <returns>The latitude b, -90..90 degrees.</returns>
         internal static double GalacticLatitude(double raDeg, double decDeg)
         {
             var v = UnitVector(raDeg, decDeg);
@@ -89,7 +117,10 @@ namespace AstroPhotoAnalyzer
             return Math.Asin(Math.Clamp(z, -1, 1)) / Deg;
         }
 
-        /// <summary>Precesia unei directii din B1950 in J2000, in grade.</summary>
+        /// <summary>The precession of a direction from B1950 to J2000, in degrees.</summary>
+        /// <param name="raDeg">The right ascension, B1950, in degrees.</param>
+        /// <param name="decDeg">The declination, B1950, in degrees.</param>
+        /// <returns>RA in [0, 360) and Dec, J2000, in degrees.</returns>
         internal static (double Ra, double Dec) B1950ToJ2000(double raDeg, double decDeg)
         {
             var v = UnitVector(raDeg, decDeg);

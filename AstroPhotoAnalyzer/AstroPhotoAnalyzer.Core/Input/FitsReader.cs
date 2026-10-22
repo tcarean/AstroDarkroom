@@ -15,21 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FitsReader.cs - cititor FITS propriu (fara dependinte), pornit din cel al FlatCheck.
-// Header din carduri de 80 octeti in blocuri de 2880, apoi date binare big-endian.
+// FitsReader.cs - our own FITS reader (no dependencies), started from FlatCheck's.
+// The header as 80-byte cards in 2880-byte blocks, then big-endian binary data.
 //
-// CE S-A PASTRAT din FlatCheck: parsarea headerului, BZERO/BSCALE, sarirea peste HDU-uri
-// fara imagine, toate tipurile BITPIX. CE S-A SCHIMBAT:
-//   - se citeste in flux, nu prin File.ReadAllBytes: un FITS float RGB de 23 MP are 277
-//     MB, si a-l tine de doua ori in memorie (octeti + float) doar ca sa fie parsat e o
-//     risipa care se simte;
-//   - planurile se PASTREAZA (1 sau 3), nu se mediaza intr-unul singur - aici culoarea
-//     e obiect de masura, nu zgomot;
-//   - valorile se normalizeaza in 0..1 dupa tipul din fisier, ca TIFF-ul si PNG-ul;
-//   - randurile se rastoarna pe ROWORDER = 'BOTTOM-UP' (asa scrie Siril), ca "coltul
-//     dreapta-jos" din raport sa fie acelasi colt ca intr-un TIFF.
-// CE S-A TAIAT: CFA, focala, aparat, obiectiv - o imagine finita n-are mozaic si nu
-// se compara cu profile de vignetare.
+// WHAT WAS KEPT from FlatCheck: the header parsing, BZERO/BSCALE, skipping the HDUs without an
+// image, every BITPIX type. WHAT CHANGED:
+//   - it reads as a stream, not through File.ReadAllBytes: a 23 MP RGB float FITS is 277 MB,
+//     and holding it twice in memory (bytes + float) just to parse it is a waste that shows;
+//   - the planes are KEPT (1 or 3), not averaged into one - here colour is an object of
+//     measurement, not noise;
+//   - the values are normalised to 0..1 by the type in the file, like the TIFF and the PNG;
+//   - the rows are flipped on ROWORDER = 'BOTTOM-UP' (that is how Siril writes), so that the
+//     report's "colt dreapta-jos" is the same corner as in a TIFF.
+// WHAT WAS CUT: CFA, focal length, camera, lens - a finished image has no mosaic and is not
+// compared with vignetting profiles.
 
 using System;
 using System.Buffers.Binary;
@@ -40,12 +39,17 @@ using System.Text;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The hand-written FITS reader (.fit, .fits, .fts): the first HDU with a 2D image or one of 3
+    /// planes, every BITPIX, BZERO and BSCALE, ROWORDER and the WCS.
+    /// </summary>
     internal sealed class FitsReader : IFrameReader
     {
         static readonly string[] Exts = { ".fit", ".fits", ".fts" };
 
         public IReadOnlyList<string> Extensions => Exts;
 
+        /// <inheritdoc/>
         public bool Handles(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -53,6 +57,15 @@ namespace AstroPhotoAnalyzer
             return Array.IndexOf(Exts, ext) >= 0;
         }
 
+        /// <summary>
+        /// Reads the first HDU that holds an image: its samples normalised to 0..1 by the BITPIX
+        /// after BZERO and BSCALE, the values outside clipped and counted in the note, the rows
+        /// flipped when ROWORDER is BOTTOM-UP, and the WCS attached when the header has one.
+        /// Throws, with a message for the user, on a file with no image, cut short, with a
+        /// BITPIX it does not know, or with more than 3 axes or planes other than 1 or 3.
+        /// </summary>
+        /// <param name="path">The FITS file.</param>
+        /// <returns>The raster, with its <see cref="SourceInfo"/>.</returns>
         public Raster Load(string path)
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
@@ -75,10 +88,15 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Doar antetul primului HDU cu imagine, fara date: pentru un FITS al carui WCS se
-        /// imprumuta altui fisier (R-027). Intoarce si latimea, inaltimea si rasturnarea,
-        /// ca sa se verifice geometria.
+        /// Only the header of the first HDU with an image, without its data: for a FITS whose WCS
+        /// is lent to another file (R-027). Also returns the width, the height and the flip, so
+        /// that the geometry can be checked. Throws on a file with no image or cut short.
         /// </summary>
+        /// <param name="path">The FITS file.</param>
+        /// <returns>
+        /// The header (keyword -> value), the width and height in pixels, and whether ROWORDER
+        /// is BOTTOM-UP.
+        /// </returns>
         internal static (IReadOnlyDictionary<string, string> Header, int W, int H, bool BottomUp) ReadImageHeader(string path)
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
@@ -98,13 +116,22 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>Whether the header's ROWORDER is 'BOTTOM-UP', in any case.</summary>
+        /// <param name="hdr">The header, keyword -> value.</param>
+        /// <returns><c>true</c> when the rows are stored from the bottom up.</returns>
         static bool IsBottomUp(IReadOnlyDictionary<string, string> hdr)
             => string.Equals(HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        /// Primul HDU cu o imagine 2D sau 3D. Intoarce si headerul lui, BITPIX-ul,
-        /// numarul de planuri din fisier si o nota pentru raport (sau null).
+        /// The first HDU with a 2D or 3D image. Also returns its header, its BITPIX, the number of
+        /// planes in the file and a note for the report (or null). Throws as
+        /// <see cref="Load"/> does.
         /// </summary>
+        /// <param name="s">The stream, at the start of the file; read forward only.</param>
+        /// <returns>
+        /// The raster without its <see cref="Raster.Source"/>, the image HDU's header, its BITPIX,
+        /// its planes (1 or 3) and the note: the values clipped, the rows flipped, or null.
+        /// </returns>
         internal static (Raster Raster, IReadOnlyDictionary<string, string> Header, int Bitpix, int Planes, string Note)
             LoadFrom(Stream s)
         {
@@ -117,10 +144,10 @@ namespace AstroPhotoAnalyzer
                 int bitpix = HInt(hdr, "BITPIX", 0);
                 int naxis = HInt(hdr, "NAXIS", 0);
 
-                // Un HDU cu NAXIS = 0 (primarul gol al unui fisier cu extensii) n-are date
-                // DELOC - nu "un pixel". Produsul gol ar da 1 si s-ar sari peste un bloc
-                // de 2880 care nu exista, si urmatorul header ar fi citit din mijlocul
-                // imaginii.
+                // An HDU with NAXIS = 0 (the empty primary of a file with extensions) has NO data
+                // AT ALL - not "one pixel". The empty product would give 1, a block of 2880 that
+                // does not exist would be skipped, and the next header would be read from the
+                // middle of the image.
                 long npix = naxis == 0 ? 0 : 1;
                 for (int ax = 1; ax <= naxis; ax++) npix *= HInt(hdr, "NAXIS" + ax, 1);
                 int bytesPer = Math.Abs(bitpix) / 8;
@@ -153,12 +180,22 @@ namespace AstroPhotoAnalyzer
                     return (raster, hdr, bitpix, n3, note);
                 }
 
-                // HDU fara imagine utila: sar peste blocurile lui de date si continui.
+                // An HDU without a usable image: skip its data blocks and go on.
                 if (!SkipExact(s, dataBlocks)) throw new Exception("FITS: fisier trunchiat.");
             }
         }
 
-        /// <summary>Cardurile pana la END, ca dictionar; null la sfarsit de fisier.</summary>
+        /// <summary>
+        /// The cards up to END, as a dictionary; null at the end of the file. Cards without a
+        /// value (HISTORY, COMMENT, blank) are skipped, and a keyword met twice keeps its last
+        /// value. Throws when the file ends inside a header.
+        /// </summary>
+        /// <param name="s">The stream, at the first block of a header.</param>
+        /// <param name="block">A buffer of 2880 bytes, overwritten.</param>
+        /// <returns>
+        /// Keyword -> value, a string without its quotes and trailing spaces, a number or a
+        /// logical as written; null when the stream ends before the header's first block.
+        /// </returns>
         internal static Dictionary<string, string> ReadHeader(Stream s, byte[] block)
         {
             var hdr = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -178,9 +215,9 @@ namespace AstroPhotoAnalyzer
                     if (key == "END") return hdr;
                     if (key.Length == 0 || card[8] != '=') continue;
 
-                    // Valoarea: pana la '/', dar un '/' dintr-un sir intre ghilimele nu e
-                    // comentariu. Sirurile se dau fara ghilimele si fara spatiile din
-                    // interior de la sfarsit (FITS le umple cu spatii).
+                    // The value: up to '/', but a '/' inside a quoted string is not a comment.
+                    // Strings are given without their quotes and without the trailing spaces
+                    // inside them (FITS pads them with spaces).
                     string value = card.Substring(10);
                     string t = value.TrimStart();
                     if (t.StartsWith("'"))
@@ -200,10 +237,17 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Datele, plan dupa plan (FITS e plane-sequential), decodate in bucati de 1 MB.
-        /// Intoarce cate valori au iesit din [0, 1] si au fost taiate - pe int nu se
-        /// intampla, pe float se poate.
+        /// The data, plane after plane (FITS is plane-sequential), decoded in chunks of 1 MB.
+        /// Returns how many values fell outside [0, 1] and were clipped - it does not happen on
+        /// int, it can on float. Throws when the data are cut short.
         /// </summary>
+        /// <param name="s">The stream, at the first byte of the data.</param>
+        /// <param name="r">The raster to fill, already of the header's size.</param>
+        /// <param name="bitpix">The header's BITPIX: 8, 16, 32, -32 or -64.</param>
+        /// <param name="bzero">The header's BZERO, 0 when absent.</param>
+        /// <param name="bscale">The header's BSCALE, 1 when absent.</param>
+        /// <param name="bottomUp">Whether the file's rows run from the bottom up.</param>
+        /// <returns>The number of samples clipped to 0 or 1, NaN ones counted at 0.</returns>
         static long ReadData(Stream s, Raster r, int bitpix, double bzero, double bscale, bool bottomUp)
         {
             int bytesPer = Math.Abs(bitpix) / 8;
@@ -228,9 +272,10 @@ namespace AstroPhotoAnalyzer
                 for (int k = 0; k < want; k++, i++)
                 {
                     double v = (bzero + bscale * ReadSample(buf, k * bytesPer, bitpix)) / scale;
-                    // Un NaN (Siril il lasa dupa unele operatii pe float) nu e nici sub 0, nici
-                    // peste 1: fara randul asta ar trece in raster si ar rupe orice tabela indexata
-                    // pe nivel (RasterOps.Gamma). Se trateaza ca valoare taiata, la 0.
+                    // A NaN (Siril leaves one after some operations on float) is neither under 0
+                    // nor over 1: without this line it would pass into the raster and break any
+                    // table indexed by level (RasterOps.Gamma). It is treated as a clipped value,
+                    // at 0.
                     if (double.IsNaN(v)) { v = 0; clipped++; }
                     else if (v < 0) { v = 0; clipped++; }
                     else if (v > 1) { v = 1; clipped++; }
@@ -247,6 +292,14 @@ namespace AstroPhotoAnalyzer
             return clipped;
         }
 
+        /// <summary>
+        /// One big-endian sample of the given BITPIX, before BZERO and BSCALE. Throws on a BITPIX
+        /// other than 8, 16, 32, -32 and -64.
+        /// </summary>
+        /// <param name="b">The bytes.</param>
+        /// <param name="p">The sample's first byte in <paramref name="b"/>.</param>
+        /// <param name="bitpix">8 unsigned; 16 and 32 signed; -32 and -64 float.</param>
+        /// <returns>The stored value, as a double.</returns>
         internal static double ReadSample(byte[] b, int p, int bitpix)
         {
             switch (bitpix)
@@ -260,6 +313,13 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>
+        /// Reads exactly <paramref name="count"/> bytes, over as many reads as it takes.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="buf">The buffer, filled from its start.</param>
+        /// <param name="count">The bytes to read, at most the buffer's length.</param>
+        /// <returns><c>false</c> when the stream ends first.</returns>
         static bool ReadExact(Stream s, byte[] buf, int count)
         {
             int got = 0;
@@ -272,6 +332,16 @@ namespace AstroPhotoAnalyzer
             return true;
         }
 
+        /// <summary>
+        /// Skips <paramref name="count"/> bytes: by seeking where the stream can, by reading
+        /// elsewhere.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="count">The bytes to skip, not negative.</param>
+        /// <returns>
+        /// <c>false</c> when the stream ends first; a stream that can seek is then left where it
+        /// was.
+        /// </returns>
         static bool SkipExact(Stream s, long count)
         {
             if (count == 0) return true;
@@ -291,10 +361,27 @@ namespace AstroPhotoAnalyzer
             return true;
         }
 
+        /// <summary>A header value as an integer, read in the invariant culture.</summary>
+        /// <param name="h">The header, keyword -> value.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">The value when the keyword is absent or not an integer.</param>
+        /// <returns>The integer, or <paramref name="def"/>.</returns>
         internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
             => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+
+        /// <summary>A header value as a real number, read in the invariant culture.</summary>
+        /// <param name="h">The header, keyword -> value.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">The value when the keyword is absent or not a number.</param>
+        /// <returns>The number, or <paramref name="def"/>.</returns>
         internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
+
+        /// <summary>A header value as it was read: a string without its quotes.</summary>
+        /// <param name="h">The header, keyword -> value.</param>
+        /// <param name="k">The keyword.</param>
+        /// <param name="def">The value when the keyword is absent.</param>
+        /// <returns>The value, or <paramref name="def"/>.</returns>
         internal static string HStr(IReadOnlyDictionary<string, string> h, string k, string def)
             => h.TryGetValue(k, out var v) ? v : def;
     }

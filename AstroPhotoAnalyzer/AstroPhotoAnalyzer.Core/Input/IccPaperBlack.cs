@@ -15,24 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IccPaperBlack.cs - Dmax-ul unei hartii pe o imprimanta, citit din profilul ICC al
-// perechii: negrul dispozitivului (toate canalele la capatul intunecat) trecut prin tabela
-// colorimetrica a profilului, relativ la albul hartiei (ADR 0028, ADR 0030).
+// IccPaperBlack.cs - the Dmax of a paper on a printer, read from the pair's ICC profile: the
+// device's black (every channel at its dark end) passed through the profile's colorimetric
+// table, relative to the paper's white (ADR 0028, ADR 0030).
 //
-// DE CE COLORIMETRIC RELATIV SI NIMIC ALTCEVA. Tabela colorimetrica e masuratoarea: ce
-// culoare iese pe hartie. Cea perceptuala e o conventie - pune negrul oricarui profil pe
-// mediul de referinta ICC, L* 3.14 (Dmax 2.46), fie ca hartia e baryta sau canvas - iar
-// intentia scrisa in antetul profilului e de obicei tocmai cea perceptuala. Aici intentia
-// se cere explicit; un test pe un profil cu negrul slab pica daca cineva o schimba.
+// WHY RELATIVE COLORIMETRIC AND NOTHING ELSE. The colorimetric table is the measurement: what
+// colour comes out on the paper. The perceptual one is a convention - it puts the black of any
+// profile on the ICC reference medium, L* 3.14 (Dmax 2.46), whether the paper is baryta or
+// canvas - and the intent written in the profile's header is usually the perceptual one. Here
+// the intent is asked for explicitly; a test on a profile with a weak black fails if someone
+// changes it.
 //
-// DE CE RELATIV LA ALBUL HARTIEI. Albul imaginii se tipareste ca albul hartiei, deci
-// intrebarea "ce L* din imagine cade sub negru" se pune pe scara aceea, nu pe cea absoluta
-// (care ar da cu ~0.03 mai mult pe o baryta).
+// WHY RELATIVE TO THE PAPER'S WHITE. The image's white prints as the paper's white, so the
+// question "which L* of the image falls under black" is asked on that scale, not on the
+// absolute one (which would give ~0.03 more on a baryta).
 //
-// Tabelele le evalueaza Wacton.Unicolour (v2 lut8/lut16, v4 lutAToB); numele profilului il
-// da IccProfileInfo, din tagul 'desc'. Pachetul nu arunca pe un fisier care nu e profil:
-// pune o eroare in configuratie si calculeaza mai departe "naiv" (L* 100) - de aceea antetul
-// se verifica aici, inainte, si eroarea lui dupa.
+// The tables are evaluated by Wacton.Unicolour (v2 lut8/lut16, v4 lutAToB); the profile's name
+// comes from IccProfileInfo, from the 'desc' tag. The package does not throw on a file that is
+// not a profile: it puts an error in the configuration and goes on computing "naively" (L* 100)
+// - which is why the header is checked here, beforehand, and its error after.
 
 using System;
 using System.Collections.Generic;
@@ -44,36 +45,57 @@ using Wacton.Unicolour.Icc;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Ce spune un profil ICC despre negrul hartiei, sau de ce nu poate spune.</summary>
+    /// <summary>What an ICC profile says about the paper's black, or why it cannot say.</summary>
     internal sealed record IccBlack
     {
         internal string Path { get; init; }
 
-        /// <summary>Numele din tagul 'desc'; numele fisierului cand profilul n-are unul.</summary>
+        /// <summary>
+        /// The name in the 'desc' tag; the file's name when the profile has none.
+        /// </summary>
         internal string Description { get; init; }
 
-        /// <summary>De ce nu s-a putut citi negrul, pentru om; null cand s-a putut.</summary>
+        /// <summary>Why the black could not be read, for the user; null when it could.</summary>
         internal string Problem { get; init; }
         internal bool Readable => Problem == null;
 
-        /// <summary>O rezerva despre cifra, pentru om (profilele CMYK); null cand nu e niciuna.</summary>
+        /// <summary>
+        /// A reservation about the figure, for the user (the CMYK profiles); null when there is
+        /// none.
+        /// </summary>
         internal string Note { get; init; }
 
-        /// <summary>Negrul dispozitivului, relativ la albul hartiei.</summary>
+        /// <summary>The device's black, relative to the paper's white.</summary>
         internal double BlackLstar { get; init; }
 
-        /// <summary>-log10(Y) al aceluiasi negru, rotunjit la cele doua zecimale cu care se afiseaza un Dmax.</summary>
+        /// <summary>
+        /// -log10(Y) of the same black, rounded to the two decimals a Dmax is shown with.
+        /// </summary>
         internal double Dmax { get; init; }
     }
 
+    /// <summary>
+    /// Reads the Dmax of a paper on a printer from the pair's ICC profile, and lists the printer
+    /// profiles installed.
+    /// </summary>
     internal static class IccPaperBlack
     {
-        /// <summary>Folderul in care Windows tine profilele instalate; nu exista pe alt sistem.</summary>
+        /// <summary>
+        /// The folder where Windows keeps the installed profiles; it does not exist on another
+        /// system.
+        /// </summary>
         internal static string InstalledFolder
             => System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "spool", "drivers", "color");
 
         static readonly string[] Extensions = { ".icc", ".icm" };
 
+        /// <summary>
+        /// The paper's black in the profile of a file, as <see cref="Read(byte[], string)"/>
+        /// reads it; a file that cannot be read gives a <see cref="IccBlack.Problem"/>, not an
+        /// exception.
+        /// </summary>
+        /// <param name="path">The profile's file.</param>
+        /// <returns>The black and its Dmax, or the problem.</returns>
         internal static IccBlack Read(string path)
         {
             byte[] bytes;
@@ -88,6 +110,17 @@ namespace AstroPhotoAnalyzer
             return Read(bytes, path);
         }
 
+        /// <summary>
+        /// The paper's black in a profile's bytes: the header checked by hand (the 'acsp'
+        /// signature, the class 'prtr', the device space RGB or CMYK), then the device's black
+        /// through the profile's relative colorimetric table, in XYZ at D50. Every refusal, the
+        /// package's errors included, is a <see cref="IccBlack.Problem"/>, not an exception.
+        /// </summary>
+        /// <param name="bytes">The file's bytes; null is not a profile.</param>
+        /// <param name="path">
+        /// The file's path, kept on the result and named in its description.
+        /// </param>
+        /// <returns>The black and its Dmax, or the problem.</returns>
         internal static IccBlack Read(byte[] bytes, string path)
         {
             string file = System.IO.Path.GetFileName(path);
@@ -98,7 +131,7 @@ namespace AstroPhotoAnalyzer
             if (deviceClass != "prtr")
                 return result with { Problem = $"nu e un profil de imprimanta (clasa '{Printable(deviceClass)}'); negrul hartiei e in profilul hartiei pe imprimanta ei" };
 
-            // Negrul dispozitivului: fara lumina pe RGB, toate cernelurile pe CMYK.
+            // The device's black: no light on RGB, every ink on CMYK.
             double[] black;
             string note = null;
             switch (space)
@@ -118,8 +151,8 @@ namespace AstroPhotoAnalyzer
                 if (!string.IsNullOrEmpty(icc.Error)) return result with { Problem = "profilul nu se poate citi: " + icc.Error };
                 var colour = new Unicolour(new Configuration(xyzConfig: XyzConfiguration.D50, iccConfig: icc), new Channels(black));
                 double y = colour.Xyz.Y;
-                // Pachetul inghite o tabela stricata si intoarce un Y oarecare; un negru care nu e
-                // intre 0 si alb, sau un Dmax pe care --dmax l-ar refuza, e semnul ei.
+                // The package swallows a damaged table and returns some Y; a black that is not
+                // between 0 and the white, or a Dmax that --dmax would refuse, is its sign.
                 if (double.IsNaN(y) || y <= 0 || y >= 1)
                     return result with { Problem = "tabela colorimetrica a profilului nu da un negru intre 0 si albul hartiei; profilul e probabil stricat" };
                 double dmax = Math.Round(-Math.Log10(y), 2);
@@ -129,17 +162,23 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e)
             {
-                // Pachetul arunca ArgumentException cu cauza inauntru pe un profil stricat.
+                // The package throws ArgumentException, with the cause inside, on a damaged
+                // profile.
                 return result with { Problem = "profilul nu se poate citi: " + (e.InnerException ?? e).Message };
             }
         }
 
         /// <summary>
-        /// Profilele de imprimanta din <paramref name="folder"/> (implicit cel al Windows-ului),
-        /// dupa nume. Celelalte clase (monitor, spatiu de lucru) si fisierele care nu sunt
-        /// profile se sar; un profil de imprimanta care nu se poate citi ramane in lista, cu
-        /// motivul lui. Un folder absent da o lista goala.
+        /// The printer profiles in <paramref name="folder"/> (by default Windows' own), by name.
+        /// The other classes (monitor, working space) and the files that are not profiles are
+        /// skipped; a printer profile whose black cannot be read stays in the list, with its
+        /// reason. An absent folder gives an empty list.
         /// </summary>
+        /// <param name="folder">The folder; null for <see cref="InstalledFolder"/>.</param>
+        /// <returns>
+        /// The profiles read, ordered by description then path; empty when the folder is absent
+        /// or cannot be listed.
+        /// </returns>
         internal static IReadOnlyList<IccBlack> Installed(string folder = null)
         {
             folder ??= InstalledFolder;
@@ -151,7 +190,8 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                // Un folder care nu se lasa listat e ca unul gol: fereastra spune "niciun profil" si ramane "Alege fisier...".
+                // A folder that will not be listed is like an empty one: the window says
+                // "niciun profil" and keeps "Alege fisier...".
                 return Array.Empty<IccBlack>();
             }
             var found = new List<IccBlack>();
@@ -167,17 +207,33 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Propozitia despre un profil, pentru lista ferestrei: "Dmax 2.41 (negrul la L* 3.5
-        /// fata de albul hartiei)", sau de ce nu s-a putut citi.
+        /// The sentence about a profile, for the window's list: "Dmax 2.41 (negrul la L* 3.5
+        /// fata de albul hartiei)", or why it could not be read.
         /// </summary>
+        /// <param name="b">The profile as read.</param>
+        /// <returns>The sentence, in Romanian, as the user sees it.</returns>
         internal static string Describe(IccBlack b)
             => b.Readable ? $"Dmax {Fmt.Dmax(b.Dmax)} (negrul la L* {Fmt.F1(b.BlackLstar)} fata de albul hartiei)" : b.Problem;
 
+        /// <summary>
+        /// Whether the bytes hold a profile's header: 132 bytes at least, 'acsp' at 36.
+        /// </summary>
+        /// <param name="b">The bytes; null is not a profile.</param>
+        /// <returns><c>true</c> for a profile.</returns>
         static bool IsProfile(byte[] b) => b != null && b.Length >= 132 && Signature(b, 36) == "acsp";
 
+        /// <summary>The 4-byte signature at a position of the header, as ASCII.</summary>
+        /// <param name="b">The profile's bytes.</param>
+        /// <param name="at">The signature's offset, in bytes.</param>
+        /// <returns>The 4 characters, padding spaces included.</returns>
         static string Signature(byte[] b, int at) => Encoding.ASCII.GetString(b, at, 4);
 
-        /// <summary>O semnatura de 4 octeti, de aratat omului: fara spatiile de umplere si fara octetii care nu sunt litere.</summary>
+        /// <summary>
+        /// A 4-byte signature, to show to the user: without the padding spaces and without the
+        /// bytes that are not letters.
+        /// </summary>
+        /// <param name="signature">The signature as <see cref="Signature"/> read it.</param>
+        /// <returns>What is left of it, possibly empty.</returns>
         static string Printable(string signature) => new string(signature.Where(c => c > ' ' && c < 127).ToArray());
     }
 }

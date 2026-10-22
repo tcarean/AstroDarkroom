@@ -15,27 +15,31 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Wcs.cs - WCS-ul din antetul unui FITS plate-solved: de la pixel la (RA, Dec) si inapoi.
+// Wcs.cs - the WCS in the header of a plate-solved FITS: from pixel to (RA, Dec) and back.
 //
-// Doar proiectia gnomonica (TAN), singura pe care o scrie Siril, cu partea liniara in
-// oricare din cele trei forme din antete: matricea CD, matricea PC cu CDELT (Siril 1.4),
-// sau CDELT cu CROTA2 (antete vechi). Termenii SIP, cand exista, se IGNORA: pe imaginea
-// de referinta muta centrul unei dale cu cel mult 6 px la marginea cadrului, sub o dala
-// de 32 px (ADR 0025). Un antet fara WCS nu e o eroare: intoarce null, si analiza merge
-// pe regula fara WCS.
+// Only the gnomonic projection (TAN), the only one Siril writes, with the linear part in any of
+// the three forms found in headers: the CD matrix, the PC matrix with CDELT (Siril 1.4), or
+// CDELT with CROTA2 (old headers). The SIP terms, when present, are IGNORED: on the reference
+// image they move the centre of a patch by at most 6 px at the edge of the frame, under a 32 px
+// patch (ADR 0025). A header without a WCS is not an error: it returns null, and the analysis
+// takes its path without a WCS.
 //
-// CONVENTIA DE PIXELI. FITS-ul numara de la 1, cu randul 1 JOS; rasterul numara de la 0,
-// cu randul 0 SUS, si cititorul rastoarna randurile pe ROWORDER = BOTTOM-UP. Un WCS se
-// aplica mereu in conventia FITS, deci intre cele doua sta un rand de conversie care
-// depinde de rasturnare: y_fits = H - y_raster cand randurile au fost rasturnate, y + 1
-// cand nu. Toate coordonatele de aici sunt in pixeli ai rasterului, centrul pixelului
-// (0, 0) fiind (0, 0); conversia e inauntru, o singura data.
+// THE PIXEL CONVENTION. FITS counts from 1, with row 1 at the BOTTOM; the raster counts from 0,
+// with row 0 at the TOP, and the reader flips the rows on ROWORDER = BOTTOM-UP. A WCS always
+// applies in the FITS convention, so between the two sits a line of conversion that depends on
+// the flip: y_fits = H - y_raster when the rows were flipped, y + 1 when not. Every coordinate
+// here is in raster pixels, the centre of pixel (0, 0) being (0, 0); the conversion is inside,
+// once.
 
 using System;
 using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The TAN projection of a plate-solved header, between raster pixels and (RA, Dec) in
+    /// degrees, SIP ignored.
+    /// </summary>
     internal sealed record Wcs
     {
         internal double Crpix1 { get; init; }
@@ -43,7 +47,9 @@ namespace AstroPhotoAnalyzer
         internal double Crval1 { get; init; }
         internal double Crval2 { get; init; }
 
-        /// <summary>Matricea de la (pixel - CRPIX) la coordonate intermediare, in grade pe pixel.</summary>
+        /// <summary>
+        /// The matrix from (pixel - CRPIX) to intermediate coordinates, in degrees per pixel.
+        /// </summary>
         internal double Cd11 { get; init; }
         internal double Cd12 { get; init; }
         internal double Cd21 { get; init; }
@@ -52,19 +58,32 @@ namespace AstroPhotoAnalyzer
         internal int W { get; init; }
         internal int H { get; init; }
 
-        /// <summary>Randurile rasterului sunt rasturnate fata de FITS (ROWORDER = BOTTOM-UP).</summary>
+        /// <summary>
+        /// The raster's rows are flipped relative to the FITS (ROWORDER = BOTTOM-UP).
+        /// </summary>
         internal bool RowsFlipped { get; init; }
 
-        /// <summary>Antetul avea termeni SIP (ignorati); pentru raport.</summary>
+        /// <summary>The header had SIP terms (ignored); for the report.</summary>
         internal bool HasSip { get; init; }
 
-        /// <summary>Scara, in grade pe pixel: radacina determinantului matricei.</summary>
+        /// <summary>
+        /// The scale, in degrees per pixel: the root of the matrix's determinant.
+        /// </summary>
         internal double ScaleDegPerPx => Math.Sqrt(Math.Abs(Cd11 * Cd22 - Cd12 * Cd21));
 
         /// <summary>
-        /// WCS-ul din antet, sau null cand antetul n-are unul citibil: fara CTYPE, alta
-        /// proiectie decat TAN, fara CRPIX/CRVAL, sau fara nicio forma a partii liniare.
+        /// The WCS from the header, or null when the header has no readable one: no CTYPE, a
+        /// projection other than TAN, no CRPIX/CRVAL, or no form of the linear part.
         /// </summary>
+        /// <param name="h">The FITS header, keyword -> value.</param>
+        /// <param name="w">The raster's width, in pixels.</param>
+        /// <param name="h2">The raster's height, in pixels.</param>
+        /// <param name="rowsFlipped">
+        /// Whether the raster's rows were flipped from the file's (ROWORDER = BOTTOM-UP).
+        /// </param>
+        /// <returns>
+        /// The WCS; null when there is none to read, or its linear part is singular.
+        /// </returns>
         internal static Wcs TryFrom(IReadOnlyDictionary<string, string> h, int w, int h2, bool rowsFlipped)
         {
             string ctype1 = FitsReader.HStr(h, "CTYPE1", ""), ctype2 = FitsReader.HStr(h, "CTYPE2", "");
@@ -84,13 +103,14 @@ namespace AstroPhotoAnalyzer
                 double d1 = FitsReader.HDbl(h, "CDELT1", 0), d2 = FitsReader.HDbl(h, "CDELT2", 0);
                 if (h.ContainsKey("PC1_1") || h.ContainsKey("PC2_2"))
                 {
-                    // PC are implicit identitatea pe diagonala si 0 in afara ei.
+                    // PC defaults to the identity on the diagonal and to 0 off it.
                     cd11 = d1 * FitsReader.HDbl(h, "PC1_1", 1); cd12 = d1 * FitsReader.HDbl(h, "PC1_2", 0);
                     cd21 = d2 * FitsReader.HDbl(h, "PC2_1", 0); cd22 = d2 * FitsReader.HDbl(h, "PC2_2", 1);
                 }
                 else
                 {
-                    // CROTA2: rotatia axelor, conventia AIPS (Paper II, sectiunea 6.1).
+                    // CROTA2: the rotation of the axes, the AIPS convention (Paper II,
+                    // section 6.1).
                     double rot = FitsReader.HDbl(h, "CROTA2", 0) * Astrometry.Deg;
                     double c = Math.Cos(rot), s = Math.Sin(rot);
                     cd11 = d1 * c; cd12 = -d2 * s;
@@ -118,24 +138,48 @@ namespace AstroPhotoAnalyzer
             };
         }
 
-        /// <summary>Acelasi WCS, pe un raster cu alta rasturnare (un PNG care imprumuta WCS-ul unui FITS).</summary>
+        /// <summary>
+        /// The same WCS, on a raster with another flip (a PNG that borrows the WCS of a FITS).
+        /// </summary>
+        /// <param name="flipped">Whether that raster's rows are flipped from the FITS's.</param>
+        /// <returns>A copy with <see cref="RowsFlipped"/> set.</returns>
         internal Wcs WithRowsFlipped(bool flipped) => this with { RowsFlipped = flipped };
 
+        /// <summary>
+        /// A row coordinate converted from the raster's convention to the FITS's.
+        /// </summary>
+        /// <param name="yRaster">The row, in raster pixels, 0 at the top.</param>
+        /// <returns>The row in FITS pixels, from 1.</returns>
         double FitsY(double yRaster) => RowsFlipped ? H - yRaster : yRaster + 1;
+
+        /// <summary>
+        /// A row coordinate converted from the FITS's convention to the raster's.
+        /// </summary>
+        /// <param name="yFits">The row in FITS pixels, from 1.</param>
+        /// <returns>The row, in raster pixels, 0 at the top.</returns>
         double RasterY(double yFits) => RowsFlipped ? H - yFits : yFits - 1;
 
-        /// <summary>(RA, Dec) in grade pentru pozitia (x, y) in pixeli ai rasterului, randul 0 sus.</summary>
+        /// <summary>
+        /// (RA, Dec) in degrees for the position (x, y) in raster pixels, row 0 at the top.
+        /// </summary>
+        /// <param name="x">The column, in raster pixels; the centre of pixel 0 is 0.</param>
+        /// <param name="y">The row, in raster pixels; the centre of the top row is 0.</param>
+        /// <returns>
+        /// RA in [0, 360) and Dec, in degrees, in the header's frame (J2000 from Siril).
+        /// </returns>
         internal (double Ra, double Dec) PixelToSky(double x, double y)
         {
             double px = x + 1 - Crpix1, py = FitsY(y) - Crpix2;
             double ix = Cd11 * px + Cd12 * py, iy = Cd21 * px + Cd22 * py;
 
-            // Proiectia zenitala: unghiul nativ (phi, theta) din planul tangent (Paper II, 5.1.3).
+            // The zenithal projection: the native angle (phi, theta) from the tangent plane
+            // (Paper II, 5.1.3).
             double r = Math.Sqrt(ix * ix + iy * iy);
             double phi = r == 0 ? 0 : Math.Atan2(ix, -iy);
             double theta = r == 0 ? Math.PI / 2 : Math.Atan2(180 / Math.PI, r);
 
-            // De la nativ la ceresc, cu polul nativ in CRVAL si LONPOLE = 180 (Paper II, 2.3).
+            // From native to celestial, with the native pole at CRVAL and LONPOLE = 180
+            // (Paper II, 2.3).
             double ap = Crval1 * Astrometry.Deg, dp = Crval2 * Astrometry.Deg, phip = Math.PI;
             double st = Math.Sin(theta), ct = Math.Cos(theta), sdp = Math.Sin(dp), cdp = Math.Cos(dp);
             double dphi = phi - phip;
@@ -147,9 +191,15 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Pozitia (x, y) in pixeli ai rasterului pentru (RA, Dec); NaN pentru o directie
-        /// din emisfera opusa planului tangent, care n-are proiectie.
+        /// The position (x, y) in raster pixels for (RA, Dec); NaN for a direction in the
+        /// hemisphere opposite the tangent plane, which has no projection.
         /// </summary>
+        /// <param name="raDeg">The right ascension, in degrees, in the header's frame.</param>
+        /// <param name="decDeg">The declination, in degrees.</param>
+        /// <returns>
+        /// The column and the row, in raster pixels, possibly outside the raster; NaN and NaN
+        /// behind the tangent plane.
+        /// </returns>
         internal (double X, double Y) SkyToPixel(double raDeg, double decDeg)
         {
             double a = raDeg * Astrometry.Deg, d = decDeg * Astrometry.Deg;
