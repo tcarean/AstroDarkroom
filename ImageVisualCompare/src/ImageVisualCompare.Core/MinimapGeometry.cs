@@ -42,14 +42,15 @@ public static class MinimapGeometry
     /// </summary>
     /// <param name="viewport">The view whose visible region is drawn.</param>
     /// <param name="thumbnailWidth">
-    /// The thumbnail's width as drawn, in the unit the rectangle is wanted in (the minimap
-    /// passes device-independent pixels).
+    /// The width of the area the whole image is mapped onto, in the unit the rectangle is
+    /// wanted in (the minimap passes its own width, in device-independent pixels).
     /// </param>
-    /// <param name="thumbnailHeight">The thumbnail's height as drawn, in the same unit.</param>
+    /// <param name="thumbnailHeight">The height of that area, in the same unit.</param>
     /// <returns>
-    /// The rectangle, clamped to the thumbnail and at least 2 units on each side, shown only
-    /// while part of the image is off screen; the default, hidden, when the viewport has no
-    /// content or the thumbnail no size.
+    /// The rectangle, clamped to the area and then widened to at least 2 units on each side,
+    /// so at deep zoom by the right or bottom edge it can reach up to 2 units past the area;
+    /// shown only while part of the image is off screen. The default, hidden, when the viewport
+    /// has no content or the area no size.
     /// </returns>
     public static MinimapLayout Layout(Viewport viewport, double thumbnailWidth, double thumbnailHeight)
     {
@@ -82,12 +83,12 @@ public static class MinimapGeometry
     /// that recentres the view.
     /// </summary>
     /// <param name="viewport">The view, whose content size the thumbnail is scaled from.</param>
-    /// <param name="thumbnailX">The position, from the thumbnail's left edge.</param>
-    /// <param name="thumbnailY">The position, from the thumbnail's top edge.</param>
-    /// <param name="thumbnailWidth">
-    /// The thumbnail's width as drawn, in the unit of the position.
+    /// <param name="thumbnailX">
+    /// The position, from the left edge of the area the image is mapped onto.
     /// </param>
-    /// <param name="thumbnailHeight">The thumbnail's height as drawn, in the same unit.</param>
+    /// <param name="thumbnailY">The position, from the top edge of that area.</param>
+    /// <param name="thumbnailWidth">The width of that area, in the unit of the position.</param>
+    /// <param name="thumbnailHeight">The height of that area, in the same unit.</param>
     /// <returns>
     /// The content point a click at this thumbnail position is pointing at, in image pixels.
     /// It is not clamped: a drag past the thumbnail's edge gives a point off the image, which

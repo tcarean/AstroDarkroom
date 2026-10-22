@@ -42,8 +42,8 @@ public readonly record struct RenderPlan(
     ImageScalingMode ScalingMode);
 
 /// <summary>
-/// Turns the viewport's state, counted in physical pixels, into the numbers the view needs in
-/// device-independent pixels.
+/// Turns the viewport's zoom, counted in physical pixels, into a scale in device-independent
+/// pixels; its pan, in image pixels, passes through as the translation.
 /// </summary>
 public static class RenderPlanner
 {
@@ -61,7 +61,10 @@ public static class RenderPlanner
     /// pixel per screen pixel, while the UI lays out in device-independent pixels. Getting
     /// that conversion backwards is invisible on an unscaled display and wrong everywhere else.
     /// </summary>
-    /// <param name="viewport">The zoom and pan, counted in physical screen pixels.</param>
+    /// <param name="viewport">
+    /// The zoom, in physical screen pixels per image pixel, and the pan, offsets in image
+    /// pixels.
+    /// </param>
     /// <param name="deviceScale">
     /// Physical pixels per device-independent pixel: 1 at 100% display scaling, 1.5 at 150%;
     /// greater than 0.

@@ -112,16 +112,19 @@ internal static class DarkTitleBar
     }
 
     /// <summary>Sets one DWM attribute of a window to a 32-bit value, unchecked.</summary>
-    /// <param name="handle">The window's handle.</param>
+    /// <param name="handle">The window whose attribute is set.</param>
     /// <param name="attribute">The attribute's number (DWMWINDOWATTRIBUTE).</param>
     /// <param name="value">The value: 1 to turn a flag on, or a COLORREF.</param>
     private static void Set(IntPtr handle, int attribute, ref int value) =>
         DwmSetWindowAttribute(handle, attribute, ref value, sizeof(int));
 
     /// <summary>The desktop window manager's call that sets one attribute of a window.</summary>
-    /// <param name="hwnd">The window's handle.</param>
+    /// <param name="hwnd">The window whose attribute is set.</param>
     /// <param name="attribute">The attribute's number (DWMWINDOWATTRIBUTE).</param>
-    /// <param name="value">The value, passed by reference.</param>
+    /// <param name="value">
+    /// The attribute's new value, by reference as the API takes it: 1 to turn a flag on, or a
+    /// COLORREF.
+    /// </param>
     /// <param name="size">The value's size, in bytes.</param>
     /// <returns>An HRESULT, 0 on success.</returns>
     [DllImport("dwmapi.dll", PreserveSig = true)]

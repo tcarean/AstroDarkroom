@@ -45,8 +45,8 @@ public enum ColorChannels
 /// does not recognise.
 /// </param>
 /// <param name="IsFloat">
-/// True when the samples are floating point. Only the FITS reader sets it; a float format WIC
-/// decodes is reported by its bits alone.
+/// True when the FITS reader read floating-point samples. WicImageLoader never sets it, so a
+/// float TIFF is reported by its bits alone: "32-bit gray", or "96-bit" for RGB.
 /// </param>
 /// <param name="ValueRange">
 /// The range a float file's values were read in, when it is not 0 to 1
@@ -89,6 +89,6 @@ public sealed record ImageInfo(
         }
     }
 
-    /// <summary>Bytes the image occupies once converted to Bgra32, for the memory budget.</summary>
+    /// <summary>Bytes the image occupies once converted to Bgra32.</summary>
     public long DisplayBytes => (long)PixelWidth * PixelHeight * 4;
 }

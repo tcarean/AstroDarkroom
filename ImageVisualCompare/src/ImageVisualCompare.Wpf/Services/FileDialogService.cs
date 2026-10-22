@@ -25,8 +25,8 @@ public interface IFileDialogService
 {
     /// <summary>Asks for the two images in turn.</summary>
     /// <param name="initialDirectory">
-    /// The folder the first dialog opens in; null, or a folder that is gone, leaves the choice
-    /// to Windows.
+    /// The folder the first dialog opens in; null, an empty string or a folder that is gone
+    /// leaves the choice to Windows.
     /// </param>
     /// <returns>The two files, or null if the user cancels either dialog.</returns>
     ImagePairSelection? PickImagePair(string? initialDirectory = null);

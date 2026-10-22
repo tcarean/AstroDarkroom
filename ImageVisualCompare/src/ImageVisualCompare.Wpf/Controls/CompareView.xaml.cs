@@ -32,9 +32,16 @@ namespace ImageVisualCompare.Wpf.Controls;
 ///
 /// Coordinates come in two flavours here and mixing them up would be a real bug, so the rule
 /// is fixed: <see cref="Core.Viewport"/> works entirely in physical screen pixels, WPF works
-/// in device-independent pixels, and the conversion happens only in this control's input
-/// handlers and in <see cref="Sync"/>. Keeping the viewport in physical pixels is what lets
-/// 100% zoom honestly mean one image pixel per screen pixel on a scaled display.
+/// in device-independent pixels, and the conversion happens only in this control: wherever it
+/// hands the viewport a position or a size (the input handlers, <see cref="ZoomAtCentre"/> and
+/// <see cref="UpdateViewportSize"/>), and in <see cref="Sync"/>. Keeping the viewport in
+/// physical pixels is what lets 100% zoom honestly mean one image pixel per screen pixel on a
+/// scaled display.
+///
+/// The scale is the one WPF reports, and the application declares no DPI awareness of its
+/// own, so it runs system-DPI-aware: on a monitor scaled differently from the system scale,
+/// WPF still reports the system's, Windows stretches the window, and 100% is not one to one
+/// there.
 ///
 /// The divider is the exception: it lives in device-independent pixels throughout, because
 /// its position is a fraction of the window and never touches image coordinates.
@@ -59,10 +66,7 @@ public partial class CompareView : UserControl
     private bool _updatingScrollBars;
     private PointD? _cursorContentPoint;
 
-    /// <summary>
-    /// Builds the surface: puts the one shared transform on both images and both backdrops, and
-    /// wires the minimap, the scrollbars, the first layout and every resize to the viewport.
-    /// </summary>
+    /// <summary>Builds the surface, empty until <see cref="SetPair"/>.</summary>
     public CompareView()
     {
         InitializeComponent();
@@ -170,10 +174,16 @@ public partial class CompareView : UserControl
         Sync();
     }
 
-    /// <summary>Steps up to the next zoom stop, anchored at the centre of the view.</summary>
+    /// <summary>
+    /// Zooms in one step as <see cref="Core.Viewport.ZoomIn"/> does, anchored at the centre of
+    /// the view.
+    /// </summary>
     public void ZoomIn() => ZoomAtCentre(step: 1);
 
-    /// <summary>Steps down to the previous zoom stop, anchored at the centre of the view.</summary>
+    /// <summary>
+    /// Zooms out one step as <see cref="Core.Viewport.ZoomOut"/> does, anchored at the centre of
+    /// the view; below the lowest stop that step zooms in.
+    /// </summary>
     public void ZoomOut() => ZoomAtCentre(step: -1);
 
     /// <summary>Zooms so the whole canvas is visible, and centres it.</summary>
@@ -184,7 +194,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Zooms to one image pixel per physical screen pixel, anchored at the centre of the view.
+    /// Zooms to 100%, one image pixel per physical pixel of the viewport (see the class summary
+    /// on monitors scaled differently), anchored at the centre of the view.
     /// </summary>
     public void ZoomToActualSize()
     {
@@ -211,8 +222,8 @@ public partial class CompareView : UserControl
     /// instead. Does nothing until a pair is shown.
     /// </summary>
     /// <param name="e">
-    /// The wheel event: the sign of its delta is the direction, and its position the anchor. It
-    /// is marked handled.
+    /// The wheel event: the sign of its delta is the direction, and its position the anchor.
+    /// Once a pair is shown, it is marked handled.
     /// </param>
     protected override void OnMouseWheel(MouseWheelEventArgs e)
     {
@@ -248,7 +259,8 @@ public partial class CompareView : UserControl
     /// press is on it, otherwise a pan.
     /// </summary>
     /// <param name="e">
-    /// The press; its position decides which drag, and it is marked handled.
+    /// The press; its position decides which drag, and once a pair is shown it is marked
+    /// handled.
     /// </param>
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
@@ -339,8 +351,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Handles the surface's keys: Ctrl+0 fits, Ctrl+1 shows 100%, + and - step the zoom, and
-    /// the left and right arrows nudge the divider by 1 device-independent pixel, 10 with Shift.
+    /// Handles the surface's own keys: the fit and 100% shortcuts, the zoom steps, and the
+    /// divider nudge (<see cref="DividerModel.NudgeBy"/>); any other key is left to the window.
     /// </summary>
     /// <param name="e">The key; marked handled when it is one of these.</param>
     protected override void OnKeyDown(KeyEventArgs e)
@@ -451,8 +463,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Pans to where a scrollbar was dragged; ignored while <see cref="UpdateScrollBars"/> sets
-    /// the bars itself.
+    /// Pans to where the user scrolled a scrollbar: by dragging its thumb, clicking it, or its
+    /// context menu.
     /// </summary>
     private void OnScrollBarMoved()
     {
@@ -522,13 +534,14 @@ public partial class CompareView : UserControl
 
     /// <summary>Converts a WPF position to physical pixels.</summary>
     /// <param name="deviceIndependent">The position, in device-independent pixels.</param>
-    /// <returns>The same position, in physical screen pixels.</returns>
+    /// <returns>The same position, in the viewport's physical pixels.</returns>
     private Point ToDevice(Point deviceIndependent) =>
         new(deviceIndependent.X * _deviceScale, deviceIndependent.Y * _deviceScale);
 
     /// <summary>
-    /// Reads the display's scale, physical pixels per device-independent pixel, then gives the
-    /// viewport its size again and redraws.
+    /// Reads the scale WPF draws this control at, device pixels per device-independent pixel
+    /// (the system's scale on every monitor; see the class summary), then gives the viewport
+    /// its size again and redraws.
     /// </summary>
     private void ReadDeviceScale()
     {
@@ -567,8 +580,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Sets both scrollbars from the viewport, without their own events panning the viewport
-    /// back.
+    /// Sets both scrollbars from the viewport. Setting them raises no Scroll event, which WPF
+    /// raises only for the user's scrolling, so this never pans the viewport back.
     /// </summary>
     private void UpdateScrollBars()
     {

@@ -38,24 +38,27 @@ public interface IImageLoader
 {
     /// <summary>
     /// Reads only the header. Used to check that a pair matches before committing to the
-    /// cost of decoding either one. A file that cannot be read throws one of the exceptions
-    /// <see cref="ImagePairLoader"/> turns into a message.
+    /// cost of decoding either one. A file that cannot be read throws;
+    /// <see cref="ImagePairLoader"/> turns the exception types it expects into a message and
+    /// lets any other through.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
     /// <returns>
-    /// What the file is: its size in pixels, its depth and its channels. A float FITS's value
-    /// range is not known yet; only the load reports it.
+    /// What the file is, as far as its header tells: its size in pixels, its depth and its
+    /// channels. What only the samples show, such as <see cref="ImageInfo.ValueRange"/>, is
+    /// left out.
     /// </returns>
     ImageInfo Probe(string path);
 
     /// <summary>
     /// Decodes the full image on a background thread. A file that cannot be read or decoded
-    /// throws one of the exceptions <see cref="ImagePairLoader"/> turns into a message.
+    /// throws; <see cref="ImagePairLoader"/> turns the exception types it expects into a
+    /// message and lets any other through.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
     /// <param name="cancellationToken">
-    /// Stops the load where the decoder can stop: before it starts, or for a FITS between two
-    /// rows. A stopped load throws <see cref="OperationCanceledException"/>.
+    /// Stops the load where the decoder can stop; a stopped load throws
+    /// <see cref="OperationCanceledException"/>.
     /// </param>
     /// <returns>The pixels, frozen Bgra32 whatever the file held, and what the file was.</returns>
     Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default);

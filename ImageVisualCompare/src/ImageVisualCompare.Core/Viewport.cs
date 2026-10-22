@@ -206,8 +206,8 @@ public sealed class Viewport
         ZoomTo(_scale * factor, anchorScreenX, anchorScreenY);
 
     /// <summary>
-    /// Steps up to the next stop on <see cref="ZoomLadder"/>, holding the anchor still as
-    /// <see cref="ZoomTo"/> does.
+    /// Zooms to <see cref="ZoomLadder.Next"/> of the current scale, clamped and anchored as
+    /// <see cref="ZoomTo"/> does: the next stop up, or no change at the highest.
     /// </summary>
     /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
     /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
@@ -215,8 +215,10 @@ public sealed class Viewport
         ZoomTo(ZoomLadder.Next(_scale), anchorScreenX, anchorScreenY);
 
     /// <summary>
-    /// Steps down to the previous stop on <see cref="ZoomLadder"/>, holding the anchor still as
-    /// <see cref="ZoomTo"/> does.
+    /// Zooms to <see cref="ZoomLadder.Previous"/> of the current scale, clamped and anchored as
+    /// <see cref="ZoomTo"/> does. That is normally the next stop down; just above
+    /// <see cref="MinScale"/> it lands on MinScale, at MinScale it changes nothing, and from a
+    /// scale under the lowest stop (possible when the fit is under 2%) it zooms in to that stop.
     /// </summary>
     /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
     /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
@@ -298,9 +300,9 @@ public sealed class Viewport
     }
 
     /// <summary>
-    /// Keeps the offsets inside the image on each axis: an axis on which the whole image fits
-    /// is centred, with equal margins either side; on any other no edge of the image comes
-    /// inside the view.
+    /// Brings the offsets back to where the view may be, axis by axis: an axis on which the
+    /// whole image fits is centred, with equal margins either side, which makes its offset
+    /// negative; on any other, no edge of the image comes inside the view.
     /// </summary>
     private void ClampOffsets()
     {

@@ -29,7 +29,7 @@ public partial class App : Application
 {
     /// <summary>
     /// A pair named on the command line, so the tool can be launched straight from a folder
-    /// without walking through both dialogs. Null unless two readable paths were given.
+    /// without walking through both dialogs. Null unless two existing files were given.
     /// </summary>
     private static ImagePairSelection? _startupSelection;
 

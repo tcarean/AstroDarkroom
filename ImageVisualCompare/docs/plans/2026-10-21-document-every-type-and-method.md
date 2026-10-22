@@ -263,7 +263,7 @@ plan and the branch (I give a prompt to paste; a chip would open at the checkout
   | a2548ef | the plan | `== OK in 22s` | 256 |
   | 6414187 | Core: 13 files, +459/-37 | `== OK in 20s` | 256 |
   | 65e2cbd | Wpf without a window: 9 files | `== OK in 20s` | 256 |
-  | 34834a3 | the visual layer: 5 files (Wpf in all: 14 files, +453/-15) | `== OK in 19s` | 256 |
+  | 34834a3 | the visual layer: 5 files (Wpf in all: 14 files, +449/-13) | `== OK in 19s` | 256 |
   | 269b802 | the two stale doc comments | `== OK in 20s` | 256 |
   | 9eaa539 | CS1573 no longer muted | `== OK in 20s` | 256 |
   | (none) | wrap-up step 1 | `== OK in 20s` | 256 |
@@ -287,3 +287,63 @@ plan and the branch (I give a prompt to paste; a chip would open at the checkout
     `de_printat_PRINT_preview_16bit.tif`: the pair at fit (24%), the divider and its handle, the
     minimap, the status bar `5938 × 3888 · A 16-bit RGB · B 16-bit RGB` with the version and the
     copyright, the dark caption; closed with exit code 0.
+- **The code review, 2026-10-22.** `/code-review` of the branch against `main`, at max effort,
+  reported 15 findings and confirmed 16 more past its cap (6 were refuted). The owner asked to
+  fix, for now, everything about the comments. Comments the branch wrote said more than the
+  code does, or something else:
+  - the loaders' contract promised a message for every file that cannot be read, though WIC
+    also throws `OverflowException` (an image too large to decode) and `COMException` (a
+    damaged WebP, HEIC or AVIF), which `ImagePairLoader` does not catch;
+  - `RenderPlanner` counted the pan in physical pixels; it is in image pixels and passes
+    through;
+  - the 100% and device-scale comments left out that the application runs system-DPI-aware,
+    so on a monitor scaled differently from the system 100% is not one to one;
+  - "−" was said to step down, though from under the lowest stop it zooms in, and just above
+    the fit it lands on the fit;
+  - `FitsHeader.Number` promised its fallback for any value that is not a number, though NaN,
+    an infinity and 1D999 parse; `ReadCards` promised an `EndOfStreamException` for any cut
+    header, though an extension cut inside its first block reads as no image;
+  - `ImageInfo.IsFloat` said that only the FITS reader sets it, as if by design; it now says
+    what the flag records and how a float TIFF reads today, which is the owner's call (below);
+  - `OpenPairAsync` tied the close to the first prompt, where the code closes whenever no pair
+    is shown (R-001); `ClampOffsets` kept the offsets inside the image, where an axis that fits
+    is centred with a negative offset; the minimap rectangle was said to stay inside its area,
+    where the 2-unit floor can carry it past; the scrollbar comments guarded against events WPF
+    raises only for the user's scrolling; `ImagePairLoader.LoadAsync`'s token was said to be
+    looked at between all its steps, though not before the padding question.
+
+  The comment findings among the 16 past the cap were corrected the same way: tags that only
+  said their name again (`SizeD`, `DarkTitleBar`), constructors that told their wiring rather
+  than what a caller gets (`CompareView`, `MainWindow`), and smaller claims (`ScrollBarState`'s
+  numbers, `initialDirectory`'s empty string, `MessageDialog.Create`'s owner, `OnKeyDown`, the
+  mouse handlers' `e`). Four comments that predate the branch were corrected with them:
+  `ReadLayout`'s `EndOfStreamException` tag, the same overclaim as `ReadCards`;
+  `ImageInfo.DisplayBytes`, "for the memory budget", which does not exist; the startup field in
+  `App`, "readable" paths, where the code checks only that the files exist; and `CompareView`'s
+  class summary, where the conversion also happens in `ZoomAtCentre` and `UpdateViewportSize`.
+  `FitsImageLoader.Probe` and `LoadAsync` now have their own text, as the interface's contract
+  no longer says what the FITS loader does, so 5 members inherit their comment, not 7. The
+  CHANGELOG line now counts the six corrected comments that predate the branch, and the
+  `Directory.Build.props` sentence no longer says that every parameter has its tag: CS1573
+  catches a comment that tags some parameters, not one that tags none. The table's Wpf total
+  for 34834a3 gave the figure after 269b802, +453/-15; it is corrected to +449/-13.
+- **The code defects the review found stay as they are,** each for a task of its own, test
+  first (the kit's rule "Test before fix"): an image too large to decode, or a damaged WebP,
+  HEIC or AVIF, ends the process instead of showing a message (R-005); Ctrl+O during a load
+  starts a second open on top of the first (R-006); on a monitor scaled differently from the
+  system, 100% is not one image pixel per physical pixel, which R-022, ADR 0011 and
+  `rendering.md` promise; a float TIFF is reported by its bits alone, and WIC converts its
+  samples as linear light, 0.5 showing as 188 where the same FITS value shows as 128 (R-011,
+  the owner's call); "−" zooms in from under the lowest stop; a NaN or infinite BZERO or BSCALE
+  blanks the image with no message; a unit with no axes still counts its PCOUNT, so the next
+  unit is missed; the minimap maps a click as if it had no 1-DIP border, so the thumbnail's
+  left edge is 31 image pixels in on the real pair. The comments now say each behaviour as it
+  is.
+- **Measured on 2026-10-22,** after the corrections: the gate `== OK in 42s`, 256 tests; the
+  scratch counter's `code` group as before, 0 types and 0 methods undocumented or incomplete
+  but the one plain `Task`; in `git diff main -- src`, 0 changed lines that are not `///`
+  lines, and no added line over 100 columns; the XML documentation files, Core 193 `<param>`,
+  38 `<returns>`, 8 `<exception>`, Wpf 130 `<param>`, 35 `<returns>`, 5 `<inheritdoc/>`, whose
+  73 `<returns>` and 5 inherited members make the 78 methods with a value; the four validation
+  cases passed (`--filter "Category=Validation"`, 8 s), with no History entry, since no figure
+  can move; the launch on the same pair showed it as on 2026-10-21 and closed with exit code 0.

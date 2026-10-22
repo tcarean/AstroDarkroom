@@ -30,6 +30,11 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// exactly as it was written, the format is recorded for the status bar, and then everything
 /// is converted to Bgra32. A 16-bit PNG from Siril, an 8-bit screenshot and a palettised
 /// image all arrive at the same place.
+///
+/// WIC can fail a file with exception types <see cref="ImagePairLoader"/> does not expect:
+/// <see cref="OverflowException"/> when the decode of an image too large for a bitmap starts,
+/// and COMException for a damaged file of a newer codec (WebP, HEIC, AVIF), at the probe or
+/// at the decode. Those reach the caller.
 /// </summary>
 public sealed class WicImageLoader : IImageLoader
 {

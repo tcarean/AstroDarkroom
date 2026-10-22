@@ -30,22 +30,37 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// </summary>
 public sealed class FitsImageLoader : IImageLoader
 {
-    /// <inheritdoc/>
+    /// <summary>
+    /// Reads only the FITS header, to check that a pair matches before either is decoded. A
+    /// file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <returns>
+    /// The image's size, depth and planes, with no value range: whether a float file counts in
+    /// 0 to 1 or in 0 to 65535 shows only in its samples.
+    /// </returns>
     public ImageInfo Probe(string path)
     {
         using FileStream stream = OpenRead(path);
         return FitsHeader.ReadLayout(stream).Describe(path);
     }
 
-    /// <inheritdoc/>
+    /// <summary>Decodes a FITS on a background thread, as <see cref="Load"/> does.</summary>
+    /// <param name="path">The file.</param>
+    /// <param name="cancellationToken">
+    /// Looked at before the decode starts and before each row; a stopped load throws
+    /// <see cref="OperationCanceledException"/>.
+    /// </param>
+    /// <returns>
+    /// The bitmap, and what the file was, with the range its values were read in.
+    /// </returns>
     public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
         Task.Run(() => Load(path, cancellationToken), cancellationToken);
 
     /// <summary>
-    /// Decodes a FITS on the calling thread, row by row into a frozen Bgra32 bitmap, the values
-    /// as stored; a float file found to count in 0 to 65535 is decoded a second time on that
-    /// scale. A file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/>
-    /// does, and so does an image too large for a bitmap.
+    /// Decodes a FITS on the calling thread into a frozen Bgra32 bitmap, the values as stored.
+    /// A file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does, and
+    /// so does an image too large for a bitmap.
     /// </summary>
     /// <param name="path">The file.</param>
     /// <param name="cancellationToken">

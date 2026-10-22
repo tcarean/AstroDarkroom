@@ -73,9 +73,8 @@ public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool Wa
 }
 
 /// <summary>
-/// Loads the two images of a pair onto the canvas they share. Nothing is decoded before that
-/// canvas is settled, and a pair whose sizes differ is padded only once the caller agrees; a
-/// file that cannot be read, or a mismatch with no one to ask, comes back as a message.
+/// Loads the two images of a pair onto the canvas they share; <see cref="LoadAsync"/> says in
+/// what order, when it asks, and what comes back.
 /// </summary>
 /// <param name="loader">The decoder each file goes through.</param>
 public sealed class ImagePairLoader(IImageLoader loader)
@@ -97,12 +96,16 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// outright, which is the right default for anything without a user attached.
     /// </param>
     /// <param name="cancellationToken">
-    /// Stops the load between its steps, and inside a decode that can stop; a stopped load
-    /// throws <see cref="OperationCanceledException"/> rather than returning a result.
+    /// Looked at as each probe and each decode starts, and inside a decode that can stop; a
+    /// stopped load throws <see cref="OperationCanceledException"/> rather than returning a
+    /// result. It is not looked at between the second probe and the padding question, so a load
+    /// cancelled there still asks, and can come back declined or as the mismatch.
     /// </param>
     /// <returns>
     /// The pair; or a failure whose message names the file that could not be read, or the
     /// mismatch when there was no one to ask; or <see cref="ImagePairLoadResult.Declined"/>.
+    /// An exception <see cref="IsExpectedLoadFailure"/> does not accept reaches the caller
+    /// instead, such as WIC's <see cref="OverflowException"/> for an image too large to decode.
     /// </returns>
     public async Task<ImagePairLoadResult> LoadAsync(
         string beforePath,
@@ -171,10 +174,12 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// <summary>
     /// Tells a failure of the file from a defect of the program. A file the user picked can be
     /// missing, locked, truncated or in a format no codec handles, and it can simply be too
-    /// large for the machine. None of those are defects in this program, so all of them become
-    /// a message rather than a crash dialog.
+    /// large for the machine. None of those are defects in this program, so the exception
+    /// types listed here become a message rather than a crash dialog. WIC reports some of those
+    /// failures with types not listed (an image too large to decode throws
+    /// <see cref="OverflowException"/>), and those are not caught.
     /// </summary>
-    /// <param name="ex">What the probe or the decode threw.</param>
+    /// <param name="ex">What a probe, the padding question or a decode threw.</param>
     /// <returns>
     /// True for an I/O or access error, an unsupported or damaged format, a bad argument, or
     /// running out of memory.

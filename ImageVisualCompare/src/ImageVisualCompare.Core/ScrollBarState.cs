@@ -19,7 +19,8 @@ namespace ImageVisualCompare.Core;
 
 /// <summary>
 /// What one floating scrollbar shows, ready to assign: its range, the thumb, its position and
-/// whether it is there at all. The numbers are the viewport's offsets, in image pixels.
+/// whether it is there at all. The numbers are in image pixels, the unit of the viewport's
+/// offsets.
 /// </summary>
 /// <param name="Maximum">Highest offset the bar can scroll to; the minimum is always zero.</param>
 /// <param name="ViewportSize">Visible extent, which is what sets the thumb's proportion.</param>

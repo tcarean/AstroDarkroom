@@ -54,7 +54,7 @@ public partial class MessageDialog : Window
         dialog.ShowDialog();
     }
 
-    /// <summary>Asks a yes or no question. Escape and the close button both count as no.</summary>
+    /// <summary>Asks a yes or no question and waits for the answer.</summary>
     /// <param name="owner">The window the dialog is centred on and blocks until it closes.</param>
     /// <param name="title">The dialog's caption.</param>
     /// <param name="message">The question; it may run over several lines.</param>
@@ -89,7 +89,7 @@ public partial class MessageDialog : Window
     /// Builds a dialog with its owner, caption and text; its first button closes it with true,
     /// the second with false.
     /// </summary>
-    /// <param name="owner">The window the dialog is centred on and blocks until it closes.</param>
+    /// <param name="owner">The window the dialog is centred on, as its owner.</param>
     /// <param name="title">The dialog's caption.</param>
     /// <param name="message">The text; it may run over several lines.</param>
     /// <returns>The dialog, not shown yet; the caller labels its buttons.</returns>

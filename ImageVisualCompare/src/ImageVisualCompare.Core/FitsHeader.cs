@@ -129,7 +129,10 @@ public static class FitsHeader
     /// </param>
     /// <returns>Where the image's samples are and how they are stored.</returns>
     /// <exception cref="NotSupportedException">The file has no image this program can show.</exception>
-    /// <exception cref="EndOfStreamException">The file is cut short.</exception>
+    /// <exception cref="EndOfStreamException">
+    /// The file is cut short inside a header or in the image data. An extension cut inside its
+    /// first block reads as no image instead (<see cref="NotSupportedException"/>).
+    /// </exception>
     public static FitsImageLayout ReadLayout(Stream stream)
     {
         bool primary = true;
@@ -180,7 +183,8 @@ public static class FitsHeader
     /// <param name="cards">The unit's header, keyword to value.</param>
     /// <param name="axes">NAXIS of the unit, 0 to 999.</param>
     /// <returns>
-    /// The bytes, rounded up to whole 2880-byte blocks; a unit with no axes counts no samples.
+    /// The bytes, rounded up to whole 2880-byte blocks. A unit with no axes counts no samples,
+    /// but its PCOUNT is still added, although the standard gives such a unit no data at all.
     /// </returns>
     /// <exception cref="NotSupportedException">
     /// The header is not valid: a count that is not a whole number, or a product that overflows.
@@ -307,10 +311,13 @@ public static class FitsHeader
     /// </param>
     /// <returns>
     /// The cards of one header up to END, keyword to value without its comment, or null when no
-    /// header starts here: at the end of the stream, or, after the primary, at bytes that are not
-    /// an extension (some programs leave padding or their own data after the last unit).
+    /// header starts here: at the end of the stream, or, after the primary, at a block that is
+    /// cut short or does not start with XTENSION (some programs leave padding or their own data
+    /// after the last unit).
     /// </returns>
-    /// <exception cref="EndOfStreamException">The stream ends inside the header.</exception>
+    /// <exception cref="EndOfStreamException">
+    /// The stream ends inside the primary header, or inside any header after its first block.
+    /// </exception>
     private static Dictionary<string, string>? ReadCards(Stream stream, bool primary)
     {
         var cards = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -422,8 +429,14 @@ public static class FitsHeader
     /// <summary>Reads a real-valued keyword, such as BZERO or BSCALE.</summary>
     /// <param name="cards">The header, keyword to value.</param>
     /// <param name="key">The keyword, in capitals.</param>
-    /// <param name="fallback">The value when the keyword is missing or not a number.</param>
-    /// <returns>The number, read with an E or a D exponent.</returns>
+    /// <param name="fallback">
+    /// The value when the keyword is missing or does not parse. NaN, an infinity and an
+    /// exponent too large (1D999) all parse, so they are not replaced by it.
+    /// </param>
+    /// <returns>
+    /// The number, read with an E or a D exponent; NaN or an infinity when the header holds one
+    /// or overflows.
+    /// </returns>
     private static double Number(Dictionary<string, string> cards, string key, double fallback) =>
         cards.TryGetValue(key, out string? value)
         && double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)

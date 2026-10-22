@@ -18,8 +18,8 @@
 namespace ImageVisualCompare.Core;
 
 /// <summary>A width and height, in whatever space the caller is working in.</summary>
-/// <param name="Width">The horizontal extent.</param>
-/// <param name="Height">The vertical extent.</param>
+/// <param name="Width">How wide, in the caller's unit.</param>
+/// <param name="Height">How tall, in the caller's unit.</param>
 public readonly record struct SizeD(double Width, double Height);
 
 /// <summary>

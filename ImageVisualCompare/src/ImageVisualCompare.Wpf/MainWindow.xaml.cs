@@ -41,8 +41,7 @@ public partial class MainWindow : Window
     private string? _lastDirectory;
 
     /// <summary>
-    /// Builds the window, makes its caption dark, wires the toolbar and the readouts, and asks
-    /// for a pair once the window has loaded.
+    /// Builds the main window, with its dark caption; it asks for a pair once it has loaded.
     /// </summary>
     public MainWindow()
     {
@@ -73,7 +72,10 @@ public partial class MainWindow : Window
         PreviewKeyDown += OnPreviewKeyDown;
     }
 
-    /// <summary>Opens another pair on Ctrl+O, wherever the focus is.</summary>
+    /// <summary>
+    /// Opens another pair on Ctrl+O, wherever the focus is. Nothing stops it while a load is
+    /// still running, so a second open can start on top of the first.
+    /// </summary>
     /// <param name="sender">The window itself; not read.</param>
     /// <param name="e">The key; marked handled when it is Ctrl+O.</param>
     private async void OnPreviewKeyDown(object sender, KeyEventArgs e)
@@ -86,9 +88,9 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Asks for a pair, the command line's the first time, and shows it once it loads. A failure
-    /// is shown and a declined padding is not, and both ask again. Cancelling the first prompt
-    /// closes the window; cancelling a later one keeps the pair on screen.
+    /// Asks for a pair until one loads, the command line's first if it named one, and shows it.
+    /// A failure is reported and a declined padding is not, and both ask again. Cancelling while
+    /// no pair is shown closes the window; with a pair shown, that pair stays as it was.
     /// </summary>
     private async Task OpenPairAsync()
     {
