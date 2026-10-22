@@ -59,7 +59,8 @@
          comentariu ///, si gate-ul (-warnaserror) face din fiecare abatere o eroare: XML
          stricat (CS1570), un <param> sau <paramref> care nu numeste niciun parametru (CS1572,
          CS1734), un parametru fara tag langa altele cu tag (CS1573), un cref care nu se
-         rezolva sau e ambiguu (CS1574, CS0419). CS1591 (comentariu lipsa) ramane oprit:
+         rezolva sau e ambiguu (CS1574, CS0419), un /// pe ceva ce nu e membru, de pilda o
+         functie locala (CS1587). CS1591 (comentariu lipsa) ramane oprit:
          regula "Documentation comments" cere comentariul pe fiecare tip si metoda, si pe cele
          private, si nimic nu o verifica; CS1591 ar cere doar membrii publici, proprietatile
          cu tot, iar nucleul e internal in intregime (ADR 0035 al kit-ului). Nimic nu citeste
