@@ -25,7 +25,9 @@ without binary files in the repository. FITS files are built in memory, card by 
 `FitsFixture` (`tests/ImageVisualCompare.Tests/FitsFixture.cs`): the Core tests read them from a
 `MemoryStream`, and `FitsImageLoaderTests` writes them to disk with `TempImages.WriteBytes`,
 whole or cut short. `ImagePairLoaderTests` covers valid, mismatched,
-missing and corrupt inputs, progress reporting (recorded on the reporting thread: a
+missing and corrupt inputs, the two failures WIC reports with types of its own (ADR 0031: a PNG
+whose header claims 40000 x 30000, from `TempImages.WritePngWithHeaderSize`, and a WebP with a
+garbage bitstream, from `WriteDamagedWebP`), progress reporting (recorded on the reporting thread: a
 `Progress<T>` posts its callbacks, and an assertion after the load raced them), and — with a
 recording fake — that a
 mismatched pair never reaches a decode, whether it was refused outright or declined at the

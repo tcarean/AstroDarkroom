@@ -105,7 +105,8 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// The pair; or a failure whose message names the file that could not be read, or the
     /// mismatch when there was no one to ask; or <see cref="ImagePairLoadResult.Declined"/>.
     /// An exception <see cref="IsExpectedLoadFailure"/> does not accept reaches the caller
-    /// instead, such as WIC's <see cref="OverflowException"/> for an image too large to decode.
+    /// instead: the loaders turn their decoders' failures into accepted types, so such an
+    /// exception is a defect.
     /// </returns>
     public async Task<ImagePairLoadResult> LoadAsync(
         string beforePath,
@@ -175,9 +176,9 @@ public sealed class ImagePairLoader(IImageLoader loader)
     /// Tells a failure of the file from a defect of the program. A file the user picked can be
     /// missing, locked, truncated or in a format no codec handles, and it can simply be too
     /// large for the machine. None of those are defects in this program, so the exception
-    /// types listed here become a message rather than a crash dialog. WIC reports some of those
-    /// failures with types not listed (an image too large to decode throws
-    /// <see cref="OverflowException"/>), and those are not caught.
+    /// types listed here become a message rather than a crash dialog. A decoder that reports
+    /// such a failure with a type of its own has it turned into one of these by its loader, as
+    /// <see cref="WicImageLoader"/> does (ADR 0031); any other type is a defect and is not caught.
     /// </summary>
     /// <param name="ex">What a probe, the padding question or a decode threw.</param>
     /// <returns>

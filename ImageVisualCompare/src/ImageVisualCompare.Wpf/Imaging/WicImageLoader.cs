@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
@@ -31,10 +32,12 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// is converted to Bgra32. A 16-bit PNG from Siril, an 8-bit screenshot and a palettised
 /// image all arrive at the same place.
 ///
-/// WIC can fail a file with exception types <see cref="ImagePairLoader"/> does not expect:
-/// <see cref="OverflowException"/> when the decode of an image too large for a bitmap starts,
-/// and COMException for a damaged file of a newer codec (WebP, HEIC, AVIF), at the probe or
-/// at the decode. Those reach the caller.
+/// WIC fails some files with exception types of its own, which <see cref="ImagePairLoader"/>
+/// does not take for a failure of the file: <see cref="OverflowException"/> when it sets aside
+/// the pixels of an image too large for it, and <see cref="COMException"/> when a codec rejects
+/// a damaged file, as Windows' WebP, HEIC and AVIF codecs do, at the probe or at the decode.
+/// This loader turns them into a <see cref="NotSupportedException"/> and a
+/// <see cref="FileFormatException"/>, which become a message (ADR 0031).
 /// </summary>
 public sealed class WicImageLoader : IImageLoader
 {
@@ -43,10 +46,17 @@ public sealed class WicImageLoader : IImageLoader
     {
         using FileStream stream = OpenRead(path);
 
-        // DelayCreation reads the header and stops there, so this costs nothing even on a
-        // 108 MB file.
-        BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.DelayCreation).Frames[0];
-        return Describe(path, frame);
+        try
+        {
+            // DelayCreation reads the header and stops there, so this costs nothing even on a
+            // 108 MB file.
+            BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.DelayCreation).Frames[0];
+            return Describe(path, frame);
+        }
+        catch (COMException ex)
+        {
+            throw Rejected(ex);
+        }
     }
 
     /// <inheritdoc/>
@@ -56,6 +66,9 @@ public sealed class WicImageLoader : IImageLoader
     /// <summary>
     /// Decodes the full image on the calling thread: the file's own format first, reported as
     /// it is, then converted to Bgra32 and frozen. The file is closed again before this returns.
+    /// A file that cannot be read or decoded throws an exception of a type
+    /// <see cref="ImagePairLoader"/> turns into a message, WIC's own failures included (see the
+    /// class summary).
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
     /// <returns>The frozen Bgra32 pixels, and what the file was.</returns>
@@ -63,21 +76,62 @@ public sealed class WicImageLoader : IImageLoader
     {
         using FileStream stream = OpenRead(path);
 
-        // PreservePixelFormat stops WIC from quietly converting on the way in, so the format
-        // reported to the user is the one the file really has.
-        BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.PreservePixelFormat).Frames[0];
-        ImageInfo info = Describe(path, frame);
+        try
+        {
+            // PreservePixelFormat stops WIC from quietly converting on the way in, so the format
+            // reported to the user is the one the file really has.
+            BitmapFrame frame = CreateDecoder(stream, BitmapCreateOptions.PreservePixelFormat).Frames[0];
+            ImageInfo info = Describe(path, frame);
 
-        var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
+            var converted = new FormatConvertedBitmap(frame, PixelFormats.Bgra32, null, 0);
 
-        // The conversion above is lazy. CachedBitmap with OnLoad realises the pixels now,
-        // while the file stream is still open, and Freeze makes the result usable from the UI
-        // thread even though the decode happened on a worker.
-        var bitmap = new CachedBitmap(converted, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-        bitmap.Freeze();
+            // The conversion above is lazy. Realise makes the pixels now, while the file stream
+            // is still open, and Freeze makes the result usable from the UI thread even though
+            // the decode happened on a worker.
+            CachedBitmap bitmap = Realise(converted, info);
+            bitmap.Freeze();
 
-        return new LoadedImage(info, bitmap);
+            return new LoadedImage(info, bitmap);
+        }
+        catch (COMException ex)
+        {
+            throw Rejected(ex);
+        }
     }
+
+    /// <summary>
+    /// Decodes and converts the pixels into memory, with <see cref="BitmapCacheOption.OnLoad"/>.
+    /// An image too large for WIC fails here with an <see cref="OverflowException"/> (a PNG
+    /// whose header says 40000 x 30000 does, measured on 2026-10-22), which is said as a
+    /// message instead.
+    /// </summary>
+    /// <param name="converted">The frame, converted to Bgra32 lazily.</param>
+    /// <param name="info">What the file is; its size goes into the message.</param>
+    /// <returns>The pixels in memory, not yet frozen.</returns>
+    /// <exception cref="NotSupportedException">The image is too large for WIC to hold.</exception>
+    private static CachedBitmap Realise(BitmapSource converted, ImageInfo info)
+    {
+        try
+        {
+            return new CachedBitmap(converted, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+        }
+        catch (OverflowException ex)
+        {
+            throw new NotSupportedException($"An image of {info.Dimensions} is too large to show.", ex);
+        }
+    }
+
+    /// <summary>
+    /// Makes the refusal for a file a codec rejected with an error of its own, in a type the pair
+    /// loader turns into a message.
+    /// </summary>
+    /// <param name="ex">
+    /// The codec's exception; its message says what is wrong with the file.
+    /// </param>
+    /// <returns>
+    /// The exception to throw, with the codec's message and the codec's exception inside.
+    /// </returns>
+    private static FileFormatException Rejected(COMException ex) => new(ex.Message, ex);
 
     /// <summary>
     /// Opens a file for one read from start to end, sharing it with other readers.

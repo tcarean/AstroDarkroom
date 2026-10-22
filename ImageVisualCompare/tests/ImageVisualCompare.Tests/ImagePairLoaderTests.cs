@@ -174,6 +174,33 @@ public class ImagePairLoaderTests : IDisposable
     }
 
     [Fact]
+    public async Task R005_AnImageTooLargeToDecode_IsAMessageNamingIt()
+    {
+        // It probes as 40000 x 30000, and four bytes a pixel overflow WIC's 32-bit buffer size
+        // when the decode sets the pixels aside.
+        string huge = _images.WritePngWithHeaderSize("huge.png", 40000, 30000);
+
+        ImagePairLoadResult result = await Real().LoadAsync(huge, huge);
+
+        Assert.Equal(
+            "Could not read huge.png." + Environment.NewLine + "An image of 40000 × 30000 is too large to show.",
+            result.Error);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task R005_ADamagedWebP_IsAMessage_AtTheProbeOrAtTheDecode(bool lossless)
+    {
+        string broken = _images.WriteDamagedWebP("broken.webp", lossless);
+
+        ImagePairLoadResult result = await Real().LoadAsync(broken, broken);
+
+        Assert.False(result.IsSuccess);
+        Assert.StartsWith("Could not read broken.webp." + Environment.NewLine, result.Error);
+    }
+
+    [Fact]
     public async Task R006_ReportsProgressAsEachImageStarts()
     {
         string before = _images.WritePng("before.png", PixelFormats.Bgr24, 32, 32);

@@ -27,6 +27,16 @@ format, which the status bar reports. See ADR 0008.
 
 If a decoder ever has to change, `IImageLoader` is the seam. Replacing it is one class.
 
+The seam carries one more promise: a loader that cannot read a file throws a type
+`ImagePairLoader.IsExpectedLoadFailure` turns into a message, and a decoder's own failure types
+are turned into those by its loader, never added to that list (ADR 0031). `WicImageLoader`
+catches a `COMException` around everything WIC does in `Probe` and in `Load`, which a codec
+throws for a damaged file (0xC00D36BE from Windows' WebP, HEIC and AVIF codecs), and rethrows a
+`FileFormatException` with the codec's message. `Realise`, the `CachedBitmap` that sets the
+converted pixels aside, turns WIC's `OverflowException` for an image too large for it into the
+too-large message the FITS reader gives too; `FitsImageLoader.CreateBitmap` does the same for a
+FITS.
+
 ## FITS, the format WIC does not read
 
 Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the bitmap:
