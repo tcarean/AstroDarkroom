@@ -263,6 +263,44 @@ public class FitsHeaderTests
         Assert.Equal("FITS: the header is not valid.", ex.Message);
     }
 
+    [Theory]
+    [InlineData("BSCALE", "NaN")]
+    [InlineData("BZERO", "1D999")]
+    [InlineData("BZERO", "-Infinity")]
+    public void R019_ABZeroOrBScaleThatIsNotFinite_IsAnInvalidHeader(string key, string value)
+    {
+        // All three parse as numbers, so none falls back to the default: NaN would make every
+        // level 0, and 1D999, which overflows to an infinity, every level 255.
+        Exception? ex = Failure(FitsFixture.Image(16, 1, 1, 1, [0], FitsFixture.Card(key, value)));
+
+        Assert.IsType<NotSupportedException>(ex);
+        Assert.Equal("FITS: the header is not valid.", ex.Message);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(5000)]
+    public void R014_ReadLayout_AnEmptyPrimaryWithAPCount_IsSteppedOverToTheImage(int pcount)
+    {
+        // NAXIS = 0: no data follow the header, whatever PCOUNT says.
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                FitsFixture.Card("SIMPLE", "T"), FitsFixture.Card("BITPIX", 16), FitsFixture.Card("NAXIS", 0),
+                FitsFixture.Card("PCOUNT", pcount),
+            ]),
+            .. FitsFixture.Header([FitsFixture.Text("XTENSION", "IMAGE"), .. FitsFixture.ImageCards(16, 4, 3, 1)]),
+            .. FitsFixture.Data(16, new double[12]),
+        ];
+
+        FitsImageLayout layout = Read(file);
+
+        Assert.Equal(4, layout.Width);
+        Assert.Equal(3, layout.Height);
+        Assert.Equal(2 * 2880, layout.DataOffset);
+    }
+
     [Fact]
     public void R019_ANegativeHeapSize_IsAnInvalidHeader_NotAnEndlessLoop()
     {

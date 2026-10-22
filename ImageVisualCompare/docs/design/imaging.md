@@ -49,23 +49,26 @@ Added on 2026-10-05 (ADR 0029). The path of a FITS file, from the dialog to the 
 2. `FitsHeader.ReadLayout` walks the header-data units: 2880-byte blocks of 80-byte cards up to
    `END`, then the unit's data, padded to a block. It stops at the first unit that can hold an
    image (the primary, or an `IMAGE` extension) and has two axes or more, and steps over the
-   others by their size (`DataBlockBytes`), which for a table needs `PCOUNT` and `GCOUNT` and
-   for random groups leaves out the first axis. A binary table has two axes and 8 bits like a
-   small image, which is why the extension's type is asked first; one with `ZIMAGE = T` is a
-   tile-compressed image and is refused by name. After the primary, a block that does not
-   start with `XTENSION` is not a header, and the search ends there with "no image": programs
-   leave padding after the last unit. The result is a `FitsImageLayout`: size, planes,
-   `BITPIX`, `BZERO`, `BSCALE`, the row order, and the offset of the first sample. The length
-   of the stream is checked here, so a file cut short fails at the probe, before the padding
-   question and before any decode.
+   others by their size (`DataBlockBytes`), which for a table needs `PCOUNT` and `GCOUNT`, for
+   random groups leaves out the first axis, and for a unit with no axes is nothing, whatever
+   its `PCOUNT` says (the standard: no data follow such a header). A binary table has two axes
+   and 8 bits like a small image, which is why the extension's type is asked first; one with
+   `ZIMAGE = T` is a tile-compressed image and is refused by name. After the primary, a block
+   that does not start with `XTENSION` is not a header, and the search ends there with "no
+   image": programs leave padding after the last unit. The result is a `FitsImageLayout`:
+   size, planes, `BITPIX`, `BZERO`, `BSCALE`, the row order, and the offset of the first
+   sample. The length of the stream is checked here, so a file cut short fails at the probe,
+   before the padding question and before any decode.
 
    The header is input from outside and is not trusted. `Count` reads every keyword the
    layout is computed from: an integer, never negative except `BITPIX`, and a value that is
-   neither makes the header invalid instead of falling back to a default. The size of a
-   unit's data is multiplied in a `checked` block, the number of axes is capped at the
-   standard's 999, and an image's width is capped so that a row of its samples fits one
-   array. The first version had none of this, and a negative axis sent the walk back to the
-   header it had just read, for ever.
+   neither makes the header invalid instead of falling back to a default. `Number` reads
+   `BZERO` and `BSCALE`, and refuses NaN and the infinities in the same way: they parse as
+   numbers ("NaN", "Infinity", an overflowing 1D999), and either would make every level black
+   or white. The size of a unit's data is multiplied in a `checked` block, the number of axes
+   is capped at the standard's 999, and an image's width is capped so that a row of its
+   samples fits one array. The first version had none of this, and a negative axis sent the
+   walk back to the header it had just read, for ever.
 3. `FitsRowDecoder.ReadFileRow` fills one Bgra32 row. FITS is plane-sequential (all of red,
    then all of green, then all of blue), so the row is read from one place per plane; the
    decoder seeks, reads `Width` samples into its one row buffer, and `Convert` writes each

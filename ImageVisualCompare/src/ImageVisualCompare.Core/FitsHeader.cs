@@ -183,21 +183,27 @@ public static class FitsHeader
     /// <param name="cards">The unit's header, keyword to value.</param>
     /// <param name="axes">NAXIS of the unit, 0 to 999.</param>
     /// <returns>
-    /// The bytes, rounded up to whole 2880-byte blocks. A unit with no axes counts no samples,
-    /// but its PCOUNT is still added, although the standard gives such a unit no data at all.
+    /// The bytes, rounded up to whole 2880-byte blocks; 0 for a unit with no axes, which the
+    /// standard gives no data at all, whatever its PCOUNT.
     /// </returns>
     /// <exception cref="NotSupportedException">
     /// The header is not valid: a count that is not a whole number, or a product that overflows.
     /// </exception>
     private static long DataBlockBytes(Dictionary<string, string> cards, int axes)
     {
+        // NAXIS = 0 means no data follow the header. The empty product would be one sample, and
+        // a PCOUNT left in such a header would be counted too; either way the next header would
+        // be looked for a block too far, and the image behind it never found.
+        if (axes == 0)
+        {
+            return 0;
+        }
+
         try
         {
             checked
             {
-                // A unit with no axes has no data at all, not one sample: the empty product
-                // would be 1, and the next header would be looked for 2880 bytes too far.
-                long samples = axes == 0 ? 0 : 1;
+                long samples = 1;
                 bool groups = IsTrue(cards, "GROUPS") && Count(cards, "NAXIS1", 1) == 0;
                 for (int axis = groups ? 2 : 1; axis <= axes; axis++)
                 {
@@ -429,17 +435,22 @@ public static class FitsHeader
     /// <summary>Reads a real-valued keyword, such as BZERO or BSCALE.</summary>
     /// <param name="cards">The header, keyword to value.</param>
     /// <param name="key">The keyword, in capitals.</param>
-    /// <param name="fallback">
-    /// The value when the keyword is missing or does not parse. NaN, an infinity and an
-    /// exponent too large (1D999) all parse, so they are not replaced by it.
-    /// </param>
-    /// <returns>
-    /// The number, read with an E or a D exponent; NaN or an infinity when the header holds one
-    /// or overflows.
-    /// </returns>
-    private static double Number(Dictionary<string, string> cards, string key, double fallback) =>
-        cards.TryGetValue(key, out string? value)
-        && double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
-            ? parsed
-            : fallback;
+    /// <param name="fallback">The value when the keyword is missing or does not parse.</param>
+    /// <returns>The number, read with an E or a D exponent; always finite.</returns>
+    /// <exception cref="NotSupportedException">
+    /// The value parses to NaN or an infinity, as "NaN", "Infinity" and an exponent too large
+    /// (1D999) do: the header is not valid.
+    /// </exception>
+    private static double Number(Dictionary<string, string> cards, string key, double fallback)
+    {
+        if (!cards.TryGetValue(key, out string? value)
+            || !double.TryParse(value.Replace('D', 'E'), NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed))
+        {
+            return fallback;
+        }
+
+        // A scale or an offset that is not finite would make every level black or white, with
+        // nothing to say why; it is refused like any other header that cannot be trusted.
+        return double.IsFinite(parsed) ? parsed : throw InvalidHeader();
+    }
 }
