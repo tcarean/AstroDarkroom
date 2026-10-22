@@ -54,6 +54,20 @@
          ADR 0009 o refuza; fiecare advisory e citit si judecat in ADR 0036 si in
          docs/design/dependencies.md, unde intra si urmatorul. -->
     <MSBuildWarningsNotAsErrors>NU1902;NU1903</MSBuildWarningsNotAsErrors>
+
+    <!-- Fisierul de documentatie XML (ADR 0038). Generat, compilatorul verifica fiecare
+         comentariu ///, si gate-ul (-warnaserror) face din fiecare abatere o eroare: XML
+         stricat (CS1570), un <param> sau <paramref> care nu numeste niciun parametru (CS1572,
+         CS1734), un parametru fara tag langa altele cu tag (CS1573), un cref care nu se
+         rezolva sau e ambiguu (CS1574, CS0419). CS1591 (comentariu lipsa) ramane oprit:
+         regula "Documentation comments" cere comentariul pe fiecare tip si metoda, si pe cele
+         private, si nimic nu o verifica; CS1591 ar cere doar membrii publici, proprietatile
+         cu tot, iar nucleul e internal in intregime (ADR 0035 al kit-ului). Nimic nu citeste
+         fisierele XML la rulare, deci niciun publish nu le livreaza: consola ramane un singur
+         fisier. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PublishDocumentationFiles>false</PublishDocumentationFiles>
   </PropertyGroup>
 
 </Project>

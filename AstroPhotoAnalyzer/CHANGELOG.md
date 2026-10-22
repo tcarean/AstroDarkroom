@@ -23,6 +23,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The build writes the XML documentation file (ADR 0038), so the gate now fails a malformed
+  doc comment, a `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside
+  tagged ones and a `cref` that does not resolve; CS1591 stays muted, and no publish ships the
+  XML files.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0036): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0009 rejects, and none
