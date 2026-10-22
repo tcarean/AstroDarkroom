@@ -210,3 +210,70 @@ the risky points were checked by hand:
 
 `/wrap-up`, the merge proposed (`git merge --no-ff` in `E:\Photografie\Code`, the owner's call),
 then the worktree removed and the branch deleted.
+
+## What deviated
+
+- **One session for two tasks.** The documentation backfill and these fixes ran in the same
+  session, at the owner's word, against the kit's "One task per session"; the eight fixes are one
+  task on one branch, a commit each.
+- **The design review was done by hand.** The planning agent stopped at the usage limit before
+  reading anything; the risky points were read in the code instead ("Design checks" above), and
+  each held.
+- **A sixth ADR, 0036.** The choice to ignore a second open, rather than queue it or let it
+  cancel the first, was settled through this plan's approval; a choice settled in chat gets an
+  ADR, so it has one, written at the wrap-up. The ADRs came out 0031 WIC's failures, 0032 the WPF
+  tests, 0033 "−", 0034 DPI, 0035 the float TIFF, 0036 the ignored open.
+- **`IsAboveThreshold` moved** from `FitsRowDecoder` to `FitsScale`, so the float TIFF and the
+  FITS reader share the rule that decides the rescale; not in the plan, no behaviour changed
+  (the R-016 tests of `FitsRowDecoderTests` pass as before).
+- **"−" at exactly 2 %.** The rule is "when no stop is below the scale", which covers the
+  lowest stop itself: with the fit under 2 %, "−" at 2 % now goes to the fit, where it did
+  nothing. R-024 says so.
+- **A circular figure, measured again.** The first check of the float TIFF on real data compared
+  the application's levels with levels computed from WIC's float conversion, the path the
+  application now takes too, so its "100 % equal" proved nothing about that conversion. The
+  floats were then read straight from the strips of the two uncompressed exports and compared
+  with WIC's `Rgb128Float`: bit for bit equal, 72 480 768 of 72 480 768 samples in each.
+- **Not checked by running:** `Ctrl+O` during a load (the test clicks the button; the key path
+  reaches the same method and is read), and a move between monitors scaled differently (all the
+  owner's monitors are at 100 %).
+- **Each test seen failing before its fix:**
+  - R-005: `OverflowException`, "The image data generated an overflow during processing.", for
+    the 40000 x 30000 PNG; `COMException` 0xC00D36BE for both WebPs, the lossless one at the
+    probe, the lossy one at the decode.
+  - R-006: `Expected: 1, Actual: 2` dialogs.
+  - FITS: the three non-finite headers read without an exception; the empty primary with a
+    `PCOUNT` of 1 and of 5000 gave "FITS: no image found in the file."
+  - R-024: from 0.018, "−" went to 0.02; the fit was 0.01533.
+  - Minimap: the rectangle ended at 101.94 on a 100-unit area; a click at (1, 1) centred on
+    31.25 image pixels; the rectangle ended at 190 on the 188-DIP thumbnail.
+  - R-022: the embedded manifest was the compiler's default, with no `PerMonitorV2`.
+  - Float TIFF: reported `32-bit gray`, `96-bit` and `32-bit RGBA`; 0.5 showed as 188 and
+    0.25 as 137; the file counting to 65535 was all white.
+- **Measured on 2026-10-22:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | 783c6a9 | the plan | `== OK in 30s` | 256 |
+  | 649532c | R-005, WIC's failures as messages | `== OK in 30s` | 259 |
+  | 8f0f52e | R-006 and the WPF test thread | `== OK in 27s` | 260 |
+  | c7ca752 | the FITS header's two edge cases | `== OK in 27s` | 265 |
+  | d3fb235 | "−" never zooms in | `== OK in 30s` | 267 |
+  | 95750f8 | the minimap inside its border | `== OK in 41s` | 270 |
+  | bfec5fc | per-monitor DPI awareness | `== OK in 26s` | 271 |
+  | c4294bd | the float TIFF as a FITS | `== OK in 25s` | 280 |
+
+  - **The float TIFF on real data:** `stacked_GraXpert.tiff` is `32-bit float RGB`, the medians
+    69/67/67 against `stacked.tif`'s 70/72/64 (142/140/140 through WIC's conversion); the load
+    takes 1.4 to 1.5 s against 0.8 to 1.4 s before, the process start included.
+  - **DPI awareness of the running application,** `GetProcessDpiAwareness` and the main window's
+    context: 3326fe4 system aware (1), this branch per-monitor (2) with the v2 context.
+  - **The launches,** from the branch's build: the real pair after the R-006, minimap and DPI
+    commits, the same picture each time, closed with exit code 0; the before/after GraXpert pair,
+    `6016 × 4016 · A 16-bit RGB · B 32-bit float RGB`, both halves equally bright; the 40000 x
+    30000 PNG, the dialog "Could not read ihdr-40000x30000.png." and "An image of 40000 × 30000
+    is too large to show.", the process still running.
+  - **`/validate`:** the four cases passed with no drift; the figures are in
+    `../validation.md`, History, 2026-10-22.
+  - **The doc counter,** `code` group: 46 types and 157 methods, none undocumented or missing a
+    tag but `OpenPairAsync`'s plain `Task`.

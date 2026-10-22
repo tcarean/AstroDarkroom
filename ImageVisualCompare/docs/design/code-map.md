@@ -84,5 +84,9 @@
   - `Theme.xaml` — the dark palette and every control style.
   - `Assets/ImageVisualCompare.ico` and `Assets/make-icon.ps1` — the application's icon and the
     script that draws it; the csproj's `ApplicationIcon` embeds the file. See `shell.md`.
+  - `app.manifest` — what Windows reads from the executable at start-up: per-monitor DPI
+    awareness, so 100% is one to one on every monitor; the csproj's `ApplicationManifest`
+    embeds it. See `rendering.md`, ADR 0034.
 - `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
-  tests drive the real WIC codecs. References both other projects.
+  tests drive the real WIC codecs. References both other projects. `WpfThread` runs the tests
+  of a window or a control on one STA thread (ADR 0032).

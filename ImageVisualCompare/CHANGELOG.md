@@ -17,10 +17,31 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The application has its own icon, in the window's caption, the taskbar and Explorer: a dim
   star field and a brighter one either side of the turquoise divider (R-064, ADR 0030).
 
+### Changed
+
+- A TIFF of 32-bit float samples, as Siril and GraXpert export, is reported `32-bit float RGB`
+  (or gray, RGBA) and shown as stored, as a FITS of the same samples is, with the same 0..1 or
+  0..65535 rule. WIC's own conversion showed it about 73 levels brighter, and reported the RGB
+  ones as `96-bit` (R-090, R-091, ADR 0035).
+
 ### Fixed
 
 - `LICENSE` now sits next to the program, in the build folder and in the publish folder, where
   the About dialog says the full licence text is (R-074, ADR 0027).
+- A file WIC fails with an error of its own, an image too large to decode or a damaged WebP,
+  HEIC or AVIF, gives the usual message instead of closing the application (R-005, ADR 0031).
+- `Ctrl+O` and `Open…` do nothing while a pair is being opened; a second open could start on
+  top of the first, and two pairs decode at once (R-006).
+- A FITS whose `BZERO` or `BSCALE` is NaN or infinite is refused as an invalid header instead of
+  showing all black or all white, and an empty primary with a `PCOUNT` no longer hides the image
+  in the extension behind it (R-014, R-019).
+- `−` never zooms in: in a window so small that the image fits under 2 %, it went up to 2 %, and
+  now goes to the fit (R-024, ADR 0033).
+- A click in the minimap centres the view on the point under the pointer; it was off by the
+  minimap's 1-DIP border, 31 image pixels of a 5938-pixel-wide image. The viewport rectangle
+  stays on the thumbnail at the far edge (R-041, R-042).
+- `100%` is one image pixel per physical pixel on every monitor, also on one scaled differently
+  from the main display: the application declares per-monitor DPI awareness (R-022, ADR 0034).
 
 ### Internal
 
@@ -44,6 +65,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the code were corrected. `Directory.Build.props` no longer mutes CS1573, so a comment that
   tags only some parameters fails the build (the kit's ADR 0035, recorded on ADR 0003). No code
   changed.
+- A defect a window or a control shows without being shown is now tested: the test project runs
+  them on one STA thread of its own (`WpfThread`), `MainWindow` and `MinimapView` first (ADR 0032,
+  superseding ADR 0026 in part).
 
 ## [1.1.1] - 2026-09-09
 

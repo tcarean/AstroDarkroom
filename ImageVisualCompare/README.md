@@ -21,10 +21,11 @@ comun Windows și urmează tema sistemului, nu a aplicației.
 ## Ce fișiere îi dai
 
 PNG sau TIFF, orice adâncime de biți și orice combinație de canale pe care WIC le poate
-citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat. Și FITS, cu ce e scris mai jos
-la „Fișiere FITS". Nu există nicio ramură în
-cod care să întrebe ce format are fișierul — totul se normalizează la Bgra32 la încărcare,
-iar formatul real e afișat în bara de stare ca să știi mereu ce ai deschis.
+citi: 8 sau 16 biți pe canal, RGB, RGBA, grayscale, paletizat, și TIFF cu valori float pe 32
+de biți (vezi „TIFF float" mai jos). Și FITS, cu ce e scris mai jos la „Fișiere FITS". Totul
+se normalizează la Bgra32 la încărcare, iar formatul real e afișat în bara de stare ca să știi
+mereu ce ai deschis; singurul loc în care codul întreabă ce format are fișierul e cel al
+valorilor float dintr-un TIFF.
 
 Adâncimea de biți și numărul de canale *pot* să difere între cele două — poți compara un PNG
 pe 16 biți cu un TIFF pe 8 biți fără probleme.
@@ -39,6 +40,10 @@ Fișierele de pe disc nu sunt atinse, și nici pixelii din memorie: negrul e fun
 se desenează oricum ambele imagini, nu o copie mai mare a lor. Citirea RGB din bara de stare
 arată `—` acolo unde o imagine nu ajunge, deci se vede imediat că ești în zona de padding și
 nu într-o zonă neagră din poză.
+
+**Un fișier care nu poate fi citit** (lipsă, blocat, stricat, într-un format pe care nu-l
+citește niciun codec instalat, sau prea mare ca să fie decodat) dă un mesaj cu numele lui și
+motivul, apoi se redeschid dialogurile. Aplicația nu se închide.
 
 Un export „32 bit" din Siril ajunge pe disc ca PNG pe **16 biți pe canal** (48 bpp), fiindcă
 formatul PNG nu are un mod pe 32 de biți. Windows raportează corect „bit depth 48".
@@ -65,6 +70,16 @@ recunoscut după conținut, nu după extensie.
   e, nu o eroare generică; la fel pentru un antet stricat sau o imagine prea mare ca să fie
   afișată. Un cadru brut cu matrice Bayer se deschide, dar apare ca mozaicul
   gri care este: nu se face debayer.
+
+### TIFF float
+
+Un TIFF cu valori float pe 32 de biți, cum sunt exporturile „32 bit" din GraXpert și din
+Siril, e citit ca un FITS cu aceleași valori: bara de stare spune `32-bit float RGB` (sau
+`gray`, `RGBA`), iar valorile se afișează așa cum sunt în fișier, fără stretch, între 0 și 1
+sau între 0 și 65535, după aceeași regulă ca la FITS. Conversia proprie a Windows le-ar fi
+arătat mult mai luminoase, în medie cu ~73 de niveluri din 255 pe exporturile GraXpert: stack-ul
+pe 16 biți de dinainte de GraXpert și rezultatul float de după ar fi părut unul de două ori mai
+luminos decât celălalt, deși în date nu e așa.
 
 ## Cum o pornești
 
@@ -95,7 +110,7 @@ Fereastra pornește maximizată, ca zoom-ul „fit" să fie calculat de la înce
 | încadrează tot | `Ctrl+0`, sau butonul `Fit` |
 | mărime reală | `Ctrl+1`, sau butonul `100%` |
 | sari în altă zonă | click sau drag în minimap-ul din stânga-jos |
-| deschide altă pereche | `Ctrl+O`, sau butonul `Open…` |
+| deschide altă pereche | `Ctrl+O`, sau butonul `Open…` (nu în timpul unei încărcări) |
 
 Scurtăturile de tastatură merg când suprafața de comparație are focus; îl primește singură
 după încărcare, și îl recapătă la orice click pe imagine. Pasul săgeților e în pixeli
@@ -108,8 +123,9 @@ altfel n-ai putea-o vedea la rezoluția ei. În sus limita e 1600%.
 
 **„100%" înseamnă un pixel de imagine peste un pixel fizic de ecran**, nu peste un pixel
 logic. Pe un ecran cu scalare Windows la 125% sau 150% diferența contează, iar la
-pixel peeping vrei varianta onestă. Peste 400% se trece automat pe nearest-neighbour, ca să
-vezi pixelii reali, nu interpolare.
+pixel peeping vrei varianta onestă. Ține pe orice monitor, și când monitoarele au scalări
+diferite: aplicația urmărește scalarea monitorului pe care e fereastra. Peste 400% se trece
+automat pe nearest-neighbour, ca să vezi pixelii reali, nu interpolare.
 
 ## Ce îți arată bara de stare
 
@@ -122,9 +138,9 @@ Dimensiunea perechii și formatul real al fiecărui fișier, coordonata pixelulu
 vedea o diferență: pe un fundal întunecat, o diferență de una-două unități din 255 e complet
 invizibilă cu ochiul, dar se citește imediat în cifre.
 
-Pentru un FITS formatul arată adâncimea și planurile din fișier, de exemplu `A 32-bit float
-RGB` sau `B 16-bit gray`. Valorile RGB citite sunt tot cele 0–255 de pe ecran, nu valorile
-float din fișier.
+Pentru un FITS, ca și pentru un TIFF float, formatul arată adâncimea și planurile din fișier,
+de exemplu `A 32-bit float RGB` sau `B 16-bit gray`. Valorile RGB citite sunt tot cele 0–255
+de pe ecran, nu valorile float din fișier.
 
 Când perechea a avut nevoie de padding, prima parte devine `600 × 400 padded · A 600 × 300 ·
 B 400 × 400`: dimensiunea pânzei singură ar fi o jumătate de adevăr, fiindcă niciuna dintre
