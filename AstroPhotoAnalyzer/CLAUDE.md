@@ -175,4 +175,9 @@ edit:
 - `.editorconfig` holds whitespace only; `dotnet format` enforces it, `IDE0005` removes unused
   usings. Warnings are errors in the gate. Code style analyzers and `Nullable` in the three
   application projects are off on purpose (ADR 0003); enabling them is a task of its own.
+- The build writes the XML documentation file, so the gate fails a malformed doc comment, a
+  `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside tagged ones,
+  a `cref` that does not resolve or is ambiguous, and a `///` on something that is not a member
+  (a local function keeps `//`); CS1591 (a missing comment) stays muted, and no publish ships
+  the XML files (ADR 0038).
 - Fix, do not suppress, unless the suppression carries a comment with the reason.

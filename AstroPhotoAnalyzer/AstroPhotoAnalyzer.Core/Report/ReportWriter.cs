@@ -159,7 +159,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// O tinta exacta de pe scara (R-043): valoarea ei, sau o margine la capetele scarii -
-        /// "<= 0.05" cand chiar prima treapta pune deja praful (sau norul) pe negru, deci tinta
+        /// "&lt;= 0.05" cand chiar prima treapta pune deja praful (sau norul) pe negru, deci tinta
         /// adevarata e undeva mai jos, unde scara nu ajunge; "> 0.60" cand nici ultima nu-l
         /// pune. Scris "0.05" simplu, primul caz parea o tinta masurata.
         /// </summary>

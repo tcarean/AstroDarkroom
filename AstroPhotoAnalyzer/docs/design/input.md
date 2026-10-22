@@ -56,7 +56,8 @@ for the dictionary; the raw header bytes are re-read between the two stream posi
 leaves. From any other source the file is a 32-bit float FITS with a minimal header and
 `ROWORDER = 'TOP-DOWN'`. The values are the raster's: what the reader clipped to 0..1 stays
 clipped. The write goes to a temporary file in the target folder, moved over the name at the
-end and deleted on failure. An integer sample that falls outside its type by more than a
+end and deleted on failure (unless the delete itself is refused: an `IOException` leaves it,
+any other refusal replaces the original exception). An integer sample that falls outside its type by more than a
 rounding (a signed 16-bit source without `BZERO` holds 0..32767) is counted, and one such
 sample refuses the save: clipped silently the file would not be the curve's.
 
@@ -81,13 +82,15 @@ or as `CDELT` + `CROTA2` (the AIPS convention). `PixelToSky` is the TAN deprojec
 WCS Paper II with `LONPOLE` 180; `SkyToPixel` its inverse (NaN behind the tangent plane).
 Both take **raster** coordinates (0-based, row 0 at the top) and convert to FITS pixels
 inside: `y_fits = H - y` when the rows were flipped (`ROWORDER = BOTTOM-UP`), `y + 1`
-otherwise; `WithRowsFlipped` re-targets a WCS lent to a raster of another orientation.
+otherwise. A WCS lent through `--wcs` keeps the lent FITS's flip, since the borrowing PNG is
+that FITS's flipped array; `WithRowsFlipped`, which re-targets a flip, is called by tests only.
 `ScaleDegPerPx` is the root of the determinant. `FitsReader` attaches the WCS to
 `SourceInfo.Wcs`; `FitsReader.ReadImageHeader(path)` reads a header without its data, for
 `AnalysisRun.BorrowWcs` (`--wcs`, R-027), which refuses a different size or a header without
 a WCS. `Astrometry` holds the sphere: unit vectors, angular separation, the radius of a disc
-of a given area, and the FK4-to-FK5 rotation (B1950 to J2000, no E-terms; within 0.02' of
-VizieR's own precession over the whole catalogue).
+of a given area, the galactic latitude (the band, ADR 0026), and the FK4-to-FK5 rotation
+(B1950 to J2000, no E-terms; within 0.02' of VizieR's own precession over the whole
+catalogue).
 
 ### The catalogue (`Input/DarkNebulaCatalogue.cs`, `Input/ldn.txt`)
 
@@ -120,7 +123,8 @@ chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level 
 
 ### Raster operations and the lift table (`Input/RasterOps.cs`, `Input/LiftTable.cs`)
 
-`RasterOps` returns new rasters and never modifies its input: `Subsample` (every n-th pixel,
+`RasterOps` never modifies its input, and what returns a raster returns a new one, except
+`Subsample` at a stride of 1 or less, which returns its input: `Subsample` (every n-th pixel,
 anchored top-left, `a[::s, ::s]`), `Crop`, `Gamma` (v^gamma on every channel through a
 65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`), `GammaFor` (ln(to) / ln(from)),
 `Level8` / `Level16`, `LstarPlane` (L\* per pixel of a subsample). `Interpolate(lut, s)` is
@@ -136,8 +140,8 @@ the sample as it is: every as-is measurement. `LiftTable` is built for one gamma
 `SrgbToLinear(PowerLut(gamma)[k])` for every 16-bit level, interpolated linearly between two
 neighbouring levels **on the linear value**; the print simulation lifts and linearises each
 step of its ladder through one table and never builds the lifted raster (ADR 0035). Against
-the lifted-raster path it replaced, the table agrees to one float ulp of L\* per patch on the
-reference images (7.6e-6 at L\* 32 to 64) and to 2e-7 in luminance at an exact level; the
+the lifted-raster path it replaced, the table agrees to 7.63e-6 of L\* per patch on the
+reference images (one float ulp at L\* 64 to 128, two below 64) and to 2e-7 in luminance at an exact level; the
 two interpolations differ most in the first 16-bit steps at a small gamma, where the power
 curve's own step is widest, and no real sample sits there (`LiftTableTests`).
 
@@ -176,7 +180,8 @@ Written down because each one cost a probe to find, and each one shapes code or 
   TIFF - the file Siril writes - cannot be produced through ImageSharp; the reader tests
   use a hand-built uncompressed TIFF (`TiffTestData`) instead, which is also the more
   honest test: decode of a foreign file, not encoder-decoder symmetry.
-- **`Image.Identify` does not read a PNG's `iCCP` chunk** (it stops at the header) and
+- **`Image.Identify` does not return a PNG's `iCCP` chunk** (it reads the chunks, checking
+  their CRCs, but decodes no pixels and keeps no profile) and
   returns no frame metadata for PNG at all. `Image.Load` does populate
   `Metadata.IccProfile`. The reader therefore takes the profile from the decoded image.
 - **The TIFF decoder puts the ICC profile on the first frame's metadata**

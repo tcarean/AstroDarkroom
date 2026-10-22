@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IccProfileInfo.cs - numele unui profil ICC, din tagul 'desc'.
+// IccProfileInfo.cs - the name of an ICC profile, from its 'desc' tag.
 //
-// Se citeste de mana, nu prin obiectele ImageSharp, dintr-un motiv simplu: tot ce vrem
-// e un sir de afisat ("sRGB IEC61966-2.1", "sRGB-elle-V2-srgbtrc.icc"), iar structura
-// tagului e de vreo treizeci de linii - textDescriptionType in profilele v2, mluc in v4.
-// Orice altceva din profil nu ne intereseaza: unealta nu converteste culori.
+// It is read by hand, not through ImageSharp's objects, for a simple reason: all we want is a
+// string to show ("sRGB IEC61966-2.1", "sRGB-elle-V2-srgbtrc.icc"), and the tag's structure is
+// about thirty lines - textDescriptionType in the v2 profiles, mluc in v4. Nothing else in the
+// profile interests us: the tool does not convert colours.
 //
-// Orice abatere de la format intoarce null, nu exceptie: un profil ciudat e un fapt de
-// raportat ("profil fara nume"), nu un motiv sa cada analiza.
+// Any departure from the format returns null, not an exception: an odd profile is a fact to
+// report ("profil fara nume"), not a reason for the analysis to fail.
 
 using System;
 using System.Buffers.Binary;
@@ -31,8 +31,16 @@ using System.Text;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>Reads the name of an ICC profile from its 'desc' tag, by hand.</summary>
     internal static class IccProfileInfo
     {
+        /// <summary>
+        /// The profile's name, from the 'desc' tag: textDescriptionType in a v2 profile, the first
+        /// record of mluc in v4. A missing, malformed or nameless profile gives null rather than
+        /// an exception.
+        /// </summary>
+        /// <param name="icc">The profile's bytes; null is allowed.</param>
+        /// <returns>The name, trimmed; null when there is none to read.</returns>
         internal static string Describe(byte[] icc)
         {
             try
@@ -59,6 +67,16 @@ namespace AstroPhotoAnalyzer
             catch (DecoderFallbackException) { return null; }
         }
 
+        /// <summary>The text of a 'desc' (v2) or 'mluc' (v4) tag; null for another type.</summary>
+        /// <param name="icc">The profile's bytes.</param>
+        /// <param name="off">The tag's offset in the profile, in bytes.</param>
+        /// <param name="size">
+        /// The tag's size, in bytes, as the tag table gives it; not read here.
+        /// </param>
+        /// <returns>
+        /// The raw text, NULs and spaces included; null for another type, no record, or a length
+        /// that runs past the profile.
+        /// </returns>
         static string ReadTextTag(byte[] icc, int off, int size)
         {
             string type = Encoding.ASCII.GetString(icc, off, 4);
@@ -66,16 +84,17 @@ namespace AstroPhotoAnalyzer
             {
                 case "desc":
                     {
-                        // textDescriptionType (v2): sig, rezervat, lungime ASCII (cu NUL), sir.
+                        // textDescriptionType (v2): sig, reserved, ASCII length (with the NUL),
+                        // string.
                         int len = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
                         if (len <= 0 || off + 12 + len > icc.Length) return null;
                         return Encoding.ASCII.GetString(icc, off + 12, len);
                     }
                 case "mluc":
                     {
-                        // multiLocalizedUnicodeType (v4): sig, rezervat, nr. inregistrari,
-                        // marimea unei inregistrari (12), apoi inregistrari: limba, tara,
-                        // lungime in octeti, offset fata de inceputul tagului. UTF-16BE.
+                        // multiLocalizedUnicodeType (v4): sig, reserved, number of records, the
+                        // size of a record (12), then the records: language, country, length in
+                        // bytes, offset from the start of the tag. UTF-16BE.
                         uint n = BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 8, 4));
                         if (n == 0) return null;
                         int recLen = (int)BinaryPrimitives.ReadUInt32BigEndian(icc.AsSpan(off + 16, 4));
@@ -90,6 +109,9 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>A tag's text without its trailing NULs and its surrounding spaces.</summary>
+        /// <param name="s">The raw text; null is allowed.</param>
+        /// <returns>The clean text; null when nothing is left.</returns>
         static string Clean(string s)
         {
             if (s == null) return null;

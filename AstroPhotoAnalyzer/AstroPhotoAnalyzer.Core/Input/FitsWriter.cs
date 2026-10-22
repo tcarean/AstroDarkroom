@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FitsWriter.cs - singurul lucru pe care unealta il scrie in afara de raport: un FITS NOU
-// cu o curba aplicata (R-145, ADR 0032). Scris de mana, ca si cititorul (ADR 0009).
+// FitsWriter.cs - the one thing the tool writes besides the report: a NEW FITS with a curve
+// applied (R-145, ADR 0032). Written by hand, like the reader (ADR 0009).
 //
-// DINTR-UN FITS. Fisierul sursa se redeschide DOAR pentru citire si se copiaza asa cum e,
-// octet cu octet, in afara de doua locuri ale HDU-ului cu imaginea: antetul primeste
-// carduri HISTORY inaintea lui END (toate celelalte carduri raman, in ordine: WCS, SIP,
-// expunere, instrument), iar datele se scriu din rasterul din memorie trecut prin curba,
-// cu aceeasi codare (BITPIX, BZERO, BSCALE) si aceeasi ordine a randurilor (ROWORDER) ca
-// in sursa. HDU-urile de dinainte si de dupa trec neatinse.
+// FROM A FITS. The source file is reopened for reading ONLY and copied as it is, byte for byte,
+// except two places of the HDU with the image: the header gets HISTORY cards before its END
+// (every other card stays, in order: WCS, SIP, exposure, instrument), and the data are written
+// from the raster in memory passed through the curve, with the same encoding (BITPIX, BZERO,
+// BSCALE) and the same row order (ROWORDER) as in the source. The HDUs before and after pass
+// untouched.
 //
-// DIN ALTCEVA (PNG, TIFF, JPEG). Un FITS float pe 32 de biti cu un antet minim, randurile
-// de sus in jos. Profilul ICC al sursei nu se duce: FITS n-are un loc standard pentru el.
+// FROM ANYTHING ELSE (PNG, TIFF, JPEG). A 32-bit float FITS with a minimal header, the rows from
+// the top down. The source's ICC profile is not carried: FITS has no standard place for it.
 //
-// Valorile sunt cele ale rasterului: ce cititorul a taiat la 0..1 ramane taiat.
+// The values are the raster's: what the reader clipped to 0..1 stays clipped.
 //
-// Se scrie intr-un fisier temporar din folderul tinta, mutat la sfarsit peste nume: o
-// scriere esuata nu lasa un FITS pe jumatate.
+// It is written to a temporary file in the target folder, moved over the name at the end: a
+// failed write does not leave a half-written FITS under the target's name.
 
 using System;
 using System.Buffers.Binary;
@@ -42,15 +42,33 @@ using System.Text;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// Writes the one image the tool writes: a new FITS of an analysed raster with a curve
+    /// applied (R-145, ADR 0032).
+    /// </summary>
     internal static class FitsWriter
     {
         const int Block = 2880, Card = 80;
 
         /// <summary>
-        /// Scrie la <paramref name="target"/> rasterul <paramref name="r"/> trecut prin
-        /// <paramref name="curve"/>. <paramref name="sourceFits"/> e FITS-ul din care a fost
-        /// citit rasterul, sau null cand sursa nu e un FITS.
+        /// Writes to <paramref name="target"/> the raster <paramref name="r"/> passed through
+        /// <paramref name="curve"/>, through a temporary file in the same folder moved over the
+        /// name at the end. On a failure the temporary file is deleted and the exception passes
+        /// on: a source that no longer has the raster's geometry or is cut short before the
+        /// image's data, or a value the source's type cannot hold. A delete refused with an
+        /// IOException leaves the temporary file; one refused otherwise (access denied) throws
+        /// in place of the original exception.
         /// </summary>
+        /// <param name="r">The raster as it was analysed, 0..1.</param>
+        /// <param name="curve">The curve applied to every sample.</param>
+        /// <param name="sourceFits">
+        /// The FITS the raster was read from, whose cards and other HDUs are copied; null when the
+        /// source is not a FITS.
+        /// </param>
+        /// <param name="history">
+        /// The texts of the HISTORY cards, one card each, cut to 72 characters.
+        /// </param>
+        /// <param name="target">The file to write; replaced when it exists.</param>
         internal static void Save(Raster r, ToneCurve curve, string sourceFits, IReadOnlyList<string> history, string target)
         {
             string temp = target + ".tmp-" + Guid.NewGuid().ToString("N");
@@ -65,17 +83,40 @@ namespace AstroPhotoAnalyzer
             }
             catch
             {
-                try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { /* fisierul temporar ramane; eroarea de scriere e cea care conteaza */ }
+                // On an IOException the temporary file stays; the write error is what matters.
+                try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { }
                 throw;
             }
         }
 
+        /// <summary>
+        /// A HISTORY card: the text after "HISTORY ", cut to the card's 80 characters.
+        /// </summary>
+        /// <param name="text">The text, ASCII.</param>
+        /// <returns>The card's 80 bytes.</returns>
         static byte[] HistoryCard(string text) => Encoding.ASCII.GetBytes(("HISTORY " + text).PadRight(Card).Substring(0, Card));
 
+        /// <summary>
+        /// A keyword = value card, the value right-aligned to column 30 as FITS writes it.
+        /// </summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="value">The value as FITS writes it (a number, T or F).</param>
+        /// <returns>The card's 80 bytes.</returns>
         static byte[] ValueCard(string key, string value) => Encoding.ASCII.GetBytes((key.PadRight(8) + "= " + value.PadLeft(20)).PadRight(Card));
 
+        /// <summary>
+        /// A keyword = 'string' card, the string padded to at least 8 characters.
+        /// </summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="text">The string, without quotes.</param>
+        /// <returns>The card's 80 bytes.</returns>
         static byte[] StringCard(string key, string text) => Encoding.ASCII.GetBytes((key.PadRight(8) + "= '" + text.PadRight(8) + "'").PadRight(Card));
 
+        /// <summary>
+        /// Writes the cards, then spaces to the end of their last 2880-byte block.
+        /// </summary>
+        /// <param name="o">The output.</param>
+        /// <param name="cards">The cards, 80 bytes each, END included.</param>
         static void WriteCards(Stream o, List<byte[]> cards)
         {
             long n = 0;
@@ -84,6 +125,14 @@ namespace AstroPhotoAnalyzer
             for (; n % Block != 0; n++) o.Write(space, 0, 1);
         }
 
+        /// <summary>
+        /// The FITS of a source that is not one: a minimal header (32-bit float, 2 or 3 axes,
+        /// ROWORDER = 'TOP-DOWN', the HISTORY cards), then the data.
+        /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="curve">The curve applied to every sample.</param>
+        /// <param name="history">The texts of the HISTORY cards.</param>
+        /// <param name="o">The output, at its start.</param>
         static void Fresh(Raster r, ToneCurve curve, IReadOnlyList<string> history, Stream o)
         {
             var cards = new List<byte[]>
@@ -100,6 +149,18 @@ namespace AstroPhotoAnalyzer
             WriteData(o, r, curve, -32, 0, 1, bottomUp: false);
         }
 
+        /// <summary>
+        /// The FITS of a FITS source: the HDUs before the image copied as they are, the image's
+        /// cards with the HISTORY cards before END, the data written from the raster through the
+        /// curve in the source's encoding and row order, and what follows the image copied as it
+        /// is. Throws when the source has no image, no longer has the raster's geometry, or is
+        /// cut short before the image's data; a tail cut short after them is copied as it is.
+        /// </summary>
+        /// <param name="r">The raster read from <paramref name="sourceFits"/>, 0..1.</param>
+        /// <param name="curve">The curve applied to every sample.</param>
+        /// <param name="sourceFits">The source FITS, opened for reading only.</param>
+        /// <param name="history">The texts of the HISTORY cards.</param>
+        /// <param name="o">The output, at its start.</param>
         static void FromFits(Raster r, ToneCurve curve, string sourceFits, IReadOnlyList<string> history, Stream o)
         {
             using var s = new FileStream(sourceFits, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16);
@@ -121,14 +182,14 @@ namespace AstroPhotoAnalyzer
 
                 if (!(naxis >= 2 && n1 > 0 && n2 > 0))
                 {
-                    // Un HDU de dinaintea imaginii: trece asa cum e.
+                    // An HDU before the image: it passes as it is.
                     Copy(s, o, start, headerEnd + dataBlocks);
                     continue;
                 }
                 if (n1 != r.W || n2 != r.H || n3 != r.Planes.Length)
                     throw new Exception("FITS-ul sursa nu mai are geometria imaginii analizate: " + sourceFits);
 
-                // Antetul: toate cardurile pana la END, apoi HISTORY, apoi END.
+                // The header: every card up to END, then HISTORY, then END.
                 var raw = new byte[headerEnd - start];
                 s.Position = start;
                 ReadExact(s, raw);
@@ -147,12 +208,17 @@ namespace AstroPhotoAnalyzer
                 bool bottomUp = string.Equals(FitsReader.HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
                 WriteData(o, r, curve, bitpix, FitsReader.HDbl(hdr, "BZERO", 0.0), FitsReader.HDbl(hdr, "BSCALE", 1.0), bottomUp);
 
-                // Ce urmeaza dupa imagine (extensii) trece asa cum e.
+                // What follows the image (extensions) passes as it is.
                 Copy(s, o, headerEnd + dataBlocks, s.Length);
                 return;
             }
         }
 
+        /// <summary>
+        /// Fills <paramref name="buf"/> from the stream; throws when the stream ends first.
+        /// </summary>
+        /// <param name="s">The stream.</param>
+        /// <param name="buf">The buffer, filled whole.</param>
         static void ReadExact(Stream s, byte[] buf)
         {
             int got = 0;
@@ -164,6 +230,14 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>
+        /// Copies the source's bytes from <paramref name="from"/> up to <paramref name="to"/>,
+        /// excluded; throws when the source ends before <paramref name="to"/>.
+        /// </summary>
+        /// <param name="s">The source, seekable.</param>
+        /// <param name="o">The output.</param>
+        /// <param name="from">The first byte, an offset in the source.</param>
+        /// <param name="to">The byte after the last, an offset in the source.</param>
         static void Copy(Stream s, Stream o, long from, long to)
         {
             if (to > s.Length) throw new Exception("FITS: fisier trunchiat.");
@@ -179,7 +253,18 @@ namespace AstroPhotoAnalyzer
             }
         }
 
-        /// <summary>Datele, plan dupa plan, in codarea si ordinea randurilor date: inversa lui FitsReader.ReadData.</summary>
+        /// <summary>
+        /// The data, plane after plane, in the given encoding and row order: the inverse of
+        /// FitsReader.ReadData. Throws on a BITPIX it does not know or a BSCALE of 0, and, after
+        /// writing, when a value fell outside the type by more than a rounding.
+        /// </summary>
+        /// <param name="o">The output, after the header.</param>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="curve">The curve applied to every sample.</param>
+        /// <param name="bitpix">The encoding: 8, 16, 32, -32 or -64.</param>
+        /// <param name="bzero">The BZERO the stored values are written for.</param>
+        /// <param name="bscale">The BSCALE the stored values are written for; not 0.</param>
+        /// <param name="bottomUp">Whether the rows are written from the bottom up.</param>
         static void WriteData(Stream o, Raster r, ToneCurve curve, int bitpix, double bzero, double bscale, bool bottomUp)
         {
             int bytesPer = Math.Abs(bitpix) / 8;
@@ -202,7 +287,8 @@ namespace AstroPhotoAnalyzer
                     for (int x = 0; x < r.W; x++)
                     {
                         double stored = (curve.MapSample(plane[y * r.W + x]) * scale - bzero) / bscale;
-                        // Peste capatul tipului cu mai mult de o rotunjire: valoarea n-ar mai fi cea a curbei.
+                        // Past the end of the type by more than a rounding: the value would no
+                        // longer be the curve's.
                         if (stored < lo - 0.5 || stored > hi + 0.5) outside++;
                         var span = new Span<byte>(row, x * bytesPer, bytesPer);
                         switch (bitpix)
@@ -217,9 +303,9 @@ namespace AstroPhotoAnalyzer
                     o.Write(row, 0, row.Length);
                     written += row.Length;
                 }
-            // Un FITS intreg fara BZERO (16 biti cu semn: doar 0..32767, jumatate de scara) nu
-            // poate tine valorile ridicate de curba. Taiate pe tacute ar da un fisier gresit:
-            // salvarea se refuza, iar fisierul temporar se sterge (Save).
+            // An integer FITS without BZERO (signed 16 bits: only 0..32767, half the scale) cannot
+            // hold the values the curve lifts. Clipped silently they would make a wrong file: the
+            // save is refused, and the temporary file is deleted (Save).
             if (outside > 0) throw new Exception(CurveTexts.ValuesDoNotFit(outside, bitpix, bzero));
             var zero = new byte[1];
             for (; written % Block != 0; written++) o.Write(zero, 0, 1);

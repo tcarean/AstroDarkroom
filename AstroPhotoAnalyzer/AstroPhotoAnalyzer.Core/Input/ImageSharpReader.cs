@@ -15,20 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ImageSharpReader.cs - TIFF, PNG si JPEG, prin ImageSharp.
+// ImageSharpReader.cs - TIFF, PNG and JPEG, through ImageSharp.
 //
-// SINGURUL fisier din nucleu care atinge ImageSharp la citire (JpegAnalyzer il atinge la
-// encodare). Daca licenta pachetului se muta vreodata, cusatura e aici.
+// THE ONLY file of the core that reads image files through ImageSharp (JpegAnalyzer encodes and
+// decodes JPEG in memory). If the package's licence ever moves, the seam is here.
 //
-// DOUA TRECERI PRIN FISIER, deliberat. Prima, Identify, citeste doar headerul si spune
-// ce e in fisier - biti pe esantion, canale, compresie. A doua decodeaza pixelii in
-// tipul potrivit: L16 pe mono, Rgb48 pe color - si abia ea da si profilul ICC (vezi
-// IccOf). Decodarea intr-un singur tip (Rgb48 pentru tot) ar fi triplat memoria pe o
-// imagine mono, iar a deduce bitii din tipul in care AM CERUT decodarea ar fi fost o
-// minciuna: ImageSharp da 16 biti oricui ii cere, si din 8 biti scalati cu 257.
+// TWO PASSES THROUGH THE FILE, on purpose. The first, Identify, reads the metadata without
+// decoding the pixels and says what is in the file - bits per sample, channels, compression
+// (on a PNG it still checks the chunks' CRCs, so a damaged IDAT fails here). The second decodes
+// the pixels into the fitting type: L16 on mono, Rgb48 on colour - and only it gives the ICC
+// profile too (see IccOf). Decoding into a single type (Rgb48 for everything) would have tripled
+// the memory of a mono image, and inferring the bits from the type I ASKED the decode for would
+// have been a lie: ImageSharp gives 16 bits to whoever asks for them, even out of 8 bits scaled
+// by 257.
 //
-// 3.1.x nu aplica niciodata profilul ICC la decodare - valorile sunt cele din fisier.
-// Exact ce vrem: masuram ce a scris Siril, nu o conversie de culoare.
+// 3.1.x never applies the ICC profile when decoding - the values are those in the file. Exactly
+// what we want: we measure what Siril wrote, not a colour conversion.
 
 using System;
 using System.Collections.Generic;
@@ -41,12 +43,14 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>The reader of TIFF, PNG and JPEG files, through ImageSharp 3.1.11.</summary>
     internal sealed class ImageSharpReader : IFrameReader
     {
         static readonly string[] Exts = { ".tif", ".tiff", ".png", ".jpg", ".jpeg" };
 
         public IReadOnlyList<string> Extensions => Exts;
 
+        /// <inheritdoc/>
         public bool Handles(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -54,6 +58,17 @@ namespace AstroPhotoAnalyzer
             return Array.IndexOf(Exts, ext) >= 0;
         }
 
+        /// <summary>
+        /// Reads the file in two passes: what the file holds from its metadata (Identify), then
+        /// the pixels as L16 (mono) or Rgb48 (colour), each sample / 65535, with the ICC profile.
+        /// Throws, with a message for the user, when Identify does not know the format or finds
+        /// the content damaged. Other failures pass with ImageSharp's own exception and message
+        /// (damage only the decode meets, a TIFF variant ImageSharp does not decode, a TIFF cut
+        /// short that Identify trips on), and some damage goes unnoticed: the decoder may read
+        /// a TIFF's missing strip rows as black.
+        /// </summary>
+        /// <param name="path">The TIFF, PNG or JPEG file.</param>
+        /// <returns>The raster, with its <see cref="SourceInfo"/>.</returns>
         public Raster Load(string path)
         {
             ImageInfo info;
@@ -80,6 +95,9 @@ namespace AstroPhotoAnalyzer
             return raster;
         }
 
+        /// <summary>
+        /// What a file's metadata say about it, as <see cref="Facts"/> reads them.
+        /// </summary>
         sealed class FileFacts
         {
             internal string Format;
@@ -90,9 +108,15 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Ce e in fisier, din metadatele fiecarui format - nu din tipul de pixel in care
-        /// s-ar decoda. PNG si TIFF spun explicit bitii si canalele; JPEG e mereu 8 biti.
+        /// What is in the file, from each format's metadata - not from the pixel type it would be
+        /// decoded into. PNG and TIFF state the bits and the channels explicitly; JPEG is always
+        /// 8 bits.
         /// </summary>
+        /// <param name="info">What Identify read from the file.</param>
+        /// <returns>
+        /// The format's name in capitals, the bits per sample, colour or not, the compression as
+        /// the report names it, and a note for the report (or null).
+        /// </returns>
         static FileFacts Facts(ImageInfo info)
         {
             string name = info.Metadata.DecodedImageFormat?.Name ?? "";
@@ -157,15 +181,23 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Profilul ICC, din imaginea DECODATA - nu din Identify. Masurat pe 3.1.11:
-        /// Identify se opreste la header si nu vede chunk-ul iCCP al unui PNG, iar la
-        /// TIFF decoderul lasa profilul pe primul cadru, langa tagurile IFD-ului, nu pe
-        /// imagine. Se cauta in ambele locuri, ca un PNG de la Siril sau un TIFF cu
-        /// profil sa nu apara "fara profil".
+        /// The ICC profile, from the DECODED image - not from Identify. Measured on 3.1.11:
+        /// Identify does not return a PNG's iCCP chunk, and on TIFF the
+        /// decoder leaves the profile on the first frame, beside the IFD's tags, not on the
+        /// image. Both places are searched, so that a PNG from Siril or a TIFF with a profile does
+        /// not show as "fara profil".
         /// </summary>
+        /// <param name="img">The decoded image.</param>
+        /// <returns>The profile's bytes, or null when the file carries none.</returns>
         static byte[] IccOf(Image img)
             => img.Metadata.IccProfile?.ToByteArray() ?? img.Frames[0].Metadata.IccProfile?.ToByteArray();
 
+        /// <summary>
+        /// Decodes the file as Rgb48 into a raster of 3 planes, each sample / 65535.
+        /// </summary>
+        /// <param name="path">The file.</param>
+        /// <param name="icc">The embedded ICC profile, or null.</param>
+        /// <returns>The raster, without its <see cref="Raster.Source"/>.</returns>
         static Raster LoadColor(string path, out byte[] icc)
         {
             using Image<Rgb48> img = Image.Load<Rgb48>(path);
@@ -189,6 +221,12 @@ namespace AstroPhotoAnalyzer
             return r;
         }
 
+        /// <summary>
+        /// Decodes the file as L16 into a raster of 1 plane, each sample / 65535.
+        /// </summary>
+        /// <param name="path">The file.</param>
+        /// <param name="icc">The embedded ICC profile, or null.</param>
+        /// <returns>The raster, without its <see cref="Raster.Source"/>.</returns>
         static Raster LoadMono(string path, out byte[] icc)
         {
             using Image<L16> img = Image.Load<L16>(path);

@@ -15,68 +15,98 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ColorMath.cs - sRGB, luminanta si L*, functiile pure pe care sta tot ce tine de hartie.
+// ColorMath.cs - sRGB, luminance and L*: the pure functions everything about paper rests on.
 //
-// Imaginea e presupusa sRGB (asa o scrie Siril, si asa era si cea de acceptanta). Un
-// profil diferit se raporteaza ca fapt (SourceInfo.IccDescription), dar nu se
-// converteste: unealta masoara ce a scris procesarea, nu o interpretare a ei.
+// The image is assumed to be sRGB (Siril writes it so, and so was the acceptance image). A
+// different profile is reported as a fact (SourceInfo.IccDescription) but not converted: the
+// tool measures what the processing wrote, not an interpretation of it.
 //
-// Formulele sunt cele standard (IEC 61966-2-1 pentru sRGB, CIE 1976 pentru L*), scrise
-// aici o singura data ca sa nu apara doua versiuni cu constante rotunjite diferit.
+// The formulas are the standard ones (IEC 61966-2-1 for sRGB, CIE 1976 for L*), written here
+// once so that two versions with constants rounded differently cannot appear.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The conversions between encoded sRGB, linear values, luminance and CIE L*, and the black
+    /// of a paper.
+    /// </summary>
     internal static class ColorMath
     {
-        /// <summary>sRGB codat (0..1) -> luminanta liniara (0..1).</summary>
+        /// <summary>Encoded sRGB (0..1) -> linear value (0..1), for one channel.</summary>
+        /// <param name="c">The encoded value, 0..1.</param>
+        /// <returns>The linear value, 0..1.</returns>
         internal static double SrgbToLinear(double c)
             => c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
 
-        /// <summary>Luminanta liniara -> sRGB codat. Inversa exacta a lui SrgbToLinear.</summary>
+        /// <summary>
+        /// Linear value -> encoded sRGB: the inverse of SrgbToLinear, to 3e-8 just under 0.04045.
+        /// </summary>
+        /// <param name="l">The linear value, 0..1.</param>
+        /// <returns>The encoded value, 0..1.</returns>
         internal static double LinearToSrgb(double l)
             => l <= 0.0031308 ? 12.92 * l : 1.055 * Math.Pow(l, 1 / 2.4) - 0.055;
 
-        /// <summary>Luminanta Y din componente LINIARE, cu ponderile Rec. 709 / sRGB.</summary>
+        /// <summary>
+        /// The luminance Y of LINEAR components, with the Rec. 709 / sRGB weights.
+        /// </summary>
+        /// <param name="rLin">The linear red, 0..1.</param>
+        /// <param name="gLin">The linear green, 0..1.</param>
+        /// <param name="bLin">The linear blue, 0..1.</param>
+        /// <returns>Y, 0..1.</returns>
         internal static double Luminance(double rLin, double gLin, double bLin)
             => 0.2126 * rLin + 0.7152 * gLin + 0.0722 * bLin;
 
         /// <summary>
-        /// L* (CIE 1976) din luminanta relativa Y (0..1, alb = 1). Segmentul liniar de sub
-        /// 0.008856 e cel din standard; fara el, L* de la Y foarte mic ar fi negativ.
+        /// L* (CIE 1976) of the relative luminance Y (0..1, white = 1). The linear segment under
+        /// 0.008856 is the standard's; without it, the L* of a very small Y would be negative.
         /// </summary>
+        /// <param name="y">The relative luminance, 0..1.</param>
+        /// <returns>L*, 0..100.</returns>
         internal static double LstarOfY(double y)
             => y > 0.008856 ? 116 * Math.Cbrt(y) - 16 : 903.3 * y;
 
-        /// <summary>Inversa lui LstarOfY: luminanta relativa Y (0..1) a unui L*.</summary>
+        /// <summary>The inverse of LstarOfY: the relative luminance Y (0..1) of an L*.</summary>
+        /// <param name="l">L*, 0..100.</param>
+        /// <returns>Y, 0..1.</returns>
         internal static double YOfLstar(double l)
             => l > 903.3 * 0.008856 ? Math.Pow((l + 16) / 116, 3) : l / 903.3;
 
         /// <summary>
-        /// Nivelul de 8 biti (0..255, fractionar) al unui gri R = G = B cu L*-ul dat - ce
-        /// citesti pe histograma din Siril pentru un prag exprimat in L*.
+        /// The 8-bit level (0..255, fractional) of a grey R = G = B with the given L* - what you
+        /// read on Siril's histogram for a threshold given in L*.
         /// </summary>
+        /// <param name="l">L*, 0..100.</param>
+        /// <returns>The level, 0..255, not rounded.</returns>
         internal static double GrayLevelOfLstar(double l)
             => LinearToSrgb(YOfLstar(l)) * 255;
 
-        /// <summary>L*-ul unui gri R = G = B la nivelul de 8 biti dat.</summary>
+        /// <summary>The L* of a grey R = G = B at the given 8-bit level.</summary>
+        /// <param name="level">The level, 0..255; a fraction is allowed.</param>
+        /// <returns>L*, 0..100.</returns>
         internal static double LstarOfGrayLevel(double level)
             => LstarOfY(SrgbToLinear(level / 255));
 
         /// <summary>
-        /// L*-ul unui pixel sRGB. Pe mono, cele trei componente sunt aceeasi valoare si
-        /// ponderile se aduna la 1, deci formula e aceeasi.
+        /// The L* of an sRGB pixel. On mono the three components are the same value and the
+        /// weights add up to 1, so the formula is the same.
         /// </summary>
+        /// <param name="r">The encoded red, 0..1.</param>
+        /// <param name="g">The encoded green, 0..1.</param>
+        /// <param name="b">The encoded blue, 0..1.</param>
+        /// <returns>L*, 0..100.</returns>
         internal static double LstarOfSrgb(double r, double g, double b)
             => LstarOfY(Luminance(SrgbToLinear(r), SrgbToLinear(g), SrgbToLinear(b)));
 
         /// <summary>
-        /// Cel mai negru negru pe care il poate reda un mediu cu densitatea maxima data:
-        /// reflectanta 10^-Dmax, in L*. Gloss baryta (Dmax 2.4) -> L* ~3.6; canvas mat
-        /// (1.5) -> ~21; C-print sub acril (2.2) -> ~6. Tot ce e sub pragul asta in
-        /// fisier se printeaza cu ACELASI negru - de aici pleaca recomandarea de fundal.
+        /// The blackest black a medium with the given maximum density can render: the
+        /// reflectance 10^-Dmax, in L*. Gloss baryta (Dmax 2.4) -> L* ~3.6; matte canvas (1.5)
+        /// -> ~21; a C-print under acrylic (2.2) -> ~6. Everything under this threshold in the
+        /// file prints with THE SAME black - the background recommendation starts from here.
         /// </summary>
+        /// <param name="dmax">The medium's maximum optical density, positive.</param>
+        /// <returns>The L* of the paper's black, 0..100.</returns>
         internal static double PaperBlackLstar(double dmax)
             => LstarOfY(Math.Pow(10, -dmax));
     }

@@ -25,7 +25,7 @@ using System;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Monotone: Ok < Atentie < Problema. Verdictul general e maximul.</summary>
+    /// <summary>Monotone: Ok &lt; Atentie &lt; Problema. Verdictul general e maximul.</summary>
     internal enum Verdict { Ok = 0, Attention = 1, Problem = 2 }
 
     /// <summary>Sectiunile raportului, in ordinea deciziilor - nu a masuratorilor.</summary>

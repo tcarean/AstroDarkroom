@@ -15,15 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ImageLoader.cs - SINGURUL loc care decide ce cititor deschide un fisier.
+// ImageLoader.cs - THE ONLY place that decides which reader opens the analysed image (a --wcs
+// file goes straight to FitsReader, in AnalysisRun).
 //
-// De aici in jos nimic nu mai stie de unde au venit pixelii: analizoarele primesc un
-// Raster, rapoartele primesc un rezultat. Daca decizia asta se mai imprastie o data
-// prin cod, urmatoarea diferenta de comportament intre formate va aparea tacut.
+// From here down the analyzers get a Raster with its SourceInfo and the reports get a result;
+// the reader shows only through SourceInfo.Format, which the curve save checks for "FITS" to
+// copy the source's header. If this decision were scattered through the code once more, the
+// next difference in behaviour between formats would appear silently.
 //
-// Spre deosebire de FlatCheck, o extensie necunoscuta e o EROARE, nu un fallback pe
-// FITS: aici formatele sunt toate cu extensie proprie, si un ".psd" cazut pe cititorul
-// FITS ar iesi ca "header incomplet" in loc de "format neacceptat".
+// Unlike FlatCheck, an unknown extension is an ERROR, not a fallback to FITS: here every
+// format has an extension of its own, and a ".psd" fallen onto the FITS reader would come out
+// as "header incomplet" instead of "format neacceptat".
 
 using System;
 using System.Collections.Generic;
@@ -32,14 +34,26 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// Chooses the reader of a file by its extension, and reads the file with it.
+    /// </summary>
     internal static class ImageLoader
     {
         static readonly IFrameReader[] Readers = { new FitsReader(), new ImageSharpReader() };
 
-        /// <summary>Toate extensiile acceptate, pentru mesaje si pentru filtrul de fisiere al ferestrei.</summary>
+        /// <summary>
+        /// Every extension accepted, for the messages and for the window's file filter.
+        /// </summary>
         internal static IReadOnlyList<string> Extensions
             => Readers.SelectMany(r => r.Extensions).ToArray();
 
+        /// <summary>
+        /// Reads the image with the reader that claims its extension. Throws
+        /// <see cref="FileNotFoundException"/> for a file that does not exist, an exception
+        /// naming the accepted extensions for an unknown one, and whatever the reader throws.
+        /// </summary>
+        /// <param name="path">The image file.</param>
+        /// <returns>The raster, 0..1, with its <see cref="SourceInfo"/>.</returns>
         internal static Raster Load(string path)
         {
             if (!File.Exists(path)) throw new FileNotFoundException("fisierul nu exista: " + path, path);

@@ -15,32 +15,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Raster.cs - imaginea in memorie: 1 sau 3 planuri de float, valori 0..1.
+// Raster.cs - the image in memory: 1 or 3 float planes, values 0..1.
 //
-// DE CE FLOAT SI NU DOUBLE: imaginea tipica are 23 MP pe 3 canale. In double ar fi 554
-// MB doar pixelii; in float, 277. Precizia float (24 de biti de mantisa) acopera cu
-// rezerva cele 16 ale sursei - round(v * 65535) intoarce exact nivelul din fisier, si
-// pe asta se sprijina masuratoarea de biti reali.
+// WHY FLOAT AND NOT DOUBLE: the typical image has 23 MP on 3 channels. In double the pixels
+// alone would take 554 MB; in float, 277. Float precision (24 bits of mantissa) covers the
+// source's 16 with room to spare - round(v * 65535) gives back exactly the level in the file,
+// and the measurement of the real bits rests on that.
 //
-// DE CE PLANURI SEPARATE SI NU INTRETESUT: aproape toate masuratorile lucreaza pe un
-// singur canal (verdele, sau mono) sau pe fiecare canal in parte; un plan contiguu se
-// parcurge fara stride si se subesantioneaza cu o singura bucla.
+// WHY SEPARATE PLANES AND NOT INTERLEAVED: almost every measurement works on a single channel
+// (the green, or mono) or on each channel apart; a contiguous plane is walked without a stride
+// and subsampled with a single loop.
 //
-// Rasterul nu stie de unde a venit - de asta e SourceInfo, un record separat pe care
-// cititorul il completeaza. Analizoarele primesc un Raster si atat.
+// The pixels do not say where they came from - that is what SourceInfo is for, a separate record
+// the reader fills in and attaches as Source. The analyzers that measure pixels get a Raster
+// with its SourceInfo, and some of them the run's Parameters.
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// An image in memory: <see cref="H"/> rows of <see cref="W"/> pixels, in 1 or 3 float
+    /// planes, every sample 0..1.
+    /// </summary>
     internal sealed class Raster
     {
         internal readonly int H, W;
 
-        /// <summary>1 plan (mono) sau 3 (R, G, B). Fiecare e H*W, row-major, randul 0 SUS.</summary>
+        /// <summary>
+        /// 1 plane (mono) or 3 (R, G, B). Each is H*W, row-major, row 0 at the TOP.
+        /// </summary>
         internal readonly float[][] Planes;
 
-        /// <summary>Ce spune fisierul despre el. Null pe un raster construit in memorie (teste).</summary>
+        /// <summary>
+        /// What the file says about itself. Null on a raster built in memory (tests).
+        /// </summary>
         internal SourceInfo Source;
 
+        /// <summary>Allocates a raster of zeros, with no <see cref="Source"/>.</summary>
+        /// <param name="h">The height, in pixels.</param>
+        /// <param name="w">The width, in pixels.</param>
+        /// <param name="planes">The number of planes: 1 (mono) or 3 (R, G, B).</param>
         internal Raster(int h, int w, int planes)
         {
             if (planes != 1 && planes != 3)
@@ -52,59 +65,88 @@ namespace AstroPhotoAnalyzer
 
         internal bool IsColor => Planes.Length == 3;
 
+        /// <summary>The sample of one plane at one pixel.</summary>
+        /// <param name="plane">The plane: 0 on mono; 0, 1 or 2 for R, G or B.</param>
+        /// <param name="y">The row, 0 at the top.</param>
+        /// <param name="x">The column, 0 at the left.</param>
+        /// <returns>The sample, 0..1.</returns>
         internal float At(int plane, int y, int x) => Planes[plane][y * W + x];
+
+        /// <summary>Writes the sample of one plane at one pixel.</summary>
+        /// <param name="plane">The plane: 0 on mono; 0, 1 or 2 for R, G or B.</param>
+        /// <param name="y">The row, 0 at the top.</param>
+        /// <param name="x">The column, 0 at the left.</param>
+        /// <param name="v">The sample, 0..1; stored as it is, not clamped.</param>
         internal void Set(int plane, int y, int x, float v) => Planes[plane][y * W + x] = v;
 
         /// <summary>
-        /// Canalul pe care se fac masuratorile mono-canal: verdele pe color (cel mai
-        /// aproape de luminanta si cel cu cei mai multi fotoni pe un senzor Bayer), sau
-        /// singurul plan pe mono. Acelasi canal pe care s-au masurat cifrele de acceptanta.
+        /// The channel the single-channel measurements are made on: the green on colour (the
+        /// closest to luminance, and the one with the most photons on a Bayer sensor), or the
+        /// only plane on mono. The same channel the acceptance figures were measured on.
         /// </summary>
         internal float[] Reference => IsColor ? Planes[1] : Planes[0];
     }
 
     /// <summary>
-    /// Ce stie fisierul despre el insusi. Campurile care lipsesc nu sunt erori, sunt
-    /// raspunsul corect pentru formatul respectiv: un FITS n-are compresie si n-are
-    /// profil ICC, un PNG n-are BITPIX.
+    /// What the file knows about itself. The fields that are missing are not errors, they are
+    /// the right answer for that format: a FITS has no compression and no ICC profile, a PNG has
+    /// no BITPIX.
     /// </summary>
     internal sealed record SourceInfo
     {
         internal string Path { get; init; }
 
-        /// <summary>"TIFF", "PNG", "JPEG", "FITS".</summary>
+        /// <summary>
+        /// "TIFF", "PNG", "JPEG", "FITS": the format the reader found, which for a mis-named
+        /// file can be another of ImageSharp's ("BMP", "GIF", ...), noted in Note.
+        /// </summary>
         internal string Format { get; init; }
 
-        /// <summary>Bitii pe esantion din FISIER: 8, 16 sau 32. Pe FITS float, 32 cu IsFloat.</summary>
+        /// <summary>
+        /// The bits per sample in the FILE: 8 or 16 on most images, 1, 2 or 4 on a PNG of few
+        /// levels, the TIFF's own on a TIFF; on a FITS 8, 16 or 32, and 32 or 64 with IsFloat.
+        /// </summary>
         internal int BitDepth { get; init; }
 
-        /// <summary>FITS cu BITPIX negativ: valori reale, fara "niveluri" de numarat.</summary>
+        /// <summary>
+        /// A FITS with a negative BITPIX: real values, with no "levels" to count.
+        /// </summary>
         internal bool IsFloat { get; init; }
 
-        /// <summary>Planurile din fisier (1 sau 3); rasterul le pastreaza pe toate.</summary>
+        /// <summary>
+        /// The planes the raster keeps, 1 or 3: a FITS's own; for a TIFF, PNG or JPEG 1 on grey
+        /// and 3 on colour, an alpha channel dropped.
+        /// </summary>
         internal int PlanesInFile { get; init; }
 
-        /// <summary>Compresia, cum o numeste formatul ("LZW", "Deflate", "necomprimat"); null unde nu exista notiunea.</summary>
+        /// <summary>
+        /// The compression, as the format names it ("LZW", "Deflate", "necomprimat"); null where
+        /// the notion does not exist.
+        /// </summary>
         internal string Compression { get; init; }
 
-        /// <summary>Profilul ICC incorporat, brut; null daca fisierul n-are.</summary>
+        /// <summary>The embedded ICC profile, raw; null when the file has none.</summary>
         internal byte[] Icc { get; init; }
 
-        /// <summary>Numele din tagul 'desc' al profilului; null fara profil sau cu profil fara nume.</summary>
+        /// <summary>
+        /// The name in the profile's 'desc' tag; null without a profile, or with a profile without
+        /// a name.
+        /// </summary>
         internal string IccDescription { get; init; }
 
         internal long FileBytes { get; init; }
 
         /// <summary>
-        /// WCS-ul din antetul FITS (R-018), sau cel imprumutat prin Parameters.WcsPath (R-027);
-        /// null cand fisierul n-are unul: atunci praful si cerul se masoara fara catalog.
+        /// The WCS from the FITS header (R-018), or the one borrowed through Parameters.WcsPath
+        /// (R-027); null when the file has none: the dust and the sky are then measured without
+        /// the catalogue.
         /// </summary>
         internal Wcs Wcs { get; init; }
 
         /// <summary>
-        /// O observatie a cititorului pe care raportul o arata ca atare: de exemplu ca
-        /// valorile float au fost taiate la [0, 1], sau ca randurile au fost rasturnate
-        /// dupa ROWORDER. Null cand n-a fost nimic de spus.
+        /// A remark of the reader's that the report shows as it is: for example that float values
+        /// were clipped to [0, 1], or that the rows were flipped by ROWORDER. Null when there was
+        /// nothing to say.
         /// </summary>
         internal string Note { get; init; }
     }

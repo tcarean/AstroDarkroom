@@ -104,7 +104,7 @@ public class PrintStretchSimulatorTests
     }
 
     /// <summary>
-    /// A target at either end of the ladder is a bound, not a value: `<= 0.05` when even the
+    /// A target at either end of the ladder is a bound, not a value: `&lt;= 0.05` when even the
     /// lowest step already puts the dust (or a cloud) on paper black, `> 0.60` when the highest
     /// does not. Written the same way in the cloud table, the exact-target line and the map.
     /// </summary>
