@@ -230,7 +230,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A 4-byte signature, to show to the user: without the padding spaces and without the
-        /// bytes that are not letters.
+        /// control and non-ASCII bytes.
         /// </summary>
         /// <param name="signature">The signature as <see cref="Signature"/> read it.</param>
         /// <returns>What is left of it, possibly empty.</returns>

@@ -17,10 +17,10 @@
 
 // IFrameReader.cs - the contract every input format implements.
 //
-// The implementations are the only code that knows a particular format. ImageLoader chooses
-// among them through this contract and knows none of them by name, so a new format is added
-// without touching the dispatcher - and, more importantly, without any difference in behaviour
-// between formats being able to slip into it.
+// The implementations are the only code that knows a particular format. ImageLoader names them
+// only in its list of readers and chooses among them through this contract, so a new format is
+// added to that list without touching the dispatch - and, more importantly, without any
+// difference in behaviour between formats being able to slip into it.
 
 using System.Collections.Generic;
 

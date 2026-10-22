@@ -17,8 +17,8 @@
 
 // ImageLoader.cs - THE ONLY place that decides which reader opens a file.
 //
-// From here down nothing knows any more where the pixels came from: the analyzers get a
-// Raster, the reports get a result. If this decision were scattered through the code once
+// From here down nothing knows which reader read the pixels: the analyzers get a Raster with its
+// SourceInfo, the reports get a result. If this decision were scattered through the code once
 // more, the next difference in behaviour between formats would appear silently.
 //
 // Unlike FlatCheck, an unknown extension is an ERROR, not a fallback to FITS: here every

@@ -18,8 +18,9 @@
 // RasterOps.cs - the pure transformations of a Raster: subsampling, cropping, the gamma curve,
 // quantization, L* over the whole plane, and the guard against linear data.
 //
-// All of them return new rasters; none modifies its input. The analyzers can therefore work on
-// the same raster in any order.
+// Those that return a raster return a new one, except Subsample with a stride of 1 or less,
+// which returns its input; none modifies its input. The analyzers can therefore work on the same
+// raster in any order.
 
 using System;
 

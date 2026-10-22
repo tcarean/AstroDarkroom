@@ -26,8 +26,9 @@
 // (the green, or mono) or on each channel apart; a contiguous plane is walked without a stride
 // and subsampled with a single loop.
 //
-// The raster does not know where it came from - that is what SourceInfo is for, a separate
-// record the reader fills in. The analyzers get a Raster and nothing else.
+// The pixels do not say where they came from - that is what SourceInfo is for, a separate record
+// the reader fills in and attaches as Source. The analyzers get a Raster with its SourceInfo
+// (some of them the run's Parameters too), never a path or a reader.
 
 namespace AstroPhotoAnalyzer
 {
@@ -99,7 +100,8 @@ namespace AstroPhotoAnalyzer
         internal string Format { get; init; }
 
         /// <summary>
-        /// The bits per sample in the FILE: 8, 16 or 32. On a float FITS, 32 with IsFloat.
+        /// The bits per sample in the FILE: 8 or 16 on most images, 1, 2 or 4 on a PNG of few
+        /// levels, the TIFF's own on a TIFF; on a FITS 8, 16 or 32, and 32 or 64 with IsFloat.
         /// </summary>
         internal int BitDepth { get; init; }
 

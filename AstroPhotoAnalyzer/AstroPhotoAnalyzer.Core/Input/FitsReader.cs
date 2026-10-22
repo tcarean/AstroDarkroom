@@ -239,7 +239,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The data, plane after plane (FITS is plane-sequential), decoded in chunks of 1 MB.
         /// Returns how many values fell outside [0, 1] and were clipped - it does not happen on
-        /// int, it can on float. Throws when the data are cut short.
+        /// integers with the usual BZERO, it can on float and on signed integers stored without
+        /// it. Throws when the data are cut short.
         /// </summary>
         /// <param name="s">The stream, at the first byte of the data.</param>
         /// <param name="r">The raster to fill, already of the header's size.</param>

@@ -16,12 +16,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Astrometry.cs - the geometry of the sphere: unit vectors, angular distance, the B1950 -> J2000
-// precession of the catalogue.
+// precession of the catalogue, the galactic latitude.
 //
 // That and nothing more: the tool does not solve fields, does not look for stars, does not
 // correct anything. It gets a WCS made by Siril (Wcs.cs) and a catalogue with coordinates from
 // 1950 (DarkNebulaCatalogue.cs), and it only has to say whether the centre of a patch falls in a
-// cloud's disc. At 42"/pixel and 32 px patches, an error of a minute of arc does not show.
+// cloud's disc, and how far a patch lies from the galactic plane (the band, ADR 0026). At
+// 42"/pixel and 32 px patches, an error of a minute of arc does not show.
 
 using System;
 
