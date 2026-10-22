@@ -95,9 +95,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Otsu's threshold on an ALREADY SORTED vector: the value at which the split into two
         /// classes has the largest variance between the classes; the values at or under the
-        /// threshold are the lower class. The upper class has at least
-        /// <paramref name="minAbove"/> values: a few extreme values (stars on a faint nebula)
-        /// would win any split otherwise.
+        /// threshold are the lower class. The split leaves at least <paramref name="minAbove"/>
+        /// values above it by rank: a few extreme values (stars on a faint nebula) would win any
+        /// split otherwise. With values tied at the split, fewer may lie above the threshold.
         /// </summary>
         /// <param name="sorted">The values, sorted in ascending order.</param>
         /// <param name="minAbove">
@@ -126,7 +126,7 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>The arithmetic mean.</summary>
-        /// <param name="values">The values.</param>
+        /// <param name="values">The values; a NaN among them makes the mean NaN.</param>
         /// <returns>The mean; NaN for an empty vector.</returns>
         internal static double Mean(float[] values)
         {
@@ -138,7 +138,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The population standard deviation (divided by N), as np.std by default.
         /// </summary>
-        /// <param name="values">The values.</param>
+        /// <param name="values">The values; a NaN among them makes the result NaN.</param>
         /// <returns>
         /// The standard deviation, in the unit of the values; NaN for an empty vector.
         /// </returns>
@@ -150,7 +150,7 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>The smallest value; a NaN is never taken.</summary>
-        /// <param name="values">The values.</param>
+        /// <param name="values">The values; NaNs are skipped.</param>
         /// <returns>The smallest value; positive infinity for an empty vector.</returns>
         internal static float Min(float[] values)
         {
@@ -160,7 +160,7 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>The largest value; a NaN is never taken.</summary>
-        /// <param name="values">The values.</param>
+        /// <param name="values">The values; NaNs are skipped.</param>
         /// <returns>The largest value; negative infinity for an empty vector.</returns>
         internal static float Max(float[] values)
         {
@@ -172,7 +172,8 @@ namespace AstroPhotoAnalyzer
 
     /// <summary>
     /// xorshift64*, with a fixed seed. Good enough to pick tiles and to generate test noise; what
-    /// matters is that it gives THE SAME numbers wherever it runs.
+    /// matters is that it gives THE SAME numbers wherever it runs (NextGaussian goes through
+    /// Math.Log and Math.Cos, which .NET does not promise bit for bit on every platform).
     /// </summary>
     internal sealed class SeededRandom
     {

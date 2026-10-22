@@ -98,9 +98,11 @@ namespace AstroPhotoAnalyzer
         {
             // Through a table on the 65536 levels of 16 bits, not through Math.Pow on every
             // sample: on a raster of 4 million samples Pow would take seconds. On a 16-bit source
-            // the value falls exactly on a level of the table and the result is Pow's; on float
-            // (FITS) it is interpolated linearly between the two neighbouring levels, with an
-            // error under 1e-6 for any gamma between 0.3 and 3. The print simulation no longer
+            // the value falls on a level of the table to within float rounding and the result is
+            // Pow's to float precision; on float (FITS) it is interpolated linearly between the
+            // two neighbouring levels, with an error under 1e-6 above a sample of about 0.01 or
+            // for a gamma of about 0.93 or more, and up to 0.015 in the first 16-bit step at
+            // gamma 0.3. The print simulation no longer
             // goes through here: it lifts and linearises from a single table (LiftTable,
             // ADR 0035); what stays here is the preview and the window's map, which need the
             // lifted raster.
@@ -134,9 +136,8 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The table of the curve v^gamma on the 65536 levels of 16 bits, plus the level 65536 so
-        /// that the interpolation has a neighbour at 1.0 too: the same for Gamma and for
-        /// LiftTable.
+        /// The table of the curve v^gamma on the 65536 levels of 16 bits, plus an entry at level
+        /// 65536 that Interpolate never reads: the same for Gamma and for LiftTable.
         /// </summary>
         /// <param name="gamma">The exponent.</param>
         /// <returns>65537 entries, (k / 65535)^gamma at index k.</returns>
@@ -217,7 +218,7 @@ namespace AstroPhotoAnalyzer
         /// thousandth, almost everything in the first percents of the scale; a finished image has
         /// its background at 0.1-0.25. The threshold is
         /// <see cref="Thresholds.LinearMedianMax"/>. The guard exists so that the tool refuses
-        /// with a message, rather than report "99% under paper black" on a file nobody prints
+        /// with a message, rather than report "99% sub negrul hartiei" on a file nobody prints
         /// like that.
         /// </summary>
         /// <param name="r">The raster, 0..1.</param>

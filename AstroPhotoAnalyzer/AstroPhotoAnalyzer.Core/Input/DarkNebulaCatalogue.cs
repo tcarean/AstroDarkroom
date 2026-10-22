@@ -77,10 +77,11 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Reads the resource's format: lines with '#' are comments; otherwise six columns
-        /// separated by tabs: LDN, RA B1950 "h m.m", Dec B1950 "d m" with its sign, the area, the
-        /// opacity, the Barnard numbers separated by spaces (may be empty; "119a" is a valid
-        /// name). Throws on a row with fewer than 5 columns or a number it cannot read.
+        /// Reads the resource's format: empty lines and lines starting with '#' are skipped;
+        /// otherwise six columns separated by tabs: LDN, RA B1950 "h m.m", Dec B1950 "d m" with
+        /// its sign, the area, the opacity, the Barnard numbers separated by spaces (may be empty;
+        /// "119a" is a valid name). Throws on a row with fewer than 5 columns or a number it
+        /// cannot read.
         /// </summary>
         /// <param name="reader">The text, read to its end.</param>
         /// <returns>The rows, in the text's order, their centres precessed to J2000.</returns>

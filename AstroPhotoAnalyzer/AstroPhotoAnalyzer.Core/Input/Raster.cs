@@ -27,8 +27,8 @@
 // and subsampled with a single loop.
 //
 // The pixels do not say where they came from - that is what SourceInfo is for, a separate record
-// the reader fills in and attaches as Source. The analyzers get a Raster with its SourceInfo
-// (some of them the run's Parameters too), never a path or a reader.
+// the reader fills in and attaches as Source. The analyzers that measure pixels get a Raster
+// with its SourceInfo, and some of them the run's Parameters.
 
 namespace AstroPhotoAnalyzer
 {
@@ -96,7 +96,10 @@ namespace AstroPhotoAnalyzer
     {
         internal string Path { get; init; }
 
-        /// <summary>"TIFF", "PNG", "JPEG", "FITS".</summary>
+        /// <summary>
+        /// "TIFF", "PNG", "JPEG", "FITS": the format the reader found, which for a mis-named
+        /// file can be another of ImageSharp's ("BMP", "GIF", ...), noted in Note.
+        /// </summary>
         internal string Format { get; init; }
 
         /// <summary>
@@ -110,7 +113,10 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal bool IsFloat { get; init; }
 
-        /// <summary>The planes in the file (1 or 3); the raster keeps all of them.</summary>
+        /// <summary>
+        /// The planes the raster keeps, 1 or 3: a FITS's own; for a TIFF, PNG or JPEG 1 on grey
+        /// and 3 on colour, an alpha channel dropped.
+        /// </summary>
         internal int PlanesInFile { get; init; }
 
         /// <summary>

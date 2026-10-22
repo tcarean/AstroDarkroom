@@ -16,9 +16,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Astrometry.cs - the geometry of the sphere: unit vectors, angular distance, the B1950 -> J2000
-// precession of the catalogue, the galactic latitude.
+// precession of the catalogue, the radius of a disc, the galactic latitude.
 //
-// That and nothing more: the tool does not solve fields, does not look for stars, does not
+// That and nothing more: the tool does not solve fields, does not match stars, does not
 // correct anything. It gets a WCS made by Siril (Wcs.cs) and a catalogue with coordinates from
 // 1950 (DarkNebulaCatalogue.cs), and it only has to say whether the centre of a patch falls in a
 // cloud's disc, and how far a patch lies from the galactic plane (the band, ADR 0026). At
@@ -48,11 +48,11 @@ namespace AstroPhotoAnalyzer
             return (c * Math.Cos(ra), c * Math.Sin(ra), Math.Sin(dec));
         }
 
-        /// <summary>(RA, Dec) in degrees, RA in [0, 360), from any non-zero vector.</summary>
+        /// <summary>(RA, Dec) in degrees, RA in [0, 360], from any non-zero vector.</summary>
         /// <param name="x">The component towards RA 0 on the equator.</param>
         /// <param name="y">The component towards RA 90 on the equator.</param>
         /// <param name="z">The component towards the north pole.</param>
-        /// <returns>RA in [0, 360) and Dec in [-90, 90], in degrees.</returns>
+        /// <returns>RA in [0, 360] (360 by rounding only) and Dec in [-90, 90], degrees.</returns>
         internal static (double Ra, double Dec) FromVector(double x, double y, double z)
         {
             double ra = Math.Atan2(y, x) / Deg;
@@ -121,7 +121,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>The precession of a direction from B1950 to J2000, in degrees.</summary>
         /// <param name="raDeg">The right ascension, B1950, in degrees.</param>
         /// <param name="decDeg">The declination, B1950, in degrees.</param>
-        /// <returns>RA in [0, 360) and Dec, J2000, in degrees.</returns>
+        /// <returns>RA in [0, 360] and Dec, J2000, in degrees.</returns>
         internal static (double Ra, double Dec) B1950ToJ2000(double raDeg, double decDeg)
         {
             var v = UnitVector(raDeg, decDeg);

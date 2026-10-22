@@ -26,10 +26,10 @@
 // interpolates linearly between two neighbouring levels - ON THE LINEAR VALUE, not on the
 // lifted one: the intermediate lifted raster (RasterOps.Gamma, the same indexing and the same
 // interpolation, on the lifted value) is no longer built at all. Measured on the reference
-// images (docs/validation.md, 2026-10-09): no patch moves by more than one float ulp of its L*
-// (7.6e-6 at L* 32..64); on an isolated sample the two interpolations differ most in the first
-// 16-bit step at a small gamma, where the interpolation of the power curve was coarse too. The
-// "as is" row does not go through the table: it stays on the exact path.
+// images (docs/validation.md, 2026-10-09): no patch moves by more than 7.63e-6 of its L* (one
+// float ulp at L* 64..128, two below 64); on an isolated sample the two interpolations differ
+// most in the first 16-bit step at a small gamma, where the interpolation of the power curve was
+// coarse too. The "asa cum e" row does not go through the table: it stays on the exact path.
 //
 // The two paths are structs that implement the same interface, and the loops over the samples
 // (DustAnalyzer.PatchLstars, RasterOps.LstarPlane) are generic on it: the JIT specialises the
@@ -41,18 +41,18 @@ using System;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// An encoded sRGB sample (0..1) -> its linear luminance, by one of the two paths.
+    /// An encoded sRGB sample (0..1) -> its linear value, by one of the two paths.
     /// </summary>
     internal interface ISrgbLinearizer
     {
         /// <summary>Linearises one encoded sample by this path.</summary>
         /// <param name="s">The encoded sRGB sample, 0..1.</param>
-        /// <returns>The linear luminance, 0..1.</returns>
+        /// <returns>The linear value, 0..1 (the luminance only on mono).</returns>
         double Linear(float s);
     }
 
     /// <summary>
-    /// The exact path: <see cref="ColorMath.SrgbToLinear"/> on the sample as it is. The "as is"
+    /// The exact path: <see cref="ColorMath.SrgbToLinear"/> on the sample as it is. The "asa cum e"
     /// measurements go this way.
     /// </summary>
     internal readonly struct ExactLinearizer : ISrgbLinearizer
@@ -98,7 +98,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="s">
         /// The encoded sRGB sample, 0..1; clamped to that range, and NaN taken as 0.
         /// </param>
-        /// <returns>The linear luminance of the lifted sample, 0..1.</returns>
+        /// <returns>The linear value of the lifted sample, 0..1.</returns>
         public double Linear(float s) => RasterOps.Interpolate(_lin, s);
     }
 }

@@ -139,7 +139,9 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The same WCS, on a raster with another flip (a PNG that borrows the WCS of a FITS).
+        /// The same WCS with another flip. Only tests call it: a WCS borrowed through --wcs keeps
+        /// the lent FITS's flip (AnalysisRun.BorrowWcs), since the borrowing PNG is that FITS's
+        /// flipped array; re-targeting it to the PNG's own order would mirror every row.
         /// </summary>
         /// <param name="flipped">Whether that raster's rows are flipped from the FITS's.</param>
         /// <returns>A copy with <see cref="RowsFlipped"/> set.</returns>
@@ -165,7 +167,7 @@ namespace AstroPhotoAnalyzer
         /// <param name="x">The column, in raster pixels; the centre of pixel 0 is 0.</param>
         /// <param name="y">The row, in raster pixels; the centre of the top row is 0.</param>
         /// <returns>
-        /// RA in [0, 360) and Dec, in degrees, in the header's frame (J2000 from Siril).
+        /// RA in [0, 360] and Dec, in degrees, in the header's frame (J2000 from Siril).
         /// </returns>
         internal (double Ra, double Dec) PixelToSky(double x, double y)
         {

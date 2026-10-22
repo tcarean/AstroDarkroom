@@ -29,18 +29,20 @@ using System;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// The conversions between encoded sRGB, linear luminance and CIE L*, and the black of a
-    /// paper.
+    /// The conversions between encoded sRGB, linear values, luminance and CIE L*, and the black
+    /// of a paper.
     /// </summary>
     internal static class ColorMath
     {
-        /// <summary>Encoded sRGB (0..1) -> linear luminance (0..1).</summary>
+        /// <summary>Encoded sRGB (0..1) -> linear value (0..1), for one channel.</summary>
         /// <param name="c">The encoded value, 0..1.</param>
         /// <returns>The linear value, 0..1.</returns>
         internal static double SrgbToLinear(double c)
             => c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
 
-        /// <summary>Linear luminance -> encoded sRGB. The exact inverse of SrgbToLinear.</summary>
+        /// <summary>
+        /// Linear value -> encoded sRGB: the inverse of SrgbToLinear, to 3e-8 just under 0.04045.
+        /// </summary>
         /// <param name="l">The linear value, 0..1.</param>
         /// <returns>The encoded value, 0..1.</returns>
         internal static double LinearToSrgb(double l)

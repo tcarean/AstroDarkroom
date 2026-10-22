@@ -17,7 +17,8 @@
 
 // IFrameReader.cs - the contract every input format implements.
 //
-// The implementations are the only code that knows a particular format. ImageLoader names them
+// The implementations are the only code that reads a format into a raster (FitsWriter, Wcs and
+// the curve save also know FITS, and AnalysisRun reads a --wcs header). ImageLoader names them
 // only in its list of readers and chooses among them through this contract, so a new format is
 // added to that list without touching the dispatch - and, more importantly, without any
 // difference in behaviour between formats being able to slip into it.
@@ -52,11 +53,15 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Reads the image into a raster normalised to 0..1, with its <see cref="Raster.Source"/>
-        /// filled in. Throws when the file cannot be read or holds no image the reader accepts,
-        /// with a message for the user.
+        /// filled in. Throws when the file cannot be read or holds no image the reader accepts;
+        /// the message is the reader's, or for some failures the platform's or the library's.
         /// </summary>
         /// <param name="path">A file this reader handles.</param>
-        /// <returns>The raster: 1 or 3 planes, row 0 at the top.</returns>
+        /// <returns>
+        /// The raster: 1 or 3 planes, row 0 the image's first row as the reader takes it (a FITS
+        /// is flipped only on ROWORDER = 'BOTTOM-UP'; an EXIF or TIFF orientation tag is not
+        /// applied).
+        /// </returns>
         Raster Load(string path);
     }
 }

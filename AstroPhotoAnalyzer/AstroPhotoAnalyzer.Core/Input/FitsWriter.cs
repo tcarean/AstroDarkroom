@@ -31,7 +31,7 @@
 // The values are the raster's: what the reader clipped to 0..1 stays clipped.
 //
 // It is written to a temporary file in the target folder, moved over the name at the end: a
-// failed write does not leave a half-written FITS.
+// failed write does not leave a half-written FITS under the target's name.
 
 using System;
 using System.Buffers.Binary;
@@ -54,8 +54,10 @@ namespace AstroPhotoAnalyzer
         /// Writes to <paramref name="target"/> the raster <paramref name="r"/> passed through
         /// <paramref name="curve"/>, through a temporary file in the same folder moved over the
         /// name at the end. On a failure the temporary file is deleted and the exception passes
-        /// on: a source that no longer has the raster's geometry or is cut short, or a value the
-        /// source's type cannot hold.
+        /// on: a source that no longer has the raster's geometry or is cut short before the
+        /// image's data, or a value the source's type cannot hold. A delete refused with an
+        /// IOException leaves the temporary file; one refused otherwise (access denied) throws
+        /// in place of the original exception.
         /// </summary>
         /// <param name="r">The raster as it was analysed, 0..1.</param>
         /// <param name="curve">The curve applied to every sample.</param>
@@ -81,7 +83,8 @@ namespace AstroPhotoAnalyzer
             }
             catch
             {
-                try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { /* the temporary file stays; the write error is the one that matters */ }
+                // On an IOException the temporary file stays; the write error is what matters.
+                try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { }
                 throw;
             }
         }
@@ -151,7 +154,7 @@ namespace AstroPhotoAnalyzer
         /// cards with the HISTORY cards before END, the data written from the raster through the
         /// curve in the source's encoding and row order, and what follows the image copied as it
         /// is. Throws when the source has no image, no longer has the raster's geometry, or is
-        /// cut short.
+        /// cut short before the image's data; a tail cut short after them is copied as it is.
         /// </summary>
         /// <param name="r">The raster read from <paramref name="sourceFits"/>, 0..1.</param>
         /// <param name="curve">The curve applied to every sample.</param>

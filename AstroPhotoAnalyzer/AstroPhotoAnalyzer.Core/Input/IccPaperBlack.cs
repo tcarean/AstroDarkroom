@@ -118,7 +118,8 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="bytes">The file's bytes; null is not a profile.</param>
         /// <param name="path">
-        /// The file's path, kept on the result and named in its description.
+        /// The file's path, kept on the result; its file name is the description when the profile
+        /// has no 'desc' name.
         /// </param>
         /// <returns>The black and its Dmax, or the problem.</returns>
         internal static IccBlack Read(byte[] bytes, string path)
@@ -229,8 +230,8 @@ namespace AstroPhotoAnalyzer
         static string Signature(byte[] b, int at) => Encoding.ASCII.GetString(b, at, 4);
 
         /// <summary>
-        /// A 4-byte signature, to show to the user: without the padding spaces and without the
-        /// control and non-ASCII bytes.
+        /// A 4-byte signature, to show to the user: without the padding spaces and the control
+        /// bytes; a non-ASCII byte, which the ASCII decoding turned into '?', shows as '?'.
         /// </summary>
         /// <param name="signature">The signature as <see cref="Signature"/> read it.</param>
         /// <returns>What is left of it, possibly empty.</returns>

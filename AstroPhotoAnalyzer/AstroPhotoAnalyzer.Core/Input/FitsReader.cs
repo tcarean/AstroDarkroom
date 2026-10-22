@@ -19,7 +19,7 @@
 // The header as 80-byte cards in 2880-byte blocks, then big-endian binary data.
 //
 // WHAT WAS KEPT from FlatCheck: the header parsing, BZERO/BSCALE, skipping the HDUs without an
-// image, every BITPIX type. WHAT CHANGED:
+// image, the BITPIX types it read (8, 16, 32, -32, -64; not 64). WHAT CHANGED:
 //   - it reads as a stream, not through File.ReadAllBytes: a 23 MP RGB float FITS is 277 MB,
 //     and holding it twice in memory (bytes + float) just to parse it is a waste that shows;
 //   - the planes are KEPT (1 or 3), not averaged into one - here colour is an object of
@@ -40,8 +40,9 @@ using System.Text;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// The hand-written FITS reader (.fit, .fits, .fts): the first HDU with a 2D image or one of 3
-    /// planes, every BITPIX, BZERO and BSCALE, ROWORDER and the WCS.
+    /// The hand-written FITS reader (.fit, .fits, .fts): the first HDU with NAXIS 2 or more, which
+    /// must be 2D or have 3 planes; BITPIX 8, 16, 32, -32 and -64; BZERO and BSCALE; ROWORDER;
+    /// the WCS. XTENSION is not checked, so a table HDU with two axes is taken for an image.
     /// </summary>
     internal sealed class FitsReader : IFrameReader
     {
@@ -58,11 +59,12 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Reads the first HDU that holds an image: its samples normalised to 0..1 by the BITPIX
+        /// Reads the first HDU with NAXIS 2 or more: its samples normalised to 0..1 by the BITPIX
         /// after BZERO and BSCALE, the values outside clipped and counted in the note, the rows
         /// flipped when ROWORDER is BOTTOM-UP, and the WCS attached when the header has one.
         /// Throws, with a message for the user, on a file with no image, cut short, with a
-        /// BITPIX it does not know, or with more than 3 axes or planes other than 1 or 3.
+        /// BITPIX it does not know, or with more than 3 axes or planes other than 1 or 3; a file
+        /// that does not open throws the platform's exception.
         /// </summary>
         /// <param name="path">The FITS file.</param>
         /// <returns>The raster, with its <see cref="SourceInfo"/>.</returns>
@@ -123,7 +125,7 @@ namespace AstroPhotoAnalyzer
             => string.Equals(HStr(hdr, "ROWORDER", ""), "BOTTOM-UP", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
-        /// The first HDU with a 2D or 3D image. Also returns its header, its BITPIX, the number of
+        /// The first HDU with NAXIS 2 or more. Also returns its header, its BITPIX, the number of
         /// planes in the file and a note for the report (or null). Throws as
         /// <see cref="Load"/> does.
         /// </summary>
@@ -188,13 +190,14 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The cards up to END, as a dictionary; null at the end of the file. Cards without a
         /// value (HISTORY, COMMENT, blank) are skipped, and a keyword met twice keeps its last
-        /// value. Throws when the file ends inside a header.
+        /// value. Throws when the file ends inside a header after its first block; one that ends
+        /// inside the first block is taken as the end of the file.
         /// </summary>
         /// <param name="s">The stream, at the first block of a header.</param>
         /// <param name="block">A buffer of 2880 bytes, overwritten.</param>
         /// <returns>
         /// Keyword -> value, a string without its quotes and trailing spaces, a number or a
-        /// logical as written; null when the stream ends before the header's first block.
+        /// logical as written; null when the stream ends before a whole first block.
         /// </returns>
         internal static Dictionary<string, string> ReadHeader(Stream s, byte[] block)
         {
@@ -240,7 +243,8 @@ namespace AstroPhotoAnalyzer
         /// The data, plane after plane (FITS is plane-sequential), decoded in chunks of 1 MB.
         /// Returns how many values fell outside [0, 1] and were clipped - it does not happen on
         /// integers with the usual BZERO, it can on float and on signed integers stored without
-        /// it. Throws when the data are cut short.
+        /// it, whose positive half is also read on the same scale (0..32767 gives 0..0.5, with no
+        /// note). Throws when the data are cut short.
         /// </summary>
         /// <param name="s">The stream, at the first byte of the data.</param>
         /// <param name="r">The raster to fill, already of the header's size.</param>
@@ -365,7 +369,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>A header value as an integer, read in the invariant culture.</summary>
         /// <param name="h">The header, keyword -> value.</param>
         /// <param name="k">The keyword.</param>
-        /// <param name="def">The value when the keyword is absent or not an integer.</param>
+        /// <param name="def">
+        /// The value when the keyword is absent or does not parse as an integer with
+        /// NumberStyles.Any, which also accepts forms FITS does not ("1,024", "16.0").
+        /// </param>
         /// <returns>The integer, or <paramref name="def"/>.</returns>
         internal static int HInt(IReadOnlyDictionary<string, string> h, string k, int def)
             => h.TryGetValue(k, out var v) && int.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
@@ -373,7 +380,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>A header value as a real number, read in the invariant culture.</summary>
         /// <param name="h">The header, keyword -> value.</param>
         /// <param name="k">The keyword.</param>
-        /// <param name="def">The value when the keyword is absent or not a number.</param>
+        /// <param name="def">
+        /// The value when the keyword is absent or does not parse with NumberStyles.Any: also a
+        /// FITS real with a D exponent ("1.5D-3"), while "0,5" parses as 5.
+        /// </param>
         /// <returns>The number, or <paramref name="def"/>.</returns>
         internal static double HDbl(IReadOnlyDictionary<string, string> h, string k, double def)
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;

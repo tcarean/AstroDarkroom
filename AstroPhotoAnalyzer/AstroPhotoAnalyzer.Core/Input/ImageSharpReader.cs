@@ -17,15 +17,17 @@
 
 // ImageSharpReader.cs - TIFF, PNG and JPEG, through ImageSharp.
 //
-// THE ONLY file of the core that touches ImageSharp for reading (JpegAnalyzer touches it for
-// encoding). If the package's licence ever moves, the seam is here.
+// THE ONLY file of the core that reads image files through ImageSharp (JpegAnalyzer encodes and
+// decodes JPEG in memory). If the package's licence ever moves, the seam is here.
 //
-// TWO PASSES THROUGH THE FILE, on purpose. The first, Identify, reads only the header and says
-// what is in the file - bits per sample, channels, compression. The second decodes the pixels
-// into the fitting type: L16 on mono, Rgb48 on colour - and only it gives the ICC profile too
-// (see IccOf). Decoding into a single type (Rgb48 for everything) would have tripled the memory
-// of a mono image, and inferring the bits from the type I ASKED the decode for would have been
-// a lie: ImageSharp gives 16 bits to whoever asks for them, even out of 8 bits scaled by 257.
+// TWO PASSES THROUGH THE FILE, on purpose. The first, Identify, reads the metadata without
+// decoding the pixels and says what is in the file - bits per sample, channels, compression
+// (on a PNG it still checks the chunks' CRCs, so a damaged IDAT fails here). The second decodes
+// the pixels into the fitting type: L16 on mono, Rgb48 on colour - and only it gives the ICC
+// profile too (see IccOf). Decoding into a single type (Rgb48 for everything) would have tripled
+// the memory of a mono image, and inferring the bits from the type I ASKED the decode for would
+// have been a lie: ImageSharp gives 16 bits to whoever asks for them, even out of 8 bits scaled
+// by 257.
 //
 // 3.1.x never applies the ICC profile when decoding - the values are those in the file. Exactly
 // what we want: we measure what Siril wrote, not a colour conversion.
@@ -57,10 +59,13 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Reads the file in the two passes above: what the file holds from its metadata, then
+        /// Reads the file in two passes: what the file holds from its metadata (Identify), then
         /// the pixels as L16 (mono) or Rgb48 (colour), each sample / 65535, with the ICC profile.
-        /// Throws, with a message for the user, on a file that is not an image ImageSharp knows
-        /// or whose content is damaged.
+        /// Throws, with a message for the user, when Identify does not know the format or finds
+        /// the content damaged. Other failures pass with ImageSharp's own exception and message
+        /// (damage only the decode meets, a TIFF variant ImageSharp does not decode, a TIFF cut
+        /// short that Identify trips on), and some damage goes unnoticed: the decoder may read
+        /// a TIFF's missing strip rows as black.
         /// </summary>
         /// <param name="path">The TIFF, PNG or JPEG file.</param>
         /// <returns>The raster, with its <see cref="SourceInfo"/>.</returns>
@@ -177,10 +182,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The ICC profile, from the DECODED image - not from Identify. Measured on 3.1.11:
-        /// Identify stops at the header and does not see a PNG's iCCP chunk, and on TIFF the
+        /// Identify does not return a PNG's iCCP chunk, and on TIFF the
         /// decoder leaves the profile on the first frame, beside the IFD's tags, not on the
         /// image. Both places are searched, so that a PNG from Siril or a TIFF with a profile does
-        /// not show as "without a profile".
+        /// not show as "fara profil".
         /// </summary>
         /// <param name="img">The decoded image.</param>
         /// <returns>The profile's bytes, or null when the file carries none.</returns>

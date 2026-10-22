@@ -15,11 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ImageLoader.cs - THE ONLY place that decides which reader opens a file.
+// ImageLoader.cs - THE ONLY place that decides which reader opens the analysed image (a --wcs
+// file goes straight to FitsReader, in AnalysisRun).
 //
-// From here down nothing knows which reader read the pixels: the analyzers get a Raster with its
-// SourceInfo, the reports get a result. If this decision were scattered through the code once
-// more, the next difference in behaviour between formats would appear silently.
+// From here down the analyzers get a Raster with its SourceInfo and the reports get a result;
+// the reader shows only through SourceInfo.Format, which the curve save checks for "FITS" to
+// copy the source's header. If this decision were scattered through the code once more, the
+// next difference in behaviour between formats would appear silently.
 //
 // Unlike FlatCheck, an unknown extension is an ERROR, not a fallback to FITS: here every
 // format has an extension of its own, and a ".psd" fallen onto the FITS reader would come out
