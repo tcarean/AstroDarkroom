@@ -30,7 +30,7 @@ AstroPhotoAnalyzer.Core/
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,
         FitsWriter.cs (the saved FITS with a curve applied, R-145)
   Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
-  Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000
+  Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000, galactic latitude
   Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader
   Analysis/FileFacts.cs, BitDepthAnalyzer.cs, CropAnalyzer.cs, TonalAnalyzer.cs,
            DustAnalyzer.cs (the five classes of the patches, by the band or by the modelled sky, the one measurement of the dust and the sky, the catalogue's clouds),

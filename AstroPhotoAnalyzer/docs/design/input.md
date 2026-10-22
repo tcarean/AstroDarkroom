@@ -86,8 +86,9 @@ otherwise; `WithRowsFlipped` re-targets a WCS lent to a raster of another orient
 `SourceInfo.Wcs`; `FitsReader.ReadImageHeader(path)` reads a header without its data, for
 `AnalysisRun.BorrowWcs` (`--wcs`, R-027), which refuses a different size or a header without
 a WCS. `Astrometry` holds the sphere: unit vectors, angular separation, the radius of a disc
-of a given area, and the FK4-to-FK5 rotation (B1950 to J2000, no E-terms; within 0.02' of
-VizieR's own precession over the whole catalogue).
+of a given area, the galactic latitude (the band, ADR 0026), and the FK4-to-FK5 rotation
+(B1950 to J2000, no E-terms; within 0.02' of VizieR's own precession over the whole
+catalogue).
 
 ### The catalogue (`Input/DarkNebulaCatalogue.cs`, `Input/ldn.txt`)
 
@@ -120,7 +121,8 @@ chosen over double (554 MB) because 24 mantissa bits recover every 16-bit level 
 
 ### Raster operations and the lift table (`Input/RasterOps.cs`, `Input/LiftTable.cs`)
 
-`RasterOps` returns new rasters and never modifies its input: `Subsample` (every n-th pixel,
+`RasterOps` never modifies its input, and what returns a raster returns a new one, except
+`Subsample` at a stride of 1 or less, which returns its input: `Subsample` (every n-th pixel,
 anchored top-left, `a[::s, ::s]`), `Crop`, `Gamma` (v^gamma on every channel through a
 65 537-entry `PowerLut` of `Math.Pow(k / 65535, gamma)`), `GammaFor` (ln(to) / ln(from)),
 `Level8` / `Level16`, `LstarPlane` (L\* per pixel of a subsample). `Interpolate(lut, s)` is

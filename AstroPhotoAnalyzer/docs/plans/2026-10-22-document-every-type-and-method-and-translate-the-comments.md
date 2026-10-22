@@ -327,4 +327,72 @@ after the approval. What it changes, for every area:
 
 ## What deviated
 
-(Filled in by each area at its wrap-up.)
+Each area adds its own section at its wrap-up.
+
+### Area 1, `Core/Input/` (2026-10-22, `claude/Document-and-translate-the-input-code`)
+
+- **It ran in the planning session, as planned,** in seven commits instead of six: the planning
+  review, which came after the approval, got a commit of its own.
+- **The extended counter counts 392 methods, not 393.** The kit task's counter flagged the plain
+  `Task` methods as missing a `<returns>` and checked no `<typeparam>` on a method; with both
+  fixed, the code holds 126 types and 392 methods to touch. Area 1's 16 and 99 are unchanged.
+- **The width rule holds for comment lines only.** A code line with a trailing comment keeps its
+  layout: `FitsWriter.Save`'s one-line `catch` with its `/* */` comment stays one line, since
+  reflowing code to fit a comment changes more than comments.
+- **The documentation file, on as proposed:** the gate's build found the three malformed comments
+  and nothing else. A broken summary (CS1570) and a `<param>` naming no parameter (CS1572) were
+  each put into `Recommendation.cs` and failed the core's build under `-warnaserror`, then taken
+  out. All five projects write their XML file; a publish of both `kit.json` entries ships none
+  (`console/`: the exe and two `.pdb`; `wpf/`: 247 files). The two failing builds ran on the core
+  only; the review's suggestion to repeat them on the window and a test project was not taken,
+  since the five XML files show the setting reaches every project and the checks are the
+  compiler's.
+- **`<inheritdoc/>` on three members:** `ExactLinearizer.Linear`, `FitsReader.Handles` and
+  `ImageSharpReader.Handles`. The two `Load` methods (each adds its format's specifics) and
+  `LiftTable.Linear` (its table) have their own text, as Assumption 3 says.
+- **Eight comments corrected, in a commit of their own, each against its line:**
+  1. `IFrameReader.cs`, header: `ImageLoader` names both readers in its list
+     (`ImageLoader.cs:37`); it does not "know none of them by name".
+  2. `Raster.cs`, header: the reader attaches its `SourceInfo` as `Raster.Source`, which four
+     analyzers read, and some analyzers take `Parameters` too; not "a Raster and nothing else".
+  3. `ImageLoader.cs`, header: the same fact, said of "where the pixels came from".
+  4. `SourceInfo.BitDepth`: 64 on a FITS of doubles, 1, 2 or 4 on a PNG, the TIFF's own on a
+     TIFF; not "8, 16 or 32".
+  5. `RasterOps.cs`, header: `Subsample` at a stride of 1 or less returns its input.
+  6. `FitsReader.ReadData`: signed integers stored without BZERO can be clipped too.
+  7. `IccPaperBlack.Printable`: it keeps digits and punctuation and drops spaces, control and
+     non-ASCII bytes; not "the bytes that are not letters".
+  8. `Astrometry.cs`, header: it also gives the galactic latitude of the band (ADR 0026).
+
+  At wrap-up `input.md` (facts 5 and 8) and `code-map.md` (fact 8) were brought in line.
+- **The Romanian scan leaves three lines, judged:** "et al." in `Astrometry.cs` (Latin) and the
+  quoted output of `IccPaperBlack.Describe` (two lines).
+- **`Report/`'s two escaped comments** (`Verdict`, `ReportWriter.TargetText`) changed one
+  character each and stay Romanian until area 3, as planned; `TargetText` gets its tags then.
+- **Measured on 2026-10-22:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | 20e16e6 | the plan | `== OK in 43s` | 351 + 54 |
+  | 7d187c9 | the documentation file (ADR 0038) | `== OK in 53s` | 351 + 54 |
+  | 56fd088 | the contracts: 6 files | `== OK in 43s` | 351 + 54 |
+  | 961d6b6 | the planning review, folded into this plan | `== OK in 43s` | 351 + 54 |
+  | 14996be | the readers, the writer and the sky: 9 files | `== OK in 41s` | 351 + 54 |
+  | ae54364 | the eight false comments | `== OK in 42s` | 351 + 54 |
+  | (none) | wrap-up step 1 | `== OK in 47s` | 351 + 54 |
+
+  - **The counter on `Core/Input/`:** on `main`, 16 types (15 undocumented, 1 missing a
+    `<param>`) and 99 methods (46 undocumented, 53 incomplete); on the branch 0 and 0. The whole
+    code has 110 types and 293 methods left for areas 2 to 5.
+  - **No code changed:** `tokens` finds the code of all 71 files identical to `main`'s, 17 of
+    them with changed comments or layout. `Core/Input/`: 15 files, +968/-339.
+  - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
+    new ones, in the 15 files.
+  - **English:** on `main`, 324 of the 519 comment lines of `Core/Input/` held a Romanian
+    function word, in all 15 files; on the branch 3, judged above.
+  - **Widths:** 27 comment lines of `Core/Input/` ran past 100 columns on `main`; none now.
+  - **ASCII:** no added line holds a character outside ASCII.
+  - **`/validate`:** the fourteen cases pass, 1237 figures identical to the recorded ones.
+  - **`check-design.ps1 -Since main`** listed six notes: `input.md` and `code-map.md` changed
+    (above); `dependencies.md`, `extending.md`, `known-limitations.md` and
+    `recommendations-and-report.md` were read against the change and hold.

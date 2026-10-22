@@ -194,6 +194,11 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-22 (the documentation backfill, area 1, `Core/Input/`, with the XML documentation file
+  of ADR 0038): comments only, every changed C# file's code token for token as on `main`. Re-run
+  on the branch, the seven files of the manifest copied into the worktree: the fourteen cases'
+  `MEASURED` lines, 1237 figures, are identical to the recorded ones (the largest difference 0).
+  The fourteen cases pass.
 - 2026-10-11 (ADR 0037, the band path needs a frame at least as wide as the band): a third
   condition before the band classes, the patch centres spanning at least 20 degrees of
   galactic latitude. `Veil_Starless.fit` added to the manifest, V-013 and V-014 recorded from
