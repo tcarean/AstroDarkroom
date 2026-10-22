@@ -17,6 +17,9 @@ on the "praf" stage longer than on everything else. Measured on 2026-10-09 befor
 the simulation alone took 17.1 s on `starless_rbf0.5_stretch0.17.fit` and 15.7 s on
 `de_printat.png`, of which the 56 lifted patch passes took 10.6 s and the 17 grid-row L\*
 passes about 5 s; the console run on the FITS took 27.2 s (median of three).
+(Corrected 2026-10-22: "7.63e-6 L\*, one float ulp of an L\* between 32 and 64" in the Decision
+below is one float ulp at L\* 64 to 128; between 32 and 64 the ulp is 3.8e-6, so 7.63e-6 is two
+there.)
 
 ## Decision
 

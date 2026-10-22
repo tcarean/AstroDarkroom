@@ -335,10 +335,11 @@ Each area adds its own section at its wrap-up.
   review, which came after the approval, got a commit of its own.
 - **The extended counter counts 392 methods, not 393.** The kit task's counter flagged the plain
   `Task` methods as missing a `<returns>` and checked no `<typeparam>` on a method; with both
-  fixed, the code holds 126 types and 392 methods to touch. Area 1's 16 and 99 are unchanged.
-- **The width rule holds for comment lines only.** A code line with a trailing comment keeps its
-  layout: `FitsWriter.Save`'s one-line `catch` with its `/* */` comment stays one line, since
-  reflowing code to fit a comment changes more than comments.
+  fixed, the code holds 126 types and 392 methods to touch. Area 1's 16 and 99 are unchanged;
+  area 5's row is the one that drops, to 119 (`MainViewModel.RunAsync`, a plain `Task`).
+- **The width rule:** at first it was held for comment-only lines, leaving `FitsWriter.Save`'s
+  161-column `catch` with its `/* */` comment. The review showed that moving the comment changes
+  no token, so it now sits on its own `//` line and every comment line fits in 100 columns.
 - **The documentation file, on as proposed:** the gate's build found the three malformed comments
   and nothing else. A broken summary (CS1570) and a `<param>` naming no parameter (CS1572) were
   each put into `Recommendation.cs` and failed the core's build under `-warnaserror`, then taken
@@ -360,8 +361,9 @@ Each area adds its own section at its wrap-up.
      TIFF; not "8, 16 or 32".
   5. `RasterOps.cs`, header: `Subsample` at a stride of 1 or less returns its input.
   6. `FitsReader.ReadData`: signed integers stored without BZERO can be clipped too.
-  7. `IccPaperBlack.Printable`: it keeps digits and punctuation and drops spaces, control and
-     non-ASCII bytes; not "the bytes that are not letters".
+  7. `IccPaperBlack.Printable`: it keeps digits and punctuation; not "drops the bytes that are
+     not letters". (The first correction said it drops non-ASCII bytes, which is false too: the
+     review found they show as '?'; corrected again, see "Code review".)
   8. `Astrometry.cs`, header: it also gives the galactic latitude of the band (ADR 0026).
 
   At wrap-up `input.md` (facts 5 and 8) and `code-map.md` (fact 8) were brought in line.
@@ -388,11 +390,86 @@ Each area adds its own section at its wrap-up.
     them with changed comments or layout. `Core/Input/`: 15 files, +968/-339.
   - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
     new ones, in the 15 files.
-  - **English:** on `main`, 324 of the 519 comment lines of `Core/Input/` held a Romanian
-    function word, in all 15 files; on the branch 3, judged above.
+  - **English:** on `main`, 324 of the comment lines of `Core/Input/` held a Romanian function
+    word, in all 15 files; on the branch 3, judged above. (This first said "of 519": the scratch
+    tool then also counted the declaration line after each doc block. Fixed, it counts 433:
+    the 402 non-blank lines of the table, 30 bare `//` lines and one trailing comment.)
   - **Widths:** 27 comment lines of `Core/Input/` ran past 100 columns on `main`; none now.
   - **ASCII:** no added line holds a character outside ASCII.
   - **`/validate`:** the fourteen cases pass, 1237 figures identical to the recorded ones.
   - **`check-design.ps1 -Since main`** listed six notes: `input.md` and `code-map.md` changed
     (above); `dependencies.md`, `extending.md`, `known-limitations.md` and
     `recommendations-and-report.md` were read against the change and hold.
+
+### Code review of area 1 (2026-10-22)
+
+`/code-review main...claude/Document-and-translate-the-input-code` ran at maximum effort: ten
+finder angles, eight verifiers (each candidate checked against the code, many with a probe run
+on the branch's build), and a final sweep. About 60 candidates; about 15 refuted; 15 findings
+reported. The owner had every comment-only finding fixed and the code defects kept as questions.
+
+- **Comments made true about the code,** in `Core/Input/`:
+  - two of the eight corrections were themselves wrong: `Printable` shows a non-ASCII byte as
+    '?' (the ASCII decoding's replacement), and the `Raster.cs` and `ImageLoader.cs` headers
+    swapped one false generalisation for another (`GamutAnalyzer.Build` takes a path;
+    `CurveRun` checks `SourceInfo.Format == "FITS"`; a `--wcs` file goes straight to
+    `FitsReader`);
+  - over-promising new docs: `ImageSharpReader.Load` and `IFrameReader.Load` (the user message
+    covers only what Identify catches; "row 0 at the top" ignores EXIF orientation and a FITS
+    without ROWORDER), `FitsReader`'s class summary (BITPIX 64 refused; the first HDU with
+    NAXIS 2 or more is taken, XTENSION unchecked), `ReadHeader` (a header cut inside its first
+    block reads as the end of the file), `ReadData` (the half-scale reading of signed integers
+    without BZERO), `HInt`/`HDbl` (`NumberStyles.Any`: no FITS D exponent, lenient commas),
+    `FitsWriter.Save` and `FromFits` (the temporary file and the tail cut short),
+    `IccPaperBlack.Read`'s `path`, `SourceInfo.Format` and `PlanesInFile`;
+  - claims translated as they stood and found false: ImageSharp's Identify "reads only the
+    header", "THE ONLY ... for reading" (JpegAnalyzer decodes), "the only code that knows a
+    format", the `Gamma` interpolation bound and "exactly on a level", `PowerLut`'s 65537th
+    entry, the ulp "7.6e-6 at L* 32..64" (also in `input.md`, and ADR 0035 with a dated
+    Corrected note), Otsu's floor with ties, `WithRowsFlipped`'s borrow use, "does not look for
+    stars", the catalogue's '#' lines, RA "[0, 360)", the "exact inverse" of `LinearToSrgb`,
+    `SeededRandom`'s platform promise for `NextGaussian`;
+  - the three quotes of Romanian output translated against the Glossary are Romanian again
+    ("asa cum e", "fara profil", "99% sub negrul hartiei"); "linear luminance" of one channel is
+    now "linear value"; the four `Stats` tags "The values." say how NaN is handled.
+- **Docs:** ADR 0038 names CS1587 and replaces the gate-time line, which read as a cost the
+  data do not show; `CLAUDE.md` and the CHANGELOG name the ambiguous `cref` and the
+  non-member `///`; the CHANGELOG's count says what it counts; this plan's baselines above.
+- **The scratch tool** counted the declaration line after each doc block as a comment line,
+  which made `facts` weaker (an identifier dropped from a comment could be "found" in the
+  declaration) and gave the 519. Fixed; area 1 re-checked with it: 0 facts lost except the four
+  figures corrected on purpose (`7.6e-6`, `32`, `3`, `1.0`).
+- **Code defects, questions for the owner** (all on `main` before this branch; none changed
+  here, as Assumption 7 says):
+  1. `IccProfileInfo.ReadTextTag` reads the `mluc` record size at `off + 16` instead of
+     `off + 12`. A v4 profile re-saved by lcms2 (Siril's library) has 00 00 00 00 there, so its
+     name is lost, and the report skips "Profilul nu e sRGB" for, e.g., an Adobe RGB v4 profile.
+  2. `ImageSharpReader.Load` wraps only Identify's two exception types: damage the decode meets,
+     a TIFF variant ImageSharp does not decode, or a cut TIFF that trips Identify's own index
+     check reaches the user in English; a TIFF missing part of a strip is analysed with the
+     missing rows as black, with no note.
+  3. `FitsReader.HInt`/`HDbl` cannot read a FITS D exponent: `BZERO = 3.2768D+04` reads as 0 and
+     the image is refused as linear; `CRVAL1` in D gives a wrong WCS silently.
+  4. No EXIF/TIFF orientation is applied: an oriented JPEG, TIFF or PNG is measured as stored,
+     with its corner names swapped.
+  5. A signed 16-bit FITS without BZERO is analysed at half level with no note (Orion stored
+     that way: background 0.151 -> 0.076, 276 stars -> 4). R-011's formula implies it and R-145
+     knows it on the save side; refuse, note, rescale, or record it in `known-limitations.md`?
+  6. `FitsReader` takes the first HDU with NAXIS 2 or more: a first HDU with 4 axes or 2 planes
+     is refused even when a valid image follows, a BINTABLE is read as an image, and BITPIX 64
+     is refused.
+  7. A FITS whose header is cut inside its first block is reported as "niciun HDU cu imagine
+     gasit" instead of "header incomplet".
+  8. `FitsWriter.Save`: a delete refused with access denied replaces the real error (which the
+     window then shows); a source whose tail is cut short after the image is copied without a
+     refusal, against R-145's "reports the reason".
+  9. Otsu's `minAbove` floor counts ranks, so ties at the cut leave fewer bright patches than
+     `DustAnalyzer` relies on (posterised or flat data only).
+- **Process questions for the owner:**
+  - `/validate` in areas 2 to 4 re-measures figures the token proof shows cannot move, at about
+    2.5 min and a 772 MB copy each; the rule "Formula changes re-validate" names the folders, so
+    skipping it needs your word.
+  - The scratch tool exists only in this session's `%TEMP%` scratchpad; a copy in the repository
+    (under `docs/plans/`, or in the kit) would keep areas 2 to 5 from depending on that folder.
+- **Left as they are:** `ReportWriter.TargetText` stays without tags until area 3 (its file is
+  still Romanian); lists of a type's members in headers and `code-map.md` are summaries.

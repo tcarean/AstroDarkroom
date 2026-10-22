@@ -25,13 +25,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 - The build writes the XML documentation file (ADR 0038), so the gate now fails a malformed
   doc comment, a `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside
-  tagged ones and a `cref` that does not resolve; CS1591 stays muted, and no publish ships the
-  XML files.
+  tagged ones, a `cref` that does not resolve or is ambiguous, and a `///` on something that is
+  not a member; CS1591 stays muted, and no publish ships the XML files.
 - The code's comments are being translated to English and every type and method documented,
   one area at a time (the kit's ADR 0035; the plan in
   `docs/plans/2026-10-22-document-every-type-and-method-and-translate-the-comments.md`):
-  `Core/Input/` is done, 15 files with 16 types and 99 methods, and eight of its comments that
-  said what the code does not do are corrected. No code changed.
+  `Core/Input/` is done: its 15 files, the 16 of their 22 types and all 99 methods that lacked
+  a full comment, and the comments that said what the code does not do, found in the
+  translation and in the review. No code changed.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0036): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0009 rejects, and none

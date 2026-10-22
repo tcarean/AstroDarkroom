@@ -25,8 +25,9 @@ the owner with four options, the owner chose the file on at once, for all five p
 `NoWarn` and sets `PublishDocumentationFiles` false; its comment, Romanian like the rest of that
 file (ADR 0005), says why. Under the gate's `-warnaserror` the build now fails a malformed
 comment (CS1570), a `<param>` or `<paramref>` naming no parameter (CS1572, CS1734), a parameter
-left untagged beside tagged ones (CS1573), and a `cref` that does not resolve or is ambiguous
-(CS1574, CS0419). The three malformed comments were escaped in the same commit, and nothing else
+left untagged beside tagged ones (CS1573), a `cref` that does not resolve or is ambiguous
+(CS1574, CS0419), and a `///` on something that is not a member, such as a local function
+(CS1587). The three malformed comments were escaped in the same commit, and nothing else
 fired.
 
 ## Alternatives rejected
@@ -47,5 +48,7 @@ fired.
 - Each project writes its `.xml` beside its `.dll`; `dotnet publish` with both `kit.json` entries
   copies none (2026-10-22: `console/` holds `AstroPhotoAnalyzer.exe` and the two `.pdb` files,
   `wpf/` 247 files and no `.xml`), and the lock files stay as they are.
-- The gate took 50 s with the file on and 43 s on the commit before it; its two test runs took
-  16 and 22 s, against 14 and 19 s.
+- No cost in the gate's time could be told from its noise: the commit before the change took
+  43 s, the change's own commit 53 s (a full rebuild), and the five commits after it 41 to 47 s.
+  A full rebuild of the solution took 2.54 s with the file and 2.23 s without, inside a spread
+  of 2 to 13 s.
