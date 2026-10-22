@@ -133,8 +133,7 @@ internal sealed class TrayIconHost : IDisposable
 
     /// <summary>
     /// Switches auto-start off when it works and on otherwise, then refreshes the item. A
-    /// change Windows refuses becomes a notification rather than an error; a refused read in
-    /// the refresh that follows is not caught.
+    /// change Windows refuses becomes a notification rather than an error.
     /// </summary>
     /// <param name="sender">The menu item; not read.</param>
     /// <param name="e">The click; not read.</param>
@@ -143,7 +142,9 @@ internal sealed class TrayIconHost : IDisposable
         try
         {
             // Anything other than a working entry -- absent, or vetoed in Task Manager --
-            // turns into "enable", so one click always restores the intended state.
+            // turns into "enable", so one click restores the intended state unless Windows
+            // refuses part of it, which the balloon below reports. A veto this account may not
+            // read counts as none, so its entry reads as working.
             if (_autoStart.GetStatus() == AutoStartStatus.Enabled)
             {
                 _autoStart.Disable();
@@ -153,7 +154,7 @@ internal sealed class TrayIconHost : IDisposable
                 _autoStart.Enable();
             }
         }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException)
+        catch (Exception ex) when (RegistryRefusal.IsWriteRefusal(ex))
         {
             ShowBalloon(
                 VersionInfo.Name,

@@ -22,10 +22,16 @@ namespace MindfulnessReminder.Core;
 /// </summary>
 public enum AutoStartStatus
 {
-    /// <summary>No Run entry exists: the app will not start with Windows.</summary>
+    /// <summary>
+    /// No Run entry this account can read: as far as it can tell, the app will not start with
+    /// Windows.
+    /// </summary>
     Disabled,
 
-    /// <summary>A Run entry exists and Windows will honour it.</summary>
+    /// <summary>
+    /// A Run entry with no Task Manager veto this account can read: as far as it can tell,
+    /// Windows will honour it.
+    /// </summary>
     Enabled,
 
     /// <summary>

@@ -27,25 +27,34 @@ internal sealed class FakeRegistryStore : IRegistryStore
 
     public int WriteCount { get; private set; }
 
-    /// <summary>When set, every read throws it, as a key the account may not read does.</summary>
+    /// <summary>
+    /// When set, every read throws it, as a key the account may not read does. A write to such
+    /// a key throws it too: the real store opens a key it writes with read access as well.
+    /// </summary>
     public Exception? ReadRefusal { get; set; }
 
     /// <summary>When set, every write throws it, as a key the account may not write does.</summary>
     public Exception? WriteRefusal { get; set; }
 
+    /// <summary>
+    /// When set, <see cref="ReadRefusal"/> and <see cref="WriteRefusal"/> apply to this key
+    /// only, compared without regard to case; when null, to every key.
+    /// </summary>
+    public string? RefusedKeyPath { get; set; }
+
     public string? GetString(string keyPath, string valueName) =>
-        ReadRefusal is { } refusal
+        RefusalFor(ReadRefusal, keyPath) is { } refusal
             ? throw refusal
             : _values.TryGetValue((keyPath, valueName), out var value) ? value as string : null;
 
     public byte[]? GetBinary(string keyPath, string valueName) =>
-        ReadRefusal is { } refusal
+        RefusalFor(ReadRefusal, keyPath) is { } refusal
             ? throw refusal
             : _values.TryGetValue((keyPath, valueName), out var value) ? value as byte[] : null;
 
     public void SetString(string keyPath, string valueName, string value)
     {
-        if (WriteRefusal is { } refusal)
+        if (WriteRefusalFor(keyPath) is { } refusal)
         {
             throw refusal;
         }
@@ -57,11 +66,26 @@ internal sealed class FakeRegistryStore : IRegistryStore
     public void SetBinary(string keyPath, string valueName, byte[] value) =>
         _values[(keyPath, valueName)] = value;
 
-    public void DeleteValue(string keyPath, string valueName) =>
+    public void DeleteValue(string keyPath, string valueName)
+    {
+        if (WriteRefusalFor(keyPath) is { } refusal)
+        {
+            throw refusal;
+        }
+
         _values.Remove((keyPath, valueName));
+    }
 
     public bool Contains(string keyPath, string valueName) =>
         _values.ContainsKey((keyPath, valueName));
+
+    private Exception? WriteRefusalFor(string keyPath) =>
+        RefusalFor(WriteRefusal, keyPath) ?? RefusalFor(ReadRefusal, keyPath);
+
+    private Exception? RefusalFor(Exception? refusal, string keyPath) =>
+        RefusedKeyPath is null || string.Equals(RefusedKeyPath, keyPath, StringComparison.OrdinalIgnoreCase)
+            ? refusal
+            : null;
 
     private sealed class CaseInsensitivePathComparer : IEqualityComparer<(string Key, string Value)>
     {

@@ -65,7 +65,7 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     /// <inheritdoc/>
     public AutoStartStatus GetStatus()
     {
-        var command = _registry.GetString(RunKeyPath, _valueName);
+        var command = ReadRunValue();
         if (string.IsNullOrWhiteSpace(command))
         {
             return AutoStartStatus.Disabled;
@@ -81,8 +81,13 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
 
         // Turning the checkbox back on has to clear a Task Manager veto too, otherwise the
         // entry is written and still ignored. Deleting the approval value is what Windows
-        // treats as "never vetoed".
-        _registry.DeleteValue(StartupApprovedKeyPath, _valueName);
+        // treats as "never vetoed". Only a veto it can read is deleted: an approval value that
+        // is no veto needs nothing, and an approval key this account may not read, it may not
+        // write either, while GetStatus already counts its value as no veto.
+        if (IsApprovalRevoked())
+        {
+            _registry.DeleteValue(StartupApprovedKeyPath, _valueName);
+        }
     }
 
     /// <inheritdoc/>
@@ -115,12 +120,48 @@ public sealed class RegistryAutoStartManager : IAutoStartManager
     /// </summary>
     /// <returns>
     /// <c>true</c> when the first byte of the approval value is odd; <c>false</c> when it is
-    /// even, or the value is empty or missing.
+    /// even, or the value is empty, missing or unreadable.
     /// </returns>
     private bool IsApprovalRevoked()
     {
-        var approval = _registry.GetBinary(StartupApprovedKeyPath, _valueName);
+        var approval = ReadApprovalValue();
         return approval is { Length: > 0 } && (approval[0] & 0x01) != 0;
+    }
+
+    /// <summary>
+    /// Reads the Run value. A value this account may not read
+    /// (<see cref="RegistryRefusal.IsReadRefusal"/>) counts as missing, as the settings store
+    /// reads its own values.
+    /// </summary>
+    /// <returns>The registered command, or <c>null</c> when it is missing or unreadable.</returns>
+    private string? ReadRunValue()
+    {
+        try
+        {
+            return _registry.GetString(RunKeyPath, _valueName);
+        }
+        catch (Exception ex) when (RegistryRefusal.IsReadRefusal(ex))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Reads Task Manager's approval value. A value this account may not read counts as
+    /// missing, which is no veto: the item then shows the entry as on, and a click can still
+    /// remove it.
+    /// </summary>
+    /// <returns>The approval blob, or <c>null</c> when it is missing or unreadable.</returns>
+    private byte[]? ReadApprovalValue()
+    {
+        try
+        {
+            return _registry.GetBinary(StartupApprovedKeyPath, _valueName);
+        }
+        catch (Exception ex) when (RegistryRefusal.IsReadRefusal(ex))
+        {
+            return null;
+        }
     }
 
     /// <summary>Puts a path between double quotes, so one with spaces stays one command.</summary>
