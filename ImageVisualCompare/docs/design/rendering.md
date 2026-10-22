@@ -9,7 +9,8 @@
 > `src/ImageVisualCompare.Core/DividerModel.cs`,
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
 > `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
-> `src/ImageVisualCompare.Core/MinimapGeometry.cs`.
+> `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
+> `src/ImageVisualCompare.Wpf/app.manifest`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -33,6 +34,11 @@ exactly two places — `CompareView`'s input handlers (multiply by `_deviceScale
 (divide the render scale by it). This is what makes 100% mean one image pixel per physical
 screen pixel on a scaled display. The divider is the exception and stays in DIPs throughout,
 because it is a fraction of the window and never touches image coordinates. See ADR 0011.
+`_deviceScale` is the scale of the monitor the window is on because the application is
+per-monitor DPI aware: `app.manifest` declares it, and without it the process is system aware,
+WPF reports the system's scale everywhere and raises no `OnDpiChanged` when the window moves,
+and Windows stretches the window on a monitor scaled differently. `AppManifestTests` reads the
+manifest out of the built files. See ADR 0034.
 
 **The image layers are `Canvas`, not `Grid`.** A `Grid` clamps a child's desired size to the
 cell, so a 5794 px wide image gets laid out at the width of the window and `Stretch` squashes

@@ -38,10 +38,9 @@ namespace ImageVisualCompare.Wpf.Controls;
 /// physical pixels is what lets 100% zoom honestly mean one image pixel per screen pixel on a
 /// scaled display.
 ///
-/// The scale is the one WPF reports, and the application declares no DPI awareness of its
-/// own, so it runs system-DPI-aware: on a monitor scaled differently from the system scale,
-/// WPF still reports the system's, Windows stretches the window, and 100% is not one to one
-/// there.
+/// The scale is the one WPF reports for the monitor the window is on: the application is
+/// per-monitor DPI aware (its manifest, ADR 0034), so a move to a monitor scaled differently
+/// raises <see cref="OnDpiChanged"/>, and the scale is read again there.
 ///
 /// The divider is the exception: it lives in device-independent pixels throughout, because
 /// its position is a fraction of the window and never touches image coordinates.
@@ -194,8 +193,8 @@ public partial class CompareView : UserControl
     }
 
     /// <summary>
-    /// Zooms to 100%, one image pixel per physical pixel of the viewport (see the class summary
-    /// on monitors scaled differently), anchored at the centre of the view.
+    /// Zooms to 100%, one image pixel per physical pixel of the monitor the window is on,
+    /// anchored at the centre of the view.
     /// </summary>
     public void ZoomToActualSize()
     {
@@ -205,7 +204,7 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Reads the display's scale again when WPF reports that the scale this control is drawn at
-    /// has changed.
+    /// has changed, as it does when the window moves to a monitor scaled differently.
     /// </summary>
     /// <param name="oldDpi">The scale before; not read.</param>
     /// <param name="newDpi">
@@ -540,8 +539,7 @@ public partial class CompareView : UserControl
 
     /// <summary>
     /// Reads the scale WPF draws this control at, device pixels per device-independent pixel
-    /// (the system's scale on every monitor; see the class summary), then gives the viewport
-    /// its size again and redraws.
+    /// of the monitor it is on, then gives the viewport its size again and redraws.
     /// </summary>
     private void ReadDeviceScale()
     {
