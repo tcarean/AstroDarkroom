@@ -92,6 +92,22 @@ public class MinimapGeometryTests
     }
 
     [Fact]
+    public void R041_AtTheFarEdge_TheRectangleStaysInsideTheArea()
+    {
+        // At 1600 % a 200-pixel view of a 20000-pixel image is 0.06 of a 100-unit area: floored
+        // to 2 units at the right and bottom edges, it is moved in, not drawn past them.
+        Viewport viewport = Create(contentWidth: 20000, contentHeight: 20000);
+        viewport.ZoomTo(16, 100, 100);
+        viewport.SetOffset(viewport.MaxOffsetX, viewport.MaxOffsetY);
+
+        MinimapLayout layout = MinimapGeometry.Layout(viewport, 100, 100);
+
+        Assert.Equal(2, layout.ViewportRect.Width, 6);
+        Assert.Equal(100, layout.ViewportRect.X + layout.ViewportRect.Width, 6);
+        Assert.Equal(100, layout.ViewportRect.Y + layout.ViewportRect.Height, 6);
+    }
+
+    [Fact]
     public void R041_DeepZoomStillLeavesAVisibleRectangle()
     {
         Viewport viewport = Create(contentWidth: 20000, contentHeight: 20000);

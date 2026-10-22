@@ -6,7 +6,10 @@
 > `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Core/Viewport.cs`,
 > `src/ImageVisualCompare.Core/RenderPlan.cs`,
-> `src/ImageVisualCompare.Core/DividerModel.cs`.
+> `src/ImageVisualCompare.Core/DividerModel.cs`,
+> `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
+> `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
+> `src/ImageVisualCompare.Core/MinimapGeometry.cs`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -53,3 +56,12 @@ larger than its own pixel count and quietly break the 1:1 zoom level. See ADR 00
 
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
 they appear, which changes the fit scale, which can change whether they are needed. See ADR 0019.
+
+**The minimap measures on its thumbnail, inside its border.** `MinimapView` wraps the thumbnail
+and the `Overlay` canvas the rectangle is drawn on in a 1-DIP border, so the minimap's own size
+and position are not the thumbnail's. It lays the rectangle out in the overlay's size, and maps
+a click through `TranslatePoint` onto the overlay before `MinimapGeometry.ContentPointAt`: on a
+188-DIP thumbnail of a 5938-pixel image, the 1 DIP the border adds is 31 image pixels. Until
+2026-10-22 both used the minimap's own size and position (R-041, R-042). `MinimapGeometry.Layout`
+floors the rectangle at 2 DIPs after clamping it, then moves it in by what the floor added, so
+by the right or bottom edge it stays on the thumbnail.

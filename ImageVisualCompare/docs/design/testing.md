@@ -9,6 +9,7 @@
 > `tests/ImageVisualCompare.Tests/ImagePairLoaderTests.cs`,
 > `tests/ImageVisualCompare.Tests/WpfThread.cs`,
 > `tests/ImageVisualCompare.Tests/MainWindowTests.cs`,
+> `tests/ImageVisualCompare.Tests/MinimapViewTests.cs`,
 > and the WPF files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
@@ -43,8 +44,10 @@ test of its own (ADR 0032). `WpfThread` starts one STA thread for the run, creat
 calls `Run`, and posts each test body to that thread's dispatcher; an exception in the body
 fails the test. `MainWindowTests` builds the main window there with dialogs that count the
 asking and a loader whose decode never ends, and clicks Open twice while the body still holds
-the dispatcher. `MessageDialog`, `DarkTitleBar`, `FileDialogService` and `MemoryHousekeeping`
-have no test.
+the dispatcher. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
+`UpdateLayout` at the size it gives itself, then checks a click on the thumbnail's corner and
+the rectangle at the far edge against the thumbnail inside the border. `MessageDialog`,
+`DarkTitleBar`, `FileDialogService` and `MemoryHousekeeping` have no test.
 
 Be aware of what that has meant in practice: both real defects found in this project before
 2026-10-21 lived in the untested layer, and neither would have been caught by any reasonable

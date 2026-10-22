@@ -46,7 +46,7 @@ public partial class MinimapView : UserControl
         InitializeComponent();
 
         // The first Show lands before layout has given the control a size, so the viewport
-        // rectangle has to be drawn again once ActualWidth is real.
+        // rectangle has to be drawn again once the overlay's size is real.
         SizeChanged += (_, _) => Refresh();
     }
 
@@ -87,12 +87,14 @@ public partial class MinimapView : UserControl
     /// <summary>Redraws the viewport rectangle after a zoom or pan.</summary>
     public void Refresh()
     {
-        if (_viewport is not { HasContent: true } viewport || ActualWidth <= 0)
+        if (_viewport is not { HasContent: true } viewport || Overlay.ActualWidth <= 0)
         {
             return;
         }
 
-        MinimapLayout layout = MinimapGeometry.Layout(viewport, ActualWidth, ActualHeight);
+        // The thumbnail sits inside the border, and so does the overlay the rectangle is drawn
+        // on: the rectangle is laid out in the overlay's size, not the minimap's.
+        MinimapLayout layout = MinimapGeometry.Layout(viewport, Overlay.ActualWidth, Overlay.ActualHeight);
 
         Canvas.SetLeft(ViewportRect, layout.ViewportRect.X);
         Canvas.SetTop(ViewportRect, layout.ViewportRect.Y);
@@ -157,22 +159,25 @@ public partial class MinimapView : UserControl
     }
 
     /// <summary>
-    /// Raises <see cref="CentreRequested"/> with the image point a position on the thumbnail
-    /// stands for; does nothing without a viewport that has content, or before the minimap has
-    /// a size.
+    /// Raises <see cref="CentreRequested"/> with the image point a position on the minimap
+    /// stands for, measured on the thumbnail inside the border; does nothing without a viewport
+    /// that has content, or before the minimap has a size.
     /// </summary>
     /// <param name="position">
-    /// The pointer, in device-independent pixels from the minimap's top-left corner.
+    /// The pointer, in device-independent pixels from the minimap's own top-left corner, as its
+    /// mouse handlers read it; the border is taken off here.
     /// </param>
-    private void RequestCentre(Point position)
+    internal void RequestCentre(Point position)
     {
-        if (_viewport is not { HasContent: true } viewport || ActualWidth <= 0)
+        if (_viewport is not { HasContent: true } viewport || Overlay.ActualWidth <= 0)
         {
             return;
         }
 
+        Point onThumbnail = TranslatePoint(position, Overlay);
         CentreRequested?.Invoke(
             this,
-            MinimapGeometry.ContentPointAt(viewport, position.X, position.Y, ActualWidth, ActualHeight));
+            MinimapGeometry.ContentPointAt(
+                viewport, onThumbnail.X, onThumbnail.Y, Overlay.ActualWidth, Overlay.ActualHeight));
     }
 }

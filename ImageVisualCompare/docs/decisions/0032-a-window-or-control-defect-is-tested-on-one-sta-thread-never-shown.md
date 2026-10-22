@@ -47,9 +47,12 @@ with no test that fails first.
 ## Consequences
 
 - `MainWindow` has an internal constructor that takes the file dialogs and the pair loader; the
-  public one, which `StartupUri` calls, passes the real ones.
+  public one, which `StartupUri` calls, passes the real ones. `MinimapView.RequestCentre`, which
+  its mouse handlers call with the pointer in the minimap's own coordinates, is internal.
 - The application object exists in the test process from the first such test on; no other test
   may create one.
 - What still needs the window shown or real input, such as Ctrl+O with Ctrl held, is read in the
   code and looked at in the running application; a test does not pretend to cover it.
-- Guards: `MainWindowTests.R006_ASecondOpenWhileAPairLoads_AsksForNothing`.
+- Guards: `MainWindowTests.R006_ASecondOpenWhileAPairLoads_AsksForNothing`;
+  `MinimapViewTests.R042_AClickOnTheThumbnailsCorner_CentresOnTheImagesCorner` and
+  `R041_TheRectangleIsDrawnInsideTheBorder`.
