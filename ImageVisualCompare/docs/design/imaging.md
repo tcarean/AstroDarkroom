@@ -11,6 +11,7 @@
 > `src/ImageVisualCompare.Core/FitsHeader.cs`,
 > `src/ImageVisualCompare.Core/FitsScale.cs`,
 > `src/ImageVisualCompare.Core/FitsRowDecoder.cs`,
+> `src/ImageVisualCompare.Core/FloatSamples.cs`,
 > `src/ImageVisualCompare.Core/ImagePairValidator.cs`,
 > and, for the padding, `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`.
@@ -97,6 +98,28 @@ MB private once loaded, the same as a 16-bit PNG of that size through WIC, and a
 peak of one more buffer during the load (peak working set 227 MB against WIC's 139 MB). The
 managed alternative and the figures of a pair are in ADR 0029 and in `../validation.md`,
 V-003 and V-004.
+## Float samples in a TIFF
+
+Added on 2026-10-22 (ADR 0035). WIC decodes a float TIFF, but its conversion to Bgra32 takes
+float samples for linear light and brightens them, by 73 levels on average on GraXpert's
+exports, where a FITS of the same samples is shown as stored. So `WicImageLoader` asks one
+question of the format, whether its samples are floats (`FloatSamplesOf`): a format WPF names,
+`Gray32Float`, `Rgb128Float`, `Rgba128Float` or `Prgba128Float`, or a TIFF whose `SampleFormat`
+tag is 3, read from the frame's `BitmapMetadata` at `/ifd/{ushort=339}`, with
+`SamplesPerPixel` (277) for the channels and `BitsPerSample` (258) for the depth. The tags are
+asked only of a `TiffBitmapDecoder`'s frame, and the header-only frame of `Probe` has them too.
+The 96 bpp RGB that Siril and GraXpert write is the case that needs them: WPF has no name for
+it, and shows its format as "Default" with 96 bits.
+
+`LoadFloat` has WIC convert the frame to `Gray32Float`, `Rgb128Float` or `Rgba128Float`, which
+copies the values: on two GraXpert exports, 6016 × 4016, its `Rgb128Float` floats equal the ones
+read straight from the file bit for bit, all 72 480 768 samples of each (2026-10-22). `Decode`
+then copies a band of rows at a time, at most 8 MB of floats, into
+`FloatSamples.ToBgra32` in Core, which puts each sample through `FitsScale.Level` as
+`FitsRowDecoder` does and counts the samples `FitsScale.IsAboveThreshold` takes. Then, as for a
+FITS, `FitsScale.IsRescaled` decides whether the image counts to 65 535, and if it does the
+bands are decoded again on that scale. A size WPF makes no bitmap of is the too-large message.
+
 ## Memory, measured
 
 Measured on a 5794×3637 16-bit pair, ~108 MB each on disk:

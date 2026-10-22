@@ -1,7 +1,7 @@
 # 0022. The source format is reported, never branched on: everything becomes Bgra32, and an unknown format is not refused
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the conversion of float samples by WIC superseded by 0035
 
 ## Context
 

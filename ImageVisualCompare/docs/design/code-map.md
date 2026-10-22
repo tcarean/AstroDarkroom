@@ -20,11 +20,14 @@
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
     therefore search rather than index. See ADR 0020. Where `Previous` would step up, under
     the lowest stop, `Viewport.ZoomOut` goes to the floor instead (ADR 0033).
-  - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on. See ADR 0022.
+  - `ImageInfo.cs` — what a file turned out to be. Reported to the user; nothing after the
+    load branches on it, and in the load only `IsFloat` does. See ADR 0022, ADR 0035.
   - `FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs` — the project's own FITS reader:
     where the image is in the file and how it is stored (`FitsImageLayout`), how a value
     becomes one of 256 levels, and one Bgra32 row at a time out of the planes. How they fit is
     in `imaging.md`. See ADR 0029.
+  - `FloatSamples.cs` — a row of float samples from a float TIFF turned into Bgra32 levels
+    through `FitsScale`, as a FITS's are. See ADR 0035.
   - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
     larger extent on each axis, plus whether that meant padding and the question to put to
     the user if it did.
@@ -49,7 +52,9 @@
   - `Imaging/WicImageLoader.cs` — decodes via WIC. `Probe` reads the header only;
     `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
     words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
-    anything it does not recognise. See ADR 0022.
+    anything it does not recognise. See ADR 0022. Float samples are found by
+    `FloatSamplesOf` and shown as stored (ADR 0035); WIC's own failures become the message
+    types (ADR 0031).
   - `Imaging/FitsImageLoader.cs` — decodes FITS with the reader in Core, row by row into a
     `WriteableBitmap`, and a second time when the floats turn out to count to 65 535. See
     ADR 0029.

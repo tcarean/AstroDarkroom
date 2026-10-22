@@ -79,6 +79,16 @@ public static class FitsScale
     public static bool IsRescaled(int bitPix, long samplesAbove, long samples) =>
         bitPix < 0 && samplesAbove > samples * RescaleFraction;
 
+    // An infinity says nothing about the scale of the file; NaN fails the first comparison.
+    /// <summary>
+    /// Tells whether a float sample counts towards <see cref="IsRescaled"/>, for a FITS and for
+    /// a float TIFF alike.
+    /// </summary>
+    /// <param name="value">The sample; for a FITS, after BZERO and BSCALE.</param>
+    /// <returns>True when it is finite and above <see cref="RescaleThreshold"/>.</returns>
+    public static bool IsAboveThreshold(double value) =>
+        value > RescaleThreshold && value <= double.MaxValue;
+
     /// <summary>Gives the factor that brings a value to 0 to 65535.</summary>
     /// <param name="fullScale">The value that is white (<see cref="FullScale"/>); above 0.</param>
     /// <returns>

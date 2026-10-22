@@ -29,6 +29,54 @@ public class WicImageLoaderTests : IDisposable
 
     public void Dispose() => _images.Dispose();
 
+    [Theory]
+    [InlineData(1, "32-bit float gray")]
+    [InlineData(3, "32-bit float RGB")]
+    [InlineData(4, "32-bit float RGBA")]
+    public async Task R090_AFloatTiff_IsReportedAsFloat(int channels, string expected)
+    {
+        string path = _images.WriteFloatTiff(
+            $"float{channels}.tif", 8, 4, channels, Enumerable.Repeat(0.5f, 8 * 4 * channels).ToArray());
+
+        ImageInfo probed = _loader.Probe(path);
+        LoadedImage loaded = await _loader.LoadAsync(path);
+
+        Assert.Equal(expected, probed.FormatDescription);
+        Assert.Equal(expected, loaded.Info.FormatDescription);
+        Assert.True(loaded.Info.IsFloat);
+    }
+
+    [Fact]
+    public async Task R091_AFloatTiff_IsShownAsStored_NotAsWicConvertsIt()
+    {
+        // Two RGB pixels. 0.5 is 32768 of 65535 and shows as 128, as the same value in a FITS
+        // does; WIC's own conversion takes float samples for linear light and gave 188.
+        float[] samples = [0.5f, 0.25f, 1.0f, float.NaN, -1f, 2f];
+        string path = _images.WriteFloatTiff("float.tif", 2, 1, 3, samples);
+
+        LoadedImage loaded = await _loader.LoadAsync(path);
+        byte[] bgra = new byte[8];
+        loaded.Bitmap.CopyPixels(bgra, 8, 0);
+
+        Assert.Equal(new byte[] { 255, 64, 128, 255, 255, 0, 0, 255 }, bgra);
+        Assert.Equal("32-bit float RGB", loaded.Info.FormatDescription);
+    }
+
+    [Fact]
+    public async Task R091_AFloatTiffInZeroTo65535_IsReadSo()
+    {
+        // Every sample is above 2, so the file counts to 65535 (R-016), and 41200, which is
+        // 0.6287 of 65535, shows as 160.
+        string path = _images.WriteFloatTiff("float65535.tif", 4, 2, 3, Enumerable.Repeat(41200f, 4 * 2 * 3).ToArray());
+
+        LoadedImage loaded = await _loader.LoadAsync(path);
+        byte[] bgra = new byte[4];
+        loaded.Bitmap.CopyPixels(new System.Windows.Int32Rect(0, 0, 1, 1), bgra, 4, 0);
+
+        Assert.Equal(new byte[] { 160, 160, 160, 255 }, bgra);
+        Assert.Equal("32-bit float RGB (0..65535)", loaded.Info.FormatDescription);
+    }
+
     [Fact]
     public void R010_Loads16BitRgbPng_TheFormatSirilProduces()
     {

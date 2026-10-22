@@ -45,8 +45,8 @@ public enum ColorChannels
 /// does not recognise.
 /// </param>
 /// <param name="IsFloat">
-/// True when the FITS reader read floating-point samples. WicImageLoader never sets it, so a
-/// float TIFF is reported by its bits alone: "32-bit gray", or "96-bit" for RGB.
+/// True when the samples are floating point, in a FITS of BITPIX -32 or -64 or in a float TIFF
+/// (R-090); <see cref="FormatDescription"/> then says "float".
 /// </param>
 /// <param name="ValueRange">
 /// The range a float file's values were read in, when it is not 0 to 1

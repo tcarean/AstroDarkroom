@@ -132,6 +132,78 @@ public sealed class TempImages : IDisposable
         return WriteBytes(name, [.. webp]);
     }
 
+    /// <summary>
+    /// A float32 TIFF as libtiff writes one, and the 32-bit exports of Siril and GraXpert are:
+    /// uncompressed, one strip, the channels interleaved, SampleFormat 3. With one channel WIC
+    /// decodes it as Gray32Float, with three as a 96 bpp RGB WPF has no name for, with four as
+    /// Rgba128Float. The samples go row by row, a pixel's channels together.
+    /// </summary>
+    public string WriteFloatTiff(string name, int width, int height, int channels, float[] samples)
+    {
+        // A value of more than two SHORTs does not fit its entry; it goes after the directory.
+        int entries = channels == 4 ? 12 : 11;
+        bool arrays = channels > 2;
+        int bitsAt = 8 + 2 + (entries * 12) + 4;
+        int formatsAt = bitsAt + (arrays ? 2 * channels : 0);
+        int dataAt = formatsAt + (arrays ? 2 * channels : 0);
+
+        var directory = new List<(ushort Tag, ushort Type, int Count, int Value)>
+        {
+            (256, 4, 1, width), // ImageWidth
+            (257, 4, 1, height), // ImageLength
+            (258, 3, channels, arrays ? bitsAt : 32), // BitsPerSample
+            (259, 3, 1, 1), // Compression: none
+            (262, 3, 1, channels >= 3 ? 2 : 1), // PhotometricInterpretation: RGB, or black is zero
+            (273, 4, 1, dataAt), // StripOffsets
+            (277, 3, 1, channels), // SamplesPerPixel
+            (278, 4, 1, height), // RowsPerStrip
+            (279, 4, 1, samples.Length * 4), // StripByteCounts
+            (284, 3, 1, 1), // PlanarConfiguration: interleaved
+        };
+        if (channels == 4)
+        {
+            directory.Add((338, 3, 1, 2)); // ExtraSamples: unassociated alpha
+        }
+
+        directory.Add((339, 3, channels, arrays ? formatsAt : 3)); // SampleFormat: IEEE float
+
+        using var tiff = new MemoryStream();
+        using var writer = new BinaryWriter(tiff);
+        writer.Write("II"u8);
+        writer.Write((ushort)42);
+        writer.Write(8);
+        writer.Write((ushort)directory.Count);
+        foreach ((ushort tag, ushort type, int count, int value) in directory)
+        {
+            writer.Write(tag);
+            writer.Write(type);
+            writer.Write(count);
+            writer.Write(value);
+        }
+
+        writer.Write(0);
+        if (arrays)
+        {
+            for (int channel = 0; channel < channels; channel++)
+            {
+                writer.Write((ushort)32);
+            }
+
+            for (int channel = 0; channel < channels; channel++)
+            {
+                writer.Write((ushort)3);
+            }
+        }
+
+        foreach (float sample in samples)
+        {
+            writer.Write(sample);
+        }
+
+        writer.Flush();
+        return WriteBytes(name, tiff.ToArray());
+    }
+
     public string PathFor(string name) => Path.Combine(_directory, name);
 
     public void Dispose()
