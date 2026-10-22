@@ -38,6 +38,9 @@ public partial class MinimapView : UserControl
     private Viewport? _viewport;
     private bool _dragging;
 
+    /// <summary>
+    /// Builds the minimap, which redraws its rectangle whenever its own size changes.
+    /// </summary>
     public MinimapView()
     {
         InitializeComponent();
@@ -50,6 +53,16 @@ public partial class MinimapView : UserControl
     /// <summary>Raised with a content-space point the user wants at the centre of the view.</summary>
     public event EventHandler<PointD>? CentreRequested;
 
+    /// <summary>
+    /// Shows a thumbnail of the canvas at the largest size with the canvas's aspect ratio that
+    /// fits the minimap's box, and draws the visible region on it.
+    /// </summary>
+    /// <param name="thumbnail">The canvas, already rendered small.</param>
+    /// <param name="contentWidth">The canvas width, in image pixels.</param>
+    /// <param name="contentHeight">The canvas height, in image pixels.</param>
+    /// <param name="viewport">
+    /// The view whose visible region the rectangle shows, read at every <see cref="Refresh"/>.
+    /// </param>
     public void Show(BitmapSource thumbnail, double contentWidth, double contentHeight, Viewport viewport)
     {
         _viewport = viewport;
@@ -63,6 +76,7 @@ public partial class MinimapView : UserControl
         Refresh();
     }
 
+    /// <summary>Hides the minimap and lets go of its thumbnail and its viewport.</summary>
     public void Hide()
     {
         _viewport = null;
@@ -89,6 +103,8 @@ public partial class MinimapView : UserControl
         ViewportRect.Visibility = layout.ShowViewportRect ? Visibility.Visible : Visibility.Collapsed;
     }
 
+    /// <summary>Starts a drag, and asks for the view to be centred on the point pressed.</summary>
+    /// <param name="e">The press; its position is read, and it is marked handled.</param>
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
@@ -99,6 +115,10 @@ public partial class MinimapView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>
+    /// While a drag is on, keeps asking for the view to be centred on the pointer.
+    /// </summary>
+    /// <param name="e">The move; its position is read.</param>
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
@@ -109,6 +129,8 @@ public partial class MinimapView : UserControl
         }
     }
 
+    /// <summary>Ends the drag.</summary>
+    /// <param name="e">The release; marked handled.</param>
     protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonUp(e);
@@ -116,12 +138,15 @@ public partial class MinimapView : UserControl
         e.Handled = true;
     }
 
+    /// <summary>Ends a drag whose mouse capture was taken away.</summary>
+    /// <param name="e">The event; not read.</param>
     protected override void OnLostMouseCapture(MouseEventArgs e)
     {
         base.OnLostMouseCapture(e);
         EndDrag();
     }
 
+    /// <summary>Ends a drag, if one is on, and releases the mouse.</summary>
     private void EndDrag()
     {
         if (_dragging)
@@ -131,6 +156,14 @@ public partial class MinimapView : UserControl
         }
     }
 
+    /// <summary>
+    /// Raises <see cref="CentreRequested"/> with the image point a position on the thumbnail
+    /// stands for; does nothing without a viewport that has content, or before the minimap has
+    /// a size.
+    /// </summary>
+    /// <param name="position">
+    /// The pointer, in device-independent pixels from the minimap's top-left corner.
+    /// </param>
     private void RequestCentre(Point position)
     {
         if (_viewport is not { HasContent: true } viewport || ActualWidth <= 0)

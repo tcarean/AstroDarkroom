@@ -17,10 +17,17 @@
 
 namespace ImageVisualCompare.Core;
 
+/// <summary>
+/// Where the minimap draws the visible region on its thumbnail, and whether it does.
+/// </summary>
 /// <param name="ViewportRect">The visible region, in thumbnail coordinates.</param>
 /// <param name="ShowViewportRect">False when the whole image is on screen and the rectangle would say nothing.</param>
 public readonly record struct MinimapLayout(RectD ViewportRect, bool ShowViewportRect);
 
+/// <summary>
+/// Maps between the minimap's thumbnail and the image: where the visible region is drawn on
+/// the thumbnail, and which image point a click on it means.
+/// </summary>
 public static class MinimapGeometry
 {
     /// <summary>Below this the rectangle is a dot nobody can see; at deep zoom it would be.</summary>
@@ -33,6 +40,18 @@ public static class MinimapGeometry
     /// because the viewport legitimately extends past the image whenever the image is smaller
     /// than the window — at fit, on the axis with spare room, the offset is negative.
     /// </summary>
+    /// <param name="viewport">The view whose visible region is drawn.</param>
+    /// <param name="thumbnailWidth">
+    /// The width of the area the whole image is mapped onto, in the unit the rectangle is
+    /// wanted in (the minimap passes its own width, in device-independent pixels).
+    /// </param>
+    /// <param name="thumbnailHeight">The height of that area, in the same unit.</param>
+    /// <returns>
+    /// The rectangle, clamped to the area and then widened to at least 2 units on each side,
+    /// so at deep zoom by the right or bottom edge it can reach up to 2 units past the area;
+    /// shown only while part of the image is off screen. The default, hidden, when the viewport
+    /// has no content or the area no size.
+    /// </returns>
     public static MinimapLayout Layout(Viewport viewport, double thumbnailWidth, double thumbnailHeight)
     {
         ArgumentNullException.ThrowIfNull(viewport);
@@ -59,7 +78,22 @@ public static class MinimapGeometry
             viewport.CanScrollHorizontally || viewport.CanScrollVertically);
     }
 
-    /// <summary>The content point a click at this thumbnail position is pointing at.</summary>
+    /// <summary>
+    /// Maps a position on the thumbnail to the image point it stands for, for a click or a drag
+    /// that recentres the view.
+    /// </summary>
+    /// <param name="viewport">The view, whose content size the thumbnail is scaled from.</param>
+    /// <param name="thumbnailX">
+    /// The position, from the left edge of the area the image is mapped onto.
+    /// </param>
+    /// <param name="thumbnailY">The position, from the top edge of that area.</param>
+    /// <param name="thumbnailWidth">The width of that area, in the unit of the position.</param>
+    /// <param name="thumbnailHeight">The height of that area, in the same unit.</param>
+    /// <returns>
+    /// The content point a click at this thumbnail position is pointing at, in image pixels.
+    /// It is not clamped: a drag past the thumbnail's edge gives a point off the image, which
+    /// <see cref="Viewport.CentreOn"/> clamps. The origin when the thumbnail has no size.
+    /// </returns>
     public static PointD ContentPointAt(
         Viewport viewport,
         double thumbnailX,

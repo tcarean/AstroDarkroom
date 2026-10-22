@@ -120,8 +120,8 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. ImageVisualCompare
 - A release is tagged `imagevisualcompare-vX.Y.Z`, the name `scripts/release.ps1` prints; it
   publishes the application self-contained for win-x64 into `artifacts/X.Y.Z/`.
 - The main checkout of the kit's rule "Worktrees" is the shared checkout `E:\Photografie\Code`.
-  A worktree has no copy of the real pair; a task that runs `/validate` copies the three files
-  into the worktree's `tests/testdata/large/` first (ADR 0005).
+  A worktree has no copy of the real pair; a task that runs `/validate` copies the files that
+  `docs/skills.md` lists for it into the worktree's `tests/testdata/large/` first (ADR 0005).
 
 ## Read before touching
 
@@ -140,8 +140,8 @@ edit:
 ## Style
 
 - `.editorconfig` holds whitespace rules and `IDE0005`; `dotnet format` enforces them, and so
-  does the build, which writes the XML documentation file for that reason (CS1591 and CS1573
-  muted). Warnings are errors, `EnforceCodeStyleInBuild` and `Nullable` are on, in
+  does the build, which writes the XML documentation file for that reason (CS1591 muted).
+  Warnings are errors, `EnforceCodeStyleInBuild` and `Nullable` are on, in
   `Directory.Build.props` (ADR 0003). The kit's code-style rules (braces, `var`) are not
   enabled: 38 findings on 2026-10-02; a style pass is a task of its own.
 - Fix, do not suppress, unless the suppression carries a comment with the reason.

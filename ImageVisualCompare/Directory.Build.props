@@ -24,10 +24,12 @@
          (missing XML comment) stays muted: the rule "Documentation comments" asks for a comment
          on every type and method, private ones included, and nothing checks it; CS1591 would
          ask only for public members, properties and fields included (the kit's ADR 0035).
-         CS1573 (a parameter without a param tag while another has one) stays muted until the
-         comments written before that rule tag every parameter (ADR 0003). -->
+         CS1573 (a parameter without a param tag while another has one) is not muted since the
+         comments written before that rule were completed: a comment that tags only some
+         parameters fails the build, while one with no param tag at all still builds (ADR 0003,
+         the kit's ADR 0035). -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
     <!-- A 21 MP pair needs ~300 MB at peak; a 32-bit process cannot host that. -->
     <PlatformTarget>x64</PlatformTarget>
     <!-- Do not set InvariantGlobalization here. WPF's font cache builds a CultureInfo("en")

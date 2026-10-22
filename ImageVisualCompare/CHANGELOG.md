@@ -38,6 +38,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - `Directory.Build.props` declares the `win-x64` runtime the release publishes for, on every
   project but the test project, so a release's publish no longer rewrites the lock files and
   stops the release on them (ADR 0028).
+- Every type and method in `src/` has an XML documentation comment, with a tag for each
+  parameter and for the return, and every coordinate's pixel space named (the kit's rule
+  "Documentation comments", the kit's ADR 0035); six comments already there that did not match
+  the code were corrected. `Directory.Build.props` no longer mutes CS1573, so a comment that
+  tags only some parameters fails the build (the kit's ADR 0035, recorded on ADR 0003). No code
+  changed.
 
 ## [1.1.1] - 2026-09-09
 

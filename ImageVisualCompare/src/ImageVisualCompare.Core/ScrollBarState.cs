@@ -17,6 +17,11 @@
 
 namespace ImageVisualCompare.Core;
 
+/// <summary>
+/// What one floating scrollbar shows, ready to assign: its range, the thumb, its position and
+/// whether it is there at all. The numbers are in image pixels, the unit of the viewport's
+/// offsets.
+/// </summary>
 /// <param name="Maximum">Highest offset the bar can scroll to; the minimum is always zero.</param>
 /// <param name="ViewportSize">Visible extent, which is what sets the thumb's proportion.</param>
 /// <param name="Value">Current offset, clamped into range.</param>
@@ -27,8 +32,19 @@ public readonly record struct ScrollBarState(
     double Value,
     bool IsVisible);
 
+/// <summary>
+/// Reads the state of the horizontal and the vertical scrollbar off the viewport.
+/// </summary>
 public static class ScrollBarStates
 {
+    /// <summary>Reads the horizontal scrollbar's state off the viewport.</summary>
+    /// <param name="viewport">
+    /// The view whose horizontal offset and visible width the bar shows.
+    /// </param>
+    /// <returns>
+    /// The range 0 to <see cref="Viewport.MaxOffsetX"/>, the visible width as the thumb, the
+    /// offset clamped into that range, and visible only while the image is wider than the view.
+    /// </returns>
     public static ScrollBarState Horizontal(Viewport viewport)
     {
         ArgumentNullException.ThrowIfNull(viewport);
@@ -40,6 +56,14 @@ public static class ScrollBarStates
             viewport.CanScrollHorizontally);
     }
 
+    /// <summary>Reads the vertical scrollbar's state off the viewport.</summary>
+    /// <param name="viewport">
+    /// The view whose vertical offset and visible height the bar shows.
+    /// </param>
+    /// <returns>
+    /// The range 0 to <see cref="Viewport.MaxOffsetY"/>, the visible height as the thumb, the
+    /// offset clamped into that range, and visible only while the image is taller than the view.
+    /// </returns>
     public static ScrollBarState Vertical(Viewport viewport)
     {
         ArgumentNullException.ThrowIfNull(viewport);

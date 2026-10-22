@@ -33,6 +33,26 @@ public enum ColorChannels
 /// layout — everything is normalised to Bgra32 for display — so this exists purely to
 /// report the truth to the user in the status bar instead of leaving them to guess.
 /// </summary>
+/// <param name="Path">The file, as the loader was given it.</param>
+/// <param name="PixelWidth">The image's width in the file, in pixels.</param>
+/// <param name="PixelHeight">The image's height in the file, in pixels.</param>
+/// <param name="BitsPerChannel">
+/// Bits of one channel as stored, from 1 to 64; for a WIC format this program does not
+/// recognise, the bits of a whole pixel.
+/// </param>
+/// <param name="Channels">
+/// The channel layout as stored; <see cref="ColorChannels.Unknown"/> for a format this program
+/// does not recognise.
+/// </param>
+/// <param name="IsFloat">
+/// True when the FITS reader read floating-point samples. WicImageLoader never sets it, so a
+/// float TIFF is reported by its bits alone: "32-bit gray", or "96-bit" for RGB.
+/// </param>
+/// <param name="ValueRange">
+/// The range a float file's values were read in, when it is not 0 to 1
+/// (<see cref="FitsScale.SixteenBitRange"/>). Known only once the samples have been read, so
+/// null after a probe, and null for every other file.
+/// </param>
 public sealed record ImageInfo(
     string Path,
     int PixelWidth,
@@ -69,6 +89,6 @@ public sealed record ImageInfo(
         }
     }
 
-    /// <summary>Bytes the image occupies once converted to Bgra32, for the memory budget.</summary>
+    /// <summary>Bytes the image occupies once converted to Bgra32.</summary>
     public long DisplayBytes => (long)PixelWidth * PixelHeight * 4;
 }

@@ -27,6 +27,10 @@ using System.Reflection;
 
 namespace ImageVisualCompare.Wpf;
 
+/// <summary>
+/// The program's version and copyright, read once from the assembly, and the texts the status
+/// bar and the About dialog build from them.
+/// </summary>
 internal static class VersionInfo
 {
     internal static string Value { get; } = Read();
@@ -61,6 +65,11 @@ internal static class VersionInfo
         "The full licence text is in the LICENSE file next to this program, and at",
         "https://www.gnu.org/licenses/gpl-3.0.html");
 
+    /// <summary>Reads the copyright notice that MSBuild wrote into the assembly.</summary>
+    /// <returns>
+    /// The notice from &lt;Copyright&gt;; a fixed one naming the author when the attribute is
+    /// missing or blank.
+    /// </returns>
     private static string ReadCopyright()
     {
         string? copyright = typeof(VersionInfo).Assembly
@@ -69,6 +78,11 @@ internal static class VersionInfo
         return string.IsNullOrWhiteSpace(copyright) ? "Copyright (C) 2026 Tudor Carean" : copyright;
     }
 
+    /// <summary>Reads the version that MSBuild wrote into the assembly.</summary>
+    /// <returns>
+    /// The version from &lt;Version&gt;, such as "1.1.1", without any "+metadata" a build
+    /// appends; the assembly version when there is none; "0.0.0" when neither can be read.
+    /// </returns>
     private static string Read()
     {
         Assembly assembly = typeof(VersionInfo).Assembly;

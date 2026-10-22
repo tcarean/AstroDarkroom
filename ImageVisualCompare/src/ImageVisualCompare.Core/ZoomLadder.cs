@@ -32,7 +32,15 @@ public static class ZoomLadder
         1.0, 1.5, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0, 16.0
     ];
 
-    /// <summary>The lowest stop strictly above <paramref name="scale"/>, or the highest stop.</summary>
+    /// <summary>Finds the stop to zoom in to from <paramref name="scale"/>.</summary>
+    /// <param name="scale">
+    /// The current scale, 1 being one image pixel per physical screen pixel: a stop, a value
+    /// between two after a wheel zoom, or one past either end of the ladder.
+    /// </param>
+    /// <returns>
+    /// The lowest stop strictly above <paramref name="scale"/>, or the highest stop when none is,
+    /// which for a scale above the ladder is a step down.
+    /// </returns>
     public static double Next(double scale)
     {
         foreach (double step in Steps)
@@ -46,7 +54,16 @@ public static class ZoomLadder
         return Steps[^1];
     }
 
-    /// <summary>The highest stop strictly below <paramref name="scale"/>, or the lowest stop.</summary>
+    /// <summary>Finds the stop to zoom out to from <paramref name="scale"/>.</summary>
+    /// <param name="scale">
+    /// The current scale, 1 being one image pixel per physical screen pixel: a stop, a value
+    /// between two after a wheel zoom, or one past either end of the ladder, such as a fit
+    /// scale under 2%.
+    /// </param>
+    /// <returns>
+    /// The highest stop strictly below <paramref name="scale"/>, or the lowest stop when none
+    /// is, which for a scale under the ladder is a step up.
+    /// </returns>
     public static double Previous(double scale)
     {
         for (int i = Steps.Count - 1; i >= 0; i--)

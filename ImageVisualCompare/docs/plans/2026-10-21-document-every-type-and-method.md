@@ -1,0 +1,349 @@
+# Document every type and method in the code
+
+## Context
+
+On 2026-10-21 the kit's rule "Documentation comments" (the kit's ADR 0035, merged as 2b2235f)
+started asking for an XML documentation comment on every type and method in the code: a
+`<summary>`, a `<param>` for each parameter, a `<returns>` for a value. Code written before the
+rule gets its comments in a task of its own per project. The owner asked for ImageVisualCompare's:
+"Backfill the XML documentation comments in ImageVisualCompare's code folders ... about 30 types
+and 143 methods to touch. Plan first. At the end, drop CS1573 from NoWarn in Directory.Build.props
+and update its comment (ADR 0003)."
+
+The outcome: every type and method under `src/` documented, no code changed, CS1573 no longer
+muted, the gate green. MindfulnessReminder's backfill
+(`MindfulnessReminder/docs/plans/2026-10-21-document-every-type-and-method.md`, on its branch) is
+the pattern; this plan follows it and says where IVC differs.
+
+## Facts checked (2026-10-21, `main` at 2b2235f)
+
+- **The gaps, measured** with the kit task's scratch counter (`doccount`, a Roslyn syntax walk
+  over the folders `kit.json` lists, skipping `bin/`, `obj/` and `*.g.cs`), copied into this
+  session's scratchpad and extended to list the incomplete members as well. In `src/` (29 files,
+  3,296 lines):
+  - types: 45, of which 18 have no summary and 12 lack a `<param>` of a positional record or a
+    primary constructor;
+  - methods: 147, of which 96 have no summary and 47 lack tags (46 a `<param>`, 33 the
+    `<returns>`); 79 return something, one of them a plain `Task` (`MainWindow.OpenPairAsync`);
+  - properties, indexers and events: 46, of which 30 have no comment (not required);
+  - so **30 types and 143 methods**: 17 and 54 in Core (13 files), 13 and 89 in Wpf (14 files).
+    `DividerLayout.cs` and `AssemblyInfo.cs` need nothing.
+- **The existing comments:** summaries; `<param>` tags on ten types and three methods; two
+  `<exception>` (`FitsHeader.ReadLayout`) and one `<remarks>` (`CompareView.CreateThumbnail`); no
+  `<returns>`, no `<inheritdoc/>`. They write `null`, `true` and `false` as plain words, code as
+  `<see cref>`, `<paramref>` and `<c>`. The FITS files cite ADR 0029; no comment cites a
+  requirement.
+- **CS1573 is muted** (`<NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>`). The props comment says it
+  stays muted "until the comments written before that rule tag every parameter (ADR 0003)";
+  `CLAUDE.md`, "Style", says "(CS1591 and CS1573 muted)"; ADR 0003's Decision records the mute,
+  and its Status already reads `accepted 2026-10-02; comments for the "why" only superseded by
+  the kit's ADR 0035`. Today six members tag only some parameters: `FitsImageLayout`,
+  `FitsRowDecoder`, `ImagePair`, `FitsImageLayout.Describe`, `FitsScale.IsRescaled`,
+  `ImagePairLoader.LoadAsync`.
+- **The tests have no `<param>` tag at all,** so dropping the mute cannot fail the test project,
+  which builds with the same `Directory.Build.props`.
+- **The compiler checks the rest already:** CS1570, CS1572, CS1574 and CS0419 fail the build
+  (documentation file on, warnings as errors). Whitespace is LF, UTF-8, no trailing space
+  (`.editorconfig`, `dotnet format` in the gate).
+- **Two doc comments describe what the code no longer does or never did** (Assumption 7).
+- **Wrap-up checks the project asks for:** the rule "Run the application" and `docs/skills.md`
+  launch the application once on the real pair when anything under `src/ImageVisualCompare.Wpf/`
+  or `Directory.Build.props` changes; `/wrap-up` step 2 runs `/validate` when Core or `Imaging/`
+  is touched. `TestData` honours `IVC_TESTDATA_LARGE`, so the worktree can read the main
+  checkout's copies of the real files instead of copying them.
+- **Branches:** no branch or worktree for this task. `claude/Document-every-type-and-method`
+  exists already (MindfulnessReminder's, unmerged), and branch names are repository-wide, so this
+  one is `claude/Document-every-type-and-method-in-IVC`.
+
+## What each file needs (U: no comment; T: tags missing)
+
+**Core (`src/ImageVisualCompare.Core/`)**: 13 files, 17 types, 54 methods
+- `DividerModel.cs`: `ScreenX`, `HandleCentreY`, `Reset` U; `MoveTo`, `NudgeBy`, `Layout`, `HitTest` T
+- `FitsHeader.cs`: `FitsImageLayout` T (Width, Height, BZero, BScale); `DisplayRow` T; `Describe` U
+  (its one `<param>` stays); `IsFits`, `ReadLayout`, `DataBlockBytes`, `ReadCards`, `Value`,
+  `Count` T; `Layout`, `NoImage`, `InvalidHeader`, `TooLarge`, `Text`, `IsTrue`, `Number` U
+- `FitsRowDecoder.cs`: `FitsRowDecoder` T (`layout`); `ReadFileRow`, `Convert` T; `IsAboveThreshold` U
+- `FitsScale.cs`: `FullScale`, `ToSixteenBits`, `ToByte`, `Level` T; `IsRescaled` U (two `<param>` stay)
+- `Geometry.cs`: `SizeD` T (2), `RectD` T (4); `AspectFit` U; `Fit` T
+- `ImageInfo.cs`: `ImageInfo` T (7)
+- `ImagePairValidator.cs`: `PadPlan` T (3), `PadRequest` T (3); `ImagePairValidator` U; `Inspect`,
+  `DescribeMismatch` T
+- `MinimapGeometry.cs`: `MinimapLayout` U (its params stay), `MinimapGeometry` U; `Layout`, `ContentPointAt` T
+- `PointD.cs`: `PointD` T (2)
+- `RenderPlan.cs`: `ImageScalingMode` U, `RenderPlan` U (its params stay), `RenderPlanner` U; `For` T
+- `ScrollBarState.cs`: `ScrollBarState` U (its params stay), `ScrollBarStates` U; `Horizontal`, `Vertical` U
+- `Viewport.cs`: `ScreenToContent`, `ContentToScreen`, `ZoomBy`, `ZoomOut`, `ClampScale`,
+  `ClampOffsets` U; `SetContentSize`, `SetViewportSize`, `ContentPointInsideAt`, `ZoomTo`,
+  `ZoomIn`, `PanBy`, `SetOffset`, `CentreOn` T
+- `ZoomLadder.cs`: `Next`, `Previous` T
+
+**Wpf without a window (`Imaging/`, `Services/`, `Interop/`, `Version.cs`)**: 9 files, 11 types, 35 methods
+- `Imaging/IImageLoader.cs`: `Probe`, `LoadAsync` T
+- `Imaging/WicImageLoader.cs`: `Probe`, `LoadAsync`, `Load`, `OpenRead`, `CreateDecoder`, `Describe` U; `Classify` T
+- `Imaging/FitsImageLoader.cs`: `Probe`, `LoadAsync`, `Load`, `OpenRead` U; `CreateBitmap`, `Decode` T
+- `Imaging/RoutingImageLoader.cs`: `RoutingImageLoader` T (`fits`, `other`); constructor, `Probe`,
+  `LoadAsync`, `For` U
+- `Imaging/ImagePairLoader.cs`: `ImagePair` T (Before, After), `ImageLoadProgress` U (its params
+  stay), `ImagePairLoadResult` T (3), `ImagePairLoader` T (`loader`); `Success`, `Failure`,
+  `LoadAsync` U; `IsExpectedLoadFailure` T
+- `Imaging/MemoryHousekeeping.cs`: `MemorySnapshot` U (its params stay), `MemoryHousekeeping` U;
+  `Describe`, `Megabytes`, `Snapshot` U
+- `Services/FileDialogService.cs`: `IFileDialogService`, `ImagePairSelection`, `FileDialogService` U;
+  the interface's `PickImagePair` T; the class's `PickImagePair`, `Pick` U
+- `Interop/DarkTitleBar.cs`: `Apply` T; `ApplyTo`, `Set`, `DwmSetWindowAttribute` U
+- `Version.cs`: `VersionInfo` U; `ReadCopyright`, `Read` U
+
+**Wpf, the visual layer**: 5 files, 2 types, 54 methods
+- `App.xaml.cs`: `App` U; `TakeStartupSelection` T (`<returns>`); `OnStartup` U
+- `MainWindow.xaml.cs`: `MainWindow` U; constructor, `OnPreviewKeyDown`, `OpenPairAsync`,
+  `LoadWithOverlayAsync`, `ShowPair`, `UpdateZoomReadout`, `Describe` U; `ConfirmPaddingAsync`,
+  `UpdatePixelReadout` T
+- `MessageDialog.xaml.cs`: constructor, `OnPreviewKeyDown`, `Create` U; `Show`, `Confirm` T
+- `Controls/CompareView.xaml.cs`: 28 U (constructor, `SetPair`, `Clear`, the four zoom commands,
+  the eight overrides, and the 13 private helpers from `SetPixelSize` to `ToRect`);
+  `CreateThumbnail` T
+- `Controls/MinimapView.xaml.cs`: constructor, `Show`, `Hide`, the four overrides, `EndDrag`,
+  `RequestCentre` U
+
+## Assumptions (the kit's rule "Two readings": decided, stated)
+
+1. **Scope** is the 30 types and 143 methods above. Properties, fields, events and enum members
+   stay as they are; the generated `obj/*.g.cs` and the XAML have no members of ours.
+2. **Tags:** a `<summary>` always; a `<param>` for each parameter, a positional record's and a
+   primary constructor's on the type; a `<returns>` for each of the 78 methods with a value,
+   seven of them through `<inheritdoc/>` (for a `Task<T>`, the value it completes with), none
+   for `OpenPairAsync`'s plain `Task`; no `<typeparam>`, since nothing in `src/` is generic.
+3. **`<inheritdoc/>` only where an interface of this project states the whole contract,** once
+   its own comment is completed here: `Probe` and `LoadAsync` of `WicImageLoader`,
+   `FitsImageLoader` and `RoutingImageLoader`, and `FileDialogService.PickImagePair`; 7 members.
+   Own text for the 14 framework overrides (what the override does, not the base class's event),
+   the two public synchronous `Load` methods and every constructor.
+4. **What a comment says: the contract,** in the voice of the file.
+   - **Every coordinate, size, offset and scale names its space:** physical screen pixels
+     (`Viewport` and what feeds it), device-independent pixels (the divider, WPF positions, the
+     minimap), image pixels (content space); a scale of 1 is one image pixel per physical pixel.
+     This is the project's rule "Physical pixels below, device-independent pixels above" carried
+     into the tags, where a reader of a signature needs it most.
+   - A range where the code enforces one ("not negative", "greater than 0"); what `null` means
+     where the type allows it; a non-nullable parameter is not called "not null".
+   - **Throws:** an argument guard is said as the parameter's range. A throw for bad input that a
+     caller must plan for (a FITS cut short, a file that cannot be read, cancellation) is said:
+     as `<exception>` tags in `FitsHeader.cs` and `FitsRowDecoder.cs`, beside `ReadLayout`'s two;
+     in prose elsewhere, as `CreateBitmap`'s summary already does. No new `<remarks>`.
+   - English; `null`, `true`, `false` as plain words; no new ADR or requirement ID (the FITS
+     files' ADR 0029 stays); wrapped at 100 columns, a long tag in the block form `ImagePair`'s
+     `Pad` uses; an overloaded name in a `cref` gets its parameter list (CS0419).
+   - Example, `Viewport.ZoomTo`: `<param name="anchorScreenX">The anchor, in physical pixels from
+     the viewport's left edge.</param>`; `<param name="scale">The new scale, 1 being one image
+     pixel per physical screen pixel; clamped to MinScale..MaxScale.</param>`.
+5. **Event handlers and overrides tag `sender` and `e`,** briefly: what raises it and what is
+   read (`OnDpiChanged`'s two scales are not read: the control asks `VisualTreeHelper`).
+6. **Existing comments keep their text,** why-paragraphs included. A sentence that already says
+   what a parameter means or what comes back moves into its tag instead of being said twice
+   (`ZoomLadder.Next` and `Previous`, `DisplayRow`, `HitTest`'s "True when", `ContentPointInsideAt`'s
+   "or null", `PickImagePair`'s "Returns null"); the summary then says what the member does.
+7. **Two stale doc comments are corrected, in a commit of their own:**
+   - the `ImagePairLoader` summary, "refusing anything the comparison could not honestly
+     display", is from the base version (a6e5f10), when a mismatched pair was refused; since
+     1.1.0 (ADR 0014) it is padded once `confirmPadding` agrees. The new summary says what the
+     loader does: both headers first, the question before any decode, the decodes one after the
+     other, an unreadable file or an unanswered mismatch as a message;
+   - `ImagePair.DisplayBytes`, "for the memory readout": the readout is `MemorySnapshot` (R-052,
+     ADR 0016) and nothing in the application reads `DisplayBytes`; the clause goes.
+
+   **Say no at approval and commit 5 goes.**
+8. **The CS1573 mute ends** after the last comment, as asked:
+   - `Directory.Build.props`: `<NoWarn>$(NoWarn);CS1591</NoWarn>`; the comment's last sentence
+     becomes "CS1573 (a parameter without a param tag while another has one) is not muted: every
+     parameter in the code has its tag, so a comment that tags only some fails the build (ADR
+     0003, the kit's ADR 0035)."
+   - ADR 0003's Status: `accepted 2026-10-02; comments for the "why" only and the CS1573 mute
+     superseded by the kit's ADR 0035` (the kit's ADR 0024: only the Status line changes).
+   - `CLAUDE.md`, "Style": "(CS1591 muted)".
+   - **No new project ADR:** the decision is the kit's ADR 0035 (a `<param>` for each parameter;
+     CS1573 among the checks wherever the documentation file is generated), which a project cites
+     rather than writes again (the kit's rule "Decisions"). Its plan already named this step.
+9. **Nothing else changes:** no requirement, test, README or version. One `Internal` line in
+   `CHANGELOG.md`: the comments, the two corrections, and CS1573 now failing a partial comment.
+10. **The project's wrap-up checks run although only comments change:** `/validate`, with
+    `IVC_TESTDATA_LARGE` pointing at the main checkout's copies; one launch from the worktree's
+    build on `de_printat.png` and `de_printat_PRINT_preview_16bit.tif`, with a screenshot
+    (a PowerShell `PrintWindow` capture into the scratchpad) looked at.
+
+## Setup
+
+- From `E:\Photografie\Code\ImageVisualCompare`:
+  `git worktree add .claude/worktrees/Document-every-type-and-method-in-IVC -b claude/Document-every-type-and-method-in-IVC main`
+- `<wt>` = `E:\Photografie\Code\ImageVisualCompare\.claude\worktrees\Document-every-type-and-method-in-IVC\ImageVisualCompare`.
+  Edits with the Edit tool on absolute paths there, never in the main checkout. Commits are plain
+  `git -C <wt> commit -q -m "..."`; the hook's `== OK in NNs` is expected.
+- This plan is saved as `<wt>/docs/plans/2026-10-21-document-every-type-and-method.md`.
+- **If the gate goes red for a reason that predates this task, I stop and report it.**
+
+## Commits on `claude/Document-every-type-and-method-in-IVC`
+
+1. The plan.
+2. **Core:** 13 files, 17 types, 54 methods.
+3. **Wpf without a window:** `Imaging/` (the interface first), `Services/`, `Interop/`,
+   `Version.cs`: 9 files, 11 types, 35 methods.
+4. **Wpf, the visual layer:** `Controls/`, `MainWindow`, `MessageDialog`, `App`: 5 files, 2 types,
+   54 methods.
+5. **The two stale doc comments** (Assumption 7).
+6. **CS1573 no longer muted** (Assumption 8).
+7. **Wrap-up:** the CHANGELOG line, and the plan's "What deviated" with the measured counts.
+
+Each message is one line, under 100 characters, saying why. One session is expected; if it runs
+short it stops after a commit, and a session opened in the project folder continues from this
+plan and the branch (I give a prompt to paste; a chip would open at the checkout root).
+
+## Verification
+
+- **The gate** green at each commit: the hook's `== OK`, 256 tests as on `main`, and the build's
+  CS1570/1572/1574/0419 checks; after commit 6 also CS1573, the compiler's own proof that no
+  comment tags only some parameters.
+- **The scratch counter** on `<wt>`: in `code`, 0 types and 0 methods undocumented or incomplete
+  (now 18 + 12 and 96 + 47); properties still 30 without a comment. Output pasted.
+- **Only comments changed:** in `git -C <wt> diff main -- src`, every `+` or `-` line is a `///`
+  line; filtered for the rest, the output is empty.
+- **`scripts/check-design.ps1 -Since main`:** each note it lists is read against the change; none
+  should change, since no mechanics do.
+- **`/validate`:** the drift table, none expected. **The launch:** the screenshot shows the pair,
+  the status bar's dimensions, formats and version.
+- **The whole diff** is read before each commit and summarised at wrap-up.
+
+## Then
+
+- `/wrap-up` in `<wt>`, then I suggest `/code-review main...claude/Document-every-type-and-method-in-IVC`.
+- I propose `git merge --no-ff claude/Document-every-type-and-method-in-IVC` in
+  `E:\Photografie\Code` and ask who runs it. After the merge: `git worktree remove`, then
+  `git branch -d`.
+- Memory: `documentation-comments-rule.md` marks ImageVisualCompare done, CS1573 mute dropped.
+
+## What deviated
+
+- **One session was enough.** The plan was approved as written, commit 5 included. The seven
+  planned commits were followed by an eighth, the two corrections below.
+- **The real files were copied, not reached through `IVC_TESTDATA_LARGE`.** Assumption 10 said
+  the variable. ADR 0005's Decision says nobody sets it, and its Consequences say a worktree
+  gets copies, so the five files were copied into the worktree's `tests/testdata/large/` (5 s;
+  `check-testdata.ps1` found every hash). `CLAUDE.md`, "Workflow", said "the three files";
+  `docs/skills.md` lists five since 2026-10-05, and the line now points there instead of
+  counting.
+- **The counter flags one member by design.** `MainWindow.OpenPairAsync` returns a plain
+  `Task`. The kit task's counter treats every non-void return as a value and lists it as
+  missing a `<returns>`; the rule asks for none (Assumption 2).
+- **Four members sit under an ordinary comment:** `FitsHeader.Number`,
+  `FitsRowDecoder.IsAboveThreshold`, `FitsImageLoader.OpenRead` and
+  `RoutingImageLoader.LoadAsync`. Their `///` block went between that `//` line and the
+  member, so that only `///` lines changed; the XML documentation file shows each block on its
+  member.
+- **Wrapping.** 67 new one-line tags ran past 100 columns and went into the block form by a
+  scratch script that touched only the branch's added lines. Twelve `Viewport` tags were then
+  shortened by hand to "in screen space (physical pixels)", which the class summary defines.
+  The 16 doc lines over 100 columns that the branch did not otherwise touch stay as on `main`.
+- **ADR 0025, judged and kept.** `CompareView.OnKeyDown` and `OnMouseWheel` and
+  `MainWindow.OnPreviewKeyDown` name their keys, which the README's "Controale" table lists
+  too. ADR 0025 keeps the user documentation out of the comments; as the kit task judged of
+  this ADR, a member's contract is not user documentation, and the keys are what these
+  handlers do.
+- **Two claims corrected after the wrap-up commit.** MindfulnessReminder's review found doc
+  claims about framework behaviour that only checking the API shows, so every such claim was
+  read again against the code. Two said more than it does: `DataBlockBytes` returned "0 for a
+  unit with no axes", but such a unit still counts its PCOUNT; and `OnDpiChanged` named the
+  monitor changes that raise it, which depends on a DPI awareness nothing here declares. Each
+  now says only what holds: no samples for a unit with no axes, and the event's own contract.
+- **CS1573 proved on twice more.** Besides the gate after commit 6: a non-incremental rebuild of
+  the three projects (0 warnings, 0 errors, every assembly rewritten), and a scratch class whose
+  method tags one of its two parameters, built against this `Directory.Build.props`, which
+  stopped on `error CS1573`.
+- **Measured on 2026-10-21:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | a2548ef | the plan | `== OK in 22s` | 256 |
+  | 6414187 | Core: 13 files, +459/-37 | `== OK in 20s` | 256 |
+  | 65e2cbd | Wpf without a window: 9 files | `== OK in 20s` | 256 |
+  | 34834a3 | the visual layer: 5 files (Wpf in all: 14 files, +449/-13) | `== OK in 19s` | 256 |
+  | 269b802 | the two stale doc comments | `== OK in 20s` | 256 |
+  | 9eaa539 | CS1573 no longer muted | `== OK in 20s` | 256 |
+  | (none) | wrap-up step 1 | `== OK in 20s` | 256 |
+
+  - **The scratch counter, `code` group.** On `main` (2b2235f): types 45, 18 undocumented and
+    12 missing a `<param>`; methods 147, 96 undocumented and 47 incomplete (46 missing a
+    `<param>`, 33 the `<returns>`). On the branch: types 0 and 0; methods 0 undocumented, 0
+    missing a `<param>`, and the one plain `Task` above. Properties, indexers and events: 46,
+    of which 30 still have no comment, as planned.
+  - **The XML documentation files the build writes:** Core 193 `<param>`, 38 `<returns>`, 8
+    `<exception>`; Wpf 127 `<param>`, 33 `<returns>`, 7 `<inheritdoc/>`. Their 71 `<returns>`
+    and the 7 inherited members, all of which return a value, make the 78 methods with one.
+  - **Only comments changed:** in `git diff main...HEAD -- src`, 27 files, 0 changed lines that
+    are not `///` lines.
+  - **`check-design.ps1 -Since main`** listed six notes: `code-map.md`, `imaging.md`,
+    `rendering.md`, `shell.md`, `testing.md` and `versioning-and-licence.md`. Each was read
+    against the change; none states anything the comments contradict, and none changed.
+  - **`/validate`:** the four cases passed, with no drift; the figures are in
+    `../validation.md`, History, 2026-10-21.
+  - **The launch,** from the worktree's build, on `de_printat.png` against
+    `de_printat_PRINT_preview_16bit.tif`: the pair at fit (24%), the divider and its handle, the
+    minimap, the status bar `5938 × 3888 · A 16-bit RGB · B 16-bit RGB` with the version and the
+    copyright, the dark caption; closed with exit code 0.
+- **The code review, 2026-10-22.** `/code-review` of the branch against `main`, at max effort,
+  reported 15 findings and confirmed 16 more past its cap (6 were refuted). The owner asked to
+  fix, for now, everything about the comments. Comments the branch wrote said more than the
+  code does, or something else:
+  - the loaders' contract promised a message for every file that cannot be read, though WIC
+    also throws `OverflowException` (an image too large to decode) and `COMException` (a
+    damaged WebP, HEIC or AVIF), which `ImagePairLoader` does not catch;
+  - `RenderPlanner` counted the pan in physical pixels; it is in image pixels and passes
+    through;
+  - the 100% and device-scale comments left out that the application runs system-DPI-aware,
+    so on a monitor scaled differently from the system 100% is not one to one;
+  - "−" was said to step down, though from under the lowest stop it zooms in, and just above
+    the fit it lands on the fit;
+  - `FitsHeader.Number` promised its fallback for any value that is not a number, though NaN,
+    an infinity and 1D999 parse; `ReadCards` promised an `EndOfStreamException` for any cut
+    header, though an extension cut inside its first block reads as no image;
+  - `ImageInfo.IsFloat` said that only the FITS reader sets it, as if by design; it now says
+    what the flag records and how a float TIFF reads today, which is the owner's call (below);
+  - `OpenPairAsync` tied the close to the first prompt, where the code closes whenever no pair
+    is shown (R-001); `ClampOffsets` kept the offsets inside the image, where an axis that fits
+    is centred with a negative offset; the minimap rectangle was said to stay inside its area,
+    where the 2-unit floor can carry it past; the scrollbar comments guarded against events WPF
+    raises only for the user's scrolling; `ImagePairLoader.LoadAsync`'s token was said to be
+    looked at between all its steps, though not before the padding question.
+
+  The comment findings among the 16 past the cap were corrected the same way: tags that only
+  said their name again (`SizeD`, `DarkTitleBar`), constructors that told their wiring rather
+  than what a caller gets (`CompareView`, `MainWindow`), and smaller claims (`ScrollBarState`'s
+  numbers, `initialDirectory`'s empty string, `MessageDialog.Create`'s owner, `OnKeyDown`, the
+  mouse handlers' `e`). Four comments that predate the branch were corrected with them:
+  `ReadLayout`'s `EndOfStreamException` tag, the same overclaim as `ReadCards`;
+  `ImageInfo.DisplayBytes`, "for the memory budget", which does not exist; the startup field in
+  `App`, "readable" paths, where the code checks only that the files exist; and `CompareView`'s
+  class summary, where the conversion also happens in `ZoomAtCentre` and `UpdateViewportSize`.
+  `FitsImageLoader.Probe` and `LoadAsync` now have their own text, as the interface's contract
+  no longer says what the FITS loader does, so 5 members inherit their comment, not 7. The
+  CHANGELOG line now counts the six corrected comments that predate the branch, and the
+  `Directory.Build.props` sentence no longer says that every parameter has its tag: CS1573
+  catches a comment that tags some parameters, not one that tags none. The table's Wpf total
+  for 34834a3 gave the figure after 269b802, +453/-15; it is corrected to +449/-13.
+- **The code defects the review found stay as they are,** each for a task of its own, test
+  first (the kit's rule "Test before fix"): an image too large to decode, or a damaged WebP,
+  HEIC or AVIF, ends the process instead of showing a message (R-005); Ctrl+O during a load
+  starts a second open on top of the first (R-006); on a monitor scaled differently from the
+  system, 100% is not one image pixel per physical pixel, which R-022, ADR 0011 and
+  `rendering.md` promise; a float TIFF is reported by its bits alone, and WIC converts its
+  samples as linear light, 0.5 showing as 188 where the same FITS value shows as 128 (R-011,
+  the owner's call); "−" zooms in from under the lowest stop; a NaN or infinite BZERO or BSCALE
+  blanks the image with no message; a unit with no axes still counts its PCOUNT, so the next
+  unit is missed; the minimap maps a click as if it had no 1-DIP border, so the thumbnail's
+  left edge is 31 image pixels in on the real pair. The comments now say each behaviour as it
+  is.
+- **Measured on 2026-10-22,** after the corrections: the gate `== OK in 42s`, 256 tests; the
+  scratch counter's `code` group as before, 0 types and 0 methods undocumented or incomplete
+  but the one plain `Task`; in `git diff main -- src`, 0 changed lines that are not `///`
+  lines, and no added line over 100 columns; the XML documentation files, Core 193 `<param>`,
+  38 `<returns>`, 8 `<exception>`, Wpf 130 `<param>`, 35 `<returns>`, 5 `<inheritdoc/>`, whose
+  73 `<returns>` and 5 inherited members make the 78 methods with a value; the four validation
+  cases passed (`--filter "Category=Validation"`, 8 s), with no History entry, since no figure
+  can move; the launch on the same pair showed it as on 2026-10-21 and closed with exit code 0.

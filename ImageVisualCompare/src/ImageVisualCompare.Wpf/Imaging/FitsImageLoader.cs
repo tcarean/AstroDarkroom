@@ -30,15 +30,45 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// </summary>
 public sealed class FitsImageLoader : IImageLoader
 {
+    /// <summary>
+    /// Reads only the FITS header, to check that a pair matches before either is decoded. A
+    /// file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <returns>
+    /// The image's size, depth and planes, with no value range: whether a float file counts in
+    /// 0 to 1 or in 0 to 65535 shows only in its samples.
+    /// </returns>
     public ImageInfo Probe(string path)
     {
         using FileStream stream = OpenRead(path);
         return FitsHeader.ReadLayout(stream).Describe(path);
     }
 
+    /// <summary>Decodes a FITS on a background thread, as <see cref="Load"/> does.</summary>
+    /// <param name="path">The file.</param>
+    /// <param name="cancellationToken">
+    /// Looked at before the decode starts and before each row; a stopped load throws
+    /// <see cref="OperationCanceledException"/>.
+    /// </param>
+    /// <returns>
+    /// The bitmap, and what the file was, with the range its values were read in.
+    /// </returns>
     public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
         Task.Run(() => Load(path, cancellationToken), cancellationToken);
 
+    /// <summary>
+    /// Decodes a FITS on the calling thread into a frozen Bgra32 bitmap, the values as stored.
+    /// A file this program cannot show throws as <see cref="FitsHeader.ReadLayout"/> does, and
+    /// so does an image too large for a bitmap.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <param name="cancellationToken">
+    /// Looked at before each row; a stopped load throws <see cref="OperationCanceledException"/>.
+    /// </param>
+    /// <returns>
+    /// The bitmap, and what the file was, with the range its values were read in.
+    /// </returns>
     public LoadedImage Load(string path, CancellationToken cancellationToken = default)
     {
         using FileStream stream = OpenRead(path);
@@ -62,10 +92,12 @@ public sealed class FitsImageLoader : IImageLoader
     }
 
     /// <summary>
-    /// The bitmap the rows are written into. A file can be whole and still hold more pixels
-    /// than WPF makes a bitmap of; that is said as a message, as every other FITS that cannot
-    /// be shown is, and not left to be an <see cref="OverflowException"/> nothing expects.
+    /// Creates the bitmap the rows are written into. A file can be whole and still hold more
+    /// pixels than WPF makes a bitmap of; that is said as a message, as every other FITS that
+    /// cannot be shown is, and not left to be an <see cref="OverflowException"/> nothing expects.
     /// </summary>
+    /// <param name="layout">The image whose size the bitmap takes.</param>
+    /// <returns>An empty Bgra32 bitmap of the image's size, at 96 dpi.</returns>
     private static WriteableBitmap CreateBitmap(FitsImageLayout layout)
     {
         try
@@ -80,9 +112,22 @@ public sealed class FitsImageLoader : IImageLoader
     }
 
     /// <summary>
-    /// Writes every row into the bitmap and returns how many float samples were above
-    /// <see cref="FitsScale.RescaleThreshold"/>.
+    /// Writes every row into the bitmap, in the order of the file, each where it belongs in the
+    /// image.
     /// </summary>
+    /// <param name="layout">Where the image's samples are and how they are stored.</param>
+    /// <param name="stream">The open file; each row is read from where it is.</param>
+    /// <param name="bitmap">Receives the rows: the image's size, Bgra32, not yet frozen.</param>
+    /// <param name="fullScale">
+    /// The value shown as white (<see cref="FitsScale.FullScale"/>).
+    /// </param>
+    /// <param name="cancellationToken">
+    /// Looked at before each row; a stopped decode throws <see cref="OperationCanceledException"/>.
+    /// </param>
+    /// <returns>
+    /// How many float samples were above <see cref="FitsScale.RescaleThreshold"/>; 0 for an
+    /// integer file.
+    /// </returns>
     private static long Decode(
         FitsImageLayout layout, Stream stream, WriteableBitmap bitmap, double fullScale, CancellationToken cancellationToken)
     {
@@ -103,6 +148,11 @@ public sealed class FitsImageLoader : IImageLoader
 
     // No buffer of the stream's own: the decoder reads one whole row at each of three places
     // in turn, and a buffer would be filled past the row and thrown away at every seek.
+    /// <summary>
+    /// Opens a file for reads here and there in it, sharing it with other readers.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <returns>The open stream, with no buffer of its own.</returns>
     private static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1, FileOptions.RandomAccess);
 }

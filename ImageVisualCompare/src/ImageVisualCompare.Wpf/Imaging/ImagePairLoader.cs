@@ -21,6 +21,8 @@ using ImageVisualCompare.Core;
 namespace ImageVisualCompare.Wpf.Imaging;
 
 /// <summary>The two images being compared, on the canvas they share.</summary>
+/// <param name="Before">Image A, shown left of the divider.</param>
+/// <param name="After">Image B, shown right of the divider.</param>
 /// <param name="Pad">
 /// The common canvas. Equal to both images when they agree; the larger extent on each axis
 /// when they do not, in which case the smaller one is shown padded with black. The padding
@@ -32,10 +34,11 @@ public sealed record ImagePair(LoadedImage Before, LoadedImage After, PadPlan Pa
 
     public int PixelHeight => Pad.Height;
 
-    /// <summary>Combined footprint of both Bgra32 buffers, for the memory readout.</summary>
+    /// <summary>Combined footprint of both Bgra32 buffers, in bytes.</summary>
     public long DisplayBytes => Before.Info.DisplayBytes + After.Info.DisplayBytes;
 }
 
+/// <summary>How far the load of a pair has got, for the progress overlay.</summary>
 /// <param name="Fraction">Overall progress in the range 0 to 1.</param>
 /// <param name="FileName">The file currently being decoded, or null when finished.</param>
 public readonly record struct ImageLoadProgress(double Fraction, string? FileName);
@@ -45,28 +48,65 @@ public readonly record struct ImageLoadProgress(double Fraction, string? FileNam
 /// answered a question, so there is nothing to report back to them and the caller can go
 /// straight back to picking files.
 /// </summary>
+/// <param name="Pair">The loaded pair; null unless the load succeeded.</param>
+/// <param name="Error">
+/// What went wrong, worded for the user; null on success and when the user declined.
+/// </param>
+/// <param name="WasDeclined">
+/// True when the user declined the padding; there is then neither a pair nor an error.
+/// </param>
 public sealed record ImagePairLoadResult(ImagePair? Pair, string? Error, bool WasDeclined = false)
 {
     public bool IsSuccess => Pair is not null;
 
+    /// <summary>Wraps a loaded pair.</summary>
+    /// <param name="pair">The pair, both images decoded.</param>
+    /// <returns>A result whose <see cref="IsSuccess"/> is true.</returns>
     public static ImagePairLoadResult Success(ImagePair pair) => new(pair, null);
 
+    /// <summary>Wraps a load that failed, with what the user is told.</summary>
+    /// <param name="error">What went wrong, worded for the user.</param>
+    /// <returns>A result with no pair and this error.</returns>
     public static ImagePairLoadResult Failure(string error) => new(null, error);
 
     public static ImagePairLoadResult Declined { get; } = new(null, null, WasDeclined: true);
 }
 
 /// <summary>
-/// Loads a pair of images, refusing anything the comparison could not honestly display.
+/// Loads the two images of a pair onto the canvas they share; <see cref="LoadAsync"/> says in
+/// what order, when it asks, and what comes back.
 /// </summary>
+/// <param name="loader">The decoder each file goes through.</param>
 public sealed class ImagePairLoader(IImageLoader loader)
 {
+    /// <summary>
+    /// Loads a pair: both headers first, then, if their sizes differ, the question whether to
+    /// pad, and only then the two decodes, one after the other.
+    /// </summary>
+    /// <param name="beforePath">Image A's file, shown left of the divider.</param>
+    /// <param name="afterPath">Image B's file, shown right of the divider.</param>
+    /// <param name="progress">
+    /// Told 0 and A's file name as A's decode starts, 0.5 and B's as B's starts, and 1 with no
+    /// name at the end; null for no reports.
+    /// </param>
     /// <param name="confirmPadding">
     /// Asked, and only asked, when the two images differ in size: answering yes pads them to
     /// a common canvas, no abandons the load. It is invoked on a thread pool thread, so a UI
     /// implementation has to marshal. Leaving it null means a mismatched pair is refused
     /// outright, which is the right default for anything without a user attached.
     /// </param>
+    /// <param name="cancellationToken">
+    /// Looked at as each probe and each decode starts, and inside a decode that can stop; a
+    /// stopped load throws <see cref="OperationCanceledException"/> rather than returning a
+    /// result. It is not looked at between the second probe and the padding question, so a load
+    /// cancelled there still asks, and can come back declined or as the mismatch.
+    /// </param>
+    /// <returns>
+    /// The pair; or a failure whose message names the file that could not be read, or the
+    /// mismatch when there was no one to ask; or <see cref="ImagePairLoadResult.Declined"/>.
+    /// An exception <see cref="IsExpectedLoadFailure"/> does not accept reaches the caller
+    /// instead, such as WIC's <see cref="OverflowException"/> for an image too large to decode.
+    /// </returns>
     public async Task<ImagePairLoadResult> LoadAsync(
         string beforePath,
         string afterPath,
@@ -132,10 +172,18 @@ public sealed class ImagePairLoader(IImageLoader loader)
     }
 
     /// <summary>
-    /// A file the user picked can be missing, locked, truncated or in a format no codec
-    /// handles, and it can simply be too large for the machine. None of those are defects in
-    /// this program, so all of them become a message rather than a crash dialog.
+    /// Tells a failure of the file from a defect of the program. A file the user picked can be
+    /// missing, locked, truncated or in a format no codec handles, and it can simply be too
+    /// large for the machine. None of those are defects in this program, so the exception
+    /// types listed here become a message rather than a crash dialog. WIC reports some of those
+    /// failures with types not listed (an image too large to decode throws
+    /// <see cref="OverflowException"/>), and those are not caught.
     /// </summary>
+    /// <param name="ex">What a probe, the padding question or a decode threw.</param>
+    /// <returns>
+    /// True for an I/O or access error, an unsupported or damaged format, a bad argument, or
+    /// running out of memory.
+    /// </returns>
     private static bool IsExpectedLoadFailure(Exception ex) => ex
         is IOException
         or UnauthorizedAccessException

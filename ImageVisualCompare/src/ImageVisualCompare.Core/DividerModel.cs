@@ -44,19 +44,43 @@ public sealed class DividerModel
         set => _position = Math.Clamp(value, 0, 1);
     }
 
+    /// <summary>Places the line on a surface of this width.</summary>
+    /// <param name="viewportWidth">The surface's width, in device-independent pixels.</param>
+    /// <returns>The line's x, in device-independent pixels from the surface's left edge.</returns>
     public double ScreenX(double viewportWidth) => _position * viewportWidth;
 
+    /// <summary>Places the handle's centre on a surface of this height: half way down.</summary>
+    /// <param name="viewportHeight">The surface's height, in device-independent pixels.</param>
+    /// <returns>
+    /// The handle's centre, in device-independent pixels from the surface's top edge.
+    /// </returns>
     public double HandleCentreY(double viewportHeight) => viewportHeight / 2;
 
+    /// <summary>Puts the line back in the middle, as for a newly opened pair.</summary>
     public void Reset() => _position = 0.5;
 
     /// <summary>Moves the line to a screen position, used while dragging.</summary>
+    /// <param name="screenX">
+    /// Where the pointer is, in device-independent pixels from the surface's left edge; a
+    /// position past either edge puts the line on that edge.
+    /// </param>
+    /// <param name="viewportWidth">
+    /// The surface's width, in device-independent pixels; at 0 or below the line goes to the
+    /// middle.
+    /// </param>
     public void MoveTo(double screenX, double viewportWidth)
     {
         Position = viewportWidth > 0 ? screenX / viewportWidth : 0.5;
     }
 
     /// <summary>Shifts the line by a screen-space amount, used by the arrow keys.</summary>
+    /// <param name="screenDelta">
+    /// How far to move, in device-independent pixels; negative moves left. The line stops at
+    /// the edges.
+    /// </param>
+    /// <param name="viewportWidth">
+    /// The surface's width, in device-independent pixels; at 0 or below nothing moves.
+    /// </param>
     public void NudgeBy(double screenDelta, double viewportWidth)
     {
         if (viewportWidth > 0)
@@ -69,6 +93,11 @@ public sealed class DividerModel
     /// Places the line, the clip region for image A, and the handle, for a viewport of this
     /// size.
     /// </summary>
+    /// <param name="viewportWidth">The surface's width, in device-independent pixels.</param>
+    /// <param name="viewportHeight">The surface's height, in device-independent pixels.</param>
+    /// <returns>
+    /// The three, in device-independent pixels from the surface's top-left corner.
+    /// </returns>
     public DividerLayout Layout(double viewportWidth, double viewportHeight)
     {
         double x = ScreenX(viewportWidth);
@@ -84,10 +113,21 @@ public sealed class DividerModel
     }
 
     /// <summary>
-    /// True when a press at this point should start a divider drag rather than a pan.
+    /// Decides whether a press at this point grabs the divider rather than starting a pan.
     /// The line can be grabbed anywhere along its length within <see cref="LineGrabTolerance"/>,
     /// and the handle offers a wider target for anyone aiming at the visible grip.
     /// </summary>
+    /// <param name="screenX">
+    /// The press, in device-independent pixels from the surface's left edge.
+    /// </param>
+    /// <param name="screenY">
+    /// The press, in device-independent pixels from the surface's top edge.
+    /// </param>
+    /// <param name="viewportWidth">The surface's width, in device-independent pixels.</param>
+    /// <param name="viewportHeight">The surface's height, in device-independent pixels.</param>
+    /// <returns>
+    /// True when a press at this point should start a divider drag rather than a pan.
+    /// </returns>
     public bool HitTest(double screenX, double screenY, double viewportWidth, double viewportHeight)
     {
         double distanceFromLine = Math.Abs(screenX - ScreenX(viewportWidth));

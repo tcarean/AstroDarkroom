@@ -30,9 +30,15 @@ namespace ImageVisualCompare.Wpf.Imaging;
 /// exactly as it was written, the format is recorded for the status bar, and then everything
 /// is converted to Bgra32. A 16-bit PNG from Siril, an 8-bit screenshot and a palettised
 /// image all arrive at the same place.
+///
+/// WIC can fail a file with exception types <see cref="ImagePairLoader"/> does not expect:
+/// <see cref="OverflowException"/> when the decode of an image too large for a bitmap starts,
+/// and COMException for a damaged file of a newer codec (WebP, HEIC, AVIF), at the probe or
+/// at the decode. Those reach the caller.
 /// </summary>
 public sealed class WicImageLoader : IImageLoader
 {
+    /// <inheritdoc/>
     public ImageInfo Probe(string path)
     {
         using FileStream stream = OpenRead(path);
@@ -43,9 +49,16 @@ public sealed class WicImageLoader : IImageLoader
         return Describe(path, frame);
     }
 
+    /// <inheritdoc/>
     public Task<LoadedImage> LoadAsync(string path, CancellationToken cancellationToken = default) =>
         Task.Run(() => Load(path), cancellationToken);
 
+    /// <summary>
+    /// Decodes the full image on the calling thread: the file's own format first, reported as
+    /// it is, then converted to Bgra32 and frozen. The file is closed again before this returns.
+    /// </summary>
+    /// <param name="path">The file; what it holds, not its name, says what it is.</param>
+    /// <returns>The frozen Bgra32 pixels, and what the file was.</returns>
     public LoadedImage Load(string path)
     {
         using FileStream stream = OpenRead(path);
@@ -66,12 +79,32 @@ public sealed class WicImageLoader : IImageLoader
         return new LoadedImage(info, bitmap);
     }
 
+    /// <summary>
+    /// Opens a file for one read from start to end, sharing it with other readers.
+    /// </summary>
+    /// <param name="path">The file.</param>
+    /// <returns>The open stream, with a 64 KB buffer.</returns>
     private static FileStream OpenRead(string path) =>
         new(path, FileMode.Open, FileAccess.Read, FileShare.Read, bufferSize: 1 << 16, FileOptions.SequentialScan);
 
+    /// <summary>Asks WIC for a decoder of whatever format the stream holds.</summary>
+    /// <param name="stream">The open file, at its start.</param>
+    /// <param name="options">
+    /// <see cref="BitmapCreateOptions.DelayCreation"/> to read the header only,
+    /// <see cref="BitmapCreateOptions.PreservePixelFormat"/> to decode the pixels as stored.
+    /// </param>
+    /// <returns>The decoder, caching nothing; its first frame is the image.</returns>
     private static BitmapDecoder CreateDecoder(Stream stream, BitmapCreateOptions options) =>
         BitmapDecoder.Create(stream, options, BitmapCacheOption.None);
 
+    /// <summary>Says what a frame is, for the status bar.</summary>
+    /// <param name="path">The file the frame came from.</param>
+    /// <param name="frame">
+    /// The first frame, probed or decoded, in the file's own pixel format.
+    /// </param>
+    /// <returns>
+    /// The frame's size, and its depth and channels as <see cref="Classify"/> reads them.
+    /// </returns>
     private static ImageInfo Describe(string path, BitmapSource frame)
     {
         (int bitsPerChannel, ColorChannels channels) = Classify(frame.Format);
@@ -83,6 +116,11 @@ public sealed class WicImageLoader : IImageLoader
     /// formats fall through to the raw bits-per-pixel rather than being rejected — the
     /// conversion to Bgra32 handles them regardless.
     /// </summary>
+    /// <param name="format">The frame's pixel format, as the file stores it.</param>
+    /// <returns>
+    /// The bits of one channel and the channel layout; for a format not listed, the bits of a
+    /// whole pixel and <see cref="ColorChannels.Unknown"/>.
+    /// </returns>
     private static (int BitsPerChannel, ColorChannels Channels) Classify(PixelFormat format)
     {
         if (format == PixelFormats.BlackWhite) return (1, ColorChannels.Gray);

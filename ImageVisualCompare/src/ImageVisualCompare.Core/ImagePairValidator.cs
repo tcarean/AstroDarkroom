@@ -26,6 +26,12 @@ namespace ImageVisualCompare.Core;
 /// pixel readout and the minimap then need no arithmetic of their own. Centring the smaller
 /// image would change that, and this is where the offsets would have to go.
 /// </summary>
+/// <param name="Width">The canvas width, in image pixels: that of the wider image.</param>
+/// <param name="Height">The canvas height, in image pixels: that of the taller image.</param>
+/// <param name="RequiresPadding">
+/// True when the two images differ in size, so one or both are shown padded and the user is
+/// asked first.
+/// </param>
 public readonly record struct PadPlan(int Width, int Height, bool RequiresPadding)
 {
     public string Dimensions => $"{Width} × {Height}";
@@ -35,11 +41,18 @@ public readonly record struct PadPlan(int Width, int Height, bool RequiresPaddin
 /// What the user is being asked to agree to, carried whole so the caller putting the question
 /// on screen does not have to assemble the wording itself.
 /// </summary>
+/// <param name="Before">Image A, shown left of the divider, as its header was probed.</param>
+/// <param name="After">Image B, shown right of the divider, as its header was probed.</param>
+/// <param name="Plan">The canvas the two would be shown on.</param>
 public readonly record struct PadRequest(ImageInfo Before, ImageInfo After, PadPlan Plan)
 {
     public string Message => ImagePairValidator.DescribeMismatch(Before, After, Plan);
 }
 
+/// <summary>
+/// Works out the canvas a pair is compared on, and words the question put to the user when
+/// that canvas means padding.
+/// </summary>
 public static class ImagePairValidator
 {
     /// <summary>
@@ -52,6 +65,11 @@ public static class ImagePairValidator
     /// <see cref="PadPlan.RequiresPadding"/> is what the caller asks about before committing
     /// to a decode.
     /// </summary>
+    /// <param name="before">Image A, as its header was probed; only its size is read.</param>
+    /// <param name="after">Image B, as its header was probed; only its size is read.</param>
+    /// <returns>
+    /// The larger extent of the two on each axis, and whether their sizes differ.
+    /// </returns>
     public static PadPlan Inspect(ImageInfo before, ImageInfo after)
     {
         ArgumentNullException.ThrowIfNull(before);
@@ -65,9 +83,16 @@ public static class ImagePairValidator
     }
 
     /// <summary>
-    /// The question put to the user, with both resolutions spelled out — "wrong size" without
-    /// the numbers leaves them to go and check for themselves.
+    /// Words the question put to the user before a mismatched pair is padded, with both
+    /// resolutions spelled out — "wrong size" without the numbers leaves them to go and check
+    /// for themselves.
     /// </summary>
+    /// <param name="before">Image A: its file name and dimensions are quoted.</param>
+    /// <param name="after">Image B: its file name and dimensions are quoted.</param>
+    /// <param name="plan">
+    /// The canvas the pair would be padded to: its dimensions are quoted.
+    /// </param>
+    /// <returns>The question, in short lines, ending with "Continue?".</returns>
     public static string DescribeMismatch(ImageInfo before, ImageInfo after, PadPlan plan)
     {
         ArgumentNullException.ThrowIfNull(before);
