@@ -1,7 +1,7 @@
 # 0028. Auto-start is one Run value under HKCU, read together with Task Manager's veto, registered on the first run only and repaired on each launch
 
 Date: 2026-10-09
-Status: accepted 2026-10-09
+Status: accepted 2026-10-09; Enable deleting the approval value superseded by 0035; the first run registering over an entry already there superseded by 0035
 
 ## Context
 

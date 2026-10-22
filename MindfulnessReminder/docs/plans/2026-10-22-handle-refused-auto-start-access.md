@@ -5,8 +5,8 @@
 The code review of the documentation backfill (2026-10-21, recorded in
 `docs/plans/2026-10-21-document-every-type-and-method.md`, "Code review") found two code gaps
 around a registry that refuses access. The owner chose the two fixes I proposed, in chat on
-2026-10-22: "poti sa te apuci de cele 2 fixuri care le-ai propus aici". In English: "you can
-start on the 2 fixes you proposed here". The two fixes I had proposed:
+2026-10-22, in Romanian; translated: "you can start on the 2 fixes you proposed here". The two
+fixes I had proposed:
 
 1. **First run:** undo the Run value when a later write is refused, so that R-003 holds.
 2. **Tray refresh:** make `GetStatus` in Core treat an entry it cannot read as not enabled, so
@@ -163,3 +163,70 @@ Today's behaviour, measured by reading the code on `main` (3326fe4):
 - **One case stays as it was.** While the marker's key refuses writes, every start is a first
   run, and `Enable` rewrites a found entry and lifts its Task Manager veto each time. It did so
   before this task too; changing what a first run does with a found entry is outside this plan.
+  (The code review below changed it at the owner's word: recommendation 2.)
+
+## Code review
+
+A max-effort `/code-review main...claude/Handle-refused-auto-start-access` ran on 2026-10-22: ten
+finder angles, one verifier per candidate, then a sweep for gaps. Of 18 candidates, 15 held up
+and three were refuted:
+
+- the undo making the first run's registration impossible on an account whose approval key
+  refuses access, which R-003 then allowed;
+- a `RegDeleteValue` failure that .NET does not report, which changes nothing the new code does;
+- a supersession of ADR 0028 by the first version of ADR 0035, which only added a case.
+
+Two findings changed behaviour, so they went to the owner with a recommendation each. The owner
+answered in chat, in Romanian; translated: "yes, do all the fixes and apply the
+recommendations".
+
+- **Recommendation 1, for finding 1 (a tray click on a refused approval key wrote the Run value
+  and still reported a refusal):** `Enable` deletes the approval value only when it reads a veto
+  there. R-005 reworded (aad66ff).
+- **Recommendation 2, for finding 2 (a first run that found an entry lifted its veto):** the
+  first run repairs the entry and keeps its veto, as a later run does, writes the marker, and
+  reports no registration. R-003 reworded (8225854). ADR 0035 now supersedes ADR 0028 in part
+  for both changes.
+- **Fixed:**
+  - 3, an `IOException` from the marker read or the repair's read escaped the registration: its
+    catch now takes a refused read as well as a refused write. R-003, R-006 (2bba85a);
+  - 4, ADR 0035's "a refused first run leaves the registry as it found it": replaced by what the
+    run takes back and what it does not;
+  - 5, the manual check (this plan's "Verification", third bullet) could pass with fix 2
+    reverted, since no Run value was left when the menu opened. ADR 0035 now gives one that
+    reads the approval key: on a test account where `StartupApproved\Run` exists and is denied
+    Read, start the application; the first-run balloon shows, and the menu shows the item
+    ticked with no crash dialog; untick it and start again, and it stays unticked;
+  - 6, the found-entry test asserted only that a Run value was left: it now pins the repaired
+    command and the kept veto (8225854);
+  - 7, a key with a `ReadRefusal` in `FakeRegistryStore` refuses writes too, as the real store
+    does (aad66ff);
+  - 8, `AutoStartStatus`'s `Enabled` and `Disabled` and `TrayIconHost`'s click comment now say
+    what holds when a value cannot be read;
+  - 9, R-003 says by the status (R-004) when the run registers, so a blank or non-string Run
+    value is no entry, as the code treats it (8225854);
+  - 10, `EnsureRegisteredOnFirstRun` has one try with an undo flag (2bba85a);
+  - 11, this plan quoted the owner in Romanian: translated only now;
+  - 12, `RegistryRefusal` in Core holds the refused read and the refused write once. The
+    settings store, the auto-start manager, the registration and the tray item use it
+    (2bba85a). `WindowsActivityMonitor`'s three catches of the same exceptions were left: App
+    code that no finding named, which only `--detect` would check.
+- **Skipped, as recommended:**
+  - 13, the twin private readers, which follow the named readers of `RegistrySettingsStore`;
+  - 14, the refused-read list repeated in test theories: one list per test is this project's
+    convention;
+  - 15, two commit messages that say what rather than why: the shape is accepted on `main`, and
+    rewording would need a rebase.
+- **Existing tests changed with the two decisions:**
+  - `R003_A_refusal_after_the_run_value_is_written_leaves_nothing_registered` seeds a veto left
+    without its Run value: under recommendation 1, the Task Manager key refuses only when there
+    is a veto to delete;
+  - `R003_A_refused_first_run_leaves_an_entry_it_found_in_place` became
+    `R003_A_refused_first_run_repairs_an_entry_it_found_and_keeps_its_veto`, which pins the
+    repaired command and the kept veto.
+- **The red runs, then the green ones:**
+  - 2bba85a: the `IOException` cases of the two new theories failed with the exception escaping,
+    `Failed: 2, Passed: 13, Total: 15` for `StartupRegistrarTests`; 243 tests in the gate after;
+  - aad66ff: the stricter fake alone left the 243 green; the new tests then failed,
+    `Failed: 6, Passed: 243, Total: 249`; 249 after;
+  - 8225854: the two found-entry tests failed, `Failed: 2, Passed: 248, Total: 250`; 250 after.

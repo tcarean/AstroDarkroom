@@ -17,10 +17,16 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   stopped" dialog, instead of the Windows Forms error dialog (R-076).
 - A first run that Windows cuts short after writing the startup entry no longer leaves that
   entry behind without its record, which made every later start register it again and undid
-  an untick; an entry that was there before the first run stays (R-003).
+  an untick (R-003).
+- A first run that finds a startup entry already there now repairs its path and keeps a Task
+  Manager veto, as later runs do; it used to lift the veto, at every start while the app's own
+  registry key refused writes (R-003).
 - A startup entry or a Task Manager veto the account may not read no longer ends the
   application at start or when the tray menu opens: such an entry counts as off, such a veto as
   no veto (R-004).
+- Ticking "Run at Windows startup" no longer reports that Windows refused the change, while the
+  entry was in fact written, when Task Manager's approval key refuses access: only a veto the
+  account can read is lifted (R-005).
 
 ### Internal
 

@@ -142,7 +142,8 @@ internal sealed class TrayIconHost : IDisposable
         try
         {
             // Anything other than a working entry -- absent, or vetoed in Task Manager --
-            // turns into "enable", so one click always restores the intended state.
+            // turns into "enable", so one click always restores the intended state. A veto
+            // this account may not read counts as none, so its entry reads as working.
             if (_autoStart.GetStatus() == AutoStartStatus.Enabled)
             {
                 _autoStart.Disable();
