@@ -34,6 +34,18 @@ the attribute is set before the first frame and the caption is never white even 
 Windows 11 the caption is set to the exact chrome colour; Windows 10 has no such attribute and
 gets the generic dark caption, which is close but not `#1B1F26`. See ADR 0018.
 
+## One open at a time
+
+`MainWindow.OpenPairAsync` runs a whole open: the file dialogs, the load behind the overlay,
+then the pair on screen or the message, and the dialogs again after a failure. The loading
+overlay is a `Border` over the window and stops only the mouse; the keyboard still reaches the
+window, so Ctrl+O, or Space on the focused `Open…` button, would start a second
+`OpenPairAsync` while the first awaits its decode, and two pairs would decode at once. The
+field `_opening`, set for the length of a call, makes a second call return at once (R-006).
+Both ways in, `OnPreviewKeyDown` and the button's `Click`, go through it. `MainWindowTests`
+clicks the button twice on the WPF test thread, with dialogs and a loader of its own given
+through the internal constructor (ADR 0032).
+
 ## The icon
 
 `Assets/make-icon.ps1` draws the curtain of ADR 0030 with WPF's own drawing classes, from

@@ -33,18 +33,33 @@ namespace ImageVisualCompare.Wpf;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private readonly IFileDialogService _dialogs = new FileDialogService();
-    private readonly ImagePairLoader _loader = new(new RoutingImageLoader());
+    private readonly IFileDialogService _dialogs;
+    private readonly ImagePairLoader _loader;
     private readonly DispatcherTimer _memoryTimer = new() { Interval = TimeSpan.FromSeconds(2) };
 
     private ImagePair? _pair;
     private string? _lastDirectory;
+    private bool _opening;
 
     /// <summary>
     /// Builds the main window, with its dark caption; it asks for a pair once it has loaded.
     /// </summary>
     public MainWindow()
+        : this(new FileDialogService(), new ImagePairLoader(new RoutingImageLoader()))
     {
+    }
+
+    /// <summary>
+    /// Builds the main window over the given dialogs and loader, which a test replaces with its
+    /// own (ADR 0032).
+    /// </summary>
+    /// <param name="dialogs">Asks the user for the two files.</param>
+    /// <param name="loader">Loads the pair the user picked.</param>
+    internal MainWindow(IFileDialogService dialogs, ImagePairLoader loader)
+    {
+        _dialogs = dialogs;
+        _loader = loader;
+
         InitializeComponent();
 
         DarkTitleBar.Apply(this);
@@ -73,8 +88,8 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Opens another pair on Ctrl+O, wherever the focus is. Nothing stops it while a load is
-    /// still running, so a second open can start on top of the first.
+    /// Opens another pair on Ctrl+O, wherever the focus is; while a pair is being opened it
+    /// does nothing (<see cref="OpenPairAsync"/>).
     /// </summary>
     /// <param name="sender">The window itself; not read.</param>
     /// <param name="e">The key; marked handled when it is Ctrl+O.</param>
@@ -90,46 +105,63 @@ public partial class MainWindow : Window
     /// <summary>
     /// Asks for a pair until one loads, the command line's first if it named one, and shows it.
     /// A failure is reported and a declined padding is not, and both ask again. Cancelling while
-    /// no pair is shown closes the window; with a pair shown, that pair stays as it was.
+    /// no pair is shown closes the window; with a pair shown, that pair stays as it was. A call
+    /// made while another is still opening a pair returns at once and asks for nothing.
     /// </summary>
     private async Task OpenPairAsync()
     {
-        // A pair given on the command line is used once, then the dialogs take over as normal.
-        ImagePairSelection? fromCommandLine = App.TakeStartupSelection();
-
-        while (true)
+        // The loading overlay stops only the mouse: Ctrl+O, or Space on the focused Open
+        // button, would otherwise start a second open on top of this one, and two pairs would
+        // decode at once (R-006).
+        if (_opening)
         {
-            ImagePairSelection? selection = fromCommandLine ?? _dialogs.PickImagePair(_lastDirectory);
-            fromCommandLine = null;
+            return;
+        }
 
-            if (selection is null)
+        _opening = true;
+        try
+        {
+            // A pair given on the command line is used once, then the dialogs take over as normal.
+            ImagePairSelection? fromCommandLine = App.TakeStartupSelection();
+
+            while (true)
             {
-                // Cancelling the very first prompt means the user did not want to be here.
-                // Cancelling later just means they changed their mind about swapping pairs.
-                if (_pair is null)
+                ImagePairSelection? selection = fromCommandLine ?? _dialogs.PickImagePair(_lastDirectory);
+                fromCommandLine = null;
+
+                if (selection is null)
                 {
-                    Close();
+                    // Cancelling the very first prompt means the user did not want to be here.
+                    // Cancelling later just means they changed their mind about swapping pairs.
+                    if (_pair is null)
+                    {
+                        Close();
+                    }
+
+                    return;
                 }
 
-                return;
+                _lastDirectory = Path.GetDirectoryName(selection.BeforePath);
+
+                ImagePairLoadResult result = await LoadWithOverlayAsync(selection);
+
+                if (result.IsSuccess)
+                {
+                    ShowPair(result.Pair!);
+                    return;
+                }
+
+                // Declining the padding is an answer, not an error. Showing a second dialog saying
+                // so would only make the user dismiss their own decision.
+                if (!result.WasDeclined)
+                {
+                    MessageDialog.Show(this, "Cannot compare these files", result.Error!);
+                }
             }
-
-            _lastDirectory = Path.GetDirectoryName(selection.BeforePath);
-
-            ImagePairLoadResult result = await LoadWithOverlayAsync(selection);
-
-            if (result.IsSuccess)
-            {
-                ShowPair(result.Pair!);
-                return;
-            }
-
-            // Declining the padding is an answer, not an error. Showing a second dialog saying
-            // so would only make the user dismiss their own decision.
-            if (!result.WasDeclined)
-            {
-                MessageDialog.Show(this, "Cannot compare these files", result.Error!);
-            }
+        }
+        finally
+        {
+            _opening = false;
         }
     }
 

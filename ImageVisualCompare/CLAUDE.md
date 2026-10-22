@@ -46,7 +46,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`, `Assets/` (the icon and the
   script that draws it).
 - `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
-  on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`),
+  on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`), a
+  defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032),
   `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,
   `VersionTests`. `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
 - `Directory.Build.props` - `<Version>` and `<Copyright>`, the single place for both (ADR
@@ -102,8 +103,9 @@ or varies a kit rule names it.
   application's own `MessageDialog` says and asks; the file dialogs are the one thing that
   follows the system theme (ADR 0018).
 - **Run the application when the WPF layer changes.** Both real defects lived in the untested
-  layer and were found on a screenshot; a green suite says nothing about `Controls/`,
-  `MainWindow` or `Directory.Build.props` (ADR 0026).
+  layer and were found on a screenshot; a green suite says little about `Controls/`,
+  `MainWindow` or `Directory.Build.props`, whose few tests reproduce single defects without
+  showing anything (ADR 0026, ADR 0032).
 - **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).
