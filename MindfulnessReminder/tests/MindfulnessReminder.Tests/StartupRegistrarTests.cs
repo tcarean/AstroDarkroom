@@ -155,7 +155,37 @@ public class StartupRegistrarTests
         var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
 
         Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
-        Assert.False(_registry.Contains(RegistryAutoStartManager.RunKeyPath, ValueName));
+    }
+
+    /// <summary>
+    /// An entry the first run may not read could be one it cannot see: it reads the entry
+    /// before it writes anything, so such an entry stops it rather than being overwritten, and
+    /// deleted again by the undo. The stub reads as no entry yet refuses the read of the Run
+    /// value, a state the faithful fake cannot reach.
+    /// </summary>
+    [Fact]
+    public void R003_A_first_run_reads_the_entry_before_it_writes_anything()
+    {
+        var autoStart = new UnreadableEntryAutoStart();
+
+        Assert.False(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.False(autoStart.EnableCalled);
+        Assert.False(_registry.Contains(StartupRegistrar.SettingsKeyPath, StartupRegistrar.RegisteredMarkerValueName));
+    }
+
+    /// <summary>
+    /// A first run with no entry lifts a veto Task Manager left behind, as a click does, so the
+    /// entry it writes is the one Windows starts.
+    /// </summary>
+    [Fact]
+    public void R003_A_first_run_lifts_a_Task_Manager_veto_left_without_its_entry()
+    {
+        SetApproval(0x03);
+        var autoStart = new RegistryAutoStartManager(_registry, ValueName, ExePath);
+
+        Assert.True(new StartupRegistrar(_registry, autoStart).EnsureRegisteredOnFirstRun());
+        Assert.False(_registry.Contains(RegistryAutoStartManager.StartupApprovedKeyPath, ValueName));
+        Assert.Equal(AutoStartStatus.Enabled, autoStart.GetStatus());
     }
 
     /// <summary>
@@ -229,6 +259,25 @@ public class StartupRegistrarTests
         registrar.EnsureRegisteredOnFirstRun();
 
         Assert.Equal(AutoStartStatus.BlockedByWindows, autoStart.GetStatus());
+    }
+
+    /// <summary>
+    /// An entry that reads as absent while the read of its Run value is refused: what an
+    /// IRegistryStore that refuses the read but not the write of the Run key would give.
+    /// </summary>
+    private sealed class UnreadableEntryAutoStart : IAutoStartManager
+    {
+        public bool EnableCalled { get; private set; }
+
+        public AutoStartStatus GetStatus() => AutoStartStatus.Disabled;
+
+        public void Enable() => EnableCalled = true;
+
+        public void Disable()
+        {
+        }
+
+        public bool RepairPathIfNeeded() => throw new IOException();
     }
 
     private void SetApproval(byte flag) =>

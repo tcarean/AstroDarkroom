@@ -49,11 +49,11 @@ public sealed class StartupRegistrar
     }
 
     /// <summary>
-    /// On the first run, registers auto-start and writes the marker. An entry the first run
-    /// finds already there is only repaired, as every later run repairs a stale path, and the
-    /// marker is written. A key this account may not read or write is not an error: nothing is
-    /// registered, no marker is written, and the next start tries again. A Run value this run
-    /// wrote before the refusal is deleted again.
+    /// On every run, repairs a stale path. On the first run, registers auto-start and writes
+    /// the marker; an entry the first run finds already there is only repaired, and the marker
+    /// is written. A key this account may not read or write is not an error: no registration
+    /// is made, no marker is written, and the next start tries again. A path repaired before
+    /// the refusal stays repaired; a Run value this run wrote is deleted again.
     /// </summary>
     /// <returns>
     /// <c>true</c> when this call performed the initial registration; <c>false</c> on a later
@@ -66,18 +66,23 @@ public sealed class StartupRegistrar
 
         try
         {
-            if (_registry.GetString(SettingsKeyPath, RegisteredMarkerValueName) is not null)
+            var firstRun = _registry.GetString(SettingsKeyPath, RegisteredMarkerValueName) is null;
+
+            // The repair reads the Run value before anything is written, so an entry this
+            // account may not read stops the run here, rather than reading as no entry below
+            // and being overwritten.
+            _autoStart.RepairPathIfNeeded();
+            if (!firstRun)
             {
-                _autoStart.RepairPathIfNeeded();
                 return false;
             }
 
             if (_autoStart.GetStatus() is not AutoStartStatus.Disabled)
             {
                 // An entry that was there before the first run was not written by it: it is
-                // treated as a later run treats it, its path repaired and a Task Manager veto
-                // kept. The marker ends the first run; nothing was registered, so no balloon.
-                _autoStart.RepairPathIfNeeded();
+                // treated as a later run treats it, its path repaired above and a Task Manager
+                // veto kept. The marker ends the first run; nothing was registered, so no
+                // balloon.
                 _registry.SetString(SettingsKeyPath, RegisteredMarkerValueName, "1");
                 return false;
             }
@@ -122,13 +127,10 @@ public sealed class StartupRegistrar
 
     /// <summary>
     /// Whether a registry access of the registration failed because this account may not make
-    /// it. The registration reads and writes in one block, so either refusal counts.
+    /// it. The registration reads and writes in one block; the exceptions of a refused read
+    /// include those of a refused write, so the read's test takes both.
     /// </summary>
     /// <param name="exception">What the access threw.</param>
-    /// <returns>
-    /// <c>true</c> for a refused read or a refused write, as <see cref="RegistryRefusal"/>
-    /// defines them.
-    /// </returns>
-    private static bool IsRefusal(Exception exception) =>
-        RegistryRefusal.IsReadRefusal(exception) || RegistryRefusal.IsWriteRefusal(exception);
+    /// <returns><c>true</c> for a refused read, as <see cref="RegistryRefusal"/> defines it.</returns>
+    private static bool IsRefusal(Exception exception) => RegistryRefusal.IsReadRefusal(exception);
 }

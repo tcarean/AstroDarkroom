@@ -230,3 +230,32 @@ recommendations".
   - aad66ff: the stricter fake alone left the 243 green; the new tests then failed,
     `Failed: 6, Passed: 243, Total: 249`; 249 after;
   - 8225854: the two found-entry tests failed, `Failed: 2, Passed: 248, Total: 250`; 250 after.
+
+## Second code review
+
+A high-effort `/code-review a909118...claude/Handle-refused-auto-start-access` of the four commits
+above, run inline without verifiers, gave 8 findings. The owner answered in chat, in Romanian;
+translated: "fix everything except efficiency".
+
+- **Fixed:**
+  - 1, a first run that could not read an existing entry read it as no entry, overwrote it and,
+    on a refusal, deleted it: the registration now reads the Run value through
+    `RepairPathIfNeeded` before it writes anything, so such an entry stops it. Latent with the
+    real store, where a key the account may not read refuses the write as well, and out of the
+    faithful fake's reach, so its red test uses a stub `IAutoStartManager` inside
+    `StartupRegistrarTests` (`Failed: 1, Passed: 19, Total: 20` before the fix);
+  - 2, no test showed a first run lifting a veto left without its entry: one now does (green
+    before the change, as the behaviour was already there);
+  - 3, the registration's refusal test took the write set on top of the read set, which already
+    holds it: it takes the read set alone;
+  - 4, the later run and the first run that finds an entry repaired the path in two branches:
+    one repair now serves both, since it is also the read of finding 1;
+  - 5, "nothing is registered" ignored a path already repaired: the summary and R-003 say it
+    stays repaired;
+  - 6, the click comment's "one click always restores the intended state" now names the
+    refusal the balloon reports;
+  - 7, the marker-refusal theory's assertion that no Run value was written could never fail:
+    removed.
+- **Skipped:** 8, the extra read of the approval value in `Enable`, microseconds on a path
+  the user paces.
+- 252 tests in the gate after.

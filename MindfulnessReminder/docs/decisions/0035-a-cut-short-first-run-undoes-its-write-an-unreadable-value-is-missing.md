@@ -44,10 +44,12 @@ refused writes. The owner chose both changes in chat the same day (the plan
   approval value only when its first byte is odd. An approval value that is no veto needs
   nothing, and a key the account may not read it may not write either, while `GetStatus`
   already counts its value as no veto (R-005).
-- **A first run registers only where there is no entry.** When the status is `Disabled`, it
+- **A first run registers only where there is no entry.** It first reads the Run value through
+  `RepairPathIfNeeded`, before anything is written, so an entry it may not read stops it
+  rather than reading as no entry and being overwritten. When the status is `Disabled`, it
   calls `Enable` and writes the marker, and when a refusal follows the write of the Run value,
   it calls `Disable`, letting a refusal of that go. When the status is anything else, an entry
-  is already there: the first run repairs its path and keeps its veto, as a later run does
+  is already there: the first run has repaired its path and keeps its veto, as a later run does
   (R-006), writes the marker, and returns `false`, so no balloon claims a registration (R-003).
   A refused access writes no marker either way, the call returns `false`, and the next start
   tries again.
@@ -82,7 +84,8 @@ refused writes. The owner chose both changes in chat the same day (the plan
   test can let the first write of a run through and refuse the second. Its `DeleteValue` throws
   `WriteRefusal` too, and a key with a `ReadRefusal` refuses writes as well, as the real store
   does.
-- Guards: `StartupRegistrarTests` (a refusal after the Run value is written, from the marker's
+- Guards: `StartupRegistrarTests` (a first run reads the entry before it writes anything, and
+  lifts a veto left without its entry; a refusal after the Run value is written, from the marker's
   key and from the Task Manager key, leaves nothing registered; a Task Manager key the account
   may not read, or may not write while there is no veto, does not stop the registration; a first
   run that finds an entry repairs it and keeps its veto, refused or not; a marker or Run value
