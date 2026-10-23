@@ -234,10 +234,14 @@ namespace AstroPhotoAnalyzer
         /// <param name="s">
         /// The text typed: two numbers separated by ':', 'x' or 'X' (empty parts are dropped).
         /// </param>
-        /// <param name="ratio">The width over the height; 0 when the text is refused.</param>
+        /// <param name="ratio">
+        /// The width over the height; 0 when the text is refused, and also when it is accepted
+        /// with an infinite height ("1:Infinity") or a quotient that underflows.
+        /// </param>
         /// <returns>
         /// <c>true</c> unless the text has not exactly two parts, a part does not read
-        /// (TryNum) or a part is 0 or negative; a NaN part passes, and so does the ratio.
+        /// (TryNum) or a part is 0 or negative; a NaN or infinite part passes, and so does the
+        /// ratio it gives.
         /// </returns>
         static bool TryAspect(string s, out double ratio)
         {

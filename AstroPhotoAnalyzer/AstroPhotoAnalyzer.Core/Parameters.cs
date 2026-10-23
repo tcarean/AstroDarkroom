@@ -58,8 +58,9 @@ namespace AstroPhotoAnalyzer
     /// <summary>
     /// What the user chose for one run, with the core's defaults for everything left unset: the
     /// one place that knows a medium's Dmax, the default sizes and framing, and the rules
-    /// between two parameters (<see cref="Validate"/>). Immutable; a variant is made with
-    /// <c>with</c>.
+    /// between two parameters (<see cref="Validate"/>). Init-only; a variant is made with
+    /// <c>with</c>, which shares the two arrays (CandidateWidthsCm, SimulationTargets): the
+    /// elements of neither may be changed in place.
     /// </summary>
     internal sealed record Parameters
     {

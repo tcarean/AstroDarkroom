@@ -17,9 +17,10 @@
 
 // AnalyzerCli.cs - the testable orchestration: parsing, running, exit code.
 //
-// What is HERE, and nobody else's: the arguments, the validation of the input, writing the
-// report to disk and the exit code. The chain proper (load -> measure -> recommend -> format)
-// sits in the core's Runs/, because the window uses it too.
+// What is HERE, and nobody else's: the arguments, the checks on the input file, writing the
+// report to disk and the exit code. The rules between parameters are the core's
+// (Parameters.Validate, which the window calls too), and so is the chain proper (load ->
+// measure -> recommend -> format), in the core's Runs/, because the window uses it too.
 //
 // EXIT CODES:
 //     0  OK - no recommendation above "Ok"
@@ -145,8 +146,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// What the user typed, translated into what the core understands. A value missing from
-        /// the Options means the default in Parameters - the console keeps no copy of its own of
-        /// the defaults.
+        /// the Options means the default in Parameters - the run takes no default of its own. The
+        /// --help text of WriteUsage does type most of them by hand (the widths, the passepartout,
+        /// the frame, the 1.5 x diagonal, the grid, the 3 decimals) and must follow a change
+        /// there.
         /// </summary>
         /// <param name="o">The options parsed, with no Error; their medium a known name.</param>
         /// <returns>The parameters, before the ICC profile is read and before Validate.</returns>

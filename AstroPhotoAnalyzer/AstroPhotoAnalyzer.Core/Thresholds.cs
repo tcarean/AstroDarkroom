@@ -178,8 +178,9 @@ namespace AstroPhotoAnalyzer
         internal const double DustClassMinFraction = 0.05;
 
         /// <summary>
-        /// Dust is a patch at least this many L* units under the band's local level (or under the
-        /// modelled sky): "darker than the band would be there", not "dark in general". On the
+        /// On the band path, dust is a patch at least this many L* units under the band's local
+        /// level (or under the modelled sky); the sky path uses SkyNoiseK instead (ADR 0033).
+        /// "Darker than the band would be there", not "dark in general". On the
         /// reference image the dust-sky difference measured on the Great Rift is 3-6 L*; with 4,
         /// 5, 6 the dust is 11, 9, 8 % of the frame. 5 is the middle.
         /// </summary>
@@ -298,11 +299,11 @@ namespace AstroPhotoAnalyzer
         internal const int NoiseTileCandidates = 400;
 
         /// <summary>
-        /// A tile is "smooth" for the noise if max-min over it is under this many levels out of
-        /// 255. It is 6000 out of 65535 - the acceptance script's threshold - and wide on
-        /// purpose: the difference between neighbouring pixels removes a slow gradient, so a tile
-        /// with a little structure still measures the noise right. (The plateau has another,
-        /// stricter threshold.)
+        /// A tile is "smooth" for the noise if max-min over it is at most this many levels out of
+        /// 255 (the plateau's tiles need strictly under theirs). It is 6000 out of 65535 - the
+        /// acceptance script's threshold - and wide on purpose: the difference between
+        /// neighbouring pixels removes a slow gradient, so a tile with a little structure still
+        /// measures the noise right. (The plateau has another, stricter threshold.)
         /// </summary>
         internal const double NoiseTileMaxRangeLevels = 6000.0 / 257;
 
