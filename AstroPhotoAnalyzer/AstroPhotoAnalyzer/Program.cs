@@ -15,15 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Program.cs - punctul de intrare. Main e un shim de o linie peste AnalyzerCli.Run,
-// care e si locul unde se poate testa tot, fiindca primeste scriitorii de iesire.
+// Program.cs - the entry point. Main is a one-line shim over AnalyzerCli.Run, which is also the
+// place where everything can be tested, because it takes the output writers.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>The console's entry point.</summary>
     static class Program
     {
+        /// <summary>Runs the console on the real stdout and stderr.</summary>
+        /// <param name="args">The command-line arguments, without the program's name.</param>
+        /// <returns>The exit code of <see cref="AnalyzerCli.Run"/>: 0, 1, 2 or 3.</returns>
         internal static int Main(string[] args)
             => AnalyzerCli.Run(args, Console.Out, Console.Error);
     }

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Options.cs - parsarea argumentelor din linia de comanda.
+// Options.cs - the parsing of the command-line arguments.
 //
-// Flagurile pot veni oriunde: "AstroPhotoAnalyzer --medium canvas poza.tif" si
-// "AstroPhotoAnalyzer poza.tif --medium canvas" sunt echivalente. Parse nu arunca:
-// intoarce un Options cu Error setat, iar AnalyzerCli il scrie pe stderr si iese cu 1.
+// The flags may come anywhere: "AstroPhotoAnalyzer --medium canvas poza.tif" and
+// "AstroPhotoAnalyzer poza.tif --medium canvas" are equivalent. Parse does not throw: it
+// returns an Options with Error set, and AnalyzerCli writes it to stderr and exits with 1.
 //
-// Valorile de aici sunt DOAR ce a tastat omul, verificate sintactic. Ce inseamna ele
-// pentru analiza (Dmax-ul unui mediu, distanta implicita de privire) se decide in
-// nucleu, in Parameters - consola nu stie ce e un baryta.
+// The values here are ONLY what the user typed, checked for syntax. What they mean for the
+// analysis (a medium's Dmax, the default viewing distance) is decided in the core, in
+// Parameters - the console does not know what a baryta is.
 
 using System;
 using System.Collections.Generic;
@@ -32,38 +32,59 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The command line as the user typed it, checked for syntax only: the image, one field per
+    /// flag (null for a flag not given, which means the core's default), Help, and Error, the
+    /// first problem found. Built by <see cref="Parse"/>.
+    /// </summary>
     internal sealed class Options
     {
         internal string Image;
 
-        /// <summary>Mediul de print, ca text: baryta, canvas, acrilic. Null = implicitul nucleului.</summary>
+        /// <summary>
+        /// The print medium, as text: baryta, canvas, acrilic. Null = the core's default.
+        /// </summary>
         internal string Medium;
 
-        /// <summary>Dmax explicit, care bate mediul. Null = din mediu.</summary>
+        /// <summary>An explicit Dmax, which beats the medium. Null = from the medium.</summary>
         internal double? Dmax;
 
-        /// <summary>Distanta de privire, in metri. Null = nucleul o deduce din diagonala.</summary>
+        /// <summary>
+        /// The viewing distance, in metres. Null = the core infers it from the diagonal.
+        /// </summary>
         internal double? Distance;
 
-        /// <summary>Latimile de print candidate, in cm. Null = lista implicita a nucleului.</summary>
+        /// <summary>
+        /// The candidate print widths, in cm. Null = the core's default list.
+        /// </summary>
         internal double[] Sizes;
 
-        /// <summary>Raportul de aspect tinta, latime/inaltime. Null = cel nativ al imaginii.</summary>
+        /// <summary>
+        /// The target aspect ratio, width/height. Null = the image's native one.
+        /// </summary>
         internal double? Aspect;
 
-        /// <summary>Fundalul-tinta pentru simularea de print, strict intre 0 si 1 dupa rotunjirea nucleului (R-023). Null = implicitul nucleului.</summary>
+        /// <summary>
+        /// The target background for the print simulation, strictly between 0 and 1 after the
+        /// core's rounding (R-023). Null = the core's default.
+        /// </summary>
         internal double? TargetBg;
 
         internal double? PassepartoutCm;
         internal double? FrameCm;
 
-        /// <summary>FITS-ul al carui WCS se imprumuta imaginii (R-027). Null = WCS-ul fisierului, daca are.</summary>
+        /// <summary>
+        /// The FITS whose WCS is lent to the image (R-027). Null = the file's own WCS, if it has
+        /// one.
+        /// </summary>
         internal string Wcs;
 
-        /// <summary>Profilul ICC de imprimanta din care se citeste Dmax-ul (R-028); exclude --dmax.</summary>
+        /// <summary>
+        /// The ICC printer profile the Dmax is read from (R-028); it excludes --dmax.
+        /// </summary>
         internal string Icc;
 
-        /// <summary>Unde se scrie si raportul, pe langa stdout. Null = doar stdout.</summary>
+        /// <summary>Where the report is also written, besides stdout. Null = stdout only.</summary>
         internal string Out;
 
         internal bool Help;
@@ -77,6 +98,16 @@ namespace AstroPhotoAnalyzer
 
         internal static readonly string[] Media = Parameters.MediumNames.ToArray();
 
+        /// <summary>
+        /// Parses the command line, flags before or after the image; it does not throw on any
+        /// input.
+        /// </summary>
+        /// <param name="args">The arguments, without the program's name; not null.</param>
+        /// <returns>
+        /// Help set when there are no arguments or -h or --help is among them; otherwise Error
+        /// set to the first problem, a Romanian sentence without the "EROARE: " prefix; otherwise
+        /// the image and the values of the flags given.
+        /// </returns>
         internal static Options Parse(string[] args)
         {
             var o = new Options();
@@ -132,7 +163,8 @@ namespace AstroPhotoAnalyzer
                                 return o.Fail($"--aspect asteapta latime:inaltime (ex. 50:35), a primit '{v}'");
                             o.Aspect = asp; break;
                         case "--target-bg":
-                            // Intervalul si rotunjirea le judeca nucleul, cu acelasi mesaj ca fereastra (R-023).
+                            // The range and the rounding are the core's to judge, with the same
+                            // message as the window's (R-023).
                             if (!TryNum(v, out var bg))
                                 return o.Fail($"--target-bg asteapta un numar strict intre 0 si 1, a primit '{v}'");
                             string bgError = Parameters.TargetBackgroundError(bg);
@@ -173,16 +205,40 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
+        /// <summary>Records the problem in <see cref="Error"/>.</summary>
+        /// <param name="message">
+        /// The problem, a Romanian sentence without the "EROARE: " prefix AnalyzerCli adds.
+        /// </param>
+        /// <returns>This instance, for Parse to return.</returns>
         Options Fail(string message)
         {
             Error = message;
             return this;
         }
 
+        /// <summary>
+        /// Reads a number in the invariant culture (a decimal point, no thousands separator).
+        /// "NaN", "Infinity" and "-Infinity" read too, as those values; the callers' range checks
+        /// refuse the infinities they bound, and only --target-bg's (TargetBackgroundError)
+        /// refuses NaN.
+        /// </summary>
+        /// <param name="s">The text typed.</param>
+        /// <param name="v">The number read; 0 when the text does not read.</param>
+        /// <returns><c>true</c> when the text reads as a double.</returns>
         static bool TryNum(string s, out double v)
             => double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v);
 
-        /// <summary>"50:35" sau "50x35" -> 50/35. Ambele forme, fiindca amandoua se tasteaza natural.</summary>
+        /// <summary>
+        /// "50:35" or "50x35" -> 50/35. Both forms, because both are typed naturally.
+        /// </summary>
+        /// <param name="s">
+        /// The text typed: two numbers separated by ':', 'x' or 'X' (empty parts are dropped).
+        /// </param>
+        /// <param name="ratio">The width over the height; 0 when the text is refused.</param>
+        /// <returns>
+        /// <c>true</c> unless the text has not exactly two parts, a part does not read
+        /// (TryNum) or a part is 0 or negative; a NaN part passes, and so does the ratio.
+        /// </returns>
         static bool TryAspect(string s, out double ratio)
         {
             ratio = 0;

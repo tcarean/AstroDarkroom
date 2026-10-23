@@ -15,12 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Parameters.cs - ce alege omul: mediul de print, marimile candidate, distanta de
-// privire, rama. Cu implicitele din conversatia care a nascut unealta.
+// Parameters.cs - what the user chooses: the print medium, the candidate sizes, the viewing
+// distance, the frame. With the defaults from the conversation that gave birth to the tool.
 //
-// Consola si fereastra construiesc amandoua un Parameters si il dau nucleului; niciuna
-// nu stie ce Dmax are un baryta - asta e aici, o singura data. De unde vine fiecare
-// Dmax: ADR 0028.
+// The console and the window both build a Parameters and hand it to the core; neither knows
+// what Dmax a baryta has - that is here, once. Where each Dmax comes from: ADR 0028.
 
 using System;
 using System.Collections.Generic;
@@ -28,63 +27,90 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The print media the tool knows, each with the Dmax <see cref="Parameters.DmaxOf"/> gives
+    /// it; the enum's order is the order of <see cref="Parameters.MediumNames"/>.
+    /// </summary>
     internal enum PrintMedium
     {
         /// <summary>
-        /// Hartie baryta lucioasa cu pigment (Harman Gloss Baryta, Photo Rag Baryta). Dmax 2.4:
-        /// masurat, 2.41 fata de albul hartiei in profilul ICC al atelierului Chromatone
-        /// pentru Hahnemuhle Photo Rag Baryta pe Canon iPF8300 (ADR 0028).
+        /// Glossy pigment baryta paper (Harman Gloss Baryta, Photo Rag Baryta). Dmax 2.4:
+        /// measured, 2.41 against the paper's white in the Chromatone workshop's ICC profile for
+        /// Hahnemuhle Photo Rag Baryta on a Canon iPF8300 (ADR 0028).
         /// </summary>
         Baryta,
 
         /// <summary>
-        /// Canvas mat, latex sau pigment. Dmax 1.5, negrul cel mai slab dintre cele trei:
-        /// regula din conversatia care a nascut unealta, sprijinita de profilul ICC Harman
-        /// Canvas (1.49 fata de albul panzei; ADR 0028).
+        /// Matte canvas, latex or pigment. Dmax 1.5, the weakest black of the three: the rule
+        /// from the conversation that gave birth to the tool, backed by the Harman Canvas ICC
+        /// profile (1.49 against the canvas's white; ADR 0028).
         /// </summary>
         Canvas,
 
         /// <summary>
-        /// C-print fotografic (Fuji Crystal Archive) sub acril. Dmax 2.2: regula din
-        /// conversatia care a nascut unealta, fara o masuratoare in spate (ADR 0028).
+        /// A photographic C-print (Fuji Crystal Archive) under acrylic. Dmax 2.2: the rule from
+        /// the conversation that gave birth to the tool, with no measurement behind it
+        /// (ADR 0028).
         /// </summary>
         Acrylic,
     }
 
+    /// <summary>
+    /// What the user chose for one run, with the core's defaults for everything left unset: the
+    /// one place that knows a medium's Dmax, the default sizes and framing, and the rules
+    /// between two parameters (<see cref="Validate"/>). Immutable; a variant is made with
+    /// <c>with</c>.
+    /// </summary>
     internal sealed record Parameters
     {
         internal PrintMedium Medium { get; init; } = PrintMedium.Baryta;
 
-        /// <summary>Dmax explicit; bate mediul. Null = din mediu.</summary>
+        /// <summary>An explicit Dmax; it beats the medium. Null = from the medium.</summary>
         internal double? DmaxOverride { get; init; }
 
         internal double Dmax => DmaxOverride ?? DmaxOf(Medium);
 
         /// <summary>
-        /// Dmax-ul e al omului, nu al mediului: un Dmax dat care e chiar cel al mediului nu
-        /// schimba nimic si nu se anunta "(explicit)" - fereastra isi arata campul completat
-        /// cu Dmax-ul mediului ales, si un raport care l-ar numi explicit ar minti.
+        /// The Dmax is the user's, not the medium's: a given Dmax that is the medium's own changes
+        /// nothing and is not announced "(explicit)" - the window shows its field filled with the
+        /// chosen medium's Dmax, and a report that called it explicit would lie.
         /// </summary>
         internal bool DmaxIsExplicit => DmaxOverride.HasValue && Math.Abs(DmaxOverride.Value - DmaxOf(Medium)) > 1e-9;
 
         /// <summary>
-        /// Numele profilului ICC din care a fost citit Dmax-ul explicit (R-028); null cand
-        /// Dmax-ul e al mediului sau scris de om. Doar pentru raport: spune de unde vine cifra.
+        /// The name of the ICC profile the explicit Dmax was read from (R-028); null when the
+        /// Dmax is the medium's or typed by the user. For the report only: it says where the
+        /// figure comes from.
         /// </summary>
         internal string DmaxProfile { get; init; }
 
-        /// <summary>Calea aceluiasi profil, ca tabul Curbe sa-l poata redeschide pentru cifra de gamut (R-144); null cand DmaxProfile e null.</summary>
+        /// <summary>
+        /// The path of the same profile, so that the Curbe tab can reopen it for the gamut figure
+        /// (R-144); null when DmaxProfile is null.
+        /// </summary>
         internal string DmaxProfilePath { get; init; }
 
-        /// <summary>Rezerva profilului despre Dmax-ul lui (profilele CMYK), pentru Anexa F; null cand nu e niciuna.</summary>
+        /// <summary>
+        /// The profile's reservation about its Dmax (the CMYK profiles), for Anexa F; null when
+        /// there is none.
+        /// </summary>
         internal string DmaxProfileNote { get; init; }
 
         /// <summary>
-        /// Aceiasi parametri, cu Dmax-ul citit din profilul ICC de imprimanta de la
-        /// <paramref name="path"/>: negrul dispozitivului fata de albul hartiei, la doua
-        /// zecimale (IccPaperBlack). Null, cu motivul in <paramref name="error"/>, cand
-        /// profilul nu se poate citi sau nu e al unei imprimante.
+        /// The same parameters, with the Dmax read from the ICC printer profile at
+        /// <paramref name="path"/>: the device's black against the paper's white, to two
+        /// decimals (IccPaperBlack). Null, with the reason in <paramref name="error"/>, when the
+        /// profile cannot be read or is not a printer's.
         /// </summary>
+        /// <param name="path">The ICC profile's file, as the user gave it.</param>
+        /// <param name="error">
+        /// Set to the reason, a Romanian sentence for the user, when the profile cannot be used;
+        /// null when it can.
+        /// </param>
+        /// <returns>
+        /// A copy with DmaxOverride, DmaxProfile (the profile's description), DmaxProfilePath and
+        /// DmaxProfileNote set; null when the profile cannot be used.
+        /// </returns>
         internal Parameters WithDmaxFromProfile(string path, out string error)
         {
             IccBlack black = IccPaperBlack.Read(path);
@@ -92,24 +118,29 @@ namespace AstroPhotoAnalyzer
             return black.Readable ? this with { DmaxOverride = black.Dmax, DmaxProfile = black.Description, DmaxProfilePath = path, DmaxProfileNote = black.Note } : null;
         }
 
-        /// <summary>Latimile de print candidate, in cm, pentru tabelul de marimi.</summary>
+        /// <summary>The candidate print widths, in cm, for the sizes table.</summary>
         internal double[] CandidateWidthsCm { get; init; } = { 50, 60, 70, 80, 90, 100 };
 
-        /// <summary>Distanta de privire, in metri. Null = 1.5 x diagonala imaginii printate.</summary>
+        /// <summary>
+        /// The viewing distance, in metres. Null = 1.5 x the diagonal of the printed image.
+        /// </summary>
         internal double? ViewingDistanceM { get; init; }
 
         internal double PassepartoutCm { get; init; } = 7;
         internal double FrameCm { get; init; } = 3;
 
-        /// <summary>Raportul de aspect tinta (latime/inaltime). Null = cel nativ, fara decupaj.</summary>
+        /// <summary>
+        /// The target aspect ratio (width/height). Null = the native one, with no crop.
+        /// </summary>
         internal double? TargetAspect { get; init; }
 
         /// <summary>
-        /// Fundalul-tinta dat de om, optional, rotunjit la TargetBackgroundDecimals zecimale (cele
-        /// pe care le tipareste raportul, Fmt.Level): adauga randul lui in tabelul simularii si
-        /// alege dala de print din Preview. Null = fara rand in plus; Preview-ul ia randul
-        /// recomandat (R-023). O valoare care dupa rotunjire nu e strict intre 0 si 1, NaN sau
-        /// infinit, o refuza Validate cu mesajul lui TargetBackgroundError (ADR 0040).
+        /// The target background the user gave, optional, rounded to TargetBackgroundDecimals
+        /// decimals (the ones the report prints, Fmt.Level): it adds its row to the simulation's
+        /// table and chooses the print tile of the Preview. Null = no extra row; the Preview takes
+        /// the recommended row (R-023). A value that after rounding is not strictly between 0 and
+        /// 1, NaN or infinite, is refused by Validate with TargetBackgroundError's message
+        /// (ADR 0040).
         /// </summary>
         internal double? TargetBackground
         {
@@ -119,28 +150,40 @@ namespace AstroPhotoAnalyzer
         double? _targetBackground;
 
         /// <summary>
-        /// Zecimalele la care se rotunjeste fundalul-tinta dat: cele trei pe care le tipareste
-        /// raportul (Fmt.Level), ca o tinta tastata cu mai multe sa fie randul pe care il arata
-        /// tabelul si nu una pe care nimic n-o mai regaseste (ADR 0040).
+        /// The decimals the given target background is rounded to: the three the report prints
+        /// (Fmt.Level), so that a target typed with more is the row the table shows and not one
+        /// that nothing finds again (ADR 0040).
         /// </summary>
         internal const int TargetBackgroundDecimals = 3;
 
-        /// <summary>Fundalul-tinta rotunjit la TargetBackgroundDecimals zecimale; NaN si infinitul raman cum sunt.</summary>
+        /// <summary>
+        /// The target background rounded to TargetBackgroundDecimals decimals; NaN and infinity
+        /// stay as they are.
+        /// </summary>
+        /// <param name="given">The level as typed, 0..1 when valid; any double accepted.</param>
+        /// <returns>
+        /// The level rounded with Math.Round to TargetBackgroundDecimals decimals.
+        /// </returns>
         internal static double RoundTargetBackground(double given) => Math.Round(given, TargetBackgroundDecimals);
 
         /// <summary>
-        /// De ce un fundal-tinta dat nu se poate simula, pentru om: NaN, infinit, sau o valoare
-        /// care dupa rotunjire nu e strict intre 0 si 1 (gamma = ln(tinta) / ln(fundal) nu exista
-        /// la 0 si la 1). Un singur mesaj, al nucleului: consola il scrie cu "--target-bg: " in
-        /// fata, fereastra asa cum e (R-023, ADR 0040). Null cand valoarea e buna.
+        /// Why a given target background cannot be simulated, for the user: NaN, infinity, or a
+        /// value that after rounding is not strictly between 0 and 1
+        /// (gamma = ln(target) / ln(background) does not exist at 0 and at 1). A single message,
+        /// the core's: the console writes it with "--target-bg: " in front, the window as it is
+        /// (R-023, ADR 0040). Null when the value is good.
         /// </summary>
+        /// <param name="given">The level as typed, before rounding; any double accepted.</param>
+        /// <returns>
+        /// The Romanian sentence, which quotes the value given; null when the value is good.
+        /// </returns>
         internal static string TargetBackgroundError(double given)
         {
             double v = RoundTargetBackground(given);
             if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
             {
-                // NaN si infinitul, in cuvinte: ToString le-ar scrie "NaN" si cu simbolul infinitului,
-                // pe care consola nu-l poate arata in orice pagina de cod.
+                // NaN and infinity in words: ToString would write them "NaN" and with the
+                // infinity symbol, which the console cannot show in every code page.
                 string got = double.IsNaN(given) ? "NaN, care nu e un numar"
                     : double.IsPositiveInfinity(given) ? "infinit"
                     : double.IsNegativeInfinity(given) ? "minus infinit"
@@ -151,16 +194,21 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Grila simularii: 0.05 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
-        /// cer de noapte (peste 0.20 un gri spalat). Podeaua a fost 0.10, negrul unei hartii
-        /// de Dmax 2.0 (L* 9); pe baryta de 2.4 (L* 3.6) praful ajunge pe negru sub 0.10 (0.093
-        /// pe imaginea de referinta, 0.067 pe Rosetta) si randurile acelea lipseau din tabel,
-        /// desi scara tintei exacte cobora deja la ExactTargetLo = 0.05; proprietarul a cerut
-        /// grila de la 0.05 pe 2026-10-06 (ADR 0034). Nu e expusa; o tinta in afara ei intra
-        /// prin TargetBackground.
+        /// The simulation's grid: 0.05 .. 0.20 in steps of 0.01, the levels a night sky is
+        /// printed at (over 0.20 a washed-out grey). The floor was 0.10, the black of a paper of
+        /// Dmax 2.0 (L* 9); on a baryta of 2.4 (L* 3.6) the dust reaches black under 0.10 (0.093
+        /// on the reference image, 0.067 on Rosetta) and those rows were missing from the table,
+        /// though the exact target's ladder already went down to ExactTargetLo = 0.05; the owner
+        /// asked for the grid from 0.05 on 2026-10-06 (ADR 0034). It is not exposed; a target
+        /// outside it comes in through TargetBackground.
         /// </summary>
         internal double[] SimulationTargets { get; init; } = DefaultSimulationTargets();
 
+        /// <summary>The default grid of <see cref="SimulationTargets"/>.</summary>
+        /// <returns>
+        /// The 16 levels 0.05, 0.06, ... 0.20, each rounded to two decimals; a new array each
+        /// call.
+        /// </returns>
         static double[] DefaultSimulationTargets()
         {
             var t = new double[16];
@@ -169,21 +217,27 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Un FITS al carui WCS se imprumuta imaginii analizate (R-027): un TIFF sau PNG
-        /// exportat din acelasi stack nu poarta antetul, dar are aceeasi geometrie. Null = WCS-ul
-        /// fisierului insusi, daca are.
+        /// A FITS whose WCS is lent to the analysed image (R-027): a TIFF or PNG exported from the
+        /// same stack does not carry the header, but has the same geometry. Null = the file's own
+        /// WCS, if it has one.
         /// </summary>
         internal string WcsPath { get; init; }
 
-        /// <summary>Samanta alegerii de dale. Fixa, ca doua rulari pe acelasi fisier sa dea aceleasi cifre.</summary>
+        /// <summary>
+        /// The seed of the choice of tiles. Fixed, so that two runs on the same file give the same
+        /// figures.
+        /// </summary>
         internal int Seed { get; init; } = 0;
 
         /// <summary>
-        /// Regulile care leaga doi parametri intre ei - ce nu poate verifica un camp
-        /// singur - si fundalul-tinta dupa rotunjire (TargetBackgroundError). Intoarce mesajul
-        /// pentru om, sau null cand totul e in regula. Consola si fereastra il cheama amandoua,
-        /// ca sa refuze aceleasi lucruri cu aceleasi cuvinte.
+        /// The rules that tie two parameters together - what a field alone cannot check - and
+        /// the target background after rounding (TargetBackgroundError). Returns the message for
+        /// the user, or null when all is well. The console and the window both call it, so as to
+        /// refuse the same things with the same words.
         /// </summary>
+        /// <returns>
+        /// The first rule broken, as a Romanian sentence for the user; null when none is.
+        /// </returns>
         internal string Validate()
         {
             if (TargetBackground.HasValue)
@@ -199,6 +253,11 @@ namespace AstroPhotoAnalyzer
             return null;
         }
 
+        /// <summary>The Dmax of a print medium (ADR 0028), the one place that holds it.</summary>
+        /// <param name="m">
+        /// The medium; a value outside the enum throws ArgumentOutOfRangeException.
+        /// </param>
+        /// <returns>The medium's Dmax: 2.4, 1.5 or 2.2.</returns>
         internal static double DmaxOf(PrintMedium m) => m switch
         {
             PrintMedium.Baryta => 2.4,
@@ -208,13 +267,19 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// Numele tuturor mediilor, in ordinea enum-ului: lista din care consola isi scrie
-        /// --help-ul si eroarea de mediu necunoscut, iar fereastra isi umple combo-ul.
+        /// The names of all the media, in the enum's order: the list the console writes its
+        /// --help and its unknown-medium error from, and the window fills its combo with.
         /// </summary>
         internal static IReadOnlyList<string> MediumNames { get; }
             = ((PrintMedium[])Enum.GetValues(typeof(PrintMedium))).Select(NameOf).ToArray();
 
-        /// <summary>Numele din linia de comanda si din fereastra: baryta, canvas, acrilic.</summary>
+        /// <summary>
+        /// The medium named as on the command line and in the window: baryta, canvas, acrilic.
+        /// </summary>
+        /// <param name="name">
+        /// The name, in any case; null or an unknown name throws ArgumentException.
+        /// </param>
+        /// <returns>The medium of that name.</returns>
         internal static PrintMedium MediumFromName(string name) => name?.ToLowerInvariant() switch
         {
             "baryta" => PrintMedium.Baryta,
@@ -223,6 +288,14 @@ namespace AstroPhotoAnalyzer
             _ => throw new ArgumentException("mediu necunoscut: " + name),
         };
 
+        /// <summary>
+        /// The name of a medium on the command line and in the window, the inverse of
+        /// <see cref="MediumFromName"/>.
+        /// </summary>
+        /// <param name="m">
+        /// The medium; a value outside the enum throws ArgumentOutOfRangeException.
+        /// </param>
+        /// <returns>"baryta", "canvas" or "acrilic".</returns>
         internal static string NameOf(PrintMedium m) => m switch
         {
             PrintMedium.Baryta => "baryta",
