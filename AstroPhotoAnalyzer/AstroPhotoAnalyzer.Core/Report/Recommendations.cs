@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Recommendations.cs - motorul: din rezultate, o lista de recomandari in ordinea
-// deciziilor. Fiecare regula e o functie mica peste un record; pragurile sunt in
-// Thresholds, formularile sunt aici. Nimic din ce e aici nu se rescrie in fereastra:
-// fereastra afiseaza lista, nu o deduce.
+// Recommendations.cs - the engine: from the results, a list of recommendations in the order of
+// the decisions. Each rule is a small function over a record; the thresholds are in Thresholds,
+// the wordings are here. Nothing here is rewritten in the window: the window shows the list, it
+// does not deduce it.
 
 using System;
 using System.Collections.Generic;
@@ -26,8 +26,20 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// Turns an analysis's results into the report's recommendations, each with its "fiindca"
+    /// (ADR 0011), Romanian.
+    /// </summary>
     internal static class Recommendations
     {
+        /// <summary>The recommendations of the six sections, in decision order.</summary>
+        /// <param name="r">
+        /// The analysis, every result filled; the recommendations and the report body are not
+        /// read.
+        /// </param>
+        /// <returns>
+        /// The list, sorted by <see cref="Topic"/>, each section's in the order its rules add them.
+        /// </returns>
         internal static IReadOnlyList<Recommendation> Build(AnalysisResult r)
         {
             var list = new List<Recommendation>();
@@ -42,6 +54,13 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ 1. format
 
+        /// <summary>
+        /// Section 1, the format to send: the 8-bit LZW TIFF (with the rounding on a source over 8
+        /// bits), JPEG q100 when the lab accepts only JPEG and the advice not to go below it, and
+        /// the banding risk, from the plateau at the reference row's dpi or from the noise alone.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the recommendations are added to.</param>
         static void Format(AnalysisResult r, List<Recommendation> o)
         {
             QuantizationResult q = r.Quantization;
@@ -90,13 +109,18 @@ namespace AstroPhotoAnalyzer
                     $"zgomot rezidual sigma {Fmt.F2(r.Noise.SigmaMedianLsb)} LSB, sub {Fmt.F1(Thresholds.NoiseBandingLsb)}"));
         }
 
-        // ------------------------------------------------------------ 2. fundal
+        // ------------------------------------------------------------ 2. background
 
-        // Verdictul: praful (zona intinsa cea mai intunecata: clasa praf sau cerul cel mai
-        // intunecat, ADR 0033) fata de negrul hartiei, si cerul fata de el (ADR 0025); apoi
-        // cerul fata de pragul de vizibilitate (ADR 0029). "Fiindca" spune ce e praful, care sunt norii cei mai
-        // intunecati, unde e negrul, de la ce Dmax ajunge praful pe negru (si ca un cer sub prag nu
-        // trece pe nicio hartie, ADR 0043) si cat e sub prag.
+        /// <summary>
+        /// Section 2, the background and the paper. The verdict: the dust (the darkest extended
+        /// area: the dust class or the darkest sky, ADR 0033) against paper black, and the sky
+        /// against it (ADR 0025); then the sky against the visibility threshold (ADR 0029). The
+        /// "fiindca" says what the dust is, which are the darkest clouds, where the black is, from
+        /// which Dmax the dust reaches black (and that a sky under the threshold passes on no
+        /// paper, ADR 0043) and how much is under the threshold.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the one recommendation is added to.</param>
         static void Background(AnalysisResult r, List<Recommendation> o)
         {
             SimulationResult s = r.Simulation;
@@ -115,8 +139,8 @@ namespace AstroPhotoAnalyzer
                 string text;
                 if (s.RecommendedIsAsIs)
                 {
-                    // Tinta imediat sub nivelul masurat e cea care pica; e ce ii spune omului
-                    // cat de aproape e de muchie.
+                    // The target right under the measured level is the one that fails; it is what
+                    // tells the user how close to the edge it is.
                     SimulationRow lower = s.Rows.LastOrDefault(x => x.Target < asIs.Target);
                     text = lower == null
                         ? "Fundalul e print-safe asa cum e; grila nu coboara sub nivelul lui."
@@ -150,7 +174,8 @@ namespace AstroPhotoAnalyzer
             }
             else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.DustOnPaperBlack))
             {
-                // Praful ajunge pe negru pe grila, dar cerul nu ajunge la prag: doar pe o grila data de om.
+                // The dust reaches black on the grid, but the sky does not reach the threshold:
+                // only on a grid the user gave.
                 string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
                 fix = $" Nicio tinta pana la {top} nu aduce cerul la {threshold}; ar trebui {ReportWriter.TargetText(s.VisibilityTarget)}.";
             }
@@ -164,15 +189,27 @@ namespace AstroPhotoAnalyzer
             o.Add(new Recommendation(Topic.Background, v, what + fix, because));
         }
 
-        /// <summary>"LDN 42 (B78) L* 0.9, LDN 1769 (B275, B278) L* 3.1, ..." - cel mult DustCloudReportRows nori, de la cel mai intunecat.</summary>
+        /// <summary>
+        /// "LDN 42 (B78) L* 0.9, LDN 1769 (B275, B278) L* 3.1, ..." - at most
+        /// <see cref="Thresholds.DustCloudReportRows"/> clouds, from the darkest.
+        /// </summary>
+        /// <param name="s">The simulation, with at least one cloud row.</param>
+        /// <returns>The clouds with their L*, followed by ", ..." when some are left out.</returns>
         internal static string CloudList(SimulationResult s)
         {
             var rows = s.Clouds.Take(Thresholds.DustCloudReportRows).Select(c => $"{c.Name} L* {Fmt.F1(c.Lstar)}");
             return string.Join(", ", rows) + (s.Clouds.Count > Thresholds.DustCloudReportRows ? ", ..." : "");
         }
 
-        // ------------------------------------------------------------ 3. culoare
+        // ------------------------------------------------------------ 3. colour
 
+        /// <summary>
+        /// Section 3, the background's colour and the gradients: the cast (or that the image is
+        /// mono, or that the background is neutral), one recommendation per flagged coloured edge
+        /// region, and one note for all the flagged neutral ones (ADR 0018).
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the recommendations are added to.</param>
         static void Colour(AnalysisResult r, List<Recommendation> o)
         {
             BackgroundResult b = r.Background;
@@ -195,8 +232,8 @@ namespace AstroPhotoAnalyzer
                     $"fundal R {Fmt.F1(b.Levels[0])} G {Fmt.F1(b.Levels[1])} B {Fmt.F1(b.Levels[2])}; G - (R+B)/2 = {Fmt.S1(b.GreenExcess)}, R - B = {Fmt.S1(b.RedMinusBlue)} niveluri"));
             }
 
-            // Abaterile COLORATE, fiecare cu recomandarea ei: poluare, orizont, gradient
-            // cu tenta - lucruri de corectat pe liniar.
+            // The COLOURED deviations, each with its own recommendation: light pollution, the
+            // horizon, a tinted gradient - things to correct on linear data.
             foreach (EdgeRegion e in b.FlaggedRegions.Where(x => x.Coloured))
             {
                 string deltas = $"R {Fmt.S1(e.Deltas[0])}, G {Fmt.S1(e.Deltas[1])}, B {Fmt.S1(e.Deltas[2])}";
@@ -208,10 +245,10 @@ namespace AstroPhotoAnalyzer
                     $"fata de fundal: {deltas} niveluri (prag {Fmt.F1(Thresholds.CornerGradientLevels)}); canalele se misca diferit"));
             }
 
-            // Abaterile NEUTRE, toate intr-o singura nota: o margine mai luminoasa la fel pe
-            // toate canalele e de cele mai multe ori obiectul insusi (banda Caii Lactee
-            // intrand in colt), nu un gradient. Unealta nu poate deosebi; o spune si lasa
-            // omul sa se uite in Preview.
+            // The NEUTRAL deviations, all in a single note: an edge brighter by the same amount on
+            // every channel is most often the object itself (the Milky Way band entering the
+            // corner), not a gradient. The tool cannot tell them apart; it says so and lets the
+            // user look in Preview.
             var neutral = b.FlaggedRegions.Where(x => !x.Coloured).ToList();
             if (neutral.Count > 0)
             {
@@ -225,10 +262,23 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>
+        /// A region's name with its first letter in upper case, to open a sentence.
+        /// </summary>
+        /// <param name="s">The name, not empty.</param>
+        /// <returns>The name, capitalised.</returns>
         static string Cap(string s) => char.ToUpperInvariant(s[0]) + s.Substring(1);
 
-        // ------------------------------------------------------------ 4. marime
+        // ------------------------------------------------------------ 4. size
 
+        /// <summary>
+        /// Section 4, the print's size: without enough stars only the pixel grid, and no size;
+        /// with a given distance the recommended size, or that the stars are discs at every
+        /// size; without one, that the wall chooses (ADR 0017); then the soft corners, the crop
+        /// and the sizes over <see cref="Thresholds.OversizeCm"/>.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the recommendations are added to.</param>
         static void Size(AnalysisResult r, List<Recommendation> o)
         {
             StarResult st = r.Stars;
@@ -238,8 +288,8 @@ namespace AstroPhotoAnalyzer
 
             if (st.Insufficient)
             {
-                // Fara FWHM nu se masoara detaliul, ci doar grila de pixeli - o limita a
-                // fisierului. Se spune pana unde ajunge fisierul; nu se recomanda un rand.
+                // Without a FWHM the detail is not measured, only the pixel grid - a limit of the
+                // file. It says how far the file reaches; no row is recommended.
                 string rule = ps.DistanceIsExplicit
                     ? $"de la {Fmt.F1(row.ViewingDistanceM)} m grila dispare de la {Fmt.F0(ps.FallbackDpi)} dpi in sus"
                     : $"fara distanta data se cere conventia de {Fmt.F0(ps.FallbackDpi)} dpi (grila invizibila de la ~0.5 m, cand te apropii)";
@@ -268,9 +318,9 @@ namespace AstroPhotoAnalyzer
             }
             else
             {
-                // Fara distanta, claritatea relativa e aceeasi la orice marime (vezi
-                // PrintSizeAnalyzer): raspunsul e da/nu pentru toata imaginea, iar
-                // marimea o alege peretele. Se spune ca atare, nu se pretinde o alegere.
+                // Without a distance, the relative sharpness is the same at any size (see
+                // PrintSizeAnalyzer): the answer is yes/no for the whole image, and the wall
+                // chooses the size. It is said as such; no choice is pretended.
                 bool sharp = row.PointAtViewingDistance;
                 o.Add(new Recommendation(Topic.Size, sharp ? Verdict.Ok : Verdict.Attention,
                     sharp
@@ -297,6 +347,13 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ 5. denoise
 
+        /// <summary>
+        /// Section 5, the denoise for the print version: too little smooth sky, or the noise
+        /// against the print target (pressed too hard, visible on screen only, right, or
+        /// acceptable), with the noise after the recommended re-stretch in the "fiindca".
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the one recommendation is added to.</param>
         static void Denoise(AnalysisResult r, List<Recommendation> o)
         {
             NoiseResult n = r.Noise;
@@ -313,8 +370,8 @@ namespace AstroPhotoAnalyzer
             SimulationRow row = r.Simulation.Recommended;
             if (row != null && !row.AsIs)
             {
-                // Panta curbei gamma la fundal: cu cat se inmulteste zgomotul cand fundalul
-                // urca (sau coboara: recomandarea merge in ambele sensuri, ADR 0025).
+                // The gamma curve's slope at the background: what the noise is multiplied by when
+                // the background rises (or falls: the recommendation goes both ways, ADR 0025).
                 double bg = r.Simulation.BackgroundMeasured;
                 double slope = row.Gamma * Math.Pow(bg, row.Gamma - 1);
                 after = $"; dupa re-stretch la {Fmt.Level(row.Target)} zgomotul {(slope >= 1 ? "creste" : "scade")} de ~{Fmt.F2(slope)} x (panta curbei la fundal), la ~{Fmt.F2(n.SigmaMedianLsb * slope)} LSB";
@@ -335,8 +392,14 @@ namespace AstroPhotoAnalyzer
                 o.Add(new Recommendation(Topic.Denoise, Verdict.Ok, "Zgomotul rezidual e acceptabil pentru print.", because));
         }
 
-        // ------------------------------------------------------------ 6. avertismente
+        // ------------------------------------------------------------ 6. warnings
 
+        /// <summary>
+        /// Section 6, the warnings: an 8-bit file in disguise, no ICC profile or one that is not
+        /// sRGB, the 16-bit master to keep, and the reader's note.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="o">The list the recommendations are added to.</param>
         static void Warnings(AnalysisResult r, List<Recommendation> o)
         {
             FileFactsResult f = r.File;

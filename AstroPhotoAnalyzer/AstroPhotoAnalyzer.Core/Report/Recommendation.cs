@@ -15,20 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Recommendation.cs - o recomandare: despre ce, cat de grav, ce sa faci, si DE CE.
+// Recommendation.cs - a recommendation: about what, how serious, what to do, and WHY.
 //
-// "Because" nu e optional. O recomandare fara cifra si fara prag nu se poate verifica,
-// si unealta asta exista tocmai ca sa se poata verifica. Fereastra o arata ca text mic
-// sub recomandare; consola ca "fiindca:".
+// "Because" is not optional. A recommendation without a figure and without a threshold cannot
+// be checked, and this tool exists precisely so that it can be checked. The window shows it as
+// small text under the recommendation; the console as "fiindca:".
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Monotone: Ok &lt; Atentie &lt; Problema. Verdictul general e maximul.</summary>
+    /// <summary>
+    /// How serious a recommendation is. Monotone: Ok &lt; Attention &lt; Problem (printed "OK",
+    /// "ATENTIE", "PROBLEMA"). A section's verdict and the overall verdict are the maximum.
+    /// </summary>
     internal enum Verdict { Ok = 0, Attention = 1, Problem = 2 }
 
-    /// <summary>Sectiunile raportului, in ordinea deciziilor - nu a masuratorilor.</summary>
+    /// <summary>
+    /// The report's sections, in the order of the decisions - not of the measurements.
+    /// </summary>
     internal enum Topic
     {
         Format = 1,
@@ -39,17 +44,29 @@ namespace AstroPhotoAnalyzer
         Warnings = 6,
     }
 
+    /// <summary>
+    /// A recommendation of the report or of the Curbe tab: its section, its verdict, what to do
+    /// and why (ADR 0011).
+    /// </summary>
     internal sealed record Recommendation
     {
         internal Topic Topic { get; init; }
         internal Verdict Verdict { get; init; }
 
-        /// <summary>O propozitie: ce sa faci.</summary>
+        /// <summary>One sentence: what to do.</summary>
         internal string Text { get; init; }
 
-        /// <summary>Metrica si pragul: de ce.</summary>
+        /// <summary>The metric and the threshold: why.</summary>
         internal string Because { get; init; }
 
+        /// <summary>A recommendation with its evidence.</summary>
+        /// <param name="topic">The report's section it belongs to.</param>
+        /// <param name="verdict">How serious it is.</param>
+        /// <param name="text">One sentence, Romanian: what to do.</param>
+        /// <param name="because">
+        /// The metric and the threshold, Romanian; never null, empty or blank: the constructor
+        /// throws an <see cref="ArgumentException"/> for one.
+        /// </param>
         internal Recommendation(Topic topic, Verdict verdict, string text, string because)
         {
             if (string.IsNullOrWhiteSpace(because))
@@ -58,8 +75,12 @@ namespace AstroPhotoAnalyzer
         }
     }
 
+    /// <summary>The words the report and the window show for a verdict and for a section.</summary>
     internal static class VerdictText
     {
+        /// <summary>A verdict as the report prints it.</summary>
+        /// <param name="v">The verdict; a value outside the enum throws.</param>
+        /// <returns>"OK", "ATENTIE" or "PROBLEMA".</returns>
         internal static string Label(Verdict v) => v switch
         {
             Verdict.Ok => "OK",
@@ -68,6 +89,9 @@ namespace AstroPhotoAnalyzer
             _ => throw new ArgumentOutOfRangeException(nameof(v)),
         };
 
+        /// <summary>A section's title, as the report numbers it and the window shows it.</summary>
+        /// <param name="t">The section; a value outside the enum throws.</param>
+        /// <returns>The Romanian title, for example "Formatul de trimis".</returns>
         internal static string Title(Topic t) => t switch
         {
             Topic.Format => "Formatul de trimis",
