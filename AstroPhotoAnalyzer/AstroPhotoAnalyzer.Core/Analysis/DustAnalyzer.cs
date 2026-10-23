@@ -650,6 +650,7 @@ namespace AstroPhotoAnalyzer
                     for (int y = Math.Max(0, by - r); y <= Math.Min(rows - 1, by + r); y++)
                         for (int x = Math.Max(0, bx - r); x <= Math.Min(cols - 1, bx + r); x++)
                             buf.Add(L[y * cols + x]);
+                    // The median by selection (Stats.Median), not by a sort of each window.
                     o[by * cols + bx] = (float)Stats.Median(buf.ToArray());
                 }
             return o;

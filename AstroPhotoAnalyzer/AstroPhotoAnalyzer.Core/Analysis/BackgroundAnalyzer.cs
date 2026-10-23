@@ -130,7 +130,7 @@ namespace AstroPhotoAnalyzer
                 for (int p = 0; p < planes; p++) t += s.Planes[p][i];
                 lum[i] = t / planes;
             }
-            double cut = Stats.PercentileSorted(Stats.Sorted(lum), 100 * Thresholds.BackgroundDarkestFraction);
+            double cut = Stats.Percentile(lum, 100 * Thresholds.BackgroundDarkestFraction);
             int rowLimit = (int)(s.H * (1 - Thresholds.BackgroundExcludeBottomFraction));
 
             // "<=", not "<": on a flat sky many pixels sit EXACTLY at the percentile, and a strict

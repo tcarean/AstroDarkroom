@@ -182,10 +182,10 @@ namespace AstroPhotoAnalyzer
                 total += plane.Length;
             }
 
-            float[] refSorted = Stats.Sorted(RasterOps.Subsample(r, Thresholds.PercentileStride).Reference);
-            var pct = new double[TonalResult.PercentileRanks.Length];
-            for (int i = 0; i < pct.Length; i++)
-                pct[i] = Stats.PercentileSorted(refSorted, TonalResult.PercentileRanks[i]) * 255;
+            // The seven percentiles by selection on one copy, not by sorting the 5.8 million
+            // samples of a 23 MP image (Stats.Percentiles; the same values, half a second less).
+            double[] pct = Stats.Percentiles(RasterOps.Subsample(r, Thresholds.PercentileStride).Reference, TonalResult.PercentileRanks);
+            for (int i = 0; i < pct.Length; i++) pct[i] *= 255;
 
             double bg = Stats.Median(RasterOps.Subsample(r, Thresholds.TonalStride).Reference);
 
