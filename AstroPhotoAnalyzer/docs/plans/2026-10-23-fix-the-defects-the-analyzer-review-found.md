@@ -388,3 +388,19 @@ became `praful ajunge pe negrul hartiei de la Dmax X` (X unchanged: 2.28, 2.28, 
 two dark scenes (as-is sky L\* 7.2) add `; asa cum e, nicio hartie nu face imaginea
 print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch`, the two bright
 ones (sky L\* 27) do not. No other line moved.
+
+### Step 2, item 2: the spline's overshoot (the probe `fixprobe maxima`, before the change)
+
+| image | anchors (dust, sky, band, clouds, peaks) | room / reach | Puternica: peaks y, raw max | uncapped Maxima: peaks y, raw max, monotone, input mapped to white | capped: factor, peaks y, gain over Puternica |
+| --- | --- | --- | --- | --- | --- |
+| plate-solved FITS (V-008) | 0.0914 0.1690 0.3057 0.5431 0.7199 | 1.0014 | 0.9189, 1.00000 | 0.9200, 1.00000, yes, 0 % | 1.0014, 0.9200, 0.0011 (no Maxima, under 0.02) |
+| de_printat.png (V-009) | 0.0574 0.0989 0.2160 0.3945 0.5932 | 1.2633 | 0.7489, 1.00000 | 0.9200, 1.00998, no, 24.2 % | 1.2198, 0.8917, 0.1428 |
+| Rosetta (V-011) | 0.0769 0.0929 0.2723 0.4194 0.6025 | 1.1904 | 0.7877, 1.00000 | 0.9200, 1.00657, no, 21.2 % | 1.1605, 0.8992, 0.1115 |
+| Veil (V-014) | 0.0779 0.1023 0.1662 0.3585 0.4980 | 1.5594 | 0.6267, 1.00000 | 0.9200, 1.05064, no, 41.0 % | 1.3833, 0.8277, 0.2010 |
+
+On every image Blanda, Medie and Puternica have a raw spline maximum of exactly 1.00000 (at the
+(1, 1) end) and are monotone: the check alone would have dropped nothing, and the cap on the
+full curve's factor (assumption 1 of the plan) changes nothing; it stays as the one rule. The
+raw minimum is 0.00002 everywhere (the dust's point, above 0). Found on the way: the curve
+(0, 0), (0.5, 0.98), (0.6, 0.99), (1, 1) of the old R-140 test stays within 0..1 (its comment
+said it passed 1) but is not monotone; the test now says so.

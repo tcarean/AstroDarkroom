@@ -28,10 +28,18 @@
 // re-stretch the Tonuri tab recommends, not a curve's job (measured: the same thing, with the
 // same noise). Above the sky, the three segments take the old curve's slopes, scaled down
 // together when the peaks would pass CurvePeakTarget. Blanda, Medie and Puternica are parts of
-// the way from the identity to that curve; Maxima scales the slopes up together until the peaks
-// reach the target, and exists only when Puternica does not get there. No point goes under its
-// input: with the peaks already at or over the target there is no room for anything, and no
-// curve is suggested (Problem), instead of four curves that change nothing.
+// the way from the identity to that curve; Maxima scales the slopes up together towards the
+// target, and exists only when its peaks gain more than CurveMaximaMinGain over Puternica's. No
+// point goes under its input: with the peaks already at or over the target there is no room for
+// anything, and no curve is suggested (Problem), instead of four curves that change nothing.
+//
+// THE CAP (ADR 0039). A factor's curve must be suggestible: its spline monotone and within 0..1
+// (ToneCurve). The factor is therefore capped at the largest value, up to the recipe's own,
+// whose spline is; the full curve's factor needs no cap on the four reference images (its
+// spline peaks at exactly 1, at the (1, 1) end), Maxima's does on three of them: the natural
+// spline from peaks at 0.92 to (1, 1) overshoots 1 (1.010 on de_printat.png, 1.007 on Rosetta,
+// 1.051 on the Veil, measured 2026-10-23), and the clamp used to hold it at white over 21 to
+// 41 % of the input range. Capped, their peaks land at 0.892, 0.899 and 0.828.
 //
 // The EVIDENCE of each curve - the five class levels and the clipped share - is RE-MEASURED on the
 // tonal subsample with the curve applied, not predicted from the points: on a colour image, a
@@ -248,10 +256,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The suggested curves for the given anchors, in the order Blanda, Medie, Puternica and,
-        /// when it exists, Maxima, with the points labelled with <paramref name="labels"/>. One
-        /// whose clamped table would not be monotone is not returned. A spline that rises over 1
-        /// and comes back is held at 1 by the clamp and kept: so is every Maxima of V-009, V-011
-        /// and V-014, which maps the top fifth to two fifths of the input range to white.
+        /// when it exists, Maxima, with the points labelled with <paramref name="labels"/>. The
+        /// slope factor of the full curve, and Maxima's, is capped at the largest value up to the
+        /// recipe's own whose spline is monotone and stays within 0..1 (ADR 0039); a curve that
+        /// still is not (<see cref="ToneCurve.IsSuggestible"/>) is not returned. Maxima exists only
+        /// when its peaks gain more than CurveMaximaMinGain over Puternica's.
         /// </summary>
         /// <param name="a">
         /// The anchors, as <see cref="Problem"/> accepts them: none NaN, strictly increasing, the
@@ -259,7 +268,7 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="labels">The five class names of the map's path, one per anchor.</param>
         /// <returns>
-        /// The name and the curve of each suggestion kept; empty when none is monotone.
+        /// The name and the curve of each suggestion kept; empty when none is suggestible.
         /// </returns>
         internal static IReadOnlyList<(string Name, ToneCurve Curve)> Curves(CurveAnchors a, IReadOnlyList<string> labels)
         {
@@ -298,17 +307,32 @@ namespace AstroPhotoAnalyzer
                 return new ToneCurve(pts);
             }
 
-            double[] full = Full(scale);
+            // The largest factor up to kMax whose full curve is suggestible, by bisection from the
+            // identity (factor 0, always suggestible) to kMax: 40 halvings put it within 1e-12.
+            double Cap(double kMax)
+            {
+                if (Build(Full(kMax), 1).IsSuggestible) return kMax;
+                double lo = 0, hi = kMax;
+                for (int i = 0; i < 40; i++)
+                {
+                    double mid = (lo + hi) / 2;
+                    if (Build(Full(mid), 1).IsSuggestible) lo = mid; else hi = mid;
+                }
+                return lo;
+            }
+
+            double[] full = Full(Cap(scale));
             var o = new List<(string, ToneCurve)>();
             for (int i = 0; i < Names.Length; i++)
             {
                 ToneCurve c = Build(full, Thresholds.CurveStrengths[i]);
-                if (c.IsMonotone) o.Add((Names[i], c));
+                if (c.IsSuggestible) o.Add((Names[i], c));
             }
-            if (Thresholds.CurvePeakTarget - full[4] > Thresholds.CurveMaximaMinGain)
+            double[] maxima = Full(Cap(room / reach));
+            if (maxima[4] - full[4] > Thresholds.CurveMaximaMinGain)
             {
-                ToneCurve c = Build(Full(room / reach), 1);
-                if (c.IsMonotone) o.Add((MaximaName, c));
+                ToneCurve c = Build(maxima, 1);
+                if (c.IsSuggestible) o.Add((MaximaName, c));
             }
             return o;
         }

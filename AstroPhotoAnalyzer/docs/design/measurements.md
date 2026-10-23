@@ -339,8 +339,9 @@ Siril's `curve_transform.c`, clamped to 0..1: the table of points typed into Sir
 tool in `cubic spline` mode gives the same image. `Map` and `Slope` evaluate the spline;
 `Apply` and the FITS writer go through a 65 536-entry table with linear interpolation between
 entries (`MapSample`), the spline at every 16-bit level to float precision (within 1.5e-7 on
-the curves measured on 2026-10-23); `IsMonotone` is judged on that table,
-after clamping, because it is the curve that is applied.
+the curves measured on 2026-10-23); `IsMonotone` and `IsWithinRange` are judged on the
+unclamped spline at the same steps, and `IsSuggestible` is both: a spline the clamp would have
+to hold at 0 or 1 is not offered (ADR 0039).
 
 **The anchors** (`CurveAdvisor.ClassLevels`, `Anchors`). Five L\* levels turned into greys:
 the dust and the sky exactly as `DustAnalyzer.Measure` gives them; the band at the
@@ -362,8 +363,12 @@ segments above the sky get the increments slope x width with `CurveSlopeSkyBand`
 `min(1, (CurvePeakTarget - sky) / sum)` so the peaks do not pass 0.92: the full curve. A point
 never goes under its own input. `Blanda`, `Medie`, `Puternica` are `CurveStrengths` (0.5,
 0.75, 1) of the way from the identity to it; `Maxima` uses the factor without the cap at 1, so
-the peaks land on 0.92, and exists only when `Puternica` leaves them more than
-`CurveMaximaMinGain` under it. A curve whose table is not monotone is dropped.
+the peaks head for 0.92. Both factors are then capped at the largest value, up to their own,
+whose full curve is suggestible (a bisection from the identity): on the four reference images
+the full curve needs no cap and Maxima's spline overshoots 1 on three of them (1.010, 1.007,
+1.051), so its peaks land at 0.892, 0.899 and 0.828 instead of 0.92 (ADR 0039). `Maxima` exists
+only when its capped peaks gain more than `CurveMaximaMinGain` over `Puternica`'s. A curve that
+is still not suggestible is dropped.
 
 **The evidence** (`CurveAdvisor.Measure`). The five class levels again, with the same
 statistics, on the tonal subsample with the curve applied: measured, not predicted, since a

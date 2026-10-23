@@ -1,7 +1,7 @@
 # 0032. Suggested curves are contrast curves anchored on the classes, and the window saves a FITS
 
 Date: 2026-10-05
-Status: accepted 2026-10-05; the histogram anchors of a frame without a WCS superseded by 0033
+Status: accepted 2026-10-05; the histogram anchors of a frame without a WCS superseded by 0033; the uncapped Maxima factor of decision 4 and the judgement of a curve on its clamped table superseded by 0039
 
 ## Context
 

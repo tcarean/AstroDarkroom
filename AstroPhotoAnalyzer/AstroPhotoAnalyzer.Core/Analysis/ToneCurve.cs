@@ -26,10 +26,13 @@
 // Applying it goes through a table of 65 536 steps with linear interpolation between them: on a
 // 16-bit source it is the spline at every level to float precision (within 1.5e-7 on the curves
 // measured), on float the difference is under 1e-6, except within a step of the corner where a
-// curve clamped at 1 meets it: there the chord cuts the corner (1.6e-6 on V-014's Maxima, up to
-// 7.8e-6 on synthetic anchors).
-// The monotonicity is judged on the same table, after clamping: it is the curve that is
-// actually applied.
+// curve clamped at 1 meets it: there the chord cuts the corner (up to 7.8e-6 on synthetic
+// anchors).
+// Whether the curve may be suggested is judged on the UNCLAMPED spline at the table's steps:
+// it must decrease nowhere and stay within 0..1 (R-140, ADR 0039). Until the review of
+// 2026-10-23 the clamped table was judged, and a spline that rose over 1 and came back was kept,
+// held at 1 by the clamp: the Maxima of V-009, V-011 and V-014 mapped 21 to 41 % of the input
+// range to white that way.
 
 using System;
 using System.Collections.Generic;
@@ -61,12 +64,25 @@ namespace AstroPhotoAnalyzer
 
         internal IReadOnlyList<CurvePoint> Points { get; }
 
-        /// <summary>The clamped table decreases nowhere.</summary>
+        /// <summary>The unclamped spline decreases nowhere between the table's steps.</summary>
         internal bool IsMonotone { get; }
 
         /// <summary>
+        /// The unclamped spline stays within 0..1 (to 1e-9) at every step of the table: the clamp
+        /// changes nothing of the curve applied.
+        /// </summary>
+        internal bool IsWithinRange { get; }
+
+        /// <summary>
+        /// Monotone and within range: what a curve must be to be suggested (R-140, ADR 0039). A
+        /// curve that is not may still be built and applied; it is never offered.
+        /// </summary>
+        internal bool IsSuggestible => IsMonotone && IsWithinRange;
+
+        /// <summary>
         /// Solves the natural spline through the points and fills the table the curve is applied
-        /// through, judging its monotonicity on it.
+        /// through, judging its monotonicity and its range on the unclamped spline at the same
+        /// steps.
         /// </summary>
         /// <param name="points">
         /// The control points: they must start at (0, 0), end at (1, 1), have x strictly
@@ -90,13 +106,18 @@ namespace AstroPhotoAnalyzer
             (_b, _c, _d) = NaturalSpline(_x, _y);
 
             _table = new float[TableSize];
-            bool monotone = true;
+            bool monotone = true, within = true;
+            double previous = 0;
             for (int i = 0; i < TableSize; i++)
             {
-                _table[i] = (float)Map(i / (double)(TableSize - 1));
-                if (i > 0 && _table[i] < _table[i - 1]) monotone = false;
+                double raw = Unclamped(i / (double)(TableSize - 1));
+                _table[i] = (float)Math.Clamp(raw, 0, 1);
+                if (i > 0 && raw < previous) monotone = false;
+                if (raw < -1e-9 || raw > 1 + 1e-9) within = false;
+                previous = raw;
             }
             IsMonotone = monotone;
+            IsWithinRange = within;
         }
 
         /// <summary>
@@ -155,13 +176,21 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="v">The input; any value but NaN.</param>
         /// <returns>The output, 0..1; NaN for a NaN input.</returns>
-        internal double Map(double v)
+        internal double Map(double v) => Math.Clamp(Unclamped(v), 0, 1);
+
+        /// <summary>
+        /// The spline itself at <paramref name="v"/>, before the clamp: what IsMonotone and
+        /// IsWithinRange judge. Outside 0..1 it takes the end's value.
+        /// </summary>
+        /// <param name="v">The input; any value but NaN.</param>
+        /// <returns>The spline's value, which may leave 0..1 between the points; NaN for NaN.</returns>
+        double Unclamped(double v)
         {
             if (v <= 0) return _y[0];
             if (v >= 1) return _y[_y.Length - 1];
             int i = Segment(v);
             double t = v - _x[i];
-            return Math.Clamp(_y[i] + t * (_b[i] + t * (_c[i] + t * _d[i])), 0, 1);
+            return _y[i] + t * (_b[i] + t * (_c[i] + t * _d[i]));
         }
 
         /// <summary>
