@@ -51,8 +51,10 @@ to report and show such a TIFF as a FITS, over reporting it as float only, or le
   conversion to `Rgb128Float` gives the floats stored in the file bit for bit, all 72 480 768
   samples of each of the two exports, read straight from their strips. The load takes 1.4 to
   1.5 s, against 0.8 to 1.4 s through WIC's conversion, the start of the process included.
-- A float TIFF in 0 to 65535 is decoded twice, as a float FITS is. Float samples in another
-  container whose format WPF does not name, a 96 bpp RGB JPEG XR say, still go through WIC's
+- A float TIFF in 0 to 65535 is decoded twice, as a float FITS is. Only 32-bit samples take this
+  path: a 16-bit half or a 64-bit double TIFF would need a conversion to a 128-bit float format
+  that was never measured, so they keep WIC's conversion (the code review of 2026-10-23). Float
+  samples in another container whose format WPF does not name, a 96 bpp RGB JPEG XR say, still go through WIC's
   conversion.
 - `IsAboveThreshold` moved from `FitsRowDecoder` to `FitsScale`, so the two readers share the
   rule that decides the rescale.

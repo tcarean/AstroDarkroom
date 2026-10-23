@@ -301,6 +301,32 @@ public class FitsHeaderTests
         Assert.Equal(2 * 2880, layout.DataOffset);
     }
 
+    [Theory]
+    [InlineData("PCOUNT", "-5")]
+    [InlineData("GCOUNT", "x")]
+    [InlineData("BITPIX", "abc")]
+    public void R019_AnEmptyPrimaryWithACountThatIsNotValid_IsAnInvalidHeader(string key, string value)
+    {
+        // A unit with no axes has no data to count, but its header is still not trusted.
+        string bitPix = key == "BITPIX" ? value : "16";
+        string[] extra = key == "BITPIX" ? [] : [FitsFixture.Card(key, value)];
+        byte[] file =
+        [
+            .. FitsFixture.Header(
+            [
+                FitsFixture.Card("SIMPLE", "T"), FitsFixture.Card("BITPIX", bitPix), FitsFixture.Card("NAXIS", 0),
+                .. extra,
+            ]),
+            .. FitsFixture.Header([FitsFixture.Text("XTENSION", "IMAGE"), .. FitsFixture.ImageCards(16, 4, 3, 1)]),
+            .. FitsFixture.Data(16, new double[12]),
+        ];
+
+        Exception? ex = Failure(file);
+
+        Assert.IsType<NotSupportedException>(ex);
+        Assert.Equal("FITS: the header is not valid.", ex.Message);
+    }
+
     [Fact]
     public void R019_ANegativeHeapSize_IsAnInvalidHeader_NotAnEndlessLoop()
     {

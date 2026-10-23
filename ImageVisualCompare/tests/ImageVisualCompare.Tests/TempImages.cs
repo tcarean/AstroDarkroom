@@ -140,6 +140,13 @@ public sealed class TempImages : IDisposable
     /// </summary>
     public string WriteFloatTiff(string name, int width, int height, int channels, float[] samples)
     {
+        // Two channels (gray and alpha) would need their two SHORTs packed into the value field,
+        // which the code below does not do; nothing writes such a file yet.
+        if (channels is not (1 or 3 or 4))
+        {
+            throw new ArgumentOutOfRangeException(nameof(channels), channels, "1, 3 or 4 channels");
+        }
+
         // A value of more than two SHORTs does not fit its entry; it goes after the directory.
         int entries = channels == 4 ? 12 : 11;
         bool arrays = channels > 2;

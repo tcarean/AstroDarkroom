@@ -277,3 +277,13 @@ then the worktree removed and the branch deleted.
     `../validation.md`, History, 2026-10-22.
   - **The doc counter,** `code` group: 46 types and 157 methods, none undocumented or missing a
     tag but `OpenPairAsync`'s plain `Task`.
+- **The code review of 2026-10-23,** `/code-review` of the branch at high effort, 7 findings, all
+  fixed on the branch at the owner's word: `DataBlockBytes` reads `BITPIX`, `GCOUNT` and `PCOUNT`
+  before returning 0 for a unit with no axes, so a negative or non-integer one is still an
+  invalid header (a theory of three cases, seen failing first); the TIFF tag path takes only
+  32-bit samples, so a half or a double TIFF keeps WIC's path (R-090 says so); `Bitmaps.Create`
+  and `Bitmaps.TooLarge` in `Imaging/` serve both loaders; `Decode` writes a band in one
+  `WritePixels`; `Win32Resources` serves `AppIconTests` and `AppManifestTests`; the WebP test
+  asserts the codec's reason, or WIC's unknown-format reason without the codec; `WriteFloatTiff`
+  refuses two channels. After them: the gate `== OK in 29s`, 283 tests; `stacked_GraXpert.tiff`
+  still equals the stored levels on 100 % of the samples, median 67.

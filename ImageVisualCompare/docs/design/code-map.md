@@ -58,6 +58,8 @@
   - `Imaging/FitsImageLoader.cs` — decodes FITS with the reader in Core, row by row into a
     `WriteableBitmap`, and a second time when the floats turn out to count to 65 535. See
     ADR 0029.
+  - `Imaging/Bitmaps.cs` — the Bgra32 bitmap the two loaders above write rows into, and the
+    too-large refusal both say, once. See `imaging.md`.
   - `Imaging/RoutingImageLoader.cs` — the loader the application constructs: FITS, by the
     file's first bytes, to `FitsImageLoader`, everything else to `WicImageLoader`.
   - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before

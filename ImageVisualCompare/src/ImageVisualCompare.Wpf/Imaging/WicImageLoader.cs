@@ -162,7 +162,7 @@ public sealed class WicImageLoader : IImageLoader
             : PixelFormats.Rgb128Float;
         var floats = new FormatConvertedBitmap(frame, target, null, 0);
 
-        WriteableBitmap bitmap = CreateBitmap(info);
+        WriteableBitmap bitmap = Bitmaps.Create(info.PixelWidth, info.PixelHeight, string.Empty);
         long above = Decode(floats, gray, bitmap, FitsScale.FullScale(-32), cancellationToken);
 
         // As for a float FITS: whether the samples count in 0 to 1 or in 0 to 65535 is known only
@@ -177,25 +177,6 @@ public sealed class WicImageLoader : IImageLoader
 
         bitmap.Freeze();
         return new LoadedImage(info with { ValueRange = valueRange }, bitmap);
-    }
-
-    /// <summary>
-    /// Creates the bitmap rows of float samples are written into; an image too large for one is
-    /// said as the too-large message, as <see cref="Realise"/> says it.
-    /// </summary>
-    /// <param name="info">The image whose size the bitmap takes.</param>
-    /// <returns>An empty Bgra32 bitmap of the image's size, at 96 dpi.</returns>
-    /// <exception cref="NotSupportedException">The image is too large for a bitmap.</exception>
-    private static WriteableBitmap CreateBitmap(ImageInfo info)
-    {
-        try
-        {
-            return new WriteableBitmap(info.PixelWidth, info.PixelHeight, 96, 96, PixelFormats.Bgra32, null);
-        }
-        catch (Exception ex) when (ex is OverflowException or ArgumentException)
-        {
-            throw TooLarge(info, ex);
-        }
     }
 
     /// <summary>
@@ -227,7 +208,8 @@ public sealed class WicImageLoader : IImageLoader
         // RGB image as floats would be 386 MB.
         int bandRows = Math.Max(1, BandFloats / floatsPerRow);
         float[] band = new float[bandRows * floatsPerRow];
-        byte[] row = new byte[width * 4];
+        int stride = width * 4;
+        byte[] levels = new byte[bandRows * stride];
         long above = 0;
 
         for (int top = 0; top < height; top += bandRows)
@@ -237,9 +219,13 @@ public sealed class WicImageLoader : IImageLoader
             floats.CopyPixels(new Int32Rect(0, top, width, rows), band, floatsPerRow * sizeof(float), 0);
             for (int y = 0; y < rows; y++)
             {
-                above += FloatSamples.ToBgra32(band.AsSpan(y * floatsPerRow, floatsPerRow), gray, row, fullScale);
-                bitmap.WritePixels(new Int32Rect(0, top + y, width, 1), row, width * 4, 0);
+                above += FloatSamples.ToBgra32(
+                    band.AsSpan(y * floatsPerRow, floatsPerRow), gray, levels.AsSpan(y * stride, stride), fullScale);
             }
+
+            // The whole band in one write: each WritePixels locks the bitmap, and a row at a time
+            // would be thousands of locks per pass.
+            bitmap.WritePixels(new Int32Rect(0, top, width, rows), levels, stride, 0);
         }
 
         return above;
@@ -248,12 +234,15 @@ public sealed class WicImageLoader : IImageLoader
     /// <summary>The floats a band of rows holds at most, 8 MB of them.</summary>
     private const int BandFloats = 2 * 1024 * 1024;
 
-    /// <summary>Makes the refusal for an image too large for WIC or WPF to hold.</summary>
+    /// <summary>
+    /// Makes the refusal for an image too large for WIC to hold, through
+    /// <see cref="Bitmaps.TooLarge"/>, with no prefix.
+    /// </summary>
     /// <param name="info">What the file is; its size is named in the message.</param>
-    /// <param name="ex">The exception WIC or WPF threw.</param>
+    /// <param name="ex">The exception WIC threw.</param>
     /// <returns>The exception to throw; its message is what the user reads.</returns>
     private static NotSupportedException TooLarge(ImageInfo info, Exception ex) =>
-        new($"An image of {info.Dimensions} is too large to show.", ex);
+        Bitmaps.TooLarge(info.PixelWidth, info.PixelHeight, string.Empty, ex);
 
     /// <summary>
     /// Makes the refusal for a file a codec rejected with an error of its own, in a type the pair
@@ -317,8 +306,9 @@ public sealed class WicImageLoader : IImageLoader
     /// The first frame, probed or decoded, in the file's own pixel format.
     /// </param>
     /// <returns>
-    /// The bits of one sample and the channels, gray, RGB or RGBA; null for integer samples,
-    /// and for float samples in any other layout, which WIC then converts like any format.
+    /// The bits of one sample, 32, and the channels, gray, RGB or RGBA; null for integer samples,
+    /// and for float samples of any other depth or layout (a 16-bit half, a 64-bit double, two
+    /// channels), which WIC then converts like any format, as it did before ADR 0035.
     /// </returns>
     private static (int BitsPerChannel, ColorChannels Channels)? FloatSamplesOf(BitmapFrame frame)
     {
@@ -327,22 +317,24 @@ public sealed class WicImageLoader : IImageLoader
         if (format == PixelFormats.Rgb128Float) return (32, ColorChannels.Rgb);
         if (format == PixelFormats.Rgba128Float || format == PixelFormats.Prgba128Float) return (32, ColorChannels.Rgba);
 
-        // Only a TIFF has these tags to ask; another format's metadata has no TIFF directory.
+        // Only a TIFF has these tags to ask; another format's metadata has no TIFF directory. Only
+        // 32-bit samples go the measured way: the conversion of a half or a double to a 128-bit
+        // float format has not been measured, so those keep WIC's own path.
         if (frame.Decoder is not TiffBitmapDecoder
             || frame.Metadata is not BitmapMetadata tags
-            || FirstNumber(tags.GetQuery("/ifd/{ushort=339}")) != 3)
+            || FirstNumber(tags.GetQuery("/ifd/{ushort=339}")) != 3
+            || FirstNumber(tags.GetQuery("/ifd/{ushort=258}")) != 32)
         {
             return null;
         }
 
-        ColorChannels? channels = FirstNumber(tags.GetQuery("/ifd/{ushort=277}")) switch
+        return FirstNumber(tags.GetQuery("/ifd/{ushort=277}")) switch
         {
-            1 => ColorChannels.Gray,
-            3 => ColorChannels.Rgb,
-            4 => ColorChannels.Rgba,
+            1 => (32, ColorChannels.Gray),
+            3 => (32, ColorChannels.Rgb),
+            4 => (32, ColorChannels.Rgba),
             _ => null,
         };
-        return channels is { } known ? (FirstNumber(tags.GetQuery("/ifd/{ushort=258}")) ?? 32, known) : null;
     }
 
     /// <summary>Reads the first number of a TIFF tag, as WIC's metadata query returns it.</summary>

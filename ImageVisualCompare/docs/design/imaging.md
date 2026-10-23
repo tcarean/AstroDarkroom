@@ -8,6 +8,7 @@
 > `src/ImageVisualCompare.Wpf/Imaging/FitsImageLoader.cs`,
 > `src/ImageVisualCompare.Wpf/Imaging/RoutingImageLoader.cs`,
 > `src/ImageVisualCompare.Wpf/Imaging/MemoryHousekeeping.cs`,
+> `src/ImageVisualCompare.Wpf/Imaging/Bitmaps.cs`,
 > `src/ImageVisualCompare.Core/FitsHeader.cs`,
 > `src/ImageVisualCompare.Core/FitsScale.cs`,
 > `src/ImageVisualCompare.Core/FitsRowDecoder.cs`,
@@ -35,8 +36,9 @@ catches a `COMException` around everything WIC does in `Probe` and in `Load`, wh
 throws for a damaged file (0xC00D36BE from Windows' WebP, HEIC and AVIF codecs), and rethrows a
 `FileFormatException` with the codec's message. `Realise`, the `CachedBitmap` that sets the
 converted pixels aside, turns WIC's `OverflowException` for an image too large for it into the
-too-large message the FITS reader gives too; `FitsImageLoader.CreateBitmap` does the same for a
-FITS.
+too-large message the FITS reader gives too. The bitmap the two loaders write rows into, and the
+too-large refusal, are `Bitmaps.Create` and `Bitmaps.TooLarge`, shared: the FITS reader passes
+the prefix `FITS: `, the WIC loader none.
 
 ## FITS, the format WIC does not read
 
@@ -106,8 +108,10 @@ exports, where a FITS of the same samples is shown as stored. So `WicImageLoader
 question of the format, whether its samples are floats (`FloatSamplesOf`): a format WPF names,
 `Gray32Float`, `Rgb128Float`, `Rgba128Float` or `Prgba128Float`, or a TIFF whose `SampleFormat`
 tag is 3, read from the frame's `BitmapMetadata` at `/ifd/{ushort=339}`, with
-`SamplesPerPixel` (277) for the channels and `BitsPerSample` (258) for the depth. The tags are
-asked only of a `TiffBitmapDecoder`'s frame, and the header-only frame of `Probe` has them too.
+`SamplesPerPixel` (277) for the channels and `BitsPerSample` (258), which must be 32: a 16-bit
+half or a 64-bit double would go through a conversion to a 128-bit float format that was never
+measured, so those keep WIC's own path. The tags are asked only of a `TiffBitmapDecoder`'s
+frame, and the header-only frame of `Probe` has them too.
 The 96 bpp RGB that Siril and GraXpert write is the case that needs them: WPF has no name for
 it, and shows its format as "Default" with 96 bits.
 

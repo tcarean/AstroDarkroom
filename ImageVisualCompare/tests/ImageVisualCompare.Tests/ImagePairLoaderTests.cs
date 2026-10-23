@@ -198,6 +198,14 @@ public class ImagePairLoaderTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.StartsWith("Could not read broken.webp." + Environment.NewLine, result.Error);
+
+        // With Windows' WebP codec installed the message is the codec's own, which only the
+        // COMException path carries (ADR 0031); without the codec WIC refuses the file as an
+        // unknown format, and the test says so rather than passing for the wrong reason.
+        string reason = result.Error!.Split(Environment.NewLine)[1];
+        bool codecInstalled = reason.Contains("does not conform", StringComparison.Ordinal);
+        bool noCodec = reason.Contains("No imaging component suitable", StringComparison.Ordinal);
+        Assert.True(codecInstalled || noCodec, $"unexpected reason: {reason}");
     }
 
     [Fact]

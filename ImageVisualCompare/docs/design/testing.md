@@ -10,6 +10,7 @@
 > `tests/ImageVisualCompare.Tests/WpfThread.cs`,
 > `tests/ImageVisualCompare.Tests/MainWindowTests.cs`,
 > `tests/ImageVisualCompare.Tests/MinimapViewTests.cs`,
+> `tests/ImageVisualCompare.Tests/Win32Resources.cs`,
 > and the WPF files it names, `src/ImageVisualCompare.Wpf/MainWindow.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/MessageDialog.xaml.cs`,
 > `src/ImageVisualCompare.Wpf/Interop/DarkTitleBar.cs`,
@@ -50,7 +51,9 @@ asking and a loader whose decode never ends, and clicks Open twice while the bod
 the dispatcher. `MinimapViewTests` lays the minimap out with `Measure`, `Arrange` and
 `UpdateLayout` at the size it gives itself, then checks a click on the thumbnail's corner and
 the rectangle at the far edge against the thumbnail inside the border. `MessageDialog`,
-`DarkTitleBar`, `FileDialogService` and `MemoryHousekeeping` have no test.
+`DarkTitleBar`, `FileDialogService` and `MemoryHousekeeping` have no test. `Win32Resources`
+reads one resource of a type out of a built file, loaded as data, for `AppIconTests` (the icon
+group) and `AppManifestTests` (the manifest).
 
 Be aware of what that has meant in practice: both real defects found in this project before
 2026-10-21 lived in the untested layer, and neither would have been caught by any reasonable

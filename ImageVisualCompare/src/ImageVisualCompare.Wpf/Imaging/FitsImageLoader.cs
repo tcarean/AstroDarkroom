@@ -17,7 +17,6 @@
 
 using System.IO;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using ImageVisualCompare.Core;
 
@@ -92,24 +91,13 @@ public sealed class FitsImageLoader : IImageLoader
     }
 
     /// <summary>
-    /// Creates the bitmap the rows are written into. A file can be whole and still hold more
-    /// pixels than WPF makes a bitmap of; that is said as a message, as every other FITS that
-    /// cannot be shown is, and not left to be an <see cref="OverflowException"/> nothing expects.
+    /// Creates the bitmap the rows are written into, through <see cref="Bitmaps.Create"/>: an
+    /// image too large for one is the too-large message with the FITS prefix.
     /// </summary>
     /// <param name="layout">The image whose size the bitmap takes.</param>
     /// <returns>An empty Bgra32 bitmap of the image's size, at 96 dpi.</returns>
-    private static WriteableBitmap CreateBitmap(FitsImageLayout layout)
-    {
-        try
-        {
-            return new WriteableBitmap(layout.Width, layout.Height, 96, 96, PixelFormats.Bgra32, null);
-        }
-        catch (Exception ex) when (ex is OverflowException or ArgumentException)
-        {
-            throw new NotSupportedException(
-                $"FITS: an image of {layout.Width} × {layout.Height} is too large to show.", ex);
-        }
-    }
+    private static WriteableBitmap CreateBitmap(FitsImageLayout layout) =>
+        Bitmaps.Create(layout.Width, layout.Height, "FITS: ");
 
     /// <summary>
     /// Writes every row into the bitmap, in the order of the file, each where it belongs in the

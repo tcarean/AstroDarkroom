@@ -187,22 +187,30 @@ public static class FitsHeader
     /// standard gives no data at all, whatever its PCOUNT.
     /// </returns>
     /// <exception cref="NotSupportedException">
-    /// The header is not valid: a count that is not a whole number, or a product that overflows.
+    /// The header is not valid: a count that is not a whole number, a negative one, or a product
+    /// that overflows; a unit with no axes is checked the same way.
     /// </exception>
     private static long DataBlockBytes(Dictionary<string, string> cards, int axes)
     {
-        // NAXIS = 0 means no data follow the header. The empty product would be one sample, and
-        // a PCOUNT left in such a header would be counted too; either way the next header would
-        // be looked for a block too far, and the image behind it never found.
-        if (axes == 0)
-        {
-            return 0;
-        }
-
         try
         {
             checked
             {
+                // Read, and so checked, for every unit: a header that cannot be trusted is refused
+                // whether or not its data would be counted.
+                long bytesPerSample = Math.Abs(Count(cards, "BITPIX", 0, signed: true)) / 8;
+                long groupCount = Count(cards, "GCOUNT", 1);
+                long parameterCount = Count(cards, "PCOUNT", 0);
+
+                // NAXIS = 0 means no data follow the header. The empty product would be one
+                // sample, and a PCOUNT left in such a header would be counted too; either way the
+                // next header would be looked for a block too far, and the image behind it never
+                // found.
+                if (axes == 0)
+                {
+                    return 0;
+                }
+
                 long samples = 1;
                 bool groups = IsTrue(cards, "GROUPS") && Count(cards, "NAXIS1", 1) == 0;
                 for (int axis = groups ? 2 : 1; axis <= axes; axis++)
@@ -210,8 +218,7 @@ public static class FitsHeader
                     samples *= Count(cards, "NAXIS" + axis.ToString(CultureInfo.InvariantCulture), 1);
                 }
 
-                long bytesPerSample = Math.Abs(Count(cards, "BITPIX", 0, signed: true)) / 8;
-                long dataBytes = bytesPerSample * Count(cards, "GCOUNT", 1) * (Count(cards, "PCOUNT", 0) + samples);
+                long dataBytes = bytesPerSample * groupCount * (parameterCount + samples);
                 return (dataBytes + BlockSize - 1) / BlockSize * BlockSize;
             }
         }

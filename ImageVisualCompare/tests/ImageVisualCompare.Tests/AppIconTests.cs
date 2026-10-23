@@ -17,7 +17,6 @@
 
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using ImageVisualCompare.Wpf;
 
 namespace ImageVisualCompare.Tests;
@@ -65,52 +64,8 @@ public class AppIconTests
     [Fact]
     public void R064_ApplicationCarriesTheIcon()
     {
-        string assembly = typeof(VersionInfo).Assembly.Location;
-        IntPtr module = LoadLibraryEx(assembly, IntPtr.Zero, LoadAsDatafile | LoadAsImageResource);
-        Assert.NotEqual(IntPtr.Zero, module);
-        try
-        {
-            var names = new List<IntPtr>();
-            EnumResourceNames(module, GroupIcon, (_, _, name, _) => { names.Add(name); return true; }, IntPtr.Zero);
-            Assert.True(names.Count == 1, $"{names.Count} icon groups in {assembly}");
+        byte[] group = Win32Resources.ReadSingle(typeof(VersionInfo).Assembly.Location, Win32Resources.GroupIcon);
 
-            IntPtr found = FindResource(module, names[0], GroupIcon);
-            int length = (int)SizeofResource(module, found);
-            byte[] group = new byte[length];
-            Marshal.Copy(LockResource(LoadResource(module, found)), group, 0, length);
-
-            Assert.Equal(Sizes, Entries(group, 14).Select(e => e.Edge));
-        }
-        finally
-        {
-            FreeLibrary(module);
-        }
+        Assert.Equal(Sizes, Entries(group, 14).Select(e => e.Edge));
     }
-
-    private const uint LoadAsDatafile = 0x2;
-    private const uint LoadAsImageResource = 0x20;
-    private static readonly IntPtr GroupIcon = 14;
-
-    private delegate bool EnumResNameProc(IntPtr module, IntPtr type, IntPtr name, IntPtr param);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    private static extern IntPtr LoadLibraryEx(string path, IntPtr file, uint flags);
-
-    [DllImport("kernel32.dll")]
-    private static extern bool FreeLibrary(IntPtr module);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern bool EnumResourceNames(IntPtr module, IntPtr type, EnumResNameProc callback, IntPtr param);
-
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
-    private static extern IntPtr FindResource(IntPtr module, IntPtr name, IntPtr type);
-
-    [DllImport("kernel32.dll")]
-    private static extern uint SizeofResource(IntPtr module, IntPtr resource);
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr LoadResource(IntPtr module, IntPtr resource);
-
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr LockResource(IntPtr data);
 }
