@@ -86,9 +86,10 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   built once per image on its as-is patch L\*s: the patch grid (`Cols`, `Rows`, `Side`,
   `Stride`, `PatchCentre`); with a `Wcs`, the galactic latitude of every patch centre
   (`Astrometry.GalacticLatitude` on `Wcs.PixelToSky`), the catalogued clouds whose discs hold
-  patches (`FindClouds`: `Wcs.SkyToPixel` for the centre, the radius in pixels from
-  `ScaleDegPerPx`, the patches within the angular radius by dot product, tested inside the
-  disc's bounding box), and the five classes (`Classify`): the band is |b| <
+  patches (`FindClouds`: every patch centre tested against every cloud by the dot product of
+  unit vectors against the cosine of the radius, after one pre-filter on the frame's centre and
+  angular radius; `Wcs.SkyToPixel` and `ScaleDegPerPx` give the centre and the radius in pixels
+  for the map alone; about 50 ms on the plate-solved FITS, ADR 0044), and the five classes (`Classify`): the band is |b| <
   `BandGalacticLatitudeDeg`; `SkyModel(L, band, cols, rows, percentile)` is the given
   percentile (the median here) of the outside-band patches per cell of `SkyModelCellPatches`,
   empty cells from the nearest (all patches together when no cell has enough), bilinear to

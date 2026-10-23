@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Globalization;
+
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
@@ -308,6 +310,84 @@ public class DustAnalyzerTests
         Assert.Equal(cloud.Nebula.RadiusDeg / WcsFixtures.NarrowScale, cloud.RadiusPx, 0);
         // Patches whose centre is within 272 px of the middle: about pi * 272^2 / 32^2 = 227 of 256.
         Assert.InRange(cloud.Patches.Length, 200, 240);
+    }
+
+    /// <summary>
+    /// Every patch whose centre lies in a cloud's disc is the cloud's, wherever the cloud is on
+    /// the frame (ADR 0044). The plate-solved FITS's geometry (5837 x 3867 at 41.7"/px, 67 by 45
+    /// degrees) pointed 30 degrees east of LDN 621, the catalogue's largest disc (3.78 degrees):
+    /// there the TAN projection stretches the disc by a third along the radius, and the pixel box
+    /// of before, the radius at the central scale around the projected centre, lost its outer
+    /// patches. The map agrees with a brute-force angular test over the whole catalogue, and some
+    /// of its patches lie outside the old box.
+    /// </summary>
+    [Fact]
+    public void R044_ACloudFarFromTheTangentPointKeepsEveryPatchWhoseCentreLiesInItsDisc()
+    {
+        DarkNebula ldn621 = DarkNebulaCatalogue.All.Single(n => n.Ldn == 621);
+        const int w = 5837, h = 3867;
+        double scale = 41.7 / 3600;
+        var hdr = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["CTYPE1"] = "RA---TAN",
+            ["CTYPE2"] = "DEC--TAN",
+            ["CRPIX1"] = "2919.5",
+            ["CRPIX2"] = "1934.5",
+            ["CRVAL1"] = (ldn621.Ra + 30 / Math.Cos(ldn621.Dec * Astrometry.Deg)).ToString("R", CultureInfo.InvariantCulture),
+            ["CRVAL2"] = ldn621.Dec.ToString("R", CultureInfo.InvariantCulture),
+            ["CD1_1"] = (-scale).ToString("R", CultureInfo.InvariantCulture),
+            ["CD1_2"] = "0",
+            ["CD2_1"] = "0",
+            ["CD2_2"] = scale.ToString("R", CultureInfo.InvariantCulture),
+        };
+        Wcs wcs = Wcs.TryFrom(hdr, w, h, rowsFlipped: false)!;
+        int cols = (w + Thresholds.TonalStride - 1) / Thresholds.TonalStride / DustAnalyzer.PatchSamples;
+        int rows = (h + Thresholds.TonalStride - 1) / Thresholds.TonalStride / DustAnalyzer.PatchSamples;
+        var L = new float[cols * rows];
+        Array.Fill(L, 20f);
+        DustMap map = DustAnalyzer.Build(w, h, wcs, L);
+
+        // Brute force: every patch centre against every cloud's angular radius.
+        var brute = new Dictionary<int, int>();
+        var cosR = DarkNebulaCatalogue.All.Select(n => Math.Cos(n.RadiusDeg * Astrometry.Deg)).ToArray();
+        var cv = DarkNebulaCatalogue.All.Select(n => Astrometry.UnitVector(n.Ra, n.Dec)).ToArray();
+        for (int by = 0; by < map.Rows; by++)
+            for (int bx = 0; bx < map.Cols; bx++)
+            {
+                var (cx, cy) = map.PatchCentre(bx, by);
+                var (ra, dec) = wcs.PixelToSky(cx, cy);
+                var v = Astrometry.UnitVector(ra, dec);
+                for (int k = 0; k < cv.Length; k++)
+                    if (v.X * cv[k].X + v.Y * cv[k].Y + v.Z * cv[k].Z >= cosR[k])
+                        brute[DarkNebulaCatalogue.All[k].Ldn] = brute.GetValueOrDefault(DarkNebulaCatalogue.All[k].Ldn) + 1;
+            }
+
+        Assert.True(brute.Count > 100, "clouds in the frame: " + brute.Count);
+        Assert.Equal(brute.Count, map.Clouds.Count);
+        foreach (DustCloud cloud in map.Clouds)
+        {
+            Assert.Equal(brute[cloud.Nebula.Ldn], cloud.Patches.Length);
+            Assert.False(double.IsNaN(cloud.CentreX));
+        }
+
+        // The box of before, in patch indices: the radius at the central scale around the
+        // projected centre, widened to whole patches. LDN 621, 30 degrees off the tangent point,
+        // has patches outside it, which were lost.
+        DustCloud far = map.Clouds.Single(c => c.Nebula.Ldn == 621);
+        double patchPx = map.Side * map.Stride;
+        int outsideBox = 0;
+        foreach (DustCloud cloud in map.Clouds)
+        {
+            int bx0 = (int)Math.Floor((cloud.CentreX - cloud.RadiusPx) / patchPx), bx1 = (int)Math.Ceiling((cloud.CentreX + cloud.RadiusPx) / patchPx);
+            int by0 = (int)Math.Floor((cloud.CentreY - cloud.RadiusPx) / patchPx), by1 = (int)Math.Ceiling((cloud.CentreY + cloud.RadiusPx) / patchPx);
+            foreach (int i in cloud.Patches)
+            {
+                int bx = i % map.Cols, by = i / map.Cols;
+                if (bx < bx0 || bx > bx1 || by < by0 || by > by1) outsideBox++;
+            }
+        }
+        Assert.True(far.Patches.Length > 100, "LDN 621 patches: " + far.Patches.Length);
+        Assert.True(outsideBox > 0, "patches outside the old box: " + outsideBox);
     }
 
     [Fact]

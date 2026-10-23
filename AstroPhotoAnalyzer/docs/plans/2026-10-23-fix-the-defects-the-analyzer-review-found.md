@@ -423,3 +423,15 @@ noise) `sub 64` 59.3 % to 39.7 %, and `mono-png8.txt` (8-bit, the same level) 76
 39.6 %: both scenes sit on the threshold itself, so "under 64 as a float" (59 %) or "at or under
 the level 64" (77 %, the 8-bit tie the review found) become "rounds to a level under 64" (40 %),
 the share an 8-bit export would show. `sub nivelul 32` stays 0.0 % on both.
+
+### Step 3, item 10: the clouds without a box (the probe `fixprobe clouds`)
+
+On the plate-solved FITS: `DustAnalyzer.Build` with the WCS 156 ms before the change, 174 ms
+after (8 and 10 ms without a WCS); a brute force over 1787 clouds x 21 840 patches 49 ms before,
+66 ms after (the same code, the run's noise); 397 clouds, 114 rows and 5110 patches by both the
+old box and the brute force at this pointing, so V-004 should not move. The regression test
+points the FITS's geometry 30 degrees east of LDN 621 (radius 3.78 degrees): the new search
+agrees with brute force on every cloud, and LDN 621 has patches outside the old box (the test
+prints their count on failure; the first draft of the test, on a 512 px frame of 0.15 degrees
+per pixel, found 46 clouds and none outside the box: its 4.8-degree patches were too coarse to
+show the loss).

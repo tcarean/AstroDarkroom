@@ -34,6 +34,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   level, the one an export writes, is under 32 or 64, on every format: on an 8-bit TIFF, PNG or
   JPEG the level 32 itself no longer counts (it added 2 points on the reference image's 8-bit
   version), and on 16-bit and float sources the shares move by tenths (R-040; ADR 0043; item 3).
+- The catalogued clouds are found by angular distance alone: every patch centre is tested
+  against every cloud, after a pre-filter on the frame's centre, instead of inside a pixel box
+  of the cloud's radius at the central plate scale, which far from the tangent point lost the
+  outer patches of a disc, or the whole cloud (R-044; ADR 0044; item 10).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;

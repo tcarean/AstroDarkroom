@@ -108,8 +108,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The indices of the patches (in the map's row order) whose centre lies in the disc,
-        /// among those inside the disc's bounding box in pixels: far from the tangent point the
-        /// projection stretches a large disc past that box, and its outer patches are not here.
+        /// every one of them: each patch centre is tested by its angular distance to the cloud's
+        /// centre (ADR 0044; until the review of 2026-10-23 only the patches inside the disc's
+        /// bounding box in pixels were tested, and far from the tangent point the outer ones were
+        /// lost).
         /// </summary>
         internal int[] Patches;
 
@@ -390,18 +392,20 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The catalogued clouds with at least one patch centre in their disc, among the patches
-        /// inside the disc's bounding box in pixels. The disc is the catalogue's area around the
-        /// catalogue's centre; a cloud whose centre does not project (behind the tangent plane)
-        /// or whose box misses the frame is skipped; a patch is tested by its angular distance to
-        /// the centre. The box is the radius at the central plate scale, so far from the tangent
-        /// point, where the projection stretches the disc, a cloud can lose its outer patches, or
-        /// be skipped though its disc holds patch centres.
+        /// The catalogued clouds with at least one patch centre in their disc, every patch centre
+        /// tested by its angular distance to the cloud's centre (the dot product of unit vectors
+        /// against the cosine of the catalogue's radius; ADR 0044). One angular pre-filter: a
+        /// cloud whose centre lies farther from the frame's centre than the frame's angular
+        /// radius (the largest angle from the frame's centre to a patch centre) plus its own
+        /// radius has no patch in its disc and is not tested. Measured on the plate-solved FITS
+        /// (1787 clouds x 21 840 patches, 2026-10-23): the whole search takes about 50 ms, less
+        /// than the box it replaced, which lost the outer patches of a disc the projection
+        /// stretched far from the tangent point.
         /// </summary>
         /// <param name="map">The map, for its grid.</param>
         /// <param name="wcs">The image's WCS.</param>
         /// <param name="catalogue">The clouds to look for.</param>
-        /// <param name="w">The image's width, in pixels.</param>
+        /// <param name="w">The image's width, in pixels; the frame's centre is its middle.</param>
         /// <param name="h">The image's height, in pixels.</param>
         /// <param name="vx">
         /// The x of the unit vector toward each patch's centre on the sky, in the map's row
@@ -412,31 +416,31 @@ namespace AstroPhotoAnalyzer
         /// <returns>The clouds with at least one patch, in the catalogue's order.</returns>
         static List<DustCloud> FindClouds(DustMap map, Wcs wcs, IReadOnlyList<DarkNebula> catalogue, int w, int h, double[] vx, double[] vy, double[] vz)
         {
-            int cols = map.Cols, rows = map.Rows;
-            double patchPx = map.Side * map.Stride;
+            int n = map.PatchCount;
+            var (centreRa, centreDec) = wcs.PixelToSky((w - 1) / 2.0, (h - 1) / 2.0);
+            var fc = Astrometry.UnitVector(centreRa, centreDec);
+            double minDot = 1;
+            for (int i = 0; i < n; i++) minDot = Math.Min(minDot, vx[i] * fc.X + vy[i] * fc.Y + vz[i] * fc.Z);
+            double frameRadius = Math.Acos(Math.Clamp(minDot, -1, 1));
+
             var clouds = new List<DustCloud>();
             foreach (DarkNebula nebula in catalogue)
             {
+                var c = Astrometry.UnitVector(nebula.Ra, nebula.Dec);
+                double radius = nebula.RadiusDeg * Astrometry.Deg;
+                double reach = frameRadius + radius;
+                if (reach < Math.PI && c.X * fc.X + c.Y * fc.Y + c.Z * fc.Z < Math.Cos(reach)) continue;
+                double cosR = Math.Cos(radius);
+                var patches = new List<int>();
+                for (int i = 0; i < n; i++)
+                    if (vx[i] * c.X + vy[i] * c.Y + vz[i] * c.Z >= cosR) patches.Add(i);
+                if (patches.Count == 0) continue;
+                // The centre and the radius in pixels, for the map's circles. A centre behind the
+                // tangent plane does not project; on a frame narrower than 180 degrees the
+                // pre-filter has already left such a cloud out, so this is a guard, not a case.
                 var (px, py) = wcs.SkyToPixel(nebula.Ra, nebula.Dec);
                 if (double.IsNaN(px)) continue;
-                double rpx = nebula.RadiusDeg / wcs.ScaleDegPerPx;
-                // The disc does not touch the frame: out. Otherwise only the patches in its
-                // rectangle are tested, on the true angular distance.
-                if (px + rpx < 0 || py + rpx < 0 || px - rpx > w || py - rpx > h) continue;
-                int bx0 = Math.Max(0, (int)Math.Floor((px - rpx) / patchPx)), bx1 = Math.Min(cols - 1, (int)Math.Ceiling((px + rpx) / patchPx));
-                int by0 = Math.Max(0, (int)Math.Floor((py - rpx) / patchPx)), by1 = Math.Min(rows - 1, (int)Math.Ceiling((py + rpx) / patchPx));
-                if (bx0 > bx1 || by0 > by1) continue;
-                var c = Astrometry.UnitVector(nebula.Ra, nebula.Dec);
-                double cosR = Math.Cos(nebula.RadiusDeg * Astrometry.Deg);
-                var patches = new List<int>();
-                for (int by = by0; by <= by1; by++)
-                    for (int bx = bx0; bx <= bx1; bx++)
-                    {
-                        int i = by * cols + bx;
-                        if (vx[i] * c.X + vy[i] * c.Y + vz[i] * c.Z >= cosR) patches.Add(i);
-                    }
-                if (patches.Count == 0) continue;
-                clouds.Add(new DustCloud { Nebula = nebula, Patches = patches.ToArray(), CentreX = px, CentreY = py, RadiusPx = rpx });
+                clouds.Add(new DustCloud { Nebula = nebula, Patches = patches.ToArray(), CentreX = px, CentreY = py, RadiusPx = nebula.RadiusDeg / wcs.ScaleDegPerPx });
             }
             return clouds;
         }
