@@ -46,9 +46,9 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<double> MeanLevels { get; init; }
 
         /// <summary>
-        /// The percentage of the samples (all planes) under <see cref="Thresholds.DarkLevelA"/>
-        /// and <see cref="Thresholds.DarkLevelB"/>, compared as floats: on an 8-bit TIFF, PNG or
-        /// JPEG the level itself counts too (the comment in Analyze).
+        /// The percentage of the samples (all planes) whose 8-bit level, the one an 8-bit export
+        /// would write (<see cref="RasterOps.Level8"/>), is under <see cref="Thresholds.DarkLevelA"/>
+        /// and under <see cref="Thresholds.DarkLevelB"/>, on every format (ADR 0043).
         /// </summary>
         internal double PctBelowDarkA { get; init; }
         internal double PctBelowDarkB { get; init; }
@@ -161,7 +161,14 @@ namespace AstroPhotoAnalyzer
             // B1: on every pixel - means and counts, a single pass per plane.
             var means = new double[r.Planes.Length];
             long belowA = 0, belowB = 0, total = 0;
-            float a = Thresholds.DarkLevelA / 255f, b = Thresholds.DarkLevelB / 255f;
+            // "sub nivelul N" (N = Thresholds.DarkLevelA or DarkLevelB) is a sample whose 8-bit
+            // level, the one an export writes (RasterOps.Level8: round(v x 255), halves to even),
+            // is under N. Level8(v) < N is v x 255 < N - 0.5 exactly, N being even (31.5 and 63.5
+            // round up to it), so the loop compares the same product Level8 forms, without a call
+            // per sample. Until the review of 2026-10-23 the float sample was compared with
+            // N / 255, which counted the level N itself on an 8-bit TIFF, PNG or JPEG, read as
+            // n x 257 / 65535 (ADR 0043; the script tested the high byte, hi < N).
+            double a = Thresholds.DarkLevelA - 0.5, b = Thresholds.DarkLevelB - 0.5;
             for (int pl = 0; pl < r.Planes.Length; pl++)
             {
                 float[] plane = r.Planes[pl];
@@ -170,13 +177,9 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = plane[i];
                     s += v;
-                    // "sub nivelul N" (N = Thresholds.DarkLevelA or DarkLevelB) is a float sample
-                    // under N / 255: from an 8-bit FITS the levels under N; from an 8-bit TIFF,
-                    // PNG or JPEG, read as n x 257 x (1 / 65535) in float, the levels up to N, N
-                    // itself included by float rounding; from 16 bits the levels under N x 257
-                    // (on a TIFF or PNG that one too). The script tested the high byte (hi < N).
-                    if (v < a) belowA++;
-                    if (v < b) belowB++;
+                    double level = v * 255.0;
+                    if (level < a) belowA++;
+                    if (level < b) belowB++;
                 }
                 means[pl] = s / plane.Length * 255;
                 total += plane.Length;

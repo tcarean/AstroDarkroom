@@ -41,7 +41,7 @@ VERDICT: PROBLEMA
 
 Anexa A. Tonuri
   medii pe canal (0..255): 29.1 / 30.8 / 28.6
-  sub nivelul 32: 81.0 %   sub 64: 92.4 %
+  sub nivelul 32: 80.6 %   sub 64: 92.3 %
   percentile canal referinta (0..255): p0.1=10.2  p1.0=13.5  p50.0=22.8  p90.0=54.8  p99.0=113.5  p99.9=123.4  p100.0=200.1
   L* median 7.4; sub negrul hartiei (L* 9.0): 72.4 %; sub L* 15: 83.9 %; peste L* 50: 0.4 %
 

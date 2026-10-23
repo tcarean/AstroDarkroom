@@ -30,6 +30,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   each cloud's) are read on the regular ladder 0.05..0.60 alone: a `--target-bg` above 0.60 no
   longer extends it, so a crossing the ladder does not reach prints `> 0.60` instead of a value
   interpolated across the gap (R-043; ADR 0040; item 7).
+- `Sub nivelul 32` and `sub 64` in Anexa A and the Tonuri tab count the samples whose 8-bit
+  level, the one an export writes, is under 32 or 64, on every format: on an 8-bit TIFF, PNG or
+  JPEG the level 32 itself no longer counts (it added 2 points on the reference image's 8-bit
+  version), and on 16-bit and float sources the shares move by tenths (R-040; ADR 0043; item 3).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;

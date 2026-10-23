@@ -43,7 +43,9 @@ they differ. The reference image at 50:35: 5938 x 3888 -> 5554 x 3888, 192 px pe
 ### B1/B2 - `TonalAnalyzer` - where the tones sit, and how many fall under paper black
 
 B1 in **levels** (0..255), on all pixels: `MeanLevels` per plane; `PctBelowDarkA` /
-`PctBelowDarkB` = share of samples (all planes) below 32/255 and 64/255;
+`PctBelowDarkB` = share of samples (all planes) whose 8-bit level (`RasterOps.Level8`) is under
+32 and under 64, compared as `v x 255 < N - 0.5`, which is `Level8(v) < N` for an even N
+(ADR 0043; the float compare with N / 255 counted the level N itself on 8-bit sources);
 `ReferencePercentiles` at ranks 0.1, 1, 50, 90, 99, 99.9, 100 of the reference plane at
 stride `PercentileStride` (2); `BackgroundMedian` = median of the reference plane at
 stride `TonalStride` (4) - the "background" the simulation lifts (correct whenever the

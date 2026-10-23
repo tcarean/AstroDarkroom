@@ -49,6 +49,33 @@ public class TonalAnalyzerTests
         Assert.Equal(100.0, t.LstarHistogramPct[53], 6);
     }
 
+    /// <summary>
+    /// "Sub nivelul 32" counts the samples whose 8-bit level (RasterOps.Level8, what an export
+    /// writes) is under 32, on every format (ADR 0043): on an 8-bit source, read as n x 257 /
+    /// 65535, the level 32 itself is not under 32; on 16 bits, 31.4 levels is and 31.6 is not;
+    /// and the loop's shortcut agrees with Level8 on every 16-bit level and on random floats.
+    /// </summary>
+    [Fact]
+    public void R040_TheDarkSharesCountTheEightBitLevelAnExportWouldWrite()
+    {
+        static Raster EightBit(int n) => SyntheticRasters.Flat(16, 16, n * 257 / 65535f);
+        Assert.Equal(100, TonalAnalyzer.Analyze(EightBit(31), Baryta).PctBelowDarkA);
+        Assert.Equal(0, TonalAnalyzer.Analyze(EightBit(32), Baryta).PctBelowDarkA);
+        Assert.Equal(100, TonalAnalyzer.Analyze(EightBit(32), Baryta).PctBelowDarkB);
+        Assert.Equal(0, TonalAnalyzer.Analyze(EightBit(64), Baryta).PctBelowDarkB);
+        Assert.Equal(100, TonalAnalyzer.Analyze(SyntheticRasters.Flat(16, 16, 31.4f / 255), Baryta).PctBelowDarkA);
+        Assert.Equal(0, TonalAnalyzer.Analyze(SyntheticRasters.Flat(16, 16, 31.6f / 255), Baryta).PctBelowDarkA);
+
+        // The shortcut v x 255 < N - 0.5 is Level8(v) < N, for N even, on every level and on floats.
+        var rng = new SeededRandom(40);
+        IEnumerable<float> samples = Enumerable.Range(0, 65536).Select(k => k / 65535f).Concat(Enumerable.Range(0, 200000).Select(_ => (float)rng.NextDouble()));
+        foreach (float v in samples)
+        {
+            Assert.Equal(RasterOps.Level8(v) < Thresholds.DarkLevelA, v * 255.0 < Thresholds.DarkLevelA - 0.5);
+            Assert.Equal(RasterOps.Level8(v) < Thresholds.DarkLevelB, v * 255.0 < Thresholds.DarkLevelB - 0.5);
+        }
+    }
+
     [Fact]
     public void ADeepShadowImageIsEntirelyBelowPaperBlack()
     {

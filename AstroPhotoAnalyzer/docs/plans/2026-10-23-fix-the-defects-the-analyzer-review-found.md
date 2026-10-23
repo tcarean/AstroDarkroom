@@ -412,3 +412,14 @@ Item 4 and item 5 moved no golden line (the stress test of the dark scene misses
 line, in `help.txt`: the `--target-bg` line gained ` (strict intre 0 si 1, 3 zecimale)`, the
 intended change of the help text. `dark-sky-wcs.txt`, which runs `--target-bg 0.135`, did not
 move: three decimals round to themselves.
+
+### Step 3, item 3: the dark shares (goldens)
+
+Four lines, one per golden, all the Anexa A line `sub nivelul 32: ... sub 64: ...`, the one
+figure this fix changes: `dark-sky.txt` and `dark-sky-wcs.txt` (16-bit, the same scene) 81.0 %
+to 80.6 % and 92.4 % to 92.3 % (the samples between 31.5 and 32 levels, and between 63.5 and
+64, no longer count); `clean-sky-canvas.txt` (16-bit, a flat 0.25 = level 63.75 with 1 LSB of
+noise) `sub 64` 59.3 % to 39.7 %, and `mono-png8.txt` (8-bit, the same level) 76.7 % to
+39.6 %: both scenes sit on the threshold itself, so "under 64 as a float" (59 %) or "at or under
+the level 64" (77 %, the 8-bit tie the review found) become "rounds to a level under 64" (40 %),
+the share an 8-bit export would show. `sub nivelul 32` stays 0.0 % on both.

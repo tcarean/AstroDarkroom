@@ -34,7 +34,7 @@ VERDICT: ATENTIE
 
 Anexa A. Tonuri
   medii pe canal (0..255): 63.9 / 63.9 / 63.9
-  sub nivelul 32: 0.0 %   sub 64: 59.3 %
+  sub nivelul 32: 0.0 %   sub 64: 39.7 %
   percentile canal referinta (0..255): p0.1=60.7  p1.0=61.4  p50.0=63.8  p90.0=65.1  p99.0=66.8  p99.9=119.1  p100.0=142.4
   L* median 27.0; sub negrul hartiei (L* 20.7): 0.0 %; sub L* 15: 0.0 %; peste L* 50: 0.1 %
 
