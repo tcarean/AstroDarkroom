@@ -680,7 +680,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Title = "Decupaj la raportul tinta",
                     Image = RasterBitmaps.Whole(RasterOps.Crop(img, r.Crop.X0, r.Crop.Y0, r.Crop.W, r.Crop.H), side),
-                    Note = $"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centrat; {Fmt.Int(r.Crop.CutPerSidePx)} px taiati pe fiecare parte din {r.Crop.Axis}",
+                    Note = $"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centrat; taiati {ReportWriter.CropCutText(r.Crop)}",
                     Check = "Ce taie raportul cerut: intra in obiect sau in compozitie? Scoate coltul moale sau benzile stivei? "
                         + "Singura dala unde raspunsul poate fi \"schimb raportul\".",
                 });

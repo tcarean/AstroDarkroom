@@ -361,7 +361,8 @@ public class ValidationTests
         f["crop.width"] = cr.W;
         f["crop.height"] = cr.H;
         f["crop.axis"] = cr.Axis ?? "none";
-        f["crop.cutPerSidePx"] = cr.CutPerSidePx;
+        f["crop.cutStartPx"] = cr.CutStartPx;
+        f["crop.cutEndPx"] = cr.CutEndPx;
         f["crop.cutPct"] = R(cr.CutPct);
 
         PrintSizeResult z = a.Size;

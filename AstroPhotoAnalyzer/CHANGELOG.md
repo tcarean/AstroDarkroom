@@ -17,6 +17,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   misses more than 20 levels over the 16-bit one, not over 20 in all: an 8-bit file saved as 16
   bits, which misses the same levels either way, now gets the upscale warning alone (R-082,
   R-096; ADR 0043; item 4).
+- A crop is reported only when the target aspect removes at least one pixel (4961 x 3508 at
+  297:210 no longer gets an Attention that cuts 0 px), and the two sides are named when they
+  differ (`0 px la stanga si 1 px la dreapta din latime`), in the report and in the Preview tile
+  (R-032; ADR 0043; item 5).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;

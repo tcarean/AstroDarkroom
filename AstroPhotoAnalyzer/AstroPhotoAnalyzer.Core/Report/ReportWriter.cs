@@ -195,6 +195,18 @@ namespace AstroPhotoAnalyzer
                 + $"cerul ajunge la pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)} la {TargetText(s.VisibilityTarget)}";
         }
 
+        /// <summary>
+        /// Ce taie decupajul, ca text (R-032): "192 px pe fiecare parte din latime" cand cele
+        /// doua parti sunt egale, altfel "0 px la stanga si 1 px la dreapta din latime" sau
+        /// "... sus si ... jos din inaltime". Acelasi text in recomandare si in dala de Preview.
+        /// </summary>
+        internal static string CropCutText(CropResult c)
+        {
+            if (c.CutStartPx == c.CutEndPx) return $"{Fmt.Int(c.CutStartPx)} px pe fiecare parte din {c.Axis}";
+            bool width = c.Axis == "latime";
+            return $"{Fmt.Int(c.CutStartPx)} px {(width ? "la stanga" : "sus")} si {Fmt.Int(c.CutEndPx)} px {(width ? "la dreapta" : "jos")} din {c.Axis}";
+        }
+
         internal const string CloudHeader = "nor                          dale   L*     tinta";
 
         internal static string CloudLine(CloudRow c)

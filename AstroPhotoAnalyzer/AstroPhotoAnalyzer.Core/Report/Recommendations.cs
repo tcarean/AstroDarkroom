@@ -286,7 +286,7 @@ namespace AstroPhotoAnalyzer
 
             if (r.Crop.Needed)
                 o.Add(new Recommendation(Topic.Size, Verdict.Attention,
-                    $"Raportul tinta cere decupaj: se taie {Fmt.Int(r.Crop.CutPerSidePx)} px pe fiecare parte din {r.Crop.Axis} ({Fmt.Pct(r.Crop.CutPct)}); alege tu cadrul, nu laboratorul.",
+                    $"Raportul tinta cere decupaj: se taie {ReportWriter.CropCutText(r.Crop)} ({Fmt.Pct(r.Crop.CutPct)}); alege tu cadrul, nu laboratorul.",
                     $"nativ {Fmt.F3(r.Crop.NativeAspect)}, tinta {Fmt.F3(r.Crop.TargetAspect.Value)}; ramane {Fmt.Dim(r.Crop.W, r.Crop.H)} px"));
 
             if (ps.Rows.Any(x => x.Oversize && x.PointAtViewingDistance))

@@ -32,12 +32,13 @@ exceeds `UpscaledFraction` (0.5).
 
 ### A3 - `CropAnalyzer` - what a target aspect cuts
 
-Given `W`, `H` and `TargetAspect`: no crop when null or equal to native (1e-6). If the
-target is narrower, the new width is `round(H x target)`, cut from both sides, the right one a
-pixel more when the cut is odd; otherwise the height, the bottom side the pixel more. Result:
-the centred rectangle (`X0 Y0 W H`), `Axis` ("latime" /
-"inaltime"), `CutPerSidePx`, `CutPct`. The reference image at 50:35: 5938 x 3888 ->
-5554 x 3888, 192 px per side, 6.5 %.
+Given `W`, `H` and `TargetAspect`: no crop when null, or when the rounded size removes no
+pixel (ADR 0043; a ratio tolerance of 1e-6 used to decide it, and cut 0 px). If the target is
+narrower, the new width is `round(H x target)`, cut from both sides, the right one a pixel more
+when the cut is odd; otherwise the height, the bottom side the pixel more. Result: the centred
+rectangle (`X0 Y0 W H`), `Axis` ("latime" / "inaltime"), `CutStartPx` and `CutEndPx` (the two
+sides), `CutPct`; `ReportWriter.CropCutText` writes the two sides as one text, named apart when
+they differ. The reference image at 50:35: 5938 x 3888 -> 5554 x 3888, 192 px per side, 6.5 %.
 
 ### B1/B2 - `TonalAnalyzer` - where the tones sit, and how many fall under paper black
 
