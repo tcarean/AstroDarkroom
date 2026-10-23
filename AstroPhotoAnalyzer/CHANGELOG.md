@@ -8,6 +8,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The gamut figure of the Curbe tab no longer undercounts near the paper's gamut edge: a pixel
+  whose interpolated displacement lies within 1.0 of the threshold takes the exact round trip of
+  its 8-bit colour, once per colour, the rows measured in parallel (R-144; ADR 0042). The grid
+  alone read the dust class of `de_printat.png` on baryta at 0.0 % where the exact figure is
+  2.4 %, and the plate-solved FITS at 1.02 % against 1.35 %; the hybrid is within 0.2 points of
+  the exact figure on every class (the code review of area 2, item 9).
 - `Maxima` no longer rises over white: its slope factor is capped at the largest value whose
   spline stays monotone and within 0..1, and every suggestion is judged on the unclamped spline,
   as R-140 and R-142 always said (ADR 0039). On `de_printat.png`, Rosetta and the Veil the

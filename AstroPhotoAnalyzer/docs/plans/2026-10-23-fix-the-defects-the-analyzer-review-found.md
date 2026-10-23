@@ -351,6 +351,41 @@ drift table.
 4. Item 15b: `Stats.Median` itself becomes selection-based, so every caller benefits with
    identical results; `DustAnalyzer.Measure`'s class-set sorts stay (among "the smaller ones").
 
+## Item 9, implemented (2026-10-23, the owner's choice: "lets go on your recommendation and fix it")
+
+On its own branch, `claude/Measure-the-gamut-exactly-near-the-edge` (the first name,
+`Measure-the-gamut-figure-near-the-threshold-exactly`, pushed a DarksCheck ADR's path past the
+Windows limit of 260 characters inside the worktree folder; the kit's rule names the worktree
+after the branch, so a branch name here has to stay under about 41 characters). `GamutAnalyzer`
+takes the exact round trip of the pixel's 8-bit colour when the interpolated displacement lies
+within `Thresholds.CurveGamutExactMargin` (1.0) of the threshold, once per colour through
+`GamutTable.Cache`, with `Measure` running the rows in parallel; a table without an `Exact` trip
+(the hand-built tables of the tests) stays interpolation alone. ADR 0042 supersedes ADR 0032's
+consequence on the grid; R-144, `measurements.md` F2, `thresholds.md`, `known-limitations.md`
+and the CHANGELOG follow. Guard: `R144_NearTheThresholdTheExactRoundTripDecidesOncePerEightBitColour`.
+The measurements after the change (the probe `fixprobe gamut`, the real `GamutAnalyzer.Measure`
+against the exact per-pixel round trip; all, dust, sky, band / nebula, clouds / bright nebula,
+peaks, in percent): the FITS on baryta as is 1.356 / 4.261 / 0.719 / 1.794 / 0.564 / 0 against
+1.348 / 4.216 / 0.713 / 1.794 / 0.571 / 0 exact, `Puternica` 1.199 / 3.968 / 0.679 / 1.378 /
+0.417 / 0 against 1.188 / 3.915 / 0.671 / 1.376 / 0.417 / 0; the FITS on canvas as is 39.787 /
+82.235 / 38.244 / 29.153 / 7.926 / 0 against 39.663 / 82.189 / 38.077 / 29.115 / 7.915 / 0,
+`Puternica` 44.645 / 81.850 / 45.146 / 30.778 / 7.395 / 0 against 44.555 / 81.850 / 45.026 /
+30.727 / 7.425 / 0; the PNG on baryta as is 0.152 / 2.295 / 0.107 / 0.292 / 0.117 / 2.446
+against 0.150 / 2.368 / 0.104 / 0.293 / 0.120 / 2.446, `Puternica` 0.141 / 3.064 / 0.111 /
+0.176 / 0.085 / 2.446 against 0.138 / 3.003 / 0.108 / 0.174 / 0.085 / 2.446: every class within
+0.17 points. A `Measure`, eight threads: FITS on baryta 119 ms then 33 ms (the first fills the
+cache), on canvas 252 then 110 ms, the PNG 78 then 23 ms; the grid alone took 45 to 55 ms, the
+table build is unchanged (0.6 to 0.7 s). Five measures per "Calculeaza" on canvas: about 0.7 s.
+
+The validation dump against the one before this change: 1696 figures, 20 moved, all V-008's
+gamut figures and nothing else (the 13 other cases pass): `curves.before.gamut.all` 1.0227 ->
+1.3563, `.dust` 2.6719 -> 4.2609, `.sky` 0.4487 -> 0.7187, `.band` 1.7775 -> 1.7945, `.clouds`
+0.5818 -> 0.5635; `Blanda` all 0.9294 -> 1.2852 (dust 2.5089 -> 4.1336, sky 0.4093 -> 0.6988,
+band 1.5754 -> 1.6117, clouds 0.4684 -> 0.4757); `Medie` all 0.8773 -> 1.2432 (dust 2.4317 ->
+4.0623, sky 0.3904 -> 0.6885, band 1.4491 -> 1.4982, clouds 0.4172 -> 0.4025); `Puternica` all
+0.8247 -> 1.1992 (dust 2.3521 -> 3.9676, sky 0.3678 -> 0.6792, band 1.326 -> 1.3781, clouds
+0.4208 -> 0.4172); the peaks 0 throughout. The JSON waits for the owner's approval.
+
 ## Record
 
 ### Step 0: baseline (2026-10-23)

@@ -552,7 +552,19 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         internal const double CurveGamutDeltaAb = 3;
 
-        /// <summary>Nodurile pe canal ale tabelei dus-intors prin profil; 33 inseamna 35 937 de culori trecute o data prin pachet (~28 microsecunde fiecare), restul prin interpolare.</summary>
+        /// <summary>Nodurile pe canal ale tabelei dus-intors prin profil; 33 inseamna 35 937 de culori trecute o data prin pachet (~25 microsecunde fiecare), restul prin interpolare.</summary>
         internal const int CurveGamutGrid = 33;
+
+        /// <summary>
+        /// Cat de aproape de CurveGamutDeltaAb trebuie sa fie deplasarea interpolata a unui pixel
+        /// ca drumul exact prin profil sa decida in locul interpolarii (R-144, ADR 0042). Grila
+        /// singura rotunjeste marginea gamutului spre interior si numara prea putin, cu pana la
+        /// 2.4 puncte pe o clasa (praful imaginii de referinta pe baryta: 0.0 % fata de 2.4 %
+        /// exact; 0.45 si 2.2 puncte chiar cu 65 de noduri). Cu marginea 0.5 cerul pe canvas
+        /// ramane cu 0.5 puncte sub exact; cu 1.0 fiecare clasa e la trei zecimale de cifra
+        /// exacta, iar o data pe culoare de 8 biti, la sub 0.2 puncte (masurat 2026-10-23 pe
+        /// FITS-ul plate-solved cu ambele profile ale atelierului si pe de_printat.png).
+        /// </summary>
+        internal const double CurveGamutExactMargin = 1.0;
     }
 }
