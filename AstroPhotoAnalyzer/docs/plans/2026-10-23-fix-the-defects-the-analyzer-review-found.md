@@ -367,3 +367,14 @@ scratchpad). Console in Release, `bash time`, three runs each: `de_printat.png` 
 (`drift.py`, every figure compared as the test rounds it). Console: `de_printat.png` 10.99 /
 10.88 / 11.14 s (median 10.99, 1.2 s less); the FITS 14.10 / 13.86 / 14.31 s (median 14.10,
 0.7 s less). The unit tests: 352 + 54 green.
+
+### Step 1, 15a: the ladder stops early
+
+`/validate` dump after the change: 14 cases, 1689 figures, 0 moved against the baseline.
+Console: `de_printat.png` 9.27 / 9.22 / 9.64 s (median 9.27, 1.7 s less than after 15b, 2.9 s
+less than the baseline); the FITS 12.24 / 12.47 / 12.39 s (median 12.39, 1.7 s less than after
+15b, 2.4 s less than the baseline). Steps lifted (`SimulationResult.StepsLifted`, the probe
+`fixprobe steps`), of the ladder's 56: `de_printat.png` 16 at Dmax 2.0 and 2.4 (the last grid
+row, 0.20, ends it); the plate-solved FITS 35 at Dmax 2.0 and 25 at 2.4 (the darkest cloud row
+crosses last); Rosetta, Veil and Orion 16 at both. `Simulate` alone: 1.85 s on the PNG, 2.29 s
+on the FITS at Dmax 2.0 (2.75 and 2.6 s recorded by ADR 0035).

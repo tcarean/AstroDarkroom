@@ -28,6 +28,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (`Stats.Percentile`, `Stats.Percentiles`, `Stats.Median`), not by sorting the whole vector: the
   same values to the bit (R-017; the 1689 validation figures identical), about 0.5 s less per
   run on the reference images (the code review of area 2, item 15).
+- The print simulation's ladder stops once every series it reads (the dust at the three paper
+  blacks, the sky at L\* 15, every row cloud) has crossed its level and every table row is
+  built, instead of lifting all 56 steps: the same figures to the bit (R-043; the 1689
+  validation figures identical), about 1 s less per run on the reference images (item 15).
 - The build writes the XML documentation file (ADR 0038), so the gate now fails a malformed
   doc comment, a `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside
   tagged ones, a `cref` that does not resolve or is ambiguous, and a `///` on something that is

@@ -33,9 +33,13 @@
 // (Thresholds.ExactTarget*), with linear interpolation between two steps: the same ladder gives
 // the exact target of the dust, of each cloud (114 rows on the plate-solved FITS, V-004 - a
 // bisection on each would be 2500 lifts) and the two targets at the neighbouring Dmax, from the
-// same 56 lifts. A step builds no lifted raster: it lifts and linearises every sample from a
-// single 16-bit table (LiftTable, ADR 0035) and sums the patches' luminances directly; the
-// "asa cum e" row stays on the exact path.
+// same lifts: at most 56, and fewer when every series has crossed its level and every table row
+// is built before the ladder's end, since an interpolated crossing reads nothing past the first
+// step at or above its level (measured 2026-10-23: 16 steps on de_printat.png, where the last
+// grid row ends it, 35 on the plate-solved FITS at Dmax 2.0, where the darkest cloud row crosses
+// last, and the same figures to the bit). A step builds no lifted raster: it lifts and
+// linearises every sample from a single 16-bit table (LiftTable, ADR 0035) and sums the
+// patches' luminances directly; the "asa cum e" row stays on the exact path.
 
 using System;
 using System.Collections.Generic;
@@ -204,6 +208,14 @@ namespace AstroPhotoAnalyzer
         internal double DmaxToPassAsIs { get; init; }
 
         /// <summary>
+        /// How many steps of the ladder were lifted: all of them when some series never reaches
+        /// its level, fewer when every series has crossed and every table row is built before
+        /// the ladder's end (Simulate). 0 with a background at 0 or 1. A figure for the tests and
+        /// the timings; nothing prints it.
+        /// </summary>
+        internal int StepsLifted { get; init; }
+
+        /// <summary>
         /// The primary row: the row marked Explicit for the target the user gave, otherwise the
         /// recommended one, otherwise "asa cum e".
         /// </summary>
@@ -318,8 +330,11 @@ namespace AstroPhotoAnalyzer
         /// Builds the patch map on the subsample at <see cref="Thresholds.TonalStride"/>,
         /// measures the "asa cum e" row and, when the measured background is strictly inside
         /// (0, 1), lifts the subsample once per step of the ladder (the exact steps, the grid and
-        /// the given target): every step feeds the dust, sky and cloud series the exact targets
-        /// are read on, and the steps of the grid and of the given target become rows.
+        /// the given target), from the lowest up: every step feeds the dust, sky and cloud series
+        /// the exact targets are read on, and the steps of the grid and of the given target
+        /// become rows. The ladder stops early once every series has a step at or above the
+        /// level it is read against and every row is built; the targets read are then the same
+        /// as from the whole ladder.
         /// </summary>
         /// <param name="r">
         /// The image, 0..1; its <see cref="Raster.Source"/> gives the WCS, when there is one.
@@ -361,6 +376,7 @@ namespace AstroPhotoAnalyzer
 
             var rows = new List<SimulationRow> { asIs };
             double? exact = null, exactLo = null, exactHi = null, visible = null;
+            int steps = 0;
             var cloudRows = new List<CloudRow>();
             int[] rowClouds = Enumerable.Range(0, map.Clouds.Count).Where(c => map.Clouds[c].Patches.Length >= Thresholds.DustCloudMinPatches).ToArray();
 
@@ -369,18 +385,32 @@ namespace AstroPhotoAnalyzer
             if (bg > 0 && bg < 1)
             {
                 // The ladder: the exact steps, the grid and the given target, a single lift for
-                // each.
+                // each, in increasing order.
                 var ladder = new SortedSet<double>();
                 for (double t = Thresholds.ExactTargetLo; t <= Thresholds.ExactTargetHi + 1e-9; t += Thresholds.ExactTargetStep) ladder.Add(Math.Round(t, 6));
                 foreach (double t in p.SimulationTargets) ladder.Add(Math.Round(t, 6));
                 if (p.TargetBackground.HasValue) ladder.Add(Math.Round(p.TargetBackground.Value, 6));
                 double[] targets = ladder.ToArray();
 
-                var dustAt = new double[targets.Length];
-                var skyAt = new double[targets.Length];
-                var cloudAt = new double[targets.Length][];
                 var tableRows = new HashSet<double>(p.SimulationTargets.Select(t => Math.Round(t, 6)));
                 if (p.TargetBackground.HasValue) tableRows.Add(Math.Round(p.TargetBackground.Value, 6));
+                int rowsLeft = targets.Count(tableRows.Contains);
+
+                // The series the exact targets are read on, one value per step lifted, and the
+                // levels each one is read against: the dust at the three paper blacks, the sky
+                // at the visibility threshold, each row cloud at paper black. Crossing reads a
+                // series up to its first step at or above the level and no further, so the
+                // ladder stops once every series has such a step and every table row is built:
+                // the results are the ones the whole ladder would give, from fewer lifts.
+                double blackLo = ColorMath.PaperBlackLstar(p.Dmax - Thresholds.DmaxSensitivityStep);
+                double blackHi = ColorMath.PaperBlackLstar(p.Dmax + Thresholds.DmaxSensitivityStep);
+                var seriesTargets = new List<double>();
+                var dustAt = new List<double>();
+                var skyAt = new List<double>();
+                var cloudAt = new List<double[]>();
+                bool dustCrossed = false, dustLoCrossed = false, dustHiCrossed = false, skyCrossed = false;
+                var cloudCrossed = new bool[rowClouds.Length];
+                int cloudsLeft = rowClouds.Length;
                 for (int i = 0; i < targets.Length; i++)
                 {
                     double target = targets[i];
@@ -389,43 +419,56 @@ namespace AstroPhotoAnalyzer
                     // (ADR 0035); the patches are re-measured on the same map.
                     var lift = new LiftTable(gamma);
                     DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, lift), map, black);
-                    dustAt[i] = d.LstarDust;
-                    skyAt[i] = d.LstarSky;
-                    cloudAt[i] = d.CloudLstars;
-                    if (!tableRows.Contains(target)) continue;
-                    // The row's pixel percentages, on the L* plane of the subsample lifted
-                    // through the same table.
-                    var (low, high) = TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, lift));
-                    rows.Add(new SimulationRow
+                    steps++;
+                    seriesTargets.Add(target);
+                    dustAt.Add(d.LstarDust);
+                    skyAt.Add(d.LstarSky);
+                    cloudAt.Add(d.CloudLstars);
+                    dustCrossed |= d.LstarDust >= black;
+                    dustLoCrossed |= d.LstarDust >= blackLo;
+                    dustHiCrossed |= d.LstarDust >= blackHi;
+                    skyCrossed |= d.LstarSky >= Thresholds.LowSeparationLstar;
+                    for (int k = 0; k < rowClouds.Length; k++)
+                        if (!cloudCrossed[k] && d.CloudLstars[rowClouds[k]] >= black) { cloudCrossed[k] = true; cloudsLeft--; }
+                    if (tableRows.Contains(target))
                     {
-                        Target = target,
-                        Explicit = p.TargetBackground.HasValue && Math.Abs(target - p.TargetBackground.Value) < 1e-9,
-                        Gamma = gamma,
-                        LstarSky = d.LstarSky,
-                        LstarDust = d.LstarDust,
-                        PctPatchesBelowPaperBlack = d.PctPatchesBelowPaperBlack,
-                        PctBelowLowSeparation = low,
-                        PctAboveHighlight = high,
-                        PaperBlackLstar = black,
-                    });
+                        // The row's pixel percentages, on the L* plane of the subsample lifted
+                        // through the same table.
+                        var (low, high) = TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, lift));
+                        rows.Add(new SimulationRow
+                        {
+                            Target = target,
+                            Explicit = p.TargetBackground.HasValue && Math.Abs(target - p.TargetBackground.Value) < 1e-9,
+                            Gamma = gamma,
+                            LstarSky = d.LstarSky,
+                            LstarDust = d.LstarDust,
+                            PctPatchesBelowPaperBlack = d.PctPatchesBelowPaperBlack,
+                            PctBelowLowSeparation = low,
+                            PctAboveHighlight = high,
+                            PaperBlackLstar = black,
+                        });
+                        rowsLeft--;
+                    }
+                    if (rowsLeft == 0 && dustCrossed && dustLoCrossed && dustHiCrossed && skyCrossed && cloudsLeft == 0) break;
                 }
                 rows = rows.OrderBy(x => x.Target).ToList();
 
-                exact = Crossing(targets, dustAt, black);
-                visible = Crossing(targets, skyAt, Thresholds.LowSeparationLstar);
-                exactLo = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax - Thresholds.DmaxSensitivityStep));
-                exactHi = Crossing(targets, dustAt, ColorMath.PaperBlackLstar(p.Dmax + Thresholds.DmaxSensitivityStep));
+                double[] st = seriesTargets.ToArray(), dust = dustAt.ToArray();
+                exact = Crossing(st, dust, black);
+                visible = Crossing(st, skyAt.ToArray(), Thresholds.LowSeparationLstar);
+                exactLo = Crossing(st, dust, blackLo);
+                exactHi = Crossing(st, dust, blackHi);
 
                 foreach (int c in rowClouds)
                 {
-                    var series = new double[targets.Length];
-                    for (int i = 0; i < targets.Length; i++) series[i] = cloudAt[i][c];
+                    var series = new double[st.Length];
+                    for (int i = 0; i < st.Length; i++) series[i] = cloudAt[i][c];
                     cloudRows.Add(new CloudRow
                     {
                         Name = map.Clouds[c].Name,
                         Patches = map.Clouds[c].Patches.Length,
                         Lstar = asIsDust.CloudLstars[c],
-                        ExactTarget = Crossing(targets, series, black),
+                        ExactTarget = Crossing(st, series, black),
                         MapIndex = c,
                     });
                 }
@@ -454,6 +497,7 @@ namespace AstroPhotoAnalyzer
                 ExactTargetDmaxHigher = exactHi,
                 VisibilityTarget = visible,
                 DmaxToPassAsIs = asIs.LstarDust > 0 ? -Math.Log10(ColorMath.YOfLstar(asIs.LstarDust)) : double.NaN,
+                StepsLifted = steps,
                 Primary = primary,
                 Map = map,
                 AsIsDust = asIsDust,

@@ -156,6 +156,37 @@ public class PrintStretchSimulatorTests
         Assert.Equal("* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
     }
 
+    /// <summary>
+    /// The ladder stops once every series it reads has a step at or above its level and every
+    /// table row is built; Crossing reads nothing past that step, so what it finds is what the
+    /// whole ladder would. A row past the last crossing keeps the ladder going to it.
+    /// </summary>
+    [Fact]
+    public void R043_TheLadderStopsOnceEverySeriesHasCrossedAndEveryRowIsBuilt()
+    {
+        int whole = (int)Math.Round((Thresholds.ExactTargetHi - Thresholds.ExactTargetLo) / Thresholds.ExactTargetStep) + 1;
+        Assert.Equal(56, whole);
+
+        // Flat 0.08 on the paper of L* 9.0: the sky passes L* 15 at 0.148 and the dust the three
+        // paper blacks (L* 11.0 at Dmax 1.9 the last) by 0.12; the last grid row is 0.20, so the
+        // ladder stops there: 16 lifts, 0.05 to 0.20, and the same targets as before the stop.
+        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
+        Assert.Equal(16, s.StepsLifted);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(2.0))), s.ExactTarget!.Value, 3);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(1.9))), s.ExactTargetDmaxLower!.Value, 3);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(2.1))), s.ExactTargetDmaxHigher!.Value, 3);
+        Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
+        Assert.Equal(17, s.Rows.Count);
+
+        // A given target above the ladder's end is a row to build: every step is lifted, and it.
+        var far = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.70 });
+        Assert.Equal(whole + 1, far.StepsLifted);
+        Assert.Equal(0.70, far.Rows.Last().Target, 9);
+
+        // A black image lifts nothing.
+        Assert.Equal(0, Simulate(SyntheticRasters.Flat(16, 16, 0f)).StepsLifted);
+    }
+
     [Fact]
     public void R043_CrossingInterpolatesBetweenTwoStepsAndHandlesTheEnds()
     {
