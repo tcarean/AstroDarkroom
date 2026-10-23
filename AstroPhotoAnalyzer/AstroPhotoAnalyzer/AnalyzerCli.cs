@@ -15,30 +15,52 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AnalyzerCli.cs - orchestrarea testabila: parsare, rulare, cod de iesire.
+// AnalyzerCli.cs - the testable orchestration: parsing, running, exit code.
 //
-// Ce e AICI, si al nimanui altcuiva: argumentele, validarea intrarii, scrierea
-// raportului pe disc si codul de iesire. Lantul propriu-zis (incarca -> masoara ->
-// recomanda -> formateaza) sta in Runs/ din nucleu, fiindca il foloseste si fereastra.
+// What is HERE, and nobody else's: the arguments, the checks on the input file, writing the
+// report to disk and the exit code. The rules between parameters are the core's
+// (Parameters.Validate, which the window calls too), and so is the chain proper (load ->
+// measure -> recommend -> format), in the core's Runs/, because the window uses it too.
 //
-// CODURI DE IESIRE:
-//     0  OK - nicio recomandare peste "Ok"
-//     1  eroare (fisier lipsa, argument gresit, format necitit, imagine liniara)
-//     2  ATENTIE - cel putin o recomandare de nivel "Atentie"
-//     3  PROBLEMA - cel putin una de nivel "Problema"
-// Verdictele sunt monotone, deci "orice != 0" inseamna "nu e curat, uita-te".
+// EXIT CODES:
+//     0  OK - no recommendation above "Ok"
+//     1  error (missing file or a folder, wrong argument, invalid parameter combination,
+//        unusable ICC profile, format not read, linear image, -o file not written)
+//     2  ATENTIE - at least one recommendation of level "Atentie"
+//     3  PROBLEMA - at least one of level "Problema"
+// The verdicts are monotone, so "anything != 0" means "not clean, take a look".
 
 using System;
 using System.IO;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The console's whole run, on writers a test can pass: the banner, the arguments, the
+    /// checks before any reading, the analysis, the report on stdout and in the -o file, and the
+    /// exit code.
+    /// </summary>
     internal static class AnalyzerCli
     {
+        /// <summary>
+        /// Runs the console once: the banner on lines 1-2, then --help, or an error, or the
+        /// report. Every error goes to <paramref name="stderr"/> as "EROARE: ..." with exit code
+        /// 1; an exception from the analysis or from writing the -o file is caught and reported
+        /// so.
+        /// </summary>
+        /// <param name="args">
+        /// The command-line arguments, without the program's name; not null.
+        /// </param>
+        /// <param name="stdout">Where the banner, the help and the report go.</param>
+        /// <param name="stderr">Where the errors go.</param>
+        /// <returns>
+        /// 0 for --help or no recommendation above Ok, 1 for an error (the report may already be
+        /// on stdout when only the -o file failed), 2 for an Attention, 3 for a Problem.
+        /// </returns>
         internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
         {
-            // Versiunea si copyright-ul, pe primele doua linii ale oricarei rulari -
-            // inclusiv --help si erorile.
+            // The version and the copyright, on the first two lines of every run - --help and
+            // the errors included.
             RunReport.WriteBanner(stdout);
 
             Options o = Options.Parse(args);
@@ -112,6 +134,9 @@ namespace AstroPhotoAnalyzer
             return ExitFor(result.Overall);
         }
 
+        /// <summary>The exit code of a run's overall verdict.</summary>
+        /// <param name="v">The worst verdict of the recommendations.</param>
+        /// <returns>0 for Ok, 2 for Attention, 3 for Problem (and any other value).</returns>
         internal static int ExitFor(Verdict v) => v switch
         {
             Verdict.Ok => 0,
@@ -120,9 +145,14 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// Ce a tastat omul, tradus in ce intelege nucleul. Un Options lipsa inseamna
-        /// implicitul din Parameters - consola nu-si tine copia ei de implicite.
+        /// What the user typed, translated into what the core understands. A value missing from
+        /// the Options means the default in Parameters - the run takes no default of its own. The
+        /// --help text of WriteUsage does type most of them by hand (the widths, the passepartout,
+        /// the frame, the 1.5 x diagonal, the grid, the 3 decimals) and must follow a change
+        /// there.
         /// </summary>
+        /// <param name="o">The options parsed, with no Error; their medium a known name.</param>
+        /// <returns>The parameters, before the ICC profile is read and before Validate.</returns>
         internal static Parameters ParametersFrom(Options o)
         {
             var d = new Parameters();
@@ -140,6 +170,12 @@ namespace AstroPhotoAnalyzer
             };
         }
 
+        /// <summary>
+        /// Writes the --help text, in Romanian: what the tool does, the options with their
+        /// defaults (the media's names and the default medium from Parameters), the exit codes
+        /// and the GPLv3 warranty lines.
+        /// </summary>
+        /// <param name="w">The writer, the console's stdout.</param>
         internal static void WriteUsage(TextWriter w)
         {
             w.WriteLine();

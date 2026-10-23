@@ -15,555 +15,645 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Thresholds.cs - toate pragurile, intr-un singur loc, fiecare cu motivul lui.
+// Thresholds.cs - every threshold, in one place, each with its reason.
 //
-// Sunt reguli empirice, nu constante fizice. Aproape toate au iesit din masurarea unei
-// singure imagini (de_printat.png, Calea Lactee, 16 biti) in conversatia care a nascut
-// unealta, si sunt un punct de plecare de calibrat pe mai multe. Cine schimba unul
-// schimba si comentariul.
+// They are empirical rules, not physical constants. Almost all of them came from measuring a
+// single image (de_printat.png, the Milky Way, 16 bits) in the conversation that gave birth to
+// the tool, and they are a starting point to calibrate on more. Whoever changes one changes its
+// comment too.
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The thresholds every measurement and every text reads, each a named constant with the
+    /// reason for its value: an empirical rule of thumb, not a physical constant (ADR 0012).
+    /// </summary>
     internal static class Thresholds
     {
-        // ------------------------------------------------------------ intrare
+        // ------------------------------------------------------------ input
 
         /// <summary>
-        /// Sub mediana asta (pe canalul de referinta, 0..1) imaginea e probabil liniara.
-        /// Un stack liniar sta la 0.001-0.01; o imagine finita, chiar intunecata, la
-        /// 0.08-0.25. Unealta refuza cu mesaj, nu masoara gresit.
+        /// Under this median (on the reference channel, 0..1) the image is probably linear. A
+        /// linear stack sits at 0.001-0.01; a finished image, even a dark one, at 0.08-0.25. The
+        /// tool refuses with a message; it does not measure wrongly.
         /// </summary>
         internal const double LinearMedianMax = 0.02;
 
         /// <summary>
-        /// Peste fractia asta de pixeli cu valoarea == octetul_inalt * 257, un fisier de
-        /// 16 biti e un 8-bit scalat. Pe 16 biti reali fractia e ~0.4 % (coincidente);
-        /// pe un upscale e 100 %.
+        /// Over this fraction of samples with value == high_byte * 257, a 16-bit file is a scaled
+        /// 8-bit one. On real 16 bits the fraction is ~0.4 % (coincidences); on an upscale it is
+        /// 100 %.
         /// </summary>
         internal const double UpscaledFraction = 0.5;
 
-        // ------------------------------------------------------------ tonuri
+        // ------------------------------------------------------------ tones
 
-        /// <summary>Nivelurile (din 255) sub care se numara "pixeli intunecati", pentru context.</summary>
+        /// <summary>
+        /// The levels (out of 255) for the dark counts, for context: the samples of every channel
+        /// whose 8-bit level is under the threshold (TonalAnalyzer.Level8Under).
+        /// </summary>
         internal const int DarkLevelA = 32;
         internal const int DarkLevelB = 64;
 
         /// <summary>
-        /// Pragul de vizibilitate: sub L*-ul asta hartia separa tonurile, dar ochiul in lumina
-        /// de camera abia le distinge - lumina slaba si reflexiile de pe hartie si de pe sticla
-        /// pun un val peste negru. Tine de privit, nu de hartie, deci nu se muta cu Dmax-ul.
-        /// Regula de degetul mare din conversatia care a nascut unealta, fara o masuratoare in
-        /// spate; un gri de L* 15 e nivelul 0.148, adica PrintBackgroundLo de mai jos, aceeasi
-        /// regula pe cealalta scara. Cerul sub el e Atentie, iar randul recomandat al simularii
-        /// il are la sau peste (ADR 0029).
+        /// The visibility threshold: under this L* the paper separates the tones, but the eye in
+        /// room light barely tells them apart - the dim light and the reflections off the paper
+        /// and the glass lay a veil over the black. It belongs to the viewing, not to the paper,
+        /// so it does not move with the Dmax. A rule of thumb from the conversation that gave
+        /// birth to the tool, with no measurement behind it; a grey of L* 15 is the level 0.148,
+        /// that is PrintBackgroundLo below, the same rule on the other scale. A sky under it is
+        /// an Attention, and the simulation's recommended row has it at or above (ADR 0029).
         /// </summary>
         internal const double LowSeparationLstar = 15;
 
-        /// <summary>Peste L*-ul asta un pixel e "luminos" - nucleul, stelele.</summary>
+        /// <summary>Over this L* a pixel is "bright" - the core, the stars.</summary>
         internal const double HighlightLstar = 50;
 
         /// <summary>
-        /// Unde sta de obicei cerul (0..1) intr-o imagine facuta pentru ecran, si unde
-        /// trebuie sa stea pentru hartie. Reguli de degetul mare din conversatia care a
-        /// nascut unealta, nu masuratori: pe ecran un cer la 0.05-0.10 arata "negru
-        /// adanc" si bine; pe hartie tot ce e sub negrul ei se printeaza cu acelasi negru,
-        /// asa ca versiunea de print vrea cerul la 0.15-0.25, un gri inchis. Imaginea de
-        /// referinta avea 0.103, iar praful ei catalogat ajunge pe negru la 0.19. Doar
-        /// pentru textele de ajutor ale ferestrei; nicio regula nu se ia dupa ele.
+        /// Where the sky usually sits (0..1) in an image made for the screen, and where it must
+        /// sit for paper. Rules of thumb from the conversation that gave birth to the tool, not
+        /// measurements: on screen a sky at 0.05-0.10 looks "deep black" and good; on paper
+        /// everything under its black prints as the same black, so the print version wants the
+        /// sky at 0.15-0.25, a dark grey. The reference image had 0.103 (V-001), and on the
+        /// plate-solved FITS of the same sky, at Dmax 2.0, the dust reaches paper black at 0.184,
+        /// the row 0.19 (V-004). For the window's help texts only; no rule reads them.
         /// </summary>
         internal const double ScreenBackgroundLo = 0.05;
         internal const double ScreenBackgroundHi = 0.10;
         internal const double PrintBackgroundLo = 0.15;
         internal const double PrintBackgroundHi = 0.25;
 
-        // ------------------------------------------------------------ praf si cer (ADR 0025)
+        // ------------------------------------------------------------ dust and sky (ADR 0025)
 
         /// <summary>
-        /// Latura dalei pe care se masoara praful si cerul, in pixeli ai imaginii: L*-ul
-        /// luminantei medii liniare a unei dale, nu al unui pixel, ca zgomotul si stropii
-        /// izolati sa nu-l miste. 32 px sunt 4 mm de hartie la 200 dpi, cam cat integreaza
-        /// ochiul pe o pata. Masurat pe ramura parcata: 16, 32 si 64 px dau 0.166, 0.162,
-        /// 0.157 pe aceeasi imagine, deci latura abia conteaza.
+        /// The side of the patch the dust and the sky are measured on, in pixels of the image:
+        /// the L* of a patch's mean linear luminance, not of a pixel, so that noise and isolated
+        /// specks do not move it. 32 px are 4 mm of paper at 200 dpi, about what the eye
+        /// integrates over a spot. Measured on the parked branch: 16, 32 and 64 px give 0.166,
+        /// 0.162, 0.157 on the same image, so the side barely matters.
         /// </summary>
         internal const int DustPatchPx = 32;
 
         /// <summary>
-        /// L*-ul unui nor catalogat, pentru randul lui din Anexa B: percentila asta (fractie) a
-        /// dalelor lui - nucleul norului, nu marginile discului, care se amesteca cu cerul.
+        /// The L* of a catalogued cloud, for its row of Anexa B: this percentile (a fraction) of
+        /// its patches - the cloud's core, not the edges of the disc, which mix with the sky.
         /// </summary>
         internal const double DustCloudFraction = 0.10;
 
-        // ---- clasele imaginii: praf, cer, banda, nori luminosi, varfuri (ADR 0026)
+        // ---- the image's classes: dust, sky, band, bright clouds, peaks (ADR 0026)
 
         /// <summary>
-        /// Banda Caii Lactee: dalele cu latitudinea galactica |b| sub atatea grade. Masurat
-        /// pe imaginea de referinta: la 10 grade banda e 33 % din cadru si Ruptura intra
-        /// toata in ea; la 12 grade, 40 %, cu mai mult cer curat inauntru.
+        /// The Milky Way band: the patches with galactic latitude |b| under this many degrees.
+        /// Measured on the reference image: at 10 degrees the band is 33 % of the frame and the
+        /// Great Rift falls wholly inside it; at 12 degrees, 40 %, with more clean sky inside.
         /// </summary>
         internal const double BandGalacticLatitudeDeg = 10;
 
         /// <summary>
-        /// Clasele benzii au sens doar cu banda SI cer in afara ei, fiecare cu cel putin atata
-        /// din dale: un cadru deep-sky in intregime in banda (M8) n-are din ce modela cerul, unul
-        /// in intregime in afara ei (o galaxie) n-are nivel local al benzii. Sub prag, ca si
-        /// fara WCS, clasele se fac relativ la cerul modelat (ADR 0033), si raportul spune de ce.
+        /// The band's classes make sense only with the band AND sky outside it, each with at
+        /// least this share of the patches: a deep-sky frame wholly inside the band (M8) has
+        /// nothing to model the sky from, one wholly outside it (a galaxy) has no local level of
+        /// the band. Under the threshold, as without a WCS, the classes are made relative to the
+        /// modelled sky (ADR 0033), and the report says why.
         /// </summary>
         internal const double BandMinFraction = 0.10;
 
         /// <summary>
-        /// Clasele benzii cer si un camp larg: dalele trebuie sa acopere cel putin atatea grade de
-        /// latitudine galactica, latimea intreaga a benzii (2 x BandGalacticLatitudeDeg). Sub atat
-        /// banda nu poate aparea ca fasie cu cer pe langa ea, oricate dale ar fi de fiecare parte
-        /// a lui |b| = 10: pe Veil_Starless.fit (9.6 x 6.4 grade, b de la -14.6 la -3.6, 65 % din
-        /// dale "banda") profilul L* dupa |b| e plat (9.1-10.5 in fiecare bin de 2 grade) si
-        /// banda geometrica e cu 0.5 L* peste cerul din afara ei, 0.6 sigma; pe imaginea de
-        /// referinta (68 grade de latitudine) urca de la 15 la 25.8 L*, cu 4.1 L* peste cer.
-        /// Un asemenea cadru e deep-sky in banda si ia calea cerului (ADR 0037).
+        /// The band's classes also need a wide field: the patches must span at least this many
+        /// degrees of galactic latitude, the band's whole width (2 x BandGalacticLatitudeDeg).
+        /// Under that the band cannot show as a strip with sky beside it, however many patches
+        /// lie on each side of |b| = 10: on Veil_Starless.fit (9.6 x 6.4 degrees, b from -14.6 to
+        /// -3.6, 65 % of the patches "band") the L* profile by |b| is flat (9.1-10.5 in every
+        /// 2-degree bin) and the geometric band is 0.5 L* over the sky outside it, 0.6 sigma; on
+        /// the reference image (68 degrees of latitude) it climbs from 15 to 25.8 L*, 4.1 L* over
+        /// the sky. Such a frame is deep-sky inside the band and takes the sky path (ADR 0037).
         /// </summary>
         internal const double BandMinLatitudeSpanDeg = 20;
 
-        // ---- clasele relative la cerul modelat, fara banda (ADR 0033)
+        // ---- the classes relative to the modelled sky, without the band (ADR 0033)
 
         /// <summary>
-        /// Fara banda, cerul se modeleaza din TOATE dalele, cu percentila asta a fiecarei celule
-        /// in loc de mediana: un obiect care acopera jumatate din celula ar ridica mediana in el,
-        /// percentila 25 ramane pe cer. Ales pe 2026-10-06 pe Rosetta, Orion, Andromeda si cele
-        /// doua imagini de referinta.
+        /// Without the band, the sky is modelled from ALL the patches, with this percentile of
+        /// each cell instead of the median: an object covering half a cell would lift the median
+        /// into itself, while the 25th percentile stays on the sky. Chosen on 2026-10-06 on
+        /// Rosetta, Orion, Andromeda and the two reference images.
         /// </summary>
         internal const double SkyModelLowPercentile = 25;
 
         /// <summary>
-        /// Zgomotul cerului pe dale: sigma robusta (1.4826 x MAD) a diferentei dala - cer
-        /// modelat, dupa o trecere de curatare care scoate dalele la peste SkyNoiseClipK sigma
-        /// (obiectul umfla MAD-ul: pe Orion starless sigma cade de la 2.95 la 1.75 L* cu
-        /// trecerea; a doua trecere ar contracta-o la 1.46, prea mult).
+        /// The sky's noise over the patches: the robust sigma (1.4826 x MAD) of the difference
+        /// patch - modelled sky, after one cleaning pass that drops the patches over
+        /// SkyNoiseClipK sigma (the object inflates the MAD: on Orion starless the sigma falls
+        /// from 2.95 to 1.75 L* with the pass; a second pass would shrink it to 1.46, too much).
         /// </summary>
         internal const double SkyNoiseClipK = 3;
 
         /// <summary>
-        /// O dala e nebuloasa cand e peste cerul modelat cu mai mult de atatea sigma ale
-        /// cerului, si praf cand e sub el cu la fel de mult. Intre 3 si 5 fractia de nebuloasa
-        /// se misca cu 2 % (Rosetta: 14.1 / 12.3 / 10.8 %) si ancorele cu sub 1.5 L*; 4 e
-        /// mijlocul. Pragul de nebuloasa stralucitoare nu are constanta: e pragul Otsu al
-        /// cozii de deasupra. Masurat pe 2026-10-06 (ADR 0033).
+        /// A patch is nebula when it is over the modelled sky by more than this many sigma of the
+        /// sky, and dust when it is under it by as much. Between 3 and 5 the nebula fraction moves
+        /// by 2 % (Rosetta: 14.1 / 12.3 / 10.8 %) and the anchors by under 1.5 L*; 4 is the
+        /// middle. The bright-nebula threshold has no constant: it is the Otsu threshold of the
+        /// tail above. Measured on 2026-10-06 (ADR 0033).
         /// </summary>
         internal const double SkyNoiseK = 4;
 
         /// <summary>
-        /// Pragul Otsu al nebuloasei stralucitoare lasa deasupra lui cel putin atata din dalele
-        /// de nebuloasa: Otsu maximizeaza varianta intre clase, si cateva dale de stele cu
-        /// zeci de L* peste o nebuloasa slaba ar fi "clasa" de sus, lasand nebuloasa
-        /// stralucitoare goala (gasit la revizia din 2026-10-06). Pe cele patru imagini cu
-        /// nebuloasa clasa de sus e 15-30 % din coada (referinta 15 %, Orion 28 %, Rosetta
-        /// 30 %), deci 5 % nu atinge nicio impartire reala.
+        /// The bright nebula's Otsu threshold leaves at least this share of the nebula patches
+        /// above it: Otsu maximises the variance between classes, and a few star patches tens of
+        /// L* over a faint nebula would be the upper "class", leaving the bright nebula empty
+        /// (found at the review of 2026-10-06). On the four images with nebula the upper class is
+        /// 15-30 % of the tail (reference 15 %, Orion 28 %, Rosetta 30 %), so 5 % touches no real
+        /// split.
         /// </summary>
         internal const double BrightClassMinTailFraction = 0.05;
 
         /// <summary>
-        /// Clasa praf decide verdictul doar cand are cel putin atata din dale; sub prag, praful
-        /// e cerul cel mai intunecat (SkyDarkestFraction). Cu banda, Ruptura e 9.4 % din cadru;
-        /// fara banda, clasa praf gaseste doar nuclee sau artefacte: 0.8 % pe de_printat.png
-        /// (nucleele Pipe-ului, p25 la L* 2.5, pe care ADR 0025 le-a respins ca praf), 0.4 % pe
-        /// Rosetta (marginea nebuloasei, mai luminoasa decat cerul), 0-2.7 % pe celelalte.
-        /// Proprietarul a ales 5 % pe 2026-10-06 (ADR 0033).
+        /// The dust class decides the verdict only when it has at least this share of the
+        /// patches; under the threshold, the dust is the darkest sky (SkyDarkestFraction). With
+        /// the band, the Great Rift is 9.4 % of the frame; without the band, the dust class finds
+        /// only cores or artefacts: 0.8 % on de_printat.png (the Pipe's cores, p25 at L* 2.5,
+        /// which ADR 0025 rejected as dust), 0.4 % on Rosetta (the nebula's edge, brighter than
+        /// the sky), 0-2.7 % on the others. The owner chose 5 % on 2026-10-06 (ADR 0033).
         /// </summary>
         internal const double DustClassMinFraction = 0.05;
 
         /// <summary>
-        /// Praful e o dala cu cel putin atatea unitati L* sub nivelul local al benzii (sau sub
-        /// cerul modelat): "mai intunecat decat ar fi banda acolo", nu "intunecat in general".
-        /// Pe imaginea de referinta diferenta praf-cer masurata pe Ruptura e de 3-6 L*; cu 4, 5,
-        /// 6 praful e 11, 9, 8 % din cadru. 5 e mijlocul.
+        /// On the band path, dust is a patch at least this many L* units under the band's local
+        /// level (or under the modelled sky); the sky path uses SkyNoiseK instead (ADR 0033).
+        /// "Darker than the band would be there", not "dark in general". On the
+        /// reference image the dust-sky difference measured on the Great Rift is 3-6 L*; with 4,
+        /// 5, 6 the dust is 11, 9, 8 % of the frame. 5 is the middle.
         /// </summary>
         internal const double DustDepthLstar = 5;
 
-        /// <summary>Un nor luminos e o dala din banda cu atatea unitati L* peste nivelul local al benzii: dublul adancimii prafului.</summary>
+        /// <summary>
+        /// A bright cloud is a band patch this many L* units over the band's local level: twice
+        /// the dust's depth.
+        /// </summary>
         internal const double BrightCloudLstar = 10;
 
-        /// <summary>Varfurile: cele mai luminoase atatea (fractie) dale ale cadrului, nucleul si norii cei mai stralucitori.</summary>
+        /// <summary>
+        /// The peaks: the brightest this many (a fraction) of the frame's patches, the core and
+        /// the brightest clouds.
+        /// </summary>
         internal const double PeakFraction = 0.001;
 
         /// <summary>
-        /// Nivelul local al benzii: mediana pe o fereastra de atatea dale (15 x 32 px = 480 px
-        /// pe imaginea de referinta), netezita apoi pe BandLocalSmoothPatches: structurile de
-        /// sute de pixeli raman, filamentele si zgomotul nu.
+        /// The band's local level: the median over a window of this many patches (15 x 32 px =
+        /// 480 px on the reference image), then smoothed over BandLocalSmoothPatches: structures
+        /// of hundreds of pixels stay, filaments and noise do not.
         /// </summary>
         internal const int BandLocalWindowPatches = 15;
         internal const int BandLocalSmoothPatches = 2;
 
         /// <summary>
-        /// Modelul cerului: mediana dalelor din AFARA benzii pe celule de atatea dale, celulele
-        /// cu mai putin de SkyModelCellMinPatches dale de cer luate de la cea mai apropiata,
-        /// interpolat liniar la rezolutia dalelor si netezit pe SkyModelSmoothPatches. Un model
-        /// neted, nu o constanta, ca gradientul (coltul stanga-sus al imaginii de referinta,
-        /// 11.7 fata de 24.3 L* la celalalt capat) sa nu devina praf.
+        /// The sky model: the median of the patches OUTSIDE the band over cells of this many
+        /// patches, the cells with fewer than SkyModelCellMinPatches sky patches taken from the
+        /// nearest one, interpolated linearly to the patches' resolution and smoothed over
+        /// SkyModelSmoothPatches. A smooth model, not a constant, so that the gradient (the
+        /// top-left corner of the reference image, 11.7 against 24.3 L* at the other end) does
+        /// not become dust.
         /// </summary>
         internal const int SkyModelCellPatches = 20;
         internal const int SkyModelCellMinPatches = 20;
         internal const int SkyModelSmoothPatches = 3;
 
         /// <summary>
-        /// L*-ul prafului pentru verdict: percentila asta (fractie) a dalelor din clasa praf.
-        /// Trei sferturi din praf raman cu tonuri peste negrul hartiei; sfertul cel mai
-        /// intunecat (nucleele Pipe-ului, negre si pe ecran) se tipareste negru plat. Pe imaginea
-        /// de referinta 10 % / 25 % / mediana dau tinte de 0.213 / 0.188 / 0.160; proprietarul a
-        /// ales 25 % pe 2026-10-02 (ADR 0026).
+        /// The dust's L* for the verdict: this percentile (a fraction) of the patches of the dust
+        /// class. Three quarters of the dust keep tones above paper black; the darkest quarter
+        /// (the Pipe's cores, black on screen too) prints as flat black. On the reference image
+        /// 10 % / 25 % / the median give targets of 0.213 / 0.188 / 0.160; the owner chose 25 % on
+        /// 2026-10-02 (ADR 0026).
         /// </summary>
         internal const double DustClassFraction = 0.25;
 
         /// <summary>
-        /// Un nor cu cel putin atatea dale primeste un rand al lui (L*, tinta exacta) si un
-        /// cerc pe harta: 9 dale = 3 x 3 = un grad patrat la 42"/px, destul ca percentila
-        /// lui sa nu fie o singura dala. Pe imaginea de referinta: 116 din 406 nori.
+        /// A cloud with at least this many patches gets a row of its own (L*, exact target) and a
+        /// circle on the map: 9 patches = 3 x 3 = a square degree at 42"/px, enough for its
+        /// percentile not to be a single patch. On the plate-solved FITS: 114 of the 397 clouds
+        /// with a patch in the frame (V-004).
         /// </summary>
         internal const int DustCloudMinPatches = 9;
 
         /// <summary>
-        /// Cerul cel mai intunecat: percentila asta (fractie) a dalelor din clasa cer. Praful
-        /// verdictului e minimul dintre percentila DustClassFraction a clasei praf (cand ea
-        /// decide) si cerul asta: zona intinsa cea mai intunecata, orice ar fi ea. 1 % e cea
-        /// mai mica fractie la care statistica sta pe sute de dale si nu pe o pata; pana la
-        /// ADR 0033 era aceeasi fractie, pe toate dalele cadrului (2026-10-02). Pe cele sase
-        /// imagini din 2026-10-06 cerul cel mai intunecat difera de vechea regula cu sub 0.2 L*.
+        /// The darkest sky: this percentile (a fraction) of the patches of the sky class. The
+        /// verdict's dust is the lower of the dust class's DustClassFraction percentile (when the
+        /// class decides) and this sky: the darkest extended area, whatever it is. 1 % is the
+        /// smallest fraction at which the statistic rests on hundreds of patches and not on a
+        /// spot; until ADR 0033 it was the same fraction, over all the frame's patches
+        /// (2026-10-02). On the six images of 2026-10-06 the darkest sky differs from the old
+        /// rule by under 0.2 L*.
         /// </summary>
         internal const double SkyDarkestFraction = 0.01;
 
-        /// <summary>Cati nori, de la cel mai intunecat, numeste raportul (Anexa B si "fiindca"); fereastra ii arata pe toti.</summary>
+        /// <summary>
+        /// How many clouds, from the darkest, the report names (Anexa B and the "fiindca"); the
+        /// window shows them all.
+        /// </summary>
         internal const int DustCloudReportRows = 15;
 
         /// <summary>
-        /// Scara pe care se cauta tinta exacta: ridicari din pas in pas, de la Lo la Hi, cu
-        /// interpolare liniara intre doi pasi. 0.05 e sub orice fundal de ecran; 0.60 e un
-        /// cer gri deschis, peste care nimeni nu tipareste; 0.01 e pasul grilei din tabel,
-        /// si statistica prafului e lina pe el (eroarea interpolarii, sub 0.001).
+        /// The ladder the exact target is looked for on: lifts step by step, from Lo to Hi, with
+        /// linear interpolation between two steps. 0.05 is under any screen background; 0.60 is a
+        /// light grey sky, above which nobody prints; 0.01 is the step of the table's grid, and
+        /// the dust's statistic is smooth over it (the interpolation's error, under 0.001).
         /// </summary>
         internal const double ExactTargetLo = 0.05;
 
         /// <summary>
-        /// Cel mai mare Dmax primit, de la om (--dmax, campul ferestrei) sau dintr-un profil ICC:
-        /// peste 4 reflectanta e sub 0.01 %, mai neagra decat orice suprafata tiparita (cele mai
-        /// bune hartii lucioase ajung la ~2.5-2.9). Un profil care da mai mult e stricat.
+        /// The largest Dmax accepted, from the user (--dmax, the window's field) or from an ICC
+        /// profile: over 4 the reflectance is under 0.01 %, blacker than any printed surface (the
+        /// best glossy papers reach ~2.5-2.9). A profile that gives more is damaged.
         /// </summary>
         internal const double DmaxMax = 4;
         internal const double ExactTargetHi = 0.60;
         internal const double ExactTargetStep = 0.01;
 
         /// <summary>
-        /// Cu cat se misca Dmax-ul in cele doua tinte exacte vecine din Anexa B: tinta se
-        /// muta cu ~0.02 la 0.1 de Dmax (masurat pe imaginea de referinta: 1.9 / 2.0 / 2.1
-        /// dau 0.208 / 0.187 / 0.166), iar Dmax-ul unei hartii pe o imprimanta anume rar e
-        /// stiut mai bine de atat.
+        /// How far the Dmax moves for the two neighbouring exact targets of Anexa B: the target
+        /// moves by ~0.02 per 0.1 of Dmax (measured on the reference image: 1.9 / 2.0 / 2.1 give
+        /// 0.208 / 0.187 / 0.166), and the Dmax of a paper on a given printer is rarely known
+        /// better than that.
         /// </summary>
         internal const double DmaxSensitivityStep = 0.1;
 
         /// <summary>
-        /// Latura maxima a imaginii din ferestrele de harta si de preview: destul pentru un
-        /// ecran de 1080p maximizat, destul de mica incat o curba gamma si L*-ul pe fiecare
-        /// pixel sa dureze sub o secunda.
+        /// The longest side of the image in the map and preview windows: enough for a maximised
+        /// 1080p screen, small enough for a gamma curve and the L* of every pixel to take under a
+        /// second.
         /// </summary>
         internal const int PreviewMaxSide = 1600;
 
-        // ------------------------------------------------------------ subesantionare
+        // ------------------------------------------------------------ subsampling
 
-        /// <summary>Pasul [::s, ::s] al fiecarei masuratori - cel din scripturile de acceptanta.</summary>
+        /// <summary>
+        /// The [::s, ::s] step of each measurement - the one of the acceptance scripts.
+        /// </summary>
         internal const int TonalStride = 4;
         internal const int PercentileStride = 2;
         internal const int BackgroundStride = 3;
 
-        // ------------------------------------------------------------ zgomot
+        // ------------------------------------------------------------ noise
 
         internal const int NoiseTileSize = 64;
         internal const int NoiseTileCandidates = 400;
 
         /// <summary>
-        /// O dala e "neteda" pentru zgomot daca max-min pe ea e sub atatea niveluri din
-        /// 255. E 6000 din 65535 - pragul scriptului de acceptanta - si e larg dinadins:
-        /// diferenta intre pixeli vecini scoate un gradient lent, deci o dala cu putina
-        /// structura tot masoara zgomotul corect. (Palierul are alt prag, mai strict.)
+        /// A tile is "smooth" for the noise if max-min over it is at most this many levels out of
+        /// 255 (the plateau's tiles need strictly under theirs). It is 6000 out of 65535 - the
+        /// acceptance script's threshold - and wide on purpose: the difference between
+        /// neighbouring pixels removes a slow gradient, so a tile with a little structure still
+        /// measures the noise right. (The plateau has another, stricter threshold.)
         /// </summary>
         internal const double NoiseTileMaxRangeLevels = 6000.0 / 257;
 
-        /// <summary>Sub atatea dale netede sigma nu e de incredere si raportul o spune.</summary>
+        /// <summary>
+        /// Under this many smooth tiles the sigma is not to be trusted, and the report says so.
+        /// </summary>
         internal const int NoiseMinTiles = 10;
 
         /// <summary>
-        /// Dalele PALIERULUI (etapa 3): range sub 6 niveluri si medie sub 70 - cer curat,
-        /// fara nucleu - 120 de dale din samanta 1. Sunt criteriile celuilalt script de
-        /// acceptanta, si dau 2.6 px pe imaginea de referinta.
+        /// The PLATEAU's tiles (stage 3): range under 6 levels and mean under 70 - clean sky,
+        /// without the core - up to 120 tiles from seed 1. They are the other acceptance script's
+        /// criteria; on the reference image 20 tiles pass in PlateauMaxAttempts tries, and give
+        /// 2.68 px (V-001).
         /// </summary>
         internal const double PlateauTileMaxRangeLevels = 6;
         internal const double PlateauTileMaxMeanLevels = 70;
         internal const int PlateauTileCount = 120;
         internal const int PlateauSeed = 1;
 
-        /// <summary>Sub sigma asta (in LSB de 8 biti) zgomotul nu mai dither-eaza cuantizarea: risc de banding.</summary>
+        /// <summary>
+        /// Under this sigma (in 8-bit LSB) the noise no longer dithers the quantization: a risk of
+        /// banding.
+        /// </summary>
         internal const double NoiseBandingLsb = 0.5;
 
-        /// <summary>Intervalul bun pentru versiunea de print: destul de mic sa fie invizibil pe hartie, destul de mare sa dither-eze.</summary>
+        /// <summary>
+        /// The good interval for the print version: small enough to be invisible on paper, large
+        /// enough to dither.
+        /// </summary>
         internal const double NoisePrintLoLsb = 0.8;
         internal const double NoisePrintHiLsb = 1.5;
 
-        /// <summary>Peste sigma asta imaginea e sub-denoise-uita pentru afisare la 100 %.</summary>
+        /// <summary>Over this sigma the image is under-denoised for display at 100 %.</summary>
         internal const double NoiseUnderDenoisedLsb = 2.0;
 
         // ------------------------------------------------------------ export
 
-        /// <summary>Un palier de valori identice mai lung de atat, pe hartie, e un contur vizibil.</summary>
+        /// <summary>
+        /// A plateau of identical values longer than this, on paper, is a visible contour.
+        /// </summary>
         internal const double PlateauVisibleMm = 1.0;
 
-        /// <summary>Un JPEG cu eroarea maxima peste atatea niveluri nu se recomanda.</summary>
+        /// <summary>
+        /// A JPEG whose maximum error is over this many levels is not recommended.
+        /// </summary>
         internal const double JpegMaxErrorReject = 10;
 
-        /// <summary>Pixelii cu eroare JPEG peste atatea niveluri se numara si se localizeaza.</summary>
+        /// <summary>
+        /// The samples with a JPEG error over this many levels are counted and located.
+        /// </summary>
         internal const double JpegErrorCountLevels = 2;
 
         /// <summary>
-        /// Peste atat la suta din esantioane cu eroare peste JpegErrorCountLevels, q100 primeste
-        /// "Atentie" chiar daca eroarea maxima e acceptabila: compresia loveste prea larg, de
-        /// obicei in cerul intunecat. Regula de la prima imagine, ca si pragul de 2 niveluri.
+        /// Over this percentage of samples with an error over JpegErrorCountLevels, q100 gets
+        /// "Atentie" even when the maximum error is acceptable: the compression hits too widely,
+        /// usually in the dark sky. The rule from the first image, as is the 2-level threshold.
         /// </summary>
         internal const double JpegOverThresholdWarnPct = 5;
 
-        /// <summary>Gamma-ul testului de stres shadow-lift (x^(1/g)): un auto-correct tipic de laborator.</summary>
+        /// <summary>
+        /// The gamma of the shadow-lift stress test (x^(1/g)): a typical lab auto-correct.
+        /// </summary>
         internal const double ShadowLiftGamma = 1.9;
 
-        /// <summary>Intervalul de niveluri in care se numara golurile din histograma dupa lift.</summary>
+        /// <summary>
+        /// The levels strictly between which the histogram's gaps are counted after the lift,
+        /// from the first level used there to the last.
+        /// </summary>
         internal const int ShadowLiftLevelLo = 8;
         internal const int ShadowLiftLevelHi = 120;
 
-        /// <summary>Peste atatea niveluri lipsa, master-ul de 16 biti e obligatoriu pentru orice editare.</summary>
+        /// <summary>
+        /// Over this many levels missing on the 8-bit path more than on the 16-bit one, the 16-bit
+        /// master is mandatory for any edit.
+        /// </summary>
         internal const int MissingLevelsWarn = 20;
 
-        // ------------------------------------------------------------ stele
+        // ------------------------------------------------------------ stars
 
         /// <summary>
-        /// Fereastra de cautare a maximelor locale (latura, px, impara): StarAnalyzer o citeste de
-        /// aici (jumatatea ei e marginea lasata deoparte); intre maxime egale in fereastra conteaza
-        /// doar primul in ordinea scanarii (ADR 0041).
+        /// The window the local maxima are looked for in (side, px, odd): StarAnalyzer reads it
+        /// from here (its half is the border left out); among equal maxima in the window only the
+        /// first in the scanning order counts (ADR 0041).
         /// </summary>
         internal const int StarWindow = 25;
 
-        /// <summary>O stea trebuie sa fie cu atat peste fundalul ferestrei, in unitati de 16 biti ...</summary>
+        /// <summary>
+        /// A star must be this far over the window's base (the median of its border), in 16-bit
+        /// units ...
+        /// </summary>
         internal const double StarMinAmplitude16 = 3000;
 
-        /// <summary>... si sub varful asta, ca sa nu fie saturata (profilul unei stele saturate n-are jumatate).</summary>
+        /// <summary>
+        /// ... and under this peak, so as not to be saturated (the profile of a saturated star has
+        /// no half).
+        /// </summary>
         internal const double StarMaxPeak16 = 60000;
 
         /// <summary>
-        /// Candidatii se cauta peste media planului + amplitudinea minima a unei stele.
-        /// Scriptul de acceptanta folosea 3 x media - bine pe un cer la 0.10, dar la un
-        /// fundal de 0.25 (versiunea de print!) pragul urca la 0.75 si stelele de 0.55
-        /// nu mai trec. Conditia necesara e cea de aici; filtrul adevarat e amplitudinea
-        /// fata de fundalul local, care se aplica oricum.
+        /// The candidates are looked for over the plane's mean + the minimum amplitude of a star.
+        /// The acceptance script used 3 x the mean - fine on a sky at 0.10, but at a background
+        /// of 0.25 (the print version!) the threshold climbs to 0.75 and stars of 0.55 no longer
+        /// pass. The condition here is the necessary one; the real filter is the amplitude over
+        /// the local base, which applies anyway.
         /// </summary>
         internal const double StarCandidateAboveMean16 = StarMinAmplitude16;
 
-        /// <summary>Latimi la jumatate acceptate; in afara lor e o pata sau un pixel fierbinte.</summary>
+        /// <summary>
+        /// The accepted widths at half maximum; outside them it is a blob or a hot pixel.
+        /// </summary>
         internal const double StarFwhmMin = 0.8;
         internal const double StarFwhmMax = 15;
 
-        /// <summary>Peste raportul asta colt/centru, colturile sunt moi.</summary>
+        /// <summary>Over this corner/centre ratio, the corners are soft.</summary>
         internal const double CornerSoftRatio = 1.4;
 
-        /// <summary>Latura unei regiuni de colt, ca fractie din latura imaginii.</summary>
+        /// <summary>The side of a corner region, as a fraction of the image's side.</summary>
         internal const double RegionFraction = 0.2;
 
         /// <summary>
-        /// Latura regiunii centrale, ca fractie. Mai mare decat coltul, ca sa aiba destule
-        /// stele: centrul unei astrofoto e adesea nucleul, unde stelele se pierd in
-        /// nebulozitate, iar o mediana pe trei stele nu e o mediana.
+        /// The side of the central region, as a fraction. Larger than the corner's, so that it
+        /// holds enough stars: the centre of an astrophoto is often the core, where the stars are
+        /// lost in the nebulosity, and a median of three stars is not a median.
         /// </summary>
         internal const double CenterFraction = 0.4;
 
-        /// <summary>Sub atatea stele masurate FWHM-ul global nu e de incredere.</summary>
+        /// <summary>Under this many measured stars the global FWHM is not to be trusted.</summary>
         internal const int StarMinCount = 20;
 
-        /// <summary>Sub atatea stele intr-o regiune, FWHM-ul ei nu se raporteaza.</summary>
+        /// <summary>Under this many stars in a region, its FWHM is not reported.</summary>
         internal const int RegionMinStars = 5;
 
-        /// <summary>Cati candidati se incearca pentru dalele palierului inainte de a renunta.</summary>
+        /// <summary>
+        /// How many candidates are tried for the plateau's tiles before giving up.
+        /// </summary>
         internal const int PlateauMaxAttempts = 5000;
 
         /// <summary>
-        /// Fara FWHM (prea putine stele) nu se masoara detaliul, ci doar grila de pixeli:
-        /// pasul pixelului trebuie sa fie sub ce desface ochiul. Fara distanta data, pragul e
-        /// conventia laboratoarelor pentru un print mare "de calitate" (150-200 dpi): la 180
-        /// dpi pasul e 0.14 mm, invizibil de la ~0.5 m - lungimea bratului, cand te apropii
-        /// sa te uiti. Cu distanta data pragul e cel fizic, 25.4 / (0.29 x d): 300 dpi = 0.29
-        /// m (citit), 180 = 0.49 m, 100 = 0.88 m, 60 = 1.46 m (canapea). E o limita a
-        /// fisierului, nu a detaliului - o nebuloasa moale poate cere mult mai putin - deci
-        /// nu recomanda un rand.
+        /// Without a FWHM (too few stars) the detail is not measured, only the pixel grid: the
+        /// pixel's pitch must be under what the eye resolves. Without a given distance, the
+        /// threshold is the labs' convention for a large "quality" print (150-200 dpi): at 180
+        /// dpi the pitch is 0.14 mm, invisible from ~0.5 m - arm's length, when you lean in to
+        /// look. With a given distance the threshold is the physical one, 25.4 / (0.29 x d): 300
+        /// dpi = 0.29 m (reading), 180 = 0.49 m, 100 = 0.88 m, 60 = 1.46 m (the sofa). It is a
+        /// limit of the file, not of the detail - a soft nebula may need much less - so it does
+        /// not recommend a row.
         /// </summary>
         internal const double FallbackMinDpi = 180;
 
-        /// <summary>Calitatile JPEG din tabel. 100 e singura recomandabila; 95 si 90 arata de ce.</summary>
+        /// <summary>
+        /// The JPEG qualities of the table. 100 is the only recommendable one; 95 and 90 show why.
+        /// </summary>
         internal static readonly int[] JpegQualities = { 100, 95, 90 };
 
-        // ------------------------------------------------------------ fundal
+        // ------------------------------------------------------------ background
 
-        /// <summary>Fundalul = cei mai intunecati atatia pixeli (fractie) ...</summary>
+        /// <summary>The background = the darkest this many pixels (a fraction) ...</summary>
         internal const double BackgroundDarkestFraction = 0.25;
 
-        /// <summary>... fara banda de jos (fractie din inaltime), unde sta orizontul si poluarea lui.</summary>
+        /// <summary>
+        /// ... without the bottom band (a fraction of the height), where the horizon and its
+        /// pollution sit.
+        /// </summary>
         internal const double BackgroundExcludeBottomFraction = 0.25;
 
         /// <summary>
-        /// Regiunile de margine: coltul e atata din inaltime x atata din latime (regiunea din
-        /// scriptul de acceptare); laturile sunt benzi de aceeasi grosime, intre colturi.
+        /// The edge regions: the corner is this much of the height x this much of the width (the
+        /// region of the acceptance script); the sides are bands of the same thickness, between
+        /// the corners.
         /// </summary>
         internal const double EdgeRegionHeightFraction = 0.15;
         internal const double EdgeRegionWidthFraction = 0.20;
 
-        /// <summary>O tenta de peste atatea niveluri pe fundal se vede odata ce fundalul e ridicat.</summary>
+        /// <summary>
+        /// A cast of over this many levels on the background shows once the background is lifted.
+        /// </summary>
         internal const double CastWarnLevels = 1.0;
 
-        /// <summary>Un colt cu atatea niveluri peste fundal e gradient rezidual sau lumina de orizont.</summary>
+        /// <summary>
+        /// A corner this many levels over the background is a residual gradient or horizon glow.
+        /// </summary>
         internal const double CornerGradientLevels = 3.0;
 
         /// <summary>
-        /// O abatere e COLORATA daca diferenta dintre canale (max - min din delta) trece
-        /// de CornerGradientLevels si e cel putin atata fractie din abaterea medie.
-        /// Masurat pe imaginea de referinta: coltul de orizont are R +9, B -10 (colorat,
-        /// poluare); coltul in care intra Calea Lactee are +11 / +10 / +16 (neutru - e
-        /// obiectul, nu un gradient). O regula care confunda obiectul cu defectul e
-        /// gresita mai des decat e utila, deci neutru = informativ, colorat = atentie.
+        /// A departure is COLOURED if the difference between the channels (max - min of the
+        /// delta) exceeds CornerGradientLevels and exceeds this fraction of the mean absolute
+        /// departure. Measured on the reference image: the horizon corner has R +9, B -10
+        /// (coloured, pollution); the corner the Milky Way enters has +11 / +10 / +16 (neutral -
+        /// it is the object, not a gradient). A rule that mistakes the object for the defect is
+        /// wrong more often than it is useful, so neutral = informative, coloured = attention.
         /// </summary>
         internal const double CornerColourSpreadRatio = 0.5;
 
-        // ------------------------------------------------------------ marime
+        // ------------------------------------------------------------ size
 
-        /// <summary>Acuitatea ochiului: 1 minut de arc = 0.29 mm la 1 m. Scaleaza liniar cu distanta.</summary>
+        /// <summary>
+        /// The eye's acuity: 1 minute of arc = 0.29 mm at 1 m. It scales linearly with distance.
+        /// </summary>
         internal const double AcuityMmAt1m = 0.29;
 
         /// <summary>
-        /// Distanta implicita de privire a unui tablou: de atatea ori diagonala lui. Regula de
-        /// degetul mare a printului si a inramarii, "1-2 x diagonala", are doua repere: 1 x
-        /// diagonala e distanta de la care perspectiva e cea a obiectivului (centrul de
-        /// perspectiva al unui obiectiv normal, cu focala cat diagonala cadrului), iar 2 x e
-        /// practica de galerie, de unde tabloul se cuprinde intreg fara sa misti capul. La
-        /// 1.5 x tabloul subintinde ~37 de grade pe diagonala: intreg in campul central, dar
-        /// destul de aproape cat sa te uiti la detaliu. E o prezumtie despre om, nu o
-        /// masuratoare a imaginii; diagonala e a imaginii, nu a ramei.
+        /// The default viewing distance of a picture: this many times its diagonal. The print and
+        /// framing rule of thumb, "1-2 x the diagonal", has two marks: 1 x the diagonal is the
+        /// distance from which the perspective is the lens's (the perspective centre of a normal
+        /// lens, whose focal length equals the frame's diagonal), and 2 x is gallery practice,
+        /// from where the picture is taken in whole without moving the head. At 1.5 x the picture
+        /// subtends ~37 degrees on the diagonal: whole in the central field, but close enough to
+        /// look at the detail. It is a presumption about the viewer, not a measurement of the
+        /// image; the diagonal is the image's, not the frame's.
         /// </summary>
         internal const double ViewingDistanceFactor = 1.5;
 
         /// <summary>
-        /// La distanta NATURALA, "steaua e punct" nu depinde de marime: si distanta de la
-        /// care steaua devine punct, si distanta naturala cresc proportional cu latimea,
-        /// iar raportul lor e fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + r^2)) - o
-        /// constanta a imaginii. Pe imaginea de referinta e 1.018: toate marimile "picau"
-        /// cu 2 %, si regula cadea pe cea mai mica; cu FWHM 3.00 in loc de 3.13 ar fi
-        /// trecut toate. O toleranta de 15 % (cat imprastierea estimatorului de FWHM)
-        /// face testul sa raspunda la intrebarea pe care chiar o poate: e imaginea destul
-        /// de clara pentru distanta ei naturala, da sau nu. Marimea o alege peretele.
+        /// At the NATURAL distance, "the star is a point" does not depend on the size: both the
+        /// distance from which the star becomes a point and the natural distance grow in
+        /// proportion to the width, and their ratio is
+        /// fwhm x 1000 / (Wpx x 0.29 x 1.5 x sqrt(1 + r^2)) - a constant of the image. On the
+        /// reference image it is 1.018: every size "failed" by 2 %, and the rule fell on the
+        /// smallest; with a FWHM of 3.00 instead of 3.13 they would all have passed. A tolerance
+        /// of 15 % (about the scatter of the FWHM estimator) makes the test answer the question it
+        /// actually can: is the image sharp enough for its natural distance, yes or no. The wall
+        /// chooses the size.
         /// </summary>
         internal const double NaturalDistanceTolerance = 1.15;
 
-        /// <summary>Peste latimea asta (cm) intervin sticla, greutatea si transportul, nu fisierul.</summary>
+        /// <summary>
+        /// Over this width (cm) the glass, the weight and the transport intervene, not the file.
+        /// </summary>
         internal const double OversizeCm = 100;
 
         /// <summary>
-        /// Pasul pixelului unui monitor obisnuit (96-110 ppi), pentru regula pasului inapoi
-        /// din Preview: la 100 % fisierul se vede ca un print de Wpx x atat. O prezumtie
-        /// despre ecran, nu o masuratoare; un 4K de 27" are 0.16 mm si vederea e cu atat
-        /// mai aspra.
+        /// The pixel pitch of a common monitor (96-110 ppi), for the Preview's step-back rule: at
+        /// 100 % the file is seen as a print of Wpx x this. A presumption about the screen, not a
+        /// measurement; a 27" 4K has 0.16 mm, and the view is that much harsher.
         /// </summary>
         internal const double ScreenPixelMm = 0.25;
 
         /// <summary>
-        /// Passepartout-ul trebuie sa fie cel putin de atatea ori latimea ramei: sub asta
-        /// rama "strange" imaginea si albul din jur nu mai are ce sa faca. Regula
-        /// inramatorilor; 0 inseamna fara passepartout si nu e verificat.
+        /// The passepartout must be at least this many times the frame's width: under that the
+        /// frame "squeezes" the image and the white around it has nothing left to do. The
+        /// framers' rule; 0 means no passepartout and is not checked.
         /// </summary>
         internal const double PassepartoutMinFrameRatio = 2;
 
-        /// <summary>Densitatea "clasica" de referinta, doar pentru a arata ca nu e limita reala.</summary>
+        /// <summary>
+        /// The "classic" reference density, only to show that it is not the real limit.
+        /// </summary>
         internal const double ReferenceDpi = 300;
 
-        // ---------------------------------------------------------------- curbele sugerate (ADR 0032)
+        // ------------------------------------------------------------ suggested curves (ADR 0032)
 
         /// <summary>
-        /// Ancora "banda" a unei curbe, cu clase: percentila dalelor din clasa banda. Nu
-        /// mediana: mediana benzii sta langa cer (banda larga isi include partea slaba), si
-        /// portiunea abrupta a curbei ar incepe de la cer. Masurat pe 2026-10-05 pe
-        /// starless_rbf0.5_stretch0.17.fit: percentila 80 da 0.306, punctul 0.32 al curbei
-        /// vechi a proprietarului; cu mediana (0.225) zgomotul din cer creste de 1.40 x in loc de 1.26.
+        /// The "band" anchor of a curve, with classes: this percentile of the patches of the band
+        /// class. Not the median: the band's median sits close to the sky (a wide band takes in
+        /// its faint part), and the steep part of the curve would start from the sky. Measured on
+        /// 2026-10-05 on starless_rbf0.5_stretch0.17.fit: the 80th percentile gives 0.306, the
+        /// 0.32 point of the owner's old curve; with the median (0.225) the noise in the sky grows
+        /// by 1.40 x instead of 1.26.
         /// </summary>
         internal const double CurveBandClassPercentile = 80;
 
         /// <summary>
-        /// Ancora "nori luminosi", cu clase: percentila 75 a clasei da 0.543 pe acelasi FITS
-        /// (curba veche: 0.55). Aceleasi doua percentile pe clasele relative la cer (nebuloasa,
-        /// nebuloasa stralucitoare): pe FITS-ul 0.17 fara geometrie dau L* 32.5 / 57.3 fata de
-        /// 33.2 / 57.7 cu banda (ADR 0033).
+        /// The "bright clouds" anchor, with classes: the class's 75th percentile gives 0.543 on
+        /// the same FITS (the old curve: 0.55). The same two percentiles on the classes relative
+        /// to the sky (nebula, bright nebula): on the 0.17 FITS without geometry they give L* 32.5
+        /// / 57.3 against 33.2 / 57.7 with the band (ADR 0033).
         /// </summary>
         internal const double CurveCloudClassPercentile = 75;
 
         /// <summary>
-        /// Pantele celor trei segmente de deasupra cerului, cele ale curbei vechi a
-        /// proprietarului pentru FITS-ul 0.17 (0.17 > 0.165, 0.32 > 0.42, 0.55 > 0.76,
-        /// 0.72 > 0.92): cer-banda, banda-nori, nori-varfuri. Vin de la o singura curba pe o
-        /// singura imagine; raportul dintre ele e reteta, marimea lor se scaleaza.
+        /// The slopes of the three segments above the sky, those of the owner's old curve for the
+        /// 0.17 FITS (0.17 -> 0.165, 0.32 -> 0.42, 0.55 -> 0.76, 0.72 -> 0.92): sky-band,
+        /// band-clouds, clouds-peaks. They come from a single curve on a single image; the ratio
+        /// between them is the recipe, their size is scaled.
         /// </summary>
         internal const double CurveSlopeSkyBand = 1.70;
         internal const double CurveSlopeBandCloud = 1.48;
         internal const double CurveSlopeCloudPeak = 0.94;
 
-        /// <summary>Unde ajung cel mult varfurile: 0.92 in curba veche, cu loc de umar pana la alb.</summary>
+        /// <summary>
+        /// Where the peaks go at most: 0.92 in the old curve, with room for a shoulder up to
+        /// white.
+        /// </summary>
         internal const double CurvePeakTarget = 0.92;
 
         /// <summary>
-        /// Tariile Blanda, Medie, Puternica: cat din drumul de la identitate la curba intreaga.
-        /// Alese pe plansele studiului din 2026-10-05: pe FITS-ul 0.17 treptele muta norii
-        /// luminosi cu cate ~4 L* (56, 60, 64), cat sa se deosebeasca la rasfoire; pasii de
-        /// 0.15 ai primei incercari (1 L* la banda) nu se deosebeau.
+        /// The strengths Blanda, Medie, Puternica: how much of the way from the identity to the
+        /// whole curve. Chosen on the sheets of the study of 2026-10-05: on the 0.17 FITS the
+        /// steps move the bright clouds by ~4 L* each (56, 60, 64), enough to tell apart when
+        /// browsing; the first attempt's steps of 0.15 (1 L* at the band) could not be told apart.
         /// </summary>
         internal static readonly double[] CurveStrengths = { 0.5, 0.75, 1.0 };
 
         /// <summary>
-        /// Maxima se ofera doar cand varfurile ei, cu factorul plafonat ca spline-ul sa ramana in
-        /// 0..1 (ADR 0039), urca cu mai mult de atat peste ale Puternicii. O alegere, nu o
-        /// masuratoare: 0.02 din scara e sub 2 L* la varfuri, mai putin decat o treapta de tarie;
-        /// pe FITS-ul 0.17 Puternica ajunge la 0.919 si Maxima n-ar adauga nimic.
+        /// Maxima is offered only when its peaks, with the factor capped so that the spline stays
+        /// within 0..1 (ADR 0039), climb by more than this over Puternica's. A choice, not a
+        /// measurement: 0.02 of the scale is under 2 L* at the peaks, less than a strength step;
+        /// on the 0.17 FITS Puternica reaches 0.919 and Maxima would add nothing.
         /// </summary>
         internal const double CurveMaximaMinGain = 0.02;
 
-        /// <summary>Un pixel e "ars" cand un canal al lui e la sau peste nivelul asta; pragul studiului din 2026-10-05.</summary>
+        /// <summary>
+        /// A pixel is "clipped" when one of its channels is at or over this level; the threshold
+        /// of the study of 2026-10-05.
+        /// </summary>
         internal const double CurveClipLevel = 0.995;
 
-        /// <summary>Graficul umbrelor din fereastra curbei merge de la 0 la de atatea ori intrarea benzii: praful si cerul stau in primii 10-20 % ai axei si nu se vad pe graficul intreg.</summary>
+        /// <summary>
+        /// The shadow chart of the curve window goes from 0 to this many times the input of the
+        /// curve's fourth point, the band's (the bright clouds' when the dust's point is the
+        /// origin, CurveAdvisor.ShadowChartLimit): the dust and the sky sit in the first 10-20 %
+        /// of the axis and do not show on the whole chart.
+        /// </summary>
         internal const double CurveShadowChartFactor = 1.25;
 
         /// <summary>
-        /// Marimea previzualizarilor cand fereastra n-a apucat sa spuna cat e zona galeriei (in
-        /// teste, sau inainte de prima asezare): cat incape pe un ecran Full HD sub bara de
-        /// parametri. O prezumtie despre ecran, nu o masuratoare.
+        /// The size of the previews while the window has not yet said how large the gallery area
+        /// is (in the tests, or before the first layout): what fits on a Full HD screen under the
+        /// parameter bar. A presumption about the screen, not a measurement.
         /// </summary>
         internal const int CurvePreviewDefaultWidth = 1600;
         internal const int CurvePreviewDefaultHeight = 900;
 
-        /// <summary>Cate puncte are curba esantionata pentru un grafic.</summary>
+        /// <summary>How many points the curve sampled for a chart has.</summary>
         internal const int CurveChartSamples = 257;
 
         /// <summary>
-        /// Gamutul hartiei (R-144): o culoare e in afara cand drumul sRGB - imprimanta - inapoi
-        /// ii muta a*, b* cu mai mult de atat. Doar croma: negrul hartiei il judeca tabul
-        /// Tonuri. 3 e pragul Delta E al studiului din 2026-10-05.
+        /// The paper's gamut (R-144): a colour is outside when the trip sRGB - printer - back moves
+        /// its a*, b* by more than this. Chroma only: the paper black is judged by the Tonuri tab.
+        /// 3 is the Delta E threshold of the study of 2026-10-05.
         /// </summary>
         internal const double CurveGamutDeltaAb = 3;
 
-        /// <summary>Nodurile pe canal ale tabelei dus-intors prin profil; 33 inseamna 35 937 de culori trecute o data prin pachet (~25 microsecunde fiecare), restul prin interpolare.</summary>
+        /// <summary>
+        /// The nodes per channel of the round-trip table through the profile; 33 means 35,937
+        /// colours passed once through the package (~25 microseconds each); the pixels are read
+        /// by interpolation, except those within CurveGamutExactMargin of the threshold, which
+        /// take the exact trip once per 8-bit colour (ADR 0042).
+        /// </summary>
         internal const int CurveGamutGrid = 33;
 
         /// <summary>
-        /// Cat de aproape de CurveGamutDeltaAb trebuie sa fie deplasarea interpolata a unui pixel
-        /// ca drumul exact prin profil sa decida in locul interpolarii (R-144, ADR 0042). Grila
-        /// singura rotunjeste marginea gamutului spre interior si numara prea putin, cu pana la
-        /// 2.4 puncte pe o clasa (praful imaginii de referinta pe baryta: 0.0 % fata de 2.4 %
-        /// exact; 0.45 si 2.2 puncte chiar cu 65 de noduri). Cu marginea 0.5 cerul pe canvas
-        /// ramane cu 0.5 puncte sub exact; cu 1.0 fiecare clasa e la trei zecimale de cifra
-        /// exacta, iar o data pe culoare de 8 biti, la sub 0.2 puncte (masurat 2026-10-23 pe
-        /// FITS-ul plate-solved cu ambele profile ale atelierului si pe de_printat.png).
+        /// How close to CurveGamutDeltaAb a pixel's interpolated displacement must be for the
+        /// exact trip through the profile to decide instead of the interpolation
+        /// (R-144, ADR 0042). The grid alone rounds the gamut's edge inward and counts too few,
+        /// by up to 2.4 points on a class (the reference image's dust on baryta: 0.0 % against
+        /// 2.4 % exact; 0.45 and 2.2 points even with 65 nodes). With the margin 0.5 the sky on
+        /// canvas stays 0.5 points under exact; with 1.0 every class is within three decimals of
+        /// the exact figure, and once per 8-bit colour, within 0.2 points (measured 2026-10-23 on
+        /// the plate-solved FITS with both of the workshop's profiles and on de_printat.png).
         /// </summary>
         internal const double CurveGamutExactMargin = 1.0;
     }
