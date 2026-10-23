@@ -19,7 +19,7 @@
 // under paper black.
 //
 // Two scales, on purpose. B1 is in LEVELS (0..255), the language of the histogram and of any
-// editor - "96 % of the pixels under 64". B2 is in L*, the language of paper: a medium's black
+// editor - "96 % of the samples under 64". B2 is in L*, the language of paper: a medium's black
 // is an L* (from its Dmax), and what lies under it prints with the same black. On grey the
 // conversion is a fixed curve (ColorMath.GrayLevelOfLstar, the LstarLadder table); on colour the
 // same level gives another L* by hue, and B1 counts samples over the channels, B2 pixels - which
@@ -35,9 +35,10 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// The tonal facts of an image: B1 in 8-bit levels (the means, the dark shares, the
-    /// percentiles and the background level the simulation lifts) and B2 in L* (the shares under
-    /// paper black and the two L* thresholds, the histogram).
+    /// The tonal facts of an image: B1 (the means and the percentiles in 8-bit levels, the dark
+    /// shares in percent of the samples, and the background level the simulation lifts, on
+    /// 0..1) and B2 in L* (the shares under paper black and the two L* thresholds, the
+    /// histogram).
     /// </summary>
     internal sealed record TonalResult
     {
@@ -46,7 +47,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The percentage of the samples (all planes) under <see cref="Thresholds.DarkLevelA"/>
-        /// and <see cref="Thresholds.DarkLevelB"/>.
+        /// and <see cref="Thresholds.DarkLevelB"/>, compared as floats: on an 8-bit TIFF, PNG or
+        /// JPEG the level itself counts too (the comment in Analyze).
         /// </summary>
         internal double PctBelowDarkA { get; init; }
         internal double PctBelowDarkB { get; init; }
@@ -168,9 +170,11 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = plane[i];
                     s += v;
-                    // "sub nivelul 32" is a sample under 32/255: on 8 bits the levels under 32;
-                    // on 16 bits those under 32 x 257 = 8224 (and 8224 itself, by float rounding,
-                    // on a TIFF or PNG), where the script's high byte (hi < 32) stopped at 8191.
+                    // "sub nivelul N" (N = Thresholds.DarkLevelA or DarkLevelB) is a float sample
+                    // under N / 255: from an 8-bit FITS the levels under N; from an 8-bit TIFF,
+                    // PNG or JPEG, read as n x 257 x (1 / 65535) in float, the levels up to N, N
+                    // itself included by float rounding; from 16 bits the levels under N x 257
+                    // (on a TIFF or PNG that one too). The script tested the high byte (hi < N).
                     if (v < a) belowA++;
                     if (v < b) belowB++;
                 }

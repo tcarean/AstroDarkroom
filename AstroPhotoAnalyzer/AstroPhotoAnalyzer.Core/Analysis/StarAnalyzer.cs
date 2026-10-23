@@ -22,7 +22,7 @@
 //
 // HOW: candidate = a pixel above the plane's mean + the minimum amplitude, which is the maximum
 // of its 25x25 window.
-// The star's background = the median of the window's border; the amplitude = peak - background,
+// The star's base = the median of the window's border; the amplitude = peak - base,
 // with a low threshold (a faint smudge has no profile); a high threshold on the peak itself
 // leaves out a saturated star (it has no half). The width at half maximum is taken on the
 // horizontal and on the vertical, with linear subpixel interpolation, and averaged. Exactly the

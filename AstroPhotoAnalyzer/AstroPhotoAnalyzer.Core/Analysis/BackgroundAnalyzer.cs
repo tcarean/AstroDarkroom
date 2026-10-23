@@ -134,8 +134,10 @@ namespace AstroPhotoAnalyzer
             int rowLimit = (int)(s.H * (1 - Thresholds.BackgroundExcludeBottomFraction));
 
             // "<=", not "<": on a flat sky many pixels sit EXACTLY at the percentile, and a strict
-            // "<" would pick none. On real data, with continuous values, the two give the same
-            // thing.
+            // "<" would pick none. Real data ties too: on the 16-bit reference image 68 pixels
+            // above the bottom band sit at the cut and the printed levels do not move; on its
+            // 8-bit version 32442 do, and the two give a green cast of +2.0 and +1.0 levels, either
+            // side of CastWarnLevels (measured 2026-10-23).
             var picked = new List<int>();
             for (int y = 0; y < rowLimit; y++)
                 for (int x = 0; x < s.W; x++)

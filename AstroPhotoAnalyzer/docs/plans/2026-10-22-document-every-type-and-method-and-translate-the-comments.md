@@ -576,7 +576,7 @@ reported. The owner had every comment-only finding fixed and the code defects ke
      8224, exactly the 8-bit level 32, counts as under 32, and on a FITS it does not (P1);
      negligible on the figures.
 - **Process:** area 1's two questions had no answer when this session started, so `/validate`
-  ran, as the rule "Formula changes re-validate" asks (the seven files copied, 754 MB), and the
+  ran, as the rule "Formula changes re-validate" asks (the seven files copied, 772 MB), and the
   scratch tool still lives in the scratchpads: area 3 copies it, with `checks.sh`, `wrapdoc.py`,
   `drift.py` and the probe project, from this session's scratchpad
   (`...\E--Photografie-Code-AstroPhotoAnalyzer\a214bf4e-2a6a-45f9-8451-f5225048091c\scratchpad`).
@@ -605,3 +605,97 @@ reported. The owner had every comment-only finding fixed and the code defects ke
   - **`check-design.ps1 -Since main`** listed four notes: `measurements.md` changed (above);
     `code-map.md`, `dependencies.md` and `known-limitations.md` were read against the change and
     hold.
+
+### Code review of area 2 (2026-10-23)
+
+`/code-review main...claude/Document-and-translate-the-analyzers` ran at maximum effort: eleven
+finder angles, six verifiers (most candidates checked with a probe on the branch's build or on
+the reference images), and a final sweep. 48 distinct candidates, 12 refuted, 38 confirmed (36
+plus 2 from the sweep); 15 reported. The owner had every comment-only finding fixed, the lower
+ones included, and the code defects kept as questions. The probes are in the scratchpad's
+`review\` folder.
+
+- **Comments made true about the code,** in `Core/Analysis/`:
+  - two of area 2's own corrections were wrong or short: the "sub nivelul N" comment (fact 1),
+    since an 8-bit TIFF, PNG or JPEG is read as n x 257 x (1 / 65535) in float, which counts the
+    level N itself too; and the `ToneCurve` header's float bound (fact 14), exceeded within a
+    step of the corner where a curve clamped at 1 meets the clamp (1.6e-6 on V-014's Maxima, up
+    to 7.8e-6 on synthetic anchors);
+  - new docs that over-promised: `TonalResult`'s summary (the background level is on 0..1, not
+    in levels), `SigmaLsb`'s return (the / sqrt 2 x 255), `PrintSizeAnalyzer.Analyze`'s fwhmPx
+    (NaN under `StarMinCount` stars), `Crossing`'s return (a branch no input reaches),
+    `CurveAnchors`, `Gray` and `Problem` (only the three upper classes can be NaN), `Map` and
+    `Slope` with NaN, `DpiLadder`'s return (now names `ReferenceDpi`), `Simulate`'s target
+    range, `Explicit` and `Primary` (the 6-decimal rounding), the exact targets' "null" (a given
+    target over 0.60 extends the ladder), `SimulationResult.Clouds` (empty without a WCS);
+  - claims translated as they stood and found false: `DmaxToPassAsIs` "passes as it is" (the
+    dust only), `Curves` "a spline that would not be monotone" (the clamped table is judged),
+    the curve evidence "re-measured" (the noise gain and noise after are predicted), the gamut
+    figure "good to tenths of a percent", `FindClouds` "whose disc holds a patch centre",
+    `ClassifyBySky`'s tail fraction (by rank) and its sigma-0 sentence (positive residuals are
+    still split by Otsu), `BackgroundAnalyzer`'s "the two give the same thing" (real data ties),
+    the crop's "Null when nothing is cut", `QuantizationAnalyzer`'s "the difference between the
+    two", `PercentileFromHistogram`'s count (one sample more at 99.9 % of a whole n), "pixels"
+    for samples in the `TonalAnalyzer` and `BitDepthAnalyzer` headers;
+  - quoted output back in Romanian ("sub negru", "sub L* 15"; "PROBLEMA", "ATENTIE"; the class
+    names quoted); the star's "background" is its base, as R-070 and the file say; a property
+    comment added to `AlreadyPrintSafe` (the dust alone, not print-safe).
+- **Docs:** `measurements.md` (the B4 heading names the sky too; the gamut grid's figures
+  re-measured, the first record's 0.01 % / 0.11 % now 0.16 % / 0.72 %, with the per-class
+  undercount on the FITS; the `<=` note), ADR 0014 a dated Corrected note ("real data has no
+  ties"), the CHANGELOG's Curbe line (no histogram path since ADR 0033; the peaks from the
+  median), this plan's "754 MB" (772 MB).
+- **Code defects, questions for the owner** (all on `main` before this branch; none changed
+  here, as Assumption 7 says), most severe first:
+  1. `DmaxToPassAsIs` tests the dust only, and the report says "trece asa cum e de la Dmax X":
+     false whenever the sky is under L* 15 (de_printat.png: 2.33, yet ATENTIE at 2.4;
+     `Golden/dark-sky.txt` prints it inside a PROBLEMA section). R-043 and README.md say the
+     same. Reword, or give the Dmax at which both pass (none when the sky is the cause)?
+  2. Every Maxima seen (V-009, V-011, V-014) has a spline that rises over 1 and is kept: the
+     table maps 21 to 41 % of the input range to white. R-140 and R-142 say a spline that is not
+     monotone is never suggested; the code and `measurements.md` judge the clamped table.
+     Reject the overshoot (no Maxima on those images), cap the scale, or reword R-140/R-142?
+  3. On an 8-bit TIFF, PNG or JPEG the dark-level counts include the level itself (+2 points
+     "sub nivelul 32" on the reference image's 8-bit version; a flat level-32 file reads 100 %).
+     This re-scopes area 2's defect 5, which said 16-bit and negligible. Compare levels, not
+     floats?
+  4. `Keep16BitMaster` reads `MissingFrom8` alone: an 8-bit file saved as 16 bits gets both
+     "Fisierul e pe 8 biti deghizat in 16" and "Pastreaza master-ul de 16 biti". R-082 and R-096
+     word the rule differently. Use the difference, or skip the advice on an upscale?
+  5. The crop is decided on the ratio (1e-6), not on pixels: 4961 x 3508 at 297:210 prints an
+     Attention that cuts 0 px; 3508 x 2480 cuts 1 px and says 0 per side (R-032's letter).
+  6. A target background that rounds to 0 or 1 at 6 decimals, or NaN, or exactly 1 from the
+     window (whose field accepts (0, 1]), ends the run with an error and no report.
+  7. A given target over 0.60 extends the ladder, so the exact targets are interpolated across
+     the gap (0.615 printed where the 0.01 ladder crosses at 0.638); R-043 wants "> 0.60".
+  8. A given target with a 7th decimal loses its "(dat)" mark and its Preview role (R-023).
+  9. The gamut grid undercounts by 1.5 to 6 points per class (above); a finer grid, an exact
+     round trip on the pixels near the edge, or the figure labelled as a lower bound?
+  10. `FindClouds` can skip whole clouds, not only outer patches: over 312 pointings of a frame
+      like the plate-solved FITS, 48 clouds skipped, 9 of them with a row; this extends area 2's
+      defect 3, whose "no row appears or disappears" held at one pointing only (R-044).
+  11. `<=` on the background percentile moves the cast verdict on 8-bit data (+2.0 against
+      +1.0 levels on the reference image's 8-bit version); ADR 0014 is now corrected.
+  12. `Thresholds.StarWindow` is read by no code (`StarAnalyzer` has `Half = 12`), against ADR
+      0012 and R-070.
+  13. `AlreadyPrintSafe` and validation.json's `simulation.alreadyPrintSafe` mean the dust
+      alone, true on frames whose verdict is ATENTIE; rename, or drop the figure?
+  14. Area 2's defect 2 (a two-pixel flat peak measured twice): R-070 and ADR 0016 require "ties
+      allowed", so the fix removes duplicate maxima, or amends both.
+  15. Efficiency, all with identical results measured: an early exit from the ladder once every
+      series has crossed (1.4 s on de_printat.png, 0.9 s on the FITS); selection instead of full
+      sorts for the medians and percentiles (0.7 to 1 s per run); one pass for a grid row's
+      patch L*s and L* shares (0.2 to 0.5 s); a 256-entry table in `Stress` (0.2 s);
+      `ClassLevels` recomputing the "before" patch L*s that `AsIsDust` holds (0.19 s per
+      Calculeaza), its `paperBlackLstar` changing nothing; `MapSample` repeating
+      `RasterOps.Interpolate`.
+- **Handed on, not changed here:** areas 3 and 4 find two stale counts of the same fact as fact
+  10: `Thresholds.cs:217` "Pe imaginea de referinta: 116 din 406 nori" (the build gives 114 rows
+  of 397 clouds on the plate-solved FITS) and `ReportWriter.cs:155`'s example "(406 nori, 4078
+  dale)", ADR 0025's superseded definition; area 5 `window.md`'s "under PreviewMaxSide". R-032,
+  R-043, R-070, R-082/R-096, R-140/R-142, R-147's "two ends unlabelled", README.md:73-75 and
+  CLAUDE.md:165 ("the anchors are the upper part of the classes") are the owner's text.
+- **Refuted, for the record:** the sky's one-decimal rounding against the table (unreachable for
+  a median of float patch L*s), the gamut's "~28 microseconds" (the 17^3 method reproduces it),
+  the preview share's wording, the scare quotes, `ShadowChartLimit` (known defect 1), the
+  "floor" wording, the hand-written inverse in `DmaxToPassAsIs`.

@@ -41,7 +41,10 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
 
         /// <summary>
-        /// "latime" or "inaltime": the axis that is cut. Null when nothing is cut.
+        /// "latime" or "inaltime": the axis that is cut. Null when no crop is needed. A crop is
+        /// needed whenever the target differs from the native ratio by 1e-6 or more, so with a
+        /// target within half a pixel of the image it is set while 0 px are cut (Needed true,
+        /// CutPerSidePx 0), or 1 px on one side only.
         /// </summary>
         internal string Axis { get; init; }
         internal int CutPerSidePx { get; init; }
@@ -54,8 +57,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The centred crop of a <paramref name="w"/> x <paramref name="h"/> image to
         /// <paramref name="targetAspect"/>: the width is cut when the target is narrower, the
-        /// height when it is wider; nothing when there is no target or it is the native one
-        /// (within 1e-6).
+        /// height when it is wider; no crop when there is no target or it is the native one
+        /// (within 1e-6). The cut is decided on the ratio, not on the pixels, so a target within
+        /// half a pixel of the image's ratio gives a crop that cuts 0 px (see Axis).
         /// </summary>
         /// <param name="w">The image's width, in pixels.</param>
         /// <param name="h">The image's height, in pixels.</param>
@@ -73,8 +77,8 @@ namespace AstroPhotoAnalyzer
             double t = targetAspect.Value;
             if (t < native)
             {
-                // The target is narrower: the width is cut, half on each side; an odd cut leaves
-                // the right side one pixel more (the bottom one, below).
+                // The target is narrower: the width is cut, half on each side; with an odd cut the
+                // right side loses one pixel more (the bottom one, below).
                 int newW = (int)Math.Round(h * t);
                 int cut = (w - newW) / 2;
                 return new CropResult

@@ -24,10 +24,14 @@
 // twice (on canvas, half of the image).
 //
 // The package (Wacton.Unicolour) makes the round trip in ~28 microseconds per colour (measured on
-// 2026-10-05, on the lab's profiles): a subsample of 1.4 MP would take 40 s. That is why a grid
-// of CurveGamutGrid^3 colours is run once, and the pixels take the displacement (da, db) by
-// trilinear interpolation. Near the gamut's edge the interpolation rounds the corner; the figure
-// is an estimate good to tenths of a percent, not a measurement per pixel.
+// 2026-10-05, on the lab's profiles, a 17^3 grid in a fresh process; warm, about 8 microseconds):
+// a subsample of 1.4 MP would take 40 s (about 14 s warm). That is why a grid of
+// CurveGamutGrid^3 colours is run once, and the pixels take the displacement (da, db) by
+// trilinear interpolation. Near the gamut's edge the interpolation rounds the corner, and it
+// misses colours rather than adds them: against the exact round trip per pixel (2026-10-23) the
+// plate-solved FITS on the lab's baryta reads 1.02 % instead of 1.35 % (the dust class 2.7 %
+// instead of 4.2 %), and on its canvas 35.1 % instead of 39.7 %. The figure is an estimate, low
+// by up to a few points per class, not a measurement per pixel.
 
 using System;
 using System.IO;

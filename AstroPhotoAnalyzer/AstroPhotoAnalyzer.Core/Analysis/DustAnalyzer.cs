@@ -210,8 +210,8 @@ namespace AstroPhotoAnalyzer
         internal bool SkyClassEmpty => Array.IndexOf(Classes, PatchClass.Sky) < 0;
 
         /// <summary>
-        /// The names of the five classes on the map's path, in the order praf, cer, banda /
-        /// nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri.
+        /// The names of the five classes on the map's path, in the order "praf", "cer", "banda" /
+        /// "nebuloasa", "nori luminosi" / "nebuloasa stralucitoare", "varfuri".
         /// </summary>
         internal IReadOnlyList<string> ClassNames => DustAnalyzer.ClassNames(Method);
 
@@ -279,13 +279,13 @@ namespace AstroPhotoAnalyzer
         static readonly string[] SkyNames = { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" };
 
         /// <summary>
-        /// The names of the five classes, in the order praf, cer, banda / nebuloasa, nori luminosi
-        /// / nebuloasa stralucitoare, varfuri: what the map, the curves' table and the report
-        /// show.
+        /// The names of the five classes, in the order "praf", "cer", "banda" / "nebuloasa",
+        /// "nori luminosi" / "nebuloasa stralucitoare", "varfuri": what the map, the curves' table
+        /// and the report show.
         /// </summary>
         /// <param name="method">
-        /// The path: Band names the third and fourth class banda and nori luminosi, Sky nebuloasa
-        /// and nebuloasa stralucitoare.
+        /// The path: Band names the third and fourth class "banda" and "nori luminosi", Sky
+        /// "nebuloasa" and "nebuloasa stralucitoare".
         /// </param>
         /// <returns>The five names, in the order of PatchClass from Dust to Peak.</returns>
         internal static IReadOnlyList<string> ClassNames(DustMethod method) => method == DustMethod.Band ? BandNames : SkyNames;
@@ -390,11 +390,13 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The catalogued clouds whose disc holds the centre of at least one patch. The disc is
-        /// the catalogue's area around the catalogue's centre; a cloud whose centre does not
-        /// project (behind the tangent plane) or whose disc misses the frame is skipped; a patch
-        /// is tested by its angular distance to the centre, only inside the disc's bounding box
-        /// in pixels.
+        /// The catalogued clouds with at least one patch centre in their disc, among the patches
+        /// inside the disc's bounding box in pixels. The disc is the catalogue's area around the
+        /// catalogue's centre; a cloud whose centre does not project (behind the tangent plane)
+        /// or whose box misses the frame is skipped; a patch is tested by its angular distance to
+        /// the centre. The box is the radius at the central plate scale, so far from the tangent
+        /// point, where the projection stretches the disc, a cloud can lose its outer patches, or
+        /// be skipped though its disc holds patch centres.
         /// </summary>
         /// <param name="map">The map, for its grid.</param>
         /// <param name="wcs">The image's WCS.</param>
@@ -493,12 +495,14 @@ namespace AstroPhotoAnalyzer
         /// one cleaning pass at SkyNoiseClipK sigmas around the median; dust under the modelled
         /// sky by SkyNoiseK sigmas, nebula over it by as much, bright nebula over the Otsu
         /// threshold of the nebula's tail taken WITHOUT the peaks and with at least
-        /// BrightClassMinTailFraction of the tail above the threshold (otherwise two stars would
-        /// be the upper "class" and the bright nebula would stay empty; none when the tail has too
-        /// few patches), the peaks the brightest PeakFraction of the patches, the sky the rest.
-        /// The thresholds stay on the map, for the legend and the report.
-        /// With sigma 0 (a posterised sky, more than half of the patches at one value) the
-        /// threshold is 0 and the class is the residual's sign.
+        /// BrightClassMinTailFraction of the tail above the threshold by rank (otherwise two
+        /// stars would be the upper "class" and the bright nebula would stay empty; none when the
+        /// tail has too few patches; tail values tied at the split leave fewer above it), the
+        /// peaks the brightest PeakFraction of the patches, the sky the rest. The thresholds stay
+        /// on the map, for the legend and the report.
+        /// With sigma 0 (a posterised sky, more than half of the patches at one value) the noise
+        /// threshold is 0: a residual under 0 is dust, one over 0 is nebula or, over the Otsu
+        /// threshold of those, bright nebula.
         /// </summary>
         /// <param name="map">
         /// The map, with its grid; its classes, sky model, thresholds, method and reason are
@@ -751,8 +755,8 @@ namespace AstroPhotoAnalyzer
         /// What gives the dust's L*, on the L*s as it is (ADR 0033): the dust class when it holds
         /// at least DustClassMinFraction of the patches and its DustClassFraction percentile is
         /// at or under the SkyDarkestFraction percentile of the sky class; otherwise the darkest
-        /// sky. Under the floor the dust class is cores or artefacts and does not decide. Decided
-        /// once, so that every row of the ladder measures the same dust as the definition.
+        /// sky. Under that threshold the dust class is cores or artefacts and does not decide.
+        /// Decided once, so that every row of the ladder measures the same dust as the definition.
         /// </summary>
         /// <param name="asIsPatchLstars">
         /// The L* of each patch of the image as it is, in the map's row order.

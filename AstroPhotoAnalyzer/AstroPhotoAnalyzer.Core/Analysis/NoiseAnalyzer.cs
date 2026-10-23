@@ -159,7 +159,8 @@ namespace AstroPhotoAnalyzer
         /// The tile's side, in pixels, at least 2; the tile lies inside the plane.
         /// </param>
         /// <returns>
-        /// The sigma, in 8-bit LSB: the population standard deviation of the differences.
+        /// The sigma, in 8-bit LSB: the population standard deviation of the differences, divided
+        /// by sqrt 2, times 255.
         /// </returns>
         internal static double SigmaLsb(float[] plane, int w, int x0, int y0, int size)
         {

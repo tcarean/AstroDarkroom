@@ -12,8 +12,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   0033): the Curbe tab shows the reason in red, instead of four curves that change nothing.
 - The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
   `Blanda`, `Medie`, `Puternica` and, when the peaks have room left, `Maxima`, built on five
-  anchors (the dust and the sky of the Tonuri tab; the band, the bright clouds and the peaks
-  from the upper part of their classes, or from the frame's histogram without a WCS). A gallery
+  anchors (the dust and the sky of the Tonuri tab; the band and the bright clouds from the upper
+  part of their classes and the peaks from the median of theirs, on either path of the classes,
+  ADR 0033). A gallery
   of previews with `Inapoi` / `Inainte` and the arrow keys; each curve with its evidence (the
   five L\* before and after, the noise gain at the sky, the clipped share, and for print the
   paper checks and the share outside the paper's gamut when the Dmax came from an ICC profile);

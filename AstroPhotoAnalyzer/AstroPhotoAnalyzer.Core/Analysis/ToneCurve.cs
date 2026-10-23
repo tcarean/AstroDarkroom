@@ -25,7 +25,9 @@
 //
 // Applying it goes through a table of 65 536 steps with linear interpolation between them: on a
 // 16-bit source it is the spline at every level to float precision (within 1.5e-7 on the curves
-// measured), on float the difference is under 1e-6.
+// measured), on float the difference is under 1e-6, except within a step of the corner where a
+// curve clamped at 1 meets it: there the chord cuts the corner (1.6e-6 on V-014's Maxima, up to
+// 7.8e-6 on synthetic anchors).
 // The monotonicity is judged on the same table, after clamping: it is the curve that is
 // actually applied.
 
@@ -151,8 +153,8 @@ namespace AstroPhotoAnalyzer
         /// The spline at <paramref name="v"/>, clamped to 0..1; outside 0..1 it takes the end's
         /// value.
         /// </summary>
-        /// <param name="v">The input; any value.</param>
-        /// <returns>The output, 0..1.</returns>
+        /// <param name="v">The input; any value but NaN.</param>
+        /// <returns>The output, 0..1; NaN for a NaN input.</returns>
         internal double Map(double v)
         {
             if (v <= 0) return _y[0];
@@ -164,10 +166,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The slope of the (unclamped) spline at <paramref name="v"/>: how many times a small
-        /// difference grows there, and so the noise.
+        /// difference grows there, and so the noise - where the curve is not clamped; where the
+        /// clamp holds it at 0 or 1 the applied slope is 0, and this one is not.
         /// </summary>
-        /// <param name="v">The input; clamped to 0..1.</param>
-        /// <returns>The spline's derivative at the input.</returns>
+        /// <param name="v">The input; clamped to 0..1, NaN left as it is.</param>
+        /// <returns>The spline's derivative at the input; NaN for a NaN input.</returns>
         internal double Slope(double v)
         {
             v = Math.Clamp(v, 0, 1);

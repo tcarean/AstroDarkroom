@@ -33,9 +33,11 @@
 // input: with the peaks already at or over the target there is no room for anything, and no
 // curve is suggested (Problem), instead of four curves that change nothing.
 //
-// The EVIDENCE of each curve is RE-MEASURED on the tonal subsample with the curve applied, not
-// predicted from the points: on a colour image, a per-channel curve does not take a patch
-// exactly where it takes its grey.
+// The EVIDENCE of each curve - the five class levels and the clipped share - is RE-MEASURED on the
+// tonal subsample with the curve applied, not predicted from the points: on a colour image, a
+// per-channel curve does not take a patch exactly where it takes its grey. The noise gain and the
+// noise after are predicted: the curve's slope at the sky's anchor, times the noise measured on
+// the image as it is.
 
 using System;
 using System.Collections.Generic;
@@ -49,7 +51,11 @@ namespace AstroPhotoAnalyzer
     /// </summary>
     internal enum CurvePurpose { Print, Screen }
 
-    /// <summary>The inputs of the five points, in values 0..1; NaN for an empty class.</summary>
+    /// <summary>
+    /// The inputs of the five points, in values 0..1; NaN for an empty band, bright or peak class
+    /// (the dust and the sky are never NaN: an empty dust class gives the darkest sky, an empty
+    /// sky class all the patches).
+    /// </summary>
     internal sealed record CurveAnchors
     {
         internal double Dust { get; init; }
@@ -146,7 +152,7 @@ namespace AstroPhotoAnalyzer
         internal const string MaximaName = "Maxima";
 
         /// <summary>The grey level of an L*: the anchor of a class.</summary>
-        /// <param name="lstar">The class's L*, 0..100; NaN for an empty class.</param>
+        /// <param name="lstar">The class's L*, 0..100; NaN for an empty upper class.</param>
         /// <returns>The level of a grey with that L*, 0..1; NaN for NaN.</returns>
         static double Gray(double lstar) => double.IsNaN(lstar) ? double.NaN : ColorMath.GrayLevelOfLstar(lstar) / 255;
 
@@ -218,11 +224,11 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// Why nothing can be suggested, for the user: an empty class; the peaks already at or
-        /// over CurvePeakTarget (the image is at the ceiling, the recipe would have no room); the
-        /// anchors do not increase strictly (a flat frame, a band no brighter than the sky). The
-        /// dust at black is not a reason: its point is the curve's origin itself, which the curve
-        /// does not move anyway (a black stacking border does that). Null when it can.
+        /// Why nothing can be suggested, for the user: an empty upper class; the peaks already at
+        /// or over CurvePeakTarget (the image is at the ceiling, the recipe would have no room);
+        /// the anchors do not increase strictly (a flat frame, a band no brighter than the sky).
+        /// The dust at black is not a reason: its point is the curve's origin itself, which the
+        /// curve does not move anyway (a black stacking border does that). Null when it can.
         /// </summary>
         /// <param name="a">The anchors.</param>
         /// <param name="labels">The five class names of the map's path, for the sentence.</param>
@@ -243,7 +249,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The suggested curves for the given anchors, in the order Blanda, Medie, Puternica and,
         /// when it exists, Maxima, with the points labelled with <paramref name="labels"/>. One
-        /// whose spline would not be monotone is not returned.
+        /// whose clamped table would not be monotone is not returned. A spline that rises over 1
+        /// and comes back is held at 1 by the clamp and kept: so is every Maxima of V-009, V-011
+        /// and V-014, which maps the top fifth to two fifths of the input range to white.
         /// </summary>
         /// <param name="a">
         /// The anchors, as <see cref="Problem"/> accepts them: none NaN, strictly increasing, the

@@ -18,7 +18,7 @@
 // BitDepthAnalyzer.cs - the measurement A2: are the 16 bits real, or an 8-bit upscale?
 //
 // An 8-bit file saved as 16 has every value equal to its high byte times 257
-// (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 pixels (0.4 %); on an
+// (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 samples (0.4 %); on an
 // upscale, on all of them. The distinct levels per channel are counted too - a disguised 8-bit
 // has no more than 256.
 //

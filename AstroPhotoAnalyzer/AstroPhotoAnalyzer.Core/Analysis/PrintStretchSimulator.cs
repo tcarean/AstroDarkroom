@@ -57,7 +57,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The row of the target the user gave (Parameters.TargetBackground): a row of its own,
-        /// or the grid's row when the target is on the grid.
+        /// or the grid's row when the target is on the grid. The row's target is the given one
+        /// rounded to 6 decimals, and the mark needs the two within 1e-9, so a target given with
+        /// more decimals (0.1234567) gets its row without the mark.
         /// </summary>
         internal bool Explicit { get; init; }
         internal double Gamma { get; init; }
@@ -117,8 +119,9 @@ namespace AstroPhotoAnalyzer
         internal double Lstar { get; init; }
 
         /// <summary>
-        /// The target at which the cloud reaches paper black; null when not even ExactTargetHi
-        /// brings it there.
+        /// The target at which the cloud reaches paper black; null when no step of the ladder
+        /// brings it there. The ladder ends at ExactTargetHi, or at a given target above it, and
+        /// a crossing past ExactTargetHi is then interpolated across that one wide step.
         /// </summary>
         internal double? ExactTarget { get; init; }
 
@@ -152,32 +155,38 @@ namespace AstroPhotoAnalyzer
         internal double? RecommendedTarget => Recommended?.Target;
         internal bool RecommendedIsAsIs => Recommended != null && Recommended.AsIs;
 
+        /// <summary>
+        /// The dust as it is is at or above paper black. Not print-safe in the sense of
+        /// <see cref="SimulationRow.PrintSafe"/>, which also needs the sky visible (ADR 0029).
+        /// </summary>
         internal bool AlreadyPrintSafe => AsIs.DustOnPaperBlack;
 
         /// <summary>
         /// The sky itself is under paper black: the sky and the dust would print with the same
-        /// black (Problema).
+        /// black ("PROBLEMA").
         /// </summary>
         internal bool SkyBelowPaperBlack => AsIs.LstarSky < PaperBlackLstar;
 
-        /// <summary>The dust is under paper black (Atentie when the sky is not).</summary>
+        /// <summary>The dust is under paper black ("ATENTIE" when the sky is not).</summary>
         internal bool DustBelowPaperBlack => !AsIs.DustOnPaperBlack;
 
         /// <summary>
-        /// The sky is under the visibility threshold (Atentie, even with the dust above paper
+        /// The sky is under the visibility threshold ("ATENTIE", even with the dust above paper
         /// black).
         /// </summary>
         internal bool SkyBelowVisibility => !AsIs.SkyVisible;
 
         /// <summary>
         /// The target at which the sky reaches the visibility threshold, interpolated on the
-        /// ladder; null when not even ExactTargetHi reaches it.
+        /// ladder; null when no step of the ladder reaches it (as for ExactTarget).
         /// </summary>
         internal double? VisibilityTarget { get; init; }
 
         /// <summary>
         /// The exact target at which the dust reaches black, interpolated on the ladder; null when
-        /// not even ExactTargetHi reaches it.
+        /// no step of the ladder reaches it, and null too with a background at 0 or 1. The ladder
+        /// ends at ExactTargetHi, or at a given target above it, and a crossing past ExactTargetHi
+        /// is then interpolated across that one wide step.
         /// </summary>
         internal double? ExactTarget { get; init; }
 
@@ -188,14 +197,15 @@ namespace AstroPhotoAnalyzer
         internal double? ExactTargetDmaxHigher { get; init; }
 
         /// <summary>
-        /// The Dmax from which the image passes as it is: the one whose black is the dust's L*.
-        /// NaN for a dust at L* 0.
+        /// The Dmax from which the dust as it is reaches paper black: the one whose black is the
+        /// dust's L*. NaN for a dust at L* 0. The sky's visibility does not enter it, so with the
+        /// sky under LowSeparationLstar the image is not print-safe at this Dmax either.
         /// </summary>
         internal double DmaxToPassAsIs { get; init; }
 
         /// <summary>
-        /// The primary row: the target the user gave, otherwise the recommended one, otherwise
-        /// "asa cum e".
+        /// The primary row: the row marked Explicit for the target the user gave, otherwise the
+        /// recommended one, otherwise "asa cum e".
         /// </summary>
         internal SimulationRow Primary { get; init; }
 
@@ -208,7 +218,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The clouds with at least DustCloudMinPatches patches, from the darkest; empty without a
-        /// catalogue.
+        /// WCS, or when no cloud has that many patches in the frame.
         /// </summary>
         internal IReadOnlyList<CloudRow> Clouds { get; init; }
 
@@ -320,7 +330,9 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="p">
         /// The run's parameters: the grid, the given target and the Dmax of the two neighbouring
-        /// exact targets.
+        /// exact targets. The given target, rounded to 6 decimals, must lie strictly inside
+        /// (0, 1), or RasterOps.GammaFor throws (an ArgumentException that ends the run); NaN
+        /// makes the LiftTable throw.
         /// </param>
         /// <returns>
         /// The simulation; with a background at 0 or 1, the "asa cum e" row alone, no exact
@@ -459,8 +471,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="values">The statistic at each target, in L*: one per target.</param>
         /// <param name="level">The level to reach, in L*.</param>
         /// <returns>
-        /// The target at the crossing; a step whose value did not rise from the step before gives
-        /// its own target.
+        /// The target at the crossing, between the first step at or above the level and the step
+        /// before it (whose value is under the level, so the interpolation never divides by zero).
         /// </returns>
         internal static double? Crossing(double[] targets, double[] values, double level)
         {

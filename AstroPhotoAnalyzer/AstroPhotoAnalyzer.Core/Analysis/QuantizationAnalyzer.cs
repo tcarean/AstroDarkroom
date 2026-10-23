@@ -26,7 +26,10 @@
 //
 // C4, the stress test: the same shadow lift applied to the 16-bit data and to the data already
 // quantised to 8, then the number of levels missing from the shadows. The figure that says
-// "Pastreaza master-ul de 16 biti" is not an opinion, it is the difference between the two.
+// "Pastreaza master-ul de 16 biti" is not an opinion: it is the levels missing on the 8-bit path,
+// which the report sets beside those missing on the 16-bit one. The rule (Keep16BitMaster) reads
+// the 8-bit path alone, so an 8-bit file saved as 16 bits, missing as many either way, gets the
+// advice too.
 
 using System;
 
@@ -251,7 +254,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The percentile of the values a histogram counts, to the bin: the first bin at which the
-        /// cumulative count reaches <paramref name="p"/> % of <paramref name="n"/>.
+        /// cumulative count reaches <paramref name="p"/> % of <paramref name="n"/>, rounded up.
+        /// In floating point 99.9 / 100 is a hair over 0.999, so when 99.9 % of n is whole the
+        /// count asked for is one sample more.
         /// </summary>
         /// <param name="hist">The count in each bin.</param>
         /// <param name="n">The total count, the sum of <paramref name="hist"/>.</param>

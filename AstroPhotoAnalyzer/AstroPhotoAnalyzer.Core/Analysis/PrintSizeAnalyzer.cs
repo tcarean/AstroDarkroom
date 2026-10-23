@@ -170,7 +170,8 @@ namespace AstroPhotoAnalyzer
         /// <param name="pixelW">The width that prints, in pixels: the crop's.</param>
         /// <param name="pixelH">The height that prints, in pixels.</param>
         /// <param name="fwhmPx">
-        /// The median FWHM, in pixels; NaN, 0 or less when no star was measured.
+        /// The median FWHM, in pixels; NaN, 0 or less when there is none: StarAnalyzer gives NaN
+        /// under <see cref="Thresholds.StarMinCount"/> stars, so 1 to 19 stars count as none.
         /// </param>
         /// <param name="p">
         /// The run's parameters: the candidate widths, the viewing distance, the passepartout and
@@ -252,7 +253,10 @@ namespace AstroPhotoAnalyzer
         /// <param name="viewingDistanceM">
         /// The given viewing distance, in metres; null for none.
         /// </param>
-        /// <returns>The rows, 300 dpi first; with a given distance, its own row last.</returns>
+        /// <returns>
+        /// The rows, <see cref="Thresholds.ReferenceDpi"/> first; with a given distance, its own
+        /// row last.
+        /// </returns>
         internal static IReadOnlyList<DpiLadderRow> DpiLadder(double? viewingDistanceM)
         {
             var rows = new List<DpiLadderRow>

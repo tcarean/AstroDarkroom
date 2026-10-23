@@ -19,7 +19,7 @@
 // copy, lifted with the row's gamma, and the class of each of its pixels against paper black
 // and the low-separation threshold.
 //
-// The window only paints: what is "under black" and what is "under L* 15" is decided here, with
+// The window only paints: what is "sub negru" and what is "sub L* 15" is decided here, with
 // the same L* that Anexa A counts. It is not in the report and is not a new measurement: it is
 // the same computation, on a smaller image, kept so that it can be seen.
 

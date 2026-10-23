@@ -11,6 +11,10 @@ Retroactive: recorded on 2026-10-02 from `docs/specification.md` §5 (B1, E1, E2
 target, and the colour against which the cast and the edge regions are judged. A finished
 astrophoto is mostly sky; the reference image has a Milky Way core across it and horizon glow in
 one corner.
+(Corrected 2026-10-23: "real data has no ties" in the Decision below is not so. On the 16-bit
+reference image 68 pixels above the bottom band sit exactly at the cut, without moving a printed
+figure; on its 8-bit version 32442 do, and `<=` gives a green cast of +2.0 levels where `<`
+would give +1.0, either side of `CastWarnLevels`. Found at the code review of 2026-10-23.)
 
 ## Decision
 

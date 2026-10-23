@@ -131,7 +131,7 @@ owner rejected it on the map on 2026-10-02) and the second (the patches at or un
 levels) are gone; what the Great Rift is on the plate-solved FITS, and what the plain edges
 are, is now what the classes say.
 
-### B4 - `PrintStretchSimulator` - the lowest level that puts the dust on paper black
+### B4 - `PrintStretchSimulator` - the lowest level that puts the dust on paper black and keeps the sky visible
 
 Builds the `DustMap`, measures the as-is row (B5 on the subsample; the pixel shares of B2),
 then, when the background is strictly inside (0, 1), lifts the subsample once per step of a
@@ -375,9 +375,13 @@ device values and back, through the profile's relative colorimetric tables (Wact
 both directions), moves its a\*, b\* by more than `CurveGamutDeltaAb` (3). The chroma only:
 without black point compensation the round trip also lifts everything under paper black, which
 is the Tonuri tab's subject and on canvas is half the image. The package takes about 28
-microseconds per colour, so the displacement (da, db) is computed once on a grid of
-`CurveGamutGrid` (33) values per channel and interpolated trilinearly per pixel; against the
-exact round trip on 20 000 colours the grid of 33 changed 0.01 % of the decisions (17: 0.11 %).
+microseconds per colour (a 17^3 grid in a fresh process; about 8 warm), so the displacement
+(da, db) is computed once on a grid of `CurveGamutGrid` (33) values per channel and interpolated
+trilinearly per pixel. Against the exact round trip the grid of 33 changes 0.16 % of the
+decisions on random colours (17: 0.72 %; re-measured 2026-10-23, where the first record said
+0.01 % and 0.11 %), and on an image it misses colours rather than adds them, most of them dark:
+the plate-solved FITS on the lab's baryta reads 1.02 % against 1.35 % exact (the dust class 2.7
+against 4.2, the sky 0.45 against 0.71), and on its canvas 35.1 % against 39.7 %.
 `Measure` gives the share of the tonal subsample's pixels, in all and per class of the patch
 each pixel lies in.
 
@@ -398,8 +402,10 @@ by digit.
   whenever the sky dominates the frame - every astrophoto - and wrong on a frame where
   it does not (`WhenTheSkyDoesNotDominateTheMedianIsNotTheSky` keeps that visible).
 - **Background mask uses `<=` the percentile, not `<`.** On a flat synthetic sky every
-  pixel sits exactly at the percentile and a strict `<` selects nothing. Real data has no
-  ties, so the acceptance numbers are unaffected.
+  pixel sits exactly at the percentile and a strict `<` selects nothing. Real data ties
+  too, but little: on the 16-bit reference image 68 pixels, and the acceptance numbers are
+  unaffected; on 8-bit data the choice moves the cast by a level (the reference image's 8-bit
+  version: +2.0 with `<=`, +1.0 with `<`), ADR 0014's correction of 2026-10-23.
 - **Corner regions are compared per channel, not by luminance.** The reference image's
   horizon corner has the sky's luminance (R +9, B -10); a luminance test would miss it.
 
