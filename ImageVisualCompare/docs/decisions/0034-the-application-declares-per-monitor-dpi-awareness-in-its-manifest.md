@@ -40,5 +40,8 @@ per-monitor awareness over writing the limit into R-022, ADR 0011 and `rendering
   the same picture as before.
 - A move between monitors scaled differently is checked only when the owner sets one monitor to
   another scaling; until then it is the reading of WPF's documented behaviour, not a run.
+  (Restated 2026-10-23: run, with one monitor set to 150 %: the window took 144 dpi on the move
+  and `100%` stayed one image pixel per physical pixel; measured in
+  `docs/plans/2026-10-22-fix-the-defects-the-documentation-review-found.md`, "What deviated".)
 - Guards: `AppManifestTests.R022_TheApplicationDeclaresPerMonitorDpiAwareness` reads the
   manifest from the built assembly and executable, as `AppIconTests` reads the icon.
