@@ -15,25 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PrintStretchSimulator.cs - masuratoarea B4: la ce fundal ajunge praful pe negrul
-// hartiei, fara sa coboare sub el?
+// PrintStretchSimulator.cs - the measurement B4: at what background does the dust reach paper
+// black, without going under it?
 //
-// E O SIMULARE, nu un stretch. Duce fundalul MASURAT (mediana canalului de referinta)
-// la fiecare tinta a grilei 0.05..0.20 cu o curba gamma identica pe toate canalele, apoi
-// remasoara praful si cerul (DustAnalyzer, pe aceeasi harta de dale) si procentele.
-// Recomandarea e cel mai mic rand - "asa cum e" inclus, sub sau peste nivelul masurat -
-// la care praful sta la sau peste negrul hartiei: nivelul minim folosibil, in ambele
-// sensuri (ADR 0025; praful si cerul sunt clasele din ADR 0026). Ce va face stretch-ul adevarat al lui Siril difera in forma curbei,
-// si nu putin: un stretch VeraLux la 0.17 a tinut praful la L* 7.6, unde curba gamma il
-// prezicea peste negru (ADR 0025). Raportul o numeste simulare de fiecare data.
+// IT IS A SIMULATION, not a stretch. It takes the MEASURED background (the median of the
+// reference channel) to every target of the grid 0.05..0.20 with a gamma curve identical on all
+// the channels, then re-measures the dust and the sky (DustAnalyzer, on the same patch map) and
+// the percentages. The recommendation is the lowest row - "asa cum e" included, under or over the
+// measured level - at which the dust sits at or above paper black and the sky at or above the
+// visibility threshold: the minimum usable level, in both directions (ADR 0025, ADR 0029; the
+// dust and the sky are the classes of ADR 0026). What Siril's real stretch will do differs in
+// the shape of the curve, and not by a little: a VeraLux stretch to 0.17 kept the dust at L* 7.6,
+// where the gamma curve predicted it above black (ADR 0025). The report calls it a simulation
+// every time.
 //
-// Tinta exacta nu se cauta prin bisectie, ci pe o SCARA de ridicari din 0.01 in 0.01
-// (Thresholds.ExactTarget*), cu interpolare liniara intre doua trepte: aceeasi scara da
-// tinta exacta a prafului, a fiecarui nor (116 pe imaginea de referinta - o bisectie pe
-// fiecare ar fi 2500 de ridicari) si cele doua tinte la Dmax vecin, din aceleasi 56 de
-// ridicari. O treapta nu construieste un raster ridicat: ridica si liniarizeaza fiecare
-// esantion dintr-o singura tabela pe 16 biti (LiftTable, ADR 0035) si aduna direct
-// luminantele dalelor; randul "asa cum e" ramane pe calea exacta.
+// The exact target is not searched by bisection but on a LADDER of lifts in steps of 0.01
+// (Thresholds.ExactTarget*), with linear interpolation between two steps: the same ladder gives
+// the exact target of the dust, of each cloud (114 rows on the plate-solved FITS, V-004 - a
+// bisection on each would be 2500 lifts) and the two targets at the neighbouring Dmax, from the
+// same 56 lifts. A step builds no lifted raster: it lifts and linearises every sample from a
+// single 16-bit table (LiftTable, ADR 0035) and sums the patches' luminances directly; the
+// "asa cum e" row stays on the exact path.
 
 using System;
 using System.Collections.Generic;
@@ -41,135 +43,205 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// A row of the simulation: a target background, its gamma, and the dust, the sky and the
+    /// pixel shares at it.
+    /// </summary>
     internal sealed record SimulationRow
     {
-        /// <summary>Fundalul-tinta; pentru randul "asa cum e" e fundalul masurat.</summary>
+        /// <summary>
+        /// The target background, 0..1; for the "asa cum e" row it is the measured background.
+        /// </summary>
         internal double Target { get; init; }
         internal bool AsIs { get; init; }
 
-        /// <summary>Randul tintei date de om (Parameters.TargetBackground), cand nu e pe grila.</summary>
+        /// <summary>
+        /// The row of the target the user gave (Parameters.TargetBackground): a row of its own,
+        /// or the grid's row when the target is on the grid. The row's target is the given one
+        /// rounded to 6 decimals, and the mark needs the two within 1e-9, so a target given with
+        /// more decimals (0.1234567) gets its row without the mark.
+        /// </summary>
         internal bool Explicit { get; init; }
         internal double Gamma { get; init; }
 
-        /// <summary>Cerul: mediana dalelor de cer (DustAnalyzer.Measure).</summary>
+        /// <summary>The sky: the median of the sky patches (DustAnalyzer.Measure).</summary>
         internal double LstarSky { get; init; }
 
-        /// <summary>Praful: percentila clasei praf sau cerul cel mai intunecat, dupa DustMap.DustSource (DustAnalyzer.Measure).</summary>
+        /// <summary>
+        /// The dust: the dust class's percentile or the darkest sky, by DustMap.DustSource
+        /// (DustAnalyzer.Measure).
+        /// </summary>
         internal double LstarDust { get; init; }
 
-        /// <summary>"Negru pur": procentul dalelor de 32 px sub negrul hartiei.</summary>
+        /// <summary>"Negru pur": the percentage of the 32 px patches under paper black.</summary>
         internal double PctPatchesBelowPaperBlack { get; init; }
         internal double PctBelowLowSeparation { get; init; }
         internal double PctAboveHighlight { get; init; }
         internal double PaperBlackLstar { get; init; }
 
-        /// <summary>Praful la sau peste negrul hartiei. Toleranta e pentru egalitatea in virgula mobila.</summary>
+        /// <summary>
+        /// The dust at or above paper black. The tolerance is for equality in floating point.
+        /// </summary>
         internal bool DustOnPaperBlack => LstarDust >= PaperBlackLstar - 1e-9;
 
         /// <summary>
-        /// Randul se poate tipari: praful pe negrul hartiei SI cerul vizibil. Un rand cu praful
-        /// pe negru si cerul sub prag nu e print-safe - asa il numea tabelul, si omul citea
-        /// "print-safe" langa un cer de L* 11 (ADR 0029).
+        /// The row can be printed: the dust on paper black AND the sky visible. A row with the
+        /// dust on black and the sky under the threshold is not print-safe - the table used to
+        /// call it that, and the owner read "print-safe" beside a sky of L* 11 (ADR 0029).
         /// </summary>
         internal bool PrintSafe => DustOnPaperBlack && SkyVisible;
 
         /// <summary>
-        /// Cerul la sau peste pragul de vizibilitate (Thresholds.LowSeparationLstar): hartia
-        /// separa si mai jos, dar in lumina de camera un cer sub prag se vede aproape negru
-        /// (ADR 0029).
-        /// Se compara cum se tipareste in tabel, la o zecimala: un rand care arata "15.0" trece,
-        /// altfel tabelul ar pune "cer sub L* 15" langa un cer scris 15.0. Pragul e o regula de
-        /// degetul mare; a doua zecimala nu spune nimic.
+        /// The sky at or above the visibility threshold (Thresholds.LowSeparationLstar): the paper
+        /// separates lower down too, but in room light a sky under the threshold looks almost
+        /// black (ADR 0029).
+        /// It is compared as the table prints it, to one decimal: a row that shows "15.0" passes,
+        /// otherwise the table would put "cer sub L* 15" beside a sky written 15.0. The threshold
+        /// is a rule of thumb; the second decimal says nothing.
         /// </summary>
         internal bool SkyVisible => Math.Round(LstarSky, 1) >= Thresholds.LowSeparationLstar;
 
-        /// <summary>Randul recomandat; il marcheaza simulatorul dupa ce a ales.</summary>
+        /// <summary>The recommended row; the simulator marks it after choosing.</summary>
         internal bool Recommended { get; set; }
     }
 
-    /// <summary>Un nor catalogat cu destule dale ca sa aiba randul lui, de la cel mai intunecat.</summary>
+    /// <summary>
+    /// A catalogued cloud with enough patches to have its own row, from the darkest.
+    /// </summary>
     internal sealed record CloudRow
     {
         internal string Name { get; init; }
         internal int Patches { get; init; }
 
-        /// <summary>L*-ul norului asa cum e: percentila DustCloudFraction a dalelor lui.</summary>
+        /// <summary>
+        /// The cloud's L* as it is: the DustCloudFraction percentile of its patches.
+        /// </summary>
         internal double Lstar { get; init; }
 
-        /// <summary>Tinta la care norul ajunge pe negrul hartiei; null cand nici ExactTargetHi nu-l aduce.</summary>
+        /// <summary>
+        /// The target at which the cloud reaches paper black; null when no step of the ladder
+        /// brings it there. The ladder ends at ExactTargetHi, or at a given target above it, and
+        /// a crossing past ExactTargetHi is then interpolated across that one wide step.
+        /// </summary>
         internal double? ExactTarget { get; init; }
 
-        /// <summary>Indicele norului in DustMap.Clouds, pentru harta.</summary>
+        /// <summary>The cloud's index in DustMap.Clouds, for the map.</summary>
         internal int MapIndex { get; init; }
     }
 
+    /// <summary>
+    /// The print-background simulation (B4): the rows of the grid and of the given target, the
+    /// recommendation, the exact targets read on the ladder, the cloud rows and the map, with the
+    /// sentences that name the method for the report and the window.
+    /// </summary>
     internal sealed record SimulationResult
     {
         internal double BackgroundMeasured { get; init; }
         internal double Dmax { get; init; }
         internal double PaperBlackLstar { get; init; }
 
-        /// <summary>Toate randurile, crescator dupa tinta; "asa cum e" printre ele, la nivelul lui.</summary>
+        /// <summary>
+        /// All the rows, in increasing target; "asa cum e" among them, at its level.
+        /// </summary>
         internal IReadOnlyList<SimulationRow> Rows { get; init; }
 
         internal SimulationRow AsIs { get; init; }
 
-        /// <summary>Cel mai mic rand print-safe si cu cerul vizibil, "asa cum e" inclus; null cand niciunul nu e.</summary>
+        /// <summary>
+        /// The lowest print-safe row with the sky visible, "asa cum e" included; null when none
+        /// is.
+        /// </summary>
         internal SimulationRow Recommended { get; init; }
         internal double? RecommendedTarget => Recommended?.Target;
         internal bool RecommendedIsAsIs => Recommended != null && Recommended.AsIs;
 
+        /// <summary>
+        /// The dust as it is is at or above paper black. Not print-safe in the sense of
+        /// <see cref="SimulationRow.PrintSafe"/>, which also needs the sky visible (ADR 0029).
+        /// </summary>
         internal bool AlreadyPrintSafe => AsIs.DustOnPaperBlack;
 
-        /// <summary>Cerul insusi e sub negrul hartiei: cerul si praful s-ar tipari cu acelasi negru (Problema).</summary>
+        /// <summary>
+        /// The sky itself is under paper black: the sky and the dust would print with the same
+        /// black ("PROBLEMA").
+        /// </summary>
         internal bool SkyBelowPaperBlack => AsIs.LstarSky < PaperBlackLstar;
 
-        /// <summary>Praful e sub negrul hartiei (Atentie cand cerul nu e).</summary>
+        /// <summary>The dust is under paper black ("ATENTIE" when the sky is not).</summary>
         internal bool DustBelowPaperBlack => !AsIs.DustOnPaperBlack;
 
-        /// <summary>Cerul e sub pragul de vizibilitate (Atentie, chiar cu praful peste negrul hartiei).</summary>
+        /// <summary>
+        /// The sky is under the visibility threshold ("ATENTIE", even with the dust above paper
+        /// black).
+        /// </summary>
         internal bool SkyBelowVisibility => !AsIs.SkyVisible;
 
-        /// <summary>Tinta la care cerul ajunge la pragul de vizibilitate, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
+        /// <summary>
+        /// The target at which the sky reaches the visibility threshold, interpolated on the
+        /// ladder; null when no step of the ladder reaches it (as for ExactTarget).
+        /// </summary>
         internal double? VisibilityTarget { get; init; }
 
-        /// <summary>Tinta exacta la care praful ajunge pe negru, interpolata pe scara; null cand nici ExactTargetHi nu ajunge.</summary>
+        /// <summary>
+        /// The exact target at which the dust reaches black, interpolated on the ladder; null when
+        /// no step of the ladder reaches it, and null too with a background at 0 or 1. The ladder
+        /// ends at ExactTargetHi, or at a given target above it, and a crossing past ExactTargetHi
+        /// is then interpolated across that one wide step.
+        /// </summary>
         internal double? ExactTarget { get; init; }
 
-        /// <summary>Aceeasi tinta exacta la Dmax - DmaxSensitivityStep si la Dmax + DmaxSensitivityStep.</summary>
+        /// <summary>
+        /// The same exact target at Dmax - DmaxSensitivityStep and at Dmax + DmaxSensitivityStep.
+        /// </summary>
         internal double? ExactTargetDmaxLower { get; init; }
         internal double? ExactTargetDmaxHigher { get; init; }
 
-        /// <summary>Dmax-ul de la care imaginea trece asa cum e: cel al carui negru e L*-ul prafului. NaN pe praf la L* 0.</summary>
+        /// <summary>
+        /// The Dmax from which the dust as it is reaches paper black: the one whose black is the
+        /// dust's L*. NaN for a dust at L* 0. The sky's visibility does not enter it, so with the
+        /// sky under LowSeparationLstar the image is not print-safe at this Dmax either.
+        /// </summary>
         internal double DmaxToPassAsIs { get; init; }
 
-        /// <summary>Randul principal: tinta data de om, altfel cel recomandat, altfel "asa cum e".</summary>
+        /// <summary>
+        /// The primary row: the row marked Explicit for the target the user gave, otherwise the
+        /// recommended one, otherwise "asa cum e".
+        /// </summary>
         internal SimulationRow Primary { get; init; }
 
-        /// <summary>Harta dalelor si statisticile "asa cum e", pentru fereastra si pentru texte.</summary>
+        /// <summary>
+        /// The patch map and the "asa cum e" statistics, for the window and for the texts.
+        /// </summary>
         internal DustMap Map { get; init; }
         internal DustStats AsIsDust { get; init; }
         internal DustMethod Method => Map.Method;
 
-        /// <summary>Norii cu cel putin DustCloudMinPatches dale, de la cel mai intunecat; gol fara catalog.</summary>
+        /// <summary>
+        /// The clouds with at least DustCloudMinPatches patches, from the darkest; empty without a
+        /// WCS, or when no cloud has that many patches in the frame.
+        /// </summary>
         internal IReadOnlyList<CloudRow> Clouds { get; init; }
 
-        /// <summary>Cati nori catalogati au macar o dala in cadru.</summary>
+        /// <summary>How many catalogued clouds have at least one patch in the frame.</summary>
         internal int CloudCount => Map.Clouds.Count;
 
         internal int PatchCount => Map.PatchCount;
         internal int DustPatchCount => AsIsDust.DustPatchCount;
 
-        /// <summary>Cum e definita clasa praf pe calea hartii: "cu 5 L* sub nivelul local al benzii sau sub cerul modelat" sau "cu 3.8 L* sub cerul modelat (4 sigma ale cerului)"; aceeasi propozitie in legenda hartii.</summary>
+        /// <summary>
+        /// How the dust class is defined on the map's path: "cu 5 L* sub nivelul local al benzii
+        /// sau sub cerul modelat" or "cu 3.8 L* sub cerul modelat (4 sigma ale cerului)"; the
+        /// same sentence in the map's legend.
+        /// </summary>
         internal string DustClassDefinition => Map.Method == DustMethod.Band
             ? $"cu {Fmt.F0(Thresholds.DustDepthLstar)} L* sub nivelul local al benzii sau sub cerul modelat"
             : $"cu {Fmt.F1(Map.NoiseThreshold)} L* sub cerul modelat ({Fmt.F0(Thresholds.SkyNoiseK)} sigma ale cerului)";
 
         /// <summary>
-        /// Ce e praful, dupa cine a dat L*-ul lui (ADR 0033): "percentila 25 % a dalelor de praf
-        /// (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; 9.3 % din cadru)" cand
-        /// clasa praf decide; altfel "cel mai intunecat 1 % al dalelor de cer", cu de ce nu
-        /// clasa praf: goala, sub DustClassMinFraction din cadru, sau mai luminoasa.
+        /// What the dust is, by what gave its L* (ADR 0033): "percentila 25 % a dalelor de praf
+        /// (cu 5 L* sub nivelul local al benzii sau sub cerul modelat; 9.3 % din cadru)" when the
+        /// dust class decides; otherwise "cel mai intunecat 1 % al dalelor de cer", with why not
+        /// the dust class: empty, under DustClassMinFraction of the frame, or lighter.
         /// </summary>
         internal string DustDescription
         {
@@ -189,14 +261,22 @@ namespace AstroPhotoAnalyzer
             }
         }
 
-        /// <summary>"mediana dalelor de cer, in afara benzii (|b| peste 10 grade)", "mediana dalelor de cer (clase relative la cerul modelat)" sau, fara nicio dala de cer, "mediana tuturor dalelor (nicio dala de cer)".</summary>
+        /// <summary>
+        /// "mediana dalelor de cer, in afara benzii (|b| peste 10 grade)", "mediana dalelor de cer
+        /// (clase relative la cerul modelat)" or, without any sky patch, "mediana tuturor dalelor
+        /// (nicio dala de cer)".
+        /// </summary>
         internal string SkyDescription => Map.SkyClassEmpty
             ? "mediana tuturor dalelor (nicio dala de cer)"
             : Map.Method == DustMethod.Band
                 ? $"mediana dalelor de cer, in afara benzii (|b| peste {Fmt.F0(Thresholds.BandGalacticLatitudeDeg)} grade)"
                 : "mediana dalelor de cer (clase relative la cerul modelat)";
 
-        /// <summary>De ce nu s-au facut clasele benzii: "fara WCS", "fara banda galactica in cadru", "cadrul e in intregime in banda", "camp prea ingust pentru banda: 10.9 grade de latitudine galactica, sub 20" (centrele dalelor); null cu banda.</summary>
+        /// <summary>
+        /// Why the band classes were not made: "fara WCS", "fara banda galactica in cadru",
+        /// "cadrul e in intregime in banda", "camp prea ingust pentru banda: 10.9 grade de
+        /// latitudine galactica, sub 20" (the patch centres); null with the band.
+        /// </summary>
         internal string MethodNote => Map.SkyReason switch
         {
             SkyReason.NoWcs => "fara WCS",
@@ -207,9 +287,9 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// "praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; pe calea
-        /// cerului, cu pragurile imaginii: "nebuloasa 12.3 % (peste cerul modelat cu 3.8 L*,
-        /// 4 sigma ale cerului), nebuloasa stralucitoare 5.2 % (peste 16.0 L*)".
+        /// "praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; on the sky
+        /// path, with the image's thresholds: "nebuloasa 12.3 % (peste cerul modelat cu 3.8 L*,
+        /// 4 sigma ale cerului), nebuloasa stralucitoare 5.2 % (peste 16.0 L*, pragul Otsu)".
         /// </summary>
         internal string ClassFractions
         {
@@ -228,8 +308,36 @@ namespace AstroPhotoAnalyzer
         }
     }
 
+    /// <summary>
+    /// The measurement B4: lifts the measured background to every target of the grid and of the
+    /// ladder and re-measures the dust and the sky on each.
+    /// </summary>
     internal static class PrintStretchSimulator
     {
+        /// <summary>
+        /// Builds the patch map on the subsample at <see cref="Thresholds.TonalStride"/>,
+        /// measures the "asa cum e" row and, when the measured background is strictly inside
+        /// (0, 1), lifts the subsample once per step of the ladder (the exact steps, the grid and
+        /// the given target): every step feeds the dust, sky and cloud series the exact targets
+        /// are read on, and the steps of the grid and of the given target become rows.
+        /// </summary>
+        /// <param name="r">
+        /// The image, 0..1; its <see cref="Raster.Source"/> gives the WCS, when there is one.
+        /// </param>
+        /// <param name="tonal">
+        /// The image's tonal facts: the measured background, the paper's black, the Dmax and the
+        /// "asa cum e" pixel shares.
+        /// </param>
+        /// <param name="p">
+        /// The run's parameters: the grid, the given target and the Dmax of the two neighbouring
+        /// exact targets. The given target, rounded to 6 decimals, must lie strictly inside
+        /// (0, 1), or RasterOps.GammaFor throws (an ArgumentException that ends the run); NaN
+        /// makes the LiftTable throw.
+        /// </param>
+        /// <returns>
+        /// The simulation; with a background at 0 or 1, the "asa cum e" row alone, no exact
+        /// target, and cloud rows without one.
+        /// </returns>
         internal static SimulationResult Simulate(Raster r, TonalResult tonal, Parameters p)
         {
             double bg = tonal.BackgroundMedian;
@@ -256,11 +364,12 @@ namespace AstroPhotoAnalyzer
             var cloudRows = new List<CloudRow>();
             int[] rowClouds = Enumerable.Range(0, map.Clouds.Count).Where(c => map.Clouds[c].Patches.Length >= Thresholds.DustCloudMinPatches).ToArray();
 
-            // Un fundal la 0 sau 1 n-are gamma; se intampla doar pe rastere sintetice (negru
-            // pur), dar nu trebuie sa arunce.
+            // A background at 0 or 1 has no gamma; it happens only on synthetic rasters (pure
+            // black), but it must not throw.
             if (bg > 0 && bg < 1)
             {
-                // Scara: treptele exacte, grila si tinta data, o singura ridicare pentru fiecare.
+                // The ladder: the exact steps, the grid and the given target, a single lift for
+                // each.
                 var ladder = new SortedSet<double>();
                 for (double t = Thresholds.ExactTargetLo; t <= Thresholds.ExactTargetHi + 1e-9; t += Thresholds.ExactTargetStep) ladder.Add(Math.Round(t, 6));
                 foreach (double t in p.SimulationTargets) ladder.Add(Math.Round(t, 6));
@@ -276,16 +385,16 @@ namespace AstroPhotoAnalyzer
                 {
                     double target = targets[i];
                     double gamma = RasterOps.GammaFor(bg, target);
-                    // Ridicarea si liniarizarea dintr-o singura tabela, fara un raster ridicat
-                    // (ADR 0035); dalele se remasoara pe aceeasi harta.
+                    // The lift and the linearisation from a single table, without a lifted raster
+                    // (ADR 0035); the patches are re-measured on the same map.
                     var lift = new LiftTable(gamma);
                     DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, lift), map, black);
                     dustAt[i] = d.LstarDust;
                     skyAt[i] = d.LstarSky;
                     cloudAt[i] = d.CloudLstars;
                     if (!tableRows.Contains(target)) continue;
-                    // Procentele de pixeli ale randului, pe planul L* al subesantionului ridicat
-                    // prin aceeasi tabela.
+                    // The row's pixel percentages, on the L* plane of the subsample lifted
+                    // through the same table.
                     var (low, high) = TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, lift));
                     rows.Add(new SimulationRow
                     {
@@ -353,10 +462,18 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Tinta la care statistica (crescatoare cu tinta) atinge <paramref name="level"/>:
-        /// prima treapta la sau peste nivel, interpolata liniar cu treapta de dinainte. Prima
-        /// treapta cand si ea trece; null cand nici ultima nu ajunge.
+        /// The target at which the statistic (increasing with the target) reaches
+        /// <paramref name="level"/>: the first step at or above the level, interpolated linearly
+        /// with the step before. The first step when it already passes; null when not even the
+        /// last one reaches it.
         /// </summary>
+        /// <param name="targets">The ladder's targets, 0..1, in increasing order.</param>
+        /// <param name="values">The statistic at each target, in L*: one per target.</param>
+        /// <param name="level">The level to reach, in L*.</param>
+        /// <returns>
+        /// The target at the crossing, between the first step at or above the level and the step
+        /// before it (whose value is under the level, so the interpolation never divides by zero).
+        /// </returns>
         internal static double? Crossing(double[] targets, double[] values, double level)
         {
             for (int i = 0; i < targets.Length; i++)

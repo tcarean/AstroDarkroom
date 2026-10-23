@@ -15,11 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FileFacts.cs - masuratoarea A1: ce e fisierul. Nu calculeaza nimic din pixeli; aduna
-// ce a spus cititorul si dimensiunile, in forma pe care o citesc raportul si fereastra.
+// FileFacts.cs - the measurement A1: what the file is. It computes nothing from the pixels; it
+// gathers what the reader said and the dimensions, in the form the report and the window read.
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// What the file is (A1): the image's dimensions and colour, and what its reader recorded.
+    /// </summary>
     internal sealed record FileFactsResult
     {
         internal int W { get; init; }
@@ -38,17 +41,27 @@ namespace AstroPhotoAnalyzer
         internal string ReaderNote { get; init; }
 
         /// <summary>
-        /// Profilul e sRGB, dupa nume? Unealta masoara presupunand sRGB; un profil cu alt
-        /// nume (AdobeRGB, ProPhoto) e un fapt pe care raportul il spune, nu il corecteaza.
-        /// Fara profil raspunsul e null: nu se stie.
+        /// Is the profile sRGB, by its name? The tool measures assuming sRGB; a profile with
+        /// another name (AdobeRGB, ProPhoto) is a fact the report states, not one it corrects.
+        /// Without a profile the answer is null: it is not known.
         /// </summary>
         internal bool? IccLooksSrgb => IccDescription == null
             ? (bool?)null
             : IccDescription.IndexOf("srgb", System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
+    /// <summary>Gathers what the file is (A1).</summary>
     internal static class FileFacts
     {
+        /// <summary>
+        /// The facts of an image's file: its dimensions and colour, and what its reader recorded
+        /// in <see cref="Raster.Source"/>.
+        /// </summary>
+        /// <param name="r">
+        /// The image; one without a Source (built in memory) reads as format "memorie", 32-bit
+        /// float.
+        /// </param>
+        /// <returns>The facts.</returns>
         internal static FileFactsResult Of(Raster r)
         {
             SourceInfo s = r.Source ?? new SourceInfo { Format = "memorie", BitDepth = 32, IsFloat = true, PlanesInFile = r.Planes.Length };

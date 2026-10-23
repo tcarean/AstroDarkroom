@@ -15,35 +15,59 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CropAnalyzer.cs - masuratoarea A3: ce se taie ca imaginea sa intre intr-un raport de
-// aspect dat. Un calcul, nu o masuratoare - dar e in Analysis fiindca raportul si
-// fereastra il consuma ca pe oricare alt rezultat, si fiindca decupajul centrat e
-// EXACT cel pe care s-au masurat cifrele de acceptanta (5554 x 3888 din 5938 x 3888).
+// CropAnalyzer.cs - the measurement A3: what is cut so that the image fits a given aspect ratio.
+// A computation, not a measurement - but it is in Analysis because the report and the window
+// consume it like any other result, and because the centred crop is EXACTLY the one the
+// acceptance figures were measured on (5554 x 3888 out of 5938 x 3888).
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// What a target aspect ratio cuts from the image (A3): the kept, centred rectangle and what
+    /// is cut.
+    /// </summary>
     internal sealed record CropResult
     {
         internal bool Needed { get; init; }
         internal double NativeAspect { get; init; }
         internal double? TargetAspect { get; init; }
 
-        /// <summary>Dreptunghiul pastrat, centrat. Fara tinta e toata imaginea.</summary>
+        /// <summary>The kept rectangle, centred. Without a target it is the whole image.</summary>
         internal int X0 { get; init; }
         internal int Y0 { get; init; }
         internal int W { get; init; }
         internal int H { get; init; }
 
-        /// <summary>"latime" sau "inaltime": pe ce axa se taie. Null cand nu se taie.</summary>
+        /// <summary>
+        /// "latime" or "inaltime": the axis that is cut. Null when no crop is needed. A crop is
+        /// needed whenever the target differs from the native ratio by 1e-6 or more, so with a
+        /// target within half a pixel of the image it is set while 0 px are cut (Needed true,
+        /// CutPerSidePx 0), or 1 px on one side only.
+        /// </summary>
         internal string Axis { get; init; }
         internal int CutPerSidePx { get; init; }
         internal double CutPct { get; init; }
     }
 
+    /// <summary>Computes the centred crop to a target aspect ratio (A3).</summary>
     internal static class CropAnalyzer
     {
+        /// <summary>
+        /// The centred crop of a <paramref name="w"/> x <paramref name="h"/> image to
+        /// <paramref name="targetAspect"/>: the width is cut when the target is narrower, the
+        /// height when it is wider; no crop when there is no target or it is the native one
+        /// (within 1e-6). The cut is decided on the ratio, not on the pixels, so a target within
+        /// half a pixel of the image's ratio gives a crop that cuts 0 px (see Axis).
+        /// </summary>
+        /// <param name="w">The image's width, in pixels.</param>
+        /// <param name="h">The image's height, in pixels.</param>
+        /// <param name="targetAspect">The target width / height, positive; null for none.</param>
+        /// <returns>
+        /// The kept rectangle, the axis cut, the pixels cut on the left or top side and the share
+        /// of the axis cut, in percent.
+        /// </returns>
         internal static CropResult Analyze(int w, int h, double? targetAspect)
         {
             double native = w / (double)h;
@@ -53,7 +77,8 @@ namespace AstroPhotoAnalyzer
             double t = targetAspect.Value;
             if (t < native)
             {
-                // Tinta e mai ingusta: se taie din latime, egal pe ambele parti.
+                // The target is narrower: the width is cut, half on each side; with an odd cut the
+                // right side loses one pixel more (the bottom one, below).
                 int newW = (int)Math.Round(h * t);
                 int cut = (w - newW) / 2;
                 return new CropResult

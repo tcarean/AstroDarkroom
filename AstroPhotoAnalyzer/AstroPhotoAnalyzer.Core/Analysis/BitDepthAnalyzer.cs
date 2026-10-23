@@ -15,36 +15,53 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BitDepthAnalyzer.cs - masuratoarea A2: sunt cei 16 biti reali, sau un 8-bit scalat?
+// BitDepthAnalyzer.cs - the measurement A2: are the 16 bits real, or an 8-bit upscale?
 //
-// Un fisier de 8 biti salvat ca 16 are fiecare valoare egala cu octetul ei inalt
-// inmultit cu 257 (n * 65535 / 255). Pe 16 biti reali coincidenta asta se intampla la
-// ~1 din 256 pixeli (0.4 %); pe un upscale, la toti. Se numara si nivelurile distincte
-// pe canal - un 8-bit deghizat n-are mai mult de 256.
+// An 8-bit file saved as 16 has every value equal to its high byte times 257
+// (n * 65535 / 255). On real 16 bits this coincidence happens on ~1 in 256 samples (0.4 %); on an
+// upscale, on all of them. The distinct levels per channel are counted too - a disguised 8-bit
+// has no more than 256.
 //
-// Se masoara pe TOTI pixelii, nu pe subesantion: e o numaratoare, nu o statistica, si
-// costa o trecere prin memorie.
+// It is measured on ALL the pixels, not on a subsample: it is a count, not a statistic, and it
+// costs one pass through memory.
 
 using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// Whether the 16 bits of an integer source are real or an 8-bit upscale (A2).
+    /// </summary>
     internal sealed record BitDepthResult
     {
-        /// <summary>Fals pe surse de 8 biti si pe FITS float - acolo intrebarea n-are sens.</summary>
+        /// <summary>
+        /// True only on a 16-bit integer source; false on 8-bit sources, on float FITS, on 32-bit
+        /// integer FITS and without a Source - there the question makes no sense.
+        /// </summary>
         internal bool Applicable { get; init; }
 
-        /// <summary>Niveluri distincte pe fiecare plan, din 65536 posibile.</summary>
+        /// <summary>The distinct levels in each plane, of 65536 possible.</summary>
         internal IReadOnlyList<int> DistinctLevels { get; init; }
 
-        /// <summary>Fractia esantioanelor (toate planurile) cu valoarea == octet_inalt * 257.</summary>
+        /// <summary>
+        /// The fraction of the samples (all planes) with value == high_byte * 257.
+        /// </summary>
         internal double UpscaledFraction { get; init; }
 
         internal bool IsUpscaled => Applicable && UpscaledFraction > Thresholds.UpscaledFraction;
     }
 
+    /// <summary>Tells real 16-bit data from an 8-bit file saved as 16 bits (A2).</summary>
     internal static class BitDepthAnalyzer
     {
+        /// <summary>
+        /// On a 16-bit integer source, counts on every sample the distinct levels per plane and
+        /// the samples equal to their high byte times 257.
+        /// </summary>
+        /// <param name="r">The image, 0..1; its Source says whether the question applies.</param>
+        /// <returns>
+        /// The counts; not applicable, with zero counts, unless the source is 16-bit integer.
+        /// </returns>
         internal static BitDepthResult Analyze(Raster r)
         {
             SourceInfo s = r.Source;

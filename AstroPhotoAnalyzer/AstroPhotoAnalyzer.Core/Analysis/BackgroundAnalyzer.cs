@@ -15,18 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BackgroundAnalyzer.cs - masuratorile E1 si E2: ce culoare are cerul, si daca vreun
-// colt sau vreo latura se abate de la el.
+// BackgroundAnalyzer.cs - the measurements E1 and E2: what colour the sky is, and whether any
+// corner or side departs from it.
 //
-// E1. "Fundalul" e cel mai intunecat sfert al pixelilor (dupa luminanta medie a
-// canalelor), fara banda de jos a imaginii - acolo sta orizontul si poluarea lui, care
-// nu e "fundal". Pe el se iau medianele R, G, B. O tenta de 1-2 niveluri e invizibila la
-// fundal 0.10 si evidenta la 0.19: de asta se masoara acum, inainte de re-stretch.
+// E1. The "background" is the darkest quarter of the pixels (by the channels' mean luminance),
+// without the bottom band of the image - the horizon sits there, with its light pollution, which
+// is not "background". The R, G, B medians are taken on it. A cast of 1-2 levels is invisible at
+// a background of 0.10 and obvious at 0.19: that is why it is measured now, before the
+// re-stretch.
 //
-// E2. Opt regiuni pe margine (4 colturi, 4 laturi), fiecare cu medianele ei R, G, B fata
-// de fundal. Nu se compara luminanta, ci FIECARE canal: coltul de orizont al imaginii de
-// acceptanta avea aceeasi luminanta ca cerul (R +9, B -10), si o comparatie pe luminanta
-// nu l-ar fi vazut.
+// E2. Eight regions on the edge (4 corners, 4 sides), each with its own R, G, B medians against
+// the background. It compares not the luminance but EACH channel: the horizon corner of the
+// acceptance image had the same luminance as the sky (R +9, B -10), and a comparison on
+// luminance would not have seen it.
 
 using System;
 using System.Collections.Generic;
@@ -34,27 +35,33 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// A region of the frame's edge (E2): its rectangle in samples of the subsample, its levels and
+    /// its departure from the background.
+    /// </summary>
     internal sealed record EdgeRegion
     {
-        /// <summary>"colt stanga-sus", "latura dreapta" etc. - numele din raport.</summary>
+        /// <summary>
+        /// "colt stanga-sus", "latura dreapta" and so on - the names in the report.
+        /// </summary>
         internal string Name { get; init; }
         internal int X0 { get; init; }
         internal int Y0 { get; init; }
         internal int W { get; init; }
         internal int H { get; init; }
 
-        /// <summary>Medianele regiunii, in niveluri 0..255, pe fiecare plan.</summary>
+        /// <summary>The region's medians, in levels 0..255, on each plane.</summary>
         internal IReadOnlyList<double> Levels { get; init; }
 
-        /// <summary>Regiune minus fundal, pe fiecare plan, in niveluri.</summary>
+        /// <summary>Region minus background, on each plane, in levels.</summary>
         internal IReadOnlyList<double> Deltas { get; init; }
 
         internal double MaxAbsDelta => Deltas.Max(d => Math.Abs(d));
         internal bool Flagged => MaxAbsDelta > Thresholds.CornerGradientLevels;
 
         /// <summary>
-        /// Abaterea are CULOARE (canalele se misca diferit), nu doar luminozitate? Pe mono
-        /// nu exista notiunea. Vezi Thresholds.CornerColourSpreadRatio.
+        /// Does the departure have COLOUR (the channels move differently), not just brightness? On
+        /// mono the notion does not exist. See Thresholds.CornerColourSpreadRatio.
         /// </summary>
         internal bool Coloured
         {
@@ -68,18 +75,21 @@ namespace AstroPhotoAnalyzer
         }
     }
 
+    /// <summary>The sky's colour (E1), and the edge regions measured against it (E2).</summary>
     internal sealed record BackgroundResult
     {
-        /// <summary>Medianele fundalului, in niveluri, pe fiecare plan (unul singur pe mono).</summary>
+        /// <summary>
+        /// The background's medians, in levels, on each plane (a single one on mono).
+        /// </summary>
         internal IReadOnlyList<double> Levels { get; init; }
 
-        /// <summary>Metricile de tenta au sens doar pe color.</summary>
+        /// <summary>The cast metrics make sense only on colour.</summary>
         internal bool ColorApplicable { get; init; }
 
-        /// <summary>G - (R + B) / 2: pozitiv = verde, negativ = magenta.</summary>
+        /// <summary>G - (R + B) / 2: positive = green, negative = magenta.</summary>
         internal double GreenExcess { get; init; }
 
-        /// <summary>R - B: pozitiv = cald, negativ = rece.</summary>
+        /// <summary>R - B: positive = warm, negative = cool.</summary>
         internal double RedMinusBlue { get; init; }
 
         internal bool HasCast => ColorApplicable
@@ -89,16 +99,30 @@ namespace AstroPhotoAnalyzer
         internal IEnumerable<EdgeRegion> FlaggedRegions => Regions.Where(x => x.Flagged);
     }
 
+    /// <summary>Measures the sky's colour and the edge regions against it (E1, E2).</summary>
     internal static class BackgroundAnalyzer
     {
+        /// <summary>
+        /// The background's colour on the subsample at <see cref="Thresholds.BackgroundStride"/>:
+        /// the medians of the pixels at or under the
+        /// <see cref="Thresholds.BackgroundDarkestFraction"/> percentile of the luminance (the
+        /// mean of the planes), the bottom <see cref="Thresholds.BackgroundExcludeBottomFraction"/>
+        /// of the rows left out; then the eight edge regions against it.
+        /// </summary>
+        /// <param name="full">The image, 0..1.</param>
+        /// <returns>
+        /// The background's levels (0 on a plane when no pixel was picked), the cast and the
+        /// regions.
+        /// </returns>
         internal static BackgroundResult Analyze(Raster full)
         {
             Raster s = RasterOps.Subsample(full, Thresholds.BackgroundStride);
             int n = s.H * s.W, planes = s.Planes.Length;
 
-            // Luminanta simpla, media planurilor - ca in script. Pragul se ia pe TOT
-            // subesantionul, apoi se scoate banda de jos: asa era scriptul, si asa
-            // fundalul ramane "cel mai intunecat sfert al imaginii", nu al partii de sus.
+            // A simple luminance, the mean of the planes - as in the script. The threshold is
+            // taken over the WHOLE subsample, then the bottom band is removed: that is how the
+            // script was, and that way the background stays "the darkest quarter of the image",
+            // not of its upper part.
             var lum = new float[n];
             for (int i = 0; i < n; i++)
             {
@@ -109,9 +133,11 @@ namespace AstroPhotoAnalyzer
             double cut = Stats.PercentileSorted(Stats.Sorted(lum), 100 * Thresholds.BackgroundDarkestFraction);
             int rowLimit = (int)(s.H * (1 - Thresholds.BackgroundExcludeBottomFraction));
 
-            // "<=", nu "<": pe un cer plat multi pixeli sunt EXACT la percentila, si un
-            // "<" strict n-ar alege niciunul. Pe date reale, cu valori continue, cele
-            // doua dau acelasi lucru.
+            // "<=", not "<": on a flat sky many pixels sit EXACTLY at the percentile, and a strict
+            // "<" would pick none. Real data ties too: on the 16-bit reference image 68 pixels
+            // above the bottom band sit at the cut and the printed levels do not move; on its
+            // 8-bit version 32442 do, and the two give a green cast of +2.0 and +1.0 levels, either
+            // side of CastWarnLevels (measured 2026-10-23).
             var picked = new List<int>();
             for (int y = 0; y < rowLimit; y++)
                 for (int x = 0; x < s.W; x++)
@@ -136,10 +162,20 @@ namespace AstroPhotoAnalyzer
             };
         }
 
+        /// <summary>
+        /// The eight edge regions of the subsample, each with its medians and its departure from
+        /// the background; a region with no width or no height is left out.
+        /// </summary>
+        /// <param name="s">The subsample, 0..1.</param>
+        /// <param name="bg">The background's level on each plane, 0..255.</param>
+        /// <returns>
+        /// The regions: the four corners (top-left, top-right, bottom-left, bottom-right), then
+        /// the four sides (top, bottom, left, right).
+        /// </returns>
         static IReadOnlyList<EdgeRegion> Regions(Raster s, double[] bg)
         {
-            // Coltul: 15 % din inaltime x 20 % din latime (regiunea din script). Latura: o
-            // banda de aceeasi grosime, pe mijlocul laturii, intre colturi.
+            // The corner: 15 % of the height x 20 % of the width (the script's region). The side:
+            // a band of the same thickness, along the middle of the side, between the corners.
             int ch = (int)(s.H * Thresholds.EdgeRegionHeightFraction), cw = (int)(s.W * Thresholds.EdgeRegionWidthFraction);
             var defs = new (string Name, int X0, int Y0, int W, int H)[]
             {

@@ -15,18 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PrintPreview.cs - imaginea unui rand al simularii, pentru fereastra de preview (R-045):
-// o copie redusa, ridicata cu gamma randului, si clasa fiecarui pixel al ei fata de negrul
-// hartiei si de pragul de separare slaba.
+// PrintPreview.cs - the image of a simulation row, for the preview window (R-045): a reduced
+// copy, lifted with the row's gamma, and the class of each of its pixels against paper black
+// and the low-separation threshold.
 //
-// Fereastra doar vopseste: ce e "sub negru" si ce e "sub L* 15" se decide aici, cu acelasi
-// L* pe care il numara Anexa A. Nu intra in raport si nu e o masuratoare noua: e acelasi
-// calcul, pe o imagine mai mica, pastrat ca sa poata fi vazut.
+// The window only paints: what is "sub negru" and what is "sub L* 15" is decided here, with
+// the same L* that Anexa A counts. It is not in the report and is not a new measurement: it is
+// the same computation, on a smaller image, kept so that it can be seen.
 
 using System;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The class of a preview pixel: under paper black, under the low-separation L* and not under
+    /// paper black, or neither.
+    /// </summary>
     internal enum PreviewClass : byte
     {
         None = 0,
@@ -34,12 +38,16 @@ namespace AstroPhotoAnalyzer
         UnderPaperBlack = 2,
     }
 
+    /// <summary>
+    /// A simulation row as an image: the reduced, lifted copy, the class of each of its pixels and
+    /// the two shares.
+    /// </summary>
     internal sealed record PrintPreviewResult
     {
-        /// <summary>Imaginea redusa si ridicata.</summary>
+        /// <summary>The reduced and lifted image.</summary>
         internal Raster Image { get; init; }
 
-        /// <summary>Clasa fiecarui pixel al imaginii reduse, in ordinea randurilor.</summary>
+        /// <summary>The class of each pixel of the reduced image, in row order.</summary>
         internal PreviewClass[] Classes { get; init; }
 
         internal double Gamma { get; init; }
@@ -48,19 +56,35 @@ namespace AstroPhotoAnalyzer
         internal double PctUnderLowSeparation { get; init; }
     }
 
+    /// <summary>A simulation row as an image, for the preview window (R-045).</summary>
     internal static class PrintPreview
     {
         /// <summary>
-        /// Pasul intreg care aduce latura mare a imaginii sub PreviewMaxSide: acelasi pentru
-        /// preview si pentru harta, ca dalele hartii sa cada pe pixelii imaginii reduse.
+        /// The integer step that brings the image's long side to at most PreviewMaxSide: the same
+        /// for the preview and for the map, so that the map's patches fall on the pixels of the
+        /// reduced image.
         /// </summary>
+        /// <param name="img">The image; only its size is read.</param>
+        /// <returns>The step, 1 or more.</returns>
         internal static int ReductionStride(Raster img)
             => Math.Max(1, (int)Math.Ceiling(Math.Max(img.W, img.H) / (double)Thresholds.PreviewMaxSide));
 
         /// <summary>
-        /// Imaginea <paramref name="img"/> redusa sub Thresholds.PreviewMaxSide, ridicata cu
-        /// <paramref name="gamma"/> (1 = asa cum e), si clasele pixelilor ei la Dmax-ul dat.
+        /// The image <paramref name="img"/> reduced to at most Thresholds.PreviewMaxSide, lifted
+        /// with <paramref name="gamma"/> (1 = as it is), and the classes of its pixels at the
+        /// given Dmax.
         /// </summary>
+        /// <param name="img">The image, 0..1.</param>
+        /// <param name="gamma">
+        /// The row's gamma, positive, as <see cref="RasterOps.GammaFor"/> gives it; within 1e-12
+        /// of 1 the reduced image is left as it is.
+        /// </param>
+        /// <param name="dmax">The paper's Dmax, positive.</param>
+        /// <returns>
+        /// The reduced, lifted image (<paramref name="img"/> itself when it needs neither), the
+        /// class of each of its pixels, and the percentages of its pixels under paper black and
+        /// under the low-separation L* (those under paper black included).
+        /// </returns>
         internal static PrintPreviewResult Render(Raster img, double gamma, double dmax)
         {
             Raster small = RasterOps.Subsample(img, ReductionStride(img));
