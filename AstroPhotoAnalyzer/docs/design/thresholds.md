@@ -65,6 +65,6 @@ All empirical, most from the reference image. Change one, change its comment.
 | `CurveSlopeSkyBand` / `CurveSlopeBandCloud` / `CurveSlopeCloudPeak` | 1.70 / 1.48 / 0.94 | the segment slopes of that curve; one curve on one image |
 | `CurvePeakTarget` / `CurveStrengths` / `CurveMaximaMinGain` | 0.92 / 0.5, 0.75, 1 / 0.02 | where the peaks go at most; the three strengths; `Maxima` only when its capped peaks gain more than this over `Puternica`'s (ADR 0039) |
 | `CurveClipLevel` | 0.995 | a pixel counts as clipped with a channel at or over it |
-| `CurveGamutDeltaAb` / `CurveGamutGrid` | 3 / 33 | the chroma displacement that counts as out of gamut; the round-trip grid per channel (0.01 % of decisions differ from the exact round trip) |
+| `CurveGamutDeltaAb` / `CurveGamutGrid` | 3 / 33 | the chroma displacement that counts as out of gamut; the round-trip grid per channel (0.16 % of decisions on random colours differ from the exact round trip, and on an image the grid undercounts by up to a few points per class: `measurements.md` F2, `known-limitations.md`) |
 | `CurveShadowChartFactor` / `CurveChartSamples` | 1.25 / 257 | the shadow chart ends at this many times the band's input; samples per chart |
 | `CurvePreviewDefaultWidth` / `CurvePreviewDefaultHeight` | 1600 / 900 | the preview size before the view has reported its gallery area: a presumption about the screen |

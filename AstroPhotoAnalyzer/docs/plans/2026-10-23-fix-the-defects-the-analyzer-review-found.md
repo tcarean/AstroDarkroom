@@ -440,3 +440,78 @@ show the loss).
 
 No golden line moved: the golden scenes' stars carry noise, so no two adjacent pixels tie at a
 window's maximum. The star figures of the validation cases are read at the drift step.
+
+### Step 3, item 9: the gamut figure, measured (the probe `fixprobe gamut`, `gamutq`, `pixtime`)
+
+The exact round trip costs 24.7 microseconds per colour single-threaded (warm; the header's
+"~28" of 2026-10-05). The tonal subsample of the FITS is 1 411 820 pixels, the PNG's 1 443 420.
+Per class: all, dust, sky, band / nebula, clouds / bright nebula, peaks, in percent of the
+class's pixels; "exact" is the per-pixel round trip; the grid is today's table (33) and the two
+finer ones; the hybrid is the grid's interpolation plus the exact trip for the pixels whose
+interpolated displacement lies within a margin of `CurveGamutDeltaAb` (3); b' is the hybrid with
+the exact trip taken once per distinct 8-bit colour of those pixels.
+
+| pair, raster | exact | grid 33 | grid 49 | grid 65 | hybrid 33 / 0.5 | hybrid 33 / 1.0 | b' (33 / 1.0, 8-bit cache) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| FITS, baryta, as is | 1.348 / 4.216 / 0.713 / 1.794 / 0.571 / 0 | 1.023 / 2.672 / 0.449 / 1.777 / 0.582 / 0 | 1.278 / 3.667 / 0.680 / 1.809 / 0.578 / 0 | 1.286 / 3.767 / 0.680 / 1.803 / 0.571 / 0 | 1.333 / 4.041 / 0.711 / 1.803 / 0.571 / 0 | = exact | 1.356 / 4.261 / 0.719 / 1.794 / 0.564 / 0 |
+| FITS, baryta, Puternica | 1.188 / 3.915 / 0.671 / 1.376 / 0.417 / 0 | 0.825 / 2.352 / 0.368 / 1.326 / 0.421 / 0 | 1.108 / 3.369 / 0.628 / 1.378 / 0.417 / 0 | 1.113 / 3.428 / 0.629 / 1.375 / 0.413 / 0 | 1.173 / 3.758 / 0.669 / 1.382 / 0.417 / 0 | = exact | 1.199 / 3.968 / 0.679 / 1.378 / 0.417 / 0 |
+| FITS, canvas, as is | 39.663 / 82.189 / 38.077 / 29.115 / 7.915 / 0 | 35.134 / 80.947 / 32.064 / 27.031 / 7.838 / 0 | 37.182 / 81.496 / 34.827 / 27.846 / 7.919 / 0 | 38.069 / 81.715 / 36.005 / 28.261 / 7.930 / 0 | 39.248 / 82.040 / 37.542 / 28.886 / 7.908 / 0 | = exact | 39.787 / 82.235 / 38.244 / 29.153 / 7.926 / 0 |
+| FITS, canvas, Puternica | 44.555 / 81.850 / 45.026 / 30.727 / 7.425 / 0 | 39.892 / 80.739 / 38.641 / 29.069 / 7.377 / 0 | 42.129 / 81.298 / 41.716 / 29.811 / 7.403 / 0 | 43.002 / 81.471 / 42.921 / 30.112 / 7.414 / 0 | 44.142 / 81.759 / 44.459 / 30.581 / 7.425 / 0 | = exact | 44.645 / 81.850 / 45.146 / 30.778 / 7.395 / 0 |
+| PNG, baryta, as is | 0.150 / 2.368 / 0.104 / 0.293 / 0.120 / 2.446 | 0.057 / 0.012 / 0.012 / 0.270 / 0.120 / 2.446 | 0.079 / 0.720 / 0.032 / 0.280 / 0.120 / 2.446 | 0.087 / 0.122 / 0.045 / 0.282 / 0.120 / 2.446 | 0.091 / 1.355 / 0.041 / 0.285 / 0.120 / 2.446 | = exact | 0.152 / 2.295 / 0.107 / 0.292 / 0.117 / 2.446 |
+| PNG, baryta, Puternica | 0.138 / 3.003 / 0.108 / 0.174 / 0.085 / 2.446 | 0.040 / 0.012 / 0.013 / 0.163 / 0.085 / 2.446 | 0.061 / 0.928 / 0.032 / 0.164 / 0.085 / 2.446 | 0.073 / 0.208 / 0.051 / 0.167 / 0.085 / 2.446 | 0.074 / 1.697 / 0.041 / 0.166 / 0.085 / 2.446 | = exact | 0.141 / 3.064 / 0.111 / 0.176 / 0.085 / 2.446 |
+
+Accuracy against the owner's 0.2 points per class: the grids fail at every size (grid 65 is
+0.45 low on the FITS's dust on baryta, 2.1 low on the canvas sky, 2.2 low on the PNG's dust);
+the hybrid at margin 0.5 fails (0.5 on the canvas sky, 1.0 on the PNG's dust); the hybrid at
+margin 1.0 (and 1.5, 2.0, and with grid 65) equals the exact figure to three decimals on every
+class of every pair; b' is within 0.17 everywhere (the canvas sky 38.244 against 38.077; the
+pixels decided otherwise than exact are 0.10 % on baryta, 1.6 % on canvas, 0.02 % on the PNG).
+
+Cost per `Measure` (one raster; a "Calculeaza" runs up to five: the original and four curves),
+the table build once per "Calculeaza": grid 33 build 0.56 to 0.62 s (today), 49: 0.82 to
+0.99 s, 65: 1.95 to 2.21 s; a grid `Measure` 44 to 55 ms (today). The hybrid at margin 1.0
+sends 3.8 % of the FITS's pixels on baryta, 32 to 35 % on canvas and 1.0 to 1.1 % of the PNG's
+to the exact trip: single-threaded 1.3 s, 11 to 12 s and 0.36 to 0.39 s per `Measure` (parallel
+over the rows, measured: 0.14 s, 1.3 to 1.6 s, 0.04 to 0.05 s). b' takes 9 100 to 9 300 trips
+on baryta, 29 000 to 40 500 on canvas, 1 700 on the PNG: single-threaded 0.13 to 0.23 s, 0.40 to
+0.41 s and 0.21 s per `Measure` (the first of a run carries the warm-up), that is about 0.7 s,
+2.0 s and 1.0 s per "Calculeaza" of five measures.
+
+Verdict against the owner's rule ("the cheapest option within about 0.2 points, if it adds no
+more than about 1 s per Calculeaza; otherwise stop and present"): no option meets both on every
+pair. b' meets the accuracy everywhere and the budget on baryta (0.7 s) and on the PNG (1.0 s),
+and takes about 2 s on canvas single-threaded, where a third of the pixels sit near the
+threshold. Not implemented; presented to the owner at wrap-up, with the recommendation to take
+b' with the exact trips run in parallel over the rows (the probe's parallel runs put the shared
+Unicolour configuration under eight threads without a wrong result), which would bring canvas
+under half a second, or b' single-threaded as measured if a 2 s canvas is acceptable.
+
+### Step 5: the drift table (the final build, d144695 plus the documentation commit)
+
+The dump against the baseline: 14 cases, 1696 figures (1689 plus the seven `crop.cutEndPx`),
+146 moved, every one below; `ValidationTests` reports V-001, V-003, V-004, V-005, V-009, V-010,
+V-011, V-013 and V-014 as drifted from `docs/validation.json`, which waits for the owner's
+approval before it is updated (V-002, V-006 to V-008 and V-012 pass; V-002's star and size
+figures move within its tolerance).
+
+| fix | figures | cases | before -> after |
+| --- | --- | --- | --- |
+| items 1 and 13, renamed keys | `simulation.alreadyPrintSafe` -> `simulation.dustOnPaperBlackAsIs`, `simulation.dmaxToPassAsIs` -> `simulation.dmaxDustOnPaperBlackAsIs` | V-001 to V-005, V-010, V-013 | the same values (2.3342, 2.0582, 2.1673, 2.1595; False / True unchanged) |
+| item 5, renamed and added keys | `crop.cutPerSidePx` -> `crop.cutStartPx` + `crop.cutEndPx` | the same seven cases | the same values (192 / 192 on V-002, 0 / 0 elsewhere) |
+| item 3, the dark shares | `tonal.pctBelowDarkA` / `B` | V-001, V-002, V-003, V-005 (the PNG) | 74.053 -> 73.034, 96.348 -> 96.252 |
+| | | V-004 (the FITS) | 17.833 -> 16.942, 88.366 -> 88.105 |
+| | | V-010 (Rosetta) | 72.492 -> 71.465, 91.728 -> 91.599 |
+| | | V-013 (Veil) | 82.906 -> 81.276, 99.475 -> 99.466 |
+| item 14, tied maxima once | `stars.count`, `fwhmMedian`, `fwhmQ1`, `fwhmQ3`, two region medians | V-001, V-002, V-003, V-005 | 7166 -> 7163 stars; 3.133 -> 3.1332, 2.868 -> 2.8685, 3.4901 -> 3.4899; centre 4.2711 -> 4.2709, top-left 2.8198 -> 2.82 |
+| item 14, through the size table | `size.naturalRatio`, `size.rowN.starMm` / `minDistanceM` | the same four | by 0.0001 to 0.0002 (1.0147 -> 1.0148; 1.0623 -> 1.0624 on V-002) |
+| item 2, Maxima capped | `curves.Maxima.*` | V-009 | peaks point 0.92 -> 0.8917, band 0.3504 -> 0.3417, clouds 0.684 -> 0.6638; L* band 37.69 -> 36.76, clouds 68.52 -> 66.69, peaks 82.92 -> 81.46 (dust 4.1853 -> 4.1827, sky 9.0489 -> 9.0352); gain 1.3096 -> 1.2897, noise after 0.5917 -> 0.5827, clipped 0.3227 -> 0.1767 |
+| | | V-011 | peaks 0.92 -> 0.8992, band 0.456 -> 0.4469, clouds 0.7152 -> 0.6995; L* 47.70 -> 46.77, 68.46 -> 67.15, 86.33 -> 84.93 (dust 6.1981 -> 6.1954, sky 8.3953 -> 8.3792); gain 1.0966 -> 1.0918, clipped 0.7171 -> 0.3917 |
+| | | V-014 | peaks 0.92 -> 0.8277, band 0.2718 -> 0.2526, clouds 0.7155 -> 0.6463; L* 30.96 -> 28.54, 69.36 -> 63.26, 83.21 -> 77.92 (dust 6.4718 -> 6.4386, sky 11.0812 -> 10.7444); gain 1.4658 -> 1.3815, clipped 0.1235 -> 0.0263 |
+
+Not moved, as the owner expected: V-004's clouds (397 clouds, 114 rows, every cloud figure;
+item 10), every `keep16BitMaster` (item 4), every `monotone` key (item 2), V-008 entirely
+(three curves, no Maxima), V-006, V-007 and V-012. The dust and the sky, the exact targets, the
+verdicts: unchanged everywhere (items 15a and 7 by construction, item 1 by name only). With the
+owner's approval the JSON takes these values and its two renamed keys, `docs/validation.md`
+gets the dated line, R-070's example moves from 7166 to 7163 stars, and R-142's example already
+carries V-009's capped figures.
