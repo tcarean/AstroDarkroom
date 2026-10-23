@@ -473,3 +473,135 @@ reported. The owner had every comment-only finding fixed and the code defects ke
     (under `docs/plans/`, or in the kit) would keep areas 2 to 5 from depending on that folder.
 - **Left as they are:** `ReportWriter.TargetText` stays without tags until area 3 (its file is
   still Romanian); lists of a type's members in headers and `code-map.md` are summaries.
+
+### Area 2, `Core/Analysis/` (2026-10-23, `claude/Document-and-translate-the-analyzers`)
+
+- **It ran in a session of its own, from area 1's prompt,** in four commits: the seven files of
+  the tonal, dust, simulation and curve chain, which the others name; the other nine; the false
+  comments; the wrap-up. The scratch tool came from area 1's scratchpad, its `CommentLines` fix
+  included, copied into this session's and rebuilt.
+- **Area 1's review, applied before writing:**
+  - quoted Romanian output stays Romanian: "asa cum e", "negru pur", "pana la X cm", "Punct de
+    la", "Pastreaza master-ul de 16 biti", "sub nivelul 32", the class names and the report's
+    sentences;
+  - "pentru om" is "for the user", as in area 1; "the owner" only where ADR 0029's owner is meant;
+  - a patch's L\* on mono is of its linear value, not of a luminance;
+  - the NaN, empty and null cases are said where the code returns them, and every guard as the
+    parameter's range;
+  - every claim a translation carried about a figure, a bound or an edge case was checked against
+    its code line, ten of them with a probe on the branch's build: a scratch project named
+    `AstroPhotoAnalyzer.Tests`, so that the core's `InternalsVisibleTo` admits it (probes P1 to
+    P10 below).
+- **28 comments corrected, in a commit of their own (204b07a), each against its line or a probe;**
+  26 facts, two of them said twice:
+  1. `TonalAnalyzer.Analyze`: "sub nivelul 32" is a sample under 32/255, on 16 bits the levels
+     under 8224 (and 8224 itself on a TIFF or PNG, by float rounding), not the script's high byte
+     under 32, which stopped at 8191 (P1).
+  2. `TonalAnalyzer.LstarShares`: the median's sort would cost about as much as the rest of a
+     grid row, not more (P5: 86 ms against 111 on a colour subsample the size of the
+     plate-solved FITS's).
+  3. `DustAnalyzer.cs`, header: on the band path a patch outside the band `BrightCloudLstar` over
+     the modelled sky is band, not sky (`Classify`).
+  4. The header and `DustSource.DustClass`: the dust class decides at or under the darkest sky,
+     not only darker (`DecideDustSource` compares with `<=`).
+  5. `DustMethod.Band`: the band path also needs the frame's span of galactic latitude (ADR 0037).
+  6. `DustCloud.Patches`: only the patches inside the disc's bounding box in pixels (P4).
+  7. `DustMap.SkySigma`: the robust sigma of every patch's residual, not of the sky patches';
+     `BrightThreshold` is infinite when the nebula's tail holds fewer than two patches, not
+     whenever no patch is bright nebula (tied tail values leave a finite threshold and none
+     above it).
+  8. `DustAnalyzer.SubsampleGrid`: a subsample with one side under 8 samples has patches as wide
+     as that side, not a single patch (P9: 5 x 20 samples give 4 patches).
+  9. `PrintStretchSimulator.cs`, header: the recommended row also has the sky at the visibility
+     threshold (ADR 0029, `PrintSafe`).
+  10. The same header: 114 cloud rows on the plate-solved FITS (V-004), not 116 on the reference
+      image (116 was ADR 0025's measurement with astropy; `de_printat.png` has no WCS).
+  11. `SimulationRow.Explicit`: a given target on the grid marks that grid row, not only an
+      extra row (P6).
+  12. `SimulationResult.ClassFractions`: the quoted bright-nebula text ends in ", pragul Otsu".
+  13. `PrintPreview.ReductionStride` and `Render`: the long side is at most `PreviewMaxSide`, not
+      under it (P8: 3200 px gives 1600).
+  14. `ToneCurve.cs`, header: the table gives the spline at a 16-bit level to float precision,
+      not exactly (P2: 65 056 of the 65 536 levels equal, the rest within 8.9e-8; 1.5e-7 on a
+      curve of slope 3; on floats 9.5e-8 and 8.3e-7, under the 1e-6 the header gives).
+  15. `CurvePoint`: the dust's point keeps its label when it is the origin (`Curves`).
+  16. `CurveAdvisor.cs`, header: the peaks' anchor is the median of their class, not its upper
+      part (R-141).
+  17. `CurveAdvisor.ClassLevels`: the same, and NaN only for an empty band, bright or peak class
+      (an empty dust class gives the darkest sky, an empty sky class all the patches).
+  18. `CurveAdvisor.ShadowChartLimit`: the curve's fourth point is the bright clouds' when the
+      dust's point is the origin (P7).
+  19. `GamutFigure.PctByClass`: NaN only on colour; on mono every class reads 0 (P10).
+  20. `CurvePurpose`: the purpose also decides the gamut figure (`CurveRun`).
+  21. `CurveEvidence.GamutBefore`: null too with a profile that cannot be used (`CurveRun`).
+  22. `BitDepthResult.Applicable`: true only on a 16-bit integer source, so false also on a
+      32-bit integer FITS and without a Source.
+  23. `CropAnalyzer.Analyze`: an odd cut leaves the right (or bottom) side one pixel more.
+  24. `StarAnalyzer.cs`, header: the high threshold is on the peak, not on the amplitude; two
+      differences from the script, not one (the candidate threshold, ADR 0016).
+  25. `StarAnalyzer.IsWindowMax`: both pixels of a flat two-pixel peak pass, so that star is
+      measured twice (P3).
+  26. `JpegAnalyzer.cs`, header: samples, not pixels; the 3 % was ImageMagick's, this encoder's
+      is 1.2 % at q100 (ADR 0019).
+
+  At wrap-up `measurements.md` was brought in line with facts 13, 14 and 23.
+- **The probes,** on the branch's build, 2026-10-23: P1 the 16-bit levels under `DarkLevelA`;
+  P2 `MapSample` against `Map` on every 16-bit level and on 5 million floats, on V-008's
+  `Puternica` and on a curve of slope 3; P3 a star centred between two pixels (two stars
+  measured, FWHM 3.135 each); P4 `FindClouds` against every patch of a synthetic WCS like the
+  plate-solved FITS's (5837 x 3867, 41.7"/px, no rotation: 408 clouds either way, LDN 621 with
+  372 of its 379 patches and LDN 649 with 169 of 170, the rows of 9 patches or more unchanged at
+  119); P5 the time of a grid row's parts; P6 a given target of 0.19; P7 the shadow chart's end
+  with the dust at 0.05 and at 0 (0.375, then 0.625 where R-147 wants 0.375); P8 the reduction
+  step at 1600, 3200 and 3201 px; P9 a grid on 5 x 20 samples; P10 the gamut figure on mono and
+  on colour with empty classes.
+- **Left as they are:** R-032 says the crop cuts "equally from both sides" (requirements are not
+  this task's; true to a pixel); `window.md` says the map's image is "under `PreviewMaxSide`"
+  (area 5's note: "at most", fact 13); the Romanian scan leaves 11 lines, all quoted output in
+  `PrintStretchSimulator.cs` (the report's sentences, quoted across line breaks).
+- **Code defects, questions for the owner** (all on `main` before this branch; none changed
+  here, as Assumption 7 says):
+  1. `CurveAdvisor.ShadowChartLimit` takes `Points[3]`; when the dust's anchor is 0 its point
+     replaces the (0, 0) end, so the shadow chart ends at 1.25 x the bright clouds' input instead
+     of the band's (P7: 0.625 against 0.375), against R-147.
+  2. `StarAnalyzer` allows ties for the window's maximum, so a star whose two brightest pixels
+     are equal is measured twice (P3), in the count and in the FWHM statistics; rare on 16 bits,
+     likelier on 8.
+  3. `DustAnalyzer.FindClouds` bounds its search by the disc's radius at the central plate scale;
+     far from the tangent point the TAN projection stretches a disc (radially by 1 / cos^2 of
+     the distance), so a large cloud near the edge loses patches that are inside its disc (P4:
+     7 of LDN 621's 379, 1 of LDN 649's 170; no row appears or disappears).
+  4. `CurveAdvisor.Measure` takes the subsample as it is, `sub`, and never reads it.
+  5. `TonalAnalyzer.Analyze` compares floats with 32/255f, so on a 16-bit TIFF or PNG the level
+     8224, exactly the 8-bit level 32, counts as under 32, and on a FITS it does not (P1);
+     negligible on the figures.
+- **Process:** area 1's two questions had no answer when this session started, so `/validate`
+  ran, as the rule "Formula changes re-validate" asks (the seven files copied, 754 MB), and the
+  scratch tool still lives in the scratchpads: area 3 copies it, with `checks.sh`, `wrapdoc.py`,
+  `drift.py` and the probe project, from this session's scratchpad
+  (`...\E--Photografie-Code-AstroPhotoAnalyzer\a214bf4e-2a6a-45f9-8451-f5225048091c\scratchpad`).
+- **Measured on 2026-10-23:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | c1233ff | the tonal, dust, simulation and curve analyzers: 7 files | `== OK in 38s` | 351 + 54 |
+  | b32054e | the other nine analyzers | `== OK in 38s` | 351 + 54 |
+  | 204b07a | the 28 false comments | `== OK in 43s` | 351 + 54 |
+
+  - **The counter on `Core/Analysis/`:** on `main`, 41 types (38 undocumented, 3 positional
+    records missing their `<param>`s) and 83 methods (34 undocumented, 49 incomplete); on the
+    branch 0 and 0. The whole code has 69 types and 210 methods left for areas 3 to 5.
+  - **No code changed:** `tokens` finds the code of all 71 files identical to `main`'s, the 16 of
+    `Core/Analysis/` with changed comments or layout: +1547/-499 before the wrap-up.
+  - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
+    new ones, except "116" (fact 10, on purpose), "20.000" (now "20,000"), one of the two "0.01"
+    of "din 0.01 in 0.01" ("in steps of 0.01"), "0033" (on `main` a line break split "ADR 0033")
+    and "DarkLevelB" (now `Thresholds.DarkLevelB` in a `cref`).
+  - **English:** on `main`, 482 of the 602 comment lines of `Core/Analysis/` held a Romanian
+    function word, in all 16 files; on the branch 11 of 1648, judged above.
+  - **Widths:** 79 comment lines of `Core/Analysis/` ran past 100 columns on `main`; none now.
+  - **ASCII:** no added line holds a character outside ASCII.
+  - **`/validate`:** the fourteen cases pass, 1237 figures identical to the recorded ones.
+  - **`check-design.ps1 -Since main`** listed four notes: `measurements.md` changed (above);
+    `code-map.md`, `dependencies.md` and `known-limitations.md` were read against the change and
+    hold.

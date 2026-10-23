@@ -33,8 +33,9 @@ exceeds `UpscaledFraction` (0.5).
 ### A3 - `CropAnalyzer` - what a target aspect cuts
 
 Given `W`, `H` and `TargetAspect`: no crop when null or equal to native (1e-6). If the
-target is narrower, the new width is `round(H x target)`, cut equally from both sides;
-otherwise the height. Result: the centred rectangle (`X0 Y0 W H`), `Axis` ("latime" /
+target is narrower, the new width is `round(H x target)`, cut from both sides, the right one a
+pixel more when the cut is odd; otherwise the height, the bottom side the pixel more. Result:
+the centred rectangle (`X0 Y0 W H`), `Axis` ("latime" /
 "inaltime"), `CutPerSidePx`, `CutPct`. The reference image at 50:35: 5938 x 3888 ->
 5554 x 3888, 192 px per side, 6.5 %.
 
@@ -167,7 +168,7 @@ predicted it above from 0.14); a disc is not the cloud's contour.
 
 ### B6 - `PrintPreview` - a simulation row as an image (window only)
 
-`Render(img, gamma, dmax)`: the image subsampled under `PreviewMaxSide` (1600), lifted with
+`Render(img, gamma, dmax)`: the image subsampled to at most `PreviewMaxSide` (1600), lifted with
 the row's gamma (left alone at gamma 1), and one `PreviewClass` per pixel from
 `RasterOps.LstarPlane`: `UnderPaperBlack`, `UnderLowSeparation` (under 15 but not under paper
 black) or `None`, with the two shares. The preview window paints the classes; it decides
@@ -328,7 +329,8 @@ and the natural cubic spline through them, solved with the same tridiagonal recu
 Siril's `curve_transform.c`, clamped to 0..1: the table of points typed into Siril's Curves
 tool in `cubic spline` mode gives the same image. `Map` and `Slope` evaluate the spline;
 `Apply` and the FITS writer go through a 65 536-entry table with linear interpolation between
-entries (`MapSample`), exact at every 16-bit level; `IsMonotone` is judged on that table,
+entries (`MapSample`), the spline at every 16-bit level to float precision (within 1.5e-7 on
+the curves measured on 2026-10-23); `IsMonotone` is judged on that table,
 after clamping, because it is the curve that is applied.
 
 **The anchors** (`CurveAdvisor.ClassLevels`, `Anchors`). Five L\* levels turned into greys:

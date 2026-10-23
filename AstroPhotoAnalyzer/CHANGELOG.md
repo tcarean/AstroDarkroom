@@ -30,9 +30,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 - The code's comments are being translated to English and every type and method documented,
   one area at a time (the kit's ADR 0035; the plan in
   `docs/plans/2026-10-22-document-every-type-and-method-and-translate-the-comments.md`):
-  `Core/Input/` is done: its 15 files, the 16 of their 22 types and all 99 methods that lacked
-  a full comment, and the comments that said what the code does not do, found in the
-  translation and in the review. No code changed.
+  `Core/Input/` and `Core/Analysis/` are done: their 31 files, the 57 of their 76 types and all
+  182 methods that lacked a full comment, and the comments that said what the code does not do,
+  found in the translation, in probes on the build and in area 1's review. No code changed.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0036): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0009 rejects, and none
