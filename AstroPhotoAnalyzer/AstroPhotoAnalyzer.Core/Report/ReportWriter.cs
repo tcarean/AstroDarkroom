@@ -228,9 +228,9 @@ namespace AstroPhotoAnalyzer
                     : $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}";
 
         /// <summary>
-        /// "praful = 10 % din dalele norilor catalogati (406 nori, 4078 dale); cerul = mediana
-        /// dalelor din afara norilor; negru pur = dale de 32 px sub negrul hartiei (L* 3.6 la
-        /// Dmax 2.4)".
+        /// "praful = percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale
+        /// cerului); 5.5 % din cadru) (fara WCS); cerul = mediana dalelor de cer (clase relative
+        /// la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)".
         /// </summary>
         /// <param name="s">The simulation.</param>
         /// <returns>

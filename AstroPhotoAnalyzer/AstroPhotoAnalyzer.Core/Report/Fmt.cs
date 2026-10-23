@@ -20,7 +20,9 @@
 // The console has InvariantGlobalization; the window cannot (WPF crashes without culture data)
 // and sets the culture at start-up. If any number went through the current culture, "0.24" could
 // become "0,24" on a Romanian Windows and Raport.txt would no longer be identical to the
-// console's output. Every number in the report goes through here.
+// console's output. Every number with decimals in the report goes through here; an integer
+// (a count, a threshold in levels or pixels, the seed) is interpolated as it is, which prints
+// the same digits in both applications, since both run in the invariant culture.
 
 using System.Globalization;
 

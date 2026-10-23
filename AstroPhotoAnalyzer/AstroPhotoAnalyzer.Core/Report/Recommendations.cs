@@ -174,8 +174,8 @@ namespace AstroPhotoAnalyzer
             }
             else if (!s.DustBelowPaperBlack || s.Rows.Any(x => x.DustOnPaperBlack))
             {
-                // The dust reaches black on the grid, but the sky does not reach the threshold:
-                // only on a grid the user gave.
+                // The dust reaches black on the grid, but the sky does not reach the threshold on
+                // it: a sky much darker than the measured background, beside a bright nebula.
                 string top = Fmt.Level(s.Rows.Where(x => !x.AsIs).Select(x => x.Target).DefaultIfEmpty(s.AsIs.Target).Max());
                 fix = $" Nicio tinta pana la {top} nu aduce cerul la {threshold}; ar trebui {ReportWriter.TargetText(s.VisibilityTarget)}.";
             }
