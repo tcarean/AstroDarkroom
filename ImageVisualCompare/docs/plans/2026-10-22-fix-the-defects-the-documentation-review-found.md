@@ -236,17 +236,18 @@ then the worktree removed and the branch deleted.
   with WIC's `Rgb128Float`: bit for bit equal, 72 480 768 of 72 480 768 samples in each.
 - **Not checked by running:** `Ctrl+O` during a load (the test clicks the button; the key path
   reaches the same method and is read), and a move between monitors scaled differently (all the
-  owner's monitors were at 100 %).
+  owner's monitors were at 100 %; run later, next bullet).
 - **The move between monitors, run on 2026-10-23,** after the merge, with the owner's right-hand
-  monitor set to 150 % and the build of `main` (cf8e0cc): the window opened at 96 dpi on the
-  primary, was moved and maximised on the 150 % monitor by a script, and `GetDpiForWindow` then
-  gave 144, so Windows no longer stretches it and `OnDpiChanged` brought the new scale. After
-  `Ctrl+1`, a 48 × 48 patch of the captured window, 300 px left of its centre, matched
-  `de_printat.png` at scale 1 with a mean difference of 0.14 levels (0 levels would be exact;
-  the capture is 24-bit), against 1.41 at scale 1.5, what a stretched window would show; a
-  control capture at fit matched neither (3.51). PowerShell's own `GetDpiForMonitor` reports
-  the system's 96 dpi for every monitor, since the process is system-DPI-aware; the script sets
-  its thread per-monitor aware first.
+  monitor set to 150 % and the build of `main` (cf8e0cc), on the real pair (V-001) with the
+  divider at the centre: the window opened at 96 dpi on the primary, was moved and maximised on
+  the 150 % monitor by a script, and `GetDpiForWindow` then gave 144, so Windows no longer
+  stretches it and `OnDpiChanged` brought the new scale. After `Ctrl+1`, a 48 × 48 patch of the
+  captured window, 300 px left of its centre and so in A, matched `de_printat.png` at scale 1
+  with a mean difference of 0.14 levels (0 would be exact; the residual was not traced), against
+  1.41 for the same patch resampled 1.5× nearest-neighbour, the proxy for a window stretched by
+  Windows; a control capture at fit matched neither (3.51). PowerShell's own `GetDpiForMonitor`
+  reports the system's 96 dpi for every monitor, since its thread is system-DPI-aware; the
+  script sets its thread per-monitor aware first.
 - **Each test seen failing before its fix:**
   - R-005: `OverflowException`, "The image data generated an overflow during processing.", for
     the 40000 x 30000 PNG; `COMException` 0xC00D36BE for both WebPs, the lossless one at the
