@@ -20,9 +20,10 @@
 //
 // Nothing is written to disk: each quality is encoded in memory, decoded back and compared with
 // the 16-bit image (on the scale 0..255, UNrounded - so the error includes the rounding to 8 bits
-// too, as in the acceptance script). Besides the mean and the maximum error, the pixels with an
+// too, as in the acceptance script). Besides the mean and the maximum error, the samples with an
 // error over 2 levels are counted and their mean level is kept: on the reference image they were
-// 3 % and sat in the dark sky, where JPEG works worst.
+// 3 % with ImageMagick and 1.2 % with this encoder at q100 (ADR 0019), and sat in the dark sky,
+// where JPEG works worst.
 //
 // The second file of the core that touches ImageSharp (the first is the reader). 4:4:4, without
 // chroma subsampling: the stars coloured on one pixel would not survive 4:2:0.

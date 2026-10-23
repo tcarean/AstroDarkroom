@@ -22,19 +22,20 @@
 // reference channel) to every target of the grid 0.05..0.20 with a gamma curve identical on all
 // the channels, then re-measures the dust and the sky (DustAnalyzer, on the same patch map) and
 // the percentages. The recommendation is the lowest row - "asa cum e" included, under or over the
-// measured level - at which the dust sits at or above paper black: the minimum usable level, in
-// both directions (ADR 0025; the dust and the sky are the classes of ADR 0026). What Siril's
-// real stretch will do differs in the shape of the curve, and not by a little: a VeraLux stretch
-// to 0.17 kept the dust at L* 7.6, where the gamma curve predicted it above black (ADR 0025). The
-// report calls it a simulation every time.
+// measured level - at which the dust sits at or above paper black and the sky at or above the
+// visibility threshold: the minimum usable level, in both directions (ADR 0025, ADR 0029; the
+// dust and the sky are the classes of ADR 0026). What Siril's real stretch will do differs in
+// the shape of the curve, and not by a little: a VeraLux stretch to 0.17 kept the dust at L* 7.6,
+// where the gamma curve predicted it above black (ADR 0025). The report calls it a simulation
+// every time.
 //
 // The exact target is not searched by bisection but on a LADDER of lifts in steps of 0.01
 // (Thresholds.ExactTarget*), with linear interpolation between two steps: the same ladder gives
-// the exact target of the dust, of each cloud (116 on the reference image - a bisection on each
-// would be 2500 lifts) and the two targets at the neighbouring Dmax, from the same 56 lifts. A
-// step builds no lifted raster: it lifts and linearises every sample from a single 16-bit table
-// (LiftTable, ADR 0035) and sums the patches' luminances directly; the "asa cum e" row stays on
-// the exact path.
+// the exact target of the dust, of each cloud (114 rows on the plate-solved FITS, V-004 - a
+// bisection on each would be 2500 lifts) and the two targets at the neighbouring Dmax, from the
+// same 56 lifts. A step builds no lifted raster: it lifts and linearises every sample from a
+// single 16-bit table (LiftTable, ADR 0035) and sums the patches' luminances directly; the
+// "asa cum e" row stays on the exact path.
 
 using System;
 using System.Collections.Generic;
@@ -55,8 +56,8 @@ namespace AstroPhotoAnalyzer
         internal bool AsIs { get; init; }
 
         /// <summary>
-        /// The row of the target the user gave (Parameters.TargetBackground), when it is not on
-        /// the grid.
+        /// The row of the target the user gave (Parameters.TargetBackground): a row of its own,
+        /// or the grid's row when the target is on the grid.
         /// </summary>
         internal bool Explicit { get; init; }
         internal double Gamma { get; init; }
@@ -278,7 +279,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// "praf 9.3 %, cer 65.1 %, banda 22.4 %, nori luminosi 3.0 %, varfuri 0.1 %"; on the sky
         /// path, with the image's thresholds: "nebuloasa 12.3 % (peste cerul modelat cu 3.8 L*,
-        /// 4 sigma ale cerului), nebuloasa stralucitoare 5.2 % (peste 16.0 L*)".
+        /// 4 sigma ale cerului), nebuloasa stralucitoare 5.2 % (peste 16.0 L*, pragul Otsu)".
         /// </summary>
         internal string ClassFractions
         {

@@ -60,8 +60,8 @@ namespace AstroPhotoAnalyzer
     internal static class PrintPreview
     {
         /// <summary>
-        /// The integer step that brings the image's long side under PreviewMaxSide: the same for
-        /// the preview and for the map, so that the map's patches fall on the pixels of the
+        /// The integer step that brings the image's long side to at most PreviewMaxSide: the same
+        /// for the preview and for the map, so that the map's patches fall on the pixels of the
         /// reduced image.
         /// </summary>
         /// <param name="img">The image; only its size is read.</param>
@@ -70,9 +70,9 @@ namespace AstroPhotoAnalyzer
             => Math.Max(1, (int)Math.Ceiling(Math.Max(img.W, img.H) / (double)Thresholds.PreviewMaxSide));
 
         /// <summary>
-        /// The image <paramref name="img"/> reduced under Thresholds.PreviewMaxSide, lifted with
-        /// <paramref name="gamma"/> (1 = as it is), and the classes of its pixels at the given
-        /// Dmax.
+        /// The image <paramref name="img"/> reduced to at most Thresholds.PreviewMaxSide, lifted
+        /// with <paramref name="gamma"/> (1 = as it is), and the classes of its pixels at the
+        /// given Dmax.
         /// </summary>
         /// <param name="img">The image, 0..1.</param>
         /// <param name="gamma">

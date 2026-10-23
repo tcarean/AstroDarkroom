@@ -35,7 +35,8 @@ namespace AstroPhotoAnalyzer
     internal sealed record BitDepthResult
     {
         /// <summary>
-        /// False on 8-bit sources and on float FITS - there the question makes no sense.
+        /// True only on a 16-bit integer source; false on 8-bit sources, on float FITS, on 32-bit
+        /// integer FITS and without a Source - there the question makes no sense.
         /// </summary>
         internal bool Applicable { get; init; }
 

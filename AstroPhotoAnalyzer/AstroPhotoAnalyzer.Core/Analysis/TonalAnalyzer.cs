@@ -168,7 +168,9 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = plane[i];
                     s += v;
-                    // "sub nivelul 32" means the high byte < 32, as in the script (hi < 32).
+                    // "sub nivelul 32" is a sample under 32/255: on 8 bits the levels under 32;
+                    // on 16 bits those under 32 x 257 = 8224 (and 8224 itself, by float rounding,
+                    // on a TIFF or PNG), where the script's high byte (hi < 32) stopped at 8191.
                     if (v < a) belowA++;
                     if (v < b) belowB++;
                 }
@@ -257,8 +259,8 @@ namespace AstroPhotoAnalyzer
         /// of an L* plane: what a row of the simulation carries. Exposed for the simulator, which
         /// recomputes them on the grid's rows from the L* plane of the subsample lifted through
         /// the table (RasterOps.LstarPlane with LiftTable), without a lifted raster and without
-        /// the median and the histogram, which the row does not show and whose sort costs more
-        /// than all the rest of the row (ADR 0035).
+        /// the median and the histogram, which the row does not show and whose sort would cost
+        /// about as much as all the rest of the row (ADR 0035).
         /// </summary>
         /// <param name="L">One L* (0..100) per pixel; an empty plane gives NaN for both.</param>
         /// <returns>

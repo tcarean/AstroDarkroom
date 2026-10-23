@@ -24,7 +24,8 @@
 // same image. It is applied alike on every plane, value by value.
 //
 // Applying it goes through a table of 65 536 steps with linear interpolation between them: on a
-// 16-bit source it is the exact spline at every level, on float the difference is under 1e-6.
+// 16-bit source it is the spline at every level to float precision (within 1.5e-7 on the curves
+// measured), on float the difference is under 1e-6.
 // The monotonicity is judged on the same table, after clamping: it is the curve that is
 // actually applied.
 
@@ -35,7 +36,8 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// A control point; the label is its class ("praf", "cer", ...) or null at the ends.
+    /// A control point; the label is its class ("praf", "cer", ...) or null at the ends (0, 0)
+    /// and (1, 1) - unless the dust's point is itself (0, 0), and keeps its label.
     /// </summary>
     /// <param name="X">The input, 0..1.</param>
     /// <param name="Y">The output, 0..1.</param>

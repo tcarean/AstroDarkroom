@@ -26,8 +26,8 @@
 //     from the galactic latitude; the sky is a smooth model from the patches OUTSIDE the band;
 //     the band's local level is a median over a window; the dust is a patch DustDepthLstar under
 //     the local level (or under the modelled sky), the bright clouds BrightCloudLstar over the
-//     local level, the peaks the brightest PeakFraction of the patches, the sky the rest outside
-//     the band;
+//     local level, the peaks the brightest PeakFraction of the patches, the band also every
+//     patch outside it BrightCloudLstar over the modelled sky, the sky the rest outside the band;
 //   - otherwise (no WCS, a frame without the band or wholly inside it, or a frame spanning under
 //     BandMinLatitudeSpanDeg degrees of galactic latitude, deep-sky in the band; ADR 0033,
 //     ADR 0037): the sky is a smooth model from ALL the patches, with the SkyModelLowPercentile
@@ -38,7 +38,7 @@
 // On either path the verdict measures the same way (Measure): the sky is the median of the sky
 // class; the dust is the darkest extended area, decided ONCE on the image as it is
 // (DecideDustSource): the DustClassFraction percentile of the dust class when the class holds
-// DustClassMinFraction of the patches (under that it is cores or artefacts) and is darker than
+// DustClassMinFraction of the patches (under that it is cores or artefacts) and is at or under
 // the SkyDarkestFraction percentile of the sky class, otherwise the latter; at every lift the
 // same statistic is re-measured, so that the ladder's rows name the same dust as the definition.
 // The Lynds catalogue (DarkNebulaCatalogue) gives the clouds' NAMES and each one's row. The
@@ -56,7 +56,10 @@ namespace AstroPhotoAnalyzer
     /// <summary>Which path made the classes.</summary>
     internal enum DustMethod
     {
-        /// <summary>A WCS, the band and sky outside it: the band classes (ADR 0026).</summary>
+        /// <summary>
+        /// A WCS, the band and sky outside it, in a frame spanning at least
+        /// BandMinLatitudeSpanDeg of galactic latitude: the band classes (ADR 0026, ADR 0037).
+        /// </summary>
         Band,
 
         /// <summary>
@@ -104,7 +107,9 @@ namespace AstroPhotoAnalyzer
         internal DarkNebula Nebula;
 
         /// <summary>
-        /// The indices of the patches (in the map's row order) whose centre lies in the disc.
+        /// The indices of the patches (in the map's row order) whose centre lies in the disc,
+        /// among those inside the disc's bounding box in pixels: far from the tangent point the
+        /// projection stretches a large disc past that box, and its outer patches are not here.
         /// </summary>
         internal int[] Patches;
 
@@ -170,10 +175,12 @@ namespace AstroPhotoAnalyzer
         internal float[] BandLevel;
 
         /// <summary>
-        /// On the sky path: the sigma of the sky patches' noise; NoiseThreshold = SkyNoiseK x
-        /// sigma, the distance in L* from the modelled sky from which a patch is nebula (upwards)
-        /// or dust (downwards); BrightThreshold, in L* over the modelled sky, from which it is
-        /// bright nebula (infinity when there is none). NaN on the band path.
+        /// On the sky path: the sky's noise, the robust sigma of every patch's residual from the
+        /// modelled sky after one clipping pass; NoiseThreshold = SkyNoiseK x sigma, the distance
+        /// in L* from the modelled sky from which a patch is nebula (upwards) or dust (downwards);
+        /// BrightThreshold, in L* over the modelled sky, from which it is bright nebula (infinity
+        /// when the nebula's tail holds fewer than two patches, and then there is none). NaN on
+        /// the band path.
         /// </summary>
         internal double SkySigma = double.NaN, NoiseThreshold = double.NaN, BrightThreshold = double.NaN;
 
@@ -224,7 +231,7 @@ namespace AstroPhotoAnalyzer
     {
         /// <summary>
         /// The DustClassFraction percentile of the dust class, which holds at least
-        /// DustClassMinFraction of the patches and is, as it is, darker than the darkest sky.
+        /// DustClassMinFraction of the patches and is, as it is, at or under the darkest sky.
         /// </summary>
         DustClass,
 
@@ -367,8 +374,8 @@ namespace AstroPhotoAnalyzer
             => SubsampleGrid((w + stride - 1) / stride, (h + stride - 1) / stride);
 
         /// <summary>
-        /// The patch grid on a subsample of subW x subH: whole patches of PatchSamples, or a
-        /// single one on a smaller raster.
+        /// The patch grid on a subsample of subW x subH: whole patches of PatchSamples; on a
+        /// subsample with a side under PatchSamples, patches as wide as that side.
         /// </summary>
         /// <param name="subW">The subsample's width, in samples.</param>
         /// <param name="subH">The subsample's height, in samples.</param>

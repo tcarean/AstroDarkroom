@@ -19,9 +19,10 @@
 //
 // FIVE ANCHORS, measured on the image, always from the classes of the Tonuri tab (DustAnalyzer,
 // on the band path or on the sky path; ADR 0033): the dust and the sky are the verdict's; the
-// band / nebula, the bright clouds / bright nebula and the peaks are the UPPER PART of their
-// classes - not the median, which for the band sits beside the sky and would start the steep
-// stretch right at the sky. The curve's points carry the names of the path's classes.
+// band / nebula and the bright clouds / bright nebula are the UPPER PART of their classes - not
+// the median, which for the band sits beside the sky and would start the steep stretch right at
+// the sky - and the peaks the median of theirs. The curve's points carry the names of the path's
+// classes.
 //
 // THE RECIPE. The curve does not move the dust and the sky: lifting a sky that is too dark is the
 // re-stretch the Tonuri tab recommends, not a curve's job (measured: the same thing, with the
@@ -43,7 +44,8 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// What the curve is for. It changes only the evidence (the paper checks), never the curve.
+    /// What the curve is for. It changes only the evidence (the paper checks and the gamut
+    /// figure), never the curve.
     /// </summary>
     internal enum CurvePurpose { Print, Screen }
 
@@ -66,7 +68,10 @@ namespace AstroPhotoAnalyzer
     {
         internal double PctAll { get; init; }
 
-        /// <summary>Over the five classes, in the map's order; NaN for an empty class.</summary>
+        /// <summary>
+        /// Over the five classes, in the map's order; on colour NaN for a class no pixel falls in,
+        /// on mono 0 for every class.
+        /// </summary>
         internal IReadOnlyList<double> PctByClass { get; init; }
     }
 
@@ -107,7 +112,8 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<Recommendation> PaperChecks { get; init; } = Array.Empty<Recommendation>();
 
         /// <summary>
-        /// The gamut before the curve and after; null without an ICC profile or for the screen.
+        /// The gamut before the curve and after; null without an ICC profile, with one that cannot
+        /// be used, or for the screen.
         /// </summary>
         internal GamutFigure GamutBefore { get; init; }
         internal GamutFigure Gamut { get; init; }
@@ -171,7 +177,10 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The L* of the five classes on the tonal subsample <paramref name="sub"/> (as it is or
         /// with a curve applied), with the same statistics as the anchors: the dust and the sky
-        /// from DustAnalyzer, the rest from the upper part of the classes; NaN for an empty class.
+        /// from DustAnalyzer, the band / nebula and the bright clouds / bright nebula from the
+        /// upper part of their classes, the peaks from the median of theirs; NaN for an empty one
+        /// of these three (an empty dust class gives the darkest sky, an empty sky class all the
+        /// patches).
         /// </summary>
         /// <param name="sub">The tonal subsample, 0..1, as it is or with a curve applied.</param>
         /// <param name="map">The map, built on the same grid.</param>
@@ -298,7 +307,8 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The right end of the shadow chart of a suggested curve: CurveShadowChartFactor x the
-        /// band's input (R-147).
+        /// input of the curve's fourth point, which is the band's (R-147) - except when the dust's
+        /// point is the origin (Curves), where the fourth is the bright clouds'.
         /// </summary>
         /// <param name="curve">A curve <see cref="Curves"/> suggested.</param>
         /// <returns>The chart's right end, on the input axis, 0..1 or a little over.</returns>

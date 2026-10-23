@@ -23,11 +23,12 @@
 // HOW: candidate = a pixel above the plane's mean + the minimum amplitude, which is the maximum
 // of its 25x25 window.
 // The star's background = the median of the window's border; the amplitude = peak - background,
-// with a low threshold (a faint smudge has no profile) and a high threshold (a saturated star
-// has no half). The width at half maximum is taken on the horizontal and on the vertical, with
-// linear subpixel interpolation, and averaged. Exactly the acceptance script - with one
-// difference: the script took 20,000 candidates at random, here ALL are taken. It is
-// deterministic and better sampled.
+// with a low threshold (a faint smudge has no profile); a high threshold on the peak itself
+// leaves out a saturated star (it has no half). The width at half maximum is taken on the
+// horizontal and on the vertical, with linear subpixel interpolation, and averaged. Exactly the
+// acceptance script - with two differences: the script's candidates were above 3 x the mean,
+// which rejects every star once the background is lifted (ADR 0016), and it took 20,000 of them
+// at random, here ALL are taken. It is deterministic and better sampled.
 
 using System;
 using System.Collections.Generic;
@@ -166,7 +167,8 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The maximum of the window, ties allowed: a flat peak of two pixels is still a star.
+        /// The maximum of the window, ties allowed: a flat peak of two pixels is still a star -
+        /// and both of its pixels pass, so it is measured as two stars.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>

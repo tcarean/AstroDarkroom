@@ -73,7 +73,8 @@ namespace AstroPhotoAnalyzer
             double t = targetAspect.Value;
             if (t < native)
             {
-                // The target is narrower: the width is cut, equally on both sides.
+                // The target is narrower: the width is cut, half on each side; an odd cut leaves
+                // the right side one pixel more (the bottom one, below).
                 int newW = (int)Math.Round(h * t);
                 int cut = (w - newW) / 2;
                 return new CropResult
