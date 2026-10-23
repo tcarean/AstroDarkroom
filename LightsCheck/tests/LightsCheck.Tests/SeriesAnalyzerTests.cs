@@ -324,4 +324,205 @@ public class SeriesAnalyzerTests
         Assert.Null(s.RotationTotalDeg is double rt && rt != 0 ? rt : null);
         Assert.Equal(Axis.Unknown, s.RaAxis);
     }
+
+    /// <summary>A 120 s frame starting at <paramref name="start"/>, registered with the rotation given, its stars good or trailed as the measurement says.</summary>
+    private static AnalyzedFrame Timed(int i, DateTime start, double rotationDeg = 0, FrameMeasurement? m = null)
+        => new(new FrameInfo(i, $"DSC_{i:0000}.NEF", "cam", 135, 2.8, 120, 1600, start, null, null, null, null, null, null),
+            m ?? Measurement(3.0, 1.1, 10000, 120), new RegistrationResult(true, 300, 200, 0, 0, rotationDeg, 1, 0.3), null);
+
+    /// <summary>The frames, cadence and dithering of a session whose frames start at the given seconds and sit at the given positions.</summary>
+    private static (AnalyzedFrame[] Frames, Cadence Cadence, DitherAnalysis Dither) Session(double[] startSeconds, double[] x, double[] y, Func<int, AnalyzedFrame>? frame = null)
+    {
+        AnalyzedFrame[] frames = startSeconds.Select((s, k) => frame is null ? Timed(k + 1, SessionFixture.FirstStart.AddSeconds(s)) : frame(k)).ToArray();
+        Cadence c = CadenceAnalyzer.Analyze(frames.Select(f => f.Info).ToList());
+        return (frames, c, DitherAnalyzer.Analyze(x.Select(v => (double?)v).ToArray(), y.Select(v => (double?)v).ToArray(), c.PauseSeconds));
+    }
+
+    /// <summary>
+    /// Four pairs shot back to back (121 s apart) with a 30 s pause and a 4 px DEC press between
+    /// the pairs, the third pair jumping 8 px: the drift is the three quiet pairs' -2 px per 121 s
+    /// along Y; the three presses, under the 5 px move rule, and the jump, a move with no pause,
+    /// are not drift pairs (R-049, ADR 0016).
+    /// </summary>
+    [Fact]
+    public void R049_TheDriftComesFromThePairsWithoutAPauseOrAMoveAndAPressUnderFivePixelsIsNotADriftPair()
+    {
+        double[] t = [0, 121, 271, 392, 542, 663, 813, 934];
+        double[] x = [0, 0, 4, 4, 8, 8, 12, 12], y = [0, -2, -2, -4, -4, -12, -12, -14];
+        (AnalyzedFrame[] frames, Cadence c, DitherAnalysis d) = Session(t, x, y);
+        Assert.Equal(1, d.Moves);
+        Assert.Equal(1, d.MovesWithoutPause);
+        Assert.Equal(3, d.PausesWithoutMove);
+
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(3, s.DriftPairs);
+        Assert.False(s.DriftApproximate);
+        Assert.Equal(-2 / (121 / 60.0), s.DriftYPerMin!.Value, 0.001);
+        Assert.Equal(0, s.DriftXPerMin!.Value, 0.001);
+        Assert.Equal(2 * 120 / 121.0, s.DriftPerExposurePx!.Value, 0.01);   // a magnitude
+    }
+
+    /// <summary>A session dithered every frame with presses under 5 px has no drift pair and falls back to the paused pairs, marked approximate; so does one with fewer than Th.DriftMinPairs clean pairs (R-049).</summary>
+    [Fact]
+    public void R049_WithoutThreeCleanPairsTheDriftFallsBackToThePausedPairsAndSaysSo()
+    {
+        (AnalyzedFrame[] frames, Cadence c, DitherAnalysis d) = Session([0, 150, 300, 450, 600], [0, 3, 6, 9, 12], [0, -1, -2, -3, -4]);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(4, s.DriftPairs);
+        Assert.True(s.DriftApproximate);
+        Assert.Equal(12 / 10.0, s.DriftXPerMin!.Value, 0.001);   // 12 px over four 150 s intervals
+        Assert.Equal(WalkingNoise.Insufficient, s.WalkingNoise);   // the dash still reads the approximate drift
+
+        // Two clean pairs and four paused ones: under the three clean pairs needed, all six count.
+        (frames, c, d) = Session([0, 121, 271, 392, 542, 692, 842], [0, 0, 3, 3, 6, 9, 12], [0, -2, -2, -4, -4, -5, -6]);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, null);
+        Assert.Equal(6, s.DriftPairs);
+        Assert.True(s.DriftApproximate);
+        Assert.Equal(2, Th.DriftMinPairs - 1);
+
+        // Two clean pairs and nothing else to add: the drift is theirs, exact, but too thin for the alignment.
+        (frames, c, d) = Session([0, 121, 242, 392, 513], [0, 0, 0, 20, 20], [0, -2, -4, -24, -44]);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.Equal(2, s.DriftPairs);
+        Assert.False(s.DriftApproximate);
+        Assert.Null(s.StarDriftPerMin);
+        Assert.Null(s.PolarErrorMinArcmin);
+    }
+
+    /// <summary>The Veil solve's shape with the field at DEC +30 degrees (R-050).</summary>
+    private static readonly Wcs SolveAt30 = new(-0.00172, 0.00172, 0.0037, -1, 1, 0.0037, 30.0);
+
+    /// <summary>
+    /// <paramref name="count"/> 120 s frames back to back (31 by default, an hour's span), the
+    /// stars drifting <paramref name="decPxPerMin"/> along X (DEC) and <paramref name="raPxPerMin"/>
+    /// along -Y (east), the field turning <paramref name="rotationArcminPerHour"/>; the last two
+    /// frames trailed when <paramref name="trailed"/>; with <paramref name="ditherPx"/> the
+    /// pointing slews that far east before frame 16 and the frame turns by the slew's
+    /// hour-circle convergence (tan DEC per radian of arc, negative in a frame of handedness +1
+    /// like the Veil solve's, as measured there), the registration's own view of a dither.
+    /// </summary>
+    private static (AnalyzedFrame[] Frames, Cadence Cadence, DitherAnalysis Dither) Polar(double decPxPerMin, double raPxPerMin, double rotationArcminPerHour, bool trailed = false, int count = 31, double ditherPx = 0)
+    {
+        double[] t = Enumerable.Range(0, count).Select(k => k * 121.0).ToArray();
+        double[] x = t.Select(s => decPxPerMin * s / 60).ToArray(), y = t.Select((s, k) => -raPxPerMin * s / 60 + (k >= 15 ? ditherPx : 0)).ToArray();
+        double ditherDeg = -Math.Tan(30 * Math.PI / 180) * ditherPx * 6.0 / 206265 * 180 / Math.PI;
+        return Session(t, x, y, k => Timed(k + 1, SessionFixture.FirstStart.AddSeconds(t[k]), rotationArcminPerHour / 60 * t[k] / 3600 + (k >= 15 ? ditherDeg : 0), trailed && k >= count - 2 ? Measurement(3.0, 1.7, 10000, 120) : null));
+    }
+
+    /// <summary>
+    /// The requirement's example: 0.2 px/min on DEC and 0.3 on RA at 6 "/px, 2 arcmin/h of
+    /// rotation, DEC +30: the error is between 4.6' (the DEC drift over the sidereal rate)
+    /// and 9.9' (the rotation over the rate times cos DEC added in quadrature), the drift the
+    /// alignment causes in a 120 s exposure between 0.40 and 0.56 px, an elongation of 1.008
+    /// on a 3 px star, at most 1.15 "/min of the RA drift from the alignment, OK (R-050).
+    /// </summary>
+    [Fact]
+    public void R050_ThePolarErrorIsBracketedFromTheDecDriftAndTheRotationAndJudgedByItsCost()
+    {
+        (AnalyzedFrame[] frames, Cadence c, DitherAnalysis d) = Polar(0.2, 0.3, 2.0);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+
+        Assert.False(s.DriftApproximate);
+        Assert.Equal(30, s.DriftPairs);
+        Assert.Equal(30.0, s.DeclinationDeg);
+        StarDrift drift = Assert.IsType<StarDrift>(s.StarDriftPerMin);
+        Assert.True(drift.Signed);
+        Assert.Equal(0.30, drift.RaPxPerMin, 0.01);     // the stars slide east
+        Assert.Equal(0.20, drift.DecPxPerMin, 0.01);    // and north
+        Assert.Equal(2.0 / 60, s.PolarRotationPerHourDeg!.Value, 0.0001);   // no dither to take out
+        Assert.Equal(4.59, s.PolarErrorMinArcmin!.Value, 0.05);
+        Assert.Equal(9.92, s.PolarErrorMaxArcmin!.Value, 0.05);
+        Assert.Equal(0.40, s.PolarDriftMinPx!.Value, 0.01);
+        Assert.Equal(0.56, s.PolarDriftMaxPx!.Value, 0.01);
+        Assert.Equal(1.008, s.PolarElongation!.Value, 0.002);
+        Assert.Equal(1.155, s.PolarRaDriftMaxArcsecPerMin!.Value, 0.01);
+        Assert.Equal(PolarAlignment.Ok, s.PolarAlignment);
+
+        // 1 px/min on DEC: at least 22.9', at least 2 px per exposure on a 3 px star, ATENTIE.
+        (frames, c, d) = Polar(1.0, 0.3, 2.0);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.Equal(22.9, s.PolarErrorMinArcmin!.Value, 0.2);
+        Assert.Equal(2.0, s.PolarDriftMinPx!.Value, 0.02);
+        Assert.Equal(PolarAlignment.Attention, s.PolarAlignment);
+
+        // 0.4 px/min on DEC with 10 arcmin/h of rotation: 0.8 px sure, up to 2.1 px: the bracket straddles the third of the FWHM.
+        (frames, c, d) = Polar(0.4, 0.3, 10.0);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.Equal(0.80, s.PolarDriftMinPx!.Value, 0.02);
+        Assert.Equal(2.08, s.PolarDriftMaxPx!.Value, 0.05);
+        Assert.Equal(PolarAlignment.Marginal, s.PolarAlignment);
+        Assert.Equal(1.0 / 3, Th.PolarDriftFwhmFraction, 0.001);
+    }
+
+    /// <summary>
+    /// A 20 px slew east before frame 16 turns the frame by its hour-circle convergence (the
+    /// registration sees 0.0192 degrees at DEC 30 and 6 "/px): the raw rate reads 0.8 arcmin/h
+    /// more, the rate behind the upper bound takes the slew out and the bound stays 9.9'; a
+    /// run under an hour gives no upper bound at all (R-050, the review of 2026-10-24).
+    /// </summary>
+    [Fact]
+    public void R050_TheDithersNetSlewIsTakenOutOfTheRotationAndAShortRunGivesNoUpperBound()
+    {
+        (AnalyzedFrame[] frames, Cadence c, DitherAnalysis d) = Polar(0.2, 0.3, 2.0, ditherPx: 20);
+        Assert.Equal(1, d.Moves);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.Equal(29, s.DriftPairs);
+        Assert.Equal(1, SolveAt30.Handedness);
+        Assert.Equal(-1, new Wcs(-0.00172, 0.00172, 0.0037, 1, 1, -0.0037).Handedness);   // the same solve mirrored on Y
+        Assert.Equal(20.0 - 0.3 * 121 / 60, s.MountMoves[15]!.RaPx, 0.05);   // the pointing's step: the slew minus the drift over the interval
+        Assert.InRange(Math.Abs(s.RotationPerHourDeg!.Value * 60 - 2.0), 0.5, 1.5);   // the raw rate carries the slew
+        Assert.Equal(2.0 / 60, s.PolarRotationPerHourDeg!.Value, 0.0005);
+        Assert.Equal(9.92, s.PolarErrorMaxArcmin!.Value, 0.1);
+        Assert.Equal(PolarAlignment.Ok, s.PolarAlignment);
+
+        (frames, c, d) = Polar(0.2, 0.3, 2.0, count: 6);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.Equal(4.59, s.PolarErrorMinArcmin!.Value, 0.05);
+        Assert.Null(s.PolarRotationPerHourDeg);
+        Assert.Null(s.PolarErrorMaxArcmin);
+        Assert.Equal(PolarAlignment.Unknown, s.PolarAlignment);
+        Assert.Equal(1.0, Th.PolarRotationMinHours);
+    }
+
+    /// <summary>Without a solve the axis from the trails gives the lower bound alone and no sense; without an axis, or with an approximate drift, nothing (R-050).</summary>
+    [Fact]
+    public void R050_WithoutASolveOnlyTheLowerBoundAndWithoutAnAxisOrACleanDriftNothing()
+    {
+        (AnalyzedFrame[] frames, Cadence c, DitherAnalysis d) = Polar(0.2, 0.3, 2.0, trailed: true);
+        SeriesAnalysis s = SeriesAnalyzer.Analyze(frames, c, d, null, null, 6.0);
+        Assert.Equal(Axis.Y, s.RaAxis);
+        Assert.Null(s.DeclinationDeg);
+        StarDrift drift = Assert.IsType<StarDrift>(s.StarDriftPerMin);
+        Assert.False(drift.Signed);
+        Assert.Equal(0.30, drift.RaPxPerMin, 0.01);
+        Assert.Equal(0.20, drift.DecPxPerMin, 0.01);
+        Assert.Equal(4.57, s.PolarErrorMinArcmin!.Value, 0.05);
+        Assert.Null(s.PolarErrorMaxArcmin);
+        Assert.Equal(0.40, s.PolarDriftMinPx!.Value, 0.01);
+        Assert.Null(s.PolarDriftMaxPx);
+        Assert.Null(s.PolarRaDriftMaxArcsecPerMin);
+        Assert.Equal(PolarAlignment.Unknown, s.PolarAlignment);   // the lower bound is harmless, the upper unknown
+
+        (frames, c, d) = Polar(1.0, 0.3, 2.0, trailed: true);
+        Assert.Equal(PolarAlignment.Attention, SeriesAnalyzer.Analyze(frames, c, d, null, null, 6.0).PolarAlignment);   // the lower bound alone condemns it
+
+        (frames, c, d) = Polar(0.2, 0.3, 2.0);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, null, 6.0);
+        Assert.Equal(Axis.Unknown, s.RaAxis);
+        Assert.Null(s.StarDriftPerMin);
+        Assert.Null(s.PolarErrorMinArcmin);
+        Assert.Equal(PolarAlignment.Unknown, s.PolarAlignment);
+
+        // Without a scale the arcminutes cannot be had.
+        (frames, c, d) = Polar(0.2, 0.3, 2.0);
+        Assert.Null(SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, null).PolarErrorMinArcmin);
+
+        // Every frame after a pause: the drift is approximate and the alignment is not read from it.
+        (frames, c, d) = Session([0, 150, 300, 450, 600], [0, 1, 2, 3, 4], [0, -1, -2, -3, -4]);
+        s = SeriesAnalyzer.Analyze(frames, c, d, null, SolveAt30, 6.0);
+        Assert.True(s.DriftApproximate);
+        Assert.Null(s.PolarErrorMinArcmin);
+        Assert.Null(s.StarDriftPerMin);
+        Assert.Equal(PolarAlignment.Unknown, s.PolarAlignment);
+    }
 }

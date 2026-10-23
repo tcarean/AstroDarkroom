@@ -23,6 +23,11 @@ are in the plan `docs/plans/2026-10-10-judge-walking-noise-by-the-drift-and-meas
 | warm pixels in the calibrated frames above 3 sigma of one frame | 1162 / Mpx | the master dark removed held 34 / Mpx |
 | autocorrelation anisotropy of the stack's background, G, lags 3 to 48 | 1.45 along Y = RA | 1.15 along X |
 
+(Corrected 2026-10-24: the Veil drift in the table was read over 45 pairs that include nine
+post-pause presses of 3 to 5 px; over the 39 pairs without a pause it is -1.1 / -5.8 "/min,
+1.96 px per exposure and a dash of 17.7 px, and the mount did not drift the same on both
+nights (ADR 0016). The verdicts and the threshold of 3 px stand.)
+
 The mount drifted the same on both nights. At 20 mm that drift is a seventh of a pixel per
 exposure, so the sensor's pattern does not move between the frames that share a spot: it stacks
 as points, which the master dark had removed anyway. At 135 mm it is over a pixel per exposure,

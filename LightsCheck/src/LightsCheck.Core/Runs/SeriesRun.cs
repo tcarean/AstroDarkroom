@@ -145,16 +145,16 @@ internal static class SeriesRun
         SensorPattern pattern = PatternAnalyzer.Analyze(crops, frames.Select(f => f.Measurement?.Channels).ToList(), dither);
         Array.Clear(crops);
 
-        IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
-        Wcs? wcs = ReadWcs(session.Root);
-        SeriesAnalysis series = SeriesAnalyzer.Analyze(frames, cadence, dither, readNoise, wcs);
-
         // The pixel scale: the file's pixel size when it says it, else the option's.
         double? filePixel = infos.Select(f => f.PixelSizeUm).FirstOrDefault(p => p is not null);
         double pixel = filePixel ?? options.PixelSizeUm;
         string pixelSource = filePixel is not null ? "din fisier (XPIXSZ)" : "introdus";
         double? focal = infos.Select(f => f.FocalMm).FirstOrDefault(f => f is not null);
         double? scale = focal is double fm && fm > 0 ? 206.265 * pixel / fm : null;
+
+        IReadOnlyList<ReadNoise>? readNoise = ReadNoise(session, cancel);
+        Wcs? wcs = ReadWcs(session.Root);
+        SeriesAnalysis series = SeriesAnalyzer.Analyze(frames, cadence, dither, readNoise, wcs, scale);
 
         return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
     }
@@ -191,8 +191,11 @@ internal static class SeriesRun
     /// <summary>
     /// The WCS of the first plate-solved FITS at the session root (Siril's stacked result, by
     /// name): the scale and the PC matrix, or the CD matrix when the file carries that form
-    /// (then the scale is 1 and the matrix holds it). Null without such a file (R-025, R-038).
+    /// (then the scale is 1 and the matrix holds it), with the declination of CRVAL2 when the
+    /// header has it (R-050). Null without such a file (R-025, R-038).
     /// </summary>
+    /// <param name="root">The session folder.</param>
+    /// <returns>The WCS of the first solved FITS by name, or null.</returns>
     internal static Wcs? ReadWcs(string root)
     {
         foreach (string f in Directory.GetFiles(root).Where(FitsReader.IsFitsPath).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
@@ -214,7 +217,8 @@ internal static class SeriesRun
                     continue;
                 }
 
-                return w;
+                double crval2 = FitsReader.HDbl(h, "CRVAL2", double.NaN);
+                return double.IsNaN(crval2) ? w : w with { DecDeg = crval2 };
             }
             catch (Exception e) when (e is IOException or InvalidDataException)
             {

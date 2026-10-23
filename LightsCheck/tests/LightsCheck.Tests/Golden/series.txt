@@ -17,6 +17,7 @@ Copyright (C) 2026 Tudor Carean
     roua               : NU - FWHM -0 %, halo +0.001
     cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
     dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
+    aliniere polara    : eroare de cel putin 5.7', costa cel putin 0.50 px intr-o expunere (fara plate solve nu se stie declinatia pentru limita de sus)
     de scos din stiva  : 2 cadre (lista la RESPINSE); raman 6 = 12 min
 
   FOCUS
@@ -43,9 +44,11 @@ Copyright (C) 2026 Tudor Carean
     directia darelor   : -90 grade fata de orizontala pe cadrele slabe = pe RA; axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
 
   DRIFT SI ROTATIE
-    drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi) = +1.5 / +0.2 "/min
+    drift intre cadre consecutive fara dithering: X +0.25 px/min, Y +0.03 px/min (4 perechi fara pauza) = +1.5 / +0.2 "/min
     drift intr-o expunere: 0.50 px = 3.0" pe 120 s, pe DEC; dare de walking noise de pana la 0.5 px (cadrele 1-2, 2 cadre la 10 px)
     rotatie de camp    : -0.0 arcmin in total, -0.1 arcmin/h; in colt, intr-o expunere: 0.00 px
+    aliniere polara    : eroare de cel putin 5.7' (driftul pe DEC de 1.5"/min; fara plate solve nu se stie declinatia pentru limita de sus); drift din aliniere cel putin 0.50 px intr-o expunere de 120 s
+    drift pe RA        : 0.2"/min (fara plate solve nu se stie cat e din aliniere)
 
   DITHERING
     pauze > 5 s        : 3; miscari >= 5 px: 3; pauze fara miscare: 0; miscari fara pauza: 0; cadre inregistrate: 8 din 8

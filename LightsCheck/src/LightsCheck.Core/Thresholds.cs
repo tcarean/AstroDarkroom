@@ -183,6 +183,31 @@ internal static class Th
     /// </summary>
     internal const double WalkingStreakVisible = 3.0;
 
+    // ---- the drift pairs and the polar alignment (R-049, R-050, ADR 0016)
+
+    /// <summary>
+    /// The drift is read over the pairs of consecutive frames with no pause above DitherPause
+    /// between them, where nothing was pressed; with fewer than this many such pairs it falls
+    /// back to the pairs that were not a move, approximate (on Veil nine presses of 3 to 5 px
+    /// halved the RA drift that way, measured on 2026-10-24).
+    /// </summary>
+    internal const int DriftMinPairs = 3;
+
+    /// <summary>
+    /// The drift the polar alignment can cause in one exposure, as a fraction of the session
+    /// FWHM, under which it costs nothing: a smear of a third of the FWHM adds under 1.03 of
+    /// elongation (a Gaussian of sigma s smeared over L reads sqrt(s^2 + L^2 / 12) / s).
+    /// </summary>
+    internal const double PolarDriftFwhmFraction = 1.0 / 3;
+
+    /// <summary>
+    /// The registered span, in hours, under which the field rotation is not read for the polar
+    /// error's upper bound: the per-frame rotation scatters by about 10" once the dithers'
+    /// projection is taken out (Veil, 2026-10-24), so an hour at 1'/h is six times the noise
+    /// and a ten-minute run would read noise as arcminutes per hour.
+    /// </summary>
+    internal const double PolarRotationMinHours = 1.0;
+
     /// <summary>The side of the central square of the raw mosaic kept from every light for the sensor's pattern (R-046); the whole frame when it is smaller.</summary>
     internal const int PatternCrop = 512;
 

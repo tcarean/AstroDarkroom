@@ -497,4 +497,81 @@ public class SeriesTests
         cells.Add(cur);
         return cells.ToArray();
     }
+
+    /// <summary>Every frame after a 30 s pause with a press under 5 px: no drift pair, the paused pairs give an approximate drift and the rows say so; the alignment is not read (R-049, R-050).</summary>
+    [Fact]
+    public void R049_ASessionDitheredEveryFrameFallsBackToThePausedPairsWordedApproximate()
+    {
+        // Steps of about 1.1 px (a 3 px step on the synthetic star grid votes a grid spacing instead).
+        (double Dx, double Dy, double Elongation, double PauseSeconds)[] pattern = [(0, 0, 1.0, 0), (1, 0.5, 1.0, 30), (2, 1, 1.0, 30), (3, 1.5, 1.0, 30), (4, 2, 1.0, 30)];
+        using SessionFixture f = new SessionFixture().WithStarSeries(pattern);
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        SeriesAnalysis s = r.Series;
+
+        Assert.True(s.DriftApproximate);
+        Assert.Equal(4, s.DriftPairs);
+        IReadOnlyList<ReportRow> rows = SeriesReport.DriftRows(r);
+        Assert.Contains("(4 perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra)", rows.Single(x => x.Label == "drift intre cadre consecutive fara dithering").Value, StringComparison.Ordinal);
+        Assert.StartsWith("nemasurabila (sub 3 perechi de cadre consecutive fara pauza si fara miscare", rows.Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
+        ReportRow summary = SeriesReport.SummaryRows(r).Single(x => x.Label == "aliniere polara");
+        Assert.Null(summary.Verdict);
+        Assert.StartsWith("nemasurabila", summary.Value, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The eight-frame pattern with Siril's solve at the root, the field at DEC +30, shot at
+    /// 600 s so the span passes an hour: the drift pairs' 0.05 px/min along X (DEC through the
+    /// solve) give an error of 1.1', the rotation of the synthetic frames adds nothing, the
+    /// drift of the alignment stays under a third of the FWHM, and the summary row reads OK with
+    /// a chip; at 120 s the span is 17 min and only the lower bound is read (R-050).
+    /// </summary>
+    [Fact]
+    public void R050_TheRowsAndTheSummaryWordThePolarAlignmentFromTheSolve()
+    {
+        string[] wcs =
+        [
+            FitsTestData.Card("CTYPE1", "'RA---TAN'"), FitsTestData.Card("CTYPE2", "'DEC--TAN'"),
+            FitsTestData.Card("CRVAL1", "314.43"), FitsTestData.Card("CRVAL2", "30.0"),
+            FitsTestData.Card("CDELT1", "-0.00172"), FitsTestData.Card("CDELT2", "0.00172"),
+            FitsTestData.Card("PC1_1", "0.0037"), FitsTestData.Card("PC1_2", "-1"), FitsTestData.Card("PC2_1", "1"), FitsTestData.Card("PC2_2", "0.0037"),
+        ];
+        using SessionFixture shortRun = new SessionFixture().WithStarSeries(SessionFixture.Pattern);
+        File.WriteAllBytes(Path.Combine(shortRun.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        SeriesResult rs = SeriesRun.Run(shortRun.Root, new SeriesOptions(Threads: 2));
+        Assert.Equal(30.0, rs.Series.DeclinationDeg);
+        Assert.Equal(5.7, rs.Series.PolarErrorMinArcmin!.Value, 0.3);
+        Assert.Null(rs.Series.PolarErrorMaxArcmin);
+        Assert.Equal(PolarAlignment.Unknown, rs.Series.PolarAlignment);
+        Assert.Contains("sesiune sub 1 h: rotatia nu da inca limita de sus", SeriesReport.DriftRows(rs).Single(x => x.Label == "aliniere polara").Value, StringComparison.Ordinal);
+        Assert.Contains("(sesiune sub 1 h: nu se stie inca cat e din aliniere)", SeriesReport.DriftRows(rs).Single(x => x.Label == "drift pe RA").Value, StringComparison.Ordinal);
+
+        using SessionFixture f = new SessionFixture().WithStarSeries(SessionFixture.Pattern, exposure: 600);
+        File.WriteAllBytes(Path.Combine(f.Root, "result.fit"), FitsTestData.BuildFits(8, 8, (x, y) => 1, extraCards: wcs));
+        SeriesResult r = SeriesRun.Run(f.Root, new SeriesOptions(Threads: 2));
+        SeriesAnalysis s = r.Series;
+
+        Assert.Equal(30.0, s.DeclinationDeg);
+        Assert.False(s.DriftApproximate);
+        Assert.Equal(4, s.DriftPairs);
+        Assert.Equal(1.14, s.PolarErrorMinArcmin!.Value, 0.1);
+        Assert.NotNull(s.PolarRotationPerHourDeg);
+        // The synthetic frames are shifted copies that do not turn with a slew, so taking the
+        // pattern's 15 px RA move out adds its convergence (about 3') to the bound here; the
+        // exact correction is pinned on hand-made frames in SeriesAnalyzerTests.
+        Assert.InRange(s.PolarErrorMaxArcmin!.Value, s.PolarErrorMinArcmin.Value, s.PolarErrorMinArcmin.Value + 4.0);
+        Assert.Equal(PolarAlignment.Ok, s.PolarAlignment);
+
+        IReadOnlyList<ReportRow> rows = SeriesReport.DriftRows(r);
+        Assert.Contains("(4 perechi fara pauza)", rows.Single(x => x.Label == "drift intre cadre consecutive fara dithering").Value, StringComparison.Ordinal);
+        string polar = rows.Single(x => x.Label == "aliniere polara").Value;
+        Assert.StartsWith("eroare ", polar, StringComparison.Ordinal);
+        Assert.Contains("'/h fara dithering la DEC +30.0 grade", polar, StringComparison.Ordinal);
+        Assert.Contains("intr-o expunere de 600 s", polar, StringComparison.Ordinal);
+        Assert.Contains("alungire adaugata cel mult 1.0", polar, StringComparison.Ordinal);
+        string ra = rows.Single(x => x.Label == "drift pe RA").Value;
+        Assert.Contains("din aliniere cel mult", ra, StringComparison.Ordinal);
+        ReportRow summary = SeriesReport.SummaryRows(r).Single(x => x.Label == "aliniere polara");
+        Assert.Equal("OK", summary.Verdict);
+        Assert.Contains("intr-o expunere", summary.Value, StringComparison.Ordinal);
+    }
 }

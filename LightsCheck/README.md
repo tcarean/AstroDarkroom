@@ -58,7 +58,9 @@ Masoara fiecare cadru (in paralel, `--threads N`, implicit jumatate din nuclee; 
 de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportul:
 
 - **REZUMAT**: focus, expunere (fata de zgomotul de citire din `biases/`), roua, cadre
-  miscate, dithering, cate cadre scoti din stiva si cate raman.
+  miscate, dithering, aliniere polara (`OK`, `LA LIMITA` sau `ATENTIE` dupa cat costa intr-o
+  expunere; fara verdict cand se stie doar limita de jos), cate cadre scoti din stiva si cate
+  raman.
 - **FOCUS**: FWHM median pe cadrele bune, la inceput si la sfarsit, pe trei zone radiale, si
   verdictul (acelasi ca pe randul `focus` din REZUMAT).
 - **EXPUNERE SI ZGOMOT**: fondul de cer, zgomotul de citire pe fiecare canal, si pe trei
@@ -72,9 +74,31 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   monturii cade ea: `dara pe RA (-90 grade)` inseamna urmarirea (eroare periodica, viteza,
   backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
   amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
-- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering, driftul intr-o
-  expunere (pe ce axa a monturii) si dara de walking noise pe care o lasa in cel mai lung grup
-  de cadre consecutive ramase in acelasi loc la 10 px, de la 2 cadre in sus, rotatia de camp.
+- **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering (masurat pe
+  perechile de cadre fara pauza si fara miscare intre ele, unde nu s-a apasat nimic si
+  montura n-a sarit; cand sunt sub 3 astfel de
+  perechi, de exemplu la dithering dupa fiecare cadru, se foloseste orice pereche fara miscare
+  de 5 px, cu mentiunea `aproximativ`, fiindca apasarile mici de dithering intra in cifra),
+  driftul intr-o expunere (pe ce axa a monturii) si dara de walking noise pe care o lasa in
+  cel mai lung grup de cadre consecutive ramase in acelasi loc la 10 px, de la 2 cadre in sus,
+  rotatia de camp, apoi `aliniere polara` si `drift pe RA`.
+  Alinierea polara se citeste din driftul pe DEC si din rotatia de camp: o axa polara gresita
+  cu un unghi `e` face stelele sa alunece pe DEC si campul sa se roteasca, in proportii care
+  depind doar de declinatie. Driftul pe DEC singur da o limita de jos a erorii (`eroare de cel
+  putin 4'`); rotatia de camp, curatata de dithering (fiecare miscare pe RA roteste putin
+  cadrul, cu pasul ei inmultit cu sinusul declinatiei, si pe Veil asta era cea mai mare parte
+  din rotatia masurata) si pusa toata pe seama alinierii, da limita de sus (`eroare intre 4'
+  si 7'`), pentru care trebuie declinatia din plate solve-ul de la radacina sesiunii si o
+  sesiune de cel putin o ora. Randul
+  spune si cat costa: driftul pe care alinierea il poate face intr-o expunere, in pixeli, si
+  alungirea pe care o adauga unei stele cu FWHM-ul sesiunii. `drift pe RA` spune cat din
+  driftul pe RA poate veni din aliniere (rotatia inmultita cu tangenta declinatiei); ce e peste
+  nu e alinierea, ci urmarirea (viteza, eroarea periodica, flexiune). Pe sesiunea Veil din
+  2026-10-06 driftul pe RA de 4.4"/min vine doar in mica parte din aliniere (cel mult 0.7"/min),
+  iar alinierea, intre 4.5' si 7', costa sub 0.5 px intr-o expunere de 120 s: nu ea a miscat
+  cadrele. Nemasurabila sub 3 perechi de cadre fara pauza si fara miscare (o serie de 10+ cadre fara
+  dithering ar masura-o); fara plate solve, sau sub o ora, ramane doar limita de jos. Impartirea erorii pe altitudine si
+  azimut ar cere locul si ora exacta, pe care raw-urile nu le au.
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,
   grupuri de cadre consecutive in acelasi loc), `scara` (cat inseamna pe cer, in secunde de
