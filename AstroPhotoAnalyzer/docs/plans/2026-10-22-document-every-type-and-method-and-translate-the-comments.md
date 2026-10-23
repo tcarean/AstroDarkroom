@@ -795,3 +795,94 @@ pixels, `ResultViews.xaml.cs:46`), and about 25 other claims the review listed a
 as it is: `CurveExport.Save`'s "a link", which the review too could not settle without a probe
 (a hard link is refused, as the input's handle has no delete sharing; a symbolic link is likely
 replaced as a link, the input untouched).
+
+### Area 4, `Thresholds.cs`, `Parameters.cs`, `AstroPhotoAnalyzer/` (2026-10-23, `claude/Translate-the-thresholds-and-console`)
+
+- **The branch and the worktree are named `claude/Translate-the-thresholds-and-console`,** not
+  the plan's `claude/Document-and-translate-the-thresholds-parameters-and-console`: the owner
+  chose the name on 2026-10-23, since the plan's would push the worktree past Windows's
+  260-character path limit (area 3's "What deviated"). The worktree's folder matches the branch,
+  as the kit's rule "Worktrees" asks.
+- **It ran in a session of its own, from area 3's prompt,** in three commits: the five files, the
+  false comments, the wrap-up. The scratch tool, `checks.sh`, `wrapdoc.py`, `drift.py` and the
+  two probe projects came from area 3's scratchpad, rebuilt in this session's; `checks.sh`
+  takes the area's three prefixes.
+- **Areas 1 to 3's reviews, applied before writing:** the quoted Romanian output stays as the
+  user sees it ("Atentie", "fiindca", "(explicit)", "EROARE: ", the class and strength names);
+  "omul" is "the user", "proprietarul" "the owner" (ADR 0026, 0033, 0034's choices); the star's
+  "fundal" is its base, the median of the window's border, as `StarAnalyzer` says; every claim
+  of a threshold's comment was checked against the code that reads the threshold (a list of
+  every use, 105 constants) and its figures against `docs/validation.json`; every NaN, null and
+  throw is said where the code returns or accepts it.
+- **The counter's figures:** the area had 6 types and 17 methods to touch, not the table's 15
+  (the difference was not traced: `main` moved since, and the counter was extended).
+  `Thresholds` gets a type summary; the constants that had no comment (`DarkLevelB`,
+  `NoiseTileSize`, ...) share the one above them and get none, as the rule allows.
+- **Thirteen comments corrected, in a commit of their own (1f1f4e4, whose message says twelve),
+  each against its line or a figure:**
+  1. `UpscaledFraction`: a fraction of samples, every plane's, not of pixels
+     (`BitDepthAnalyzer`, `Recommendations.cs:412`).
+  2. `DarkLevelA`: the dark counts are of samples of every channel whose 8-bit level is under the
+     threshold (`TonalAnalyzer.Level8Under`, ADR 0043), not "dark pixels".
+  3. `ScreenBackgroundLo`: de_printat.png has no WCS, so no catalogued dust (V-001: 0 clouds);
+     "reaches black at 0.19" is now the plate-solved FITS at Dmax 2.0, exact target 0.184, row
+     0.19 (V-004).
+  4. `DustCloudMinPatches`: "116 of 406 clouds" on the reference image, handed on by area 2, is
+     now 114 of the 397 clouds with a patch in the frame, on the plate-solved FITS (V-004; 406 was
+     the astropy measurement, `validation.md`).
+  5. `PlateauTileMaxRangeLevels`: up to 120 tiles; on the reference image 20 pass in
+     `PlateauMaxAttempts` tries and give 2.68 px (V-001), not "120 tiles ... 2.6 px".
+  6. `JpegErrorCountLevels`: samples, not pixels (`JpegAnalyzer`'s per-sample `Add`).
+  7. `ShadowLiftLevelLo`: the gaps are counted strictly between the two levels, from the first
+     level used to the last (`QuantizationAnalyzer.Count`).
+  8. `MissingLevelsWarn`: `Keep16BitMaster` compares the levels missing on the 8-bit path beyond
+     those missing on the 16-bit one, not the missing levels alone.
+  9. `CornerColourSpreadRatio`: the spread must exceed the fraction of the mean absolute
+     departure (`>`), not reach it.
+  10. `CurveShadowChartFactor`: the chart ends at the curve's fourth point, the band's, or the
+      bright clouds' when the dust's point is the origin (`CurveAdvisor.ShadowChartLimit`).
+  11. `CurveGamutGrid`: the pixels near the threshold take the exact round trip (ADR 0042), not
+      all "by interpolation".
+  12. `Parameters.DmaxProfile`: not "for the report only": the Tonuri ladder's paper-black row
+      reads it, and `CurveRun` reopens `DmaxProfilePath` only while it is set.
+  13. `AnalyzerCli.cs`, header: exit code 1 also covers a folder, an invalid parameter
+      combination, an unusable ICC profile and a `-o` file not written (`Run`, `console.md`).
+- **Left as they are:** the historical figures of `DustPatchPx` ("the parked branch"),
+  `BandGalacticLatitudeDeg`, `DmaxSensitivityStep`, `NaturalDistanceTolerance` and the curve
+  constants, measured on an earlier build and dated or attributed as such. `thresholds.md` and
+  `console.md` say none of the thirteen facts; they hold.
+- **Code defects, questions for the owner** (on `main` before this branch; none changed here, as
+  Assumption 7 says):
+  1. The console's number flags accept "NaN", and `--distance`, `--sizes`, `--passepartout`,
+     `--frame` and `--aspect` "Infinity" too: `TryNum` reads them (the invariant culture), and
+     only `--target-bg`'s check refuses NaN. Probed on 2026-10-23 with the branch's console on
+     de_printat.png: `--dmax NaN` prints "Dmax n/a, negrul hartiei L* n/a" and exact targets
+     "<= 0.05 la Dmax n/a", `--distance NaN` "Distanta de privire: n/a m", `--passepartout NaN`
+     outer sizes "n/a x n/a", `--aspect NaN:1` "ramane 5938 x 1 px", `--sizes NaN` a size row of
+     "n/a"; each run exits 2, with no error. Refuse NaN and infinity in `TryNum` (one place, a
+     console message), or also in the core's `Validate`, so the window's fields share it (area
+     5 to check `ParameterFields`)?
+- **Measured on 2026-10-23:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | 5efd860 | the five files | `== OK in 62s` | 380 + 58 |
+  | 1f1f4e4 | the thirteen false comments | `== OK in 63s` | 380 + 58 |
+
+  - **The counter on the area:** on `main`, 6 types and 17 methods to touch (10 undocumented, 7
+    incomplete); on the branch 0 and 0. The whole code has 48 types and 121 methods left for
+    area 5 (the plan's table said 48 and 120; `main` moved).
+  - **No code changed:** `tokens` finds the code of all 71 files identical to `main`'s, the 5 of
+    the area with changed comments or layout: +606/-350.
+  - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
+    new ones, except "116", "406" and "2.6" (facts 4 and 5, on purpose), "35 937" (now
+    "35,937") and one of the two "0.01" of "din 0.01 in 0.01" ("in steps of 0.01").
+  - **English:** on `main`, 338 of the 475 comment lines of the area held a Romanian function
+    word, in all 5 files; on the branch 0 of 731.
+  - **Widths:** 45 comment lines of the area ran past 100 columns on `main`; none now.
+  - **ASCII:** no added line holds a character outside ASCII.
+  - **`/validate`:** the fourteen cases pass; of the 1242 figures 1240 are identical to the
+    recorded ones, and the same two as in area 3 differ by 0.0001, inside the 0.01 tolerance
+    (V-011's `curves.Maxima.lstar.clouds`, V-014's `curves.Maxima.lstar.peaks`).
+  - **`check-design.ps1 -Since main`** listed four notes: `code-map.md`, `console.md`,
+    `extending.md` and `thresholds.md`, read against the change; all hold.
