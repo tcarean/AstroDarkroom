@@ -15,26 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurveAdvisor.cs - curbele de contrast sugerate (R-141, R-142, R-143; ADR 0032).
+// CurveAdvisor.cs - the suggested contrast curves (R-141, R-142, R-143; ADR 0032).
 //
-// CINCI ANCORE, masurate pe imagine, mereu din clasele tabului Tonuri (DustAnalyzer, pe
-// calea benzii sau pe cea a cerului; ADR 0033): praful si cerul sunt cele ale verdictului;
-// banda / nebuloasa, norii luminosi / nebuloasa stralucitoare si varfurile sunt PARTEA DE
-// SUS a claselor lor - nu mediana, care la banda sta langa cer si ar porni portiunea
-// abrupta chiar din cer. Punctele curbei poarta numele claselor caii.
+// FIVE ANCHORS, measured on the image, always from the classes of the Tonuri tab (DustAnalyzer,
+// on the band path or on the sky path; ADR 0033): the dust and the sky are the verdict's; the
+// band / nebula, the bright clouds / bright nebula and the peaks are the UPPER PART of their
+// classes - not the median, which for the band sits beside the sky and would start the steep
+// stretch right at the sky. The curve's points carry the names of the path's classes.
 //
-// RETETA. Curba nu muta praful si cerul: ridicarea unui cer prea intunecat e re-stretch-ul
-// pe care il recomanda Tonuri, nu treaba unei curbe (masurat: acelasi lucru, cu acelasi
-// zgomot). Deasupra cerului, cele trei segmente iau pantele curbei vechi, micsorate
-// impreuna cand varfurile ar trece de CurvePeakTarget. Blanda, Medie si Puternica sunt
-// parti din drumul de la identitate la curba aceea; Maxima mareste pantele impreuna pana
-// cand varfurile ating tinta, si exista doar cand Puternica nu ajunge acolo. Niciun punct
-// nu coboara sub intrarea lui: cu varfurile deja la sau peste tinta nu mai e loc de nimic,
-// si nu se sugereaza nicio curba (Problem), in loc de patru curbe care nu schimba nimic.
+// THE RECIPE. The curve does not move the dust and the sky: lifting a sky that is too dark is the
+// re-stretch the Tonuri tab recommends, not a curve's job (measured: the same thing, with the
+// same noise). Above the sky, the three segments take the old curve's slopes, scaled down
+// together when the peaks would pass CurvePeakTarget. Blanda, Medie and Puternica are parts of
+// the way from the identity to that curve; Maxima scales the slopes up together until the peaks
+// reach the target, and exists only when Puternica does not get there. No point goes under its
+// input: with the peaks already at or over the target there is no room for anything, and no
+// curve is suggested (Problem), instead of four curves that change nothing.
 //
-// DOVADA fiecarei curbe se REMASOARA pe subesantionul tonal cu curba aplicata, nu se
-// prezice din puncte: pe o imagine colorata, o curba pe canale nu duce o dala exact unde
-// duce griul ei.
+// The EVIDENCE of each curve is RE-MEASURED on the tonal subsample with the curve applied, not
+// predicted from the points: on a colour image, a per-channel curve does not take a patch
+// exactly where it takes its grey.
 
 using System;
 using System.Collections.Generic;
@@ -42,10 +42,12 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Pentru ce e curba. Schimba doar dovada (verificarile de hartie), niciodata curba.</summary>
+    /// <summary>
+    /// What the curve is for. It changes only the evidence (the paper checks), never the curve.
+    /// </summary>
     internal enum CurvePurpose { Print, Screen }
 
-    /// <summary>Intrarile celor cinci puncte, in valori 0..1; NaN pentru o clasa goala.</summary>
+    /// <summary>The inputs of the five points, in values 0..1; NaN for an empty class.</summary>
     internal sealed record CurveAnchors
     {
         internal double Dust { get; init; }
@@ -54,65 +56,99 @@ namespace AstroPhotoAnalyzer
         internal double Clouds { get; init; }
         internal double Peaks { get; init; }
 
+        /// <summary>The five inputs, in the order of the curve's points.</summary>
+        /// <returns>A new array: the dust, the sky, the band, the clouds, the peaks.</returns>
         internal double[] AsArray() => new[] { Dust, Sky, Band, Clouds, Peaks };
     }
 
-    /// <summary>Cati pixeli ies din gamutul hartiei (R-144).</summary>
+    /// <summary>How many pixels leave the paper's gamut (R-144).</summary>
     internal sealed record GamutFigure
     {
         internal double PctAll { get; init; }
 
-        /// <summary>Pe cele cinci clase, in ordinea hartii; NaN pentru o clasa goala.</summary>
+        /// <summary>Over the five classes, in the map's order; NaN for an empty class.</summary>
         internal IReadOnlyList<double> PctByClass { get; init; }
     }
 
+    /// <summary>
+    /// The measured evidence of a suggested curve (R-143): the five class levels before and after,
+    /// the noise gain and the noise after, the clipped shares, and for print the paper checks and
+    /// the gamut.
+    /// </summary>
     internal sealed record CurveEvidence
     {
-        /// <summary>Numele celor cinci clase, ale caii hartii (DustAnalyzer.ClassNames).</summary>
+        /// <summary>
+        /// The names of the five classes, of the map's path (DustAnalyzer.ClassNames).
+        /// </summary>
         internal IReadOnlyList<string> Labels { get; init; }
 
-        /// <summary>L*-ul celor cinci clase (praf, cer, banda / nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri) inainte si dupa curba.</summary>
+        /// <summary>
+        /// The L* of the five classes (dust, sky, band / nebula, bright clouds / bright nebula,
+        /// peaks) before and after the curve.
+        /// </summary>
         internal IReadOnlyList<double> LstarBefore { get; init; }
         internal IReadOnlyList<double> LstarAfter { get; init; }
 
-        /// <summary>Panta curbei la cer: de cate ori creste zgomotul din cer.</summary>
+        /// <summary>The curve's slope at the sky: how many times the sky's noise grows.</summary>
         internal double NoiseGain { get; init; }
 
-        /// <summary>Zgomotul masurat (R-050) inmultit cu panta; NaN cand n-a fost destul cer neted.</summary>
+        /// <summary>
+        /// The measured noise (R-050) times the slope; NaN when there was not enough smooth sky.
+        /// </summary>
         internal double NoiseAfterLsb { get; init; }
 
-        /// <summary>Procentul pixelilor cu un canal la sau peste CurveClipLevel.</summary>
+        /// <summary>
+        /// The percentage of the pixels with a channel at or over CurveClipLevel.
+        /// </summary>
         internal double PctClippedBefore { get; init; }
         internal double PctClippedAfter { get; init; }
 
-        /// <summary>Verificarile de hartie, doar pentru print; gol pentru ecran.</summary>
+        /// <summary>The paper checks, only for print; empty for the screen.</summary>
         internal IReadOnlyList<Recommendation> PaperChecks { get; init; } = Array.Empty<Recommendation>();
 
-        /// <summary>Gamutul inainte de curba si dupa; null fara profil ICC sau pentru ecran.</summary>
+        /// <summary>
+        /// The gamut before the curve and after; null without an ICC profile or for the screen.
+        /// </summary>
         internal GamutFigure GamutBefore { get; init; }
         internal GamutFigure Gamut { get; init; }
 
-        /// <summary>De ce lipseste cifra de gamut, pentru om; null cand exista sau cand nu se cere (ecran).</summary>
+        /// <summary>
+        /// Why the gamut figure is missing, for the user; null when it exists or when it is not
+        /// asked for (screen).
+        /// </summary>
         internal string GamutNote { get; init; }
     }
 
+    /// <summary>A suggested curve: its name, the curve, its preview and its evidence.</summary>
     internal sealed record CurveSuggestion
     {
         internal string Name { get; init; }
         internal ToneCurve Curve { get; init; }
 
-        /// <summary>Imaginea redusa, cu curba aplicata.</summary>
+        /// <summary>The reduced image, with the curve applied.</summary>
         internal Raster Preview { get; init; }
         internal CurveEvidence Evidence { get; init; }
     }
 
+    /// <summary>
+    /// Suggests contrast curves anchored on the classes (ADR 0032) and measures each one's
+    /// evidence.
+    /// </summary>
     internal static class CurveAdvisor
     {
         internal static readonly string[] Names = { "Blanda", "Medie", "Puternica" };
         internal const string MaximaName = "Maxima";
 
+        /// <summary>The grey level of an L*: the anchor of a class.</summary>
+        /// <param name="lstar">The class's L*, 0..100; NaN for an empty class.</param>
+        /// <returns>The level of a grey with that L*, 0..1; NaN for NaN.</returns>
         static double Gray(double lstar) => double.IsNaN(lstar) ? double.NaN : ColorMath.GrayLevelOfLstar(lstar) / 255;
 
+        /// <summary>The L*s of one class's patches.</summary>
+        /// <param name="patchLstars">The L* of each patch, in the map's row order.</param>
+        /// <param name="map">The map, for its classes.</param>
+        /// <param name="c">The class.</param>
+        /// <returns>The class's L*s, in the map's row order; empty for an empty class.</returns>
         static float[] ClassLstars(float[] patchLstars, DustMap map, PatchClass c)
         {
             var v = new List<float>();
@@ -120,7 +156,12 @@ namespace AstroPhotoAnalyzer
             return v.ToArray();
         }
 
-        /// <summary>Percentila clasei, sau NaN cand clasa e goala.</summary>
+        /// <summary>The class's percentile, or NaN when the class is empty.</summary>
+        /// <param name="patchLstars">The L* of each patch, in the map's row order.</param>
+        /// <param name="map">The map, for its classes.</param>
+        /// <param name="c">The class.</param>
+        /// <param name="percentile">The percentile, 0..100.</param>
+        /// <returns>The percentile, in L*; NaN for an empty class.</returns>
         static double ClassLevel(float[] patchLstars, DustMap map, PatchClass c, double percentile)
         {
             float[] v = ClassLstars(patchLstars, map, c);
@@ -128,10 +169,19 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// L*-ul celor cinci clase pe subesantionul tonal <paramref name="sub"/> (asa cum e sau
-        /// cu o curba aplicata), cu aceleasi statistici ca ancorele: praful si cerul de la
-        /// DustAnalyzer, restul din partea de sus a claselor; NaN pentru o clasa goala.
+        /// The L* of the five classes on the tonal subsample <paramref name="sub"/> (as it is or
+        /// with a curve applied), with the same statistics as the anchors: the dust and the sky
+        /// from DustAnalyzer, the rest from the upper part of the classes; NaN for an empty class.
         /// </summary>
+        /// <param name="sub">The tonal subsample, 0..1, as it is or with a curve applied.</param>
+        /// <param name="map">The map, built on the same grid.</param>
+        /// <param name="paperBlackLstar">
+        /// The paper's black, in L*, passed to DustAnalyzer.Measure; no level depends on it.
+        /// </param>
+        /// <returns>
+        /// Five L*s: the dust, the sky, the band / nebula, the bright clouds / bright nebula, the
+        /// peaks.
+        /// </returns>
         internal static double[] ClassLevels(Raster sub, DustMap map, double paperBlackLstar)
         {
             float[] patches = DustAnalyzer.PatchLstars(sub);
@@ -146,7 +196,9 @@ namespace AstroPhotoAnalyzer
             };
         }
 
-        /// <summary>Ancorele: griul L*-ului fiecarei clase.</summary>
+        /// <summary>The anchors: the grey of each class's L*.</summary>
+        /// <param name="classLstars">The five class L*s, as ClassLevels gives them.</param>
+        /// <returns>The anchors, 0..1; NaN where the L* is NaN.</returns>
         internal static CurveAnchors Anchors(double[] classLstars) => new()
         {
             Dust = Gray(classLstars[0]),
@@ -157,12 +209,17 @@ namespace AstroPhotoAnalyzer
         };
 
         /// <summary>
-        /// De ce nu se poate sugera nimic, pentru om: o clasa goala; varfurile deja la sau peste
-        /// CurvePeakTarget (imaginea e la plafon, reteta n-ar avea loc); ancorele nu cresc strict
-        /// (un cadru plat, o banda nu mai luminoasa decat cerul). Praful la negru nu e un motiv:
-        /// punctul lui e chiar originea curbei, pe care curba oricum n-o muta (o margine neagra
-        /// de stack face asta). Null cand se poate.
+        /// Why nothing can be suggested, for the user: an empty class; the peaks already at or
+        /// over CurvePeakTarget (the image is at the ceiling, the recipe would have no room); the
+        /// anchors do not increase strictly (a flat frame, a band no brighter than the sky). The
+        /// dust at black is not a reason: its point is the curve's origin itself, which the curve
+        /// does not move anyway (a black stacking border does that). Null when it can.
         /// </summary>
+        /// <param name="a">The anchors.</param>
+        /// <param name="labels">The five class names of the map's path, for the sentence.</param>
+        /// <returns>
+        /// The reason, in Romanian, from CurveTexts; null when curves can be suggested.
+        /// </returns>
         internal static string Problem(CurveAnchors a, IReadOnlyList<string> labels)
         {
             double[] x = a.AsArray();
@@ -175,10 +232,18 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Curbele sugerate pentru ancorele date, in ordinea Blanda, Medie, Puternica si,
-        /// cand exista, Maxima, cu punctele etichetate cu <paramref name="labels"/>. Una al
-        /// carei spline n-ar fi monoton nu se intoarce.
+        /// The suggested curves for the given anchors, in the order Blanda, Medie, Puternica and,
+        /// when it exists, Maxima, with the points labelled with <paramref name="labels"/>. One
+        /// whose spline would not be monotone is not returned.
         /// </summary>
+        /// <param name="a">
+        /// The anchors, as <see cref="Problem"/> accepts them: none NaN, strictly increasing, the
+        /// peaks under CurvePeakTarget.
+        /// </param>
+        /// <param name="labels">The five class names of the map's path, one per anchor.</param>
+        /// <returns>
+        /// The name and the curve of each suggestion kept; empty when none is monotone.
+        /// </returns>
         internal static IReadOnlyList<(string Name, ToneCurve Curve)> Curves(CurveAnchors a, IReadOnlyList<string> labels)
         {
             double[] x = a.AsArray();
@@ -191,8 +256,8 @@ namespace AstroPhotoAnalyzer
             };
             double reach = inc.Sum();
             double room = Thresholds.CurvePeakTarget - ys;
-            // Varfurile nu trec de tinta: pantele se micsoreaza impreuna. Varfurile deja la sau
-            // peste tinta nu ajung aici: Problem le-a refuzat, deci room > 0.
+            // The peaks do not pass the target: the slopes shrink together. Peaks already at or
+            // over the target do not get here: Problem refused them, so room > 0.
             double scale = Math.Min(room / reach, 1);
 
             double[] Full(double k)
@@ -206,8 +271,9 @@ namespace AstroPhotoAnalyzer
 
             ToneCurve Build(double[] full, double strength)
             {
-                // Praful la negru e originea insasi: punctul lui ia locul capatului (0, 0),
-                // cu eticheta, ca tabelul si dovada sa aiba tot cinci puncte etichetate.
+                // The dust at black is the origin itself: its point takes the place of the (0, 0)
+                // end, with its label, so that the table and the evidence still have five labelled
+                // points.
                 var pts = new List<CurvePoint>();
                 if (x[0] > 0) pts.Add(new CurvePoint(0, 0, null));
                 for (int i = 0; i < 5; i++) pts.Add(new CurvePoint(x[i], x[i] + strength * (full[i] - x[i]), labels[i]));
@@ -230,10 +296,19 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
-        /// <summary>Capatul din dreapta al graficului umbrelor unei curbe sugerate: CurveShadowChartFactor x intrarea benzii (R-147).</summary>
+        /// <summary>
+        /// The right end of the shadow chart of a suggested curve: CurveShadowChartFactor x the
+        /// band's input (R-147).
+        /// </summary>
+        /// <param name="curve">A curve <see cref="Curves"/> suggested.</param>
+        /// <returns>The chart's right end, on the input axis, 0..1 or a little over.</returns>
         internal static double ShadowChartLimit(ToneCurve curve) => Thresholds.CurveShadowChartFactor * curve.Points[3].X;
 
-        /// <summary>Procentul pixelilor cu un canal la sau peste CurveClipLevel.</summary>
+        /// <summary>
+        /// The percentage of the pixels with a channel at or over CurveClipLevel.
+        /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <returns>The percentage, 0..100.</returns>
         internal static double PctClipped(Raster r)
         {
             int n = r.W * r.H;
@@ -249,9 +324,26 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Dovada masurata a unei curbe (R-143), fara verificarile de hartie si fara gamut, pe
-        /// care le adauga rularea dupa scop.
+        /// The measured evidence of a curve (R-143), without the paper checks and without the
+        /// gamut, which the run adds by purpose.
         /// </summary>
+        /// <param name="curve">The curve; its slope at the sky is the noise gain.</param>
+        /// <param name="sub">The tonal subsample as it is; not read.</param>
+        /// <param name="curvedSub">The same subsample with the curve applied.</param>
+        /// <param name="map">The map, for the classes and their names.</param>
+        /// <param name="before">
+        /// The five class L*s before the curve, as ClassLevels gave them; kept, not copied.
+        /// </param>
+        /// <param name="clippedBefore">
+        /// The clipped percentage before the curve, from PctClipped.
+        /// </param>
+        /// <param name="sky">The sky's anchor, 0..1: where the slope is taken.</param>
+        /// <param name="noise">
+        /// The noise measurement; null, or one with too few smooth tiles, gives a NaN noise
+        /// after.
+        /// </param>
+        /// <param name="paperBlackLstar">The paper's black, in L*, for ClassLevels.</param>
+        /// <returns>The evidence, with no paper check and no gamut.</returns>
         internal static CurveEvidence Measure(ToneCurve curve, Raster sub, Raster curvedSub, DustMap map,
             double[] before, double clippedBefore, double sky, NoiseResult noise, double paperBlackLstar)
         {

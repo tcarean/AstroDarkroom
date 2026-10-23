@@ -15,36 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// DustAnalyzer.cs - masuratoarea B5: unde sta praful, partea cea mai intunecata INTINSA a
-// imaginii, si unde sta cerul, in L*.
+// DustAnalyzer.cs - the measurement B5: where the dust sits, the darkest EXTENDED part of the
+// image, and where the sky sits, in L*.
 //
-// Nu pe pixeli: cei mai intunecati pixeli sunt zgomot si stropi izolati. Pe DALE de
-// Thresholds.DustPatchPx x DustPatchPx pixeli ai imaginii, fiecare cu L*-ul luminantei ei
-// medii LINIARE - ce integreaza ochiul pe o pata de 4 mm de hartie. Dalele se impart in
-// CLASE, relativ, nu dupa un prag absolut, pe una din doua cai:
-//   - cu WCS si cu banda Caii Lactee in cadru (ADR 0026): banda e geometrie, din latitudinea
-//     galactica; cerul e un model neted din dalele din AFARA benzii; nivelul local al benzii
-//     e o mediana pe fereastra; praful e dala cu DustDepthLstar sub nivelul local (sau sub
-//     cerul modelat), norii luminosi cu BrightCloudLstar peste nivelul local, varfurile cele
-//     mai luminoase PeakFraction dale, cerul restul din afara benzii;
-//   - altfel (fara WCS, cadru fara banda ori in intregime in ea, sau cadru care acopera mai
-//     putin de BandMinLatitudeSpanDeg grade de latitudine galactica, deep-sky in banda; ADR
-//     0033, ADR 0037): cerul e un model neted din TOATE dalele, cu percentila
-//     SkyModelLowPercentile pe celula; pragurile vin din imagine: nebuloasa e dala cu mai mult
-//     de SkyNoiseK sigma ale cerului peste model, praful cu la fel de mult sub el, nebuloasa
-//     stralucitoare peste pragul Otsu al cozii de nebuloasa (fara varfuri), varfurile ca mai
-//     sus, cerul restul.
-// Pe orice cale, verdictul masoara la fel (Measure): cerul e mediana clasei cer; praful e zona
-// intinsa cea mai intunecata, decisa O DATA pe imaginea asa cum e (DecideDustSource): percentila
-// DustClassFraction a clasei praf cand clasa are DustClassMinFraction din dale (sub atat sunt
-// nuclee sau artefacte) si e mai intunecata decat percentila SkyDarkestFraction a clasei cer,
-// altfel aceasta din urma; la fiecare ridicare se remasoara aceeasi statistica, ca randurile
-// scarii sa spuna acelasi praf ca definitia. Catalogul Lynds (DarkNebulaCatalogue) da NUMELE
-// norilor si randul fiecaruia. Geometria (DustMap) se face o data; L*-urile se refac la fiecare
-// ridicare.
+// Not on pixels: the darkest pixels are noise and isolated specks. On PATCHES of
+// Thresholds.DustPatchPx x DustPatchPx pixels of the image, each with the L* of its mean LINEAR
+// luminance - what the eye integrates over a 4 mm spot of paper. The patches are split into
+// CLASSES, relatively, not by an absolute threshold, on one of two paths:
+//   - with a WCS and with the Milky Way's band in the frame (ADR 0026): the band is geometry,
+//     from the galactic latitude; the sky is a smooth model from the patches OUTSIDE the band;
+//     the band's local level is a median over a window; the dust is a patch DustDepthLstar under
+//     the local level (or under the modelled sky), the bright clouds BrightCloudLstar over the
+//     local level, the peaks the brightest PeakFraction of the patches, the sky the rest outside
+//     the band;
+//   - otherwise (no WCS, a frame without the band or wholly inside it, or a frame spanning under
+//     BandMinLatitudeSpanDeg degrees of galactic latitude, deep-sky in the band; ADR 0033,
+//     ADR 0037): the sky is a smooth model from ALL the patches, with the SkyModelLowPercentile
+//     percentile per cell; the thresholds come from the image: the nebula is a patch more than
+//     SkyNoiseK sky sigmas over the model, the dust as much under it, the bright nebula over the
+//     Otsu threshold of the nebula's tail (without the peaks), the peaks as above, the sky the
+//     rest.
+// On either path the verdict measures the same way (Measure): the sky is the median of the sky
+// class; the dust is the darkest extended area, decided ONCE on the image as it is
+// (DecideDustSource): the DustClassFraction percentile of the dust class when the class holds
+// DustClassMinFraction of the patches (under that it is cores or artefacts) and is darker than
+// the SkyDarkestFraction percentile of the sky class, otherwise the latter; at every lift the
+// same statistic is re-measured, so that the ladder's rows name the same dust as the definition.
+// The Lynds catalogue (DarkNebulaCatalogue) gives the clouds' NAMES and each one's row. The
+// geometry (DustMap) is made once; the L*s are redone at every lift.
 //
-// Lucreaza pe subesantionul tonal (pasul 4): o dala e 8 x 8 esantioane. Dalele partiale de
-// la marginea din dreapta si de jos se lasa afara.
+// It works on the tonal subsample (step 4): a patch is 8 x 8 samples. The partial patches at the
+// right and bottom edges are left out.
 
 using System;
 using System.Collections.Generic;
@@ -52,53 +53,73 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Pe ce cale s-au facut clasele.</summary>
+    /// <summary>Which path made the classes.</summary>
     internal enum DustMethod
     {
-        /// <summary>WCS, banda si cer in afara ei: clasele benzii (ADR 0026).</summary>
+        /// <summary>A WCS, the band and sky outside it: the band classes (ADR 0026).</summary>
         Band,
 
-        /// <summary>Clasele relative la cerul modelat (ADR 0033); DustMap.SkyReason spune de ce nu banda.</summary>
+        /// <summary>
+        /// The classes relative to the modelled sky (ADR 0033); DustMap.SkyReason says why not the
+        /// band.
+        /// </summary>
         Sky,
     }
 
-    /// <summary>De ce nu s-au facut clasele benzii.</summary>
+    /// <summary>Why the band classes were not made.</summary>
     internal enum SkyReason
     {
-        /// <summary>Clasele sunt ale benzii.</summary>
+        /// <summary>The classes are the band's.</summary>
         None,
 
-        /// <summary>Fisierul n-are WCS.</summary>
+        /// <summary>The file has no WCS.</summary>
         NoWcs,
 
-        /// <summary>WCS, dar banda galactica e sub BandMinFraction din cadru (deep-sky departe de plan).</summary>
+        /// <summary>
+        /// A WCS, but the galactic band is under BandMinFraction of the frame (deep-sky far from
+        /// the plane).
+        /// </summary>
         NoBand,
 
-        /// <summary>WCS, dar cerul din afara benzii e sub BandMinFraction din cadru (deep-sky in plan).</summary>
+        /// <summary>
+        /// A WCS, but the sky outside the band is under BandMinFraction of the frame (deep-sky in
+        /// the plane).
+        /// </summary>
         AllBand,
 
-        /// <summary>WCS, banda si cer de ambele parti ale lui |b| = 10, dar dalele acopera sub BandMinLatitudeSpanDeg grade de latitudine galactica: un cadru deep-sky in banda, nu un peisaj cu ea (ADR 0037).</summary>
+        /// <summary>
+        /// A WCS, band and sky on both sides of |b| = 10, but the patches span under
+        /// BandMinLatitudeSpanDeg degrees of galactic latitude: a deep-sky frame in the band, not
+        /// a landscape with it (ADR 0037).
+        /// </summary>
         NarrowField,
     }
 
-    /// <summary>Un nor catalogat cu cel putin o dala in cadru: care dale sunt ale lui, si unde e pe imagine.</summary>
+    /// <summary>
+    /// A catalogued cloud with at least one patch in the frame: which patches are its own, and
+    /// where it is on the image.
+    /// </summary>
     internal sealed class DustCloud
     {
         internal DarkNebula Nebula;
 
-        /// <summary>Indicii dalelor (in ordinea randurilor hartii) cu centrul in disc.</summary>
+        /// <summary>
+        /// The indices of the patches (in the map's row order) whose centre lies in the disc.
+        /// </summary>
         internal int[] Patches;
 
-        /// <summary>Centrul discului, in pixeli ai imaginii (randul 0 sus), si raza lui in pixeli.</summary>
+        /// <summary>
+        /// The disc's centre, in pixels of the image (row 0 at the top), and its radius in pixels.
+        /// </summary>
         internal double CentreX, CentreY, RadiusPx;
 
         internal string Name => Nebula.Name;
     }
 
     /// <summary>
-    /// Clasa unei dale. Band si BrightCloud sunt "banda" si "nori luminosi" pe calea benzii,
-    /// "nebuloasa" si "nebuloasa stralucitoare" pe calea cerului (DustAnalyzer.ClassNames);
-    /// None nu se da niciodata de Build.
+    /// The class of a patch. Band and BrightCloud are "banda" and "nori luminosi" on the band
+    /// path, "nebuloasa" and "nebuloasa stralucitoare" on the sky path (DustAnalyzer.ClassNames);
+    /// Build never gives None.
     /// </summary>
     internal enum PatchClass : byte
     {
@@ -111,112 +132,186 @@ namespace AstroPhotoAnalyzer
     }
 
     /// <summary>
-    /// Geometria masuratorii: grila de dale, clasa fiecareia si norii catalogati. Se
-    /// construieste o data pe imagine, pe L*-urile ei asa cum e, si se refoloseste la fiecare
-    /// ridicare: clasele nu se muta cu ridicarea, doar valorile.
+    /// The measurement's geometry: the grid of patches, the class of each and the catalogued
+    /// clouds. It is built once per image, on its L*s as it is, and reused at every lift: the
+    /// classes do not move with the lift, only the values.
     /// </summary>
     internal sealed class DustMap
     {
         internal int Cols, Rows;
 
-        /// <summary>Latura dalei in esantioane ale subesantionului, si pasul subesantionului.</summary>
+        /// <summary>
+        /// The side of a patch in samples of the subsample, and the subsample's step.
+        /// </summary>
         internal int Side, Stride;
         internal DustMethod Method;
         internal SkyReason SkyReason;
 
-        /// <summary>Clasa fiecarei dale.</summary>
+        /// <summary>The class of each patch.</summary>
         internal PatchClass[] Classes;
 
-        /// <summary>Latitudinea galactica a centrului fiecarei dale; null fara WCS.</summary>
+        /// <summary>
+        /// The galactic latitude of each patch's centre, in degrees; null without a WCS.
+        /// </summary>
         internal float[] GalacticLatitude;
 
-        /// <summary>Cate grade de latitudine galactica acopera centrele dalelor (maxim minus minim); NaN fara WCS.</summary>
+        /// <summary>
+        /// How many degrees of galactic latitude the patch centres span (the maximum minus the
+        /// minimum); NaN without a WCS.
+        /// </summary>
         internal double LatitudeSpanDeg = double.NaN;
 
-        /// <summary>Cerul modelat, L* pe dala, asa cum e.</summary>
+        /// <summary>The modelled sky, an L* per patch, on the image as it is.</summary>
         internal float[] SkyModel;
 
-        /// <summary>Nivelul local al benzii, L* pe dala, asa cum e; null pe calea cerului.</summary>
+        /// <summary>
+        /// The band's local level, an L* per patch, on the image as it is; null on the sky path.
+        /// </summary>
         internal float[] BandLevel;
 
         /// <summary>
-        /// Pe calea cerului: sigma zgomotului dalelor de cer; NoiseThreshold = SkyNoiseK x sigma,
-        /// distanta in L* fata de cerul modelat de la care o dala e nebuloasa (in sus) sau praf
-        /// (in jos); BrightThreshold, in L* peste cerul modelat, de la care e nebuloasa
-        /// stralucitoare (infinit cand niciuna nu e). NaN pe calea benzii.
+        /// On the sky path: the sigma of the sky patches' noise; NoiseThreshold = SkyNoiseK x
+        /// sigma, the distance in L* from the modelled sky from which a patch is nebula (upwards)
+        /// or dust (downwards); BrightThreshold, in L* over the modelled sky, from which it is
+        /// bright nebula (infinity when there is none). NaN on the band path.
         /// </summary>
         internal double SkySigma = double.NaN, NoiseThreshold = double.NaN, BrightThreshold = double.NaN;
 
-        /// <summary>Cine da L*-ul prafului, decis o data pe imaginea asa cum e (DustAnalyzer.DecideDustSource).</summary>
+        /// <summary>
+        /// What gives the dust's L*, decided once on the image as it is
+        /// (DustAnalyzer.DecideDustSource).
+        /// </summary>
         internal DustSource DustSource;
 
-        /// <summary>Norii cu cel putin o dala in cadru, in ordinea catalogului; gol fara WCS.</summary>
+        /// <summary>
+        /// The clouds with at least one patch in the frame, in the catalogue's order; empty
+        /// without a WCS.
+        /// </summary>
         internal IReadOnlyList<DustCloud> Clouds;
 
         internal int PatchCount => Cols * Rows;
 
-        /// <summary>Fractia dalelor din fiecare clasa, indexata cu PatchClass.</summary>
+        /// <summary>The fraction of the patches in each class, by PatchClass.</summary>
+        /// <param name="c">The class; None gives 0, as Build gives it to no patch.</param>
+        /// <returns>The fraction of the patches in the class, 0..1.</returns>
         internal double FractionOf(PatchClass c) => Classes.Count(x => x == c) / (double)PatchCount;
 
-        /// <summary>Nicio dala de cer (toate sunt praf, nebuloasa sau varf): cerul verdictului e mediana tuturor dalelor.</summary>
+        /// <summary>
+        /// No sky patch (all are dust, nebula or peaks): the verdict's sky is the median of all
+        /// the patches.
+        /// </summary>
         internal bool SkyClassEmpty => Array.IndexOf(Classes, PatchClass.Sky) < 0;
 
-        /// <summary>Numele celor cinci clase pe calea hartii, in ordinea praf, cer, banda / nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri.</summary>
+        /// <summary>
+        /// The names of the five classes on the map's path, in the order praf, cer, banda /
+        /// nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri.
+        /// </summary>
         internal IReadOnlyList<string> ClassNames => DustAnalyzer.ClassNames(Method);
 
-        /// <summary>Centrul dalei (bx, by), in pixeli ai imaginii intregi.</summary>
+        /// <summary>The centre of the patch (bx, by), in pixels of the whole image.</summary>
+        /// <param name="bx">The patch's column on the grid, from 0.</param>
+        /// <param name="by">The patch's row on the grid, from 0 at the top.</param>
+        /// <returns>
+        /// The column and the row of the centre, in pixels of the whole image, row 0 at the top
+        /// and the centre of pixel 0 at 0.
+        /// </returns>
         internal (double X, double Y) PatchCentre(int bx, int by)
             => ((bx + 0.5) * Side * Stride - 0.5, (by + 0.5) * Side * Stride - 0.5);
     }
 
-    /// <summary>Ce da L*-ul prafului: clasa praf, sau cerul cel mai intunecat.</summary>
+    /// <summary>What gives the dust's L*: the dust class, or the darkest sky.</summary>
     internal enum DustSource
     {
-        /// <summary>Percentila DustClassFraction a clasei praf, care are cel putin DustClassMinFraction din dale si e, asa cum e, mai intunecata decat cerul cel mai intunecat.</summary>
+        /// <summary>
+        /// The DustClassFraction percentile of the dust class, which holds at least
+        /// DustClassMinFraction of the patches and is, as it is, darker than the darkest sky.
+        /// </summary>
         DustClass,
 
-        /// <summary>Percentila SkyDarkestFraction a clasei cer (a tuturor dalelor cand clasa cer e goala): clasa praf e goala, prea mica, sau mai luminoasa.</summary>
+        /// <summary>
+        /// The SkyDarkestFraction percentile of the sky class (of all the patches when the sky
+        /// class is empty): the dust class is empty, too small, or lighter.
+        /// </summary>
         DarkestSky,
     }
 
-    /// <summary>Praful si cerul pe o harta, la o ridicare data.</summary>
+    /// <summary>The dust and the sky on a map, at a given lift.</summary>
     internal sealed record DustStats
     {
         internal double LstarDust { get; init; }
         internal double LstarSky { get; init; }
 
-        /// <summary>Procentul dalelor cadrului cu L* sub negrul hartiei - "negru pur".</summary>
+        /// <summary>
+        /// The percentage of the frame's patches with an L* under paper black - "negru pur".
+        /// </summary>
         internal double PctPatchesBelowPaperBlack { get; init; }
 
-        /// <summary>L*-ul fiecarei dale, in ordinea randurilor hartii.</summary>
+        /// <summary>The L* of each patch, in the map's row order.</summary>
         internal float[] PatchLstars { get; init; }
 
-        /// <summary>Percentila DustCloudFraction a dalelor fiecarui nor din DustMap.Clouds, in aceeasi ordine.</summary>
+        /// <summary>
+        /// The DustCloudFraction percentile of each cloud's patches in DustMap.Clouds, in the same
+        /// order.
+        /// </summary>
         internal double[] CloudLstars { get; init; }
 
-        /// <summary>Cate dale are clasa praf.</summary>
+        /// <summary>How many patches the dust class holds.</summary>
         internal int DustPatchCount { get; init; }
     }
 
+    /// <summary>
+    /// The measurement B5: the patches' L*s, the map of their classes on the band or the sky
+    /// path, and the dust and the sky measured on that map.
+    /// </summary>
     internal static class DustAnalyzer
     {
-        /// <summary>Latura dalei in esantioane ale subesantionului tonal.</summary>
+        /// <summary>The side of a patch in samples of the tonal subsample.</summary>
         internal const int PatchSamples = Thresholds.DustPatchPx / Thresholds.TonalStride;
 
         static readonly string[] BandNames = { "praf", "cer", "banda", "nori luminosi", "varfuri" };
         static readonly string[] SkyNames = { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" };
 
-        /// <summary>Numele celor cinci clase, in ordinea praf, cer, banda / nebuloasa, nori luminosi / nebuloasa stralucitoare, varfuri: ce arata harta, tabelul curbelor si raportul.</summary>
+        /// <summary>
+        /// The names of the five classes, in the order praf, cer, banda / nebuloasa, nori luminosi
+        /// / nebuloasa stralucitoare, varfuri: what the map, the curves' table and the report
+        /// show.
+        /// </summary>
+        /// <param name="method">
+        /// The path: Band names the third and fourth class banda and nori luminosi, Sky nebuloasa
+        /// and nebuloasa stralucitoare.
+        /// </param>
+        /// <returns>The five names, in the order of PatchClass from Dust to Peak.</returns>
         internal static IReadOnlyList<string> ClassNames(DustMethod method) => method == DustMethod.Band ? BandNames : SkyNames;
 
         /// <summary>
-        /// Harta dalelor unei imagini de <paramref name="w"/> x <paramref name="h"/> pixeli,
-        /// subesantionata cu <paramref name="stride"/>, pe L*-urile ei asa cum e
-        /// (<paramref name="asIsPatchLstars"/>, de la PatchLstars pe aceeasi grila): cu WCS,
-        /// latitudinea galactica a fiecarei dale si norii catalogati care o revendica dupa
-        /// distanta pana la centrul lor; apoi clasele, ale benzii cand se pot face, altfel
-        /// relative la cerul modelat.
+        /// The patch map of an image of <paramref name="w"/> x <paramref name="h"/> pixels,
+        /// subsampled with <paramref name="stride"/>, on its L*s as it is
+        /// (<paramref name="asIsPatchLstars"/>, from PatchLstars on the same grid): with a WCS,
+        /// the galactic latitude of each patch and the catalogued clouds that claim it by its
+        /// distance to their centre; then the classes, the band's when they can be made,
+        /// otherwise relative to the modelled sky; then the dust's source (DecideDustSource).
         /// </summary>
+        /// <param name="w">The image's width, in pixels.</param>
+        /// <param name="h">The image's height, in pixels.</param>
+        /// <param name="wcs">
+        /// The image's WCS; null takes the sky path, with <see cref="SkyReason.NoWcs"/>.
+        /// </param>
+        /// <param name="asIsPatchLstars">
+        /// The L* of each patch of the image as it is, in the map's row order: exactly one per
+        /// patch of the grid of <paramref name="w"/>, <paramref name="h"/> and
+        /// <paramref name="stride"/>, as <see cref="PatchLstars(Raster)"/> gives them on the
+        /// subsample.
+        /// </param>
+        /// <param name="catalogue">
+        /// The dark nebulae to look for; null takes the whole Lynds catalogue
+        /// (<see cref="DarkNebulaCatalogue.All"/>). Read only with a WCS.
+        /// </param>
+        /// <param name="stride">
+        /// The step of the subsample the patch L*s were measured on; by default the tonal one.
+        /// </param>
+        /// <returns>
+        /// The map: its grid, classes, models, thresholds, clouds and dust source.
+        /// </returns>
         internal static DustMap Build(int w, int h, Wcs wcs, float[] asIsPatchLstars, IReadOnlyList<DarkNebula> catalogue = null, int stride = Thresholds.TonalStride)
         {
             var (cols, rows, side) = Grid(w, h, stride);
@@ -239,7 +334,7 @@ namespace AstroPhotoAnalyzer
 
             catalogue ??= DarkNebulaCatalogue.All;
 
-            // Directia cerului si latitudinea galactica ale centrului fiecarei dale, o singura data.
+            // The sky direction and the galactic latitude of each patch's centre, once.
             int n = cols * rows;
             var vx = new double[n]; var vy = new double[n]; var vz = new double[n];
             map.GalacticLatitude = new float[n];
@@ -261,17 +356,51 @@ namespace AstroPhotoAnalyzer
             return map;
         }
 
-        /// <summary>Grila dalelor pentru o imagine intreaga: subesantionul ei, apoi SubsampleGrid.</summary>
+        /// <summary>
+        /// The patch grid for a whole image: its subsample, then SubsampleGrid.
+        /// </summary>
+        /// <param name="w">The image's width, in pixels.</param>
+        /// <param name="h">The image's height, in pixels.</param>
+        /// <param name="stride">The subsampling step.</param>
+        /// <returns>The grid's columns and rows, and a patch's side in samples.</returns>
         static (int Cols, int Rows, int Side) Grid(int w, int h, int stride)
             => SubsampleGrid((w + stride - 1) / stride, (h + stride - 1) / stride);
 
-        /// <summary>Grila dalelor pe un subesantion de subW x subH: dale intregi de PatchSamples, sau una singura pe un raster mai mic.</summary>
+        /// <summary>
+        /// The patch grid on a subsample of subW x subH: whole patches of PatchSamples, or a
+        /// single one on a smaller raster.
+        /// </summary>
+        /// <param name="subW">The subsample's width, in samples.</param>
+        /// <param name="subH">The subsample's height, in samples.</param>
+        /// <returns>
+        /// The grid's columns and rows, and a patch's side in samples; the samples past the last
+        /// whole patch, at the right and at the bottom, belong to none.
+        /// </returns>
         static (int Cols, int Rows, int Side) SubsampleGrid(int subW, int subH)
         {
             int side = Math.Max(1, Math.Min(PatchSamples, Math.Min(subW, subH)));
             return (subW / side, subH / side, side);
         }
 
+        /// <summary>
+        /// The catalogued clouds whose disc holds the centre of at least one patch. The disc is
+        /// the catalogue's area around the catalogue's centre; a cloud whose centre does not
+        /// project (behind the tangent plane) or whose disc misses the frame is skipped; a patch
+        /// is tested by its angular distance to the centre, only inside the disc's bounding box
+        /// in pixels.
+        /// </summary>
+        /// <param name="map">The map, for its grid.</param>
+        /// <param name="wcs">The image's WCS.</param>
+        /// <param name="catalogue">The clouds to look for.</param>
+        /// <param name="w">The image's width, in pixels.</param>
+        /// <param name="h">The image's height, in pixels.</param>
+        /// <param name="vx">
+        /// The x of the unit vector toward each patch's centre on the sky, in the map's row
+        /// order.
+        /// </param>
+        /// <param name="vy">The y of the same vectors.</param>
+        /// <param name="vz">The z of the same vectors.</param>
+        /// <returns>The clouds with at least one patch, in the catalogue's order.</returns>
         static List<DustCloud> FindClouds(DustMap map, Wcs wcs, IReadOnlyList<DarkNebula> catalogue, int w, int h, double[] vx, double[] vy, double[] vz)
         {
             int cols = map.Cols, rows = map.Rows;
@@ -282,8 +411,8 @@ namespace AstroPhotoAnalyzer
                 var (px, py) = wcs.SkyToPixel(nebula.Ra, nebula.Dec);
                 if (double.IsNaN(px)) continue;
                 double rpx = nebula.RadiusDeg / wcs.ScaleDegPerPx;
-                // Discul nu atinge cadrul: afara. Altfel se testeaza doar dalele din dreptunghiul
-                // lui, pe distanta unghiulara adevarata.
+                // The disc does not touch the frame: out. Otherwise only the patches in its
+                // rectangle are tested, on the true angular distance.
                 if (px + rpx < 0 || py + rpx < 0 || px - rpx > w || py - rpx > h) continue;
                 int bx0 = Math.Max(0, (int)Math.Floor((px - rpx) / patchPx)), bx1 = Math.Min(cols - 1, (int)Math.Ceiling((px + rpx) / patchPx));
                 int by0 = Math.Max(0, (int)Math.Floor((py - rpx) / patchPx)), by1 = Math.Min(rows - 1, (int)Math.Ceiling((py + rpx) / patchPx));
@@ -303,7 +432,18 @@ namespace AstroPhotoAnalyzer
             return clouds;
         }
 
-        /// <summary>Clasele benzii (ADR 0026) pe L*-urile asa cum e; sau calea cerului, cu motivul, cand banda ori cerul din afara ei lipsesc, sau cand campul e mai ingust decat banda (ADR 0037).</summary>
+        /// <summary>
+        /// The band classes (ADR 0026) on the L*s as it is; or the sky path, with the reason, when
+        /// the band or the sky outside it is missing, or when the field is narrower than the band
+        /// (ADR 0037).
+        /// </summary>
+        /// <param name="map">
+        /// The map, with its grid and galactic latitudes; its classes, models, method and reason
+        /// are written.
+        /// </param>
+        /// <param name="L">
+        /// The L* of each patch of the image as it is, in the map's row order.
+        /// </param>
         static void Classify(DustMap map, float[] L)
         {
             int cols = map.Cols, rows = map.Rows, n = cols * rows;
@@ -341,18 +481,26 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Clasele relative la cerul modelat (ADR 0033): cerul din toate dalele, cu percentila
-        /// joasa pe celula; reziduul dala - cer, cu sigma robusta dupa o trecere de curatare la
-        /// SkyNoiseClipK sigma in jurul medianei; praf sub cerul modelat cu SkyNoiseK sigma,
-        /// nebuloasa peste el cu la fel de mult, nebuloasa stralucitoare peste pragul Otsu al
-        /// cozii de nebuloasa luate FARA varfuri si cu cel putin BrightClassMinTailFraction din
-        /// coada deasupra pragului (altfel doua stele ar fi "clasa" de sus si nebuloasa
-        /// stralucitoare ar ramane goala; niciuna cand coada are prea putine dale), varfurile
-        /// cele mai luminoase PeakFraction dale, cerul restul. Pragurile raman pe harta, pentru
-        /// legenda si raport.
-        /// Cu sigma 0 (un cer posterizat, mai mult de jumatate din dale la o valoare) pragul e
-        /// 0 si clasa e semnul reziduului.
+        /// The classes relative to the modelled sky (ADR 0033): the sky from all the patches,
+        /// with the low percentile per cell; the residual patch - sky, with the robust sigma after
+        /// one cleaning pass at SkyNoiseClipK sigmas around the median; dust under the modelled
+        /// sky by SkyNoiseK sigmas, nebula over it by as much, bright nebula over the Otsu
+        /// threshold of the nebula's tail taken WITHOUT the peaks and with at least
+        /// BrightClassMinTailFraction of the tail above the threshold (otherwise two stars would
+        /// be the upper "class" and the bright nebula would stay empty; none when the tail has too
+        /// few patches), the peaks the brightest PeakFraction of the patches, the sky the rest.
+        /// The thresholds stay on the map, for the legend and the report.
+        /// With sigma 0 (a posterised sky, more than half of the patches at one value) the
+        /// threshold is 0 and the class is the residual's sign.
         /// </summary>
+        /// <param name="map">
+        /// The map, with its grid; its classes, sky model, thresholds, method and reason are
+        /// written, and its band level set to null.
+        /// </param>
+        /// <param name="L">
+        /// The L* of each patch of the image as it is, in the map's row order.
+        /// </param>
+        /// <param name="reason">Why not the band; written as the map's SkyReason.</param>
         static void ClassifyBySky(DustMap map, float[] L, SkyReason reason)
         {
             int cols = map.Cols, rows = map.Rows, n = cols * rows;
@@ -389,15 +537,33 @@ namespace AstroPhotoAnalyzer
             map.BrightThreshold = bright;
         }
 
-        /// <summary>L*-ul peste care o dala e varf: percentila (1 - PeakFraction) a dalelor.</summary>
+        /// <summary>
+        /// The L* over which a patch is a peak: the (1 - PeakFraction) percentile of the patches.
+        /// </summary>
+        /// <param name="L">The L* of each patch; at least one.</param>
+        /// <returns>The level, in L*; a patch strictly over it is a peak.</returns>
         static float PeakLevel(float[] L) => (float)Stats.PercentileSorted(Stats.Sorted(L), 100 * (1 - Thresholds.PeakFraction));
 
         /// <summary>
-        /// Cerul modelat: percentila <paramref name="percentile"/> a dalelor din afara benzii pe
-        /// celule de SkyModelCellPatches, celulele fara destule dale de cer luate de la cea mai
-        /// apropiata, interpolat liniar la rezolutia dalelor si netezit. Cu <paramref name="band"/>
-        /// tot fals, fiecare celula are toate dalele ei.
+        /// The modelled sky: the <paramref name="percentile"/> percentile of the patches outside
+        /// the band on cells of SkyModelCellPatches, the cells without enough sky patches taken
+        /// from the nearest one, interpolated linearly to the patches' resolution and smoothed.
+        /// With <paramref name="band"/> all false, each cell has all its patches.
         /// </summary>
+        /// <param name="L">The L* of each patch, in the map's row order.</param>
+        /// <param name="band">
+        /// For each patch, whether it lies in the band and is left out of the model.
+        /// </param>
+        /// <param name="cols">The grid's columns.</param>
+        /// <param name="rows">The grid's rows.</param>
+        /// <param name="percentile">
+        /// The percentile taken in each cell, 0..100: 50 on the band path,
+        /// <see cref="Thresholds.SkyModelLowPercentile"/> on the sky path.
+        /// </param>
+        /// <returns>
+        /// The model, an L* per patch, in the map's row order; 0 everywhere when every patch is in
+        /// the band.
+        /// </returns>
         internal static float[] SkyModel(float[] L, bool[] band, int cols, int rows, double percentile)
         {
             int cell = Thresholds.SkyModelCellPatches;
@@ -413,7 +579,7 @@ namespace AstroPhotoAnalyzer
                             if (!band[by * cols + bx]) v.Add(L[by * cols + bx]);
                     if (v.Count >= Thresholds.SkyModelCellMinPatches) { grid[gy * gw + gx] = (float)Stats.PercentileSorted(Stats.Sorted(v.ToArray()), percentile); known[gy * gw + gx] = true; }
                 }
-            // Nicio celula cu destule dale (un raster mic): toate dalele de cer impreuna.
+            // No cell with enough patches (a small raster): all the sky patches together.
             if (!known.Any(k => k))
             {
                 var all = new List<float>();
@@ -421,7 +587,7 @@ namespace AstroPhotoAnalyzer
                 float v = all.Count > 0 ? (float)Stats.PercentileSorted(Stats.Sorted(all.ToArray()), percentile) : 0;
                 for (int g = 0; g < grid.Length; g++) { grid[g] = v; known[g] = true; }
             }
-            // Celulele necunoscute iau valoarea celei mai apropiate cunoscute (distanta pe grila).
+            // The unknown cells take the value of the nearest known one (distance on the grid).
             for (int g = 0; g < grid.Length; g++)
             {
                 if (known[g]) continue;
@@ -435,7 +601,7 @@ namespace AstroPhotoAnalyzer
                 }
                 grid[g] = val;
             }
-            // Interpolare biliniara intre centrele celulelor, apoi netezire.
+            // Bilinear interpolation between the cells' centres, then smoothing.
             var o = new float[cols * rows];
             for (int by = 0; by < rows; by++)
                 for (int bx = 0; bx < cols; bx++)
@@ -451,7 +617,16 @@ namespace AstroPhotoAnalyzer
             return Smooth(o, cols, rows, Thresholds.SkyModelSmoothPatches);
         }
 
-        /// <summary>Mediana pe o fereastra patrata de <paramref name="window"/> dale, taiata la margini.</summary>
+        /// <summary>
+        /// The median over a square window of <paramref name="window"/> patches, cut at the edges.
+        /// </summary>
+        /// <param name="L">The values, one per patch, in row order.</param>
+        /// <param name="cols">The grid's columns.</param>
+        /// <param name="rows">The grid's rows.</param>
+        /// <param name="window">
+        /// The window's side, in patches, odd; an even side is taken as the next odd one.
+        /// </param>
+        /// <returns>The filtered values, one per patch, in row order.</returns>
         internal static float[] MedianFilter(float[] L, int cols, int rows, int window)
         {
             int r = window / 2;
@@ -469,7 +644,17 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
-        /// <summary>Media pe o fereastra de raza <paramref name="radius"/> dale, taiata la margini: netezirea.</summary>
+        /// <summary>
+        /// The mean over a window of radius <paramref name="radius"/> patches, cut at the edges:
+        /// the smoothing.
+        /// </summary>
+        /// <param name="L">The values, one per patch, in row order.</param>
+        /// <param name="cols">The grid's columns.</param>
+        /// <param name="rows">The grid's rows.</param>
+        /// <param name="radius">
+        /// The window's radius, in patches: its side is 2 x radius + 1; 0 copies the values.
+        /// </param>
+        /// <returns>The smoothed values, one per patch, in row order.</returns>
         internal static float[] Smooth(float[] L, int cols, int rows, int radius)
         {
             var o = new float[L.Length];
@@ -485,17 +670,32 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// L*-ul luminantei medii liniare al fiecarei dale intregi, in ordinea randurilor
-        /// hartii, pe un raster DEJA subesantionat la pasul hartii, asa cum e: calea exacta.
-        /// Grila e cea pe care o construieste Build pentru aceeasi imagine.
+        /// The L* of the mean linear luminance of each whole patch, in the map's row order, on a
+        /// raster ALREADY subsampled at the map's step, as it is: the exact path. The grid is the
+        /// one Build builds for the same image.
         /// </summary>
+        /// <param name="sub">The subsample, 0..1, at the map's step.</param>
+        /// <returns>
+        /// One L* (0..100) per whole patch, in the map's row order, as
+        /// <see cref="PatchLstars{T}(Raster, T)"/> gives it with an
+        /// <see cref="ExactLinearizer"/>.
+        /// </returns>
         internal static float[] PatchLstars(Raster sub) => PatchLstars(sub, new ExactLinearizer());
 
         /// <summary>
-        /// Acelasi L* pe dale, cu esantioanele trecute prin <paramref name="lin"/>: exact, sau
-        /// ridicate cu o gamma si liniarizate din tabela (LiftTable), cum le remasoara
-        /// simularea la fiecare treapta, fara un raster ridicat intermediar (ADR 0035).
+        /// The same L* per patch, with the samples passed through <paramref name="lin"/>: exact,
+        /// or lifted with a gamma and linearised from the table (LiftTable), as the simulation
+        /// re-measures them at every step, without an intermediate lifted raster (ADR 0035).
         /// </summary>
+        /// <typeparam name="T">The path, a struct the JIT specialises the loop on.</typeparam>
+        /// <param name="sub">The subsample, 0..1, at the map's step.</param>
+        /// <param name="lin">
+        /// The path: an <see cref="ExactLinearizer"/> or a <see cref="LiftTable"/>.
+        /// </param>
+        /// <returns>
+        /// One L* (0..100) per whole patch, in the map's row order: of the mean of the Rec. 709
+        /// luminance of the linearised components on colour, of the mean linear value on mono.
+        /// </returns>
         internal static float[] PatchLstars<T>(Raster sub, T lin) where T : struct, ISrgbLinearizer
         {
             var (cols, rows, side) = SubsampleGrid(sub.W, sub.H);
@@ -522,7 +722,13 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
-        /// <summary>Dalele clasei praf si ale clasei cer; cerul e toate dalele cand clasa cer e goala (DustMap.SkyClassEmpty).</summary>
+        /// <summary>
+        /// The patches of the dust class and of the sky class; the sky is all the patches when
+        /// the sky class is empty (DustMap.SkyClassEmpty).
+        /// </summary>
+        /// <param name="patchLstars">The L* of each patch, in the map's row order.</param>
+        /// <param name="map">The map, for its classes.</param>
+        /// <returns>The L*s of the two sets, each sorted in ascending order.</returns>
         static (float[] DustSorted, float[] SkySorted) ClassSets(float[] patchLstars, DustMap map)
         {
             var dustL = new List<float>(); var skyL = new List<float>();
@@ -535,12 +741,17 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Cine da L*-ul prafului, pe L*-urile asa cum e (ADR 0033): clasa praf cand are cel
-        /// putin DustClassMinFraction din dale si percentila ei DustClassFraction e la sau sub
-        /// percentila SkyDarkestFraction a clasei cer; altfel cerul cel mai intunecat. Sub prag
-        /// clasa praf e nuclee sau artefacte si nu decide. Decis o data, ca fiecare rand al
-        /// scarii sa masoare acelasi praf ca definitia.
+        /// What gives the dust's L*, on the L*s as it is (ADR 0033): the dust class when it holds
+        /// at least DustClassMinFraction of the patches and its DustClassFraction percentile is
+        /// at or under the SkyDarkestFraction percentile of the sky class; otherwise the darkest
+        /// sky. Under the floor the dust class is cores or artefacts and does not decide. Decided
+        /// once, so that every row of the ladder measures the same dust as the definition.
         /// </summary>
+        /// <param name="asIsPatchLstars">
+        /// The L* of each patch of the image as it is, in the map's row order.
+        /// </param>
+        /// <param name="map">The map, for its classes.</param>
+        /// <returns>The source, which Build keeps as <see cref="DustMap.DustSource"/>.</returns>
         internal static DustSource DecideDustSource(float[] asIsPatchLstars, DustMap map)
         {
             var (dust, sky) = ClassSets(asIsPatchLstars, map);
@@ -551,11 +762,23 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Praful, cerul si "negru pur" pe L*-urile dalelor, pe clasele hartii, pe orice cale:
-        /// cerul e mediana clasei cer (a tuturor dalelor cand clasa e goala); praful e statistica
-        /// pe care a ales-o DecideDustSource pe imaginea asa cum e: percentila DustClassFraction
-        /// a clasei praf, sau percentila SkyDarkestFraction a clasei cer.
+        /// The dust, the sky and "negru pur" on the patches' L*s, on the map's classes, on either
+        /// path: the sky is the median of the sky class (of all the patches when the class is
+        /// empty); the dust is the statistic DecideDustSource chose on the image as it is: the
+        /// DustClassFraction percentile of the dust class, or the SkyDarkestFraction percentile
+        /// of the sky class.
         /// </summary>
+        /// <param name="patchLstars">
+        /// The L* of each patch, as it is or lifted, in the map's row order.
+        /// </param>
+        /// <param name="map">The map: its classes, its dust source and its clouds.</param>
+        /// <param name="paperBlackLstar">
+        /// The paper's black, in L*; a patch strictly under it counts as "negru pur".
+        /// </param>
+        /// <returns>
+        /// The dust's and the sky's L*, the share of the patches under paper black, each cloud's
+        /// L* and the dust class's size; the patch L*s are kept, not copied.
+        /// </returns>
         internal static DustStats Measure(float[] patchLstars, DustMap map, double paperBlackLstar)
         {
             int n = patchLstars.Length;

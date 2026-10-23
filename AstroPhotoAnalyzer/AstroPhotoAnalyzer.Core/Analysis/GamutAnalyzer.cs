@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// GamutAnalyzer.cs - cati pixeli ies din gamutul hartiei (R-144, ADR 0032).
+// GamutAnalyzer.cs - how many pixels leave the paper's gamut (R-144, ADR 0032).
 //
-// O CIFRA, nu o corectie: nu intra in nicio curba. O culoare e "in afara" cand drumul
-// sRGB -> imprimanta -> inapoi, prin tabelele colorimetrice relative ale profilului, ii
-// muta a*, b* cu mai mult de CurveGamutDeltaAb. Doar croma: ce cade sub negrul hartiei e
-// treaba tabului Tonuri, iar fara compensarea punctului negru L*-ul umbrelor s-ar numara
-// de doua ori (pe canvas, jumatate din imagine).
+// A FIGURE, not a correction: it goes into no curve. A colour is "outside" when the round trip
+// sRGB -> printer -> back, through the profile's relative colorimetric tables, moves its a*, b*
+// by more than CurveGamutDeltaAb. The chroma only: what falls under paper black is the Tonuri
+// tab's business, and without black point compensation the L* of the shadows would be counted
+// twice (on canvas, half of the image).
 //
-// Pachetul (Wacton.Unicolour) face drumul in ~28 de microsecunde pe culoare (masurat pe
-// 2026-10-05, pe profilele laboratorului): un subesantion de 1.4 MP ar dura 40 s. De
-// aceea se trece o data o grila de CurveGamutGrid^3 culori, iar pixelii iau deplasarea
-// (da, db) prin interpolare triliniara. Langa marginea gamutului interpolarea rotunjeste
-// coltul; cifra e o estimare buna la zecimi de procent, nu o masuratoare la pixel.
+// The package (Wacton.Unicolour) makes the round trip in ~28 microseconds per colour (measured on
+// 2026-10-05, on the lab's profiles): a subsample of 1.4 MP would take 40 s. That is why a grid
+// of CurveGamutGrid^3 colours is run once, and the pixels take the displacement (da, db) by
+// trilinear interpolation. Near the gamut's edge the interpolation rounds the corner; the figure
+// is an estimate good to tenths of a percent, not a measurement per pixel.
 
 using System;
 using System.IO;
@@ -36,19 +36,37 @@ using Wacton.Unicolour.Icc;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Deplasarea (da, db) a fiecarui nod al grilei sRGB dupa drumul prin profil.</summary>
+    /// <summary>
+    /// The displacement (da, db) of each node of the sRGB grid after the round trip through the
+    /// profile.
+    /// </summary>
     internal sealed class GamutTable
     {
         internal int N;
         internal float[] Da, Db;
 
-        /// <summary>De ce nu s-a putut construi, pentru om; null cand s-a putut.</summary>
+        /// <summary>Why it could not be built, for the user; null when it could.</summary>
         internal string Problem;
     }
 
+    /// <summary>
+    /// The share of an image's pixels whose colour leaves the gamut of an ICC printer profile
+    /// (R-144).
+    /// </summary>
     internal static class GamutAnalyzer
     {
-        /// <summary>Tabela dus-intors a profilului de la <paramref name="path"/>; cu Problem setat cand profilul nu se poate folosi.</summary>
+        /// <summary>
+        /// The round-trip table of the profile at <paramref name="path"/>; with Problem set when
+        /// the profile cannot be used.
+        /// </summary>
+        /// <param name="path">The ICC printer profile's file.</param>
+        /// <param name="n">
+        /// The grid's nodes per channel, at least 2; by default CurveGamutGrid.
+        /// </param>
+        /// <returns>
+        /// The table; or, when the file cannot be read, is not a usable profile or has no table
+        /// toward the printer (B2A), a table with only Problem set. It never throws.
+        /// </returns>
         internal static GamutTable Build(string path, int n = Thresholds.CurveGamutGrid)
         {
             try
@@ -77,7 +95,17 @@ namespace AstroPhotoAnalyzer
             }
         }
 
-        /// <summary>Pixelul (r, g, b) iese din gamut: deplasarea interpolata trece de prag.</summary>
+        /// <summary>
+        /// The pixel (r, g, b) leaves the gamut: the interpolated displacement passes the
+        /// threshold.
+        /// </summary>
+        /// <param name="t">A table Build made, without a Problem.</param>
+        /// <param name="r">The encoded sRGB red, 0..1; clamped to that range.</param>
+        /// <param name="g">The encoded sRGB green, 0..1; clamped to that range.</param>
+        /// <param name="b">The encoded sRGB blue, 0..1; clamped to that range.</param>
+        /// <returns>
+        /// <c>true</c> when the displacement moves a*, b* by more than CurveGamutDeltaAb.
+        /// </returns>
         internal static bool Outside(GamutTable t, float r, float g, float b)
         {
             int n = t.N;
@@ -97,9 +125,17 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Procentul pixelilor subesantionului tonal <paramref name="sub"/> din afara gamutului,
-        /// in total si pe cele cinci clase ale hartii; o imagine mono n-are croma si da 0.
+        /// The percentage of the pixels of the tonal subsample <paramref name="sub"/> outside the
+        /// gamut, in all and over the five classes of the map; a mono image has no chroma and
+        /// gives 0.
         /// </summary>
+        /// <param name="t">A table Build made, without a Problem.</param>
+        /// <param name="sub">The tonal subsample, 0..1, on the map's grid.</param>
+        /// <param name="map">The map, for the class of the patch each pixel lies in.</param>
+        /// <returns>
+        /// The figure: in all, over every pixel; per class, over the pixels of the patches of that
+        /// class, NaN on colour for a class no pixel falls in.
+        /// </returns>
         internal static GamutFigure Measure(GamutTable t, Raster sub, DustMap map)
         {
             long all = 0, outAll = 0;

@@ -15,17 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ToneCurve.cs - o curba de ton: puncte de control si spline-ul cubic NATURAL prin ele
-// (R-140, ADR 0032).
+// ToneCurve.cs - a tone curve: control points and the NATURAL cubic spline through them (R-140,
+// ADR 0032).
 //
-// E spline-ul pe care il calculeaza unealta Curves Transformation din Siril in modul
-// "cubic spline" (curve_transform.c: derivata a doua zero la capete, sistem tridiagonal,
-// rezultatul taiat la 0..1) - de aceea tabelul de puncte se poate reface de mana acolo si
-// da aceeasi imagine. Se aplica la fel pe fiecare plan, valoare cu valoare.
+// It is the spline that the Curves Transformation tool of Siril computes in "cubic spline" mode
+// (curve_transform.c: second derivative zero at the ends, a tridiagonal system, the result
+// clamped to 0..1) - which is why the table of points can be redone by hand there and gives the
+// same image. It is applied alike on every plane, value by value.
 //
-// Aplicarea trece printr-o tabela de 65 536 de trepte cu interpolare liniara intre ele: pe
-// o sursa de 16 biti e spline-ul exact in fiecare nivel, pe float diferenta e sub 1e-6.
-// Monotonia se judeca pe aceeasi tabela, dupa taiere: e curba care se aplica de fapt.
+// Applying it goes through a table of 65 536 steps with linear interpolation between them: on a
+// 16-bit source it is the exact spline at every level, on float the difference is under 1e-6.
+// The monotonicity is judged on the same table, after clamping: it is the curve that is
+// actually applied.
 
 using System;
 using System.Collections.Generic;
@@ -33,9 +34,20 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
-    /// <summary>Un punct de control; eticheta e clasa lui ("praf", "cer", ...) sau null la capete.</summary>
+    /// <summary>
+    /// A control point; the label is its class ("praf", "cer", ...) or null at the ends.
+    /// </summary>
+    /// <param name="X">The input, 0..1.</param>
+    /// <param name="Y">The output, 0..1.</param>
+    /// <param name="Label">
+    /// The name of the point's class, as the map's path names it; or null.
+    /// </param>
     internal readonly record struct CurvePoint(double X, double Y, string Label);
 
+    /// <summary>
+    /// A tone curve: its control points, the natural cubic spline through them clamped to 0..1,
+    /// and the 65 536-entry table it is applied through.
+    /// </summary>
     internal sealed class ToneCurve
     {
         const int TableSize = 65536;
@@ -45,13 +57,17 @@ namespace AstroPhotoAnalyzer
 
         internal IReadOnlyList<CurvePoint> Points { get; }
 
-        /// <summary>Tabela taiata nu scade nicaieri.</summary>
+        /// <summary>The clamped table decreases nowhere.</summary>
         internal bool IsMonotone { get; }
 
         /// <summary>
-        /// Punctele trebuie sa inceapa in (0, 0), sa se termine in (1, 1), sa aiba x strict
-        /// crescator si y in 0..1; altfel ArgumentException.
+        /// Solves the natural spline through the points and fills the table the curve is applied
+        /// through, judging its monotonicity on it.
         /// </summary>
+        /// <param name="points">
+        /// The control points: they must start at (0, 0), end at (1, 1), have x strictly
+        /// increasing and y in 0..1; otherwise ArgumentException.
+        /// </param>
         internal ToneCurve(IReadOnlyList<CurvePoint> points)
         {
             if (points == null || points.Count < 2) throw new ArgumentException("o curba are cel putin doua puncte");
@@ -79,7 +95,15 @@ namespace AstroPhotoAnalyzer
             IsMonotone = monotone;
         }
 
-        /// <summary>Coeficientii pe segment ai spline-ului natural: y = y_i + b t + c t^2 + d t^3, t = x - x_i.</summary>
+        /// <summary>
+        /// The per-segment coefficients of the natural spline: y = y_i + b t + c t^2 + d t^3,
+        /// t = x - x_i.
+        /// </summary>
+        /// <param name="x">The points' inputs, strictly increasing; at least two.</param>
+        /// <param name="y">The points' outputs, one per input.</param>
+        /// <returns>
+        /// b, c and d, one per point, for the segment that starts at it; the last point's are 0.
+        /// </returns>
         static (double[] B, double[] C, double[] D) NaturalSpline(double[] x, double[] y)
         {
             int n = x.Length;
@@ -108,6 +132,12 @@ namespace AstroPhotoAnalyzer
             return (b, c, d);
         }
 
+        /// <summary>
+        /// The segment that holds <paramref name="v"/>: the last point at or under it, kept within
+        /// the segments.
+        /// </summary>
+        /// <param name="v">The input, 0..1.</param>
+        /// <returns>The index of the segment's first point, 0 to the point count - 2.</returns>
         int Segment(double v)
         {
             int i = Array.BinarySearch(_x, v);
@@ -115,7 +145,12 @@ namespace AstroPhotoAnalyzer
             return Math.Clamp(i, 0, _x.Length - 2);
         }
 
-        /// <summary>Spline-ul in <paramref name="v"/>, taiat la 0..1; in afara 0..1 ia valoarea capatului.</summary>
+        /// <summary>
+        /// The spline at <paramref name="v"/>, clamped to 0..1; outside 0..1 it takes the end's
+        /// value.
+        /// </summary>
+        /// <param name="v">The input; any value.</param>
+        /// <returns>The output, 0..1.</returns>
         internal double Map(double v)
         {
             if (v <= 0) return _y[0];
@@ -125,7 +160,12 @@ namespace AstroPhotoAnalyzer
             return Math.Clamp(_y[i] + t * (_b[i] + t * (_c[i] + t * _d[i])), 0, 1);
         }
 
-        /// <summary>Panta spline-ului (netaiat) in <paramref name="v"/>: de cate ori creste acolo o diferenta mica, deci si zgomotul.</summary>
+        /// <summary>
+        /// The slope of the (unclamped) spline at <paramref name="v"/>: how many times a small
+        /// difference grows there, and so the noise.
+        /// </summary>
+        /// <param name="v">The input; clamped to 0..1.</param>
+        /// <returns>The spline's derivative at the input.</returns>
         internal double Slope(double v)
         {
             v = Math.Clamp(v, 0, 1);
@@ -134,7 +174,15 @@ namespace AstroPhotoAnalyzer
             return _b[i] + t * (2 * _c[i] + 3 * t * _d[i]);
         }
 
-        /// <summary>Curba pe o valoare a rasterului, prin tabela, cu interpolare liniara intre trepte.</summary>
+        /// <summary>
+        /// The curve on a value of the raster, through the table, with linear interpolation
+        /// between the steps.
+        /// </summary>
+        /// <param name="v">
+        /// The sample, 0..1; at or under 0, and NaN, give the table's first entry, at or over 1
+        /// its last.
+        /// </param>
+        /// <returns>The curved sample, 0..1.</returns>
         internal float MapSample(float v)
         {
             if (!(v > 0)) return _table[0];
@@ -145,7 +193,14 @@ namespace AstroPhotoAnalyzer
             return lo + (f - i) * (_table[i + 1] - lo);
         }
 
-        /// <summary>Un raster nou cu curba aplicata pe fiecare plan; cel primit ramane neatins.</summary>
+        /// <summary>
+        /// A new raster with the curve applied to every plane; the one received stays untouched.
+        /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <returns>
+        /// A new raster of the same size and planes, every sample through
+        /// <see cref="MapSample"/>, with the same <see cref="Raster.Source"/>.
+        /// </returns>
         internal Raster Apply(Raster r)
         {
             var o = new Raster(r.H, r.W, r.Planes.Length) { Source = r.Source };
@@ -157,7 +212,14 @@ namespace AstroPhotoAnalyzer
             return o;
         }
 
-        /// <summary>Curba esantionata uniform pe 0..<paramref name="xMax"/>, pentru un grafic.</summary>
+        /// <summary>
+        /// The curve sampled uniformly over 0..<paramref name="xMax"/>, for a chart.
+        /// </summary>
+        /// <param name="xMax">The right end of the range; past 1 the curve stays at 1.</param>
+        /// <param name="count">The number of samples, at least 2.</param>
+        /// <returns>
+        /// The points (x, <see cref="Map"/>(x)), x from 0 to <paramref name="xMax"/>.
+        /// </returns>
         internal IReadOnlyList<(double X, double Y)> Sample(double xMax, int count)
         {
             var o = new (double, double)[count];

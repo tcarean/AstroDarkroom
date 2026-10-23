@@ -15,18 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// TonalAnalyzer.cs - masuratorile B1 si B2: unde stau tonurile, si cate din ele cad
-// sub negrul hartiei.
+// TonalAnalyzer.cs - the measurements B1 and B2: where the tones sit, and how many of them fall
+// under paper black.
 //
-// Doua scari, deliberat. B1 e in NIVELURI (0..255), limbajul histogramei si al oricarui
-// editor - "96 % din pixeli sub 64". B2 e in L*, limbajul hartiei: negrul unui mediu e
-// un L* (din Dmax), si ce e sub el se printeaza cu acelasi negru. Pe gri trecerea e o
-// curba fixa (ColorMath.GrayLevelOfLstar, tabela LstarLadder); pe culoare acelasi nivel
-// da alt L* dupa nuanta, iar B1 numara esantioane pe canale, B2 pixeli - de asta se
-// raporteaza amandoua. Sunt FAPTE ale imaginii, nu verdictul: verdictul de print se da
-// pe praf si pe cer, in DustAnalyzer si PrintStretchSimulator (ADR 0025).
+// Two scales, on purpose. B1 is in LEVELS (0..255), the language of the histogram and of any
+// editor - "96 % of the pixels under 64". B2 is in L*, the language of paper: a medium's black
+// is an L* (from its Dmax), and what lies under it prints with the same black. On grey the
+// conversion is a fixed curve (ColorMath.GrayLevelOfLstar, the LstarLadder table); on colour the
+// same level gives another L* by hue, and B1 counts samples over the channels, B2 pixels - which
+// is why both are reported. They are FACTS of the image, not the verdict: the print verdict is
+// given on the dust and the sky, in DustAnalyzer and PrintStretchSimulator (ADR 0025).
 //
-// Pasii de subesantionare sunt cei ai scripturilor de acceptanta (Thresholds.*Stride).
+// The subsampling steps are those of the acceptance scripts (Thresholds.*Stride).
 
 using System;
 using System.Collections.Generic;
@@ -34,20 +34,32 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The tonal facts of an image: B1 in 8-bit levels (the means, the dark shares, the
+    /// percentiles and the background level the simulation lifts) and B2 in L* (the shares under
+    /// paper black and the two L* thresholds, the histogram).
+    /// </summary>
     internal sealed record TonalResult
     {
-        /// <summary>Media fiecarui plan, in niveluri 0..255, pe toti pixelii.</summary>
+        /// <summary>The mean of each plane, in levels 0..255, over all the pixels.</summary>
         internal IReadOnlyList<double> MeanLevels { get; init; }
 
-        /// <summary>Procentul esantioanelor (toate planurile) sub Thresholds.DarkLevelA si DarkLevelB.</summary>
+        /// <summary>
+        /// The percentage of the samples (all planes) under <see cref="Thresholds.DarkLevelA"/>
+        /// and <see cref="Thresholds.DarkLevelB"/>.
+        /// </summary>
         internal double PctBelowDarkA { get; init; }
         internal double PctBelowDarkB { get; init; }
 
-        /// <summary>Percentilele canalului de referinta, in niveluri, la PercentileRanks.</summary>
+        /// <summary>
+        /// The percentiles of the reference channel, in levels, at <see cref="PercentileRanks"/>.
+        /// </summary>
         internal IReadOnlyList<double> ReferencePercentiles { get; init; }
         internal static readonly double[] PercentileRanks = { 0.1, 1, 50, 90, 99, 99.9, 100 };
 
-        /// <summary>Mediana canalului de referinta, 0..1 - "fundalul" pe care il ridica simularea.</summary>
+        /// <summary>
+        /// The median of the reference channel, 0..1 - the "background" the simulation lifts.
+        /// </summary>
         internal double BackgroundMedian { get; init; }
 
         internal double Dmax { get; init; }
@@ -58,31 +70,56 @@ namespace AstroPhotoAnalyzer
         internal double PctBelowLowSeparation { get; init; }
         internal double PctAboveHighlight { get; init; }
 
-        /// <summary>Histograma L*, 101 cosuri (0..100), procente - pentru fereastra.</summary>
+        /// <summary>The L* histogram, 101 bins (0..100), in percent - for the window.</summary>
         internal IReadOnlyList<double> LstarHistogramPct { get; init; }
     }
 
     /// <summary>
-    /// Un rand al tabelei nivel - L*: un reper al tabului, cu L*-ul lui si nivelul de 8 biti
-    /// al unui gri cu acelasi L*. Chosen = negrul mediului pe care se judeca imaginea.
+    /// A row of the level - L* table: a reference mark of the tab, with its L* and the 8-bit level
+    /// of a grey with the same L*.
     /// </summary>
+    /// <param name="Lstar">The mark's L*, 0..100.</param>
+    /// <param name="GrayLevel">
+    /// The 8-bit level of a grey (R = G = B) with that L*, 0..255, not rounded.
+    /// </param>
+    /// <param name="Meaning">
+    /// What the mark is, in Romanian as the window shows it ("negrul hartiei: baryta (Dmax
+    /// 2.4)", "separare slaba").
+    /// </param>
+    /// <param name="Chosen">
+    /// The black of the medium the image is judged on: the chosen medium's, or the explicit
+    /// Dmax's.
+    /// </param>
     internal sealed record LstarLadderRow(double Lstar, double GrayLevel, string Meaning, bool Chosen = false);
 
+    /// <summary>
+    /// Measures where the tones sit (B1, B2) and builds the level - L* table of the Tonuri tab.
+    /// </summary>
     internal static class TonalAnalyzer
     {
         /// <summary>
-        /// Tabela de corespondenta nivel - L* pentru reperele tabului: negrul celor trei
-        /// medii, pragurile in niveluri (32/64), pragurile in L* (15/50) si tinta principala
-        /// a simularii (cea data, altfel cea recomandata; niciun rand cand "asa cum e" e
-        /// randul principal). Nu masoara nimic din imagine - e fereastra care o arata, ca sa
-        /// se poata citi un prag in L* pe histograma din Siril. Valabila pe gri; pe culoare
-        /// acelasi nivel da alt L* dupa nuanta. Crescator dupa L*.
+        /// The level - L* correspondence table for the tab's reference marks: the black of the
+        /// three media (and of an explicit Dmax, R-042), the thresholds in levels (32/64), the
+        /// thresholds in L* (15/50) and the simulation's primary target (the given one, otherwise
+        /// the recommended one; no row when "asa cum e" is the primary row). It measures nothing
+        /// of the image: the window shows it so that a threshold in L* can be read on Siril's
+        /// histogram. Valid on grey; on colour the same level gives another L* by hue.
         /// </summary>
+        /// <param name="p">
+        /// The run's parameters: the medium, the Dmax and whether it is explicit (and read from a
+        /// profile), the given target background.
+        /// </param>
+        /// <param name="s">
+        /// The simulation, for its primary row; null without one, and then a given target
+        /// background has its row.
+        /// </param>
+        /// <returns>The rows, in increasing L*.</returns>
         internal static IReadOnlyList<LstarLadderRow> LstarLadder(Parameters p, SimulationResult s = null)
         {
             var rows = new List<LstarLadderRow>();
-            // Randul marcat e hartia cu care se analizeaza: mediul ales cand Dmax-ul e al lui,
-            // altfel randul Dmax-ului explicit - chiar daca alt mediu are acelasi Dmax (R-042).
+            // The marked row is the paper the analysis uses: the chosen medium when the Dmax is
+            // its own, otherwise the explicit Dmax's row - even when another medium has the same
+            // Dmax (R-042).
             foreach (PrintMedium m in Enum.GetValues(typeof(PrintMedium)))
             {
                 double dmax = Parameters.DmaxOf(m);
@@ -108,9 +145,18 @@ namespace AstroPhotoAnalyzer
                 => new(ColorMath.LstarOfGrayLevel(level), level, meaning);
         }
 
+        /// <summary>
+        /// Measures B1 (the means and the dark shares on every sample, the percentiles at
+        /// <see cref="Thresholds.PercentileStride"/>, the background level at
+        /// <see cref="Thresholds.TonalStride"/>) and B2 (the L* facts at
+        /// <see cref="Thresholds.TonalStride"/>).
+        /// </summary>
+        /// <param name="r">The image, 0..1.</param>
+        /// <param name="p">The run's parameters; only the Dmax is read.</param>
+        /// <returns>The tonal facts.</returns>
         internal static TonalResult Analyze(Raster r, Parameters p)
         {
-            // B1: pe toti pixelii - medii si numaratori, o singura trecere pe plan.
+            // B1: on every pixel - means and counts, a single pass per plane.
             var means = new double[r.Planes.Length];
             long belowA = 0, belowB = 0, total = 0;
             float a = Thresholds.DarkLevelA / 255f, b = Thresholds.DarkLevelB / 255f;
@@ -122,7 +168,7 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = plane[i];
                     s += v;
-                    // "sub nivelul 32" inseamna octetul inalt < 32, ca in script (hi < 32).
+                    // "sub nivelul 32" means the high byte < 32, as in the script (hi < 32).
                     if (v < a) belowA++;
                     if (v < b) belowB++;
                 }
@@ -137,7 +183,7 @@ namespace AstroPhotoAnalyzer
 
             double bg = Stats.Median(RasterOps.Subsample(r, Thresholds.TonalStride).Reference);
 
-            // B2: L* pe subesantion.
+            // B2: L* on the subsample.
             var (median, belowBlack, belowLow, aboveHigh, hist) = LstarStats(r, p.Dmax);
 
             return new TonalResult
@@ -157,12 +203,37 @@ namespace AstroPhotoAnalyzer
             };
         }
 
-        /// <summary>Statisticile L* ale unui raster, la pasul dat (implicit cel tonal).</summary>
+        /// <summary>
+        /// The L* statistics of a raster, at the given step (by default the tonal one).
+        /// </summary>
+        /// <param name="r">The raster, 0..1.</param>
+        /// <param name="dmax">
+        /// The paper's Dmax, positive; its black is <see cref="ColorMath.PaperBlackLstar"/>.
+        /// </param>
+        /// <param name="stride">
+        /// The subsampling step, as in <see cref="RasterOps.Subsample"/>.
+        /// </param>
+        /// <returns>
+        /// As <see cref="LstarStats(float[], double)"/> returns them, on one L* per pixel of the
+        /// subsample.
+        /// </returns>
         internal static (double Median, double PctBelowPaperBlack, double PctBelowLow, double PctAboveHigh, double[] HistPct)
             LstarStats(Raster r, double dmax, int stride = Thresholds.TonalStride)
             => LstarStats(RasterOps.LstarPlane(r, stride), dmax);
 
-        /// <summary>Aceleasi statistici pe un plan L* gata facut (RasterOps.LstarPlane).</summary>
+        /// <summary>
+        /// The same statistics on an L* plane already made (RasterOps.LstarPlane).
+        /// </summary>
+        /// <param name="L">One L* (0..100) per pixel; at least one value.</param>
+        /// <param name="dmax">
+        /// The paper's Dmax, positive; its black is <see cref="ColorMath.PaperBlackLstar"/>.
+        /// </param>
+        /// <returns>
+        /// The median L*; the percentages (0..100) of the values under paper black, under
+        /// <see cref="Thresholds.LowSeparationLstar"/> and over
+        /// <see cref="Thresholds.HighlightLstar"/>; and the histogram of the L* rounded to an
+        /// integer, 101 bins (0..100), in percent.
+        /// </returns>
         internal static (double Median, double PctBelowPaperBlack, double PctBelowLow, double PctAboveHigh, double[] HistPct)
             LstarStats(float[] L, double dmax)
         {
@@ -182,13 +253,18 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Doar procentele de pixeli sub L* LowSeparationLstar si peste HighlightLstar ale unui
-        /// plan L*: ce poarta un rand al simularii. Publica pentru simulator, care le
-        /// recalculeaza pe randurile grilei din planul L* al subesantionului ridicat prin tabela
-        /// (RasterOps.LstarPlane cu LiftTable), fara raster ridicat si fara mediana si histograma,
-        /// pe care randul nu le arata si a caror sortare costa mai mult decat tot restul randului
-        /// (ADR 0035).
+        /// Only the percentages of the pixels under L* LowSeparationLstar and over HighlightLstar
+        /// of an L* plane: what a row of the simulation carries. Exposed for the simulator, which
+        /// recomputes them on the grid's rows from the L* plane of the subsample lifted through
+        /// the table (RasterOps.LstarPlane with LiftTable), without a lifted raster and without
+        /// the median and the histogram, which the row does not show and whose sort costs more
+        /// than all the rest of the row (ADR 0035).
         /// </summary>
+        /// <param name="L">One L* (0..100) per pixel; an empty plane gives NaN for both.</param>
+        /// <returns>
+        /// The percentages (0..100) of the values under <see cref="Thresholds.LowSeparationLstar"/>
+        /// and over <see cref="Thresholds.HighlightLstar"/>.
+        /// </returns>
         internal static (double PctBelowLow, double PctAboveHigh) LstarShares(float[] L)
         {
             long nLow = 0, nHigh = 0;
