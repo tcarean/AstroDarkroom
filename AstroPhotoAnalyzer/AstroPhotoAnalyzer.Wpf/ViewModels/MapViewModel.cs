@@ -20,12 +20,12 @@
 // ADR 0026, ADR 0033) painted differently, each with its tick, and the catalogued clouds
 // circled, with their names.
 //
-// It computes nothing: the classes of the patches, the circles and the names come from the
-// core's result (DustAnalyzer, PrintStretchSimulator); here they are laid on a reduced copy of
-// the image, and the user is let to switch the layers off, the clouds all together or one by
-// one.
+// It computes nothing: the classes of the patches, each class's share of them
+// (DustMap.FractionOf, the figure the report's class fractions use), the circles and the names
+// come from the core's result (DustAnalyzer, PrintStretchSimulator); here they are laid on a
+// reduced copy of the image, and the user is let to switch the layers off, the clouds all
+// together or one by one.
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
@@ -150,7 +150,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 var (cls, colour) = Palette[k];
                 string name = names[k];
-                double pct = 100.0 * classes.Count(c => c == cls) / classes.Length;
+                double pct = 100 * map.FractionOf(cls);
                 layers.Add(new ClassLayer
                 {
                     Name = name,
