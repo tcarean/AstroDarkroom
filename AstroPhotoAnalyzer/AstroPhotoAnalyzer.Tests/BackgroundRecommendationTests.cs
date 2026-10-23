@@ -62,7 +62,10 @@ public class BackgroundRecommendationTests
         Assert.Contains("negrul hartiei L* 9.0 la Dmax 2.0", rec.Because);
         Assert.Contains("cerul (mediana dalelor de cer (clase relative la cerul modelat)) la L* 6.", rec.Because);
         Assert.Contains("nivelul fundalului 0.08", rec.Because);
-        Assert.Contains("trece asa cum e de la Dmax 2.", rec.Because);
+        // The Dmax figure is the dust's; the sky (L* 6) is under the visibility threshold, so no paper passes as it is.
+        Assert.Contains("praful ajunge pe negrul hartiei de la Dmax 2.", rec.Because);
+        Assert.Contains("; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch", rec.Because);
+        Assert.DoesNotContain("trece asa cum e", rec.Because);
     }
 
     [Fact]

@@ -6,6 +6,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- The Dmax figure of the background section and of Anexa B is named for what it measures: the
+  Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
+  2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;
+  there the sentence now adds that as it is no paper makes the image print-safe and that the fix
+  is lifting the background at the stretch (R-043, R-092; ADR 0043; the code review of area 2,
+  items 1 and 13).
+
 ### Added
 
 - No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR

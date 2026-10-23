@@ -95,14 +95,13 @@ namespace AstroPhotoAnalyzer
         // Verdictul: praful (zona intinsa cea mai intunecata: clasa praf sau cerul cel mai
         // intunecat, ADR 0033) fata de negrul hartiei, si cerul fata de el (ADR 0025); apoi
         // cerul fata de pragul de vizibilitate (ADR 0029). "Fiindca" spune ce e praful, care sunt norii cei mai
-        // intunecati, unde e negrul, de la ce Dmax ar trece asa cum e si cat e sub prag.
+        // intunecati, unde e negrul, de la ce Dmax ajunge praful pe negru (si ca un cer sub prag nu
+        // trece pe nicio hartie, ADR 0043) si cat e sub prag.
         static void Background(AnalysisResult r, List<Recommendation> o)
         {
             SimulationResult s = r.Simulation;
             SimulationRow asIs = s.AsIs;
-            string pass = double.IsNaN(s.DmaxToPassAsIs)
-                ? "nu trece asa cum e la niciun Dmax (praful e la L* 0)"
-                : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
+            string pass = ReportWriter.DustDmaxText(s);
             string clouds = s.Clouds.Count == 0 ? "" : "; cei mai intunecati: " + CloudList(s);
             string because = $"praful ({s.DustDescription}{(s.MethodNote == null ? "" : "; " + s.MethodNote)}) la L* {Fmt.F1(asIs.LstarDust)}{clouds}; "
                 + $"negrul hartiei L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)}; "

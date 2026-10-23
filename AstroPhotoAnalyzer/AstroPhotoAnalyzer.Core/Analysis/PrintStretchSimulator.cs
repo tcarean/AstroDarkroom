@@ -161,9 +161,10 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The dust as it is is at or above paper black. Not print-safe in the sense of
-        /// <see cref="SimulationRow.PrintSafe"/>, which also needs the sky visible (ADR 0029).
+        /// <see cref="SimulationRow.PrintSafe"/>, which also needs the sky visible (ADR 0029);
+        /// it was called AlreadyPrintSafe until the review of 2026-10-23 (ADR 0043).
         /// </summary>
-        internal bool AlreadyPrintSafe => AsIs.DustOnPaperBlack;
+        internal bool DustOnPaperBlackAsIs => AsIs.DustOnPaperBlack;
 
         /// <summary>
         /// The sky itself is under paper black: the sky and the dust would print with the same
@@ -203,9 +204,11 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// The Dmax from which the dust as it is reaches paper black: the one whose black is the
         /// dust's L*. NaN for a dust at L* 0. The sky's visibility does not enter it, so with the
-        /// sky under LowSeparationLstar the image is not print-safe at this Dmax either.
+        /// sky under LowSeparationLstar the image is not print-safe at this Dmax either, and the
+        /// report says so beside it (ReportWriter.DustDmaxText; it was called DmaxToPassAsIs and
+        /// printed "trece asa cum e" until the review of 2026-10-23, ADR 0043).
         /// </summary>
-        internal double DmaxToPassAsIs { get; init; }
+        internal double DmaxDustOnPaperBlackAsIs { get; init; }
 
         /// <summary>
         /// How many steps of the ladder were lifted: all of them when some series never reaches
@@ -496,7 +499,7 @@ namespace AstroPhotoAnalyzer
                 ExactTargetDmaxLower = exactLo,
                 ExactTargetDmaxHigher = exactHi,
                 VisibilityTarget = visible,
-                DmaxToPassAsIs = asIs.LstarDust > 0 ? -Math.Log10(ColorMath.YOfLstar(asIs.LstarDust)) : double.NaN,
+                DmaxDustOnPaperBlackAsIs = asIs.LstarDust > 0 ? -Math.Log10(ColorMath.YOfLstar(asIs.LstarDust)) : double.NaN,
                 StepsLifted = steps,
                 Primary = primary,
                 Map = map,

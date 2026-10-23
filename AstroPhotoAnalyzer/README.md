@@ -135,8 +135,10 @@ negrul hârtiei; raportul îl dă ca „atenție", iar rândul recomandat are pr
 și cerul la L\* 15 sau peste. Pragul e o regulă de degetul mare, nu o măsurătoare: un petic de
 probă privit în lumina camerei unde va sta tabloul spune mai mult. Anexa B
 dă grila, ținta exactă (și la Dmax cu 0.1 mai mic și mai mare, fiindcă Dmax-ul hârtiei pe
-imprimanta ta rar e știut mai bine), Dmax-ul de la care imaginea trece așa cum e, nivelul de la
-care cerul ajunge la L\* 15 și norii cei mai întunecați. Simularea rămâne o curbă gamma: un stretch adevărat (Siril, VeraLux) ține
+imprimanta ta rar e știut mai bine), Dmax-ul de la care praful așa cum e ajunge pe negrul
+hârtiei (cifra e a prafului singur: cu cerul sub L\* 15 nicio hârtie nu face imaginea print-safe
+așa cum e, și raportul o spune lângă ea), nivelul de la care cerul ajunge la L\* 15 și norii cei
+mai întunecați. Simularea rămâne o curbă gamma: un stretch adevărat (Siril, VeraLux) ține
 umbrele mai jos, deci ținta exactă e a curbei, nu a lui — citește-o ca pe o margine de jos.
 
 ## Consola

@@ -378,3 +378,13 @@ less than the baseline); the FITS 12.24 / 12.47 / 12.39 s (median 12.39, 1.7 s l
 row, 0.20, ends it); the plate-solved FITS 35 at Dmax 2.0 and 25 at 2.4 (the darkest cloud row
 crosses last); Rosetta, Veil and Orion 16 at both. `Simulate` alone: 1.85 s on the PNG, 2.29 s
 on the FITS at Dmax 2.0 (2.75 and 2.6 s recorded by ADR 0035).
+
+### Step 2, items 1 and 13: the Dmax figure and the dust flag (goldens)
+
+Eight lines in four goldens, all the one sentence this fix means to change: in each of
+`dark-sky.txt`, `dark-sky-wcs.txt`, `clean-sky-canvas.txt` and `mono-png8.txt` the `fiindca:` of
+the background section and the `tinta exacta` line of Anexa B. `trece asa cum e de la Dmax X`
+became `praful ajunge pe negrul hartiei de la Dmax X` (X unchanged: 2.28, 2.28, 1.3, 1.3); the
+two dark scenes (as-is sky L\* 7.2) add `; asa cum e, nicio hartie nu face imaginea
+print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch`, the two bright
+ones (sky L\* 27) do not. No other line moved.

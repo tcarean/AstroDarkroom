@@ -44,7 +44,7 @@ public class PrintStretchSimulatorTests
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
-        Assert.False(s.AlreadyPrintSafe);
+        Assert.False(s.DustOnPaperBlackAsIs);
         Assert.True(s.DustBelowPaperBlack);
         Assert.True(s.SkyBelowPaperBlack);
         Assert.Equal(17, s.Rows.Count);
@@ -71,7 +71,7 @@ public class PrintStretchSimulatorTests
         // so that is recommended, below the measured level.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));
 
-        Assert.True(s.AlreadyPrintSafe);
+        Assert.True(s.DustOnPaperBlackAsIs);
         Assert.NotNull(s.Recommended);
         Assert.False(s.RecommendedIsAsIs);
         Assert.Equal(0.15, s.RecommendedTarget);
@@ -98,9 +98,9 @@ public class PrintStretchSimulatorTests
         Assert.True(s.ExactTargetDmaxHigher < s.ExactTarget);
         Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(1.9))), s.ExactTargetDmaxLower!.Value, 3);
 
-        // The Dmax from which the as-is image passes: the one whose paper black is the dust's L*.
-        Assert.Equal(-Math.Log10(ColorMath.YOfLstar(s.AsIs.LstarDust)), s.DmaxToPassAsIs, 6);
-        Assert.InRange(s.DmaxToPassAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
+        // The Dmax from which the as-is dust reaches paper black: the one whose paper black is the dust's L*.
+        Assert.Equal(-Math.Log10(ColorMath.YOfLstar(s.AsIs.LstarDust)), s.DmaxDustOnPaperBlackAsIs, 6);
+        Assert.InRange(s.DmaxDustOnPaperBlackAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class PrintStretchSimulatorTests
         string cloud = ReportWriter.CloudLine(new CloudRow { Name = "LDN 42 (B78)", Patches = 12, Lstar = 38.5, ExactTarget = Thresholds.ExactTargetLo });
         Assert.EndsWith("   <= 0.05", cloud);
 
-        var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxToPassAsIs = 1.3 };
+        var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxDustOnPaperBlackAsIs = 1.3, AsIs = new SimulationRow { LstarSky = 20 } };
         Assert.StartsWith("tinta exacta a prafului pe negru: <= 0.05 la Dmax 2.0 (0.06 la Dmax 1.9, <= 0.05 la Dmax 2.1); ", ReportWriter.ExactLine(s));
         var none = s with { ExactTarget = null, ExactTargetDmaxLower = null, ExactTargetDmaxHigher = null };
         Assert.StartsWith("tinta exacta a prafului pe negru: > 0.60 la Dmax 2.0 (> 0.60 la Dmax 1.9, > 0.60 la Dmax 2.1); ", ReportWriter.ExactLine(none));
@@ -137,7 +137,7 @@ public class PrintStretchSimulatorTests
         Raster r = SyntheticRasters.Flat(64, 64, 0.08f);
         SimulationResult s = PrintStretchSimulator.Simulate(r, TonalAnalyzer.Analyze(r, p), p);
 
-        Assert.True(s.AlreadyPrintSafe);
+        Assert.True(s.DustOnPaperBlackAsIs);
         Assert.True(s.SkyBelowVisibility);
         // On the default baryta (paper black L* 3.6) the dust is on black from 0.06 (L* 4.4) up,
         // but under 0.15 the sky is under the visibility threshold: no row before it is print-safe.
@@ -185,6 +185,31 @@ public class PrintStretchSimulatorTests
 
         // A black image lifts nothing.
         Assert.Equal(0, Simulate(SyntheticRasters.Flat(16, 16, 0f)).StepsLifted);
+    }
+
+    /// <summary>
+    /// The Dmax figure is the dust's alone: the sentence names the dust, and when the as-is sky
+    /// is under the visibility threshold it says that no paper makes the image print-safe as it
+    /// is and that the fix is the stretch (ADR 0043). A sky at or over the threshold gets the
+    /// figure alone; a dust at L* 0 reaches black at no Dmax.
+    /// </summary>
+    [Fact]
+    public void R043_TheDmaxFigureNamesTheDustAndSaysWhenNoPaperMakesTheImagePrintSafe()
+    {
+        var dark = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));   // sky L* 6, under 15
+        Assert.True(dark.SkyBelowVisibility);
+        string text = ReportWriter.DustDmaxText(dark);
+        Assert.StartsWith("praful ajunge pe negrul hartiei de la Dmax 2.1", text);
+        Assert.EndsWith("; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch", text);
+        Assert.Contains("); " + text + "; cerul ajunge", ReportWriter.ExactLine(dark));
+        Assert.DoesNotContain("trece asa cum e", ReportWriter.ExactLine(dark));
+
+        var bright = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));   // sky L* 31
+        Assert.False(bright.SkyBelowVisibility);
+        Assert.Equal($"praful ajunge pe negrul hartiei de la Dmax {Fmt.Dmax(bright.DmaxDustOnPaperBlackAsIs)}", ReportWriter.DustDmaxText(bright));
+
+        var black = Simulate(SyntheticRasters.Flat(16, 16, 0f));
+        Assert.StartsWith("praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)", ReportWriter.DustDmaxText(black));
     }
 
     [Fact]
@@ -242,7 +267,7 @@ public class PrintStretchSimulatorTests
         Assert.Single(s.Rows);
         Assert.Null(s.RecommendedTarget);
         Assert.Null(s.ExactTarget);
-        Assert.True(double.IsNaN(s.DmaxToPassAsIs));
+        Assert.True(double.IsNaN(s.DmaxDustOnPaperBlackAsIs));
         Assert.Same(s.AsIs, s.Primary);
     }
 

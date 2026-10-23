@@ -127,7 +127,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Definitia prafului si a cerului in uz, sub tabel (R-044).</summary>
         public string Definition { get => _definition; private set => Set(ref _definition, value); }
 
-        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care trece asa cum e (R-043).</summary>
+        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care praful ajunge pe negrul hartiei (R-043).</summary>
         public string ExactLine { get => _exactLine; private set => Set(ref _exactLine, value); }
 
         /// <summary>Propozitia rosie fara WCS; null cu WCS (ascunsa).</summary>

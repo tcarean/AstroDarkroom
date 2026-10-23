@@ -162,8 +162,11 @@ reads the ladder: the first step at or above a level, interpolated linearly with
 before (the first step when it already passes, null when the last does not), which gives
 `ExactTarget` at the Dmax in use, `ExactTargetDmaxLower`/`Higher` at Dmax -/+
 `DmaxSensitivityStep` (0.1), and each `CloudRow`'s own `ExactTarget`. `CloudRow`s exist for
-the clouds with at least `DustCloudMinPatches` (9) patches, darkest first. `DmaxToPassAsIs`
-is the Dmax whose paper black equals the as-is dust's L\* (NaN at L\* 0). `Primary` = the
+the clouds with at least `DustCloudMinPatches` (9) patches, darkest first.
+`DmaxDustOnPaperBlackAsIs` is the Dmax whose paper black equals the as-is dust's L\* (NaN at
+L\* 0), and `DustOnPaperBlackAsIs` whether the as-is dust is on it: the dust's figures alone,
+named so since the review of 2026-10-23 (ADR 0043); `ReportWriter.DustDmaxText` writes the
+sentence, with the sky's caveat when the as-is sky is under `LowSeparationLstar`. `Primary` = the
 explicit row, else the recommended one, else the as-is row. `DustDescription`,
 `SkyDescription` and `MethodNote` are the words the report and the window use for the method.
 
