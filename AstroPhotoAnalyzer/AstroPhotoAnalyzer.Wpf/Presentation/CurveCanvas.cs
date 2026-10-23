@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurveCanvas.cs - graficul unei curbe de ton (R-147), desenat direct, ca BarsCanvas.
+// CurveCanvas.cs - the chart of a tone curve (R-147), drawn directly, like BarsCanvas.
 //
-// Primeste curba deja esantionata de nucleu, punctele de control si pozitiile claselor;
-// deseneaza cadrul, grila, diagonala "fara schimbare", curba, punctele si cate o linie
-// verticala cu eticheta pentru fiecare clasa. XMax alege cat din axa intrarilor se vede:
-// 1 pentru curba intreaga, mai putin pentru graficul umbrelor. Axa iesirilor merge pana
-// la cea mai mare valoare desenata, ca umbrele marite sa nu iasa din cadru.
+// It receives the curve already sampled by the core, the control points and the positions of
+// the classes; it draws the frame, the grid, the "no change" diagonal, the curve, the points and
+// a vertical line with a label for each class. XMax chooses how much of the input axis is seen:
+// 1 for the whole curve, less for the shadow chart. The output axis goes up to the largest
+// value drawn, so that the magnified shadows do not leave the frame.
 
 using System;
 using System.Collections.Generic;
@@ -31,8 +31,21 @@ using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The chart of a tone curve on 0..<see cref="XMax"/>: grid with tick labels, the diagonal,
+    /// the sampled <see cref="Points"/>, the <see cref="ControlPoints"/> as discs and a dotted
+    /// vertical with a rotated label per <see cref="CurveMarker"/>; redrawn when any property
+    /// changes.
+    /// </summary>
     public sealed class CurveCanvas : FrameworkElement
     {
+        /// <summary>
+        /// Registers a dependency property of this element that triggers a redraw.
+        /// </summary>
+        /// <typeparam name="T">The property's type.</typeparam>
+        /// <param name="name">The property's name, as nameof gives it.</param>
+        /// <param name="fallback">The default value; null is allowed for a reference type.</param>
+        /// <returns>The registered property.</returns>
         static DependencyProperty Register<T>(string name, T fallback) => DependencyProperty.Register(
             name, typeof(T), typeof(CurveCanvas), new FrameworkPropertyMetadata(fallback, FrameworkPropertyMetadataOptions.AffectsRender));
 
@@ -48,16 +61,26 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<Point> ControlPoints { get => (IReadOnlyList<Point>)GetValue(ControlPointsProperty); set => SetValue(ControlPointsProperty, value); }
         public IReadOnlyList<CurveMarker> Markers { get => (IReadOnlyList<CurveMarker>)GetValue(MarkersProperty); set => SetValue(MarkersProperty, value); }
 
-        /// <summary>Capatul din dreapta al axei intrarilor.</summary>
+        /// <summary>The right end of the input axis.</summary>
         public double XMax { get => (double)GetValue(XMaxProperty); set => SetValue(XMaxProperty, value); }
 
         public Brush Stroke { get => (Brush)GetValue(StrokeProperty); set => SetValue(StrokeProperty, value); }
         public Brush GridBrush { get => (Brush)GetValue(GridBrushProperty); set => SetValue(GridBrushProperty, value); }
         public Brush TextBrush { get => (Brush)GetValue(TextBrushProperty); set => SetValue(TextBrushProperty, value); }
 
+        /// <summary>A label in the chart's font, at this element's DPI.</summary>
+        /// <param name="s">The text.</param>
+        /// <param name="size">The font size in device-independent units.</param>
+        /// <returns>The formatted text, in <see cref="TextBrush"/>.</returns>
         FormattedText Text(string s, double size = 11) => new(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
             new Typeface("Segoe UI"), size, TextBrush, VisualTreeHelper.GetDpi(this).PixelsPerDip);
 
+        /// <summary>
+        /// Draws the whole chart in one pass; draws nothing without a plot area, with fewer than
+        /// two points, or with an <see cref="XMax"/> that is not positive. The output axis ends at
+        /// <see cref="XMax"/> or at the largest output of a point within it, whichever is larger.
+        /// </summary>
+        /// <param name="dc">WPF's drawing context for this pass.</param>
         protected override void OnRender(DrawingContext dc)
         {
             const double left = 44, bottom = 24, top = 8, right = 10;
@@ -82,7 +105,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 dc.DrawText(ty, new Point(left - ty.Width - 6, At(0, gy).Y - ty.Height / 2));
             }
 
-            // Diagonala: fara schimbare.
+            // The diagonal: no change.
             double d = Math.Min(xMax, yMax);
             dc.DrawLine(new Pen(GridBrush, 1.2), At(0, 0), At(d, d));
 

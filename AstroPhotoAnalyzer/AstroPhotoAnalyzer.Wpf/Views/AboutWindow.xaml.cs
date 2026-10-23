@@ -15,9 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutWindow.xaml.cs - fereastra "Despre": GPLv3 sectiunea 5(d) cere ca un program
-// interactiv sa-si arate notita. Aici raman doar bara de titlu intunecata si deschiderea
-// link-urilor.
+// AboutWindow.xaml.cs - the "Despre" window: GPLv3 section 5(d) asks an interactive program to
+// show its notice. Only the dark title bar and the opening of links remain here.
 
 using System.Diagnostics;
 using System.Windows;
@@ -25,8 +24,13 @@ using System.Windows.Navigation;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>The "Despre" window (R-119), over an <see cref="AboutViewModel"/>.</summary>
     public partial class AboutWindow : Window
     {
+        /// <summary>
+        /// Loads the XAML, binds a new <see cref="AboutViewModel"/>, puts the largest icon frame
+        /// in the logo and asks for the dark title bar once there is a handle.
+        /// </summary>
         public AboutWindow()
         {
             InitializeComponent();
@@ -35,6 +39,12 @@ namespace AstroPhotoAnalyzer.Wpf
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         }
 
+        /// <summary>
+        /// Opens a hyperlink in the system's browser, through the shell; a refusal by the shell
+        /// or a missing handler is swallowed.
+        /// </summary>
+        /// <param name="sender">The hyperlink; not read.</param>
+        /// <param name="e">The navigation; its URI is opened and it is marked handled.</param>
         void OpenLink(object sender, RequestNavigateEventArgs e)
         {
             e.Handled = true;
@@ -43,6 +53,9 @@ namespace AstroPhotoAnalyzer.Wpf
             catch (System.InvalidOperationException) { }
         }
 
+        /// <summary>The close button.</summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
         void Close(object sender, RoutedEventArgs e) => Close();
     }
 }

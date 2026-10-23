@@ -15,16 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// VerdictPalette.cs - ce culoare are un verdict.
+// VerdictPalette.cs - what colour a verdict has.
 //
-// Culoarea se deriva din eticheta pe care o scrie nucleul (VerdictText.Label), nu
-// dintr-o lista proprie: un verdict nou din nucleu s-ar colora neutru, nu verde -
-// directia sigura pentru o greseala.
+// The colour is derived from the label the core writes (VerdictText.Label), not from a list of
+// its own: a new verdict in the core would be coloured neutral, not green - the safe direction
+// for a mistake.
 
 using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The colour of a verdict, from its label: green for "OK", amber for "ATENTIE", red for
+    /// "PROBLEMA", neutral grey for anything else.
+    /// </summary>
     internal static class VerdictPalette
     {
         internal static readonly Color Good = Color.FromRgb(0x3F, 0xB9, 0x50);
@@ -32,6 +36,13 @@ namespace AstroPhotoAnalyzer.Wpf
         internal static readonly Color Bad = Color.FromRgb(0xF8, 0x51, 0x49);
         internal static readonly Color Neutral = Color.FromRgb(0x8B, 0x94, 0x9E);
 
+        /// <summary>The colour of a verdict label.</summary>
+        /// <param name="label">
+        /// The label as the core writes it (VerdictText.Label); null or any other text is neutral.
+        /// </param>
+        /// <returns>
+        /// <see cref="Good"/>, <see cref="Warn"/>, <see cref="Bad"/> or <see cref="Neutral"/>.
+        /// </returns>
         internal static Color For(string label)
         {
             if (label == VerdictText.Label(Verdict.Ok)) return Good;
@@ -40,6 +51,9 @@ namespace AstroPhotoAnalyzer.Wpf
             return Neutral;
         }
 
+        /// <summary>The colour of a verdict label as a brush.</summary>
+        /// <param name="label">The label, as for <see cref="For"/>.</param>
+        /// <returns>A frozen solid brush of that colour, usable from any thread.</returns>
         internal static Brush BrushFor(string label)
         {
             var b = new SolidColorBrush(For(label));

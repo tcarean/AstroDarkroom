@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BarsCanvas.cs - o histograma desenata direct, cu un marcaj vertical optional.
+// BarsCanvas.cs - a histogram drawn directly, with an optional vertical marker.
 //
-// Un element propriu in loc de o suta de dreptunghiuri legate: histograma L* are 101
-// cosuri, iar un ItemsControl cu o suta de elemente s-ar reaseza la fiecare redimensionare.
-// OnRender deseneaza tot intr-o trecere. Marcajul e negrul hartiei (in L*), ca sa se vada
-// pe loc cat din histograma cade sub el.
+// An element of its own instead of a hundred bound rectangles: the L* histogram has 101 bins,
+// and an ItemsControl with a hundred elements would lay itself out again at every resize.
+// OnRender draws everything in one pass. The marker is paper black (in L*), so that how much of
+// the histogram falls under it is seen at once.
 
 using System;
 using System.Collections.Generic;
@@ -29,6 +29,10 @@ using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// A bar chart of <see cref="Values"/>, one bar per value, scaled to the tallest, with an
+    /// optional vertical <see cref="Marker"/>; redrawn when any of its properties changes.
+    /// </summary>
     public sealed class BarsCanvas : FrameworkElement
     {
         public static readonly DependencyProperty ValuesProperty = DependencyProperty.Register(
@@ -49,12 +53,20 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public IReadOnlyList<double> Values { get => (IReadOnlyList<double>)GetValue(ValuesProperty); set => SetValue(ValuesProperty, value); }
 
-        /// <summary>Pozitia marcajului, in indici de cos (0..Values.Count). NaN = fara marcaj.</summary>
+        /// <summary>
+        /// The marker's position, in bin indices (0..Values.Count). NaN = no marker.
+        /// </summary>
         public double Marker { get => (double)GetValue(MarkerProperty); set => SetValue(MarkerProperty, value); }
 
         public Brush Fill { get => (Brush)GetValue(FillProperty); set => SetValue(FillProperty, value); }
         public Brush MarkerBrush { get => (Brush)GetValue(MarkerBrushProperty); set => SetValue(MarkerBrushProperty, value); }
 
+        /// <summary>
+        /// Draws the bars over the element's whole size, each as tall as its value's share of the
+        /// largest, then the marker line; draws nothing without a size, without values, or when
+        /// no value is positive.
+        /// </summary>
+        /// <param name="dc">WPF's drawing context for this pass.</param>
         protected override void OnRender(DrawingContext dc)
         {
             double w = ActualWidth, h = ActualHeight;

@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// DarkTitleBar.cs - bara de titlu intunecata.
+// DarkTitleBar.cs - the dark title bar.
 //
-// WPF nu deseneaza bara de titlu, o deseneaza Windows, deci o fereastra altfel complet
-// intunecata ramane cu o banda alba deasupra. Se rezolva cerandu-i lui DWM sa foloseasca
-// varianta intunecata - un singur atribut, al carui numar s-a schimbat intre versiuni de
-// Windows 10 (19 inainte de 20H1, 20 dupa). Se incearca amandoua si se ignora esecul.
+// WPF does not draw the title bar, Windows does, so a window otherwise completely dark keeps a
+// white band above it. It is solved by asking DWM to use the dark variant - a single attribute,
+// whose number changed between versions of Windows 10 (19 before 20H1, 20 after). Both are
+// tried and failure is ignored.
 
 using System;
 using System.Runtime.InteropServices;
@@ -29,15 +29,26 @@ using System.Windows.Interop;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>Asks DWM for the dark title bar on a window; best effort, never fails.</summary>
     internal static class DarkTitleBar
     {
         const int UseImmersiveDarkModeBefore20H1 = 19;
         const int UseImmersiveDarkMode = 20;
 
+        /// <summary>DwmSetWindowAttribute of dwmapi.dll, for an int-sized attribute.</summary>
+        /// <param name="hwnd">The window's handle.</param>
+        /// <param name="attr">The DWMWINDOWATTRIBUTE number.</param>
+        /// <param name="value">The attribute's value; 1 turns the dark mode on.</param>
+        /// <param name="size">The size of the value in bytes, sizeof(int).</param>
+        /// <returns>An HRESULT: 0 on success, otherwise the failure, never an exception.</returns>
         [DllImport("dwmapi.dll", PreserveSig = true)]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-        /// <summary>Se cheama dupa ce fereastra are un handle (SourceInitialized sau mai tarziu).</summary>
+        /// <summary>
+        /// Turns the dark title bar on. Called once the window has a handle (SourceInitialized or
+        /// later); earlier it does nothing. A missing dwmapi.dll or entry point is ignored.
+        /// </summary>
+        /// <param name="window">The window; not null.</param>
         internal static void Apply(Window window)
         {
             IntPtr hwnd = new WindowInteropHelper(window).Handle;

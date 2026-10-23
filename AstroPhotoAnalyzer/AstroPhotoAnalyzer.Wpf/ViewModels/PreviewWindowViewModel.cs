@@ -15,18 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PreviewWindowViewModel.cs - fereastra de preview a unui rand al simularii (R-131):
-// imaginea ridicata la tinta randului, cu pixelii de sub negrul hartiei si cei de sub
-// pragul de separare slaba vopsiti diferit.
+// PreviewWindowViewModel.cs - the preview window of one row of the simulation (R-131): the
+// image lifted to the row's target, with the pixels under paper black and those under the
+// weak-separation threshold painted differently.
 //
-// Imaginea ridicata si clasa fiecarui pixel vin din nucleu (PrintPreview, R-045); aici doar
-// se vopsesc si se lasa omul sa stinga straturile.
+// The lifted image and the class of each pixel come from the core (PrintPreview, R-045); here
+// they are only painted, and the user is let to switch the layers off.
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The preview window's state (R-131): the lifted image, its two overlays with their
+    /// legends, the caption, and the two visibility switches.
+    /// </summary>
     public sealed class PreviewWindowViewModel : ObservableObject
     {
         static readonly Color BlackColour = Color.FromArgb(140, 0xF8, 0x51, 0x49);
@@ -41,7 +45,9 @@ namespace AstroPhotoAnalyzer.Wpf
         public int Width { get; private init; }
         public int Height { get; private init; }
 
-        /// <summary>Ce rand e: tinta, gamma, praful si cerul lui, negrul hartiei.</summary>
+        /// <summary>
+        /// Which row it is: the target, the gamma, its dust and sky, paper black.
+        /// </summary>
         public string Caption { get; private init; }
         public string BlackLegend { get; private init; }
         public string LowLegend { get; private init; }
@@ -49,8 +55,19 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool ShowBlack { get => _showBlack; set => Set(ref _showBlack, value); }
         public bool ShowLow { get => _showLow; set => Set(ref _showLow, value); }
 
+        /// <summary>Only <see cref="From"/> builds one.</summary>
         PreviewWindowViewModel() { }
 
+        /// <summary>
+        /// Renders a simulation row through the core and paints its two classes: red where a
+        /// pixel is under paper black, amber where it is under the weak-separation L* but over
+        /// black.
+        /// </summary>
+        /// <param name="r">The analysis the row belongs to; its raster and Dmax are read.</param>
+        /// <param name="row">
+        /// The row: its gamma lifts the image, its figures fill the caption.
+        /// </param>
+        /// <returns>The view-model, with both layers shown.</returns>
         internal static PreviewWindowViewModel From(AnalysisResult r, SimulationRow row)
         {
             PrintPreviewResult p = PrintPreview.Render(r.Raster, row.Gamma, r.Parameters.Dmax);

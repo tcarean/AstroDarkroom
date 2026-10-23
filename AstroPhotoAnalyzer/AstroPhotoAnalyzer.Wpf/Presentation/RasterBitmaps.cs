@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RasterBitmaps.cs - o bucata de Raster, direct ca bitmap WPF, fara fisier.
+// RasterBitmaps.cs - a piece of a Raster, directly as a WPF bitmap, with no file.
 //
-// Previzualizarile sunt decupaje la 100 % sau 200 % si micsorari ale intregului: toate
-// se fac cu un pas intreg (stride) si o marire intreaga (zoom, vecinul cel mai apropiat),
-// ca pixelii aratati sa fie pixeli din fisier, nu medii. BitmapSource.Create ia octetii
-// asa cum sunt; inghetat, deci bun de legat de pe orice fir.
+// The previews are crops at 100 % or 200 % and reductions of the whole: all are made with an
+// integer step (stride) and an integer magnification (zoom, nearest neighbour), so that the
+// pixels shown are pixels of the file, not averages. BitmapSource.Create takes the bytes as
+// they are; frozen, so good to bind from any thread.
 
 using System;
 using System.Windows.Media;
@@ -28,13 +28,30 @@ using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// Frozen WPF bitmaps from a <see cref="Raster"/>: a region at an integer step and zoom,
+    /// the whole frame reduced, and a semi-transparent overlay from a predicate per pixel.
+    /// </summary>
     internal static class RasterBitmaps
     {
         /// <summary>
-        /// Dreptunghiul (x0, y0, w, h) din raster, luat din <paramref name="stride"/> in
-        /// stride pixeli si marit de <paramref name="zoom"/> ori. Pe mono da acelasi gri pe
-        /// toate cele trei canale.
+        /// The rectangle (x0, y0, w, h) of the raster, taken every <paramref name="stride"/>
+        /// pixels and magnified <paramref name="zoom"/> times. On mono the same grey goes on all
+        /// three channels.
         /// </summary>
+        /// <param name="r">The raster, 0..1 levels; at least one pixel.</param>
+        /// <param name="x0">The left column, in pixels; clamped into the image.</param>
+        /// <param name="y0">The top row, in pixels, 0 at the top; clamped into the image.</param>
+        /// <param name="w">The width in source pixels; clamped to 1..the pixels left of x0.</param>
+        /// <param name="h">The height in source pixels; clamped to 1..the rows under y0.</param>
+        /// <param name="stride">Take every n-th pixel on both axes, 1 or more.</param>
+        /// <param name="zoom">
+        /// Repeat each taken pixel this many times on both axes, 1 or more.
+        /// </param>
+        /// <returns>
+        /// A frozen Rgb24 bitmap at 96 dpi, (w / stride) x zoom by (h / stride) x zoom pixels, at
+        /// least 1 x 1, each sample the 8-bit level of <see cref="RasterOps.Level8"/>.
+        /// </returns>
         internal static BitmapSource Region(Raster r, int x0, int y0, int w, int h, int stride = 1, int zoom = 1)
         {
             x0 = Math.Clamp(x0, 0, Math.Max(0, r.W - 1));
@@ -62,16 +79,29 @@ namespace AstroPhotoAnalyzer.Wpf
             return b;
         }
 
-        /// <summary>Intreaga imagine, micsorata cu pasul care o aduce sub <paramref name="maxSide"/> px.</summary>
+        /// <summary>
+        /// The whole image, reduced by the step that brings it under <paramref name="maxSide"/>
+        /// px.
+        /// </summary>
+        /// <param name="r">The raster, 0..1 levels.</param>
+        /// <param name="maxSide">The limit of the long side, in pixels, 1 or more.</param>
+        /// <returns>A frozen Rgb24 bitmap, as <see cref="Region"/> gives it.</returns>
         internal static BitmapSource Whole(Raster r, int maxSide)
             => Region(r, 0, 0, r.W, r.H, Math.Max(1, (int)Math.Ceiling(Math.Max(r.W, r.H) / (double)maxSide)));
 
         /// <summary>
-        /// Un strat de culoare semitransparenta de <paramref name="w"/> x <paramref name="h"/>
-        /// pixeli, vopsit acolo unde <paramref name="on"/>(x, y) e adevarat si transparent in
-        /// rest: cum arata ferestrele de harta si de preview ce a decis nucleul. Nu decide
-        /// nimic: primeste clasa fiecarui pixel sau a fiecarei dale.
+        /// A layer of one semi-transparent colour, <paramref name="w"/> x <paramref name="h"/>
+        /// pixels, painted where <paramref name="on"/>(x, y) is true and transparent elsewhere:
+        /// how the map and preview windows show what the core decided. Decides nothing: it is
+        /// given the class of each pixel or of each patch.
         /// </summary>
+        /// <param name="w">The width in pixels, 1 or more.</param>
+        /// <param name="h">The height in pixels, 1 or more.</param>
+        /// <param name="on">Whether the pixel at column x, row y (0 at the top) is painted.</param>
+        /// <param name="colour">
+        /// The paint, with its alpha; the bytes stored are premultiplied.
+        /// </param>
+        /// <returns>A frozen Pbgra32 bitmap at 96 dpi.</returns>
         internal static BitmapSource Overlay(int w, int h, Func<int, int, bool> on, Color colour)
         {
             var bgra = new byte[w * h * 4];
@@ -80,7 +110,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     if (!on(x, y)) continue;
                     int o = (y * w + x) * 4;
-                    // Pbgra32: canalele premultiplicate cu alpha.
+                    // Pbgra32: the channels premultiplied with the alpha.
                     bgra[o] = (byte)(colour.B * colour.A / 255);
                     bgra[o + 1] = (byte)(colour.G * colour.A / 255);
                     bgra[o + 2] = (byte)(colour.R * colour.A / 255);

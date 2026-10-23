@@ -15,14 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MapViewModel.cs - fereastra "Harta praf / cer" (R-130): imaginea intreaga, cu cele cinci
-// clase ale dalelor (praf, cer, banda sau nebuloasa, nori luminosi sau nebuloasa
-// stralucitoare, varfuri; ADR 0026, ADR 0033) vopsite diferit, fiecare cu bifa ei, si norii
-// catalogati incercuiti, cu numele lor.
+// MapViewModel.cs - the "Harta praf / cer" window (R-130): the whole image, with the five
+// classes of the patches (dust, sky, band or nebula, bright clouds or bright nebula, peaks;
+// ADR 0026, ADR 0033) painted differently, each with its tick, and the catalogued clouds
+// circled, with their names.
 //
-// Nu calculeaza nimic: clasele dalelor, cercurile si numele vin din rezultatul nucleului
-// (DustAnalyzer, PrintStretchSimulator); aici se aseaza pe o copie redusa a imaginii si se
-// lasa omul sa stinga straturile, norii toti sau unul cate unul.
+// It computes nothing: the classes of the patches, the circles and the names come from the
+// core's result (DustAnalyzer, PrintStretchSimulator); here they are laid on a reduced copy of
+// the image, and the user is let to switch the layers off, the clouds all together or one by
+// one.
 
 using System;
 using System.Collections.Generic;
@@ -33,7 +34,9 @@ using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>Un strat al hartii: o clasa de dale, cu culoarea, legenda si bifa ei.</summary>
+    /// <summary>
+    /// A layer of the map: one class of patches, with its colour, its legend and its tick.
+    /// </summary>
     public sealed class ClassLayer : ObservableObject
     {
         bool _visible = true;
@@ -45,11 +48,15 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool IsVisible { get => _visible; set => Set(ref _visible, value); }
     }
 
+    /// <summary>
+    /// The map window's state (R-130): the reduced image, the five class layers, the catalogued
+    /// clouds with their switches, and the sentences under the map.
+    /// </summary>
     public sealed class MapViewModel : ObservableObject
     {
-        // Culorile claselor, cu alpha, in ordinea numelor nucleului (DustMap.ClassNames): praful
-        // cald, cerul rece, banda / nebuloasa verde, norii luminosi / nebuloasa stralucitoare
-        // roz, varfurile albe.
+        // The classes' colours, with alpha, in the order of the core's names (DustMap.ClassNames):
+        // the dust warm, the sky cold, the band / nebula green, the bright clouds / bright nebula
+        // pink, the peaks white.
         static readonly (PatchClass Class, Color Colour)[] Palette =
         {
             (PatchClass.Dust, Color.FromArgb(130, 0xE3, 0xB3, 0x41)),
@@ -64,42 +71,67 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Title { get; private init; }
         public BitmapSource Image { get; private init; }
 
-        /// <summary>Cele cinci clase, in ordinea paletei, cu numele caii lor (banda sau cerul modelat).</summary>
+        /// <summary>
+        /// The five classes, in the palette's order, named for their path (the band or the modelled
+        /// sky).
+        /// </summary>
         public IReadOnlyList<ClassLayer> Layers { get; private init; }
         public IReadOnlyList<CloudLayer> Clouds { get; private init; }
 
-        /// <summary>Latimea si inaltimea imaginii reduse: marimea panzei pe care se deseneaza totul.</summary>
+        /// <summary>
+        /// The width and the height of the reduced image: the size of the canvas everything is
+        /// drawn on.
+        /// </summary>
         public int Width { get; private init; }
         public int Height { get; private init; }
 
-        /// <summary>Fara WCS nu exista nori de aratat: bifa norilor e dezactivata si nebifata.</summary>
+        /// <summary>
+        /// Without a WCS there are no clouds to show: the clouds' tick is disabled and off.
+        /// </summary>
         public bool HasWcs { get; private init; }
 
-        /// <summary>Propozitia care defineste praful si cerul, aceeasi ca sub tabelul simularii.</summary>
+        /// <summary>
+        /// The sentence that defines the dust and the sky, the same as under the simulation table.
+        /// </summary>
         public string Definition { get; private init; }
 
-        /// <summary>Propozitia rosie fara WCS; null cu WCS.</summary>
+        /// <summary>The red sentence without a WCS; null with one.</summary>
         public string NoWcsWarning { get; private init; }
 
-        /// <summary>Norii, cercuri si etichete deopotriva; nebifat, lista lor e dezactivata.</summary>
+        /// <summary>The clouds, circles and labels alike; off, their list is disabled.</summary>
         public bool ShowClouds { get => _showClouds; set => Set(ref _showClouds, value); }
 
-        /// <summary>Toti norii vizibili, respectiv niciunul: bifele din lista, nu stratul.</summary>
+        /// <summary>
+        /// Every cloud visible, respectively none: the ticks in the list, not the layer.
+        /// </summary>
         public ICommand SelectAllClouds { get; }
         public ICommand DeselectAllClouds { get; }
 
+        /// <summary>
+        /// Makes the two cloud commands; only <see cref="From"/> builds a complete one.
+        /// </summary>
         MapViewModel()
         {
             SelectAllClouds = new RelayCommand(() => { foreach (CloudLayer c in Clouds) c.IsVisible = true; });
             DeselectAllClouds = new RelayCommand(() => { foreach (CloudLayer c in Clouds) c.IsVisible = false; });
         }
 
+        /// <summary>
+        /// Builds the map of an analysis: the image reduced by the preview's step, one overlay
+        /// per class from the patch under each reduced pixel, one <see cref="CloudLayer"/> per
+        /// cloud row, in reduced pixels.
+        /// </summary>
+        /// <param name="r">The analysis; its raster, simulation and path are read.</param>
+        /// <returns>
+        /// The view-model, every layer visible, the clouds shown when there is a WCS and a row.
+        /// </returns>
         internal static MapViewModel From(AnalysisResult r)
         {
             SimulationResult s = r.Simulation;
             DustMap map = s.Map;
             Raster img = r.Raster;
-            // Acelasi pas ca PrintPreview, ca dalele sa cada pe pixelii imaginii reduse.
+            // The same step as PrintPreview, so that the patches fall on the reduced image's
+            // pixels.
             int stride = PrintPreview.ReductionStride(img);
             BitmapSource image = RasterBitmaps.Region(img, 0, 0, img.W, img.H, stride);
             int w = image.PixelWidth, h = image.PixelHeight;
@@ -159,8 +191,14 @@ namespace AstroPhotoAnalyzer.Wpf
             };
         }
 
-        // Ce inseamna fiecare clasa, cu cifrele din Thresholds, din harta si din rezultat;
-        // explicatie, nu diagnostic. Praful si cerul spun si ce a dat verdictul (ADR 0033).
+        /// <summary>
+        /// What each class means, with the figures from Thresholds, from the map and from the
+        /// result; explanation, not diagnosis. The dust and the sky also say what gave the
+        /// verdict (ADR 0033).
+        /// </summary>
+        /// <param name="cls">The class; None gives an empty string.</param>
+        /// <param name="s">The simulation, for the map and the as-is row.</param>
+        /// <returns>The legend's tail, starting with " - ", to append after the share.</returns>
         static string LegendOf(PatchClass cls, SimulationResult s)
         {
             SimulationRow asIs = s.AsIs;

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - fisierul, parametrii, rularea, si cele sase taburi.
+// MainViewModel.cs - the file, the parameters, the run, and the six tabs.
 //
-// O singura rulare la un moment dat: butonul se dezactiveaza cat timp se calculeaza.
-// Analiza tine cateva secunde pe 23 MP (JPEG-ul e jumatate din ele) si sta pe un fir
-// din pool; progresul vine pe etape, prin IProgress<string>, care isi capteaza contextul
-// la constructie - deci pe firul de interfata, cand e construit acolo.
+// One run at a time: the button is disabled while it computes. The analysis takes a few
+// seconds on 23 MP (the JPEG is half of them) and sits on a pool thread; the progress comes by
+// stage, through IProgress<string>, which captures its context at construction - so on the UI
+// thread, when it is built there.
 //
-// Nu deschide dialoge: alegerea fisierului si a locului de salvare sunt ale ferestrei.
-// Un ViewModel care deschide dialoge nu se mai poate testa.
+// It opens no dialogs: choosing the file and the place to save are the window's. A view-model
+// that opens dialogs can no longer be tested.
 
 using System;
 using System.IO;
@@ -31,6 +31,10 @@ using System.Threading.Tasks;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The window's state (R-110, R-111): the image's path, the parameter fields, the busy and
+    /// error flags, and the tab view-models the result is poured into.
+    /// </summary>
     public sealed class MainViewModel : ObservableObject
     {
         string _path = "";
@@ -40,6 +44,7 @@ namespace AstroPhotoAnalyzer.Wpf
         bool _hasResult;
         AnalysisResult _result;
 
+        /// <summary>Makes the parameter fields and the tabs, all empty.</summary>
         public MainViewModel()
         {
             Parameters = new ParameterFields();
@@ -64,7 +69,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
 
-        /// <summary>Imaginea aleasa, sau gol.</summary>
+        /// <summary>The image chosen, or empty.</summary>
         public string Path
         {
             get => _path;
@@ -100,18 +105,28 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public bool CanSave => HasResult && !IsBusy;
 
-        /// <summary>Raport.txt langa imagine - numele implicit din dialogul de salvare.</summary>
+        /// <summary>Raport.txt beside the image - the default name in the save dialog.</summary>
         public string DefaultReportPath
             => HasPath ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(_path) ?? "", "Raport.txt") : "Raport.txt";
 
-        /// <summary>Alege imaginea si porneste analiza: fara ea fereastra n-are ce arata.</summary>
+        /// <summary>
+        /// Chooses the image and starts the analysis: without it the window has nothing to show.
+        /// </summary>
+        /// <param name="path">
+        /// The image's path; null or empty clears the path and runs nothing.
+        /// </param>
         internal Task OpenAsync(string path)
         {
             Path = path ?? "";
             return HasPath ? RunAsync() : Task.CompletedTask;
         }
 
-        /// <summary>Ruleaza (din nou) pe imaginea aleasa, cu parametrii de acum.</summary>
+        /// <summary>
+        /// Runs (again) on the chosen image, with the fields as they are now: a bad field sets
+        /// <see cref="Error"/> and runs nothing; otherwise the tabs are cleared, the core runs on
+        /// a pool thread, and the tabs are filled, or <see cref="Error"/> gets the exception's
+        /// messages. Nothing happens without a path or while a run is on.
+        /// </summary>
         internal async Task RunAsync()
         {
             if (!HasPath || IsBusy) return;
@@ -143,7 +158,12 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Raport.txt: banner + corp, identic cu ce ar scrie consola cu -o.</summary>
+        /// <summary>
+        /// Raport.txt: banner + body, identical to what the console would write with -o.
+        /// </summary>
+        /// <param name="file">
+        /// The file to write, replaced if it exists; nothing is written without a result.
+        /// </param>
         internal void SaveReport(string file)
         {
             if (_result == null) return;
@@ -151,6 +171,8 @@ namespace AstroPhotoAnalyzer.Wpf
             ReportWriter.WriteFull(_result, w);
         }
 
+        /// <summary>Pours one result into the seven tabs.</summary>
+        /// <param name="r">The analysis; not null.</param>
         void Populate(AnalysisResult r)
         {
             Report.Populate(r);
@@ -162,12 +184,21 @@ namespace AstroPhotoAnalyzer.Wpf
             Curves.Populate(r);
         }
 
+        /// <summary>Empties the seven tabs.</summary>
         void ClearTabs()
         {
             Report.Clear(); Tones.Clear(); Export.Clear(); Resolution.Clear(); Background.Clear(); Preview.Clear(); Curves.Clear();
         }
 
-        /// <summary>Mesajul exceptiei, cu cauza daca exista; fara stiva - nu ajuta pe nimeni pe ecran.</summary>
+        /// <summary>
+        /// The exception's message, with the cause if there is one; no stack - it helps nobody on
+        /// screen.
+        /// </summary>
+        /// <param name="e">The exception; not null.</param>
+        /// <returns>
+        /// Its message, then each inner message that is not blank and not already contained,
+        /// separated by blank lines.
+        /// </returns>
         internal static string Describe(Exception e)
         {
             string m = e.Message;

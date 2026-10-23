@@ -15,8 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ResultViews.xaml.cs - legaturile cu XAML-ul celor sapte taburi. Comportamentul e in
-// ViewModel-uri; aici e doar marimea galeriei tabului Curbe, pe care numai vederea o stie.
+// ResultViews.xaml.cs - the links with the XAML of the seven tabs. The behaviour is in the
+// view-models; here there is only the size of the Curbe tab's gallery, which only the view
+// knows.
 
 using System.Windows;
 using System.Windows.Controls;
@@ -24,21 +25,65 @@ using System.Windows.Media;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    public partial class ReportView : UserControl { public ReportView() => InitializeComponent(); }
-    public partial class TonesView : UserControl { public TonesView() => InitializeComponent(); }
-    public partial class ExportView : UserControl { public ExportView() => InitializeComponent(); }
-    public partial class ResolutionView : UserControl { public ResolutionView() => InitializeComponent(); }
-    public partial class BackgroundView : UserControl { public BackgroundView() => InitializeComponent(); }
-    public partial class PreviewView : UserControl { public PreviewView() => InitializeComponent(); }
+    /// <summary>The Raport tab's view (R-112); the XAML holds everything.</summary>
+    public partial class ReportView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public ReportView() => InitializeComponent();
+    }
 
+    /// <summary>The Tonuri tab's view (R-113); the XAML holds everything.</summary>
+    public partial class TonesView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public TonesView() => InitializeComponent();
+    }
+
+    /// <summary>The Export tab's view (R-114); the XAML holds everything.</summary>
+    public partial class ExportView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public ExportView() => InitializeComponent();
+    }
+
+    /// <summary>The Rezolutie tab's view (R-115); the XAML holds everything.</summary>
+    public partial class ResolutionView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public ResolutionView() => InitializeComponent();
+    }
+
+    /// <summary>The Culoare tab's view (R-116); the XAML holds everything.</summary>
+    public partial class BackgroundView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public BackgroundView() => InitializeComponent();
+    }
+
+    /// <summary>The Preview tab's view (R-117); the XAML holds everything.</summary>
+    public partial class PreviewView : UserControl
+    {
+        /// <summary>Loads the XAML.</summary>
+        public PreviewView() => InitializeComponent();
+    }
+
+    /// <summary>
+    /// The Curbe tab's view (R-146): the XAML, plus the gallery's size for the view-model.
+    /// </summary>
     public partial class CurvesView : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public CurvesView() => InitializeComponent();
 
         /// <summary>
-        /// Previzualizarile se cer la marimea zonei galeriei (R-146), in pixeli ai ecranului:
-        /// "Calculeaza" o ia de la view-model, unde o pune randul acesta la fiecare reasezare.
+        /// The previews are asked for at the size of the gallery area (R-146), in pixels of the
+        /// screen: "Calculeaza" takes it from the view-model, where this handler puts it at every
+        /// layout pass.
         /// </summary>
+        /// <param name="sender">The gallery area; not read.</param>
+        /// <param name="e">
+        /// The new size, in device-independent units, scaled here by the DPI.
+        /// </param>
         void GallerySizeChanged(object sender, SizeChangedEventArgs e)
         {
             if (DataContext is not CurvesTabViewModel vm) return;

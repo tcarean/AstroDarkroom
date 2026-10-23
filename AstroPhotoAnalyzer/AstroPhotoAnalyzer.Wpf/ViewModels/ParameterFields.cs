@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ParameterFields.cs - campurile de text ale panoului de parametri si traducerea lor in
-// Parameters. Echivalentul lui Options din consola: doar verificare sintactica; ce
-// inseamna valorile decide nucleul.
+// ParameterFields.cs - the text fields of the parameter panel and their translation into
+// Parameters. The equivalent of the console's Options: syntax checks only; what the values
+// mean is the core's to decide.
 //
-// Campurile sunt siruri, nu numere, dintr-un motiv de interfata: un TextBox legat la un
-// double refuza sa lase omul sa stearga ca sa scrie altceva, si il coloreaza rosu la
-// jumatatea tastarii. Se parseaza o data, la "Analizeaza".
+// The fields are strings, not numbers, for a reason of interface: a TextBox bound to a double
+// refuses to let the user clear it to type something else, and colours it red halfway through
+// typing. They are parsed once, at "Analizeaza".
 
 using System;
 using System.Collections.Generic;
@@ -30,6 +30,10 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The parameter card's fields as text (R-024), the help text of each, and
+    /// <see cref="TryBuild"/>, which turns them into a <see cref="Parameters"/> or a message.
+    /// </summary>
     public sealed class ParameterFields : ObservableObject
     {
         static readonly Parameters D = new();
@@ -44,16 +48,16 @@ namespace AstroPhotoAnalyzer.Wpf
         string _frame = Fmt.F0(D.FrameCm);
         string _wcsPath = "";
 
-        // Profilul ICC din care a fost luat Dmax-ul, si textul pus atunci in camp: numele
-        // ajunge in raport doar cat timp campul mai arata textul acela (R-132).
+        // The ICC profile the Dmax was taken from, and the text put in the field then: the name
+        // reaches the report only while the field still shows that text (R-132).
         string _dmaxProfile, _dmaxProfileText, _dmaxProfileNote, _dmaxProfilePath;
 
         public IReadOnlyList<string> Media { get; } = Parameters.MediumNames;
 
         /// <summary>
-        /// Alegerea unui mediu scrie Dmax-ul lui in campul Dmax, peste orice era acolo, ca
-        /// omul sa vada cu ce Dmax se va analiza. Valoarea e a nucleului (R-020). Ordinea
-        /// conteaza: cine le pune pe amandoua din cod pune mediul intai, apoi Dmax-ul.
+        /// Choosing a medium writes its Dmax into the Dmax field, over whatever was there, so
+        /// that the user sees which Dmax the analysis will use. The value is the core's (R-020).
+        /// The order matters: code that sets both sets the medium first, then the Dmax.
         /// </summary>
         public string Medium
         {
@@ -68,13 +72,19 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Completat cu Dmax-ul mediului ales; omul il poate schimba. Gol = al mediului.</summary>
+        /// <summary>
+        /// Filled with the chosen medium's Dmax; the user may change it. Empty = the medium's.
+        /// </summary>
         public string Dmax { get => _dmax; set => Set(ref _dmax, value); }
 
         /// <summary>
-        /// Dmax-ul unui profil ales in fereastra "Din profil ICC...": intra in camp, iar numele
-        /// profilului il insoteste in raport pana cand omul scrie altceva sau alege un mediu.
+        /// The Dmax of a profile chosen in the "Din profil ICC..." window: it goes into the
+        /// field, and the profile's name accompanies it in the report until the user types
+        /// something else or chooses a medium.
         /// </summary>
+        /// <param name="profile">
+        /// The row chosen; null, or one that could not be read, changes nothing.
+        /// </param>
         public void UseProfile(IccProfileRow profile)
         {
             if (profile == null || !profile.Readable) return;
@@ -85,6 +95,13 @@ namespace AstroPhotoAnalyzer.Wpf
             _dmaxProfilePath = profile.File;
         }
 
+        /// <summary>
+        /// The text the Dmax field shows for a medium: the core's Dmax, as Fmt.Dmax writes it.
+        /// </summary>
+        /// <param name="medium">The medium's name, as in <see cref="Media"/>, any case.</param>
+        /// <returns>
+        /// "2.4" for baryta, and so on; an unknown name gives the default medium's.
+        /// </returns>
         static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
         public string Distance { get => _distance; set => Set(ref _distance, value); }
         public string Sizes { get => _sizes; set => Set(ref _sizes, value); }
@@ -93,17 +110,30 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Passepartout { get => _passepartout; set => Set(ref _passepartout, value); }
         public string Frame { get => _frame; set => Set(ref _frame, value); }
 
-        /// <summary>FITS-ul al carui WCS se imprumuta imaginii (R-027); gol = WCS-ul fisierului, daca are.</summary>
+        /// <summary>
+        /// The FITS whose WCS is lent to the image (R-027); empty = the file's own WCS, if it has
+        /// one.
+        /// </summary>
         public string WcsPath { get => _wcsPath; set => Set(ref _wcsPath, value); }
 
-        /// <summary>Parametrii, sau null cu un mesaj in <paramref name="error"/>.</summary>
+        /// <summary>
+        /// The parameters, or null with a message in <paramref name="error"/>: the first field
+        /// that is not a number or is out of its range, or the core's rule between parameters
+        /// (Parameters.Validate).
+        /// </summary>
+        /// <param name="error">
+        /// The message for the user, in Romanian; null when the parameters are returned.
+        /// </param>
+        /// <returns>
+        /// The parameters, every empty field left to the core's default; null on a message.
+        /// </returns>
         internal Parameters TryBuild(out string error)
         {
             error = null;
             try
             {
-                // Campul care arata inca textul pus de mediu nu e un Dmax dat: ramane al nucleului,
-                // cu toate zecimalele lui, nu o copie rotunjita la afisare (R-024).
+                // A field that still shows the text the medium put there is not a given Dmax: it
+                // stays the core's, with all its decimals, not a copy rounded for display (R-024).
                 string dmax = (Dmax ?? "").Trim();
                 bool fromProfile = _dmaxProfile != null && dmax == _dmaxProfileText;
                 bool untouched = !fromProfile && dmax == DmaxTextOf(Medium);
@@ -122,7 +152,7 @@ namespace AstroPhotoAnalyzer.Wpf
                     FrameCm = OptionalNumber(Frame, "rama", 0, 100, allowZero: true) ?? D.FrameCm,
                     WcsPath = string.IsNullOrWhiteSpace(WcsPath) ? null : WcsPath.Trim(),
                 };
-                // Regulile intre parametri sunt ale nucleului; aici doar se arata mesajul.
+                // The rules between parameters are the core's; here only the message is shown.
                 error = p.Validate();
                 return error == null ? p : null;
             }
@@ -134,10 +164,15 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Fundalul-tinta din camp: gol = niciunul; un text care nu e numar da mesajul campurilor;
-        /// intervalul si rotunjirea le judeca nucleul, cu mesajul lui (Parameters.TargetBackgroundError,
-        /// R-023), ca fereastra sa refuze ce refuza si consola, cu aceleasi cuvinte.
+        /// The target background from its field: empty = none; a text that is not a number gives
+        /// the fields' message; the range and the rounding are judged by the core, with its
+        /// message (Parameters.TargetBackgroundError, R-023), so that the window refuses what the
+        /// console refuses, in the same words.
         /// </summary>
+        /// <param name="text">The field's text; null or blank is allowed.</param>
+        /// <returns>
+        /// The level as typed, 0..1, or null for an empty field; a bad text throws FormatException.
+        /// </returns>
         static double? TargetBgOf(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
@@ -148,9 +183,18 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Numarul dintr-un camp, cu cultura invarianta (R-024); un text care nu e numar da
-        /// mesajul campurilor, cu punctul ca separator. Un singur loc pentru toate campurile.
+        /// The number in a field, with the invariant culture (R-024); a text that is not a number
+        /// gives the fields' message, with the point as the separator. One place for every field.
+        /// "NaN", "Infinity" and "-Infinity" read too, as those values; the range checks of the
+        /// callers refuse the infinities, and only the target background's refuses NaN.
         /// </summary>
+        /// <param name="text">The field's text, trimmed here; not null.</param>
+        /// <param name="what">
+        /// The field's name for the message, in Romanian ("Dmax", "distanta").
+        /// </param>
+        /// <returns>
+        /// The number; a text that does not parse throws FormatException with the message.
+        /// </returns>
         static double ParseNumber(string text, string what)
         {
             if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
@@ -158,6 +202,20 @@ namespace AstroPhotoAnalyzer.Wpf
             return v;
         }
 
+        /// <summary>
+        /// An optional number in a range: empty = none; outside the range, a FormatException
+        /// with the range in the message. NaN passes both comparisons and is returned.
+        /// </summary>
+        /// <param name="text">The field's text; null or blank gives null.</param>
+        /// <param name="what">The field's name for the message, in Romanian.</param>
+        /// <param name="lo">
+        /// The lower bound; excluded, or included with <paramref name="allowZero"/>.
+        /// </param>
+        /// <param name="hi">The upper bound, included.</param>
+        /// <param name="allowZero">
+        /// True when <paramref name="lo"/> itself (0 means "none") is allowed.
+        /// </param>
+        /// <returns>The number, or null for an empty field.</returns>
         static double? OptionalNumber(string text, string what, double lo, double hi, bool allowZero = false)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
@@ -168,9 +226,9 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Textele de ajutor ale campurilor - aceleasi in tooltip si pe eticheta. Paragrafe
-        /// despartite de o linie goala: un TextBlock respecta '\n', iar un singur bloc de
-        /// 900 de caractere nu se citeste. Un test cere cel putin doua paragrafe fiecaruia.
+        /// The fields' help texts - the same in the tooltip and on the label. Paragraphs
+        /// separated by an empty line: a TextBlock honours '\n', and a single block of 900
+        /// characters cannot be read. A test asks at least two paragraphs of each.
         /// </summary>
         public string DistanceHelp =>
             "De la cati metri se va privi printul. Testul de marime: steaua (FWHM x pasul pixelului pe hartie) "
@@ -232,6 +290,13 @@ namespace AstroPhotoAnalyzer.Wpf
             + "\n\n"
             + "Intra doar in marimea exterioara a tabloului.";
 
+        /// <summary>
+        /// The candidate widths from their field: numbers separated by commas, semicolons or
+        /// spaces, each positive; a FormatException for a part that is not one, or for no part at
+        /// all. NaN and Infinity pass as positive.
+        /// </summary>
+        /// <param name="text">The field's text; null counts as empty.</param>
+        /// <returns>The widths in cm, in the order typed, at least one.</returns>
         static double[] SizesOf(string text)
         {
             var list = new List<double>();
@@ -245,6 +310,13 @@ namespace AstroPhotoAnalyzer.Wpf
             return list.ToArray();
         }
 
+        /// <summary>
+        /// The target aspect from its field: two positive numbers separated by ':', 'x', 'X' or
+        /// '/'; anything else is a FormatException. NaN is refused as not positive; an infinite
+        /// side passes, and gives an infinite, zero or NaN ratio.
+        /// </summary>
+        /// <param name="text">The field's text; null or blank gives null.</param>
+        /// <returns>Width over height, or null for an empty field.</returns>
         static double? AspectOf(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
