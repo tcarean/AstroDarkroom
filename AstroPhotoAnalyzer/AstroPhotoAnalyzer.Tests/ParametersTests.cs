@@ -182,4 +182,42 @@ public class ParametersTests
             Assert.All(error, ch => Assert.True(ch < 128, "non-ASCII in the message: " + error));
         }
     }
+
+    /// <summary>
+    /// NaN and infinity read as numbers in both applications but no analysis can use them: the
+    /// core's Validate refuses each number parameter with one message, which the console and
+    /// the window show in the same words (R-024, ADR 0045). The aspect must also be positive:
+    /// "1:Infinity" parses to 0.
+    /// </summary>
+    [Theory]
+    [InlineData("Dmax", double.NaN, "Dmax trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Dmax", double.PositiveInfinity, "Dmax trebuie sa fie un numar; a primit infinit")]
+    [InlineData("Distance", double.NaN, "distanta de privire trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Distance", double.NegativeInfinity, "distanta de privire trebuie sa fie un numar; a primit minus infinit")]
+    [InlineData("Width", double.NaN, "latimea de print trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Width", double.PositiveInfinity, "latimea de print trebuie sa fie un numar; a primit infinit")]
+    [InlineData("Aspect", double.NaN, "raportul de aspect trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
+    [InlineData("Aspect", double.PositiveInfinity, "raportul de aspect trebuie sa fie un numar pozitiv; a primit infinit")]
+    [InlineData("Aspect", 0.0, "raportul de aspect trebuie sa fie un numar pozitiv; a primit 0")]
+    [InlineData("Passepartout", double.NaN, "passepartout-ul trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Frame", double.PositiveInfinity, "rama trebuie sa fie un numar; a primit infinit")]
+    public void R024_NaNAndInfinityAreRefusedByValidateWithOneMessagePerParameter(string which, double value, string message)
+    {
+        string error = With(which, value).Validate();
+
+        Assert.Equal(message, error);
+        Assert.All(error, ch => Assert.True(ch < 128, "non-ASCII in the message: " + error));
+        Assert.Null(With(which, 20).Validate());   // the same parameter, finite: nothing to say
+    }
+
+    static Parameters With(string which, double value) => which switch
+    {
+        "Dmax" => new Parameters { DmaxOverride = value },
+        "Distance" => new Parameters { ViewingDistanceM = value },
+        "Width" => new Parameters { CandidateWidthsCm = new[] { 60, value } },
+        "Aspect" => new Parameters { TargetAspect = value },
+        "Passepartout" => new Parameters { PassepartoutCm = value },
+        "Frame" => new Parameters { FrameCm = value, PassepartoutCm = 0 },   // 0 = no passepartout, so the rule between the two stays out
+        _ => throw new ArgumentException(which),
+    };
 }

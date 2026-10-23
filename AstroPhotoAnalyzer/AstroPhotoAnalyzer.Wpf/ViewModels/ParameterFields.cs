@@ -120,8 +120,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The parameters, or null with a message in <paramref name="error"/>: the first field
-        /// that is not a number or is out of its range, or the core's rule between parameters
-        /// (Parameters.Validate).
+        /// that is not a number or is out of its range, or the core's own checks
+        /// (Parameters.Validate: NaN and infinity, the rule between parameters).
         /// </summary>
         /// <param name="error">
         /// The message for the user, in Romanian; null when the parameters are returned.
@@ -189,7 +189,9 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The number in a field, with the invariant culture (R-024); a text that is not a number
         /// gives the fields' message, with the point as the separator. One place for every field.
         /// "NaN", "Infinity" and "-Infinity" read too, as those values; the range checks of the
-        /// callers refuse the infinities, and only the target background's refuses NaN.
+        /// callers refuse the infinities they bound, the target background's refuses NaN, and
+        /// what passes them is refused by the core's Parameters.Validate, which
+        /// <see cref="TryBuild"/> calls (R-024).
         /// </summary>
         /// <param name="text">The field's text, trimmed here; not null.</param>
         /// <param name="what">
@@ -207,7 +209,8 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// An optional number in a range: empty = none; outside the range, a FormatException
-        /// with the range in the message. NaN passes both comparisons and is returned.
+        /// with the range in the message. NaN passes both comparisons and is returned;
+        /// Parameters.Validate refuses it (R-024).
         /// </summary>
         /// <param name="text">The field's text; null or blank gives null.</param>
         /// <param name="what">The field's name for the message, in Romanian.</param>
@@ -296,7 +299,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The candidate widths from their field: numbers separated by commas, semicolons or
         /// spaces, each positive; a FormatException for a part that is not one, or for no part at
-        /// all. NaN and Infinity pass as positive.
+        /// all. NaN and Infinity pass as positive; Parameters.Validate refuses them (R-024).
         /// </summary>
         /// <param name="text">The field's text; null counts as empty.</param>
         /// <returns>The widths in cm, in the order typed, at least one.</returns>
@@ -316,7 +319,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The target aspect from its field: two positive numbers separated by ':', 'x', 'X' or
         /// '/'; anything else is a FormatException. NaN is refused as not positive; an infinite
-        /// side passes, and gives an infinite, zero or NaN ratio.
+        /// side passes, and gives an infinite, zero or NaN ratio, which Parameters.Validate
+        /// refuses (R-024).
         /// </summary>
         /// <param name="text">The field's text; null or blank gives null.</param>
         /// <returns>Width over height, or null for an empty field.</returns>

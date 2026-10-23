@@ -39,9 +39,10 @@ names the metric and the threshold; a test in `RecommendationsTests` on a scene 
 (extend `Scenes` if none does); goldens; **its row in `../requirements.md` and
 `recommendations-and-report.md`**.
 
-**A new parameter**: `Parameters.cs` (default + comment), `Options.cs` + `--help` +
-`OptionsTests`, `ParametersFrom` in `AnalyzerCli`, `ParameterFields` + `MainWindow.xaml` +
-`ParameterFieldsTests`, appendix F; goldens (help.txt changes); **its row in
+**A new parameter**: `Parameters.cs` (default + comment, and for a number its `FiniteError`
+line in `Validate`, so that NaN and infinity are refused with the others, R-024), `Options.cs`
++ `--help` + `OptionsTests`, `ParametersFrom` in `AnalyzerCli`, `ParameterFields` +
+`MainWindow.xaml` + `ParameterFieldsTests`, appendix F; goldens (help.txt changes); **its row in
 `../requirements.md` and `console.md`, "Parameters"**.
 
 **A new print medium**: the source of its Dmax first, in a new ADR beside ADR 0028 (a value

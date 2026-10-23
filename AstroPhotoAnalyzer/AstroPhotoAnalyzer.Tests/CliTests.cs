@@ -132,4 +132,32 @@ public class CliTests
         Assert.Equal(4, q.FrameCm);
         Assert.Equal(d.PassepartoutCm, q.PassepartoutCm);
     }
+
+    /// <summary>
+    /// The number flags read "NaN" and "Infinity" (R-024): the core refuses them before the
+    /// image is read, with its message behind "EROARE: " and exit 1, like the rule between
+    /// parameters (R-025). --dmax Infinity is not here: the console's own range check refuses it.
+    /// </summary>
+    [Theory]
+    [InlineData("--dmax", "NaN", "Dmax trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("--distance", "NaN", "distanta de privire trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("--distance", "Infinity", "distanta de privire trebuie sa fie un numar; a primit infinit")]
+    [InlineData("--sizes", "NaN", "latimea de print trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("--sizes", "60,Infinity", "latimea de print trebuie sa fie un numar; a primit infinit")]
+    [InlineData("--aspect", "NaN:1", "raportul de aspect trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
+    [InlineData("--aspect", "Infinity:1", "raportul de aspect trebuie sa fie un numar pozitiv; a primit infinit")]
+    [InlineData("--aspect", "1:Infinity", "raportul de aspect trebuie sa fie un numar pozitiv; a primit 0")]
+    [InlineData("--passepartout", "NaN", "passepartout-ul trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("--frame", "Infinity", "rama trebuie sa fie un numar; a primit infinit")]
+    public void R024_TheConsoleRefusesNaNAndInfinityBeforeReading(string flag, string value, string message)
+    {
+        using var ws = new TempWorkspace();
+        string tif = ws.WriteFile("x.tif", new byte[16]);   // never read: refused before
+
+        var (code, output, err) = Run(tif, flag, value);
+
+        Assert.Equal(1, code);
+        Assert.Equal("EROARE: " + message + Environment.NewLine, err);
+        Assert.StartsWith(VersionInfo.Banner, output);
+    }
 }

@@ -31,7 +31,11 @@
 
 The console (`Options.cs`) and the window (`ParameterFields.cs`) validate syntax only,
 with the invariant culture (a comma decimal is an error that says to use the point).
-Neither holds a copy of the defaults: an unset field means "the core's default".
+Neither holds a copy of the defaults: an unset field means "the core's default". What the
+syntax lets through but no analysis can use, NaN and infinity (`double.TryParse` reads the
+words, and a range check is false on NaN), is the core's to refuse: `Parameters.Validate()`
+names the parameter and quotes the value in one message both applications show (R-024,
+ADR 0045), the same words NaN and infinity get in the target background's message.
 
 The media are the values of `PrintMedium`, and their names one list, `Parameters.MediumNames`
 (the enum's order, through `NameOf`). `Options.Media` is that list, so the `--medium` line of
@@ -58,7 +62,10 @@ words.
 
 Rules between parameters are the core's: `Parameters.Validate()` returns a message or
 null, and both the console (exit 1, before any reading) and the window (the error text)
-call it. Currently one rule: **the passepartout must be at least
+call it. It checks, in this order, the target background after rounding (R-023), NaN and
+infinity in each number parameter in the parameters' order (`FiniteError`; the aspect ratio
+through `PositiveError`, since an infinite side arrives as a ratio of 0, infinity or NaN),
+and currently one rule between two parameters: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
 checked. The window's distance, aspect, target-background, framing and WCS fields carry help
 text (`DistanceHelp`, `AspectHelp`, `TargetBgHelp`, `PassepartoutHelp`, `FrameHelp`, `WcsHelp`) as

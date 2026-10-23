@@ -140,6 +140,33 @@ public class ParameterFieldsTests
         Assert.Equal(0, p!.PassepartoutCm);
     }
 
+    /// <summary>
+    /// A field that reads "NaN" or "Infinity" past the fields' own checks gets the core's
+    /// message, the same the console prints (R-024, ADR 0045). Dmax, the distance, the
+    /// passepartout and the frame refuse "Infinity" by their range already; "NaN:1" is refused
+    /// by the aspect field as not positive; those are not here.
+    /// </summary>
+    [Theory]
+    [InlineData("Dmax", "NaN", "Dmax trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Distance", "NaN", "distanta de privire trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Sizes", "NaN", "latimea de print trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Sizes", "60, Infinity", "latimea de print trebuie sa fie un numar; a primit infinit")]
+    [InlineData("Aspect", "Infinity:1", "raportul de aspect trebuie sa fie un numar pozitiv; a primit infinit")]
+    [InlineData("Aspect", "1:Infinity", "raportul de aspect trebuie sa fie un numar pozitiv; a primit 0")]
+    [InlineData("Aspect", "Infinity:Infinity", "raportul de aspect trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
+    [InlineData("Passepartout", "NaN", "passepartout-ul trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    [InlineData("Frame", "NaN", "rama trebuie sa fie un numar; a primit NaN, care nu e un numar")]
+    public void R024_NaNAndInfinityInAFieldGiveTheCoresMessage(string field, string value, string message)
+    {
+        var f = new ParameterFields();
+        typeof(ParameterFields).GetProperty(field)!.SetValue(f, value);
+
+        Parameters? p = f.TryBuild(out string? error);
+
+        Assert.Null(p);
+        Assert.Equal(message, error);
+    }
+
     [Fact]
     public void R026_TheFramingFieldsCarryHelpText()
     {

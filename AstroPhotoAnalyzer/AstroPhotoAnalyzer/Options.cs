@@ -219,8 +219,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Reads a number in the invariant culture (a decimal point, no thousands separator).
         /// "NaN", "Infinity" and "-Infinity" read too, as those values; the callers' range checks
-        /// refuse the infinities they bound, and only --target-bg's (TargetBackgroundError)
-        /// refuses NaN.
+        /// refuse the infinities they bound, --target-bg's (TargetBackgroundError) refuses NaN,
+        /// and what passes them is refused by the core's Parameters.Validate, which AnalyzerCli
+        /// calls before reading the image (R-024).
         /// </summary>
         /// <param name="s">The text typed.</param>
         /// <param name="v">The number read; 0 when the text does not read.</param>
@@ -240,8 +241,8 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <returns>
         /// <c>true</c> unless the text has not exactly two parts, a part does not read
-        /// (TryNum) or a part is 0 or negative; a NaN or infinite part passes, and so does the
-        /// ratio it gives.
+        /// (TryNum) or a part is 0 or negative; a NaN or infinite part passes here, and the
+        /// ratio it gives (infinity, 0 or NaN) is refused by Parameters.Validate (R-024).
         /// </returns>
         static bool TryAspect(string s, out double ratio)
         {

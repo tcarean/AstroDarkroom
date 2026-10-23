@@ -183,17 +183,47 @@ namespace AstroPhotoAnalyzer
         {
             double v = RoundTargetBackground(given);
             if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
-            {
-                // NaN and infinity in words: ToString would write them "NaN" and with the
-                // infinity symbol, which the console cannot show in every code page.
-                string got = double.IsNaN(given) ? "NaN, care nu e un numar"
-                    : double.IsPositiveInfinity(given) ? "infinit"
-                    : double.IsNegativeInfinity(given) ? "minus infinit"
-                    : given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture);
-                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {got}";
-            }
+                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {Quote(given)}";
             return null;
         }
+
+        /// <summary>
+        /// A given value as a refusal quotes it: NaN and infinity in words, since ToString would
+        /// write them "NaN" and with the infinity symbol, which the console cannot show in every
+        /// code page; any other value with up to nine decimals, the invariant culture.
+        /// </summary>
+        /// <param name="given">The value as the user gave it; any double.</param>
+        /// <returns>
+        /// "NaN, care nu e un numar", "infinit", "minus infinit", or the number as text.
+        /// </returns>
+        static string Quote(double given)
+            => double.IsNaN(given) ? "NaN, care nu e un numar"
+             : double.IsPositiveInfinity(given) ? "infinit"
+             : double.IsNegativeInfinity(given) ? "minus infinit"
+             : given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture);
+
+        /// <summary>
+        /// Why a number parameter cannot be used: NaN or infinity, which both applications'
+        /// parsers read ("NaN", "Infinity", "-Infinity") and whose range checks let NaN through
+        /// (every comparison with it is false). One message per parameter, the core's, so that
+        /// the console and the window refuse the same values in the same words (R-024, ADR 0045).
+        /// </summary>
+        /// <param name="what">The parameter's name for the user, in Romanian ("Dmax", "rama").</param>
+        /// <param name="value">The value given; null (not given) is never refused.</param>
+        /// <returns>The Romanian sentence, quoting the value; null when it is finite or null.</returns>
+        static string FiniteError(string what, double? value)
+            => value.HasValue && !double.IsFinite(value.Value) ? $"{what} trebuie sa fie un numar; a primit {Quote(value.Value)}" : null;
+
+        /// <summary>
+        /// <see cref="FiniteError"/> for a parameter that must also be positive: the aspect
+        /// ratio, which the parsers build from two sides, so that "1:Infinity" arrives as 0 and
+        /// "Infinity:Infinity" as NaN, past their checks on the sides.
+        /// </summary>
+        /// <param name="what">The parameter's name for the user, in Romanian.</param>
+        /// <param name="value">The value given; null (not given) is never refused.</param>
+        /// <returns>The Romanian sentence, quoting the value; null when it is finite and positive, or null.</returns>
+        static string PositiveError(string what, double? value)
+            => value.HasValue && !(double.IsFinite(value.Value) && value.Value > 0) ? $"{what} trebuie sa fie un numar pozitiv; a primit {Quote(value.Value)}" : null;
 
         /// <summary>
         /// The simulation's grid: 0.05 .. 0.20 in steps of 0.01, the levels a night sky is
@@ -232,10 +262,12 @@ namespace AstroPhotoAnalyzer
         internal int Seed { get; init; } = 0;
 
         /// <summary>
-        /// The rules that tie two parameters together - what a field alone cannot check - and
-        /// the target background after rounding (TargetBackgroundError). Returns the message for
-        /// the user, or null when all is well. The console and the window both call it, so as to
-        /// refuse the same things with the same words.
+        /// What the applications' syntax checks cannot judge: the target background after
+        /// rounding (TargetBackgroundError, R-023), then NaN and infinity in each number
+        /// parameter, in the parameters' order (FiniteError, PositiveError for the aspect;
+        /// R-024), then the rule that ties the passepartout to the frame (R-025). Returns the
+        /// message for the user, or null when all is well. The console and the window both call
+        /// it, so as to refuse the same things with the same words.
         /// </summary>
         /// <returns>
         /// The first rule broken, as a Romanian sentence for the user; null when none is.
@@ -247,6 +279,13 @@ namespace AstroPhotoAnalyzer
                 string bg = TargetBackgroundError(TargetBackground.Value);
                 if (bg != null) return bg;
             }
+            string notANumber = FiniteError("Dmax", DmaxOverride)
+                ?? FiniteError("distanta de privire", ViewingDistanceM)
+                ?? (CandidateWidthsCm ?? Array.Empty<double>()).Select(w => FiniteError("latimea de print", w)).FirstOrDefault(e => e != null)
+                ?? PositiveError("raportul de aspect", TargetAspect)
+                ?? FiniteError("passepartout-ul", PassepartoutCm)
+                ?? FiniteError("rama", FrameCm);
+            if (notANumber != null) return notANumber;
             double minPassepartout = Thresholds.PassepartoutMinFrameRatio * FrameCm;
             if (PassepartoutCm > 0 && PassepartoutCm < minPassepartout)
                 return $"passepartout-ul ({Fmt.F1(PassepartoutCm)} cm) e sub dublul latimii ramei ({Fmt.F1(FrameCm)} cm): "
