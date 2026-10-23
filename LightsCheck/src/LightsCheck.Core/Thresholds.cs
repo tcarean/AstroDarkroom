@@ -200,6 +200,14 @@ internal static class Th
     /// </summary>
     internal const double PolarDriftFwhmFraction = 1.0 / 3;
 
+    /// <summary>
+    /// The registered span, in hours, under which the field rotation is not read for the polar
+    /// error's upper bound: the per-frame rotation scatters by about 10" once the dithers'
+    /// projection is taken out (Veil, 2026-10-24), so an hour at 1'/h is six times the noise
+    /// and a ten-minute run would read noise as arcminutes per hour.
+    /// </summary>
+    internal const double PolarRotationMinHours = 1.0;
+
     /// <summary>The side of the central square of the raw mosaic kept from every light for the sensor's pattern (R-046); the whole frame when it is smaller.</summary>
     internal const int PatternCrop = 512;
 

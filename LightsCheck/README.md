@@ -75,7 +75,8 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   backlash pe RA); `pe DEC`, alinierea polara, vantul sau o atingere a monturii; `oblica`,
   amandoua sau o lovitura. Fara axa ramane doar unghiul: `dara la -90 grade`.
 - **DRIFT SI ROTATIE**: driftul dintre cadrele consecutive fara dithering (masurat pe
-  perechile de cadre fara pauza intre ele, unde nu s-a apasat nimic; cand sunt sub 3 astfel de
+  perechile de cadre fara pauza si fara miscare intre ele, unde nu s-a apasat nimic si
+  montura n-a sarit; cand sunt sub 3 astfel de
   perechi, de exemplu la dithering dupa fiecare cadru, se foloseste orice pereche fara miscare
   de 5 px, cu mentiunea `aproximativ`, fiindca apasarile mici de dithering intra in cifra),
   driftul intr-o expunere (pe ce axa a monturii) si dara de walking noise pe care o lasa in
@@ -84,16 +85,19 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   Alinierea polara se citeste din driftul pe DEC si din rotatia de camp: o axa polara gresita
   cu un unghi `e` face stelele sa alunece pe DEC si campul sa se roteasca, in proportii care
   depind doar de declinatie. Driftul pe DEC singur da o limita de jos a erorii (`eroare de cel
-  putin 4'`); rotatia, pusa toata pe seama alinierii, da limita de sus (`eroare intre 4' si
-  10'`), pentru care trebuie declinatia din plate solve-ul de la radacina sesiunii. Randul
+  putin 4'`); rotatia de camp, curatata de dithering (fiecare miscare pe RA roteste putin
+  cadrul, cu pasul ei inmultit cu sinusul declinatiei, si pe Veil asta era cea mai mare parte
+  din rotatia masurata) si pusa toata pe seama alinierii, da limita de sus (`eroare intre 4'
+  si 7'`), pentru care trebuie declinatia din plate solve-ul de la radacina sesiunii si o
+  sesiune de cel putin o ora. Randul
   spune si cat costa: driftul pe care alinierea il poate face intr-o expunere, in pixeli, si
   alungirea pe care o adauga unei stele cu FWHM-ul sesiunii. `drift pe RA` spune cat din
   driftul pe RA poate veni din aliniere (rotatia inmultita cu tangenta declinatiei); ce e peste
   nu e alinierea, ci urmarirea (viteza, eroarea periodica, flexiune). Pe sesiunea Veil din
-  2026-10-06 driftul pe RA de 5.8"/min vine doar in mica parte din aliniere (cel mult 1.6"/min),
-  iar alinierea, intre 4' si 12', costa sub 0.7 px intr-o expunere de 120 s: nu ea a miscat
-  cadrele. Nemasurabila fara perechi de cadre fara pauza (o serie de 10+ cadre fara dithering
-  ar masura-o); fara plate solve ramane doar limita de jos. Impartirea erorii pe altitudine si
+  2026-10-06 driftul pe RA de 4.4"/min vine doar in mica parte din aliniere (cel mult 0.7"/min),
+  iar alinierea, intre 4.5' si 7', costa sub 0.5 px intr-o expunere de 120 s: nu ea a miscat
+  cadrele. Nemasurabila sub 3 perechi de cadre fara pauza si fara miscare (o serie de 10+ cadre fara
+  dithering ar masura-o); fara plate solve, sau sub o ora, ramane doar limita de jos. Impartirea erorii pe altitudine si
   azimut ar cere locul si ora exacta, pe care raw-urile nu le au.
 - **DITHERING**: cate pauze si cate miscari (>= 5 px), la cate cadre o data, cat de mari, pe
   ce axe si in ce sens, cat de aproape sunt cadrele unul de altul (pozitii distincte,

@@ -44,7 +44,7 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `TwoDAxisFraction`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
 `PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
-`PolarDriftFwhmFraction`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`PolarDriftFwhmFraction`, `PolarRotationMinHours`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -103,9 +103,22 @@ and the field turns at `w cos d (e_alt cos H + e_az sin H)`. The squares of the 
 add to `|e|^2` at any hour angle, which the raws do not carry, so the analyzer reads the two
 brackets and never `H`. `PolarErrorMinArcmin` is the DEC component of `StarDriftPerMin`, in
 arcseconds through the scale, over `w`: a bound from below that needs only the RA axis and the
-scale. `PolarErrorMaxArcmin` adds in quadrature the rotation rate over `w cos d`, the second
-bracket read as the alignment's; it needs `d`, `Wcs.DecDeg` from the solve's `CRVAL2`, and
-is skipped within 0.01 of `cos d = 0`. The same reading bounds the RA drift the alignment can
+scale. `PolarErrorMaxArcmin` adds in quadrature the tracking's rotation rate over `w cos d`, the
+second bracket read as the alignment's; it needs `d`, `Wcs.DecDeg` from the solve's `CRVAL2`,
+and is skipped within 0.01 of `cos d = 0`. The tracking's rate, `PolarRotationPerHourDeg`, is
+not the raw end-to-end rotation: every slew about the mount's RA axis turns the frame by its
+RA step times `sin d` (the hour circles converge; `tan d` per radian of arc), and on Veil the
+dithers' net slew made most of the 8.45' the registration saw (regressing the per-frame
+rotation on time and on the pointing's RA arc gives -0.51 to -0.59 rad per radian in that
+frame, `tan d` being 0.62, and drops the per-frame scatter from 33" to 6-12"). So the
+analyzer sums the moves' RA components (R-038) minus the drift over each move's interval, the
+slews proper, and subtracts their convergence, `-Wcs.Handedness x tan d x` the net arc, from
+the total rotation before dividing by the span; the drift's own projection stays in, since the
+bound reads the whole tracking rotation as the alignment's. `Wcs.Handedness` is the sign of
+the determinant of the pixel-to-sky map, which a mirrored frame flips together with the
+registration's rotation sign. The rate is read only over `Th.PolarRotationMinHours` of
+registered span: the per-frame rotation still scatters by about 10" and a short run would
+read that as arcminutes per hour. The same reading bounds the RA drift the alignment can
 explain at the rotation rate times `tan d` (`PolarRaDriftMaxArcsecPerMin`); on Veil 1.3 of
 the 5.8 "/min, the rest being the tracking, which these frames cannot separate (ADR 0016).
 The cost: `PolarDriftMinPx` is the DEC drift over the median exposure, `PolarDriftMaxPx` the
@@ -115,7 +128,7 @@ of the session FWHM, `sqrt(s^2 + L^2 / 12) / s` with `s = FWHM / 2.355`. The ver
 the drift against `Th.PolarDriftFwhmFraction` of the session FWHM: `Attention` when the lower
 drift reaches it, `Ok` when the upper stays under it, `Marginal` between, `Unknown` without
 the figures or with a harmless lower bound and no upper one. Everything is null without a
-clean drift, an axis, a scale or a median exposure. Refraction, which pushes the apparent
+clean drift of at least `Th.DriftMinPairs` pairs, an axis, a scale or a median exposure. Refraction, which pushes the apparent
 field toward the zenith at a fraction of an arcsecond per minute low in the sky, is not
 modelled: the lower bound is that much soft on a field that sets.
 
@@ -156,16 +169,18 @@ and the session medians (FWHM over the good frames, stars over all), then the fl
 the session (soft, clouds, background jump against the two neighbours on each side). Trends
 compare the first and the last 10 good frames (fewer on a short session: half the good
 frames). Drift is the mean step per minute over the drift pairs: the consecutive registered pairs with
-no pause above `Th.DitherPause` between them, where nothing was pressed (R-049). A pair after
-a pause is never a drift pair, even when its step stayed under the move threshold: on Veil
+no pause above `Th.DitherPause` and no move between them, where nothing was pressed and the
+mount did not jump (R-049). A pair after a pause is never a drift pair, even when its step
+stayed under the move threshold: on Veil
 nine such presses of 3 to 5 px, counted as drift, halved the RA drift and inflated the DEC
 drift (ADR 0016); over the 39 clean pairs the drift is -0.19 / -0.96 px/min. With fewer than
 `Th.DriftMinPairs` clean pairs (Smida, dithered every frame) the mean falls back to the pairs
-that were not a move, as before, and `DriftApproximate` says so; the private `Drift` helper
-sums the steps and the minutes under either rule. `StarDriftPerMin` is the clean drift as the
-stars move on the sky, a `MountMove` through the moves' mapping with the sign flipped (the
-stars are the negative of the pointing), signed with a solve, magnitudes with the axis from the
-trails, null for an approximate drift. Rotation is the last registered frame's minus the first's; the corner
+that were not a move, as before, and `DriftApproximate` says so when that added pairs; the
+private `Drift` helper sums the steps and the minutes under either rule. `StarDriftPerMin` is
+the clean drift of at least `Th.DriftMinPairs` pairs as the stars move on the sky, a
+`StarDrift` through the moves' mapping with the sign flipped (the stars are the negative of
+the pointing), signed with a solve, magnitudes with the axis from the trails, null for an
+approximate or a thin drift. Rotation is the last registered frame's minus the first's; the corner
 figure is that rate over one exposure at the half-diagonal. The RA axis comes from the WCS
 when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
 along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
@@ -243,8 +258,10 @@ for the fallback), and it closes with `PolarRow` (the bracket of `PolarBounds` w
 each bound, the drift per exposure and the elongation, or the lower bound alone without a
 solve) and `RaDriftRow` (the RA drift with the stars' sense when signed, the alignment's share
 and whether the rest is the tracking). `PolarReason` is the one place that words why the
-alignment is not measured (no clean drift, no axis, no scale), and `PolarSummary` the REZUMAT
-row with its verdict word, `OK`, `LA LIMITA` or `ATENTIE`, none when unknown.
+alignment is not measured (no registered pair, under three drift pairs, no axis, no scale),
+`NoUpperBound` why the lower bound stands alone (no solve, or a span under an hour), and
+`PolarSummary` the REZUMAT row with its verdict word, `OK`, `LA LIMITA` or `ATENTIE`, none
+when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
 `verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`

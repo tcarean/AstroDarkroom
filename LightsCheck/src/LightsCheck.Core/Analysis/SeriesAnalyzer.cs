@@ -64,6 +64,14 @@ internal enum TrailAxis
 /// </summary>
 internal sealed record MountMove(double RaPx, double DecPx, bool Signed);
 
+/// <summary>
+/// The stars' drift per minute along RA and DEC, in pixels of the plate scale, read over the
+/// drift pairs (R-049): positive east and north when Signed (a WCS was at hand), the
+/// magnitudes along the two axes when not (the axis came from the trails) (R-050). The
+/// opposite of the pointing's motion: a mount that lags the sky shows stars drifting west.
+/// </summary>
+internal sealed record StarDrift(double RaPxPerMin, double DecPxPerMin, bool Signed);
+
 /// <summary>Medians of the first and the last <see cref="Count"/> good frames, for the trends (R-023).</summary>
 internal sealed record Trend(double? First, double? Last, int Count)
 {
@@ -114,10 +122,12 @@ internal enum PolarAlignment
 /// the session's medians, the trends, the drift and the field rotation, the drift per exposure
 /// with the walking-noise dash and verdict it gives, the RA axis, the noise against the read
 /// noise when the biases gave one, and the polar alignment read from the drift and the rotation:
-/// DriftApproximate when the drift fell back to the pairs with a pause; StarDriftPerMin the
-/// stars' motion per minute along RA and DEC in pixels (signed east and north with a solve);
-/// DeclinationDeg the solve's; PolarErrorMinArcmin from the DEC drift alone, PolarErrorMaxArcmin
-/// adding the rotation; PolarDriftMinPx and PolarDriftMaxPx the drift those bounds cause in one
+/// DriftApproximate when the drift fell back to pairs with a pause; StarDriftPerMin the stars'
+/// motion per minute along RA and DEC in pixels (signed east and north with a solve), null for an
+/// approximate or a thin drift; DeclinationDeg the solve's; PolarRotationPerHourDeg the field
+/// rotation rate with the dithers' net slew taken out, null under Th.PolarRotationMinHours of
+/// span or without a solve; PolarErrorMinArcmin from the DEC drift alone, PolarErrorMaxArcmin
+/// adding that rotation; PolarDriftMinPx and PolarDriftMaxPx the drift those bounds cause in one
 /// median exposure; PolarElongation what the upper one adds to a star of the session FWHM;
 /// PolarRaDriftMaxArcsecPerMin how much of the RA drift the alignment can explain.
 /// </summary>
@@ -156,8 +166,9 @@ internal sealed record SeriesAnalysis(
     IReadOnlyList<IReadOnlyList<ChannelNoise>>? Swamping,
     IReadOnlyList<int> SwampingFrames,
     bool DriftApproximate,
-    MountMove? StarDriftPerMin,
+    StarDrift? StarDriftPerMin,
     double? DeclinationDeg,
+    double? PolarRotationPerHourDeg,
     double? PolarErrorMinArcmin,
     double? PolarErrorMaxArcmin,
     double? PolarDriftMinPx,
@@ -304,15 +315,17 @@ internal static class SeriesAnalyzer
         bool? dew = fwhmTrend.RelativeChange is double fr && haloTrend.Change is double hc ? fr > Th.DewFwhmRise && hc > Th.DewHaloRise : null;
 
         // Drift: the mean step per minute over the drift pairs, the consecutive registered frames
-        // with no pause above Th.DitherPause between them, where nothing was pressed (R-049, ADR
-        // 0016); with fewer than Th.DriftMinPairs of them, over the pairs that were not a move,
-        // where a press of 3 to 5 px still counts, so the figure is approximate.
-        (double sumX, double sumY, double minutes, int pairs) = Drift(frames, dither, i => cadence.PauseSeconds[i] is double p && p <= Th.DitherPause);
+        // with no pause above Th.DitherPause between them and no move between them either, where
+        // nothing was pressed and the mount did not jump (R-049, ADR 0016); with fewer than
+        // Th.DriftMinPairs of them, over every pair that was not a move, where a press of 3 to
+        // 5 px still counts, so the figure is approximate when that added pairs.
+        (double sumX, double sumY, double minutes, int pairs) = Drift(frames, dither, i => cadence.PauseSeconds[i] is double p && p <= Th.DitherPause && !dither.IsMove[i]);
+        int cleanPairs = pairs;
         bool approximate = false;
         if (pairs < Th.DriftMinPairs)
         {
             (sumX, sumY, minutes, pairs) = Drift(frames, dither, i => !dither.IsMove[i]);
-            approximate = pairs > 0;
+            approximate = pairs > cleanPairs;
         }
 
         double? driftX = minutes > 0 ? sumX / minutes : null, driftY = minutes > 0 ? sumY / minutes : null;
@@ -425,24 +438,51 @@ internal static class SeriesAnalyzer
         }
 
         // The drift as the stars move on the sky (R-050): the moves' mapping on the drift
-        // vector, the stars being the negative of the pointing; a clean drift only, since the
-        // presses inside an approximate one are not the mount's tracking.
-        MountMove? starDrift = null;
-        if (!approximate && driftX is double sdx && driftY is double sdy)
+        // vector, the stars being the negative of the pointing; a clean drift of at least
+        // Th.DriftMinPairs pairs only, since the presses inside an approximate one are not the
+        // mount's tracking and two pairs are too few to read.
+        StarDrift? starDrift = null;
+        if (!approximate && pairs >= Th.DriftMinPairs && driftX is double sdx && driftY is double sdy)
         {
             if (wcs is not null)
             {
                 (double raDeg, double decDeg) = wcs.SkyOffsetDeg(-sdx, sdy);
-                starDrift = new MountMove(-raDeg / wcs.RaScaleDeg, -decDeg / wcs.DecScaleDeg, true);
+                starDrift = new StarDrift(-raDeg / wcs.RaScaleDeg, -decDeg / wcs.DecScaleDeg, true);
             }
             else if (ra == Axis.Y)
             {
-                starDrift = new MountMove(Math.Abs(sdy), Math.Abs(sdx), false);
+                starDrift = new StarDrift(Math.Abs(sdy), Math.Abs(sdx), false);
             }
             else if (ra == Axis.X)
             {
-                starDrift = new MountMove(Math.Abs(sdx), Math.Abs(sdy), false);
+                starDrift = new StarDrift(Math.Abs(sdx), Math.Abs(sdy), false);
             }
+        }
+
+        // The rotation the tracking made (R-050): the end-to-end rotation minus the hour-circle
+        // convergence of the dithers. Each slew about the mount's RA axis turns the frame by its
+        // RA step times sin DEC, tan DEC per radian of arc, in the sense the frame's handedness
+        // sets (measured on Veil, 2026-10-24: -0.51 to -0.59 rad per rad of the pointing's
+        // eastward arc at tan DEC 0.62, X north and Y west, the per-frame scatter falling from
+        // 33" to 6-12" once that term is fitted). A slew is the move's RA component minus the
+        // drift over the move's interval, so the drift's own projection stays in the rotation,
+        // where the reading below wants it. Read only over Th.PolarRotationMinHours or more.
+        double? polarRotPerHour = null;
+        if (rotTotal is double rotationTotal && wcs?.DecDeg is double decForRotation && starDrift is { Signed: true } sd && arcsecPerPixel is double scaleForRotation && scaleForRotation > 0
+            && firstReg?.Info.Timestamp is DateTime tFirst && lastReg?.Info.Timestamp is DateTime tLast && (tLast - tFirst).TotalHours >= Th.PolarRotationMinHours)
+        {
+            double netEastPx = 0;
+            for (int i = 1; i < n; i++)
+            {
+                if (moves[i] is MountMove m && frames[i].Info.Timestamp is DateTime t && frames[i - 1].Info.Timestamp is DateTime tp)
+                {
+                    netEastPx += m.RaPx + sd.RaPxPerMin * (t - tp).TotalMinutes;   // the pointing drifts opposite to the stars
+                }
+            }
+
+            double netEastRad = netEastPx * scaleForRotation / 206265;
+            double dithersDeg = -wcs.Handedness * Math.Tan(decForRotation * Math.PI / 180) * netEastRad * 180 / Math.PI;
+            polarRotPerHour = (rotationTotal - dithersDeg) / (tLast - tFirst).TotalHours;
         }
 
         // The polar alignment (R-050, ADR 0016). A pole off by e makes the stars drift in DEC at
@@ -457,10 +497,10 @@ internal static class SeriesAnalyzer
         if (starDrift is not null && arcsecPerPixel is double scale && scale > 0 && medianExposure is double exposureSeconds)
         {
             double exposureMin = exposureSeconds / 60;
-            double decArcsec = Math.Abs(starDrift.DecPx) * scale;
+            double decArcsec = Math.Abs(starDrift.DecPxPerMin) * scale;
             polarMin = decArcsec / SiderealArcsecPerMin * RadToArcmin;
-            polarDriftMin = Math.Abs(starDrift.DecPx) * exposureMin;
-            if (wcs?.DecDeg is double dec && rotPerHour is double rph && Math.Cos(dec * Math.PI / 180) is double cosDec && cosDec > 0.01)
+            polarDriftMin = Math.Abs(starDrift.DecPxPerMin) * exposureMin;
+            if (wcs?.DecDeg is double dec && polarRotPerHour is double rph && Math.Cos(dec * Math.PI / 180) is double cosDec && cosDec > 0.01)
             {
                 double rho = Math.Abs(rph) * 60;   // degrees per hour to arcseconds per minute
                 double a = rho / (SiderealArcsecPerMin * cosDec) * RadToArcmin;
@@ -504,7 +544,7 @@ internal static class SeriesAnalyzer
             classes.Count(c => c == FrameClass.Good), classes.Count(c => c == FrameClass.Marginal), classes.Count(c => c == FrameClass.Bad), classes.Count(c => c == FrameClass.Unknown),
             sessionFwhm, sessionStars, fwhmTrend, haloTrend, bgTrend, starsTrend, focusHeld, dew,
             driftX, driftY, pairs, medianExposure, driftPerExposure, driftAxis, streak, walking, rotTotal, rotPerHour, corner, ra, source, trailAngle, trailOn, moves, readNoise, swamping, swampingFrames,
-            approximate, starDrift, wcs?.DecDeg, polarMin, polarMax, polarDriftMin, polarDriftMax, polarElongation, polarRaMax, polar);
+            approximate, starDrift, wcs?.DecDeg, polarRotPerHour, polarMin, polarMax, polarDriftMin, polarDriftMax, polarElongation, polarRaMax, polar);
     }
 
     /// <summary>

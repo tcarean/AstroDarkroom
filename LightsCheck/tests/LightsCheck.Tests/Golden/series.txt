@@ -17,7 +17,7 @@ Copyright (C) 2026 Tudor Carean
     roua               : NU - FWHM -0 %, halo +0.001
     cadre miscate      : 2 slabe, 0 la limita, 6 bune (din 8); axa Y a imaginii = RA, X = DEC (directia darelor (presupus: urmarirea e pe RA))
     dithering          : FARA walking noise, OK pentru pixeli calzi - dare de walking noise de cel mult 0.5 px: drift 0.50 px pe expunere, cadrele 1-2, 2 cadre la 10 px; 3 miscari la 8 cadre, 4 pozitii distincte la 10 px, 0 izolate, 0 miscari pe ambele axe
-    aliniere polara    : eroare de cel putin 5.7', costa cel putin 0.50 px intr-o expunere (fara plate solve nu se stie limita de sus)
+    aliniere polara    : eroare de cel putin 5.7', costa cel putin 0.50 px intr-o expunere (fara plate solve nu se stie declinatia pentru limita de sus)
     de scos din stiva  : 2 cadre (lista la RESPINSE); raman 6 = 12 min
 
   FOCUS

@@ -314,16 +314,21 @@ internal static class SeriesReport
     private static string PairsWord(SeriesAnalysis s)
         => s.DriftApproximate ? $"{s.DriftPairs.ToString(Inv)} perechi cu pauza, aproximativ: pasii mici de dithering intra in cifra" : $"{s.DriftPairs.ToString(Inv)} perechi fara pauza";
 
-    /// <summary>Why the polar alignment is not measured, or null when it is (R-050): no clean drift, no RA axis, no scale.</summary>
+    /// <summary>Why the polar alignment is not measured, or null when it is (R-050): no registered pairs, under three drift pairs, no RA axis, no scale, no exposure.</summary>
     private static string? PolarReason(SeriesResult r)
     {
         SeriesAnalysis s = r.Series;
         return s.PolarErrorMinArcmin is not null ? null
-            : s.StarDriftPerMin is null && (s.DriftApproximate || s.DriftXPerMin is null) ? "nemasurabila (dithering la fiecare cadru: nicio pereche de cadre consecutive fara pauza; o serie de 10+ cadre fara dithering ar masura-o)"
+            : r.Dither.Registered < 2 ? "- (cadre neinregistrate)"
+            : s.StarDriftPerMin is null && (s.DriftApproximate || s.DriftXPerMin is null || s.DriftPairs < Th.DriftMinPairs) ? $"nemasurabila (sub {Th.DriftMinPairs.ToString(Inv)} perechi de cadre consecutive fara pauza si fara miscare intre ele; o serie de 10+ cadre fara dithering ar masura-o)"
             : s.RaAxis == Axis.Unknown ? "- (fara axa RA)"
             : r.ArcsecPerPixel is null ? "- (fara scara)"
             : "- (fara expunere)";
     }
+
+    /// <summary>Why there is no upper bound when the lower one exists (R-050): no solve for the declination, or a span under Th.PolarRotationMinHours.</summary>
+    private static string NoUpperBound(SeriesAnalysis s)
+        => s.DeclinationDeg is null ? "fara plate solve nu se stie declinatia pentru limita de sus" : $"sesiune sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: rotatia nu da inca limita de sus";
 
     /// <summary>`eroare intre 4.2' si 10.4'`, `eroare de 5.7'` when the bounds meet, `eroare de cel putin 5.7'` without an upper bound.</summary>
     private static string PolarBounds(SeriesAnalysis s)
@@ -348,13 +353,13 @@ internal static class SeriesReport
 
         SeriesAnalysis s = r.Series;
         string exposure = $"intr-o expunere de {RunReport.F(s.MedianExposureSeconds ?? 0, 0)} s";
-        string dec = $"driftul pe DEC de {RunReport.F(Math.Abs(s.StarDriftPerMin!.DecPx) * (r.ArcsecPerPixel ?? 0), 1)}\"/min";
+        string dec = $"driftul pe DEC de {RunReport.F(Math.Abs(s.StarDriftPerMin!.DecPxPerMin) * (r.ArcsecPerPixel ?? 0), 1)}\"/min";
         if (s.PolarErrorMaxArcmin is null)
         {
-            return $"{PolarBounds(s)} ({dec}; fara plate solve nu se stie declinatia pentru limita de sus); drift din aliniere cel putin {RunReport.F(s.PolarDriftMinPx ?? 0, 2)} px {exposure}";
+            return $"{PolarBounds(s)} ({dec}; {NoUpperBound(s)}); drift din aliniere cel putin {RunReport.F(s.PolarDriftMinPx ?? 0, 2)} px {exposure}";
         }
 
-        string rotation = $"rotatia de {RunReport.F(Math.Abs(s.RotationPerHourDeg ?? 0) * 60, 1)}'/h la DEC {Signed(s.DeclinationDeg, 1)} grade";
+        string rotation = $"rotatia de {RunReport.F(Math.Abs(s.PolarRotationPerHourDeg ?? 0) * 60, 1)}'/h fara dithering la DEC {Signed(s.DeclinationDeg, 1)} grade";
         string elongation = s.PolarElongation is double el ? $", alungire adaugata cel mult {RunReport.F(el, 2)} pe FWHM {RunReport.F(s.SessionFwhm ?? 0, 2)} px" : "";
         return $"{PolarBounds(s)} ({dec}; {rotation}); drift din aliniere cel mult {RunReport.F(s.PolarDriftMaxPx ?? 0, 2)} px {exposure} ({RunReport.F(s.PolarDriftMinPx ?? 0, 2)} px sigur){elongation}";
     }
@@ -372,12 +377,12 @@ internal static class SeriesReport
             return "-";
         }
 
-        MountMove d = s.StarDriftPerMin!;
-        double ra = Math.Abs(d.RaPx) * (r.ArcsecPerPixel ?? 0);
-        string sense = d.Signed ? (d.RaPx >= 0 ? ", stelele spre est" : ", stelele spre vest") : "";
+        StarDrift d = s.StarDriftPerMin!;
+        double ra = Math.Abs(d.RaPxPerMin) * (r.ArcsecPerPixel ?? 0);
+        string sense = d.Signed ? (d.RaPxPerMin >= 0 ? ", stelele spre est" : ", stelele spre vest") : "";
         if (s.PolarRaDriftMaxArcsecPerMin is not double raMax)
         {
-            return $"{RunReport.F(ra, 1)}\"/min{sense} (fara plate solve nu se stie cat e din aliniere)";
+            return $"{RunReport.F(ra, 1)}\"/min{sense} ({(s.DeclinationDeg is null ? "fara plate solve nu se stie cat e din aliniere" : $"sesiune sub {RunReport.F(Th.PolarRotationMinHours, 0)} h: nu se stie inca cat e din aliniere")})";
         }
 
         string share = $"din aliniere cel mult {RunReport.F(raMax, 1)}\"/min";
@@ -403,7 +408,7 @@ internal static class SeriesReport
         string cost = s.PolarAlignment == PolarAlignment.Attention || s.PolarDriftMaxPx is null ? $"costa cel putin {min} px intr-o expunere"
             : s.PolarAlignment == PolarAlignment.Marginal ? $"costa intre {min} si {max} px intr-o expunere"
             : $"costa cel mult {max} px intr-o expunere";
-        string suffix = s.PolarErrorMaxArcmin is null ? " (fara plate solve nu se stie limita de sus)" : "";
+        string suffix = s.PolarErrorMaxArcmin is null ? $" ({NoUpperBound(s)})" : "";
         string? verdict = s.PolarAlignment switch
         {
             PolarAlignment.Ok => "OK",

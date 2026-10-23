@@ -33,7 +33,7 @@ scripts in `prototype/`, which read the same libraw through rawpy).
 | V-005 | same, frame 23 (doubled stars) | frame | 11352 / 1340, FWHM 4.88 (5.24), elongation 2.23, 98 %, angle -87 at 0.98, halo 0.182, background 135, sigma 14.5, channels 27 / 135 / 135 / 153 | 2026-10-09 |
 | V-006 | same, frame 72 (clean, late) | frame | 13338 / 1886, FWHM 3.03 (3.64), elongation 1.16, 15 %, angle -76 at 0.46, halo 0.012, background 161, sigma 15.0, channels 33 / 159 / 159 / 183 | 2026-10-09 |
 | V-007 | same, frame 83 (clean, last hour) | frame | 12135 / 1662, FWHM 3.06 (3.58), elongation 1.13, 13 %, angle -87 at 0.17, halo -0.006, background 174, sigma 15.8, channels 35 / 174 / 174 / 195 | 2026-10-09 |
-| V-008 | same, the whole session | series | 48 good / 17 marginal / 22 bad, the bad frames 1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76; 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.19 / -0.96 px/min over the 39 pairs without a pause (X / Y); session FWHM 3.12 px; read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, walking noise insufficient by the dither rule; drift 1.96 px per exposure, a dash of 17.7 px in the run of 10, word `Insufficient`; polar error between 4.2' and 12.0' (the DEC drift of 1.1 "/min; the rotation of 2.5'/h at DEC +31.6), at most 0.64 px of drift per exposure, `Ok`; no darks; pattern measured on 87 crops: sigma 1.4 / 2.1 / 2.1 / 2.3 ADU on R / G1 / G2 / B (12, 10, 10 and 10 % of a frame's noise), 4 hot pixels per megapixel; 1.6 % of one frame's pattern survives in the mean (16 pairs within 1.5 px; ideal 1.1 %) | 2026-10-09, the drift, darks and pattern figures 2026-10-10, the drift and polar figures 2026-10-24 |
+| V-008 | same, the whole session | series | 48 good / 17 marginal / 22 bad, the bad frames 1, 13, 15, 17, 18, 20, 22, 23, 25, 27, 38, 43, 45, 50, 52, 54, 56, 60, 63, 68, 70, 76; 87 registered; 41 moves (>= 5 px), 47 pauses, 9 pauses without a move; 38 distinct spots at 5 px, 25 at 10 px, 1 isolated, longest run at 10 px 10 frames (61-70); median move 13.29 px; rotation 8.5 arcmin; drift -0.20 / -0.73 px/min over the 36 pairs without a pause or a move (X / Y); session FWHM 3.12 px; read noise G1 2.9 ADU; swamping of R on frame 1 9.4; RA along Y (WCS); focus held, no dew, hot pixels fine, walking noise insufficient by the dither rule; drift 1.52 px per exposure, a dash of 13.7 px in the run of 10, word `Insufficient`; polar error between 4.5' and 6.7' (the DEC drift of 1.2 "/min; the tracking's rotation of 1.1'/h at DEC +31.6, the dithers' slews taken out of the 2.5'/h end to end), at most 0.46 px of drift per exposure, `Ok`; no darks; pattern measured on 87 crops: sigma 1.4 / 2.1 / 2.1 / 2.3 ADU on R / G1 / G2 / B (12, 10, 10 and 10 % of a frame's noise), 4 hot pixels per megapixel; 1.6 % of one frame's pattern survives in the mean (16 pairs within 1.5 px; ideal 1.1 %) | 2026-10-09, the drift, darks and pattern figures 2026-10-10, the drift and polar figures 2026-10-24 |
 | V-009 | same, the whole session | words | the trail axis word `RA` on all 22 bad and all 17 marginal frames (angles 77 to 89 degrees in absolute value, coherence 0.94 and 0.86 or more); the `acelasi loc` cells `1/4 de la 57` to `4/4 de la 57` on 57 to 60, `1/10 de la 61` to `10/10 de la 61` on 61 to 70, `-` on 71 and 72 | 2026-10-09 |
 | V-010 | same, the whole session | tables | the five dithering tables of R-036, cell by cell: how often (every 1 frame 12 times, 2 frames 22, 3 once, 4 three times, 5 and 6 once each), how far (median 13.29 px = 79.6", 10 moves of 5-10 px, 23 of 10-20, 8 of 20+), direction (X = DEC: 6 alone, 11 plus, 2 minus; Y = RA: 28 alone, 11 plus, 24 minus; both 7), coverage (70 frames within 3 px of another, 79 within 5 with 38 distinct spots and 8 runs, 86 within 10 with 25 and 11), the 8 runs at 5 px and the 11 at 10 px with their minutes (61-70, 10 frames, 22 min) | 2026-10-09 |
 | V-012 | `Milkyway-Core/2026-08-12-Smida` (Nikon D3300, Tokina 11-20 at 20 mm f/2.8, SA GTi, a dark site) | inventory | 32 lights, 30 biases, 20 darks, `Nikon D3300`, 119.2 s at ISO 400, first start 2026-08-12 23:22:25, span 4996 s (1 h 23 min), duty 76.3 % | 2026-10-10 |
@@ -46,11 +46,12 @@ same groups of frames in 5 and 10 px (`raport.md`, section 6), the rotation of 8
 read noise and the swamping of red. The drift along Y was first recorded as -0.48 px/min over 45
 non-move pairs, against the hand report's -0.8 px/min over the back-to-back pairs; the 45
 included nine post-pause presses of 3 to 5 px, which halved it (ADR 0016). Since 2026-10-24 the
-drift is over the 39 pairs without a pause, -0.19 / -0.96 px/min, the hand report's figure
-(its "-1.9 px per 141 s" is -1.94 px per pair of 121 s). The polar upper bound reads 12.0' with
-the tool's end-to-end rotation of 2.5'/h (the first and the last frame each carry the dithers'
-projection of up to 40"), against 10.7' with a linear fit at 2.13'/h in ADR 0016's measurement;
-the lower bound of 4.2' is the same in both.
+drift is over the 36 pairs without a pause and without a move, -0.20 / -0.73 px/min: the 39
+back-to-back pairs of ADR 0016's measurement held three jumps of 6 to 9 px (frames 16, 22 and
+54, the mount's, behind the doubled stars of 17 and 23), which the move rule now leaves out;
+the hand report's -0.8 px/min was this figure. The polar upper bound reads 6.7' from the
+tracking's rotation of 1.1'/h, the end-to-end 2.5'/h less the hour-circle convergence of the
+dithers' net slew (most of what the registration saw, ADR 0016); the lower bound is 4.5'.
 
 The frame figures are the console's `--frame N` output of 2026-10-09 and equal the prototype's
 (`docs/validation/2026-10-06-veil/frames.csv`, columns `n_det`, `n_det_bright`, `fwhm_med`,
@@ -96,13 +97,15 @@ drift instead of editing the figures.
 
 - 2026-10-24: V-008 and V-013 gain the drift pairs, whether the drift is approximate, the
   polar error's bounds, the drift it can cause per exposure and the verdict (R-049, R-050,
-  ADR 0016), recorded from the console's run of the same day: V-008 39 pairs, exact, 4.2' to
-  12.0', 0.64 px, `Ok`; V-013 29 pairs, approximate, `Unknown`, its three numeric keys left
-  out since the session cannot give them. V-008's drift moved with the rule: -0.48 to -0.96
-  px/min along Y (the 45 pairs held nine post-pause presses of 3 to 5 px), 1.1 to 1.96 px per
-  exposure, the dash 9.9 to 17.7 px; the word stays `Insufficient`. V-013's drift did not
-  move (the fallback is the old rule). All 13 cases re-measured on the branch the same day:
-  `ValidationTests` 13 passed in 7 min 22 s on the Release build.
+  ADR 0016), recorded from the console's run of the same day: V-008 36 pairs, exact, 4.5' to
+  6.7', 0.46 px, `Ok`; V-013 29 pairs, approximate, `Unknown`, its three numeric keys left
+  out since the session cannot give them. V-008's drift moved with the rule: -0.48 to -0.73
+  px/min along Y (the 45 pairs held nine post-pause presses of 3 to 5 px; a first reading of
+  the day over 39 back-to-back pairs, -0.96, still held three mount jumps of 6 to 9 px, which
+  the review of the same day took out), 1.1 to 1.52 px per exposure, the dash 9.9 to 13.7 px;
+  the word stays `Insufficient`. V-013's drift did not move (the fallback is the old rule).
+  All 13 cases re-measured on the branch the same day: `ValidationTests` 13 passed in 7 min
+  22 s on the Release build before the review's fixes, and 13 passed in 7 min 39 s after them.
 
 - 2026-10-10: V-001 and V-008 gain the darks count, the drift per exposure, the dash, the
   walking word, the pattern sigmas, the hot rate and the surviving fraction (R-042, R-043,

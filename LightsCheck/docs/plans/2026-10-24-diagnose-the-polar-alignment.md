@@ -141,3 +141,11 @@ binding error (the Wpf tests run in the gate).
   registers as a grid spacing (the vote picks 139.7 px), a fixture artefact noted in the test.
 - ADR 0015's note went in as a `(Corrected ...)` paragraph after its table, the kit's ADR 0024
   form, not the plain dated note the plan named.
+- The review of the same day (six findings, all fixed on the branch): a drift pair also needs no
+  move between its frames (three Veil jumps of 6 to 9 px were in the 39 pairs; 36 remain,
+  -0.73 px/min, 1.52 px per exposure, a dash of 13.7 px); the rotation behind the upper bound
+  is cleared of the dithers' net slew (measured on Veil: -0.51 to -0.59 rad per radian of the
+  pointing's eastward arc, most of the 8.45' end to end) and read only over an hour of span,
+  which moved Veil's bracket to 4.5' to 6.7'; the fallback is approximate only when it added
+  pairs; the stars' drift got its own `StarDrift` record; the unmeasurable reason names what was
+  checked. The 12.0' upper bound recorded first was the slews, not the mount.
