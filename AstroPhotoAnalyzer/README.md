@@ -153,7 +153,8 @@ AstroPhotoAnalyzer poza.tif --medium baryta --distance 1.5 --sizes 60,70,80 --as
 
 Opțiuni: `--medium baryta|canvas|acrilic` (Dmax 2.4, 1.5, 2.2), `--dmax` (Dmax-ul hârtiei tale,
 în locul celui al mediului), `--distance` (m), `--sizes` (cm),
-`--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.05..0.20),
+`--aspect` (l:i), `--target-bg` (o țintă în plus în simulare, pe lângă grila 0.05..0.20: un număr
+strict între 0 și 1, rotunjit la 3 zecimale),
 `--passepartout`, `--frame`, `--wcs` (FITS-ul plate-solved de aceeași mărime al cărui WCS se
 folosește pentru nori), `--icc` (profilul ICC al hârtiei pe imprimanta ei: Dmax-ul se citește
 din el, în locul celui al mediului; nu merge împreună cu `--dmax`), `-o`. `--help` le explică.

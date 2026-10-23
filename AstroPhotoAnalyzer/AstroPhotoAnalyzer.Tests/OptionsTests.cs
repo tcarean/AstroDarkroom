@@ -50,6 +50,9 @@ public class OptionsTests
     public void R006_NumbersAreParsedWithTheInvariantCulture()
     {
         var o = Options.Parse(new[] { "poza.tif", "--distance", "1.5", "--target-bg", "0.19", "--dmax", "2.2" });
+        // The interval and the rounding are the core's, with its message behind the flag's name (R-023).
+        Assert.Equal("--target-bg: " + Parameters.TargetBackgroundError(1), Options.Parse(new[] { "poza.tif", "--target-bg", "1" }).Error);
+        Assert.Equal(0.1234567, Options.Parse(new[] { "poza.tif", "--target-bg", "0.1234567" }).TargetBg);
 
         Assert.Null(o.Error);
         Assert.Equal(1.5, o.Distance);
@@ -85,6 +88,11 @@ public class OptionsTests
     [InlineData("--sizes", "a,b")]
     [InlineData("--aspect", "50")]
     [InlineData("--target-bg", "1.5")]
+    [InlineData("--target-bg", "1")]
+    [InlineData("--target-bg", "0")]
+    [InlineData("--target-bg", "0.0004")]
+    [InlineData("--target-bg", "NaN")]
+    [InlineData("--target-bg", "Infinity")]
     public void R003_ABadValueIsAnErrorNotAnException(string flag, string value)
     {
         var o = Options.Parse(new[] { "poza.tif", flag, value });

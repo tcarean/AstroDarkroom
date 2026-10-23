@@ -105,11 +105,42 @@ namespace AstroPhotoAnalyzer
         internal double? TargetAspect { get; init; }
 
         /// <summary>
-        /// Fundalul-tinta dat de om, optional: adauga randul lui in tabelul simularii si
+        /// Fundalul-tinta dat de om, optional, rotunjit la TargetBackgroundDecimals zecimale (cele
+        /// pe care le tipareste raportul, Fmt.Level): adauga randul lui in tabelul simularii si
         /// alege dala de print din Preview. Null = fara rand in plus; Preview-ul ia randul
-        /// recomandat (R-023).
+        /// recomandat (R-023). O valoare care dupa rotunjire nu e strict intre 0 si 1, NaN sau
+        /// infinit, o refuza Validate cu mesajul lui TargetBackgroundError (ADR 0040).
         /// </summary>
-        internal double? TargetBackground { get; init; }
+        internal double? TargetBackground
+        {
+            get => _targetBackground;
+            init => _targetBackground = value.HasValue ? RoundTargetBackground(value.Value) : null;
+        }
+        double? _targetBackground;
+
+        /// <summary>
+        /// Zecimalele la care se rotunjeste fundalul-tinta dat: cele trei pe care le tipareste
+        /// raportul (Fmt.Level), ca o tinta tastata cu mai multe sa fie randul pe care il arata
+        /// tabelul si nu una pe care nimic n-o mai regaseste (ADR 0040).
+        /// </summary>
+        internal const int TargetBackgroundDecimals = 3;
+
+        /// <summary>Fundalul-tinta rotunjit la TargetBackgroundDecimals zecimale; NaN si infinitul raman cum sunt.</summary>
+        internal static double RoundTargetBackground(double given) => Math.Round(given, TargetBackgroundDecimals);
+
+        /// <summary>
+        /// De ce un fundal-tinta dat nu se poate simula, pentru om: NaN, infinit, sau o valoare
+        /// care dupa rotunjire nu e strict intre 0 si 1 (gamma = ln(tinta) / ln(fundal) nu exista
+        /// la 0 si la 1). Un singur mesaj, al nucleului: consola il scrie cu "--target-bg: " in
+        /// fata, fereastra asa cum e (R-023, ADR 0040). Null cand valoarea e buna.
+        /// </summary>
+        internal static string TargetBackgroundError(double given)
+        {
+            double v = RoundTargetBackground(given);
+            if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
+                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture)}";
+            return null;
+        }
 
         /// <summary>
         /// Grila simularii: 0.05 .. 0.20 din 0.01 in 0.01, nivelurile la care se tipareste un
@@ -141,12 +172,17 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Regulile care leaga doi parametri intre ei - ce nu poate verifica un camp
-        /// singur. Intoarce mesajul pentru om, sau null cand totul e in regula. Consola
-        /// si fereastra il cheama amandoua, ca sa refuze aceleasi lucruri cu aceleasi
-        /// cuvinte.
+        /// singur - si fundalul-tinta dupa rotunjire (TargetBackgroundError). Intoarce mesajul
+        /// pentru om, sau null cand totul e in regula. Consola si fereastra il cheama amandoua,
+        /// ca sa refuze aceleasi lucruri cu aceleasi cuvinte.
         /// </summary>
         internal string Validate()
         {
+            if (TargetBackground.HasValue)
+            {
+                string bg = TargetBackgroundError(TargetBackground.Value);
+                if (bg != null) return bg;
+            }
             double minPassepartout = Thresholds.PassepartoutMinFrameRatio * FrameCm;
             if (PassepartoutCm > 0 && PassepartoutCm < minPassepartout)
                 return $"passepartout-ul ({Fmt.F1(PassepartoutCm)} cm) e sub dublul latimii ramei ({Fmt.F1(FrameCm)} cm): "

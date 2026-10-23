@@ -21,6 +21,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   297:210 no longer gets an Attention that cuts 0 px), and the two sides are named when they
   differ (`0 px la stanga si 1 px la dreapta din latime`), in the report and in the Preview tile
   (R-032; ADR 0043; item 5).
+- The target background (`--target-bg`, the window's "Fundal-tinta") is rounded to the three
+  decimals the report prints and refused, with one message from the core in both applications,
+  when it is NaN, infinite or not strictly inside (0, 1) once rounded: no more run that ends in an
+  error without a report at 1 or at a value that rounds to 0, and a target typed with more
+  decimals keeps its `(dat)` row and the Preview tile (R-023; ADR 0040; items 6 and 8).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;

@@ -87,6 +87,11 @@ public class ParameterFieldsTests
         Assert.Equal(0.2, p.TargetBackground);
         Assert.Equal(8, p.PassepartoutCm);
         Assert.Equal(4, p.FrameCm);
+
+        // The field's refusal is the core's message, word for word (R-023, ADR 0040).
+        Assert.Null(new ParameterFields { TargetBg = "1" }.TryBuild(out string? bad));
+        Assert.Equal(Parameters.TargetBackgroundError(1), bad);
+        Assert.Equal(0.123, new ParameterFields { TargetBg = "0.1234567" }.TryBuild(out _)!.TargetBackground);
     }
 
     [Theory]
@@ -96,7 +101,11 @@ public class ParameterFieldsTests
     [InlineData("Sizes", "", "cel putin o latime")]
     [InlineData("Sizes", "60,x", "latime")]
     [InlineData("Aspect", "50", "latime:inaltime")]
-    [InlineData("TargetBg", "1.5", "intervalului")]
+    [InlineData("TargetBg", "1.5", "strict intre 0 si 1")]
+    [InlineData("TargetBg", "1", "strict intre 0 si 1")]
+    [InlineData("TargetBg", "0.0004", "strict intre 0 si 1")]
+    [InlineData("TargetBg", "NaN", "strict intre 0 si 1")]
+    [InlineData("TargetBg", "0,2", "punctul")]
     public void R024_ABadFieldGivesAMessageNotAnException(string field, string value, string fragment)
     {
         var f = new ParameterFields();

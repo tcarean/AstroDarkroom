@@ -243,6 +243,13 @@ public class PrintStretchSimulatorTests
         // Without one, the primary row is the recommended one.
         var none = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
         Assert.Same(none.Recommended, none.Primary);
+
+        // A target with more decimals than the report prints is the row of its rounded value,
+        // marked and primary all the same (ADR 0040; before it, 0.1234567 lost the mark).
+        var fine = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.1234567 });
+        SimulationRow rounded = Assert.Single(fine.Rows, x => x.Explicit);
+        Assert.Equal(0.123, rounded.Target, 9);
+        Assert.Same(rounded, fine.Primary);
     }
 
     [Fact]

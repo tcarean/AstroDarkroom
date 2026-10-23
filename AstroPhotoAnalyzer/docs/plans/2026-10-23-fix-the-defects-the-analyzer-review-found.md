@@ -404,3 +404,11 @@ full curve's factor (assumption 1 of the plan) changes nothing; it stays as the 
 raw minimum is 0.00002 everywhere (the dust's point, above 0). Found on the way: the curve
 (0, 0), (0.5, 0.98), (0.6, 0.99), (1, 1) of the old R-140 test stays within 0..1 (its comment
 said it passed 1) but is not monotone; the test now says so.
+
+### Step 2, items 4, 5, 6 and 8 (goldens)
+
+Item 4 and item 5 moved no golden line (the stress test of the dark scene misses no level from
+16 bits, and its crop of 77 px per side keeps the equal-sides wording). Items 6 and 8 moved one
+line, in `help.txt`: the `--target-bg` line gained ` (strict intre 0 si 1, 3 zecimale)`, the
+intended change of the help text. `dark-sky-wcs.txt`, which runs `--target-bg 0.135`, did not
+move: three decimals round to themselves.
