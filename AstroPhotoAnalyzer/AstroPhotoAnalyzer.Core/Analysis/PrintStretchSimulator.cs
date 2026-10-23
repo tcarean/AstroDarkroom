@@ -30,7 +30,8 @@
 // every time.
 //
 // The exact target is not searched by bisection but on a LADDER of lifts in steps of 0.01
-// (Thresholds.ExactTarget*), with linear interpolation between two steps: the same ladder gives
+// (Thresholds.ExactTarget*), with linear interpolation between two steps, and on that ladder
+// alone: a given target outside it gets its table row and feeds no series (ADR 0040). The same ladder gives
 // the exact target of the dust, of each cloud (114 rows on the plate-solved FITS, V-004 - a
 // bisection on each would be 2500 lifts) and the two targets at the neighbouring Dmax, from the
 // same lifts: at most 56, and fewer when every series has crossed its level and every table row
@@ -123,9 +124,9 @@ namespace AstroPhotoAnalyzer
         internal double Lstar { get; init; }
 
         /// <summary>
-        /// The target at which the cloud reaches paper black; null when no step of the ladder
-        /// brings it there. The ladder ends at ExactTargetHi, or at a given target above it, and
-        /// a crossing past ExactTargetHi is then interpolated across that one wide step.
+        /// The target at which the cloud reaches paper black, read on the regular ladder,
+        /// ExactTargetLo to ExactTargetHi; null when no step of it brings the cloud there. A
+        /// given target outside the ladder gets its table row and feeds no series (ADR 0040).
         /// </summary>
         internal double? ExactTarget { get; init; }
 
@@ -188,10 +189,11 @@ namespace AstroPhotoAnalyzer
         internal double? VisibilityTarget { get; init; }
 
         /// <summary>
-        /// The exact target at which the dust reaches black, interpolated on the ladder; null when
-        /// no step of the ladder reaches it, and null too with a background at 0 or 1. The ladder
-        /// ends at ExactTargetHi, or at a given target above it, and a crossing past ExactTargetHi
-        /// is then interpolated across that one wide step.
+        /// The exact target at which the dust reaches black, interpolated on the regular ladder,
+        /// ExactTargetLo to ExactTargetHi; null when no step of it reaches black, and null too
+        /// with a background at 0 or 1. A given target outside the ladder gets its table row and
+        /// feeds no series (ADR 0040; until the review of 2026-10-23 it extended the ladder, and a
+        /// crossing past ExactTargetHi was interpolated across that one wide step).
         /// </summary>
         internal double? ExactTarget { get; init; }
 
@@ -333,11 +335,12 @@ namespace AstroPhotoAnalyzer
         /// Builds the patch map on the subsample at <see cref="Thresholds.TonalStride"/>,
         /// measures the "asa cum e" row and, when the measured background is strictly inside
         /// (0, 1), lifts the subsample once per step of the ladder (the exact steps, the grid and
-        /// the given target), from the lowest up: every step feeds the dust, sky and cloud series
-        /// the exact targets are read on, and the steps of the grid and of the given target
-        /// become rows. The ladder stops early once every series has a step at or above the
-        /// level it is read against and every row is built; the targets read are then the same
-        /// as from the whole ladder.
+        /// the given target), from the lowest up: every step within ExactTargetLo..ExactTargetHi
+        /// feeds the dust, sky and cloud series the exact targets are read on (a given target
+        /// outside that range is lifted for its row alone, ADR 0040), and the steps of the grid
+        /// and of the given target become rows. The ladder stops early once every series has a
+        /// step at or above the level it is read against and every row is built; the targets read
+        /// are then the same as from the whole ladder.
         /// </summary>
         /// <param name="r">
         /// The image, 0..1; its <see cref="Raster.Source"/> gives the WCS, when there is one.
@@ -423,16 +426,21 @@ namespace AstroPhotoAnalyzer
                     var lift = new LiftTable(gamma);
                     DustStats d = DustAnalyzer.Measure(DustAnalyzer.PatchLstars(sub, lift), map, black);
                     steps++;
-                    seriesTargets.Add(target);
-                    dustAt.Add(d.LstarDust);
-                    skyAt.Add(d.LstarSky);
-                    cloudAt.Add(d.CloudLstars);
-                    dustCrossed |= d.LstarDust >= black;
-                    dustLoCrossed |= d.LstarDust >= blackLo;
-                    dustHiCrossed |= d.LstarDust >= blackHi;
-                    skyCrossed |= d.LstarSky >= Thresholds.LowSeparationLstar;
-                    for (int k = 0; k < rowClouds.Length; k++)
-                        if (!cloudCrossed[k] && d.CloudLstars[rowClouds[k]] >= black) { cloudCrossed[k] = true; cloudsLeft--; }
+                    // Only the regular ladder feeds the series: a given target outside it would
+                    // put one wide step into the interpolation (ADR 0040).
+                    if (target >= Thresholds.ExactTargetLo - 1e-9 && target <= Thresholds.ExactTargetHi + 1e-9)
+                    {
+                        seriesTargets.Add(target);
+                        dustAt.Add(d.LstarDust);
+                        skyAt.Add(d.LstarSky);
+                        cloudAt.Add(d.CloudLstars);
+                        dustCrossed |= d.LstarDust >= black;
+                        dustLoCrossed |= d.LstarDust >= blackLo;
+                        dustHiCrossed |= d.LstarDust >= blackHi;
+                        skyCrossed |= d.LstarSky >= Thresholds.LowSeparationLstar;
+                        for (int k = 0; k < rowClouds.Length; k++)
+                            if (!cloudCrossed[k] && d.CloudLstars[rowClouds[k]] >= black) { cloudCrossed[k] = true; cloudsLeft--; }
+                    }
                     if (tableRows.Contains(target))
                     {
                         // The row's pixel percentages, on the L* plane of the subsample lifted

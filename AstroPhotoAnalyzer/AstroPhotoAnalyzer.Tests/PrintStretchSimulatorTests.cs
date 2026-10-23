@@ -212,6 +212,38 @@ public class PrintStretchSimulatorTests
         Assert.StartsWith("praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)", ReportWriter.DustDmaxText(black));
     }
 
+    /// <summary>
+    /// A given target outside the ladder is a row, not a step of the series (ADR 0040): a dust
+    /// that reaches paper black only above 0.60 keeps `> 0.60` with a target of 0.70 given, where
+    /// it used to be interpolated across the one wide step from 0.60 to the given target.
+    /// </summary>
+    [Fact]
+    public void R043_AGivenTargetOutsideTheLadderGetsItsRowButDoesNotFeedTheExactTargets()
+    {
+        // A sky at 0.08 with one 32 px patch at half of the first 16-bit level (7.63e-6): the
+        // dust class is that patch (6 % of the 16 patches), and its lift from 0.08 through the
+        // lift table (half of the lifted first level, in linear light) reaches the paper black
+        // of L* 9.0 between 0.65 and 0.70: at 0.60 it reads L* 5.0, at 0.70 L* 14.3.
+        Raster r = SyntheticRasters.From(128, 128, 3, (x, y, p) => x < 32 && y < 32 ? 7.63e-6f : 0.08f);
+        var plain = Simulate(r);
+        Assert.Null(plain.ExactTarget);
+        Assert.Equal("> 0.60", ReportWriter.TargetText(plain.ExactTarget));
+
+        var given = Simulate(r, new Parameters { TargetBackground = 0.70 });
+        SimulationRow row = Assert.Single(given.Rows, x => x.Explicit);
+        Assert.Equal(0.70, row.Target, 9);
+        Assert.True(row.DustOnPaperBlack);          // the row itself shows the dust on black there
+        Assert.Null(given.ExactTarget);             // but the ladder's answer stays "> 0.60"
+        Assert.Equal(plain.ExactTargetDmaxLower, given.ExactTargetDmaxLower);
+        Assert.Equal(plain.VisibilityTarget, given.VisibilityTarget);
+
+        // Below the ladder too: a target of 0.03 is a row and no step.
+        var low = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.03 });
+        Assert.Equal(0.03, low.Rows.First().Target, 9);
+        Assert.True(low.Rows.First().Explicit);
+        Assert.Equal(Simulate(SyntheticRasters.Flat(64, 64, 0.08f)).ExactTarget, low.ExactTarget);
+    }
+
     [Fact]
     public void R043_CrossingInterpolatesBetweenTwoStepsAndHandlesTheEnds()
     {

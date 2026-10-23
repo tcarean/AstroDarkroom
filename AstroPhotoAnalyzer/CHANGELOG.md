@@ -26,6 +26,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   when it is NaN, infinite or not strictly inside (0, 1) once rounded: no more run that ends in an
   error without a report at 1 or at a value that rounds to 0, and a target typed with more
   decimals keeps its `(dat)` row and the Preview tile (R-023; ADR 0040; items 6 and 8).
+- The exact targets of Anexa B (the dust's, its two Dmax neighbours, the visibility target,
+  each cloud's) are read on the regular ladder 0.05..0.60 alone: a `--target-bg` above 0.60 no
+  longer extends it, so a crossing the ladder does not reach prints `> 0.60` instead of a value
+  interpolated across the gap (R-043; ADR 0040; item 7).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;

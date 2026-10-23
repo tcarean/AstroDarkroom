@@ -151,7 +151,9 @@ exact targets are read on (the dust against the paper black of the Dmax in use a
 black) is marked crossed at its first step at or above its level, and once every series has
 crossed and every table row is built the remaining steps are not lifted; `Crossing` reads a
 series no further than that first step, so the targets are those of the whole ladder
-(`SimulationResult.StepsLifted` counts the lifts; the review of 2026-10-23, item 15). The grid steps become
+(`SimulationResult.StepsLifted` counts the lifts; the review of 2026-10-23, item 15). Only the
+steps within `ExactTargetLo`..`ExactTargetHi` feed the series: a given target outside the ladder
+is lifted for its row alone (ADR 0040). The grid steps become
 `SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,
 `PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `DustOnPaperBlack`,
 `SkyVisible` = the sky, rounded to the one decimal the table prints, at or above
