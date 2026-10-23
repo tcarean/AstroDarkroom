@@ -167,7 +167,7 @@ reproduce, to the last decimal the record printed, the "tool" column of the tabl
 wherever ADR 0025 did not change the rule: the means and the shares below 32 and 64, the
 percentiles, the L\* figures, the noise (128 smooth tiles, median 0.45 LSB), the plateau
 (2.68 px from 20 tiles), the rounding, the stress test, the JPEG and TIFF sizes and errors, the
-stars (7166, median 3.133 px, centre 4.27 px), the background colour and the bottom-right
+stars (7163 since ADR 0041; 7166 before it, median 3.133 px, centre 4.27 px), the background colour and the bottom-right
 corner, the crop and the 70 cm row on 50:35, and the 70 cm recommended at 1.5 m.
 
 One figure does not. The natural ratio, the distance from which a star is a point over the
@@ -193,6 +193,36 @@ exact target 0.184 (0.205 at Dmax 1.9, 0.163 at 2.1), and the image passes as it
 LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6, LDN 559 at 4.7.
 
 ## History
+
+- 2026-10-23 (the fixes of the area-2 code review, `docs/plans/2026-10-23-fix-the-defects-the-analyzer-review-found.md`;
+  ADRs 0039 to 0044), approved by the owner on the drift table of the plan's record: 146 of
+  1696 figures moved, none of the dust, the sky, the exact targets or the verdicts. The renamed
+  keys, the same values: `simulation.alreadyPrintSafe` -> `simulation.dustOnPaperBlackAsIs`,
+  `simulation.dmaxToPassAsIs` -> `simulation.dmaxDustOnPaperBlackAsIs` (the dust's figures,
+  ADR 0043), `crop.cutPerSidePx` -> `crop.cutStartPx` plus the new `crop.cutEndPx` (0 / 0, and
+  192 / 192 on V-002). The dark shares count the 8-bit level an export writes (ADR 0043):
+  `tonal.pctBelowDarkA` / `B` 74.053 -> 73.0336 and 96.3479 -> 96.252 on the PNG (V-001, V-002,
+  V-003, V-005), 17.8327 -> 16.9419 and 88.3661 -> 88.1052 on the FITS (V-004), 72.4919 ->
+  71.4654 and 91.728 -> 91.5987 on Rosetta (V-010), 82.906 -> 81.2761 and 99.4746 -> 99.4663 on
+  the Veil (V-013). A flat two-pixel star peak counts once (ADR 0041): on the PNG `stars.count`
+  7166 -> 7163, `fwhmMedian` 3.133 -> 3.1332, `fwhmQ1` 2.868 -> 2.8685, `fwhmQ3` 3.4901 ->
+  3.4899, the centre 4.2711 -> 4.2709 and the top-left corner 2.8198 -> 2.82, and through them
+  `size.naturalRatio` 1.0147 -> 1.0148 (1.0623 -> 1.0624 on V-002) and the size rows' `starMm`
+  and `minDistanceM` by 0.0001 to 0.0002. Maxima's factor is capped under the spline's overshoot
+  (ADR 0039): V-009 `curves.Maxima.point.peaks` 0.92 -> 0.8917 (band 0.3504 -> 0.3417, clouds
+  0.684 -> 0.6638; L* after 37.6936 / 68.5218 / 82.9249 -> 36.7604 / 66.6896 / 81.4566, the dust
+  and the sky by hundredths; `noiseGain` 1.3096 -> 1.2897, `noiseAfterLsb` 0.5917 -> 0.5827,
+  `pctClipped` 0.3227 -> 0.1767); V-011 peaks 0.92 -> 0.8992 (band 0.456 -> 0.4469, clouds
+  0.7152 -> 0.6995; L* 47.6964 / 68.4645 / 86.3281 -> 46.7735 / 67.1502 / 84.9267; gain 1.0966
+  -> 1.0918; clipped 0.7171 -> 0.3917); V-014 peaks 0.92 -> 0.8277 (band 0.2718 -> 0.2526,
+  clouds 0.7155 -> 0.6463; L* 30.961 / 69.3605 / 83.2141 -> 28.5383 / 63.2578 / 77.9226, sky
+  11.0812 -> 10.7444; gain 1.4658 -> 1.3815; clipped 0.1235 -> 0.0263). V-004's clouds (397,
+  114 rows, every cloud figure), every `keep16BitMaster` and `monotone`, V-002's verdict, V-006
+  to V-008 and V-012: no drift. The two speed changes of the same task (the selection in
+  `Stats`, the ladder's early stop) were measured before the fixes: all 1689 figures identical.
+  Found while rewriting the file: V-003's `expected` listed seven keys twice with the same values
+  (`simulation.skyReason`, `latitudeSpanDeg`, the five `pctPatches.*`); the second copies are
+  gone, a change the owner did not ask for and is told of here.
 
 - 2026-10-23 (the documentation backfill, area 2, `Core/Analysis/`): comments only, every
   changed C# file's code token for token as on `main`. Re-run on the branch, the seven files of
