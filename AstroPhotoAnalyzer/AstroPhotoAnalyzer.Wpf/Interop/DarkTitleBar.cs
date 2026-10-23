@@ -40,7 +40,10 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="attr">The DWMWINDOWATTRIBUTE number.</param>
         /// <param name="value">The attribute's value; 1 turns the dark mode on.</param>
         /// <param name="size">The size of the value in bytes, sizeof(int).</param>
-        /// <returns>An HRESULT: 0 on success, otherwise the failure, never an exception.</returns>
+        /// <returns>
+        /// An HRESULT: 0 on success, otherwise the failure, not an exception; a missing
+        /// dwmapi.dll or entry point still throws, which <see cref="Apply"/> catches.
+        /// </returns>
         [DllImport("dwmapi.dll", PreserveSig = true)]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 

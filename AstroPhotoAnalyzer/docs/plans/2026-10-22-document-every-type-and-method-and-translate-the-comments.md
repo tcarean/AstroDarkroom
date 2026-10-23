@@ -981,3 +981,51 @@ replaced as a link, the input untouched).
     shows the core identical to `main`'s.
   - **`check-design.ps1 -Since main`** listed four notes: `window.md` changed (the fix above);
     `code-map.md`, `console.md` and `extending.md` were read against the change and hold.
+
+### Code review of area 5 (2026-10-24)
+
+`/code-review main...claude/Document-and-translate-the-window` ran at high effort: eight finder
+angles in one context, no verify pass, ten findings, each checked against its code line or the
+XAML by reading. The owner had the eight comment-only findings fixed and the two that need a code
+change kept as questions.
+
+- **Comments made true about the code,** in one commit:
+  - `ParameterFields.DmaxTextOf`: an unknown or null medium name throws ArgumentException
+    (`Parameters.MediumFromName`), which `TryBuild` does not catch; it does not fall back to the
+    default medium.
+  - `ParameterFields.TryBuild`: an empty field takes the core's default except the widths,
+    which an empty field refuses (`SizesOf`; `ParameterFieldsTests`'s R024 case).
+  - `MetricRow` and `ResultTabViewModel.Row`: the note is on its own line under the label and
+    the description (`Theme/Dark.xaml`, both row templates; `window.md`), not beside the value.
+  - `DarkTitleBar.DwmSetWindowAttribute`: a missing dwmapi.dll or entry point throws, which
+    `Apply` catches; "never an exception" was false.
+  - `MainWindow.GalleryKeys`: the arrow is marked handled whenever the gallery is the target,
+    also at its ends, where nothing moves.
+  - `RasterBitmaps.Region`: the width is clamped to the columns from x0 to the right edge, not
+    "the pixels left of x0".
+  - `ResultTabViewModel.Populate`: the six tabs of `ResultTabs.cs` fill their rows; the Curbe
+    tab's override only keeps the result until "Calculeaza".
+  - `ResultTabs.cs` and `PreviewWindowViewModel.cs`, headers: two figures are derived in the
+    window, the Preview guide's 1 / `ScreenStepBackFactor` and the amber legend's share as the
+    difference of the core's two shares; the headers said none was.
+- **Code questions for the owner** (on `main` before this branch; none changed here, as
+  Assumption 7 says):
+  1. **Saving the report can end the application.** `MainViewModel.SaveReport` opens a
+     `StreamWriter` without a try, `MainWindow.SaveReport` calls it from the click handler, and
+     the application handles no `DispatcherUnhandledException`: saving over a file another
+     program holds open, or into a folder that refuses writing, throws IOException or
+     UnauthorizedAccessException and closes the window with its analysis. The Curbe tab's
+     `Save` catches and shows `SaveError`. Recommendation: catch in `SaveReport` and show the
+     message as the Curbe tab does (a requirement row and a failing test first); a global
+     handler would hide the next such bug instead of naming it.
+  2. **The map legend computes the share of each class itself.** `MapViewModel.From` takes
+     `100.0 * classes.Count(c => c == cls) / classes.Length`, while the core has
+     `DustMap.FractionOf`, which `PrintStretchSimulator` uses for the report's class fractions;
+     the rule "Computed only in the core" is broken, and the header's "It computes nothing" is
+     false (left as it is with the code). The two give the same figure today. The same rule is
+     bent by the two figures the comments above now name (`1 / f`, the amber share).
+     Recommendation: call `100 * map.FractionOf(cls)` in the legend and correct the header with
+     it; have the core return the inverse factor and the amber share when the Preview code is
+     next touched.
+
+  These sit beside area 4's NaN question and the rule "Languages" question in "Area 5" above.

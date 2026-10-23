@@ -19,8 +19,9 @@
 // image lifted to the row's target, with the pixels under paper black and those under the
 // weak-separation threshold painted differently.
 //
-// The lifted image and the class of each pixel come from the core (PrintPreview, R-045); here
-// they are only painted, and the user is let to switch the layers off.
+// The lifted image, the class of each pixel and the two shares come from the core (PrintPreview,
+// R-045); here they are painted, the amber legend's share is taken as the difference of the
+// two, and the user is let to switch the layers off.
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;

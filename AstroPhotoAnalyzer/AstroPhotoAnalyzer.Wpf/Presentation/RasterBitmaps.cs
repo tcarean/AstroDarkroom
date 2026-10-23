@@ -42,8 +42,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <param name="r">The raster, 0..1 levels; at least one pixel.</param>
         /// <param name="x0">The left column, in pixels; clamped into the image.</param>
         /// <param name="y0">The top row, in pixels, 0 at the top; clamped into the image.</param>
-        /// <param name="w">The width in source pixels; clamped to 1..the pixels left of x0.</param>
-        /// <param name="h">The height in source pixels; clamped to 1..the rows under y0.</param>
+        /// <param name="w">
+        /// The width in source pixels; clamped to 1..the columns from x0 to the right edge.
+        /// </param>
+        /// <param name="h">
+        /// The height in source pixels; clamped to 1..the rows from y0 to the bottom edge.
+        /// </param>
         /// <param name="stride">Take every n-th pixel on both axes, 1 or more.</param>
         /// <param name="zoom">
         /// Repeat each taken pixel this many times on both axes, 1 or more.

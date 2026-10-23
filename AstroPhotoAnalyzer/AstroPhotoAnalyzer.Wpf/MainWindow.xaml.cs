@@ -113,7 +113,10 @@ namespace AstroPhotoAnalyzer.Wpf
         /// use them to change the tab; in a text box they stay the box's.
         /// </summary>
         /// <param name="sender">The window; not read.</param>
-        /// <param name="e">The key; marked handled when the gallery took it.</param>
+        /// <param name="e">
+        /// The key; marked handled whenever the gallery is the target, also at its ends, where
+        /// nothing moves, so the TabControl never gets the arrow.
+        /// </param>
         void GalleryKeys(object sender, System.Windows.Input.KeyEventArgs e)
         {
             if (e.Key != System.Windows.Input.Key.Left && e.Key != System.Windows.Input.Key.Right) return;

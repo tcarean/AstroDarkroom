@@ -98,10 +98,12 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>
         /// The text the Dmax field shows for a medium: the core's Dmax, as Fmt.Dmax writes it.
         /// </summary>
-        /// <param name="medium">The medium's name, as in <see cref="Media"/>, any case.</param>
-        /// <returns>
-        /// "2.4" for baryta, and so on; an unknown name gives the default medium's.
-        /// </returns>
+        /// <param name="medium">
+        /// The medium's name, as in <see cref="Media"/>, any case; null or an unknown name throws
+        /// ArgumentException (Parameters.MediumFromName), which <see cref="TryBuild"/> does not
+        /// catch.
+        /// </param>
+        /// <returns>"2.4" for baryta, and so on.</returns>
         static string DmaxTextOf(string medium) => Fmt.Dmax(Parameters.DmaxOf(Parameters.MediumFromName(medium)));
         public string Distance { get => _distance; set => Set(ref _distance, value); }
         public string Sizes { get => _sizes; set => Set(ref _sizes, value); }
@@ -125,7 +127,8 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The message for the user, in Romanian; null when the parameters are returned.
         /// </param>
         /// <returns>
-        /// The parameters, every empty field left to the core's default; null on a message.
+        /// The parameters, an empty field left to the core's default, except the widths, which
+        /// an empty field refuses; null on a message.
         /// </returns>
         internal Parameters TryBuild(out string error)
         {

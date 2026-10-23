@@ -49,8 +49,9 @@ namespace AstroPhotoAnalyzer.Wpf
     }
 
     /// <summary>
-    /// One metric of a tab: a label, its formatted value, an optional note beside the value and
-    /// an optional description under the label.
+    /// One metric of a tab: a label, its formatted value, an optional description under the
+    /// label and an optional note on its own line below them (Theme/Dark.xaml's two row
+    /// templates).
     /// </summary>
     public sealed class MetricRow
     {

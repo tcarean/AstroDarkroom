@@ -16,10 +16,11 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ResultTabs.cs - the six tabs with results. Each receives the AnalysisResult through Populate
-// and turns it into rows; none computes a figure or phrases a sentence of diagnosis - those
-// come from Recommendations and from ReportWriter, the figures from Fmt. The descriptions, the
-// guides and the checks are the view-models' own explanation, every number in them interpolated
-// from Thresholds, Parameters or the result (ADR 0020).
+// and turns it into rows; none phrases a sentence of diagnosis - those come from
+// Recommendations and from ReportWriter, the figures from Fmt. The descriptions, the guides and
+// the checks are the view-models' own explanation, every number in them interpolated from
+// Thresholds, Parameters or the result (ADR 0020); one is derived here, the Preview guide's
+// 1 / ScreenStepBackFactor, when the print is larger than the 100 % view.
 //
 // All in one file because they are all the same thing: a list of rows and a bool HasResult.
 // When one grows, it takes a file of its own.
@@ -40,7 +41,8 @@ namespace AstroPhotoAnalyzer.Wpf
         public bool HasResult { get => _has; protected set => Set(ref _has, value); }
 
         /// <summary>
-        /// Fills the tab's rows from an analysis and sets <see cref="HasResult"/>.
+        /// Takes an analysis and sets <see cref="HasResult"/>: the six tabs of this file fill
+        /// their rows from it; the Curbe tab only keeps it, until "Calculeaza".
         /// </summary>
         /// <param name="r">The analysis; not null.</param>
         internal abstract void Populate(AnalysisResult r);
@@ -56,7 +58,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>A <see cref="MetricRow"/>, for the tabs' row lists.</summary>
         /// <param name="label">The row's label.</param>
         /// <param name="value">The formatted value.</param>
-        /// <param name="note">The note beside the value; null for none.</param>
+        /// <param name="note">The note, on its own line under the label; null for none.</param>
         /// <param name="description">What the row measures; null for none.</param>
         /// <returns>The row.</returns>
         protected static MetricRow Row(string label, string value, string note = null, string description = null)
