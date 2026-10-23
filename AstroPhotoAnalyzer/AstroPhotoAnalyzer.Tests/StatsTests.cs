@@ -19,7 +19,7 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class StatsTests
 {
-    /// <summary>Semantica numpy: np.percentile([1,2,3,4], 50) = 2.5, 25 -> 1.75, 100 -> 4.</summary>
+    /// <summary>numpy's semantics: np.percentile([1,2,3,4], 50) = 2.5, 25 -> 1.75, 100 -> 4.</summary>
     [Theory]
     [InlineData(50, 2.5)]
     [InlineData(25, 1.75)]

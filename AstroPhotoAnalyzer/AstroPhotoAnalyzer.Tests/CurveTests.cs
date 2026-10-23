@@ -119,6 +119,14 @@ public class CurveTests
         Assert.True(earlier.IsWithinRange);
         Assert.True(earlier.IsMonotone);
         Assert.True(earlier.IsSuggestible);
+
+        // The judgement without the table agrees with the built curve, and a flat run of points
+        // on the diagonal, whose spline is straight up to rounding, is monotone.
+        Assert.False(ToneCurve.WouldBeSuggestible(maxima.Points));
+        Assert.True(ToneCurve.WouldBeSuggestible(earlier.Points));
+        ToneCurve flat = Curve((0, 0), (0.1, 0.1), (0.2, 0.2), (0.3, 0.3), (0.4, 0.4), (1, 1));
+        Assert.True(flat.IsMonotone);
+        Assert.True(flat.IsSuggestible);
     }
 
     /// <summary>

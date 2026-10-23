@@ -86,7 +86,9 @@ namespace AstroPhotoAnalyzer
             {
                 // The target is narrower: the width is cut, half on each side; with an odd cut the
                 // right side loses one pixel more (the bottom one, below).
-                int newW = Math.Min(w, Math.Max(1, (int)Math.Round(h * t)));
+                // A target narrower than the image rounds to at most w; the floor of 1 px is for
+                // an absurd target (1:10000), which must not leave a width of 0.
+                int newW = Math.Max(1, (int)Math.Round(h * t));
                 if (newW == w) return none;
                 int cut = (w - newW) / 2;
                 return new CropResult
@@ -106,7 +108,7 @@ namespace AstroPhotoAnalyzer
             }
             else
             {
-                int newH = Math.Min(h, Math.Max(1, (int)Math.Round(w / t)));
+                int newH = Math.Max(1, (int)Math.Round(w / t));
                 if (newH == h) return none;
                 int cut = (h - newH) / 2;
                 return new CropResult

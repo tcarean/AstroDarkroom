@@ -134,7 +134,7 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = g[row + x];
                     if (v <= thr || v > maxPeak) continue;
-                    if (!IsWindowMax(g, W, x, y, v)) continue;
+                    if (!IsWindowMax(g, W, H, x, y, v)) continue;
 
                     float baseLevel = BorderMedian(g, W, x, y, border);
                     float amp = v - baseLevel;
@@ -176,10 +176,13 @@ namespace AstroPhotoAnalyzer
         /// The maximum of the window, ties allowed, counted once: a flat peak of two pixels is
         /// still a star, and only its first pixel in scan order (a row above, or the same row to
         /// the left) passes, so it is measured once (ADR 0041; before it both passed and it was
-        /// measured twice).
+        /// measured twice). Only a tied pixel the scan reaches counts as earlier: one in the
+        /// border left out can disqualify nothing, or a flat peak straddling the border would be
+        /// lost altogether.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>
+        /// <param name="H">The plane's height, in pixels.</param>
         /// <param name="x">
         /// The candidate's column, at least <see cref="Thresholds.StarWindow"/> / 2 px from the
         /// left and right edges.
@@ -193,16 +196,17 @@ namespace AstroPhotoAnalyzer
         /// <c>true</c> when no pixel of the window is over <paramref name="v"/> and none equal to
         /// it comes earlier in scan order.
         /// </returns>
-        static bool IsWindowMax(float[] g, int W, int x, int y, float v)
+        static bool IsWindowMax(float[] g, int W, int H, int x, int y, float v)
         {
             for (int dy = -Half; dy <= Half; dy++)
             {
                 int o = (y + dy) * W + x;
+                bool rowScanned = y + dy >= Half && y + dy < H - Half;
                 for (int dx = -Half; dx <= Half; dx++)
                 {
                     float u = g[o + dx];
                     if (u > v) return false;
-                    if (u == v && (dy < 0 || (dy == 0 && dx < 0))) return false;
+                    if (u == v && (dy < 0 || (dy == 0 && dx < 0)) && rowScanned && x + dx >= Half && x + dx < W - Half) return false;
                 }
             }
             return true;

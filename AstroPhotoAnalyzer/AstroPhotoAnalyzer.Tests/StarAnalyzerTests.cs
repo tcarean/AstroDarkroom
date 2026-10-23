@@ -21,7 +21,7 @@ public class StarAnalyzerTests
 {
     const float Sky = 0.08f;
 
-    /// <summary>Un cer de 512x512 cu stele pe o grila de 8x8, la 55 px una de alta; jumatate au centrul intre pixeli.</summary>
+    /// <summary>A 512 x 512 sky with stars on an 8 x 8 grid, 55 px apart; half of them are centred between pixels.</summary>
     static Raster StarField(double fwhm, float amplitude = 0.3f, int count = 64)
     {
         Raster r = SyntheticRasters.Flat(512, 512, Sky);
@@ -42,9 +42,9 @@ public class StarAnalyzerTests
 
         Assert.False(s.Insufficient);
         Assert.InRange(s.Count, 55, 70);
-        // Interpolarea liniara la jumatate supraestimeaza o gaussiana esantionata cu
-        // ~2.5 % (intre 1 si 2 px curba e convexa). E bias-ul metodei din scriptul de
-        // acceptanta, pastrat pentru paritate: 3.0 real iese ~3.08.
+        // The linear interpolation at the half overestimates a sampled Gaussian by about
+        // 2.5 % (between 1 and 2 px the curve is convex). It is the bias of the acceptance
+        // script's method, kept for parity: a true 3.0 reads about 3.08.
         Assert.InRange(s.FwhmMedian, 2.95, 3.2);
         Assert.InRange(s.FwhmQ1, 2.8, 3.2);
         Assert.InRange(s.FwhmQ3, 2.9, 3.3);
@@ -73,6 +73,14 @@ public class StarAnalyzerTests
         foreach (float[] plane in column.Planes) plane[61 * 128 + 60] = plane[60 * 128 + 60];
         Star top = Assert.Single(StarAnalyzer.Analyze(column).Stars);
         Assert.Equal(60, top.Y);
+
+        // A flat peak whose first pixel lies in the border the scan leaves out: the second pixel,
+        // the first the scan reaches, is the star; a tied pixel outside the scan disqualifies nothing.
+        int half = Thresholds.StarWindow / 2;
+        Raster edge = SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), half, 60, 3.0, 0.3f);
+        foreach (float[] plane in edge.Planes) plane[60 * 128 + half - 1] = plane[60 * 128 + half];
+        Star kept = Assert.Single(StarAnalyzer.Analyze(edge).Stars);
+        Assert.Equal(half, kept.X);
     }
 
     /// <summary>
@@ -103,8 +111,8 @@ public class StarAnalyzerTests
     [Fact]
     public void SoftCornersAreSeenAgainstTheCentre()
     {
-        // Centru (40 % din latura, 154..358): 16 stele de 3.0. Colturi (20 %, 102 px):
-        // cate 9 stele de 4.6. Raportul 1.53 trece de 1.4.
+        // The centre (40 % of the side, 154..358): 16 stars of 3.0. The corners (20 %, 102 px):
+        // 9 stars of 4.6 each. The ratio 1.53 passes 1.4.
         Raster r = SyntheticRasters.Flat(512, 512, Sky);
         for (int i = 0; i < 4; i++)
             for (int j = 0; j < 4; j++)
@@ -153,7 +161,7 @@ public class StarAnalyzerTests
     [Fact]
     public void TheHalfWidthOfATriangleIsExact()
     {
-        // Triunghi cu varful 1 la centru si panta 1/3: la jumatate e lat exact 3.0.
+        // A triangle with its peak of 1 at the centre and a slope of 1/3: at the half it is exactly 3.0 wide.
         var line = new double[25];
         for (int i = 0; i < 25; i++) line[i] = Math.Max(0, 1 - Math.Abs(i - 12) / 3.0);
 

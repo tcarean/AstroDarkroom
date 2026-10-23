@@ -141,18 +141,27 @@ namespace AstroPhotoAnalyzer.Wpf
         static double? TargetBgOf(string text)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
-            if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
-                throw new FormatException($"fundalul-tinta: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
+            double v = ParseNumber(text, "fundalul-tinta");
             string error = Parameters.TargetBackgroundError(v);
             if (error != null) throw new FormatException(error);
+            return v;
+        }
+
+        /// <summary>
+        /// Numarul dintr-un camp, cu cultura invarianta (R-024); un text care nu e numar da
+        /// mesajul campurilor, cu punctul ca separator. Un singur loc pentru toate campurile.
+        /// </summary>
+        static double ParseNumber(string text, string what)
+        {
+            if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
+                throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
             return v;
         }
 
         static double? OptionalNumber(string text, string what, double lo, double hi, bool allowZero = false)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
-            if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
-                throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
+            double v = ParseNumber(text, what);
             bool tooLow = allowZero ? v < lo : v <= lo;
             if (tooLow || v > hi) throw new FormatException($"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]");
             return v;

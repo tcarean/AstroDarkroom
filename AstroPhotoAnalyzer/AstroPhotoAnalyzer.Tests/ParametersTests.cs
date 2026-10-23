@@ -19,7 +19,7 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class ParametersTests
 {
-    // Enum-ul e internal, deci testele publice il primesc pe nume, nu ca tip.
+    // The enum is internal, so the public tests receive it by name, not as a type.
     [Theory]
     [InlineData("baryta", 2.4)]
     [InlineData("canvas", 1.5)]
@@ -119,7 +119,7 @@ public class ParametersTests
         Assert.Throws<ArgumentException>(() => Parameters.MediumFromName("hartie"));
     }
 
-    /// <summary>Regula inramatorilor: passepartout-ul cel putin dublul ramei; 0 = fara, si nu se verifica.</summary>
+    /// <summary>The framers' rule: the passepartout at least twice the frame; 0 = none, and not checked.</summary>
     [Theory]
     [InlineData(7, 3, true)]
     [InlineData(6, 3, true)]
@@ -176,6 +176,9 @@ public class ParametersTests
         {
             Assert.StartsWith("fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la 3 zecimale); a primit ", error);
             Assert.DoesNotContain("--target-bg", error);
+            if (double.IsNaN(given)) Assert.EndsWith("a primit NaN, care nu e un numar", error);
+            if (double.IsPositiveInfinity(given)) Assert.EndsWith("a primit infinit", error);
+            Assert.All(error, ch => Assert.True(ch < 128, "non-ASCII in the message: " + error));
         }
     }
 }

@@ -226,7 +226,8 @@ Candidate = pixel of the reference plane above `mean + StarCandidateAboveMean16/
 (3000/65535 = 0.046 above the plane mean), not above `StarMaxPeak16/65535` (saturated),
 and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`, `Half = StarWindow / 2` the
 border left out); among tied maxima only the first in scan order passes, so a flat two-pixel
-peak is one star (ADR 0041). Base = median of the
+peak is one star (ADR 0041); a tied pixel in the border left out disqualifies nothing, so a flat
+peak straddling the border is still measured, at its first scanned pixel. Base = median of the
 window's 96 border pixels; amplitude = peak - base >= `StarMinAmplitude16/65535`. Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing
@@ -350,8 +351,10 @@ tool in `cubic spline` mode gives the same image. `Map` and `Slope` evaluate the
 `Apply` and the FITS writer go through a 65 536-entry table with linear interpolation between
 entries (`MapSample`), the spline at every 16-bit level to float precision (within 1.5e-7 on
 the curves measured on 2026-10-23); `IsMonotone` and `IsWithinRange` are judged on the
-unclamped spline at the same steps, and `IsSuggestible` is both: a spline the clamp would have
-to hold at 0 or 1 is not offered (ADR 0039).
+unclamped spline at the same steps, to a tolerance of 1e-9 for the arithmetic's noise, and
+`IsSuggestible` is both: a spline the clamp would have to hold at 0 or 1 is not offered (ADR
+0039). `WouldBeSuggestible(points)` makes the same judgement without building the table, for
+the cap's bisection.
 
 **The anchors** (`CurveAdvisor.ClassLevels`, `Anchors`). Five L\* levels turned into greys:
 the dust and the sky exactly as `DustAnalyzer.Measure` gives them; the band at the

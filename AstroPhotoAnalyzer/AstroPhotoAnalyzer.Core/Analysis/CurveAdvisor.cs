@@ -295,7 +295,7 @@ namespace AstroPhotoAnalyzer
                 return y;
             }
 
-            ToneCurve Build(double[] full, double strength)
+            List<CurvePoint> PointsOf(double[] full, double strength)
             {
                 // The dust at black is the origin itself: its point takes the place of the (0, 0)
                 // end, with its label, so that the table and the evidence still have five labelled
@@ -304,19 +304,22 @@ namespace AstroPhotoAnalyzer
                 if (x[0] > 0) pts.Add(new CurvePoint(0, 0, null));
                 for (int i = 0; i < 5; i++) pts.Add(new CurvePoint(x[i], x[i] + strength * (full[i] - x[i]), labels[i]));
                 pts.Add(new CurvePoint(1, 1, null));
-                return new ToneCurve(pts);
+                return pts;
             }
+
+            ToneCurve Build(double[] full, double strength) => new ToneCurve(PointsOf(full, strength));
 
             // The largest factor up to kMax whose full curve is suggestible, by bisection from the
             // identity (factor 0, always suggestible) to kMax: 40 halvings put it within 1e-12.
+            // Each probe judges the spline without building a table (ToneCurve.WouldBeSuggestible).
             double Cap(double kMax)
             {
-                if (Build(Full(kMax), 1).IsSuggestible) return kMax;
+                if (ToneCurve.WouldBeSuggestible(PointsOf(Full(kMax), 1))) return kMax;
                 double lo = 0, hi = kMax;
                 for (int i = 0; i < 40; i++)
                 {
                     double mid = (lo + hi) / 2;
-                    if (Build(Full(mid), 1).IsSuggestible) lo = mid; else hi = mid;
+                    if (ToneCurve.WouldBeSuggestible(PointsOf(Full(mid), 1))) lo = mid; else hi = mid;
                 }
                 return lo;
             }

@@ -18,8 +18,9 @@ with `Half = StarWindow / 2` and the border buffer from it.
 ## Decision
 
 A candidate is still the maximum of its window, ties allowed, but a pixel equal to it that comes
-earlier in scan order (a row above, or the same row to its left) disqualifies it: a flat peak is
-counted once, at its first pixel (R-070). The window's side is `Thresholds.StarWindow` (25), the
+earlier in scan order (a row above, or the same row to its left), among the pixels the scan
+reaches, disqualifies it: a flat peak is counted once, at its first scanned pixel, and one that
+straddles the border left out is not lost (R-070). The window's side is `Thresholds.StarWindow` (25), the
 half-width `StarWindow / 2`, and the border left out is that half-width.
 
 ## Alternatives rejected

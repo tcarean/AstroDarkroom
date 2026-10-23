@@ -514,4 +514,26 @@ item 10), every `keep16BitMaster` (item 4), every `monotone` key (item 2), V-008
 verdicts: unchanged everywhere (items 15a and 7 by construction, item 1 by name only). With the
 owner's approval the JSON takes these values and its two renamed keys, `docs/validation.md`
 gets the dated line, R-070's example moves from 7166 to 7163 stars, and R-142's example already
-carries V-009's capped figures.
+carries V-009's capped figures. Approved by the owner on 2026-10-23 and recorded in 6bad089;
+the rewrite of the JSON also collapsed seven keys V-003's `expected` listed twice with the same
+values (reported in `docs/validation.md`).
+
+### Step 5: the code review of the branch (`/code-review main...claude/...`, 2026-10-23)
+
+Eight findings, all fixed on the owner's word ("fixeaza tot mai intai si dupa faci merge"):
+the monotonicity and range judgements of `ToneCurve` get a tolerance of 1e-9 for the double
+arithmetic's noise (a flat run of points on the diagonal is monotone); the star tie rule counts
+only the tied pixels the scan reaches, so a flat peak whose first pixel lies in the border is
+still measured at its second; the refused target background names NaN and infinity in words
+(ASCII, like every other message); the dark-share cut is `TonalAnalyzer.Level8Under`, right for
+an odd threshold too (tested at 33); `ParameterFields` parses every field through one
+`ParseNumber`; the crop keeps the floor of 1 px for an absurd target and drops the unreachable
+`Math.Min`; the cap's bisection judges each probe with `ToneCurve.WouldBeSuggestible`, without a
+65 536-entry table; and the five test files that mixed languages (StarAnalyzerTests,
+TonalAnalyzerTests, QuantizationAnalyzerTests, StatsTests, ParametersTests) had their remaining
+Romanian comments translated, so each is one language. No golden line moved. The validation
+dump after the fixes against the approved one: 1696 figures, 2 moved by one unit of the fourth
+decimal, both Maxima levels whose capped factor the tolerance of 1e-9 lets land a hair higher
+(V-011 `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503, V-014 `curves.Maxima.lstar.peaks`
+77.9226 -> 77.9227); the 14 cases pass against the recorded values, within their tolerance of
+0.01, so the JSON keeps the approved figures.

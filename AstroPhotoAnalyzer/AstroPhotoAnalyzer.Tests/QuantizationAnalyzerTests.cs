@@ -24,7 +24,7 @@ public class QuantizationAnalyzerTests
     [Fact]
     public void ANoiselessSlowRampHasLongPlateausThatWouldShowOnPaper()
     {
-        // 0.10 -> 0.11 pe 256 px: 2.5 niveluri pe toata latimea, deci sub un pas pe dala.
+        // 0.10 -> 0.11 over 256 px: 2.5 levels across the whole width, so under one step per tile.
         var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
 
         Assert.True(q.PlateauKnown);
@@ -48,7 +48,7 @@ public class QuantizationAnalyzerTests
     [Fact]
     public void ABrightOrStructuredImageHasNoPlateauTiles()
     {
-        // Media peste 70 de niveluri: nu e cer, nu se masoara.
+        // A mean over 70 levels: not sky, not measured.
         var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(256, 256, 0.5f));
 
         Assert.Equal(0, q.PlateauTiles);
@@ -91,8 +91,8 @@ public class QuantizationAnalyzerTests
     [Fact]
     public void R082_TheShadowLiftStressShowsWhatEightBitsLoses()
     {
-        // O rampa continua 0 -> 0.5: ridicata, foloseste toate nivelurile din umbre. Aceeasi
-        // rampa cuantizata intai la 8 biti lasa goluri intre ele.
+        // A continuous ramp 0 -> 0.5: lifted, it uses every level in the shadows. The same ramp
+        // quantised to 8 bits first leaves gaps between them.
         var r = Sixteen(SyntheticRasters.Ramp(4, 4096, 0f, 0.5f));
         var q = QuantizationAnalyzer.Analyze(r);
 

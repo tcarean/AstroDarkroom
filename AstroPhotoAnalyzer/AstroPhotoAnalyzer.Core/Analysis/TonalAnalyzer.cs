@@ -162,13 +162,11 @@ namespace AstroPhotoAnalyzer
             var means = new double[r.Planes.Length];
             long belowA = 0, belowB = 0, total = 0;
             // "sub nivelul N" (N = Thresholds.DarkLevelA or DarkLevelB) is a sample whose 8-bit
-            // level, the one an export writes (RasterOps.Level8: round(v x 255), halves to even),
-            // is under N. Level8(v) < N is v x 255 < N - 0.5 exactly, N being even (31.5 and 63.5
-            // round up to it), so the loop compares the same product Level8 forms, without a call
-            // per sample. Until the review of 2026-10-23 the float sample was compared with
-            // N / 255, which counted the level N itself on an 8-bit TIFF, PNG or JPEG, read as
-            // n x 257 / 65535 (ADR 0043; the script tested the high byte, hi < N).
-            double a = Thresholds.DarkLevelA - 0.5, b = Thresholds.DarkLevelB - 0.5;
+            // level, the one an export writes (RasterOps.Level8), is under N: Level8Under, on the
+            // same product Level8 forms, without a Math.Round per sample. Until the review of
+            // 2026-10-23 the float sample was compared with N / 255, which counted the level N
+            // itself on an 8-bit TIFF, PNG or JPEG, read as n x 257 / 65535 (ADR 0043; the script
+            // tested the high byte, hi < N).
             for (int pl = 0; pl < r.Planes.Length; pl++)
             {
                 float[] plane = r.Planes[pl];
@@ -178,8 +176,8 @@ namespace AstroPhotoAnalyzer
                     float v = plane[i];
                     s += v;
                     double level = v * 255.0;
-                    if (level < a) belowA++;
-                    if (level < b) belowB++;
+                    if (Level8Under(level, Thresholds.DarkLevelA)) belowA++;
+                    if (Level8Under(level, Thresholds.DarkLevelB)) belowB++;
                 }
                 means[pl] = s / plane.Length * 255;
                 total += plane.Length;
@@ -211,6 +209,19 @@ namespace AstroPhotoAnalyzer
                 LstarHistogramPct = hist,
             };
         }
+
+        /// <summary>
+        /// Whether the 8-bit level of a sample is under <paramref name="n"/>, from the product
+        /// <see cref="RasterOps.Level8"/> rounds: round(x) &lt; n is x &lt; n - 0.5 when n is even
+        /// (the half rounds up to n, the even value) and x &lt;= n - 0.5 when n is odd (the half
+        /// rounds down to n - 1). The same answer as Level8 for every value, whatever the
+        /// threshold's parity.
+        /// </summary>
+        /// <param name="level255">The sample times 255, in double, as Level8 forms it before rounding.</param>
+        /// <param name="n">The level compared with, 0..255.</param>
+        /// <returns><c>true</c> when Level8 of the sample is under <paramref name="n"/>.</returns>
+        internal static bool Level8Under(double level255, int n)
+            => (n & 1) == 0 ? level255 < n - 0.5 : level255 <= n - 0.5;
 
         /// <summary>
         /// The L* statistics of a raster, at the given step (by default the tonal one).

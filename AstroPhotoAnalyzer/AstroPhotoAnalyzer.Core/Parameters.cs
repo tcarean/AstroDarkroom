@@ -138,7 +138,15 @@ namespace AstroPhotoAnalyzer
         {
             double v = RoundTargetBackground(given);
             if (double.IsNaN(v) || double.IsInfinity(v) || v <= 0 || v >= 1)
-                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture)}";
+            {
+                // NaN si infinitul, in cuvinte: ToString le-ar scrie "NaN" si cu simbolul infinitului,
+                // pe care consola nu-l poate arata in orice pagina de cod.
+                string got = double.IsNaN(given) ? "NaN, care nu e un numar"
+                    : double.IsPositiveInfinity(given) ? "infinit"
+                    : double.IsNegativeInfinity(given) ? "minus infinit"
+                    : given.ToString("0.#########", System.Globalization.CultureInfo.InvariantCulture);
+                return $"fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la {TargetBackgroundDecimals} zecimale); a primit {got}";
+            }
             return null;
         }
 

@@ -66,20 +66,21 @@ public class TonalAnalyzerTests
         Assert.Equal(100, TonalAnalyzer.Analyze(SyntheticRasters.Flat(16, 16, 31.4f / 255), Baryta).PctBelowDarkA);
         Assert.Equal(0, TonalAnalyzer.Analyze(SyntheticRasters.Flat(16, 16, 31.6f / 255), Baryta).PctBelowDarkA);
 
-        // The shortcut v x 255 < N - 0.5 is Level8(v) < N, for N even, on every level and on floats.
+        // Level8Under agrees with Level8 on every 16-bit level and on random floats, for the two
+        // thresholds and for an odd one, whose half rounds the other way.
         var rng = new SeededRandom(40);
         IEnumerable<float> samples = Enumerable.Range(0, 65536).Select(k => k / 65535f).Concat(Enumerable.Range(0, 200000).Select(_ => (float)rng.NextDouble()));
         foreach (float v in samples)
-        {
-            Assert.Equal(RasterOps.Level8(v) < Thresholds.DarkLevelA, v * 255.0 < Thresholds.DarkLevelA - 0.5);
-            Assert.Equal(RasterOps.Level8(v) < Thresholds.DarkLevelB, v * 255.0 < Thresholds.DarkLevelB - 0.5);
-        }
+            foreach (int n in new[] { Thresholds.DarkLevelA, Thresholds.DarkLevelB, 33 })
+                Assert.Equal(RasterOps.Level8(v) < n, TonalAnalyzer.Level8Under(v * 255.0, n));
+        Assert.True(TonalAnalyzer.Level8Under(32.5, 33));    // 32.5 rounds to 32, the even one
+        Assert.False(TonalAnalyzer.Level8Under(31.5, 32));   // 31.5 rounds to 32
     }
 
     [Fact]
     public void ADeepShadowImageIsEntirelyBelowPaperBlack()
     {
-        // 0.02 e nivelul 5: L* ~1.4, sub negrul oricarei hartii.
+        // 0.02 is the level 5: L* about 1.4, under the black of any paper.
         var t = TonalAnalyzer.Analyze(SyntheticRasters.Flat(64, 64, 0.02f), Baryta);
 
         Assert.Equal(100, t.PctBelowDarkA);
@@ -90,7 +91,7 @@ public class TonalAnalyzerTests
     [Fact]
     public void ATwoToneImageSplitsThePercentages()
     {
-        // Jumatatea stanga la 0.02, dreapta la 0.5; pasul 4 ancorat la 0 imparte egal.
+        // The left half at 0.02, the right at 0.5; the stride of 4 anchored at 0 splits them equally.
         var r = SyntheticRasters.From(64, 64, 3, (x, y, p) => x < 32 ? 0.02f : 0.5f);
         var t = TonalAnalyzer.Analyze(r, Baryta);
 
@@ -103,8 +104,8 @@ public class TonalAnalyzerTests
     [Fact]
     public void TheMediumChangesWhatCountsAsPaperBlack()
     {
-        // 0.10: L* ~9, mult sub negrul canvasului (Dmax 1.5, L* ~21), dar peste cel al
-        // acrilului (2.2, L* ~6).
+        // 0.10: L* about 9, well under canvas's black (Dmax 1.5, L* about 21) but over
+        // acrylic's (2.2, L* about 6).
         var r = SyntheticRasters.Flat(32, 32, 0.10f);
 
         Assert.Equal(100, TonalAnalyzer.Analyze(r, new Parameters { Medium = PrintMedium.Canvas }).PctBelowPaperBlack);
@@ -112,9 +113,9 @@ public class TonalAnalyzerTests
     }
 
     /// <summary>
-    /// Tabela nivel - L*: cele trei negre, 32/64, L* 15/50 si fundalul-tinta, crescator
-    /// dupa L*; mediul ales e marcat, iar un Dmax explicit care nu e al niciunui mediu
-    /// isi aduce randul lui.
+    /// The level - L* table: the three blacks, 32/64, L* 15/50 and the target background, in
+    /// increasing L*; the chosen medium is marked, and an explicit Dmax that is no medium's
+    /// brings its own row.
     /// </summary>
     [Fact]
     public void TheLadderListsEveryReferenceInLstarOrder()
