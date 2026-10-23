@@ -11,7 +11,8 @@
 ## The window (`AstroPhotoAnalyzer.Wpf/`)
 
 **Layout** (`MainWindow.xaml`): top bar (banner, image path, "Deschide imagine...",
-"Salveaza raportul...", "Despre" = F1); left column `ParameterFields` card with
+"Salveaza raportul...", "Despre" = F1, and under the three buttons a fixed two-line place for
+`SaveMessage` / `SaveError`, as the Curbe tab has for its own save); left column `ParameterFields` card with
 "Analizeaza" (the WCS field, R-027, under the target background); right: a placeholder when nothing is loaded, an error card when the run
 failed, otherwise a `TabControl` with Raport, Tonuri, Export, Rezolutie, Culoare,
 Preview, Curbe; `BusyOverlay` over the right side while running. "Fundal" names one thing, the
@@ -26,8 +27,11 @@ shown.
 (`Raport.txt` beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
-(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull`. It
-opens no dialogs (the window does), so it is fully testable.
+(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` and tells
+the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the path) or
+`SaveError` (`Describe` of the exception: a file another program holds open, a folder that
+refuses writing or does not exist), both cleared by the next run (R-111). It opens no dialogs
+(the window does), so it is fully testable.
 
 **Tabs** (`ResultTabs.cs`, each a `ResultTabViewModel` with `Populate(AnalysisResult)`,
 `Clear()`, `HasResult`):

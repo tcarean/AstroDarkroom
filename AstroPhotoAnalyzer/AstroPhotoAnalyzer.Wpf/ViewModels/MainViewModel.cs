@@ -41,8 +41,12 @@ namespace AstroPhotoAnalyzer.Wpf
         bool _busy;
         string _busyMessage = "";
         string _error;
+        string _saveMessage, _saveError;
         bool _hasResult;
         AnalysisResult _result;
+
+        // The words the console prints after -o ("-> raport salvat: <file>"), without the arrow.
+        const string SavedPrefix = "raport salvat: ";
 
         /// <summary>Makes the parameter fields and the tabs, all empty.</summary>
         public MainViewModel()
@@ -97,6 +101,18 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public bool HasError => !string.IsNullOrEmpty(_error);
 
+        /// <summary>
+        /// Where the last "Salveaza raportul" wrote, "raport salvat: " and the path (R-111);
+        /// null until a save, after one that failed, and after the next run.
+        /// </summary>
+        public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
+
+        /// <summary>
+        /// Why the last "Salveaza raportul" could not write, <see cref="Describe"/>'s text
+        /// (R-111); null until a save, after one that worked, and after the next run.
+        /// </summary>
+        public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
+
         public bool HasResult
         {
             get => _hasResult;
@@ -135,6 +151,8 @@ namespace AstroPhotoAnalyzer.Wpf
             if (p == null) { Error = bad; return; }
 
             Error = null;
+            SaveMessage = null;
+            SaveError = null;
             HasResult = false;
             ClearTabs();
             IsBusy = true;
@@ -159,7 +177,10 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Raport.txt: banner + body, identical to what the console would write with -o.
+        /// Raport.txt: banner + body, identical to what the console would write with -o. The
+        /// outcome is told, not thrown (R-111): <see cref="SaveMessage"/> names the file written,
+        /// or <see cref="SaveError"/> says why it could not be (held open by another program, a
+        /// folder that refuses writing or does not exist, a path the system refuses).
         /// </summary>
         /// <param name="file">
         /// The file to write, replaced if it exists; nothing is written without a result.
@@ -167,8 +188,18 @@ namespace AstroPhotoAnalyzer.Wpf
         internal void SaveReport(string file)
         {
             if (_result == null) return;
-            using var w = new StreamWriter(file, false);
-            ReportWriter.WriteFull(_result, w);
+            try
+            {
+                using (var w = new StreamWriter(file, false))
+                    ReportWriter.WriteFull(_result, w);
+                SaveError = null;
+                SaveMessage = SavedPrefix + file;
+            }
+            catch (Exception e)
+            {
+                SaveMessage = null;
+                SaveError = Describe(e);
+            }
         }
 
         /// <summary>Pours one result into the seven tabs.</summary>

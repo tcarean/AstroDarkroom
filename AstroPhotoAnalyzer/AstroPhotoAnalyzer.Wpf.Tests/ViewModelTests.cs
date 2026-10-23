@@ -137,6 +137,50 @@ public class ViewModelTests
         Assert.Equal(expected.ToString(), File.ReadAllText(saved));
     }
 
+    /// <summary>
+    /// A report that cannot be written is told under the buttons, not thrown (R-111): the
+    /// result and the tabs stay; a save that works says where it went; the next run clears both.
+    /// </summary>
+    [Fact]
+    public async Task R111_ASaveThatCannotWriteIsToldNotThrown()
+    {
+        using var ws = new TempWorkspace();
+        Raster r = Scenes.CleanSky();
+        string tif = ws.WriteFile("curat.tif", TiffTestData.Build16Rgb(r.W, r.H, (x, y, c) => RasterOps.Level16(r.At(c, y, x)), IccTestData.V4("sRGB IEC61966-2.1")));
+        var vm = new MainViewModel();
+        await vm.OpenAsync(tif);
+        Assert.True(vm.HasResult, vm.Error);
+        Assert.Null(vm.SaveMessage);
+        Assert.Null(vm.SaveError);
+
+        // Held open by another program: a sharing violation.
+        string held = ws.PathTo("Raport.txt");
+        using (new FileStream(held, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+            vm.SaveReport(held);
+        Assert.NotNull(vm.SaveError);
+        Assert.Null(vm.SaveMessage);
+        Assert.True(vm.HasResult);
+        Assert.False(vm.HasError);
+
+        // A folder that does not exist.
+        vm.SaveReport(ws.PathTo(Path.Combine("nu-exista", "r.txt")));
+        Assert.NotNull(vm.SaveError);
+        Assert.Null(vm.SaveMessage);
+
+        // A save that works says where, and the file is the console's.
+        string saved = ws.PathTo("r.txt");
+        vm.SaveReport(saved);
+        Assert.Null(vm.SaveError);
+        Assert.Equal("raport salvat: " + saved, vm.SaveMessage);
+        var expected = new StringWriter();
+        ReportWriter.WriteFull(AnalysisRun.Execute(tif, new Parameters()), expected);
+        Assert.Equal(expected.ToString(), File.ReadAllText(saved));
+
+        await vm.RunAsync();
+        Assert.Null(vm.SaveMessage);
+        Assert.Null(vm.SaveError);
+    }
+
     [Fact]
     public async Task ABadParameterStopsTheRunWithAMessage()
     {

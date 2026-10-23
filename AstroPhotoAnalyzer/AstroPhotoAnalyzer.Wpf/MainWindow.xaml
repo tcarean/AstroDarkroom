@@ -64,10 +64,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Visibility="{Binding HasPath, Converter={StaticResource NotBoolToVis}}" />
         </StackPanel>
 
-        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <Button Content="Deschide imagine..." Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
-          <Button Content="Salveaza raportul..." Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
-          <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
+        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal">
+            <Button Content="Deschide imagine..." Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
+            <Button Content="Salveaza raportul..." Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
+            <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
+          </StackPanel>
+          <!-- Un loc fix, de doua randuri, pentru rezultatul salvarii: aparitia lui nu muta butoanele. -->
+          <Grid Height="34" Margin="0,4,0,0">
+            <TextBlock x:Name="SaveMessageText" Style="{StaticResource Faint}" Text="{Binding SaveMessage}"
+                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
+            <TextBlock x:Name="SaveErrorText" Text="{Binding SaveError}" Foreground="{StaticResource BadBr}"
+                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveError}" />
+          </Grid>
         </StackPanel>
       </Grid>
     </Border>

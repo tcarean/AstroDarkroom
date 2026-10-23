@@ -45,7 +45,9 @@ cadrul întreg, simularea de print, decupajul la raportul țintă, fiecare cu ce
 verificat în ea, și regula ecran-hârtie cu pasul înapoi calculat pe imagine), **Curbe**
 (curbe de contrast sugerate, vezi mai jos). În toate
 taburile, fiecare cifră are sub ea ce măsoară și pragul de care se judecă. „Salvează
-raportul..." scrie `Raport.txt` — byte-identic cu ieșirea consolei. Temă întunecată;
+raportul..." scrie `Raport.txt` — byte-identic cu ieșirea consolei — și spune sub butoane unde
+l-a scris sau, cu roșu, de ce nu a putut (un fișier ținut deschis de alt program, un folder care
+refuză scrierea). Temă întunecată;
 F1 = Despre.
 
 Două ferestre pleacă din tabul Tonuri, amândouă maximizate și amândouă doar de privit (nu
