@@ -24,7 +24,7 @@ public class QuantizationAnalyzerTests
     [Fact]
     public void ANoiselessSlowRampHasLongPlateausThatWouldShowOnPaper()
     {
-        // 0.10 -> 0.11 pe 256 px: 2.5 niveluri pe toata latimea, deci sub un pas pe dala.
+        // 0.10 -> 0.11 over 256 px: 2.5 levels across the whole width, so under one step per tile.
         var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
 
         Assert.True(q.PlateauKnown);
@@ -48,7 +48,7 @@ public class QuantizationAnalyzerTests
     [Fact]
     public void ABrightOrStructuredImageHasNoPlateauTiles()
     {
-        // Media peste 70 de niveluri: nu e cer, nu se masoara.
+        // A mean over 70 levels: not sky, not measured.
         var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Flat(256, 256, 0.5f));
 
         Assert.Equal(0, q.PlateauTiles);
@@ -69,11 +69,30 @@ public class QuantizationAnalyzerTests
         Assert.InRange(q.RoundingP999, 0.45, 0.501);
     }
 
+    /// <summary>
+    /// An 8-bit file saved as 16 bits: every value is already an 8-bit level, so the lift from
+    /// the 16-bit data and from the data rounded to 8 bits miss the same levels, and the master
+    /// advice is not given; R-096's upscale warning covers it (ADR 0043).
+    /// </summary>
     [Fact]
-    public void TheShadowLiftStressShowsWhatEightBitsLoses()
+    public void R082_AnUpscaledSourceMissesTheSameLevelsOnBothPathsAndKeepsNoMaster()
     {
-        // O rampa continua 0 -> 0.5: ridicata, foloseste toate nivelurile din umbre. Aceeasi
-        // rampa cuantizata intai la 8 biti lasa goluri intre ele.
+        Raster ramp = SyntheticRasters.Ramp(4, 4096, 0f, 0.5f);
+        foreach (float[] plane in ramp.Planes)
+            for (int i = 0; i < plane.Length; i++) plane[i] = RasterOps.Level8(plane[i]) * 257 / 65535f;
+        var q = QuantizationAnalyzer.Analyze(Sixteen(ramp));
+
+        Assert.True(q.Applicable);
+        Assert.Equal(q.MissingFrom16, q.MissingFrom8);
+        Assert.True(q.MissingFrom8 > Thresholds.MissingLevelsWarn, "lipsa din 8 biti: " + q.MissingFrom8);
+        Assert.False(q.Keep16BitMaster);
+    }
+
+    [Fact]
+    public void R082_TheShadowLiftStressShowsWhatEightBitsLoses()
+    {
+        // A continuous ramp 0 -> 0.5: lifted, it uses every level in the shadows. The same ramp
+        // quantised to 8 bits first leaves gaps between them.
         var r = Sixteen(SyntheticRasters.Ramp(4, 4096, 0f, 0.5f));
         var q = QuantizationAnalyzer.Analyze(r);
 

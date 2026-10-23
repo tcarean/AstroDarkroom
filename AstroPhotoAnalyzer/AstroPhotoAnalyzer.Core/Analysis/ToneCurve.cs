@@ -26,10 +26,13 @@
 // Applying it goes through a table of 65 536 steps with linear interpolation between them: on a
 // 16-bit source it is the spline at every level to float precision (within 1.5e-7 on the curves
 // measured), on float the difference is under 1e-6, except within a step of the corner where a
-// curve clamped at 1 meets it: there the chord cuts the corner (1.6e-6 on V-014's Maxima, up to
-// 7.8e-6 on synthetic anchors).
-// The monotonicity is judged on the same table, after clamping: it is the curve that is
-// actually applied.
+// curve clamped at 1 meets it: there the chord cuts the corner (up to 7.8e-6 on synthetic
+// anchors).
+// Whether the curve may be suggested is judged on the UNCLAMPED spline at the table's steps:
+// it must decrease nowhere and stay within 0..1 (R-140, ADR 0039). Until the review of
+// 2026-10-23 the clamped table was judged, and a spline that rose over 1 and came back was kept,
+// held at 1 by the clamp: the Maxima of V-009, V-011 and V-014 mapped 21 to 41 % of the input
+// range to white that way.
 
 using System;
 using System.Collections.Generic;
@@ -61,18 +64,57 @@ namespace AstroPhotoAnalyzer
 
         internal IReadOnlyList<CurvePoint> Points { get; }
 
-        /// <summary>The clamped table decreases nowhere.</summary>
+        /// <summary>
+        /// The unclamped spline decreases nowhere between the table's steps, by more than
+        /// SplineTolerance.
+        /// </summary>
         internal bool IsMonotone { get; }
 
         /// <summary>
+        /// The unclamped spline stays within 0..1 (to SplineTolerance) at every step of the table:
+        /// the clamp changes nothing of the curve applied.
+        /// </summary>
+        internal bool IsWithinRange { get; }
+
+        /// <summary>
+        /// Monotone and within range: what a curve must be to be suggested (R-140, ADR 0039). A
+        /// curve that is not may still be built and applied; it is never offered.
+        /// </summary>
+        internal bool IsSuggestible => IsMonotone && IsWithinRange;
+
+        /// <summary>
         /// Solves the natural spline through the points and fills the table the curve is applied
-        /// through, judging its monotonicity on it.
+        /// through, judging its monotonicity and its range on the unclamped spline at the same
+        /// steps.
         /// </summary>
         /// <param name="points">
         /// The control points: they must start at (0, 0), end at (1, 1), have x strictly
         /// increasing and y in 0..1; otherwise ArgumentException.
         /// </param>
         internal ToneCurve(IReadOnlyList<CurvePoint> points)
+        {
+            (_x, _y) = Validate(points);
+            Points = points.ToArray();
+            (_b, _c, _d) = NaturalSpline(_x, _y);
+            _table = new float[TableSize];
+            (IsMonotone, IsWithinRange) = Judge(_x, _y, _b, _c, _d, _table);
+        }
+
+        /// <summary>
+        /// The tolerance of the two judgements: a decrease between two steps, or an excursion past
+        /// 0 or 1, smaller than this is the double arithmetic's noise, not the spline's shape (a
+        /// flat segment evaluates to equal values only up to rounding). Far under a 16-bit step
+        /// (1.5e-5), so no applied value is affected.
+        /// </summary>
+        const double SplineTolerance = 1e-9;
+
+        /// <summary>Checks the control points and returns their inputs and their outputs.</summary>
+        /// <param name="points">
+        /// The control points: they must start at (0, 0), end at (1, 1), have x strictly
+        /// increasing and y in 0..1; otherwise ArgumentException.
+        /// </param>
+        /// <returns>The inputs and the outputs, one array each, in the points' order.</returns>
+        static (double[] X, double[] Y) Validate(IReadOnlyList<CurvePoint> points)
         {
             if (points == null || points.Count < 2) throw new ArgumentException("o curba are cel putin doua puncte");
             int n = points.Count;
@@ -84,19 +126,50 @@ namespace AstroPhotoAnalyzer
                     throw new ArgumentException("punct de control in afara 0..1");
                 if (i > 0 && !(points[i].X > points[i - 1].X)) throw new ArgumentException("x-urile punctelor de control trebuie sa creasca strict");
             }
-            Points = points.ToArray();
-            _x = points.Select(p => p.X).ToArray();
-            _y = points.Select(p => p.Y).ToArray();
-            (_b, _c, _d) = NaturalSpline(_x, _y);
+            return (points.Select(p => p.X).ToArray(), points.Select(p => p.Y).ToArray());
+        }
 
-            _table = new float[TableSize];
-            bool monotone = true;
+        /// <summary>
+        /// Whether the curve through <paramref name="points"/> would be suggestible: the same
+        /// judgement the constructor makes, without allocating or filling the table. CurveAdvisor's
+        /// cap probes it up to forty times per factor.
+        /// </summary>
+        /// <param name="points">The control points, as the constructor requires them.</param>
+        /// <returns><c>true</c> when the spline is monotone and stays within 0..1.</returns>
+        internal static bool WouldBeSuggestible(IReadOnlyList<CurvePoint> points)
+        {
+            var (x, y) = Validate(points);
+            var (b, c, d) = NaturalSpline(x, y);
+            var (monotone, within) = Judge(x, y, b, c, d, null);
+            return monotone && within;
+        }
+
+        /// <summary>
+        /// Evaluates the unclamped spline at every step of the table, fills
+        /// <paramref name="table"/> with the clamped values when one is given, and judges the
+        /// spline: monotone when it never decreases between two steps by more than
+        /// SplineTolerance, within range when it never leaves 0..1 by more than it.
+        /// </summary>
+        /// <param name="x">The points' inputs, strictly increasing.</param>
+        /// <param name="y">The points' outputs.</param>
+        /// <param name="b">The spline's linear coefficients, from NaturalSpline.</param>
+        /// <param name="c">The quadratic coefficients.</param>
+        /// <param name="d">The cubic coefficients.</param>
+        /// <param name="table">The table to fill, of TableSize entries; null to judge alone.</param>
+        /// <returns>Whether the spline is monotone, and whether it stays within 0..1.</returns>
+        static (bool Monotone, bool Within) Judge(double[] x, double[] y, double[] b, double[] c, double[] d, float[] table)
+        {
+            bool monotone = true, within = true;
+            double previous = 0;
             for (int i = 0; i < TableSize; i++)
             {
-                _table[i] = (float)Map(i / (double)(TableSize - 1));
-                if (i > 0 && _table[i] < _table[i - 1]) monotone = false;
+                double raw = Unclamped(x, y, b, c, d, i / (double)(TableSize - 1));
+                if (table != null) table[i] = (float)Math.Clamp(raw, 0, 1);
+                if (i > 0 && raw < previous - SplineTolerance) monotone = false;
+                if (raw < -SplineTolerance || raw > 1 + SplineTolerance) within = false;
+                previous = raw;
             }
-            IsMonotone = monotone;
+            return (monotone, within);
         }
 
         /// <summary>
@@ -140,13 +213,14 @@ namespace AstroPhotoAnalyzer
         /// The segment that holds <paramref name="v"/>: the last point at or under it, kept within
         /// the segments.
         /// </summary>
+        /// <param name="x">The points' inputs, strictly increasing.</param>
         /// <param name="v">The input, 0..1.</param>
         /// <returns>The index of the segment's first point, 0 to the point count - 2.</returns>
-        int Segment(double v)
+        static int Segment(double[] x, double v)
         {
-            int i = Array.BinarySearch(_x, v);
+            int i = Array.BinarySearch(x, v);
             if (i < 0) i = ~i - 1;
-            return Math.Clamp(i, 0, _x.Length - 2);
+            return Math.Clamp(i, 0, x.Length - 2);
         }
 
         /// <summary>
@@ -155,13 +229,31 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="v">The input; any value but NaN.</param>
         /// <returns>The output, 0..1; NaN for a NaN input.</returns>
-        internal double Map(double v)
+        internal double Map(double v) => Math.Clamp(Unclamped(v), 0, 1);
+
+        /// <summary>
+        /// The spline itself at <paramref name="v"/>, before the clamp: what IsMonotone and
+        /// IsWithinRange judge. Outside 0..1 it takes the end's value.
+        /// </summary>
+        /// <param name="v">The input; any value but NaN.</param>
+        /// <returns>The spline's value, which may leave 0..1 between the points; NaN for NaN.</returns>
+        double Unclamped(double v) => Unclamped(_x, _y, _b, _c, _d, v);
+
+        /// <summary>The unclamped spline of the given points and coefficients at <paramref name="v"/>.</summary>
+        /// <param name="x">The points' inputs, strictly increasing.</param>
+        /// <param name="y">The points' outputs.</param>
+        /// <param name="b">The spline's linear coefficients, from NaturalSpline.</param>
+        /// <param name="c">The quadratic coefficients.</param>
+        /// <param name="d">The cubic coefficients.</param>
+        /// <param name="v">The input; any value but NaN.</param>
+        /// <returns>The spline's value; the end's value outside 0..1; NaN for NaN.</returns>
+        static double Unclamped(double[] x, double[] y, double[] b, double[] c, double[] d, double v)
         {
-            if (v <= 0) return _y[0];
-            if (v >= 1) return _y[_y.Length - 1];
-            int i = Segment(v);
-            double t = v - _x[i];
-            return Math.Clamp(_y[i] + t * (_b[i] + t * (_c[i] + t * _d[i])), 0, 1);
+            if (v <= 0) return y[0];
+            if (v >= 1) return y[y.Length - 1];
+            int i = Segment(x, v);
+            double t = v - x[i];
+            return y[i] + t * (b[i] + t * (c[i] + t * d[i]));
         }
 
         /// <summary>
@@ -174,7 +266,7 @@ namespace AstroPhotoAnalyzer
         internal double Slope(double v)
         {
             v = Math.Clamp(v, 0, 1);
-            int i = Segment(v);
+            int i = Segment(_x, v);
             double t = v - _x[i];
             return _b[i] + t * (2 * _c[i] + 3 * t * _d[i]);
         }

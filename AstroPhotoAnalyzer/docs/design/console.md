@@ -24,7 +24,7 @@
 | `PassepartoutCm` | 7 | `--passepartout cm` | field | PrintSize (outer size) |
 | `FrameCm` | 3 | `--frame cm` | field | PrintSize (outer size) |
 | `TargetAspect` | null = native | `--aspect w:h` (also `wxh`) | "Raport de aspect" | Crop, PrintSize |
-| `TargetBackground` | null = none | `--target-bg 0..1` | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one; the Preview tile) |
+| `TargetBackground` | null = none | `--target-bg`, strictly inside (0, 1) once rounded to 3 decimals (the core's `TargetBackgroundError`, one message for both applications; ADR 0040) | "Fundal-tinta in plus" | Simulation (one more row, marked `(dat)`, the primary one; the Preview tile) |
 | `SimulationTargets` | 0.05 .. 0.20 by 0.01 | - | - | Simulation (the grid) |
 | `WcsPath` | null = the file's own WCS | `--wcs file.fit` | "WCS din FITS" | the dust and the sky (R-027: a FITS header lent to a TIFF/PNG of the same size) |
 | `Seed` | 0 | - | - | Noise tiles |

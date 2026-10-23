@@ -6,6 +6,47 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- `Maxima` no longer rises over white: its slope factor is capped at the largest value whose
+  spline stays monotone and within 0..1, and every suggestion is judged on the unclamped spline,
+  as R-140 and R-142 always said (ADR 0039). On `de_printat.png`, Rosetta and the Veil the
+  uncapped Maxima mapped 21 to 41 % of the input range to white; capped, its peaks land at 0.892,
+  0.899 and 0.828 instead of 0.92 (the code review of area 2, item 2).
+- `Pastreaza master-ul de 16 biti` is advised when the 8-bit path of the shadow-lift stress test
+  misses more than 20 levels over the 16-bit one, not over 20 in all: an 8-bit file saved as 16
+  bits, which misses the same levels either way, now gets the upscale warning alone (R-082,
+  R-096; ADR 0043; item 4).
+- A crop is reported only when the target aspect removes at least one pixel (4961 x 3508 at
+  297:210 no longer gets an Attention that cuts 0 px), and the two sides are named when they
+  differ (`0 px la stanga si 1 px la dreapta din latime`), in the report and in the Preview tile
+  (R-032; ADR 0043; item 5).
+- The target background (`--target-bg`, the window's "Fundal-tinta") is rounded to the three
+  decimals the report prints and refused, with one message from the core in both applications,
+  when it is NaN, infinite or not strictly inside (0, 1) once rounded: no more run that ends in an
+  error without a report at 1 or at a value that rounds to 0, and a target typed with more
+  decimals keeps its `(dat)` row and the Preview tile (R-023; ADR 0040; items 6 and 8).
+- The exact targets of Anexa B (the dust's, its two Dmax neighbours, the visibility target,
+  each cloud's) are read on the regular ladder 0.05..0.60 alone: a `--target-bg` above 0.60 no
+  longer extends it, so a crossing the ladder does not reach prints `> 0.60` instead of a value
+  interpolated across the gap (R-043; ADR 0040; item 7).
+- `Sub nivelul 32` and `sub 64` in Anexa A and the Tonuri tab count the samples whose 8-bit
+  level, the one an export writes, is under 32 or 64, on every format: on an 8-bit TIFF, PNG or
+  JPEG the level 32 itself no longer counts (it added 2 points on the reference image's 8-bit
+  version), and on 16-bit and float sources the shares move by tenths (R-040; ADR 0043; item 3).
+- The catalogued clouds are found by angular distance alone: every patch centre is tested
+  against every cloud, after a pre-filter on the frame's centre, instead of inside a pixel box
+  of the cloud's radius at the central plate scale, which far from the tangent point lost the
+  outer patches of a disc, or the whole cloud (R-044; ADR 0044; item 10).
+- A flat two-pixel star peak is measured once, at its first pixel in scan order, not twice
+  (R-070; ADR 0041; item 14); the star figures move a little where such peaks occur.
+- The Dmax figure of the background section and of Anexa B is named for what it measures: the
+  Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
+  2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;
+  there the sentence now adds that as it is no paper makes the image print-safe and that the fix
+  is lifting the background at the stretch (R-043, R-092; ADR 0043; the code review of area 2,
+  items 1 and 13).
+
 ### Added
 
 - No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR
@@ -24,6 +65,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `StarAnalyzer` reads its window from `Thresholds.StarWindow` instead of a literal 12 (item 12).
+- The medians and percentiles of unsorted vectors are found by selection on one copy
+  (`Stats.Percentile`, `Stats.Percentiles`, `Stats.Median`), not by sorting the whole vector: the
+  same values to the bit (R-017; the 1689 validation figures identical), about 0.5 s less per
+  run on the reference images (the code review of area 2, item 15).
+- The print simulation's ladder stops once every series it reads (the dust at the three paper
+  blacks, the sky at L\* 15, every row cloud) has crossed its level and every table row is
+  built, instead of lifting all 56 steps: the same figures to the bit (R-043; the 1689
+  validation figures identical), about 1 s less per run on the reference images (item 15).
 - The build writes the XML documentation file (ADR 0038), so the gate now fails a malformed
   doc comment, a `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside
   tagged ones, a `cref` that does not resolve or is ambiguous, and a `///` on something that is

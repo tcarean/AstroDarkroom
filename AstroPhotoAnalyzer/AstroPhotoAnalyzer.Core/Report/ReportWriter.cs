@@ -168,13 +168,43 @@ namespace AstroPhotoAnalyzer
              : t.Value <= Thresholds.ExactTargetLo + 1e-9 ? "<= " + Fmt.Level(Thresholds.ExactTargetLo)
              : Fmt.Level(t.Value);
 
-        /// <summary>Tinta exacta, cele doua la Dmax vecin, si Dmax-ul de la care trece asa cum e.</summary>
+        /// <summary>
+        /// Dmax-ul de la care praful asa cum e ajunge pe negrul hartiei, ca propozitie (R-043):
+        /// "praful ajunge pe negrul hartiei de la Dmax 2.28", sau "praful nu ajunge pe negrul
+        /// hartiei la niciun Dmax (e la L* 0)". Cand cerul asa cum e e sub pragul de vizibilitate
+        /// adauga ca asa cum e nicio hartie nu face imaginea print-safe, fiindca cerul e sub L* 15,
+        /// si ca remediul e ridicarea fundalului la stretch: cifra e a prafului singur, si pana la
+        /// revizia din 2026-10-23 spunea "trece asa cum e" si langa un cer de L* 7 (ADR 0043).
+        /// Aceeasi propozitie in "fiindca" (Recommendations) si in Anexa B.
+        /// </summary>
+        internal static string DustDmaxText(SimulationResult s)
+        {
+            string dust = double.IsNaN(s.DmaxDustOnPaperBlackAsIs)
+                ? "praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)"
+                : $"praful ajunge pe negrul hartiei de la Dmax {Fmt.Dmax(s.DmaxDustOnPaperBlackAsIs)}";
+            return s.SkyBelowVisibility
+                ? dust + $"; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}, iar remediul e ridicarea fundalului la stretch"
+                : dust;
+        }
+
+        /// <summary>Tinta exacta, cele doua la Dmax vecin, si Dmax-ul de la care praful ajunge pe negru (DustDmaxText).</summary>
         internal static string ExactLine(SimulationResult s)
         {
-            string pass = double.IsNaN(s.DmaxToPassAsIs) ? "nu trece asa cum e la niciun Dmax" : $"trece asa cum e de la Dmax {Fmt.Dmax(s.DmaxToPassAsIs)}";
             double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
-            return $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {pass}; "
+            return $"tinta exacta a prafului pe negru: {TargetText(s.ExactTarget)} la Dmax {Fmt.Dmax(s.Dmax)} ({TargetText(s.ExactTargetDmaxLower)} la Dmax {Fmt.Dmax(lo)}, {TargetText(s.ExactTargetDmaxHigher)} la Dmax {Fmt.Dmax(hi)}); {DustDmaxText(s)}; "
                 + $"cerul ajunge la pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)} la {TargetText(s.VisibilityTarget)}";
+        }
+
+        /// <summary>
+        /// Ce taie decupajul, ca text (R-032): "192 px pe fiecare parte din latime" cand cele
+        /// doua parti sunt egale, altfel "0 px la stanga si 1 px la dreapta din latime" sau
+        /// "... sus si ... jos din inaltime". Acelasi text in recomandare si in dala de Preview.
+        /// </summary>
+        internal static string CropCutText(CropResult c)
+        {
+            if (c.CutStartPx == c.CutEndPx) return $"{Fmt.Int(c.CutStartPx)} px pe fiecare parte din {c.Axis}";
+            bool width = c.Axis == "latime";
+            return $"{Fmt.Int(c.CutStartPx)} px {(width ? "la stanga" : "sus")} si {Fmt.Int(c.CutEndPx)} px {(width ? "la dreapta" : "jos")} din {c.Axis}";
         }
 
         internal const string CloudHeader = "nor                          dale   L*     tinta";

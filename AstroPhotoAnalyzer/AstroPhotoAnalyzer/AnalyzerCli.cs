@@ -156,7 +156,7 @@ namespace AstroPhotoAnalyzer
             w.WriteLine("  --distance <m>                      distanta de privire, in metri (implicit 1.5 x diagonala)");
             w.WriteLine("  --sizes <cm,cm,...>                 latimile de print candidate (implicit 50,60,70,80,90,100)");
             w.WriteLine("  --aspect <l:i>                      raportul de aspect tinta, ex. 50:35 (implicit cel nativ)");
-            w.WriteLine("  --target-bg <0..1>                  o tinta in plus in simularea de print, pe langa grila 0.05..0.20");
+            w.WriteLine("  --target-bg <0..1>                  o tinta in plus in simularea de print, pe langa grila 0.05..0.20 (strict intre 0 si 1, 3 zecimale)");
             w.WriteLine("  --passepartout <cm>                 latimea passepartout-ului (implicit 7; cel putin dublul ramei, 0 = fara)");
             w.WriteLine("  --frame <cm>                        latimea ramei (implicit 3)");
             w.WriteLine("  --wcs <fisier.fit>                  FITS plate-solved de aceeasi marime, al carui WCS se foloseste pentru norii de praf");

@@ -19,7 +19,7 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class ParametersTests
 {
-    // Enum-ul e internal, deci testele publice il primesc pe nume, nu ca tip.
+    // The enum is internal, so the public tests receive it by name, not as a type.
     [Theory]
     [InlineData("baryta", 2.4)]
     [InlineData("canvas", 1.5)]
@@ -119,7 +119,7 @@ public class ParametersTests
         Assert.Throws<ArgumentException>(() => Parameters.MediumFromName("hartie"));
     }
 
-    /// <summary>Regula inramatorilor: passepartout-ul cel putin dublul ramei; 0 = fara, si nu se verifica.</summary>
+    /// <summary>The framers' rule: the passepartout at least twice the frame; 0 = none, and not checked.</summary>
     [Theory]
     [InlineData(7, 3, true)]
     [InlineData(6, 3, true)]
@@ -143,5 +143,43 @@ public class ParametersTests
     public void R025_TheDefaultsValidate()
     {
         Assert.Null(new Parameters().Validate());
+    }
+
+    /// <summary>
+    /// The target background is kept to three decimals, the ones the report prints, and refused
+    /// by the one message of the core when, once rounded, it is not strictly inside (0, 1), or
+    /// is NaN or infinite (ADR 0040).
+    /// </summary>
+    [Theory]
+    [InlineData(0.1234567, 0.123, true)]
+    [InlineData(0.19, 0.19, true)]
+    [InlineData(0.0014, 0.001, true)]
+    [InlineData(0.9994, 0.999, true)]
+    [InlineData(0.0004, 0.0, false)]
+    [InlineData(0.9996, 1.0, false)]
+    [InlineData(0.0, 0.0, false)]
+    [InlineData(1.0, 1.0, false)]
+    [InlineData(-0.2, -0.2, false)]
+    [InlineData(double.NaN, double.NaN, false)]
+    [InlineData(double.PositiveInfinity, double.PositiveInfinity, false)]
+    public void R023_TheTargetBackgroundIsRoundedToThreeDecimalsAndRefusedOutsideTheOpenInterval(double given, double stored, bool valid)
+    {
+        var p = new Parameters { TargetBackground = given };
+        Assert.Equal(stored, p.TargetBackground!.Value);
+        string error = p.Validate();
+        // Validate judges the stored value and quotes it; the applications call TargetBackgroundError
+        // on the typed one and quote that. Both refuse the same values.
+        Assert.Equal(Parameters.TargetBackgroundError(stored), error);
+        Assert.Equal(error == null, Parameters.TargetBackgroundError(given) == null);
+        if (valid) Assert.Null(error);
+        else
+        {
+            Assert.NotNull(error);
+            Assert.StartsWith("fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la 3 zecimale); a primit ", error);
+            Assert.DoesNotContain("--target-bg", error);
+            if (double.IsNaN(given)) Assert.EndsWith("a primit NaN, care nu e un numar", error);
+            if (double.IsPositiveInfinity(given)) Assert.EndsWith("a primit infinit", error);
+            Assert.All(error, ch => Assert.True(ch < 128, "non-ASCII in the message: " + error));
+        }
     }
 }

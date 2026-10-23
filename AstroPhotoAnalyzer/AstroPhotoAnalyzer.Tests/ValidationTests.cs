@@ -292,7 +292,7 @@ public class ValidationTests
         f["simulation.asIs.lstarDust"] = R(s.AsIs.LstarDust);
         f["simulation.asIs.lstarSky"] = R(s.AsIs.LstarSky);
         f["simulation.asIs.pctPatchesBelowPaperBlack"] = R(s.AsIs.PctPatchesBelowPaperBlack);
-        f["simulation.alreadyPrintSafe"] = s.AlreadyPrintSafe;
+        f["simulation.dustOnPaperBlackAsIs"] = s.DustOnPaperBlackAsIs;
         f["simulation.skyBelowPaperBlack"] = s.SkyBelowPaperBlack;
         f["simulation.skyBelowVisibility"] = s.SkyBelowVisibility;
         f["simulation.visibilityTarget"] = s.VisibilityTarget is double vt ? R(vt) : "none";
@@ -301,7 +301,7 @@ public class ValidationTests
         f["simulation.exactTarget"] = s.ExactTarget is double et ? R(et) : "none";
         f["simulation.exactTargetDmaxLower"] = s.ExactTargetDmaxLower is double el ? R(el) : "none";
         f["simulation.exactTargetDmaxHigher"] = s.ExactTargetDmaxHigher is double eh ? R(eh) : "none";
-        f["simulation.dmaxToPassAsIs"] = R(s.DmaxToPassAsIs);
+        f["simulation.dmaxDustOnPaperBlackAsIs"] = R(s.DmaxDustOnPaperBlackAsIs);
         if (s.Primary != null)
         {
             f["simulation.primary.target"] = R(s.Primary.Target);
@@ -361,7 +361,8 @@ public class ValidationTests
         f["crop.width"] = cr.W;
         f["crop.height"] = cr.H;
         f["crop.axis"] = cr.Axis ?? "none";
-        f["crop.cutPerSidePx"] = cr.CutPerSidePx;
+        f["crop.cutStartPx"] = cr.CutStartPx;
+        f["crop.cutEndPx"] = cr.CutEndPx;
         f["crop.cutPct"] = R(cr.CutPct);
 
         PrintSizeResult z = a.Size;

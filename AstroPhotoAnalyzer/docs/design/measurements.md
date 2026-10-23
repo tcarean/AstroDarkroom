@@ -32,17 +32,20 @@ exceeds `UpscaledFraction` (0.5).
 
 ### A3 - `CropAnalyzer` - what a target aspect cuts
 
-Given `W`, `H` and `TargetAspect`: no crop when null or equal to native (1e-6). If the
-target is narrower, the new width is `round(H x target)`, cut from both sides, the right one a
-pixel more when the cut is odd; otherwise the height, the bottom side the pixel more. Result:
-the centred rectangle (`X0 Y0 W H`), `Axis` ("latime" /
-"inaltime"), `CutPerSidePx`, `CutPct`. The reference image at 50:35: 5938 x 3888 ->
-5554 x 3888, 192 px per side, 6.5 %.
+Given `W`, `H` and `TargetAspect`: no crop when null, or when the rounded size removes no
+pixel (ADR 0043; a ratio tolerance of 1e-6 used to decide it, and cut 0 px). If the target is
+narrower, the new width is `round(H x target)`, cut from both sides, the right one a pixel more
+when the cut is odd; otherwise the height, the bottom side the pixel more. Result: the centred
+rectangle (`X0 Y0 W H`), `Axis` ("latime" / "inaltime"), `CutStartPx` and `CutEndPx` (the two
+sides), `CutPct`; `ReportWriter.CropCutText` writes the two sides as one text, named apart when
+they differ. The reference image at 50:35: 5938 x 3888 -> 5554 x 3888, 192 px per side, 6.5 %.
 
 ### B1/B2 - `TonalAnalyzer` - where the tones sit, and how many fall under paper black
 
 B1 in **levels** (0..255), on all pixels: `MeanLevels` per plane; `PctBelowDarkA` /
-`PctBelowDarkB` = share of samples (all planes) below 32/255 and 64/255;
+`PctBelowDarkB` = share of samples (all planes) whose 8-bit level (`RasterOps.Level8`) is under
+32 and under 64, compared as `v x 255 < N - 0.5`, which is `Level8(v) < N` for an even N
+(ADR 0043; the float compare with N / 255 counted the level N itself on 8-bit sources);
 `ReferencePercentiles` at ranks 0.1, 1, 50, 90, 99, 99.9, 100 of the reference plane at
 stride `PercentileStride` (2); `BackgroundMedian` = median of the reference plane at
 stride `TonalStride` (4) - the "background" the simulation lifts (correct whenever the
@@ -83,9 +86,10 @@ cannot move it (`PatchLstars(sub)`). Three parts:
   built once per image on its as-is patch L\*s: the patch grid (`Cols`, `Rows`, `Side`,
   `Stride`, `PatchCentre`); with a `Wcs`, the galactic latitude of every patch centre
   (`Astrometry.GalacticLatitude` on `Wcs.PixelToSky`), the catalogued clouds whose discs hold
-  patches (`FindClouds`: `Wcs.SkyToPixel` for the centre, the radius in pixels from
-  `ScaleDegPerPx`, the patches within the angular radius by dot product, tested inside the
-  disc's bounding box), and the five classes (`Classify`): the band is |b| <
+  patches (`FindClouds`: every patch centre tested against every cloud by the dot product of
+  unit vectors against the cosine of the radius, after one pre-filter on the frame's centre and
+  angular radius; `Wcs.SkyToPixel` and `ScaleDegPerPx` give the centre and the radius in pixels
+  for the map alone; about 50 ms on the plate-solved FITS, ADR 0044), and the five classes (`Classify`): the band is |b| <
   `BandGalacticLatitudeDeg`; `SkyModel(L, band, cols, rows, percentile)` is the given
   percentile (the median here) of the outside-band patches per cell of `SkyModelCellPatches`,
   empty cells from the nearest (all patches together when no cell has enough), bilinear to
@@ -144,7 +148,15 @@ patch luminances straight from it, and a grid row's pixel shares come from
 `TonalAnalyzer.LstarShares(RasterOps.LstarPlane(sub, table))`; the as-is row stays on the
 exact path (ADR 0035; before it, `RasterOps.Gamma` plus a `Math.Pow` per lifted sample made
 the lifted passes 15 of the simulation's 17 s on the FITS; the whole simulation takes 2.6 s
-now). The grid steps become
+now). The steps are lifted from the lowest up and the ladder **stops early**: each series the
+exact targets are read on (the dust against the paper black of the Dmax in use and of Dmax -/+
+`DmaxSensitivityStep`, the sky against `LowSeparationLstar`, each row cloud against paper
+black) is marked crossed at its first step at or above its level, and once every series has
+crossed and every table row is built the remaining steps are not lifted; `Crossing` reads a
+series no further than that first step, so the targets are those of the whole ladder
+(`SimulationResult.StepsLifted` counts the lifts; the review of 2026-10-23, item 15). Only the
+steps within `ExactTargetLo`..`ExactTargetHi` feed the series: a given target outside the ladder
+is lifted for its row alone (ADR 0040). The grid steps become
 `SimulationRow`s (`Target`, `AsIs`, `Explicit`, `Gamma`, `LstarDust`, `LstarSky`,
 `PctPatchesBelowPaperBlack`, `PctBelowLowSeparation`, `PctAboveHighlight`, `DustOnPaperBlack`,
 `SkyVisible` = the sky, rounded to the one decimal the table prints, at or above
@@ -156,8 +168,11 @@ reads the ladder: the first step at or above a level, interpolated linearly with
 before (the first step when it already passes, null when the last does not), which gives
 `ExactTarget` at the Dmax in use, `ExactTargetDmaxLower`/`Higher` at Dmax -/+
 `DmaxSensitivityStep` (0.1), and each `CloudRow`'s own `ExactTarget`. `CloudRow`s exist for
-the clouds with at least `DustCloudMinPatches` (9) patches, darkest first. `DmaxToPassAsIs`
-is the Dmax whose paper black equals the as-is dust's L\* (NaN at L\* 0). `Primary` = the
+the clouds with at least `DustCloudMinPatches` (9) patches, darkest first.
+`DmaxDustOnPaperBlackAsIs` is the Dmax whose paper black equals the as-is dust's L\* (NaN at
+L\* 0), and `DustOnPaperBlackAsIs` whether the as-is dust is on it: the dust's figures alone,
+named so since the review of 2026-10-23 (ADR 0043); `ReportWriter.DustDmaxText` writes the
+sentence, with the sky's caveat when the as-is sky is under `LowSeparationLstar`. `Primary` = the
 explicit row, else the recommended one, else the as-is row. `DustDescription`,
 `SkyDescription` and `MethodNote` are the words the report and the window use for the method.
 
@@ -209,7 +224,10 @@ is one plane and `Coloured` is always false.
 
 Candidate = pixel of the reference plane above `mean + StarCandidateAboveMean16/65535`
 (3000/65535 = 0.046 above the plane mean), not above `StarMaxPeak16/65535` (saturated),
-and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`). Base = median of the
+and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`, `Half = StarWindow / 2` the
+border left out); among tied maxima only the first in scan order passes, so a flat two-pixel
+peak is one star (ADR 0041); a tied pixel in the border left out disqualifies nothing, so a flat
+peak straddling the border is still measured, at its first scanned pixel. Base = median of the
 window's 96 border pixels; amplitude = peak - base >= `StarMinAmplitude16/65535`. Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing
@@ -301,7 +319,9 @@ histogram).
 first rounded to 8 bits. Levels used strictly inside (`ShadowLiftLevelLo` 8,
 `ShadowLiftLevelHi` 120) and missing between the first and last used:
 `LevelsUsedFrom16` / `MissingFrom16` / `LevelsUsedFrom8` / `MissingFrom8`.
-`Keep16BitMaster` when MissingFrom8 > `MissingLevelsWarn` (20).
+`Keep16BitMaster` when MissingFrom8 - MissingFrom16 > `MissingLevelsWarn` (20): the levels 8 bits
+lose that 16 bits keep, so an upscale, missing the same on both paths, gets no such advice
+(ADR 0043).
 
 ### C3 - `JpegAnalyzer`
 
@@ -330,8 +350,11 @@ Siril's `curve_transform.c`, clamped to 0..1: the table of points typed into Sir
 tool in `cubic spline` mode gives the same image. `Map` and `Slope` evaluate the spline;
 `Apply` and the FITS writer go through a 65 536-entry table with linear interpolation between
 entries (`MapSample`), the spline at every 16-bit level to float precision (within 1.5e-7 on
-the curves measured on 2026-10-23); `IsMonotone` is judged on that table,
-after clamping, because it is the curve that is applied.
+the curves measured on 2026-10-23); `IsMonotone` and `IsWithinRange` are judged on the
+unclamped spline at the same steps, to a tolerance of 1e-9 for the arithmetic's noise, and
+`IsSuggestible` is both: a spline the clamp would have to hold at 0 or 1 is not offered (ADR
+0039). `WouldBeSuggestible(points)` makes the same judgement without building the table, for
+the cap's bisection.
 
 **The anchors** (`CurveAdvisor.ClassLevels`, `Anchors`). Five L\* levels turned into greys:
 the dust and the sky exactly as `DustAnalyzer.Measure` gives them; the band at the
@@ -353,8 +376,12 @@ segments above the sky get the increments slope x width with `CurveSlopeSkyBand`
 `min(1, (CurvePeakTarget - sky) / sum)` so the peaks do not pass 0.92: the full curve. A point
 never goes under its own input. `Blanda`, `Medie`, `Puternica` are `CurveStrengths` (0.5,
 0.75, 1) of the way from the identity to it; `Maxima` uses the factor without the cap at 1, so
-the peaks land on 0.92, and exists only when `Puternica` leaves them more than
-`CurveMaximaMinGain` under it. A curve whose table is not monotone is dropped.
+the peaks head for 0.92. Both factors are then capped at the largest value, up to their own,
+whose full curve is suggestible (a bisection from the identity): on the four reference images
+the full curve needs no cap and Maxima's spline overshoots 1 on three of them (1.010, 1.007,
+1.051), so its peaks land at 0.892, 0.899 and 0.828 instead of 0.92 (ADR 0039). `Maxima` exists
+only when its capped peaks gain more than `CurveMaximaMinGain` over `Puternica`'s. A curve that
+is still not suggestible is dropped.
 
 **The evidence** (`CurveAdvisor.Measure`). The five class levels again, with the same
 statistics, on the tonal subsample with the curve applied: measured, not predicted, since a

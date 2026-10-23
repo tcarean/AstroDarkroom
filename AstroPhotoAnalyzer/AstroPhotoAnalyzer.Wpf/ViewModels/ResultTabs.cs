@@ -127,7 +127,7 @@ namespace AstroPhotoAnalyzer.Wpf
         /// <summary>Definitia prafului si a cerului in uz, sub tabel (R-044).</summary>
         public string Definition { get => _definition; private set => Set(ref _definition, value); }
 
-        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care trece asa cum e (R-043).</summary>
+        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care praful ajunge pe negrul hartiei (R-043).</summary>
         public string ExactLine { get => _exactLine; private set => Set(ref _exactLine, value); }
 
         /// <summary>Propozitia rosie fara WCS; null cu WCS (ascunsa).</summary>
@@ -372,7 +372,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 rows.Add(Row("... din 8 biti", $"{q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa", q.Keep16BitMaster ? "pastreaza master-ul de 16 biti" : null,
                     "Acelasi lift, dar pornind din datele deja rotunjite la 8 biti, adica din fisierul de tipar. Fiecare nivel lipsa e o treapta in "
                         + "histograma, un gol pe care nu-l mai umple nimic, vizibil ca banding daca umbrele sunt netede. "
-                        + $"Peste {Fmt.Int(Thresholds.MissingLevelsWarn)} de niveluri lipsa, pastreaza master-ul de 16 biti: orice editare ulterioara "
+                        + $"Peste {Fmt.Int(Thresholds.MissingLevelsWarn)} de niveluri lipsa in plus fata de calea de 16 biti, pastreaza master-ul de 16 biti: orice editare ulterioara "
                         + "(recadrare, retus, alt print) pleaca din el, nu din fisierul de 8 biti. Cat timp laboratorul printeaza fisierul asa cum e, "
                         + "8 biti ajung; testul e despre ce ramane pentru mai tarziu."));
             }
@@ -680,7 +680,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 {
                     Title = "Decupaj la raportul tinta",
                     Image = RasterBitmaps.Whole(RasterOps.Crop(img, r.Crop.X0, r.Crop.Y0, r.Crop.W, r.Crop.H), side),
-                    Note = $"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centrat; {Fmt.Int(r.Crop.CutPerSidePx)} px taiati pe fiecare parte din {r.Crop.Axis}",
+                    Note = $"{Fmt.Dim(r.Crop.W, r.Crop.H)} px, centrat; taiati {ReportWriter.CropCutText(r.Crop)}",
                     Check = "Ce taie raportul cerut: intra in obiect sau in compozitie? Scoate coltul moale sau benzile stivei? "
                         + "Singura dala unde raspunsul poate fi \"schimb raportul\".",
                 });

@@ -21,7 +21,8 @@
 // here the "300 dpi" myth falls.
 //
 // HOW: candidate = a pixel above the plane's mean + the minimum amplitude, which is the maximum
-// of its 25x25 window.
+// of its StarWindow x StarWindow window (25 x 25); among equal maxima only the first in scan
+// order counts, so a flat two-pixel peak is one star, not two (ADR 0041).
 // The star's base = the median of the window's border; the amplitude = peak - base,
 // with a low threshold (a faint smudge has no profile); a high threshold on the peak itself
 // leaves out a saturated star (it has no half). The width at half maximum is taken on the
@@ -94,15 +95,20 @@ namespace AstroPhotoAnalyzer
     /// <summary>Measures how wide the stars are, over the frame and per region (D1, D2).</summary>
     internal static class StarAnalyzer
     {
-        const int Half = 12;   // window 25 = 2 * 12 + 1
+        /// <summary>
+        /// The window's half-width, in pixels: <see cref="Thresholds.StarWindow"/> is 2 x Half + 1,
+        /// and the border of Half pixels holds no candidate. (Until the review of 2026-10-23 a
+        /// literal 12 stood here, and the threshold was read by no code.)
+        /// </summary>
+        const int Half = Thresholds.StarWindow / 2;
 
         /// <summary>
         /// Scans every pixel of the reference plane for star candidates and measures the width at
         /// half maximum of each one kept.
         /// </summary>
         /// <param name="r">
-        /// The image, 0..1; the stars are looked for on its reference plane, the 12 px border left
-        /// out.
+        /// The image, 0..1; the stars are looked for on its reference plane, the border of
+        /// <see cref="Thresholds.StarWindow"/> / 2 pixels left out.
         /// </param>
         /// <returns>
         /// The stars, the FWHM median and quartiles (NaN under
@@ -128,7 +134,7 @@ namespace AstroPhotoAnalyzer
                 {
                     float v = g[row + x];
                     if (v <= thr || v > maxPeak) continue;
-                    if (!IsWindowMax(g, W, x, y, v)) continue;
+                    if (!IsWindowMax(g, W, H, x, y, v)) continue;
 
                     float baseLevel = BorderMedian(g, W, x, y, border);
                     float amp = v - baseLevel;
@@ -167,45 +173,60 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// The maximum of the window, ties allowed: a flat peak of two pixels is still a star -
-        /// and both of its pixels pass, so it is measured as two stars.
+        /// The maximum of the window, ties allowed, counted once: a flat peak of two pixels is
+        /// still a star, and only its first pixel in scan order (a row above, or the same row to
+        /// the left) passes, so it is measured once (ADR 0041; before it both passed and it was
+        /// measured twice). Only a tied pixel the scan reaches counts as earlier: one in the
+        /// border left out can disqualify nothing, or a flat peak straddling the border would be
+        /// lost altogether.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>
+        /// <param name="H">The plane's height, in pixels.</param>
         /// <param name="x">
-        /// The candidate's column, at least 12 px from the left and right edges.
+        /// The candidate's column, at least <see cref="Thresholds.StarWindow"/> / 2 px from the
+        /// left and right edges.
         /// </param>
         /// <param name="y">
-        /// The candidate's row, at least 12 px from the top and bottom edges.
+        /// The candidate's row, at least <see cref="Thresholds.StarWindow"/> / 2 px from the top
+        /// and bottom edges.
         /// </param>
         /// <param name="v">The candidate's value.</param>
         /// <returns>
-        /// <c>true</c> when no pixel of the 25 x 25 window is over <paramref name="v"/>.
+        /// <c>true</c> when no pixel of the window is over <paramref name="v"/> and none equal to
+        /// it comes earlier in scan order.
         /// </returns>
-        static bool IsWindowMax(float[] g, int W, int x, int y, float v)
+        static bool IsWindowMax(float[] g, int W, int H, int x, int y, float v)
         {
             for (int dy = -Half; dy <= Half; dy++)
             {
                 int o = (y + dy) * W + x;
+                bool rowScanned = y + dy >= Half && y + dy < H - Half;
                 for (int dx = -Half; dx <= Half; dx++)
-                    if (g[o + dx] > v) return false;
+                {
+                    float u = g[o + dx];
+                    if (u > v) return false;
+                    if (u == v && (dy < 0 || (dy == 0 && dx < 0)) && rowScanned && x + dx >= Half && x + dx < W - Half) return false;
+                }
             }
             return true;
         }
 
         /// <summary>
-        /// The median of the 96 pixels on the border of the 25 x 25 window around (x, y): the
-        /// star's base.
+        /// The median of the pixels on the border of the window around (x, y), 96 for the window
+        /// of <see cref="Thresholds.StarWindow"/> (25): the star's base.
         /// </summary>
         /// <param name="g">The reference plane, 0..1, row-major.</param>
         /// <param name="W">The plane's width, in pixels.</param>
         /// <param name="x">
-        /// The window's centre column, at least 12 px from the left and right edges.
+        /// The window's centre column, at least <see cref="Thresholds.StarWindow"/> / 2 px from
+        /// the left and right edges.
         /// </param>
         /// <param name="y">
-        /// The window's centre row, at least 12 px from the top and bottom edges.
+        /// The window's centre row, at least <see cref="Thresholds.StarWindow"/> / 2 px from the
+        /// top and bottom edges.
         /// </param>
-        /// <param name="buf">A buffer of 96 values, overwritten.</param>
+        /// <param name="buf">A buffer of 4 x (StarWindow - 1) values (96), overwritten.</param>
         /// <returns>The median of the border: the mean of its two middle values.</returns>
         static float BorderMedian(float[] g, int W, int x, int y, float[] buf)
         {

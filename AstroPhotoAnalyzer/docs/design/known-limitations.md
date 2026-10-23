@@ -69,6 +69,12 @@
 - Stars on bright nebulosity measure wider (border median overestimates the base); the
   centre region of a Milky Way core is not a sharpness statement.
 - The half-max estimator overestimates a sampled Gaussian by ~2.5 %.
+- On an 8-bit file the background's levels (the per-channel medians of the darkest quarter, R-060)
+  are whole levels, so a cast near `CastWarnLevels` (1 level) depends on the tie rule of the
+  darkest-quarter cut: `<=` keeps the pixels that sit exactly at the 25th percentile and `<`
+  drops them, +2.0 against +1.0 levels of green on the reference image's 8-bit version, either
+  side of the threshold. The code keeps `<=`, as ADR 0014 decided (its correction of 2026-10-23
+  records the ties); on the 16-bit version no printed figure moves.
 - Neutral edge brightening cannot be told from the object; it is reported as
   informative and left to the eye.
 - JPEG numbers are ImageSharp's encoder's; another encoder will differ by tenths of a
@@ -90,9 +96,15 @@
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.
 - The gamut figure counts the chroma only, through relative colorimetric tables without black
-  point compensation, on an interpolated grid: an estimate to tenths of a percent, not a
-  soft proof. `Maxima` clips more pixels than the other suggestions (0.37 % against 0.10 % on
-  the reference PNG).
+  point compensation, on an interpolated grid of 33 nodes per channel: not a soft proof, and an
+  estimate low by up to a few points per class, since the interpolation rounds the gamut's edge
+  and misses colours rather than adds them (measured 2026-10-23 against the exact round trip per
+  pixel: the plate-solved FITS on the lab's baryta 1.02 % against 1.35 %, its dust class 2.7
+  against 4.2; on its canvas 35.1 % against 39.7 %; `de_printat.png` on baryta 0.06 % against
+  0.15 %, its dust class 0.0 against 2.4). A hybrid that takes the exact round trip for the
+  pixels near the threshold reproduces the exact figure and is the owner's open question
+  (`docs/plans/2026-10-23-fix-the-defects-the-analyzer-review-found.md`, item 9). `Maxima`
+  clips more pixels than the other suggestions (0.32 % against 0.10 % on the reference PNG).
 - A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /
   `DATAMAX`, would describe the old data. Siril writes none of them by default; a source that
   carries them yields a file that fails checksum verification.

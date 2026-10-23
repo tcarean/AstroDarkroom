@@ -44,7 +44,7 @@ public class PrintStretchSimulatorTests
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
 
         Assert.Equal(0.08, s.BackgroundMeasured, 6);
-        Assert.False(s.AlreadyPrintSafe);
+        Assert.False(s.DustOnPaperBlackAsIs);
         Assert.True(s.DustBelowPaperBlack);
         Assert.True(s.SkyBelowPaperBlack);
         Assert.Equal(17, s.Rows.Count);
@@ -71,7 +71,7 @@ public class PrintStretchSimulatorTests
         // so that is recommended, below the measured level.
         var s = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));
 
-        Assert.True(s.AlreadyPrintSafe);
+        Assert.True(s.DustOnPaperBlackAsIs);
         Assert.NotNull(s.Recommended);
         Assert.False(s.RecommendedIsAsIs);
         Assert.Equal(0.15, s.RecommendedTarget);
@@ -98,9 +98,9 @@ public class PrintStretchSimulatorTests
         Assert.True(s.ExactTargetDmaxHigher < s.ExactTarget);
         Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(1.9))), s.ExactTargetDmaxLower!.Value, 3);
 
-        // The Dmax from which the as-is image passes: the one whose paper black is the dust's L*.
-        Assert.Equal(-Math.Log10(ColorMath.YOfLstar(s.AsIs.LstarDust)), s.DmaxToPassAsIs, 6);
-        Assert.InRange(s.DmaxToPassAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
+        // The Dmax from which the as-is dust reaches paper black: the one whose paper black is the dust's L*.
+        Assert.Equal(-Math.Log10(ColorMath.YOfLstar(s.AsIs.LstarDust)), s.DmaxDustOnPaperBlackAsIs, 6);
+        Assert.InRange(s.DmaxDustOnPaperBlackAsIs, 2.1, 2.2);   // Y(0.08) = 0.0072, -log10 = 2.14
     }
 
     /// <summary>
@@ -119,7 +119,7 @@ public class PrintStretchSimulatorTests
         string cloud = ReportWriter.CloudLine(new CloudRow { Name = "LDN 42 (B78)", Patches = 12, Lstar = 38.5, ExactTarget = Thresholds.ExactTargetLo });
         Assert.EndsWith("   <= 0.05", cloud);
 
-        var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxToPassAsIs = 1.3 };
+        var s = new SimulationResult { Dmax = 2.0, ExactTarget = Thresholds.ExactTargetLo, ExactTargetDmaxLower = 0.06, ExactTargetDmaxHigher = Thresholds.ExactTargetLo, DmaxDustOnPaperBlackAsIs = 1.3, AsIs = new SimulationRow { LstarSky = 20 } };
         Assert.StartsWith("tinta exacta a prafului pe negru: <= 0.05 la Dmax 2.0 (0.06 la Dmax 1.9, <= 0.05 la Dmax 2.1); ", ReportWriter.ExactLine(s));
         var none = s with { ExactTarget = null, ExactTargetDmaxLower = null, ExactTargetDmaxHigher = null };
         Assert.StartsWith("tinta exacta a prafului pe negru: > 0.60 la Dmax 2.0 (> 0.60 la Dmax 1.9, > 0.60 la Dmax 2.1); ", ReportWriter.ExactLine(none));
@@ -137,7 +137,7 @@ public class PrintStretchSimulatorTests
         Raster r = SyntheticRasters.Flat(64, 64, 0.08f);
         SimulationResult s = PrintStretchSimulator.Simulate(r, TonalAnalyzer.Analyze(r, p), p);
 
-        Assert.True(s.AlreadyPrintSafe);
+        Assert.True(s.DustOnPaperBlackAsIs);
         Assert.True(s.SkyBelowVisibility);
         // On the default baryta (paper black L* 3.6) the dust is on black from 0.06 (L* 4.4) up,
         // but under 0.15 the sky is under the visibility threshold: no row before it is print-safe.
@@ -154,6 +154,94 @@ public class PrintStretchSimulatorTests
         Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
         Assert.EndsWith("cerul ajunge la pragul de vizibilitate L* 15 la 0.148", ReportWriter.ExactLine(s));
         Assert.Equal("* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* 15 sau peste", ReportWriter.SimulationFooter(s));
+    }
+
+    /// <summary>
+    /// The ladder stops once every series it reads has a step at or above its level and every
+    /// table row is built; Crossing reads nothing past that step, so what it finds is what the
+    /// whole ladder would. A row past the last crossing keeps the ladder going to it.
+    /// </summary>
+    [Fact]
+    public void R043_TheLadderStopsOnceEverySeriesHasCrossedAndEveryRowIsBuilt()
+    {
+        int whole = (int)Math.Round((Thresholds.ExactTargetHi - Thresholds.ExactTargetLo) / Thresholds.ExactTargetStep) + 1;
+        Assert.Equal(56, whole);
+
+        // Flat 0.08 on the paper of L* 9.0: the sky passes L* 15 at 0.148 and the dust the three
+        // paper blacks (L* 11.0 at Dmax 1.9 the last) by 0.12; the last grid row is 0.20, so the
+        // ladder stops there: 16 lifts, 0.05 to 0.20, and the same targets as before the stop.
+        var s = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
+        Assert.Equal(16, s.StepsLifted);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(2.0))), s.ExactTarget!.Value, 3);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(1.9))), s.ExactTargetDmaxLower!.Value, 3);
+        Assert.Equal(ColorMath.LinearToSrgb(ColorMath.YOfLstar(ColorMath.PaperBlackLstar(2.1))), s.ExactTargetDmaxHigher!.Value, 3);
+        Assert.InRange(s.VisibilityTarget!.Value, 0.147, 0.149);
+        Assert.Equal(17, s.Rows.Count);
+
+        // A given target above the ladder's end is a row to build: every step is lifted, and it.
+        var far = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.70 });
+        Assert.Equal(whole + 1, far.StepsLifted);
+        Assert.Equal(0.70, far.Rows.Last().Target, 9);
+
+        // A black image lifts nothing.
+        Assert.Equal(0, Simulate(SyntheticRasters.Flat(16, 16, 0f)).StepsLifted);
+    }
+
+    /// <summary>
+    /// The Dmax figure is the dust's alone: the sentence names the dust, and when the as-is sky
+    /// is under the visibility threshold it says that no paper makes the image print-safe as it
+    /// is and that the fix is the stretch (ADR 0043). A sky at or over the threshold gets the
+    /// figure alone; a dust at L* 0 reaches black at no Dmax.
+    /// </summary>
+    [Fact]
+    public void R043_TheDmaxFigureNamesTheDustAndSaysWhenNoPaperMakesTheImagePrintSafe()
+    {
+        var dark = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));   // sky L* 6, under 15
+        Assert.True(dark.SkyBelowVisibility);
+        string text = ReportWriter.DustDmaxText(dark);
+        Assert.StartsWith("praful ajunge pe negrul hartiei de la Dmax 2.1", text);
+        Assert.EndsWith("; asa cum e, nicio hartie nu face imaginea print-safe: cerul e sub L* 15, iar remediul e ridicarea fundalului la stretch", text);
+        Assert.Contains("); " + text + "; cerul ajunge", ReportWriter.ExactLine(dark));
+        Assert.DoesNotContain("trece asa cum e", ReportWriter.ExactLine(dark));
+
+        var bright = Simulate(SyntheticRasters.Flat(64, 64, 0.3f));   // sky L* 31
+        Assert.False(bright.SkyBelowVisibility);
+        Assert.Equal($"praful ajunge pe negrul hartiei de la Dmax {Fmt.Dmax(bright.DmaxDustOnPaperBlackAsIs)}", ReportWriter.DustDmaxText(bright));
+
+        var black = Simulate(SyntheticRasters.Flat(16, 16, 0f));
+        Assert.StartsWith("praful nu ajunge pe negrul hartiei la niciun Dmax (e la L* 0)", ReportWriter.DustDmaxText(black));
+    }
+
+    /// <summary>
+    /// A given target outside the ladder is a row, not a step of the series (ADR 0040): a dust
+    /// that reaches paper black only above 0.60 keeps `> 0.60` with a target of 0.70 given, where
+    /// it used to be interpolated across the one wide step from 0.60 to the given target.
+    /// </summary>
+    [Fact]
+    public void R043_AGivenTargetOutsideTheLadderGetsItsRowButDoesNotFeedTheExactTargets()
+    {
+        // A sky at 0.08 with one 32 px patch at half of the first 16-bit level (7.63e-6): the
+        // dust class is that patch (6 % of the 16 patches), and its lift from 0.08 through the
+        // lift table (half of the lifted first level, in linear light) reaches the paper black
+        // of L* 9.0 between 0.65 and 0.70: at 0.60 it reads L* 5.0, at 0.70 L* 14.3.
+        Raster r = SyntheticRasters.From(128, 128, 3, (x, y, p) => x < 32 && y < 32 ? 7.63e-6f : 0.08f);
+        var plain = Simulate(r);
+        Assert.Null(plain.ExactTarget);
+        Assert.Equal("> 0.60", ReportWriter.TargetText(plain.ExactTarget));
+
+        var given = Simulate(r, new Parameters { TargetBackground = 0.70 });
+        SimulationRow row = Assert.Single(given.Rows, x => x.Explicit);
+        Assert.Equal(0.70, row.Target, 9);
+        Assert.True(row.DustOnPaperBlack);          // the row itself shows the dust on black there
+        Assert.Null(given.ExactTarget);             // but the ladder's answer stays "> 0.60"
+        Assert.Equal(plain.ExactTargetDmaxLower, given.ExactTargetDmaxLower);
+        Assert.Equal(plain.VisibilityTarget, given.VisibilityTarget);
+
+        // Below the ladder too: a target of 0.03 is a row and no step.
+        var low = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.03 });
+        Assert.Equal(0.03, low.Rows.First().Target, 9);
+        Assert.True(low.Rows.First().Explicit);
+        Assert.Equal(Simulate(SyntheticRasters.Flat(64, 64, 0.08f)).ExactTarget, low.ExactTarget);
     }
 
     [Fact]
@@ -187,6 +275,13 @@ public class PrintStretchSimulatorTests
         // Without one, the primary row is the recommended one.
         var none = Simulate(SyntheticRasters.Flat(64, 64, 0.08f));
         Assert.Same(none.Recommended, none.Primary);
+
+        // A target with more decimals than the report prints is the row of its rounded value,
+        // marked and primary all the same (ADR 0040; before it, 0.1234567 lost the mark).
+        var fine = Simulate(SyntheticRasters.Flat(64, 64, 0.08f), new Parameters { TargetBackground = 0.1234567 });
+        SimulationRow rounded = Assert.Single(fine.Rows, x => x.Explicit);
+        Assert.Equal(0.123, rounded.Target, 9);
+        Assert.Same(rounded, fine.Primary);
     }
 
     [Fact]
@@ -211,7 +306,7 @@ public class PrintStretchSimulatorTests
         Assert.Single(s.Rows);
         Assert.Null(s.RecommendedTarget);
         Assert.Null(s.ExactTarget);
-        Assert.True(double.IsNaN(s.DmaxToPassAsIs));
+        Assert.True(double.IsNaN(s.DmaxDustOnPaperBlackAsIs));
         Assert.Same(s.AsIs, s.Primary);
     }
 

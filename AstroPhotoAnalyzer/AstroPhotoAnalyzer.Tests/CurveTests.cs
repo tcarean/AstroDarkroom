@@ -78,9 +78,15 @@ public class CurveTests
     {
         Assert.False(Curve((0, 0), (0.2, 0.6), (0.4, 0.3), (1, 1)).IsMonotone);
 
-        // The spline through these points passes 1 between them: the curve is clamped there.
+        // The spline through these points stays within 0..1 (measured 2026-10-23; the test's
+        // earlier comment said it passed 1) but wavers on its way to (1, 1), so it is not
+        // monotone and not suggestible. A spline that does pass 1 is the Maxima of
+        // R140_ACurveWhoseSplineLeavesTheRangeIsNotSuggestible.
         ToneCurve over = Curve((0, 0), (0.5, 0.98), (0.6, 0.99), (1, 1));
         for (double v = 0; v <= 1; v += 0.01) Assert.InRange(over.Map(v), 0, 1);
+        Assert.True(over.IsWithinRange);
+        Assert.False(over.IsMonotone);
+        Assert.False(over.IsSuggestible);
 
         ToneCurve c = Curve(Earlier);
         Raster r = SyntheticRasters.Flat(4, 4, 0.25f, 0.32f, 0.45f);
@@ -92,6 +98,63 @@ public class CurveTests
 
         Assert.Throws<ArgumentException>(() => Curve((0, 0), (0.5, 0.5)));               // does not end at (1, 1)
         Assert.Throws<ArgumentException>(() => Curve((0, 0), (0.5, 0.4), (0.5, 0.6), (1, 1)));   // x not strictly increasing
+    }
+
+    /// <summary>
+    /// A curve is judged on its unclamped spline (ADR 0039): the uncapped Maxima of
+    /// de_printat.png (V-009, measured 2026-10-23: the spline reaches 1.010 before (1, 1) and
+    /// comes back) is monotone and within 0..1 once clamped, and is not suggestible; the owner's
+    /// earlier curve is.
+    /// </summary>
+    [Fact]
+    public void R140_ACurveWhoseSplineLeavesTheRangeIsNotSuggestible()
+    {
+        ToneCurve maxima = Curve((0, 0), (0.0574, 0.0574), (0.0989, 0.0989), (0.2160, 0.3504), (0.3945, 0.6841), (0.5932, 0.92), (1, 1));
+        for (double v = 0; v <= 1; v += 0.001) Assert.InRange(maxima.Map(v), 0, 1);
+        Assert.False(maxima.IsWithinRange);
+        Assert.False(maxima.IsMonotone);
+        Assert.False(maxima.IsSuggestible);
+
+        ToneCurve earlier = Curve(Earlier);
+        Assert.True(earlier.IsWithinRange);
+        Assert.True(earlier.IsMonotone);
+        Assert.True(earlier.IsSuggestible);
+
+        // The judgement without the table agrees with the built curve, and a flat run of points
+        // on the diagonal, whose spline is straight up to rounding, is monotone.
+        Assert.False(ToneCurve.WouldBeSuggestible(maxima.Points));
+        Assert.True(ToneCurve.WouldBeSuggestible(earlier.Points));
+        ToneCurve flat = Curve((0, 0), (0.1, 0.1), (0.2, 0.2), (0.3, 0.3), (0.4, 0.4), (1, 1));
+        Assert.True(flat.IsMonotone);
+        Assert.True(flat.IsSuggestible);
+    }
+
+    /// <summary>
+    /// Maxima's factor is capped at the largest one whose spline stays within 0..1 (ADR 0039):
+    /// on de_printat.png's anchors the recipe's factor 1.263 overshoots, the cap gives 1.220, the
+    /// peaks land under the target and still gain more than CurveMaximaMinGain over Puternica;
+    /// every suggestion is suggestible, and the uncapped curve would not have been.
+    /// </summary>
+    [Fact]
+    public void R142_MaximaIsCappedSoThatItsSplineStaysWithinTheRange()
+    {
+        var labels = new[] { "praf", "cer", "nebuloasa", "nebuloasa stralucitoare", "varfuri" };
+        var a = new CurveAnchors { Dust = 0.0574, Sky = 0.0989, Band = 0.2160, Clouds = 0.3945, Peaks = 0.5932 };
+        IReadOnlyList<(string Name, ToneCurve Curve)> curves = CurveAdvisor.Curves(a, labels);
+
+        Assert.Equal(new[] { "Blanda", "Medie", "Puternica", "Maxima" }, curves.Select(c => c.Name).ToArray());
+        Assert.All(curves, c => Assert.True(c.Curve.IsSuggestible, c.Name));
+        double puternica = curves[2].Curve.Points[5].Y, maxima = curves[3].Curve.Points[5].Y;
+        Assert.InRange(maxima, 0.89, 0.895);                       // 0.892 measured; 0.92 uncapped
+        Assert.True(maxima < Thresholds.CurvePeakTarget);
+        Assert.True(maxima - puternica > Thresholds.CurveMaximaMinGain);
+        // The capped factor against the recipe's: the band point's rise over the sky, scaled.
+        double reach = Thresholds.CurveSlopeSkyBand * (a.Band - a.Sky) + Thresholds.CurveSlopeBandCloud * (a.Clouds - a.Band) + Thresholds.CurveSlopeCloudPeak * (a.Peaks - a.Clouds);
+        double factor = (curves[3].Curve.Points[3].Y - a.Sky) / (Thresholds.CurveSlopeSkyBand * (a.Band - a.Sky));
+        Assert.InRange(factor, 1.21, 1.23);                        // 1.220 measured
+        Assert.True(factor < (Thresholds.CurvePeakTarget - a.Sky) / reach);
+        // Puternica's factor is 1 here: room / reach > 1 and its spline stays within the range.
+        Assert.Equal(a.Sky + Thresholds.CurveSlopeSkyBand * (a.Band - a.Sky), curves[2].Curve.Points[3].Y, 9);
     }
 
     [Fact]
@@ -214,14 +277,17 @@ public class CurveTests
             Assert.Equal(Thresholds.CurveSlopeSkyBand / Thresholds.CurveSlopeBandCloud, sb / bc, 6);
             Assert.True(sb <= Thresholds.CurveSlopeSkyBand + 1e-9);
 
-            // Maxima exists exactly when Puternica leaves the peaks under the target, and reaches it.
-            bool under = Thresholds.CurvePeakTarget - full[5].Y > Thresholds.CurveMaximaMinGain;
-            Assert.Equal(under ? 4 : 3, set.Suggestions.Count);
-            if (under)
+            // Maxima exists exactly when its peaks gain more than the minimum over Puternica's; they
+            // reach the target unless the cap of ADR 0039 holds them under it.
+            if (set.Suggestions.Count == 4)
             {
                 Assert.Equal("Maxima", set.Suggestions[3].Name);
-                Assert.Equal(Thresholds.CurvePeakTarget, set.Suggestions[3].Curve.Points[5].Y, 9);
+                double peaks = set.Suggestions[3].Curve.Points[5].Y;
+                Assert.True(peaks <= Thresholds.CurvePeakTarget + 1e-9);
+                Assert.True(peaks - full[5].Y > Thresholds.CurveMaximaMinGain);
+                Assert.True(set.Suggestions[3].Curve.IsSuggestible);
             }
+            else Assert.Equal(3, set.Suggestions.Count);
         }
     }
 

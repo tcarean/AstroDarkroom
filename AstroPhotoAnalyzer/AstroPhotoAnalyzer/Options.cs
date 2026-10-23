@@ -51,7 +51,7 @@ namespace AstroPhotoAnalyzer
         /// <summary>Raportul de aspect tinta, latime/inaltime. Null = cel nativ al imaginii.</summary>
         internal double? Aspect;
 
-        /// <summary>Fundalul-tinta pentru simularea de print (0..1). Null = implicitul nucleului.</summary>
+        /// <summary>Fundalul-tinta pentru simularea de print, strict intre 0 si 1 dupa rotunjirea nucleului (R-023). Null = implicitul nucleului.</summary>
         internal double? TargetBg;
 
         internal double? PassepartoutCm;
@@ -132,8 +132,11 @@ namespace AstroPhotoAnalyzer
                                 return o.Fail($"--aspect asteapta latime:inaltime (ex. 50:35), a primit '{v}'");
                             o.Aspect = asp; break;
                         case "--target-bg":
-                            if (!TryNum(v, out var bg) || bg <= 0 || bg >= 1)
-                                return o.Fail($"--target-bg asteapta un numar intre 0 si 1, a primit '{v}'");
+                            // Intervalul si rotunjirea le judeca nucleul, cu acelasi mesaj ca fereastra (R-023).
+                            if (!TryNum(v, out var bg))
+                                return o.Fail($"--target-bg asteapta un numar strict intre 0 si 1, a primit '{v}'");
+                            string bgError = Parameters.TargetBackgroundError(bg);
+                            if (bgError != null) return o.Fail("--target-bg: " + bgError);
                             o.TargetBg = bg; break;
                         case "--passepartout":
                             if (!TryNum(v, out var pp) || pp < 0)

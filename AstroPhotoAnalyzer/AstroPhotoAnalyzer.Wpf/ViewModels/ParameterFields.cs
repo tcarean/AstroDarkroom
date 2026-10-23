@@ -117,7 +117,7 @@ namespace AstroPhotoAnalyzer.Wpf
                     ViewingDistanceM = OptionalNumber(Distance, "distanta", 0, 100),
                     CandidateWidthsCm = SizesOf(Sizes),
                     TargetAspect = AspectOf(Aspect),
-                    TargetBackground = OptionalNumber(TargetBg, "fundalul-tinta", 0, 1),
+                    TargetBackground = TargetBgOf(TargetBg),
                     PassepartoutCm = OptionalNumber(Passepartout, "passepartout-ul", 0, 100, allowZero: true) ?? D.PassepartoutCm,
                     FrameCm = OptionalNumber(Frame, "rama", 0, 100, allowZero: true) ?? D.FrameCm,
                     WcsPath = string.IsNullOrWhiteSpace(WcsPath) ? null : WcsPath.Trim(),
@@ -133,11 +133,35 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
+        /// <summary>
+        /// Fundalul-tinta din camp: gol = niciunul; un text care nu e numar da mesajul campurilor;
+        /// intervalul si rotunjirea le judeca nucleul, cu mesajul lui (Parameters.TargetBackgroundError,
+        /// R-023), ca fereastra sa refuze ce refuza si consola, cu aceleasi cuvinte.
+        /// </summary>
+        static double? TargetBgOf(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+            double v = ParseNumber(text, "fundalul-tinta");
+            string error = Parameters.TargetBackgroundError(v);
+            if (error != null) throw new FormatException(error);
+            return v;
+        }
+
+        /// <summary>
+        /// Numarul dintr-un camp, cu cultura invarianta (R-024); un text care nu e numar da
+        /// mesajul campurilor, cu punctul ca separator. Un singur loc pentru toate campurile.
+        /// </summary>
+        static double ParseNumber(string text, string what)
+        {
+            if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
+                throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
+            return v;
+        }
+
         static double? OptionalNumber(string text, string what, double lo, double hi, bool allowZero = false)
         {
             if (string.IsNullOrWhiteSpace(text)) return null;
-            if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v))
-                throw new FormatException($"{what}: '{text}' nu e un numar (foloseste punctul ca separator zecimal)");
+            double v = ParseNumber(text, what);
             bool tooLow = allowZero ? v < lo : v <= lo;
             if (tooLow || v > hi) throw new FormatException($"{what}: {text} e in afara intervalului {(allowZero ? "[" : "(")}{Fmt.F1(lo)}, {Fmt.F1(hi)}]");
             return v;
@@ -172,7 +196,7 @@ namespace AstroPhotoAnalyzer.Wpf
             + "fixe (20x30, 35x50, 50x70...): raportul spune cat se taie si pe ce latura, ca sa alegi tu cadrul, nu ei.";
 
         public string TargetBgHelp =>
-            $"Un nivel (0..1) in plus pe care sa-l incerce simularea, pe langa grila ei "
+            $"Un nivel in plus pe care sa-l incerce simularea, strict intre 0 si 1 si rotunjit la {Parameters.TargetBackgroundDecimals} zecimale, pe langa grila ei "
             + $"{Fmt.Level(D.SimulationTargets.Min())}..{Fmt.Level(D.SimulationTargets.Max())}: randul lui apare in tabel marcat "
             + "\"(dat)\" si e cel pe care il arata dala de print din Preview. Gol = doar grila, si Preview-ul ia randul recomandat."
             + "\n\n"

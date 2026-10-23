@@ -37,7 +37,7 @@ Background, Colour, Size, Denoise, Warnings.
 | Size | natural distance, rows pass | Ok | "no size is recommended without a distance: up to <largest> cm the image is equally sharp at its natural distance, choose by the wall; give a distance if viewed from close" |
 | Size | natural distance, rows fail | Attention | "slightly discs at any size; the smallest minimises it; give a distance" |
 | Size | `SoftCorners` | Attention | do not enlarge the whole frame; consider a crop |
-| Size | crop `Needed` | Attention | what the target cuts |
+| Size | crop `Needed` | Attention | what the target cuts, each side named when they differ (`ReportWriter.CropCutText`) |
 | Size | any oversize row passes | Ok | above 100 cm glass/weight/transport are the limit |
 | Denoise | noise `Insufficient` | Attention | not enough flat sky |
 | Denoise | `BandingRisk` | Attention | denoise pressed too hard for print; target 0.8-1.5; sigma after the recommended re-stretch (x the curve's slope at the background) |
@@ -72,7 +72,7 @@ VERDICT: <OK|ATENTIE|PROBLEMA>
 
 Anexa A. Tonuri        means, % below 32/64, percentiles, L* line
 Anexa B. Simularea     table: target (as-is among the grid, "(dat)", "*"), gamma, L* praf, L* cer, negru pur (% patches), % below 15, % above 50, print-safe;
-                       the footer, the definition line (dust, sky, method), the exact-target line (at Dmax, Dmax -/+ 0.1, the Dmax from which it passes as is),
+                       the footer, the definition line (dust, sky, method), the exact-target line (at Dmax, Dmax -/+ 0.1, the Dmax from which the as-is dust reaches paper black, with the sky's caveat under L\* 15: `ReportWriter.DustDmaxText`),
                        the cloud table (name, patches, L*, target), the darkest DustCloudReportRows of them;
                        every target goes through ReportWriter.TargetText: the value, or a bound at the ladder's
                        ends, "<= 0.05" (even the lowest step already reaches paper black) and "> 0.60" (none does)

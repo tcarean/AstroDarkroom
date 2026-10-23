@@ -163,7 +163,13 @@ L\* - one fixed curve, used only by the window's level - L\* table and guide tex
 ### Statistics (`Input/Stats.cs`)
 
 Percentiles use numpy's default linear interpolation between ranks (the acceptance
-numbers were made with numpy). `RobustSigma` is 1.4826 x the median absolute deviation,
+numbers were made with numpy). `PercentileSorted` reads a vector already sorted, for the callers
+that sort once and read several ranks (Otsu, the class sets); `Percentile`, `Percentiles` and
+`Median` read an unsorted vector by selection on one copy (Hoare's quickselect, the ranks put in
+place from the lowest up), which gives the same two values the sorted vector would hold and so
+the same bits, in linear time where sorting the stride-2 samples of a 23 MP image took about
+half a second; a vector that holds a NaN takes the sorted path, whose order a selection on `<`
+would not reproduce (R-017). `RobustSigma` is 1.4826 x the median absolute deviation,
 with the median as a second result; `OtsuThreshold` on a sorted vector is the split that
 maximises the variance between the two halves, the lower half at or under it, with a floor on
 the size of the upper half (NaN when the vector cannot leave that many above; with all values

@@ -336,7 +336,11 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ stele
 
-        /// <summary>Fereastra de cautare a maximelor locale (latura, px).</summary>
+        /// <summary>
+        /// Fereastra de cautare a maximelor locale (latura, px, impara): StarAnalyzer o citeste de
+        /// aici (jumatatea ei e marginea lasata deoparte); intre maxime egale in fereastra conteaza
+        /// doar primul in ordinea scanarii (ADR 0041).
+        /// </summary>
         internal const int StarWindow = 25;
 
         /// <summary>O stea trebuie sa fie cu atat peste fundalul ferestrei, in unitati de 16 biti ...</summary>
@@ -517,10 +521,10 @@ namespace AstroPhotoAnalyzer
         internal static readonly double[] CurveStrengths = { 0.5, 0.75, 1.0 };
 
         /// <summary>
-        /// Maxima se ofera doar cand Puternica lasa varfurile cu mai mult de atat sub
-        /// CurvePeakTarget. O alegere, nu o masuratoare: 0.02 din scara e sub 2 L* la varfuri,
-        /// mai putin decat o treapta de tarie; pe FITS-ul 0.17 Puternica ajunge la 0.919 si
-        /// Maxima n-ar adauga nimic.
+        /// Maxima se ofera doar cand varfurile ei, cu factorul plafonat ca spline-ul sa ramana in
+        /// 0..1 (ADR 0039), urca cu mai mult de atat peste ale Puternicii. O alegere, nu o
+        /// masuratoare: 0.02 din scara e sub 2 L* la varfuri, mai putin decat o treapta de tarie;
+        /// pe FITS-ul 0.17 Puternica ajunge la 0.919 si Maxima n-ar adauga nimic.
         /// </summary>
         internal const double CurveMaximaMinGain = 0.02;
 

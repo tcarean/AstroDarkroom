@@ -19,18 +19,58 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class StatsTests
 {
-    /// <summary>Semantica numpy: np.percentile([1,2,3,4], 50) = 2.5, 25 -> 1.75, 100 -> 4.</summary>
+    /// <summary>numpy's semantics: np.percentile([1,2,3,4], 50) = 2.5, 25 -> 1.75, 100 -> 4.</summary>
     [Theory]
     [InlineData(50, 2.5)]
     [InlineData(25, 1.75)]
     [InlineData(0, 1.0)]
     [InlineData(100, 4.0)]
     [InlineData(99.9, 3.997)]
-    public void PercentileInterpolatesLikeNumpy(double p, double expected)
+    public void R017_PercentileInterpolatesLikeNumpy(double p, double expected)
     {
         float[] v = { 4, 1, 3, 2 };
 
         Assert.Equal(expected, Stats.PercentileSorted(Stats.Sorted(v), p), 3);
+        Assert.Equal(expected, Stats.Percentile(v, p), 3);
+    }
+
+    /// <summary>
+    /// The selection path gives the same bits as the sorted path: on random vectors with many
+    /// duplicates (16-bit levels), on all-equal vectors, on the smallest counts, for every rank
+    /// the tonal analyzer reads and in any order of the ranks; a vector with a NaN takes the
+    /// sorted path and agrees too.
+    /// </summary>
+    [Fact]
+    public void R017_PercentilesBySelectionEqualTheSortedRuleBitForBit()
+    {
+        var rng = new SeededRandom(17);
+        double[] ranks = TonalResult.PercentileRanks;
+        double[] shuffled = { 99.9, 0.1, 50, 100, 1, 99, 90 };
+        foreach (int n in new[] { 1, 2, 3, 4, 7, 100, 10_007, 250_000 })
+        {
+            var v = new float[n];
+            for (int i = 0; i < n; i++) v[i] = rng.Next(256) / 255f;   // heavy duplicates, as 8-bit levels
+            float[] sorted = Stats.Sorted(v);
+            double[] bySort = ranks.Select(p => Stats.PercentileSorted(sorted, p)).ToArray();
+            Assert.Equal(bySort, Stats.Percentiles(v, ranks));
+            double[] byShuffled = Stats.Percentiles(v, shuffled);
+            for (int i = 0; i < shuffled.Length; i++) Assert.Equal(Stats.PercentileSorted(sorted, shuffled[i]), byShuffled[i]);
+            Assert.Equal(Stats.PercentileSorted(sorted, 50), Stats.Median(v));
+            Assert.Equal(Stats.PercentileSorted(sorted, 25), Stats.Percentile(v, 25));
+
+            var w = new float[n];
+            for (int i = 0; i < n; i++) w[i] = (float)rng.NextDouble();   // no duplicates
+            float[] ws = Stats.Sorted(w);
+            Assert.Equal(ranks.Select(p => Stats.PercentileSorted(ws, p)).ToArray(), Stats.Percentiles(w, ranks));
+        }
+
+        float[] flat = Enumerable.Repeat(0.25f, 1000).ToArray();
+        Assert.Equal(0.25, Stats.Percentile(flat, 99.9));
+        Assert.Equal(0.25, Stats.Median(flat));
+
+        float[] withNaN = { 3, float.NaN, 1, 2 };
+        Assert.Equal(Stats.PercentileSorted(Stats.Sorted(withNaN), 50), Stats.Median(withNaN));
+        Assert.Throws<ArgumentException>(() => Stats.Percentile(Array.Empty<float>(), 50));
     }
 
     [Fact]
@@ -91,7 +131,7 @@ public class StatsTests
     }
 
     [Fact]
-    public void TheSeededGeneratorIsDeterministic()
+    public void R017_TheSeededGeneratorIsDeterministic()
     {
         var a = new SeededRandom(42);
         var b = new SeededRandom(42);
