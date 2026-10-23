@@ -40,7 +40,7 @@ namespace AstroPhotoAnalyzer
         internal const double LinearMedianMax = 0.02;
 
         /// <summary>
-        /// Over this fraction of pixels with value == high_byte * 257, a 16-bit file is a scaled
+        /// Over this fraction of samples with value == high_byte * 257, a 16-bit file is a scaled
         /// 8-bit one. On real 16 bits the fraction is ~0.4 % (coincidences); on an upscale it is
         /// 100 %.
         /// </summary>
@@ -49,7 +49,8 @@ namespace AstroPhotoAnalyzer
         // ------------------------------------------------------------ tones
 
         /// <summary>
-        /// The levels (out of 255) under which "dark pixels" are counted, for context.
+        /// The levels (out of 255) for the dark counts, for context: the samples of every channel
+        /// whose 8-bit level is under the threshold (TonalAnalyzer.Level8Under).
         /// </summary>
         internal const int DarkLevelA = 32;
         internal const int DarkLevelB = 64;
@@ -73,8 +74,9 @@ namespace AstroPhotoAnalyzer
         /// sit for paper. Rules of thumb from the conversation that gave birth to the tool, not
         /// measurements: on screen a sky at 0.05-0.10 looks "deep black" and good; on paper
         /// everything under its black prints as the same black, so the print version wants the
-        /// sky at 0.15-0.25, a dark grey. The reference image had 0.103, and its catalogued dust
-        /// reaches black at 0.19. For the window's help texts only; no rule reads them.
+        /// sky at 0.15-0.25, a dark grey. The reference image had 0.103 (V-001), and on the
+        /// plate-solved FITS of the same sky, at Dmax 2.0, the dust reaches paper black at 0.184,
+        /// the row 0.19 (V-004). For the window's help texts only; no rule reads them.
         /// </summary>
         internal const double ScreenBackgroundLo = 0.05;
         internal const double ScreenBackgroundHi = 0.10;
@@ -227,7 +229,8 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// A cloud with at least this many patches gets a row of its own (L*, exact target) and a
         /// circle on the map: 9 patches = 3 x 3 = a square degree at 42"/px, enough for its
-        /// percentile not to be a single patch. On the reference image: 116 of 406 clouds.
+        /// percentile not to be a single patch. On the plate-solved FITS: 114 of the 397 clouds
+        /// with a patch in the frame (V-004).
         /// </summary>
         internal const int DustCloudMinPatches = 9;
 
@@ -310,8 +313,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The PLATEAU's tiles (stage 3): range under 6 levels and mean under 70 - clean sky,
-        /// without the core - 120 tiles from seed 1. They are the other acceptance script's
-        /// criteria, and give 2.6 px on the reference image.
+        /// without the core - up to 120 tiles from seed 1. They are the other acceptance script's
+        /// criteria; on the reference image 20 tiles pass in PlateauMaxAttempts tries, and give
+        /// 2.68 px (V-001).
         /// </summary>
         internal const double PlateauTileMaxRangeLevels = 6;
         internal const double PlateauTileMaxMeanLevels = 70;
@@ -347,7 +351,7 @@ namespace AstroPhotoAnalyzer
         internal const double JpegMaxErrorReject = 10;
 
         /// <summary>
-        /// The pixels with a JPEG error over this many levels are counted and located.
+        /// The samples with a JPEG error over this many levels are counted and located.
         /// </summary>
         internal const double JpegErrorCountLevels = 2;
 
@@ -364,13 +368,15 @@ namespace AstroPhotoAnalyzer
         internal const double ShadowLiftGamma = 1.9;
 
         /// <summary>
-        /// The interval of levels in which the histogram's gaps are counted after the lift.
+        /// The levels strictly between which the histogram's gaps are counted after the lift,
+        /// from the first level used there to the last.
         /// </summary>
         internal const int ShadowLiftLevelLo = 8;
         internal const int ShadowLiftLevelHi = 120;
 
         /// <summary>
-        /// Over this many missing levels, the 16-bit master is mandatory for any edit.
+        /// Over this many levels missing on the 8-bit path more than on the 16-bit one, the 16-bit
+        /// master is mandatory for any edit.
         /// </summary>
         internal const int MissingLevelsWarn = 20;
 
@@ -482,7 +488,7 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// A departure is COLOURED if the difference between the channels (max - min of the
-        /// delta) exceeds CornerGradientLevels and is at least this fraction of the mean
+        /// delta) exceeds CornerGradientLevels and exceeds this fraction of the mean absolute
         /// departure. Measured on the reference image: the horizon corner has R +9, B -10
         /// (coloured, pollution); the corner the Milky Way enters has +11 / +10 / +16 (neutral -
         /// it is the object, not a gradient). A rule that mistakes the object for the defect is
@@ -605,9 +611,10 @@ namespace AstroPhotoAnalyzer
         internal const double CurveClipLevel = 0.995;
 
         /// <summary>
-        /// The shadow chart of the curve window goes from 0 to this many times the band's input:
-        /// the dust and the sky sit in the first 10-20 % of the axis and do not show on the whole
-        /// chart.
+        /// The shadow chart of the curve window goes from 0 to this many times the input of the
+        /// curve's fourth point, the band's (the bright clouds' when the dust's point is the
+        /// origin, CurveAdvisor.ShadowChartLimit): the dust and the sky sit in the first 10-20 %
+        /// of the axis and do not show on the whole chart.
         /// </summary>
         internal const double CurveShadowChartFactor = 1.25;
 
@@ -631,8 +638,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The nodes per channel of the round-trip table through the profile; 33 means 35,937
-        /// colours passed once through the package (~25 microseconds each), the rest by
-        /// interpolation.
+        /// colours passed once through the package (~25 microseconds each); the pixels are read
+        /// by interpolation, except those within CurveGamutExactMargin of the threshold, which
+        /// take the exact trip once per 8-bit colour (ADR 0042).
         /// </summary>
         internal const int CurveGamutGrid = 33;
 

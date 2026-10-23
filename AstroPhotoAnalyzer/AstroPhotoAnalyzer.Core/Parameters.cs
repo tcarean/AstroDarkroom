@@ -79,8 +79,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// The name of the ICC profile the explicit Dmax was read from (R-028); null when the
-        /// Dmax is the medium's or typed by the user. For the report only: it says where the
-        /// figure comes from.
+        /// Dmax is the medium's or typed by the user. For the texts that say where the figure
+        /// comes from (the report, the paper-black row of the Tonuri ladder); CurveRun also
+        /// reopens DmaxProfilePath only while it is set.
         /// </summary>
         internal string DmaxProfile { get; init; }
 
