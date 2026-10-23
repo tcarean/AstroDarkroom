@@ -80,8 +80,8 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// The whole image, reduced by the step that brings it under <paramref name="maxSide"/>
-        /// px.
+        /// The whole image, reduced by the smallest step that brings its long side to at most
+        /// <paramref name="maxSide"/> px (3200 px at 1600 gives 1600, not under).
         /// </summary>
         /// <param name="r">The raster, 0..1 levels.</param>
         /// <param name="maxSide">The limit of the long side, in pixels, 1 or more.</param>

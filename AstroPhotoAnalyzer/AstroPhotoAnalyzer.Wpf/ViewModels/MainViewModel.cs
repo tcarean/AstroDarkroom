@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the file, the parameters, the run, and the six tabs.
+// MainViewModel.cs - the file, the parameters, the run, and the seven tabs.
 //
 // One run at a time: the button is disabled while it computes. The analysis takes a few
 // seconds on 23 MP (the JPEG is half of them) and sits on a pool thread; the progress comes by

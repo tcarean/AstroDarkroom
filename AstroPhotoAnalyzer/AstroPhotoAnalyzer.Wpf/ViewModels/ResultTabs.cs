@@ -16,8 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // ResultTabs.cs - the six tabs with results. Each receives the AnalysisResult through Populate
-// and turns it into rows; none computes a figure or phrases a sentence - the texts come from
-// Recommendations and from ReportWriter, the figures from Fmt.
+// and turns it into rows; none computes a figure or phrases a sentence of diagnosis - those
+// come from Recommendations and from ReportWriter, the figures from Fmt. The descriptions, the
+// guides and the checks are the view-models' own explanation, every number in them interpolated
+// from Thresholds, Parameters or the result (ADR 0020).
 //
 // All in one file because they are all the same thing: a list of rows and a bool HasResult.
 // When one grows, it takes a file of its own.

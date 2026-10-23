@@ -106,7 +106,8 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Name { get; init; }
 
         /// <summary>
-        /// "LDN 42 (B78)  L* 0.9  tinta 0.392", for the tick list and for the label.
+        /// "LDN 42 (B78)  L* 0.9  tinta 0.392  (57 dale)", for the tick list; the label on the
+        /// map shows <see cref="Name"/> alone.
         /// </summary>
         public string Caption { get; init; }
 
