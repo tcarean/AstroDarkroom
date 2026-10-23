@@ -336,7 +336,11 @@ namespace AstroPhotoAnalyzer
 
         // ------------------------------------------------------------ stele
 
-        /// <summary>Fereastra de cautare a maximelor locale (latura, px).</summary>
+        /// <summary>
+        /// Fereastra de cautare a maximelor locale (latura, px, impara): StarAnalyzer o citeste de
+        /// aici (jumatatea ei e marginea lasata deoparte); intre maxime egale in fereastra conteaza
+        /// doar primul in ordinea scanarii (ADR 0041).
+        /// </summary>
         internal const int StarWindow = 25;
 
         /// <summary>O stea trebuie sa fie cu atat peste fundalul ferestrei, in unitati de 16 biti ...</summary>

@@ -224,7 +224,9 @@ is one plane and `Coloured` is always false.
 
 Candidate = pixel of the reference plane above `mean + StarCandidateAboveMean16/65535`
 (3000/65535 = 0.046 above the plane mean), not above `StarMaxPeak16/65535` (saturated),
-and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`). Base = median of the
+and the maximum (ties allowed) of its 25 x 25 window (`StarWindow`, `Half = StarWindow / 2` the
+border left out); among tied maxima only the first in scan order passes, so a flat two-pixel
+peak is one star (ADR 0041). Base = median of the
 window's 96 border pixels; amplitude = peak - base >= `StarMinAmplitude16/65535`. Width
 at half maximum is measured on the horizontal and vertical lines through the peak:
 descend from the centre until below `base + amplitude/2`, interpolate the crossing

@@ -36,7 +36,7 @@ public class StarAnalyzerTests
     }
 
     [Fact]
-    public void RecoversTheFwhmOfSyntheticStars()
+    public void R070_RecoversTheFwhmOfSyntheticStars()
     {
         var s = StarAnalyzer.Analyze(StarField(3.0));
 
@@ -50,6 +50,46 @@ public class StarAnalyzerTests
         Assert.InRange(s.FwhmQ3, 2.9, 3.3);
         Assert.Equal(512 / s.FwhmMedian, s.EffectiveDetailPx(512), 6);
         Assert.False(s.SoftCorners);
+    }
+
+    /// <summary>
+    /// A flat two-pixel peak (two adjacent pixels at the same value, each the maximum of its
+    /// window) is one star, at its first pixel in scan order (ADR 0041); before it both pixels
+    /// passed and the star was counted twice.
+    /// </summary>
+    [Fact]
+    public void R070_AFlatTwoPixelPeakIsMeasuredOnce()
+    {
+        Raster r = SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), 60, 60, 3.0, 0.3f);
+        foreach (float[] plane in r.Planes) plane[60 * 128 + 61] = plane[60 * 128 + 60];   // the peak's right neighbour equals it
+        var s = StarAnalyzer.Analyze(r);
+
+        Star star = Assert.Single(s.Stars);
+        Assert.Equal(60, star.X);
+        Assert.Equal(60, star.Y);
+
+        // A single-pixel peak is one star too, and a flat peak down a column counts once, at the top.
+        Raster column = SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), 60, 60, 3.0, 0.3f);
+        foreach (float[] plane in column.Planes) plane[61 * 128 + 60] = plane[60 * 128 + 60];
+        Star top = Assert.Single(StarAnalyzer.Analyze(column).Stars);
+        Assert.Equal(60, top.Y);
+    }
+
+    /// <summary>
+    /// The window is Thresholds.StarWindow (25): two equal stars 12 px apart share a window and
+    /// count once, 13 px apart they are two; a star within 12 px of the border is not looked at.
+    /// </summary>
+    [Fact]
+    public void R070_TheWindowIsTheThresholdsStarWindow()
+    {
+        int half = Thresholds.StarWindow / 2;
+        Assert.Equal(12, half);
+        Raster inside = SyntheticRasters.AddStar(SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), 60, 60, 3.0, 0.3f), 60 + half, 60, 3.0, 0.3f);
+        Assert.Single(StarAnalyzer.Analyze(inside).Stars);
+        Raster apart = SyntheticRasters.AddStar(SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), 60, 60, 3.0, 0.3f), 60 + half + 1, 60, 3.0, 0.3f);
+        Assert.Equal(2, StarAnalyzer.Analyze(apart).Stars.Count);
+        Raster border = SyntheticRasters.AddStar(SyntheticRasters.Flat(128, 128, Sky), half - 1, 60, 3.0, 0.3f);
+        Assert.Empty(StarAnalyzer.Analyze(border).Stars);
     }
 
     [Fact]

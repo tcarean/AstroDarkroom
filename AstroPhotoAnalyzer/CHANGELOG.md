@@ -38,6 +38,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   against every cloud, after a pre-filter on the frame's centre, instead of inside a pixel box
   of the cloud's radius at the central plate scale, which far from the tangent point lost the
   outer patches of a disc, or the whole cloud (R-044; ADR 0044; item 10).
+- A flat two-pixel star peak is measured once, at its first pixel in scan order, not twice
+  (R-070; ADR 0041; item 14); the star figures move a little where such peaks occur.
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;
@@ -63,6 +65,7 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- `StarAnalyzer` reads its window from `Thresholds.StarWindow` instead of a literal 12 (item 12).
 - The medians and percentiles of unsorted vectors are found by selection on one copy
   (`Stats.Percentile`, `Stats.Percentiles`, `Stats.Median`), not by sorting the whole vector: the
   same values to the bit (R-017; the 1689 validation figures identical), about 0.5 s less per

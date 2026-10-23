@@ -435,3 +435,8 @@ agrees with brute force on every cloud, and LDN 621 has patches outside the old 
 prints their count on failure; the first draft of the test, on a 512 px frame of 0.15 degrees
 per pixel, found 46 clouds and none outside the box: its 4.8-degree patches were too coarse to
 show the loss).
+
+### Step 3, items 12 and 14: the star window and the tied maxima (goldens)
+
+No golden line moved: the golden scenes' stars carry noise, so no two adjacent pixels tie at a
+window's maximum. The star figures of the validation cases are read at the drift step.
