@@ -194,6 +194,21 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
 
 ## History
 
+- 2026-10-23 (ADR 0042, the gamut figure decided by the exact round trip of the 8-bit colour
+  near the threshold; `docs/plans/2026-10-23-fix-the-defects-the-analyzer-review-found.md`,
+  "Item 9, implemented"), approved by the owner on the comparison with the exact per-pixel round
+  trip: V-008's twenty gamut figures, the peaks (0) excepted. As is `curves.before.gamut.all`
+  1.0227 -> 1.3563 (exact 1.348), `.dust` 2.6719 -> 4.2609 (4.216), `.sky` 0.4487 -> 0.7187
+  (0.713), `.band` 1.7775 -> 1.7945 (1.794), `.clouds` 0.5818 -> 0.5635 (0.571); `Blanda` all
+  0.9294 -> 1.2852 (1.276), dust 2.5089 -> 4.1336 (4.086), sky 0.4093 -> 0.6988 (0.690), band
+  1.5754 -> 1.6117 (1.616), clouds 0.4684 -> 0.4757 (0.465); `Medie` all 0.8773 -> 1.2432
+  (1.230), dust 2.4317 -> 4.0623 (4.006), sky 0.3904 -> 0.6885 (0.676), band 1.4491 -> 1.4982
+  (1.499), clouds 0.4172 -> 0.4025 (0.406); `Puternica` all 0.8247 -> 1.1992 (1.188), dust
+  2.3521 -> 3.9676 (3.915), sky 0.3678 -> 0.6792 (0.671), band 1.326 -> 1.3781 (1.376), clouds
+  0.4208 -> 0.4172 (0.417). The grid alone was 0.3 points low in all and 1.5 to 1.6 on the dust
+  class; the new figures are within 0.06 points of exact, the residue being the 8-bit
+  quantisation of the colours near the threshold. No other case moved.
+
 - 2026-10-23 (the fixes of the area-2 code review, `docs/plans/2026-10-23-fix-the-defects-the-analyzer-review-found.md`;
   ADRs 0039 to 0044), approved by the owner on the drift table of the plan's record: 146 of
   1696 figures moved, none of the dust, the sky, the exact targets or the verdicts. The renamed

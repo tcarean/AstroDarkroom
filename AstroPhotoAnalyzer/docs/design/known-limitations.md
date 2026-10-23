@@ -96,15 +96,10 @@
   saved clipped. The ICC profile of a PNG or TIFF source is not carried, and a borrowed WCS
   (`--wcs`) is not written. SIP cards are copied with the rest and still ignored by the classes.
 - The gamut figure counts the chroma only, through relative colorimetric tables without black
-  point compensation, on an interpolated grid of 33 nodes per channel: not a soft proof, and an
-  estimate low by up to a few points per class, since the interpolation rounds the gamut's edge
-  and misses colours rather than adds them (measured 2026-10-23 against the exact round trip per
-  pixel: the plate-solved FITS on the lab's baryta 1.02 % against 1.35 %, its dust class 2.7
-  against 4.2; on its canvas 35.1 % against 39.7 %; `de_printat.png` on baryta 0.06 % against
-  0.15 %, its dust class 0.0 against 2.4). A hybrid that takes the exact round trip for the
-  pixels near the threshold reproduces the exact figure and is the owner's open question
-  (`docs/plans/2026-10-23-fix-the-defects-the-analyzer-review-found.md`, item 9). `Maxima`
-  clips more pixels than the other suggestions (0.32 % against 0.10 % on the reference PNG).
+  point compensation: not a soft proof. Near the threshold it is decided on the pixel's 8-bit
+  colour (ADR 0042), so on a 16-bit or float image it is within 0.2 points of the exact per-pixel
+  figure, not equal to it (measured 2026-10-23: the canvas sky 38.24 % against 38.08 %). `Maxima`
+  clips more pixels than the other suggestions (0.18 % against 0.10 % on the reference PNG).
 - A saved FITS copies every card of the source, so a `CHECKSUM` / `DATASUM` pair, or `DATAMIN` /
   `DATAMAX`, would describe the old data. Siril writes none of them by default; a source that
   carries them yields a file that fails checksum verification.
