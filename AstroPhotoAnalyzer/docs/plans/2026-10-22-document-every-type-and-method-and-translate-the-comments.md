@@ -699,3 +699,76 @@ ones included, and the code defects kept as questions. The probes are in the scr
   a median of float patch L*s), the gamut's "~28 microseconds" (the 17^3 method reproduces it),
   the preview share's wording, the scare quotes, `ShadowChartLimit` (known defect 1), the
   "floor" wording, the hand-written inverse in `DmaxToPassAsIs`.
+
+### Area 3, `Core/Report/`, `Core/Runs/`, `ThirdParty.cs`, `Version.cs` (2026-10-23, `claude/Document-and-translate-the-report-and-the-runs`)
+
+- **It ran in a session of its own, from area 2's prompt,** in three commits: the ten files in
+  one (1,517 lines in the plan's table, 1,546 on `main` at 1b80408), the false comments, the
+  wrap-up. The scratch tool, `checks.sh`, `wrapdoc.py`, `drift.py` and the probe project came
+  from area 2's scratchpad, rebuilt in this session's; `checks.sh` takes the area's four
+  prefixes.
+- **The worktree's name, 46 characters, is over the ~41 that area 2's memory gave as safe**
+  (the plan fixes the branch name): the longest path of the monorepo, a DarksCheck ADR, came to
+  257 of Windows's 260 and the checkout was complete. Area 4's name,
+  `Document-and-translate-the-thresholds-parameters-and-console` (61 characters), would pass
+  260 (272); its worktree needs a shorter folder name than the branch's, which the kit's rule
+  "Worktrees" asks to match, or a shorter branch name: the owner's call when area 4 starts.
+- **Areas 1 and 2's reviews, applied before writing:** the quoted Romanian output stays as the
+  user sees it ("asa cum e", "fiindca", "PROBLEMA", the report's example lines); "omul" is "the
+  user", and "the owner" only in `Version.cs`, where ADR 0029's owner increments the version;
+  every NaN, null and empty case is said where the code returns or accepts it; a throw a caller
+  plans for (`BorrowWcs`, the two `Execute`s, `CurveExport.Save`, the `Recommendation`
+  constructor) is in the summary or the parameter's range, no `<remarks>`; each claim checked
+  against its code line or caller, one with a probe on the branch's build (P1 below).
+- **The counter's methods: 78, not 76.** `main` moved since the plan's table (area 2's review
+  fixes); the area had 18 types (14 undocumented, `ThirdPartyComponent` missing its `<param>`s:
+  15 to touch) and 78 methods (48 undocumented, 30 incomplete).
+- **Three comments corrected, in a commit of their own (08681ed):**
+  1. `ReportWriter.DustDefinition`: the example was ADR 0025's superseded line ("10 % din dalele
+     norilor catalogati (406 nori, 4078 dale); cerul = mediana dalelor din afara norilor"),
+     handed on by area 2; it is now the line `Golden/dark-sky.txt` prints.
+  2. `Recommendations.Background`: the branch where the dust reaches black on the grid but the
+     sky reaches L\* 15 on no row is not "only on a grid the user gave": P1 reaches it on the
+     default grid, with a mono frame whose left 45 % is a sky at 0.08 and the rest a nebula at
+     0.25 ("Nicio tinta pana la 0.20 nu aduce cerul la L* 15; ar trebui 0.341"), and on six of
+     the 36 frames it tried (P1 is `probe3` in this session's scratchpad).
+  3. `Fmt.cs`, header: not every number in the report goes through `Fmt`; the integers (the
+     counts, `DarkLevelA`, `DustPatchPx`, the shadow-lift levels, the seed) are interpolated as
+     they are, which holds because both applications run in the invariant culture.
+
+  At wrap-up `recommendations-and-report.md` was brought in line with fact 3.
+- **Left as they are:** `CurveExport.Save` says the operating system refuses any other spelling
+  of the input, "a link" among them; a symbolic link would more likely be replaced as a link,
+  leaving the input untouched, but no probe ran (creating one needs a privilege), so the
+  sentence stands as translated. `Thresholds.cs:217`'s "116 din 406 nori" is area 4's, as area 2
+  handed it on. The Romanian scan leaves 5 lines, all quoted output in `ReportWriter.cs` (the
+  `DustDefinition` and `DustDmaxText` examples).
+- **Code defects, questions for the owner:** none found in this area.
+- **Measured on 2026-10-23:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | 51fe855 | the ten files | `== OK in 66s` | 380 + 58 |
+  | 08681ed | the three false comments | `== OK in 58s` | 380 + 58 |
+
+  - **The counter on the area:** on `main`, 15 types and 78 methods to touch; on the branch 0
+    and 0. The whole code has 54 types and 138 methods left for areas 4 and 5.
+  - **No code changed:** `tokens` finds the code of all 71 files identical to `main`'s, the 10 of
+    the area with changed comments or layout: +756/-186.
+  - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
+    new ones, except the stale example's "10", "406", "4078", "3.6" and "2.4" (fact 1, on
+    purpose) and "DustCloudReportRows" (now `Thresholds.DustCloudReportRows` in a `cref`).
+  - **English:** on `main`, 174 of the 239 comment lines of the area held a Romanian function
+    word, in all 10 files; on the branch 5 of 803, judged above.
+  - **Widths:** 16 comment lines of the area ran past 100 columns on `main`; none now.
+  - **ASCII:** no added line holds a character outside ASCII.
+  - **`/validate`:** the fourteen cases pass; of the 1242 figures 1240 are identical to the
+    recorded ones and two differ by 0.0001, inside the 0.01 tolerance: V-011's
+    `curves.Maxima.lstar.clouds` (67.1502 recorded, 67.1503 measured) and V-014's
+    `curves.Maxima.lstar.peaks` (77.9226, 77.9227). The code is token-identical to `main`, and a
+    second run gave the same figures, so this branch did not move them. Both were recorded at
+    6bad089, before three later commits to the core on `main`; a0dcb7d, which changed the
+    spline's tolerance, is the likely cause, not checked.
+  - **`check-design.ps1 -Since main`** listed five notes: `recommendations-and-report.md`
+    changed (above); `code-map.md`, `dependencies.md`, `extending.md` and `pipeline.md` were read
+    against the change and hold.

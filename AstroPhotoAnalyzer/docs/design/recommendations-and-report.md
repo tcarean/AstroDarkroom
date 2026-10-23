@@ -82,10 +82,11 @@ Anexa E. Culoarea fundalului  background colour (R/G/B) and cast; the eight regi
 Anexa F. Parametri     every parameter as used
 ```
 
-Every number goes through `Fmt` with `CultureInfo.InvariantCulture` spelled out (`F0..F4`,
-`S1` signed, `Pct`, `Mb`, `Int`, `Dim`); NaN prints as `n/a`. This is what makes the
-window's saved file byte-identical to the console's output on any Windows culture
-(`CultureTests`). Text is Romanian without diacritics. The format is pinned by the golden
+Every number with decimals goes through `Fmt` with `CultureInfo.InvariantCulture` spelled out
+(`F0..F4`, `S1` signed, `Pct`, `Mb`, `Int`, `Dim`); NaN prints as `n/a`. Some integers (counts,
+thresholds in levels or pixels, the seed) are interpolated as they are, which relies on both
+applications running in the invariant culture. This is what makes the window's saved file
+byte-identical to the console's output on any Windows culture (`CultureTests`). Text is Romanian without diacritics. The format is pinned by the golden
 tests: change it on purpose, re-approve, read the diff.
 
 ### The Curbe tab's sentences (`Report/CurveTexts.cs`, ADR 0032)
