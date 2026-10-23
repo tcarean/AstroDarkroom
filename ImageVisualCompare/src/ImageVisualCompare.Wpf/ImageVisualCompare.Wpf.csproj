@@ -11,6 +11,9 @@
     <!-- The executable's icon; a window with no Icon of its own takes it for its caption and the
          taskbar. Assets/make-icon.ps1 writes the file (ADR 0030). -->
     <ApplicationIcon>Assets\ImageVisualCompare.ico</ApplicationIcon>
+    <!-- Per-monitor DPI awareness, which Windows reads from the executable's manifest when the
+         process starts (R-022, ADR 0034). -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>

@@ -125,7 +125,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 for (int x = 0; x < width; x++)
                 {
                     double value = zero + (scale * BinaryPrimitives.ReadSingleBigEndian(row.Slice(x * 4, 4)));
-                    above += IsAboveThreshold(value) ? 1 : 0;
+                    above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
                     bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
                 }
 
@@ -135,7 +135,7 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
                 for (int x = 0; x < width; x++)
                 {
                     double value = zero + (scale * BinaryPrimitives.ReadDoubleBigEndian(row.Slice(x * 8, 8)));
-                    above += IsAboveThreshold(value) ? 1 : 0;
+                    above += FitsScale.IsAboveThreshold(value) ? 1 : 0;
                     bgra[(x * 4) + channel] = FitsScale.Level(value * toSixteenBits);
                 }
 
@@ -144,15 +144,4 @@ public sealed class FitsRowDecoder(FitsImageLayout layout, Stream stream, double
 
         SamplesAboveThreshold += above;
     }
-
-    // An infinity says nothing about the scale of the file; NaN fails the first comparison.
-    /// <summary>
-    /// Tells whether a float sample counts towards <see cref="SamplesAboveThreshold"/>.
-    /// </summary>
-    /// <param name="value">The sample, after BZERO and BSCALE.</param>
-    /// <returns>
-    /// True when it is finite and above <see cref="FitsScale.RescaleThreshold"/>.
-    /// </returns>
-    private static bool IsAboveThreshold(double value) =>
-        value > FitsScale.RescaleThreshold && value <= double.MaxValue;
 }

@@ -1,7 +1,7 @@
 # 0015. Both headers are probed before either decode, the decodes never overlap, a file failure is a message, never a crash
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; a new exception type becomes a message by being added to IsExpectedLoadFailure superseded by 0031
 
 ## Context
 

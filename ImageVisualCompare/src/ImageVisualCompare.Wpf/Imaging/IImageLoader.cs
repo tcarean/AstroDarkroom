@@ -38,9 +38,9 @@ public interface IImageLoader
 {
     /// <summary>
     /// Reads only the header. Used to check that a pair matches before committing to the
-    /// cost of decoding either one. A file that cannot be read throws;
-    /// <see cref="ImagePairLoader"/> turns the exception types it expects into a message and
-    /// lets any other through.
+    /// cost of decoding either one. A file that cannot be read throws an exception of a type
+    /// <see cref="ImagePairLoader"/> turns into a message; an implementation turns its
+    /// decoder's own failures into one of those types.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
     /// <returns>
@@ -52,8 +52,8 @@ public interface IImageLoader
 
     /// <summary>
     /// Decodes the full image on a background thread. A file that cannot be read or decoded
-    /// throws; <see cref="ImagePairLoader"/> turns the exception types it expects into a
-    /// message and lets any other through.
+    /// throws an exception of a type <see cref="ImagePairLoader"/> turns into a message, as
+    /// <see cref="Probe"/> does.
     /// </summary>
     /// <param name="path">The file; what it holds, not its name, says what it is.</param>
     /// <param name="cancellationToken">

@@ -18,12 +18,16 @@
   - `DividerModel.cs` — the split line as a fraction of viewport width, plus hit testing.
   - `ZoomLadder.cs` — the discrete stops the `+`/`−` buttons step through. The wheel zooms
     continuously, so an off-ladder scale can be current at any time; `Next`/`Previous`
-    therefore search rather than index. See ADR 0020.
-  - `ImageInfo.cs` — what a file turned out to be. Reported to the user, never branched on. See ADR 0022.
+    therefore search rather than index. See ADR 0020. Where `Previous` would step up, under
+    the lowest stop, `Viewport.ZoomOut` goes to the floor instead (ADR 0033).
+  - `ImageInfo.cs` — what a file turned out to be. Reported to the user; nothing after the
+    load branches on it, and in the load only `IsFloat` does. See ADR 0022, ADR 0035.
   - `FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs` — the project's own FITS reader:
     where the image is in the file and how it is stored (`FitsImageLayout`), how a value
     becomes one of 256 levels, and one Bgra32 row at a time out of the planes. How they fit is
     in `imaging.md`. See ADR 0029.
+  - `FloatSamples.cs` — a row of float samples from a float TIFF turned into Bgra32 levels
+    through `FitsScale`, as a FITS's are. See ADR 0035.
   - `ImagePairValidator.cs` — `PadPlan`: the canvas the pair is compared on, which is the
     larger extent on each axis, plus whether that meant padding and the question to put to
     the user if it did.
@@ -48,10 +52,14 @@
   - `Imaging/WicImageLoader.cs` — decodes via WIC. `Probe` reads the header only;
     `Load` realises the pixels and converts to Bgra32. `Classify` maps a WIC pixel format to
     words for the status bar, and falls through to raw bits-per-pixel rather than rejecting
-    anything it does not recognise. See ADR 0022.
+    anything it does not recognise. See ADR 0022. Float samples are found by
+    `FloatSamplesOf` and shown as stored (ADR 0035); WIC's own failures become the message
+    types (ADR 0031).
   - `Imaging/FitsImageLoader.cs` — decodes FITS with the reader in Core, row by row into a
     `WriteableBitmap`, and a second time when the floats turn out to count to 65 535. See
     ADR 0029.
+  - `Imaging/Bitmaps.cs` — the Bgra32 bitmap the two loaders above write rows into, and the
+    too-large refusal both say, once. See `imaging.md`.
   - `Imaging/RoutingImageLoader.cs` — the loader the application constructs: FITS, by the
     file's first bytes, to `FitsImageLoader`, everything else to `WicImageLoader`.
   - `Imaging/ImagePairLoader.cs` — probes **both** headers and settles the canvas before
@@ -78,5 +86,9 @@
   - `Theme.xaml` — the dark palette and every control style.
   - `Assets/ImageVisualCompare.ico` and `Assets/make-icon.ps1` — the application's icon and the
     script that draws it; the csproj's `ApplicationIcon` embeds the file. See `shell.md`.
+  - `app.manifest` — what Windows reads from the executable at start-up: per-monitor DPI
+    awareness, so 100% is one to one on every monitor; the csproj's `ApplicationManifest`
+    embeds it. See `rendering.md`, ADR 0034.
 - `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
-  tests drive the real WIC codecs. References both other projects.
+  tests drive the real WIC codecs. References both other projects. `WpfThread` runs the tests
+  of a window or a control on one STA thread (ADR 0032).

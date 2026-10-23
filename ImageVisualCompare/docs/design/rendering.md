@@ -6,7 +6,11 @@
 > `src/ImageVisualCompare.Wpf/Controls/CompareView.xaml.cs`,
 > `src/ImageVisualCompare.Core/Viewport.cs`,
 > `src/ImageVisualCompare.Core/RenderPlan.cs`,
-> `src/ImageVisualCompare.Core/DividerModel.cs`.
+> `src/ImageVisualCompare.Core/DividerModel.cs`,
+> `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml`,
+> `src/ImageVisualCompare.Wpf/Controls/MinimapView.xaml.cs`,
+> `src/ImageVisualCompare.Core/MinimapGeometry.cs`,
+> `src/ImageVisualCompare.Wpf/app.manifest`.
 > A change to the code this describes means this note is updated in the same task, or
 > deleted with the decision it explains.
 
@@ -30,6 +34,11 @@ exactly two places — `CompareView`'s input handlers (multiply by `_deviceScale
 (divide the render scale by it). This is what makes 100% mean one image pixel per physical
 screen pixel on a scaled display. The divider is the exception and stays in DIPs throughout,
 because it is a fraction of the window and never touches image coordinates. See ADR 0011.
+`_deviceScale` is the scale of the monitor the window is on because the application is
+per-monitor DPI aware: `app.manifest` declares it, and without it the process is system aware,
+WPF reports the system's scale everywhere and raises no `OnDpiChanged` when the window moves,
+and Windows stretches the window on a monitor scaled differently. `AppManifestTests` reads the
+manifest out of the built files. See ADR 0034.
 
 **The image layers are `Canvas`, not `Grid`.** A `Grid` clamps a child's desired size to the
 cell, so a 5794 px wide image gets laid out at the width of the window and `Stretch` squashes
@@ -53,3 +62,12 @@ larger than its own pixel count and quietly break the 1:1 zoom level. See ADR 00
 
 **Scrollbars float over the image.** Putting them in the layout would shrink the viewport when
 they appear, which changes the fit scale, which can change whether they are needed. See ADR 0019.
+
+**The minimap measures on its thumbnail, inside its border.** `MinimapView` wraps the thumbnail
+and the `Overlay` canvas the rectangle is drawn on in a 1-DIP border, so the minimap's own size
+and position are not the thumbnail's. It lays the rectangle out in the overlay's size, and maps
+a click through `TranslatePoint` onto the overlay before `MinimapGeometry.ContentPointAt`: on a
+188-DIP thumbnail of a 5938-pixel image, the 1 DIP the border adds is 31 image pixels. Until
+2026-10-22 both used the minimap's own size and position (R-041, R-042). `MinimapGeometry.Layout`
+floors the rectangle at 2 DIPs after clamping it, then moves it in by what the floor added, so
+by the right or bottom edge it stays on the thumbnail.

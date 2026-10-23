@@ -143,3 +143,9 @@ files above. They are kept here as they were written, as the history of the figu
   above, left as they are: V-001 decoded in 2.63 s, +177.9 MB and 0.2 MB after the release;
   V-002 in 1.78 s, +171.4 and 0.2 MB; V-003 in 1.67 s, +201.4 and 25.3 MB; V-004 in 2.10 s,
   +173.3 and -2.9 MB.
+- 2026-10-22: after the fixes of the documentation review (WIC's failures as messages, the
+  FITS header's two edge cases, the float TIFF shown as stored, ADRs 0031 to 0035), all four
+  cases ran again in the task's worktree and passed against the figures above, left as they
+  are; no case has a float TIFF. V-001 decoded in 2.63 s, +178.0 MB and 0.6 MB after the
+  release; V-002 in 1.82 s, +172.9 and 1.5 MB; V-003 in 1.61 s, +201.4 and 25.4 MB; V-004 in
+  2.09 s, +172.9 and -3.3 MB.

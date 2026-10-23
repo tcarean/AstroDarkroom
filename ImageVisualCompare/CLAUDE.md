@@ -36,7 +36,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 - `src/ImageVisualCompare.Core/` - `net9.0`, no UI framework reference: zoom and pan
   (`Viewport.cs`, `ZoomLadder.cs`), the divider (`DividerModel.cs`), the canvas of a pair
   (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), the FITS reader
-  (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), and the layout
+  (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), a float TIFF's samples shown as a
+  FITS's (`FloatSamples.cs`), and the layout
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`).
   All of it unit tested.
@@ -46,7 +47,8 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`, `Assets/` (the icon and the
   script that draws it).
 - `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
-  on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`),
+  on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`), a
+  defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032),
   `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,
   `VersionTests`. `tests/testdata/manifest.json` hashes the real pair, which stays outside git.
 - `Directory.Build.props` - `<Version>` and `<Copyright>`, the single place for both (ADR
@@ -77,8 +79,9 @@ or varies a kit rule names it.
   decoder would fill. SkiaSharp, ImageSharp and Magick.NET were compared and rejected; read
   `docs/design/imaging.md` before proposing one again (ADR 0008). FITS, which WIC has no codec
   for, is read by the project's own code in Core, behind the same seam (ADR 0029).
-- **A FITS is shown as stored.** No stretch, and the 8-bit level is the one WIC gives the same
-  value in a 16-bit PNG; `FitsScale` is the only place a FITS value becomes a level (ADR 0029).
+- **A FITS, and a float TIFF, is shown as stored.** No stretch, and the 8-bit level is the one
+  WIC gives the same value in a 16-bit PNG; `FitsScale` is the only place a FITS value or a
+  float sample becomes a level, never WIC's float conversion (ADR 0029, ADR 0035).
 - **Core has no UI.** `ImageVisualCompare.Core` references no UI framework; its own `PointD`,
   `SizeD` and `RectD` exist so it never needs `WindowsBase`. The controls do no arithmetic: a
   number on screen comes from a Core record and has its test there (ADR 0009).
@@ -94,16 +97,18 @@ or varies a kit rule names it.
 - **Padding is layout, never pixels.** A mismatched pair is compared on the larger canvas,
   both anchored top-left, the backdrop fills the gap, and the user is asked before any decode
   (ADR 0014).
-- **Formats are reported, never branched on.** Everything is Bgra32 after the load; the status
-  bar says what the file was (ADR 0022).
+- **Formats are reported, not branched on.** Everything is Bgra32 after the load, and nothing
+  after it reads the format; the status bar says what the file was (ADR 0022). The one branch
+  is in `WicImageLoader`: float samples go to `FloatSamples`, not to WIC's conversion (ADR 0035).
 - **Never set `InvariantGlobalization`.** WPF's font cache dies on it during text layout, and no
   unit test can catch it (ADR 0017).
 - **No `MessageBox`; every `Window` calls `DarkTitleBar.Apply` in its constructor.** The
   application's own `MessageDialog` says and asks; the file dialogs are the one thing that
   follows the system theme (ADR 0018).
 - **Run the application when the WPF layer changes.** Both real defects lived in the untested
-  layer and were found on a screenshot; a green suite says nothing about `Controls/`,
-  `MainWindow` or `Directory.Build.props` (ADR 0026).
+  layer and were found on a screenshot; a green suite says little about `Controls/`,
+  `MainWindow` or `Directory.Build.props`, whose few tests reproduce single defects without
+  showing anything (ADR 0026, ADR 0032).
 - **Licence headers.** Every `.cs` file starts with the GPL notice, `.xaml` files do not;
   `LicenseHeaderTests` fails otherwise, and its project list is explicit, so adding a project
   is a decision (ADR 0024).

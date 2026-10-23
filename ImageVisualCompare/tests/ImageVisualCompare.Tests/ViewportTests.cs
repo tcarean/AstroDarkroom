@@ -34,6 +34,33 @@ public class ViewportTests
     }
 
     [Fact]
+    public void R024_ZoomOut_StepsDownTheLadder()
+    {
+        Viewport viewport = Create(4000, 4000, 400, 400);
+        viewport.ZoomTo(0.5, 200, 200);
+
+        viewport.ZoomOut(200, 200);
+
+        Assert.Equal(0.33, viewport.Scale, 9);
+    }
+
+    [Fact]
+    public void R024_ZoomOut_UnderTheLowestStop_GoesToTheFloor_NeverIn()
+    {
+        // 5938 x 3888 in 91 x 60 physical pixels fits at 0.0153, under the ladder's 0.02.
+        Viewport viewport = Create(5938, 3888, 91, 60);
+        viewport.ZoomTo(0.018, 45, 30);
+
+        viewport.ZoomOut(45, 30);
+        double fromBetween = viewport.Scale;
+        viewport.ZoomOut(45, 30);
+
+        Assert.True(viewport.FitScale < ZoomLadder.Steps[0]);
+        Assert.Equal(viewport.FitScale, fromBetween, 9);
+        Assert.Equal(viewport.FitScale, viewport.Scale, 9);
+    }
+
+    [Fact]
     public void R029_WithoutContent_ZoomAndPanAreNoOps()
     {
         var viewport = new Viewport();

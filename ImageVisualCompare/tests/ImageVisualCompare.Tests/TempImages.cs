@@ -15,7 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using System.Buffers.Binary;
 using System.IO;
+using System.IO.Compression;
+using System.Text;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -62,6 +65,152 @@ public sealed class TempImages : IDisposable
         return path;
     }
 
+    /// <summary>
+    /// A gray PNG whose header declares this size over a few rows of data: it probes as that
+    /// size, and a decoder that believes the header fails when it sets aside the pixels.
+    /// </summary>
+    public string WritePngWithHeaderSize(string name, int width, int height)
+    {
+        using var png = new MemoryStream();
+        png.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+        byte[] header = new byte[13];
+        BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(0), width);
+        BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4), height);
+        header[8] = 8; // 8 bits a sample; colour type 0, gray; no interlace
+        WriteChunk(png, "IHDR", header);
+
+        using var deflated = new MemoryStream();
+        using (var zlib = new ZLibStream(deflated, CompressionLevel.SmallestSize, leaveOpen: true))
+        {
+            for (int row = 0; row < Math.Min(height, 8); row++)
+            {
+                zlib.Write(new byte[1 + Math.Min(width, 64)]);
+            }
+        }
+
+        WriteChunk(png, "IDAT", deflated.ToArray());
+        WriteChunk(png, "IEND", []);
+        return WriteBytes(name, png.ToArray());
+    }
+
+    /// <summary>
+    /// A 16 x 16 WebP with a valid container and frame header and a garbage bitstream, as the
+    /// code review of 2026-10-21 built it. With Windows' WebP codec the lossless one is refused
+    /// when it is probed, and the lossy one probes and is refused when it is decoded; without the
+    /// codec both are refused as an unknown format.
+    /// </summary>
+    public string WriteDamagedWebP(string name, bool lossless)
+    {
+        var frame = new List<byte>();
+        byte[] number = new byte[4];
+        if (lossless)
+        {
+            // The signature, then 14 bits of the width less 1 and 14 of the height less 1.
+            frame.Add(0x2F);
+            BinaryPrimitives.WriteInt32LittleEndian(number, 15 | (15 << 14));
+            frame.AddRange(number);
+        }
+        else
+        {
+            // A key frame's tag, the start code, the width and the height.
+            frame.AddRange([0x50, 0x01, 0x00, 0x9D, 0x01, 0x2A, 0x10, 0x00, 0x10, 0x00]);
+        }
+
+        byte[] garbage = new byte[40];
+        new Random(lossless ? 3 : 7).NextBytes(garbage);
+        frame.AddRange(garbage);
+
+        var webp = new List<byte>();
+        webp.AddRange(Encoding.ASCII.GetBytes("RIFF"));
+        BinaryPrimitives.WriteInt32LittleEndian(number, 4 + 8 + frame.Count);
+        webp.AddRange(number);
+        webp.AddRange(Encoding.ASCII.GetBytes(lossless ? "WEBPVP8L" : "WEBPVP8 "));
+        BinaryPrimitives.WriteInt32LittleEndian(number, frame.Count);
+        webp.AddRange(number);
+        webp.AddRange(frame);
+        return WriteBytes(name, [.. webp]);
+    }
+
+    /// <summary>
+    /// A float32 TIFF as libtiff writes one, and the 32-bit exports of Siril and GraXpert are:
+    /// uncompressed, one strip, the channels interleaved, SampleFormat 3. With one channel WIC
+    /// decodes it as Gray32Float, with three as a 96 bpp RGB WPF has no name for, with four as
+    /// Rgba128Float. The samples go row by row, a pixel's channels together.
+    /// </summary>
+    public string WriteFloatTiff(string name, int width, int height, int channels, float[] samples)
+    {
+        // Two channels (gray and alpha) would need their two SHORTs packed into the value field,
+        // which the code below does not do; nothing writes such a file yet.
+        if (channels is not (1 or 3 or 4))
+        {
+            throw new ArgumentOutOfRangeException(nameof(channels), channels, "1, 3 or 4 channels");
+        }
+
+        // A value of more than two SHORTs does not fit its entry; it goes after the directory.
+        int entries = channels == 4 ? 12 : 11;
+        bool arrays = channels > 2;
+        int bitsAt = 8 + 2 + (entries * 12) + 4;
+        int formatsAt = bitsAt + (arrays ? 2 * channels : 0);
+        int dataAt = formatsAt + (arrays ? 2 * channels : 0);
+
+        var directory = new List<(ushort Tag, ushort Type, int Count, int Value)>
+        {
+            (256, 4, 1, width), // ImageWidth
+            (257, 4, 1, height), // ImageLength
+            (258, 3, channels, arrays ? bitsAt : 32), // BitsPerSample
+            (259, 3, 1, 1), // Compression: none
+            (262, 3, 1, channels >= 3 ? 2 : 1), // PhotometricInterpretation: RGB, or black is zero
+            (273, 4, 1, dataAt), // StripOffsets
+            (277, 3, 1, channels), // SamplesPerPixel
+            (278, 4, 1, height), // RowsPerStrip
+            (279, 4, 1, samples.Length * 4), // StripByteCounts
+            (284, 3, 1, 1), // PlanarConfiguration: interleaved
+        };
+        if (channels == 4)
+        {
+            directory.Add((338, 3, 1, 2)); // ExtraSamples: unassociated alpha
+        }
+
+        directory.Add((339, 3, channels, arrays ? formatsAt : 3)); // SampleFormat: IEEE float
+
+        using var tiff = new MemoryStream();
+        using var writer = new BinaryWriter(tiff);
+        writer.Write("II"u8);
+        writer.Write((ushort)42);
+        writer.Write(8);
+        writer.Write((ushort)directory.Count);
+        foreach ((ushort tag, ushort type, int count, int value) in directory)
+        {
+            writer.Write(tag);
+            writer.Write(type);
+            writer.Write(count);
+            writer.Write(value);
+        }
+
+        writer.Write(0);
+        if (arrays)
+        {
+            for (int channel = 0; channel < channels; channel++)
+            {
+                writer.Write((ushort)32);
+            }
+
+            for (int channel = 0; channel < channels; channel++)
+            {
+                writer.Write((ushort)3);
+            }
+        }
+
+        foreach (float sample in samples)
+        {
+            writer.Write(sample);
+        }
+
+        writer.Flush();
+        return WriteBytes(name, tiff.ToArray());
+    }
+
     public string PathFor(string name) => Path.Combine(_directory, name);
 
     public void Dispose()
@@ -94,5 +243,33 @@ public sealed class TempImages : IDisposable
         using FileStream stream = File.Create(path);
         encoder.Save(stream);
         return path;
+    }
+
+    /// <summary>Appends a PNG chunk: its length, its type, its data and their CRC.</summary>
+    private static void WriteChunk(Stream png, string type, byte[] data)
+    {
+        byte[] number = new byte[4];
+        BinaryPrimitives.WriteInt32BigEndian(number, data.Length);
+        png.Write(number);
+        byte[] typeAndData = [.. Encoding.ASCII.GetBytes(type), .. data];
+        png.Write(typeAndData);
+        BinaryPrimitives.WriteUInt32BigEndian(number, Crc32(typeAndData));
+        png.Write(number);
+    }
+
+    /// <summary>The CRC-32 PNG puts after every chunk.</summary>
+    private static uint Crc32(byte[] data)
+    {
+        uint crc = 0xFFFFFFFF;
+        foreach (byte b in data)
+        {
+            crc ^= b;
+            for (int bit = 0; bit < 8; bit++)
+            {
+                crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320 : crc >> 1;
+            }
+        }
+
+        return ~crc;
     }
 }

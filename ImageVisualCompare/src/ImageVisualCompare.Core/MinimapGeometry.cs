@@ -43,14 +43,14 @@ public static class MinimapGeometry
     /// <param name="viewport">The view whose visible region is drawn.</param>
     /// <param name="thumbnailWidth">
     /// The width of the area the whole image is mapped onto, in the unit the rectangle is
-    /// wanted in (the minimap passes its own width, in device-independent pixels).
+    /// wanted in (the minimap passes its thumbnail's width, in device-independent pixels).
     /// </param>
     /// <param name="thumbnailHeight">The height of that area, in the same unit.</param>
     /// <returns>
-    /// The rectangle, clamped to the area and then widened to at least 2 units on each side,
-    /// so at deep zoom by the right or bottom edge it can reach up to 2 units past the area;
-    /// shown only while part of the image is off screen. The default, hidden, when the viewport
-    /// has no content or the area no size.
+    /// The rectangle, clamped to the area and at least 2 units on each side; one floored by
+    /// the right or bottom edge is moved in, so it never reaches past the area unless the area
+    /// is smaller than 2 units. Shown only while part of the image is off screen. The default,
+    /// hidden, when the viewport has no content or the area no size.
     /// </returns>
     public static MinimapLayout Layout(Viewport viewport, double thumbnailWidth, double thumbnailHeight)
     {
@@ -69,12 +69,16 @@ public static class MinimapGeometry
         double right = Math.Min(thumbnailWidth, (viewport.OffsetX + viewport.VisibleContentWidth) * scaleX);
         double bottom = Math.Min(thumbnailHeight, (viewport.OffsetY + viewport.VisibleContentHeight) * scaleY);
 
+        double width = Math.Max(MinimumRectSize, right - left);
+        double height = Math.Max(MinimumRectSize, bottom - top);
+
+        // The floor comes after the clamp, so by the right or bottom edge it would carry the
+        // rectangle past the area; it is moved in by what it was widened.
+        left = Math.Max(0, Math.Min(left, thumbnailWidth - width));
+        top = Math.Max(0, Math.Min(top, thumbnailHeight - height));
+
         return new MinimapLayout(
-            new RectD(
-                left,
-                top,
-                Math.Max(MinimumRectSize, right - left),
-                Math.Max(MinimumRectSize, bottom - top)),
+            new RectD(left, top, width, height),
             viewport.CanScrollHorizontally || viewport.CanScrollVertically);
     }
 

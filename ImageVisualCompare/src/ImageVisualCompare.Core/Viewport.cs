@@ -216,14 +216,19 @@ public sealed class Viewport
 
     /// <summary>
     /// Zooms to <see cref="ZoomLadder.Previous"/> of the current scale, clamped and anchored as
-    /// <see cref="ZoomTo"/> does. That is normally the next stop down; just above
-    /// <see cref="MinScale"/> it lands on MinScale, at MinScale it changes nothing, and from a
-    /// scale under the lowest stop (possible when the fit is under 2%) it zooms in to that stop.
+    /// <see cref="ZoomTo"/> does: normally the next stop down, and just above
+    /// <see cref="MinScale"/> MinScale itself. When no stop is below the scale, which happens
+    /// only when the fit is under 2%, it zooms to MinScale instead, so it never zooms in; at
+    /// MinScale it changes nothing.
     /// </summary>
     /// <param name="anchorScreenX">The anchor, in screen space (physical pixels).</param>
     /// <param name="anchorScreenY">The anchor, in screen space (physical pixels).</param>
-    public void ZoomOut(double anchorScreenX, double anchorScreenY) =>
-        ZoomTo(ZoomLadder.Previous(_scale), anchorScreenX, anchorScreenY);
+    public void ZoomOut(double anchorScreenX, double anchorScreenY)
+    {
+        // Under the lowest stop the ladder answers with that stop, which is above the scale.
+        double previous = ZoomLadder.Previous(_scale);
+        ZoomTo(previous < _scale ? previous : MinScale, anchorScreenX, anchorScreenY);
+    }
 
     /// <summary>Zooms so the whole image is visible and centres it.</summary>
     public void ZoomToFit()

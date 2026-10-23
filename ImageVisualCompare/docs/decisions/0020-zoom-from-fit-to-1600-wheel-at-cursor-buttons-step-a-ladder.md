@@ -1,7 +1,7 @@
 # 0020. The zoom runs from the fit scale, or 100 %, to 1600 %; the wheel zooms at the cursor, the buttons step a ladder
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; − staying at 0.02 at the low end of the ladder superseded by 0033
 
 ## Context
 

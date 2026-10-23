@@ -1,7 +1,7 @@
 # 0026. Test images are generated at run time; the WPF layer is checked by launching the application, not by unit tests
 
 Date: 2026-10-02
-Status: accepted 2026-10-02
+Status: accepted 2026-10-02; the WPF layer untested by design superseded by 0032
 
 ## Context
 
