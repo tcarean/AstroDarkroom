@@ -274,8 +274,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Section 4, the print's size: without enough stars only the pixel grid, and no size;
         /// with a given distance the recommended size, or that the stars are discs at every
-        /// size; without one, that the wall chooses (ADR 0017); then the soft corners, the crop
-        /// and the sizes over <see cref="Thresholds.OversizeCm"/>.
+        /// size; without one, that the wall chooses when the stars are points, otherwise that they
+        /// are discs at every size (ADR 0017); then the soft corners, the crop and the sizes over
+        /// <see cref="Thresholds.OversizeCm"/>.
         /// </summary>
         /// <param name="r">The analysis.</param>
         /// <param name="o">The list the recommendations are added to.</param>

@@ -250,7 +250,8 @@ namespace AstroPhotoAnalyzer
         /// </summary>
         /// <param name="t">
         /// The target, 0..1, read on the ladder (the dust's, a cloud's, or the sky's at the
-        /// visibility threshold); null when no step of the ladder reaches it.
+        /// visibility threshold); null when no step of the ladder reaches it, or with a background
+        /// at 0 or 1.
         /// </param>
         /// <returns>The level (<see cref="Fmt.Level"/>), "&lt;= 0.05" or "> 0.60".</returns>
         internal static string TargetText(double? t)

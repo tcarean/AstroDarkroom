@@ -28,8 +28,9 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// Every sentence the Curbe tab and the curve window show, and the HISTORY text of a saved
-    /// curve, all Romanian (ADR 0032); the console prints none of them.
+    /// The sentences of diagnosis and evidence the Curbe tab and the curve window show (the
+    /// reasons, the evidence lines, the paper checks, the captions), and the HISTORY text of a
+    /// saved curve, all Romanian (ADR 0032); the console prints none of them.
     /// </summary>
     internal static class CurveTexts
     {
@@ -90,7 +91,9 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>The heading of the curve window's shadow chart (R-147).</summary>
         /// <param name="limit">
-        /// The chart's upper input, 0..1 (<see cref="CurveAdvisor.ShadowChartLimit"/>).
+        /// The chart's upper input, <see cref="Thresholds.CurveShadowChartFactor"/> times the
+        /// band's input (<see cref="CurveAdvisor.ShadowChartLimit"/>); over 1 when that input is
+        /// over 0.8.
         /// </param>
         /// <returns>The heading, with the limit at three decimals.</returns>
         internal static string ShadowHeading(double limit) => $"UMBRELE MARITE (0 - {Fmt.F3(limit)}): unde stau praful si cerul";

@@ -710,8 +710,8 @@ ones included, and the code defects kept as questions. The probes are in the scr
 - **The worktree's name, 46 characters, is over the ~41 that area 2's memory gave as safe**
   (the plan fixes the branch name): the longest path of the monorepo, a DarksCheck ADR, came to
   257 of Windows's 260 and the checkout was complete. Area 4's name,
-  `Document-and-translate-the-thresholds-parameters-and-console` (61 characters), would pass
-  260 (272); its worktree needs a shorter folder name than the branch's, which the kit's rule
+  `Document-and-translate-the-thresholds-parameters-and-console` (60 characters), would pass
+  260 (271); its worktree needs a shorter folder name than the branch's, which the kit's rule
   "Worktrees" asks to match, or a shorter branch name: the owner's call when area 4 starts.
 - **Areas 1 and 2's reviews, applied before writing:** the quoted Romanian output stays as the
   user sees it ("asa cum e", "fiindca", "PROBLEMA", the report's example lines); "omul" is "the
@@ -772,3 +772,26 @@ ones included, and the code defects kept as questions. The probes are in the scr
   - **`check-design.ps1 -Since main`** listed five notes: `recommendations-and-report.md`
     changed (above); `code-map.md`, `dependencies.md`, `extending.md` and `pipeline.md` were read
     against the change and hold.
+
+### Review of area 3 (2026-10-23)
+
+A fresh subagent read the branch's diff against the code, its callers and the requirements, one
+probe on the build (`Fmt.S1` around zero). It found no meaning lost in the translation and seven
+claims too strong, each checked against its line and fixed in one commit:
+
+- `CurveTexts`'s summary: the window writes some sentences of its own (`CurvesView.xaml:128`,
+  the curve window's title and headings); the class holds those of diagnosis and evidence.
+- `Fmt.cs`'s header (fact 3 as first corrected) read as if every integer were interpolated; many
+  go through `Fmt.Int` and `Fmt.Dim`. `recommendations-and-report.md` listed `Int` and `Dim`
+  among the numbers "with decimals" and left out `Level` and `Dmax`.
+- `ShadowHeading`'s limit is not within 0..1: 1.25 x the band's input, over 1 when that input is
+  over 0.8.
+- `TargetText`'s null also comes with a background at 0 or 1 (`SimulationResult.ExactTarget`).
+- `Recommendations.Size` without a distance says the wall chooses only when the stars are points.
+- This plan: area 4's branch name has 60 characters, and the path would be 271, not 61 and 272.
+
+Refuted: "screen pixels" for `CurveRun.Execute`'s size (the window passes `DpiScale`d device
+pixels, `ResultViews.xaml.cs:46`), and about 25 other claims the review listed as checked. Left
+as it is: `CurveExport.Save`'s "a link", which the review too could not settle without a probe
+(a hard link is refused, as the input's handle has no delete sharing; a symbolic link is likely
+replaced as a link, the input untouched).
