@@ -15,16 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AnalysisRun.cs - lantul intreg: incarca -> masoara -> recomanda -> formateaza.
+// AnalysisRun.cs - the whole chain: load -> measure -> recommend -> format.
 //
-// Consola si fereastra apeleaza AMANDOUA de aici si nu fac nimic in plus in afara de a
-// arata rezultatul. Ordinea analizoarelor conteaza doar unde un rezultat il hraneste pe
-// altul: tonurile inaintea simularii, stelele si decupajul inaintea tabelului de marimi,
-// tabelul inaintea recomandarilor (palierul se judeca la dpi-ul randului de referinta).
+// The console and the window BOTH call from here and do nothing more than show the result. The
+// order of the analyzers matters only where one result feeds another: the tones before the
+// simulation, the stars and the crop before the size table, the table before the
+// recommendations (the plateau is judged at the reference row's dpi).
 //
-// Progresul e un IProgress<string> cu numele etapei: fereastra il arata in overlay,
-// consola il ignora. Nu e procentaj - etapele au durate prea diferite (JPEG-ul e
-// jumatate din tot) ca un procent sa spuna ceva.
+// The progress is an IProgress<string> with the stage's name: the window shows it in an
+// overlay, the console ignores it. It is not a percentage - the stages have durations too
+// different (the JPEG is half of the whole) for a percentage to say anything.
 
 using System;
 using System.Collections.Generic;
@@ -34,22 +34,29 @@ using System.Linq;
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// O imagine pe care unealta refuza sa o masoare - nu o eroare de citire, ci una de
-    /// CONTINUT: e liniara, nu stretch-uita. Consola o raporteaza ca EROARE si iese cu 1.
+    /// An image the tool refuses to measure - not a reading error, but one of CONTENT: it is
+    /// linear, not stretched. The console reports it as EROARE and exits with 1.
     /// </summary>
     internal sealed class RefusedImageException : Exception
     {
+        /// <summary>A refusal with the message the user sees.</summary>
+        /// <param name="message">The reason and what to do, Romanian.</param>
         internal RefusedImageException(string message) : base(message) { }
     }
 
+    /// <summary>
+    /// Everything one analysis produced: the inputs, every result, the recommendations and the
+    /// report body. The console prints its body; the window fills its tabs from it and keeps it
+    /// for the Curbe tab.
+    /// </summary>
     internal sealed class AnalysisResult
     {
         internal string Path;
 
         /// <summary>
-        /// Calea completa a imaginii in clipa citirii; null pentru un raster din memorie. Path
-        /// ramane cum a fost data (raportul o tipareste asa); salvarea unei curbe are nevoie de
-        /// cea completa, care nu se mai schimba daca directorul de lucru se schimba (R-145).
+        /// The image's full path at the moment it was read; null for a raster from memory. Path
+        /// stays as it was given (the report prints it that way); saving a curve needs the full
+        /// one, which no longer changes if the working directory changes (R-145).
         /// </summary>
         internal string FullPath;
         internal Parameters Parameters;
@@ -70,12 +77,31 @@ namespace AstroPhotoAnalyzer
         internal IReadOnlyList<Recommendation> Recommendations;
         internal Verdict Overall => Recommendations.Count == 0 ? Verdict.Ok : Recommendations.Max(r => r.Verdict);
 
-        /// <summary>Raportul FARA banner - consola l-a scris deja; fisierul salvat il primeste prin WriteFull.</summary>
+        /// <summary>
+        /// The report WITHOUT the banner - the console has already written it; the saved file
+        /// gets it through WriteFull.
+        /// </summary>
         internal string ReportBody;
     }
 
+    /// <summary>The analysis chain both applications call (ADR 0007).</summary>
     internal static class AnalysisRun
     {
+        /// <summary>
+        /// Reads the image, takes the WCS of <see cref="Parameters.WcsPath"/> when one is given,
+        /// and runs the chain on it
+        /// (<see cref="Execute(Raster, string, Parameters, IProgress{string})"/>). A file that
+        /// cannot be read, a borrowed WCS that does not fit (<see cref="BorrowWcs"/>) and a linear
+        /// image (<see cref="RefusedImageException"/>) throw.
+        /// </summary>
+        /// <param name="path">
+        /// The image's path, as the user gave it; the report prints it so.
+        /// </param>
+        /// <param name="p">The parameters.</param>
+        /// <param name="progress">
+        /// Told the name of each stage as it starts ("citire" first); null for none.
+        /// </param>
+        /// <returns>The analysis, with <see cref="AnalysisResult.FullPath"/> set.</returns>
         internal static AnalysisResult Execute(string path, Parameters p, IProgress<string> progress = null)
         {
             progress?.Report("citire");
@@ -87,10 +113,15 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// WCS-ul unui alt FITS, pentru un raster de aceeasi geometrie (R-027). Un PNG sau TIFF
-        /// exportat din Siril e in orientarea afisata, adica FITS-ul BOTTOM-UP rasturnat, deci
-        /// rasturnarea WCS-ului urmeaza ROWORDER-ul FITS-ului imprumutat, nu fisierul analizat.
+        /// The WCS of another FITS, for a raster of the same geometry (R-027). A PNG or TIFF
+        /// exported from Siril is in the displayed orientation, that is the BOTTOM-UP FITS flipped,
+        /// so the WCS's flip follows the ROWORDER of the borrowed FITS, not the analysed file.
+        /// Throws, with a Romanian message that starts with "--wcs:", when the file is missing,
+        /// cannot be read, has another size or holds no TAN WCS.
         /// </summary>
+        /// <param name="wcsPath">The FITS whose header holds the WCS.</param>
+        /// <param name="r">The analysed raster, whose width and height the FITS must have.</param>
+        /// <returns>The WCS, never null.</returns>
         internal static Wcs BorrowWcs(string wcsPath, Raster r)
         {
             if (!File.Exists(wcsPath)) throw new Exception("--wcs: fisierul nu exista: " + wcsPath);
@@ -104,6 +135,22 @@ namespace AstroPhotoAnalyzer
             return wcs;
         }
 
+        /// <summary>
+        /// The chain on a raster already read: refuses a linear image, then runs the analyzers in
+        /// order, builds the recommendations and writes the report body.
+        /// </summary>
+        /// <param name="r">
+        /// The image, 0..1, with its <see cref="Raster.Source"/> when it has one.
+        /// </param>
+        /// <param name="path">
+        /// The path the report prints; a raster from memory may give any text.
+        /// </param>
+        /// <param name="p">The parameters.</param>
+        /// <param name="progress">
+        /// Told the name of each stage as it starts: "fisier", "tonuri", "praf", "zgomot",
+        /// "fundal", "stele", "cuantizare", "JPEG", "raport"; null for none.
+        /// </param>
+        /// <returns>The analysis; its <see cref="AnalysisResult.FullPath"/> stays null.</returns>
         internal static AnalysisResult Execute(Raster r, string path, Parameters p, IProgress<string> progress = null)
         {
             if (RasterOps.LooksLinear(r, out double median))

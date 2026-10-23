@@ -15,27 +15,42 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ThirdParty.cs - componentele scrise de altii pe care le leaga unealta, ca valoare.
+// ThirdParty.cs - the components written by others that the tool links, as a value.
 //
-// DE CE SE AFISEAZA, NU DOAR SE LIVREAZA. Motivele de compatibilitate cu GPLv3 stau in
-// THIRD-PARTY-NOTICES.md, dar acel fisier nu calatoreste garantat cu binarul: cine ia
-// doar exe-ul nu primeste niciun fisier de notite. Lista asta e ce arata fereastra
-// "Despre", si singurul loc din care poate sa o arate.
+// WHY IT IS SHOWN, NOT ONLY SHIPPED. The reasons for the compatibility with GPLv3 are in
+// THIRD-PARTY-NOTICES.md, but that file is not guaranteed to travel with the binary: whoever
+// takes only the exe gets no notices file. This list is what the window's "Despre" shows, and
+// the only place it can show it from.
 //
-// O DEPENDINTA NOUA INSEAMNA O INTRARE AICI, pe langa cea din THIRD-PARTY-NOTICES.md.
-// ThirdPartyTests leaga lista de PackageReference-urile din AstroPhotoAnalyzer.Core.csproj
-// in ambele sensuri, si fiecare nume de un heading din fisierul de notite - un pachet
-// adaugat fara intrare pica testul, nu ramane nescris pe ecran.
+// A NEW DEPENDENCY MEANS AN ENTRY HERE, besides the one in THIRD-PARTY-NOTICES.md.
+// ThirdPartyTests binds the list to the PackageReferences of AstroPhotoAnalyzer.Core.csproj in
+// both directions, and each name to a heading of the notices file - a package added without an
+// entry fails the test, rather than stay unwritten on the screen.
 
 using System.Collections.Generic;
 
 namespace AstroPhotoAnalyzer
 {
     /// <summary>
-    /// O componenta terta: cum se cheama, ce face aici, sub ce licenta e luata, a cui e,
-    /// unde e proiectul ei, si care pachete NuGet din csproj o aduc - sau, pentru date
-    /// imbarcate, care resurse incorporate (EmbeddedResource) o aduc.
+    /// A third-party component: what it is called, what it does here, under which licence it is
+    /// taken, whose it is, where its project is, and which NuGet packages of the csproj bring it -
+    /// or, for embedded data, which embedded resources (EmbeddedResource) bring it.
     /// </summary>
+    /// <param name="Name">
+    /// The component's name, which a heading of THIRD-PARTY-NOTICES.md contains.
+    /// </param>
+    /// <param name="Role">What it does in this tool, Romanian, as "Despre" shows it.</param>
+    /// <param name="Licence">The licence it is taken under, as "Despre" shows it.</param>
+    /// <param name="Copyright">
+    /// Its copyright line, or for data its authors and distributors.
+    /// </param>
+    /// <param name="Url">The project's or the catalogue's web page.</param>
+    /// <param name="Packages">
+    /// The core's PackageReference names that bring it; empty, never null, for embedded data.
+    /// </param>
+    /// <param name="Resources">
+    /// The logical names of the embedded resources that bring it; null reads as empty.
+    /// </param>
     internal sealed record ThirdPartyComponent(
         string Name,
         string Role,
@@ -48,6 +63,9 @@ namespace AstroPhotoAnalyzer
         internal string[] Resources { get; init; } = Resources ?? System.Array.Empty<string>();
     }
 
+    /// <summary>
+    /// The third-party components the tool links, in the order "Despre" lists them.
+    /// </summary>
     internal static class ThirdParty
     {
         internal static readonly IReadOnlyList<ThirdPartyComponent> Components = new[]

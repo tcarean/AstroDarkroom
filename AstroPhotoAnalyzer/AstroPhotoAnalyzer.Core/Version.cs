@@ -15,32 +15,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Version.cs - versiunea uneltei, citita din assembly.
+// Version.cs - the tool's version, read from the assembly.
 //
-// SURSA DE ADEVAR e <Version> (si <Copyright>) din Directory.Build.props. Nu hardcoda
-// nimic aici: MSBuild transforma <Version> in AssemblyInformationalVersion, iar de acolo
-// o citim. Asa exista un singur loc de schimbat. Se incrementeaza MANUAL, de utilizator.
+// THE SOURCE OF TRUTH is <Version> (and <Copyright>) in Directory.Build.props. Hard-code nothing
+// here: MSBuild turns <Version> into AssemblyInformationalVersion, and we read it from there.
+// That way there is a single place to change. It is incremented BY HAND, by the owner.
 
 using System.Reflection;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The tool's version and copyright notice, read once from the assembly's attributes, which
+    /// Directory.Build.props sets.
+    /// </summary>
     internal static class VersionInfo
     {
         internal static string Value { get; } = Read();
 
-        /// <summary>Numele si versiunea, exact cum apar pe prima linie a fiecarei rulari.</summary>
+        /// <summary>
+        /// The name and the version, exactly as they appear on the first line of every run.
+        /// </summary>
         internal static string Banner => "AstroPhotoAnalyzer " + Value;
 
         /// <summary>
-        /// Notita de copyright, pe a doua linie a fiecarei rulari - sub banner. Programul e
-        /// GPLv3 (vezi LICENSE), iar licenta cere ca fiecare copie sa poarte notita; un
-        /// raport copiat undeva spune atunci singur si a cui e unealta, nu doar ce versiune.
-        /// Ca si versiunea, vine din Directory.Build.props - nu o hardcoda aici. Literalul
-        /// din ReadCopyright e doar un fallback.
+        /// The copyright notice, on the second line of every run - under the banner. The program
+        /// is GPLv3 (see LICENSE), and the licence requires every copy to carry the notice; a
+        /// report copied somewhere then says by itself whose tool it is, not only which version.
+        /// Like the version, it comes from Directory.Build.props - do not hard-code it here. The
+        /// literal in ReadCopyright is only a fallback.
         /// </summary>
         internal static string Copyright { get; } = ReadCopyright();
 
+        /// <summary>
+        /// The assembly's copyright attribute, which Directory.Build.props's &lt;Copyright&gt;
+        /// sets.
+        /// </summary>
+        /// <returns>
+        /// The attribute's text, or "Copyright (C) 2026 Tudor Carean" when it is missing or blank.
+        /// </returns>
         static string ReadCopyright()
         {
             string c = typeof(VersionInfo).Assembly
@@ -48,17 +61,25 @@ namespace AstroPhotoAnalyzer
             return string.IsNullOrWhiteSpace(c) ? "Copyright (C) 2026 Tudor Carean" : c;
         }
 
+        /// <summary>
+        /// The assembly's informational version, which Directory.Build.props's &lt;Version&gt;
+        /// sets, without the source metadata some builds append.
+        /// </summary>
+        /// <returns>
+        /// The version as written there ("1.0.0"); the assembly version when the attribute is
+        /// missing; "0.0.0" when neither gives anything.
+        /// </returns>
         static string Read()
         {
             Assembly asm = typeof(VersionInfo).Assembly;
 
-            // InformationalVersion vine direct din <Version> si pastreaza forma "1.0.0".
-            // AssemblyVersion ar da "1.0.0.0", care nu e ce vrem sa aratam.
+            // InformationalVersion comes straight from <Version> and keeps the form "1.0.0".
+            // AssemblyVersion would give "1.0.0.0", which is not what we want to show.
             string v = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
                        ?? asm.GetName().Version?.ToString();
             if (string.IsNullOrWhiteSpace(v)) return "0.0.0";
 
-            // Unele build-uri lipesc metadata de sursa: "1.0.0+9a8b7c6". Taie de la '+'.
+            // Some builds append source metadata: "1.0.0+9a8b7c6". Cut at the '+'.
             int plus = v.IndexOf('+');
             return plus >= 0 ? v.Substring(0, plus) : v;
         }

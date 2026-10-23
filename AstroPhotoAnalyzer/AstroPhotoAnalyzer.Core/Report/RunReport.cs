@@ -15,28 +15,33 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RunReport.cs - textul care incadreaza raportul: antetul (versiune + copyright) si
-// notita de garantie.
+// RunReport.cs - the text that frames the report: the banner (version + copyright) and the
+// warranty notice.
 //
-// Sta aici, nu in consola, fiindca nu e al consolei. Cerinta pentru aplicatia WPF e ca
-// fisierul "Raport.txt" pe care il salveaza sa contina EXACT ce ar fi scris consola -
-// antet inclus, ca un raport copiat undeva sa spuna singur ce versiune si a cui unealta
-// l-a produs. Doua implementari ale acelorasi doua linii ar fi divergat la prima
-// reformulare.
+// It lives here, not in the console, because it is not the console's. The requirement for the
+// WPF application is that the "Raport.txt" file it saves holds EXACTLY what the console would
+// have written - banner included, so that a report copied somewhere says by itself which version
+// and whose tool produced it. Two implementations of the same two lines would have diverged at
+// the first rewording.
 
 using System.IO;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// The banner every run starts with and the warranty notice, shared by the console and the
+    /// window.
+    /// </summary>
     internal static class RunReport
     {
         /// <summary>
-        /// Primele doua linii ale oricarei rulari: versiunea si notita de copyright.
+        /// The first two lines of any run: the version and the copyright notice.
         ///
-        /// Banner-ul pe prima linie inseamna ca un raport copiat spune singur ce
-        /// versiune l-a produs - de aceea apare si la --help, si la rulari esuate.
-        /// Copyright-ul pe a doua e cerut de GPLv3 (vezi LICENSE).
+        /// The banner on the first line means that a copied report says by itself which version
+        /// produced it - that is why it also appears with --help and on failed runs. The
+        /// copyright on the second is required by GPLv3 (see LICENSE).
         /// </summary>
+        /// <param name="w">The writer the two lines go to.</param>
         internal static void WriteBanner(TextWriter w)
         {
             w.WriteLine(VersionInfo.Banner);
@@ -44,13 +49,13 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Notita de garantie si de licenta - GPLv3 sectiunea 5(d). Consola o tipareste
-        /// la --help (banner-ul poarta doar copyright-ul; cinci linii in plus pe fiecare
-        /// raport ar ineca cifrele), fereastra o arata in "Despre". Un singur text pentru
-        /// amandoua, ca sa nu poata spune doua lucruri diferite despre aceeasi licenta.
+        /// The warranty and licence notice - GPLv3 section 5(d). The console prints it with
+        /// --help (the banner carries only the copyright; five more lines on every report would
+        /// drown the figures), the window shows it in "Despre". One text for both, so that they
+        /// cannot say two different things about the same licence.
         ///
-        /// Liniile sunt rupte la ~70 de coloane pentru consola; fereastra le lipeste cu
-        /// spatiu si impacheteaza singura.
+        /// The lines are broken at ~70 columns for the console; the window joins them with a
+        /// space and wraps them itself.
         /// </summary>
         internal static readonly string[] WarrantyLines =
         {
@@ -61,7 +66,9 @@ namespace AstroPhotoAnalyzer
             "sau la <" + LicenseUrl + ">.",
         };
 
-        /// <summary>Unde e textul complet al licentei, pentru cine n-are fisierul LICENSE la indemana.</summary>
+        /// <summary>
+        /// Where the licence's full text is, for whoever does not have the LICENSE file at hand.
+        /// </summary>
         internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
     }
 }

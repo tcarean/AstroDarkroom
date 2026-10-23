@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ReportWriter.cs - raportul ca text: intai deciziile, apoi anexele cu tabelele.
+// ReportWriter.cs - the report as text: the decisions first, then the appendices with the tables.
 //
-// Acelasi text pentru consola si pentru Raport.txt din fereastra - de asta scrie intr-un
-// TextWriter si nu stie cine il citeste. Formatul e fixat de testele golden: o
-// reformulare aici se vede acolo, si asta e intentia.
+// The same text for the console and for the window's Raport.txt - that is why it writes into a
+// TextWriter and does not know who reads it. The format is pinned by the golden tests: a
+// rewording here shows there, and that is the intention.
 
 using System;
 using System.Collections.Generic;
@@ -28,15 +28,31 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// Writes the report, Romanian, and the lines of it the window's tabs show as they are: the
+    /// simulation's table, the size table, the crop's cut.
+    /// </summary>
     internal static class ReportWriter
     {
-        /// <summary>Banner + corp: ce salveaza fereastra si ce scrie consola cu -o.</summary>
+        /// <summary>
+        /// Banner + body: what the window saves and what the console writes with -o.
+        /// </summary>
+        /// <param name="r">The analysis, complete.</param>
+        /// <param name="w">The writer the report goes to.</param>
         internal static void WriteFull(AnalysisResult r, TextWriter w)
         {
             RunReport.WriteBanner(w);
             WriteBody(r, w);
         }
 
+        /// <summary>
+        /// The report without the banner: the file's header and the verdict, the six sections of
+        /// recommendations, then the appendices A to F. It is what
+        /// <see cref="AnalysisResult.ReportBody"/> holds and what the console prints after its own
+        /// banner.
+        /// </summary>
+        /// <param name="r">The analysis, its recommendations included.</param>
+        /// <param name="w">The writer the report goes to.</param>
         internal static void WriteBody(AnalysisResult r, TextWriter w)
         {
             Header(r, w);
@@ -49,6 +65,12 @@ namespace AstroPhotoAnalyzer
             AppendixParameters(r, w);
         }
 
+        /// <summary>
+        /// The report's head: the path as it was given, the file's facts, the medium with its
+        /// Dmax and paper black, the viewing distance, and the overall verdict.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void Header(AnalysisResult r, TextWriter w)
         {
             FileFactsResult f = r.File;
@@ -64,6 +86,13 @@ namespace AstroPhotoAnalyzer
             w.WriteLine("VERDICT: " + VerdictText.Label(r.Overall));
         }
 
+        /// <summary>
+        /// The six sections in decision order, each numbered with its title and its verdict (the
+        /// maximum of its recommendations), then each recommendation with its mark and its
+        /// "fiindca"; "(nimic de semnalat)" for a section without one.
+        /// </summary>
+        /// <param name="r">The analysis, its recommendations included.</param>
+        /// <param name="w">The writer.</param>
         static void Decisions(AnalysisResult r, TextWriter w)
         {
             foreach (Topic t in Enum.GetValues(typeof(Topic)))
@@ -81,8 +110,18 @@ namespace AstroPhotoAnalyzer
             }
         }
 
+        /// <summary>The mark before a recommendation's text.</summary>
+        /// <param name="v">The recommendation's verdict.</param>
+        /// <returns>"-" for Ok, "!" for Attention, "!!" for Problem.</returns>
         static string Mark(Verdict v) => v == Verdict.Ok ? "-" : v == Verdict.Attention ? "!" : "!!";
 
+        /// <summary>
+        /// Appendix A: the channel means and the reference percentiles (0..255), the shares under
+        /// the two dark levels, the median L* and the shares under paper black, under the
+        /// visibility threshold and over the highlight threshold.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixTones(AnalysisResult r, TextWriter w)
         {
             TonalResult t = r.Tonal;
@@ -94,12 +133,27 @@ namespace AstroPhotoAnalyzer
             w.WriteLine($"  L* median {Fmt.F1(t.LstarMedian)}; sub negrul hartiei (L* {Fmt.F1(t.PaperBlackLstar)}): {Fmt.Pct(t.PctBelowPaperBlack)}; sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}: {Fmt.Pct(t.PctBelowLowSeparation)}; peste L* {Fmt.F0(Thresholds.HighlightLstar)}: {Fmt.Pct(t.PctAboveHighlight)}");
         }
 
-        /// <summary>De unde vine Dmax-ul, in Anexa F: nimic cand e al mediului, profilul cand a fost citit din el, altfel "(explicit)".</summary>
+        /// <summary>
+        /// Where the Dmax comes from, in Appendix F: nothing when it is the medium's, the profile
+        /// when it was read from one, otherwise "(explicit)".
+        /// </summary>
+        /// <param name="p">The parameters the analysis ran with.</param>
+        /// <returns>
+        /// " (din profilul ICC "name")", " (explicit)" for a given Dmax that differs from the
+        /// medium's, or "" (each with its leading space, to follow the Dmax).
+        /// </returns>
         internal static string DmaxOrigin(Parameters p)
             => p.DmaxProfile != null && p.DmaxOverride.HasValue ? $" (din profilul ICC \"{p.DmaxProfile}\")"
              : p.DmaxIsExplicit ? " (explicit)"
              : "";
 
+        /// <summary>
+        /// Appendix B: the simulation's table from the measured level, its footer, the definition
+        /// of the dust and the sky, the class shares, the exact-target line, and the darkest
+        /// <see cref="Thresholds.DustCloudReportRows"/> cloud rows with a count of the rest.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixSimulation(AnalysisResult r, TextWriter w)
         {
             SimulationResult s = r.Simulation;
@@ -123,11 +177,22 @@ namespace AstroPhotoAnalyzer
             }
         }
 
-        // Tabelul simularii, acelasi text in raport si in tabul Tonuri: antetul, randurile, nota
-        // de sub el, definitia prafului si a cerului, tinta exacta si norii.
+        // The simulation's table, the same text in the report and in the Tonuri tab: the header,
+        // the rows, the note under it, the definition of the dust and the sky, the exact target and
+        // the clouds.
 
         internal const string SimulationHeader = "fundal-tinta         gamma   L* praf   L* cer   negru pur   sub L*15   peste L*50";
 
+        /// <summary>
+        /// A row of the simulation's table, under <see cref="SimulationHeader"/>, without the
+        /// indent.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <returns>
+        /// The target (with "asa cum e" or "(dat)", and " *" on the recommended row), the gamma,
+        /// the dust's and the sky's L*, the three shares, and the row's mark
+        /// (<see cref="RowMark"/>).
+        /// </returns>
         internal static string SimulationLine(SimulationRow row)
         {
             string target = Fmt.Level(row.Target) + (row.AsIs ? " asa cum e" : row.Explicit ? " (dat)" : "") + (row.Recommended ? " *" : "");
@@ -135,14 +200,24 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Marca unui rand: "print-safe" cand praful e pe negrul hartiei si cerul la prag sau
-        /// peste, "cer sub L* 15" cand doar praful trece, nimic cand praful e sub negru (R-043).
+        /// A row's mark: "print-safe" when the dust is on paper black and the sky at the
+        /// threshold or above, "cer sub L* 15" when only the dust passes, nothing when the dust is
+        /// under black (R-043).
         /// </summary>
+        /// <param name="row">The row.</param>
+        /// <returns>The mark with its three leading spaces, or "".</returns>
         internal static string RowMark(SimulationRow row)
             => row.PrintSafe ? "   print-safe"
              : row.DustOnPaperBlack ? $"   cer sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}"
              : "";
 
+        /// <summary>The note under the simulation's table.</summary>
+        /// <param name="s">The simulation.</param>
+        /// <returns>
+        /// What "*" means when a row is recommended; otherwise why none is: the sky reaches the
+        /// visibility threshold on no row (with its target), or the dust reaches paper black on
+        /// no row (with its exact target, or "nici 0.60" when the ladder has none).
+        /// </returns>
         internal static string SimulationFooter(SimulationResult s)
             => s.Recommended != null
                 ? $"* = recomandat: cea mai mica tinta print-safe - praful pe negrul hartiei si cerul la L* {Fmt.F0(Thresholds.LowSeparationLstar)} sau peste"
@@ -152,31 +227,50 @@ namespace AstroPhotoAnalyzer
                     ? $"nicio tinta din grila nu aduce praful pe negrul hartiei (ar trebui ~{Fmt.Level(s.ExactTarget.Value)})"
                     : $"nicio tinta din grila nu aduce praful pe negrul hartiei, nici {Fmt.Level(Thresholds.ExactTargetHi)}";
 
-        /// <summary>"praful = 10 % din dalele norilor catalogati (406 nori, 4078 dale); cerul = mediana dalelor din afara norilor; negru pur = dale de 32 px sub negrul hartiei (L* 3.6 la Dmax 2.4)".</summary>
+        /// <summary>
+        /// "praful = percentila 25 % a dalelor de praf (cu 0.5 L* sub cerul modelat (4 sigma ale
+        /// cerului); 5.5 % din cadru) (fara WCS); cerul = mediana dalelor de cer (clase relative
+        /// la cerul modelat); negru pur = dale de 32 px sub negrul hartiei (L* 9.0 la Dmax 2.0)".
+        /// </summary>
+        /// <param name="s">The simulation.</param>
+        /// <returns>
+        /// What the dust is (with why the band classes were not made, on the sky path), what the
+        /// sky is, and what "negru pur" counts, with the paper black and the Dmax.
+        /// </returns>
         internal static string DustDefinition(SimulationResult s)
             => $"praful = {s.DustDescription}{(s.MethodNote == null ? "" : " (" + s.MethodNote + ")")}; cerul = {s.SkyDescription}; "
              + $"negru pur = dale de {Thresholds.DustPatchPx} px sub negrul hartiei (L* {Fmt.F1(s.PaperBlackLstar)} la Dmax {Fmt.Dmax(s.Dmax)})";
 
         /// <summary>
-        /// O tinta exacta de pe scara (R-043): valoarea ei, sau o margine la capetele scarii -
-        /// "&lt;= 0.05" cand chiar prima treapta pune deja praful (sau norul) pe negru, deci tinta
-        /// adevarata e undeva mai jos, unde scara nu ajunge; "> 0.60" cand nici ultima nu-l
-        /// pune. Scris "0.05" simplu, primul caz parea o tinta masurata.
+        /// An exact target from the ladder (R-043): its value, or a bound at the ladder's ends -
+        /// "&lt;= 0.05" when even the first step already puts the dust (or the cloud) on black, so
+        /// the true target is somewhere lower, where the ladder does not reach; "> 0.60" when not
+        /// even the last puts it there. Written as a plain "0.05", the first case looked like a
+        /// measured target.
         /// </summary>
+        /// <param name="t">
+        /// The target, 0..1, read on the ladder (the dust's, a cloud's, or the sky's at the
+        /// visibility threshold); null when no step of the ladder reaches it, or with a background
+        /// at 0 or 1.
+        /// </param>
+        /// <returns>The level (<see cref="Fmt.Level"/>), "&lt;= 0.05" or "> 0.60".</returns>
         internal static string TargetText(double? t)
             => !t.HasValue ? "> " + Fmt.Level(Thresholds.ExactTargetHi)
              : t.Value <= Thresholds.ExactTargetLo + 1e-9 ? "<= " + Fmt.Level(Thresholds.ExactTargetLo)
              : Fmt.Level(t.Value);
 
         /// <summary>
-        /// Dmax-ul de la care praful asa cum e ajunge pe negrul hartiei, ca propozitie (R-043):
-        /// "praful ajunge pe negrul hartiei de la Dmax 2.28", sau "praful nu ajunge pe negrul
-        /// hartiei la niciun Dmax (e la L* 0)". Cand cerul asa cum e e sub pragul de vizibilitate
-        /// adauga ca asa cum e nicio hartie nu face imaginea print-safe, fiindca cerul e sub L* 15,
-        /// si ca remediul e ridicarea fundalului la stretch: cifra e a prafului singur, si pana la
-        /// revizia din 2026-10-23 spunea "trece asa cum e" si langa un cer de L* 7 (ADR 0043).
-        /// Aceeasi propozitie in "fiindca" (Recommendations) si in Anexa B.
+        /// The Dmax from which the dust as it is reaches paper black, as a sentence (R-043):
+        /// "praful ajunge pe negrul hartiei de la Dmax 2.28", or "praful nu ajunge pe negrul
+        /// hartiei la niciun Dmax (e la L* 0)". When the sky as it is is under the visibility
+        /// threshold it adds that, as it is, no paper makes the image print-safe, since the sky is
+        /// under L* 15, and that the remedy is lifting the background at the stretch: the figure
+        /// is the dust's alone, and until the review of 2026-10-23 it said "trece asa cum e" even
+        /// beside a sky at L* 7 (ADR 0043). The same sentence in the "fiindca" (Recommendations)
+        /// and in Appendix B.
         /// </summary>
+        /// <param name="s">The simulation.</param>
+        /// <returns>The sentence, without a final full stop.</returns>
         internal static string DustDmaxText(SimulationResult s)
         {
             string dust = double.IsNaN(s.DmaxDustOnPaperBlackAsIs)
@@ -187,7 +281,15 @@ namespace AstroPhotoAnalyzer
                 : dust;
         }
 
-        /// <summary>Tinta exacta, cele doua la Dmax vecin, si Dmax-ul de la care praful ajunge pe negru (DustDmaxText).</summary>
+        /// <summary>
+        /// The exact target, the two at the neighbouring Dmax, and the Dmax from which the dust
+        /// reaches black (<see cref="DustDmaxText"/>).
+        /// </summary>
+        /// <param name="s">The simulation.</param>
+        /// <returns>
+        /// The line, which ends with the target at which the sky reaches the visibility threshold;
+        /// every target through <see cref="TargetText"/>.
+        /// </returns>
         internal static string ExactLine(SimulationResult s)
         {
             double lo = s.Dmax - Thresholds.DmaxSensitivityStep, hi = s.Dmax + Thresholds.DmaxSensitivityStep;
@@ -196,10 +298,13 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Ce taie decupajul, ca text (R-032): "192 px pe fiecare parte din latime" cand cele
-        /// doua parti sunt egale, altfel "0 px la stanga si 1 px la dreapta din latime" sau
-        /// "... sus si ... jos din inaltime". Acelasi text in recomandare si in dala de Preview.
+        /// What the crop cuts, as text (R-032): "192 px pe fiecare parte din latime" when the two
+        /// sides are equal, otherwise "0 px la stanga si 1 px la dreapta din latime" or
+        /// "... sus si ... jos din inaltime". The same text in the recommendation and in the
+        /// Preview tile.
         /// </summary>
+        /// <param name="c">The crop, one that is needed (its axis is not null).</param>
+        /// <returns>The pixels cut on each side and the axis, without a final full stop.</returns>
         internal static string CropCutText(CropResult c)
         {
             if (c.CutStartPx == c.CutEndPx) return $"{Fmt.Int(c.CutStartPx)} px pe fiecare parte din {c.Axis}";
@@ -209,9 +314,23 @@ namespace AstroPhotoAnalyzer
 
         internal const string CloudHeader = "nor                          dale   L*     tinta";
 
+        /// <summary>
+        /// A row of the cloud table, under <see cref="CloudHeader"/>, without the indent.
+        /// </summary>
+        /// <param name="c">The cloud's row.</param>
+        /// <returns>
+        /// The name, the patch count, the L* and the exact target (<see cref="TargetText"/>).
+        /// </returns>
         internal static string CloudLine(CloudRow c)
             => $"{c.Name,-28} {Fmt.Int(c.Patches),4}   {Fmt.F1(c.Lstar),4}   {TargetText(c.ExactTarget)}";
 
+        /// <summary>
+        /// Appendix C: the 8-bit LZW TIFF's size, the JPEG table, and when
+        /// <see cref="QuantizationResult.Applicable"/> the 16 -> 8 rounding and the shadow-lift
+        /// stress; then the plateau, or that no clean sky tile was found.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixExport(AnalysisResult r, TextWriter w)
         {
             QuantizationResult q = r.Quantization;
@@ -231,6 +350,12 @@ namespace AstroPhotoAnalyzer
                 : $"  palier: fara dale de cer curat ({q.PlateauTiles})");
         }
 
+        /// <summary>
+        /// Appendix D: the stars and their FWHM (or that too few were measured), the regions with
+        /// the corner / centre ratio, and the size table with its footer.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixResolution(AnalysisResult r, TextWriter w)
         {
             StarResult s = r.Stars;
@@ -250,15 +375,26 @@ namespace AstroPhotoAnalyzer
                 w.WriteLine("  " + line);
         }
 
-        /// <summary>Un rand al tabelului de marimi, fara indentare - acelasi in raport si in tabul Rezolutie.</summary>
+        /// <summary>
+        /// A row of the size table, without the indent - the same in the report and in the
+        /// Rezolutie tab.
+        /// </summary>
+        /// <param name="row">The row.</param>
+        /// <returns>
+        /// The width (" *" on the recommended row), the height, the dpi, the star in mm, the
+        /// distance from which it is a point, the distance used and the outer size, with
+        /// "(peste limita)" over <see cref="Thresholds.OversizeCm"/>.
+        /// </returns>
         internal static string SizeTableRow(SizeRow row) =>
             $"{Fmt.F0(row.WidthCm),6}{(row.Recommended ? " *" : "  ")}    {Fmt.F1(row.HeightCm),8}   {Fmt.F0(row.Dpi),3}   {Fmt.F2(row.StarMm),7}   {Fmt.F2(row.MinDistanceM) + " m",11}   {Fmt.F2(row.ViewingDistanceM) + " m",14}   {Fmt.F0(row.OuterWidthCm)} x {Fmt.F0(row.OuterHeightCm)}{(row.Oversize ? "  (peste limita)" : "")}";
 
         /// <summary>
-        /// Legenda tabelului: steluta cand exista un rand recomandat; altfel de ce nu exista -
-        /// fara stele se judeca doar grila de pixeli, la distanta naturala raportul
-        /// punct/distanta e acelasi pe fiecare rand.
+        /// The table's legend: the asterisk when there is a recommended row; otherwise why there
+        /// is none - without stars only the pixel grid is judged, at the natural distance the
+        /// point / distance ratio is the same on every row.
         /// </summary>
+        /// <param name="ps">The size table's result.</param>
+        /// <returns>One line, or two for the natural distance, without the indent.</returns>
         internal static IEnumerable<string> SizeTableFooter(PrintSizeResult ps)
         {
             if (ps.CanRecommend)
@@ -275,6 +411,13 @@ namespace AstroPhotoAnalyzer
             yield return "  si testul nu desparte marimile - o alege peretele; da o distanta de privire ca sa le desparta";
         }
 
+        /// <summary>
+        /// Appendix E: the background's colour (R / G / B, or its one channel, 0..255) with the
+        /// two cast metrics on colour, then each edge region with its levels, its deltas and "!"
+        /// when it is flagged.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixBackground(AnalysisResult r, TextWriter w)
         {
             BackgroundResult b = r.Background;
@@ -286,6 +429,13 @@ namespace AstroPhotoAnalyzer
                 w.WriteLine($"  {e.Name,-18} {string.Join(" / ", e.Levels.Select(Fmt.F1)),-22} delta {string.Join(" / ", e.Deltas.Select(Fmt.S1))}{(e.Flagged ? "  !" : "")}");
         }
 
+        /// <summary>
+        /// Appendix F: every parameter as the analysis used it - the medium and the Dmax with its
+        /// origin, the widths, the passe-partout and the frame, the profile's note, the distance,
+        /// the target aspect, the target background with the grid's range, the WCS and the seed.
+        /// </summary>
+        /// <param name="r">The analysis.</param>
+        /// <param name="w">The writer.</param>
         static void AppendixParameters(AnalysisResult r, TextWriter w)
         {
             Parameters p = r.Parameters;
