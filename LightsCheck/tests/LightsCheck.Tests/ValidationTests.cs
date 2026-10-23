@@ -143,7 +143,41 @@ public class ValidationTests
         }
 
         AssertWithin("patternSurvivingPct", e.GetProperty("patternSurvivingPct").GetDouble(), Figure(d.PatternSurviving, "patternSurviving") * 100, t.GetProperty("pct").GetDouble());
+
+        // The drift pairs and the polar alignment (R-049, R-050): each key checked only once recorded (not null).
+        if (Recorded(e, "driftPairs", out JsonElement pairs))
+        {
+            Assert.Equal(pairs.GetInt32(), s.DriftPairs);
+        }
+
+        if (Recorded(e, "driftApproximate", out JsonElement approximate))
+        {
+            Assert.Equal(approximate.GetBoolean(), s.DriftApproximate);
+        }
+
+        if (Recorded(e, "polarErrorMinArcmin", out JsonElement polarMin))
+        {
+            AssertWithin("polarErrorMinArcmin", polarMin.GetDouble(), Figure(s.PolarErrorMinArcmin, "polarErrorMin"), t.GetProperty("arcmin").GetDouble());
+        }
+
+        if (Recorded(e, "polarErrorMaxArcmin", out JsonElement polarMax))
+        {
+            AssertWithin("polarErrorMaxArcmin", polarMax.GetDouble(), Figure(s.PolarErrorMaxArcmin, "polarErrorMax"), t.GetProperty("arcmin").GetDouble());
+        }
+
+        if (Recorded(e, "polarDriftMaxPx", out JsonElement polarDrift))
+        {
+            AssertWithin("polarDriftMaxPx", polarDrift.GetDouble(), Figure(s.PolarDriftMaxPx, "polarDriftMax"), t.GetProperty("px").GetDouble());
+        }
+
+        if (Recorded(e, "polarAlignment", out JsonElement polar))
+        {
+            Assert.Equal(polar.GetString(), s.PolarAlignment.ToString());
+        }
     }
+
+    /// <summary>Whether the case records <paramref name="name"/> with a value: absent or null means unmeasured, nothing checked.</summary>
+    private static bool Recorded(JsonElement e, string name, out JsonElement value) => e.TryGetProperty(name, out value) && value.ValueKind != JsonValueKind.Null;
 
     /// <summary>The words per frame on the real session: the trail axis of every frame with a trailing flag, by class, and the run cell of the frames listed (R-033, R-034).</summary>
     private static void CheckWords(SeriesResult r, JsonElement e)

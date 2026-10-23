@@ -92,8 +92,22 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   darks without touching the lens, in five paragraphs worded in the core (R-045, R-047);
   `README.md` says the same.
 - V-012 and V-013 add the Smida session of 2026-08-12 (20 mm) to the validation cases.
+- The polar alignment, read from the frames (R-050, ADR 0016): DRIFT SI ROTATIE gets
+  `aliniere polara`, the error bracketed between the DEC drift over the sidereal rate and that
+  plus the field rotation over the rate times cos DEC (the declination from the solved FITS at
+  the root), with the drift the alignment can cause in one exposure and the elongation it adds,
+  and `drift pe RA`, how much of the RA drift the alignment can explain and that the rest is the
+  tracking; REZUMAT gets the verdict, `OK`, `LA LIMITA` or `ATENTIE` by that drift against a
+  third of the FWHM. On the Veil session: between 4.2' and 12.0', at most 0.64 px per
+  exposure, and over 4 of the 5.8 "/min of RA drift are not the alignment.
 
 ### Changed
+
+- The drift is measured on the pairs of consecutive frames with no pause between them, where
+  nothing was pressed, and falls back to the pairs without a move, worded approximate, under
+  three such pairs (R-049, ADR 0016). On Veil nine post-pause presses of 3 to 5 px had halved
+  the RA drift: -0.48 px/min becomes -0.96, 1.1 px per exposure becomes 1.9 and the
+  walking-noise dash over frames 61-70 9.9 px becomes 17.7 px (V-008).
 
 - The reason of a frame at the limit carries the trail angle too (`alungire 1.49 la limita
   (prag 1.35), dara la -90 grade`), as the bad frames' did.

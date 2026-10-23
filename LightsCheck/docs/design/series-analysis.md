@@ -2,7 +2,7 @@
 
 **Covers:** `src/LightsCheck.Core/Analysis/Registration.cs`, `src/LightsCheck.Core/Analysis/Dithering.cs`, `src/LightsCheck.Core/Analysis/SeriesAnalyzer.cs`, `src/LightsCheck.Core/Analysis/Wcs.cs`, `src/LightsCheck.Core/Analysis/NoiseAnalyzer.cs`, `src/LightsCheck.Core/Analysis/PatternAnalyzer.cs`, `src/LightsCheck.Core/Runs/SeriesRun.cs`, `src/LightsCheck.Core/Report/SeriesReport.cs`, `src/LightsCheck.Core/Report/SeriesOutputs.cs`.
 
-The behaviour is R-018 to R-028 and R-042 to R-046; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015. The
+The behaviour is R-018 to R-028, R-042 to R-046, R-049 and R-050; the dither definitions and the verdicts are ADR 0007, the drift-aware walking verdict and the sensor's pattern ADR 0015, the drift pairs and the polar alignment ADR 0016. The
 prototype is `prototype/reg.py` and `prototype/summary.py`; `docs/validation/2026-10-06-veil/raport.md`
 is the hand report the tool reproduces, and V-008 pins its session figures.
 
@@ -43,7 +43,8 @@ The series' constants are fields of `Th` in `Thresholds.cs` like the frame's
 `HotPixelRunMax`, `WalkingNoiseDistinctFraction`, `WalkingNoiseIsolatedFraction`,
 `TwoDAxisFraction`; the drift-aware verdict and the pattern, `WalkingStreakVisible`,
 `PatternCrop`, `PatternHotSigma`, `PatternMinFrames`, `PatternClusterFraction`,
-`PatternSharePx`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
+`PatternSharePx`; the drift pairs and the polar alignment, `DriftMinPairs`,
+`PolarDriftFwhmFraction`; frame classes, `ElongationBad`, `ElongationMarginal`, `SoftFwhmFactor`,
 `CloudStarFraction`, `BackgroundJumpPct`, `BackgroundNeighbours`; trends, `TrendFrames`,
 `DewFwhmRise`, `DewHaloRise`, `FocusHeldFraction`, `SwampingRatioOk`; the RA axis from the
 trails, `TrailAxisMinFrames`, `TrailAxisCoherence`, `TrailAxisTolerance`.
@@ -92,6 +93,32 @@ dither rule is untouched), else `Static` when the dash is known and under
 pattern, however the map looks. The report's `DitherVerdict` orders the walking and the
 hot-pixel words worst first, so the chip's colour is the worse of the two.
 
+## The polar alignment (`SeriesAnalyzer`, R-050)
+
+A pole off by a small angle `e` (components `e_alt` along the meridian and `e_az` east-west)
+makes the mount track about the wrong axis; to first order, with `w` the sidereal rate
+(902.46 "/min, the private constant), `H` the hour angle and `d` the declination, the stars
+drift in DEC at `w (e_alt sin H - e_az cos H)`, in RA at `w sin d (e_alt cos H + e_az sin H)`,
+and the field turns at `w cos d (e_alt cos H + e_az sin H)`. The squares of the two brackets
+add to `|e|^2` at any hour angle, which the raws do not carry, so the analyzer reads the two
+brackets and never `H`. `PolarErrorMinArcmin` is the DEC component of `StarDriftPerMin`, in
+arcseconds through the scale, over `w`: a bound from below that needs only the RA axis and the
+scale. `PolarErrorMaxArcmin` adds in quadrature the rotation rate over `w cos d`, the second
+bracket read as the alignment's; it needs `d`, `Wcs.DecDeg` from the solve's `CRVAL2`, and
+is skipped within 0.01 of `cos d = 0`. The same reading bounds the RA drift the alignment can
+explain at the rotation rate times `tan d` (`PolarRaDriftMaxArcsecPerMin`); on Veil 1.3 of
+the 5.8 "/min, the rest being the tracking, which these frames cannot separate (ADR 0016).
+The cost: `PolarDriftMinPx` is the DEC drift over the median exposure, `PolarDriftMaxPx` the
+DEC drift and the RA share in quadrature over the same exposure (the rotation itself moves no
+star at the centre), `PolarElongation` what a smear of the upper one adds to a Gaussian star
+of the session FWHM, `sqrt(s^2 + L^2 / 12) / s` with `s = FWHM / 2.355`. The verdict reads
+the drift against `Th.PolarDriftFwhmFraction` of the session FWHM: `Attention` when the lower
+drift reaches it, `Ok` when the upper stays under it, `Marginal` between, `Unknown` without
+the figures or with a harmless lower bound and no upper one. Everything is null without a
+clean drift, an axis, a scale or a median exposure. Refraction, which pushes the apparent
+field toward the zenith at a fraction of an arcsecond per minute low in the sky, is not
+modelled: the lower bound is that much soft on a field that sets.
+
 ## The sensor's pattern (`PatternAnalyzer`, R-046)
 
 `PatternCrop.Cut` takes the central `Th.PatternCrop` square of the float raster above black
@@ -128,9 +155,17 @@ Two passes: the classes that need no session figure (trailing, from the median e
 and the session medians (FWHM over the good frames, stars over all), then the flags against
 the session (soft, clouds, background jump against the two neighbours on each side). Trends
 compare the first and the last 10 good frames (fewer on a short session: half the good
-frames). Drift is the mean step per minute over the consecutive registered pairs that were
-not moves, so a dither does not count as drift; on Veil it is the 0.8 px/min along RA the
-hand report found. Rotation is the last registered frame's minus the first's; the corner
+frames). Drift is the mean step per minute over the drift pairs: the consecutive registered pairs with
+no pause above `Th.DitherPause` between them, where nothing was pressed (R-049). A pair after
+a pause is never a drift pair, even when its step stayed under the move threshold: on Veil
+nine such presses of 3 to 5 px, counted as drift, halved the RA drift and inflated the DEC
+drift (ADR 0016); over the 39 clean pairs the drift is -0.19 / -0.96 px/min. With fewer than
+`Th.DriftMinPairs` clean pairs (Smida, dithered every frame) the mean falls back to the pairs
+that were not a move, as before, and `DriftApproximate` says so; the private `Drift` helper
+sums the steps and the minutes under either rule. `StarDriftPerMin` is the clean drift as the
+stars move on the sky, a `MountMove` through the moves' mapping with the sign flipped (the
+stars are the negative of the pointing), signed with a solve, magnitudes with the axis from the
+trails, null for an approximate drift. Rotation is the last registered frame's minus the first's; the corner
 figure is that rate over one exposure at the half-diagonal. The RA axis comes from the WCS
 when a solved FITS sits at the root (Siril's result: `PC1_2` dominates `PC1_1`, so RA runs
 along Y on the D3300 frames), else from the vector mean of the trail angles of the bad
@@ -202,7 +237,14 @@ the RA axis and its source, which the console carries on its `directie` row; bot
 session's scale, R-044), `SurvivingRow` (the surviving fraction against `1 / n`, R-048),
 `PatternRow` (the `SensorPattern` by its status, the sigmas with their fractions, the hot
 rate and the darks clause, R-046) and the verdict. `DriftRows` adds `DriftPerExposure`, the drift over the median
-exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `nicio dara` without a run.
+exposure on its axis (`DriftAxisWord`) and the dash of `Streak`, `nicio dara` without a run;
+its first row names the pairs through `PairsWord` (`fara pauza`, or `cu pauza, aproximativ`
+for the fallback), and it closes with `PolarRow` (the bracket of `PolarBounds` with what gave
+each bound, the drift per exposure and the elongation, or the lower bound alone without a
+solve) and `RaDriftRow` (the RA drift with the stars' sense when signed, the alignment's share
+and whether the rest is the tracking). `PolarReason` is the one place that words why the
+alignment is not measured (no clean drift, no axis, no scale), and `PolarSummary` the REZUMAT
+row with its verdict word, `OK`, `LA LIMITA` or `ATENTIE`, none when unknown.
 `DitherExplanation` is the list of paragraphs the window's Dithering card shows under its
 tables (R-045), built from `Th` like `RejectedExplanation`, the third one emphasised. FOCUS closes with a
 `verdict` row from the same `Focus` pair the summary uses. The console prints `DitherRows`
