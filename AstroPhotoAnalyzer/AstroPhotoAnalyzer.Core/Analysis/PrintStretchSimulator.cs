@@ -55,7 +55,7 @@ namespace AstroPhotoAnalyzer
         internal bool AsIs { get; init; }
 
         /// <summary>
-        /// The row of the target the owner gave (Parameters.TargetBackground), when it is not on
+        /// The row of the target the user gave (Parameters.TargetBackground), when it is not on
         /// the grid.
         /// </summary>
         internal bool Explicit { get; init; }
@@ -193,7 +193,7 @@ namespace AstroPhotoAnalyzer
         internal double DmaxToPassAsIs { get; init; }
 
         /// <summary>
-        /// The primary row: the target the owner gave, otherwise the recommended one, otherwise
+        /// The primary row: the target the user gave, otherwise the recommended one, otherwise
         /// "asa cum e".
         /// </summary>
         internal SimulationRow Primary { get; init; }

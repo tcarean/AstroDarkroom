@@ -15,19 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// JpegAnalyzer.cs - masuratoarea C3: ce pierde imaginea la fiecare calitate JPEG, si
-// cat ar avea ca TIFF pe 8 biti.
+// JpegAnalyzer.cs - the measurement C3: what the image loses at each JPEG quality, and how large
+// it would be as an 8-bit TIFF.
 //
-// Nu se scrie nimic pe disc: fiecare calitate se encodeaza in memorie, se decodeaza
-// inapoi si se compara cu imaginea de 16 biti (in scara 0..255, NErotunjita - deci
-// eroarea include si rotunjirea la 8 biti, ca in scriptul de acceptanta). Pe langa
-// media si maximul erorii, se numara pixelii cu eroare peste 2 niveluri si se retine
-// nivelul lor mediu: pe imaginea de referinta erau 3 % si stateau in cerul intunecat,
-// unde JPEG-ul lucreaza cel mai prost.
+// Nothing is written to disk: each quality is encoded in memory, decoded back and compared with
+// the 16-bit image (on the scale 0..255, UNrounded - so the error includes the rounding to 8 bits
+// too, as in the acceptance script). Besides the mean and the maximum error, the pixels with an
+// error over 2 levels are counted and their mean level is kept: on the reference image they were
+// 3 % and sat in the dark sky, where JPEG works worst.
 //
-// Al doilea fisier din nucleu care atinge ImageSharp (primul e cititorul). 4:4:4,
-// fara subesantionare de crominanta: stelele colorate pe un pixel n-ar supravietui
-// lui 4:2:0.
+// The second file of the core that touches ImageSharp (the first is the reader). 4:4:4, without
+// chroma subsampling: the stars coloured on one pixel would not survive 4:2:0.
 
 using System;
 using System.Collections.Generic;
@@ -40,6 +38,9 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>
+    /// One JPEG quality (C3): its size and its error against the unrounded image, in levels.
+    /// </summary>
     internal sealed record JpegRow
     {
         internal int Quality { get; init; }
@@ -50,15 +51,22 @@ namespace AstroPhotoAnalyzer
         internal double P99 { get; init; }
         internal double P999 { get; init; }
 
-        /// <summary>Procentul esantioanelor cu eroare peste Thresholds.JpegErrorCountLevels.</summary>
+        /// <summary>
+        /// The percentage of the samples with an error over Thresholds.JpegErrorCountLevels.
+        /// </summary>
         internal double PctOverThreshold { get; init; }
 
-        /// <summary>Nivelul mediu (0..255) al acelor esantioane - unde loveste compresia.</summary>
+        /// <summary>
+        /// The mean level (0..255) of those samples - where the compression hits.
+        /// </summary>
         internal double MeanLevelOverThreshold { get; init; }
 
         internal bool Acceptable => MaxError <= Thresholds.JpegMaxErrorReject;
     }
 
+    /// <summary>
+    /// What the image loses at each JPEG quality, and its size as an 8-bit TIFF LZW (C3).
+    /// </summary>
     internal sealed record JpegResult
     {
         internal IReadOnlyList<JpegRow> Rows { get; init; }
@@ -66,10 +74,27 @@ namespace AstroPhotoAnalyzer
         internal double Tiff8LzwMegabytes => Tiff8LzwBytes / 1048576.0;
     }
 
+    /// <summary>
+    /// Measures the JPEG qualities and the 8-bit TIFF size (C3), in memory, with ImageSharp's
+    /// encoders.
+    /// </summary>
     internal static class JpegAnalyzer
     {
+        /// <summary>Measures at the qualities of <see cref="Thresholds.JpegQualities"/>.</summary>
+        /// <param name="r">The image, 0..1.</param>
+        /// <returns>One row per quality, and the 8-bit TIFF LZW size.</returns>
         internal static JpegResult Analyze(Raster r) => Analyze(r, Thresholds.JpegQualities);
 
+        /// <summary>
+        /// Quantises the image to 8 bits, encodes it as JPEG at each quality, in memory, decodes
+        /// it back and measures the error against the unrounded image; and its size as an 8-bit
+        /// TIFF LZW.
+        /// </summary>
+        /// <param name="r">The image, 0..1.</param>
+        /// <param name="qualities">The JPEG qualities, 1..100, in the rows' order.</param>
+        /// <returns>
+        /// One row per quality, in the given order, and the 8-bit TIFF LZW size, in bytes.
+        /// </returns>
         internal static JpegResult Analyze(Raster r, int[] qualities)
         {
             var rows = new List<JpegRow>();
@@ -89,6 +114,11 @@ namespace AstroPhotoAnalyzer
             return new JpegResult { Rows = rows, Tiff8LzwBytes = tiffBytes };
         }
 
+        /// <summary>A colour raster quantised to 8 bits, as an ImageSharp image.</summary>
+        /// <param name="r">A colour raster, 0..1.</param>
+        /// <returns>
+        /// A new image, every sample at <see cref="RasterOps.Level8"/>; the caller disposes of it.
+        /// </returns>
         static Image<Rgb24> ToRgb24(Raster r)
         {
             var img = new Image<Rgb24>(r.W, r.H);
@@ -105,6 +135,11 @@ namespace AstroPhotoAnalyzer
             return img;
         }
 
+        /// <summary>A mono raster quantised to 8 bits, as an ImageSharp image.</summary>
+        /// <param name="r">A mono raster, 0..1.</param>
+        /// <returns>
+        /// A new image, every sample at <see cref="RasterOps.Level8"/>; the caller disposes of it.
+        /// </returns>
         static Image<L8> ToL8(Raster r)
         {
             var img = new Image<L8>(r.W, r.H);
@@ -120,15 +155,29 @@ namespace AstroPhotoAnalyzer
             return img;
         }
 
+        /// <summary>
+        /// The size of the image saved as TIFF LZW with the horizontal predictor, in memory.
+        /// </summary>
+        /// <typeparam name="T">The pixel type: Rgb24 or L8.</typeparam>
+        /// <param name="img">The 8-bit image.</param>
+        /// <returns>The size, in bytes.</returns>
         static long TiffBytes<T>(Image<T> img) where T : unmanaged, IPixel<T>
         {
-            // Predictorul orizontal e ce face LZW-ul util pe fotografii: fara el, pe
-            // imaginea de referinta ImageSharp dadea 38.6 MB acolo unde ImageMagick da 20.
+            // The horizontal predictor is what makes LZW useful on photographs: without it, on
+            // the reference image ImageSharp gave 38.6 MB where ImageMagick gives 20.
             using var ms = new MemoryStream();
             img.SaveAsTiff(ms, new TiffEncoder { Compression = TiffCompression.Lzw, HorizontalPredictor = TiffPredictor.Horizontal });
             return ms.Length;
         }
 
+        /// <summary>
+        /// Encodes the 8-bit colour image as JPEG 4:4:4 at a quality, decodes it back and
+        /// accumulates the error of every sample against the raster.
+        /// </summary>
+        /// <param name="r">The colour raster, 0..1: the reference.</param>
+        /// <param name="img">The same raster quantised to 8 bits.</param>
+        /// <param name="quality">The JPEG quality, 1..100.</param>
+        /// <returns>The quality's row.</returns>
         static JpegRow MeasureColor(Raster r, Image<Rgb24> img, int quality)
         {
             using var ms = new MemoryStream();
@@ -153,6 +202,14 @@ namespace AstroPhotoAnalyzer
             return acc.Row(quality, ms.Length);
         }
 
+        /// <summary>
+        /// Encodes the 8-bit mono image as a luminance-only JPEG at a quality, decodes it back and
+        /// accumulates the error of every sample against the raster.
+        /// </summary>
+        /// <param name="r">The mono raster, 0..1: the reference.</param>
+        /// <param name="img">The same raster quantised to 8 bits.</param>
+        /// <param name="quality">The JPEG quality, 1..100.</param>
+        /// <returns>The quality's row.</returns>
         static JpegRow MeasureMono(Raster r, Image<L8> img, int quality)
         {
             using var ms = new MemoryStream();
@@ -173,8 +230,8 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Eroarea pe esantion, acumulata intr-o histograma cu pas de 0.01 nivel: pe 69 de
-        /// milioane de esantioane o sortare pentru percentile ar costa secunde si sute de MB.
+        /// The error per sample, accumulated in a histogram with a step of 0.01 level: on 69
+        /// million samples a sort for the percentiles would cost seconds and hundreds of MB.
         /// </summary>
         sealed class ErrorAccumulator
         {
@@ -183,6 +240,11 @@ namespace AstroPhotoAnalyzer
             long _n, _over;
             double _sum, _max, _levelOver;
 
+            /// <summary>Adds the error of one sample.</summary>
+            /// <param name="decoded">The decoded 8-bit value, 0..255.</param>
+            /// <param name="reference">
+            /// The raster's sample, 0..1; clamped to that range and taken x 255, unrounded.
+            /// </param>
             internal void Add(byte decoded, float reference)
             {
                 double refLevel = Math.Clamp(reference, 0f, 1f) * 255;
@@ -193,6 +255,14 @@ namespace AstroPhotoAnalyzer
                 if (e > Thresholds.JpegErrorCountLevels) { _over++; _levelOver += refLevel; }
             }
 
+            /// <summary>The row of the errors accumulated so far.</summary>
+            /// <param name="quality">The JPEG quality the errors belong to.</param>
+            /// <param name="bytes">The JPEG's size, in bytes.</param>
+            /// <returns>
+            /// The row: the mean and the maximum error, the 99th and 99.9th percentiles to 0.01
+            /// level, the share of the samples over JpegErrorCountLevels and their mean level (0
+            /// when there are none).
+            /// </returns>
             internal JpegRow Row(int quality, long bytes) => new JpegRow
             {
                 Quality = quality,

@@ -15,31 +15,30 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PrintSizeAnalyzer.cs - masuratoarea D3: tabelul de marimi.
+// PrintSizeAnalyzer.cs - the measurement D3: the size table.
 //
-// Pentru fiecare latime candidata: dpi, pasul pixelului pe hartie, cat de mare iese o
-// stea (FWHM x pas), si de la ce distanta ochiul o vede ca punct - acuitatea e ~0.29 mm
-// la 1 m si scaleaza liniar. Testul: steaua e punct de la distanta de privire - cea data
-// de om, sau, fara ea, 1.5 x diagonala printului, de unde se priveste un tablou in mod
-// natural.
+// For each candidate width: the dpi, the pixel's pitch on paper, how large a star comes out
+// (FWHM x pitch), and from what distance the eye sees it as a point - the acuity is ~0.29 mm at
+// 1 m and scales linearly. The test: the star is a point from the viewing distance - the one the
+// user gave, or, without it, 1.5 x the print's diagonal, from where a picture is naturally
+// looked at.
 //
-// DISTANTA NATURALA NU ALEGE O MARIME. Si distanta de la care steaua e punct, si cea
-// naturala cresc proportional cu latimea; raportul lor e o constanta a imaginii (vezi
-// Thresholds.NaturalDistanceTolerance). Deci fara distanta data testul spune doar "e
-// destul de clara pentru distanta ei naturala" - la toate marimile deopotriva - si NU
-// SE RECOMANDA NICIUN RAND: steluta ar fi cazut pe cel mai mare candidat sub limita,
-// adica pe --sizes, nu pe imagine. Cu o distanta data (hol, canapea) si cu FWHM masurat
-// testul chiar desparte marimile, si doar acolo se sprijina o recomandare. Randul de
-// referinta (cel mai mare care trece si nu e supradimensionat, altfel cel mai mic)
-// exista mereu: de el vorbesc recomandarile ("pana la X cm") si la dpi-ul lui se
-// judeca palierul.
+// THE NATURAL DISTANCE DOES NOT PICK A SIZE. Both the distance from which the star is a point and
+// the natural one grow in proportion to the width; their ratio is a constant of the image (see
+// Thresholds.NaturalDistanceTolerance). So without a given distance the test says only "it is
+// sharp enough for its natural distance" - at every size alike - and NO ROW IS RECOMMENDED: the
+// asterisk would have landed on the largest candidate under the limit, that is on --sizes, not on
+// the image. With a given distance (a hallway, a sofa) and a measured FWHM the test really
+// separates the sizes, and only there does a recommendation rest on it. The reference row (the
+// largest that passes and is not oversize, otherwise the smallest) always exists: the
+// recommendations speak of it ("pana la X cm") and the plateau is judged at its dpi.
 //
-// Nu exista "dpi minim" aici. Rezolutia reala e FWHM-ul; dpi-ul e doar cati pixeli
-// incap intr-un inch, si peste 1/FWHM din el nu mai aduce nimic. Singura data cand
-// dpi-ul decide e fara stele - si atunci nu judeca detaliul, ci doar grila de pixeli:
-// invizibila de la distanta data (25.4 / (0.29 x d) dpi) sau, fara ea, de la ~0.5 m
-// (Thresholds.FallbackMinDpi). E o limita a fisierului, nu o masuratoare, deci nici
-// acolo nu se recomanda un rand.
+// There is no "minimum dpi" here. The real resolution is the FWHM; the dpi is only how many
+// pixels fit in an inch, and beyond 1/FWHM of it nothing more is gained. The only time the dpi
+// decides is without stars - and then it does not judge the detail, only the pixel grid:
+// invisible from the given distance (25.4 / (0.29 x d) dpi) or, without one, from ~0.5 m
+// (Thresholds.FallbackMinDpi). It is a limit of the file, not a measurement, so there too no row
+// is recommended.
 
 using System;
 using System.Collections.Generic;
@@ -47,6 +46,7 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>A row of the size table (D3): a candidate width and what it gives.</summary>
     internal sealed record SizeRow
     {
         internal double WidthCm { get; init; }
@@ -54,19 +54,24 @@ namespace AstroPhotoAnalyzer
         internal double Dpi { get; init; }
         internal double PitchMm { get; init; }
 
-        /// <summary>De la ce distanta (m) dispare grila de pixeli: pasul / acuitate. Nu depinde de stele.</summary>
+        /// <summary>
+        /// From what distance (m) the pixel grid vanishes: the pitch / the acuity. It does not
+        /// depend on the stars.
+        /// </summary>
         internal double PixelDistanceM { get; init; }
 
-        /// <summary>NaN fara FWHM.</summary>
+        /// <summary>NaN without FWHM.</summary>
         internal double StarMm { get; init; }
 
-        /// <summary>De la ce distanta (m) steaua e punct. NaN fara FWHM.</summary>
+        /// <summary>From what distance (m) the star is a point. NaN without FWHM.</summary>
         internal double MinDistanceM { get; init; }
 
-        /// <summary>1.5 x diagonala imaginii printate, in metri.</summary>
+        /// <summary>1.5 x the printed image's diagonal, in metres.</summary>
         internal double NaturalDistanceM { get; init; }
 
-        /// <summary>Distanta la care s-a judecat randul: cea din parametri, sau cea naturala.</summary>
+        /// <summary>
+        /// The distance the row was judged at: the one in the parameters, or the natural one.
+        /// </summary>
         internal double ViewingDistanceM { get; init; }
 
         internal bool PointAtViewingDistance { get; init; }
@@ -74,10 +79,16 @@ namespace AstroPhotoAnalyzer
         internal double OuterHeightCm { get; init; }
         internal bool Oversize { get; init; }
 
-        /// <summary>Doar cand testul desparte randurile - vezi PrintSizeResult.CanRecommend.</summary>
+        /// <summary>
+        /// Only when the test separates the rows - see PrintSizeResult.CanRecommend.
+        /// </summary>
         internal bool Recommended { get; init; }
     }
 
+    /// <summary>
+    /// The size table (D3): the rows of the candidate widths, the reference row, and whether a
+    /// row can be recommended.
+    /// </summary>
     internal sealed record PrintSizeResult
     {
         internal int PixelW { get; init; }
@@ -87,63 +98,93 @@ namespace AstroPhotoAnalyzer
         internal double EffectiveDetailPx => FwhmKnown ? PixelW / FwhmPx : double.NaN;
 
         /// <summary>
-        /// Cat de lat ar fi printul cu pasul pixelului unui monitor (Thresholds.ScreenPixelMm):
-        /// ce arata o vedere la 100 % pe ecran. Doar pentru Preview.
+        /// How wide the print would be at a monitor's pixel pitch (Thresholds.ScreenPixelMm):
+        /// what a 100 % view on screen shows. Only for the Preview.
         /// </summary>
         internal double ScreenEquivalentWidthCm => PixelW * Thresholds.ScreenPixelMm / 10;
 
         /// <summary>
-        /// De cate ori distanta fata de monitor trebuie privita dala de 100 % ca sa arate ca
-        /// printul de referinta de la distanta monitorului: latimea echivalenta / latimea lui.
-        /// Sub 1 printul e mai mare decat ecranul la 100 %. NaN fara rand de referinta.
+        /// At how many times the monitor's distance the 100 % tile must be viewed to look like
+        /// the reference print from the monitor's distance: the equivalent width / its width.
+        /// Under 1 the print is larger than the screen at 100 %. NaN without a reference row.
         /// </summary>
         internal double ScreenStepBackFactor => ReferenceRow == null ? double.NaN : ScreenEquivalentWidthCm / ReferenceRow.WidthCm;
         internal bool DistanceIsExplicit { get; init; }
 
         /// <summary>
-        /// Adevarat doar cu distanta data SI FWHM masurat - singurul caz in care testul
-        /// desparte randurile pe o masuratoare. Fals la distanta naturala (verdictul e
-        /// acelasi pe fiecare rand) si fals fara stele (regula de dpi e despre fisier, nu
-        /// despre detaliu). Acolo o steluta ar fi o minciuna.
+        /// True only with a given distance AND a measured FWHM - the only case in which the test
+        /// separates the rows on a measurement. False at the natural distance (the verdict is the
+        /// same on every row) and false without stars (the dpi rule is about the file, not about
+        /// the detail). There an asterisk would be a lie.
         /// </summary>
         internal bool CanRecommend { get; init; }
 
         /// <summary>
-        /// Pragul de dpi aplicat fara FWHM: cel fizic din distanta data, 25.4 / (0.29 x d),
-        /// altfel Thresholds.FallbackMinDpi. NaN cu FWHM.
+        /// The dpi threshold applied without FWHM: the physical one from the given distance,
+        /// 25.4 / (0.29 x d), otherwise Thresholds.FallbackMinDpi. NaN with FWHM.
         /// </summary>
         internal double FallbackDpi { get; init; }
 
         /// <summary>
-        /// Cel mai mare rand care trece si nu e supradimensionat, altfel cel mai mic. Exista
-        /// mereu (cu cel putin un candidat): recomandarile vorbesc de el si palierul se
-        /// judeca la dpi-ul lui, fie ca e recomandat sau nu.
+        /// The largest row that passes and is not oversize, otherwise the smallest. It always
+        /// exists (with at least one candidate): the recommendations speak of it and the plateau
+        /// is judged at its dpi, whether it is recommended or not.
         /// </summary>
         internal SizeRow ReferenceRow { get; init; }
 
-        /// <summary>Randul de referinta cand exista o recomandare, altfel null.</summary>
+        /// <summary>The reference row when there is a recommendation, otherwise null.</summary>
         internal SizeRow RecommendedRow => CanRecommend ? ReferenceRow : null;
 
         /// <summary>
-        /// "Punct de la" / distanta naturala - acelasi pe fiecare rand, o constanta a imaginii:
-        /// 1 = fix atat de clara cat ii trebuie pentru distanta ei naturala, 10 = ar trebui
-        /// privita de zece ori mai de departe. NaN fara FWHM.
+        /// "Punct de la" / the natural distance - the same on every row, a constant of the image:
+        /// 1 = exactly as sharp as it needs to be for its natural distance, 10 = it would have to
+        /// be viewed from ten times farther. NaN without FWHM.
         /// </summary>
         internal double NaturalRatio { get; init; }
 
         internal IReadOnlyList<SizeRow> Rows { get; init; }
     }
 
-    /// <summary>Un rand al scarii dpi - distanta: de la cati metri dispare grila de pixeli la dpi-ul asta.</summary>
+    /// <summary>
+    /// A row of the dpi - distance ladder: from how many metres the pixel grid vanishes at this
+    /// dpi.
+    /// </summary>
+    /// <param name="Dpi">The dots per inch.</param>
+    /// <param name="PitchMm">The pixel's pitch on paper, 25.4 / dpi, in mm.</param>
+    /// <param name="DistanceM">
+    /// The distance from which the grid vanishes, the pitch / the acuity, in metres.
+    /// </param>
+    /// <param name="Meaning">
+    /// What the row is, in Romanian as the window shows it ("poster", "de pe canapea").
+    /// </param>
     internal sealed record DpiLadderRow(double Dpi, double PitchMm, double DistanceM, string Meaning);
 
+    /// <summary>Builds the size table (D3) and the dpi - distance ladder.</summary>
     internal static class PrintSizeAnalyzer
     {
+        /// <summary>
+        /// The size table of a <paramref name="pixelW"/> x <paramref name="pixelH"/> print: one
+        /// row per candidate width, judged on the star's size at the viewing distance or, without
+        /// a FWHM, on the pixel grid.
+        /// </summary>
+        /// <param name="pixelW">The width that prints, in pixels: the crop's.</param>
+        /// <param name="pixelH">The height that prints, in pixels.</param>
+        /// <param name="fwhmPx">
+        /// The median FWHM, in pixels; NaN, 0 or less when no star was measured.
+        /// </param>
+        /// <param name="p">
+        /// The run's parameters: the candidate widths, the viewing distance, the passepartout and
+        /// the frame.
+        /// </param>
+        /// <returns>
+        /// The rows by increasing width, the reference row, and the recommendation when the rows
+        /// separate on a measurement.
+        /// </returns>
         internal static PrintSizeResult Analyze(int pixelW, int pixelH, double fwhmPx, Parameters p)
         {
             bool known = !double.IsNaN(fwhmPx) && fwhmPx > 0;
-            // Fara FWHM se judeca doar grila de pixeli: invizibila de la distanta data sau,
-            // fara ea, de la ~0.5 m (conventia de 180 dpi).
+            // Without FWHM only the pixel grid is judged: invisible from the given distance or,
+            // without one, from ~0.5 m (the 180 dpi convention).
             double fallbackDpi = known ? double.NaN
                 : p.ViewingDistanceM.HasValue ? 25.4 / (Thresholds.AcuityMmAt1m * p.ViewingDistanceM.Value)
                 : Thresholds.FallbackMinDpi;
@@ -157,7 +198,8 @@ namespace AstroPhotoAnalyzer
                 double minDist = known ? star / Thresholds.AcuityMmAt1m : double.NaN;
                 double natural = Thresholds.ViewingDistanceFactor * Math.Sqrt(wcm * wcm + hcm * hcm) / 100;
                 double viewing = p.ViewingDistanceM ?? natural;
-                // Toleranta doar pe distanta naturala: cea data de om e a lui, nu se largeste.
+                // The tolerance only on the natural distance: the one the user gave is theirs, it
+                // is not widened.
                 double allowed = p.ViewingDistanceM.HasValue ? viewing : viewing * Thresholds.NaturalDistanceTolerance;
                 bool point = known ? minDist <= allowed : dpi >= fallbackDpi;
                 rows.Add(new SizeRow
@@ -178,9 +220,9 @@ namespace AstroPhotoAnalyzer
                 });
             }
 
-            // Randul de referinta: cea mai mare latime la care steaua e punct si care nu e
-            // supradimensionata; daca niciuna nu trece, cea mai mica - un print tot se face.
-            // E recomandat doar cand testul a avut cum sa-l aleaga pe o masuratoare.
+            // The reference row: the largest width at which the star is a point and which is not
+            // oversize; if none passes, the smallest - a print is made anyway. It is recommended
+            // only when the test had a way to choose it on a measurement.
             bool canRecommend = p.ViewingDistanceM.HasValue && known;
             int pick = rows.FindLastIndex(r => r.PointAtViewingDistance && !r.Oversize);
             if (pick < 0 && rows.Count > 0) pick = 0;
@@ -201,12 +243,16 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Scara de referinta, ca sa se citeasca coloana "dpi" fara mitul celor 300: pasul
-        /// pixelului e 25.4 / dpi si grila dispare de la pas / acuitate. Nu masoara nimic din
-        /// imagine - e fereastra care o arata. Reperele: 300 = citit, 240 = nativul multor
-        /// imprimante, 180 = conventia fara stele, 100 = poster, 60 = de pe canapea. Cu
-        /// distanta data, ultimul rand e pragul ei.
+        /// The reference ladder, so that the "dpi" column is read without the myth of the 300:
+        /// the pixel's pitch is 25.4 / dpi and the grid vanishes from pitch / acuity. It measures
+        /// nothing of the image: the window shows it. The marks: 300 = reading, 240 = the native
+        /// resolution of many printers, 180 = the convention without stars, 100 = poster, 60 =
+        /// from the sofa. With a given distance, the last row is its threshold.
         /// </summary>
+        /// <param name="viewingDistanceM">
+        /// The given viewing distance, in metres; null for none.
+        /// </param>
+        /// <returns>The rows, 300 dpi first; with a given distance, its own row last.</returns>
         internal static IReadOnlyList<DpiLadderRow> DpiLadder(double? viewingDistanceM)
         {
             var rows = new List<DpiLadderRow>

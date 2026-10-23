@@ -15,17 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// NoiseAnalyzer.cs - masuratoarea B3: cat zgomot a ramas in cer, in LSB de 8 biti.
+// NoiseAnalyzer.cs - the measurement B3: how much noise is left in the sky, in 8-bit LSB.
 //
-// De ce conteaza pe o imagine FINITA: zgomotul e ce dither-eaza cuantizarea. Sub ~0.5
-// LSB nu mai exista dither natural si un gradient lent se rupe in trepte pe 8 biti;
-// peste ~2 LSB se vede la 100 % pe ecran. Iar pe hartie, la 200+ dpi, orice sub 1.5 LSB
-// e invizibil - de aici tinta de denoise pentru versiunea de print.
+// Why it matters on a FINISHED image: the noise is what dithers the quantization. Under ~0.5 LSB
+// there is no natural dither left and a slow gradient breaks into steps on 8 bits; over ~2 LSB it
+// shows at 100 % on screen. And on paper, at 200+ dpi, anything under 1.5 LSB is invisible -
+// hence the denoise target for the print version.
 //
-// CUM: dale de 64x64 alese aleator (samanta fixa), pastrate doar cele netede (range mic),
-// pe canalul de referinta. Sigma = std(diferenta intre pixeli vecini pe orizontala)/sqrt 2:
-// diferenta scoate gradientul lent si lasa zgomotul, iar sqrt 2 e pentru ca diferenta a
-// doua variabile independente are varianta dubla. Exact scriptul de acceptanta.
+// HOW: 64x64 tiles chosen at random (a fixed seed), only the smooth ones kept (a small range), on
+// the reference channel. Sigma = std(difference between horizontally neighbouring pixels)/sqrt 2:
+// the difference removes the slow gradient and leaves the noise, and sqrt 2 is because the
+// difference of two independent variables has twice the variance. Exactly the acceptance script.
 
 using System;
 using System.Collections.Generic;
@@ -33,8 +33,16 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>A smooth tile the noise was measured on.</summary>
+    /// <param name="X">The tile's left column, in pixels.</param>
+    /// <param name="Y">The tile's top row, in pixels, 0 at the top.</param>
+    /// <param name="SigmaLsb">The tile's noise sigma, in 8-bit LSB.</param>
     internal sealed record NoiseTile(int X, int Y, double SigmaLsb);
 
+    /// <summary>
+    /// The noise left in the sky (B3): the smooth tiles and their sigmas, in 8-bit LSB, with the
+    /// flags the report reads.
+    /// </summary>
     internal sealed record NoiseResult
     {
         internal int Candidates { get; init; }
@@ -45,11 +53,16 @@ namespace AstroPhotoAnalyzer
         internal double Sigma10thLsb { get; init; }
         internal double SigmaMinLsb { get; init; }
 
-        /// <summary>Procentul dalelor netede cu sigma sub pragul de banding, respectiv sub 1 LSB.</summary>
+        /// <summary>
+        /// The percentage of the smooth tiles with a sigma under the banding threshold, and under
+        /// 1 LSB respectively.
+        /// </summary>
         internal double PctTilesBelowBanding { get; init; }
         internal double PctTilesBelowOne { get; init; }
 
-        /// <summary>Prea putine dale netede ca sigma sa insemne ceva: imaginea e toata structura.</summary>
+        /// <summary>
+        /// Too few smooth tiles for the sigma to mean anything: the image is all structure.
+        /// </summary>
         internal bool Insufficient => SmoothTiles < Thresholds.NoiseMinTiles;
 
         internal bool BandingRisk => !Insufficient && SigmaMedianLsb < Thresholds.NoiseBandingLsb;
@@ -57,8 +70,19 @@ namespace AstroPhotoAnalyzer
         internal bool UnderDenoised => !Insufficient && SigmaMedianLsb > Thresholds.NoiseUnderDenoisedLsb;
     }
 
+    /// <summary>Measures the noise left in the sky (B3).</summary>
     internal static class NoiseAnalyzer
     {
+        /// <summary>
+        /// Draws <see cref="Thresholds.NoiseTileCandidates"/> random tiles of
+        /// <see cref="Thresholds.NoiseTileSize"/> pixels on the reference plane, with the run's
+        /// seed, keeps the smooth ones and measures the noise sigma on each.
+        /// </summary>
+        /// <param name="r">
+        /// The image, 0..1; with a side not larger than a tile there are no candidates.
+        /// </param>
+        /// <param name="p">The run's parameters; only the seed is read.</param>
+        /// <returns>The smooth tiles and the sigmas; NaN sigmas without a smooth tile.</returns>
         internal static NoiseResult Analyze(Raster r, Parameters p)
         {
             int size = Thresholds.NoiseTileSize;
@@ -100,6 +124,14 @@ namespace AstroPhotoAnalyzer
             };
         }
 
+        /// <summary>Whether a tile is smooth: its range, max - min, is at most the limit.</summary>
+        /// <param name="plane">The plane, 0..1, row-major.</param>
+        /// <param name="w">The plane's width, in pixels.</param>
+        /// <param name="x0">The tile's left column.</param>
+        /// <param name="y0">The tile's top row, 0 at the top.</param>
+        /// <param name="size">The tile's side, in pixels; the tile lies inside the plane.</param>
+        /// <param name="maxRange">The largest range allowed, on the scale 0..1.</param>
+        /// <returns><c>true</c> when max - min is at most <paramref name="maxRange"/>.</returns>
         internal static bool IsSmooth(float[] plane, int w, int x0, int y0, int size, float maxRange)
         {
             float lo = float.PositiveInfinity, hi = float.NegativeInfinity;
@@ -116,7 +148,19 @@ namespace AstroPhotoAnalyzer
             return hi - lo <= maxRange;
         }
 
-        /// <summary>Sigma zgomotului pe o dala, in LSB de 8 biti: std(diff orizontal) / sqrt 2 * 255.</summary>
+        /// <summary>
+        /// The noise sigma on a tile, in 8-bit LSB: std(horizontal diff) / sqrt 2 * 255.
+        /// </summary>
+        /// <param name="plane">The plane, 0..1, row-major.</param>
+        /// <param name="w">The plane's width, in pixels.</param>
+        /// <param name="x0">The tile's left column.</param>
+        /// <param name="y0">The tile's top row, 0 at the top.</param>
+        /// <param name="size">
+        /// The tile's side, in pixels, at least 2; the tile lies inside the plane.
+        /// </param>
+        /// <returns>
+        /// The sigma, in 8-bit LSB: the population standard deviation of the differences.
+        /// </returns>
         internal static double SigmaLsb(float[] plane, int w, int x0, int y0, int size)
         {
             int n = size * (size - 1);

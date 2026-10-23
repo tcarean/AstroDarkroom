@@ -15,18 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StarAnalyzer.cs - masuratorile D1 si D2: cat de late sunt stelele, global si pe
-// regiuni. FWHM-ul e rezolutia REALA a imaginii: o stea de 3 px inseamna ca nimic mai
-// fin de 3 px nu exista in fisier, oricati pixeli ar avea el. De aici pleaca tabelul de
-// marimi, si de aici cade mitul "300 dpi".
+// StarAnalyzer.cs - the measurements D1 and D2: how wide the stars are, over the frame and per
+// region. The FWHM is the image's REAL resolution: a star of 3 px means that nothing finer than
+// 3 px exists in the file, however many pixels it has. The size table starts from here, and
+// here the "300 dpi" myth falls.
 //
-// CUM: candidat = pixel peste media planului + amplitudinea minima, care e maximul
-// ferestrei lui de 25x25.
-// Fundalul stelei = mediana marginii ferestrei; amplitudinea = varf - fundal, cu prag
-// jos (o pata slaba n-are profil) si prag sus (o stea saturata n-are jumatate). Latimea
-// la jumatate se ia pe orizontala si pe verticala, cu interpolare liniara subpixel, si
-// se mediaza. Exact scriptul de acceptanta - cu o diferenta: scriptul lua 20.000 de
-// candidati la intamplare, aici se iau TOTI. E determinist si mai bine esantionat.
+// HOW: candidate = a pixel above the plane's mean + the minimum amplitude, which is the maximum
+// of its 25x25 window.
+// The star's background = the median of the window's border; the amplitude = peak - background,
+// with a low threshold (a faint smudge has no profile) and a high threshold (a saturated star
+// has no half). The width at half maximum is taken on the horizontal and on the vertical, with
+// linear subpixel interpolation, and averaged. Exactly the acceptance script - with one
+// difference: the script took 20,000 candidates at random, here ALL are taken. It is
+// deterministic and better sampled.
 
 using System;
 using System.Collections.Generic;
@@ -34,8 +35,16 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer
 {
+    /// <summary>A star kept by the measurement.</summary>
+    /// <param name="X">The peak's column, in pixels.</param>
+    /// <param name="Y">The peak's row, in pixels, 0 at the top.</param>
+    /// <param name="Fwhm">
+    /// The width at half maximum, in pixels: the mean of the horizontal and vertical widths.
+    /// </param>
+    /// <param name="Peak">The peak's value on the reference plane, 0..1.</param>
     internal sealed record Star(int X, int Y, double Fwhm, double Peak);
 
+    /// <summary>A region of the frame and the median FWHM of the stars in it (D2).</summary>
     internal sealed record StarRegion
     {
         internal string Name { get; init; }
@@ -45,37 +54,60 @@ namespace AstroPhotoAnalyzer
         internal int H { get; init; }
         internal int Count { get; init; }
 
-        /// <summary>NaN sub Thresholds.RegionMinStars stele.</summary>
+        /// <summary>NaN under Thresholds.RegionMinStars stars.</summary>
         internal double FwhmMedian { get; init; }
         internal bool Known => !double.IsNaN(FwhmMedian);
     }
 
+    /// <summary>
+    /// The stars and the image's real resolution, over the frame and per region (D1, D2).
+    /// </summary>
     internal sealed record StarResult
     {
         internal IReadOnlyList<Star> Stars { get; init; }
         internal int Count => Stars.Count;
         internal bool Insufficient => Count < Thresholds.StarMinCount;
 
-        /// <summary>NaN cand sunt prea putine stele.</summary>
+        /// <summary>NaN when there are too few stars.</summary>
         internal double FwhmMedian { get; init; }
         internal double FwhmQ1 { get; init; }
         internal double FwhmQ3 { get; init; }
 
-        /// <summary>Centrul primul, apoi cele patru colturi.</summary>
+        /// <summary>The centre first, then the four corners.</summary>
         internal IReadOnlyList<StarRegion> Regions { get; init; }
 
-        /// <summary>Cel mai lat colt / centru; NaN daca centrul sau toate colturile sunt necunoscute.</summary>
+        /// <summary>
+        /// The widest corner / the centre; NaN if the centre or all the corners are unknown.
+        /// </summary>
         internal double CornerToCenterRatio { get; init; }
         internal bool SoftCorners => !double.IsNaN(CornerToCenterRatio) && CornerToCenterRatio > Thresholds.CornerSoftRatio;
 
-        /// <summary>Cati pixeli de detaliu real are imaginea pe latime: W / FWHM.</summary>
+        /// <summary>
+        /// How many pixels of real detail the image has across its width: W / FWHM.
+        /// </summary>
+        /// <param name="w">The width, in pixels.</param>
+        /// <returns>The width divided by the median FWHM; NaN with too few stars.</returns>
         internal double EffectiveDetailPx(int w) => Insufficient ? double.NaN : w / FwhmMedian;
     }
 
+    /// <summary>Measures how wide the stars are, over the frame and per region (D1, D2).</summary>
     internal static class StarAnalyzer
     {
-        const int Half = 12;   // fereastra 25 = 2 * 12 + 1
+        const int Half = 12;   // window 25 = 2 * 12 + 1
 
+        /// <summary>
+        /// Scans every pixel of the reference plane for star candidates and measures the width at
+        /// half maximum of each one kept.
+        /// </summary>
+        /// <param name="r">
+        /// The image, 0..1; the stars are looked for on its reference plane, the 12 px border left
+        /// out.
+        /// </param>
+        /// <returns>
+        /// The stars, the FWHM median and quartiles (NaN under
+        /// <see cref="Thresholds.StarMinCount"/> stars), the regions and the corner-to-centre
+        /// ratio.
+        /// </returns>
         internal static StarResult Analyze(Raster r)
         {
             float[] g = r.Reference;
@@ -133,7 +165,21 @@ namespace AstroPhotoAnalyzer
             };
         }
 
-        /// <summary>Maxim al ferestrei, cu egalitate permisa: un varf plat de doi pixeli e tot o stea.</summary>
+        /// <summary>
+        /// The maximum of the window, ties allowed: a flat peak of two pixels is still a star.
+        /// </summary>
+        /// <param name="g">The reference plane, 0..1, row-major.</param>
+        /// <param name="W">The plane's width, in pixels.</param>
+        /// <param name="x">
+        /// The candidate's column, at least 12 px from the left and right edges.
+        /// </param>
+        /// <param name="y">
+        /// The candidate's row, at least 12 px from the top and bottom edges.
+        /// </param>
+        /// <param name="v">The candidate's value.</param>
+        /// <returns>
+        /// <c>true</c> when no pixel of the 25 x 25 window is over <paramref name="v"/>.
+        /// </returns>
         static bool IsWindowMax(float[] g, int W, int x, int y, float v)
         {
             for (int dy = -Half; dy <= Half; dy++)
@@ -145,6 +191,20 @@ namespace AstroPhotoAnalyzer
             return true;
         }
 
+        /// <summary>
+        /// The median of the 96 pixels on the border of the 25 x 25 window around (x, y): the
+        /// star's base.
+        /// </summary>
+        /// <param name="g">The reference plane, 0..1, row-major.</param>
+        /// <param name="W">The plane's width, in pixels.</param>
+        /// <param name="x">
+        /// The window's centre column, at least 12 px from the left and right edges.
+        /// </param>
+        /// <param name="y">
+        /// The window's centre row, at least 12 px from the top and bottom edges.
+        /// </param>
+        /// <param name="buf">A buffer of 96 values, overwritten.</param>
+        /// <returns>The median of the border: the mean of its two middle values.</returns>
         static float BorderMedian(float[] g, int W, int x, int y, float[] buf)
         {
             int k = 0;
@@ -163,10 +223,17 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// Latimea profilului la nivelul <paramref name="half"/>: se coboara din centru pana
-        /// sub nivel in fiecare directie, apoi se interpoleaza liniar locul exact al
-        /// trecerii. Aceeasi functie ca in script, inclusiv epsilonul de la impartire.
+        /// The width of the profile at the level <paramref name="half"/>: from the centre it
+        /// descends in each direction until under the level, then interpolates linearly the exact
+        /// place of the crossing. The same function as in the script, the epsilon of the division
+        /// included.
         /// </summary>
+        /// <param name="line">The profile through the peak, the peak at the middle.</param>
+        /// <param name="half">The level: the base plus half the amplitude.</param>
+        /// <returns>
+        /// The width, in pixels; on a side that stays over the level to the line's end, the
+        /// crossing is extrapolated from the end.
+        /// </returns>
         internal static double WidthAtHalf(double[] line, double half)
         {
             int c = line.Length / 2, last = line.Length - 1;
@@ -179,6 +246,17 @@ namespace AstroPhotoAnalyzer
             return fr - fl;
         }
 
+        /// <summary>
+        /// The centre region (<see cref="Thresholds.CenterFraction"/> of each side) and the four
+        /// corners (<see cref="Thresholds.RegionFraction"/> of each side), each with the median
+        /// FWHM of its stars when it holds at least <see cref="Thresholds.RegionMinStars"/>.
+        /// </summary>
+        /// <param name="stars">The stars kept.</param>
+        /// <param name="W">The image's width, in pixels.</param>
+        /// <param name="H">The image's height, in pixels.</param>
+        /// <returns>
+        /// The centre first, then the corners: top-left, top-right, bottom-left, bottom-right.
+        /// </returns>
         static IReadOnlyList<StarRegion> Regions(List<Star> stars, int W, int H)
         {
             int cw = (int)(W * Thresholds.RegionFraction), ch = (int)(H * Thresholds.RegionFraction);
