@@ -372,7 +372,7 @@ namespace AstroPhotoAnalyzer.Wpf
                 rows.Add(Row("... din 8 biti", $"{q.LevelsUsedFrom8} folosite / {q.MissingFrom8} lipsa", q.Keep16BitMaster ? "pastreaza master-ul de 16 biti" : null,
                     "Acelasi lift, dar pornind din datele deja rotunjite la 8 biti, adica din fisierul de tipar. Fiecare nivel lipsa e o treapta in "
                         + "histograma, un gol pe care nu-l mai umple nimic, vizibil ca banding daca umbrele sunt netede. "
-                        + $"Peste {Fmt.Int(Thresholds.MissingLevelsWarn)} de niveluri lipsa, pastreaza master-ul de 16 biti: orice editare ulterioara "
+                        + $"Peste {Fmt.Int(Thresholds.MissingLevelsWarn)} de niveluri lipsa in plus fata de calea de 16 biti, pastreaza master-ul de 16 biti: orice editare ulterioara "
                         + "(recadrare, retus, alt print) pleaca din el, nu din fisierul de 8 biti. Cat timp laboratorul printeaza fisierul asa cum e, "
                         + "8 biti ajung; testul e despre ce ramane pentru mai tarziu."));
             }

@@ -26,10 +26,11 @@
 //
 // C4, the stress test: the same shadow lift applied to the 16-bit data and to the data already
 // quantised to 8, then the number of levels missing from the shadows. The figure that says
-// "Pastreaza master-ul de 16 biti" is not an opinion: it is the levels missing on the 8-bit path,
-// which the report sets beside those missing on the 16-bit one. The rule (Keep16BitMaster) reads
-// the 8-bit path alone, so an 8-bit file saved as 16 bits, missing as many either way, gets the
-// advice too.
+// "Pastreaza master-ul de 16 biti" is not an opinion: it is the levels missing on the 8-bit path
+// over those missing on the 16-bit one, which the report sets side by side. The rule
+// (Keep16BitMaster) reads the difference, so an 8-bit file saved as 16 bits, missing as many
+// either way, gets the upscale warning alone (ADR 0043; until the review of 2026-10-23 the rule
+// read the 8-bit path alone and gave both).
 
 using System;
 
@@ -75,7 +76,13 @@ namespace AstroPhotoAnalyzer
         internal int MissingFrom16 { get; init; }
         internal int LevelsUsedFrom8 { get; init; }
         internal int MissingFrom8 { get; init; }
-        internal bool Keep16BitMaster => Applicable && MissingFrom8 > Thresholds.MissingLevelsWarn;
+
+        /// <summary>
+        /// Keep the 16-bit master: more than <see cref="Thresholds.MissingLevelsWarn"/> levels are
+        /// missing on the 8-bit path over the 16-bit one (R-082, R-096). False where C4 does not
+        /// apply, and on an 8-bit upscale, whose two paths miss the same levels.
+        /// </summary>
+        internal bool Keep16BitMaster => Applicable && MissingFrom8 - MissingFrom16 > Thresholds.MissingLevelsWarn;
     }
 
     /// <summary>Measures what happens on the way to 8 bits (C1, C2, C4).</summary>

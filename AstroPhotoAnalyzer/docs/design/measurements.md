@@ -310,7 +310,9 @@ histogram).
 first rounded to 8 bits. Levels used strictly inside (`ShadowLiftLevelLo` 8,
 `ShadowLiftLevelHi` 120) and missing between the first and last used:
 `LevelsUsedFrom16` / `MissingFrom16` / `LevelsUsedFrom8` / `MissingFrom8`.
-`Keep16BitMaster` when MissingFrom8 > `MissingLevelsWarn` (20).
+`Keep16BitMaster` when MissingFrom8 - MissingFrom16 > `MissingLevelsWarn` (20): the levels 8 bits
+lose that 16 bits keep, so an upscale, missing the same on both paths, gets no such advice
+(ADR 0043).
 
 ### C3 - `JpegAnalyzer`
 

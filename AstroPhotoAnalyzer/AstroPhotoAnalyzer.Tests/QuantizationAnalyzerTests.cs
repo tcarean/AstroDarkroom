@@ -69,8 +69,27 @@ public class QuantizationAnalyzerTests
         Assert.InRange(q.RoundingP999, 0.45, 0.501);
     }
 
+    /// <summary>
+    /// An 8-bit file saved as 16 bits: every value is already an 8-bit level, so the lift from
+    /// the 16-bit data and from the data rounded to 8 bits miss the same levels, and the master
+    /// advice is not given; R-096's upscale warning covers it (ADR 0043).
+    /// </summary>
     [Fact]
-    public void TheShadowLiftStressShowsWhatEightBitsLoses()
+    public void R082_AnUpscaledSourceMissesTheSameLevelsOnBothPathsAndKeepsNoMaster()
+    {
+        Raster ramp = SyntheticRasters.Ramp(4, 4096, 0f, 0.5f);
+        foreach (float[] plane in ramp.Planes)
+            for (int i = 0; i < plane.Length; i++) plane[i] = RasterOps.Level8(plane[i]) * 257 / 65535f;
+        var q = QuantizationAnalyzer.Analyze(Sixteen(ramp));
+
+        Assert.True(q.Applicable);
+        Assert.Equal(q.MissingFrom16, q.MissingFrom8);
+        Assert.True(q.MissingFrom8 > Thresholds.MissingLevelsWarn, "lipsa din 8 biti: " + q.MissingFrom8);
+        Assert.False(q.Keep16BitMaster);
+    }
+
+    [Fact]
+    public void R082_TheShadowLiftStressShowsWhatEightBitsLoses()
     {
         // O rampa continua 0 -> 0.5: ridicata, foloseste toate nivelurile din umbre. Aceeasi
         // rampa cuantizata intai la 8 biti lasa goluri intre ele.

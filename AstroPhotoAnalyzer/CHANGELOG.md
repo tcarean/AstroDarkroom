@@ -13,6 +13,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   as R-140 and R-142 always said (ADR 0039). On `de_printat.png`, Rosetta and the Veil the
   uncapped Maxima mapped 21 to 41 % of the input range to white; capped, its peaks land at 0.892,
   0.899 and 0.828 instead of 0.92 (the code review of area 2, item 2).
+- `Pastreaza master-ul de 16 biti` is advised when the 8-bit path of the shadow-lift stress test
+  misses more than 20 levels over the 16-bit one, not over 20 in all: an 8-bit file saved as 16
+  bits, which misses the same levels either way, now gets the upscale warning alone (R-082,
+  R-096; ADR 0043; item 4).
 - The Dmax figure of the background section and of Anexa B is named for what it measures: the
   Dmax from which the as-is dust reaches paper black (`praful ajunge pe negrul hartiei de la Dmax
   2.28`), no longer `trece asa cum e`, which was false whenever the as-is sky was under L\* 15;
