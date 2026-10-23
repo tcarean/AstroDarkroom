@@ -252,7 +252,7 @@ namespace AstroPhotoAnalyzer
             return new GamutFigure { PctAll = total.All == 0 ? 0 : 100.0 * total.OutAll / total.All, PctByClass = per };
         }
 
-        /// <summary>The pixels counted by one row, or by all: in all, outside, and per class.</summary>
+        /// <summary>The pixels counted by one worker over the rows it took, or by all: in all, outside, and per class.</summary>
         sealed class Counts
         {
             internal long All, OutAll;

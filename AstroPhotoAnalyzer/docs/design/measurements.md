@@ -416,7 +416,7 @@ run; the others keep the grid's answer. Measured 2026-10-23 against the exact fi
 class within 0.17 points on the three image-profile pairs; 9 100 trips per curve on the FITS on
 baryta, 29 000 to 40 500 on its canvas, 1 700 on the PNG. `Measure` gives the share of the
 tonal subsample's pixels, in all and per class of the patch each pixel lies in, the rows run in
-parallel (`Parallel.For` with per-row counts merged under a lock; the package's configuration
+parallel (`Parallel.For`, each worker's counts over the rows it took merged under a lock; the package's configuration
 served eight threads in the probe with the single-threaded results); a table without an `Exact`
 trip, the hand-built ones of the tests, is judged by the interpolation alone.
 
