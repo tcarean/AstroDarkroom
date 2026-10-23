@@ -174,6 +174,7 @@ public class ParametersTests
         if (valid) Assert.Null(error);
         else
         {
+            Assert.NotNull(error);
             Assert.StartsWith("fundalul-tinta trebuie sa fie un numar strict intre 0 si 1 (se rotunjeste la 3 zecimale); a primit ", error);
             Assert.DoesNotContain("--target-bg", error);
             if (double.IsNaN(given)) Assert.EndsWith("a primit NaN, care nu e un numar", error);
