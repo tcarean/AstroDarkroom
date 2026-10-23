@@ -886,3 +886,146 @@ replaced as a link, the input untouched).
     (V-011's `curves.Maxima.lstar.clouds`, V-014's `curves.Maxima.lstar.peaks`).
   - **`check-design.ps1 -Since main`** listed four notes: `code-map.md`, `console.md`,
     `extending.md` and `thresholds.md`, read against the change; all hold.
+
+### Area 5, `AstroPhotoAnalyzer.Wpf/` (2026-10-24, `claude/Document-and-translate-the-window`)
+
+- **It ran in a session of its own, from area 4's prompt,** in three commits: the 25 files, the
+  false comments with the `window.md` fix the owner asked for, the wrap-up. The scratch tool,
+  `checks.sh`, `wrapdoc.py`, `drift.py` and the two probe projects came from area 4's
+  scratchpad, rebuilt in this session's; `checks.sh` takes the area's one prefix. A third probe,
+  `nanprobe` (a console project named `AstroPhotoAnalyzer.Wpf.Tests`, so that the window's
+  `InternalsVisibleTo` admits it), answers area 4's code question for the window, below.
+- **Areas 1 to 4's reviews, applied before writing:** the quoted Romanian output stays as the
+  user sees it ("asa cum e", "se calculeaza", "sfert", the button labels "Analizeaza",
+  "Calculeaza", "Foloseste", the window titles); "omul" is "the user"; every NaN, null and throw
+  is said where the code returns or accepts it; a claim about framework behaviour was checked
+  against the API (a null `PropertyChangedEventArgs` name means every property; `Progress<T>`
+  captures the synchronization context at construction; the DWM attribute numbers); every other
+  claim against its code line or its XAML (the maximised windows, the map label bound to `Name`,
+  the F1 command, the `TextBoxBase` test of the arrow keys).
+- **The counter's figures:** 48 types and 121 methods to touch (95 undocumented, 26 incomplete),
+  as area 4 said; `main` at 8718852 holds 159 types and 419 methods in all, against the plan's
+  158 and 392, the reviews' fixes having added members.
+- **`<inheritdoc/>` on 12 members:** the `Populate` and `Clear` overrides of the six tabs in
+  `ResultTabs.cs`, whose base says it all (fills the rows and sets `HasResult`; empties them).
+  Own text on the Curbe tab's two (it keeps the result and fills nothing; it returns the purpose
+  to print), on the WPF overrides (`OnStartup`, the two `OnRender`), the six converters' twelve
+  methods, `RelayCommand` and every constructor, as Assumption 3 says.
+- **The six one-line views** of `ResultViews.xaml.cs` are split into blocks, so that each
+  constructor has its comment; `tokens` finds the code identical.
+- **Four comments corrected, in a commit of their own (00ab833), each against its line:**
+  1. `MainViewModel.cs`, header: seven tabs, not six (the Curbe tab, R-146, was added after it).
+  2. `ResultTabs.cs`, header: the tabs phrase no sentence of diagnosis; the descriptions, guides
+     and checks are their own explanation, every number interpolated (ADR 0020, the rule
+     "Explanation is not diagnosis"), which the header, written before the explanation pass,
+     denied.
+  3. `RasterBitmaps.Whole`: the step brings the long side to at most `maxSide`, not under it
+     (3200 px at 1600 gives 1600); area 2's fact 13 again, on the window's copy of the formula.
+  4. `CloudLayer.Caption`: the example lacked the "(57 dale)" tail `MapViewModel` appends, and
+     the map's label shows `Name` alone (`MapWindow.xaml:115`), not the caption.
+
+  With them, `window.md`'s "under `PreviewMaxSide`" is "at most", as area 2 handed on and the
+  owner asked.
+- **Three omissions completed in the translation itself,** not in a commit of their own, since
+  each adds to a true sentence rather than replacing a false one: `SimulationRows` names the
+  footer beside the header; the Tonuri `Guide` names `Parameters` among the sources of its
+  figures (`Parameters.DmaxOf`, as `window.md` says); the `IccPickerViewModel` header's "reads
+  no profile" is rendered "parses no profile", since the view-model asks the core to read
+  (`IccPaperBlack.Installed`, `IccPaperBlack.Read`).
+- **Left as they are:** the `CurveCanvas` header's "the output axis goes up to the largest value
+  drawn" (the axis ends at `XMax` or above; `OnRender`'s own comment says it exactly); the
+  `MainViewModel` header's "a few seconds on 23 MP (the JPEG is half of them)", a figure not
+  re-measured; `RelayCommand`'s "see FlatCheck for why". The Romanian scan leaves one line in the
+  area, the quoted "se calculeaza" of `CurvesTab.cs` split across a line break, and 20 in the
+  whole code, all quoted output or "et al.", judged in areas 1 to 3 and here.
+- **Code question for the owner, area 4's question 1 answered for the window** (probed on
+  2026-10-24 with `TryBuild` on each field, `nanprobe` in this session's scratchpad): the
+  window accepts "NaN" in Dmax, the distance, the widths, the passepartout and the frame
+  (`OptionalNumber`'s `v <= lo` and `v > hi` are both false on NaN, `SizesOf`'s `v <= 0` too)
+  and builds the parameters with NaN in them; "Infinity" is refused by the five range-checked
+  fields (`> hi`) but accepted by the widths (`[Infinity]`) and by the aspect (`Infinity:1`
+  gives a ratio of infinity, `1:Infinity` 0, `Infinity:Infinity` NaN); "-Infinity" is refused
+  everywhere; the target background refuses all three with the core's message (R-023, ADR
+  0040). So the window matches the console, and a check in the core's `Parameters.Validate`
+  (or in `TargetBackgroundError`'s manner, per parameter) would cover both applications at
+  once, where a fix in `TryNum` and `ParseNumber` would be two. Recommendation: the core.
+- **Process question for the owner,** put here as the planning review asked: once this branch
+  is merged no code file carries a Romanian comment, and `CLAUDE.md`'s rule "Languages" still
+  says "most of them still carry Romanian ones: a file's comments are translated when it gets
+  its documentation comments ... until then a comment added to it is Romanian". Options:
+  (a) reword the rule now, on this branch at the owner's word: the C# comments are English (the
+  kit's ADR 0035), the tests' Romanian comments (29 of 54 files, about 246 lines) stay until a
+  task of their own, and the csproj and `Directory.Build.props` comments stay Romanian (ADR
+  0005); (b) leave it until the tests are translated. Recommendation: (a), with a dated note
+  on ADR 0005's Status; the tests' translation is a task of its own, not this one.
+- **Measured on 2026-10-24:**
+
+  | Commit | What | Gate | Tests |
+  |---|---|---|---|
+  | aa9639f | the 25 files | `== OK in 40s` | 380 + 58 |
+  | 00ab833 | the four false comments and `window.md` | `== OK in 47s` | 380 + 58 |
+
+  - **The counter on the area:** on `main`, 48 types and 121 methods to touch; on the branch 0
+    and 0. **The whole code shows 0 and 0:** 159 types, 419 methods, 12 of them `<inheritdoc/>`,
+    as "Then" below asked.
+  - **No code changed:** `tokens` finds the code of all 71 files identical to `main`'s, the 25 of
+    the area with changed comments or layout: +1093/-266 in the first commit.
+  - **No fact lost:** `facts` finds every number, ID and identifier of the old comments in the
+    new ones, except "ViewModel" in six files (now "view-model") and "15" (now
+    `DustCloudReportRows`, the threshold it was).
+  - **English:** on `main`, 251 of the 309 comment lines of the area held a Romanian function
+    word, in all 25 files; on the branch 1 of 1104, judged above.
+  - **Widths:** 52 comment lines of the area ran past 100 columns on `main`; none now.
+  - **ASCII:** no added line holds a character outside ASCII.
+  - **`/validate`:** not run; the area touches no numeric code (Assumption 10), and `tokens`
+    shows the core identical to `main`'s.
+  - **`check-design.ps1 -Since main`** listed four notes: `window.md` changed (the fix above);
+    `code-map.md`, `console.md` and `extending.md` were read against the change and hold.
+
+### Code review of area 5 (2026-10-24)
+
+`/code-review main...claude/Document-and-translate-the-window` ran at high effort: eight finder
+angles in one context, no verify pass, ten findings, each checked against its code line or the
+XAML by reading. The owner had the eight comment-only findings fixed and the two that need a code
+change kept as questions.
+
+- **Comments made true about the code,** in one commit:
+  - `ParameterFields.DmaxTextOf`: an unknown or null medium name throws ArgumentException
+    (`Parameters.MediumFromName`), which `TryBuild` does not catch; it does not fall back to the
+    default medium.
+  - `ParameterFields.TryBuild`: an empty field takes the core's default except the widths,
+    which an empty field refuses (`SizesOf`; `ParameterFieldsTests`'s R024 case).
+  - `MetricRow` and `ResultTabViewModel.Row`: the note is on its own line under the label and
+    the description (`Theme/Dark.xaml`, both row templates; `window.md`), not beside the value.
+  - `DarkTitleBar.DwmSetWindowAttribute`: a missing dwmapi.dll or entry point throws, which
+    `Apply` catches; "never an exception" was false.
+  - `MainWindow.GalleryKeys`: the arrow is marked handled whenever the gallery is the target,
+    also at its ends, where nothing moves.
+  - `RasterBitmaps.Region`: the width is clamped to the columns from x0 to the right edge, not
+    "the pixels left of x0".
+  - `ResultTabViewModel.Populate`: the six tabs of `ResultTabs.cs` fill their rows; the Curbe
+    tab's override only keeps the result until "Calculeaza".
+  - `ResultTabs.cs` and `PreviewWindowViewModel.cs`, headers: two figures are derived in the
+    window, the Preview guide's 1 / `ScreenStepBackFactor` and the amber legend's share as the
+    difference of the core's two shares; the headers said none was.
+- **Code questions for the owner** (on `main` before this branch; none changed here, as
+  Assumption 7 says):
+  1. **Saving the report can end the application.** `MainViewModel.SaveReport` opens a
+     `StreamWriter` without a try, `MainWindow.SaveReport` calls it from the click handler, and
+     the application handles no `DispatcherUnhandledException`: saving over a file another
+     program holds open, or into a folder that refuses writing, throws IOException or
+     UnauthorizedAccessException and closes the window with its analysis. The Curbe tab's
+     `Save` catches and shows `SaveError`. Recommendation: catch in `SaveReport` and show the
+     message as the Curbe tab does (a requirement row and a failing test first); a global
+     handler would hide the next such bug instead of naming it.
+  2. **The map legend computes the share of each class itself.** `MapViewModel.From` takes
+     `100.0 * classes.Count(c => c == cls) / classes.Length`, while the core has
+     `DustMap.FractionOf`, which `PrintStretchSimulator` uses for the report's class fractions;
+     the rule "Computed only in the core" is broken, and the header's "It computes nothing" is
+     false (left as it is with the code). The two give the same figure today. The same rule is
+     bent by the two figures the comments above now name (`1 / f`, the amber share).
+     Recommendation: call `100 * map.FractionOf(cls)` in the legend and correct the header with
+     it; have the core return the inverse factor and the amber share when the Preview code is
+     next touched.
+
+  These sit beside area 4's NaN question and the rule "Languages" question in "Area 5" above.

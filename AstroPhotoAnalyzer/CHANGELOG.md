@@ -84,14 +84,13 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   doc comment, a `<param>` or `<paramref>` naming no parameter, a parameter left untagged beside
   tagged ones, a `cref` that does not resolve or is ambiguous, and a `///` on something that is
   not a member; CS1591 stays muted, and no publish ships the XML files.
-- The code's comments are being translated to English and every type and method documented,
-  one area at a time (the kit's ADR 0035; the plan in
-  `docs/plans/2026-10-22-document-every-type-and-method-and-translate-the-comments.md`):
-  the whole core (`Input/`, `Analysis/`, `Report/`, `Runs/`, `Thresholds.cs`, `Parameters.cs`,
-  `ThirdParty.cs`, `Version.cs`) and the console are done: their 46 files, the 78 of their 100
-  types and all 277 methods that lacked a full comment, and the comments that said what the code
-  does not do, found in the translation, in probes on the build and in the reviews of areas 1 to
-  3. No code changed.
+- The code's comments are English and every type and method is documented, done one area at a
+  time (the kit's ADR 0035; the plan in
+  `docs/plans/2026-10-22-document-every-type-and-method-and-translate-the-comments.md`): the
+  core, the console and the window, all 71 files, the 126 of their 159 types and the 398 of
+  their 419 methods that lacked a full comment, and the comments that said what the code does
+  not do, found in the translation, in probes on the build and in the reviews of areas 1 to 4.
+  No code changed.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0036): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0009 rejects, and none

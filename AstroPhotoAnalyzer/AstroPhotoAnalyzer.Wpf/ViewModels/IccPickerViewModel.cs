@@ -15,19 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IccPickerViewModel.cs - fereastra "Din profil ICC..." (R-132): lista profilelor de
-// imprimanta instalate, cu Dmax-ul fiecaruia, si profilul ales. Nu citeste niciun profil
-// si nu calculeaza nimic: cifrele si propozitiile despre un profil sunt ale nucleului
-// (IccPaperBlack); aici e doar lista, selectia si textul care explica ce se citeste.
+// IccPickerViewModel.cs - the "Din profil ICC..." window (R-132): the list of the installed
+// printer profiles, with the Dmax of each, and the chosen profile. It parses no profile and
+// computes nothing: the figures and the sentences about a profile are the core's
+// (IccPaperBlack); here are only the list, the selection and the text that explains what is
+// read.
 
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>Un profil din lista: numele lui, fisierul, si ce a citit nucleul din el.</summary>
+    /// <summary>
+    /// A profile in the list: its name, its file, and what the core read from it.
+    /// </summary>
     public sealed class IccProfileRow
     {
+        /// <summary>Copies what the core read into bindable fields.</summary>
+        /// <param name="b">The core's reading of the profile, readable or not.</param>
         internal IccProfileRow(IccBlack b)
         {
             Name = b.Description;
@@ -41,22 +46,35 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Name { get; }
         public string File { get; }
 
-        /// <summary>"Dmax 2.41 (negrul la L* 3.5 fata de albul hartiei)", sau de ce nu s-a putut citi.</summary>
+        /// <summary>
+        /// "Dmax 2.41 (negrul la L* 3.5 fata de albul hartiei)", or why it could not be read.
+        /// </summary>
         public string Detail { get; }
 
-        /// <summary>Rezerva nucleului despre cifra (profilele CMYK); null cand nu e niciuna.</summary>
+        /// <summary>
+        /// The core's reservation about the figure (the CMYK profiles); null when there is none.
+        /// </summary>
         public string Note { get; }
         public bool Readable { get; }
 
-        /// <summary>Ce se scrie in campul Dmax; gol pe un profil care nu s-a putut citi.</summary>
+        /// <summary>
+        /// What goes into the Dmax field; empty on a profile that could not be read.
+        /// </summary>
         public string DmaxText { get; }
     }
 
+    /// <summary>
+    /// The profile window's state (R-132): the installed profiles, the one selected, and whether
+    /// "Foloseste" may take it.
+    /// </summary>
     public sealed class IccPickerViewModel : ObservableObject
     {
         IccProfileRow _selected;
 
-        /// <param name="folder">Folderul cu profile; null = cel al Windows-ului. Testele dau unul al lor.</param>
+        /// <summary>Lists the profiles of a folder and selects the first readable one.</summary>
+        /// <param name="folder">
+        /// The folder with the profiles; null = Windows's. The tests give one of their own.
+        /// </param>
         internal IccPickerViewModel(string folder = null)
         {
             Folder = folder ?? IccPaperBlack.InstalledFolder;
@@ -64,6 +82,7 @@ namespace AstroPhotoAnalyzer.Wpf
             _selected = Profiles.FirstOrDefault(p => p.Readable);
         }
 
+        /// <summary>The window's constructor: the installed profiles of Windows's folder.</summary>
         public IccPickerViewModel() : this(null) { }
 
         public string Folder { get; }
@@ -76,16 +95,23 @@ namespace AstroPhotoAnalyzer.Wpf
             set { if (Set(ref _selected, value)) Raise(nameof(CanUse)); }
         }
 
-        /// <summary>"Foloseste" e activ doar pe un profil din care s-a putut citi negrul.</summary>
+        /// <summary>
+        /// "Foloseste" is enabled only on a profile from which the black could be read.
+        /// </summary>
         public bool CanUse => _selected != null && _selected.Readable;
 
         /// <summary>
-        /// Un profil de oriunde, ales cu "Alege fisier...": intra in lista si e selectat, citit
-        /// sau nu - cel care nu se poate citi isi arata motivul in loc sa dispara.
+        /// A profile from anywhere, chosen with "Alege fisier...": it enters the list and is
+        /// selected, readable or not - one that cannot be read shows its reason instead of
+        /// disappearing.
         /// </summary>
+        /// <param name="path">
+        /// The profile's path; one already in the list is selected, not added again.
+        /// </param>
         public void AddFile(string path)
         {
-            // Un fisier deja in lista (ales a doua oara, sau unul dintre cele instalate) se selecteaza, nu se dubleaza.
+            // A file already in the list (chosen a second time, or one of the installed ones) is
+            // selected, not duplicated.
             IccProfileRow row = Profiles.FirstOrDefault(p => string.Equals(p.File, path, System.StringComparison.OrdinalIgnoreCase));
             if (row == null)
             {
@@ -96,7 +122,7 @@ namespace AstroPhotoAnalyzer.Wpf
             Selected = row;
         }
 
-        // Explicatie, nu diagnostic (ADR 0020): ce se citeste si de ce conteaza imprimanta.
+        // Explanation, not diagnosis (ADR 0020): what is read and why the printer matters.
         public string Explanation =>
             "Dmax-ul se citeste din tabela colorimetrica a profilului: negrul imprimantei fata de albul hartiei. "
             + "Alege profilul hartiei tale pe imprimanta care o va tipari - de obicei il da atelierul; "

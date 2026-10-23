@@ -15,14 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BusyOverlay.xaml.cs - doar legatura cu XAML-ul.
+// BusyOverlay.xaml.cs - only the link with the XAML.
 
 using System.Windows.Controls;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>The overlay shown over the result area while an analysis runs (R-110).</summary>
     public partial class BusyOverlay : UserControl
     {
+        /// <summary>Loads the XAML.</summary>
         public BusyOverlay() => InitializeComponent();
     }
 }

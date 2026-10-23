@@ -15,17 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// OverlayWindows.xaml.cs - legaturile cu XAML-ul ferestrelor de vizualizare: harta
-// praf / cer (R-130), preview-ul unui rand (R-131) si curba sugerata (R-147). Comportamentul e in ViewModel-uri;
-// aici doar bara de titlu intunecata si Esc.
+// OverlayWindows.xaml.cs - the links with the XAML of the viewing windows: the dust / sky map
+// (R-130), the preview of a row (R-131) and the suggested curve (R-147). The behaviour is in
+// the view-models; here only the dark title bar and Esc.
 
 using System.Windows;
 using System.Windows.Input;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>The map window (R-130), over a <see cref="MapViewModel"/>; non-modal.</summary>
     public partial class MapWindow : Window
     {
+        /// <summary>
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// </summary>
         public MapWindow()
         {
             InitializeComponent();
@@ -34,8 +38,14 @@ namespace AstroPhotoAnalyzer.Wpf
         }
     }
 
+    /// <summary>
+    /// The curve window (R-147), over a <see cref="CurveWindowViewModel"/>; non-modal.
+    /// </summary>
     public partial class CurveWindow : Window
     {
+        /// <summary>
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// </summary>
         public CurveWindow()
         {
             InitializeComponent();
@@ -44,8 +54,14 @@ namespace AstroPhotoAnalyzer.Wpf
         }
     }
 
+    /// <summary>
+    /// The preview window (R-131), over a <see cref="PreviewWindowViewModel"/>; non-modal.
+    /// </summary>
     public partial class PreviewWindow : Window
     {
+        /// <summary>
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// </summary>
         public PreviewWindow()
         {
             InitializeComponent();

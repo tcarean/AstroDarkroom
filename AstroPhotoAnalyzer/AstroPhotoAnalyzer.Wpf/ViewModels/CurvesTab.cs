@@ -15,13 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CurvesTab.cs - tabul Curbe (R-146) si fereastra curbei (R-147): galeria de previzualizari
-// ale curbelor sugerate, dovada fiecareia, tabelul si graficele unei curbe, salvarea.
+// CurvesTab.cs - the Curbe tab (R-146) and the curve window (R-147): the gallery of previews
+// of the suggested curves, the evidence of each, the table and the charts of one curve, the
+// saving.
 //
-// Nu calculeaza nimic: curbele, previzualizarile, cifrele si propozitiile vin de la
-// CurveRun; salvarea o face CurveExport. Aici sunt doar pozitia in galerie, comenzile si
-// formatarea punctelor pentru tabel. Spre deosebire de celelalte taburi, continutul nu
-// vine cu analiza: se cere cu "Calculeaza", fiindca costa si nu e diagnostic.
+// It computes nothing: the curves, the previews, the figures and the sentences come from
+// CurveRun; the saving is CurveExport's. Here are only the position in the gallery, the
+// commands and the formatting of the points for the table. Unlike the other tabs, the content
+// does not come with the analysis: it is asked for with "Calculeaza", because it costs and is
+// not diagnosis.
 
 using System;
 using System.Collections.Generic;
@@ -34,15 +36,15 @@ using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
-    /// <summary>O imagine a galeriei: originalul sau o curba sugerata.</summary>
+    /// <summary>An image of the gallery: the original or a suggested curve.</summary>
     public sealed class CurveGalleryItem : ObservableObject
     {
         bool _isCurrent;
 
         /// <summary>
-        /// E imaginea aratata. Dovezile tuturor imaginilor stau suprapuse sub galerie si se
-        /// vede doar a celei curente: zona are mereu inaltimea celei mai lungi, iar imaginea
-        /// nu-si schimba marimea si locul la rasfoire (R-146).
+        /// It is the image shown. The evidence of every image sits stacked under the gallery and
+        /// only the current one's is seen: the area always has the height of the longest, and
+        /// the image does not change its size or place while browsing (R-146).
         /// </summary>
         public bool IsCurrent { get => _isCurrent; internal set => Set(ref _isCurrent, value); }
 
@@ -51,23 +53,25 @@ namespace AstroPhotoAnalyzer.Wpf
         public int Width { get; init; }
         public int Height { get; init; }
 
-        /// <summary>Dovada curbei, rand cu rand; goala pentru original.</summary>
+        /// <summary>The curve's evidence, line by line; empty for the original.</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
 
-        /// <summary>Aceleasi randuri, cu semnul de avertisment al nucleului.</summary>
+        /// <summary>The same lines, with the core's warning mark.</summary>
         public IReadOnlyList<CurveEvidenceRow> EvidenceRows { get; init; } = Array.Empty<CurveEvidenceRow>();
 
         internal CurveSuggestion Suggestion { get; init; }
     }
 
-    /// <summary>Un rand al dovezii unei curbe; avertismentele (verificarile de hartie) se arata cu rosu.</summary>
+    /// <summary>
+    /// A line of a curve's evidence; the warnings (the paper checks) are shown in red.
+    /// </summary>
     public sealed class CurveEvidenceRow
     {
         public string Text { get; init; }
         public bool IsWarning { get; init; }
     }
 
-    /// <summary>Un rand al tabelului de puncte, cum se tasteaza in Siril.</summary>
+    /// <summary>A row of the table of points, as it is typed into Siril.</summary>
     public sealed class CurvePointRow
     {
         public string Label { get; init; }
@@ -77,32 +81,47 @@ namespace AstroPhotoAnalyzer.Wpf
         public string LstarAfter { get; init; }
     }
 
-    /// <summary>Unde sta o clasa pe axa intrarilor.</summary>
+    /// <summary>Where a class sits on the input axis.</summary>
     public sealed class CurveMarker
     {
         public double X { get; init; }
         public string Label { get; init; }
     }
 
+    /// <summary>
+    /// The curve window's content (R-147): the table of control points, the two charts and the
+    /// sentences around them, all formatted once by <see cref="From"/>.
+    /// </summary>
     public sealed class CurveWindowViewModel
     {
         public string Title { get; init; }
         public string Caption { get; init; }
         public IReadOnlyList<CurvePointRow> Rows { get; init; }
 
-        /// <summary>Curba esantionata pe 0..1, si doar umbrele, pe 0..ShadowLimit.</summary>
+        /// <summary>The curve sampled on 0..1, and the shadows alone, on 0..ShadowLimit.</summary>
         public IReadOnlyList<Point> Chart { get; init; }
         public IReadOnlyList<Point> ShadowChart { get; init; }
         public double ShadowLimit { get; init; }
         public string ShadowHeading { get; init; }
 
-        /// <summary>Ce inseamna coloanele tabelului, sub el.</summary>
+        /// <summary>What the table's columns mean, under it.</summary>
         public string PointsNote { get; init; }
 
-        /// <summary>Punctele de control si pozitiile celor cinci clase.</summary>
+        /// <summary>The control points, and the positions of the five classes.</summary>
         public IReadOnlyList<Point> ControlPoints { get; init; }
         public IReadOnlyList<CurveMarker> Markers { get; init; }
 
+        /// <summary>
+        /// Formats one suggestion for its window: a row per control point, with the L* before
+        /// and after on the labelled ones, the two sampled charts and the core's sentences.
+        /// </summary>
+        /// <param name="s">The suggestion; its curve and evidence are read.</param>
+        /// <param name="imageName">The image's file name, for the title.</param>
+        /// <param name="method">
+        /// The path the classes were made on, for the note under the table.
+        /// </param>
+        /// <param name="colour">Whether the image is colour, for the caption and the note.</param>
+        /// <returns>The view-model.</returns>
         internal static CurveWindowViewModel From(CurveSuggestion s, string imageName, DustMethod method, bool colour)
         {
             ToneCurve c = s.Curve;
@@ -139,24 +158,30 @@ namespace AstroPhotoAnalyzer.Wpf
         }
     }
 
+    /// <summary>
+    /// The Curbe tab (R-146): empty after an analysis, filled by "Calculeaza" with the gallery of
+    /// the original and the suggested curves, browsed with Next and Previous, each openable in
+    /// the curve window and saveable as a new FITS.
+    /// </summary>
     public sealed class CurvesTabViewModel : ResultTabViewModel
     {
         AnalysisResult _result;
 
-        // Curbele se calculeaza o data, pentru print; setul pentru ecran e acelasi fara
-        // verificarile de hartie (CurveRun.ForScreen). Schimbarea scopului nu mai calculeaza
-        // nimic si nu reface nicio imagine: alege intre cele doua seturi de randuri.
+        // The curves are computed once, for print; the set for the screen is the same without
+        // the paper checks (CurveRun.ForScreen). Changing the purpose computes nothing more and
+        // remakes no image: it chooses between the two sets of rows.
         CurveSet _print, _screen;
         IReadOnlyList<BitmapSource> _images = Array.Empty<BitmapSource>();
         IReadOnlyList<CurveGalleryItem> _items = Array.Empty<CurveGalleryItem>();
         int _index, _width = Thresholds.CurvePreviewDefaultWidth, _height = Thresholds.CurvePreviewDefaultHeight;
 
-        // Fiecare calcul pornit are numarul lui; unul care se termina dupa ce s-a deschis alta
-        // imagine, sau dupa ce s-a pornit altul, nu mai atinge nimic.
+        // Each computation started has its number; one that ends after another image was opened,
+        // or after another was started, touches nothing any more.
         int _run;
         bool _isPrint = true, _busy, _isProblem;
         string _message, _anchorSource, _saveMessage, _saveError;
 
+        /// <summary>Makes the five commands; the tab starts empty and disabled.</summary>
         public CurvesTabViewModel()
         {
             Calculate = new RelayCommand(() => _ = ComputeAsync(), () => _result != null && !IsBusy);
@@ -173,10 +198,12 @@ namespace AstroPhotoAnalyzer.Wpf
         public ICommand OpenCurve { get; }
         public ICommand SaveAs { get; }
 
-        /// <summary>Fereastra deschide fereastra curbei; view-model-ul doar o cere.</summary>
+        /// <summary>The window opens the curve window; the view-model only asks for it.</summary>
         public event Action<CurveWindowViewModel> CurveRequested;
 
-        /// <summary>Fereastra intreaba unde se salveaza, cu numele propus, apoi apeleaza Save.</summary>
+        /// <summary>
+        /// The window asks where to save, with the proposed name, then calls Save.
+        /// </summary>
         public event Action<string> SaveRequested;
 
         public bool IsPrint
@@ -186,7 +213,7 @@ namespace AstroPhotoAnalyzer.Wpf
             {
                 if (!Set(ref _isPrint, value)) return;
                 Raise(nameof(IsScreen));
-                // Scopul schimba doar dovada: aceleasi curbe, aceleasi imagini, aceeasi pozitie.
+                // The purpose changes only the evidence: the same curves, images and position.
                 if (HasGallery) ShowItems(_index);
             }
         }
@@ -204,29 +231,54 @@ namespace AstroPhotoAnalyzer.Wpf
         public CurveGalleryItem Current => _items.Count == 0 ? null : _items[_index];
         public string Position => _items.Count == 0 ? "" : $"{_index + 1} / {_items.Count}";
 
-        /// <summary>De ce nu s-a sugerat nimic, sau eroarea calculului; null cand galeria exista.</summary>
+        /// <summary>
+        /// Why nothing was suggested, or the computation's error; null when the gallery exists.
+        /// </summary>
         public string Message { get => _message; private set => Set(ref _message, value); }
 
-        /// <summary>Mesajul e un motiv al nucleului pentru care nu exista curbe (R-142, R-146): fereastra il arata cu rosu. Fals pentru "se calculeaza" si pentru o eroare.</summary>
+        /// <summary>
+        /// The message is a reason of the core's for which there are no curves (R-142, R-146):
+        /// the window shows it in red. False for "se calculeaza" and for an error.
+        /// </summary>
         public bool IsProblem { get => _isProblem; private set => Set(ref _isProblem, value); }
 
-        /// <summary>De unde vin ancorele (R-141).</summary>
+        /// <summary>Where the anchors come from (R-141).</summary>
         public string AnchorSource { get => _anchorSource; private set => Set(ref _anchorSource, value); }
 
         public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
-        /// <summary>Folderul imaginii, de unde porneste dialogul de salvare.</summary>
+        /// <summary>
+        /// The image's folder, where the save dialog starts; null without a file on disk.
+        /// </summary>
         public string InputFolder => _result?.FullPath == null || !File.Exists(_result.FullPath) ? null : Path.GetDirectoryName(_result.FullPath);
 
-        /// <summary>Marimea zonei galeriei, in pixeli: o pune vederea, o foloseste "Calculeaza".</summary>
+        /// <summary>
+        /// The size of the gallery area, in pixels: the view sets it, "Calculeaza" uses it.
+        /// </summary>
+        /// <param name="width">
+        /// The width in device pixels; 0 or less leaves the size as it was.
+        /// </param>
+        /// <param name="height">
+        /// The height in device pixels; 0 or less leaves the size as it was.
+        /// </param>
         internal void SetGallerySize(int width, int height)
         {
             if (width > 0 && height > 0) { _width = width; _height = height; }
         }
 
+        /// <summary>
+        /// Whether the current item is a suggestion, not the original: what OpenCurve and SaveAs
+        /// need.
+        /// </summary>
+        /// <returns>True on a suggestion; false on the original or with no gallery.</returns>
         bool HasCurve() => Current?.Suggestion != null;
 
+        /// <summary>
+        /// Keeps the result and enables "Calculeaza"; unlike the other tabs, it fills nothing
+        /// until the user asks (R-146). Any computation in progress is abandoned.
+        /// </summary>
+        /// <param name="r">The analysis; not null.</param>
         internal override void Populate(AnalysisResult r)
         {
             Reset();
@@ -235,6 +287,10 @@ namespace AstroPhotoAnalyzer.Wpf
             (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
+        /// <summary>
+        /// Empties the tab, drops the result, returns the purpose to print and disables
+        /// "Calculeaza".
+        /// </summary>
         internal override void Clear()
         {
             base.Clear();
@@ -244,7 +300,10 @@ namespace AstroPhotoAnalyzer.Wpf
             (Calculate as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Goleste tabul si paraseste orice calcul in curs: rezultatul lui nu mai e al nimanui.</summary>
+        /// <summary>
+        /// Empties the tab and abandons any computation in progress: its result is nobody's any
+        /// more.
+        /// </summary>
         void Reset()
         {
             _run++;
@@ -257,7 +316,16 @@ namespace AstroPhotoAnalyzer.Wpf
             RaiseGallery();
         }
 
-        /// <summary>Ce ruleaza "Calculeaza", sincron: curbele imaginii, la marimea data a galeriei.</summary>
+        /// <summary>
+        /// What "Calculeaza" runs, synchronously: the image's curves, at the given size of the
+        /// gallery.
+        /// </summary>
+        /// <param name="width">
+        /// The gallery's width in pixels; 0 or less keeps the current size.
+        /// </param>
+        /// <param name="height">
+        /// The gallery's height in pixels; 0 or less keeps the current size.
+        /// </param>
         internal void Compute(int width, int height)
         {
             SetGallerySize(width, height);
@@ -265,6 +333,11 @@ namespace AstroPhotoAnalyzer.Wpf
             Show(CurveRun.Execute(_result, CurvePurpose.Print, _width, _height));
         }
 
+        /// <summary>
+        /// "Calculeaza": runs the core on a pool thread at the gallery's size, with "se
+        /// calculeaza" shown meanwhile; the outcome, the set or the error's message, is applied
+        /// only if no Reset or newer computation came in between.
+        /// </summary>
         internal async Task ComputeAsync()
         {
             AnalysisResult result = _result;
@@ -291,7 +364,11 @@ namespace AstroPhotoAnalyzer.Wpf
             }
         }
 
-        /// <summary>Un set calculat pentru print: imaginile se fac o data, randurile pentru amandoua scopurile.</summary>
+        /// <summary>
+        /// Takes a set computed for print: the images are made once, the rows for both purposes;
+        /// a set with a problem empties the gallery and shows the problem in red.
+        /// </summary>
+        /// <param name="print">The core's set for print; not null.</param>
         void Show(CurveSet print)
         {
             SaveMessage = null; SaveError = null;
@@ -311,23 +388,32 @@ namespace AstroPhotoAnalyzer.Wpf
             var images = new List<BitmapSource> { Bitmap(print.OriginalPreview) };
             foreach (CurveSuggestion s in print.Suggestions) images.Add(Bitmap(s.Preview));
             _images = images;
-            // Rasterele previzualizarilor nu mai trebuie: bitmapurile le tin locul. Curbele si
-            // dovezile raman, pentru fereastra curbei si pentru salvare.
+            // The previews' rasters are no longer needed: the bitmaps take their place. The
+            // curves and the evidence stay, for the curve window and for saving.
             _print = Slim(_print);
             _screen = Slim(_screen);
             Message = null;
             ShowItems(0);
         }
 
+        /// <summary>A preview raster as a frozen bitmap, pixel for pixel.</summary>
+        /// <param name="image">The preview the core made, already at the gallery's size.</param>
+        /// <returns>The bitmap.</returns>
         static BitmapSource Bitmap(Raster image) => RasterBitmaps.Region(image, 0, 0, image.W, image.H);
 
+        /// <summary>
+        /// A copy of a set without its preview rasters, which the bitmaps replace.
+        /// </summary>
+        /// <param name="set">The set; not null.</param>
+        /// <returns>The copy, with the curves and the evidence kept.</returns>
         static CurveSet Slim(CurveSet set) => set with
         {
             OriginalPreview = null,
             Suggestions = set.Suggestions.Select(s => s with { Preview = null }).ToArray(),
         };
 
-        /// <summary>Galeria pentru scopul ales, din imaginile deja facute.</summary>
+        /// <summary>The gallery for the chosen purpose, from the images already made.</summary>
+        /// <param name="index">The item to show; clamped into the gallery.</param>
         void ShowItems(int index)
         {
             CurveSet set = _isPrint ? _print : _screen;
@@ -338,6 +424,11 @@ namespace AstroPhotoAnalyzer.Wpf
             RaiseGallery();
         }
 
+        /// <summary>One gallery item, with its evidence lines formatted by the core.</summary>
+        /// <param name="name">The item's name, as the gallery shows it.</param>
+        /// <param name="image">Its bitmap.</param>
+        /// <param name="s">The suggestion; null for the original, which has no evidence.</param>
+        /// <returns>The item, not yet current.</returns>
         static CurveGalleryItem Item(string name, BitmapSource image, CurveSuggestion s) => new()
         {
             Name = name,
@@ -350,12 +441,17 @@ namespace AstroPhotoAnalyzer.Wpf
             Suggestion = s,
         };
 
+        /// <summary>Moves the position in the gallery, stopping at its ends.</summary>
+        /// <param name="step">+1 for Next, -1 for Previous.</param>
         void Move(int step)
         {
             _index = Math.Clamp(_index + step, 0, Math.Max(0, _items.Count - 1));
             RaiseGallery();
         }
 
+        /// <summary>
+        /// Marks the current item, raises the gallery properties and requeries the four commands.
+        /// </summary>
         void RaiseGallery()
         {
             for (int i = 0; i < _items.Count; i++) _items[i].IsCurrent = i == _index;
@@ -363,7 +459,10 @@ namespace AstroPhotoAnalyzer.Wpf
             foreach (ICommand c in new[] { Next, Previous, OpenCurve, SaveAs }) (c as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Salveaza curba aratata intr-un FITS nou (R-145); eroarea se spune, nu se arunca.</summary>
+        /// <summary>
+        /// Saves the curve shown into a new FITS (R-145); an error is told, not thrown.
+        /// </summary>
+        /// <param name="path">The file to write, as the save dialog gave it.</param>
         internal void Save(string path)
         {
             try

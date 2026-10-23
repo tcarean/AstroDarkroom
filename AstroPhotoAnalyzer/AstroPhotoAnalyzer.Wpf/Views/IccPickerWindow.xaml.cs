@@ -15,17 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// IccPickerWindow.xaml.cs - legatura cu XAML-ul ferestrei "Din profil ICC..." (R-132).
-// Comportamentul e in IccPickerViewModel; aici sunt dialogul de fisier (ViewModel-ul nu
-// deschide dialoguri), inchiderea cu rezultat si bara de titlu intunecata.
+// IccPickerWindow.xaml.cs - the link with the XAML of the "Din profil ICC..." window (R-132).
+// The behaviour is in IccPickerViewModel; here are the file dialog (the view-model opens no
+// dialogs), the closing with a result and the dark title bar.
 
 using System.Windows;
 using System.Windows.Input;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The profile window (R-132), modal: closes with true when the user takes a readable
+    /// profile, with false or null otherwise; the caller reads the view-model's selection.
+    /// </summary>
     public partial class IccPickerWindow : Window
     {
+        /// <summary>
+        /// Loads the XAML, asks for the dark title bar once there is a handle; Esc closes.
+        /// </summary>
         public IccPickerWindow()
         {
             InitializeComponent();
@@ -35,6 +42,11 @@ namespace AstroPhotoAnalyzer.Wpf
 
         IccPickerViewModel Vm => (IccPickerViewModel)DataContext;
 
+        /// <summary>
+        /// "Alege fisier...": the open dialog for a profile from anywhere, added to the list.
+        /// </summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
         void ChooseFile(object sender, RoutedEventArgs e)
         {
             var dlg = new Microsoft.Win32.OpenFileDialog
@@ -46,17 +58,31 @@ namespace AstroPhotoAnalyzer.Wpf
             if (dlg.ShowDialog(this) == true) Vm.AddFile(dlg.FileName);
         }
 
+        /// <summary>
+        /// "Foloseste": closes with true, only when the selected profile is readable.
+        /// </summary>
+        /// <param name="sender">The button; not read.</param>
+        /// <param name="e">The click; not read.</param>
         void Use(object sender, RoutedEventArgs e)
         {
             if (Vm.CanUse) DialogResult = true;
         }
 
+        /// <summary>
+        /// A double-click on a row is "Foloseste"; on the scroll bar or the list's blank it is
+        /// nothing.
+        /// </summary>
+        /// <param name="sender">The list; not read.</param>
+        /// <param name="e">The click; its button and original source are read.</param>
         void UseOnDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            // Dublu-clic pe un rand, nu pe bara de derulare sau pe golul listei.
+            // A double-click on a row, not on the scroll bar or on the list's empty space.
             if (e.ChangedButton == MouseButton.Left && e.OriginalSource is DependencyObject d && ItemsControl_ContainerOf(d) && Vm.CanUse) DialogResult = true;
         }
 
+        /// <summary>Whether an element sits inside one of the list's item containers.</summary>
+        /// <param name="d">The element clicked.</param>
+        /// <returns>True inside a row of the list; false elsewhere in it.</returns>
         bool ItemsControl_ContainerOf(DependencyObject d)
             => System.Windows.Controls.ItemsControl.ContainerFromElement(List, d) != null;
     }

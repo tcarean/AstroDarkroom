@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AppIcon.cs - icoana aplicatiei, la marimea cea mai mare din fisier. Un <Image> care
-// primeste direct .ico-ul ia cadrul pe care il gaseste primul - la 72 px pe ecran poate
-// fi cel de 16, scalat. "Despre" vrea cadrul de 256, micsorat.
+// AppIcon.cs - the application's icon, at the largest size in the file. An <Image> given the
+// .ico directly takes the frame it finds first - at 72 px on screen that can be the 16 px one,
+// scaled up. "Despre" wants the 256 px frame, scaled down.
 
 using System;
 using System.Linq;
@@ -25,11 +25,16 @@ using System.Windows.Media.Imaging;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>The icon both executables share, read from this assembly's resources.</summary>
     internal static class AppIcon
     {
         internal static readonly Uri Source =
             new Uri("pack://application:,,,/AstroPhotoAnalyzer.Wpf;component/Icon/AstroPhotoAnalyzer.ico");
 
+        /// <summary>Decodes the .ico and picks its widest frame.</summary>
+        /// <returns>
+        /// The widest frame, frozen when it can be; 256 px in the icon the build ships.
+        /// </returns>
         internal static BitmapSource Largest()
         {
             var decoder = BitmapDecoder.Create(Source, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);

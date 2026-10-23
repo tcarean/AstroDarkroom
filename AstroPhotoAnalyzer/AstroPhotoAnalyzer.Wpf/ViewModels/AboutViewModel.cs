@@ -15,17 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// AboutViewModel.cs - ce arata fereastra "Despre". Nu formuleaza nimic: versiunea si
-// copyright-ul din VersionInfo, garantia din RunReport (aceeasi ca la --help),
-// componentele din ThirdParty.
+// AboutViewModel.cs - what the "Despre" window shows. It phrases nothing: the version and the
+// copyright from VersionInfo, the warranty from RunReport (the same as at --help), the
+// components from ThirdParty.
 
 using System.Collections.Generic;
 using System.Linq;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The texts of the "Despre" window (R-119): the headings and the lead sentences are its own,
+    /// the version, the warranty and the components the core's.
+    /// </summary>
     public sealed class AboutViewModel
     {
+        /// <summary>Copies the core's component list into <see cref="ComponentRow"/>s.</summary>
         public AboutViewModel()
         {
             Components = ThirdParty.Components
@@ -39,7 +44,7 @@ namespace AstroPhotoAnalyzer.Wpf
         public string Tagline => "Masoara o astrofoto finita si spune cum sa fie trimisa la print.";
         public string LicenceHeading => "LICENTA";
 
-        /// <summary>Notita GPLv3 sectiunea 5(d), intr-un singur paragraf.</summary>
+        /// <summary>The GPLv3 section 5(d) notice, in a single paragraph.</summary>
         public string Warranty => string.Join(" ", RunReport.WarrantyLines);
         public string LicenseUrl => RunReport.LicenseUrl;
         public string LicenseLinkLabel => "Textul complet al GPLv3";

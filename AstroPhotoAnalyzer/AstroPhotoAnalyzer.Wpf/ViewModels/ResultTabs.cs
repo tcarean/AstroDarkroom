@@ -15,12 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ResultTabs.cs - cele sase taburi cu rezultate. Fiecare primeste AnalysisResult prin
-// Populate si il transforma in randuri; niciunul nu calculeaza o cifra si nu formuleaza o
-// propozitie - textele vin din Recommendations si din ReportWriter, cifrele din Fmt.
+// ResultTabs.cs - the six tabs with results. Each receives the AnalysisResult through Populate
+// and turns it into rows; none phrases a sentence of diagnosis - those come from
+// Recommendations and from ReportWriter, the figures from Fmt. The descriptions, the guides and
+// the checks are the view-models' own explanation, every number in them interpolated from
+// Thresholds, Parameters or the result (ADR 0020); one is derived here, the Preview guide's
+// 1 / ScreenStepBackFactor, when the print is larger than the 100 % view.
 //
-// Toate intr-un fisier fiindca sunt toate acelasi lucru: o lista de randuri si un bool
-// HasResult. Cand unul va creste, isi ia fisierul lui.
+// All in one file because they are all the same thing: a list of rows and a bool HasResult.
+// When one grows, it takes a file of its own.
 
 using System;
 using System.Collections.Generic;
@@ -28,24 +31,46 @@ using System.Linq;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The base of the seven tabs: <see cref="HasResult"/>, filled by <see cref="Populate"/>
+    /// from an analysis and emptied by <see cref="Clear"/>.
+    /// </summary>
     public abstract class ResultTabViewModel : ObservableObject
     {
         bool _has;
         public bool HasResult { get => _has; protected set => Set(ref _has, value); }
 
+        /// <summary>
+        /// Takes an analysis and sets <see cref="HasResult"/>: the six tabs of this file fill
+        /// their rows from it; the Curbe tab only keeps it, until "Calculeaza".
+        /// </summary>
+        /// <param name="r">The analysis; not null.</param>
         internal abstract void Populate(AnalysisResult r);
 
+        /// <summary>
+        /// Empties the tab and clears <see cref="HasResult"/>; an override empties its rows too.
+        /// </summary>
         internal virtual void Clear()
         {
             HasResult = false;
         }
 
+        /// <summary>A <see cref="MetricRow"/>, for the tabs' row lists.</summary>
+        /// <param name="label">The row's label.</param>
+        /// <param name="value">The formatted value.</param>
+        /// <param name="note">The note, on its own line under the label; null for none.</param>
+        /// <param name="description">What the row measures; null for none.</param>
+        /// <returns>The row.</returns>
         protected static MetricRow Row(string label, string value, string note = null, string description = null)
             => new MetricRow { Label = label, Value = value, Note = note, Description = description };
     }
 
     // ------------------------------------------------------------ Raport
 
+    /// <summary>
+    /// The Raport tab (R-112): the overall verdict, one section per topic with its
+    /// recommendations, and the full report text behind a toggle.
+    /// </summary>
     public sealed class ReportTabViewModel : ResultTabViewModel
     {
         IReadOnlyList<SectionRow> _sections = Array.Empty<SectionRow>();
@@ -56,10 +81,13 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<SectionRow> Sections { get => _sections; private set => Set(ref _sections, value); }
         public string VerdictLabel { get => _verdict; private set => Set(ref _verdict, value); }
 
-        /// <summary>Raportul complet, cu banner - exact ce se salveaza in Raport.txt.</summary>
+        /// <summary>
+        /// The full report, with the banner - exactly what is saved in Raport.txt.
+        /// </summary>
         public string Text { get => _text; private set => Set(ref _text, value); }
         public bool ShowText { get => _showText; set => Set(ref _showText, value); }
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             var sections = new List<SectionRow>();
@@ -89,6 +117,7 @@ namespace AstroPhotoAnalyzer.Wpf
             HasResult = true;
         }
 
+        /// <inheritdoc/>
         internal override void Clear()
         {
             base.Clear();
@@ -100,9 +129,17 @@ namespace AstroPhotoAnalyzer.Wpf
 
     // ------------------------------------------------------------ Tonuri
 
+    /// <summary>
+    /// The Tonuri tab (R-113): the tonal rows with their descriptions, the L* histogram with
+    /// paper black marked, the simulation table with a preview button per row, the cloud rows,
+    /// the level-L* ladder, the guide, and the requests for the map and preview windows.
+    /// </summary>
     public sealed class TonesTabViewModel : ResultTabViewModel
     {
-        /// <summary>Propozitia rosie de sub tabel cand fisierul n-are WCS (R-113); aceeasi in fereastra hartii.</summary>
+        /// <summary>
+        /// The red sentence under the table when the file has no WCS (R-113); the same in the map
+        /// window.
+        /// </summary>
         public const string NoWcsSentence = "Fisierul nu are WCS: norii nu au fost identificati dupa coordonate astrometrice.";
 
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
@@ -118,50 +155,79 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
         public IReadOnlyList<double> Histogram { get => _hist; private set => Set(ref _hist, value); }
 
-        /// <summary>Negrul hartiei, in L*, ca pozitie in histograma (cosurile sunt 0..100).</summary>
+        /// <summary>
+        /// Paper black, in L*, as a position in the histogram (the bins are 0..100).
+        /// </summary>
         public double PaperBlack { get => _paperBlack; private set => Set(ref _paperBlack, value); }
 
-        /// <summary>Tabelul simularii: antetul, apoi un rand pe tinta, fiecare cu butonul lui de preview (R-113, R-131).</summary>
+        /// <summary>
+        /// The simulation table: the header, then a row per target, each with its preview
+        /// button, then the footer (R-113, R-131).
+        /// </summary>
         public IReadOnlyList<SimulationRowItem> SimulationRows { get => _simulation; private set => Set(ref _simulation, value); }
 
-        /// <summary>Definitia prafului si a cerului in uz, sub tabel (R-044).</summary>
+        /// <summary>
+        /// The definition of the dust and the sky in use, under the table (R-044).
+        /// </summary>
         public string Definition { get => _definition; private set => Set(ref _definition, value); }
 
-        /// <summary>Tinta exacta, cele doua la Dmax vecin, Dmax-ul de la care praful ajunge pe negrul hartiei (R-043).</summary>
+        /// <summary>
+        /// The exact target, the two at the neighbouring Dmax, the Dmax from which the dust reaches
+        /// paper black (R-043).
+        /// </summary>
         public string ExactLine { get => _exactLine; private set => Set(ref _exactLine, value); }
 
-        /// <summary>Propozitia rosie fara WCS; null cu WCS (ascunsa).</summary>
+        /// <summary>The red sentence without a WCS; null with one (hidden).</summary>
         public string NoWcsWarning { get => _noWcs; private set => Set(ref _noWcs, value); }
 
-        /// <summary>Norii catalogati cu randul lor, toti, ca text mono (raportul ii arata pe primii 15).</summary>
+        /// <summary>
+        /// The catalogued clouds with a row, all of them, as mono text (the report shows the first
+        /// DustCloudReportRows).
+        /// </summary>
         public IReadOnlyList<string> CloudRows { get => _clouds; private set => Set(ref _clouds, value); }
 
-        /// <summary>Tabela nivel - L* a reperelor tabului, din TonalAnalyzer.LstarLadder; doar in fereastra.</summary>
+        /// <summary>
+        /// The level - L* table of the tab's landmarks, from TonalAnalyzer.LstarLadder; in the
+        /// window only.
+        /// </summary>
         public IReadOnlyList<string> LadderRows { get => _ladder; private set => Set(ref _ladder, value); }
 
-        /// <summary>Panoul "cum se citeste tabul". Cifrele din el vin din Thresholds si ColorMath, nu sunt scrise de mana.</summary>
+        /// <summary>
+        /// The "how to read the tab" panel. Its figures come from Thresholds, Parameters and
+        /// ColorMath, none typed in.
+        /// </summary>
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
-        /// <summary>Tooltip-ul butonului Preview al unui rand: pragul vine din Thresholds, nu e tastat.</summary>
+        /// <summary>
+        /// The tooltip of a row's Preview button: the threshold comes from Thresholds, not typed.
+        /// </summary>
         public string PreviewTooltip => $"Imaginea la tinta randului, cu ce e sub negrul hartiei si sub L* {Fmt.F0(Thresholds.LowSeparationLstar)} vopsit";
 
-        /// <summary>Deschide harta praf / cer (R-130). Fereastra o face cine asculta MapRequested; aici nu se deschide nimic.</summary>
+        /// <summary>
+        /// Opens the dust / sky map (R-130). Whoever listens to MapRequested opens the window;
+        /// nothing opens here.
+        /// </summary>
         public System.Windows.Input.ICommand OpenMap { get; }
 
         public event Action<MapViewModel> MapRequested;
         public event Action<PreviewWindowViewModel> PreviewRequested;
 
+        /// <summary>Makes the map command, enabled once there is a result.</summary>
         public TonesTabViewModel()
         {
             OpenMap = new RelayCommand(() => { if (_result != null) MapRequested?.Invoke(BuildMap()); }, () => _result != null);
         }
 
-        /// <summary>Harta pentru rezultatul curent, construita la cerere (R-130).</summary>
+        /// <summary>The map for the current result, built on request (R-130).</summary>
+        /// <returns>A new map view-model; a result must be present.</returns>
         internal MapViewModel BuildMap() => MapViewModel.From(_result);
 
-        /// <summary>Preview-ul unui rand al simularii, construit la cerere (R-131).</summary>
+        /// <summary>The preview of a simulation row, built on request (R-131).</summary>
+        /// <param name="row">A row of the current result's simulation table.</param>
+        /// <returns>A new preview view-model; a result must be present.</returns>
         internal PreviewWindowViewModel BuildPreview(SimulationRow row) => PreviewWindowViewModel.From(_result, row);
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             TonalResult t = r.Tonal;
@@ -192,15 +258,16 @@ namespace AstroPhotoAnalyzer.Wpf
                 Row($"Peste L* {Fmt.F0(Thresholds.HighlightLstar)}", Fmt.Pct(t.PctAboveHighlight),
                     description: "Pixelii mai luminosi decat griul de mijloc: stele, nucleu, nebulozitate stralucitoare. "
                         + "Arata cat din cadru poarta luminile."),
-                // Cate o percentila pe rand: pe un singur rand valoarea ar fi cea mai lata din
-                // panel si ar ingusta coloana descrierilor pentru toate randurile.
+                // One percentile per line: on a single line the value would be the widest in the
+                // panel and would narrow the description column for every row.
                 Row("Percentile canal referinta", string.Join("\n", TonalResult.PercentileRanks.Zip(t.ReferencePercentiles, (p, v) => $"{"p" + Fmt.F1(p),-6} = {Fmt.F1(v),5}")),
                     description: "Nivelul (0..255) sub care cade un procent din pixelii canalului de referinta: p50 e fundalul, "
                         + "p0.1 cel mai adanc negru care conteaza, p99.9 si p100 stelele cele mai luminoase. p100 = 255 inseamna pixeli saturati."),
             };
             Histogram = t.LstarHistogramPct;
             PaperBlack = t.PaperBlackLstar;
-            // Acelasi text mono ca in Anexa B, plus butonul de preview pe fiecare rand (antetul n-are).
+            // The same mono text as in Anexa B, plus the preview button on every row (the header
+            // has none).
             var sim = new List<SimulationRowItem> { new SimulationRowItem { Text = ReportWriter.SimulationHeader } };
             foreach (SimulationRow row in s.Rows)
             {
@@ -229,6 +296,7 @@ namespace AstroPhotoAnalyzer.Wpf
             (OpenMap as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
+        /// <inheritdoc/>
         internal override void Clear()
         {
             base.Clear();
@@ -245,7 +313,11 @@ namespace AstroPhotoAnalyzer.Wpf
             (OpenMap as RelayCommand)?.RaiseCanExecuteChanged();
         }
 
-        // Textul panoului: explicatie, nu diagnostic - nu depinde de imagine, doar de praguri.
+        /// <summary>
+        /// The panel's text: explanation, not diagnosis - it does not depend on the image, only
+        /// on the thresholds.
+        /// </summary>
+        /// <returns>The six paragraphs, "CUM SE CITESTE TABUL".</returns>
         static IReadOnlyList<GuideParagraph> GuideParagraphs()
         {
             double barytaBlack = ColorMath.PaperBlackLstar(Parameters.DmaxOf(PrintMedium.Baryta));
@@ -327,6 +399,10 @@ namespace AstroPhotoAnalyzer.Wpf
 
     // ------------------------------------------------------------ Export
 
+    /// <summary>
+    /// The Export tab (R-114): the JPEG table with its guide, and the rows of the TIFF size, the
+    /// rounding, the stress test and the plateau, each with its description.
+    /// </summary>
     public sealed class ExportTabViewModel : ResultTabViewModel
     {
         IReadOnlyList<string> _jpeg = Array.Empty<string>();
@@ -335,10 +411,14 @@ namespace AstroPhotoAnalyzer.Wpf
 
         public IReadOnlyList<string> JpegRows { get => _jpeg; private set => Set(ref _jpeg, value); }
 
-        /// <summary>Paragrafele de sub tabelul JPEG: cum se masoara, ce e fiecare coloana, ce se recomanda.</summary>
+        /// <summary>
+        /// The paragraphs under the JPEG table: how it is measured, what each column is, what is
+        /// recommended.
+        /// </summary>
         public IReadOnlyList<GuideParagraph> JpegGuide { get => _jpegGuide; private set => Set(ref _jpegGuide, value); }
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             QuantizationResult q = r.Quantization;
@@ -348,7 +428,8 @@ namespace AstroPhotoAnalyzer.Wpf
                 .ToList();
             JpegGuide = JpegGuideParagraphs();
 
-            // Descrierile: ce masoara randul, cu pragurile din Thresholds, nu scrise de mana.
+            // The descriptions: what the row measures, with the thresholds from Thresholds, not
+            // typed in.
             string lo = Fmt.Int(Thresholds.ShadowLiftLevelLo), hi = Fmt.Int(Thresholds.ShadowLiftLevelHi);
             var rows = new List<MetricRow>
             {
@@ -389,7 +470,11 @@ namespace AstroPhotoAnalyzer.Wpf
             HasResult = true;
         }
 
-        // Textul de sub tabelul JPEG: explicatie, nu diagnostic - nu depinde de imagine, doar de praguri.
+        /// <summary>
+        /// The text under the JPEG table: explanation, not diagnosis - it does not depend on the
+        /// image, only on the thresholds.
+        /// </summary>
+        /// <returns>The five paragraphs.</returns>
         static IReadOnlyList<GuideParagraph> JpegGuideParagraphs()
         {
             string count = Fmt.F0(Thresholds.JpegErrorCountLevels);
@@ -436,6 +521,10 @@ namespace AstroPhotoAnalyzer.Wpf
 
     // ------------------------------------------------------------ Rezolutie
 
+    /// <summary>
+    /// The Rezolutie tab (R-115): the star rows with their descriptions, the size table as the
+    /// report writes it, and the dpi - distance ladder.
+    /// </summary>
     public sealed class ResolutionTabViewModel : ResultTabViewModel
     {
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
@@ -445,16 +534,20 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
         public IReadOnlyList<string> SizeRows { get => _sizes; private set => Set(ref _sizes, value); }
 
-        /// <summary>Scara dpi - distanta, doar in fereastra: raportul n-o repeta la fiecare imagine.</summary>
+        /// <summary>
+        /// The dpi - distance ladder, in the window only: the report does not repeat it for every
+        /// image.
+        /// </summary>
         public IReadOnlyList<string> DpiRows { get => _dpi; private set => Set(ref _dpi, value); }
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             StarResult s = r.Stars;
             PrintSizeResult ps = r.Size;
-            // Descrierile: ce masoara randul, cu pragurile din Thresholds, nu scrise de mana.
-            // Colturile nu au descriere - le acopera cea de pe centru, si de patru ori acelasi
-            // text ar incarca panoul.
+            // The descriptions: what the row measures, with the thresholds from Thresholds, not
+            // typed in. The corners have no description - the centre's covers them, and four
+            // times the same text would load the panel.
             string minStars = Fmt.Int(Thresholds.StarMinCount), regionStars = Fmt.Int(Thresholds.RegionMinStars);
             string fwhmDesc = "Latimea unei stele la jumatatea inaltimii ei, in pixeli: cel mai mic detaliu pe care il tine imaginea, "
                 + "indiferent cati pixeli are fisierul. Se masoara pe linia si pe coloana prin varf si se ia media; mediana pe toate "
@@ -510,6 +603,10 @@ namespace AstroPhotoAnalyzer.Wpf
 
     // ------------------------------------------------------------ Fundal
 
+    /// <summary>
+    /// The Culoare tab (R-116): the background's colour and the cast rows with their
+    /// descriptions, the region table as the report writes it, and its guide.
+    /// </summary>
     public sealed class BackgroundTabViewModel : ResultTabViewModel
     {
         IReadOnlyList<MetricRow> _rows = Array.Empty<MetricRow>();
@@ -519,14 +616,19 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<MetricRow> Rows { get => _rows; private set => Set(ref _rows, value); }
 
         /// <summary>
-        /// Tabelul regiunilor, ca in raport, cu o singura deosebire: semnul "!" spune si
-        /// daca abaterea e colorata sau neutra - in raport distinctia e in recomandari.
+        /// The region table, as in the report, with one difference: the "!" mark also says
+        /// whether the departure is coloured or neutral - in the report the distinction is in
+        /// the recommendations.
         /// </summary>
         public IReadOnlyList<string> RegionRows { get => _regions; private set => Set(ref _regions, value); }
 
-        /// <summary>Paragrafele de sub tabelul regiunilor: ce sunt, ce e delta, ce e "!", colorat sau neutru.</summary>
+        /// <summary>
+        /// The paragraphs under the region table: what they are, what delta is, what "!" is,
+        /// coloured or neutral.
+        /// </summary>
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             BackgroundResult b = r.Background;
@@ -562,10 +664,19 @@ namespace AstroPhotoAnalyzer.Wpf
             HasResult = true;
         }
 
-        /// <summary>"sfert" pentru 0.25, altfel procentul - ca textul sa ramana romanesc cat timp pragul e cel de acum.</summary>
+        /// <summary>
+        /// "sfert" for 0.25, otherwise the percentage - so that the text stays Romanian while the
+        /// threshold is today's.
+        /// </summary>
+        /// <param name="f">The fraction, 0..1.</param>
+        /// <returns>"sfert", or "20 %" and the like.</returns>
         static string Fraction(double f) => Math.Abs(f - 0.25) < 1e-9 ? "sfert" : Fmt.F0(f * 100) + " %";
 
-        // Textul de sub tabel: explicatie, nu diagnostic - nu depinde de imagine, doar de praguri.
+        /// <summary>
+        /// The text under the table: explanation, not diagnosis - it does not depend on the
+        /// image, only on the thresholds.
+        /// </summary>
+        /// <returns>The five paragraphs.</returns>
         static IReadOnlyList<GuideParagraph> GuideParagraphs()
         {
             string grad = Fmt.F0(Thresholds.CornerGradientLevels);
@@ -611,15 +722,24 @@ namespace AstroPhotoAnalyzer.Wpf
 
     // ------------------------------------------------------------ Preview
 
+    /// <summary>
+    /// The Preview tab (R-117): the guide card with the screen-versus-paper rule, and the tiles
+    /// - centre at 100 % and 200 %, the four corners, the whole frame, the print simulation and
+    /// the crop - each with what to check in it.
+    /// </summary>
     public sealed class PreviewTabViewModel : ResultTabViewModel
     {
         IReadOnlyList<PreviewTile> _tiles = Array.Empty<PreviewTile>();
         IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
         public IReadOnlyList<PreviewTile> Tiles { get => _tiles; private set => Set(ref _tiles, value); }
 
-        /// <summary>Cardul de deasupra dalelor: regula ecran - hartie, cu pasul inapoi calculat pe imagine.</summary>
+        /// <summary>
+        /// The card above the tiles: the screen - paper rule, with the step back computed on the
+        /// image.
+        /// </summary>
         public IReadOnlyList<GuideParagraph> Guide { get => _guide; private set => Set(ref _guide, value); }
 
+        /// <inheritdoc/>
         internal override void Populate(AnalysisResult r)
         {
             Raster img = r.Raster;
@@ -627,7 +747,7 @@ namespace AstroPhotoAnalyzer.Wpf
             int cw = Math.Min(480, img.W), ch = Math.Min(320, img.H);
             int cx = (img.W - cw) / 2, cy = (img.H - ch) / 2;
 
-            // Ce verifici in fiecare dala: text de indrumare, nu diagnostic. Pragurile din Thresholds.
+            // What to check in each tile: guidance, not diagnosis. The thresholds from Thresholds.
             const string corner = "Fata de centru: stele alungite spre colt = coma; intr-un singur colt = tilt; in toate patru = curbura de camp. "
                 + "Colt mai luminos sau mai cald = gradientul din tabul Culoare; benzi la margine = cadrele stivei. Un colt rau poate iesi prin decupaj.";
 
@@ -689,7 +809,15 @@ namespace AstroPhotoAnalyzer.Wpf
             HasResult = true;
         }
 
-        // Cardul de sus: regula ecran - hartie. Cifrele vin din PrintSizeResult si Thresholds.
+        /// <summary>
+        /// The card at the top: the screen - paper rule. The figures come from PrintSizeResult and
+        /// Thresholds.
+        /// </summary>
+        /// <param name="ps">
+        /// The size analysis: the screen-equivalent width, the step-back factor and the reference
+        /// row.
+        /// </param>
+        /// <returns>The four paragraphs, "CUM SE FOLOSESTE PREVIEW-UL".</returns>
         static IReadOnlyList<GuideParagraph> GuideParagraphs(PrintSizeResult ps)
         {
             string eq = Fmt.F0(ps.ScreenEquivalentWidthCm);
@@ -729,6 +857,7 @@ namespace AstroPhotoAnalyzer.Wpf
             };
         }
 
+        /// <inheritdoc/>
         internal override void Clear()
         {
             base.Clear();

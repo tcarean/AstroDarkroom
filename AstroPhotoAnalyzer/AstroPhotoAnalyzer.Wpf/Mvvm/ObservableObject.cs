@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ObservableObject.cs - INotifyPropertyChanged, scris de mana. Nu s-a adus un framework
-// MVVM pentru douazeci de linii; regula dependentelor e regula "Package notices" din
-// CLAUDE.md, cu motivele in docs/design/dependencies.md.
+// ObservableObject.cs - INotifyPropertyChanged, written by hand. No MVVM framework was brought
+// in for twenty lines; the rule on dependencies is the rule "Package notices" in CLAUDE.md,
+// with the reasons in docs/design/dependencies.md.
 //
-// Publica, nu internal, fiindca o mostenesc ViewModel-urile, care trebuie sa fie publice
-// ca sa le vada legarea WPF. Consecinta e utila: un ViewModel public NU poate expune un
-// tip internal din nucleu, deci ce se vede pe ecran trece obligatoriu prin campuri simple.
+// Public, not internal, because the view-models inherit it, and they must be public for WPF's
+// binding to see them. The consequence is useful: a public view-model CANNOT expose an internal
+// type of the core, so what reaches the screen necessarily passes through simple fields.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -29,13 +29,33 @@ using System.Runtime.CompilerServices;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The base of every view-model: raises <see cref="PropertyChanged"/> for the property that
+    /// calls <see cref="Raise"/> or <see cref="Set{T}"/>.
+    /// </summary>
     public abstract class ObservableObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>Raises <see cref="PropertyChanged"/> for one property.</summary>
+        /// <param name="name">
+        /// The property's name; left out, the compiler fills in the calling member's. Null, given
+        /// on purpose, tells WPF that every property changed.
+        /// </param>
         protected void Raise([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
+        /// <summary>
+        /// Stores a value in a backing field and raises <see cref="PropertyChanged"/> when it
+        /// differs from the old one, by the type's default equality.
+        /// </summary>
+        /// <typeparam name="T">The property's type.</typeparam>
+        /// <param name="field">The backing field.</param>
+        /// <param name="value">The new value; null is allowed where the type allows it.</param>
+        /// <param name="name">The property's name; left out, the calling member's.</param>
+        /// <returns>
+        /// True when the value changed and the event was raised; false when it was equal.
+        /// </returns>
         protected bool Set<T>(ref T field, T value, [CallerMemberName] string name = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;

@@ -15,10 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// App.xaml.cs - pornirea aplicatiei.
+// App.xaml.cs - the application's start.
 //
-// Imaginea poate veni din linia de comanda: un shortcut, sau "Deschide cu" din Explorer.
-// Nu e pentru scripting - pentru asta exista consola.
+// The image can come from the command line: a shortcut, or "Open with" from Explorer. It is not
+// for scripting - the console exists for that.
 
 using System.Globalization;
 using System.IO;
@@ -26,8 +26,16 @@ using System.Windows;
 
 namespace AstroPhotoAnalyzer.Wpf
 {
+    /// <summary>
+    /// The WPF application: pins the culture, shows the main window, opens the file given.
+    /// </summary>
     public partial class App : Application
     {
+        /// <summary>
+        /// Starts the application: the invariant culture first, then the main window, shown and
+        /// started with the first existing file among the arguments, or with none.
+        /// </summary>
+        /// <param name="e">WPF's startup arguments; <c>e.Args</c> is read.</param>
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
@@ -41,15 +49,15 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Fixeaza cultura pe cea invarianta, pentru numere.
+        /// Pins the culture to the invariant one, for numbers.
         ///
-        /// Consola obtine acelasi lucru din InvariantGlobalization, dar aia nu se poate
-        /// folosi aici: fara date de cultura WPF nu poate lega nimic si fereastra crapa
-        /// la incarcarea XAML-ului. Raportul trece oricum prin Fmt cu cultura invarianta
-        /// explicita; asta e a doua plasa, pentru orice text care n-ar trece.
+        /// The console gets the same from InvariantGlobalization, but that cannot be used here:
+        /// without culture data WPF can bind nothing and the window crashes while loading the
+        /// XAML. The report goes through Fmt with an explicit invariant culture anyway; this is
+        /// the second net, for any text that would not.
         ///
-        /// DefaultThreadCurrentCulture, nu doar CurrentCulture: analiza ruleaza pe un fir
-        /// din pool prin Task.Run, si acela si-ar lua cultura sistemului.
+        /// DefaultThreadCurrentCulture, not only CurrentCulture: the analysis runs on a pool
+        /// thread through Task.Run, and that one would take the system's culture.
         /// </summary>
         internal static void ForceInvariantNumbers()
         {
@@ -57,7 +65,13 @@ namespace AstroPhotoAnalyzer.Wpf
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         }
 
-        /// <summary>Primul argument care e un fisier existent; orice altceva se ignora tacut.</summary>
+        /// <summary>
+        /// The first argument that is an existing file; anything else is silently ignored.
+        /// </summary>
+        /// <param name="args">The command-line arguments; null or empty gives null.</param>
+        /// <returns>
+        /// The first argument that names an existing file, as given; null when none does.
+        /// </returns>
         internal static string FileFromArgs(string[] args)
         {
             if (args == null) return null;
