@@ -15,37 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PreviewReader.cs - decodarea previzualizarii JPEG, prin ImageSharp.
+// PreviewReader.cs - decoding the JPEG preview, through ImageSharp.
 //
-// SINGURUL fisier care numeste un tip din SixLabors.ImageSharp, exact cum RawReader.cs e
-// singurul care numeste unul din Sdcb.LibRaw. Aceeasi izolare, din acelasi motiv - si
-// aici e in plus punctul de schimb daca licenta pachetului se muta vreodata: alternativa
-// masurata (StbImageSharp, Unlicense/MIT) a dat mediane identice pe aceleasi
-// previzualizari, deci inlocuirea ar fi de un fisier. Vezi THIRD-PARTY-NOTICES.md.
+// The ONLY file that names a type from SixLabors.ImageSharp, exactly as RawReader.cs is the only
+// one that names one from Sdcb.LibRaw. The same isolation, for the same reason - and here it is
+// also the swap point should the package's licence ever move: the measured alternative
+// (StbImageSharp, Unlicense/MIT) gave identical medians on the same previews, so the replacement
+// would be one file. See THIRD-PARTY-NOTICES.md.
 //
-// Patru lucruri pe care decodarea trebuie sa le nimereasca, verificate in sursa
-// ImageSharp, nu in documentatie:
-//   - Profilul ICC inglobat NU se aplica pixelilor. O previzualizare convertita nu mai e
-//     ce a stat pe ecran, iar diferenta n-ar aparea in niciun test. Pe 3.1.x asta e
-//     singurul comportament posibil - decodorul pastreaza profilul ca metadata si atat.
-//     Daca pachetul se urca vreodata la 4.x, acolo exista DecoderOptions.ColorProfileHandling
-//     cu un membru Convert, si trebuie setat EXPLICIT pe Preserve. (4.x aduce si un task
-//     MSBuild care cere cheie de licenta pe Release; vezi FlatCheck.Core.csproj.)
-//   - TargetSize scaleaza in timpul IDCT-ului, nu dupa. Se foloseste doar cand fisierul
-//     ofera numai o previzualizare mare (vezi RawReader.TryCapturePreview); pe cea de
-//     marime medie se decodeaza la dimensiunea nativa, ca niciun reesantionaj sa nu atinga
-//     pixelii.
-//   - Se decodeaza in Rgb24, ca un JPEG CMYK/YCCK sa ajunga tot RGB.
-//   - Orice esec intoarce null. O previzualizare care nu se decodeaza nu e un motiv sa
-//     pice rularea - inseamna doar ca comutatorul din fereastra ramane stins.
+// Four things the decoding has to get right, checked in ImageSharp's source, not in its
+// documentation:
+//   - The embedded ICC profile is NOT applied to the pixels. A converted preview is no longer
+//     what was on the screen, and the difference would show in no test. On 3.1.x this is the
+//     only possible behaviour - the decoder keeps the profile as metadata and that is all. If
+//     the package is ever raised to 4.x, there DecoderOptions.ColorProfileHandling exists with
+//     a Convert member, and it must be set EXPLICITLY to Preserve. (4.x also brings an MSBuild
+//     task that asks for a licence key on Release; see FlatCheck.Core.csproj.)
+//   - TargetSize scales during the IDCT, not after. It is used only when the file offers only a
+//     large preview (see RawReader.TryCapturePreview); the medium-sized one is decoded at its
+//     native size, so that no resampling touches the pixels.
+//   - It decodes into Rgb24, so that a CMYK/YCCK JPEG still arrives as RGB.
+//   - Any failure returns null. A preview that does not decode is no reason for the run to fail
+//     - it only means the window's switch stays off.
 //
-// Masurat pe D3300, cu ImageSharp 4.1.1, previzualizarea din DSC_0091.NEF:
-//   1620x1080, nativ            16 ms,  5 MB alocati
-//   6000x4000, nativ           460 ms, 69 MB
-//   6000x4000, TargetSize 2000 485 ms,  9 MB
-// Deci TargetSize taie MEMORIA, nu timpul - entropia se decodeaza oricum, doar IDCT-ul
-// iese mai mic. Ce face decodarea ieftina e alegerea previzualizarii medii, in RawReader;
-// TargetSize e plasa de siguranta pentru aparatele care n-au decat una mare.
+// Measured on a D3300, with ImageSharp 4.1.1, the preview of DSC_0091.NEF (the project pins
+// 3.1.11, ADR 0010; these figures were not re-measured on it):
+//   1620x1080, native            16 ms,  5 MB allocated
+//   6000x4000, native           460 ms, 69 MB
+//   6000x4000, TargetSize 2000  485 ms,  9 MB
+// So TargetSize cuts the MEMORY, not the time - the entropy is decoded anyway, only the IDCT
+// comes out smaller. What makes the decoding cheap is the choice of the medium preview, in
+// RawReader; TargetSize is the safety net for the cameras that have only a large one.
 
 using System;
 using System.IO;
@@ -55,23 +55,26 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace FlatCheck
 {
+    /// <summary>Turns an <see cref="EmbeddedPreview"/> into pixels, or into null.</summary>
     internal static class PreviewReader
     {
-        // ATENTIE: niciun camp de tip ImageSharp aici, din acelasi motiv ca la RawReader -
-        // campurile se rezolva la incarcarea tipului, corpurile de metoda abia la JIT.
-        // Pinuit de PreviewReaderTests.HoldsNoImageSharpTypedFields.
+        // CAREFUL: no field of an ImageSharp type here, for the same reason as in RawReader -
+        // the fields are resolved when the type loads, the method bodies only at JIT. Pinned by
+        // PreviewReaderTests.HoldsNoImageSharpTypedFields.
 
         /// <summary>
-        /// Latura lunga la care se aduce o previzualizare prea mare. Peste asta se plateste
-        /// timp si memorie pentru pixeli pe care o histograma nu-i deosebeste.
+        /// The long side a preview that is too large is brought to. Above it, time and memory
+        /// are paid for pixels a histogram cannot tell apart.
         /// </summary>
         internal const int TargetLongSide = 2000;
 
         /// <summary>
-        /// Previzualizarea ca pixeli. Un bitmap trece direct; un JPEG trece prin ImageSharp.
-        /// Null la orice esec, inclusiv cand assembly-ul ImageSharp lipseste de langa
-        /// executabil - atunci se degradeaza la "fara previzualizare", nu crapa tabul.
+        /// The preview as pixels. A bitmap passes straight through; a JPEG goes through
+        /// ImageSharp. Null on any failure, including when the ImageSharp assembly is missing
+        /// beside the executable - then it degrades to "no preview", the tab does not crash.
         /// </summary>
+        /// <param name="p">The captured preview; null allowed.</param>
+        /// <returns>The pixels, or null.</returns>
         internal static PreviewImage Decode(EmbeddedPreview p)
         {
             if (p == null || p.Data == null || p.Data.Length == 0) return null;
@@ -94,11 +97,17 @@ namespace FlatCheck
             catch (Exception) { return null; }
         }
 
+        /// <summary>
+        /// Decodes a JPEG preview into RGB, shrunk to about <see cref="TargetLongSide"/> only
+        /// when its long side is over 1.5 times that. Throws on a corrupt stream;
+        /// <see cref="Decode"/> catches it.
+        /// </summary>
+        /// <param name="p">A JPEG preview with bytes.</param>
+        /// <returns>The pixels.</returns>
         static PreviewImage DecodeJpeg(EmbeddedPreview p)
         {
-            // Numai cand e chiar prea mare: pe o previzualizare de marime medie nu se
-            // reesantioneaza nimic. Fereastra de 20% si medianele nu au nevoie de mai
-            // mult de ~2000 px pe latura lunga.
+            // Only when it really is too large: on a medium-sized preview nothing is resampled.
+            // The 20% window and the medians need no more than ~2000 px on the long side.
             Size? target = null;
             int longSide = Math.Max(p.W, p.H);
             if (longSide > TargetLongSide * 3 / 2 && p.W > 0 && p.H > 0)
@@ -107,8 +116,9 @@ namespace FlatCheck
                 target = new Size(Math.Max(1, (int)(p.W * k)), Math.Max(1, (int)(p.H * k)));
             }
 
-            // SkipMetadata: EXIF si ICC nu se citesc deloc - nu ne trebuie, si asa nici nu
-            // exista tentatia (sau, pe 4.x, optiunea) de a aplica profilul pixelilor.
+            // SkipMetadata: EXIF and ICC are not read at all - we do not need them, and this way
+            // there is not even the temptation (or, on 4.x, the option) to apply the profile to
+            // the pixels.
             var options = new DecoderOptions
             {
                 SkipMetadata = true,

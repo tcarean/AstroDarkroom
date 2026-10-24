@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Metrics.cs - geometria si metricile pure. Fiecare functie e o transformare
-// deterministica a rasterului; niciuna nu scrie nimic si niciuna nu are stare.
+// Metrics.cs - the geometry and the pure metrics. Each function is a deterministic transform of
+// the raster; none writes anything and none has state.
 //
-// ATENTIE la centrul folosit de apelanti: modelul radial si asimetria se calculeaza
-// in jurul centrului SENZORULUI, nu al varfului fitat de FitCenter. Vezi
-// docs/design/pipeline.md, "The core idea" (ADR 0013) - centrarea pe varf ar absorbi
-// exact gradientul cautat.
+// MIND the centre the callers use: the radial model and the asymmetry are computed around the
+// centre of the SENSOR, not around the vertex fitted by FitCenter. See docs/design/pipeline.md,
+// "The core idea" (ADR 0013) - centring on the vertex would absorb exactly the gradient being
+// looked for.
 
 using System;
 using System.Collections.Generic;
@@ -29,38 +29,48 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The geometry of a flat (the paraboloid fit, the radial model) and the metrics the
+    /// structure, ratio, light and smoothing analyzers compute on it. Every metric is a ratio or
+    /// a fraction, so ISO and gain cancel.
+    /// </summary>
     internal static class Metrics
     {
-        // ========================================================= geometrie
+        // ========================================================= geometry
         /// <summary>
-        /// Fitul unui paraboloid pe log(I). Din acelasi fit ies doua lucruri diferite:
+        /// The fit of a paraboloid on log(I). Two different things come out of the same fit:
         ///
-        /// - <b>varful</b> (vertexul), adica centrul de iluminare. E o POZITIE, si de
-        ///   aceea NU e scale-invariant: vertexul e ~ -b/(2d), un raport intre gradient
-        ///   si curbura. Pe un obiectiv aproape fara vignetare (d mic) o rampa modesta
-        ///   il arunca oricat de departe; iar cand ajunge sa iasa din cadru, garda de
-        ///   mai jos cade pe centrul senzorului. Deci metrica e si NEMONOTONA: peste un
-        ///   prag, cu cat defectul e mai mare, cu atat offsetul raportat e mai mic, pana
-        ///   la 0. Masurat: cu acelasi gradient de 11%, offsetul creste de la 2.4% la
-        ///   2 stopuri de vignetare pana la 57% la 0.08 stopuri, apoi cade la 0 la 0.05.
-        ///   De asta offsetul e raportat doar informativ, si nu mai da verdict.
+        /// - the <b>vertex</b>, that is the centre of illumination. It is a POSITION, and so it is
+        ///   NOT scale-invariant: the vertex is ~ -b/(2d), a ratio between gradient and
+        ///   curvature. On a lens with almost no vignetting (small d) a modest ramp throws it
+        ///   arbitrarily far; and when it comes to leave the frame, the guard below falls back
+        ///   on the sensor's centre. So the metric is also NON-MONOTONIC: above a threshold, the
+        ///   larger the defect, the smaller the offset reported, down to 0. Measured: with the
+        ///   same 11% gradient, the offset grows from 2.4% at 2 stops of vignetting to 57% at
+        ///   0.08 stops, then falls to 0 at 0.05. That is why the offset is reported only as
+        ///   information, and no longer gives a verdict.
         ///
-        /// - <b>inclinarea</b> (<paramref name="tiltPct"/>), adica amplitudinea
-        ///   varf-la-varf a termenului LINIAR peste cadru. E numaratorul de mai sus luat
-        ///   singur: o fractie, deci scale-invarianta ca restul metricilor si direct
-        ///   comparabila cu scara de reziduu. Un camp radial genuin decentrat produce si
-        ///   el un termen liniar (~ offset x curbura), deci inclinarea prinde si
-        ///   decentrarea reala - dar ponderata cu cat costa ea fotometric, ceea ce e
-        ///   exact ponderarea care lipsea offsetului.
+        /// - the <b>tilt</b> (<c>tiltPct</c>), that is the peak-to-peak amplitude of the LINEAR
+        ///   term over the frame. It is the numerator above taken alone: a fraction, so
+        ///   scale-invariant like the other metrics and directly comparable with the residual
+        ///   scale. A genuinely off-centre radial field produces a linear term too (~ offset x
+        ///   curvature), so the tilt catches real decentring as well - but weighted by what it
+        ///   costs photometrically, which is exactly the weighting the offset lacked.
         ///
-        /// Termenul incrucisat f (astigmatism / sa) e lasat deliberat in afara
-        /// inclinarii: nu e o inclinare, iar reziduul dupa modelul radial il prinde
-        /// oricum. Amestecat in aceeasi cifra, ar face-o neinterpretabila.
+        /// The cross term f (astigmatism / saddle) is left out of the tilt on purpose: it is not
+        /// a tilt, and the residual after the radial model catches it anyway. Mixed into the
+        /// same figure, it would make it uninterpretable.
         /// </summary>
+        /// <param name="img">The analysis raster; values above 0 (floored at 1e-12 for the
+        /// log).</param>
+        /// <returns>
+        /// The vertex (cx, cy) in pixels, the tilt in percent (NaN on a degenerate raster), and
+        /// whether the vertex is valid; when it is not, (cx, cy) is the raster's centre.
+        /// </returns>
         internal static (double cx, double cy, double tiltPct, bool vertexValid) FitCenter(Img img)
         {
             int h = img.H, w = img.W;
-            // normal equations pentru A=[1,xn,yn,xn^2,yn^2,xn*yn], 6 necunoscute
+            // normal equations for A=[1,xn,yn,xn^2,yn^2,xn*yn], 6 unknowns
             int step = Math.Max(1, Math.Min(h, w) / 200);
             var AtA = new double[6, 6];
             var Atb = new double[6];
@@ -78,14 +88,14 @@ namespace FlatCheck
                     }
                 }
             double[] coef = Stats.Solve(AtA, Atb, 6);
-            // Sistemul normal depinde doar de coordonate, nu de valori, deci e singular
-            // doar pe un raster degenerat. Atunci nici inclinarea nu se poate calcula:
-            // NaN, care cade in banda cea mai proasta, ca peste tot in tool.
+            // The normal system depends only on the coordinates, not on the values, so it is
+            // singular only on a degenerate raster. Then the tilt cannot be computed either:
+            // NaN, which falls into the worst band, as everywhere in the tool.
             if (coef == null) return (w / 2.0, h / 2.0, double.NaN, false);
             double b = coef[1], c = coef[2], d = coef[3], e = coef[4], f = coef[5];
-            // Amplitudinea varf-la-varf a termenului liniar peste cadru. |b| + |c| e
-            // valoarea lui in colt (unde xn = yn = 1), iar sinh face conversia exacta
-            // din log in intensitate, in loc de aproximarea liniara 2*(|b| + |c|).
+            // The peak-to-peak amplitude of the linear term over the frame. |b| + |c| is its
+            // value in the corner (where xn = yn = 1), and sinh makes the exact conversion from
+            // log to intensity, instead of the linear approximation 2*(|b| + |c|).
             double tilt = 2 * Math.Sinh(Math.Abs(b) + Math.Abs(c)) * 100;
             // M = [[2d, f],[f, 2e]]; sol = M^-1 * [-b,-c]
             double det = 2 * d * 2 * e - f * f;
@@ -98,77 +108,103 @@ namespace FlatCheck
             return (cx, cy, tilt, true);
         }
 
-        // Profil radial robust + model 2D reconstruit prin interpolare.
+        // A robust radial profile + a 2D model rebuilt by interpolation.
         //
-        // In cercul inscris profilul e mediana pe inel, ca dintotdeauna: exacta pe un inel
-        // intreg si imuna la ce e compact. Dincolo de el un inel e doar arce partiale, la
-        // azimuturi fixe (stanga si dreapta, apoi doar colturile), si orice statistica pe
-        // arce mosteneste dependenta de azimut a campului. Img.Symmetrise scoate exact partea
-        // IMPARA (gradientul) inainte; partea PARA neradiala - o sa (xy) sau o cadere mai
-        // abrupta pe o axa decat pe cealalta (x^2 - y^2) - trece prin simetrizare neatinsa,
-        // si mediana pe arcele din stanga/dreapta o absorbea in profil: panta modelului sarea
-        // de la 0.21 la 0.71 % per bin chiar pe cercul inscris, iar harta desena o creasta pe
-        // el si doi lobi cu margini dure. Masurat pe masterul de cer al Tokinei 20 (15 + 15
-        // cadre rotite la 180 de grade; saua cerului, -6 % la colturi, e para si rotatia nu o
-        // poate anula) si reprodus pe un sintetic neted cu aceiasi coeficienti: eroarea hartii
-        // fata de reziduul adevarat, in afara cercului, 8.9 % cu mediana si 0.5 % cu corectia;
-        // cea mai abrupta treapta intre dale de 8 px 3.58 -> 0.23 %.
+        // Inside the inscribed circle the profile is the median per ring, as always: exact on a
+        // whole ring and immune to what is compact. Beyond it a ring is only partial arcs, at
+        // fixed azimuths (left and right, then only the corners), and any statistic on arcs
+        // inherits the field's dependence on azimuth. Img.Symmetrise removes exactly the ODD part
+        // (the gradient) beforehand; the non-radial EVEN part - a saddle (xy) or a steeper fall
+        // along one axis than along the other (x^2 - y^2) - passes through the symmetrisation
+        // untouched, and the median on the left/right arcs absorbed it into the profile: the
+        // model's slope jumped from 0.21 to 0.71 % per bin right on the inscribed circle, and
+        // the map drew a ridge on it and two lobes with hard edges. Measured on the sky master
+        // of the Tokina at 20 (15 + 15 frames rotated by 180 degrees; the sky's saddle, -6 % at
+        // the corners, is even and the rotation cannot cancel it) and reproduced on a smooth
+        // synthetic with the same coefficients: the map's error against the true residual,
+        // outside the circle, 8.9 % with the median and 0.5 % with the correction; the steepest
+        // step between 8 px tiles 3.58 -> 0.23 %.
         //
-        // CORECTIA, pe inelele partiale: profilul e mediana lui
+        // THE CORRECTION, on the partial rings: the profile is the median of
         //     v / (1 + r^2 (q2c cos 2t + q2s sin 2t + q4c cos 4t + q4s sin 4t)),
-        // cu q amplitudinile RELATIVE per r^2 (raport, ca orice metrica din tool: o sa a
-        // cerului inmulteste, nu aduna, si creste cu r^2). q se estimeaza pe fiecare inel
-        // identificabil prin RingFit - pe MEDIANELE sectoarelor de 15 grade, cele mai mici
-        // patrate cu taiere la 2.5 MAD - si se ia O SINGURA mediana peste inelele de la
-        // RingQFrom * rIns in afara, intregi si partiale: un q constant pe r^2, deci o corectie
-        // neteda in r, care nu poate desena inele; in colturi, unde arcele nu mai pot separa
-        // termenii de constanta (criteriu pur geometric, RingFitMinDet pe determinantul Gram
-        // al bazei, la varianta unui inel intreg), acelasi q. Inelele intregi intra fiindca pe
-        // ele armonicile sunt exact identificabile: numai din arce, impartirea intre 2t si 4t
-        // e prost conditionata si extrapolarea spre azimuturile neobservate a pus +1.3 puncte
-        // pe dala maxima a masterului Nikkor ISO400 fara motiv (2.9 -> 4.2); ancorate, 3.2.
-        // a0 ramane o mediana pe pixeli peste tot, deci zgomotul si robustetea profilului sunt
-        // cele de dinainte.
+        // with q the RELATIVE amplitudes per r^2 (a ratio, like every metric of the tool: a sky
+        // saddle multiplies, it does not add, and grows with r^2). q is estimated on every
+        // identifiable ring by RingFit - on the MEDIANS of the 15-degree sectors, least squares
+        // with a cut at 2.5 MAD - and a SINGLE median is taken over the rings from
+        // RingQFrom * rIns outwards, whole and partial: a q constant per r^2, so a correction
+        // smooth in r, which cannot draw rings; in the corners, where the arcs can no longer
+        // separate the terms from the constant (a purely geometric criterion, RingFitMinDet on
+        // the Gram determinant of the basis, at the variance of a whole ring), the same q. The
+        // whole rings come in because on them the harmonics are exactly identifiable: from arcs
+        // alone, the split between 2t and 4t is badly conditioned and the extrapolation towards
+        // the unobserved azimuths put +1.3 points on the maximum tile of the Nikkor ISO400 master
+        // for no reason (2.9 -> 4.2); anchored, 3.2. a0 stays a median over pixels everywhere,
+        // so the profile's noise and robustness are those of before.
         //
-        // De ce si 4t (2026-09-23): pe arce de +-30..60 de grade in jurul axei x, cos 2t si
-        // cos 4t sunt aproape coliniare, si un fit numai cu 2t citea un termen de 4t ca 2t.
-        // Un master din patru orientari rotite la 90 de grade are, prin constructie, NICIUN
-        // 2t al lumii si NUMAI familia 4t (petele lumii inmuiate de patru ori): corectia
-        // veche nu avea ce corecta si injecta q2c de +2..+4 % cu semnul sarind de la un inel
-        // la altul (LMedS alegea alte triplete), profilul primea o treapta de -1.7 % chiar pe
-        // cercul inscris si benzi de +-1 % dincolo, iar harta desena un inel rosu si un cerc
-        // dur pe un master ale carui pete sunt netede. Masurat pe sintetice cu adevar
-        // cunoscut (eroare model/adevar, rms): sa 2t de 6 % - mediana 0.76 %, 2t 0.03, 2t+4t
-        // 0.03; termen 4t de 3 % - mediana 0.17, 2t 1.87 (trepte 2.6 %), 2t+4t 0.03; sa + 4t,
-        // gradient, pata compacta, pata + sa, pata + 4t: 2t+4t sub 0.13 %. Pe masterele
-        // reale, treapta maxima intre inele a mediei reziduului: master rotit 0.73 -> 0.17 %,
-        // monitor 1.01 -> 0.29, cer 0.31 -> 0.31; un singur stack de orientare citea 17.9 %
-        // reziduu (continut neradial adevarat 7.6 %) si citeste 7.9. LMedS nu mai e necesar:
-        // taierea la 2.5 MAD in trei runde a tinut pata compacta de +10 % afara din estimare
-        // (0.08 % eroare). Vezi docs/design/radial-model-even-term.md, sectiunea 7.
+        // Why 4t too (2026-09-23): on arcs of +-30..60 degrees around the x axis, cos 2t and
+        // cos 4t are almost collinear, and a fit with 2t alone read a 4t term as 2t. A master
+        // from four orientations rotated by 90 degrees has, by construction, NO 2t of the world
+        // and ONLY the 4t family (the world's spots softened four times): the old correction had
+        // nothing to correct and injected a q2c of +2..+4 % with the sign jumping from one ring
+        // to another (LMedS chose other triplets), the profile got a -1.7 % step right on the
+        // inscribed circle and +-1 % bands beyond, and the map drew a red ring and a hard circle
+        // on a master whose spots are smooth. Measured on synthetics with a known truth
+        // (model/truth error, rms): a 6 % 2t saddle - median 0.76 %, 2t 0.03, 2t+4t 0.03; a 3 %
+        // 4t term - median 0.17, 2t 1.87 (steps of 2.6 %), 2t+4t 0.03; saddle + 4t, gradient,
+        // compact spot, spot + saddle, spot + 4t: 2t+4t under 0.13 %. On the real masters, the
+        // maximum step between rings of the residual's mean: rotated master 0.73 -> 0.17 %,
+        // monitor 1.01 -> 0.29, sky 0.31 -> 0.31; a single orientation stack read 17.9 %
+        // residual (true non-radial content 7.6 %) and reads 7.9. LMedS is no longer needed: the
+        // cut at 2.5 MAD in three rounds kept the compact +10 % spot out of the estimate (0.08 %
+        // error). See docs/design/radial-model-even-term.md, section 7.
         //
-        // Ce a fost incercat si respins, in ordine:
-        //  - a0 direct din fitul pe inel (LS cu taiere la 3 MAD, apoi L1): o pata compacta de
-        //    10 % intr-un colt, simetrizata in doua jumatati antipodale, E un semnal 2t pe
-        //    inelele ei, si fitul o absorbea cu a0 mutat cu 2.3 % - un inel fals in harta.
-        //  - un fit global patratic al partii pare (astigmatism + sa) impartit inainte de
-        //    mediana: aliaza termenii radiali de ordin mai mare intr-un astigmatism fals
-        //    (0.3 % pe un camp perfect radial pe 3:2) si muta dala maxima a Nikkor 800 cu
-        //    1.3 puncte fara motiv.
-        //  - amplitudini absolute tinute de la ultimul inel identificabil: pe o sa
-        //    multiplicativa gresesc cu factorul vignetarii (1.4 % in colt), si o pata din
-        //    ultimul inel se propaga in toate cele patru colturi.
-        //  - termenul 4t cu amplitudinea extrapolata in colturi: exploda (dala maxima
-        //    9.8 -> 28 %). Ca amplitudine relativa pe r^2, constanta pe toate inelele, nu.
-        //  - q netezit cu o mediana glisanta pe 7 inele (versiunea 2.2): pe masterele cu pete
-        //    lasa trepte de 0.7-1 % intre inele; o singura mediana peste inele nu.
-        internal const double RingFitMinDet = 0.02;   // sub atat baza 2t+4t nu se mai poate separa pe arcele unui inel (det. Gram, la varianta unui inel intreg)
-        internal const int RingSectors = 24;          // sectoare de 15 grade; fitul pe inel se face pe medianele lor
-        internal const int RingMinSectors = 6;        // sub atatea sectoare populate inelul nu se estimeaza
-        internal const int RingFitRounds = 3;         // runde de cele mai mici patrate cu taiere la 2.5 MAD
-        internal const double RingQFrom = 0.75;       // q e mediana peste inelele de la atata din raza inscrisa in afara, intregi si partiale
-        internal const double RingFitTie = 1e-9;      // toleranta (relativ la nivel) la alegerea inlierilor, pt scene fara zgomot
+        // What was tried and rejected, in order:
+        //  - a0 directly from the per-ring fit (LS with a cut at 3 MAD, then L1): a compact 10 %
+        //    spot in a corner, symmetrised into two antipodal halves, IS a 2t signal on its
+        //    rings, and the fit absorbed it with a0 moved by 2.3 % - a false ring in the map.
+        //  - a global quadratic fit of the even part (astigmatism + saddle) divided out before
+        //    the median: it aliases the higher-order radial terms into a false astigmatism
+        //    (0.3 % on a perfectly radial field on 3:2) and moves the maximum tile of the Nikkor
+        //    800 by 1.3 points for no reason.
+        //  - absolute amplitudes held from the last identifiable ring: on a multiplicative
+        //    saddle they are wrong by the vignetting's factor (1.4 % in the corner), and a spot
+        //    in the last ring propagates into all four corners.
+        //  - the 4t term with its amplitude extrapolated into the corners: it exploded (maximum
+        //    tile 9.8 -> 28 %). As a relative amplitude per r^2, constant over all the rings, no.
+        //  - q smoothed with a sliding median over 7 rings (version 2.2): on the masters with
+        //    spots it leaves steps of 0.7-1 % between rings; a single median over the rings
+        //    does not.
 
+        // below this the 2t+4t basis can no longer be separated on a ring's arcs (Gram
+        // determinant, at the variance of a whole ring)
+        internal const double RingFitMinDet = 0.02;
+        internal const int RingSectors = 24;          // sectors of 15 degrees; the per-ring fit is on their medians
+        internal const int RingMinSectors = 6;        // below this many populated sectors the ring is not estimated
+        internal const int RingFitRounds = 3;         // rounds of least squares with a cut at 2.5 MAD
+        // q is the median over the rings from this fraction of the inscribed radius outwards,
+        // whole and partial
+        internal const double RingQFrom = 0.75;
+        internal const double RingFitTie = 1e-9;      // tolerance (relative to the level) when choosing inliers, for noiseless scenes
+
+        /// <summary>
+        /// The radial profile around (<paramref name="cx"/>, <paramref name="cy"/>) and the 2D
+        /// model interpolated from it: the median per ring inside the inscribed circle
+        /// (radius <c>min(cx, cy)</c>), and on the partial rings beyond it the median after
+        /// dividing out the even 2t and 4t terms (the correction described above, and in
+        /// docs/design/radial-model-even-term.md). When no ring from RingQFrom * rIns outwards is
+        /// identifiable, there is no correction and those rings take the plain median too. Rings
+        /// with fewer than 8 pixels are left out.
+        /// </summary>
+        /// <param name="img">The raster, normally symmetrised
+        /// (<see cref="Img.Symmetrise"/>).</param>
+        /// <param name="cx">The centre's column, in pixels; the sensor's centre, not the
+        /// vertex.</param>
+        /// <param name="cy">The centre's row, in pixels.</param>
+        /// <param name="nbins">How many rings out to the farthest pixel.</param>
+        /// <returns>
+        /// The ring centres in pixels, the profile at each, and the model raster of the same
+        /// size as <paramref name="img"/>.
+        /// </returns>
         internal static (double[] centers, double[] prof, Img model) RadialModel(Img img, double cx, double cy, int nbins = 80)
         {
             int h = img.H, w = img.W;
@@ -205,9 +241,9 @@ namespace FlatCheck
             var ringBins = new List<int>();
             for (int i = 0; i < nbins; i++)
                 if (binVals[i].Count >= 8) ringBins.Add(i);
-            // amplitudinile relative per r^2 pe inelele identificabile de la RingQFrom * rIns in
-            // afara - intregi (unde armonicile sunt exact identificabile si ancoreaza estimarea)
-            // si partiale - apoi mediana lor
+            // the relative amplitudes per r^2 on the identifiable rings from RingQFrom * rIns
+            // outwards - whole (where the harmonics are exactly identifiable and anchor the
+            // estimate) and partial - then their median
             var qRows = new List<double>[4];
             for (int j = 0; j < 4; j++) qRows[j] = new List<double>();
             foreach (int i in ringBins)
@@ -258,17 +294,22 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Un inel identificabil: (a0, a2, b2, a4, b4) ale lui
-        /// a0 + a2 cos 2t + b2 sin 2t + a4 cos 4t + b4 sin 4t peste medianele sectoarelor,
-        /// prin cele mai mici patrate ponderate (ponderea = pixelii sectorului), RingFitRounds
-        /// runde, intre runde sectoarele cu reziduul peste 2.5 MAD fiind scoase - o pata
-        /// compacta care, simetrizata, ocupa 2-4 sectoare din 24, iese la a doua runda. Null
-        /// cand baza nu e identificabila pe arce (determinantul Gram al celor patru coloane
-        /// neconstante, la varianta unui inel intreg, sub RingFitMinDet - geometrie pura, in
-        /// colturi) sau cand
-        /// sunt sub RingMinSectors sectoare populate. Pereche numerica: <c>_ring_fit</c> din
-        /// flatcheck.py.
+        /// One identifiable ring: (a0, a2, b2, a4, b4) of
+        /// a0 + a2 cos 2t + b2 sin 2t + a4 cos 4t + b4 sin 4t over the sectors' medians, by
+        /// weighted least squares (weight = the sector's pixels), RingFitRounds rounds, the
+        /// sectors with a residual above 2.5 MAD being removed between rounds - a compact spot
+        /// which, symmetrised, takes 2-4 sectors of 24, is out by the second round. Null when the
+        /// basis is not identifiable on the arcs (the Gram determinant of the four non-constant
+        /// columns, at the variance of a whole ring, under RingFitMinDet - pure geometry, in the
+        /// corners) or when there are fewer than RingMinSectors populated sectors. Numeric pair:
+        /// <c>_ring_fit</c> of flatcheck.py.
         /// </summary>
+        /// <param name="v">The ring's pixel values.</param>
+        /// <param name="c">cos 2t of each pixel's azimuth.</param>
+        /// <param name="s">sin 2t of each pixel's azimuth.</param>
+        /// <param name="sector">Each pixel's sector, 0..RingSectors-1.</param>
+        /// <returns>The five coefficients, a0 first; null when the ring is not
+        /// identifiable.</returns>
         static double[] RingFit(List<double> v, List<double> c, List<double> s, List<int> sector)
         {
             int n = v.Count;
@@ -293,10 +334,11 @@ namespace FlatCheck
             int m = med.Count;
             if (m < RingMinSectors) return null;
 
-            // identificabilitate: determinantul matricei Gram a coloanelor neconstante centrate,
-            // normalizata la 1/2 - varianta unei armonice pe un inel intreg - deci 1 pe un inel
-            // intreg si spre 0 pe arce inguste. NU prin corelatie: pe arcele din colturile unui
-            // cadru patrat corelatia ar da 1 oricat de inguste ar fi, cu un fit fara sens.
+            // identifiability: the determinant of the Gram matrix of the centred non-constant
+            // columns, normalised to 1/2 - the variance of a harmonic on a whole ring - so 1 on a
+            // whole ring and towards 0 on narrow arcs. NOT through correlation: on the arcs in the
+            // corners of a square frame the correlation would give 1 however narrow they are,
+            // with a meaningless fit.
             var mean = new double[4];
             for (int j = 0; j < 4; j++)
             {
@@ -354,7 +396,15 @@ namespace FlatCheck
             return sol;
         }
 
-        /// <summary>Determinantul unei matrice n x n, prin eliminare Gauss cu pivotare partiala.</summary>
+        /// <summary>
+        /// The determinant of an n x n matrix, by Gaussian elimination with partial pivoting.
+        /// </summary>
+        /// <param name="src">The matrix; not modified.</param>
+        /// <param name="n">Its size.</param>
+        /// <returns>
+        /// The determinant; exactly 0 when, at some step of the elimination, the current column
+        /// has no non-zero entry on or below the diagonal.
+        /// </returns>
         static double Determinant(double[,] src, int n)
         {
             var a = (double[,])src.Clone();
@@ -380,32 +430,34 @@ namespace FlatCheck
             return det;
         }
 
-        // ========================================================= metrici
+        // ========================================================= metrics
         /// <summary>
-        /// Cata TEXTURA FINA are un raster: partea structurata a componentei fine, in
-        /// procente. Componenta fina e <c>raster / neted - 1</c>, unde "neted" e rasterul
-        /// trecut de doua ori printr-un filtru cutie de <paramref name="box"/> px (o cutie
-        /// aplicata de doua ori e un triunghi - destul de aproape de un gaussian pentru un
-        /// DETECTOR, si fara nicio dependinta). Zgomotul de pixel se estimeaza din
-        /// diferentele intre vecini orizontali (impartite la radical din 2) si se scade in
-        /// cuadratura, ca sa ramana doar ce e corelat spatial: textura difuzorului, nu
-        /// granulatia. Bordura de <paramref name="inset"/> px nu intra in statistica, fiindca
-        /// acolo cutia e trunchiata.
+        /// How much FINE TEXTURE a raster has: the structured part of the fine component, in
+        /// percent. The fine component is <c>raster / smooth - 1</c>, where "smooth" is the
+        /// raster passed twice through a box filter of <c>box</c> px (a box applied twice is a
+        /// triangle - close enough to a Gaussian for a DETECTOR, and without any dependency). The
+        /// pixel noise is estimated from the differences between horizontal neighbours (divided
+        /// by the square root of 2) and subtracted in quadrature, so that only what is spatially
+        /// correlated is left: the diffuser's texture, not the grain. The border of
+        /// <c>inset</c> px does not enter the statistic, because there the box is truncated.
         ///
-        /// Exista pentru propunerea de scara a modului de netezire: pe rasterul de analiza
-        /// al unui senzor de 6016 px (1504 px, 4 px de senzor pe pixel) cutia e de 32 px,
-        /// adica 128 px pe senzor, iar celulele de ~300 px ale unui difuzor pus pe monitor
-        /// ies la 0.69 % fata de 0.04-0.06 % pe un master fara textura. Masurat pe cinci
-        /// mastere reale; pragurile in Th.SmoothTexture*.
+        /// It exists for the smoothing mode's scale proposal: on the analysis raster of a 6016 px
+        /// sensor (1504 px, 4 sensor px per pixel) the box is 32 px, that is 128 px on the
+        /// sensor, and the ~300 px cells of a diffuser placed on a monitor come out at 0.69 %
+        /// against 0.04-0.06 % on a master without texture. Measured on five real masters; the
+        /// thresholds are in Th.SmoothTexture*.
         ///
-        /// Cutia si bordura sunt RELATIVE la latimea rasterului (1/47 si 1/15 din ea), nu
-        /// fixe in pixeli: cu 32 px ficsi pe un fixture de 256 px cutia era o optime din
-        /// cadru, curbura vignetarii se scurgea in "textura" cu 0.14 % si nimic nu mai
-        /// trecea de niciun prag. Pe rasterul real cele doua definitii coincid (32 si 100).
+        /// The box and the border are RELATIVE to the raster's width (1/47 and 1/15 of it), not
+        /// fixed in pixels: with a fixed 32 px on a 256 px fixture the box was an eighth of the
+        /// frame, the vignetting's curvature leaked into the "texture" with 0.14 % and nothing
+        /// passed any threshold any more. On the real raster the two definitions coincide (32
+        /// and 100).
         ///
-        /// NU prin BlockMean marit inapoi: grila de blocuri isi pune propriile margini in
-        /// componenta fina (masurat: perioade de 32 px care erau blocurile, nu textura).
+        /// NOT through BlockMean scaled back up: the block grid puts its own edges into the fine
+        /// component (measured: periods of 32 px that were the blocks, not the texture).
         /// </summary>
+        /// <param name="a">The analysis raster (<see cref="Img.Prepare"/>).</param>
+        /// <returns>The fine texture, in percent; 0 on a raster too small to measure.</returns>
         internal static double FineTexture(Img a)
         {
             int box = Math.Max(4, (int)Math.Round(a.W / 47.0));
@@ -434,10 +486,15 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Media pe o cutie de <paramref name="box"/> px centrata pe fiecare pixel, prin sume
-        /// glisante pe randuri si apoi pe coloane; la margini cutia se trunchiaza si se
-        /// imparte la cati pixeli a acoperit. Separabil, deci O(pixeli), oricat de mare e cutia.
+        /// The mean over a box of <paramref name="box"/> px centred on each pixel, through
+        /// sliding sums along the rows and then along the columns; at the edges the box is
+        /// truncated and divided by how many pixels it covered. Separable, so O(pixels), however
+        /// large the box.
         /// </summary>
+        /// <param name="a">The raster to blur.</param>
+        /// <param name="box">The box's side in pixels; its half, rounded down, reaches each
+        /// way.</param>
+        /// <returns>A new raster of the same size.</returns>
         internal static Img BoxBlur(Img a, int box)
         {
             int r = box / 2;
@@ -471,6 +528,18 @@ namespace FlatCheck
             return o;
         }
 
+        /// <summary>
+        /// The median of each corner's box and of the centre's, the boxes a fraction
+        /// <paramref name="frac"/> of the frame's sides (at least 4 px); the centre's box is twice
+        /// as large each way.
+        /// </summary>
+        /// <param name="img">The raster.</param>
+        /// <param name="frac">The corner box's side, as a fraction of the frame's height and
+        /// width.</param>
+        /// <returns>
+        /// The four corners' medians keyed by their Romanian names ("stanga-sus" ...), and the
+        /// centre's median.
+        /// </returns>
         internal static (Dictionary<string, double> vals, double ctr) CornerStats(Img img, double frac = 0.05)
         {
             int h = img.H, w = img.W;
@@ -492,7 +561,19 @@ namespace FlatCheck
             return (vals, ctr);
         }
 
-        // Ptp intre sectoare, per inel. Doar in raza inscrisa (toate azimuturile esantionate).
+        // Ptp between sectors, per ring. Only within the inscribed radius (all azimuths sampled).
+        /// <summary>
+        /// The azimuthal asymmetry: per ring, between 0.15 and 1 of the inscribed radius, the
+        /// peak-to-peak of the sector medians over their median. A ring is reported only when at
+        /// most one sector has fewer than 8 pixels.
+        /// </summary>
+        /// <param name="img">The raster.</param>
+        /// <param name="cx">The centre's column, in pixels; the sensor's centre.</param>
+        /// <param name="cy">The centre's row, in pixels.</param>
+        /// <param name="nsect">How many sectors per ring.</param>
+        /// <param name="nrings">How many rings.</param>
+        /// <returns>Per ring reported, its mid radius as a fraction of the inscribed one and the
+        /// peak-to-peak in percent.</returns>
         internal static List<(double r, double ptp)> AzimuthalAsymmetry(Img img, double cx, double cy, int nsect = 12, int nrings = 10)
         {
             int h = img.H, w = img.W;
@@ -527,27 +608,33 @@ namespace FlatCheck
             return outl;
         }
 
-        // Structura de scala mare (izolata de zgomot prin mediere pe tile-uri).
+        // Large-scale structure (isolated from the noise by averaging over tiles).
         /// <summary>
-        /// Latura dalei folosita de metricile de scara mare. Scoasa separat fiindca o
-        /// citesc doi consumatori - <see cref="LargeScalePtp"/> si modul de atribuire -
-        /// iar doua formule ar fi divergat la prima ajustare a lui ntiles.
+        /// The tile side the large-scale metrics use. Taken out on its own because two consumers
+        /// read it - <see cref="LargeScalePtp"/> and the attribution mode - and two formulas
+        /// would have diverged at the first adjustment of ntiles.
         /// </summary>
+        /// <param name="src">The raster to tile.</param>
+        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <returns>The tile side in pixels, at least 2.</returns>
         internal static int TileSize(Img src, int ntiles = 40)
             => Math.Max(2, (int)(src.W / (double)ntiles));
 
         /// <summary>
-        /// p95 - p5 al dalelor, pe TOT cadrul.
+        /// p95 - p5 of the tiles, over the WHOLE frame.
         ///
-        /// Initial lua doar dalele din cercul inscris, fiindca dincolo de el
-        /// profilul radial venea din arce partiale si nu era de incredere. Simetrizarea
-        /// (vezi <see cref="Img.Symmetrise"/>) a rezolvat exact asta, deci restrictia
-        /// ramasese fara motiv - si costa mult: pe un cadru 3:2 cercul inscris e 53% din
-        /// dale, iar colturile, unde traiesc scurgerile de lumina si unde gradientul e
-        /// cel mai mare, nu se vedeau deloc. Tot din cauza ei acelasi gradient citea
-        /// 6.5% pe axa lunga si 9.7% pe cea scurta; pe tot cadrul citeste 10.4 / 10.6.
-        /// Podeaua pe un camp radial curat a ramas sub 0.1% la rezolutia de analiza.
+        /// At first it took only the tiles in the inscribed circle, because beyond it the radial
+        /// profile came from partial arcs and could not be trusted. Symmetrisation (see
+        /// <see cref="Img.Symmetrise"/>) solved exactly that, so the restriction had stayed for
+        /// no reason - and it cost a lot: on a 3:2 frame the inscribed circle is 53% of the
+        /// tiles, and the corners, where the light leaks live and where the gradient is largest,
+        /// were not seen at all. Because of it too the same gradient read 6.5% on the long axis
+        /// and 9.7% on the short one; over the whole frame it reads 10.4 / 10.6. The floor on a
+        /// clean radial field stayed under 0.1% at the analysis resolution.
         /// </summary>
+        /// <param name="resid">The residual raster (image / model), centred on 1.</param>
+        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <returns>The spread as a fraction (not percent); NaN with fewer than 10 tiles.</returns>
         internal static double LargeScalePtp(Img resid, int ntiles = 40)
         {
             int k = TileSize(resid, ntiles);
@@ -557,20 +644,23 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cea mai mare abatere a unei singure dale fata de model, in valoare absoluta,
-        /// pe tot cadrul. Fractie, nu procent.
+        /// The largest deviation of a single tile from the model, in absolute value, over the
+        /// whole frame. A fraction, not a percent.
         ///
-        /// Exista fiindca <see cref="LargeScalePtp"/> taie 5% din dale la fiecare capat,
-        /// deci un defect COMPACT - o scurgere mica de lumina, o pata de condens - care
-        /// acopera sub 5% din cadru dispare din el complet, oricat de adanc ar fi. Masurat:
-        /// o pata de +10% cat un deget intr-un colt citea 0.04% la reziduu si verdict
-        /// PERFECT, cu pata perfect vizibila in harta. Aici citeste 9.3%.
+        /// It exists because <see cref="LargeScalePtp"/> cuts 5% of the tiles at each end, so a
+        /// COMPACT defect - a small light leak, a condensation spot - that covers under 5% of
+        /// the frame disappears from it completely, however deep it is. Measured: a finger-sized
+        /// +10% spot in a corner read 0.04% on the residual and the verdict PERFECT, with the
+        /// spot perfectly visible in the map. Here it reads 9.3%.
         ///
-        /// E tot o limita superioara, ca celelalte: o umbra de praf adanca (diafragma
-        /// inchisa) e fixa pe aparat si se imparte corect din lights-urile aceleiasi
-        /// sesiuni, dar tot aici se vede. Pentru asta exista <see cref="LocalSpots"/> si
-        /// atentionarea din raport.
+        /// It is an upper bound too, like the others: a deep dust shadow (aperture closed down)
+        /// is fixed on the camera and divides out correctly from the lights of the same session,
+        /// but it shows here all the same. For that there is <see cref="LocalSpots"/> and the
+        /// report's warning.
         /// </summary>
+        /// <param name="resid">The residual raster (image / model), centred on 1.</param>
+        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <returns>The largest |tile - 1|, as a fraction.</returns>
         internal static double MaxTileDeviation(Img resid, int ntiles = 40)
         {
             Img t = Img.BlockMean(resid, TileSize(resid, ntiles));
@@ -580,38 +670,45 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cea mai adanca pata COMPACTA: fiecare dala fina minus mediana vecinatatii ei,
-        /// si se pastreaza cea mai mare in valoare absoluta, cu semn si cu pozitia (in
-        /// pixelii rasterului de analiza). Fractie, nu procent.
+        /// The deepest COMPACT spot: each fine tile minus the median of its neighbourhood, and
+        /// the largest in absolute value is kept, with its sign and its position (in pixels of
+        /// the analysis raster). A fraction, not a percent.
         ///
-        /// Scaderea medianei locale e ce o deosebeste de <see cref="MaxTileDeviation"/>:
-        /// un gradient e neted, deci mediana vecinatatii il urmareste si diferenta iese
-        /// ~0 (masurat: 0.46% la un gradient de 12%, 0.68% la 25%), pe cand o umbra de
-        /// praf, un inel sau o scurgere mica raman intregi (4.99% pe o umbra de 5%, si
-        /// tot 4.71% cand umbra sta sub un gradient de 12% cu zgomot). Raspunde deci la o
-        /// intrebare pe care celelalte cifre n-o pot pune: E CEVA MIC SI FIX PE APARAT?
-        /// Raspunsul conteaza altfel decat un verdict: o asemenea pata e corecta pentru
-        /// sesiunea ale carei lights o au si ele, si gresita pentru un flat de biblioteca.
-        /// De aceea nu voteaza - da o atentionare.
+        /// Subtracting the local median is what sets it apart from
+        /// <see cref="MaxTileDeviation"/>: a gradient is smooth, so the neighbourhood's median
+        /// follows it and the difference comes out ~0 (measured: 0.46% at a 12% gradient, 0.68%
+        /// at 25%), whereas a dust shadow, a ring or a small leak stay whole (4.99% on a 5%
+        /// shadow, and still 4.71% when the shadow sits under a 12% gradient with noise). So it
+        /// answers a question the other figures cannot ask: IS THERE SOMETHING SMALL AND FIXED
+        /// ON THE CAMERA? The answer matters differently from a verdict: such a spot is right for
+        /// the session whose lights have it too, and wrong for a library flat. That is why it
+        /// does not vote - it gives a warning.
         ///
-        /// Dalele sunt de doua ori mai fine decat la celelalte doua metrici (80 pe
-        /// latime, ~18 px la rezolutia de analiza), ca o umbra de praf de 60 px sa nu se
-        /// dilueze; vecinatatea e 7x7 dale, adica ~250 px pe senzor, mai lata decat orice
-        /// pata de praf de pe un DSLR.
+        /// The tiles are twice as fine as for the other two metrics (80 across the width, ~18 px
+        /// at the analysis resolution), so that a 60 px dust shadow is not diluted; the
+        /// neighbourhood is 7x7 tiles, that is ~250 px on the sensor, wider than any dust spot on
+        /// a DSLR.
         ///
-        /// Se evalueaza NUMAI dalele cu vecinatatea intreaga, deci fara o bordura de
-        /// <paramref name="win"/> dale (~55 px la rezolutia de analiza, ~110 pe senzor).
-        /// La margine vecinatatea e taiata pe o parte, mediana ei nu mai urmareste un
-        /// gradient, si diferenta iese din gradient, nu dintr-o pata: masurat pe 256 px,
-        /// -0.76% in colt pe un camp CURAT si -1.61% sub un gradient de 60% - la un pas de
-        /// atentionarea de 2%, pentru un praf care nu exista. O pata chiar pe margine o
-        /// prinde oricum <see cref="MaxTileDeviation"/>.
+        /// ONLY the tiles with a whole neighbourhood are evaluated, so without a border of
+        /// <paramref name="win"/> tiles (~55 px at the analysis resolution, ~110 on the sensor).
+        /// At the edge the neighbourhood is cut on one side, its median no longer follows a
+        /// gradient, and the difference comes from the gradient, not from a spot: measured on
+        /// 256 px, -0.76% in the corner on a CLEAN field and -1.61% under a 60% gradient - one
+        /// step from the 2% warning, for a dust that does not exist. A spot right on the edge is
+        /// caught anyway by <see cref="MaxTileDeviation"/>.
         ///
-        /// Podeaua: sub 0.1% pe camp curat, 1.1% la 10% zgomot pe pixelul senzorului;
-        /// masterele reale au 0.2-0.3% zgomot. Pe un master real de Nikkor 35 la f/2.8
-        /// umbra de praf vizibila in harta are -0.31%, deci sub orice prag - cum spune si
-        /// documentatia ca la deschideri mari praful e sub prag.
+        /// The floor: under 0.1% on a clean field, 1.1% at 10% noise per sensor pixel; the real
+        /// masters have 0.2-0.3% noise. On a real master of the Nikkor 35 at f/2.8 the dust
+        /// shadow visible in the map has -0.31%, so under any threshold - as the documentation
+        /// says too, that at wide apertures the dust is under the threshold.
         /// </summary>
+        /// <param name="resid">The residual raster (image / model), centred on 1.</param>
+        /// <param name="ntiles">How many tiles across the width.</param>
+        /// <param name="win">The neighbourhood's half side, in tiles.</param>
+        /// <returns>
+        /// The signed deviation as a fraction, and the spot tile's centre (x, y) in pixels of
+        /// <paramref name="resid"/>.
+        /// </returns>
         internal static (double dev, int x, int y) LocalSpots(Img resid, int ntiles = 80, int win = 3)
         {
             int k = TileSize(resid, ntiles);
@@ -626,15 +723,26 @@ namespace FlatCheck
                         for (int dx = -win; dx <= win; dx++)
                             nb.Add(t.At(y + dy, x + dx));
                     double hp = t.At(y, x) - Stats.Percentile(nb, 50);
-                    // Toleranta la egalitate: pe o scena simetrica doua dale pot iesi egale pana
-                    // la ultimul bit, iar C# si numpy aduna in alta ordine, deci ar alege alta
-                    // dala. Sub 1e-12 ramane prima in ordinea randurilor, in amandoua.
+                    // A tolerance on equality: on a symmetric scene two tiles can come out equal
+                    // to the last bit, and C# and numpy sum in a different order, so they would
+                    // pick a different tile. Under 1e-12 the first in row order stays, in both.
                     if (Math.Abs(hp) > Math.Abs(worst) + 1e-12) { worst = hp; wx = x; wy = y; }
                 }
             return (worst, (int)((wx + 0.5) * k), (int)((wy + 0.5) * k));
         }
 
-        // Fond local per tile (percentila mica = robust la stele/nebulozitate).
+        // Local background per tile (a low percentile = robust to stars/nebulosity).
+        /// <summary>
+        /// The local background of a light: a low percentile of each whole tile, with the tile's
+        /// centre. The partial tiles at the right and bottom are dropped.
+        /// </summary>
+        /// <param name="img">The light's analysis raster.</param>
+        /// <param name="ntiles">How many tiles across the width; a tile is at least 4 px.</param>
+        /// <param name="pct">The percentile taken per tile, 0..100.</param>
+        /// <returns>
+        /// Per tile, row-major: the background, the centre's x and y in pixels; then the grid's
+        /// height and width in tiles and the tile side in pixels.
+        /// </returns>
         internal static (double[] bg, double[] bx, double[] by, int th, int tw, int k) TileBackground(Img img, int ntiles = 40, double pct = 15)
         {
             int h = img.H, w = img.W;

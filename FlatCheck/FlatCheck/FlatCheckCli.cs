@@ -224,7 +224,7 @@ namespace FlatCheck
 
         /// <summary>
         /// Sursele de profile: implicit cele ale masinii (folderele Adobe si lensfun/ de langa
-        /// exe); cu --profiles <dir>, folderul dat (cu .lcp-uri oriunde in el) si subfolderul
+        /// exe); cu --profiles &lt;dir&gt;, folderul dat (cu .lcp-uri oriunde in el) si subfolderul
         /// lui lensfun/. Asa ruleaza si testele, pe XML scris de ele.
         /// </summary>
         static ProfileSources Sources(Options o)

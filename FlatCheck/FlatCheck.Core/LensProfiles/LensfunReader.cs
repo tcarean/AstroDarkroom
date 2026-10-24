@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Cititorul bazei lensfun (data/db/*.xml, <lensdatabase version="2">). Se iau <lens>-urile
-// cu <calibration><vignetting model="pa" .../> si <camera>-ele, pentru crop factor. Un
-// obiectiv poate avea mai multe <mount>-uri; numele canonic e <model> fara lang, iar cele
-// cu lang sunt aliasuri de cautare. Nimic altceva din baza nu se citeste (distorsiune, TCA).
+// The reader of the lensfun database (data/db/*.xml, <lensdatabase version="2">). The <lens>
+// elements with <calibration><vignetting model="pa" .../> are taken, and the <camera> elements,
+// for the crop factor. A lens can have several <mount>s; the canonical name is the <model>
+// without lang, and those with lang are search aliases. Nothing else of the database is read
+// (distortion, TCA).
 //
-// Baza e CC BY-SA 3.0 si e livrata neschimbata in folderul lensfun/ de langa exe - vezi
-// THIRD-PARTY-NOTICES.md.
+// The database is CC BY-SA 3.0 and is shipped unchanged in the lensfun/ folder beside the exe -
+// see THIRD-PARTY-NOTICES.md.
 
 using System;
 using System.Collections.Generic;
@@ -32,13 +33,25 @@ using System.Xml.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>A camera body of the lensfun database.</summary>
+    /// <param name="Maker">The canonical maker's name.</param>
+    /// <param name="Model">The canonical model name.</param>
+    /// <param name="Aliases">The model's names in other languages, for searching.</param>
+    /// <param name="Mount">The camera's mount; empty when the database gives none.</param>
+    /// <param name="CropFactor">The sensor's crop factor against full frame.</param>
     internal sealed record LensfunCamera(string Maker, string Model, IReadOnlyList<string> Aliases, string Mount, double CropFactor);
 
+    /// <summary>
+    /// What was read from the lensfun database: the vignetting profiles and the cameras.
+    /// </summary>
     internal sealed class LensfunData
     {
         internal readonly IReadOnlyList<LensProfile> Profiles;
         internal readonly IReadOnlyList<LensfunCamera> Cameras;
 
+        /// <summary>The database's content.</summary>
+        /// <param name="profiles">The vignetting profiles, one per calibration entry.</param>
+        /// <param name="cameras">The camera bodies with a crop factor.</param>
         internal LensfunData(IReadOnlyList<LensProfile> profiles, IReadOnlyList<LensfunCamera> cameras)
         {
             Profiles = profiles;
@@ -48,9 +61,12 @@ namespace FlatCheck
         internal static readonly LensfunData Empty = new LensfunData(Array.Empty<LensProfile>(), Array.Empty<LensfunCamera>());
 
         /// <summary>
-        /// Crop-ul aparatului al carui nume (model sau alias) apare in <paramref name="cameraName"/>
-        /// sau il contine - "NIKON D3300" din EXIF gaseste "Nikon D3300" / "D3300". Null cand nu e.
+        /// The crop of the camera whose name (model or alias) appears in
+        /// <paramref name="cameraName"/> or contains it - "NIKON D3300" from the EXIF finds
+        /// "Nikon D3300" / "D3300". Null when there is none.
         /// </summary>
+        /// <param name="cameraName">The camera's name from the file; null or blank allowed.</param>
+        /// <returns>The crop factor of the longest matching name, or null.</returns>
         internal double? CropOf(string cameraName)
         {
             if (string.IsNullOrWhiteSpace(cameraName)) return null;
@@ -62,17 +78,27 @@ namespace FlatCheck
                 {
                     string n = Normalise(name);
                     if (n.Length == 0) continue;
-                    // cel mai lung nume care se potriveste castiga: "D3300" bate "D3"
+                    // the longest matching name wins: "D3300" beats "D3"
                     if ((wanted.Contains(n) || n.Contains(wanted)) && n.Length > bestLen) { best = c; bestLen = n.Length; }
                 }
             return best?.CropFactor;
         }
 
+        /// <summary>A name with only its letters and digits, upper-cased, for matching.</summary>
+        /// <param name="s">The name.</param>
+        /// <returns>The normalised name.</returns>
         static string Normalise(string s) => new string(s.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
     }
 
+    /// <summary>Reads the lensfun database's XML files.</summary>
     internal static class LensfunReader
     {
+        /// <summary>
+        /// Every .xml file of a folder, in name order; a file that does not parse is skipped.
+        /// </summary>
+        /// <param name="dir">The folder of the database's XML files.</param>
+        /// <returns>What the files hold together; <see cref="LensfunData.Empty"/> for a missing
+        /// folder.</returns>
         internal static LensfunData ReadDirectory(string dir)
         {
             var profiles = new List<LensProfile>();
@@ -82,13 +108,20 @@ namespace FlatCheck
             {
                 LensfunData d;
                 try { d = ReadXml(File.ReadAllText(f), f); }
-                catch (Exception) { continue; }   // un fisier stricat nu opreste lista; e al altcuiva
+                catch (Exception) { continue; }   // a broken file does not stop the list; it is someone else's
                 profiles.AddRange(d.Profiles);
                 cameras.AddRange(d.Cameras);
             }
             return new LensfunData(profiles, cameras);
         }
 
+        /// <summary>
+        /// The cameras with a crop factor and the lenses' "pa" vignetting entries of one
+        /// document, the copied-distance pairs collapsed. Throws on XML that does not parse.
+        /// </summary>
+        /// <param name="xml">The document's text.</param>
+        /// <param name="file">The path recorded as each profile's source.</param>
+        /// <returns>The document's content.</returns>
         internal static LensfunData ReadXml(string xml, string file)
         {
             var doc = XDocument.Parse(xml);
@@ -116,8 +149,9 @@ namespace FlatCheck
                 var mounts = lens.Elements("mount").Select(m => m.Value.Trim()).Where(m => m.Length > 0).ToList();
                 string mount = mounts.Count > 0 ? string.Join(" / ", mounts) : "";
                 var aliases = Aliases(lens, "model");
-                // Crop-ul de calibrare face parte din identitate: acelasi obiectiv calibrat pe
-                // doua formate e de doua ori in baza, si sunt doua profile diferite (LensChoice).
+                // The calibration crop is part of the identity: the same lens calibrated on two
+                // formats is in the database twice, and they are two different profiles
+                // (LensChoice).
                 var choice = new LensChoice(ProfileSource.Lensfun, maker, model, mount, LensChoice.CalibrationLabel(crop.Value));
                 var own = new List<LensProfile>();
                 foreach (XElement v in cal.Elements("vignetting"))
@@ -139,15 +173,17 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Aceeasi (focala, diafragma) la doua distante cu EXACT aceiasi coeficienti e conventia
-        /// lensfun pentru "masurat la o singura distanta, nescrisa": scriptul lor de calibrare
-        /// copiaza valorile la 10 si la 1000 m. Doua masuratori reale nu coincid la patru
-        /// zecimale. Perechea devine un singur profil cu distanta necunoscuta (NaN), pe care
-        /// raportul il scrie "distanta nespecificata" in loc de "infinit" - pe Nikkor 35/1.8G
-        /// DX intrarea "APS-C" spunea "infinit" si arata ca un perete de aproape (platoul de
-        /// 0.16-0.17 stopuri de la f/4 la f/22 e cel al profilului Adobe de la 0.36 m, nu cel de
-        /// la 1.5 m). O singura intrare la o distanta declarata ramane cu distanta ei.
+        /// The same (focal length, aperture) at two distances with EXACTLY the same coefficients
+        /// is lensfun's convention for "measured at a single distance, not written down": their
+        /// calibration script copies the values to 10 and to 1000 m. Two real measurements do not
+        /// coincide to four decimals. The pair becomes a single profile with an unknown distance
+        /// (NaN), which the report writes "distanta nespecificata" instead of "infinit" - on the
+        /// Nikkor 35/1.8G DX the "APS-C" entry said "infinit" and looked like a close wall (the
+        /// plateau of 0.16-0.17 stops from f/4 to f/22 is that of the Adobe profile at 0.36 m, not
+        /// that at 1.5 m). A single entry at a declared distance keeps its distance.
         /// </summary>
+        /// <param name="own">One lens's profiles, as read.</param>
+        /// <returns>The profiles with each copied pair (or group) collapsed into one.</returns>
         internal static IReadOnlyList<LensProfile> CollapseCopiedDistances(IReadOnlyList<LensProfile> own)
         {
             var result = new List<LensProfile>();
@@ -165,10 +201,19 @@ namespace FlatCheck
             return result;
         }
 
+        /// <summary>Whether two models carry the same polynomial coefficients, exactly.</summary>
+        /// <param name="a">One model.</param>
+        /// <param name="b">The other.</param>
+        /// <returns>True when both have coefficients and they are equal.</returns>
         static bool SameCoefficients(VignettingModel a, VignettingModel b)
             => a.Coefficients != null && b.Coefficients != null && a.Coefficients.SequenceEqual(b.Coefficients);
 
-        /// <summary>Elementul fara atribut lang - numele canonic; altfel primul.</summary>
+        /// <summary>
+        /// The element without a lang attribute - the canonical name; otherwise the first.
+        /// </summary>
+        /// <param name="e">The camera or lens element.</param>
+        /// <param name="name">The child element's name ("model", "maker").</param>
+        /// <returns>Its trimmed text, or null when absent or empty.</returns>
         static string Canonical(XElement e, string name)
         {
             var all = e.Elements(name).ToList();
@@ -177,10 +222,19 @@ namespace FlatCheck
             return string.IsNullOrEmpty(v) ? null : v;
         }
 
+        /// <summary>
+        /// The names in other languages: the child elements with a lang attribute.
+        /// </summary>
+        /// <param name="e">The camera or lens element.</param>
+        /// <param name="name">The child element's name.</param>
+        /// <returns>The distinct non-empty aliases.</returns>
         static IReadOnlyList<string> Aliases(XElement e, string name)
             => e.Elements(name).Where(x => x.Attribute("lang") != null).Select(x => x.Value.Trim())
                 .Where(v => v.Length > 0).Distinct().ToList();
 
+        /// <summary>A number in the invariant culture, or null.</summary>
+        /// <param name="s">The text; null allowed.</param>
+        /// <returns>The number, or null when the text is null or not a number.</returns>
         static double? Num(string s)
             => s != null && double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : null;
     }

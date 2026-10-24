@@ -15,32 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ThirdParty.cs - componentele scrise de altii pe care le leaga unealta, ca valoare.
+// ThirdParty.cs - the components written by others that the tool links, as a value.
 //
-// DE CE SE AFISEAZA, NU DOAR SE LIVREAZA. Motivele de compatibilitate cu GPLv3 stau in
-// THIRD-PARTY-NOTICES.md, dar acel fisier nu calatoreste garantat cu binarul: promisiunea
-// uneltei e "un singur exe copiabil", si cine ia doar exe-ul nu primeste niciun fisier de
-// notite. Iar LGPL-2.1 sectiunea 6 (LibRaw) cere explicit ca, daca programul afiseaza
-// notite de copyright la rulare - si o face, pe linia a doua a fiecarui raport si in bara
-// ferestrei - notita bibliotecii sa apara printre ele, cu o trimitere la licenta. Deci
-// lista asta e ce arata fereastra "Despre", si singurul loc din care poate sa o arate.
+// WHY THEY ARE SHOWN, NOT ONLY SHIPPED. The GPLv3 compatibility arguments sit in
+// THIRD-PARTY-NOTICES.md, but that file is not guaranteed to travel with the binary: the tool's
+// promise is "a single copyable exe", and whoever takes only the exe gets no notices file. And
+// LGPL-2.1 section 6 (LibRaw) asks explicitly that, if the program shows copyright notices at
+// run time - and it does, on the second line of every report and in the window's bar - the
+// library's notice appear among them, with a reference to the licence. So this list is what the
+// "Despre" window shows, and the only place it can show it from.
 //
-// O DEPENDINTA NOUA INSEAMNA O INTRARE AICI, pe langa cea din THIRD-PARTY-NOTICES.md.
-// ThirdPartyTests leaga lista de PackageReference-urile din FlatCheck.Core.csproj in
-// ambele sensuri, si fiecare nume de un heading din fisierul de notite - un pachet
-// adaugat fara intrare pica testul, nu ramane nescris pe ecran.
+// A NEW DEPENDENCY MEANS AN ENTRY HERE, beside the one in THIRD-PARTY-NOTICES.md.
+// ThirdPartyTests ties the list to the PackageReferences of FlatCheck.Core.csproj in both
+// directions, and each name to a heading of the notices file - a package added without an entry
+// fails the test, it does not stay unwritten on screen.
 //
-// Textul oglindeste tabelul din README si fisierul de notite DE MANA; niciun test nu
-// compara formularile, doar prezenta.
+// The text mirrors the table of the README and the notices file BY HAND; no test compares the
+// wording, only the presence.
 
 using System.Collections.Generic;
 
 namespace FlatCheck
 {
     /// <summary>
-    /// O componenta terta: cum se cheama, ce face aici, sub ce licenta e luata, a cui e,
-    /// unde e proiectul ei, si care pachete NuGet din csproj o aduc.
+    /// A third-party component: what it is called, what it does here, under which licence it is
+    /// taken, whose it is, where its project is, and which NuGet packages of the csproj bring it.
     /// </summary>
+    /// <param name="Name">The component's name, as the notices file's heading spells it.</param>
+    /// <param name="Role">What it does in the tool, in Romanian, as the window shows it.</param>
+    /// <param name="Licence">The licence it is taken under.</param>
+    /// <param name="Copyright">Its copyright notice.</param>
+    /// <param name="Url">Its project's home page.</param>
+    /// <param name="Packages">The NuGet packages that bring it; empty for data.</param>
     internal sealed record ThirdPartyComponent(
         string Name,
         string Role,
@@ -50,13 +56,14 @@ namespace FlatCheck
         string[] Packages)
     {
         /// <summary>
-        /// O componenta de DATE, nu de cod: nu vine printr-un pachet NuGet, ci ca fisiere
-        /// livrate langa exe (baza lensfun). Lista de pachete e goala si testul care leaga
-        /// componentele de csproj o stie.
+        /// A DATA component, not a code one: it does not come through a NuGet package, but as
+        /// files shipped beside the exe (the lensfun database). The package list is empty and the
+        /// test that ties the components to the csproj knows it.
         /// </summary>
         internal bool IsData => Packages.Length == 0;
     }
 
+    /// <summary>The components the tool links or ships, for the notices it shows.</summary>
     internal static class ThirdParty
     {
         internal static readonly IReadOnlyList<ThirdPartyComponent> Components = new[]
@@ -69,10 +76,10 @@ namespace FlatCheck
                 Url: "https://github.com/sdcb/Sdcb.LibRaw",
                 Packages: new[] { "Sdcb.LibRaw" }),
 
-            // Dubla licenta, si se alege LGPL: CDDL nu e compatibila cu GPL. Vezi
-            // THIRD-PARTY-NOTICES.md pentru de ce; aici doar se spune ce s-a ales.
-            // Notita de copyright e cea din fisierul COPYRIGHT al LibRaw 0.21.1, versiunea
-            // pe care o aduc pachetele runtime.
+            // Dual licence, and LGPL is chosen: CDDL is not compatible with the GPL. See
+            // THIRD-PARTY-NOTICES.md for why; here it only says what was chosen. The copyright
+            // notice is the one in the COPYRIGHT file of LibRaw 0.21.1, the version the runtime
+            // packages bring.
             new ThirdPartyComponent(
                 Name: "LibRaw",
                 Role: "citirea fisierelor raw de aparat (bibliotecile native)",
@@ -89,9 +96,9 @@ namespace FlatCheck
                 Url: "https://github.com/SixLabors/ImageSharp",
                 Packages: new[] { "SixLabors.ImageSharp" }),
 
-            // Date, nu cod: baza de profile de obiective, copiata neschimbata in folderul
-            // lensfun/ de langa exe, pentru flatul sintetic. CC BY-SA cere atribuirea, si
-            // lista asta e locul in care programul isi arata notitele - de aceea e aici.
+            // Data, not code: the database of lens profiles, copied unchanged into the lensfun/
+            // folder beside the exe, for the synthetic flat. CC BY-SA asks for attribution, and
+            // this list is the place where the program shows its notices - which is why it is here.
             new ThirdPartyComponent(
                 Name: "lensfun (baza de date)",
                 Role: "profilele de vignetare ale obiectivelor, pentru flatul sintetic (fisierele din lensfun/)",

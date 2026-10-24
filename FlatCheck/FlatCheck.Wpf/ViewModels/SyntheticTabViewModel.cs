@@ -112,7 +112,11 @@ namespace FlatCheck.Wpf
                                        Func<string, LoadedFrame> loadInfo = null)
             : this(confirm, new ProfileCatalog(locate), loadInfo) { }
 
+        /// <param name="confirm">Asks the user a yes/no question (overwriting the synthetic flat);
+        /// null answers yes.</param>
         /// <param name="catalog">Catalogul comun al ferestrei (MainViewModel il da si tabului Structura).</param>
+        /// <param name="loadInfo">Reads a file's header without its pixels; null uses
+        /// <see cref="ImageLoader.LoadInfo"/>.</param>
         internal SyntheticTabViewModel(Func<string, bool> confirm, ProfileCatalog catalog, Func<string, LoadedFrame> loadInfo)
         {
             _confirm = confirm ?? (_ => true);

@@ -20,7 +20,7 @@ namespace FlatCheck.Tests;
 /// <summary>
 /// Phase 4: the numeric primitives. All pure functions with hand-computable answers.
 ///
-/// <see cref="Stats.Percentile"/> is meant to match <c>numpy.percentile</c>'s default
+/// <see cref="Stats.Percentile(List{double}, double)"/> is meant to match <c>numpy.percentile</c>'s default
 /// (linear interpolation between the two neighbouring order statistics), because
 /// flatcheck.py is the numeric oracle - the expected values below are the ones numpy
 /// produces for the same input.

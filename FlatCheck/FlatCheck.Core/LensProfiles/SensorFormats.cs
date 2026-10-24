@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Tipurile de senzor si crop-ul lor nominal - rezerva pentru un aparat pe care baza de
-// camere lensfun nu-l are. Sase numere fixe de decenii, nu o lista de aparate: lista de
-// aparate o tine lensfun (1053 de corpuri, actualizata cu baza), si o a doua lista a
-// noastra s-ar fi invechit la primul model nou. Crop-ul nominal e la 1-2 % de cel real
-// (D3300: 1.523 fata de 1.5), destul pentru raza coltului.
+// The sensor types and their nominal crop - the fallback for a camera the lensfun camera
+// database does not have. Six numbers fixed for decades, not a list of cameras: the list of
+// cameras is lensfun's (1053 bodies, updated with the database), and a second list of ours would
+// have gone stale at the first new model. The nominal crop is within 1-2 % of the real one
+// (D3300: 1.523 against 1.5), enough for the corner's radius.
 
 using System;
 using System.Collections.Generic;
@@ -28,11 +28,16 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>A sensor format and its nominal crop factor.</summary>
+    /// <param name="Label">The format's name, as the report and the window show it.</param>
+    /// <param name="Crop">The nominal crop factor against full frame (1.0).</param>
+    /// <param name="Note">The sensor's size and the systems that use it.</param>
     internal sealed record SensorFormat(string Label, double Crop, string Note)
     {
         internal string CropText => Crop.ToString("0.0#", CultureInfo.InvariantCulture);
     }
 
+    /// <summary>The six sensor formats, and the nearest one to a crop factor.</summary>
     internal static class SensorFormats
     {
         internal static readonly IReadOnlyList<SensorFormat> All = new[]
@@ -45,14 +50,26 @@ namespace FlatCheck
             new SensorFormat("1\"", 2.7, "13.2 x 8.8 mm: Sony RX100, Nikon 1"),
         };
 
-        /// <summary>"full frame 1.0, APS-C 1.5, APS-C Canon 1.6, ..." - pentru mesajul care cere --crop.</summary>
+        /// <summary>
+        /// "full frame 1.0, APS-C 1.5, APS-C Canon 1.6, ..." - for the message that asks for
+        /// --crop.
+        /// </summary>
+        /// <returns>Every format with its crop, comma-separated.</returns>
         internal static string Describe()
             => string.Join(", ", All.Select(f => $"{f.Label} {f.CropText}"));
 
-        /// <summary>Cat de departe de crop-ul nominal mai e acelasi format: D3300 1.523 e APS-C 1.5, Tokina lensfun 1.61 e APS-C Canon 1.6.</summary>
+        /// <summary>
+        /// How far from the nominal crop the same format still is, as a fraction: D3300 1.523 is
+        /// APS-C 1.5, the Tokina's lensfun 1.61 is APS-C Canon 1.6.
+        /// </summary>
         internal const double Tolerance = 0.05;
 
-        /// <summary>Formatul al carui crop nominal e cel mai aproape, in toleranta, sau null (1.15 nu e nimic).</summary>
+        /// <summary>
+        /// The format whose nominal crop is nearest, within the tolerance, or null (1.15 is
+        /// nothing).
+        /// </summary>
+        /// <param name="crop">The crop factor; 0, negative or NaN gives null.</param>
+        /// <returns>The nearest format within <see cref="Tolerance"/>, or null.</returns>
         internal static SensorFormat Nearest(double crop)
         {
             if (!(crop > 0)) return null;
@@ -68,7 +85,9 @@ namespace FlatCheck
 
         internal const string Unusual = "format neobisnuit";
 
-        /// <summary>Eticheta formatului, sau "format neobisnuit".</summary>
+        /// <summary>The format's label, or "format neobisnuit".</summary>
+        /// <param name="crop">The crop factor.</param>
+        /// <returns>The nearest format's label, or <see cref="Unusual"/>.</returns>
         internal static string LabelOf(double crop) => Nearest(crop)?.Label ?? Unusual;
     }
 }

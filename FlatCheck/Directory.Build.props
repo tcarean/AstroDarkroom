@@ -55,6 +55,17 @@
          rejects; each advisory is read and judged in ADR 0058 and in
          docs/design/dependencies.md, where the next one goes too. -->
     <MSBuildWarningsNotAsErrors>NU1902;NU1903</MSBuildWarningsNotAsErrors>
+
+    <!-- The XML documentation file, written so the compiler checks every doc comment: with the
+         gate's -warnaserror a malformed comment, a <param> naming no parameter, a parameter left
+         untagged beside tagged ones or a cref that does not resolve fails the build. CS1591
+         (a public member without a comment) stays muted: it asks for public members only,
+         properties included, and the core is internal; the kit's rule "Documentation comments"
+         is the one that applies. Nothing reads the XML at run time, so no publish ships it
+         (ADR 0059). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <PublishDocumentationFiles>false</PublishDocumentationFiles>
   </PropertyGroup>
 
 </Project>

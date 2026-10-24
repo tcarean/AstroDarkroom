@@ -55,6 +55,11 @@ namespace FlatCheck.Wpf
 
         readonly SirilSession _session;
 
+        /// <param name="session">The session the parts are cut from: its flats split between them,
+        /// at most <see cref="MaxLights"/> lights when the script enters lights/, and every other
+        /// folder the script enters, but Siril's output folders, copied whole; never null.</param>
+        /// <param name="parts">How many parts: one of <see cref="Choices"/>.</param>
+        /// <param name="tempRoot">The folder the part sessions are built under; never null.</param>
         /// <param name="requiredFolders">Folderele in care intra scriptul (SirilScript.RequiredFolders); flats/ se copiaza oricum.</param>
         internal SplitPlan(SirilSession session, int parts, string tempRoot, IEnumerable<string> requiredFolders)
         {

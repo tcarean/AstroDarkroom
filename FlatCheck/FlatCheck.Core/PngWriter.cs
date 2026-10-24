@@ -15,40 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PngWriter.cs - encoder PNG propriu (fara dependinte) pentru harta reziduala.
+// PngWriter.cs - our own PNG encoder (no dependencies) for the residual map.
 //
-// Harta e divergenta: albastru (sub) -> alb -> rosu (peste), cu albul FIXAT la 1.0.
-// Fixarea la 1.0 e valida pentru toti apelantii de azi - reziduul de structura e
-// img/model ~ 1, raportul A/B e normalizat la mediana 1, iar harta din --light e
-// 1 + radial/a. Daca adaugi un apelant ale carui date NU sunt centrate pe 1, harta
-// va minti.
+// The map is diverging: blue (below) -> white -> red (above), with the white FIXED at 1.0.
+// Fixing it at 1.0 is valid for every caller of today - the structure residual is img/model ~ 1,
+// the A/B ratio is normalised to median 1, and the --light map is 1 + radial/a. If you add a
+// caller whose data are NOT centred on 1, the map will lie.
 //
-// CAPETELE intervalului vin din afara, ca MapRange, si sunt de doua feluri:
+// The ENDS of the range come from outside, as MapRange, and are of two kinds:
 //
-//   - AutoRange - percentilele 1/99 plus 10% padding. Purtarea din totdeauna, si
-//     singura pe care o folosesc consola si fisierul salvat de fereastra.
-//   - FixedRange - simetric, +/- un plafon procentual in jurul lui 1.0.
+//   - AutoRange - the 1/99 percentiles plus 10% padding. The behaviour of always, and the only
+//     one the console and the file the window saves use.
+//   - FixedRange - symmetric, +/- a percentage cap around 1.0.
 //
-// De ce a aparut a doua: scara automata intinde culoarea pe intervalul propriu al
-// fiecarei imagini, deci rosu plin nu inseamna nimic anume - masurat pe doua mastere
-// ale aceluiasi obiectiv, rosu plin era +3% pe unul si +10% pe altul, iar nimic de pe
-// ecran nu spunea asta. Doua hartii pe scara automata se pot compara doar prin forma.
+// Why the second appeared: the automatic scale stretches the colour over each image's own
+// range, so full red means nothing in particular - measured on two masters of the same lens,
+// full red was +3% on one and +10% on the other, and nothing on screen said so. Two maps on the
+// automatic scale can be compared only by their shape.
 //
-// Plafoanele oferite (FixedCapsPct) NU sunt numere noi: sunt granitele scarii de
-// reziduu, Th.Resid*. Nu le duplica; daca scara se recalibreaza, se recalibreaza si ele.
+// The caps offered (FixedCapsPct) are NOT new numbers: they are the bounds of the residual
+// scale, Th.Resid*. Do not duplicate them; if the scale is recalibrated, so are they.
 //
-// Dar plafonul si banda NU sunt acelasi lucru, si merita spus exact: plafonul e abaterea
-// unui PIXEL fata de model, banda e o amplitudine varf-la-varf. O pata unilaterala de
-// +10% atinge plafonul de 10% chiar la granita benzii BUN; un gradient de 10% (care
-// merge de -5% la +5%) ajunge doar la jumatatea lui. Masurat: la un gradient de 10%
-// harta are p1/p99 la -4.9/+4.8%. Deci pe chipul implicit de +/-10% saturatia inseamna
-// "iese din BUN" pentru o pata si "a ajuns la REFA" pentru un gradient. Nu exista un
-// plafon care sa fie exact pentru amandoua, asa ca se explica in legenda si in README,
-// nu se schimba cifrele.
+// But the cap and the band are NOT the same thing, and it is worth saying exactly: the cap is a
+// PIXEL's deviation from the model, the band is a peak-to-peak amplitude. A one-sided +10% spot
+// reaches the 10% cap right at the bound of the BUN band; a 10% gradient (which goes from -5% to
+// +5%) reaches only half of it. Measured: at a 10% gradient the map has p1/p99 at -4.9/+4.8%. So
+// on the default +/-10% chip, saturation means "leaves BUN" for a spot and "has reached REFA"
+// for a gradient. There is no cap that is exact for both, so it is explained in the legend and
+// in the README, the figures are not changed.
 //
-// Encoderul scrie semnatura + IHDR (8 biti, color type 2 = RGB) + un singur IDAT
-// (fiecare rand precedat de filter byte 0, deflatat prin ZLibStream) + IEND, cu CRC-32
-// calculat de mana.
+// The encoder writes the signature + IHDR (8 bits, color type 2 = RGB) + a single IDAT (each row
+// preceded by filter byte 0, deflated through ZLibStream) + IEND, with the CRC-32 computed by
+// hand.
 
 using System;
 using System.IO;
@@ -57,50 +55,75 @@ using System.Collections.Generic;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Encodes RGB rasters as PNG, and turns a residual raster centred on 1.0 into the
+    /// blue-white-red map, alone or several side by side in a labelled mosaic.
+    /// </summary>
     internal static class PngWriter
     {
-        /// <summary>Albul hartii. Vezi nota de sus inainte sa-l schimbi.</summary>
+        /// <summary>The map's white. See the note at the top before you change it.</summary>
         internal const double Mid = 1.0;
 
         internal static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
-        /// <summary>Capetele hartii, in unitatile rasterului (deci in jurul lui <see cref="Mid"/> = 1.0).</summary>
+        /// <summary>
+        /// The map's ends, in the raster's units (so around <see cref="Mid"/> = 1.0).
+        /// </summary>
+        /// <param name="Lo">The value drawn full blue; anything lower is clipped to it.</param>
+        /// <param name="Hi">The value drawn full red; anything higher is clipped to it.</param>
         internal readonly record struct MapRange(double Lo, double Hi);
 
         /// <summary>
-        /// Plafoanele oferite ca scara fixa: granitele scarii de reziduu, in procente.
-        /// Vezi nota de sus - nu sunt praguri noi, sunt Th.Resid* refolosite.
+        /// The caps offered as a fixed scale: the bounds of the residual scale, in percent.
+        /// See the note at the top - they are not new thresholds, they are Th.Resid* reused.
         /// </summary>
         internal static readonly double[] FixedCapsPct = { Th.ResidPerfect, Th.ResidUsable, Th.ResidCheck };
 
         /// <summary>
-        /// Plafonul implicit al ferestrei: banda in care se asteapta sa traiasca un flat
-        /// normal, deci doua sesiuni se compara dintr-o privire fara sa apesi nimic.
+        /// The window's default cap: the band a normal flat is expected to live in, so two
+        /// sessions are compared at a glance without pressing anything.
         /// </summary>
         internal const double DefaultCapPct = Th.ResidUsable;
 
         /// <summary>
-        /// Scara automata: percentilele 1/99 plus 10% padding. Purtarea din totdeauna -
-        /// consola si fisierul salvat folosesc numai asta.
+        /// The automatic scale: the 1/99 percentiles plus 10% padding. The behaviour of always -
+        /// the console and the saved file use only this.
         /// </summary>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
+        /// <returns>The ends, each padded by 10% of the spread and at least 1e-5.</returns>
         internal static MapRange AutoRange(Img resid)
         {
-            // o singura sortare pentru ambele percentile
+            // a single sort for both percentiles
             var sorted = Stats.Sorted(resid.D);
             double lo = Stats.OfSorted(sorted, 1), hi = Stats.OfSorted(sorted, 99);
             double pad = Math.Max(hi - lo, 1e-4) * 0.1;
             return new MapRange(lo - pad, hi + pad);
         }
 
-        /// <summary>Scara fixa, simetrica: +/- <paramref name="capPct"/> procente in jurul lui 1.0.</summary>
+        /// <summary>
+        /// The fixed, symmetric scale: +/- <paramref name="capPct"/> percent around 1.0.
+        /// </summary>
+        /// <param name="capPct">The cap, in percent.</param>
+        /// <returns>The ends, <c>1 - cap/100</c> and <c>1 + cap/100</c>.</returns>
         internal static MapRange FixedRange(double capPct)
             => new MapRange(Mid - capPct / 100.0, Mid + capPct / 100.0);
 
-        /// <summary>Scaleaza reziduul si-l converteste in RGB. Intoarce si capetele, ca sa fie verificabile.</summary>
+        /// <summary>
+        /// Scales the residual and converts it to RGB, on the automatic scale. It also returns
+        /// the ends, so that they can be checked.
+        /// </summary>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
+        /// <returns>The RGB bytes (H*W*3, interleaved) and the ends used.</returns>
         internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid)
             => MapResidual(resid, AutoRange(resid));
 
-        /// <inheritdoc cref="MapResidual(Img)"/>
+        /// <summary>
+        /// Scales the residual and converts it to RGB, on ends given by the caller. It also
+        /// returns the ends, so that they can be checked.
+        /// </summary>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
+        /// <param name="range">The ends of the colour scale.</param>
+        /// <returns>The RGB bytes (H*W*3, interleaved) and the ends used.</returns>
         internal static (byte[] Rgb, double Lo, double Hi) MapResidual(Img resid, MapRange range)
         {
             double lo = range.Lo, hi = range.Hi;
@@ -118,45 +141,67 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Harta reziduala gata encodata PNG, in memorie, pe scara automata.
+        /// The residual map ready encoded as PNG, in memory, on the automatic scale.
         ///
-        /// Asta e forma pe care o vor amandoua aplicatiile: consola o scrie pe disc,
-        /// fereastra o da direct unui BitmapImage. Un fisier temporar doar ca fereastra
-        /// sa poata arata o imagine ar fi fost gunoi pe disc si o cale de esec in plus.
+        /// That is the form both applications want: the console writes it to disk, the window
+        /// gives it straight to a BitmapImage. A temporary file just so that the window can show
+        /// an image would have been litter on disk and one more failure path.
         /// </summary>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
+        /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeResidualMap(Img resid)
             => EncodeResidualMap(resid, AutoRange(resid));
 
         /// <summary>
-        /// Aceeasi harta, pe capete date de apelant. Fereastra o refoloseste ca sa arate
-        /// acelasi reziduu pe scara fixa, fara sa reia analiza.
+        /// The same map, on ends given by the caller. The window reuses it to show the same
+        /// residual on the fixed scale, without rerunning the analysis.
         /// </summary>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
+        /// <param name="range">The ends of the colour scale.</param>
+        /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeResidualMap(Img resid, MapRange range)
         {
             var (rgb, _, _) = MapResidual(resid, range);
             return Encode(rgb, resid.W, resid.H);
         }
 
-        /// <summary>Scrie harta reziduala pe disc. Mesajul pentru utilizator e treaba apelantului.</summary>
+        /// <summary>
+        /// Writes the residual map to disk, on the automatic scale. The message for the user is
+        /// the caller's business.
+        /// </summary>
+        /// <param name="path">The PNG file to write; overwritten if it exists.</param>
+        /// <param name="resid">The residual raster, centred on 1.0.</param>
         internal static void WriteResidualMap(string path, Img resid)
             => File.WriteAllBytes(path, EncodeResidualMap(resid));
 
-        // ------------------------------------------------------------------ mozaicul
+        // ------------------------------------------------------------------ the mosaic
         //
-        // Mai multe harti reziduale una langa alta, pe O SINGURA scara (data de apelant,
-        // de obicei AutoRange peste toate deodata), cu o banda de titlu deasupra si o
-        // banda de eticheta deasupra fiecarei dale. Textul e BitmapFont; scara textului
-        // se ia dupa latimea dalei, ca o eticheta sa incapa si pe o dala de test de 128 px.
-        // Nu decide nimic: apelantul da hartile, etichetele, scara si titlul (ADR 0054).
+        // Several residual maps side by side, on ONE scale (given by the caller, usually
+        // AutoRange over all of them at once), with a title band above and a label band above
+        // each tile. The text is BitmapFont; the text's scale follows the tile's width, so that
+        // a label fits even on a 128 px test tile. It decides nothing: the caller gives the
+        // maps, the labels, the scale and the title (ADR 0054).
 
         internal const int MosaicGap = 8;
         internal const int MosaicTextScale = 3;
         internal const int MosaicPad = 8;
-        /// <summary>Inaltimea unei benzi de text (titlu, eticheta), fixa: la scara maxima a textului plus margini.</summary>
+        /// <summary>
+        /// The height of a text band (title, label), fixed: at the text's largest scale plus
+        /// margins.
+        /// </summary>
         internal static readonly int MosaicBandHeight = BitmapFont.Height(MosaicTextScale) + 2 * MosaicPad;
         internal static readonly (byte R, byte G, byte B) MosaicText = (255, 255, 255);
         internal static readonly (byte R, byte G, byte B) MosaicBand = (40, 40, 44);
 
+        /// <summary>
+        /// The mosaic of residual maps as a PNG: the title band, then per tile its label band
+        /// and its map, the tiles <see cref="MosaicGap"/> px apart. An empty list throws an
+        /// ArgumentException.
+        /// </summary>
+        /// <param name="tiles">The maps, left to right, each with its label; at least one.</param>
+        /// <param name="range">The one colour scale every map is drawn on.</param>
+        /// <param name="title">The text of the title band.</param>
+        /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeMosaic(IReadOnlyList<(Img Map, string Label)> tiles, MapRange range, string title)
         {
             if (tiles == null || tiles.Count == 0) throw new ArgumentException("mozaic fara dale", nameof(tiles));
@@ -194,6 +239,16 @@ namespace FlatCheck
             return Encode(rgb, w, h);
         }
 
+        /// <summary>
+        /// The colour of one value on the diverging scale: blue at <paramref name="lo"/>, white
+        /// at <paramref name="mid"/>, red at <paramref name="hi"/>, linear in between and clipped
+        /// outside.
+        /// </summary>
+        /// <param name="v">The value.</param>
+        /// <param name="lo">The value drawn full blue.</param>
+        /// <param name="mid">The value drawn white.</param>
+        /// <param name="hi">The value drawn full red.</param>
+        /// <returns>The colour's components, 0..255.</returns>
         internal static (byte r, byte g, byte b) Colormap(double v, double lo, double mid, double hi)
         {
             double t;
@@ -201,27 +256,35 @@ namespace FlatCheck
             if (v < mid)
             {
                 t = (v - lo) / Math.Max(mid - lo, 1e-12); t = Math.Clamp(t, 0, 1);
-                // albastru -> alb
+                // blue -> white
                 r = (byte)(255 * t); g = (byte)(255 * t); b = 255;
             }
             else
             {
                 t = (v - mid) / Math.Max(hi - mid, 1e-12); t = Math.Clamp(t, 0, 1);
-                // alb -> rosu
+                // white -> red
                 r = 255; g = (byte)(255 * (1 - t)); b = (byte)(255 * (1 - t));
             }
             return (r, g, b);
         }
 
+        /// <summary>Writes an RGB raster to disk as a PNG.</summary>
+        /// <param name="path">The PNG file to write; overwritten if it exists.</param>
+        /// <param name="rgb">The pixels, w*h*3 bytes, interleaved R,G,B, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
         internal static void Write(string path, byte[] rgb, int w, int h)
             => File.WriteAllBytes(path, Encode(rgb, w, h));
 
         /// <summary>
-        /// Un raster gri, scris ca RGB cu cele trei componente egale. Encoderul ramane cu
-        /// un singur tip de culoare; a adauga tipul 0 pentru vederile egalizate ar fi
-        /// insemnat o a doua cale prin IHDR si prin decoderul din teste, pentru octeti pe
-        /// care nimeni nu-i numara.
+        /// A grey raster, written as RGB with the three components equal. The encoder keeps a
+        /// single colour type; adding type 0 for the equalised views would have meant a second
+        /// path through IHDR and through the tests' decoder, for bytes no one counts.
         /// </summary>
+        /// <param name="grey">The pixels, w*h bytes, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
+        /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeGrey(byte[] grey, int w, int h)
         {
             var rgb = new byte[grey.Length * 3];
@@ -232,7 +295,13 @@ namespace FlatCheck
             return Encode(rgb, w, h);
         }
 
-        /// <summary>Encodeaza in memorie - punctul de intrare real, ca sa fie testabil fara disc.</summary>
+        /// <summary>
+        /// Encodes in memory - the real entry point, so that it can be tested without a disk.
+        /// </summary>
+        /// <param name="rgb">The pixels, w*h*3 bytes, interleaved R,G,B, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
+        /// <returns>The PNG file's bytes: 8-bit RGB, no filtering, one IDAT.</returns>
         internal static byte[] Encode(byte[] rgb, int w, int h)
         {
             using var outp = new MemoryStream();
@@ -242,10 +311,10 @@ namespace FlatCheck
             WriteBE(ihdr, 0, w); WriteBE(ihdr, 4, h);
             ihdr[8] = 8;   // bit depth
             ihdr[9] = 2;   // color type RGB
-            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;   // deflate, filtrare adaptiva, neintretesut
+            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;   // deflate, adaptive filtering, not interlaced
             WriteChunk(outp, "IHDR", ihdr);
 
-            // IDAT: fiecare rand precedat de filter byte 0 (None), apoi zlib
+            // IDAT: each row preceded by filter byte 0 (None), then zlib
             using var raw = new MemoryStream();
             for (int y = 0; y < h; y++)
             {
@@ -265,9 +334,17 @@ namespace FlatCheck
             return outp.ToArray();
         }
 
+        /// <summary>Writes a 32-bit integer big-endian into a buffer.</summary>
+        /// <param name="b">The buffer.</param>
+        /// <param name="o">The offset of the first byte.</param>
+        /// <param name="v">The value.</param>
         static void WriteBE(byte[] b, int o, int v)
         { b[o] = (byte)(v >> 24); b[o + 1] = (byte)(v >> 16); b[o + 2] = (byte)(v >> 8); b[o + 3] = (byte)v; }
 
+        /// <summary>Writes one PNG chunk: length, type, data, CRC.</summary>
+        /// <param name="s">Where the chunk goes.</param>
+        /// <param name="type">The four-letter chunk type.</param>
+        /// <param name="data">The chunk's data; may be empty.</param>
         static void WriteChunk(Stream s, string type, byte[] data)
         {
             var len = new byte[4]; WriteBE(len, 0, data.Length); s.Write(len, 0, 4);
@@ -278,16 +355,17 @@ namespace FlatCheck
             var cb = new byte[4]; WriteBE(cb, 0, (int)crc); s.Write(cb, 0, 4);
         }
 
-        // Construita o singura data, la initializarea tipului, si publicata gata umpluta.
-        // A fost un camp initializat lenes ("if null, umple"), ceea ce era o cursa reala,
-        // nu teoretica: campul se atribuia INAINTE de umplere, deci un al doilea fir care
-        // intra in acel moment vedea tabela ne-nula, o citea cu zerouri si scria un CRC
-        // gresit - adica un PNG corupt. Reprodus: 8 fire, 2000 de runde, 5261 de CRC-uri
-        // gresite. In fereastra e chiar posibil, fiindca tabul Ratio poate encoda in timp
-        // ce Structura inca ruleaza. Un initializator static are garantia CLR-ului ca
-        // nimeni nu vede tabela pana nu e gata.
+        // Built once, when the type initialises, and published already filled. It used to be a
+        // lazily initialised field ("if null, fill it"), which was a real race, not a theoretical
+        // one: the field was assigned BEFORE it was filled, so a second thread coming in at that
+        // moment saw the table non-null, read it with zeros and wrote a wrong CRC - that is, a
+        // corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs. In the window it is
+        // really possible, because the Ratio tab can encode while Structure is still running. A
+        // static initialiser has the CLR's guarantee that no one sees the table until it is ready.
         static readonly uint[] _crcTable = BuildCrcTable();
 
+        /// <summary>The 256-entry table of the PNG CRC-32 (polynomial 0xedb88320).</summary>
+        /// <returns>The table.</returns>
         static uint[] BuildCrcTable()
         {
             var table = new uint[256];
@@ -300,6 +378,10 @@ namespace FlatCheck
             return table;
         }
 
+        /// <summary>The CRC-32 of a chunk, over its type and its data, as PNG defines it.</summary>
+        /// <param name="type">The chunk type's four bytes.</param>
+        /// <param name="data">The chunk's data.</param>
+        /// <returns>The CRC.</returns>
         internal static uint Crc32(byte[] type, byte[] data)
         {
             uint crc = 0xffffffff;

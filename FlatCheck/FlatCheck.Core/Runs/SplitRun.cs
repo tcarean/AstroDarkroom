@@ -105,6 +105,7 @@ namespace FlatCheck
         /// <param name="query">Profilele si raw-ul de langa master, ca la structura; null = fara comparatie.</param>
         /// <param name="when">Data si ora rularii, scrise in raport si in titlul mozaicului.</param>
         /// <param name="framesPerPart">Cate cadre a avut fiecare parte; 0 cand nu se stie.</param>
+        /// <param name="report">Where the report text goes.</param>
         internal static RunOutcome<SplitResult> Execute(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                                         DateTime when, int framesPerPart, TextWriter report)
         {

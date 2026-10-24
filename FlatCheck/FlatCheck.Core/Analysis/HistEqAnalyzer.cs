@@ -240,10 +240,13 @@ namespace FlatCheck
         /// <summary>Latura lunga tinta a rasterului afisat: aceeasi ca la Img.Prepare.</summary>
         internal const int TargetLong = 1200;
 
+        /// <param name="data">The frame to display, as loaded.</param>
         /// <param name="cfa">
         /// Ordinea culorilor citita din fisier, sau null cand fisierul n-o spune. Numeste
         /// canalele si decide daca compozitul poate fi color; nu schimba niciun raster.
         /// </param>
+        /// <param name="targetLong">The long side of the displayed raster, in pixels; the frame is
+        /// shrunk by a whole factor to reach about it.</param>
         internal static HistEqResult Analyze(Img data, CfaPattern cfa, int targetLong = TargetLong)
         {
             bool canSplit = data.H >= 2 && data.W >= 2;

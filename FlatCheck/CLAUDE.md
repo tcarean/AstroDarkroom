@@ -89,13 +89,14 @@ a kit rule names it.
 - **Discuss before designing** (extends the kit's rule "Two readings"). Every design, not only a
   choice with more than one reasonable answer, goes to the owner first: the measured facts, the
   decisions to take and a recommendation; then wait (the owner's standing instruction).
-- **Languages** (varies the kit's rule "Languages", ADR 0006, and for a file not yet translated
-  the kit's rule "Documentation comments"). English in everything the model reads or writes
-  about the process: docs, tests of invariants, scripts, commits, CHANGELOG. Romanian in
-  everything the user sees: CLI text, `--help`, window labels, `README.md`. Code comments are
-  English too (the kit's ADR 0035), but most source files still carry Romanian ones: a file's
-  comments are translated when it gets its documentation comments, in a task of its own, and
-  until then a comment added to it is Romanian. Never leave a file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADR 0006, ADR 0060). English in everything
+  the model reads or writes about the process: docs, tests of invariants, scripts, commits,
+  CHANGELOG. Romanian in everything the user sees: CLI text, `--help`, window labels,
+  `README.md`. Every comment is English, in C#, XAML, csproj and the tests; a comment written now
+  is English whatever the file around it. Until the documentation backfill
+  (`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md`) reaches
+  its area, a file may still hold Romanian comments beside English ones; its area translates
+  them all. The exception ends with the backfill's fifth area.
 - **Computed only in the core.** Nothing is computed outside `FlatCheck.Core`: a new number,
   threshold or sentence of diagnosis goes in `Analysis/`, `Thresholds.cs` or `Report/`, never in
   a view-model or the console.
@@ -139,4 +140,6 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. FlatCheck adds:
 - `.editorconfig` holds whitespace only; `dotnet format` enforces it, `IDE0005` removes unused
   usings. Warnings are errors in the gate. Code style analyzers and `Nullable` in the three
   application projects are off on purpose (ADR 0003); enabling them is a task of its own.
+- The build writes the XML documentation file, so the gate fails a malformed doc comment, a tag
+  naming no parameter or an unresolved `cref`; CS1591 is muted (ADR 0059).
 - Fix, do not suppress, unless the suppression carries a comment with the reason.

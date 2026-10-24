@@ -138,7 +138,7 @@ public class SirilInstallTests
     }
 
     /// <summary>
-    /// Intrarile sunt "cd <nume simplu>"; "cd ../process" e iesirea si "cd .." e
+    /// Intrarile sunt "cd &lt;nume simplu&gt;"; "cd ../process" e iesirea si "cd .." e
     /// intoarcerea, si niciuna nu e o cerinta a folderului.
     /// </summary>
     [Fact]

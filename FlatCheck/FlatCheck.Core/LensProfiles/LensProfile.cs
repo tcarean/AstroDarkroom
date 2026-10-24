@@ -15,23 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Un profil de vignetare selectabil - o combinatie (obiectiv, focala, diafragma, distanta)
-// dintr-una din cele doua surse - si catalogul care le tine pe toate: cautare dupa nume,
-// gruparea pe obiectiv, alegerea celui mai apropiat profil de ce s-a cerut.
+// A selectable vignetting profile - a combination (lens, focal length, aperture, distance) from
+// one of the two sources - and the catalogue that holds them all: search by name, grouping by
+// lens, choosing the profile nearest to what was asked for.
 //
-// Alegerea e "cel mai apropiat, raportat", nu interpolare: intai focala cea mai apropiata,
-// apoi diafragma cea mai apropiata in stopuri, apoi distanta cea mai mare (flat-urile sunt
-// la infinit). Raportul spune mereu ce profil s-a folosit, ca utilizatorul sa vada daca
-// 18 mm a stat in loc de 20.
+// The choice is "nearest, reported", not interpolation: first the nearest focal length, then the
+// nearest aperture in stops, then the largest distance (the flats are at infinity). The report
+// always says which profile was used, so that the user sees whether 18 mm stood in for 20.
 //
-// Profilele Adobe se citesc LENES. Masurat pe masina autorului: 3531 de fisiere .lcp,
-// 455 MB, 36 de secunde de parsat pe toate - de neacceptat pentru o lista. Numele
-// fisierului spune insa tot ce trebuie pentru lista si pentru cautare:
-//   <Producator>/<Montura>/<Aparat> (<Obiectiv>) - RAW.lcp
-// deci catalogul tine pentru Adobe doar aceste "cioturi" si parseaza un fisier abia cand
-// cineva ii cere profilele (obiectivul ales) sau cand cauta un ID de obiectiv, si atunci
-// numai in fisierele monturii aparatului. Ce se pierde: aliasurile nu intra in cautare
-// pana la parsare. Fisierele parsate se tin minte.
+// The Adobe profiles are read LAZILY. Measured on the author's machine: 3531 .lcp files, 455 MB,
+// 36 seconds to parse them all - unacceptable for a list. The file name, however, says all that
+// is needed for the list and for searching:
+//   <Maker>/<Mount>/<Camera> (<Lens>) - RAW.lcp
+// so the catalogue keeps only these "stubs" for Adobe and parses a file only when someone asks
+// for its profiles (the chosen lens) or looks for a lens ID, and then only in the files of the
+// camera's mount. What is lost: the aliases do not enter the search until parsing. The parsed
+// files are remembered.
 
 using System;
 using System.Collections.Concurrent;
@@ -43,21 +42,28 @@ using System.Threading.Tasks;
 
 namespace FlatCheck
 {
+    /// <summary>Which database a profile comes from.</summary>
     internal enum ProfileSource { Adobe, Lensfun }
 
     /// <summary>
-    /// Identitatea unui obiectiv intr-o sursa: ce se alege din lista. <paramref name="Calibration"/>
-    /// e formatul senzorului pe care a fost calibrat profilul ("APS-C 1.528", "full frame 1"),
-    /// si face parte din identitate: baza lensfun tine acelasi obiectiv, pe aceeasi montura, de
-    /// doua ori cand doi oameni l-au calibrat pe corpuri de format diferit - 20 din 692 in copia
-    /// livrata, printre ele Nikkor 35 f/1.8G DX, a carui intrare "media APS-C" da 0.19 stopuri in
-    /// coltul DX la f/2.8 si intrarea D780 0.51, langa Adobe 0.61. Cu cheia fara crop cele doua
-    /// se contopeau, Nearest lua prima din fisier, si calibrarea buna nu ajungea niciodata pe
-    /// ecran. Eticheta se pune pe TOATE obiectivele lensfun, nu doar pe cele dublate: un nume
-    /// care s-ar schimba cand baza primeste a doua intrare ar strica textul din --lens. La
-    /// Adobe ramane goala: corpul de calibrare e deja in montura ("NIKON D90"), iar SFF-ul sta
-    /// in fisier, nu in numele lui, deci n-ar putea intra in lista incarcata lenes.
+    /// A lens's identity in a source: what is chosen from the list. <paramref name="Calibration"/>
+    /// is the format of the sensor the profile was calibrated on ("APS-C 1.528", "full frame 1"),
+    /// and it is part of the identity: the lensfun database holds the same lens, on the same
+    /// mount, twice when two people calibrated it on bodies of different formats - 20 of 692 in
+    /// the shipped copy, among them the Nikkor 35 f/1.8G DX, whose "media APS-C" entry gives 0.19
+    /// stops in the DX corner at f/2.8 and the D780 entry 0.51, next to Adobe's 0.61. With the key
+    /// without the crop the two merged, Nearest took the first in the file, and the good
+    /// calibration never reached the screen. The label is put on ALL the lensfun lenses, not only
+    /// on the doubled ones: a name that would change when the database gets a second entry would
+    /// break the text given to --lens. For Adobe it stays empty: the calibration body is already
+    /// in the mount ("NIKON D90"), and the SFF sits in the file, not in its name, so it could not
+    /// enter the lazily loaded list.
     /// </summary>
+    /// <param name="Source">The database.</param>
+    /// <param name="Maker">The lens's maker, for grouping.</param>
+    /// <param name="Name">The lens's name.</param>
+    /// <param name="Mount">The mount (Adobe: the camera or mount of the file).</param>
+    /// <param name="Calibration">The calibration format (lensfun); empty for Adobe.</param>
     internal sealed record LensChoice(ProfileSource Source, string Maker, string Name, string Mount, string Calibration = "")
     {
         internal string Key => $"{Source}|{Maker}|{Name}|{Mount}" + (HasCalibration ? $"|{Calibration}" : "");
@@ -66,40 +72,66 @@ namespace FlatCheck
 
         internal bool HasCalibration => !string.IsNullOrEmpty(Calibration);
 
-        /// <summary>Montura, plus calibrarea cand se stie: "Nikon F AF, calibrat pe full frame 1".</summary>
+        /// <summary>
+        /// The mount, plus the calibration when known: "Nikon F AF, calibrat pe full frame 1".
+        /// </summary>
         internal string Where => HasCalibration ? $"{Mount}, calibrat pe {Calibration}" : Mount;
 
-        /// <summary>Numele, plus calibrarea cand se stie - pentru propozitii care numesc profilul ales.</summary>
+        /// <summary>
+        /// The name, plus the calibration when known - for sentences that name the chosen profile.
+        /// </summary>
         internal string Title => HasCalibration ? $"{Name} (calibrat pe {Calibration})" : Name;
 
-        /// <summary>"APS-C 1.528", "full frame 1", "format neobisnuit 1.37": formatul nominal si crop-ul exact.</summary>
+        /// <summary>
+        /// "APS-C 1.528", "full frame 1", "format neobisnuit 1.37": the nominal format and the
+        /// exact crop.
+        /// </summary>
+        /// <param name="crop">The calibration crop factor.</param>
+        /// <returns>The label.</returns>
         internal static string CalibrationLabel(double crop)
             => $"{SensorFormats.LabelOf(crop)} {crop.ToString("0.###", CultureInfo.InvariantCulture)}";
 
+        /// <summary>The lens as the lists show it: name, where, source.</summary>
+        /// <returns>"name [where] (source)".</returns>
         public override string ToString() => $"{Name} [{Where}] ({SourceLabel})";
     }
 
     /// <summary>
-    /// Gama unui obiectiv citita din numele lui - "11-20mm F2.8", "18-200mm f3.5-5.6G",
-    /// "135mm f/2.0" - ca sa poata fi pusa fata in fata cu ce spune MakerNote-ul unui raw.
-    /// Exista fiindca un ID de obiectiv Nikon nu e unic: 139 e si Tokina 11-20 f/2.8, si
-    /// Nikkor 18-200 f/3.5-5.6, si Sigma 18-35 f/1.8, iar prima alegere dupa ID lua primul
-    /// nume in ordine alfabetica - un Nikkor - pentru un raw facut cu Tokina. Null la orice
-    /// parte pe care numele n-o spune ("Zeiss Batis 2/25"); nimic nu se ghiceste, si un nume
-    /// care nu se citeste nu contrazice nimic.
+    /// A lens's range read from its name - "11-20mm F2.8", "18-200mm f3.5-5.6G", "135mm f/2.0" -
+    /// so that it can be set against what a raw's MakerNote says. It exists because a Nikon lens ID
+    /// is not unique: 139 is the Tokina 11-20 f/2.8, and the Nikkor 18-200 f/3.5-5.6, and the
+    /// Sigma 18-35 f/1.8, and the first choice by ID took the first name in alphabetical order - a
+    /// Nikkor - for a raw made with the Tokina. Null for any part the name does not say ("Zeiss
+    /// Batis 2/25"); nothing is guessed, and a name that cannot be read contradicts nothing.
     /// </summary>
+    /// <param name="MinFocalMm">The shortest focal length, in mm; null when the name does not
+    /// say.</param>
+    /// <param name="MaxFocalMm">The longest focal length, in mm (the same for a prime); null when
+    /// the
+    /// name does not say.</param>
+    /// <param name="MaxAperture">The widest f-number, at the shortest focal length; null when the
+    /// name does not say.</param>
     internal readonly record struct LensSpec(double? MinFocalMm, double? MaxFocalMm, double? MaxAperture)
     {
-        // "11-20mm", "18-200 mm", "35mm"; prima aparitie castiga.
+        // "11-20mm", "18-200 mm", "35mm"; the first occurrence wins.
         static readonly Regex FocalRx = new(@"(\d+(?:\.\d+)?)\s*(?:-\s*(\d+(?:\.\d+)?))?\s*mm\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        // "f/2.8", "F2.8", "f3.5-5.6G" (se ia deschiderea la focala minima); nu "AF-S", "EF".
+        // "f/2.8", "F2.8", "f3.5-5.6G" (the aperture at the shortest focal length is taken); not
+        // "AF-S", "EF".
         static readonly Regex ApertureRx = new(@"(?<![A-Za-z])[fF]/?\s?(\d+(?:\.\d+)?)", RegexOptions.Compiled);
 
-        /// <summary>Toleranta la focala: 1 mm sau 5 %, care e mai mare - numele rotunjesc. Aceeasi cu Th.ProfileFocalTol*, o singura definitie.</summary>
+        /// <summary>
+        /// The focal tolerance: 1 mm or 5 %, whichever is larger - names round. The same as
+        /// Th.ProfileFocalTol*, a single definition.
+        /// </summary>
         internal const double FocalToleranceMm = Th.ProfileFocalTolMm, FocalToleranceFraction = Th.ProfileFocalTolFrac;
-        /// <summary>Toleranta la deschidere, in stopuri: codurile Nikon merg in sesimi de stop.</summary>
+        /// <summary>
+        /// The aperture tolerance, in stops: the Nikon codes go in sixths of a stop.
+        /// </summary>
         internal const double ApertureToleranceStops = 0.25;
 
+        /// <summary>Reads the range from a lens's name.</summary>
+        /// <param name="name">The name; null or empty gives an all-null spec.</param>
+        /// <returns>The range, each part null when the name does not say it.</returns>
         internal static LensSpec Parse(string name)
         {
             if (string.IsNullOrEmpty(name)) return default;
@@ -116,9 +148,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Adevarat cand numele spune o gama si raw-ul spune alta. O parte lipsa de oricare
-        /// parte nu contrazice.
+        /// True when the name says one range and the raw says another. A part missing on either
+        /// side does not contradict.
         /// </summary>
+        /// <param name="minFocal">The raw's shortest focal length, in mm; null when
+        /// unknown.</param>
+        /// <param name="maxFocal">The raw's longest focal length, in mm; null when unknown.</param>
+        /// <param name="maxAperture">The raw's widest f-number; null when unknown.</param>
+        /// <returns>True on a contradiction beyond the tolerances.</returns>
         internal bool Contradicts(double? minFocal, double? maxFocal, double? maxAperture)
         {
             if (minFocal.HasValue && MinFocalMm.HasValue && !Close(MinFocalMm.Value, minFocal.Value)) return true;
@@ -128,9 +165,19 @@ namespace FlatCheck
             return false;
         }
 
+        /// <summary>Whether two focal lengths agree within the focal tolerance.</summary>
+        /// <param name="a">One focal length, in mm.</param>
+        /// <param name="b">The other, in mm.</param>
+        /// <returns>True within 1 mm or 5 % of the larger, whichever is larger.</returns>
         internal static bool Close(double a, double b) => Math.Abs(a - b) <= Math.Max(FocalToleranceMm, FocalToleranceFraction * Math.Max(a, b));
 
-        /// <summary>"11-20 mm f/2.8", "135 mm f/2.0", "11-20 mm", "" cand nu se stie nimic.</summary>
+        /// <summary>
+        /// "11-20 mm f/2.8", "135 mm f/2.0", "11-20 mm", "" when nothing is known.
+        /// </summary>
+        /// <param name="minFocal">The shortest focal length, in mm; null allowed.</param>
+        /// <param name="maxFocal">The longest focal length, in mm; null allowed.</param>
+        /// <param name="maxAperture">The widest f-number; null allowed.</param>
+        /// <returns>The range in words; empty when every part is null.</returns>
         internal static string Describe(double? minFocal, double? maxFocal, double? maxAperture)
         {
             string focal = "";
@@ -145,6 +192,9 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// One vignetting profile: a lens at one focal length, aperture and distance, with its model.
+    /// </summary>
     internal sealed class LensProfile
     {
         internal readonly LensChoice Lens;
@@ -153,14 +203,24 @@ namespace FlatCheck
         internal readonly double FocalMm;
         internal readonly double FStop;
         /// <summary>
-        /// Distanta de focalizare in metri; NaN cand profilul n-o da - un Adobe fara
-        /// FocusDistance, sau o pereche lensfun 10 / 1000 m cu aceiasi coeficienti
-        /// (LensfunReader.CollapseCopiedDistances), care e "o masuratoare, distanta nescrisa".
+        /// The focus distance in metres; NaN when the profile does not give it - an Adobe one
+        /// without FocusDistance, or a lensfun 10 / 1000 m pair with the same coefficients
+        /// (LensfunReader.CollapseCopiedDistances), which is "one measurement, distance not
+        /// written down".
         /// </summary>
         internal readonly double DistanceM;
         internal readonly VignettingModel Model;
         internal readonly string File;
 
+        /// <summary>A profile.</summary>
+        /// <param name="lens">The lens it belongs to.</param>
+        /// <param name="aliases">The lens's other names; null for none.</param>
+        /// <param name="lensIds">The Nikon lens IDs it carries (Adobe); null for none.</param>
+        /// <param name="focalMm">The focal length, in mm.</param>
+        /// <param name="fStop">The f-number.</param>
+        /// <param name="distanceM">The focus distance in metres; NaN when not given.</param>
+        /// <param name="model">The vignetting model.</param>
+        /// <param name="file">The file it was read from.</param>
         internal LensProfile(LensChoice lens, IReadOnlyList<string> aliases, IReadOnlyList<long> lensIds,
                              double focalMm, double fStop, double distanceM, VignettingModel model, string file)
         {
@@ -174,29 +234,43 @@ namespace FlatCheck
             File = file;
         }
 
+        /// <summary>The same profile under another lens identity.</summary>
+        /// <param name="lens">The identity to carry.</param>
+        /// <returns>A copy with <paramref name="lens"/>.</returns>
         internal LensProfile WithLens(LensChoice lens)
             => new LensProfile(lens, Aliases, LensIds, FocalMm, FStop, DistanceM, Model, File);
 
         internal const string DistanceUnspecified = "nespecificata", DistanceInfinity = "infinit";
 
-        /// <summary>"0.36 m" / "infinit" (1000 m si peste) / "nespecificata" (NaN) - o singura scriere a distantei, pentru Settings si pentru lista.</summary>
+        /// <summary>
+        /// "0.36 m" / "infinit" (1000 m and over) / "nespecificata" (NaN) - a single way of
+        /// writing the distance, for Settings and for the list.
+        /// </summary>
+        /// <param name="distanceM">The distance in metres; NaN when unknown.</param>
+        /// <returns>The distance in words.</returns>
         internal static string DistanceLabel(double distanceM)
             => double.IsNaN(distanceM) ? DistanceUnspecified
              : distanceM >= 1000 ? DistanceInfinity
              : $"{distanceM.ToString("0.##", CultureInfo.InvariantCulture)} m";
 
-        /// <summary>"20 mm, f/2.8, infinit" / ", 1.51 m" / ", distanta nespecificata" (NaN: profilul n-o spune).</summary>
+        /// <summary>
+        /// "20 mm, f/2.8, infinit" / ", 1.51 m" / ", distanta nespecificata" (NaN: the profile
+        /// does not say).
+        /// </summary>
         internal string Settings
             => $"{FocalMm.ToString("0.#", CultureInfo.InvariantCulture)} mm, f/{FStop.ToString("0.0", CultureInfo.InvariantCulture)}, "
              + (double.IsNaN(DistanceM) ? "distanta " : "") + DistanceLabel(DistanceM);
     }
 
-    /// <summary>Un fisier Adobe neparsat inca: ce se stie din numele si folderul lui.</summary>
+    /// <summary>An Adobe file not parsed yet: what is known from its name and its folder.</summary>
     internal sealed class AdobeProfileFile
     {
         internal readonly string Path;
         internal readonly LensChoice Lens;
 
+        /// <summary>A stub.</summary>
+        /// <param name="path">The .lcp file.</param>
+        /// <param name="lens">The lens its name says.</param>
         internal AdobeProfileFile(string path, LensChoice lens)
         {
             Path = path;
@@ -204,11 +278,15 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// "NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp" in folderul
-        /// Tokina/Nikon: aparatul inainte de prima paranteza, obiectivul intre prima paranteza
-        /// si perechea ei (poate contine paranteze: "(IF)"), producatorul e folderul bunic.
-        /// Un nume fara paranteze e un aparat cu obiectiv fix, si ramane ciot cu numele lui.
+        /// "NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp" in the folder
+        /// Tokina/Nikon: the camera before the first parenthesis, the lens between the first
+        /// parenthesis and its pair (it can contain parentheses: "(IF)"), the maker is the
+        /// grandparent folder. A name without parentheses is a camera with a fixed lens, and stays
+        /// a
+        /// stub with its name.
         /// </summary>
+        /// <param name="path">The .lcp file's path.</param>
+        /// <returns>The stub; never null.</returns>
         internal static AdobeProfileFile FromName(string path)
         {
             string name = System.IO.Path.GetFileNameWithoutExtension(path);
@@ -221,8 +299,9 @@ namespace FlatCheck
             }
             if (open <= 0 || close < 0)
             {
-                // Telefoane si compacte cu obiectiv fix: "Apple/iPhone 6.lcp", "Canon/Canon PowerShot
-                // G12 - RAW.lcp". Numele e aparatul, producatorul e folderul; montura nu exista.
+                // Phones and compacts with a fixed lens: "Apple/iPhone 6.lcp", "Canon/Canon
+                // PowerShot G12 - RAW.lcp". The name is the camera, the maker is the folder; there
+                // is no mount.
                 string folder = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(path) ?? "") ?? "";
                 int dash = name.LastIndexOf(" - ", StringComparison.Ordinal);
                 string camera = (dash > 0 ? name.Substring(0, dash) : name).Trim();
@@ -238,17 +317,23 @@ namespace FlatCheck
         }
     }
 
-    /// <summary>Toate profilele gasite, de oriunde, si intrebarile care se pun listei.</summary>
+    /// <summary>All the profiles found, from anywhere, and the questions put to the list.</summary>
     internal sealed class LensCatalog
     {
-        /// <summary>Profilele parsate: toate cele lensfun, plus cele Adobe date gata parsate (teste).</summary>
+        /// <summary>
+        /// The parsed profiles: all the lensfun ones, plus the Adobe ones given already parsed
+        /// (tests).
+        /// </summary>
         internal readonly IReadOnlyList<LensProfile> Profiles;
 
-        /// <summary>Fisierele Adobe neparsate, cunoscute din nume.</summary>
+        /// <summary>The unparsed Adobe files, known by name.</summary>
         internal readonly IReadOnlyList<AdobeProfileFile> AdobeFiles;
 
         readonly ConcurrentDictionary<string, IReadOnlyList<LensProfile>> _parsed = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>A catalogue.</summary>
+        /// <param name="profiles">The parsed profiles; null for none.</param>
+        /// <param name="adobeFiles">The Adobe stubs, parsed on demand; null for none.</param>
         internal LensCatalog(IReadOnlyList<LensProfile> profiles, IReadOnlyList<AdobeProfileFile> adobeFiles = null)
         {
             Profiles = profiles ?? Array.Empty<LensProfile>();
@@ -262,11 +347,14 @@ namespace FlatCheck
                 .OrderBy(l => l.Source).ThenBy(l => l.Maker).ThenBy(l => l.Name).ThenBy(l => l.Mount).ToList();
 
         /// <summary>
-        /// Obiectivele al caror nume, producator, montura sau calibrare contine TOATE cuvintele
-        /// cautate (si aliasurile, pentru profilele deja parsate), fara sa conteze majusculele;
-        /// textul gol le da pe toate. Optional doar dintr-o sursa. Calibrarea e in cautare ca
-        /// "Nikkor 35mm full" sa aleaga una din cele doua intrari lensfun ale aceluiasi obiectiv.
+        /// The lenses whose name, maker, mount or calibration contains ALL the words searched (and
+        /// the aliases, for the profiles already parsed), case-insensitively; an empty text gives
+        /// them all. Optionally from one source only. The calibration is in the search so that
+        /// "Nikkor 35mm full" picks one of the two lensfun entries of the same lens.
         /// </summary>
+        /// <param name="text">The words, separated by spaces; null or empty matches all.</param>
+        /// <param name="source">The one source to search; null for both.</param>
+        /// <returns>The matching lenses, in the catalogue's order.</returns>
         internal IReadOnlyList<LensChoice> Search(string text, ProfileSource? source = null)
         {
             string[] words = (text ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -282,7 +370,9 @@ namespace FlatCheck
             return hits;
         }
 
-        /// <summary>Profilele unui obiectiv; un fisier Adobe se parseaza acum, o singura data.</summary>
+        /// <summary>A lens's profiles; an Adobe file is parsed now, once.</summary>
+        /// <param name="lens">The lens.</param>
+        /// <returns>Its profiles by focal length, f-number and distance.</returns>
         internal IReadOnlyList<LensProfile> ProfilesOf(LensChoice lens)
         {
             IEnumerable<LensProfile> eager = Profiles.Where(p => p.Lens == lens);
@@ -290,18 +380,27 @@ namespace FlatCheck
             return eager.Concat(lazy).OrderBy(p => p.FocalMm).ThenBy(p => p.FStop).ThenBy(p => p.DistanceM).ToList();
         }
 
+        /// <summary>
+        /// An Adobe stub's profiles, parsed once and remembered; none for a broken file.
+        /// </summary>
+        /// <param name="f">The stub.</param>
+        /// <returns>Its profiles under the stub's lens identity.</returns>
         IReadOnlyList<LensProfile> Parse(AdobeProfileFile f)
             => _parsed.GetOrAdd(f.Path, path =>
             {
                 try { return LcpReader.Read(path).Select(p => p.WithLens(f.Lens)).ToList(); }
-                catch (Exception) { return Array.Empty<LensProfile>(); }   // un fisier stricat nu e al nostru; lista merge mai departe
+                catch (Exception) { return Array.Empty<LensProfile>(); }   // a broken file is not ours; the list goes on
             });
 
         /// <summary>
-        /// Obiectivele Adobe care poarta ID-ul de obiectiv Nikon dat (LensID sau AlternateLensIDs).
-        /// Parseaza fisierele a caror montura sau aparat contine <paramref name="makerHint"/>
-        /// (cele Nikon pentru un D3300), in paralel, sau pe toate cand indiciul lipseste.
+        /// The Adobe lenses that carry the given Nikon lens ID (LensID or AlternateLensIDs). It
+        /// parses the files whose mount or camera contains <paramref name="makerHint"/> (the Nikon
+        /// ones for a D3300), in parallel, or all of them when the hint is missing.
         /// </summary>
+        /// <param name="id">The Nikon lens ID.</param>
+        /// <param name="makerHint">A word of the camera's name; null or blank for every
+        /// file.</param>
+        /// <returns>The lenses with the ID, by name and mount.</returns>
         internal IReadOnlyList<LensChoice> ByLensId(long id, string makerHint = null)
         {
             var hits = new List<LensChoice>(Profiles.Where(p => p.LensIds.Contains(id)).Select(p => p.Lens));
@@ -318,18 +417,28 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Din potrivirile dupa ID, doar cele al caror nume NU contrazice gama din raw
-        /// (focala minima / maxima, deschiderea maxima): un nume care nu se citeste ramane.
-        /// Fara nicio gama, lista ramane intreaga.
+        /// Of the matches by ID, only those whose name does NOT contradict the range in the raw
+        /// (minimum / maximum focal length, maximum aperture): a name that cannot be read stays.
+        /// Without any range, the list stays whole.
         /// </summary>
+        /// <param name="hits">The matches.</param>
+        /// <param name="minFocal">The raw's shortest focal length, in mm; null when
+        /// unknown.</param>
+        /// <param name="maxFocal">The raw's longest focal length, in mm; null when unknown.</param>
+        /// <param name="maxAperture">The raw's widest f-number; null when unknown.</param>
+        /// <returns>The matches that do not contradict the raw.</returns>
         internal static IReadOnlyList<LensChoice> Narrow(IReadOnlyList<LensChoice> hits, double? minFocal, double? maxFocal, double? maxAperture)
             => hits.Where(h => !LensSpec.Parse(h.Name).Contradicts(minFocal, maxFocal, maxAperture)).ToList();
 
         /// <summary>
-        /// Profilul cel mai apropiat de (focala, diafragma) dintre cele ale unui obiectiv:
-        /// focala cea mai apropiata, apoi diafragma cea mai apropiata in stopuri, apoi
-        /// distanta cea mai mare. Null cand obiectivul n-are niciun profil.
+        /// The profile nearest to (focal length, aperture) among a lens's: the nearest focal
+        /// length, then the nearest aperture in stops, then the largest distance. Null when the
+        /// lens has no profile.
         /// </summary>
+        /// <param name="profiles">One lens's profiles; null allowed.</param>
+        /// <param name="focalMm">The focal length asked for, in mm.</param>
+        /// <param name="fStop">The f-number asked for.</param>
+        /// <returns>The nearest profile, or null.</returns>
         internal static LensProfile Nearest(IReadOnlyList<LensProfile> profiles, double focalMm, double fStop)
         {
             if (profiles == null || profiles.Count == 0) return null;
@@ -340,7 +449,11 @@ namespace FlatCheck
             return atStop.OrderByDescending(p => double.IsNaN(p.DistanceM) ? double.NegativeInfinity : p.DistanceM).First();
         }
 
-        /// <summary>Diafragma in stopuri (log2 f^2), ca f/2.8 si f/4 sa fie la o unitate.</summary>
+        /// <summary>
+        /// The aperture in stops (log2 f^2), so that f/2.8 and f/4 are one unit apart.
+        /// </summary>
+        /// <param name="fStop">The f-number.</param>
+        /// <returns>The stops.</returns>
         internal static double Stops(double fStop) => 2 * Math.Log2(fStop);
     }
 }
