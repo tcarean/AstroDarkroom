@@ -120,8 +120,7 @@ namespace AstroPhotoAnalyzer
             {
                 try
                 {
-                    using var f = new StreamWriter(o.Out, false);
-                    ReportWriter.WriteFull(result, f);
+                    ReportWriter.SaveFull(result, o.Out);
                     stdout.WriteLine("    -> raport salvat: " + o.Out);
                 }
                 catch (Exception e)

@@ -27,7 +27,8 @@ shown.
 (`Raport.txt` beside the image), `Banner`, `Copyright`; `OpenAsync(path)` sets the path
 and runs; `RunAsync()` validates the fields (`ParameterFields.TryBuild`), clears the
 tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Error`
-(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` and tells
+(`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` through
+`ReportWriter.SaveFull` (whole or not at all, as the console's `-o`) and tells
 the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the path) or
 `SaveError` (`Describe` of the exception: a file another program holds open, a folder that
 refuses writing or does not exist), both cleared as soon as the next run is asked, before the

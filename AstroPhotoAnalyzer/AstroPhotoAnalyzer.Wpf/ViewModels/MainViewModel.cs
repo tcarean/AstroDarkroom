@@ -26,7 +26,6 @@
 // that opens dialogs can no longer be tested.
 
 using System;
-using System.IO;
 using System.Threading.Tasks;
 
 namespace AstroPhotoAnalyzer.Wpf
@@ -181,10 +180,11 @@ namespace AstroPhotoAnalyzer.Wpf
         }
 
         /// <summary>
-        /// Raport.txt: banner + body, identical to what the console would write with -o. The
-        /// outcome is told, not thrown (R-111): <see cref="SaveMessage"/> names the file written,
-        /// or <see cref="SaveError"/> says why it could not be (held open by another program, a
-        /// folder that refuses writing or does not exist, a path the system refuses).
+        /// Raport.txt: banner + body, identical to what the console would write with -o, written
+        /// whole or not at all (ReportWriter.SaveFull, R-005). The outcome is told, not thrown
+        /// (R-111): <see cref="SaveMessage"/> names the file written, or <see cref="SaveError"/>
+        /// says why it could not be (held open by another program, a folder that refuses writing
+        /// or does not exist, a path the system refuses).
         /// </summary>
         /// <param name="file">
         /// The file to write, replaced if it exists; nothing is written without a result.
@@ -194,8 +194,7 @@ namespace AstroPhotoAnalyzer.Wpf
             if (_result == null) return;
             try
             {
-                using (var w = new StreamWriter(file, false))
-                    ReportWriter.WriteFull(_result, w);
+                ReportWriter.SaveFull(_result, file);
                 SaveError = null;
                 SaveMessage = SavedPrefix + file;
             }

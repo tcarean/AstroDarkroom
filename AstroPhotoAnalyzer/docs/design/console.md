@@ -109,7 +109,8 @@ an `Error` printed as `EROARE: ...`. Every run prints the banner and copyright o
 
 Exit codes: **0** no recommendation above Ok, **1** error (bad argument, invalid
 parameter combination, missing file, a folder, unreadable format, refused linear image,
-cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull` and prints
+cannot write `-o`), **2** at least one Attention, **3** at least one Problem. `-o` writes `WriteFull` through
+`ReportWriter.SaveFull` (whole or not at all, `recommendations-and-report.md`) and prints
 `    -> raport salvat: <file>`.
 
 ## Golden scenes

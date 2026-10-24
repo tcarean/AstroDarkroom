@@ -285,7 +285,20 @@ and kept three to decide:
   are cleared as soon as a run is asked, and `R111_ASaveThatCannotWriteIsToldNotThrown` covers
   it. No test pinned the order of `Validate`'s checks that R-025 states;
   `R025_ValidateChecksTheTargetBackgroundThenFinitenessThenThePassepartoutRule` does.
-- **Left to the owner:** a write that fails midway leaves a truncated `Raport.txt` (the
-  console's `-o` has the same gap); the aspect refusal quotes the derived ratio, so
-  `1:Infinity` reads `a primit 0` (ADR 0045's choice); R-024's "the same words" does not hold
-  for `NaN:1`, which the window's aspect field refuses with its own message.
+- **Put to the owner, then fixed at their word ("fixeaza-le si pe ele"), in two commits:**
+  the aspect parsers (`Options.TryAspect`, `ParameterFields.AspectOf`) refuse a side that
+  reads as NaN or infinity with their own syntax message, which quotes the text typed, where
+  the first version let the core refuse the ratio and `1:Infinity` read `a primit 0`; ADR 0045,
+  R-024, `console.md` and the two R024 theories say so, and with it R-024's "the same words"
+  holds again, the aspect's sides being syntax in both applications. Then the report file is
+  written whole or not at all: `ReportWriter.SaveFull` writes into a temporary file beside the
+  target and moves it over at the end, the console's `-o` and the window's save both through
+  it (R-005, R-111, `recommendations-and-report.md`); guarded by
+  `R005_AReportThatCannotBeWrittenLeavesTheOldFileWholeAndNoTemporary` and the R111 test. One
+  assumption of the new R-005 test was wrong and was corrected before the commit: a move over
+  a file another program holds open is refused as `UnauthorizedAccessException` on Windows,
+  not `IOException`, so the test asserts the throw, not the type. `Report/` moved, so
+  `/validate` was re-run after it (below).
+- **`/validate` after the atomic write** (`Report/` moved; `SaveFull` touches no figure): the
+  fourteen cases pass, the same 1240 of 1242 figures identical, the same two 0.0001
+  differences as above (V-011 `curves.Maxima.lstar.clouds`, V-014 `curves.Maxima.lstar.peaks`).

@@ -74,6 +74,42 @@ public class CliTests
         Assert.Equal(printedBody.TrimEnd(), saved.TrimEnd());
     }
 
+    /// <summary>
+    /// The report file is written whole or not at all (R-005): a target another program holds
+    /// open keeps its old content, no temporary file stays beside it, and the console says why
+    /// with exit 1. The same path serves the window's save (R-111).
+    /// </summary>
+    [Fact]
+    public void R005_AReportThatCannotBeWrittenLeavesTheOldFileWholeAndNoTemporary()
+    {
+        using var ws = new TempWorkspace();
+        string tif = DarkTiff(ws);
+        string outFile = ws.PathTo("raport.txt");
+        File.WriteAllText(outFile, "vechi");
+        int code;
+        string err;
+        using (new FileStream(outFile, FileMode.Open, FileAccess.Read, FileShare.None))
+            (code, _, err) = Run(tif, "-o", outFile);
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: nu s-a putut scrie raportul: ", err);
+        Assert.Equal("vechi", File.ReadAllText(outFile));
+        Assert.Equal(new[] { Path.GetFileName(tif), "raport.txt" }, Directory.GetFiles(ws.Dir).Select(Path.GetFileName).OrderBy(n => n));
+
+        // The direct call, with the same guarantee, and the written file is WriteFull's bytes.
+        // The move over a held file is refused as UnauthorizedAccessException on Windows, not
+        // IOException: the type is the system's, so only the throw is asserted.
+        AnalysisResult result = AnalysisRun.Execute(tif, new Parameters());
+        using (new FileStream(outFile, FileMode.Open, FileAccess.Read, FileShare.None))
+            Assert.ThrowsAny<Exception>(() => ReportWriter.SaveFull(result, outFile));
+        Assert.Equal("vechi", File.ReadAllText(outFile));
+        ReportWriter.SaveFull(result, outFile);
+        var expected = new StringWriter();
+        ReportWriter.WriteFull(result, expected);
+        Assert.Equal(expected.ToString(), File.ReadAllText(outFile));
+        Assert.Equal(2, Directory.GetFiles(ws.Dir).Length);
+    }
+
     [Fact]
     public void R015_ALinearFitsIsRefusedWithExitOne()
     {

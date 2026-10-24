@@ -153,14 +153,18 @@ public class ViewModelTests
         Assert.Null(vm.SaveMessage);
         Assert.Null(vm.SaveError);
 
-        // Held open by another program: a sharing violation.
+        // Held open by another program: a sharing violation; the old file stays whole, and no
+        // temporary file stays beside it (R-005).
         string held = ws.PathTo("Raport.txt");
-        using (new FileStream(held, FileMode.Create, FileAccess.ReadWrite, FileShare.None))
+        File.WriteAllText(held, "vechi");
+        using (new FileStream(held, FileMode.Open, FileAccess.Read, FileShare.None))
             vm.SaveReport(held);
         Assert.NotNull(vm.SaveError);
         Assert.Null(vm.SaveMessage);
         Assert.True(vm.HasResult);
         Assert.False(vm.HasError);
+        Assert.Equal("vechi", File.ReadAllText(held));
+        Assert.Equal(2, Directory.GetFiles(ws.Dir).Length);
 
         // A folder that does not exist.
         vm.SaveReport(ws.PathTo(Path.Combine("nu-exista", "r.txt")));

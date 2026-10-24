@@ -19,6 +19,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   by another program, a folder that refuses writing): the reason shows in red under the top
   bar's buttons, and a save that works says `raport salvat: <path>` there (R-110, R-111; the
   backfill's area 5 review, question 1).
+- The report file, the console's `-o` and the window's `Raport.txt` alike, is written whole or
+  not at all: into a temporary file beside the target, moved over it at the end, so that a
+  write that fails midway (a full disk) leaves the old file or none instead of a truncated
+  report (R-005, R-111; this branch's code review).
+- `--aspect` with a side that reads as NaN or infinity (`1:Infinity`) is refused by the
+  console's and the window's own aspect message, which quotes the text typed, instead of the
+  core's message on the ratio it would give (`a primit 0`) (R-024; ADR 0045; this branch's code
+  review).
 - The gamut figure of the Curbe tab no longer undercounts near the paper's gamut edge: a pixel
   whose interpolated displacement lies within 1.0 of the threshold takes the exact round trip of
   its 8-bit colour, once per colour, the rows measured in parallel (R-144; ADR 0042). The grid
