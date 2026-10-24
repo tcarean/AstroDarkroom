@@ -196,4 +196,78 @@ merge. Memory: a pointer file for this task once merged.
 
 ## What deviated
 
-(filled at wrap-up)
+Run on 2026-10-24 in one session, five commits on `claude/Close-the-backfill-questions`, cut
+from `main` at 532b459, in the order the plan gave.
+
+- **Item 1 as planned,** with these settlings: the aspect is checked by a `PositiveError`
+  helper beside `FiniteError` (finite and > 0), and `Validate`'s finiteness checks sit after
+  the target background's and before the passepartout rule, as the plan said. The messages:
+  `<name> trebuie sa fie un numar; a primit <value>`, the aspect's
+  `trebuie sa fie un numar pozitiv`, the value spelt by one `Quote` helper shared with
+  `TargetBackgroundError`. Dmax, the distance, the passepartout and the frame refuse
+  "Infinity" by the applications' range checks before the core sees it, so those cases are
+  not in the console's and the window's tests, and the window refuses "NaN:1" itself (the
+  aspect field's `w > 0`); each test's summary says so. R-024 carries the rule and the
+  examples, R-025 the order in `Validate`.
+- **Item 2:** the restating note of ADR 0005 went first at the end of the Decision section,
+  and `scripts/check-decisions.ps1` refused it ("inside '## Decision'"); it sits at the top of
+  "Alternatives rejected", as the kit's ADR 0016 and FlatCheck's ADR 0046 do. The Status note
+  has no semicolons, which the header grammar would split. `README.md` says nothing about the
+  comments' language; the kit's `GHID.md` (line 291) tells the history in the past tense
+  ("tinea comentariile din cod in romana ... se traduc cand fisierul isi primeste
+  documentatia") and holds; neither changed.
+- **Item 3 as planned** (the owner chose the message beside the button in this session's plan
+  phase). `SaveReport` catches `Exception`, as the Curbe tab's `Save` does, not only
+  IOException and UnauthorizedAccessException: a path the dialog hands over can also throw
+  NotSupportedException or PathTooLongException. The success text is a view-model constant,
+  `raport salvat: ` and the path, the console's words after `-o` without the arrow. The
+  two-line place under the buttons makes the top bar about 38 px taller; the render
+  (`WindowSmokeTests`, `fereastra.png`) was looked at. `README.md`'s "Fereastra" paragraph
+  got the clause.
+- **Item 4 as planned.** The new test `R130_TheLegendsShareIsTheCoresFraction` passes on
+  `main` too (the two counts agree), so the change is guarded by reading, as the plan said;
+  `using System;` in `MapViewModel.cs` became unused and the gate's format step caught it.
+- **Not done, on purpose:** the Preview guide's `1 / ScreenStepBackFactor` and the amber
+  legend's difference of two shares stay in the window, as the task said.
+
+**Measured on 2026-10-24:**
+
+| Commit | What | Gate | Tests |
+|---|---|---|---|
+| fe8cb6e | item 1: NaN and infinity refused in `Validate` (R-024, ADR 0045) | `== OK in 57s` | 401 + 67 |
+| 3c407d2 | item 2: the rule "Languages", ADR 0005 | `== OK in 62s` | 401 + 67 |
+| c176067 | item 3: the save's outcome under the buttons (R-110, R-111) | `== OK in 41s` | 401 + 68 |
+| 7f6def9 | item 4: the legend's share from `DustMap.FractionOf` (R-130) | `== OK in 41s` | 401 + 69 |
+| (wrap-up) | CHANGELOG, `validation.md`, this section | `== OK in 62s` | 401 + 69 |
+
+- **Goldens:** no golden changed (`git diff --stat` on `AstroPhotoAnalyzer.Tests/Golden/`
+  against `main` is empty); the help text and every report are as they were.
+- **`/validate`** after item 1, the seven manifest files copied into the worktree's
+  `testdata/large/` (hashes checked by `check-testdata.ps1`): the fourteen cases pass; of the
+  1242 figures 1240 are identical, and the same two as in areas 3 and 4 differ by 0.0001,
+  inside the 0.01 tolerance:
+
+  | Case | Image / parameters | Figures | Identical | Within tolerance (max diff) | Outside |
+  |---|---|---|---|---|---|
+  | V-001 | de_printat.png (dmax=2.0) | 189 | 189 | 0 | 0 |
+  | V-002 | de_printat.png (aspect=50:35, distanceM=1.5) | 37 | 37 | 0 | 0 |
+  | V-003 | de_printat.png (dmax=2.35) | 34 | 34 | 0 | 0 |
+  | V-004 | starless_rbf0.5_stretch0.17.fit (dmax=2.0) | 205 | 205 | 0 | 0 |
+  | V-005 | de_printat.png (defaults) | 52 | 52 | 0 | 0 |
+  | V-006 | Hahnemuhle PRBaryta.icm | 4 | 4 | 0 | 0 |
+  | V-007 | HARMAN_Canvas.icc | 4 | 4 | 0 | 0 |
+  | V-008 | starless_rbf0.5_stretch0.17.fit (icc=Hahnemuhle PRBaryta.icm) | 87 | 87 | 0 | 0 |
+  | V-009 | de_printat.png (defaults) | 74 | 74 | 0 | 0 |
+  | V-010 | Rosetta_starless_no_WCS.fit (defaults) | 187 | 187 | 0 | 0 |
+  | V-011 | Rosetta_starless_no_WCS.fit (defaults) | 76 | 75 | 1 (0.0001: `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503) | 0 |
+  | V-012 | Orion_with_WCS.fit (defaults) | 10 | 10 | 0 | 0 |
+  | V-013 | Veil_Starless.fit (defaults) | 207 | 207 | 0 | 0 |
+  | V-014 | Veil_Starless.fit (defaults) | 76 | 75 | 1 (0.0001: `curves.Maxima.lstar.peaks` 77.9226 -> 77.9227) | 0 |
+
+  Items 2 to 4 touch no numeric code, so it was not re-run after them.
+- **`check-design.ps1 -Since main`** listed five notes: `console.md`, `extending.md` and
+  `window.md` changed with the items; `code-map.md` (file lists) and `testing.md` (what
+  `WindowSmokeTests` renders) were read against the change and hold.
+- **ADRs:** 0045 is new, accepted. ADR 0005, already on `main`, changed in the two ways the
+  kit's ADR 0024 allows: its Status clause completed with a note, and a dated `(Restated
+  2026-10-24: ...)` note after the Decision section; the decision itself stands.

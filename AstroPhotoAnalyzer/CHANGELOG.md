@@ -8,6 +8,17 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- "NaN" and "Infinity" typed in a number parameter no longer reach the analysis: the core's
+  `Parameters.Validate` refuses them in both applications, one Romanian message per parameter
+  (`Dmax trebuie sa fie un numar; a primit NaN, care nu e un numar`), the console with exit 1
+  before reading, the window in its error card; the aspect ratio must also be positive, since
+  `1:Infinity` arrived as 0. Until now `--dmax NaN` printed a report of `n/a` figures and exited
+  2, and the window ran with NaN in its parameters (R-024; ADR 0045; the backfill's area 4 and
+  area 5 questions).
+- "Salveaza raportul..." no longer closes the window when the file cannot be written (held open
+  by another program, a folder that refuses writing): the reason shows in red under the top
+  bar's buttons, and a save that works says `raport salvat: <path>` there (R-110, R-111; the
+  backfill's area 5 review, question 1).
 - The gamut figure of the Curbe tab no longer undercounts near the paper's gamut edge: a pixel
   whose interpolated displacement lies within 1.0 of the threshold takes the exact round trip of
   its 8-bit colour, once per colour, the rows measured in parallel (R-144; ADR 0042). The grid
@@ -71,6 +82,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- The rule "Languages" in `CLAUDE.md` says what holds after the documentation backfill: every
+  comment in the code's C# files is English (the kit's ADR 0035); the tests' Romanian comments
+  stay until a task of their own, the csproj, `Directory.Build.props` and XAML comments stay
+  Romanian; ADR 0005's Status and a dated note say the same.
+- The map legend takes each class's share from the core (`DustMap.FractionOf`, the figure of
+  the report's class fractions) instead of counting the patches in the window: the same figure,
+  and `MapViewModel`'s "it computes nothing" is true (R-130; the backfill's area 5 review,
+  question 2).
 - `StarAnalyzer` reads its window from `Thresholds.StarWindow` instead of a literal 12 (item 12).
 - The medians and percentiles of unsorted vectors are found by selection on one copy
   (`Stats.Percentile`, `Stats.Percentiles`, `Stats.Median`), not by sorting the whole vector: the
