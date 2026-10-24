@@ -17,10 +17,11 @@
 
 // StructureTabViewModel.cs - tab 1.
 //
-// It runs StructureRun on process/pp_flat_stacked.fit and shows the same thing the console writes,
-// only laid out differently. The figures are NOT recomputed here: each row takes a value from
-// StructureResult and formats it. The only thing composed here are the corner percentages, and
-// those through the same ratio as in the report.
+// It runs StructureRun on the session's pp_flat_stacked.fit, in masters/ or process/
+// (SirilSession.FindFlatMaster), and shows the same thing the console writes, only laid out
+// differently. The figures are NOT recomputed here: each row takes a value from StructureResult
+// and formats it. The only things composed in the window are the corner percentages, in
+// StructureRows, through the same ratios as in the report.
 //
 // Besides the display, the tab has a duty to the disk: it saves the report in the session folder,
 // as a text file, IDENTICAL to what the console would have written - version header, copyright,

@@ -25,9 +25,9 @@
 // is of the same order as the signal looked for. So now two files are asked for explicitly, and
 // nothing is assumed.
 //
-// The only tab that does NOT run at start, and now with even more reason: until the user chooses
-// two files, there is nothing to compute. Until then it shows the documentation - see
-// SessionMessages.RatioNeedsTwoMasters.
+// It does NOT run at start - only Structure and End to end do - and with good reason: until the
+// user chooses two files, there is nothing to compute. Until then it shows the documentation -
+// see SessionMessages.RatioNeedsTwoMasters.
 //
 // A NEW CHOICE SUPERSEDES THE ONE IN PROGRESS. Choose starts the computation without awaiting it,
 // so a re-choice during it started a second analysis over the first, and both reached the screen,
@@ -108,11 +108,12 @@ namespace FlatCheck.Wpf
         /// that is why they were left without descriptions when tab 1 got them.
         ///
         /// THE LIST IS REPLACED, not cleared and refilled - and that is not a detail: Choose()
-        /// starts RecomputeAsync without awaiting it, and the token is the session's, not the
-        /// run's, so two quick choices leave two computations in the air and NEITHER cancels the
-        /// other. An ObservableCollection cleared and refilled by both would come out with
-        /// duplicated rows; a replaced reference simply lets the last one win. The same reason as
-        /// for Histograms on the exposure tab.
+        /// starts RecomputeAsync without awaiting it, so two quick choices leave two computations
+        /// in the air. Each run now has its own token and the new one cancels the old (see the
+        /// header), but the analysis already in RatioRun still runs to its end; a replaced
+        /// reference lets only the last one land, where an ObservableCollection cleared and
+        /// refilled by both would come out with duplicated rows. The same reason as for Histograms
+        /// on the exposure tab.
         /// </summary>
         public IReadOnlyList<MetricRow> Tests { get => _tests; private set => Set(ref _tests, value); }
 

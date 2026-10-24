@@ -15,16 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureRows.cs - the five test rows of the structure battery, built once for both tabs that
-// show them.
+// StructureRows.cs - the five test rows of the structure battery, built once for the three tabs
+// that show them.
 //
-// WHY IT EXISTS. The Structure tab and the Ratio tab show THE SAME battery - Ratio runs it on the
-// combined master (A+B)/2, but the figures, the labels and the verdicts are the same, because it
-// is literally the same analyzer. Until then each tab composed them by itself: Structure from an
-// ItemsControl over MetricRow, Ratio from five Grid blocks hand-written in XAML, with the labels
-// as literals. The consequence was exactly what could be expected - when Structure got
-// descriptions under every row, Ratio was left without, and when the fifth test appeared it had
-// to be added in two places.
+// WHY IT EXISTS. The Structure, Ratio and Netezire tabs show THE SAME battery - Ratio runs it on
+// the combined master (A+B)/2, Netezire on the master before and after smoothing, but the figures,
+// the labels and the verdicts are the same, because it is literally the same analyzer. (The
+// informative rows go to Structure and Ratio.) Before this file each tab composed them by itself:
+// Structure from an ItemsControl over MetricRow, Ratio from five Grid blocks hand-written in XAML,
+// with the labels as literals. The consequence was exactly what could be expected - when
+// Structure got descriptions under every row, Ratio was left without, and when the fifth test
+// appeared it had to be added in two places.
 //
 // So the rows are built here, and the tabs only show them. The text is still not written here:
 // the labels belong to the rows, but the explanations come from StructureReport.TestNote, in the

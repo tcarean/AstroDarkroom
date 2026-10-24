@@ -17,9 +17,9 @@
 
 // SmoothTabViewModel.cs - the "Netezire" tab: a second master, without the texture.
 //
-// IT RUNS ON A BUTTON, NOT ON OPENING. The other tabs compute when the folder is opened; this one
-// writes a 96 MB file beside the master, and a file is not produced because someone looked at a
-// folder. Attach only prepares the paths and the guide.
+// IT RUNS ON A BUTTON, NOT ON OPENING. Structure and End to end compute when the folder is
+// opened; this one writes a 96 MB file beside the master, and a file is not produced because
+// someone looked at a folder. Attach only prepares the paths and the guide.
 //
 // SEQUENTIAL: the button can be pressed while the structure run is still going on the same 24 MP
 // master; RunAsync first awaits the opening chain (MainViewModel), for the memory reason given

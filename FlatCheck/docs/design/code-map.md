@@ -316,9 +316,10 @@ a library extraction and not a copy is ADR 0011.
     (one script run as the run window - and the Split tab - sees it: log text, progress,
     current command and its index, outcome), plus
     `MainViewModel` for the folder, `AboutViewModel` for the "Despre" window (constant
-    properties only, ADR 0040), and two small companions of the residual map shared by
-    the Structure and Ratio tabs: `MapScaleViewModel` (the scale chips, which translate a
-    choice into a `PngWriter.MapRange` and decide nothing) and `MapGuideViewModel` (the
+    properties only, ADR 0040), and two small companions of the residual map:
+    `MapScaleViewModel` (the scale chips, which translate a choice into a
+    `PngWriter.MapRange` and decide nothing; on every tab with a residual map - Structure,
+    Ratio, Netezire, Sintetic, Split) and `MapGuideViewModel` (on Structure and Ratio; the
     shape guide's text and its collapsed state). `HistogramSourceViewModel` is the third of
     that kind, on the Exposure tab: raw data or the camera's preview, and it decides nothing
     either. `SensorFormatViewModel` is the same pattern on the Sintetic tab: six chips that

@@ -415,9 +415,10 @@ namespace FlatCheck.Wpf
         internal Task<ProfileSources> EnsureProfilesAsync() => _catalog.EnsureAsync();
 
         /// <summary>
-        /// The prefill: the catalog, then the master's header (FOCALLEN, INSTRUME) and, once the
-        /// opening chain has ended, a raw from flats/ for the aperture and the lens ID. Nothing
-        /// written here overwrites what the user has already typed.
+        /// The prefill: the catalog, then the master's header (FOCALLEN, INSTRUME) and, when there
+        /// is one, the first raw from flats/ for the aperture and the lens ID - metadata only, read
+        /// at once, without waiting for the opening chain. Nothing written here overwrites what the
+        /// user has already typed.
         /// </summary>
         /// <returns>A task that completes when the fields are filled; it never faults, a failure
         /// ends up in <see cref="PrefillNote"/>.</returns>

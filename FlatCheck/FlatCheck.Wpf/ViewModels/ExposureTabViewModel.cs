@@ -128,7 +128,8 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value)) Recompute(); }
         }
 
-        /// <summary>Requirement 8: the switch changes the thresholds, so it recomputes.</summary>
+        /// <summary>The window's --sky (R-043): the switch changes the bands, so it
+        /// recomputes.</summary>
         public bool Sky
         {
             get => _sky;

@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - the session folder and the six tabs.
+// MainViewModel.cs - the session folder and the eight tabs.
 //
 // Two decisions about behaviour deserve an explanation:
 //
@@ -156,7 +156,7 @@ namespace FlatCheck.Wpf
 
         /// <summary>
         /// The problem that stops this folder from starting, if there is one. When it is set, the
-        /// tabs are not shown at all: there is no point seeing four empty panels when what has to
+        /// tabs are not shown at all: there is no point seeing eight empty panels when what has to
         /// be done is to run a script in Siril.
         /// </summary>
         public string ProblemTitle { get => _problemTitle; private set => Set(ref _problemTitle, value); }
@@ -255,8 +255,9 @@ namespace FlatCheck.Wpf
             await Light.RunAsync(session, ct).ConfigureAwait(true);
             if (ct.IsCancellationRequested) return;
 
-            // The Ratio tab usually has two preselected masters; only now, after the other two
-            // have finished, can it compute without fighting over memory.
+            // The Ratio tab proposes nothing (R-082), and ResetTabs dropped its two files, so here
+            // it finds none and only clears its result; it computes when the user has chosen two
+            // masters, by hand.
             await Ratio.RecomputeAsync().ConfigureAwait(true);
         }
 

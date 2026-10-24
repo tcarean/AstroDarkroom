@@ -490,9 +490,10 @@ mid-field excess of section 8; it needs a new box measurement on the master.
 - A camera missing from the lensfun table gets its crop from a sensor-format chip or by
   hand; the nominal crops are within 1-2 % of the real ones. The chips otherwise only show
   the format of the crop in the box; the exact value stays the table's.
-- The window prefill reads the first raw in `flats/` once per session, after the opening
-  chain, through `ImageLoader.LoadInfo` (metadata only, no pixel decoded, ADR 0030); a raw
-  libraw cannot open leaves the f-stop empty and says so.
+- The window prefill reads the first raw in `flats/` once per session, as soon as the catalog
+  is loaded, without waiting for the opening chain, through `ImageLoader.LoadInfo` (metadata
+  only, no pixel decoded, ADR 0030); a raw libraw cannot open leaves the f-stop empty and says
+  so.
 - The window's comparison follows the write by itself (`SyntheticTabViewModel.RunAsync`
   chains `CompareAsync(Report)` after a real write; the report is one text with one
   banner). "Compara cu masterul" runs it alone, for a file written earlier.

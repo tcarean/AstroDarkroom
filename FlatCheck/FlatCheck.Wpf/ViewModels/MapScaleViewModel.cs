@@ -22,10 +22,10 @@
 // one and +10% on the other. On a fixed scale two sessions compare at a glance, and saturation
 // has a meaning - "out of the band".
 //
-// WHY IT IS A CLASS OF ITS OWN, used by two tabs. Structure and Ratio both show a residual on the
-// residual scale, so both want the same switch. Two copies of the list of caps would have
-// diverged at the first adjustment, and the list is NOT the window's anyway: it comes from
-// PngWriter.FixedCapsPct, which takes it from Th.Resid*.
+// WHY IT IS A CLASS OF ITS OWN, used by five tabs. Structure, Ratio, Netezire, Sintetic and Split
+// all show a residual on the residual scale, so all want the same switch. Copies of the list of
+// caps would have diverged at the first adjustment, and the list is NOT the window's anyway: it
+// comes from PngWriter.FixedCapsPct, which takes it from Th.Resid*.
 //
 // WHAT IT DOES NOT DO: it decides nothing and computes no figure. It translates a choice into
 // PngWriter.MapRange and tells the tab it must re-encode. The verdict never changes with the
