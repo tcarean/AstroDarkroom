@@ -21,7 +21,10 @@ frames, and in LightsCheck's pixels `+X` is north and `+Y` is west. The drift of
 the nine DEC presses of the night were all to the south. (Corrected 2026-10-12: stars sliding
 east in the frame are the camera moving west against them; a mount that lags the sky makes them
 slide west, so the drift is not a lag. The senses stand: four more plate-solved frames agree
-with them, `docs/validation.md`, History, 2026-10-12.) Which arrow moves the mount which
+with them, `docs/validation.md`, History, 2026-10-12.) (Corrected 2026-10-24: the -0.48 px/min
+was read over 45 pairs, nine of them presses after a pause; over the pairs without a pause or a
+move, as ADR 0016 decided, the drift along Y is larger and still negative (`docs/validation.md`,
+V-008), so the stars still slide east.) Which arrow moves the mount which
 way is a setting of the SynScan app; its default, pasted by the owner from a user forum, is
 up = north, down = south, left = east, right = west.
 
