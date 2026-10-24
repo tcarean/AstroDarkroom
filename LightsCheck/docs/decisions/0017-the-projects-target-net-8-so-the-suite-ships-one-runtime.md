@@ -37,4 +37,5 @@ SDK 9 builds net8.0 with C# 13 through `LangVersion latest`.
 the same `lock` statement. C# 13 stays. The runtime the release publishes for is declared as
 before (the kit's ADR 0034). Guarded by
 `RepoInvariantTests.TargetFramework_IsNet8_InEveryProjectThatShips`, which reads
-`Directory.Build.props` and the window's project file.
+`Directory.Build.props` and the window's project file. Measured on 2026-10-25
+(`docs/validation.md`, History): the 13 validation cases pass on .NET 8 with no figure moved.

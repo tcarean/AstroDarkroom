@@ -95,6 +95,10 @@ drift instead of editing the figures.
 
 ## History
 
+- 2026-10-25: after the move to .NET 8 (ADR 0017), all 13 cases re-run on the net8 build with
+  `LIGHTSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 13, Passed: 13, Total
+  time: 8.8582 Minutes`; no figure moved.
+
 - 2026-10-24: V-008 and V-013 gain the drift pairs, whether the drift is approximate, the
   polar error's bounds, the drift it can cause per exposure and the verdict (R-049, R-050,
   ADR 0016), recorded from the console's run of the same day: V-008 36 pairs, exact, 4.5' to
