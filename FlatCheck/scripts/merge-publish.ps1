@@ -30,7 +30,8 @@
 #   exit 1  one line per collision, "collision  <relative path>  (<From> differs from <Into>)",
 #           and nothing copied
 #   exit 2  any other error (a missing -From, a failed copy), with its message; release.ps1
-#           tells it from a collision by this code
+#           tells it from a collision by this code. After a failed copy the files this run
+#           copied are removed again; folders it created may stay, empty
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$From,
@@ -73,11 +74,22 @@ if ($collisions.Count -gt 0) {
 }
 
 # --- pass 2: copy -----------------------------------------------------------------------
-foreach ($relative in $copy) {
-    $target = Join-Path $intoFull $relative
-    $dir = Split-Path -Parent $target
-    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    Copy-Item -LiteralPath (Join-Path $fromFull $relative) -Destination $target
+# A copy that fails midway (a disk full, a file locked, a file where a folder must go) takes
+# back the files this run copied before rethrowing, so -Into holds none of this entry.
+$copied = New-Object System.Collections.Generic.List[string]
+try {
+    foreach ($relative in $copy) {
+        $target = Join-Path $intoFull $relative
+        $dir = Split-Path -Parent $target
+        if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        Copy-Item -LiteralPath (Join-Path $fromFull $relative) -Destination $target
+        $copied.Add($target)
+    }
+}
+catch {
+    foreach ($done in $copied) { Remove-Item -LiteralPath $done -Force -ErrorAction SilentlyContinue }
+    Write-Host ("merge-publish: the copy failed; the {0} file(s) this run copied were removed again." -f $copied.Count) -ForegroundColor Red
+    throw
 }
 if (-not (Test-Path -LiteralPath $intoFull)) { New-Item -ItemType Directory -Path $intoFull -Force | Out-Null }
 Write-Host ("merged   {0} file(s) copied, {1} already there with the same bytes, into {2}" -f $copy.Count, $same, $intoFull)
