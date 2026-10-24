@@ -15,18 +15,29 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistEqReport.cs - textul modului 5. Nu exista verdict, deci nu exista nici scara si
-// nici sfat: raportul spune ce s-a egalizat, la ce marime, si - propozitia care conteaza -
-// ce NU se poate citi din poza. Aia e Caveat(), expusa ca valoare fiindca fereastra o
-// pune sub imagine, iar regula e ca nicio propozitie pentru utilizator nu se scrie intr-un
-// ViewModel.
+// HistEqReport.cs - the text of mode 5. There is no verdict, so there is no scale and no
+// advice either: the report says what was equalised, at what size, and - the sentence that
+// matters - what CANNOT be read from the picture. That is Caveat(), exposed as a value because
+// the window puts it under the image, and the rule is that no sentence for the user is written
+// in a ViewModel.
 
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The words of <c>--histeq</c>: the console report of a <see cref="HistEqResult"/> and the
+    /// captions the window puts under its pictures.
+    /// </summary>
     internal static class HistEqReport
     {
+        /// <summary>
+        /// Writes the console report: the file, the frame, the display size, one row per
+        /// channel, and the caveat.
+        /// </summary>
+        /// <param name="r">The equalised result.</param>
+        /// <param name="path">The file's path, as the report prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void Write(HistEqResult r, string path, TextWriter w)
         {
             w.WriteLine("== EGALIZARE DE HISTOGRAMA (vederea \"Histogram\" din Siril) ==");
@@ -41,7 +52,12 @@ namespace FlatCheck
             w.WriteLine("INFORMATIV: " + Caveat());
         }
 
-        /// <summary>"6000 x 4000, CFA (ordine RGGB, din libraw)" / "..., CFA (ordine necunoscuta)" / "..., mono/procesat".</summary>
+        /// <summary>
+        /// "6000 x 4000, CFA (ordine RGGB, din libraw)" / "..., CFA (ordine necunoscuta)" / "...,
+        /// mono/procesat".
+        /// </summary>
+        /// <param name="r">The equalised result.</param>
+        /// <returns>The frame's size and kind.</returns>
         internal static string FrameLine(HistEqResult r)
         {
             string kind = !r.IsCfa
@@ -53,13 +69,20 @@ namespace FlatCheck
         }
 
         /// <summary>"1500 x 1000 (bloc 2x2 pe canal), 65536 cosuri pe canal".</summary>
+        /// <param name="r">The equalised result.</param>
+        /// <returns>The shrunk size, the block and the bin count.</returns>
         internal static string DisplayLine(HistEqResult r)
         {
             string shrink = r.Shrink > 1 ? $"bloc {r.Shrink}x{r.Shrink} pe canal" : "nemicsorat";
             return $"{r.W} x {r.H} ({shrink}), {HistEqLut.Bins} cosuri pe canal";
         }
 
-        /// <summary>Un rand din tabel: eticheta, intervalul de intrare, cate niveluri de iesire s-au folosit.</summary>
+        /// <summary>
+        /// A row of the table: the label, the input interval, how many output levels were used.
+        /// </summary>
+        /// <param name="r">The equalised result.</param>
+        /// <param name="i">The channel's index in <see cref="HistEqResult.Channels"/>.</param>
+        /// <returns>The row, in fixed-width columns.</returns>
         internal static string ChannelLine(HistEqResult r, int i)
         {
             HistEqChannel c = r.Channels[i];
@@ -67,7 +90,10 @@ namespace FlatCheck
             return $"{c.Label,-9}  {range,-30} {c.LevelsUsed,3} / 256";
         }
 
-        /// <summary>Singura propozitie de INTELES a modului. Sta sub poza si in raport.</summary>
+        /// <summary>
+        /// The mode's only sentence of MEANING. It sits under the picture and in the report.
+        /// </summary>
+        /// <returns>The caveat: the picture shows the shape, not the size.</returns>
         internal static string Caveat()
             => "modul nu da verdict. Poza arata FORMA a ceea ce nu e uniform - nu si cat de mare e: "
              + "fiecare nivel de gri primeste acelasi numar de pixeli, deci o unda de 0.5 % si un "
@@ -75,9 +101,10 @@ namespace FlatCheck
              + "maxim. Cifrele sunt in modul de structura.";
 
         /// <summary>
-        /// Ce inseamna sa pui masterul langa un cadru din care s-a facut. Text de ecran;
-        /// consola n-are unde sa-l puna, fiindca primeste un singur fisier.
+        /// What it means to put the master beside a frame it was made from. Screen text; the
+        /// console has nowhere to put it, because it takes a single file.
         /// </summary>
+        /// <returns>One paragraph.</returns>
         internal static string MasterVersusFrame()
             => "Masterul e stiva cadrelor de mai jos. O forma care se vede pe un cadru si lipseste "
              + "de pe master a fost trecatoare si s-a mediat; una care se vede pe amandoua e fixa pe "
@@ -86,11 +113,12 @@ namespace FlatCheck
              + "slaba.";
 
         /// <summary>
-        /// Ce inseamna sa pui flat-ul netezit langa masterul din care s-a facut. Tot text
-        /// de ecran. Ultima propozitie e cea care se intreaba: netezitul are zgomotul
-        /// scos, deci egalizarea pe ranguri intinde ce a RAMAS - oricat de mic - pe toata
-        /// scara de gri, si un flat mai curat arata mai zgomotos, nu invers.
+        /// What it means to put the smoothed flat beside the master it was made from. Screen
+        /// text too. The last sentence is the one people ask about: the smoothed one has its
+        /// noise removed, so the rank equalisation stretches what is LEFT - however small - over
+        /// the whole grey scale, and a cleaner flat looks noisier, not the other way round.
         /// </summary>
+        /// <returns>One paragraph.</returns>
         internal static string SmoothedVersusMaster()
             => "Flat-ul netezit e masterul de deasupra cu textura, praful si petele compacte "
              + "scoase. O forma care se vede pe master si lipseste de aici a fost scoasa de "
@@ -100,10 +128,14 @@ namespace FlatCheck
              + "netezit care pare mai ZGOMOTOS decat masterul e poza asteptata, nu un defect.";
 
         /// <summary>
-        /// Ce vedere e pe ecran, ca legenda sub poza. Marimea e cea la rezolutie intreaga,
-        /// fiindca pe aia o arata fereastra: mozaicul cat senzorul, o pozitie sau
-        /// compozitul la jumatate pe fiecare latura.
+        /// Which view is on screen, as the caption under the picture. The size is the
+        /// full-resolution one, because that is the one the window shows: the mosaic the size
+        /// of the sensor, a position or the composite at half on each side.
         /// </summary>
+        /// <param name="r">The equalised result.</param>
+        /// <param name="viewLabel">The view's label: "RGB", "Mozaic", "mono" or a channel's
+        /// label.</param>
+        /// <returns>What the view is, and its size in pixels.</returns>
         internal static string ViewCaption(HistEqResult r, string viewLabel)
         {
             string what = viewLabel switch

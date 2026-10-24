@@ -171,6 +171,59 @@ Each area adds its own section at its wrap-up.
     identical to the recorded value.
   - The gate: `== OK` at each of the six commits, 951 + 331 tests.
 
+### Area 2, the analyzers and reports (2026-10-24, `claude/Document-the-analyzers-and-reports`)
+
+- **No documentation-file error and no code change**: the 22 files built clean under the gate
+  at the first try.
+- **Five comments corrected, in a commit of their own** (four in the commit message's count,
+  the fifth found while correcting the fourth, in the same header):
+  1. `LightSeriesAnalyzer.cs`, header: the series' files are loaded in `Runs/LightSeriesRun.cs`,
+     not in `FlatCheckCli` (it calls `LightAnalyzer.Analyze` and `Combine`; the console calls
+     `Runs/` only).
+  2. `SmoothAnalyzer.Analyze`, "what was removed": `Prepare` is linear but a ratio is not;
+     `Prepare(a) / Prepare(b)` equals `Prepare(a / b)` only where `b` is constant over a block,
+     which the smoothed flat nearly is at the analysis block.
+  3. `ExposureReport`, the "for the window" section: `ChannelColumn`, its first member, is
+     printed by the console (`Write` uses it for the per-channel rows).
+  4. `LightSeriesReport.cs`, header: `Runs/LightSeriesRun.cs` writes the header, the rows and
+     the summary, for both applications, not "the CLI".
+  5. The same header: `Report/` is not "the only place with Romanian text"; the error messages
+     are thrown in Romanian where they arise, in `Analysis/` and `Runs/`.
+- **One figure first left for the owner, then corrected:** "a thirtieth of the memory" in
+  `RatioAnalyzer.Analyze`, `StructureAnalyzer.AnalyzePrepared` and `SmoothAnalyzer.Analyze`,
+  and in ADR 0019 ("Averaging at full resolution"). By `Img.Prepare`'s arithmetic the analysis
+  raster has (2k)^2 times fewer pixels, k = floor(long side / 2 / 1200): 16 on the D3300's
+  6016 x 4016 (3008 -> k = 2), not 30. Asked, the owner did not know and said to find out
+  from the code. Measured: all 16 masters under `E:\Photografie\Astro\Flats and Darks` are
+  6016 x 4016, and the console prints `dimensiune analiza : 1504 x 1004` on
+  `Samyang/ISO400/f2.0-sky`, so 16. The figure dates from the Ratio rewrite (eb13d63,
+  2026-09-09); `Prepare` was the same then. The three comments now say a sixteenth, and ADR
+  0019 got a dated correction note (the kit's ADR 0024, a wrong figure).
+- **A high-effort `/code-review`** of the branch found nine comment findings and no code
+  issue; eight fixed in a commit of their own (`VignettingComparer.Analyze`'s gap order, which
+  said a null catalog means NoProfiles; the absolute correlation in `Combine`; the return
+  shapes of `Levels`, `DepthLightScaleNote` and `Diagnosis`; `AnalyzePrepared`'s second caller,
+  the smoothing mode; the full lists in the `ExposureReport` and `RatioReport` headers). The
+  ninth is the "thirtieth" figure above, corrected after the owner's answer.
+- **`wrap.py`** leaves a single word on the last line of some wrapped `<param>` / `<returns>`
+  tags (`/// it.</param>`); readable, left as it is.
+- **Measured on 2026-10-24:**
+  - The counter on area 2's 22 files: on `main` 38 types and 213 methods to touch; on the
+    branch 0 and 0. The whole code has 95 types and 451 methods left for areas 3-5.
+  - `tokens`: all 121 code files identical to `main`'s code, 22 with changed comments.
+  - `facts`: no number, ID or identifier of the old comments missing, except one judged:
+    `SmoothAnalyzer.PositionMedian`, "din 8 in 8" became "one pixel in 8 of the position (one
+    in 16 of the sensor)", one 8 instead of two.
+  - `romanian`: no line left in the 22 files but two false hits: "care" (English) in
+    `ExposureAnalyzer.AnalyzePreview` and the quoted output in `StructureReport.DepthDetail`.
+  - `width`: no comment line over 100 columns; every added line ASCII.
+  - `check-design.ps1 -Since main`: 14 notes cover the files; none describes a comment, and
+    none repeats a corrected claim (ADR 0019 aside, above).
+  - `/validate`: the 40 cases ran on the real masters (`FLATCHECK_TESTDATA_LARGE` =
+    `E:\Photografie\Astro\Flats and Darks`, all 30 files present and matching the manifest);
+    300 figures, every one identical to the recorded value and to area 1's run.
+  - The gate: `== OK` at each commit, 951 + 331 tests.
+
 ## Glossary: one English word per Romanian term, in every area
 
 | Romanian | English | Where, and the identifiers that fix it |
@@ -203,4 +256,15 @@ To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 1 i
 'Each area's session', on branch `claude/Document-the-analyzers-and-reports`. The plan is
 approved. The scratch tool's source is in
 `C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\0e1af765-b386-4d2c-8f34-b2966ed6f718\scratchpad\doccount`
+(and `wrap.py` beside it): copy them into yours and build the tool."
+
+## The prompt for area 3
+
+To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 2 is merged:
+"Area 3 of the documentation backfill, `Runs/`, `FlatCheck/` and the Wpf `Session/`,
+`Interop/`, `Mvvm/`, `Presentation/`, `App` and `MainWindow`: follow
+`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md` on `main`,
+'Each area's session', on branch `claude/Document-the-runs-console-and-session`. The plan is
+approved. The scratch tool's source is in
+`C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\374a5ba5-2bc6-4317-9b11-7357b78b4fb2\scratchpad\doccount`
 (and `wrap.py` beside it): copy them into yours and build the tool."

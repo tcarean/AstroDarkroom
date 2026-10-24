@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureAnalyzer.cs - modul 1: e master flat-ul simetric radial?
+// StructureAnalyzer.cs - mode 1: is the master flat radially symmetric?
 //
-// Pur: Img -> StructureResult. Nu scrie nimic, nu citeste fisiere. Textul e in
+// Pure: Img -> StructureResult. It writes nothing, it reads no files. The text is in
 // Report/StructureReport.cs.
 
 using System;
@@ -26,60 +26,86 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// What the structure battery measured on one master: the five deviation tests with their
+    /// verdicts, the informative figures (centre offset, vignetting depth, local spot) and the
+    /// residual map.
+    /// </summary>
     internal sealed class StructureResult
     {
-        internal int Width, Height;                  // rasterul de analiza (dupa Prepare)
-        internal double RawMedian, RawMax;           // pe rasterul original, informativ
-        internal double FitCx, FitCy;                // varful de iluminare fitat
-        internal double SensorCx, SensorCy;          // centrul senzorului (w/2, h/2)
-        internal double CentroidOffsetPct;           // % din semidiagonala, INFORMATIV
-        internal bool CentroidValid;                 // false => varful fitat nu e utilizabil
-        internal double TiltPct;                     // amplitudinea termenului liniar, %
-        internal Dictionary<string, double> Corners; // medianele celor 4 colturi
+        internal int Width, Height;                  // the analysis raster (after Prepare)
+        internal double RawMedian, RawMax;           // on the original raster, informative
+        internal double FitCx, FitCy;                // the fitted illumination vertex
+        internal double SensorCx, SensorCy;          // the sensor's centre (w/2, h/2)
+        internal double CentroidOffsetPct;           // % of the half-diagonal, INFORMATIVE
+        internal bool CentroidValid;                 // false => the fitted vertex is not usable
+        internal double TiltPct;                     // the amplitude of the linear term, %
+        internal Dictionary<string, double> Corners; // the medians of the 4 corners
         internal double CornerMean, CentreMedian;
-        internal double VignetteStops;               // informativ, NU e un test
+        internal double VignetteStops;               // informative, NOT a test
         internal double CornerSpreadPct;
         internal double AzimuthalMaxPct;
         internal double ResidualPtpPct;
-        internal double MaxTilePct;                  // cea mai abatuta dala, pe tot cadrul
-        internal double LocalSpotPct;                // cea mai adanca pata compacta, CU SEMN
-        internal int LocalSpotX, LocalSpotY;         // unde e, in pixelii rasterului de analiza
+        internal double MaxTilePct;                  // the most deviant tile, over the whole frame
+        internal double LocalSpotPct;                // the deepest compact spot, SIGNED
+        internal int LocalSpotX, LocalSpotY;         // where it is, in the analysis raster's pixels
         internal bool LocalSpotFlagged;              // |LocalSpotPct| >= Th.LocalSpotWarn
-        internal Img Residual;                       // img / model radial, pentru harta
+        internal Img Residual;                       // img / radial model, for the map
         internal string CornerVerdict, AzimuthalVerdict, ResidualVerdict, TiltVerdict, MaxTileVerdict;
-        internal string Verdict;                     // cel mai prost dintre cele cinci
+        internal string Verdict;                     // the worst of the five
     }
 
+    /// <summary>
+    /// Mode 1, structure: the five deviation tests of a master against radial symmetry, each
+    /// read on the residual scale (ADR 0015).
+    /// </summary>
     internal static class StructureAnalyzer
     {
+        /// <summary>Prepares a master and runs the structure battery on it.</summary>
+        /// <param name="raw">The master, as loaded; not modified.</param>
+        /// <returns>The figures and the verdicts; RawMedian/RawMax in the file's units.</returns>
         internal static StructureResult Analyze(Img raw) => Run(raw, Img.Prepare(raw));
 
         /// <summary>
-        /// Aceeasi analiza, pe un raster deja trecut prin <see cref="Img.Prepare"/>.
+        /// The same analysis, on a raster already passed through <see cref="Img.Prepare"/>.
         ///
-        /// Exista pentru modul de atribuire, care isi construieste intrarea - media
-        /// celor doua orientari - si ar plati de doua ori memoria daca ar trebui sa o
-        /// tina la rezolutie intreaga. Prepare fiind numai medii de blocuri, e liniara:
-        /// media rasterelor pregatite e acelasi lucru cu pregatirea mediei, la o
-        /// treizecime din memorie.
+        /// It exists for the attribution mode, which builds its own input - the mean of the
+        /// two orientations - and would pay the memory twice if it had to hold it at full
+        /// resolution. Prepare being only block means, it is linear: the mean of the prepared
+        /// rasters is the same thing as preparing the mean, at a sixteenth of the memory on the
+        /// D3300's 6016 x 4016 masters ((2k)^2 = 16 with k = 2: 1504 x 1004 prepared).
         ///
-        /// RawMedian/RawMax ies atunci de pe rasterul pregatit si normalizat, deci nu
-        /// mai inseamna ADU. Nu se tiparesc: raportul de atribuire cheama
-        /// StructureReport.WriteBody, care nu include randul acela.
+        /// The smoothing mode calls it too, for its before and after batteries on the prepared
+        /// input and output.
+        ///
+        /// RawMedian/RawMax then come from the prepared (and, for the attribution mode,
+        /// normalised) raster, so they no longer mean ADU. They are not printed: the attribution
+        /// report calls StructureReport.WriteBody, which does not include that row, and the
+        /// smoothing report and tab show only the five tests, the verdicts and the residual map.
         /// </summary>
+        /// <param name="prepared">The analysis raster; not modified.</param>
+        /// <returns>The figures and the verdicts.</returns>
         internal static StructureResult AnalyzePrepared(Img prepared) => Run(prepared, prepared);
 
+        /// <summary>
+        /// The battery: the corners, the azimuthal asymmetry, the residual after the radial
+        /// model, the tilt and the worst tile, each through <see cref="Stats.ResidualVerdict"/>,
+        /// plus the local spot against <see cref="Th.LocalSpotWarn"/>.
+        /// </summary>
+        /// <param name="raw">The raster RawMedian and RawMax are taken from.</param>
+        /// <param name="img">The analysis raster every test runs on.</param>
+        /// <returns>The figures and the verdicts; the overall one the worst of the five.</returns>
         static StructureResult Run(Img raw, Img img)
         {
             int h = img.H, w = img.W;
 
-            // ATENTIE: modelul radial si asimetria se calculeaza in jurul centrului
-            // SENZORULUI, nu al varfului fitat. Centrarea pe varf ar absorbi exact
-            // gradientul liniar cautat, iar testul s-ar autoanula.
+            // WARNING: the radial model and the asymmetry are computed around the SENSOR's
+            // centre, not the fitted vertex. Centring on the vertex would absorb exactly the
+            // linear gradient being looked for, and the test would cancel itself.
             double cx = w / 2.0, cy = h / 2.0;
-            // Din acelasi fit ies doua lucruri: inclinarea, care e un test, si offsetul
-            // varfului, care e doar informativ - nu e scale-invariant, si peste un prag
-            // nici macar monoton. Vezi Metrics.FitCenter pentru de ce.
+            // Two things come out of the same fit: the tilt, which is a test, and the vertex's
+            // offset, which is only informative - it is not scale-invariant, and above a
+            // threshold not even monotonic. See Metrics.FitCenter for why.
             var (fx, fy, tilt, centroidValid) = Metrics.FitCenter(img);
             double off = Math.Sqrt((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy))
                        / Math.Sqrt(cx * cx + cy * cy) * 100;
@@ -89,32 +115,32 @@ namespace FlatCheck
             double vignStops = Math.Log2(ctr / cmean);
             double spread = (cor.Values.Max() - cor.Values.Min()) / cmean * 100;
 
-            // Profilul se ia din rasterul SIMETRIZAT la 180 de grade, nu din img: altfel
-            // mediana pe inel sare dincolo de cercul inscris si harta capata inele
-            // concentrice care nu sunt in flat. Vezi Img.Symmetrise pentru mecanism.
-            // Reziduul ramane insa al lui img - simetrizarea ar anula tocmai gradientul
-            // pe care harta trebuie sa-l arate.
+            // The profile is taken from the raster SYMMETRISED at 180 degrees, not from img:
+            // otherwise the median per ring jumps beyond the inscribed circle and the map gets
+            // concentric rings that are not in the flat. See Img.Symmetrise for the mechanism.
+            // The residual stays img's, though - symmetrising would cancel the very gradient
+            // the map must show.
             var (_, _, model) = Metrics.RadialModel(Img.Symmetrise(img), cx, cy);
             var resid = Img.Divide(img, model);
-            // Pe tot cadrul, nu doar in cercul inscris - vezi Metrics.LargeScalePtp
-            // pentru ce costa restrictia si de ce nu mai e nevoie de ea.
+            // Over the whole frame, not only in the inscribed circle - see Metrics.LargeScalePtp
+            // for what the restriction costs and why it is no longer needed.
             double resPtp = Metrics.LargeScalePtp(resid) * 100;
-            // Reziduul taie 5% din dale la fiecare capat, deci un defect compact ii scapa
-            // complet. Dala cea mai abatuta il prinde; e al cincilea test.
+            // The residual trims 5% of the tiles at each end, so a compact defect escapes it
+            // completely. The most deviant tile catches it; it is the fifth test.
             double maxTile = Metrics.MaxTileDeviation(resid) * 100;
-            // Si, separat, ce e mic SI fix pe aparat - praf, inel, scurgere mica - dupa
-            // scoaterea structurii de scara mare. Nu voteaza: raspunsul depinde de ce
-            // faci cu flat-ul (sesiune vs biblioteca), deci da o atentionare.
+            // And, separately, what is small AND fixed to the camera - dust, a ring, a small leak -
+            // after the large-scale structure is taken out. It does not vote: the answer depends
+            // on what you do with the flat (session vs library), so it gives a warning.
             var (spot, spotX, spotY) = Metrics.LocalSpots(resid);
             double spotPct = spot * 100;
 
             var az = Metrics.AzimuthalAsymmetry(img, cx, cy);
             double azMax = az.Count > 0 ? az.Max(v => v.ptp) : double.NaN;
 
-            // Toate cinci masoara aceeasi abatere de la simetria radiala, din unghiuri
-            // diferite, si toate cinci sunt amplitudini fractionare in procente - deci
-            // impart scara de reziduu. Offsetul centrului masoara altceva, o pozitie, si
-            // nu mai da verdict deloc: e raportat informativ.
+            // All five measure the same departure from radial symmetry, from different
+            // angles, and all five are fractional amplitudes in percent - so they share the
+            // residual scale. The centre offset measures something else, a position, and
+            // gives no verdict at all: it is reported as information.
             string vCorner = Stats.ResidualVerdict(spread);
             string vAzim = Stats.ResidualVerdict(azMax);
             string vResid = Stats.ResidualVerdict(resPtp);
@@ -145,8 +171,8 @@ namespace FlatCheck
                 LocalSpotPct = spotPct,
                 LocalSpotX = spotX,
                 LocalSpotY = spotY,
-                // !(x < prag) si nu (x >= prag), ca NaN sa cada pe partea atentionata -
-                // aceeasi conventie ca Stats.Verdict.
+                // !(x < threshold) and not (x >= threshold), so that NaN falls on the warned
+                // side - the same convention as Stats.Verdict.
                 LocalSpotFlagged = !(Math.Abs(spotPct) < Th.LocalSpotWarn),
                 Residual = resid,
                 CornerVerdict = vCorner,
@@ -154,8 +180,8 @@ namespace FlatCheck
                 ResidualVerdict = vResid,
                 TiltVerdict = vTilt,
                 MaxTileVerdict = vMaxTile,
-                // verdictul general e cel mai prost dintre cele cinci, exprimat in
-                // vocabularul benzilor de reziduu
+                // the overall verdict is the worst of the five, expressed in the
+                // vocabulary of the residual bands
                 Verdict = Stats.ResidualBands[
                     new[] { vCorner, vAzim, vResid, vTilt, vMaxTile }.Max(Stats.Severity)],
             };

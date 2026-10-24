@@ -15,41 +15,42 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Vignetarea masterului fata de profilele publicate ale obiectivului - al saselea test al
-// modului structura, de alt fel decat celelalte cinci si pe alta scara.
+// The master's vignetting against the lens's published profiles - the sixth test of the
+// structure mode, of another kind than the other five and on another scale.
 //
-// DE CE EXISTA. Cele cinci teste masoara abaterea de la simetria radiala, si sunt oarbe
-// prin constructie la un exces RADIAL: masterele de tableta (2026-09-18, Tokina 20 mm
-// f/2.8, patru orientari la 90 de grade) au iesit PERFECT pe toate cinci cu 1.26 stopuri
-// de vignetare, cand cele doua baze dau 0.67-0.92 pentru obiectivul asta - caderea
-// unghiulara a panoului, facuta radiala de rotatie. --ratio e la fel de orb (tot ce se
-// roteste cu aparatul sau e simetrizat de rotatie ii scapa). Singura referinta externa pe
-// care o are unealta e modelul obiectivului, si asta e comparatia.
+// WHY IT EXISTS. The five tests measure the departure from radial symmetry, and are blind
+// by construction to a RADIAL excess: the tablet masters (2026-09-18, Tokina 20 mm
+// f/2.8, four orientations 90 degrees apart) came out PERFECT on all five with 1.26 stops
+// of vignetting, when the two databases give 0.67-0.92 for this lens - the panel's angular
+// falloff, made radial by the rotation. --ratio is just as blind (everything that rotates
+// with the camera or is symmetrised by the rotation escapes it). The only external reference
+// the tool has is the lens's model, and that is the comparison.
 //
-// CUM SE MASOARA. Nu evaluand polinomul in punctul din colt, ci construind rasterul
-// modelului la marimea rasterului de analiza (SyntheticFlatBuilder) si rulandu-i EXACT
-// Metrics.CornerStats - acelasi operator ca pe master, deci diferenta dintre "mediana unei
-// cutii de 5 %" si "valoarea intr-un punct" nu exista, iar artefactul de jumatate de pixel
-// (known issue 5) e acelasi pe amandoua partile. Costul e ~1.5 M evaluari, zeci de ms.
+// HOW IT IS MEASURED. Not by evaluating the polynomial at the corner point, but by building the
+// model's raster at the size of the analysis raster (SyntheticFlatBuilder) and running EXACTLY
+// Metrics.CornerStats on it - the same operator as on the master, so the difference between "the
+// median of a 5 % box" and "the value at a point" does not exist, and the half-pixel artefact
+// (known issue 5) is the same on both sides. The cost is ~1.5 M evaluations, tens of ms.
 //
-// VERDICTUL E AL CELUI MAI APROPIAT PROFIL, nu al celui mai rau. Cele doua baze difera
-// intre ele cu ~0.2 stopuri pe acelasi obiectiv (docs/design/lens-profiles.md, sectiunea 8), si
-// unealta nu poate acuza un master cu mai multa precizie decat au bazele intre ele: un
-// master care coincide cu una din ele nu e gresit. "Cel mai rau" ar fi coborat masterele de
-// monitor bune la ACCEPTABIL si BUN in loc de PERFECT si BUN (monitor-difuzor-aproape +0.19
-// stopuri fata de Adobe, monitor-difuzor-pe-monitor -0.13 fata de lensfun AF; masurat
-// 2026-09-27, V-036 si V-038). Pragurile nu sunt
-// noi: diferenta in stopuri trece prin Stats.DepthErrorPct (2^|D| - 1) pe scara de reziduu,
-// exact ca adancimea din --against. Semnul e diagnosticul: plus = masterul cade mai mult
-// decat modelul (sursa cade cu unghiul: panou fara difuzor real, prea aproape), minus =
-// mai putin (sursa umple colturile: cupola cerului, ambient, o reflexie).
+// THE VERDICT IS THE NEAREST PROFILE'S, not the worst one's. The two databases differ from
+// each other by ~0.2 stops on the same lens (docs/design/lens-profiles.md, section 8), and
+// the tool cannot accuse a master with more precision than the databases have between them: a
+// master that matches one of them is not wrong. "The worst" would have lowered the good
+// monitor masters to ACCEPTABIL and BUN instead of PERFECT and BUN (monitor-difuzor-aproape +0.19
+// stops against Adobe, monitor-difuzor-pe-monitor -0.13 against lensfun AF; measured
+// 2026-09-27, V-036 and V-038). The thresholds are not
+// new: the difference in stops goes through Stats.DepthErrorPct (2^|D| - 1) onto the residual
+// scale, exactly like the depth of --against. The sign is the diagnosis: plus = the master falls
+// more than the model (the source falls with the angle: a panel without a real diffuser, too
+// close), minus = less (the source fills the corners: the sky's dome, ambient light, a
+// reflection).
 //
-// CE NU POATE STI, si raportul o spune: profilul e modelul obiectivului, nu exemplarul;
-// e acromatic, iar masterul e o medie 2x2 a mozaicului (ponderata pe verde); un exces
-// radial nu se vede nici in cele cinci teste, nici in harta. Fara raw langa master nu e
-// niciun ID de obiectiv, fara diafragma nu se poate alege profilul: atunci nu se compara,
-// se explica de ce, si verdictul ramane al celor cinci teste - "Unknown is not a refusal",
-// regula de la --light.
+// WHAT IT CANNOT KNOW, and the report says it: the profile is the lens's model, not the copy;
+// it is achromatic, and the master is a 2x2 mean of the mosaic (weighted toward green); a radial
+// excess shows neither in the five tests nor in the map. Without a raw beside the master there
+// is no lens ID, without the aperture the profile cannot be chosen: then it does not compare,
+// it explains why, and the verdict stays the five tests' - "Unknown is not a refusal",
+// the rule of --light.
 
 using System;
 using System.Collections.Generic;
@@ -57,42 +58,76 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    /// <summary>De ce nu s-a putut compara. None cand s-a comparat.</summary>
+    /// <summary>Why the comparison could not be made. None when it was made.</summary>
     internal enum ComparisonGap
     {
         None,
-        /// <summary>Niciun profil pe masina: nici Adobe, nici lensfun/.</summary>
+        /// <summary>No profile on the machine: neither Adobe nor lensfun/.</summary>
         NoProfiles,
-        /// <summary>Niciun raw langa master (sau ca referinta), deci niciun ID de obiectiv - si niciun --lens.</summary>
+        /// <summary>
+        /// No raw beside the master (or as a reference), so no lens ID - and no --lens.
+        /// </summary>
         NoRaw,
-        /// <summary>Raw-ul are ID, dar niciun obiectiv din catalog nu i se potriveste.</summary>
+        /// <summary>The raw has an ID, but no lens in the catalog matches it.</summary>
         NoLensMatch,
-        /// <summary>Focala nu se stie (nici FOCALLEN, nici raw, nici --focal).</summary>
+        /// <summary>
+        /// The focal length is not known (neither FOCALLEN, nor a raw, nor --focal).
+        /// </summary>
         NoFocal,
-        /// <summary>Diafragma nu se stie: Siril n-o scrie, si n-a fost niciun raw sau --fstop.</summary>
+        /// <summary>
+        /// The aperture is not known: Siril does not write it, and there was no raw or --fstop.
+        /// </summary>
         NoFStop,
-        /// <summary>Doar profile lensfun, si crop-ul aparatului nu se stie.</summary>
+        /// <summary>Only lensfun profiles, and the camera's crop is not known.</summary>
         NoCrop,
     }
 
-    /// <summary>Un profil pus fata in fata cu masterul.</summary>
+    /// <summary>A profile set face to face with the master.</summary>
     internal sealed class ProfileDepth
     {
         internal readonly LensProfile Profile;
-        /// <summary>Adancimea modelului in colt, masurata cu CornerStats pe rasterul lui, in stopuri.</summary>
+        /// <summary>
+        /// The model's depth at the corner, measured with CornerStats on its raster, in stops.
+        /// </summary>
         internal readonly double CornerStops;
-        /// <summary>master - profil, in stopuri; pozitiv = masterul cade mai mult spre colt decat modelul.</summary>
+        /// <summary>
+        /// master - profile, in stops; positive = the master falls more toward the corner than the
+        /// model.
+        /// </summary>
         internal readonly double DiffStops;
-        /// <summary>2^|DiffStops| - 1, in procente: eroarea lasata in coltul unui light calibrat cu masterul, daca modelul e adevarul.</summary>
+        /// <summary>
+        /// 2^|DiffStops| - 1, in percent: the error left in the corner of a light calibrated with
+        /// the master, if the model is the truth.
+        /// </summary>
         internal readonly double ErrorPct;
         internal readonly string Verdict;
-        /// <summary>Crop-ul cu care s-a construit modelul (0 = senzorul de calibrare al profilului).</summary>
+        /// <summary>
+        /// The crop the model was built with (0 = the profile's calibration sensor).
+        /// </summary>
         internal readonly double CameraCrop;
-        /// <summary>Coltul masterului fata de coltul de calibrare al profilului (SyntheticFlatResult.Extrapolation).</summary>
+        /// <summary>
+        /// The master's corner against the profile's calibration corner
+        /// (SyntheticFlatResult.Extrapolation).
+        /// </summary>
         internal readonly double Extrapolation;
-        /// <summary>Toate profilele obiectivului, pentru avertismentul "profilul folosit e departe de ce a spus raw-ul".</summary>
+        /// <summary>
+        /// All the lens's profiles, for the warning "the profile used is far from what the raw
+        /// said".
+        /// </summary>
         internal readonly IReadOnlyList<LensProfile> LensProfiles;
 
+        /// <summary>
+        /// One profile's row: the difference and its verdict through
+        /// <see cref="Stats.DepthErrorPct"/> and <see cref="Stats.DepthVerdict"/>.
+        /// </summary>
+        /// <param name="profile">The profile compared.</param>
+        /// <param name="cornerStops">The model's depth at the corner, stops.</param>
+        /// <param name="masterStops">The master's depth at the corner, stops.</param>
+        /// <param name="cameraCrop">The crop the model was built with; 0 for the calibration
+        /// sensor.</param>
+        /// <param name="extrapolation">The master's corner against the calibration corner.</param>
+        /// <param name="lensProfiles">All the lens's profiles; null for just
+        /// <paramref name="profile"/>.</param>
         internal ProfileDepth(LensProfile profile, double cornerStops, double masterStops, double cameraCrop, double extrapolation,
                               IReadOnlyList<LensProfile> lensProfiles = null)
         {
@@ -107,24 +142,49 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// The sixth structure test: the master's corner depth against every candidate lens's
+    /// profile, the nearest one's verdict, or the gap that kept it from being made.
+    /// </summary>
     internal sealed class VignettingComparison
     {
         internal readonly double MasterStops;
         internal readonly ShotIdentity Shot;
-        /// <summary>Un rand pe obiectiv candidat, in ordinea catalogului; gol cand nu s-a putut compara.</summary>
+        /// <summary>
+        /// One row per candidate lens, in catalog order; empty when it could not compare.
+        /// </summary>
         internal readonly IReadOnlyList<ProfileDepth> Profiles;
-        /// <summary>Cel cu diferenta cea mai mica in modul; null cand nu s-a comparat.</summary>
+        /// <summary>
+        /// The one with the smallest difference in absolute value; null when it did not compare.
+        /// </summary>
         internal readonly ProfileDepth Nearest;
-        /// <summary>Verdictul comparatiei = al celui mai apropiat profil; null cand nu s-a comparat.</summary>
+        /// <summary>
+        /// The comparison's verdict = the nearest profile's; null when it did not compare.
+        /// </summary>
         internal readonly string Verdict;
-        /// <summary>Cat difera profilele intre ele in colt, in stopuri (max - min); 0 cu un singur profil.</summary>
+        /// <summary>
+        /// How much the profiles differ among themselves at the corner, in stops (max - min); 0
+        /// with a single profile.
+        /// </summary>
         internal readonly double SpreadStops;
         internal readonly ComparisonGap Gap;
-        /// <summary>Obiectivele lensfun sarite fiindca crop-ul nu se stie; goala de obicei.</summary>
+        /// <summary>
+        /// The lensfun lenses skipped because the crop is not known; usually empty.
+        /// </summary>
         internal readonly IReadOnlyList<LensChoice> SkippedForCrop;
 
         internal bool Compared => Verdict != null;
 
+        /// <summary>
+        /// A comparison: picks the nearest row (a NaN difference never wins) and the spread
+        /// between the profiles.
+        /// </summary>
+        /// <param name="masterStops">The master's depth at the corner, stops.</param>
+        /// <param name="shot">What is known of the shot; null when nothing.</param>
+        /// <param name="profiles">One row per lens compared; null or empty when none.</param>
+        /// <param name="gap">Why nothing was compared, or None.</param>
+        /// <param name="skippedForCrop">The lensfun lenses skipped for want of a crop; null for
+        /// none.</param>
         internal VignettingComparison(double masterStops, ShotIdentity shot, IReadOnlyList<ProfileDepth> profiles,
                                       ComparisonGap gap, IReadOnlyList<LensChoice> skippedForCrop)
         {
@@ -135,7 +195,7 @@ namespace FlatCheck
             SkippedForCrop = skippedForCrop ?? Array.Empty<LensChoice>();
             if (Profiles.Count > 0)
             {
-                // NaN (un profil degenerat) nu castiga niciodata: Min pe o cheie NaN ar putea sa-l ia.
+                // NaN (a degenerate profile) never wins: Min on a NaN key could take it.
                 Nearest = Profiles.OrderBy(p => double.IsNaN(p.DiffStops) ? double.PositiveInfinity : Math.Abs(p.DiffStops)).First();
                 Verdict = Nearest.Verdict;
                 SpreadStops = Profiles.Max(p => p.CornerStops) - Profiles.Min(p => p.CornerStops);
@@ -144,20 +204,35 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Makes the <see cref="VignettingComparison"/> of a master with the profiles of its lens.
+    /// </summary>
     internal static class VignettingComparer
     {
         /// <summary>
-        /// Compara masterul cu profilele obiectivelor din <paramref name="lenses"/> (implicit
-        /// candidatii identitatii: ce a indicat raw-ul), fiecare prin profilul cel mai apropiat
-        /// de focala si diafragma. <paramref name="catalog"/> null sau gol inseamna NoProfiles.
+        /// Compares the master with the profiles of the lenses in <paramref name="lenses"/> (by
+        /// default the identity's candidates: what the raw indicated), each through the profile
+        /// nearest to the focal length and the aperture. The gap is the first that applies, in
+        /// this order: an empty <paramref name="catalog"/> gives NoProfiles; no lens to compare
+        /// gives NoLensMatch when the raw had a lens ID, NoRaw otherwise; a null catalog then gives
+        /// NoProfiles; then NoFocal, NoFStop, and NoCrop or NoLensMatch when no row was made.
         /// </summary>
+        /// <param name="master">The master's structure result; its VignetteStops is
+        /// compared.</param>
+        /// <param name="shot">The shot's identity (lens, focal length, aperture, crop); null when
+        /// nothing is known.</param>
+        /// <param name="catalog">The profiles on the machine; null when none was loaded.</param>
+        /// <param name="lenses">The lenses to compare with; null for the identity's
+        /// candidates.</param>
+        /// <returns>The comparison, or one carrying the <see cref="ComparisonGap"/> that kept it
+        /// from being made; never null.</returns>
         internal static VignettingComparison Analyze(StructureResult master, ShotIdentity shot, LensCatalog catalog,
                                                      IReadOnlyList<LensChoice> lenses = null)
         {
             lenses ??= shot?.Candidates ?? Array.Empty<LensChoice>();
             double masterStops = master.VignetteStops;
-            // Un catalog gol e motivul cel mai adanc; unul necunoscut (null) nu e un motiv, deci
-            // fara raw se spune "fara raw", care e ce poate omul sa repare.
+            // An empty catalog is the deepest reason; an unknown one (null) is not a reason, so
+            // without a raw it says "no raw", which is what the person can fix.
             if (catalog != null && catalog.Lenses.Count == 0)
                 return new VignettingComparison(masterStops, shot, null, ComparisonGap.NoProfiles, null);
             if (lenses.Count == 0)
@@ -175,8 +250,9 @@ namespace FlatCheck
             var skipped = new List<LensChoice>();
             foreach (LensChoice lens in lenses)
             {
-                // lensfun normalizeaza raza la semidiagonala senzorului de calibrare, deci fara
-                // crop-ul aparatului nu stie unde e coltul tau; Adobe are SFF-ul ca rezerva.
+                // lensfun normalises the radius to the calibration sensor's half-diagonal, so
+                // without the camera's crop it does not know where your corner is; Adobe has the
+                // SFF as a fallback.
                 if (lens.Source == ProfileSource.Lensfun && !(crop > 0)) { skipped.Add(lens); continue; }
                 IReadOnlyList<LensProfile> all = catalog.ProfilesOf(lens);
                 LensProfile p = LensCatalog.Nearest(all, shot.FocalMm.Value, shot.FStop.Value);
@@ -188,9 +264,16 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Adancimea unui profil in colt, cu operatorul masterului: rasterul modelului la
-        /// marimea rasterului de analiza, apoi CornerStats pe el.
+        /// A profile's depth at the corner, with the master's operator: the model's raster at
+        /// the size of the analysis raster, then CornerStats on it.
         /// </summary>
+        /// <param name="p">The profile.</param>
+        /// <param name="master">The master's structure result, for the raster size and its
+        /// depth.</param>
+        /// <param name="crop">The camera's crop factor; 0 for none (Adobe only).</param>
+        /// <param name="all">All the lens's profiles, for the mismatch warning; null for just
+        /// <paramref name="p"/>.</param>
+        /// <returns>The profile's row against the master.</returns>
         internal static ProfileDepth Measure(LensProfile p, StructureResult master, double crop, IReadOnlyList<LensProfile> all = null)
         {
             SyntheticFlatResult built = SyntheticFlatBuilder.Build(p, master.Width, master.Height, crop);

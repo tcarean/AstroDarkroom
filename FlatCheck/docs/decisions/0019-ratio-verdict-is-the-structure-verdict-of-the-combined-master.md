@@ -43,7 +43,11 @@ an unbiased noise estimate for the odd part, computed on the tile grid of a cent
   centred crop. `LargeScalePtp` keeps the top-left anchoring because that is what
   `flatcheck.py` does and parity is tested.
 - **Averaging at full resolution.** `Prepare` is linear, so the mean of the prepared rasters
-  equals the prepared mean at a thirtieth of the memory.
+  equals the prepared mean at a thirtieth of the memory. (Corrected 2026-10-24: a sixteenth.
+  `Img.Prepare` shrinks by (2k)^2 with k = floor(long side / 2 / 1200); every master in
+  `docs/validation.md` is 6016 x 4016, k = 2, and the console prints `dimensiune analiza :
+  1504 x 1004` for them. No measurement of the old figure is recorded, and `Prepare` has not
+  changed since this decision.)
 
 ## Consequences
 
