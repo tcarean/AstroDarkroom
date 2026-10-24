@@ -17,9 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ResolutionView - FWHM-ul si regiunile, fiecare cu descrierea lui sub nume (colturile fara: le
-     acopera cea de pe centru), apoi tabelul de marimi, cu randul recomandat cand exista unul, si scara
-     dpi - distanta, ca sa se citeasca coloana "dpi" fata de fizica, nu fata de 300. -->
+<!-- ResolutionView - the FWHM and the regions, each with its description under the name
+     (the corners without one: the centre's covers them), then the table of sizes, with the
+     recommended row when there is one, and the dpi - distance scale, so that the "dpi"
+     column is read against the physics, not against 300. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ResolutionView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

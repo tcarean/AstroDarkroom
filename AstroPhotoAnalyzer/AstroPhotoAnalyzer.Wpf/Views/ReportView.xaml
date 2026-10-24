@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ReportView - deciziile, sectiune cu sectiune, cu pastile de verdict; si raportul
-     text complet, pliabil, exact cel care se salveaza. -->
+<!-- ReportView - the decisions, section by section, with verdict pills; and the complete
+     text report, foldable, exactly the one that is saved. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ReportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

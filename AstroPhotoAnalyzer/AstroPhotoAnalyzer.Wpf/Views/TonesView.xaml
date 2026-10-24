@@ -17,9 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- TonesView - histograma L* cu negrul hartiei si pragul de vizibilitate marcate, cifrele tonale cu descrierea lor,
-     tabelul simularii de fundal, tabela nivel - L* a reperelor si, ultimul, panoul care
-     explica tabul. -->
+<!-- TonesView - the L* histogram with paper black and the visibility threshold marked, the
+     tonal figures with their descriptions, the table of the background simulation, the
+     level - L* table of the reference points and, last, the panel that explains the tab. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.TonesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -49,8 +49,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
           <TextBlock Style="{StaticResource Heading}" Text="SIMULAREA FUNDALULUI (curba gamma pe toate canalele)" />
-          <!-- Acelasi text mono ca in Anexa B; pe fiecare rand cu tinta, butonul care deschide
-               preview-ul randului (R-131). Antetul si nota n-au buton. -->
+          <!-- The same mono text as in Anexa B; on each row with a target, the button that
+               opens the row's preview (R-131). The header and the note have no button. -->
           <ItemsControl ItemsSource="{Binding SimulationRows}">
             <ItemsControl.ItemTemplate>
               <DataTemplate>

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// WindowSmokeTests.cs - fereastra chiar se incarca si chiar se deseneaza.
+// WindowSmokeTests.cs - the window really loads and really renders.
 //
-// XAML-ul nu se verifica la compilare: o resursa cu nume gresit, un convertor lipsa, o
-// legare catre o proprietate inexistenta trec de compilator si se vad abia la rulare -
-// unele la INCARCARE. Testele de aici construiesc fereastra, o aseaza, o deseneaza
-// intr-un bitmap si asculta erorile de legare. Ce nu se verifica: cum arata.
+// XAML is not checked at compile time: a resource with a wrong name, a missing converter, a
+// binding to a property that does not exist pass the compiler and show only at run time -
+// some at LOADING. The tests here build the window, lay it out, render it into a bitmap and
+// listen for the binding errors. What is not checked: how it looks.
 //
-// APA_DUMP_SCREENS=<folder> salveaza randarile ca PNG - ca sa te uiti la fereastra fara
-// s-o pornesti. Nu e o comparatie cu o referinta.
+// APA_DUMP_SCREENS=<folder> saves the renders as PNG - to look at the window without
+// starting it. It is not a comparison against a reference.
 
 using AstroPhotoAnalyzer.Tests;
 using System.Diagnostics;
@@ -94,13 +94,13 @@ public class WindowSmokeTests
     }
 
     /// <summary>
-    /// Se deseneaza CONTINUTUL ferestrei, nu fereastra: un Window neafisat se randeaza
-    /// transparent (PNG alb), iar panoul radacina mosteneste DataContext-ul si trece prin
-    /// aceleasi legari.
+    /// The window's CONTENT is rendered, not the window: a Window never shown renders
+    /// transparent (a white PNG), while the root panel inherits the DataContext and goes
+    /// through the same bindings.
     /// </summary>
     static FrameworkElement ContentOf(MainWindow w) => (FrameworkElement)w.Content;
 
-    /// <summary>Cazul din FlatCheck care a crapat la pornire: fereastra goala, fara rezultat.</summary>
+    /// <summary>The FlatCheck case that crashed at startup: the empty window, no result.</summary>
     [Fact]
     public void R110_TheMainWindowLoadsAndRenders()
         => _sta.Invoke(() =>
@@ -108,7 +108,7 @@ public class WindowSmokeTests
             using var errors = new BindingErrors();
             var window = new MainWindow();
             Render(ContentOf(window), name: "fereastra-goala");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
             // The save's outcome has its place under the buttons (R-110, R-111).
             Assert.NotNull(window.FindName("SaveMessageText"));
             Assert.NotNull(window.FindName("SaveErrorText"));
@@ -129,7 +129,7 @@ public class WindowSmokeTests
             Render((FrameworkElement)picker.Content, 720, 520, "profil-icc");
             Render((FrameworkElement)new IccPickerWindow { DataContext = new IccPickerViewModel(ws.PathTo("gol")) }.Content, 720, 520, "profil-icc-gol");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
     [Fact]
@@ -139,15 +139,15 @@ public class WindowSmokeTests
             using var errors = new BindingErrors();
             var about = new AboutWindow();
             Render((FrameworkElement)about.Content, 600, 720, "despre");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
 
             var logo = Assert.IsAssignableFrom<BitmapSource>(about.Logo.Source);
             Assert.Equal(256, logo.PixelWidth);
         });
 
     /// <summary>
-    /// Toate taburile, cu un rezultat real. Un tab gol s-ar desena si cu jumatate din
-    /// sabloane gresite - abia cu date se ating toate legarile.
+    /// Every tab, with a real result. An empty tab would render even with half its
+    /// templates wrong - only with data are all the bindings touched.
     /// </summary>
     [Fact]
     public async Task R110_EveryTabRendersWithARealResultAndNoBindingErrors()
@@ -193,7 +193,7 @@ public class WindowSmokeTests
             PreviewWindowViewModel preview = vm.Tones.BuildPreview(AnalysisRun.Execute(tif, Scenes.OnBuiltForPaper()).Simulation.Rows[3]);
             Render((FrameworkElement)new PreviewWindow { DataContext = preview }.Content, name: "preview-rand");
 
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
 
         Assert.Equal("PROBLEMA", vm.Report.VerdictLabel);
@@ -203,7 +203,9 @@ public class WindowSmokeTests
         Assert.Contains(vm.Preview.Tiles, t => t.Title.StartsWith("Decupaj"));
     }
 
-    /// <summary>Cardul de eroare, cu textul refuzului - starea pe care o vede omul pe un FITS liniar.</summary>
+    /// <summary>
+    /// The error card, with the refusal's text - the state the user sees on a linear FITS.
+    /// </summary>
     [Fact]
     public async Task R015_TheErrorCardRendersARefusal()
     {
@@ -217,14 +219,14 @@ public class WindowSmokeTests
             await vm.OpenAsync(bad);
             Assert.True(vm.HasError);
             Render(ContentOf(new MainWindow { DataContext = vm }), name: "fereastra-eroare");
-            Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            Assert.True(errors.Text.Length == 0, "binding errors:\n" + errors.Text);
         });
     }
     /// <summary>
-    /// Tooltipul de ajutor, cu stilul temei si textul real. Un tooltip e un popup, nu se
-    /// vede in randarea ferestrei - de asta se randeaza controlul direct: latimea trebuie
-    /// sa fie cea din tema (nu un rand de un metru), iar textul destul de inalt pentru
-    /// paragrafele lui. APA_DUMP_SCREENS il salveaza ca "tooltip-distanta.png".
+    /// The help tooltip, with the theme's style and the real text. A tooltip is a popup, it
+    /// does not show in the window's render - that is why the control is rendered directly:
+    /// the width must be the theme's (not a one-metre row), and the text tall enough for
+    /// its paragraphs. APA_DUMP_SCREENS saves it as "tooltip-distanta.png".
     /// </summary>
     [Fact]
     public void R026_TheHelpTooltipRendersAtTheThemeWidth()
@@ -234,8 +236,8 @@ public class WindowSmokeTests
             tip.Measure(new Size(1000, 1000));
             Size s = tip.DesiredSize;
 
-            Assert.InRange(s.Width, 300, 420 + 2 * 8 + 2);   // MaxWidth + padding + bordura
-            Assert.True(s.Height > 12 * 17, "tooltipul e prea scund pentru patru paragrafe: " + s.Height);
+            Assert.InRange(s.Width, 300, 420 + 2 * 8 + 2);   // MaxWidth + padding + border
+            Assert.True(s.Height > 12 * 17, "the tooltip is too short for four paragraphs: " + s.Height);
             Render(tip, (int)Math.Ceiling(s.Width), (int)Math.Ceiling(s.Height), "tooltip-distanta");
         });
 }

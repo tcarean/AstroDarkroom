@@ -17,9 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- CurveWindow - o curba sugerata (R-147): tabelul punctelor de control, cum se tasteaza
-     in Siril, si doua grafice: curba intreaga si umbrele marite, unde stau praful si cerul
-     si unde pe graficul intreg nu se vede nimic. Nicio cifra nu se calculeaza aici. -->
+<!-- CurveWindow - one suggested curve (R-147): the table of control points, as they are
+     typed in Siril, and two graphs: the whole curve and the magnified shadows, where the
+     dust and the sky sit and where nothing shows on the whole graph. No figure is computed
+     here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.CurveWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

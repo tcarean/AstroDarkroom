@@ -24,7 +24,10 @@ public class PrintSizeAnalyzerTests
 
     static SizeRow Row(PrintSizeResult r, double width) => r.Rows.Single(x => x.WidthCm == width);
 
-    /// <summary>Tabelul din conversatie: 70 cm -> 215 dpi, stea 0.35 mm, punct de la 1.2 m, rama ~90 x 66.</summary>
+    /// <summary>
+    /// The table from the conversation: 70 cm -> 215 dpi, star 0.35 mm, point from 1.2 m,
+    /// frame ~90 x 66.
+    /// </summary>
     [Fact]
     public void TheSeventyCentimetreRowMatchesTheConversation()
     {
@@ -58,10 +61,11 @@ public class PrintSizeAnalyzerTests
     }
 
     /// <summary>
-    /// La distanta naturala raportul "punct de la" / naturala e acelasi pe fiecare rand,
-    /// deci o steluta ar fi picat pe --sizes, nu pe imagine: nu se recomanda nimic. Cu
-    /// distanta data si FWHM masurat randurile se despart pe o masuratoare si steluta
-    /// exista. Fara stele regula de dpi e despre fisier, nu despre detaliu: nici acolo.
+    /// At the natural distance the ratio "punct de la" / natural is the same on every row,
+    /// so an asterisk would have fallen on --sizes, not on the image: nothing is recommended.
+    /// With a given distance and a measured FWHM the rows part on a measurement and the
+    /// asterisk exists. Without stars the dpi rule is about the file, not about the detail:
+    /// none there either.
     /// </summary>
     [Fact]
     public void OnlyATestThatSeparatesTheRowsRecommendsOne()
@@ -79,17 +83,17 @@ public class PrintSizeAnalyzerTests
     }
 
     /// <summary>
-    /// La distanta naturala raportul punct/natural e o constanta a imaginii: pe cea de
-    /// referinta 1.018 cu FWHM 3.13. Fara toleranta toate randurile picau cu 2 % si
-    /// randul de referinta cadea pe 50; cu ea, toate trec la fel si referinta e 100. O
-    /// imagine chiar moale (FWHM 4) pica la toate, tot deopotriva. Recomandat nu e niciunul.
+    /// At the natural distance the point/natural ratio is a constant of the image: on the
+    /// reference one 1.018 with FWHM 3.13. Without a tolerance every row failed by 2 % and
+    /// the reference row fell on 50; with it, all pass alike and the reference is 100. A
+    /// truly soft image (FWHM 4) fails at all of them, alike too. None is recommended.
     /// </summary>
     [Fact]
     public void TheNaturalDistanceVerdictIsTheSameAtEverySizeAndHasATolerance()
     {
         var real = PrintSizeAnalyzer.Analyze(W, H, 3.13, new Parameters());
-        Assert.All(real.Rows, row => Assert.True(row.MinDistanceM > row.NaturalDistanceM));   // ar pica strict
-        Assert.All(real.Rows, row => Assert.True(row.PointAtViewingDistance));                // trece cu toleranta
+        Assert.All(real.Rows, row => Assert.True(row.MinDistanceM > row.NaturalDistanceM));   // would fail strictly
+        Assert.All(real.Rows, row => Assert.True(row.PointAtViewingDistance));                // passes with the tolerance
         Assert.Equal(100, real.ReferenceRow.WidthCm);
         Assert.Null(real.RecommendedRow);
 
@@ -98,7 +102,7 @@ public class PrintSizeAnalyzerTests
         Assert.Equal(50, soft.ReferenceRow.WidthCm);
         Assert.Null(soft.RecommendedRow);
 
-        // Cu distanta data nu exista toleranta: e a omului.
+        // With a given distance there is no tolerance: it is the user's.
         var given = PrintSizeAnalyzer.Analyze(W, H, 3.13, new Parameters { ViewingDistanceM = 1.3 });
         Assert.False(Row(given, 80).PointAtViewingDistance);   // 1.45 m > 1.3
         Assert.True(Row(given, 70).PointAtViewingDistance);    // 1.27 m
@@ -139,11 +143,12 @@ public class PrintSizeAnalyzerTests
         Assert.True(Row(r, 80).PointAtViewingDistance);    // 189 dpi
         Assert.False(Row(r, 90).PointAtViewingDistance);   // 168 dpi
         Assert.Equal(80, r.ReferenceRow.WidthCm);
-        Assert.False(r.CanRecommend);                      // o limita a fisierului, nu o masuratoare
+        Assert.False(r.CanRecommend);                      // a limit of the file, not a measurement
         Assert.Null(r.RecommendedRow);
-        Assert.InRange(Row(r, 80).PixelDistanceM, 0.46, 0.47);   // pas 0.135 mm / 0.29
+        Assert.InRange(Row(r, 80).PixelDistanceM, 0.46, 0.47);   // pitch 0.135 mm / 0.29
 
-        // Cu distanta data pragul e cel fizic: de la 1.5 m grila dispare de la 58 dpi in sus.
+        // With a given distance the threshold is the physical one: from 1.5 m the grid
+        // disappears from 58 dpi up.
         var far = PrintSizeAnalyzer.Analyze(W, H, double.NaN, new Parameters { ViewingDistanceM = 1.5 });
         Assert.InRange(far.FallbackDpi, 58.3, 58.5);
         Assert.All(far.Rows, row => Assert.True(row.PointAtViewingDistance));
@@ -161,10 +166,9 @@ public class PrintSizeAnalyzerTests
     }
 
     /// <summary>
-    /// Scara dpi - distanta: 300 dpi = grila dispare de la 0.29 m (citit), 180 = pas 0.14 mm,
-    /// 0.49 m. Cu distanta data, ultimul rand e pragul ei: 58 dpi la 1.5 m.
+    /// At 0.25 mm/px, 5938 px are ~148 cm at 100 %; the reference print at the natural
+    /// distance is 100 cm.
     /// </summary>
-    /// <summary>La 0.25 mm/px, 5938 px sunt ~148 cm la 100 %; printul de referinta la distanta naturala e 100 cm.</summary>
     [Fact]
     public void TheHundredPercentViewIsAPrintOfTheScreensPitch()
     {
@@ -177,6 +181,11 @@ public class PrintSizeAnalyzerTests
         Assert.True(double.IsNaN(none.ScreenStepBackFactor));
     }
 
+    /// <summary>
+    /// The dpi - distance ladder: 300 dpi = the grid disappears from 0.29 m (read), 180 =
+    /// pitch 0.14 mm, 0.49 m. With a given distance, the last row is its threshold: 58 dpi
+    /// at 1.5 m.
+    /// </summary>
     [Fact]
     public void TheDpiLadderSaysFromHowFarTheGridVanishes()
     {

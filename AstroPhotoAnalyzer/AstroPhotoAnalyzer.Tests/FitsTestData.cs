@@ -20,20 +20,22 @@ using System.Text;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Construieste fisiere FITS sintetice in memorie. Nimic de aici nu atinge discul, si
-/// niciun cadru real nu e in repo - fiecare scena vine dintr-o formula, deci raspunsul
-/// asteptat e cunoscut analitic. Pornit din FitsTestData al FlatCheck.
+/// Builds synthetic FITS files in memory. Nothing here touches the disk, and no real
+/// frame is in the repo - every scene comes from a formula, so the expected answer is
+/// known analytically. Started from FlatCheck's FitsTestData.
 /// </summary>
 internal static class FitsTestData
 {
     internal const int BlockSize = 2880;
     internal const int CardSize = 80;
 
-    /// <summary>Card in format fix: KEYWORD (8) + "= " + valoarea aliniata la dreapta pe 20, umplut la 80.</summary>
+    /// <summary>
+    /// A fixed-format card: KEYWORD (8) + "= " + the value right-aligned in 20, padded to 80.
+    /// </summary>
     internal static string Card(string key, string value) =>
         (key.PadRight(8) + "= " + value.PadLeft(20)).PadRight(CardSize);
 
-    /// <summary>Card cu sir: KEYWORD = 'text' [/ comentariu], umplut la 80.</summary>
+    /// <summary>A string card: KEYWORD = 'text' [/ comment], padded to 80.</summary>
     internal static string StringCard(string key, string text, string? comment = null) =>
         (key.PadRight(8) + "= '" + text + "'" + (comment == null ? "" : " / " + comment)).PadRight(CardSize);
 
@@ -81,7 +83,7 @@ internal static class FitsTestData
                     break;
                 }
             default:
-                throw new ArgumentException("BITPIX neacceptat de generator: " + bitpix);
+                throw new ArgumentException("BITPIX not supported by the generator: " + bitpix);
         }
     }
 
@@ -93,9 +95,10 @@ internal static class FitsTestData
     }
 
     /// <summary>
-    /// Un HDU cu imagine 2D sau cub. <paramref name="pixel"/>(x, y, plan) da valoarea
-    /// FIZICA (dupa BZERO/BSCALE): pentru BITPIX 16 e 0..65535, pentru -32 e valoarea reala.
-    /// Randul 0 e primul din fisier - cine vrea BOTTOM-UP pune cardul si stie ce face.
+    /// An HDU with a 2D or cube image. <paramref name="pixel"/>(x, y, plane) gives the
+    /// PHYSICAL value (after BZERO/BSCALE): for BITPIX 16 it is 0..65535, for -32 the real
+    /// value. Row 0 is the file's first - whoever wants BOTTOM-UP adds the card and knows what
+    /// they are doing.
     /// </summary>
     internal static byte[] Build(
         int width, int height, int planes, Func<int, int, int, double> pixel,
@@ -123,12 +126,15 @@ internal static class FitsTestData
         return HeaderBlocks(cards).Concat(PadToBlock(data)).ToArray();
     }
 
-    /// <summary>Imagine 2D, comoditate peste <see cref="Build"/>.</summary>
+    /// <summary>A 2D image, a convenience over <see cref="Build"/>.</summary>
     internal static byte[] Build2D(int width, int height, Func<int, int, double> pixel,
         int bitpix = 16, double? bzero = null, double bscale = 1, IEnumerable<string>? extraCards = null)
         => Build(width, height, 1, (x, y, _) => pixel(x, y), bitpix, bzero, bscale, extraCards);
 
-    /// <summary>Un HDU primar GOL (NAXIS = 0) urmat de un HDU cu imagine - ca la fisierele cu extensii.</summary>
+    /// <summary>
+    /// An EMPTY primary HDU (NAXIS = 0) followed by an HDU with an image - as in files with
+    /// extensions.
+    /// </summary>
     internal static byte[] WithEmptyPrimary(byte[] imageHdu)
     {
         var primary = HeaderBlocks(new[] { Card("SIMPLE", "T"), Card("BITPIX", "8"), Card("NAXIS", "0"), Card("EXTEND", "T") });

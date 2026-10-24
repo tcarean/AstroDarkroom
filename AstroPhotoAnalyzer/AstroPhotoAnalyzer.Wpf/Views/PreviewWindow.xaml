@@ -17,9 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- PreviewWindow - preview-ul unui rand al simularii (R-131): imaginea ridicata la tinta
-     randului, maximizata, cu pixelii de sub negrul hartiei si cei de sub L* 15 vopsiti,
-     fiecare strat cu bifa lui. Nicio cifra nu se calculeaza aici. -->
+<!-- PreviewWindow - the preview of one row of the simulation (R-131): the image lifted to
+     the row's target, maximised, with the pixels below paper black and those below L* 15
+     painted, each layer with its own checkbox. No figure is computed here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.PreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

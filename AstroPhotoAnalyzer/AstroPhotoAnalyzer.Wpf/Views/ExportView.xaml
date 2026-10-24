@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- ExportView - tabelul JPEG cu paragrafele care il explica sub el, apoi rotunjirea, stresul
-     shadow-lift si palierul, fiecare cu descrierea lui sub nume. -->
+<!-- ExportView - the JPEG table with the paragraphs that explain it under it, then the
+     rounding, the shadow-lift stress and the plateau, each with its description under the
+     name. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.ExportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

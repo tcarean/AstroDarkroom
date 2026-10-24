@@ -21,10 +21,10 @@ using System.Text.RegularExpressions;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Versiunea se incrementeaza manual. Sursa de adevar e <c>&lt;Version&gt;</c> din
-/// Directory.Build.props - <see cref="VersionInfo"/> o citeste din assembly, nu o
-/// hardcodeaza. Testele astea verifica plumbing-ul si ca banner-ul chiar apare pe prima
-/// linie a fiecarei rulari.
+/// The version is incremented by hand. The source of truth is <c>&lt;Version&gt;</c> in
+/// Directory.Build.props - <see cref="VersionInfo"/> reads it from the assembly, it does
+/// not hardcode it. These tests check the plumbing and that the banner really appears on
+/// the first line of every run.
 /// </summary>
 public class VersionTests
 {
@@ -45,14 +45,14 @@ public class VersionTests
     {
         var m = Regex.Match(BuildProps(), @"<Version>([^<]+)</Version>");
 
-        Assert.True(m.Success, "Directory.Build.props nu are <Version>");
+        Assert.True(m.Success, "Directory.Build.props has no <Version>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Value);
     }
 
     /// <summary>
-    /// Toate assembly-urile poarta aceeasi versiune. VersionInfo o citeste din Core, deci
-    /// un &lt;Version&gt; ramas intr-un csproj ar trece neobservat de testul de mai sus si
-    /// ar da un exe cu alta versiune in proprietatile fisierului decat cea tiparita.
+    /// Every assembly carries the same version. VersionInfo reads it from Core, so a
+    /// &lt;Version&gt; left in a csproj would pass unnoticed by the test above and would
+    /// give an exe with another version in the file's properties than the one printed.
     /// </summary>
     [Theory]
     [InlineData("AstroPhotoAnalyzer")]
@@ -61,7 +61,7 @@ public class VersionTests
     public void R120_NoProjectOverridesTheSharedVersionOrCopyright(string project)
     {
         string path = Path.Combine(RepoDir(), project, project + ".csproj");
-        if (!File.Exists(path)) return;   // proiectul WPF apare abia in etapa 5
+        Assert.True(File.Exists(path), $"{path} does not exist; a renamed project must be renamed here too");
 
         string csproj = File.ReadAllText(path);
 
@@ -69,7 +69,7 @@ public class VersionTests
         Assert.DoesNotContain("<Copyright>", csproj);
     }
 
-    /// <summary>Nu trebuie sa ramana "1.0.0.0" sau "1.0.0+abc123" din assembly.</summary>
+    /// <summary>It must not stay "1.0.0.0" or "1.0.0+abc123" from the assembly.</summary>
     [Fact]
     public void R120_TheVersionIsNotTheFourPartOrSourceTaggedForm()
     {
@@ -82,7 +82,7 @@ public class VersionTests
     {
         var m = Regex.Match(BuildProps(), @"<Copyright>([^<]+)</Copyright>");
 
-        Assert.True(m.Success, "Directory.Build.props nu are <Copyright>");
+        Assert.True(m.Success, "Directory.Build.props has no <Copyright>");
         Assert.Equal(m.Groups[1].Value.Trim(), VersionInfo.Copyright);
     }
 
@@ -92,7 +92,7 @@ public class VersionTests
         Assert.Equal("Copyright (C) 2026 Tudor Carean", VersionInfo.Copyright);
     }
 
-    // ------------------------------------------------------------ banner-ul
+    // ------------------------------------------------------------ the banner
 
     [Fact]
     public void R001_TheBannerIsTheNameAndTheVersion()
@@ -119,8 +119,8 @@ public class VersionTests
     }
 
     /// <summary>
-    /// GPLv3 vrea ca notita de copyright sa se vada la fiecare rulare, deci sta pe linia
-    /// a doua peste tot unde sta si banner-ul pe prima - inclusiv la --help si la erori.
+    /// GPLv3 wants the copyright notice seen on every run, so it sits on the second line
+    /// everywhere the banner sits on the first - --help and errors included.
     /// </summary>
     [Fact]
     public void R001_EveryRunPrintsTheCopyrightOnTheSecondLine()
@@ -132,7 +132,7 @@ public class VersionTests
         Assert.Equal(VersionInfo.Copyright, SecondLine("--optiune-inventata"));
     }
 
-    /// <summary>Si o rulare care esueaza spune ce versiune a esuat.</summary>
+    /// <summary>A run that fails also says which version failed.</summary>
     [Fact]
     public void R001_AFailedRunStillPrintsTheBanner()
     {
@@ -143,9 +143,9 @@ public class VersionTests
     }
 
     /// <summary>
-    /// GPLv3 sectiunea 5(d): un program care afiseaza notite legale trebuie sa afiseze si
-    /// lipsa garantiei. Nu se poate pune sub banner - ar ingrosa fiecare raport - deci sta
-    /// in --help, si de acolo trimite la textul complet.
+    /// GPLv3 section 5(d): a program that displays legal notices must also display the
+    /// absence of a warranty. It cannot go under the banner - it would thicken every
+    /// report - so it sits in --help, and from there points to the full text.
     /// </summary>
     [Fact]
     public void R004_HelpCarriesTheWarrantyDisclaimerAndPointsAtTheLicense()

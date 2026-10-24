@@ -19,7 +19,10 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class JpegAnalyzerTests
 {
-    /// <summary>Cer cu gradient si zgomot, plus 16 stele: destula structura ca JPEG-ul sa aiba ce strica.</summary>
+    /// <summary>
+    /// A sky with a gradient and noise, plus 16 stars: enough structure for the JPEG to have
+    /// something to spoil.
+    /// </summary>
     static Raster Scene(int planes = 3)
     {
         Raster r = SyntheticRasters.Ramp(256, 256, 0.08f, 0.14f, planes);
@@ -37,14 +40,14 @@ public class JpegAnalyzerTests
         string dump = string.Join(" | ", j.Rows.Select(r => $"q{r.Quality}: {r.Bytes} B, mean {r.MeanAbsError:0.000}, max {r.MaxError:0.0}, >2: {r.PctOverThreshold:0.00}%"));
 
         Assert.Equal(new[] { 100, 95, 90 }, j.Rows.Select(r => r.Quality));
-        Assert.True(j.Rows[0].Bytes > j.Rows[1].Bytes && j.Rows[1].Bytes > j.Rows[2].Bytes, "octeti: " + dump);
-        // Eroarea MAXIMA creste monoton cu scaderea calitatii; MEDIA nu neaparat. Masurat:
-        // la q100 conversia RGB<->YCbCr in intregi costa ±1-2 niveluri pe pixel, iar q95
-        // netezeste zgomotul de sub un nivel si pe o scena aproape fara pierderi poate
-        // nimeri, in medie, mai aproape de referinta. De asta raportul judeca JPEG-ul
-        // dupa maxim si dupa pixelii afectati, nu dupa medie.
-        Assert.True(j.Rows[0].MaxError <= j.Rows[1].MaxError && j.Rows[1].MaxError <= j.Rows[2].MaxError, "eroare maxima: " + dump);
-        Assert.True(j.Rows[0].MeanAbsError < 1.0, "eroare medie q100: " + dump);
+        Assert.True(j.Rows[0].Bytes > j.Rows[1].Bytes && j.Rows[1].Bytes > j.Rows[2].Bytes, "bytes: " + dump);
+        // The MAXIMUM error rises monotonically as the quality drops; the MEAN does not
+        // necessarily. Measured: at q100 the integer RGB<->YCbCr conversion costs +/-1-2 levels
+        // per pixel, and q95 smooths the noise under one level and, on an almost lossless scene,
+        // can land closer to the reference on average. That is why the report judges the JPEG
+        // by the maximum and by the affected pixels, not by the mean.
+        Assert.True(j.Rows[0].MaxError <= j.Rows[1].MaxError && j.Rows[1].MaxError <= j.Rows[2].MaxError, "maximum error: " + dump);
+        Assert.True(j.Rows[0].MeanAbsError < 1.0, "mean error q100: " + dump);
         Assert.True(j.Tiff8LzwBytes > 0);
     }
 
@@ -53,7 +56,7 @@ public class JpegAnalyzerTests
     {
         var row = JpegAnalyzer.Analyze(Scene()).Rows[0];
 
-        // Include rotunjirea la 8 biti (0.25); pe imaginea de referinta era 0.63.
+        // Includes the rounding to 8 bits (0.25); on the reference image it was 0.63.
         Assert.InRange(row.MeanAbsError, 0.2, 1.5);
         Assert.True(row.Acceptable, "max err: " + row.MaxError);
         Assert.True(row.P99 >= row.MeanAbsError);

@@ -60,9 +60,9 @@ public class ColorMathTests
     }
 
     /// <summary>
-    /// Negrul hartiei: baryta lucios (2.4) ~3.6, canvas mat (1.5) ~21, C-print sub acril
-    /// (2.2) ~6; 2.0 (~9) e baryta de dinainte de ADR 0028, pe care stau scenele. Pragurile
-    /// din raport pleaca de aici.
+    /// Paper black: glossy baryta (2.4) ~3.6, matte canvas (1.5) ~21, C-print under acrylic
+    /// (2.2) ~6; 2.0 (~9) is the baryta from before ADR 0028, which the scenes stand on. The
+    /// report's thresholds start from here.
     /// </summary>
     [Theory]
     [InlineData(2.4, 3.60)]
@@ -96,8 +96,9 @@ public class ColorMathTests
     }
 
     /// <summary>
-    /// Perechile din panoul Tonuri: L* 9 (negrul unei hartii de Dmax 2.0) e nivelul ~25 al unui gri,
-    /// nivelul 32 e L* ~12, 64 e L* ~27, L* 50 e nivelul ~119.
+    /// The pairs of the Tonuri panel: L* 9 (the black of a Dmax 2.0 paper) is level ~25 of a
+    /// grey, L* 15 (the visibility threshold) is level ~38, L* 50 is level ~119. Levels 32 and
+    /// 64 are the next test's.
     /// </summary>
     [Theory]
     [InlineData(8.99, 25.5)]

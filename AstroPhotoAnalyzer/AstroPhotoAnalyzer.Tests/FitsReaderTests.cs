@@ -42,7 +42,8 @@ public class FitsReaderTests
     [Fact]
     public void Int16WithBzeroIsScaledToUnitRange()
     {
-        // Valorile fizice 0, 32768, 65535 - cu BZERO implicit 32768, stocate ca -32768, 0, 32767.
+        // The physical values 0, 32768, 65535 - with the implicit BZERO 32768, stored as
+        // -32768, 0, 32767.
         byte[] fits = FitsTestData.Build2D(3, 1, (x, y) => x == 0 ? 0 : x == 1 ? 32768 : 65535);
         Raster r = Load(fits);
 
@@ -76,13 +77,13 @@ public class FitsReaderTests
     [Fact]
     public void BottomUpRowOrderIsFlippedSoThatRowZeroIsTheTop()
     {
-        // Siril scrie randurile de jos in sus: primul rand din fisier e cel de JOS al imaginii.
+        // Siril writes the rows bottom to top: the file's first row is the image's BOTTOM one.
         byte[] fits = FitsTestData.Build2D(2, 3, (x, y) => y * 1000, bitpix: -32, bzero: 0,
             extraCards: new[] { FitsTestData.StringCard("ROWORDER", "BOTTOM-UP") });
         Raster r = Load(fits);
 
-        Assert.Equal(1f, r.At(0, 0, 0));      // randul de sus al rasterului = ultimul rand din fisier (2000, taiat la 1)
-        Assert.Equal(0f, r.At(0, 2, 0));      // randul de jos = primul rand din fisier
+        Assert.Equal(1f, r.At(0, 0, 0));      // top row = the file's last row (2000, clipped to 1)
+        Assert.Equal(0f, r.At(0, 2, 0));      // the bottom row = the file's first row
         Assert.Contains("ROWORDER", r.Source.Note);
     }
 

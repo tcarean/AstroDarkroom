@@ -17,9 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- IccPickerWindow - "Din profil ICC..." (R-132): profilele de imprimanta instalate, cu
-     Dmax-ul citit de nucleu din fiecare; "Foloseste" il scrie in campul Dmax. Modala,
-     centrata pe parinte; Esc o inchide. Nicio cifra nu se calculeaza aici. -->
+<!-- IccPickerWindow - "Din profil ICC..." (R-132): the installed printer profiles, with
+     the Dmax the core reads from each; "Foloseste" writes it into the Dmax field. Modal,
+     centred on the parent; Esc closes it. No figure is computed here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.IccPickerWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

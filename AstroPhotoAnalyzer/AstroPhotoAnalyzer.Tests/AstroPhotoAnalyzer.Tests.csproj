@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Testele nucleului si ale consolei. Portabile: nu depind de WPF. Testele ferestrei
-       stau in AstroPhotoAnalyzer.Wpf.Tests, care e Windows-only. -->
+  <!-- The tests of the core and of the console. Portable: they do not depend on WPF. The
+       window's tests live in AstroPhotoAnalyzer.Wpf.Tests, which is Windows-only. -->
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>

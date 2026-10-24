@@ -15,18 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-"""Genereaza AstroPhotoAnalyzer.ico - icoana comuna a consolei si a ferestrei.
+"""Generates AstroPhotoAnalyzer.ico - the icon shared by the console and the window.
 
-Desenul: un cer intunecat cu o stea mare in stanga-sus si trei bare de histograma care
-urca, in dreapta-jos - imaginea si masuratoarea ei, cele doua jumatati ale uneltei.
+The drawing: a dark sky with a large star at the top left and three histogram bars that
+climb, at the bottom right - the image and its measurement, the two halves of the tool.
 
-De ce un script si nu un fisier desenat de mana: fiecare dimensiune din .ico e desenata
-separat, nu micsorata din cea mare. La 16 px o stea cu patru varfuri subtiri devine un
-punct, si trei bare separate de un pixel se topesc intr-una; dimensiunile mici au deci
-forme mai groase si mai putine stele de fundal.
+Why a script and not a hand-drawn file: each size in the .ico is drawn separately, not
+shrunk from the large one. At 16 px a star with four thin points becomes a dot, and three
+bars one pixel apart melt into one; the small sizes therefore have thicker shapes and fewer
+background stars.
 
-Pillow e folosit doar aici, la generare - nu e o dependinta a uneltei. .ico-ul rezultat
-e pus in repo, deci scriptul se ruleaza doar cand se schimba desenul:
+Pillow is used only here, for the generation - it is not a dependency of the tool. The
+resulting .ico is put in the repo, so the script is run only when the drawing changes:
 
     python Icon/make_icon.py
 """
@@ -35,10 +35,10 @@ import os
 
 from PIL import Image, ImageDraw
 
-# Dimensiunile din .ico. 20 si 40 sunt pentru bara de titlu la 125% si 250% DPI.
+# The sizes in the .ico. 20 and 40 are for the title bar at 125% and 250% DPI.
 SIZES = [16, 20, 24, 32, 40, 48, 64, 256]
 
-# Desenul e descris pe o grila de 110 unitati si scalat la fiecare dimensiune.
+# The drawing is described on a grid of 110 units and scaled to each size.
 GRID = 110
 SUPERSAMPLE = 8
 
@@ -47,12 +47,12 @@ STAR = (238, 242, 250, 255)
 BAR = (245, 185, 66, 255)
 DUST = (120, 134, 170, 255)
 
-# Stelele mici de fundal, doar pe dimensiunile mari: (x, y, raza).
+# The small background stars, only on the large sizes: (x, y, radius).
 BACKGROUND_STARS = [(70, 18, 2.2), (88, 34, 1.6), (26, 52, 1.8), (58, 44, 1.3), (18, 84, 1.5)]
 
 
 def star_polygon(cx, cy, outer, inner):
-    """Un poligon cu patru varfuri, pe axe: varful de sus, apoi in sensul acelor."""
+    """A polygon with four points, on the axes: the top point, then clockwise."""
     return [(cx, cy - outer), (cx + inner, cy - inner), (cx + outer, cy),
             (cx + inner, cy + inner), (cx, cy + outer), (cx - inner, cy + inner),
             (cx - outer, cy), (cx - inner, cy - inner)]
@@ -71,12 +71,12 @@ def draw(size):
         for x, y, r in BACKGROUND_STARS:
             d.ellipse([(x - r) * s, (y - r) * s, (x + r) * s, (y + r) * s], fill=DUST)
 
-    # Steaua principala. Pe dimensiunile mici e mai grasa, ca varfurile sa nu se piarda.
+    # The main star. On the small sizes it is fatter, so that the points are not lost.
     cx, cy = 38, 38
     outer, inner = (26, 7) if small else (24, 5)
     d.polygon([(x * s, y * s) for x, y in star_polygon(cx, cy, outer, inner)], fill=STAR)
 
-    # Histograma: trei bare care urca, ancorate jos-dreapta.
+    # The histogram: three climbing bars, anchored at the bottom right.
     heights = (18, 30, 44)
     width = 12 if small else 11
     gap = 4 if small else 6

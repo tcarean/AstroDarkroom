@@ -17,10 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- CurvesView - tabul Curbe (R-146): scopul, "Calculeaza", galeria cu originalul si curbele
-     sugerate, dovada curbei aratate si cele doua butoane ale ei. Imaginea ia tot locul
-     ramas, de aceea tabul e o grila, nu o coloana derulata ca celelalte. Nicio cifra nu se
-     calculeaza aici. -->
+<!-- CurvesView - the Curbe tab (R-146): the purpose, "Calculeaza", the gallery with the
+     original and the suggested curves, the evidence of the curve shown and its two buttons.
+     The image takes all the remaining room, which is why the tab is a grid, not a scrolled
+     column like the others. No figure is computed here. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.CurvesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -82,9 +82,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
 
     <StackPanel Grid.Row="3" Margin="0,8,0,0" Visibility="{Binding HasGallery, Converter={StaticResource BoolToVis}}">
-      <!-- Dovezile tuturor imaginilor, suprapuse; se vede doar a celei curente (Hidden, nu
-           Collapsed), deci zona are inaltimea celei mai lungi si imaginea de deasupra nu se
-           muta la rasfoire. -->
+      <!-- The evidence of all the images, stacked; only the current one's shows (Hidden, not
+           Collapsed), so the area has the height of the longest and the image above does
+           not move while browsing. -->
       <ItemsControl x:Name="EvidenceArea" ItemsSource="{Binding Items}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>
@@ -126,7 +126,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <TextBlock Style="{StaticResource Faint}" Text="{Binding AnchorSource}" TextWrapping="Wrap" Margin="0,6,0,0" />
       <TextBlock Style="{StaticResource Faint}" TextWrapping="Wrap" Margin="0,2,0,0"
                  Text="Curbele nu muta praful si cerul: un fundal prea jos pentru hartie se ridica la stretch (tabul Tonuri). Previzualizarea e o copie redusa; pixelii sunt presupusi sRGB." />
-      <!-- Un loc fix, de doua randuri, pentru mesajul salvarii: aparitia lui nu muta imaginea. -->
+      <!-- A fixed place, two lines high, for the save message: its appearance does not
+           move the image. -->
       <Grid Height="34" Margin="0,4,0,0">
         <TextBlock Text="{Binding SaveMessage}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
         <TextBlock Text="{Binding SaveError}" Foreground="{StaticResource BadBr}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis"

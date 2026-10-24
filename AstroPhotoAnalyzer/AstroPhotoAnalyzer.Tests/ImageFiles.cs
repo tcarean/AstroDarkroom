@@ -25,10 +25,10 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Scrie un Raster pe disc in formatele pe care le citeste unealta, cu encoderul
-/// ImageSharp. Testele cititorului trec deci prin acelasi pachet la scriere si la
-/// citire - ceea ce verifica ca NOI il folosim corect, nu ca el e corect; pentru asta
-/// exista testele lui.
+/// Writes a Raster to disk in the formats the tool reads, with the ImageSharp encoder.
+/// The reader's tests therefore go through the same package for writing and for reading -
+/// which checks that WE use it correctly, not that it is correct; its own tests exist for
+/// that.
 /// </summary>
 internal static class ImageFiles
 {
@@ -63,9 +63,9 @@ internal static class ImageFiles
     }
 
     /// <summary>
-    /// TIFF RGB pe 8 biti. Encoderul TIFF din ImageSharp 3.1 scrie 8 biti pe esantion
-    /// si cand i se cere Bit48 (masurat), deci 16 biti RGB nu se pot produce prin el -
-    /// pentru asta exista TiffTestData, care scrie fisierul de mana.
+    /// An 8-bit RGB TIFF. The TIFF encoder in ImageSharp 3.1 writes 8 bits per sample even
+    /// when asked for Bit48 (measured), so 16-bit RGB cannot be produced through it -
+    /// TiffTestData, which writes the file by hand, exists for that.
     /// </summary>
     internal static string SaveTiff8Rgb(Raster r, string path, TiffCompression compression = TiffCompression.Lzw)
     {

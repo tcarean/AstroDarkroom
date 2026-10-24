@@ -63,7 +63,8 @@ public class ViewModelTests
 
         Assert.All(vm.Tiles, t => Assert.False(string.IsNullOrWhiteSpace(t.Check), t.Title));
         Assert.Equal(4, vm.Guide.Count);
-        // Scena are 512 px: la 100 % ar fi 12.8 cm, mai putin decat printul de 50 cm - ramura "printul e mai mare".
+        // The scene is 512 px: at 100 % it would be 12.8 cm, less than the 50 cm print - the
+        // "printul e mai mare" branch.
         Assert.Contains("e mai mare decat vederea la 100 %", vm.Guide[1].Text);
     }
 
@@ -81,15 +82,16 @@ public class ViewModelTests
         Assert.Equal(Thresholds.LowSeparationLstar, tones.LowSeparation);
         Assert.Contains($"linia rosie = negrul hartiei, linia galbena intrerupta = pragul de vizibilitate L* {Thresholds.LowSeparationLstar:0}", tones.HistogramHeading);
         Assert.Contains($"La stanga liniei galbene intrerupte (sub L* {Thresholds.LowSeparationLstar:0})", tones.HistogramNote);
-        Assert.Equal(1 + 17 + 1, tones.SimulationRows.Count);   // antet + "asa cum e" + grila 0.05..0.20 + nota
+        Assert.Equal(1 + 17 + 1, tones.SimulationRows.Count);   // header + "asa cum e" + grid 0.05..0.20 + note
         Assert.Null(tones.SimulationRows[0].Preview);
         Assert.All(tones.SimulationRows.Skip(1).Take(17), row => Assert.NotNull(row.Preview));
         Assert.Contains(tones.SimulationRows, row => row.Target == "asa cum e");
         Assert.All(tones.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
-        // Rezolutie: descriere pe fiecare rand, mai putin colturile (le acopera centrul).
+        // Rezolutie: a description on every row, except the corners (the centre covers them).
         Assert.Contains(res.Rows, row => row.Label == "FWHM median in centru" && row.Description != null);
         Assert.All(res.Rows, row => Assert.Equal(row.Label.Contains("coltul "), string.IsNullOrWhiteSpace(row.Description)));
-        // antet + 3 negre + negrul hartiei scenei (Dmax explicit 2.0, al niciunui mediu), 32/64, L* 15/50, fundalul recomandat
+        // header + 3 blacks + the scene's paper black (explicit Dmax 2.0, no medium's), 32/64,
+        // L* 15/50, the recommended background
         Assert.Equal(1 + 9, tones.LadderRows.Count);
         Assert.Contains(tones.LadderRows, s => s.Contains("fundalul recomandat 0.1"));
         Assert.Single(tones.LadderRows, s => s.EndsWith("<- mediul ales") && s.Contains("Dmax explicit 2.0"));
@@ -107,10 +109,10 @@ public class ViewModelTests
         Assert.Contains(export.Rows, r => r.Label.StartsWith("Palier"));
         Assert.All(export.Rows, row => Assert.False(string.IsNullOrWhiteSpace(row.Description), row.Label));
         Assert.Contains(res.Rows, r => r.Label == "Stele masurate");
-        Assert.Equal(2 + 6 + 2, res.SizeRows.Count);   // 2 antete + 6 marimi + nota de 2 randuri: fara distanta nu e rand recomandat
+        Assert.Equal(2 + 6 + 2, res.SizeRows.Count);   // 2 headers + 6 sizes + a 2-row note: no distance, no recommended row
         Assert.DoesNotContain(res.SizeRows, s => s.Contains(" *"));
         Assert.Contains(res.SizeRows, s => s.StartsWith("fara rand recomandat"));
-        Assert.Equal(1 + 5, res.DpiRows.Count);        // antet + scara de referinta; fara distanta data, fara randul ei
+        Assert.Equal(1 + 5, res.DpiRows.Count);        // header + the reference ladder; no given distance, no row of its own
         Assert.Contains(res.DpiRows, s => s.Contains("180") && s.Contains("0.49 m"));
         Assert.Equal(8, bg.RegionRows.Count);
         Assert.Contains(bg.RegionRows, r => r.EndsWith("! colorat") || r.EndsWith("! neutru"));
