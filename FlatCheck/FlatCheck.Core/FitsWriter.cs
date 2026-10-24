@@ -15,17 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FitsWriter.cs - scriitor FITS propriu, perechea lui FitsReader. Exista pentru un
-// singur consumator: modul de netezire, care scrie un al doilea master flat.
+// FitsWriter.cs - our own FITS writer, the pair of FitsReader. It exists for a single
+// consumer: the smoothing mode, which writes a second master flat.
 //
-// Scrie un singur HDU primar, 2D, BITPIX -32 sau 16, big-endian, cu headerul intrarii
-// copiat card cu card - minus cele structurale, pe care le rescrie - si cu cateva
-// HISTORY la sfarsit. Nu e un scriitor general: nu stie cuburi, nu stie extensii, nu
-// stie sa formateze decat cardurile pe care le genereaza el.
+// It writes a single primary HDU, 2D, BITPIX -32 or 16, big-endian, with the input's header
+// copied card by card - minus the structural ones, which it rewrites - and with a few HISTORY
+// cards at the end. It is not a general writer: it knows no cubes, no extensions, and can
+// format only the cards it generates itself.
 //
-// Scrie intr-un Stream, nu intoarce byte[], din acelasi motiv pentru care raportul se
-// scrie intr-un TextWriter: 96 MB de float n-au de ce sa mai stea o data in memorie.
-// Testele ii dau un MemoryStream.
+// It writes to a Stream, rather than returning a byte[], for the same reason the report is
+// written to a TextWriter: 96 MB of floats have no reason to sit in memory once more. The
+// tests give it a MemoryStream.
 
 using System;
 using System.Collections.Generic;
@@ -35,14 +35,18 @@ using System.Text;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Writes a 2D image as the primary HDU of a FITS file, with a copied header and HISTORY
+    /// lines.
+    /// </summary>
     internal static class FitsWriter
     {
         const int CardSize = 80, BlockSize = 2880;
 
         /// <summary>
-        /// Cuvintele-cheie pe care scriitorul le pune el, deci nu le copiaza din intrare.
-        /// XTENSION/PCOUNT/GCOUNT sunt ale unui HDU de extensie; imaginea putea veni de
-        /// acolo (FitsReader sare peste un primar gol), dar aici se scrie mereu un primar.
+        /// The keywords the writer sets itself, so it does not copy them from the input.
+        /// XTENSION/PCOUNT/GCOUNT belong to an extension HDU; the image could have come from
+        /// there (FitsReader skips an empty primary), but here a primary is always written.
         /// </summary>
         static readonly HashSet<string> Structural = new(StringComparer.Ordinal)
         {
@@ -51,11 +55,19 @@ namespace FlatCheck
         };
 
         /// <summary>
-        /// Scrie <paramref name="img"/> ca HDU primar 2D. <paramref name="bitpix"/> e -32
-        /// (float IEEE) sau 16 (short cu BZERO 32768, rotunjit si taiat la 0..65535).
-        /// <paramref name="cards"/> sunt cardurile brute de copiat (cele structurale se
-        /// sar), <paramref name="history"/> sunt liniile HISTORY de adaugat.
+        /// Writes <paramref name="img"/> as a 2D primary HDU. <paramref name="bitpix"/> is -32
+        /// (IEEE float) or 16 (short with BZERO 32768, rounded and clipped to 0..65535).
+        /// <paramref name="cards"/> are the raw cards to copy (the structural ones are skipped),
+        /// <paramref name="history"/> are the HISTORY lines to add. Any other BITPIX throws an
+        /// ArgumentException.
         /// </summary>
+        /// <param name="s">Where the file's bytes go; flushed at the end, not closed.</param>
+        /// <param name="img">The image; its values are written as they are (-32) or as ADU
+        /// (16).</param>
+        /// <param name="bitpix">-32 or 16.</param>
+        /// <param name="cards">The input's raw 80-character cards; null for none.</param>
+        /// <param name="history">The HISTORY lines, each wrapped to 72 characters; null for
+        /// none.</param>
         internal static void Write(Stream s, Img img, int bitpix, IReadOnlyList<string> cards, IReadOnlyList<string> history)
         {
             if (bitpix != -32 && bitpix != 16)
@@ -118,7 +130,14 @@ namespace FlatCheck
             s.Flush();
         }
 
-        /// <summary>Toate octetii unui fisier, pentru teste si pentru cine chiar vrea un byte[].</summary>
+        /// <summary>
+        /// All the bytes of a file, for the tests and for whoever really wants a byte[].
+        /// </summary>
+        /// <param name="img">The image, as for <see cref="Write"/>.</param>
+        /// <param name="bitpix">-32 or 16.</param>
+        /// <param name="cards">The input's raw cards; null for none.</param>
+        /// <param name="history">The HISTORY lines; null for none.</param>
+        /// <returns>The whole FITS file.</returns>
         internal static byte[] Encode(Img img, int bitpix, IReadOnlyList<string> cards, IReadOnlyList<string> history)
         {
             using var ms = new MemoryStream();
@@ -126,14 +145,29 @@ namespace FlatCheck
             return ms.ToArray();
         }
 
-        // Format fix: cuvant in 8, "= ", valoarea aliniata la dreapta pana la coloana 30,
-        // apoi " / comentariu". Doar pentru cardurile generate aici.
+        // Fixed format: the keyword in 8, "= ", the value right-aligned up to column 30, then
+        // " / comment". Only for the cards generated here.
+        /// <summary>An integer card in the fixed format.</summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="comment">The comment; empty for none.</param>
+        /// <returns>The 80-character card.</returns>
         static string Number(string key, long value, string comment)
             => Card(key, value.ToString(CultureInfo.InvariantCulture).PadLeft(20), comment);
 
+        /// <summary>A logical card (T or F) in the fixed format.</summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="comment">The comment; empty for none.</param>
+        /// <returns>The 80-character card.</returns>
         static string Logical(string key, bool value, string comment)
             => Card(key, (value ? "T" : "F").PadLeft(20), comment);
 
+        /// <summary>A card from a keyword, a value already padded and a comment.</summary>
+        /// <param name="key">The keyword, at most 8 characters.</param>
+        /// <param name="value">The value, right-aligned in 20 characters.</param>
+        /// <param name="comment">The comment; empty for none.</param>
+        /// <returns>The card, padded or cut to 80 characters.</returns>
         static string Card(string key, string value, string comment)
         {
             string s = key.PadRight(8) + "= " + value;
@@ -141,6 +175,10 @@ namespace FlatCheck
             return s.PadRight(CardSize).Substring(0, CardSize);
         }
 
+        /// <summary>Cuts a text into pieces of a fixed width, the last one shorter.</summary>
+        /// <param name="text">The text; empty gives one empty piece.</param>
+        /// <param name="width">The width of a piece, in characters.</param>
+        /// <returns>The pieces, in order.</returns>
         static IEnumerable<string> Wrap(string text, int width)
         {
             for (int i = 0; i < text.Length; i += width)

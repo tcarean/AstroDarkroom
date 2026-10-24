@@ -15,26 +15,26 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RawReader.cs - citirea fisierelor raw de aparat (.NEF si rudele lui), prin libraw.
+// RawReader.cs - reading camera raw files (.NEF and its relatives), through libraw.
 //
-// Singurul loc din unealta care atinge o librarie externa. FITS-ul si PNG-ul raman
-// scrise de mana; aici nu se putea, fiindca un NEF nu e doar un container: pixelii sunt
-// comprimati Huffman cu un predictor si trecuti printr-o curba de linearizare din
-// MakerNote. Nu exista niciun decodor .NET pur managed pentru asta.
+// The only place in the tool that touches an external library. The FITS and the PNG stay
+// written by hand; here it was not possible, because a NEF is not just a container: the pixels
+// are Huffman-compressed with a predictor and passed through a linearisation curve from the
+// MakerNote. There is no pure managed .NET decoder for that.
 //
-// Ce se cere de la libraw e strict brutul, NU o imagine developata:
-//   - raw_image, decupat la zona vizibila  -> mozaicul CFA intact, exact ca
-//     raw_image_visible din rawpy (asta foloseste flatcheck.py)
-//   - color.maximum                        -> white
-//   - color.black + color.cblack[0..3]     -> black, pe canal
-//   - iparams.filters + iparams.cdesc      -> ce culoare are fiecare pozitie Bayer
-// Nicio interpolare, niciun balans de alb, nicio gama: --expo masoara nivelul ADU
-// original, iar orice developare l-ar distruge.
+// What is asked of libraw is strictly the raw data, NOT a developed image:
+//   - raw_image, cropped to the visible area  -> the CFA mosaic intact, exactly like
+//     raw_image_visible of rawpy (which flatcheck.py uses)
+//   - color.maximum                           -> white
+//   - color.black + color.cblack[0..3]        -> black, per channel
+//   - iparams.filters + iparams.cdesc         -> which colour each Bayer position has
+// No interpolation, no white balance, no gamma: --expo measures the original ADU level, and any
+// development would destroy it.
 //
-// DLL-urile native vin din pachetele Sdcb.LibRaw.runtime.* si stau LANGA executabil.
-// Daca lipsesc (cineva a copiat doar flatcheck.exe), modurile pe FITS merg mai departe
-// neschimbate - tipul asta se incarca abia cand se cere un fisier raw - iar aici se
-// iese cu un mesaj care spune ce lipseste, nu cu un DllNotFoundException.
+// The native DLLs come from the Sdcb.LibRaw.runtime.* packages and sit BESIDE the executable.
+// If they are missing (someone copied only flatcheck.exe), the FITS modes go on unchanged - this
+// type is loaded only when a raw file is asked for - and here the run ends with a message that
+// says what is missing, not with a DllNotFoundException.
 
 using System;
 using System.Collections.Generic;
@@ -45,28 +45,33 @@ using Sdcb.LibRaw.Natives;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Reads a camera raw through libraw: the visible CFA mosaic in ADU, the exact white and
+    /// black levels, the CFA order, the embedded preview and the shooting metadata.
+    /// </summary>
     internal sealed class RawReader : IFrameReader
     {
-        // ATENTIE: niciun camp al clasei asteia nu are voie sa fie un tip din Sdcb.LibRaw.
-        // Campurile se rezolva la incarcarea tipului, iar tipul se incarca la fiecare
-        // rulare, si pe FITS - corpurile de metoda, in schimb, abia la JIT. Un camp de tip
-        // valoare din libraw ar face ca o rulare pe FITS sa crape cand DLL-urile lipsesc.
-        // Masurat, nu presupus; pinuit de RawReaderTests.
+        // CAREFUL: no field of this class may be a type from Sdcb.LibRaw. The fields are
+        // resolved when the type loads, and the type loads on every run, on FITS too - the method
+        // bodies, by contrast, only at JIT. A value-type field from libraw would make a run on a
+        // FITS crash when the DLLs are missing. Measured, not assumed; pinned by RawReaderTests.
         static readonly IReadOnlyDictionary<string, string> NoHeader = new Dictionary<string, string>();
 
-        // Aceleasi extensii ca in flatcheck.py. Doar NEF-ul e testat pe date reale;
-        // restul merg pe cat de bine le stie libraw, care e si ce face rawpy.
+        // The same extensions as in flatcheck.py. Only the NEF is tested on real data; the rest
+        // work as well as libraw knows them, which is also what rawpy does.
         static readonly string[] Extensions =
         { ".nef", ".cr2", ".cr3", ".arw", ".dng", ".raf" };
 
         /// <summary>
-        /// Extensiile recunoscute ca raw de aparat, expuse fiindca nu numai cititorul are
-        /// nevoie de ele: aplicatia WPF filtreaza dupa ele lista din flats/, iar o a doua
-        /// copie a listei ar insemna ca urmatorul aparat adaugat aici nu apare acolo.
+        /// The extensions recognised as camera raws, exposed because not only the reader needs
+        /// them: the WPF application filters the list of flats/ by them, and a second copy of
+        /// the list would mean the next camera added here does not appear there.
         /// </summary>
         internal static IReadOnlyList<string> RawExtensions => Extensions;
 
-        /// <summary>Poarta de dispecerat: se decide DOAR pe extensie, ca in flatcheck.py.</summary>
+        /// <summary>The dispatch gate: decided ONLY on the extension, as in flatcheck.py.</summary>
+        /// <param name="path">The file's path; null or empty allowed.</param>
+        /// <returns>True for one of the six raw extensions, any case.</returns>
         internal static bool IsRawPath(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
@@ -74,8 +79,17 @@ namespace FlatCheck
             return Array.IndexOf(Extensions, ext) >= 0;
         }
 
+        /// <inheritdoc/>
         public bool Handles(string path) => IsRawPath(path);
 
+        /// <summary>
+        /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
+        /// libraw, the CFA order, the best embedded preview and the shooting metadata. Throws
+        /// FileNotFoundException for a missing file, InvalidOperationException when libraw cannot
+        /// be loaded or gives no 16-bit Bayer mosaic or an impossible scale.
+        /// </summary>
+        /// <param name="path">The raw file to read.</param>
+        /// <returns>The frame, its image filled and its header empty.</returns>
         public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
@@ -92,12 +106,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Doar metadatele: libraw umple focala, diafragma, aparatul si LensInfo la
-        /// OpenFile, inainte de Unpack, deci se deschide fisierul si se citesc acelea. Fara
-        /// pixeli, fara previzualizare, fara scala - Image null, Header gol. Masurat pe
-        /// D3300: zeci de milisecunde in loc de secunde, si nicio sutime de gigaoctet.
-        /// Aceleasi garzi de incarcare lenesa ca la Load.
+        /// The metadata only: libraw fills the focal length, aperture, camera and LensInfo at
+        /// OpenFile, before Unpack, so the file is opened and those are read. No pixels, no
+        /// preview, no scale - Image null, Header empty. Measured on a D3300: tens of
+        /// milliseconds instead of seconds, and not a hundredth of a gigabyte. The same
+        /// lazy-loading guards as Load.
         /// </summary>
+        /// <param name="path">The raw file to read.</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         public LoadedFrame LoadInfo(string path)
         {
             if (!File.Exists(path))
@@ -113,6 +129,11 @@ namespace FlatCheck
             catch (TypeInitializationException e) { throw Missing(e); }
         }
 
+        /// <summary>
+        /// Opens the file in libraw and reads the shooting metadata, without Unpack.
+        /// </summary>
+        /// <param name="path">The raw file, known to exist.</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         static LoadedFrame ReadInfo(string path)
         {
             using RawContext ctx = RawContext.OpenFile(path);
@@ -132,6 +153,12 @@ namespace FlatCheck
             };
         }
 
+        /// <summary>
+        /// The error that says libraw's native DLLs are missing beside the executable, and how
+        /// to publish so that they are not.
+        /// </summary>
+        /// <param name="inner">The loader's own exception, kept as the inner one.</param>
+        /// <returns>An InvalidOperationException with a Romanian message for the user.</returns>
         static Exception Missing(Exception inner)
             => new InvalidOperationException(
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
@@ -139,6 +166,12 @@ namespace FlatCheck
               + "pe FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
               + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
 
+        /// <summary>
+        /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the
+        /// preview and the metadata, all read while the file is open once.
+        /// </summary>
+        /// <param name="path">The raw file, known to exist.</param>
+        /// <returns>The frame, its image in ADU.</returns>
         static LoadedFrame Decode(string path)
         {
             using RawContext ctx = RawContext.OpenFile(path);
@@ -148,8 +181,8 @@ namespace FlatCheck
             LibRawImageSizes s = d.RawData.Sizes;
             IntPtr src = d.RawData.RawImage;
 
-            // Foveon si unele formate nu produc un mozaic pe 16 biti, ci direct planuri
-            // de culoare. --expo n-are ce face cu ele, deci se refuza pe fata.
+            // Foveon and some formats do not produce a 16-bit mosaic, but colour planes
+            // directly. --expo has nothing to do with them, so they are refused openly.
             if (src == IntPtr.Zero)
                 throw new InvalidOperationException(
                     $"{path}: libraw n-a produs un mozaic Bayer pe 16 biti pentru fisierul asta "
@@ -159,16 +192,16 @@ namespace FlatCheck
             if (h <= 0 || w <= 0)
                 throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
 
-            // Ordinea culorilor, evaluata la originea zonei VIZIBILE - aceleasi margini pe
-            // care le sare copierea de mai jos. Numai locale, niciun camp: un camp de tip
-            // libraw ar forta incarcarea assembly-ului si pe rularile pe FITS (vezi nota
-            // de sus si RawReaderTests.HoldsNoLibrawTypedFields).
+            // The colour order, evaluated at the origin of the VISIBLE area - the same margins
+            // the copy below skips. Locals only, no field: a field of a libraw type would force
+            // the assembly to load on FITS runs too (see the note at the top and
+            // RawReaderTests.HoldsNoLibrawTypedFields).
             LibRawImageParams ip = d.RawData.IParams;
             CfaPattern cfa = CfaPattern.FromLibRaw(ip.Filters, ip.Cdesc, s.TopMargin, s.LeftMargin);
 
-            // Zona VIZIBILA, ca raw_image_visible din rawpy: se sare peste marginile
-            // mascate (pixelii de calibrare de sub capacul senzorului), altfel medianele
-            // ar fi trase in jos de o banda neagra pe care aparatul n-o considera imagine.
+            // The VISIBLE area, like raw_image_visible of rawpy: the masked margins (the
+            // calibration pixels under the sensor's cover) are skipped, otherwise the medians
+            // would be pulled down by a black band the camera does not consider image.
             int stride = s.RawPitch > 0 ? (int)(s.RawPitch / 2) : s.RawWidth;
             var img = new Img(h, w);
             var row = new short[w];
@@ -177,46 +210,47 @@ namespace FlatCheck
                 long offset = ((long)(y + s.TopMargin) * stride + s.LeftMargin) * sizeof(ushort);
                 Marshal.Copy(src + (nint)offset, row, 0, w);
                 int o = y * w;
-                // libraw da ushort, Marshal.Copy stie doar short - deci se citeste ca
-                // short si se reinterpreteaza. Fara cast, un pixel peste 32767 ar iesi negativ.
+                // libraw gives ushort, Marshal.Copy knows only short - so it is read as short
+                // and reinterpreted. Without the cast, a pixel above 32767 would come out negative.
                 for (int x = 0; x < w; x++) img.D[o + x] = (ushort)row[x];
             }
 
             LibRawColorData c = d.RawData.Color;
             double white = c.Maximum;
 
-            // Nivelul de negru poate fi dat global (color.black) sau pe canal
-            // (color.cblack), si libraw le imparte cum ii vine: pe NEF-urile Nikon muta
-            // partea comuna in black si lasa cblack pe zero. Suma e ce citeste si rawpy,
-            // iar flatcheck.py ia mediana celor patru canale - deci la fel si aici.
+            // The black level can be given globally (color.black) or per channel
+            // (color.cblack), and libraw splits them as it likes: on Nikon NEFs it moves the
+            // common part into black and leaves cblack at zero. The sum is what rawpy reads too,
+            // and flatcheck.py takes the median of the four channels - so here as well.
             var blacks = new List<double>(4);
             for (int i = 0; i < 4; i++)
                 blacks.Add(c.Black + (c.CBlack != null && i < c.CBlack.Length ? c.CBlack[i] : 0));
             double black = Stats.Percentile(blacks, 50);
 
-            // Daca scala citita e degenerata, mai bine o eroare decat o scala inversata:
-            // rng negativ ar da procente absurde, iar garda de sanitate le-ar imbraca in
-            // "fisierul nu pare un flat brut", care ar trimite omul pe pista gresita.
+            // If the scale read is degenerate, better an error than an inverted scale: a
+            // negative rng would give absurd percentages, and the sanity guard would dress them
+            // up as "the file does not look like a raw flat", which would send the person down
+            // the wrong track.
             if (!(white > black))
                 throw new InvalidOperationException(
                     $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}). "
                   + "Foloseste --sat si --black daca stii valorile corecte.");
 
-            // Previzualizarea aparatului, aleasa din METADATE (lista de miniaturi e deja
-            // marsalizata in d) si despachetata numai ea. Se face aici, cat fisierul e
-            // deschis, ca sa nu se mai deschida o data pentru cativa MB de octeti.
+            // The camera's preview, chosen from the METADATA (the thumbnail list is already
+            // marshalled in d) and only it unpacked. It is done here, while the file is open,
+            // so that it is not opened once more for a few MB of bytes.
             EmbeddedPreview preview = TryCapturePreview(ctx, d.ThumbnailList);
 
-            // Ce stie raw-ul despre fotografiere, pentru flatul sintetic. Pe D3300 cu un
-            // obiectiv de alta marca libraw nu da NUMELE obiectivului, dar da ID-ul Nikon
-            // (139 la Tokina 11-20), pe care profilele Adobe il poarta in AlternateLensIDs.
+            // What the raw knows about the shot, for the synthetic flat. On a D3300 with a lens
+            // of another make libraw does not give the lens's NAME, but it gives the Nikon ID
+            // (139 for the Tokina 11-20), which the Adobe profiles carry in AlternateLensIDs.
             var (focalMm, fNumber, cameraName, nikonLensId, lensMin, lensMax, lensAp) = ShootingInfo(ctx, ip);
 
             return new LoadedFrame
             {
                 Image = img,
-                // Header gol, nu absent: garda de aplicabilitate a lui --light il citeste
-                // ca "necunoscut" si ruleaza cu o nota, in loc sa refuze.
+                // An empty header, not an absent one: the --light suitability guard reads it as
+                // "unknown" and runs with a note, instead of refusing.
                 Header = NoHeader,
                 Scale = new ExposureScale(white, black, "libraw (exact)"),
                 Cfa = cfa,
@@ -232,14 +266,22 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Focala, diafragma, numele aparatului, ID-ul de obiectiv Nikon si gama obiectivului
-        /// (focala minima / maxima, deschiderea maxima la focala minima), fiecare null cand
-        /// libraw le da zero sau goale. Numai locale, ca peste tot in acest fisier.
+        /// The focal length, aperture, camera name, Nikon lens ID and the lens's range (minimum
+        /// / maximum focal length, maximum aperture at the minimum focal length), each null when
+        /// libraw gives them zero or empty. Locals only, as everywhere in this file.
         ///
-        /// Gama vine din LensInfo.MakerNotes, nu din campurile de sus ale lui LensInfo: pe
-        /// D3300 cu Tokina 11-20, MinFocal / MaxFocal de sus sunt 0, iar MakerNotes da 11, 20
-        /// si 2.8 (LensData din MakerNote-ul Nikon, decodat de libraw). Masurat, nu presupus.
+        /// The range comes from LensInfo.MakerNotes, not from the top fields of LensInfo: on a
+        /// D3300 with the Tokina 11-20, the top MinFocal / MaxFocal are 0, while MakerNotes gives
+        /// 11, 20 and 2.8 (LensData from the Nikon MakerNote, decoded by libraw). Measured, not
+        /// assumed.
         /// </summary>
+        /// <param name="ctx">The open libraw context.</param>
+        /// <param name="ip">The image parameters, for the make and model.</param>
+        /// <returns>
+        /// The focal length (mm), the f-number, the camera ("make model", the make once), the
+        /// Nikon lens ID, and the lens's minimum and maximum focal length (mm) and maximum
+        /// aperture; each null when unknown.
+        /// </returns>
         static (double? FocalMm, double? FNumber, string Camera, long? NikonLensId, double? LensMinFocal, double? LensMaxFocal, double? LensMaxAperture)
             ShootingInfo(RawContext ctx, LibRawImageParams ip)
         {
@@ -264,26 +306,28 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Latura lunga peste care o previzualizare nu mai e "de marime medie". Pe D3300
-        /// alege intrarea de 1620x1080 in locul celei de 6000x4000: aceleasi mediane la
-        /// 0.4 puncte, la a douasprezecea parte din timp si a treisprezecea din memorie.
+        /// The long side above which a preview is no longer "medium-sized". On a D3300 it picks
+        /// the 1620x1080 entry instead of the 6000x4000 one: the same medians within 0.4 points,
+        /// at a twelfth of the time and a thirteenth of the memory.
         /// </summary>
         internal const int PreferredMaxLongSide = 3000;
 
         /// <summary>
-        /// Cea mai potrivita previzualizare din fisier, sau null. Regula, in ordine:
-        /// cel mai mare JPEG cu latura lunga sub <see cref="PreferredMaxLongSide"/>; altfel
-        /// cel mai mare JPEG de orice marime (PreviewReader il va scala la decodare);
-        /// altfel un bitmap deja decodat de libraw, oricat de mic.
+        /// The most suitable preview in the file, or null. The rule, in order: the largest JPEG
+        /// with a long side under <see cref="PreferredMaxLongSide"/>; otherwise the largest JPEG
+        /// of any size (PreviewReader will scale it at decoding); otherwise a bitmap already
+        /// decoded by libraw, however small.
         ///
-        /// Alegerea se face din lista de metadate - ThumbCount intrari, fiecare cu format
-        /// si dimensiuni - deci fara niciun cost pe ce nu se alege. Indecsii NU sunt
-        /// stabili intre aparate, de aia se enumereaza si nu se presupun.
+        /// The choice is made from the metadata list - ThumbCount entries, each with format and
+        /// dimensions - so at no cost for what is not chosen. The indices are NOT stable between
+        /// cameras, which is why they are enumerated and not assumed.
         ///
-        /// Nu arunca niciodata: Load a mers luni de zile fara previzualizare, si o
-        /// miniatura ciudata pe vreun aparat nu are voie sa-l strice acum. Lipsa ei lasa
-        /// doar comutatorul din fereastra stins.
+        /// It never throws: Load worked for months without a preview, and an odd thumbnail on
+        /// some camera may not break it now. Its absence only leaves the window's switch off.
         /// </summary>
+        /// <param name="ctx">The open, unpacked libraw context.</param>
+        /// <param name="list">The thumbnail list libraw read.</param>
+        /// <returns>The preview's bytes, or null.</returns>
         static EmbeddedPreview TryCapturePreview(RawContext ctx, LibRawThumbnailList list)
         {
             try
@@ -306,7 +350,7 @@ namespace FlatCheck
                     else if (area > areaOther) { bestOther = i; areaOther = area; }
                 }
 
-                // Regulile 1 si 2: un JPEG, de preferat mediu.
+                // Rules 1 and 2: a JPEG, medium if possible.
                 int jpegIdx = bestMid >= 0 ? bestMid : bestAny;
                 if (jpegIdx >= 0)
                 {
@@ -314,7 +358,7 @@ namespace FlatCheck
                     if (j != null) return j;
                 }
 
-                // Regula 3: ce a mai ramas, daca libraw il da ca bitmap decodat.
+                // Rule 3: what is left, if libraw gives it as a decoded bitmap.
                 return bestOther >= 0 ? Export(ctx, bestOther, list.ThumbList[bestOther].Flip) : null;
             }
             catch (Exception)
@@ -324,10 +368,16 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Despacheteaza o singura intrare si ii copiaza octetii. ProcessedImage
-        /// impacheteaza memorie nativa si e IDisposable: copia se face in interiorul
-        /// using-ului si niciun span nu iese de acolo.
+        /// Unpacks a single entry and copies its bytes. ProcessedImage wraps native memory and
+        /// is IDisposable: the copy is made inside the using and no span leaves it.
         /// </summary>
+        /// <param name="ctx">The open libraw context.</param>
+        /// <param name="index">The thumbnail's index in libraw's list.</param>
+        /// <param name="flip">libraw's orientation code for the entry, kept with the bytes.</param>
+        /// <returns>
+        /// The JPEG stream or the 8-bit RGB bitmap, or null for an empty entry or any other
+        /// layout.
+        /// </returns>
         static EmbeddedPreview Export(RawContext ctx, int index, int flip)
         {
             ctx.UnpackThumbnail(index);
@@ -336,8 +386,8 @@ namespace FlatCheck
 
             if (t.ImageType == ProcessedImageType.Jpeg)
             {
-                // Pe intrarile JPEG libraw raporteaza Bits = 0 (masurat), deci aici nu se
-                // verifica adancimea - octetii sunt fluxul comprimat, nu pixeli.
+                // On JPEG entries libraw reports Bits = 0 (measured), so the depth is not
+                // checked here - the bytes are the compressed stream, not pixels.
                 byte[] data = t.AsSpan<byte>().ToArray();
                 return new EmbeddedPreview(true, data, t.Width, t.Height, flip,
                     $"previzualizare JPEG {t.Width}x{t.Height} din fisier");
@@ -351,7 +401,7 @@ namespace FlatCheck
                     $"miniatura RGB {t.Width}x{t.Height} din fisier");
             }
 
-            // Altceva (alt bit depth, alt numar de canale) nu se reinterpreteaza.
+            // Anything else (another bit depth, another number of channels) is not reinterpreted.
             return null;
         }
     }

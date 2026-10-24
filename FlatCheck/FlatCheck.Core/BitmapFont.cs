@@ -15,22 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BitmapFont.cs - un font bitmap 5x7, de mana, pentru etichetele din PNG-ul de split.
+// BitmapFont.cs - a hand-made 5x7 bitmap font, for the labels of the split PNG.
 //
-// Scriitorul PNG e scris de mana (ADR 0008) si nu deseneaza text; o eticheta ca
-// "PARTEA 1 DIN 4" sau titlul cu versiunea si data nu justifica un pachet de fonturi
-// (ADR 0054). Cifre, majuscule si cateva semne; literele mici se deseneaza ca majuscule,
-// orice altceva ramane gol dar avanseaza, ca sirul sa nu se stranga.
+// The PNG writer is written by hand (ADR 0008) and draws no text; a label like "PARTEA 1 DIN 4"
+// or the title with the version and the date does not justify a font package (ADR 0054).
+// Digits, capitals and a few signs; lower-case letters are drawn as capitals, anything else
+// stays blank but advances, so that the string does not shrink.
 
 using System.Collections.Generic;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Draws text into an RGB raster with a built-in 5x7 font, scaled by whole pixels.
+    /// </summary>
     internal static class BitmapFont
     {
         internal const int GlyphW = 5;
         internal const int GlyphH = 7;
-        /// <summary>Avansul de la o litera la urmatoarea, in pixeli de glifa: latimea plus o coloana goala.</summary>
+        /// <summary>
+        /// The advance from one letter to the next, in glyph pixels: the width plus one blank
+        /// column.
+        /// </summary>
         internal const int Advance = GlyphW + 1;
 
         static readonly Dictionary<char, string[]> Glyphs = new()
@@ -83,21 +89,47 @@ namespace FlatCheck
             [','] = new[] { ".....", ".....", ".....", ".....", ".##..", "..#..", ".#..." },
         };
 
+        /// <summary>The glyph table's key for a character: its upper-case form.</summary>
+        /// <param name="c">The character.</param>
+        /// <returns>The upper-case character.</returns>
         static char Key(char c) => char.ToUpperInvariant(c);
 
-        /// <summary>Adevarat cand caracterul are glifa (literele mici prin majuscula lor).</summary>
+        /// <summary>
+        /// True when the character has a glyph (lower-case letters through their capital).
+        /// </summary>
+        /// <param name="c">The character.</param>
+        /// <returns>True when it is drawn, false when it would stay blank.</returns>
         internal static bool Has(char c) => Glyphs.ContainsKey(Key(c));
 
-        /// <summary>Latimea textului in pixeli, la scara data; fara coloana goala dupa ultima litera.</summary>
+        /// <summary>
+        /// The text's width in pixels, at the given scale; without the blank column after the
+        /// last letter.
+        /// </summary>
+        /// <param name="text">The text; every character counts, drawn or not.</param>
+        /// <param name="scale">Screen pixels per glyph pixel, 1 or more.</param>
+        /// <returns>The width in pixels; 0 for an empty text.</returns>
         internal static int Width(string text, int scale)
             => text.Length == 0 ? 0 : (text.Length * Advance - 1) * scale;
 
+        /// <summary>The height of a line of text, in pixels.</summary>
+        /// <param name="scale">Screen pixels per glyph pixel, 1 or more.</param>
+        /// <returns>The height in pixels.</returns>
         internal static int Height(int scale) => GlyphH * scale;
 
         /// <summary>
-        /// Deseneaza textul in rasterul RGB, cu coltul din stanga-sus la (x, y). Ce iese
-        /// din raster se taie; nimic nu arunca.
+        /// Draws the text into the RGB raster, with the top left corner at (x, y). What falls
+        /// outside the raster is clipped; nothing throws.
         /// </summary>
+        /// <param name="rgb">The raster, w*h*3 bytes, interleaved R,G,B.</param>
+        /// <param name="w">The raster's width in pixels.</param>
+        /// <param name="h">The raster's height in pixels.</param>
+        /// <param name="x">The left edge of the first letter, in pixels.</param>
+        /// <param name="y">The top edge of the text, in pixels.</param>
+        /// <param name="text">The text.</param>
+        /// <param name="scale">Screen pixels per glyph pixel, 1 or more.</param>
+        /// <param name="r">The text's red, 0..255.</param>
+        /// <param name="g">The text's green, 0..255.</param>
+        /// <param name="b">The text's blue, 0..255.</param>
         internal static void Draw(byte[] rgb, int w, int h, int x, int y, string text, int scale, byte r, byte g, byte b)
         {
             int cx = x;
@@ -112,6 +144,16 @@ namespace FlatCheck
             }
         }
 
+        /// <summary>Fills a square of the raster with one colour, clipped to the raster.</summary>
+        /// <param name="rgb">The raster, w*h*3 bytes, interleaved R,G,B.</param>
+        /// <param name="w">The raster's width in pixels.</param>
+        /// <param name="h">The raster's height in pixels.</param>
+        /// <param name="x0">The square's left edge, in pixels.</param>
+        /// <param name="y0">The square's top edge, in pixels.</param>
+        /// <param name="size">The square's side, in pixels.</param>
+        /// <param name="r">Red, 0..255.</param>
+        /// <param name="g">Green, 0..255.</param>
+        /// <param name="b">Blue, 0..255.</param>
         static void Block(byte[] rgb, int w, int h, int x0, int y0, int size, byte r, byte g, byte b)
         {
             for (int y = y0; y < y0 + size; y++)
