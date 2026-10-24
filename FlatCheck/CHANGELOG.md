@@ -72,10 +72,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   muted and no publish ships the files (ADR 0059). The 34 errors it found on `main` are fixed.
 - Every comment is English from now on, tests, XAML and project files included (ADR 0060); the
   documentation backfill translates the Romanian ones in five areas while it writes the XML
-  comments the kit's ADR 0035 asks for on every type and method. Areas 1 to 3 done: the core's
+  comments the kit's ADR 0035 asks for on every type and method. Areas 1 to 4 done: the core's
   root files, `Metrics.cs`, `Thresholds.cs`, `LensProfiles/`, `Analysis/`, `Report/`, `Runs/`,
-  the console, and the window's `Session/`, `Interop/`, `Mvvm/`, `Presentation/`, `App` and
-  `MainWindow`.
+  the console, and the window's `Session/`, `Interop/`, `Mvvm/`, `Presentation/`, `App`,
+  `MainWindow` and `ViewModels/`.
 - NuGet's audit advisories (NU1902, NU1903) stay warnings under the gate's `-warnaserror`, and
   each one is judged in `docs/design/dependencies.md` (ADR 0058): the five published against
   ImageSharp 3.1.11 on 2026-10-07 are patched in 4.1.2 only, the line ADR 0010 rejects, and none

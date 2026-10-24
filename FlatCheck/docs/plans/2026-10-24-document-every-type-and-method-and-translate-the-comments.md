@@ -292,6 +292,64 @@ Each area adds its own section at its wrap-up.
     change touches one).
   - The gate: `== OK` at each commit, 951 + 331 tests, 951 + 332 with the new test.
 
+### Area 4, the view-models (2026-10-25, `claude/Document-the-view-models`)
+
+- **No documentation-file error and no code change**: the 22 files built clean under the gate
+  at the first try. Overrides of `TabViewModel.Reset` use `<inheritdoc/>`, as assumption 2
+  allows for the tab view-model base.
+- **Eleven comments corrected, in a commit of their own:**
+  1. `TabViewModel.cs`, header: "the six tabs" - there are eight; Split keeps its own running
+     state and uses only the result and error part; and Ratio, not only the histogram tab,
+     overlaps runs on a quick re-choice.
+  2. `MainViewModel.cs`, header and `ProblemTitle`: "six tabs", "four empty panels" - eight.
+  3. `MainViewModel.RunChainAsync`: "the Ratio tab usually has two preselected masters" - it
+     proposes nothing (R-082) and `ResetTabs` drops its files, so the call finds none.
+  4. `MapScaleViewModel.cs`, header: "used by two tabs, Structure and Ratio" - five: Structure,
+     Ratio, Netezire, Sintetic, Split.
+  5. `StructureRows.cs`, header: "for both tabs" - Netezire shows the five tests too, before
+     and after.
+  6. `RatioTabViewModel.cs`, header: "the only tab that does NOT run at start" - only Structure
+     and End to end run at opening.
+  7. `RatioTabViewModel.Tests`: "the token is the session's, not the run's, so NEITHER cancels
+     the other" - each run has its own linked token since the header's fix.
+  8. `StructureTabViewModel.cs`, header: the master is `pp_flat_stacked.fit` in `masters/` or
+     `process/`, not `process/` only; the corner percentages are composed in `StructureRows`.
+  9. `ExposureTabViewModel.Sky`: "Cerinta 8" was the window's first brief (0982260), not
+     `requirements.md`; now R-043, the `--sky` bands.
+  10. `SmoothTabViewModel.cs`, header: "the other tabs compute when the folder is opened" -
+      only Structure and End to end do.
+  11. `SyntheticTabViewModel.PrefillAsync`: "once the opening chain has ended, a raw from
+      flats/" - the prefill reads the raw's metadata at once, without waiting.
+- **Three design-note passages corrected with them**, the same claims: `two-applications.md`
+  (the Histogram tab's views are bitmaps from the full-resolution raster, no PNG; Ratio
+  overlaps runs too), `lens-profiles.md` (the prefill does not wait for the chain) and
+  `code-map.md` (`MapScaleViewModel` is on five tabs).
+- **Found, reported, not changed** (code, or a requirement; the owner's call):
+  - `StructureTabViewModel.Pct` has no caller.
+  - `MainViewModel.RunChainAsync`'s `Ratio.RecomputeAsync()` always finds no files at that
+    point (item 3), so it only clears a result already cleared.
+  - R-084 says the Expo tab lists "the raws and FITS of `flats/`"; `SirilSession.RawFlats`
+    lists raws only, and its comment and the tab's say why (exact white and black).
+  - The window words and computes a few things the rule "Computed only in the core" puts in
+    the core: `ExposureTabViewModel.AdviceText` (the stops, and "Sub 60 %", "Sub ~30 %" as
+    literals for `Th.ExpoSkyTooHigh` and `Th.ExpoTooLow`), its `Caption` ("98 % din white"),
+    `DescribeChannels`' percentages, `LightTabViewModel`'s refusal text and `DescribeReasons`,
+    and `StructureRows`' corner percentages.
+- **Measured on 2026-10-25:**
+  - The counter on area 4's 22 files: on `main` 25 types and 144 methods to touch; on the
+    branch 0 and 0. The whole code has 18 types and 41 methods left, all in `Views/` (area 5).
+  - `tokens`: all 22 files identical to `main`'s code, 22 with changed comments.
+  - `facts`: no number, ID or identifier of the old comments missing, except two judged:
+    "ViewModel" became "view-model" in five files, and the "8" of "Cerinta 8" (item 9).
+  - `romanian`: no line left but two quoted outputs (`SirilRunViewModel.CommandCount`,
+    `SmoothTabViewModel.AdviceRows`).
+  - `width`: no comment line over 100 columns; every added line ASCII.
+  - `check-design.ps1 -Since main`: four notes cover the files (`code-map.md`,
+    `two-applications.md`, `lens-profiles.md`, `modes-synthetic.md`); three corrected above,
+    `modes-synthetic.md` holds.
+  - `/validate`: not run, as assumption 7 says (no formula file in this area).
+  - The gate: `== OK` at each commit, 951 + 332 tests.
+
 ## Glossary: one English word per Romanian term, in every area
 
 | Romanian | English | Where, and the identifiers that fix it |
@@ -346,3 +404,15 @@ To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 3 i
 scratch tool's source is in
 `C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\d30c94e5-1cf8-4aa9-a885-57d7c43d0ce9\scratchpad\doccount`
 (and `wrap.py` and `chk.sh` beside it): copy them into yours and build the tool."
+
+## The prompt for area 5
+
+To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 4 is merged:
+"Area 5 of the documentation backfill, the Wpf `Views/`, every XAML comment, the tests'
+comments and the csproj comments, and the rule's exception closed: follow
+`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md` on `main`,
+'Each area's session', on branch `claude/Document-the-views-and-translate-tests`. The plan is
+approved. The scratch tool's source is in
+`C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\2af746cc-6be7-4e2a-a1a6-2b71e33b1f07\scratchpad\doccount`
+(and `wrap.py` and `chk.sh` beside it; `chk.sh` names this session's scratchpad and worktree in
+its first lines): copy them into yours and build the tool."
