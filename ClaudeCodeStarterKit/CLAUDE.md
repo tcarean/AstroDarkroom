@@ -17,7 +17,8 @@ The sample code exists to show how a requirement, a test and a validation figure
 - Design notes a branch touched (the index and Covers paths are a gate step):
   `scripts/check-design.ps1 -Since main`
 - Mutation score of Core (minutes, not in the gate): `scripts/mutate.ps1 [-Mutate "**/File.cs"] [-BreakAt 80]`
-- Release (verify, version, CHANGELOG, publish; no commit, no tag): `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`
+- Release (verify, version, CHANGELOG, publish, `release.json`, zip; no commit, no tag):
+  `scripts/release.ps1 -Version X.Y.Z [-WhatIf]`; the publish alone again: `-PublishOnly`
 - Take the kit's shared folders and settings keys (or, in the kit, push them to every project):
   `scripts/sync.ps1 [-Check]`
 
@@ -33,11 +34,11 @@ The sample code exists to show how a requirement, a test and a validation figure
 - `docs/validation.md` + `validation.json` - acceptance figures; the JSON is read by tests.
 - `docs/plans/` - approved plans, one per task. `docs/design/` - per-area notes, read on demand.
 - `kit.json` - what the shared scripts, skills and agent need to know about this project
-  (solution, code and test folders, test data, what a release publishes, what the auditor may
-  also read, where the kit is). `docs/skills.md` - this project's additions to the kit's skills,
-  one section per skill. `scripts/`, `.claude/skills/`, `.claude/agents/`,
-  `.claude/rules/kit/` and the process keys of `.claude/settings.json` are the kit's, the same
-  here.
+  (solution, code and test folders, test data, what a release publishes, from sibling projects
+  too, and its zip, what the auditor may also read, where the kit is). `docs/skills.md` - this
+  project's additions to the kit's skills, one section per skill. `scripts/`, `.claude/skills/`,
+  `.claude/agents/`, `.claude/rules/kit/` and the process keys of `.claude/settings.json` are
+  the kit's, the same here.
 - `.claude/rules/kit/process.md` holds the process rules; this file holds the project's own. The
   explanations behind them (why, alternatives, how to adopt) are in `GHID.md`, kept once, in the
   kit folder `ClaudeCodeStarterKit` beside this project in the `photo` repository. For humans;

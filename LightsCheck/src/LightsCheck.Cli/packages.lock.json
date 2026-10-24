@@ -1,7 +1,7 @@
 {
   "version": 2,
   "dependencies": {
-    "net9.0": {
+    "net8.0": {
       "lightscheck.core": {
         "type": "Project",
         "dependencies": {
@@ -29,7 +29,7 @@
         "contentHash": "KFiLy91bR/4oMiIZ8S4ZYos22SY3QouqImsF2DbCnCIPYYTD2cAVX8RtUNRdax7HLuV4Wgtb68DPYKyF7rDYzA=="
       }
     },
-    "net9.0/win-x64": {
+    "net8.0/win-x64": {
       "Sdcb.LibRaw.runtime.linux64": {
         "type": "CentralTransitive",
         "requested": "[0.21.1, )",

@@ -10,7 +10,7 @@
 
 ## Structure
 
-- `src/ImageVisualCompare.Core/` — `net9.0`, no UI framework reference at all. Everything
+- `src/ImageVisualCompare.Core/` — `net8.0`, no UI framework reference at all. Everything
   here is pure and unit tested.
   - `Viewport.cs` — the single source of truth for zoom and pan. Screen space is **physical
     pixels**, content space is image pixels. Holds `Scale`, `OffsetX/Y`, the clamping rules,
@@ -45,7 +45,7 @@
   The last four exist so that the controls do no arithmetic of their own. A control reads a
   layout record and assigns properties; if a number looks wrong on screen, the test for it
   is in Core. See ADR 0009.
-- `src/ImageVisualCompare.Wpf/` — `net9.0-windows`, the application.
+- `src/ImageVisualCompare.Wpf/` — `net8.0-windows`, the application.
   - `Imaging/IImageLoader.cs` — the decoder seam. Typed on `BitmapSource` deliberately: any
     replacement decoder still has to produce one for the `Image` control, so a generic
     parameter would buy nothing. That is also why it lives here and not in Core. See ADR 0008.
@@ -89,6 +89,6 @@
   - `app.manifest` — what Windows reads from the executable at start-up: per-monitor DPI
     awareness, so 100% is one to one on every monitor; the csproj's `ApplicationManifest`
     embeds it. See `rendering.md`, ADR 0034.
-- `tests/ImageVisualCompare.Tests/` — `net9.0-windows` with `UseWPF`, because the imaging
+- `tests/ImageVisualCompare.Tests/` — `net8.0-windows` with `UseWPF`, because the imaging
   tests drive the real WIC codecs. References both other projects. `WpfThread` runs the tests
   of a window or a control on one STA thread (ADR 0032).

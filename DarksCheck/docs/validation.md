@@ -164,3 +164,13 @@ report delivered on 2026-10-11), with its figures in `results.json`,
   Total: 10, Duration: 7 m 2 s`; no other figure moved. Re-run after the band went to 2 °C and
   the counts above were re-recorded: `Passed! - Failed: 0, Passed: 10, Skipped: 0, Total: 10,
   Duration: 8 m 44 s`.
+- 2026-10-25: after the move to .NET 8 (ADR 0018), all ten cases re-run on the net8 build
+  with `DARKSCHECK_TESTDATA_LARGE=E:\Photografie\Astro`: `Total tests: 10, Passed: 10, Total
+  time: 7.0789 Minutes`; no figure moved. The working set ADR 0007 measured, re-measured the
+  same night with the console of `main` built for .NET 9 and the console of the branch built for
+  .NET 8, whose code differs only in its three locks (`System.Threading.Lock` against `object`;
+  peak working set, two runs each): the 30-frame library at 3.13 / 3.16 GB in 26.5 / 26.2 s on .NET 9 and
+  3.22 / 3.29 GB in 25.9 / 24.2 s on .NET 8; the Smida session at 5.75 / 6.09 GB in 64.8 / 64.3
+  s on .NET 9 and 5.72 / 5.87 GB in 64.7 / 62.9 s on .NET 8. The runtime moves neither. Smida
+  is above ADR 0007's 4.5 to 4.7 GB and 35 s on both runtimes alike; what makes that gap was not
+  looked for, and ADR 0007 is left as it is.

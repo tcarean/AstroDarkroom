@@ -1,5 +1,5 @@
 {
-  "$comment": "What the shared scripts in scripts/ and the shared skills and agent under .claude/ need to know about this project. It is the only file a project edits to adopt them (project-specific skill steps go in docs/skills.md); the folders themselves stay byte-identical with the kit's (scripts/sync.ps1 keeps them so). Folders are relative to this folder, with forward slashes and a trailing slash. 'kit' is the kit folder, relative to this one; '.' means this project is the kit. See scripts/kit-config.ps1 for every key.",
+  "$comment": "What the shared scripts in scripts/ and the shared skills and agent under .claude/ need to know about this project. It is the only file a project edits to adopt them (project-specific skill steps go in docs/skills.md); the folders themselves stay byte-identical with the kit's (scripts/sync.ps1 keeps them so). Folders are relative to this folder, with forward slashes and a trailing slash. 'kit' is the kit folder, relative to this one; '.' means this project is the kit. A release.publish entry may name a project of a sibling kit project ('../X/...'), which the release then bundles and lists in release.json; 'release.zip', optional, names the zip of the release folder ('{version}' replaced). See scripts/kit-config.ps1 for every key.",
   "solution": "Starter.sln",
   "testFilter": "",
   "codeFolders": ["src/"],

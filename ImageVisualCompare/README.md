@@ -5,7 +5,7 @@ trage stânga-dreapta: în stânga liniei vezi prima imagine, în dreapta a doua
 loc și la același zoom. Făcut pentru a compara două variante ale aceleiași procesări astro
 — înainte și după extracția stelelor, două setări de background extraction, două stretch-uri.
 
-Aplicație WPF pe .NET 9, Windows, x64, **fără nicio dependință NuGet**. Decodarea se face
+Aplicație WPF pe .NET 8, Windows, x64, **fără nicio dependință NuGet**. Decodarea se face
 prin WIC, codecul din Windows pe care îl folosește WPF oricum; fișierele FITS, pe care WIC nu
 le știe, sunt citite de un cititor propriu, tot fără dependințe.
 
@@ -163,7 +163,7 @@ Decodarea a două fișiere de ~108 MB durează ~2,7 secunde, cu bară de progres
 
 ## Compilare
 
-Cere .NET 9 SDK pe Windows.
+Cere .NET SDK 9.0.3xx pe Windows (`global.json`); proiectele țintesc .NET 8.
 
 ```bash
 dotnet build ImageVisualCompare.sln -c Release

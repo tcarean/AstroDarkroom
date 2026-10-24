@@ -1,14 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The window. The same core as lightscheck.exe, through LightsCheck.Core: it computes no
        figure and writes no sentence of its own; it calls Runs/ and shows what comes back
-       (ADR 0008). net9.0-windows + UseWPF makes this project Windows-only, so the solution
+       (ADR 0008). net8.0-windows + UseWPF makes this project Windows-only, so the solution
        builds on Windows only; the console alone builds anywhere.
        No <InvariantGlobalization> here: WPF needs culture data to bind anything and would
        throw while loading XAML (FlatCheck's ADR 0037); App.ForceInvariantNumbers pins the
        number culture instead. -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>LightsCheck.Wpf</RootNamespace>
     <AssemblyName>LightsCheck.Wpf</AssemblyName>

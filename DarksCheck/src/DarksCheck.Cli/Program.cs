@@ -102,7 +102,7 @@ internal static class Program
     /// <summary>Progress written as it happens, on the calling thread, serialised by a lock.</summary>
     private sealed class ConsoleProgress(TextWriter stderr) : IProgress<RunProgress>
     {
-        private readonly Lock _lock = new();
+        private readonly object _lock = new();
         private bool _shown;
 
         public void Report(RunProgress value)

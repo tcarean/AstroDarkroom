@@ -419,4 +419,84 @@ session appends its "What deviated (session A|B)" section at wrap-up.
 
 ## What deviated
 
-(filled at each session's wrap-up)
+### Session A (2026-10-24, branch `claude/Prepare-the-Astro-Darkroom-suite`)
+
+Parts 1-4 done as planned: DarksCheck (ADR 0018), LightsCheck (ADR 0017) and
+ImageVisualCompare (ADR 0037) on net8.0 / net8.0-windows, each gate green and each window
+started from its net8 build; the lock files of all three changed only their framework keys
+(`net9.0...` -> `net8.0...`), no package version moved, so nothing stopped the work. Kit ADR 0036,
+`merge-publish.ps1`, the `release.ps1` changes and the sync, one commit per project. Deviations:
+
+- **The zip is written entry by entry.** Measured in this session: under Windows PowerShell 5.1
+  `ZipFile.CreateFromDirectory`, which the plan chose, writes backslashes into the entry names
+  (`lensfun\a.xml`), as `Compress-Archive` does. `release.ps1` opens a `ZipArchive` and adds
+  each file with `CreateEntryFromFile` under a forward-slash name; the ADR says so.
+- **Step 5 empties `artifacts/<version>/` first.** Not in the plan: a previous run's files would
+  be compared with this run's and reported as collisions, and would end up in the zip.
+- **Paths in step 5 use the platform separator.** The kit's Bitbucket template runs the gate
+  under pwsh on Linux, and the new `-PublishOnly` test runs a real publish; the old code's
+  `artifacts\` would be part of a file name there. Not verified on Linux: no pwsh on this
+  machine.
+- **One more `ReleaseTests` case:** `-PublishOnly` publishes a one-file library
+  (`net$(BundledNETCoreAppTargetFrameworkVersion)`, offline) into an `output` subfolder, and
+  checks `release.json`, the zip's entry names and its `.sha256`. The tests write their
+  `kit.json` themselves; `ScriptRunner.KitJson` is unchanged.
+- **`-WhatIf` lists a component that is not ready as `NOT READY`, then refuses**, so the
+  listing and the refusal come from one run; a plain run refuses at once.
+- **The release skill** also gained, at step 4, naming the components with unreleased changes,
+  and at step 6, that each component's folder must still be clean.
+- **Docs name `artifacts/X.Y.Z/release.json`**, not a bare `release.json`, which
+  `KitGuideAndReadme_NameOnlyPathsThatExist` reads as a file the kit should have.
+- **Names:** kit ADR 0036's file name is shortened
+  (`0036-a-release-stages-merges-by-hash-bundles-and-zips.md`) for the Windows path limit in
+  nested worktrees; ImageVisualCompare's guard test is one theory over its three project files.
+- **Manual checks in the kit worktree:** `-Version 0.2.0 -WhatIf` refused as a linked worktree;
+  `-PublishOnly` published `src/Starter.Cli` (10 files, 0.2 MB) with a `release.json` of one
+  component. With a temporary `kit.json` publishing the CLI twice into one folder
+  (framework-dependent, then self-contained) it refused with four collisions
+  (`starter.deps.json`, `starter.dll`, `starter.pdb`, `starter.runtimeconfig.json`) and copied
+  nothing; with `output: "sc"` on the second it merged 203 files, 74.7 MB, zip 33.3 MB, and the
+  `.sha256` matched `sha256sum`. `kit.json`, the lock files and `artifacts/` were restored after.
+
+**After `/code-review` (2026-10-25, ten findings, all fixed on the branch at the owner's word):**
+
+- `-PublishOnly -WhatIf` published half for real (dotnet publish, the child merge script,
+  `release.json` and the zip ignore `-WhatIf`): it now lists the components and what it would
+  publish, and stops.
+- Under Windows PowerShell 5.1 git's stderr, even sent to `$null`, stopped the script (measured:
+  `git -C C:\ log ... 2>$null` threw): git runs through `Invoke-GitText`, which leaves the commits
+  empty outside git.
+- The zip and the size line skipped hidden files that the merge copied: `-Force`.
+- A `release.json` an entry published at the root is a collision instead of being overwritten.
+- `merge-publish.ps1` exits 2 on an error that is not a collision, and a failed publish is no
+  longer reported with the collision advice.
+- `release.json` gains `clean` per component, the two version files a full release has changed
+  aside. Writing it found a PowerShell trap: `if ... else { @() }` yields `$null`, and `$null`
+  piped through `ForEach-Object` made one bare `:(exclude)` pathspec that excluded everything.
+- Tests: ten more `ReleaseTests` and `MergePublishTests` cases (a second component in
+  `release.json`, two entries that collide through `release.ps1`, and the cases above); each
+  failed before its fix except the two-entry collision, which is coverage.
+- The `<Version>` and `[Unreleased]` patterns are defined once; the component check reuses
+  `Get-ComponentInfo`; `merge-publish.ps1` hashes only files of equal length.
+- **Measured on .NET 8** (`docs/validation.md`, History, of the three projects): DarksCheck 10/10,
+  LightsCheck 13/13, ImageVisualCompare 4/4 cases pass, no figure moved, IVC's memory within
+  3.3 MB. DarksCheck's working set, `main` on .NET 9 against the branch on .NET 8 (the code
+  differs only in its three locks), two runs each: library 3.13 / 3.16 GB (.NET 9) and 3.22 /
+  3.29 GB (.NET 8), 24-27 s; Smida 5.75 / 6.09 GB and 5.72 / 5.87 GB, 63-65 s. Smida is above
+  ADR 0007's 4.5-4.7 GB and 35 s on both runtimes alike; what makes that gap was not looked for,
+  ADR 0007 left as it is.
+
+**After the second `/code-review`, of the fixes only (2026-10-25, ten findings; the owner chose
+1-5 and 7):**
+
+- `Invoke-GitText` checks that git is on PATH (a missing git was a `CommandNotFoundException`
+  that stopped the script, measured by a test with a PATH without git), keeps git's message in
+  `$script:GitError` for the "not clean" line instead of guessing "not in a git repository",
+  and trims only trailing white space, so `git status`'s ` M` (not staged) keeps its column.
+- `merge-publish.ps1` takes back the files a failed copy had already put in `-Into`.
+- The validation notes and ADR 0018 say what was compared (`main` on .NET 9 against the
+  branch on .NET 8, three locks apart) and no longer give causes that were not measured.
+- Left, at the owner's word: the test outside git depends on the temp folder being in no
+  repository; `release.json`'s collision is a check of its own beside `merge-publish.ps1`;
+  the components' git calls run twice per release; no test drives `release.ps1`'s exit-2
+  branch.
