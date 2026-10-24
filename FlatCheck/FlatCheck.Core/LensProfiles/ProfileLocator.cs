@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Singurul fisier din LensProfiles/ care se uita pe masina: unde sunt profilele Adobe (le
-// instaleaza Lightroom, Camera Raw si DNG Converter, care e gratuit) si unde e copia bazei
-// lensfun (folderul lensfun/ de langa exe, livrat cu unealta). Cititul propriu-zis e in
-// LcpReader / LensfunReader, pure, ca testele sa mearga pe XML scris de ele.
+// The only file in LensProfiles/ that looks at the machine: where the Adobe profiles are (they
+// are installed by Lightroom, Camera Raw and DNG Converter, which is free) and where the copy of
+// the lensfun database is (the lensfun/ folder beside the exe, shipped with the tool). The reading
+// itself is in LcpReader / LensfunReader, pure, so that the tests run on XML they write.
 //
-// Profilele Adobe nu se redistribuie: se citesc de unde le-a pus Adobe. Lipsa lor nu e o
-// eroare, e o jumatate goala a listei, si ProfileSources spune de ce.
+// The Adobe profiles are not redistributed: they are read from where Adobe put them. Their
+// absence is not an error, it is an empty half of the list, and ProfileSources says why.
 
 using System;
 using System.Collections.Generic;
@@ -30,7 +30,7 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    /// <summary>Ce s-a gasit si unde, pentru raport si pentru panoul din fereastra.</summary>
+    /// <summary>What was found and where, for the report and for the window's panel.</summary>
     internal sealed class ProfileSources
     {
         internal readonly IReadOnlyList<string> AdobeDirectories;
@@ -42,6 +42,16 @@ namespace FlatCheck
         internal readonly LensCatalog Catalog;
         internal readonly LensfunData Lensfun;
 
+        /// <summary>The result of a search for profiles.</summary>
+        /// <param name="adobeDirs">The folders searched for .lcp files.</param>
+        /// <param name="adobeFiles">How many .lcp files were found.</param>
+        /// <param name="adobeSkipped">How many of them could not be read.</param>
+        /// <param name="lensfunDir">The lensfun folder looked at.</param>
+        /// <param name="lensfunPresent">Whether it holds any .xml file.</param>
+        /// <param name="lensfunVersion">The text of its version file; null when there is
+        /// none.</param>
+        /// <param name="catalog">Every lens found, from both sources.</param>
+        /// <param name="lensfun">The lensfun database read, cameras included.</param>
         internal ProfileSources(IReadOnlyList<string> adobeDirs, int adobeFiles, int adobeSkipped,
                                 string lensfunDir, bool lensfunPresent, string lensfunVersion,
                                 LensCatalog catalog, LensfunData lensfun)
@@ -60,12 +70,17 @@ namespace FlatCheck
         internal int LensfunLenses => Catalog.Lenses.Count(l => l.Source == ProfileSource.Lensfun);
     }
 
+    /// <summary>Finds the Adobe profiles and the lensfun database on this machine.</summary>
     internal static class ProfileLocator
     {
         internal const string LensfunFolderName = "lensfun";
         internal const string LensfunVersionFile = "LENSFUN-VERSION.txt";
 
-        /// <summary>Folderele in care Adobe isi pune profilele pe Windows: cele instalate si cele ale utilizatorului.</summary>
+        /// <summary>
+        /// The folders where Adobe puts its profiles on Windows: the installed ones and the
+        /// user's.
+        /// </summary>
+        /// <returns>The two folders, whether they exist or not.</returns>
         internal static IReadOnlyList<string> DefaultAdobeDirectories()
         {
             var dirs = new List<string>();
@@ -78,17 +93,29 @@ namespace FlatCheck
             return dirs;
         }
 
-        /// <summary>Folderul lensfun/ de langa exe-ul care ruleaza.</summary>
+        /// <summary>The lensfun/ folder beside the running exe.</summary>
+        /// <returns>Its path, whether it exists or not.</returns>
         internal static string DefaultLensfunDirectory()
             => Path.Combine(AppContext.BaseDirectory, LensfunFolderName);
 
+        /// <summary>Searches the default places.</summary>
+        /// <returns>What was found.</returns>
         internal static ProfileSources Locate()
             => Locate(DefaultAdobeDirectories(), DefaultLensfunDirectory());
 
+        /// <summary>
+        /// Searches the given places: every .lcp under the Adobe folders (by file name, read
+        /// later; a name of an unexpected form is read now), and the lensfun folder's XML. A
+        /// missing folder is skipped, an unreadable .lcp counted.
+        /// </summary>
+        /// <param name="adobeDirs">The folders to search for .lcp files, recursively.</param>
+        /// <param name="lensfunDir">The folder of the lensfun XML files.</param>
+        /// <returns>What was found.</returns>
         internal static ProfileSources Locate(IReadOnlyList<string> adobeDirs, string lensfunDir)
         {
-            // Adobe: doar numele fisierelor - 3531 pe masina autorului, 36 s de parsat pe
-            // toate. Un nume care nu are forma asteptata se parseaza pe loc, ca sa nu lipseasca.
+            // Adobe: only the file names - 3531 on the author's machine, 36 s to parse them all.
+            // A name that does not have the expected form is parsed on the spot, so that it is
+            // not missing.
             var profiles = new List<LensProfile>();
             var stubs = new List<AdobeProfileFile>();
             int files = 0, skipped = 0;

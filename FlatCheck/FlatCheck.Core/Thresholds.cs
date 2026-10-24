@@ -15,166 +15,174 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Thresholds.cs - toate pragurile de verdict, in procente.
+// Thresholds.cs - every verdict threshold, in percent.
 //
-// Sunt reguli empirice, nu constante fizice: un punct de plecare, de calibrat pe un
-// setup despre care esti sigur. Din faza 8 sunt TOATE aici - inainte, --light avea
-// 2.0/5.0 inline si --expo benzile ca locale, ceea ce facea imposibil de vazut
-// intr-un singur loc dupa ce se ia o decizie.
+// They are empirical rules, not physical constants: a starting point, to be calibrated on a
+// setup you are sure of. Since phase 8 they are ALL here - before, --light had 2.0/5.0 inline
+// and --expo its bands as locals, which made it impossible to see in a single place what a
+// decision rests on.
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Every threshold the verdicts use, as named constants: the residual scale, the smoothing,
+    /// --ratio, --light and its series, the profile tolerances and the exposure bands. Percent
+    /// unless the name says otherwise.
+    /// </summary>
     static class Th
     {
-        // --- structura ---
-        // Scara de reziduu, folosita de toate patru metricile de abatere de la simetria
-        // radiala: imprastierea colturilor, asimetria azimutala, reziduul dupa model si
-        // inclinarea. Toate patru masoara aceeasi abatere din unghiuri diferite, si toate
-        // patru sunt amplitudini fractionare in procente, deci impart scara:
-        //     sub  2 %   calitate perfecta
-        //      2 - 10 %  utilizabil; background extraction scoate ce ramane
-        //     10 - 20 %  utilizabil, dar confirma cu --light inainte de un stretch dur
-        //     peste 20 % refa flat-urile
+        // --- structure ---
+        // The residual scale, used by all four metrics of deviation from radial symmetry: the
+        // spread of the corners, the azimuthal asymmetry, the residual after the model and the
+        // tilt. All four measure the same deviation from different angles, and all four are
+        // fractional amplitudes in percent, so they share the scale:
+        //     under  2 %   perfect quality
+        //      2 - 10 %    usable; background extraction removes what is left
+        //     10 - 20 %    usable, but confirm with --light before a hard stretch
+        //     over  20 %   redo the flats
         public const double ResidPerfect = 2.0;
         public const double ResidUsable = 10.0;
         public const double ResidCheck = 20.0;
 
-        // Pragul de la care "pete locale" (Metrics.LocalSpots) tipareste atentionarea.
-        // Nu e un verdict: o pata compacta fixa pe aparat - praf, condens, o scurgere
-        // mica - e corecta pentru sesiunea ale carei lights o au si ele, si gresita
-        // pentru un flat de biblioteca. Raspunsul depinde de ce faci cu flat-ul, nu de
-        // flat, deci se atentioneaza, nu se voteaza. Acelasi 2% ca banda PERFECT: sub
-        // atat nu conteaza nici forma, nici ce e fix pe aparat.
+        // The threshold from which "local spots" (Metrics.LocalSpots) prints the warning. It is
+        // not a verdict: a compact spot fixed on the camera - dust, condensation, a small leak -
+        // is right for the session whose lights have it too, and wrong for a library flat. The
+        // answer depends on what you do with the flat, not on the flat, so it warns, it does not
+        // vote. The same 2% as the PERFECT band: below that neither the shape nor what is fixed
+        // on the camera matters.
         public const double LocalSpotWarn = ResidPerfect;
 
-        // Offsetul centrului de iluminare nu mai are praguri, fiindca nu mai e un test.
-        // Pana in 1.2.0 avea 4%/10% pe scara OK/SUSPECT/PROBLEMA, si era gresit: offsetul
-        // e ~ -b/(2d), adica raportul dintre gradient si curbura, deci NU e o fractie si
-        // nu e scale-invariant. Pe un obiectiv cu vignetare mica exploda (masurat: 31% pe
-        // un Samyang 135 f/2.8 la 0.15 stopuri, unde eroarea reala era de 11%), iar cand
-        // varful ajungea sa iasa din cadru cadea la 0.00% = "OK" - adica devenea si
-        // nemonoton, dand un fals negativ exact pe obiectivele cele mai plate. Ce se
-        // masoara acum e Th.Resid* pe "inclinare": acelasi gradient, luat ca amplitudine.
+        // The offset of the illumination centre no longer has thresholds, because it is no
+        // longer a test. Until 1.2.0 it had 4%/10% on the OK/SUSPECT/PROBLEMA scale, and that was
+        // wrong: the offset is ~ -b/(2d), the ratio between gradient and curvature, so it is NOT
+        // a fraction and NOT scale-invariant. On a lens with little vignetting it exploded
+        // (measured: 31% on a Samyang 135 f/2.8 at 0.15 stops, where the real error was 11%), and
+        // when the vertex came to leave the frame it fell to 0.00% = "OK" - so it also became
+        // non-monotonic, giving a false negative exactly on the flattest lenses. What is measured
+        // now is Th.Resid* on the "tilt": the same gradient, taken as an amplitude.
 
-        // --- netezire ---
-        // Pragul de la care raportul de netezire atentioneaza ca s-a scos mai mult decat
-        // textura: cea mai abatuta dala a componentei scoase (original / netezit), pe
-        // rasterul de analiza. Nu e un verdict - fisierul se scrie oricum - ci semnalul
-        // ca netezirea a luat si ceva de scara mare, pe care omul trebuie sa-l vada in
-        // harta. Masurat la scara implicita de 300 px pe cinci mastere reale: 0.40-0.71 %
-        // pe cele patru curate, 4.2 % pe cel cu textura de tesatura - deci acelasi 2 % ca
-        // banda PERFECT lasa o marja de 3x in ambele directii.
+        // --- smoothing ---
+        // The threshold from which the smoothing report warns that more than the texture was
+        // removed: the most deviant tile of the removed component (original / smoothed), on the
+        // analysis raster. It is not a verdict - the file is written anyway - but the signal that
+        // the smoothing took something of large scale too, which the person has to see in the
+        // map. Measured at the default scale of 300 px on five real masters: 0.40-0.71 % on the
+        // four clean ones, 4.2 % on the one with the fabric texture - so the same 2 % as the
+        // PERFECT band leaves a 3x margin in both directions.
         public const double SmoothKeptWarn = ResidPerfect;
 
-        // Propunerea de scara (SmoothScaleAdvisor), pe Metrics.FineTexture - partea
-        // structurata a componentei fine sub ~128 px pe senzor, in procente, pe rasterul
-        // de analiza. Masurat in C# pe cinci mastere reale (2026-09-16):
-        //   intrare: 0.04-0.06 % pe cele patru fara textura, 0.69 % pe cel cu difuzorul pe
-        //   monitor (celule de ~300 px). Pragul de 0.20 lasa 3x in ambele directii.
-        //   dupa netezire, pe cel cu textura: 0.09 % la 150 px, 0.02 % la 300, 0.01 % la
-        //   600; pe cele curate 0.01-0.02 % la orice scara. Pragul de 0.05 spune "a plecat"
-        //   de la 300 in sus, cu 1.8x fata de 150 si 2.5x fata de ce ramane la 300.
-        // Cinci mastere ajung ca sa se vada ca ideea tine, nu ca sa fie calibrat: un master
-        // cu textura slaba, de 0.15-0.25 %, cade langa primul prag.
-        public const double SmoothTextureMin = 0.20;    // sub atat, nimic de netezit
-        public const double SmoothTextureGone = 0.05;   // sub atat, textura a plecat
+        // The scale proposal (SmoothScaleAdvisor), on Metrics.FineTexture - the structured part
+        // of the fine component under ~128 px on the sensor, in percent, on the analysis raster.
+        // Measured in C# on five real masters (2026-09-16):
+        //   input: 0.04-0.06 % on the four without texture, 0.69 % on the one with the diffuser
+        //   on a monitor (cells of ~300 px). The 0.20 threshold leaves 3x in both directions.
+        //   after smoothing, on the textured one: 0.09 % at 150 px, 0.02 % at 300, 0.01 % at
+        //   600; on the clean ones 0.01-0.02 % at any scale. The 0.05 threshold says "it is gone"
+        //   from 300 up, with 1.8x against 150 and 2.5x against what is left at 300.
+        // Five masters are enough to see that the idea holds, not to calibrate it: a master with
+        // a weak texture, of 0.15-0.25 %, falls next to the first threshold.
+        public const double SmoothTextureMin = 0.20;    // below this, nothing to smooth
+        public const double SmoothTextureGone = 0.05;   // below this, the texture is gone
 
-        // Garda "scara prea mare": cat au voie sa SCADA asimetria azimutala si inclinarea,
-        // in puncte, intre master si fisierul netezit. Sunt cele doua teste pe care textura
-        // nu le atinge (sectoare mari, respectiv un plan), deci o scadere e structura reala
-        // care pleaca. Masurat: la 300 px pe masterul cu textura se misca 0.00 si -0.01;
-        // la 600 px inelul real al unui Nikkor 35 DX scade asimetria cu 0.79 si petele
-        // monitorului pe Tokina cu 0.80. Colturile, reziduul si pata maxima NU pot fi
-        // garda: scad cand pleaca textura (1.47 puncte la pata maxima).
+        // The "scale too large" guard: how much the azimuthal asymmetry and the tilt may DROP,
+        // in points, between the master and the smoothed file. They are the two tests the
+        // texture does not touch (large sectors, and a plane), so a drop is real structure
+        // leaving. Measured: at 300 px on the textured master they move 0.00 and -0.01; at
+        // 600 px the real ring of a Nikkor 35 DX drops the asymmetry by 0.79 and the monitor's
+        // spots on the Tokina by 0.80. The corners, the residual and the maximum spot can NOT be
+        // the guard: they drop when the texture leaves (1.47 points on the maximum spot).
         public const double SmoothScaleLoss = 0.5;
 
-        // --- rotatie 180 ---
+        // --- 180 rotation ---
         public const double RatioOk = 1.0, RatioBad = 3.0;
 
         // --- end-to-end ---
         public const double LightRadOk = 2.0, LightRadBad = 5.0;
 
-        // Garda de aplicabilitate, pe DIAGONALA campului acoperit, in grade.
+        // The suitability guard, on the DIAGONAL of the field covered, in degrees.
         //
-        // Testul separa fondul in "plan de poluare luminoasa" + "termeni radiali = eroare
-        // de flat". Separarea tine doar cat timp cupola de poluare e cvasi-liniara peste
-        // cadru. Pe un camp larg ea se CURBEAZA in interiorul cadrului, iar partea
-        // radial simetrica a acelei curburi are exact forma vignetarii - deci fitul nu
-        // mai are cum sa le deosebeasca, indiferent cat de bine e scris.
+        // The test splits the background into "light pollution plane" + "radial terms = flat
+        // error". The split holds only as long as the pollution dome is quasi-linear over the
+        // frame. On a wide field it CURVES inside the frame, and the radially symmetric part of
+        // that curvature has exactly the shape of vignetting - so the fit has no way left to tell
+        // them apart, however well it is written.
         //
-        // Nu e un prag de calitate, e o limita de valabilitate: peste LightFovMax
-        // modul refuza sa raspunda, nu da un raspuns prost.
-        public const double LightFovOk = 20.0;      // sub asta, separarea e curata
-        public const double LightFovMax = 40.0;     // peste asta, testul nu se aplica
+        // It is not a quality threshold, it is a validity limit: above LightFovMax the mode
+        // refuses to answer, it does not give a bad answer.
+        public const double LightFovOk = 20.0;      // below this, the split is clean
+        public const double LightFovMax = 40.0;     // above this, the test does not apply
 
-        // Acelasi lucru cand headerul da doar FOCALLEN, fara marimea pixelului: nu se
-        // poate calcula campul real, deci se presupune cel mai mare senzor plauzibil
-        // (full-frame, diagonala 43.3 mm) si se compara focala direct. Conservator prin
-        // constructie - pe un senzor mai mic campul e mai ingust decat se presupune aici,
-        // deci un cadru bun poate iesi "marginal". Pentru cazul asta exista --fov.
-        public const double LightFocalOk = 120.0;   // ~20.5 grade diagonala pe full-frame
-        public const double LightFocalMin = 60.0;   // ~39.6 grade diagonala pe full-frame
+        // The same when the header gives only FOCALLEN, without the pixel size: the real field
+        // cannot be computed, so the largest plausible sensor is assumed (full-frame, diagonal
+        // 43.3 mm) and the focal length is compared directly. Conservative by construction - on
+        // a smaller sensor the field is narrower than assumed here, so a good frame can come out
+        // "marginal". For that case there is --fov.
+        public const double LightFocalOk = 120.0;   // ~20.5 degrees diagonal on full-frame
+        public const double LightFocalMin = 60.0;   // ~39.6 degrees diagonal on full-frame
         public const double FullFrameDiagMm = 43.27;
 
-        // Gradient de cer (planul din fit) peste care se tipareste un avertisment. E doar
-        // INFORMATIV, nu o poarta: panta e un proxy indirect - cauza reala a nesepararii e
-        // curbura, iar pe aia o acopera garda de camp de mai sus.
+        // The sky gradient (the plane of the fit) above which a warning is printed. It is only
+        // INFORMATIVE, not a gate: the slope is an indirect proxy - the real cause of a failed
+        // split is the curvature, and that one is covered by the field guard above.
         public const double LightPlaneWarn = 40.0;
 
-        // --- end-to-end pe o serie de cadre ---
-        // Media pe serie e o masuratoare mai buna decat orice cadru singur, dar numai daca
-        // termenul radial al CERULUI se mediaza la zero peste sesiune. Cele trei conditii
-        // de mai jos verifica exact asta; daca vreuna pica, verdictul e NEDETERMINAT.
+        // --- end-to-end over a series of frames ---
+        // The mean over the series is a better measurement than any single frame, but only if
+        // the SKY's radial term averages to zero over the session. The three conditions below
+        // check exactly that; if any fails, the verdict is NEDETERMINAT.
         //
-        // Pragurile astea sunt cele mai putin calibrate din fisier: vin dintr-o singura
-        // sesiune reala (2026-08-12, care le pica pe amandoua). Recalibreaza-le cand ai
-        // o sesiune despre care esti sigur.
-        public const int LightSeriesMinFrames = 5;      // sub asta o medie nu inseamna nimic
+        // These thresholds are the least calibrated in the file: they come from a single real
+        // session (2026-08-12, which fails both). Recalibrate them when you have a session you
+        // are sure of.
+        public const int LightSeriesMinFrames = 5;      // below this a mean means nothing
 
-        // Eroarea mediei (std/sqrt(n)). Daca depaseste chiar pragul de OK, seria nu
-        // rezolva flat-ul la precizia la care se pronunta pragurile - deci nu se pronunta.
+        // The error of the mean (std/sqrt(n)). If it exceeds even the OK threshold, the series
+        // does not resolve the flat to the precision the thresholds speak at - so it does not
+        // speak.
         public const double LightSeriesSemMax = LightRadOk;
 
-        // Corelatia Pearson intre componenta radiala si gradientul de cer, peste serie.
-        // Flat-ul e acelasi pe toate cadrele prin constructie: daca "eroarea de flat"
-        // urmareste cerul, ce se masoara e cerul.
+        // The Pearson correlation between the radial component and the sky gradient, over the
+        // series. The flat is the same on every frame by construction: if the "flat error"
+        // follows the sky, what is measured is the sky.
         public const double LightSeriesSkyCorr = 0.70;
 
-        // ...dar corelatia are sens doar daca gradientul chiar variaza peste serie. Pe o
-        // sesiune curata unde sta constant, corelatia e zgomot si ar respinge date bune,
-        // deci testul de corelatie se aplica numai peste intervalul asta (puncte de %).
+        // ...but the correlation makes sense only if the gradient really varies over the series.
+        // On a clean session where it stays constant, the correlation is noise and would reject
+        // good data, so the correlation test applies only above this span (points of %).
         public const double LightSeriesSkySpanMin = 10.0;
 
-        // --- profilul de vignetare fata de ce s-a cerut (sintetic, structura cu --raw) ---
-        // Profilul se alege "cel mai apropiat", fara interpolare; peste pragurile astea
-        // raportul avertizeaza ca adancimea e a profilului, nu a valorilor cerute. Doar un
-        // avertisment: exit-ul nu se schimba. Focala: 1 mm sau 5 %, care e mai mare -
-        // aceeasi toleranta cu care LensSpec compara numele unui obiectiv cu gama din raw
-        // (numele rotunjesc). Diafragma: o jumatate de stop - grila Adobe e la stopuri
-        // intregi, deci orice cerere din interiorul gamei cade sub prag, si avertismentul
-        // prinde exact cererile din afara ei (f/1.0 pe un obiectiv cu profile de la f/1.8).
+        // --- the vignetting profile against what was asked for (synthetic, structure with --raw)
+        // ---
+        // The profile is chosen "nearest", without interpolation; above these thresholds the
+        // report warns that the depth is the profile's, not the requested values'. Only a
+        // warning: the exit code does not change. Focal length: 1 mm or 5 %, whichever is larger
+        // - the same tolerance with which LensSpec compares a lens's name with the range in the
+        // raw (names round). Aperture: half a stop - the Adobe grid is at whole stops, so any
+        // request inside the range falls under the threshold, and the warning catches exactly
+        // the requests outside it (f/1.0 on a lens with profiles from f/1.8).
         public const double ProfileFocalTolMm = 1.0;
         public const double ProfileFocalTolFrac = 0.05;
         public const double ProfileStopsTol = 0.5;
 
-        // Cat difera cele doua baze de profile intre ele, pe acelasi obiectiv, la aceeasi
-        // diafragma, in coltul cadrului: 0.16-0.25 stopuri pe Tokina 11-20 si Nikkor 35 DX
-        // (docs/design/lens-profiles.md, sectiunea 8). E incertitudinea REFERINTEI verdictului de
-        // adancime, si motivul pentru care acel verdict sta pe scara de reziduu (10 % = BUN)
-        // si nu pe cea a modului --light (5 % = PROBLEMA), desi masoara aceeasi marime:
-        // 0.2 stopuri = 15 % in colt, de trei ori linia de PROBLEMA. Nu e un prag: raportul
-        // il citeaza ca sa spuna cat de fin poate fi verdictul, nu ca sa decida ceva.
+        // How much the two profile databases differ from each other, on the same lens, at the
+        // same aperture, in the corner of the frame: 0.16-0.25 stops on the Tokina 11-20 and the
+        // Nikkor 35 DX (docs/design/lens-profiles.md, section 8). It is the uncertainty of the
+        // REFERENCE of the depth verdict, and the reason that verdict sits on the residual scale
+        // (10 % = BUN) and not on that of the --light mode (5 % = PROBLEMA), although it measures
+        // the same quantity: 0.2 stops = 15 % in the corner, three times the PROBLEMA line. It is
+        // not a threshold: the report quotes it to say how fine the verdict can be, not to decide
+        // anything.
         public const double ProfileDatabaseSpreadStops = 0.2;
 
-        // --- expunere, pe fereastra centrala 20% a canalului celui mai luminos ---
-        public const double ExpoClip = 0.05;        // % pixeli saturati = clipping
-        public const double ExpoTooLow = 30.0;      // sub asta masterul iese zgomotos
-        public const double ExpoLo = 50.0;          // tinta pt panou
+        // --- exposure, on the central 20% window of the brightest channel ---
+        public const double ExpoClip = 0.05;        // % of pixels saturated = clipping
+        public const double ExpoTooLow = 30.0;      // below this the master comes out noisy
+        public const double ExpoLo = 50.0;          // target for a panel
         public const double ExpoHi = 65.0;
         public const double ExpoTooHigh = 80.0;
-        public const double ExpoTarget = 57.0;      // mijlocul tintei, pt sugestia in stopuri
+        public const double ExpoTarget = 57.0;      // middle of the target, for the suggestion in stops
 
-        // --- expunere pe cer (blue hour) ---
+        // --- exposure on the sky (blue hour) ---
         public const double ExpoSkyLo = 15.0, ExpoSkyHi = 50.0;
         public const double ExpoSkyTooHigh = 60.0;
         public const double ExpoSkyTarget = 30.0;

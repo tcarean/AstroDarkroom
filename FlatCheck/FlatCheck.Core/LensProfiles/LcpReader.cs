@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Cititorul profilelor Adobe (.lcp): XMP / RDF, un fisier per obiectiv si montura, cu o
-// lista de sub-profile (focala x diafragma x distanta). Formatul are doua infatisari, si
-// amandoua apar in fisierele instalate: proprietatile ca ATRIBUTE pe un rdf:Description
-// (fisierele actuale) sau ca ELEMENTE copil sub un rdf:li cu parseType="Resource" (Anexa A
-// din documentul Adobe). Se citesc amandoua. Modelul de vignetare poate fi un element cu
-// atribute sau, cand are si tabelul "piecewise", un rdf:Description imbricat.
+// The reader of the Adobe profiles (.lcp): XMP / RDF, one file per lens and mount, with a list
+// of sub-profiles (focal length x aperture x distance). The format has two looks, and both occur
+// in the installed files: the properties as ATTRIBUTES on an rdf:Description (the current files)
+// or as child ELEMENTS under an rdf:li with parseType="Resource" (Appendix A of Adobe's
+// document). Both are read. The vignetting model can be an element with attributes or, when it
+// also has the "piecewise" table, a nested rdf:Description.
 //
-// Ce NU se citeste: distorsiunea, aberatia cromatica, profilele fisheye fara VignetteModel.
-// Un fisier stricat nu opreste nimic - se sare si se numara, ca lista sa se faca din ce
-// merge; e fisierul altcuiva.
+// What is NOT read: the distortion, the chromatic aberration, the fisheye profiles without a
+// VignetteModel. A broken file stops nothing - it is skipped and counted, so that the list is
+// made from what works; it is someone else's file.
 //
-// Diafragma e in APEX (ApertureValue): f = 2^(Av/2); 2.970854 -> 2.80. Focala si SFF sunt
-// cele din profil, nu din EXIF-ul utilizatorului.
+// The aperture is in APEX (ApertureValue): f = 2^(Av/2); 2.970854 -> 2.80. The focal length and
+// the SFF are the profile's, not those of the user's EXIF.
 
 using System;
 using System.Collections.Generic;
@@ -38,23 +38,36 @@ using System.Xml.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>Reads the vignetting sub-profiles of an Adobe .lcp file.</summary>
     internal static class LcpReader
     {
         static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
         static readonly XNamespace St = "http://ns.adobe.com/photoshop/1.0/camera-profile";
         static readonly XNamespace Ps = "http://ns.adobe.com/photoshop/1.0/";
 
+        /// <summary>The sub-profiles of an .lcp file on disk; throws on unreadable XML.</summary>
+        /// <param name="path">The .lcp file.</param>
+        /// <returns>One profile per sub-profile that has a vignetting model.</returns>
         internal static IReadOnlyList<LensProfile> Read(string path)
             => ReadXml(File.ReadAllText(path), path);
 
+        /// <summary>
+        /// The sub-profiles of an .lcp document, in either of its two looks. A sub-profile without
+        /// a VignetteModel, without a focal length above 0 or without an aperture is skipped.
+        /// Throws on XML that does not parse.
+        /// </summary>
+        /// <param name="xml">The document's text.</param>
+        /// <param name="file">The path recorded as each profile's source.</param>
+        /// <returns>One profile per usable sub-profile, in document order.</returns>
         internal static IReadOnlyList<LensProfile> ReadXml(string xml, string file)
         {
             var doc = XDocument.Parse(xml);
             var result = new List<LensProfile>();
             foreach (XElement li in doc.Descendants(Ps + "CameraProfiles").Descendants(Rdf + "li"))
             {
-                // Proprietatile stau fie ca atribute pe rdf:Description-ul copil, fie ca elemente
-                // direct sub rdf:li. Se cauta in amandoua locurile; primul care are ceva castiga.
+                // The properties sit either as attributes on the child rdf:Description, or as
+                // elements directly under rdf:li. Both places are searched; the first that has
+                // something wins.
                 XElement desc = li.Element(Rdf + "Description");
                 if (desc == null && li.Element(St + "Make") == null && li.Element(St + "LensPrettyName") == null) continue;
                 XElement holder = desc ?? li;
@@ -110,13 +123,22 @@ namespace FlatCheck
             return result;
         }
 
-        /// <summary>Primul cuvant al numelui de obiectiv - "Tokina", "Nikon" - ca sa se grupeze lista.</summary>
+        /// <summary>
+        /// The first word of the lens's name - "Tokina", "Nikon" - so that the list can be
+        /// grouped.
+        /// </summary>
+        /// <param name="lensName">The lens's pretty name.</param>
+        /// <param name="make">The camera make, used when the name is blank.</param>
+        /// <returns>The lens's maker.</returns>
         static string LensMaker(string lensName, string make)
         {
             string[] parts = lensName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             return parts.Length > 0 ? parts[0] : make;
         }
 
+        /// <summary>A number in the invariant culture, or null.</summary>
+        /// <param name="s">The text; null allowed.</param>
+        /// <returns>The number, or null when the text is null or not a number.</returns>
         static double? Num(string s)
             => s != null && double.TryParse(s.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double v) ? v : null;
     }

@@ -15,49 +15,49 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Modelul de vignetare al unui profil de obiectiv, ca valoare: factorul V(x, y) cu care
-// obiectivul intuneca un punct al senzorului fata de axa. Doua conventii de coordonate,
-// amandoua verificate din surse inainte de a fi scrise aici (2026-09-17):
+// The vignetting model of a lens profile, as a value: the factor V(x, y) by which the lens darkens
+// a point of the sensor against the axis. Two coordinate conventions, both checked from the
+// sources before being written here (2026-09-17):
 //
-//  - Adobe (LCP): V = 1 + a1 r^2 + a2 r^4 + a3 r^6, cu r^2 = xd^2 + yd^2 si
-//    xd = (u - u0) / fx, yd = (v - v0) / fy - pixelul minus punctul principal, impartit la
-//    focala in pixeli ("Adobe Camera Model", sectiunea Vignette Model, si descriptorii de
-//    la pagina 18: FocalLengthX = fx / Dmax, ImageXCenter = u0 / Dmax, Dmax = latura lunga
-//    a imaginii in pixeli; cand FocalLengthX lipseste, focala e cea nominala in mm, si cum
-//    latura lunga a senzorului e 36 / SensorFormatFactor mm, fx / Dmax = f * SFF / 36).
-//    Pe scurt: r = distanta in mm / focala in mm. Verificat pe profilul Tokinei 11-20:
-//    tabelele "piecewise" din acelasi fisier au ultimul punct la r = 0.7094, adica exact
-//    coltul DX (14.1 mm / 20 mm = 0.705), si acolo tabelul da 0.603 iar polinomul 0.597.
-//    "Note that these model parameters are identical for all color channels" - modelul e
-//    acromatic, si raportul o spune.
+//  - Adobe (LCP): V = 1 + a1 r^2 + a2 r^4 + a3 r^6, with r^2 = xd^2 + yd^2 and
+//    xd = (u - u0) / fx, yd = (v - v0) / fy - the pixel minus the principal point, divided by
+//    the focal length in pixels ("Adobe Camera Model", section Vignette Model, and the
+//    descriptors on page 18: FocalLengthX = fx / Dmax, ImageXCenter = u0 / Dmax, Dmax = the
+//    image's long side in pixels; when FocalLengthX is missing, the focal length is the nominal
+//    one in mm, and since the sensor's long side is 36 / SensorFormatFactor mm,
+//    fx / Dmax = f * SFF / 36). In short: r = distance in mm / focal length in mm. Checked on
+//    the profile of the Tokina 11-20: the "piecewise" tables in the same file have their last
+//    point at r = 0.7094, that is exactly the DX corner (14.1 mm / 20 mm = 0.705), and there the
+//    table gives 0.603 and the polynomial 0.597. "Note that these model parameters are identical
+//    for all color channels" - the model is achromatic, and the report says so.
 //
-//    Distanta in mm vine din crop-ul APARATULUI TAU (latura lunga = 36 / crop), nu din
-//    SFF-ul profilului: SFF-ul e senzorul pe care Adobe a calibrat profilul, si prima
-//    versiune il lua drept senzorul tuturor. Pe D3300 cu profilul DX coincideau la 1.5 %;
-//    pe un full frame cu un profil calibrat pe DX, sau invers, coltul ar fi cazut la raza
-//    gresita fara niciun avertisment. Focala in pixeli a profilului (FocalLengthX) e in
-//    unitati de Dmax ale aparatului de calibrare, deci se trece prin mm (FocalX * 36 / SFF),
-//    iar descentrarea (ImageXCenter) e a obiectivului, tot in mm. Fara crop se ia SFF-ul,
-//    ca inainte, si raportul o spune. Capatul tabelului "piecewise", r = 0.7094, cade la
-//    14.19 mm: exact semidiagonala unui senzor de 36 / 1.523 = 23.64 mm, nu a celui de
-//    24 mm pe care il implica SFF 1.5 (14.42 mm, r = 0.721) - crop-ul real e ce a folosit
-//    si Adobe.
+//    The distance in mm comes from YOUR CAMERA's crop (long side = 36 / crop), not from the
+//    profile's SFF: the SFF is the sensor Adobe calibrated the profile on, and the first version
+//    took it for everyone's sensor. On a D3300 with the DX profile they coincided within 1.5 %;
+//    on a full frame with a profile calibrated on DX, or the other way round, the corner would
+//    have fallen at the wrong radius without any warning. The profile's focal length in pixels
+//    (FocalLengthX) is in units of the calibration camera's Dmax, so it goes through mm
+//    (FocalX * 36 / SFF), and the decentring (ImageXCenter) is the lens's, in mm too. Without a
+//    crop the SFF is taken, as before, and the report says so. The end of the "piecewise" table,
+//    r = 0.7094, falls at 14.19 mm: exactly the half-diagonal of a sensor of 36 / 1.523 =
+//    23.64 mm, not of the 24 mm one SFF 1.5 implies (14.42 mm, r = 0.721) - the real crop is what
+//    Adobe used too.
 //
-//  - lensfun ("pa", Pablo D'Angelo / Hugin): acelasi polinom, dar r e normalizat la
-//    semidiagonala unui cadru 36 x 24 impartit la crop-ul aparatului de CALIBRARE
-//    (mod-color.cpp: hugin_scale_in_millimeters = hypot(36, 24) / CropFactor / 2), deci
-//    r = distanta in mm / (21.63 mm / crop_calibrare). Pe un aparat cu alt crop coltul
-//    poate cadea dincolo de r = 1 (D3300 1.523 fata de 1.61 la Tokina: 1.05, o
-//    extrapolare mica pe care raportul o mentioneaza). Distanta in mm se ia din crop-ul
-//    aparatului tau: latura lunga = 36 / crop.
+//  - lensfun ("pa", Pablo D'Angelo / Hugin): the same polynomial, but r is normalised to the
+//    half-diagonal of a 36 x 24 frame divided by the crop of the CALIBRATION camera
+//    (mod-color.cpp: hugin_scale_in_millimeters = hypot(36, 24) / CropFactor / 2), so
+//    r = distance in mm / (21.63 mm / calibration_crop). On a camera with another crop the
+//    corner can fall beyond r = 1 (D3300 1.523 against 1.61 for the Tokina: 1.05, a small
+//    extrapolation the report mentions). The distance in mm is taken from your camera's crop:
+//    long side = 36 / crop.
 //
-// In ambele cazuri polinomul E factorul de vignetare: inmultit aplica vignetarea, impartit
-// o corecteaza (lensfun: Cd = Cs * (...) la "vignetting", / la "devignetting"). Flatul
-// sintetic e chiar V, cu 1.0 pe axa.
+// In both cases the polynomial IS the vignetting factor: multiplied it applies the vignetting,
+// divided it corrects it (lensfun: Cd = Cs * (...) for "vignetting", / for "devignetting"). The
+// synthetic flat is V itself, with 1.0 on the axis.
 //
-// Coordonata de intrare e comuna: (xN, yN) = pozitia pixelului fata de CENTRUL imaginii, in
-// unitati de Dmax. E ce stie generatorul fara sa cunoasca senzorul; conversia in mm o face
-// modelul, fiecare dupa conventia lui.
+// The input coordinate is shared: (xN, yN) = the pixel's position relative to the CENTRE of the
+// image, in units of Dmax. It is what the generator knows without knowing the sensor; the
+// conversion to mm is the model's, each by its convention.
 
 using System;
 using System.Collections.Generic;
@@ -65,30 +65,58 @@ using System.Globalization;
 
 namespace FlatCheck
 {
+    /// <summary>Which coordinate convention a vignetting model follows.</summary>
     internal enum VignettingModelKind { Adobe, Lensfun }
 
+    /// <summary>
+    /// A lens profile's vignetting factor V(x, y): a polynomial in r^2 or an Adobe table, with
+    /// the coordinate convention of its source.
+    /// </summary>
     internal sealed class VignettingModel
     {
         internal readonly VignettingModelKind Kind;
 
-        /// <summary>a1..a3 (Adobe) sau k1..k3 (lensfun); null cand profilul are doar tabel.</summary>
+        /// <summary>
+        /// a1..a3 (Adobe) or k1..k3 (lensfun); null when the profile has only a table.
+        /// </summary>
         internal readonly double[] Coefficients;
 
-        /// <summary>Tabelul (r, V) al unui profil Adobe "piecewise", pe aceeasi axa r; null altfel.</summary>
+        /// <summary>
+        /// The (r, V) table of an Adobe "piecewise" profile, on the same r axis; null otherwise.
+        /// </summary>
         internal readonly IReadOnlyList<(double R, double V)> Table;
 
-        /// <summary>Focala nominala in mm (cea din profil).</summary>
+        /// <summary>The nominal focal length in mm (the profile's).</summary>
         internal readonly double FocalMm;
 
-        /// <summary>Adobe: SensorFormatFactor al profilului. lensfun: crop-ul aparatului de calibrare.</summary>
+        /// <summary>
+        /// Adobe: the profile's SensorFormatFactor. lensfun: the calibration camera's crop.
+        /// </summary>
         internal readonly double CropFactor;
 
-        /// <summary>Adobe: fx / Dmax, fy / Dmax daca profilul le da; altfel f * SFF / 36.</summary>
+        /// <summary>
+        /// Adobe: fx / Dmax, fy / Dmax if the profile gives them; otherwise f * SFF / 36.
+        /// </summary>
         internal readonly double? FocalX, FocalY;
 
-        /// <summary>Adobe: u0 / Dmax, v0 / Dmax; 0.5 cand lipsesc.</summary>
+        /// <summary>Adobe: u0 / Dmax, v0 / Dmax; 0.5 when missing.</summary>
         internal readonly double CenterX, CenterY;
 
+        /// <summary>
+        /// A model. Throws an ArgumentException without coefficients or a table of at least two
+        /// points, or with a focal length or crop of 0 or less.
+        /// </summary>
+        /// <param name="kind">The source's convention.</param>
+        /// <param name="coefficients">The three polynomial coefficients; null for a table-only
+        /// profile.</param>
+        /// <param name="table">The (r, V) table, r ascending; null when there is none.</param>
+        /// <param name="focalMm">The profile's nominal focal length, in mm, above 0.</param>
+        /// <param name="cropFactor">The profile's SFF (Adobe) or calibration crop (lensfun), above
+        /// 0.</param>
+        /// <param name="focalX">Adobe's fx / Dmax; null when the profile gives none.</param>
+        /// <param name="focalY">Adobe's fy / Dmax; null to use the x one.</param>
+        /// <param name="centerX">Adobe's u0 / Dmax.</param>
+        /// <param name="centerY">Adobe's v0 / Dmax.</param>
         internal VignettingModel(VignettingModelKind kind, double[] coefficients, IReadOnlyList<(double R, double V)> table,
                                  double focalMm, double cropFactor,
                                  double? focalX = null, double? focalY = null, double centerX = 0.5, double centerY = 0.5)
@@ -109,25 +137,37 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Factorul de vignetare in punctul (xN, yN): pozitia fata de centrul imaginii, in
-        /// unitati de Dmax (latura lunga in pixeli). <paramref name="cameraCrop"/> e crop-ul
-        /// aparatului pe care se aplica: lensfun il cere, Adobe il foloseste cand e dat si
-        /// ia SFF-ul profilului cand nu e (0).
+        /// The vignetting factor at the point (xN, yN): the position relative to the image's
+        /// centre, in units of Dmax (the long side in pixels). <paramref name="cameraCrop"/> is the
+        /// crop of the camera it is applied on: lensfun requires it, Adobe uses it when given and
+        /// takes the profile's SFF when it is not (0).
         /// </summary>
+        /// <param name="xN">The horizontal position, in units of Dmax, 0 at the centre.</param>
+        /// <param name="yN">The vertical position, in units of Dmax, 0 at the centre.</param>
+        /// <param name="cameraCrop">Your camera's crop factor; 0 for none (Adobe only).</param>
+        /// <returns>V, 1.0 on the axis, below 1 where the lens darkens.</returns>
         internal double Factor(double xN, double yN, double cameraCrop)
         {
             double r = Radius(xN, yN, cameraCrop);
             return Coefficients != null ? Polynomial(r * r) : Interpolate(r);
         }
 
-        /// <summary>r in unitatile modelului, pentru raport (unde cade coltul, de exemplu).</summary>
+        /// <summary>
+        /// r in the model's units, for the report (where the corner falls, for example). The
+        /// lensfun model without a crop throws an ArgumentException.
+        /// </summary>
+        /// <param name="xN">The horizontal position, in units of Dmax, 0 at the centre.</param>
+        /// <param name="yN">The vertical position, in units of Dmax, 0 at the centre.</param>
+        /// <param name="cameraCrop">Your camera's crop factor; 0 for none (Adobe only).</param>
+        /// <returns>The radius in the model's units.</returns>
         internal double Radius(double xN, double yN, double cameraCrop)
         {
             if (Kind == VignettingModelKind.Adobe)
             {
-                // Totul in mm: cadrul tau e lat de 36 / crop (36 / SFF fara crop), focala in
-                // pixeli a profilului e in Dmax-ul aparatului de calibrare (36 / SFF mm), si
-                // descentrarea la fel. La crop == SFF se reduce la (xN + 0.5 - CenterX) / fx.
+                // Everything in mm: your frame is 36 / crop wide (36 / SFF without a crop), the
+                // profile's focal length in pixels is in the calibration camera's Dmax
+                // (36 / SFF mm), and the decentring the same. At crop == SFF it reduces to
+                // (xN + 0.5 - CenterX) / fx.
                 double calibMm = 36.0 / CropFactor;
                 double longSideMm = 36.0 / (cameraCrop > 0 ? cameraCrop : CropFactor);
                 double fxMm = FocalX.HasValue ? FocalX.Value * calibMm : FocalMm;
@@ -147,11 +187,13 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Raza, in unitatile modelului, a coltului senzorului pe care a fost calibrat profilul:
-        /// 1 la lensfun prin definitie, semidiagonala lui 36 x 24 / SFF peste focala la Adobe.
-        /// Dincolo de ea polinomul extrapoleaza, si un polinom de gradul sase extrapolat cu
-        /// 50 % (un full frame pe un profil DX) da valori fara sens, chiar negative.
+        /// The radius, in the model's units, of the corner of the sensor the profile was
+        /// calibrated on: 1 for lensfun by definition, the half-diagonal of 36 x 24 / SFF over the
+        /// focal length for Adobe. Beyond it the polynomial extrapolates, and a sixth-degree
+        /// polynomial extrapolated by 50 % (a full frame on a DX profile) gives meaningless
+        /// values, even negative ones.
         /// </summary>
+        /// <returns>The calibration corner's radius.</returns>
         internal double CalibrationCornerRadius()
         {
             if (Kind != VignettingModelKind.Adobe) return 1.0;
@@ -160,13 +202,23 @@ namespace FlatCheck
             return Math.Sqrt(36.0 * 36.0 + 24.0 * 24.0) / 2.0 / CropFactor / fxMm;
         }
 
-        /// <summary>Coltul unui cadru w x h fata de coltul senzorului de calibrare; peste 1 = extrapolare.</summary>
+        /// <summary>
+        /// The corner of a w x h frame against the corner of the calibration sensor; above 1 =
+        /// extrapolation.
+        /// </summary>
+        /// <param name="w">The frame's width in pixels.</param>
+        /// <param name="h">The frame's height in pixels.</param>
+        /// <param name="cameraCrop">Your camera's crop factor; 0 for none (Adobe only).</param>
+        /// <returns>The ratio of the two radii.</returns>
         internal double Extrapolation(int w, int h, double cameraCrop)
         {
             double dmax = Math.Max(w, h);
             return Radius(w / 2.0 / dmax, h / 2.0 / dmax, cameraCrop) / CalibrationCornerRadius();
         }
 
+        /// <summary>1 + c1 r^2 + c2 r^4 + c3 r^6.</summary>
+        /// <param name="r2">r^2, in the model's units.</param>
+        /// <returns>V.</returns>
         double Polynomial(double r2)
         {
             double v = 1, p = 1;
@@ -174,6 +226,9 @@ namespace FlatCheck
             return v;
         }
 
+        /// <summary>The table read linearly, held at its end values outside it.</summary>
+        /// <param name="r">The radius, in the model's units.</param>
+        /// <returns>V.</returns>
         double Interpolate(double r)
         {
             if (r <= Table[0].R) return Table[0].V;
@@ -186,6 +241,10 @@ namespace FlatCheck
             return Table[Table.Count - 1].V;
         }
 
+        /// <summary>
+        /// The model in one line, for the report: its formula, coefficients and axis.
+        /// </summary>
+        /// <returns>The Romanian description.</returns>
         internal string Describe()
         {
             string coeffs = Coefficients != null
