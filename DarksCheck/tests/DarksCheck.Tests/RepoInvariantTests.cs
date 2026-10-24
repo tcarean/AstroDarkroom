@@ -39,6 +39,20 @@ public partial class RepoInvariantTests
         Assert.Matches(@"^\d+\.\d+\.\d+$", versions[0].Groups[1].Value);
     }
 
+    /// <summary>
+    /// The projects that ship target .NET 8, so the Astro Darkroom suite carries one runtime
+    /// (ADR 0018): the shared framework in Directory.Build.props and the window's own.
+    /// </summary>
+    [Fact]
+    public void TargetFramework_IsNet8_InEveryProjectThatShips()
+    {
+        string root = TestData.FindRepoRoot();
+        Assert.Contains("<TargetFramework>net8.0</TargetFramework>",
+            File.ReadAllText(Path.Combine(root, "Directory.Build.props")), StringComparison.Ordinal);
+        Assert.Contains("<TargetFramework>net8.0-windows</TargetFramework>",
+            File.ReadAllText(Path.Combine(root, "src", "DarksCheck.Wpf", "DarksCheck.Wpf.csproj")), StringComparison.Ordinal);
+    }
+
     /// <summary>Every fixture on disk is in the manifest; today there is none, every frame is generated in the tests.</summary>
     [Fact]
     public void Manifest_ListsEveryFixtureInRepo()
@@ -107,7 +121,7 @@ public partial class RepoInvariantTests
     /// <summary>
     /// Every test method whose name starts with R### followed by an underscore: by reflection in
     /// this assembly, and by reading the sources of the other test projects under tests/ (the
-    /// window's tests target net9.0-windows and cannot be referenced from here; ADR 0008).
+    /// window's tests target net8.0-windows and cannot be referenced from here; ADR 0008).
     /// </summary>
     private static HashSet<string> TestMethodIds()
     {

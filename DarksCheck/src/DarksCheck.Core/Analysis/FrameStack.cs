@@ -105,7 +105,7 @@ internal sealed class FrameStack
         StackFrame[] frames = new StackFrame[n];
         (int W, int H, double Black, double White, CfaPattern? Cfa, string Source, double Norm)? geometry = null;
         FrameInfo? firstInfo = null;
-        Lock gate = new();
+        object gate = new();
         int done = 0;
         ParallelOptions po = new() { MaxDegreeOfParallelism = Math.Max(1, threads), CancellationToken = cancel };
 

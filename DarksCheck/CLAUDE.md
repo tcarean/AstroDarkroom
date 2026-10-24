@@ -48,7 +48,7 @@ modifies, moves or writes anything into the frames' folders.
   copied from LightsCheck, one view-model fed by the report's rows, the views (ADR 0009).
   `Icon/` - the one icon of both executables and the script that draws it.
 - `tests/DarksCheck.Wpf.Tests/` - the window's tests (view-model, rendering of every tab,
-  culture, icon), a project of their own since they need `net9.0-windows`.
+  culture, icon), a project of their own since they need `net8.0-windows`.
 - `tests/DarksCheck.Tests/` - unit, acceptance (`AcceptanceTests`), golden texts
   (`GoldenOutputTests`, `Golden/`), figures (`ValidationTests`), repo rules
   (`RepoInvariantTests`, `LicenseHeaderTests`, `ThirdPartyTests`, `VersionTests`). Every frame

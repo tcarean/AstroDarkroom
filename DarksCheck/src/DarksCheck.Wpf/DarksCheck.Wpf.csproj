@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The window. The same core as darkscheck.exe, through DarksCheck.Core: it computes no
        figure and writes no sentence of its own; it calls Runs/ and shows the report's rows
-       (ADR 0009). net9.0-windows + UseWPF makes this project Windows-only, so the solution
+       (ADR 0009). net8.0-windows + UseWPF makes this project Windows-only, so the solution
        builds on Windows only; the console alone builds anywhere.
        No <InvariantGlobalization> here: WPF needs culture data to bind anything and would
        throw while loading XAML (FlatCheck's ADR 0037); App.ForceInvariantNumbers pins the
@@ -9,7 +9,7 @@
        GC knob as the console's (ADR 0007). -->
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>DarksCheck.Wpf</RootNamespace>
     <AssemblyName>DarksCheck.Wpf</AssemblyName>

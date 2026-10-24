@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
+  (ADR 0018).
+
 - Check 3 judges the plateau of the series instead of the first frame against the last
   (R-023, ADR 0017). The hot-pixel amplitude of every frame is fitted on the minutes as an
   approach to a plateau; the rows `platou` and `de aruncat` give the plateau, the time

@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!-- The window's tests. A project of its own, not a folder in DarksCheck.Tests: it must
-       target net9.0-windows to load WPF, and DarksCheck.Tests, which checks the core and the
+       target net8.0-windows to load WPF, and DarksCheck.Tests, which checks the core and the
        goldens, stays portable (ADR 0009). What is tested: the view-model (the rules), the
        window loading and rendering with real results and no binding error, the culture, the
        icon. What is not: how it looks.
        No <InvariantGlobalization>: WPF cannot bind without culture data (FlatCheck's ADR 0037);
        the tests call App.ForceInvariantNumbers where the report's text matters. -->
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>

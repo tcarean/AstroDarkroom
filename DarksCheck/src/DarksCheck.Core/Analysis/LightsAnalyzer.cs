@@ -79,7 +79,7 @@ internal static class LightsAnalyzer
 
         int[] counts = new int[w * h];
         LightFigures[] frames = new LightFigures[n];
-        Lock gate = new();
+        object gate = new();
         int done = 0, used = 0;
         ParallelOptions po = new() { MaxDegreeOfParallelism = Math.Max(1, threads), CancellationToken = cancel };
         Parallel.For(0, n, po, i =>
