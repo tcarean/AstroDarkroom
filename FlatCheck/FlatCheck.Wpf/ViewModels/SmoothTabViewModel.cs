@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SmoothTabViewModel.cs - tabul "Netezire": un al doilea master, fara textura.
+// SmoothTabViewModel.cs - the "Netezire" tab: a second master, without the texture.
 //
-// RULEAZA PE BUTON, NU LA DESCHIDERE. Celelalte taburi calculeaza cand se deschide
-// folderul; asta scrie un fisier de 96 MB langa master, si un fisier nu se produce
-// fiindca cineva s-a uitat la un folder. Attach pregateste doar caile si ghidul.
+// IT RUNS ON A BUTTON, NOT ON OPENING. The other tabs compute when the folder is opened; this one
+// writes a 96 MB file beside the master, and a file is not produced because someone looked at a
+// folder. Attach only prepares the paths and the guide.
 //
-// SECVENTIAL: butonul poate fi apasat in timp ce structura inca ruleaza pe acelasi
-// master de 24 MP; RunAsync asteapta intai lantul de la deschidere (MainViewModel), din
-// motivul de memorie de acolo.
+// SEQUENTIAL: the button can be pressed while the structure run is still going on the same 24 MP
+// master; RunAsync first awaits the opening chain (MainViewModel), for the memory reason given
+// there.
 //
-// FISIERUL SE SCRIE DUPA CE REZULTATUL E PE ECRAN, si suprascrierea se intreaba printr-un
-// delegat dat din afara - MessageBox in aplicatie, un raspuns fix in teste. Un "nu" lasa
-// rezultatul pe ecran si fisierul vechi pe disc, si spune asta.
+// THE FILE IS WRITTEN AFTER THE RESULT IS ON SCREEN, and the overwrite is asked through a delegate
+// given from outside - a MessageBox in the application, a fixed answer in the tests. A "no" leaves
+// the result on screen and the old file on disk, and says so.
 //
-// Ca tabul de structura, tine RASTERELE celor doua harti, nu octetii: harta se
-// reencodeaza la schimbarea plafonului si se tine in cache pe (harta, plafon). Plafonul
-// implicit e +-2 %, nu +-10 %: ce se scoate e mic, si la 10 % harta ar fi alba.
+// Like the structure tab, it keeps the RASTERS of the two maps, not the bytes: the map is
+// re-encoded on a change of cap and cached per (map, cap). The default cap is +-2 %, not +-10 %:
+// what is removed is small, and at 10 % the map would be white.
 
 using System;
 using System.Collections.Generic;
@@ -42,6 +42,10 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The Netezire tab: on a button, the session master smoothed at the chosen scale,
+    /// the numbers before and after, the removed component and the result's residual as maps,
+    /// then the smoothed master written beside the master; a second button proposes the
+    /// scale.</summary>
     public sealed class SmoothTabViewModel : TabViewModel
     {
         SirilSession _session;
@@ -71,7 +75,9 @@ namespace FlatCheck.Wpf
         Img _afterResidual;
         readonly Dictionary<(bool After, MapScaleOption Scale), byte[]> _mapCache = new();
 
-        /// <param name="confirm">Intrebarea de suprascriere: primeste textul, intoarce da/nu.</param>
+        /// <summary>An empty tab with its two commands, listening to its map scale.</summary>
+        /// <param name="confirm">The overwrite question: it receives the text, returns yes/no;
+        /// null always answers yes.</param>
         public SmoothTabViewModel(Func<string, bool> confirm = null)
         {
             _confirm = confirm ?? (_ => true);
@@ -85,15 +91,17 @@ namespace FlatCheck.Wpf
         string _adviceVerdict = "";
         string _adviceNote = "";
 
-        /// <summary>Al doilea buton: propune scara, bifeaza chipul, omul apasa netezirea.</summary>
+        /// <summary>The second button: proposes the scale, ticks the chip, the user presses the
+        /// smoothing.</summary>
         internal RelayCommand Advise { get; }
         public System.Windows.Input.ICommand AdviseCommand => Advise;
         public string AdviseLabel => SessionMessages.SmoothAdviseLabel();
 
-        /// <summary>Cate un rand pe treapta incercata; gol pana la prima propunere si pe "nimic de netezit".</summary>
+        /// <summary>One row per rung tried; empty until the first proposal and on "nimic de
+        /// netezit".</summary>
         public IReadOnlyList<MetricRow> AdviceRows { get => _adviceRows; private set => Set(ref _adviceRows, value); }
 
-        /// <summary>Textura fina a intrarii, cu pragul.</summary>
+        /// <summary>The input's fine texture, with the threshold.</summary>
         public string AdviceTexture { get => _adviceTexture; private set => Set(ref _adviceTexture, value); }
 
         /// <summary>"SCARA PROPUSA: 300 px" / "NIMIC DE NETEZIT" / "NEDETERMINAT: ...".</summary>
@@ -107,17 +115,19 @@ namespace FlatCheck.Wpf
 
         public string AdviceNote { get => _adviceNote; private set => Set(ref _adviceNote, value); }
 
-        /// <summary>Ce nu stie regula. Instanta, ca {Binding} sa o vada.</summary>
+        /// <summary>What the rule does not know. An instance property, so {Binding} sees
+        /// it.</summary>
         public string AdviceCaveat => SmoothReport.AdviceCaveat().Replace('\n', ' ');
 
-        /// <summary>Scara propusa la ultima propunere; NaN cand n-a fost una.</summary>
+        /// <summary>The scale proposed at the last proposal; NaN when there was none.</summary>
         internal double ProposedScalePx { get; private set; } = double.NaN;
 
         /// <summary>
-        /// Propunerea: sfatuitorul pe masterul sesiunii, dupa lantul de la deschidere ca si
-        /// netezirea, apoi chipul propus bifat. Nu scrie niciun fisier; rezultatul de pe
-        /// ecran, daca exista unul, ramane.
+        /// The proposal: the advisor on the session's master, after the opening chain like the
+        /// smoothing, then the proposed chip ticked. It writes no file; the result on screen, if
+        /// there is one, stays.
         /// </summary>
+        /// <returns>A task that completes when the proposal ended; it never faults.</returns>
         internal async Task AdviseAsync()
         {
             if (_session == null || !CanRun) return;
@@ -153,7 +163,9 @@ namespace FlatCheck.Wpf
             Advise.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Internal, ca testele de randare sa poata aduce o propunere fara fisier.</summary>
+        /// <summary>Internal, so the rendering tests can bring a proposal without a
+        /// file.</summary>
+        /// <param name="a">The advisor's proposal; a proposed scale ticks its chip.</param>
         internal void PopulateAdvice(SmoothScaleAdvice a)
         {
             AdviceTexture = SmoothReport.InputTextureLine(a);
@@ -170,42 +182,44 @@ namespace FlatCheck.Wpf
             if (a.Kind == SmoothAdviceKind.Proposed) Scale.SelectScale(a.ScalePx);
         }
 
-        /// <summary>Masterul din care se face flat-ul netezit.</summary>
+        /// <summary>The master the smoothed flat is made from.</summary>
         public string Source { get => _source; private set => Set(ref _source, value); }
 
-        /// <summary>Unde se scrie flat-ul netezit.</summary>
+        /// <summary>Where the smoothed flat is written.</summary>
         public string Target { get => _target; private set => Set(ref _target, value); }
 
-        /// <summary>Exista un master de netezit si nu ruleaza deja ceva.</summary>
+        /// <summary>There is a master to smooth and nothing is running already.</summary>
         public bool CanRun
         {
             get => _canRun;
             private set { if (Set(ref _canRun, value)) { Run.RaiseCanExecuteChanged(); Advise?.RaiseCanExecuteChanged(); } }
         }
 
-        /// <summary>Butonul. Porneste rularea; rezultatul nu e asteptat de nimeni in afara testelor.</summary>
+        /// <summary>The button. It starts the run; nobody awaits the result outside the
+        /// tests.</summary>
         internal RelayCommand Run { get; }
 
-        /// <summary>XAML leaga aici: RelayCommand e internal.</summary>
+        /// <summary>The XAML binds here: RelayCommand is internal.</summary>
         public System.Windows.Input.ICommand RunCommand => Run;
 
-        /// <summary>Eticheta butonului, din SessionMessages.</summary>
+        /// <summary>The button's label, from SessionMessages.</summary>
         public string ButtonLabel => SessionMessages.SmoothButtonLabel();
 
-        /// <summary>Scara de netezire: trei chipuri. Se citeste la click.</summary>
+        /// <summary>The smoothing scale: three chips. Read on the click.</summary>
         public SmoothScaleViewModel Scale { get; } = new();
 
-        /// <summary>Ghidul: ce face, ce nu poate sti. Deschis implicit.</summary>
+        /// <summary>The guide: what it does, what it cannot know. Open by default.</summary>
         public SmoothGuideViewModel Guide { get; } = new();
 
         public string Frame { get => _frame; private set => Set(ref _frame, value); }
         public string ScaleLine { get => _scaleLine; private set => Set(ref _scaleLine, value); }
         public string Rejected { get => _rejected; private set => Set(ref _rejected, value); }
 
-        /// <summary>Cele patru cifre despre componenta scoasa, ca randuri fara verdict.</summary>
+        /// <summary>The four figures about the removed component, as rows without a
+        /// verdict.</summary>
         public IReadOnlyList<MetricRow> Removed { get => _removed; private set => Set(ref _removed, value); }
 
-        /// <summary>Atentionarea cand s-a scos mai mult decat textura, sau gol.</summary>
+        /// <summary>The warning when more than the texture was removed, or empty.</summary>
         public string Warning
         {
             get => _warning;
@@ -214,32 +228,36 @@ namespace FlatCheck.Wpf
 
         public bool HasWarning => !string.IsNullOrEmpty(_warning);
 
-        /// <summary>Bateria de structura pe intrare si pe iesire - aceleasi randuri ca tabul 1.</summary>
+        /// <summary>The structure battery on the input and on the output - the same rows as
+        /// tab 1.</summary>
         public IReadOnlyList<MetricRow> Before { get => _before; private set => Set(ref _before, value); }
         public IReadOnlyList<MetricRow> After { get => _after; private set => Set(ref _after, value); }
         public string BeforeVerdict { get => _beforeVerdict; private set => Set(ref _beforeVerdict, value); }
         public string AfterVerdict { get => _afterVerdict; private set => Set(ref _afterVerdict, value); }
 
-        /// <summary>Ce nu stie fisierul, si cum ajunge in Siril. Instanta, ca {Binding} sa le vada.</summary>
+        /// <summary>What the file does not know, and how it gets into Siril. Instance properties,
+        /// so {Binding} sees them.</summary>
         public string Caveat => SmoothReport.Caveat().Replace('\n', ' ');
         public string SirilNote => SmoothReport.SirilNote().Replace('\n', ' ');
 
-        /// <summary>Unde s-a scris flat-ul, sau gol.</summary>
+        /// <summary>Where the flat was written, or empty.</summary>
         public string SavedTo { get => _savedTo; private set => Set(ref _savedTo, value); }
 
         /// <summary>
-        /// Ridicat o singura data, cu calea, dupa ce fisierul chiar s-a scris - nu la un
-        /// refuz de suprascriere si nu la o eroare de scriere, cand pe disc nu s-a
-        /// schimbat nimic de folosit. E un fapt pe care tabul il RAPORTEAZA, spre deosebire
-        /// de intrebarea de suprascriere, pe care o PUNE; de aici eveniment, nu delegat in
-        /// constructor. Cine asculta e MainViewModel, care reface lista tabului Histogram.
+        /// Raised once, with the path, after the file really was written - not on a refused
+        /// overwrite and not on a write error, when nothing usable changed on disk. It is a fact
+        /// the tab REPORTS, unlike the overwrite question, which it ASKS; hence an event, not a
+        /// delegate in the constructor. The listener is MainViewModel, which rebuilds the
+        /// Histogram tab's list.
         /// </summary>
         internal event Action<string> Saved;
 
-        /// <summary>De ce nu s-a scris (refuz de suprascriere, disc), sau gol. Cifrele raman.</summary>
+        /// <summary>Why it was not written (a refused overwrite, the disk), or empty. The figures
+        /// stay.</summary>
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
-        /// <summary>Harta afisata: componenta scoasa, sau reziduul flat-ului netezit.</summary>
+        /// <summary>The map shown: the removed component, or the smoothed flat's
+        /// residual.</summary>
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
 
         public bool ShowAfterMap
@@ -248,17 +266,25 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _showAfterMap, value)) RefreshMap(); }
         }
 
-        /// <summary>Plafonul hartii; implicit +-2 %, banda PERFECT - ce se scoate e mic.</summary>
+        /// <summary>The map's cap; by default +-2 %, the PERFECT band - what is removed is
+        /// small.</summary>
         public MapScaleViewModel MapScale { get; } = new(Th.ResidPerfect);
 
         public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
 
-        /// <summary>Ultima rulare pornita de buton, ca un test sa o poata astepta.</summary>
+        /// <summary>The last run started by a button, so a test can await it.</summary>
         internal Task Pending { get; private set; } = Task.CompletedTask;
 
-        /// <summary>Scara folosita la ultima rulare, in pixeli de senzor; NaN inainte de prima.</summary>
+        /// <summary>The scale used at the last run, in sensor pixels; NaN before the
+        /// first.</summary>
         internal double LastScalePx { get; private set; } = double.NaN;
 
+        /// <summary>Prepares the paths and enables the buttons when the session has a master;
+        /// it computes nothing.</summary>
+        /// <param name="session">The folder just opened.</param>
+        /// <param name="ct">The folder's token.</param>
+        /// <param name="waitIdle">Awaits the opening chain before a run; null runs at
+        /// once.</param>
         internal void Attach(SirilSession session, CancellationToken ct, Func<Task> waitIdle = null)
         {
             _session = session;
@@ -271,6 +297,10 @@ namespace FlatCheck.Wpf
             ClearError();
         }
 
+        /// <summary>Smooths the session's master at the chosen scale, guarded, after the opening
+        /// chain; shows the numbers, then writes the smoothed master beside it, asking before an
+        /// overwrite, and raises <see cref="Saved"/> once written.</summary>
+        /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal async Task RunAsync()
         {
             if (_session == null || !CanRun) return;
@@ -303,12 +333,13 @@ namespace FlatCheck.Wpf
 
                 LastScalePx = scale;
                 Populate(outcome.Result);
-                // octetii primiti sunt pe scara automata: in cache, ca sa nu se reencodeze
+                // the bytes received are on the automatic scale: into the cache, so they are not
+                // re-encoded
                 _mapCache[(false, MapScale.Options[0])] = outcome.Png;
                 _mapCache[(true, MapScale.Options[0])] = outcome.SecondaryPng;
 
-                // Fisierul, dupa ce cifrele sunt pe ecran: un refuz de suprascriere sau
-                // un disc plin nu au de ce sa ascunda un rezultat deja calculat.
+                // The file, after the figures are on screen: a refused overwrite or a full disk
+                // have no reason to hide a result already computed.
                 SavedTo = "";
                 SaveError = "";
                 if (File.Exists(target) && !_confirm(SessionMessages.SmoothOverwriteQuestion(target)))
@@ -334,11 +365,13 @@ namespace FlatCheck.Wpf
                 }
                 Report = text.ToString();
             }).ConfigureAwait(true);
-            // butonul se reactiveaza dupa ce ecranul de asteptare s-a stins
+            // the button is re-enabled after the waiting screen went off
             Run.RaiseCanExecuteChanged();
         }
 
-        /// <summary>Internal, ca testele de randare sa poata aduce un rezultat fara fisier.</summary>
+        /// <summary>Internal, so the rendering tests can bring a result without a
+        /// file.</summary>
+        /// <param name="r">The analyzer's result; its two rasters are kept for the maps.</param>
         internal void Populate(SmoothResult r)
         {
             Frame = SmoothReport.FrameLine(r);
@@ -365,6 +398,8 @@ namespace FlatCheck.Wpf
             HasResult = true;
         }
 
+        /// <summary>Shows the map chosen by the toggle on the chosen cap, from the cache or
+        /// encoded now, with its legend; empty before a result.</summary>
         void RefreshMap()
         {
             Img raster = _showAfterMap ? _afterResidual : _removedRaster;
@@ -381,6 +416,7 @@ namespace FlatCheck.Wpf
             MapLegend = RunReport.MapLegend(range);
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             base.Reset();

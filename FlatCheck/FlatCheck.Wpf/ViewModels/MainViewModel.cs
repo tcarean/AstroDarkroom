@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainViewModel.cs - folderul sesiunii si cele sase taburi.
+// MainViewModel.cs - the session folder and the six tabs.
 //
-// Doua decizii de comportament merita explicate:
+// Two decisions about behaviour deserve an explanation:
 //
-// SECVENTIAL, NU PARALEL. Structura si testul end-to-end pornesc amandoua la deschiderea
-// unui folder, dar unul dupa altul. Un cadru de 24 MP ajunge la sute de MB in analiza
-// (vezi docs/design/known-issues.md, punctul 7), iar seria mai tine si un cadru incarcat pe langa;
-// doua lanturi simultane ar putea trece de un gigaoctet pe o masina obisnuita. Timpul
-// castigat n-ar merita riscul.
+// SEQUENTIAL, NOT PARALLEL. Structure and the end-to-end test both start when a folder is
+// opened, but one after the other. A 24 MP frame reaches hundreds of MB in the analysis (see
+// docs/design/known-issues.md, point 7), and the series also holds a loaded frame beside it; two
+// chains at once could go past a gigabyte on an ordinary machine. The time gained would not be
+// worth the risk.
 //
-// FOLDER NOU = ANULARE. Cand se alege alt folder in timp ce ruleaza ceva, munca veche se
-// anuleaza si taburile se golesc, in loc sa se lase rezultate din folderul precedent
-// langa cele noi. Anularea se prinde intre cadre, deci raspunde in sub o secunda.
+// NEW FOLDER = CANCELLATION. When another folder is chosen while something runs, the old work is
+// cancelled and the tabs empty, instead of leaving results from the previous folder beside the
+// new ones. The cancellation is caught between frames, so it answers in under a second.
 
 using System;
 using System.Threading;
@@ -35,6 +35,9 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The window's view-model: the session folder, the problem that stops it, the
+    /// script block of the problem card, and the tabs, which it attaches and runs on every
+    /// folder.</summary>
     public sealed class MainViewModel : ObservableObject
     {
         CancellationTokenSource _cts;
@@ -48,17 +51,36 @@ namespace FlatCheck.Wpf
         readonly Func<SirilInstall> _locate;
         readonly Func<bool> _sirilGuiRunning;
 
-        /// <summary>Lantul pornit la deschidere (structura, seria, ratio), ca tabul de netezire sa-l poata astepta.</summary>
+        /// <summary>The chain started on opening (structure, series, ratio), so the smoothing tab
+        /// can wait for it.</summary>
         Task _chain = Task.CompletedTask;
 
+        /// <summary>The application's view-model, every question answered by the real
+        /// machine.</summary>
         public MainViewModel() : this(null, null, null) { }
 
         /// <summary>
-        /// Cele doua intrebari despre masina - unde e Siril, si daca ruleaza - se dau din
-        /// afara ca testele sa nu depinda de ce e instalat pe calculatorul care le ruleaza.
-        /// Null inseamna raspunsul adevarat. A treia e intrebarea de suprascriere a tabului
-        /// de netezire: implicit un MessageBox, in teste un raspuns dat dinainte.
+        /// The two questions about the machine - where Siril is, and whether it runs - are given
+        /// from outside so the tests do not depend on what is installed on the computer running
+        /// them. Null means the real answer. The third is the smoothing tab's overwrite question:
+        /// by default a MessageBox, in the tests an answer given beforehand.
         /// </summary>
+        /// <param name="locate">Finds Siril on this machine; null for
+        /// <c>SirilInstall.Locate</c>.</param>
+        /// <param name="sirilGuiRunning">Whether Siril's own window is open; null for
+        /// <c>SirilInstall.IsGuiRunning</c>.</param>
+        /// <param name="confirm">Asks a yes/no question before a file is overwritten; null for a
+        /// MessageBox whose default is No.</param>
+        /// <param name="locateProfiles">Finds the lens-profile sources for the shared
+        /// <see cref="ProfileCatalog"/>; null for the real lookup.</param>
+        /// <param name="loadInfo">Reads a file's header and metadata without its pixels; null for
+        /// the real reader.</param>
+        /// <param name="runScript">Makes the runner of a script in a folder, for the Split tab;
+        /// null for the real siril-cli.</param>
+        /// <param name="clock">The current time, for the Split tab's temp folder name; null for
+        /// the system clock.</param>
+        /// <param name="splitTempRootFor">The Split tab's temp root for a given time; null for the
+        /// default one.</param>
         internal MainViewModel(Func<SirilInstall> locate, Func<bool> sirilGuiRunning, Func<string, bool> confirm = null,
                                Func<ProfileSources> locateProfiles = null, Func<string, LoadedFrame> loadInfo = null,
                                Func<string, string, SirilRunner> runScript = null, Func<DateTime> clock = null,
@@ -67,9 +89,9 @@ namespace FlatCheck.Wpf
             _locate = locate ?? SirilInstall.Locate;
             _sirilGuiRunning = sirilGuiRunning ?? SirilInstall.IsGuiRunning;
 
-            // Catalogul de profile, unul pentru tabul Structura (comparatia vignetarii) si
-            // pentru tabul Sintetic; cititorul de metadate, tot unul, ca testele sa poata
-            // pune un cadru fabricat in locul unui raw.
+            // The profile catalog, one for the Structure tab (the vignetting comparison) and for
+            // the Sintetic tab; the metadata reader, one as well, so the tests can put a made-up
+            // frame in place of a raw.
             var catalog = new ProfileCatalog(locateProfiles);
             Structure = new StructureTabViewModel(catalog, loadInfo);
             Ratio = new RatioTabViewModel();
@@ -78,19 +100,22 @@ namespace FlatCheck.Wpf
             HistEq = new HistEqTabViewModel();
             Smooth = new SmoothTabViewModel(confirm ?? AskOnScreen);
             Synthetic = new SyntheticTabViewModel(confirm ?? AskOnScreen, catalog, loadInfo);
-            // Tabul Split ruleaza scriptul Siril ca butonul de pe card, deci primeste aceleasi
-            // doua intrebari despre masina, plus fabrica de rulari (in teste, un Siril fals),
-            // ceasul si radacina temporara (in teste, folderul testului).
+            // The Split tab runs the Siril script like the card's button, so it gets the same two
+            // questions about the machine, plus the run factory (in the tests, a fake Siril),
+            // the clock and the temp root (in the tests, the test's folder).
             Split = new SplitTabViewModel(_locate, _sirilGuiRunning, runScript, catalog, loadInfo, clock, splitTempRootFor);
             Preprocess = new PreprocessViewModel();
 
-            // Singura legatura intre doua taburi: flat-ul netezit pe care il scrie Netezire
-            // apare in lista tabului Histogram, langa master. Legata aici, ca niciunul din
-            // ele sa nu-l cunoasca pe celalalt; FileWritten ignora singur o cale care nu e
-            // a sesiunii curente, deci schimbarea folderului nu are nimic de dezlegat.
+            // The only link between two tabs: the smoothed flat Netezire writes appears in the
+            // Histogram tab's list, beside the master. Wired here, so neither of them knows the
+            // other; FileWritten ignores by itself a path that is not the current session's, so
+            // a change of folder has nothing to unwire.
             Smooth.Saved += HistEq.FileWritten;
         }
 
+        /// <summary>Asks a yes/no question in a MessageBox, No by default.</summary>
+        /// <param name="question">The question, Romanian.</param>
+        /// <returns>True when the user answered Yes.</returns>
         static bool AskOnScreen(string question)
             => System.Windows.MessageBox.Show(question, "FlatCheck", System.Windows.MessageBoxButton.YesNo,
                    System.Windows.MessageBoxImage.Question, System.Windows.MessageBoxResult.No)
@@ -106,20 +131,21 @@ namespace FlatCheck.Wpf
         public SplitTabViewModel Split { get; }
 
         /// <summary>
-        /// Se termina cand lantul de la deschidere s-a terminat. Tabul de netezire ruleaza
-        /// dintr-un click, deci s-ar putea suprapune peste structura daca omul apasa in
-        /// timpul ei; asteapta intai - regula "secvential, nu paralel" de mai sus.
+        /// Completes when the chain started on opening has ended. The smoothing tab runs from a
+        /// click, so it could overlap the structure run if the user pressed during it; it waits
+        /// first - the "sequential, not parallel" rule above.
         /// </summary>
+        /// <returns>The chain's task; already complete when nothing runs.</returns>
         internal Task WhenIdleAsync() => _chain;
 
         /// <summary>
-        /// Blocul "ruleaza scriptul de aici" de pe ecranul de problema. Exista mereu, ca
-        /// legarile din XAML sa aiba pe ce sta; e oferit doar cand problema e una pe care
-        /// un script o rezolva.
+        /// The "run the script from here" block on the problem screen. It always exists, so the
+        /// XAML bindings have something to stand on; it is offered only when the problem is one
+        /// a script solves.
         /// </summary>
         public PreprocessViewModel Preprocess { get; }
 
-        /// <summary>Folderul sesiunii, sau gol daca nu s-a ales inca niciunul.</summary>
+        /// <summary>The session folder, or empty if none was chosen yet.</summary>
         public string Folder
         {
             get => _folder;
@@ -129,9 +155,9 @@ namespace FlatCheck.Wpf
         public bool HasFolder => !string.IsNullOrEmpty(_folder);
 
         /// <summary>
-        /// Problema care impiedica pornirea pe folderul asta, daca exista. Cand e setata,
-        /// taburile nu se arata deloc: n-are rost sa vezi patru panouri goale cand ce
-        /// trebuie facut e sa rulezi un script in Siril.
+        /// The problem that stops this folder from starting, if there is one. When it is set, the
+        /// tabs are not shown at all: there is no point seeing four empty panels when what has to
+        /// be done is to run a script in Siril.
         /// </summary>
         public string ProblemTitle { get => _problemTitle; private set => Set(ref _problemTitle, value); }
 
@@ -143,17 +169,22 @@ namespace FlatCheck.Wpf
 
         public bool HasProblem => !string.IsNullOrEmpty(_problemText);
 
-        /// <summary>true cat timp ruleaza analizele de la deschiderea folderului.</summary>
+        /// <summary>True while the analyses started by opening the folder run.</summary>
         public bool IsRunning { get => _running; private set => Set(ref _running, value); }
 
-        /// <summary>Versiunea si copyright-ul, aceleasi cu ce scrie consola pe primele doua linii.</summary>
+        /// <summary>The version and the copyright, the same as what the console writes on its
+        /// first two lines.</summary>
         public string Banner => VersionInfo.Banner;
         public string Copyright => VersionInfo.Copyright;
 
         /// <summary>
-        /// Deschide un folder: valideaza, pregateste taburile care asteapta o alegere, si
-        /// porneste analizele care ruleaza singure.
+        /// Opens a folder: validates it, prepares the tabs that wait for a choice, and starts the
+        /// analyses that run by themselves.
         /// </summary>
+        /// <param name="folder">The session folder; null or blank just empties the
+        /// window.</param>
+        /// <returns>A task that completes when the opening chain has ended, or at once when the
+        /// folder has a problem.</returns>
         internal async Task OpenAsync(string folder)
         {
             CancelPending();
@@ -171,8 +202,8 @@ namespace FlatCheck.Wpf
                 ProblemTitle = SessionMessages.Title(problem);
                 ProblemText = SessionMessages.Explain(session, problem);
 
-                // Un script Siril produce process/ si masterul din el; un folder care nu
-                // exista nu-l ajuta niciun script.
+                // A Siril script produces process/ and the master in it; no script helps a folder
+                // that does not exist.
                 if (problem == SessionProblem.NoProcessDir || problem == SessionProblem.NoFlatMaster)
                     Preprocess.Attach(session, _locate(), _sirilGuiRunning);
                 return;
@@ -183,18 +214,19 @@ namespace FlatCheck.Wpf
             _cts = new CancellationTokenSource();
             CancellationToken ct = _cts.Token;
 
-            // Taburile care asteapta o alegere se pregatesc imediat: listele lor se
-            // citesc din folder, nu din vreun calcul, deci n-au de ce sa astepte.
+            // The tabs that wait for a choice are prepared at once: their lists are read from the
+            // folder, not from a computation, so they have no reason to wait.
             Ratio.Attach(session, ct);
             Exposure.Attach(session, ct);
-            // Tot o lista, tot fara calcul: masterul de 24 MP nu se incarca de doua ori la
-            // deschidere - il citeste deja Structura, mai jos.
+            // A list too, also without a computation: the 24 MP master is not loaded twice on
+            // opening - Structure is already reading it, below.
             HistEq.Attach(session, ct);
-            // Nici netezirea nu calculeaza la deschidere: scrie un fisier, si un fisier
-            // nu se produce fiindca s-a deschis un folder. Asteapta un click.
+            // The smoothing does not compute on opening either: it writes a file, and a file is
+            // not produced because a folder was opened. It waits for a click.
             Smooth.Attach(session, ct, WhenIdleAsync);
             Synthetic.Attach(session, ct, WhenIdleAsync);
-            // Nici Split: copiaza si ruleaza Siril de N ori, deci numai la buton, si dupa lant.
+            // Nor does Split: it copies and runs Siril N times, so only on the button, and after
+            // the chain.
             Split.Attach(session, ct, WhenIdleAsync);
 
             IsRunning = true;
@@ -209,6 +241,12 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>The opening chain, one after the other: Structure, then the end-to-end
+        /// series, then Ratio; it stops at the first cancellation.</summary>
+        /// <param name="session">The folder just opened.</param>
+        /// <param name="ct">The folder's token, cancelled by another folder or by closing the
+        /// window.</param>
+        /// <returns>A task that completes when the chain ended.</returns>
         async Task RunChainAsync(SirilSession session, CancellationToken ct)
         {
             await Structure.RunAsync(session, ct).ConfigureAwait(true);
@@ -217,12 +255,13 @@ namespace FlatCheck.Wpf
             await Light.RunAsync(session, ct).ConfigureAwait(true);
             if (ct.IsCancellationRequested) return;
 
-            // Tabul Ratio are, de obicei, doua mastere preselectate; abia acum, dupa
-            // ce celelalte doua au terminat, se poate calcula fara sa se bata pe memorie.
+            // The Ratio tab usually has two preselected masters; only now, after the other two
+            // have finished, can it compute without fighting over memory.
             await Ratio.RecomputeAsync().ConfigureAwait(true);
         }
 
-        /// <summary>Se cheama la inchiderea ferestrei, ca sa nu ramana fire care lucreaza degeaba.</summary>
+        /// <summary>Called when the window closes, so no threads are left working for
+        /// nothing.</summary>
         internal void CancelPending()
         {
             CancellationTokenSource cts = _cts;
@@ -233,9 +272,12 @@ namespace FlatCheck.Wpf
             cts.Dispose();
         }
 
-        /// <summary>Dupa o rulare de script reusita: acelasi folder, de la capat, prin Check().</summary>
+        /// <summary>After a successful script run: the same folder, from the start, through
+        /// Check().</summary>
+        /// <returns>The task of <see cref="OpenAsync"/> on the current folder.</returns>
         internal Task ReopenAsync() => OpenAsync(Folder);
 
+        /// <summary>Empties every tab and detaches the problem card's script block.</summary>
         void ResetTabs()
         {
             Preprocess.Detach();
@@ -249,6 +291,7 @@ namespace FlatCheck.Wpf
             Split.Reset();
         }
 
+        /// <summary>Removes the problem card.</summary>
         void ClearProblem()
         {
             ProblemTitle = null;

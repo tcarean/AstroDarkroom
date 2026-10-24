@@ -15,58 +15,62 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MapGuideViewModel.cs - ghidul de citire al hartii reziduale.
+// MapGuideViewModel.cs - the reading guide of the residual map.
 //
-// CE E: documentatie afisata in fereastra, nu un diagnostic. Unealta NU clasifica forma
-// hartii - o pata poate fi light leak sau un nor, si din pixeli nu se pot deosebi. Ce se
-// poate face e sa i se spuna omului ce a insemnat fiecare forma pe mastere reale, si
-// care e contra-testul care desparte cazurile. Deci nicio cifra nu se calculeaza aici si
-// niciun prag nu se compara: textul vine intreg din SessionMessages.
+// WHAT IT IS: documentation shown in the window, not a diagnosis. The tool does NOT classify the
+// map's shape - a spot can be a light leak or a cloud, and the pixels cannot tell them apart.
+// What can be done is to tell the user what each shape meant on real masters, and which
+// counter-test separates the cases. So no figure is computed here and no threshold compared:
+// the text comes whole from SessionMessages.
 //
-// DE CE E O CLASA SI NU TREI PROPRIETATI PE FIECARE TAB: Structura si Ratio arata
-// amandoua acelasi ghid, iar TabViewModel nu e locul - tabul de expunere nu are harta,
-// deci n-are ce sa faca cu el.
+// WHY IT IS A CLASS AND NOT THREE PROPERTIES ON EACH TAB: Structure and Ratio both show the same
+// guide, and TabViewModel is not the place - the exposure tab has no map, so it has nothing to
+// do with it.
 //
-// Proprietati de INSTANTA, desi textul e constant: {Binding} rezolva prin DataContext si
-// nu vede proprietati statice - o legare la una ar fi randat gol, exact ca la
-// documentatia tabului Ratio.
+// INSTANCE properties, though the text is constant: {Binding} resolves through the DataContext
+// and does not see static properties - a binding to one would have rendered empty, exactly as
+// the Ratio tab's documentation did.
 
 using System.Collections.Generic;
 using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The collapsible guide under the residual map, on the Structure and Ratio
+    /// tabs: an intro and one row per shape, the text from
+    /// <see cref="SessionMessages"/>.</summary>
     public sealed class MapGuideViewModel : ObservableObject
     {
         bool _expanded;
 
-        /// <summary>Cum se citeste harta, inainte de lista de forme.</summary>
+        /// <summary>How to read the map, before the list of shapes.</summary>
         public string Intro => SessionMessages.MapGuideIntro();
 
-        /// <summary>Formele si ce au insemnat, in ordinea in care merita cautate.</summary>
+        /// <summary>The shapes and what they meant, in the order worth looking for
+        /// them.</summary>
         public IReadOnlyList<GuideRow> Shapes { get; } =
             SessionMessages.MapGuideShapes()
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
         /// <summary>
-        /// Pliat implicit: sase randuri de text sub fiecare harta, la fiecare rulare, ar
-        /// ineca tocmai cifrele. Starea sta aici si nu in control ca s-o poata deschide un
-        /// test - o legare gresita intr-un panou pliat compileaza si cade abia la afisare,
-        /// si asta e exact ce prinde WindowSmokeTests.
+        /// Collapsed by default: six rows of text under every map, on every run, would drown the
+        /// very figures. The state lives here and not in the control so a test can open it - a
+        /// wrong binding in a collapsed panel compiles and fails only when shown, and that is
+        /// exactly what WindowSmokeTests catches.
         /// </summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
     /// <summary>
-    /// "Cum citesc tabul": ce decid cifrele si ce decide ochiul.
+    /// "Cum citesc tabul": what the figures decide and what the eye decides.
     ///
-    /// Aceeasi forma ca ghidul hartii, si din acelasi motiv - documentatie afisata, cu un
-    /// intro si doua randuri - dar alt subiect si alt loc pe ecran: ghidul sta sub harta
-    /// si vorbeste despre forme, asta sta sub verdict si vorbeste despre despartirea
-    /// dintre "cat de mult" (cifrele) si "ce fel" (harta). Despartirea nu se vede din
-    /// asezarea ecranului, fiindca cifrele si harta arata ca doua vederi ale aceluiasi
-    /// lucru, cand de fapt una decide si cealalta explica.
+    /// The same shape as the map guide, and for the same reason - documentation shown, with an
+    /// intro and two rows - but another subject and another place on screen: the guide sits
+    /// under the map and talks about shapes, this one sits under the verdict and talks about the
+    /// division between "how much" (the figures) and "what kind" (the map). The division does not
+    /// show in the screen's layout, because the figures and the map look like two views of the
+    /// same thing, when in fact one decides and the other explains.
     /// </summary>
     public sealed class HowToReadViewModel : ObservableObject
     {
@@ -79,16 +83,17 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Pliat implicit, ca ghidul hartii: verdictul trebuie sa ramana primul lucru vizibil.</summary>
+        /// <summary>Collapsed by default, like the map guide: the verdict must stay the first
+        /// thing visible.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
     /// <summary>
-    /// "Cum citesc histogramele", pe tabul de expunere. A treia bucata de documentatie
-    /// afisata in fereastra, cu aceeasi forma ca celelalte doua si din acelasi motiv:
-    /// desenul arata ce e, dar nu si de ce doua curbe, sau de ce cea lata NU inseamna
-    /// subexpunere - iar aia e chiar concluzia gresita pe care o trage cineva care se uita
-    /// prima oara la histograma unui flat.
+    /// "Cum citesc histogramele", on the exposure tab. The third piece of documentation shown in
+    /// the window, with the same shape as the other two and for the same reason: the drawing
+    /// shows what is there, but not why two curves, or why the wide one does NOT mean
+    /// underexposure - and that is exactly the wrong conclusion someone draws when looking at a
+    /// flat's histogram for the first time.
     /// </summary>
     public sealed class HistogramGuideViewModel : ObservableObject
     {
@@ -101,15 +106,15 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Pliat implicit, ca celelalte doua ghiduri.</summary>
+        /// <summary>Collapsed by default, like the other two guides.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
     /// <summary>
-    /// "Cum citesc poza egalizata", pe tabul de histograma. Al patrulea ghid, cu aceeasi
-    /// forma. Motivul lui e cel mai apasat dintre toate: poza arata orice neuniformitate
-    /// la contrast maxim si nu spune cat de mare e, iar cineva care o vede prima oara
-    /// citeste zgomotul unui flat curat drept defect.
+    /// "Cum citesc poza egalizata", on the histogram tab. The fourth guide, with the same shape.
+    /// Its reason is the most pressing of all: the picture shows any non-uniformity at maximum
+    /// contrast and does not say how large it is, and someone seeing it for the first time reads
+    /// a clean flat's noise as a defect.
     /// </summary>
     public sealed class HistEqGuideViewModel : ObservableObject
     {
@@ -122,14 +127,14 @@ namespace FlatCheck.Wpf
                 .Select(s => new GuideRow { Shape = s.Shape, Meaning = s.Meaning })
                 .ToList();
 
-        /// <summary>Pliat implicit, ca celelalte trei.</summary>
+        /// <summary>Collapsed by default, like the other three.</summary>
         public bool IsExpanded { get => _expanded; set => Set(ref _expanded, value); }
     }
 
     /// <summary>
-    /// Ghidul tabului de netezire. Aceeasi forma ca celelalte, dar DESCHIS implicit: e
-    /// preconditia tabului, nu o nota de subsol - un buton care scrie un fisier langa
-    /// master nu se apasa inainte de a sti ce face. Vezi SessionMessages.SmoothGuideIntro.
+    /// The smoothing tab's guide. The same shape as the others, but OPEN by default: it is the
+    /// tab's precondition, not a footnote - a button that writes a file beside the master is not
+    /// pressed before knowing what it does. See SessionMessages.SmoothGuideIntro.
     /// </summary>
     public sealed class SmoothGuideViewModel : ObservableObject
     {

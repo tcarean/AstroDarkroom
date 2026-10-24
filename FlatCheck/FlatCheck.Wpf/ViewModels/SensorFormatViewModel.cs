@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Chip-urile de tip de senzor de pe tabul Sintetic, pe tiparul MapScaleViewModel: o
-// alegere devine un crop in campul de text, si nimic altceva. Sunt rezerva pentru un
-// aparat pe care baza lensfun nu-l are - calea principala ramane tabelul, care umple
-// campul singur - ca omul sa nu tasteze o valoare obscura. Lista vine din nucleu
-// (SensorFormats); aici nu se decide nimic.
+// The sensor-format chips of the Sintetic tab, on the MapScaleViewModel pattern: a choice becomes
+// a crop in the text field, and nothing else. They are the fallback for a camera the lensfun
+// database does not have - the main path stays the table, which fills the field by itself - so
+// the user does not type an obscure value. The list comes from the core (SensorFormats); nothing
+// is decided here.
 
 using System;
 using System.Collections.Generic;
@@ -27,11 +27,16 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>One sensor-format chip: its label and crop ("APS-C 1.5") and the core's note
+    /// as its tooltip.</summary>
     public sealed class SensorFormatOption : ObservableObject
     {
         readonly SensorFormatViewModel _owner;
         bool _selected;
 
+        /// <summary>Makes the chip for one of the core's formats.</summary>
+        /// <param name="owner">The chip row it belongs to; told when it is ticked.</param>
+        /// <param name="format">The format, from <c>SensorFormats.All</c>.</param>
         internal SensorFormatOption(SensorFormatViewModel owner, SensorFormat format)
         {
             _owner = owner;
@@ -52,14 +57,19 @@ namespace FlatCheck.Wpf
             set { if (Set(ref _selected, value) && value) _owner.Select(this); }
         }
 
+        /// <summary>Unticks without re-entering the owner.</summary>
         internal void Unselect() => Set(ref _selected, false, nameof(IsSelected));
     }
 
+    /// <summary>The row of sensor-format chips behind the crop field: a click announces a
+    /// format through <see cref="Chosen"/>; a typed crop only lights the matching
+    /// chip.</summary>
     public sealed class SensorFormatViewModel : ObservableObject
     {
         SensorFormatOption _selected;
         bool _following;
 
+        /// <summary>One chip per format of the core, none ticked.</summary>
         public SensorFormatViewModel()
         {
             Options = SensorFormats.All.Select(f => new SensorFormatOption(this, f)).ToList();
@@ -67,7 +77,8 @@ namespace FlatCheck.Wpf
 
         public IReadOnlyList<SensorFormatOption> Options { get; }
 
-        /// <summary>Chip-ul ales, sau null cand crop-ul a venit din tabel sau de la tastatura.</summary>
+        /// <summary>The chosen chip, or null when the crop came from the table or the
+        /// keyboard.</summary>
         public SensorFormatOption Selected
         {
             get => _selected;
@@ -76,6 +87,9 @@ namespace FlatCheck.Wpf
 
         internal event Action<SensorFormat> Chosen;
 
+        /// <summary>Makes the option the chosen one and unticks the others; announces it through
+        /// <see cref="Chosen"/> unless the tick came from <see cref="Follow"/>.</summary>
+        /// <param name="option">One of <see cref="Options"/>.</param>
         internal void Select(SensorFormatOption option)
         {
             if (ReferenceEquals(option, _selected)) return;
@@ -86,11 +100,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Chip-urile arata formatul valorii din camp: se aprinde cel mai apropiat (in toleranta
-        /// lui SensorFormats), fara sa anunte o alegere; o valoare fara format, sau niciuna,
-        /// le stinge pe toate. Prima varianta le stingea la orice tastare, si 1.523 din tabel
-        /// arata ca o valoare cazuta din cer.
+        /// The chips show the format of the field's value: the nearest one lights up (within
+        /// SensorFormats' tolerance), without announcing a choice; a value with no format, or
+        /// none, turns them all off. The first version turned them off on any keystroke, and
+        /// 1.523 from the table looked like a value fallen from the sky.
         /// </summary>
+        /// <param name="crop">The crop factor in the field, or null when it holds none.</param>
         internal void Follow(double? crop)
         {
             SensorFormat f = crop.HasValue ? SensorFormats.Nearest(crop.Value) : null;
@@ -104,7 +119,7 @@ namespace FlatCheck.Wpf
             finally { _following = false; }
         }
 
-        /// <summary>Niciun chip: crop-ul de pe ecran nu mai e al unui chip.</summary>
+        /// <summary>No chip: the crop on screen is no longer a chip's.</summary>
         internal void Clear()
         {
             foreach (var o in Options) o.Unselect();

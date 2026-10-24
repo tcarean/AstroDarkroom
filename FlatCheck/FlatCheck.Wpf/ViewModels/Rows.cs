@@ -15,37 +15,38 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Rows.cs - randurile pe care le deseneaza interfata.
+// Rows.cs - the rows the interface draws.
 //
-// Tipuri simple si publice, cu exact ce se vede: o eticheta, o cifra deja formatata si,
-// unde e cazul, un verdict. Cifra vine formatata din ViewModel si nu din XAML, ca sa fie
-// verificabila intr-un test - "51.6 %" e un lucru pe care il poti asserta, un
-// StringFormat dintr-un binding nu.
+// Plain public types, with exactly what is seen: a label, a figure already formatted and, where
+// it applies, a verdict. The figure comes formatted from the view-model and not from the XAML, so
+// it can be checked in a test - "51.6 %" is something you can assert, a binding's StringFormat
+// is not.
 
 using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>Un rand de metrica: eticheta, valoare, si eventual un verdict colorat.</summary>
+    /// <summary>A metric row: label, value, and possibly a coloured verdict.</summary>
     public sealed class MetricRow
     {
         public string Label { get; init; }
         public string Value { get; init; }
 
-        /// <summary>Null cand randul e informativ si NU e un test.</summary>
+        /// <summary>Null when the row is informative and NOT a test.</summary>
         public string Verdict { get; init; }
 
-        /// <summary>Se ingroasa randul care conteaza cel mai mult (reziduul).</summary>
+        /// <summary>The row that matters most (the residual) is drawn bold.</summary>
         public bool IsKey { get; init; }
 
-        /// <summary>Explicatie scurta sub rand, sau null.</summary>
+        /// <summary>A short explanation under the row, or null.</summary>
         public string Note { get; init; }
 
         public bool HasVerdict => !string.IsNullOrEmpty(Verdict);
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
-    /// <summary>O banda din scara de reziduu, cu marcaj daca e cea in care a cazut verdictul.</summary>
+    /// <summary>A band of the residual scale, marked when it is the one the verdict fell
+    /// in.</summary>
     public sealed class ScaleRow
     {
         public string Band { get; init; }
@@ -54,11 +55,10 @@ namespace FlatCheck.Wpf
         public bool IsCurrent { get; init; }
     }
 
-    /// <summary>O forma din ghidul hartii: numele ei si ce a insemnat pe mastere reale.</summary>
     /// <summary>
-    /// Un rand al tabelului de comparatie din tabul Sintetic: aceeasi marime pe masterul
-    /// fotografiat (A), pe flatul sintetic (B) si pe raportul lor, cu verdictul unde e un
-    /// test. Copiat din AgainstRow din nucleu, care e internal.
+    /// A row of the Sintetic tab's comparison table: the same quantity on the photographed master
+    /// (A), on the synthetic flat (B) and on their ratio, with the verdict where it is a test.
+    /// Copied from the core's AgainstRow, which is internal.
     /// </summary>
     public sealed class CompareRow
     {
@@ -78,14 +78,15 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un rand din tabelul "vignetarea fata de profilul obiectivului" de pe tabul Structura:
-    /// copia publica a lui ProfileRow din nucleu (internal), cu textele gata formatate acolo.
+    /// A row of the "vignetting against the lens profile" table on the Structure tab: the public
+    /// copy of the core's ProfileRow (internal), with the texts already formatted there.
     /// </summary>
     public sealed class LensProfileRow
     {
         public string Source { get; init; }       // "Adobe" / "lensfun"
         public string Lens { get; init; }
-        /// <summary>Montura, plus formatul de calibrare la lensfun (LensChoice.Where).</summary>
+        /// <summary>The mount, plus the calibration format for lensfun
+        /// (LensChoice.Where).</summary>
         public string Where { get; init; }
         public string Profile { get; init; }      // "20 mm, f/2.8, infinit"
         public string Depth { get; init; }        // "0.66 stopuri (colt = 63 % din centru)"
@@ -99,6 +100,8 @@ namespace FlatCheck.Wpf
         public bool HasNote => !string.IsNullOrEmpty(Note);
     }
 
+    /// <summary>A shape from the map guide: its name and what it meant on real masters. The
+    /// other guides use it for their rows too.</summary>
     public sealed class GuideRow
     {
         public string Shape { get; init; }
@@ -106,36 +109,38 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un canal pe cardul de histograme. Tot ce e aici e deja formatat sau deja
-    /// normalizat: desenul nu mai calculeaza nimic, iar un test poate asserta "44.4 %".
+    /// A channel on the histogram card. Everything here is already formatted or already
+    /// normalised: the drawing computes nothing more, and a test can assert "44.4 %".
     ///
-    /// Pragurile sunt COPIATE pe fiecare rand, desi sunt aceleasi pe toate. Asa sablonul
-    /// se leaga local, cu {Binding BandLo}, in loc de un RelativeSource catre stramosul
-    /// potrivit - o legare care compileaza, arata bine, si se rupe tacut cand sablonul e
-    /// refolosit in alt loc din arbore.
+    /// The thresholds are COPIED onto every row, though they are the same on all. That way the
+    /// template binds locally, with {Binding BandLo}, instead of a RelativeSource to the right
+    /// ancestor - a binding that compiles, looks fine, and breaks silently when the template is
+    /// reused elsewhere in the tree.
     /// </summary>
     public sealed class ChannelHistogramRow
     {
-        /// <summary>"R", "G1", ... sau "CFA[0,1]" cand fisierul n-a spus ordinea.</summary>
+        /// <summary>"R", "G1", ... or "CFA[0,1]" when the file did not say the order.</summary>
         public string Label { get; init; }
 
-        /// <summary>Pozitia in mozaic, cand eticheta e o culoare; altfel gol.</summary>
+        /// <summary>The position in the mosaic, when the label is a colour; empty
+        /// otherwise.</summary>
         public string Position { get; init; }
 
         public Brush Colour { get; init; }
 
-        /// <summary>Mediana canalului intreg si a ferestrei centrale, deja formatate.</summary>
+        /// <summary>The median of the whole channel and of the central window, already
+        /// formatted.</summary>
         public string Median { get; init; }
         public string Centre { get; init; }
 
         public string Note { get; init; }
         public bool IsBrightest { get; init; }
 
-        /// <summary>Cele doua curbe, 0..1, fiecare normalizata la propriul varf.</summary>
+        /// <summary>The two curves, 0..1, each normalised to its own peak.</summary>
         public double[] Whole { get; init; }
         public double[] CentreCurve { get; init; }
 
-        /// <summary>Mediana centrului, in procente - linia verticala de pe desen.</summary>
+        /// <summary>The centre's median, in percent - the vertical line on the drawing.</summary>
         public double Marker { get; init; }
 
         public double BandLo { get; init; }
@@ -149,12 +154,12 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un rand din tabelul de comparatie raw / ecran: acelasi canal, cele doua cifre, si
-    /// diferenta. Toate trei sunt mediane ale ferestrei centrale, deja formatate.
+    /// A row of the raw / screen comparison table: the same channel, the two figures, and the
+    /// difference. All three are medians of the central window, already formatted.
     /// </summary>
     public sealed class ScreenPairRow
     {
-        public string Channel { get; init; }   // "R", "G (media G1, G2)", sau eticheta de rezerva
+        public string Channel { get; init; }   // "R", "G (media G1, G2)", or the fallback label
         public Brush Colour { get; init; }
         public string Raw { get; init; }       // "29.0 %"
         public string Screen { get; init; }    // "81.2 %"
@@ -162,29 +167,33 @@ namespace FlatCheck.Wpf
     }
 
     /// <summary>
-    /// Un rand din lista tabului de histograma: masterul din masters/ sau process/,
-    /// flat-ul netezit de langa el, sau un cadru din flats/. Formatat aici, nu printr-un
-    /// convertor, ca un test sa poata asserta "MASTER", "NETEZIT" si "process/" direct.
+    /// A row of the histogram tab's list: the master from masters/ or process/, the smoothed flat
+    /// beside it, or a frame from flats/. Formatted here, not through a converter, so a test can
+    /// assert "MASTER", "NETEZIT" and "process/" directly.
     /// </summary>
     public sealed class HistEqFileRow
     {
         public string Path { get; init; }
 
-        /// <summary>Numai numele fisierului.</summary>
+        /// <summary>The file's name only.</summary>
         public string Name { get; init; }
 
-        /// <summary>Folderul real: "process/" sau "masters/" pentru master si netezit, "flats/" pentru un cadru.</summary>
+        /// <summary>The real folder: "process/" or "masters/" for the master and the smoothed
+        /// one, "flats/" for a frame.</summary>
         public string Where { get; init; }
 
-        /// <summary>Felul randului. Internal - un tip intern nu poate iesi printr-o proprietate publica.</summary>
+        /// <summary>The row's kind. Internal - an internal type cannot leave through a public
+        /// property.</summary>
         internal HistEqKind Kind { get; init; }
 
         public bool IsMaster => Kind == HistEqKind.Master;
 
-        /// <summary>Flat-ul netezit scris de tabul Netezire. NU e master: IsMaster ramane fals.</summary>
+        /// <summary>The smoothed flat written by the Netezire tab. It is NOT a master: IsMaster
+        /// stays false.</summary>
         public bool IsSmoothed => Kind == HistEqKind.Smoothed;
 
-        /// <summary>Chipul din lista: "MASTER" pe master, "NETEZIT" pe flat-ul netezit, gol pe un cadru.</summary>
+        /// <summary>The chip in the list: "MASTER" on the master, "NETEZIT" on the smoothed
+        /// flat, empty on a frame.</summary>
         public string Tag => Kind switch
         {
             HistEqKind.Master => "MASTER",
@@ -195,14 +204,14 @@ namespace FlatCheck.Wpf
         public bool HasTag => Tag.Length > 0;
 
         /// <summary>
-        /// Ultimul rand din grupul master + netezit: sub el sta linia care il desparte de
-        /// cadre. Se pune la construirea listei, care vede tot grupul; de aceea lista se
-        /// reface intreaga cand apare un fisier, nu se insereaza un rand.
+        /// The last row of the master + smoothed group: under it sits the line that separates it
+        /// from the frames. It is set when the list is built, which sees the whole group; that is
+        /// why the list is rebuilt whole when a file appears, not a row inserted.
         /// </summary>
         public bool ClosesGroup { get; init; }
     }
 
-    /// <summary>Un cadru din tabelul seriei end-to-end.</summary>
+    /// <summary>A frame of the end-to-end series table.</summary>
     public sealed class SeriesRow
     {
         public string Name { get; init; }
@@ -212,9 +221,9 @@ namespace FlatCheck.Wpf
         public string Verdict { get; init; }
     }
     /// <summary>
-    /// O componenta terta din fereastra "Despre". Copie publica a lui ThirdPartyComponent
-    /// din nucleu, care e internal: un ViewModel public nu poate expune un tip internal
-    /// catre XAML, si compilatorul e cel care tine granita asta.
+    /// A third-party component in the "Despre" window. A public copy of the core's
+    /// ThirdPartyComponent, which is internal: a public view-model cannot expose an internal type
+    /// to the XAML, and the compiler is the one that keeps that border.
     /// </summary>
     public sealed class ComponentRow
     {

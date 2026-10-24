@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightTabViewModel.cs - tabul 3, testul end-to-end pe toata seria din process/.
+// LightTabViewModel.cs - tab 3, the end-to-end test on the whole series in process/.
 //
-// Trei stari de sfarsit, si toate trei sunt raspunsuri corecte:
+// Three end states, and all three are correct answers:
 //
-//   1. verdict pe serie - media chiar estimeaza eroarea de flat;
-//   2. NEDETERMINAT - a rulat, dar seria nu e concludenta, si se spune de ce;
-//   3. INAPLICABIL - campul e prea larg, cerul si vignetarea au aceeasi forma, deci nu
-//      se produce nicio cifra.
+//   1. a verdict on the series - the mean really estimates the flat error;
+//   2. NEDETERMINAT - it ran, but the series is not conclusive, and it says why;
+//   3. INAPLICABIL - the field is too wide, the sky and the vignetting have the same shape, so
+//      no figure is produced.
 //
-// A treia NU e o eroare a aplicatiei si nu se afiseaza ca atare. E rezultatul gardei din
-// 1.2.0, adaugata dupa ce unealta raportase increzator "+3.13 % SUB-corectie" pe o
-// sesiune la 20 mm unde 88 % din ce masura era cer. Un tab care ar arata asta ca pe un
-// esec l-ar invata pe om ca aplicatia e stricata, cand de fapt tocmai l-a scutit de o
-// concluzie falsa.
+// The third is NOT an error of the application and is not shown as one. It is the result of the
+// guard from 1.2.0, added after the tool had confidently reported "+3.13 % SUB-corectie" on a
+// session at 20 mm where 88 % of what it measured was sky. A tab that showed this as a failure
+// would teach the user the application is broken, when in fact it has just spared them a false
+// conclusion.
 //
-// Tabelul se umple pe masura ce cadrele sunt gata, prin callback-ul lui LightSeriesRun.
-// Pe 32 de cadre rularea ia vreo doua minute; un ecran gol tot timpul ala ar parea blocat.
+// The table fills as the frames are ready, through LightSeriesRun's callback. On 32 frames the
+// run takes about two minutes; an empty screen all that time would look frozen.
 
 using System;
 using System.Collections.ObjectModel;
@@ -42,6 +42,9 @@ using System.Windows.Threading;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The End to end tab: the light series of process/, one table row per frame as it
+    /// finishes, then the series' figures, verdict and radial map - or the field guard's
+    /// refusal.</summary>
     public sealed class LightTabViewModel : TabViewModel
     {
         string _source = "";
@@ -59,22 +62,24 @@ namespace FlatCheck.Wpf
         string _mapLegend = "";
 
         /// <summary>
-        /// Firul pe care se scrie in Frames, captat O SINGURA DATA la pornirea rularii.
+        /// The thread Frames is written on, captured ONCE when the run starts.
         ///
-        /// Nu se intreaba Application.Current la fiecare cadru, si asta nu e o optimizare:
-        /// daca raspunsul s-ar schimba la mijlocul seriei, o parte din randuri ar intra pe
-        /// un fir si restul pe altul, iar ObservableCollection nu suporta asa ceva - se
-        /// pierd randuri, tacut. S-a si intamplat, intr-o rulare de teste unde aplicatia
-        /// WPF aparea intre timp: sase cadre prelucrate, cinci randuri in tabel.
+        /// Application.Current is not asked at every frame, and that is not an optimisation: if
+        /// the answer changed in the middle of the series, some rows would go in on one thread and
+        /// the rest on another, and ObservableCollection does not stand that - rows are lost,
+        /// silently. It did happen, in a test run where the WPF application appeared meanwhile:
+        /// six frames processed, five rows in the table.
         /// </summary>
         Dispatcher _ui;
 
         public string Source { get => _source; private set => Set(ref _source, value); }
 
-        /// <summary>Campul acoperit si de unde s-a aflat - se arata si cand se refuza.</summary>
+        /// <summary>The field covered and where it was learnt from - shown also when the test is
+        /// refused.</summary>
         public string Field { get => _field; private set => Set(ref _field, value); }
 
-        /// <summary>Avertismentul de camp la limita, sau nota ca nu s-a putut verifica.</summary>
+        /// <summary>The warning of a field at the limit, or the note that it could not be
+        /// checked.</summary>
         public string FieldWarning { get => _fieldWarning; private set => Set(ref _fieldWarning, value); }
 
         public string MeanRadial { get => _meanRadial; private set => Set(ref _meanRadial, value); }
@@ -85,35 +90,40 @@ namespace FlatCheck.Wpf
         public string Verdict { get => _verdict; private set => Set(ref _verdict, value); }
         public string Diagnosis { get => _diagnosis; private set => Set(ref _diagnosis, value); }
 
-        /// <summary>De ce nu e concludenta seria. Gol cand e.</summary>
+        /// <summary>Why the series is not conclusive. Empty when it is.</summary>
         public string Reasons { get => _reasons; private set => Set(ref _reasons, value); }
 
-        /// <summary>true cand garda de camp a oprit testul. Nu e o eroare.</summary>
+        /// <summary>True when the field guard stopped the test. It is not an error.</summary>
         public bool Refused
         {
             get => _refused;
             private set { if (Set(ref _refused, value)) Raise(nameof(HasNumbers)); }
         }
 
-        /// <summary>Se arata panoul de cifre doar cand chiar exista cifre.</summary>
+        /// <summary>The figures panel is shown only when there really are figures.</summary>
         public bool HasNumbers => !_refused;
 
         public byte[] Map { get => _map; private set => Set(ref _map, value); }
 
         /// <summary>
-        /// Ce inseamna capetele culorilor. Doar legenda, fara comutator de scara: harta
-        /// de aici e termenul radial fitat, iar pragurile lui sunt Th.LightRad*, nu scara
-        /// de reziduu - deci plafoanele de +/-2/10/20 % n-ar insemna nimic pe ea.
+        /// What the ends of the colours mean. Only the legend, without a scale switch: the map
+        /// here is the fitted radial term, and its thresholds are Th.LightRad*, not the residual
+        /// scale - so the caps of +/-2/10/20 % would mean nothing on it.
         /// </summary>
         public string MapLegend { get => _mapLegend; private set => Set(ref _mapLegend, value); }
 
         public ObservableCollection<SeriesRow> Frames { get; } = new();
 
+        /// <summary>Runs the light series of the session's process/, guarded, adding a row per
+        /// frame as it finishes; a folder without a series gets the explanation instead.</summary>
+        /// <param name="session">The folder just opened.</param>
+        /// <param name="ct">The folder's token; checked between frames.</param>
+        /// <returns>A task that completes when the run ended; it never faults.</returns>
         internal Task RunAsync(SirilSession session, CancellationToken ct)
             => RunGuardedAsync("Rulez testul end-to-end pe seria de lights...", async () =>
             {
-                // Lista se cere INAINTE de rulare, ca "niciun cadru" sa fie o stare a
-                // interfetei cu explicatie, nu o exceptie prinsa la mijlocul unui calcul.
+                // The list is asked for BEFORE the run, so "no frame" is a state of the interface
+                // with an explanation, not an exception caught in the middle of a computation.
                 var files = session.LightSeries();
                 if (files.Count == 0)
                 {
@@ -138,16 +148,20 @@ namespace FlatCheck.Wpf
             });
 
         /// <summary>
-        /// Chemat de pe firul de calcul. Adaugarea intr-o ObservableCollection trebuie sa
-        /// se intample pe firul de interfata, altfel WPF arunca la prima legare - deci se
-        /// trece prin dispecer.
+        /// Called from the computing thread. Adding to an ObservableCollection must happen on the
+        /// UI thread, otherwise WPF throws at the first binding - so it goes through the
+        /// dispatcher.
         ///
-        /// Doua situatii ocolesc dispecerul, si amandoua sunt reale:
-        ///   - nu exista aplicatie WPF (teste): nu deseneaza nimeni, deci se adauga direct;
-        ///   - dispecerul se inchide (fereastra a fost inchisa in mijlocul unei serii de
-        ///     32 de cadre): un Invoke acolo ar arunca, iar randul oricum n-are cine sa-l
-        ///     mai vada. Anularea opreste bucla la cadrul urmator.
+        /// Two situations bypass the dispatcher, and both are real:
+        ///   - there is no WPF application (tests): nobody draws, so the row is added directly;
+        ///   - the dispatcher is shutting down (the window was closed in the middle of a series of
+        ///     32 frames): an Invoke there would throw, and nobody is left to see the row anyway.
+        ///     The cancellation stops the loop at the next frame.
         /// </summary>
+        /// <param name="index">The frame's index in the series, from 0.</param>
+        /// <param name="total">How many frames the series has.</param>
+        /// <param name="name">The frame's file name.</param>
+        /// <param name="r">The frame's analysis.</param>
         void OnFrame(int index, int total, string name, LightResult r)
         {
             var row = new SeriesRow
@@ -170,28 +184,29 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Ruleaza pe firul care detine Frames pe durata rularii curente.
+        /// Runs on the thread that owns Frames for the current run.
         ///
-        /// Fara aplicatie WPF - in teste - nu exista fir de interfata, deci se executa
-        /// direct: nu deseneaza nimeni si nu e nimic de sincronizat.
+        /// Without a WPF application - in the tests - there is no UI thread, so it runs directly:
+        /// nobody draws and there is nothing to synchronise.
         ///
-        /// Cu dispecerul inchis in timpul rularii - fereastra inchisa in mijlocul unei
-        /// serii de 32 de cadre - actualizarea se ARUNCA, nu se executa direct. Pare
-        /// tentant sa cazi inapoi pe firul curent, dar aia ar rupe exact invariantul care
-        /// tine colectia intreaga: o parte din randuri ar ajunge pe firul de interfata si
-        /// restul pe firul de calcul, iar ObservableCollection pierde randuri tacut cand i
-        /// se intampla asta. Randul oricum n-are cine sa-l mai vada - fereastra se inchide
-        /// - iar anularea opreste bucla la cadrul urmator.
+        /// With the dispatcher shut down during the run - the window closed in the middle of a
+        /// series of 32 frames - the update is DROPPED, not run directly. It is tempting to fall
+        /// back to the current thread, but that would break exactly the invariant that keeps the
+        /// collection whole: some rows would reach the UI thread and the rest the computing
+        /// thread, and ObservableCollection loses rows silently when that happens to it. Nobody is
+        /// left to see the row anyway - the window is closing - and the cancellation stops the loop
+        /// at the next frame.
         /// </summary>
+        /// <param name="work">The update to make.</param>
         void OnUi(Action work)
         {
             Dispatcher d = _ui;
             if (d == null) { work(); return; }
 
-            // Inchiderea poate cadea oricand dupa captura. Actualizarea se ARUNCA atunci,
-            // nu se executa pe firul curent: aia ar rupe invariantul de mai sus la
-            // jumatatea rularii, si ObservableCollection pierde randuri tacut cand i se
-            // intampla asta. Randul n-are cine sa-l mai vada oricum - fereastra se inchide.
+            // The shutdown can come at any time after the capture. The update is DROPPED then,
+            // not run on the current thread: that would break the invariant above halfway through
+            // the run, and ObservableCollection loses rows silently when that happens to it.
+            // Nobody is left to see the row anyway - the window is closing.
             if (d.HasShutdownStarted || d.HasShutdownFinished) return;
 
             try { d.Invoke(work); }
@@ -200,20 +215,25 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Firul de interfata, daca exista unul UTILIZABIL acum.
+        /// The UI thread, if there is one USABLE now.
         ///
-        /// Nu e destul sa existe un Application: obiectul ala supravietuieste propriului
-        /// dispecer, deci dupa o inchidere Application.Current e in continuare nenul iar
-        /// dispecerul lui nu mai primeste nimic. Captat asa, campul spune un singur lucru
-        /// pentru toata rularea - "exista un fir de interfata" sau "nu exista" - si nu
-        /// se schimba la mijloc.
+        /// It is not enough for an Application to exist: that object outlives its own dispatcher,
+        /// so after a shutdown Application.Current is still non-null while its dispatcher no
+        /// longer takes anything. Captured this way, the field says a single thing for the whole
+        /// run - "there is a UI thread" or "there is not" - and does not change midway.
         /// </summary>
+        /// <returns>The dispatcher, or null without an application or once it is shutting
+        /// down.</returns>
         static Dispatcher UiDispatcher()
         {
             Dispatcher d = System.Windows.Application.Current?.Dispatcher;
             return d != null && !d.HasShutdownStarted && !d.HasShutdownFinished ? d : null;
         }
 
+        /// <summary>Shows the series' outcome: the field and its warning, then either the
+        /// refusal's explanation or the figures, the verdict, the diagnosis or the reasons, and
+        /// the map on the automatic scale.</summary>
+        /// <param name="outcome">The run's outcome.</param>
         void Populate(LightSeriesRunOutcome outcome)
         {
             Field = DescribeField(outcome.Suitability);
@@ -252,14 +272,17 @@ namespace FlatCheck.Wpf
             Diagnosis = r.Conclusive ? LightReport.Diagnosis(r.MeanRad) : "";
             Reasons = r.Conclusive ? "" : DescribeReasons(r);
             Map = outcome.Png;
-            // Aceleasi capete cu care a fost encodata harta primita, deci scara automata.
+            // The same ends the received map was encoded with, so the automatic scale.
             MapLegend = RunReport.MapLegend(PngWriter.AutoRange(r.RadialMap));
         }
 
         /// <summary>
-        /// De ce nu se poate citi media ca eroare de flat. Aceeasi lista de motive ca in
-        /// raportul de consola, doar ca fara indentare de coloane.
+        /// Why the mean cannot be read as the flat error. The same list of reasons as in the
+        /// console report, only without the column indentation.
         /// </summary>
+        /// <param name="r">The series' result; not conclusive.</param>
+        /// <returns>One paragraph per reason, then the closing paragraph pointing at the Ratio
+        /// tab, separated by blank lines.</returns>
         static string DescribeReasons(LightSeriesResult r)
         {
             var parts = new System.Collections.Generic.List<string>();
@@ -286,6 +309,11 @@ namespace FlatCheck.Wpf
             return string.Join("\n\n", parts);
         }
 
+        /// <summary>The field covered, for the card.</summary>
+        /// <param name="s">The field guard's result, or null.</param>
+        /// <returns>The diagonal in degrees with its source, "nedeterminat" with the source when
+        /// only the focal length is known, a sentence when nothing is known, or "" for
+        /// null.</returns>
         static string DescribeField(SuitabilityResult s)
         {
             if (s == null) return "";
@@ -294,6 +322,10 @@ namespace FlatCheck.Wpf
             return "necunoscut - headerul nu da nici focala, nici scara";
         }
 
+        /// <summary>The warning under the field: a marginal field's caution, or the note that the
+        /// field could not be checked.</summary>
+        /// <param name="s">The field guard's result, or null.</param>
+        /// <returns>The warning, or "" for a suitable field or null.</returns>
         static string FieldWarningFor(SuitabilityResult s)
         {
             if (s == null) return "";
@@ -310,6 +342,7 @@ namespace FlatCheck.Wpf
             return "";
         }
 
+        /// <inheritdoc/>
         internal override void Reset()
         {
             base.Reset();

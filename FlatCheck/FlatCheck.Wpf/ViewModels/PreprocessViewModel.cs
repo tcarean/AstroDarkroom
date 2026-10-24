@@ -15,19 +15,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// PreprocessViewModel.cs - alegerea unui script Siril, si blocul "ruleaza scriptul de
-// aici" de pe ecranul de problema, care e cel mai mic consumator al ei.
+// PreprocessViewModel.cs - the choice of a Siril script, and the "run the script from here" block
+// on the problem screen, which is its smallest consumer.
 //
-// ScriptChoiceViewModel e partea comuna: lista de scripturi din meniul Siril, scriptul
-// propus, blocajul (siril-cli negasit, niciun script, un subfolder de intrare gol) si
-// avertismentul ca Siril e deschis. O folosesc cardul de problema (PreprocessViewModel,
-// care adauga doar textul de deasupra listei) si tabul Split, care ruleaza acelasi script
-// pe fiecare sesiune temporara (ADR 0054). Alegerea se face pe card sau pe tab, nu in
-// fereastra de rulare: fereastra aia e log-ul unei rulari deja pornite, si un ecran care
-// intai intreaba si apoi ruleaza ar fi doua ecrane in unul.
+// ScriptChoiceViewModel is the common part: the list of scripts from Siril's menu, the proposed
+// script, the blocker (siril-cli not found, no script, an empty input subfolder) and the warning
+// that Siril is open. The problem card uses it (PreprocessViewModel, which only adds the text
+// above the list) and so does the Split tab, which runs the same script on each temporary session
+// (ADR 0054). The choice is made on the card or on the tab, not in the run window: that window is
+// the log of a run already started, and a screen that first asks and then runs would be two
+// screens in one.
 //
-// Nu decide nimic despre flat-uri. Traduce trei intrebari de mediu - exista Siril, ce
-// scripturi stie, are folderul ce cere scriptul - in text si intr-un buton activ sau nu.
+// It decides nothing about flats. It translates three questions about the environment - does
+// Siril exist, which scripts does it know, does the folder have what the script asks for - into
+// text and a button that is enabled or not.
 
 using System;
 using System.Collections.Generic;
@@ -36,9 +37,11 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>Un script din lista: numele pentru ecran, calea pentru rulare.</summary>
+    /// <summary>A script in the list: the name for the screen, the path for the run.</summary>
     public sealed class ScriptOption
     {
+        /// <summary>Makes the option; its name is the file name of the path.</summary>
+        /// <param name="path">The script's full path.</param>
         internal ScriptOption(string path)
         {
             Path = path;
@@ -48,9 +51,14 @@ namespace FlatCheck.Wpf
         public string Name { get; }
         internal string Path { get; }
 
+        /// <summary>The script's file name, which the combo box shows.</summary>
+        /// <returns><see cref="Name"/>.</returns>
         public override string ToString() => Name;
     }
 
+    /// <summary>The choice of a Siril script for a session folder: the list, the chosen one, what
+    /// blocks the run and the warning that Siril is open. The problem card and the Split tab each
+    /// hold one.</summary>
     public class ScriptChoiceViewModel : ObservableObject
     {
         SirilSession _session;
@@ -63,20 +71,22 @@ namespace FlatCheck.Wpf
         string _warning;
         bool _offered;
 
-        /// <summary>true cat timp e atasata unei sesiuni: pe card, cand folderul are o problema pe care un script o rezolva.</summary>
+        /// <summary>True while attached to a session: on the card, when the folder has a problem
+        /// a script solves.</summary>
         public bool IsOffered { get => _offered; private set => Set(ref _offered, value); }
 
-        /// <summary>Scripturile din meniul Siril, in ordinea de acolo.</summary>
+        /// <summary>The scripts from Siril's menu, in the order they have there.</summary>
         public IReadOnlyList<ScriptOption> Scripts { get => _scripts; private set => Set(ref _scripts, value); }
 
-        /// <summary>Scriptul ales; implicit cel din SirilInstall.DefaultScript daca exista.</summary>
+        /// <summary>The chosen script; by default SirilInstall.DefaultScript's, if it
+        /// exists.</summary>
         public ScriptOption Selected
         {
             get => _selected;
             set { if (Set(ref _selected, value)) Refresh(); }
         }
 
-        /// <summary>De ce nu se poate apasa butonul, sau null cand se poate.</summary>
+        /// <summary>Why the button cannot be pressed, or null when it can.</summary>
         public string Blocker
         {
             get => _blocker;
@@ -85,7 +95,8 @@ namespace FlatCheck.Wpf
 
         public bool HasBlocker => !string.IsNullOrEmpty(_blocker);
 
-        /// <summary>Avertismentul ca Siril e deschis, sau null. Nu blocheaza - vezi SirilInstall.IsGuiRunning.</summary>
+        /// <summary>The warning that Siril is open, or null. It does not block - see
+        /// SirilInstall.IsGuiRunning.</summary>
         public string Warning
         {
             get => _warning;
@@ -100,13 +111,20 @@ namespace FlatCheck.Wpf
         internal string SelectedPath => _selected?.Path;
         internal string SelectedName => _selected?.Name;
 
-        /// <summary>Folderele in care intra scriptul ales, citite la ultimul Refresh; goale cand scriptul nu s-a putut citi.</summary>
+        /// <summary>The folders the chosen script enters, read at the last Refresh; empty when the
+        /// script could not be read.</summary>
         internal IReadOnlyList<string> RequiredFolders { get; private set; } = Array.Empty<string>();
 
-        /// <summary>Se ridica dupa fiecare Refresh, ca un consumator sa-si recalculeze propriul blocaj peste al alegerii.</summary>
+        /// <summary>Raised after every Refresh, so a consumer can recompute its own blocker on top
+        /// of the choice's.</summary>
         internal event Action Refreshed;
 
-        /// <summary>Pregateste blocul pentru un folder. Lista si alegerea implicita se fac o data, aici.</summary>
+        /// <summary>Prepares the block for a folder. The list and the default choice are made
+        /// once, here.</summary>
+        /// <param name="session">The session folder the script will run in.</param>
+        /// <param name="install">The Siril found on this machine; null counts as none.</param>
+        /// <param name="guiRunning">Whether Siril's own window is open, asked at every Refresh;
+        /// null counts as never.</param>
         internal void Attach(SirilSession session, SirilInstall install, Func<bool> guiRunning)
         {
             _session = session;
@@ -122,6 +140,7 @@ namespace FlatCheck.Wpf
             Refresh();
         }
 
+        /// <summary>Empties the block: no session, no list, no choice, nothing offered.</summary>
         internal void Detach()
         {
             _session = null;
@@ -135,9 +154,9 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Recalculeaza blocajul si avertismentul. Se cheama la atasare, la schimbarea
-        /// scriptului, si inca o data chiar inainte de rulare - Siril se poate deschide
-        /// sau inchide intre timp, si un folder de intrare se poate umple.
+        /// Recomputes the blocker and the warning. Called on attaching, on a change of script, and
+        /// once more right before the run - Siril can be opened or closed meanwhile, and an input
+        /// folder can fill up.
         /// </summary>
         internal void Refresh()
         {
@@ -150,6 +169,10 @@ namespace FlatCheck.Wpf
             Refreshed?.Invoke();
         }
 
+        /// <summary>The first thing that stops the run, in order: no siril-cli, no script in the
+        /// menu, none chosen, the chosen one unreadable, an input folder missing or empty. Sets
+        /// <see cref="RequiredFolders"/> when the script was read.</summary>
+        /// <returns>The explanation to show, or null when nothing blocks.</returns>
         string FindBlocker()
         {
             if (!_install.HasCli) return SessionMessages.SirilCliNotFound();
@@ -168,7 +191,8 @@ namespace FlatCheck.Wpf
         }
     }
 
-    /// <summary>Blocul de pe cardul de problema: alegerea scriptului plus textul de deasupra ei.</summary>
+    /// <summary>The block on the problem card: the choice of script plus the text above
+    /// it.</summary>
     public sealed class PreprocessViewModel : ScriptChoiceViewModel
     {
         public string Lead => SessionMessages.PreprocessLead();
