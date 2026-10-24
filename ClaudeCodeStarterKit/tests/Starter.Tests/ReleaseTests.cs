@@ -41,7 +41,7 @@ public sealed class ReleaseTests : IDisposable
         File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson(null));
         WriteProps("2.3.0");
         File.WriteAllText(Path.Combine(_project, "CHANGELOG.md"), Changelog);
-        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\nartifacts/\n");
+        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\nartifacts/\nbin/\nobj/\n");
         Commit("Start");
     }
 
@@ -249,27 +249,21 @@ public sealed class ReleaseTests : IDisposable
     /// <summary>
     /// -PublishOnly runs step 5 alone, from any branch, and leaves the version files as they are:
     /// a small library is published through the staging folder into its output subfolder,
-    /// release.json lists this project as its one component, and the zip, whose entry names use
-    /// forward slashes whatever the shell, has its hash beside it.
+    /// release.json lists this project as its one component, clean, and the zip, whose entry
+    /// names use forward slashes whatever the shell, holds every published file, a hidden one
+    /// included, and has its hash beside it.
     /// </summary>
     [Fact]
     public void PublishOnly_WritesReleaseJsonAndTheZip_FromAnyBranch()
     {
-        string lib = Path.Combine(_project, "src", "Lib");
-        Directory.CreateDirectory(lib);
-        File.WriteAllText(Path.Combine(lib, "Lib.csproj"),
-            """
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
-              </PropertyGroup>
-            </Project>
-            """);
-        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\nartifacts/\nbin/\nobj/\n");
-        File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson(null).Replace(
-            "\"publish\": []",
-            "\"publish\": [{ \"project\": \"src/Lib/Lib.csproj\", \"output\": \"lib\" }], \"zip\": \"Proj-{version}-win-x64.zip\"",
-            StringComparison.Ordinal));
+        string lib = WriteLibrary("src/Lib", items: """<None Include="hidden.txt" CopyToPublishDirectory="PreserveNewest" />""");
+        File.WriteAllText(Path.Combine(lib, "hidden.txt"), "hidden\n");
+        if (OperatingSystem.IsWindows())
+        {
+            File.SetAttributes(Path.Combine(lib, "hidden.txt"), FileAttributes.Hidden);
+        }
+
+        WriteKitJson("""{ "project": "src/Lib/Lib.csproj", "output": "lib" }""", zip: "Proj-{version}-win-x64.zip");
         Commit("Zip the release");
         Git("switch", "-q", "-c", "claude/Task");
         byte[] props = File.ReadAllBytes(Path.Combine(_project, "Directory.Build.props"));
@@ -293,6 +287,7 @@ public sealed class ReleaseTests : IDisposable
         Assert.Equal("2.3.0", component.GetProperty("version").GetString());
         Assert.Equal(head.Trim(), component.GetProperty("commit").GetString());
         Assert.True(component.GetProperty("unreleased").GetBoolean());
+        Assert.True(component.GetProperty("clean").GetBoolean());
 
         string zip = Path.Combine(artifacts, "Proj-2.3.0-win-x64.zip");
         using (ZipArchive archive = ZipFile.OpenRead(zip))
@@ -300,11 +295,157 @@ public sealed class ReleaseTests : IDisposable
             string[] entries = archive.Entries.Select(e => e.FullName).ToArray();
             Assert.Contains("release.json", entries);
             Assert.Contains("lib/Lib.dll", entries);
+            Assert.Contains("lib/hidden.txt", entries);
             Assert.DoesNotContain(entries, e => e.Contains('\\', StringComparison.Ordinal) || e.StartsWith(".stage", StringComparison.Ordinal));
         }
 
         string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(zip))).ToLowerInvariant();
         Assert.Equal($"{hash}  Proj-2.3.0-win-x64.zip\n", File.ReadAllText(zip + ".sha256"));
+    }
+
+    /// <summary>-WhatIf with -PublishOnly previews: no publish, no release.json, no zip, the previous folder left as it was.</summary>
+    [Fact]
+    public void PublishOnly_WithWhatIf_ChangesNothing()
+    {
+        WriteKitJson(string.Empty, zip: "Proj-{version}.zip");
+        Commit("Zip the release");
+        string old = Path.Combine(_project, "artifacts", "2.3.0", "old.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(old)!);
+        File.WriteAllText(old, "previous run\n");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly", "-WhatIf");
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("WhatIf: would publish", output);
+        Assert.True(File.Exists(old), "the previous run's folder was emptied");
+        Assert.False(File.Exists(Path.Combine(_project, "artifacts", "2.3.0", "release.json")), "release.json was written");
+        Assert.False(File.Exists(Path.Combine(_project, "artifacts", "Proj-2.3.0.zip")), "the zip was written");
+    }
+
+    /// <summary>
+    /// Outside a git repository, as a project just copied from the kit is before its first commit,
+    /// git's error does not stop the publish: release.json has empty commits and says not clean.
+    /// </summary>
+    [Fact]
+    public void PublishOnly_OutsideAGitRepository_WritesEmptyCommits()
+    {
+        string plain = _repo + "-plain";
+        ScriptRunner.CopyTree(_project, plain);
+
+        (int exitCode, string output) = ScriptRunner.RunScript(plain, Path.Combine(plain, "scripts", "release.ps1"), "-Version", "2.3.0", "-PublishOnly");
+        try
+        {
+            Assert.True(exitCode == 0, output);
+            using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(plain, "artifacts", "2.3.0", "release.json")));
+            Assert.Equal(string.Empty, release.RootElement.GetProperty("commit").GetString());
+            JsonElement component = Assert.Single(release.RootElement.GetProperty("components").EnumerateArray());
+            Assert.Equal(string.Empty, component.GetProperty("commit").GetString());
+            Assert.False(component.GetProperty("clean").GetBoolean());
+        }
+        finally
+        {
+            ScriptRunner.DeleteTree(plain);
+        }
+    }
+
+    /// <summary>-PublishOnly checks nothing, so release.json says when a component's folder held uncommitted files.</summary>
+    [Fact]
+    public void PublishOnly_FromADirtyTree_RecordsItNotClean()
+    {
+        File.WriteAllText(Path.Combine(_project, "scratch.txt"), "not committed\n");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.True(exitCode == 0, output);
+        using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(_project, "artifacts", "2.3.0", "release.json")));
+        JsonElement component = Assert.Single(release.RootElement.GetProperty("components").EnumerateArray());
+        Assert.False(component.GetProperty("clean").GetBoolean());
+    }
+
+    /// <summary>A full release changes the two version files itself; release.json still says this project is clean.</summary>
+    [Fact]
+    public void AFullRelease_RecordsItselfClean_DespiteTheVersionFilesItChanged()
+    {
+        (int exitCode, string output) = Release("2.4.0");
+        Assert.True(exitCode == 0, output);
+        using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(_project, "artifacts", "2.4.0", "release.json")));
+        JsonElement component = Assert.Single(release.RootElement.GetProperty("components").EnumerateArray());
+        Assert.Equal("2.4.0", component.GetProperty("version").GetString());
+        Assert.False(component.GetProperty("unreleased").GetBoolean());
+        Assert.True(component.GetProperty("clean").GetBoolean());
+    }
+
+    /// <summary>
+    /// A component is listed in release.json after this project, with its own version, last
+    /// commit and an [Unreleased] that is empty.
+    /// </summary>
+    [Fact]
+    public void PublishOnly_ListsEveryComponent_InReleaseJson()
+    {
+        string proj2 = Path.Combine(_repo, "Proj2");
+        Directory.CreateDirectory(proj2);
+        File.WriteAllText(Path.Combine(proj2, "kit.json"), ScriptRunner.KitJson(null));
+        File.WriteAllText(Path.Combine(proj2, "Directory.Build.props"),
+            "<Project>\n  <PropertyGroup>\n    <Version>1.4.0</Version>\n  </PropertyGroup>\n</Project>\n");
+        File.WriteAllText(Path.Combine(proj2, "CHANGELOG.md"), "# Changelog\n\n## [Unreleased]\n\n## [1.4.0] - 2026-10-01\n\n- Done.\n");
+        WriteLibrary("../Proj2/src/P2");
+        WriteKitJson("""{ "project": "../Proj2/src/P2/Lib.csproj", "output": "p2" }""");
+        Commit("Bundle Proj2");
+        (int _, string proj2Commit) = ScriptRunner.Run(_repo, gitDir: null, "git", "log", "-1", "--format=%H", "--", "Proj2");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.True(exitCode == 0, output);
+        using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(_project, "artifacts", "2.3.0", "release.json")));
+        JsonElement[] components = release.RootElement.GetProperty("components").EnumerateArray().ToArray();
+        Assert.Equal(["Proj", "Proj2"], components.Select(c => c.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal("1.4.0", components[1].GetProperty("version").GetString());
+        Assert.Equal(proj2Commit.Trim(), components[1].GetProperty("commit").GetString());
+        Assert.False(components[1].GetProperty("unreleased").GetBoolean());
+        Assert.True(components[1].GetProperty("clean").GetBoolean());
+        Assert.True(File.Exists(Path.Combine(_project, "artifacts", "2.3.0", "p2", "Lib.dll")));
+    }
+
+    /// <summary>Two entries that publish different bytes at one path stop the release, which writes no release.json.</summary>
+    [Fact]
+    public void TwoEntriesThatCollide_StopThePublish()
+    {
+        WriteLibrary("src/A");
+        WriteLibrary("src/B", source: "namespace B;\n\npublic static class Marker\n{\n}\n");
+        WriteKitJson("""{ "project": "src/A/Lib.csproj", "output": "" }, { "project": "src/B/Lib.csproj", "output": "" }""");
+        Commit("Two libraries named Lib");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("collision  Lib.dll", output);
+        Assert.Contains("src/B/Lib.csproj collides with what the entries before it published", output);
+        Assert.False(File.Exists(Path.Combine(_project, "artifacts", "2.3.0", "release.json")), "release.json was written");
+    }
+
+    /// <summary>release.json is the release's own file: a publish that ships one at the root is a collision, not overwritten.</summary>
+    [Fact]
+    public void APublishedReleaseJson_IsACollision()
+    {
+        string lib = WriteLibrary("src/Lib", items: """<None Include="release.json" CopyToPublishDirectory="PreserveNewest" />""");
+        File.WriteAllText(Path.Combine(lib, "release.json"), "{ \"app\": \"own\" }\n");
+        WriteKitJson("""{ "project": "src/Lib/Lib.csproj", "output": "" }""");
+        Commit("A library that ships release.json");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("collision  release.json", output);
+        Assert.Equal("{ \"app\": \"own\" }\n", File.ReadAllText(Path.Combine(_project, "artifacts", "2.3.0", "release.json")));
+    }
+
+    /// <summary>A publish that fails says so, without the advice meant for a collision.</summary>
+    [Fact]
+    public void AFailedPublish_IsNotReportedAsACollision()
+    {
+        WriteKitJson("""{ "project": "src/Missing/Missing.csproj", "output": "" }""");
+        Commit("An entry whose project is missing");
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("dotnet publish (src/Missing/Missing.csproj) failed", output);
+        Assert.DoesNotContain("output subfolder", output);
+        Assert.DoesNotContain("collides", output);
     }
 
     public void Dispose()
@@ -324,11 +465,38 @@ public sealed class ReleaseTests : IDisposable
             $"<Project>\n  <PropertyGroup>\n    <Version>{version}</Version>\n  </PropertyGroup>\n</Project>\n");
     }
 
-    /// <summary>Proj's kit.json with the given release.publish entries.</summary>
-    private void WriteKitJson(string entries)
+    /// <summary>Proj's kit.json with the given release.publish entries and, when given, release.zip.</summary>
+    private void WriteKitJson(string entries, string? zip = null)
     {
+        string zipKey = zip is null ? string.Empty : $", \"zip\": \"{zip}\"";
         File.WriteAllText(Path.Combine(_project, "kit.json"),
-            ScriptRunner.KitJson(null).Replace("\"publish\": []", $"\"publish\": [{entries}]", StringComparison.Ordinal));
+            ScriptRunner.KitJson(null).Replace("\"publish\": []", $"\"publish\": [{entries}]{zipKey}", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A class library Lib.csproj in <paramref name="folder"/> (relative to Proj), on the SDK's own
+    /// framework so it builds offline; <paramref name="items"/> go in an ItemGroup and
+    /// <paramref name="source"/>, when given, in Code.cs. Returns the folder.
+    /// </summary>
+    private string WriteLibrary(string folder, string items = "", string? source = null)
+    {
+        string dir = Path.GetFullPath(Path.Combine(_project, folder));
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "Lib.csproj"),
+            $"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
+              </PropertyGroup>
+              <ItemGroup>{items}</ItemGroup>
+            </Project>
+            """);
+        if (source is not null)
+        {
+            File.WriteAllText(Path.Combine(dir, "Code.cs"), source);
+        }
+
+        return dir;
     }
 
     /// <summary>A sibling kit project, Proj2 at 1.4.0 with unreleased changes, bundled by Proj and committed.</summary>

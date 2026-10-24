@@ -38,7 +38,10 @@
 #          after the last merge;
 #        - writes artifacts/<version>/release.json: this project's name (its folder), the
 #          version, the date, the commit, and each component (this project first) with its
-#          <Version>, its last commit and whether its CHANGELOG has [Unreleased] content;
+#          <Version>, its last commit, whether its CHANGELOG has [Unreleased] content and
+#          whether its folder was clean (the two version files a full release has just
+#          changed do not count). An entry that published a release.json at the root
+#          collides with it. Outside git the commits are empty and clean is false;
 #        - when kit.json sets release.zip, zips artifacts/<version>/ into artifacts/<zip name>
 #          ("{version}" replaced) and writes the zip's SHA-256 beside it in <zip name>.sha256.
 #   It commits nothing and tags nothing. At the end it prints the commit and the tag to
@@ -59,7 +62,8 @@
 #   -NoPublish       skip step 5
 #   -PublishOnly     run step 5 alone for -Version, with none of the checks and no change to
 #                    Directory.Build.props or CHANGELOG.md: the retry after a collision, or a
-#                    measurement of what a release would publish, from any branch
+#                    measurement of what a release would publish, from any branch. With
+#                    -WhatIf it lists the components and what it would publish, and stops
 #
 # RESULT
 #   exit 0  done, or the -WhatIf preview finished; it prints the files changed and the tag
@@ -78,6 +82,21 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'kit-config.ps1')
 $kit = Read-KitConfig $root
+
+# <Version> in Directory.Build.props, and the [Unreleased] section of CHANGELOG.md: from its
+# heading to the next "## [" heading or the end of the file.
+$VersionPattern = '<Version>([^<]+)</Version>'
+$UnreleasedPattern = '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)'
+
+# git's output in $Dir as one trimmed string, or $null when git fails. Its error message is
+# dropped, not raised: under Windows PowerShell 5.1 a native command's stderr, even sent to
+# $null, stops a script whose $ErrorActionPreference is Stop (measured 2026-10-24).
+function Invoke-GitText([string]$Dir, [string[]]$Arguments) {
+    $ErrorActionPreference = 'Continue'
+    $text = & git -C $Dir @Arguments 2>$null
+    if ($LASTEXITCODE -ne 0) { return $null }
+    return (@($text) -join "`n").Trim()
+}
 
 # A kit.json path (forward slashes) as a path under the project on this system: pwsh on Linux,
 # where CI may run, takes a backslash for part of a file name.
@@ -104,26 +123,34 @@ function Get-ReleaseComponents {
 }
 
 # What release.json says about one component: its folder name, its <Version> ('' when absent),
-# its last commit and whether its CHANGELOG.md has content under [Unreleased].
-function Get-ComponentInfo([string]$ComponentRoot) {
+# its last commit ('' outside git), whether its CHANGELOG.md has content under [Unreleased],
+# and whether its folder is clean, with the uncommitted paths when it is not. $Exclude names
+# paths, relative to the component, that do not count against clean: the version files a
+# full release has just changed itself.
+function Get-ComponentInfo([string]$ComponentRoot, [string[]]$Exclude = @()) {
     $version = ''
     $propsFile = Join-Path $ComponentRoot 'Directory.Build.props'
     if (Test-Path -LiteralPath $propsFile) {
-        $vm = [regex]::Match([System.IO.File]::ReadAllText($propsFile), '<Version>([^<]+)</Version>')
+        $vm = [regex]::Match([System.IO.File]::ReadAllText($propsFile), $VersionPattern)
         if ($vm.Success) { $version = $vm.Groups[1].Value }
     }
     $pending = $false
     $changelogFile = Join-Path $ComponentRoot 'CHANGELOG.md'
     if (Test-Path -LiteralPath $changelogFile) {
-        $um = [regex]::Match([System.IO.File]::ReadAllText($changelogFile), '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)')
+        $um = [regex]::Match([System.IO.File]::ReadAllText($changelogFile), $UnreleasedPattern)
         $pending = $um.Success -and $um.Groups[1].Value.Trim().Length -gt 0
     }
-    $commit = (git -C $ComponentRoot log -1 --format=%H -- . 2>$null)
+    $commit = Invoke-GitText $ComponentRoot @('log', '-1', '--format=%H', '--', '.')
+    # Where-Object first: $null piped on would make one bare ':(exclude)', which excludes all.
+    $status = Invoke-GitText $ComponentRoot (@('status', '--porcelain', '--', '.') + @($Exclude | Where-Object { $_ } | ForEach-Object { ":(exclude)$_" }))
+    $dirty = if ($null -eq $status) { @('(git status failed: not in a git repository?)') } elseif ($status) { @($status -split "`n") } else { @() }
     return [pscustomobject]@{
         Name = Split-Path $ComponentRoot -Leaf
         Version = $version
-        Commit = if ($commit) { "$commit".Trim() } else { '' }
+        Commit = if ($commit) { $commit } else { '' }
         Unreleased = $pending
+        Clean = $dirty.Count -eq 0
+        Dirty = $dirty
     }
 }
 
@@ -143,8 +170,9 @@ function ConvertTo-JsonText([string]$Text) {
 }
 
 # Step 5: stage and merge every publish, write release.json, zip. Throws on a failed publish
-# or a collision, with what to do next.
-function Publish-Release {
+# or a collision, with what to do next. -AfterVersionEdits: a full release, which has just
+# changed Directory.Build.props and CHANGELOG.md itself; they do not make this project unclean.
+function Publish-Release([switch]$AfterVersionEdits) {
     # Resolved first: an entry in no kit project stops before anything is built.
     $componentRoots = @(Get-ReleaseComponents)
     $out = Join-Path (ConvertTo-LocalPath 'artifacts') $Version
@@ -153,7 +181,8 @@ function Publish-Release {
     if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out -Recurse -Force }
     New-Item -ItemType Directory -Path $out -Force | Out-Null
     $stage = Join-Path $out '.stage'
-    $retry = "Resolve it (usually an output subfolder for that entry in kit.json) and re-run with -PublishOnly -Version $Version; Directory.Build.props and CHANGELOG.md are already changed unless this run was -PublishOnly."
+    $versionFiles = if ($AfterVersionEdits) { 'Directory.Build.props and CHANGELOG.md are already changed.' } else { 'The version files were not touched (-PublishOnly).' }
+    $rerun = "re-run with -PublishOnly -Version $Version. $versionFiles"
     $index = 0
     foreach ($p in $kit.release.publish) {
         $index++
@@ -161,16 +190,32 @@ function Publish-Release {
         $target = if ($p.output) { Join-Path $out ($p.output -replace '[\\/]', [System.IO.Path]::DirectorySeparatorChar) } else { $out }
         $extra = @($p.args)
         dotnet publish (ConvertTo-LocalPath $p.project) -c Release -o $staged --nologo -v q @extra
-        if ($LASTEXITCODE -ne 0) { throw ("dotnet publish ({0}) failed. {1}" -f $p.project, $retry) }
+        if ($LASTEXITCODE -ne 0) { throw ("dotnet publish ({0}) failed; fix the cause shown above and {1}" -f $p.project, $rerun) }
         & (Get-KitShell) -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'merge-publish.ps1') -From $staged -Into $target
-        if ($LASTEXITCODE -ne 0) { throw ("{0} collides with what the entries before it published. {1}" -f $p.project, $retry) }
+        # merge-publish.ps1: exit 1 is a collision, any other failure is an error of its own.
+        if ($LASTEXITCODE -eq 1) { throw ("{0} collides with what the entries before it published. Resolve it (usually an output subfolder for that entry in kit.json) and {1}" -f $p.project, $rerun) }
+        if ($LASTEXITCODE -ne 0) { throw ("merge-publish.ps1 failed for {0} (exit {1}); see its message above, then {2}" -f $p.project, $LASTEXITCODE, $rerun) }
     }
     if (Test-Path -LiteralPath $stage) { Remove-Item -LiteralPath $stage -Recurse -Force }
 
+    # release.json is the release's own file: an entry that published one at the root collides
+    # with it, as two entries collide, and is never overwritten.
+    $manifest = Join-Path $out 'release.json'
+    if (Test-Path -LiteralPath $manifest) {
+        Write-Host ("collision  release.json  (published by an entry; the release writes its own into {0})" -f $out) -ForegroundColor Red
+        throw ("An entry of release.publish published release.json into {0}, where the release writes its own. Give that entry an output subfolder in kit.json and {1}" -f $out, $rerun)
+    }
+
     # release.json: what this folder holds, for the people who receive it and for a program
-    # that shows the versions. UTF-8 without a byte order mark, LF line ends.
-    $components = @($componentRoots | ForEach-Object { Get-ComponentInfo $_ })
-    $head = "$(git -C $root rev-parse HEAD 2>$null)".Trim()
+    # that shows the versions. UTF-8 without a byte order mark, LF line ends. A component whose
+    # folder held uncommitted files says so ("clean": false): -PublishOnly checks nothing.
+    $components = @()
+    foreach ($componentRoot in $componentRoots) {
+        $exclude = if ($AfterVersionEdits -and $components.Count -eq 0) { @('Directory.Build.props', 'CHANGELOG.md') } else { @() }
+        $components += Get-ComponentInfo $componentRoot $exclude
+    }
+    $head = Invoke-GitText $root @('rev-parse', 'HEAD')
+    if (-not $head) { $head = '' }
     $lines = @(
         '{',
         ('  "name": {0},' -f (ConvertTo-JsonText (Split-Path ([System.IO.Path]::GetFullPath($root).TrimEnd('\', '/')) -Leaf))),
@@ -182,18 +227,21 @@ function Publish-Release {
     for ($i = 0; $i -lt $components.Count; $i++) {
         $c = $components[$i]
         $comma = if ($i -lt $components.Count - 1) { ',' } else { '' }
-        $lines += ('    {{ "name": {0}, "version": {1}, "commit": {2}, "unreleased": {3} }}{4}' -f
-            (ConvertTo-JsonText $c.Name), (ConvertTo-JsonText $c.Version), (ConvertTo-JsonText $c.Commit), $c.Unreleased.ToString().ToLowerInvariant(), $comma)
+        $lines += ('    {{ "name": {0}, "version": {1}, "commit": {2}, "unreleased": {3}, "clean": {4} }}{5}' -f
+            (ConvertTo-JsonText $c.Name), (ConvertTo-JsonText $c.Version), (ConvertTo-JsonText $c.Commit),
+            $c.Unreleased.ToString().ToLowerInvariant(), $c.Clean.ToString().ToLowerInvariant(), $comma)
     }
     $lines += @('  ]', '}')
     $utf8NoBom = New-Object System.Text.UTF8Encoding $false
-    [System.IO.File]::WriteAllText((Join-Path $out 'release.json'), (($lines -join "`n") + "`n"), $utf8NoBom)
+    [System.IO.File]::WriteAllText($manifest, (($lines -join "`n") + "`n"), $utf8NoBom)
     foreach ($c in $components) {
         $flag = if ($c.Unreleased) { ', unreleased changes' } else { '' }
+        if (-not $c.Clean) { $flag += ', NOT CLEAN' }
         Write-Host ("component {0} {1} ({2}{3})" -f $c.Name, $c.Version, $(if ($c.Commit) { $c.Commit.Substring(0, [Math]::Min(7, $c.Commit.Length)) } else { 'no commit' }), $flag)
     }
 
-    $files = @(Get-ChildItem -LiteralPath $out -Recurse -File)
+    # -Force: a hidden file is published like any other, as merge-publish.ps1 copied it.
+    $files = @(Get-ChildItem -LiteralPath $out -Recurse -File -Force)
     $size = ($files | Measure-Object Length -Sum).Sum
     Write-Host ("published {0} ({1} files, {2:n1} MB)" -f $out, $files.Count, ($size / 1MB))
 
@@ -211,7 +259,7 @@ function Publish-Release {
         $stream = [System.IO.File]::Open($zip, [System.IO.FileMode]::CreateNew)
         $archive = New-Object System.IO.Compression.ZipArchive($stream, [System.IO.Compression.ZipArchiveMode]::Create)
         try {
-            foreach ($f in Get-ChildItem -LiteralPath $outFull -Recurse -File) {
+            foreach ($f in Get-ChildItem -LiteralPath $outFull -Recurse -File -Force) {
                 $entry = $f.FullName.Substring($outFull.Length + 1).Replace([System.IO.Path]::DirectorySeparatorChar, '/')
                 [void][System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $f.FullName, $entry, [System.IO.Compression.CompressionLevel]::Optimal)
             }
@@ -237,6 +285,15 @@ try {
     # -PublishOnly: step 5 alone, no checks, no version files (the kit's ADR 0036).
     if ($PublishOnly) {
         Write-Host ("== publish only {0}: no checks, Directory.Build.props and CHANGELOG.md untouched" -f $Version) -ForegroundColor Cyan
+        # -WhatIf previews here: step 5 runs dotnet publish and a child script, which a
+        # -WhatIf would not reach, so nothing of it starts.
+        if ($WhatIfPreference) {
+            $targets = ($kit.release.publish | ForEach-Object { $_.project }) -join ', '
+            $zipPlan = if ($kit.release.zip) { ', zip ' + $kit.release.zip.Replace('{version}', $Version) } else { '' }
+            foreach ($componentRoot in @(Get-ReleaseComponents)) { Write-Host ("component {0} ({1})" -f (Split-Path $componentRoot -Leaf), $componentRoot) }
+            Write-Host ("WhatIf: would publish {0} into artifacts/{1}/ after emptying it, write release.json{2}." -f $(if ($targets) { $targets } else { 'nothing' }), $Version, $zipPlan)
+            exit 0
+        }
         Publish-Release
         Write-Host '== published. Nothing is committed or tagged by this script.' -ForegroundColor Green
         exit 0
@@ -268,7 +325,7 @@ try {
     # The current version is the text between <Version> and </Version>.
     $propsPath = Join-Path $root 'Directory.Build.props'
     $props = [System.IO.File]::ReadAllText($propsPath)
-    $m = [regex]::Match($props, '<Version>([^<]+)</Version>')
+    $m = [regex]::Match($props, $VersionPattern)
     if (-not $m.Success) { throw 'No <Version> element in Directory.Build.props.' }
     $current = [version]$m.Groups[1].Value
     if ($new -lt $current) { throw "Version $new is below <Version> $current in Directory.Build.props, which the owner already set; release $current or above." }
@@ -281,8 +338,8 @@ try {
     $floor = $released | Sort-Object -Descending | Select-Object -First 1
     if ($floor -and $new -le $floor) { throw "Version $new is not above $floor, the newest released heading in CHANGELOG.md." }
 
-    # The [Unreleased] section: from its heading to the next "## [" heading or the end of file.
-    $unreleased = [regex]::Match($changelog, '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)')
+    # The [Unreleased] section ($UnreleasedPattern).
+    $unreleased = [regex]::Match($changelog, $UnreleasedPattern)
     if (-not $unreleased.Success) { throw 'CHANGELOG.md has no [Unreleased] section.' }
     if ($unreleased.Groups[1].Value.Trim().Length -eq 0) { throw '[Unreleased] is empty; nothing to release.' }
 
@@ -294,24 +351,14 @@ try {
     $problems = @()
     foreach ($componentRoot in @(Get-ReleaseComponents | Where-Object { $_ -ne $here })) {
         $name = Split-Path $componentRoot -Leaf
+        $info = Get-ComponentInfo $componentRoot
         $problem = $null
         try { $null = Read-KitConfig $componentRoot } catch { $problem = "Component $name has no usable kit.json: $($_.Exception.Message)" }
         if (-not $problem) {
-            $componentProps = Join-Path $componentRoot 'Directory.Build.props'
-            if (-not (Test-Path -LiteralPath $componentProps) -or -not [regex]::IsMatch([System.IO.File]::ReadAllText($componentProps), '<Version>[^<]+</Version>')) {
-                $problem = "Component $name has no <Version> in Directory.Build.props."
-            }
-            elseif (-not (Test-Path -LiteralPath (Join-Path $componentRoot 'CHANGELOG.md'))) {
-                $problem = "Component $name has no CHANGELOG.md."
-            }
-            else {
-                $componentDirty = @(git -C $componentRoot status --porcelain -- . 2>$null | Where-Object { $_ })
-                if ($componentDirty.Count -gt 0) {
-                    $problem = "Component $name is not clean; commit or stash first:`n" + ($componentDirty -join "`n")
-                }
-            }
+            if (-not $info.Version) { $problem = "Component $name has no <Version> in Directory.Build.props." }
+            elseif (-not (Test-Path -LiteralPath (Join-Path $componentRoot 'CHANGELOG.md'))) { $problem = "Component $name has no CHANGELOG.md." }
+            elseif (-not $info.Clean) { $problem = "Component $name is not clean; commit or stash first:`n" + ($info.Dirty -join "`n") }
         }
-        $info = Get-ComponentInfo $componentRoot
         $state = if ($problem) { 'NOT READY' } else { 'clean' }
         $flag = if ($info.Unreleased) { ', unreleased changes' } else { '' }
         $componentLines += ("component {0} {1} ({2}{3}) - {4}" -f $name, $info.Version, $componentRoot, $flag, $state)
@@ -366,7 +413,7 @@ try {
 
     # --- artifacts ----------------------------------------------------------------------
     # artifacts/ is git-ignored.
-    if (-not $NoPublish) { Publish-Release }
+    if (-not $NoPublish) { Publish-Release -AfterVersionEdits }
 
     Write-Host ("== ready. Propose: git commit -m ""Release {0}"" -- Directory.Build.props CHANGELOG.md, then git tag -a {1} -m ""Release {0}"". Nothing is committed or tagged by this script." -f $Version, $tag) -ForegroundColor Green
     exit 0

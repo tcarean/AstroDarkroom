@@ -30,13 +30,19 @@ new `scripts/merge-publish.ps1`: a file already there with the same SHA-256 is s
 other bytes is a collision, and on any collision nothing of that entry is copied and the release
 stops, naming each path; the owner decides (usually an `output` subfolder for that entry) and
 re-runs with the new `-PublishOnly`, which runs step 5 alone with no checks and no change to the
-version files. An entry may name a project in another kit project (`../X/...`, the nearest
-`kit.json` above it), which makes that project a component: step 1 requires its `kit.json`, a
-`<Version>`, a `CHANGELOG.md` and a clean folder, and `-WhatIf` lists the components. Step 5
-always writes `artifacts/<version>/release.json` (name, version, date, commit, and per component,
-this project first, its `<Version>`, last commit and whether its `[Unreleased]` has content).
-The new optional key `release.zip` names a zip of `artifacts/<version>/`, written to `artifacts/`
-entry by entry with forward-slash names, with `<zip>.sha256` beside it.
+version files (with `-WhatIf` it only lists what it would publish). An error of
+`merge-publish.ps1` that is not a collision exits 2 and is reported as such. An entry may name a
+project in another kit project (`../X/...`, the nearest `kit.json` above it), which makes that
+project a component: step 1 requires its `kit.json`, a `<Version>`, a `CHANGELOG.md` and a clean
+folder, and `-WhatIf` lists the components. Step 5 always writes
+`artifacts/<version>/release.json` (name, version, date, commit, and per component, this project
+first, its `<Version>`, last commit, whether its `[Unreleased]` has content and whether its
+folder was clean, the two version files a full release has just changed aside); a `release.json`
+that an entry published at the root is a collision. Every file of the folder, a hidden one
+included, goes into the zip, and git's errors (a project not committed yet) leave the commits
+empty instead of stopping the script. The new optional key `release.zip` names a zip of
+`artifacts/<version>/`, written to `artifacts/` entry by entry with forward-slash names, with
+`<zip>.sha256` beside it.
 
 ## Alternatives rejected
 
@@ -63,5 +69,8 @@ one. A collision or a failed publish still comes after steps 3 and 4, as a faile
 the message says so and names `-PublishOnly`. `-PublishOnly` also measures what a release would
 publish from a task branch. Guarded by `MergePublishTests` (skipped equal files, the collision
 report, nothing copied on a collision) and `ReleaseTests` (an entry outside every kit project,
-a component that is not clean, the `-WhatIf` listing, and `-PublishOnly` staging a library into
-a subfolder, writing `release.json` and a zip with forward-slash entries and its hash).
+a component that is not clean, the `-WhatIf` listing, `-PublishOnly` staging a library into a
+subfolder and writing `release.json` and a zip with forward-slash entries, a hidden file and its
+hash, `-PublishOnly -WhatIf` changing nothing, a project outside git, a dirty tree recorded as
+not clean, a full release recorded clean, a second component in `release.json`, two entries
+that collide, a published `release.json`, and a failed publish not called a collision).

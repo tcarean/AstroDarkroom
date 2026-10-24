@@ -12,7 +12,8 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   the new `scripts/merge-publish.ps1`, which refuses a file that would overwrite one with other
   bytes and names it; an entry may publish from a sibling kit project (`../X/...`), a component
   that must be clean and that `-WhatIf` lists; every publish writes `release.json` (version,
-  commit, and each component's version, commit and unreleased changes); the new optional
+  commit, and each component's version, commit, unreleased changes and whether its folder was
+  clean), and a `release.json` an entry publishes is a collision; the new optional
   `release.zip` key in `kit.json` zips the folder into `artifacts/` with a `.sha256` beside it;
   `-PublishOnly` redoes the publish alone, without checks or version edits.
 - The kit's rule "Documentation comments" (ADR 0035): every type and every method in the code,

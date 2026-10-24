@@ -55,14 +55,29 @@ public sealed class MergePublishTests : IDisposable
         Write(_into, "runtimes/coreclr.dll", "net9");
         Write(_from, "LICENSE", "same");
         Write(_into, "LICENSE", "same");
+        Write(_from, "NOTICES.md", "short");
+        Write(_into, "NOTICES.md", "a longer text");
         Write(_from, "app.exe", "app");
 
         (int exitCode, string output) = Merge();
         Assert.Equal(1, exitCode);
         Assert.Contains("collision  runtimes/coreclr.dll  (", output);
+        Assert.Contains("collision  NOTICES.md  (", output);
         Assert.DoesNotContain("collision  LICENSE", output);
         Assert.False(File.Exists(Path.Combine(_into, "app.exe")), "a file was copied despite the collision");
         Assert.Equal("net9", File.ReadAllText(Path.Combine(_into, "runtimes", "coreclr.dll")));
+    }
+
+    /// <summary>An error that is not a collision exits 2, so release.ps1 does not give the collision advice for it.</summary>
+    [Fact]
+    public void AMissingFromFolder_ExitsTwo_AndIsNoCollision()
+    {
+        Directory.Delete(_from);
+
+        (int exitCode, string output) = Merge();
+        Assert.Equal(2, exitCode);
+        Assert.Contains("is not a folder", output);
+        Assert.DoesNotContain("collision", output);
     }
 
     public void Dispose()

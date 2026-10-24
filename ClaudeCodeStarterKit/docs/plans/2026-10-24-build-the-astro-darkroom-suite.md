@@ -457,3 +457,30 @@ started from its net8 build; the lock files of all three changed only their fram
   (`starter.deps.json`, `starter.dll`, `starter.pdb`, `starter.runtimeconfig.json`) and copied
   nothing; with `output: "sc"` on the second it merged 203 files, 74.7 MB, zip 33.3 MB, and the
   `.sha256` matched `sha256sum`. `kit.json`, the lock files and `artifacts/` were restored after.
+
+**After `/code-review` (2026-10-25, ten findings, all fixed on the branch at the owner's word):**
+
+- `-PublishOnly -WhatIf` published half for real (dotnet publish, the child merge script,
+  `release.json` and the zip ignore `-WhatIf`): it now lists the components and what it would
+  publish, and stops.
+- Under Windows PowerShell 5.1 git's stderr, even sent to `$null`, stopped the script (measured:
+  `git -C C:\ log ... 2>$null` threw): git runs through `Invoke-GitText`, which leaves the commits
+  empty outside git.
+- The zip and the size line skipped hidden files that the merge copied: `-Force`.
+- A `release.json` an entry published at the root is a collision instead of being overwritten.
+- `merge-publish.ps1` exits 2 on an error that is not a collision, and a failed publish is no
+  longer reported with the collision advice.
+- `release.json` gains `clean` per component, the two version files a full release has changed
+  aside. Writing it found a PowerShell trap: `if ... else { @() }` yields `$null`, and `$null`
+  piped through `ForEach-Object` made one bare `:(exclude)` pathspec that excluded everything.
+- Tests: ten more `ReleaseTests` and `MergePublishTests` cases (a second component in
+  `release.json`, two entries that collide through `release.ps1`, and the cases above); each
+  failed before its fix except the two-entry collision, which is coverage.
+- The `<Version>` and `[Unreleased]` patterns are defined once; the component check reuses
+  `Get-ComponentInfo`; `merge-publish.ps1` hashes only files of equal length.
+- **Measured on .NET 8** (`docs/validation.md`, History, of the three projects): DarksCheck 10/10,
+  LightsCheck 13/13, ImageVisualCompare 4/4 cases pass, no figure moved, IVC's memory within
+  3.3 MB. DarksCheck's working set, same code on both runtimes, two runs each: library 3.13 /
+  3.16 GB (.NET 9) and 3.22 / 3.29 GB (.NET 8), 24-27 s; Smida 5.75 / 6.09 GB and 5.72 / 5.87 GB,
+  63-65 s. Smida is above ADR 0007's 4.5-4.7 GB and 35 s on both runtimes alike: the console
+  does more on that folder than it did on 2026-10-11; not looked into, ADR 0007 left as it is.
