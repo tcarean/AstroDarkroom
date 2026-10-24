@@ -131,8 +131,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
     /// <summary>
     /// The Tonuri tab (R-113): the tonal rows with their descriptions, the L* histogram with
-    /// paper black marked, the simulation table with a preview button per row, the cloud rows,
-    /// the level-L* ladder, the guide, and the requests for the map and preview windows.
+    /// paper black and the visibility threshold marked, the simulation table with a preview
+    /// button per row, the cloud rows, the level-L* ladder, the guide, and the requests for the
+    /// map and preview windows.
     /// </summary>
     public sealed class TonesTabViewModel : ResultTabViewModel
     {
@@ -148,7 +149,7 @@ namespace AstroPhotoAnalyzer.Wpf
         IReadOnlyList<string> _clouds = Array.Empty<string>();
         IReadOnlyList<string> _ladder = Array.Empty<string>();
         IReadOnlyList<GuideParagraph> _guide = Array.Empty<GuideParagraph>();
-        double _paperBlack = double.NaN;
+        double _paperBlack = double.NaN, _lowSeparation = double.NaN;
         string _definition, _exactLine, _noWcs;
         AnalysisResult _result;
 
@@ -159,6 +160,31 @@ namespace AstroPhotoAnalyzer.Wpf
         /// Paper black, in L*, as a position in the histogram (the bins are 0..100).
         /// </summary>
         public double PaperBlack { get => _paperBlack; private set => Set(ref _paperBlack, value); }
+
+        /// <summary>
+        /// The visibility threshold, Thresholds.LowSeparationLstar, as a position in the histogram:
+        /// the dashed line. It does not depend on the image or the paper (ADR 0029), but it is
+        /// set with the result, so that an empty chart has no line.
+        /// </summary>
+        public double LowSeparation { get => _lowSeparation; private set => Set(ref _lowSeparation, value); }
+
+        /// <summary>
+        /// The chart's heading: what each of the two lines is. The threshold comes from
+        /// Thresholds, not typed.
+        /// </summary>
+        public string HistogramHeading => "HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = "
+            + $"pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}";
+
+        /// <summary>
+        /// The note under the chart. Each sentence says what lies left of one line and never
+        /// which line is left of the other: on canvas (Dmax 1.5) paper black is L* 20.7, right of
+        /// the threshold, and the text must hold there too. The second sentence speaks only of
+        /// the tones the paper still separates, since part of what is left of the threshold is
+        /// also under paper black, on every paper.
+        /// </summary>
+        public string HistogramNote => "La stanga liniei rosii totul se printeaza cu acelasi negru. "
+            + $"La stanga liniei galbene intrerupte (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}), tonurile pe care hartia "
+            + "le mai separa abia se deosebesc cu ochiul, in lumina de camera. Histograma e pe subesantion, in procente.";
 
         /// <summary>
         /// The simulation table: the header, then a row per target, each with its preview
@@ -266,6 +292,7 @@ namespace AstroPhotoAnalyzer.Wpf
             };
             Histogram = t.LstarHistogramPct;
             PaperBlack = t.PaperBlackLstar;
+            LowSeparation = Thresholds.LowSeparationLstar;
             // The same mono text as in Anexa B, plus the preview button on every row (the header
             // has none).
             var sim = new List<SimulationRowItem> { new SimulationRowItem { Text = ReportWriter.SimulationHeader } };
@@ -303,6 +330,8 @@ namespace AstroPhotoAnalyzer.Wpf
             _result = null;
             Rows = Array.Empty<MetricRow>();
             Histogram = Array.Empty<double>();
+            PaperBlack = double.NaN;
+            LowSeparation = double.NaN;
             SimulationRows = Array.Empty<SimulationRowItem>();
             CloudRows = Array.Empty<string>();
             LadderRows = Array.Empty<string>();

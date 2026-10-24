@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The paper-black line of the Tonuri histogram stood half a bin (about 5 px) left of its value:
+  the bins are centred on whole L\* values, and the line now falls at the centre of its bin,
+  as does the new threshold line (R-113; the code review of ADR 0046's task).
 - The gamut figure of the Curbe tab no longer undercounts near the paper's gamut edge: a pixel
   whose interpolated displacement lies within 1.0 of the threshold takes the exact round trip of
   its 8-bit colour, once per colour, the rows measured in parallel (R-144; ADR 0042). The grid
@@ -55,6 +58,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Tonuri histogram also marks the visibility threshold L\* 15, an amber dashed line beside
+  the red paper-black line, the colours the preview window gives the same two classes; the
+  heading and the note under the chart name both lines and hold on canvas too, where paper
+  black is right of the threshold (R-113; ADR 0046).
 - No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR
   0033): the Curbe tab shows the reason in red, instead of four curves that change nothing.
 - The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
