@@ -174,6 +174,7 @@ namespace FlatCheck
         //  - q smoothed with a sliding median over 7 rings (version 2.2): on the masters with
         //    spots it leaves steps of 0.7-1 % between rings; a single median over the rings
         //    does not.
+
         // below this the 2t+4t basis can no longer be separated on a ring's arcs (Gram
         // determinant, at the variance of a whole ring)
         internal const double RingFitMinDet = 0.02;
@@ -187,10 +188,12 @@ namespace FlatCheck
 
         /// <summary>
         /// The radial profile around (<paramref name="cx"/>, <paramref name="cy"/>) and the 2D
-        /// model interpolated from it: the median per ring inside the inscribed circle, and on
-        /// the partial rings beyond it the median after dividing out the even 2t and 4t terms
-        /// (the correction described above, and in docs/design/radial-model-even-term.md).
-        /// Rings with fewer than 8 pixels are left out.
+        /// model interpolated from it: the median per ring inside the inscribed circle
+        /// (radius <c>min(cx, cy)</c>), and on the partial rings beyond it the median after
+        /// dividing out the even 2t and 4t terms (the correction described above, and in
+        /// docs/design/radial-model-even-term.md). When no ring from RingQFrom * rIns outwards is
+        /// identifiable, there is no correction and those rings take the plain median too. Rings
+        /// with fewer than 8 pixels are left out.
         /// </summary>
         /// <param name="img">The raster, normally symmetrised
         /// (<see cref="Img.Symmetrise"/>).</param>
@@ -398,7 +401,10 @@ namespace FlatCheck
         /// </summary>
         /// <param name="src">The matrix; not modified.</param>
         /// <param name="n">Its size.</param>
-        /// <returns>The determinant; 0 when a whole pivot column is zero.</returns>
+        /// <returns>
+        /// The determinant; exactly 0 when, at some step of the elimination, the current column
+        /// has no non-zero entry on or below the diagonal.
+        /// </returns>
         static double Determinant(double[,] src, int n)
         {
             var a = (double[,])src.Clone();

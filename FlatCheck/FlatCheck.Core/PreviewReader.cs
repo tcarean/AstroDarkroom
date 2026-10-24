@@ -38,7 +38,8 @@
 //   - Any failure returns null. A preview that does not decode is no reason for the run to fail
 //     - it only means the window's switch stays off.
 //
-// Measured on a D3300, with ImageSharp 4.1.1, the preview of DSC_0091.NEF:
+// Measured on a D3300, with ImageSharp 4.1.1, the preview of DSC_0091.NEF (the project pins
+// 3.1.11, ADR 0010; these figures were not re-measured on it):
 //   1620x1080, native            16 ms,  5 MB allocated
 //   6000x4000, native           460 ms, 69 MB
 //   6000x4000, TargetSize 2000  485 ms,  9 MB

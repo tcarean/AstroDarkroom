@@ -142,7 +142,9 @@ namespace FlatCheck
         /// Reads the whole file: the first HDU with a 2D image, its planes averaged, the header
         /// as a dictionary and as raw cards, the CFA order from BAYERPAT, and the focal length
         /// and camera. The ADU scale stays null: a FITS does not carry it. Throws
-        /// InvalidDataException on a file that is not a FITS or whose header is cut.
+        /// InvalidDataException on a file that is not a FITS or whose header is cut, and an
+        /// Exception when no HDU holds a 2D image or BITPIX is not one of the five (as
+        /// <see cref="LoadFull"/>).
         /// </summary>
         /// <param name="path">The FITS file to read.</param>
         /// <returns>The frame, its image filled.</returns>

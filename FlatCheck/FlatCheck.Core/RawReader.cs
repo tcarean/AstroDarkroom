@@ -85,8 +85,10 @@ namespace FlatCheck
         /// <summary>
         /// Decodes the raw: the visible mosaic in ADU (no development), the exact scale from
         /// libraw, the CFA order, the best embedded preview and the shooting metadata. Throws
-        /// FileNotFoundException for a missing file, InvalidOperationException when libraw cannot
-        /// be loaded or gives no 16-bit Bayer mosaic or an impossible scale.
+        /// FileNotFoundException for a missing file; InvalidOperationException when libraw cannot
+        /// be loaded, or gives no 16-bit Bayer mosaic, invalid dimensions or an impossible scale;
+        /// and, unwrapped, whatever libraw throws on a file it cannot open or unpack (a file
+        /// that is not a raw at all).
         /// </summary>
         /// <param name="path">The raw file to read.</param>
         /// <returns>The frame, its image filled and its header empty.</returns>

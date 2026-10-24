@@ -18,14 +18,17 @@
 // Thresholds.cs - every verdict threshold, in percent.
 //
 // They are empirical rules, not physical constants: a starting point, to be calibrated on a
-// setup you are sure of. Since phase 8 they are ALL here - before, --light had 2.0/5.0 inline
-// and --expo its bands as locals, which made it impossible to see in a single place what a
-// decision rests on.
+// setup you are sure of. Since phase 8 the verdict thresholds are ALL here - before, --light had
+// 2.0/5.0 inline and --expo its bands as locals, which made it impossible to see in a single
+// place what a decision rests on. A few tolerances still sit beside their code:
+// Mosaic.CfaSpreadMin (does a frame look CFA), LensSpec.ApertureToleranceStops and
+// SensorFormats.Tolerance (lens and format matching), SyntheticFlatBuilder.SmallExtrapolation
+// (when an extrapolation is a large one).
 
 namespace FlatCheck
 {
     /// <summary>
-    /// Every threshold the verdicts use, as named constants: the residual scale, the smoothing,
+    /// The verdict thresholds, as named constants: the residual scale, the smoothing,
     /// --ratio, --light and its series, the profile tolerances and the exposure bands. Percent
     /// unless the name says otherwise.
     /// </summary>
