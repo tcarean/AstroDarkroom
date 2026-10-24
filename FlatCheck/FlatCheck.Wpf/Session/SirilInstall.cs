@@ -141,7 +141,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Config-ul lui Siril: %LOCALAPPDATA%\siril\config.<versiune>.ini. Numele poarta
+        /// Config-ul lui Siril: %LOCALAPPDATA%\siril\config.&lt;versiune&gt;.ini. Numele poarta
         /// versiunea, deci se ia cel mai nou dupa data - Siril isi migreaza setarile
         /// intr-un fisier nou la o versiune majora si il lasa pe cel vechi acolo.
         /// </summary>

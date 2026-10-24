@@ -139,4 +139,6 @@ The kit's workflow in `.claude/rules/kit/process.md` applies. FlatCheck adds:
 - `.editorconfig` holds whitespace only; `dotnet format` enforces it, `IDE0005` removes unused
   usings. Warnings are errors in the gate. Code style analyzers and `Nullable` in the three
   application projects are off on purpose (ADR 0003); enabling them is a task of its own.
+- The build writes the XML documentation file, so the gate fails a malformed doc comment, a tag
+  naming no parameter or an unresolved `cref`; CS1591 is muted (ADR 0059).
 - Fix, do not suppress, unless the suppression carries a comment with the reason.

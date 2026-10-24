@@ -60,6 +60,12 @@ namespace FlatCheck
 
     internal static class LightSeriesRun
     {
+        /// <param name="dir">The folder that holds the lights.</param>
+        /// <param name="pattern">The file pattern the lights match in <paramref name="dir"/>
+        /// (--pattern).</param>
+        /// <param name="fov">The diagonal field of view in degrees given with --fov, or null to
+        /// compute it from the first frame's header.</param>
+        /// <param name="report">Where the report text goes.</param>
         /// <param name="onFrame">
         /// Chemat dupa fiecare cadru, cu indexul (de la 0), totalul si rezultatul. Pentru
         /// consola e null - ei ii ajunge randul scris in report. Pentru fereastra e cum

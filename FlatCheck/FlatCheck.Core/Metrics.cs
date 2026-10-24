@@ -45,7 +45,7 @@ namespace FlatCheck
         ///   2 stopuri de vignetare pana la 57% la 0.08 stopuri, apoi cade la 0 la 0.05.
         ///   De asta offsetul e raportat doar informativ, si nu mai da verdict.
         ///
-        /// - <b>inclinarea</b> (<paramref name="tiltPct"/>), adica amplitudinea
+        /// - <b>inclinarea</b> (<c>tiltPct</c>), adica amplitudinea
         ///   varf-la-varf a termenului LINIAR peste cadru. E numaratorul de mai sus luat
         ///   singur: o fractie, deci scale-invarianta ca restul metricilor si direct
         ///   comparabila cu scara de reziduu. Un camp radial genuin decentrat produce si
@@ -384,12 +384,12 @@ namespace FlatCheck
         /// <summary>
         /// Cata TEXTURA FINA are un raster: partea structurata a componentei fine, in
         /// procente. Componenta fina e <c>raster / neted - 1</c>, unde "neted" e rasterul
-        /// trecut de doua ori printr-un filtru cutie de <paramref name="box"/> px (o cutie
+        /// trecut de doua ori printr-un filtru cutie de <c>box</c> px (o cutie
         /// aplicata de doua ori e un triunghi - destul de aproape de un gaussian pentru un
         /// DETECTOR, si fara nicio dependinta). Zgomotul de pixel se estimeaza din
         /// diferentele intre vecini orizontali (impartite la radical din 2) si se scade in
         /// cuadratura, ca sa ramana doar ce e corelat spatial: textura difuzorului, nu
-        /// granulatia. Bordura de <paramref name="inset"/> px nu intra in statistica, fiindca
+        /// granulatia. Bordura de <c>inset</c> px nu intra in statistica, fiindca
         /// acolo cutia e trunchiata.
         ///
         /// Exista pentru propunerea de scara a modului de netezire: pe rasterul de analiza

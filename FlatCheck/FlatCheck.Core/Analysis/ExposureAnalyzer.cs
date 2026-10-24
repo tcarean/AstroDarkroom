@@ -188,6 +188,12 @@ namespace FlatCheck
             return 65535.0;
         }
 
+        /// <param name="data">The raw flat's pixels, in the file's own levels (ADU).</param>
+        /// <param name="satOverride">The white level given with --sat, or null to take it from
+        /// the file or guess it.</param>
+        /// <param name="blackOverride">The black level given with --black, or null to take it
+        /// from the file (0 when the file carries none).</param>
+        /// <param name="sky">True for a sky flat, whose acceptable bands differ from a panel's.</param>
         /// <param name="fileScale">
         /// Scala citita din fisier, sau null daca fisierul n-o poarta (FITS). Ordinea de
         /// precedenta e cea din flatcheck.py: --sat bate fisierul, fisierul bate ghicitul.

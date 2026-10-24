@@ -77,6 +77,7 @@ namespace FlatCheck
 
     internal static class StructureRun
     {
+        /// <param name="path">The master flat to analyze: a FITS or a camera raw.</param>
         /// <param name="report">
         /// Unde se scrie raportul. Consola da stdout, fereastra da un StringWriter din
         /// care apoi salveaza "Rezultat testare.txt" - acelasi text, prin constructie.

@@ -71,6 +71,8 @@ namespace FlatCheck
         /// </summary>
         internal static void WriteBody(StructureResult r, TextWriter w) => WriteBody(r, w, null);
 
+        /// <param name="r">The structure battery's result to write.</param>
+        /// <param name="w">Where the text goes.</param>
         /// <param name="o">
         /// Rularea intreaga, cand a avut o comparatie cu profilele: blocul ei se scrie dupa
         /// scara, iar verdictul si sfatul sunt ale ei (cel mai rau dintre forma si adancime).
@@ -422,7 +424,7 @@ namespace FlatCheck
         /// si exact acest text e singurul loc din care utilizatorul afla de unde incolo
         /// conteaza cifra. Pinuit de <c>TheLocalSpotNoteQuotesTheThresholdFromTh</c>.
         ///
-        /// Intors ca sir, ca <see cref="Advice"/>: il arata si fereastra, sub rand.
+        /// Intors ca sir, ca <see cref="Advice(StructureOutcome)"/>: il arata si fereastra, sub rand.
         /// </summary>
         internal static string LocalSpotNote()
             => "Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.\n"
@@ -448,7 +450,7 @@ namespace FlatCheck
         /// <summary>
         /// Ce masoara fiecare dintre cele cinci teste, intr-o propozitie.
         ///
-        /// FARA APELANT IN CONSOLA, ca <see cref="MapScaleLabel"/> si celelalte: raportul
+        /// FARA APELANT IN CONSOLA, ca <see cref="RunReport.MapScaleLabel"/> si celelalte: raportul
         /// de consola isi tine explicatiile grupate sub scara, iar cinci note intercalate
         /// intre randuri ar ineca tocmai cifrele. Fereastra pune fiecare nota sub randul
         /// ei, unde nu costa nimic.

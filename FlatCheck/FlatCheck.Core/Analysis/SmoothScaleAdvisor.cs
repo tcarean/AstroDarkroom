@@ -92,6 +92,7 @@ namespace FlatCheck
             SmoothAnalyzer.DefaultScalePx / 2, SmoothAnalyzer.DefaultScalePx, SmoothAnalyzer.DefaultScalePx * 2,
         };
 
+        /// <param name="input">The master to smooth, as loaded.</param>
         /// <param name="ladder">Treptele de incercat, crescator; implicit <see cref="Ladder"/>. Testele dau trepte pe masura fixture-urilor lor.</param>
         internal static SmoothScaleAdvice Advise(Img input, IReadOnlyList<double> ladder = null)
         {

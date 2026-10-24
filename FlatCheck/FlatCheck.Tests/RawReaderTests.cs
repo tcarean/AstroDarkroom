@@ -24,7 +24,7 @@ namespace FlatCheck.Tests;
 /// pinned here is the *seam*, not libraw: which paths get routed to it, and that a FITS
 /// never does. A raw file cannot be committed to the repo - the smallest real NEF is 18 MB
 /// - so the decode itself is checked against a real file only when one is pointed at,
-/// via FLATCHECK_NEF (see <see cref="DecodesARealRawWhenOneIsPointedAt"/>).
+/// via FLATCHECK_NEF (see <see cref="ARealRawDecodesToAnUndebayeredMosaicWithAScaleFromTheFile"/>).
 /// </summary>
 public class RawReaderTests
 {
