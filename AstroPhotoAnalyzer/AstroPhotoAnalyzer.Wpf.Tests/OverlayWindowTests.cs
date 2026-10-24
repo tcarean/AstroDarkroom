@@ -110,6 +110,26 @@ public class OverlayWindowTests
         Assert.Empty(withWcs.SimulationRows);
     }
 
+    /// <summary>
+    /// The share in each legend is the core's figure (DustMap.FractionOf, the one the report's
+    /// class fractions use), not a count made in the window (R-130; the rule "Computed only in
+    /// the core"). It held before the window called the core, the two counts being the same, so
+    /// it guards the figure, not the call.
+    /// </summary>
+    [Fact]
+    public void R130_TheLegendsShareIsTheCoresFraction()
+    {
+        PatchClass[] order = { PatchClass.Dust, PatchClass.Sky, PatchClass.Band, PatchClass.BrightCloud, PatchClass.Peak };
+        foreach (AnalysisResult result in new[] { Result(WcsFixtures.BandScene()), Result(Scenes.DarkSky()) })
+        {
+            MapViewModel map = MapViewModel.From(result);
+            DustMap core = result.Simulation.Map;
+            Assert.Equal(order.Length, map.Layers.Count);
+            for (int k = 0; k < order.Length; k++)
+                Assert.StartsWith($"{map.Layers[k].Name}: {Fmt.Pct(100 * core.FractionOf(order[k]))} din dale", map.Layers[k].Legend);
+        }
+    }
+
     [Fact]
     public void R130_TheMapCarriesTheFiveLayersTheCloudsAndTheirCaptions()
     {

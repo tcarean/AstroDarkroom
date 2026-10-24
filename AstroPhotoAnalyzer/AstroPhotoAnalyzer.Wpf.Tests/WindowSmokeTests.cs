@@ -106,8 +106,12 @@ public class WindowSmokeTests
         => _sta.Invoke(() =>
         {
             using var errors = new BindingErrors();
-            Render(ContentOf(new MainWindow()), name: "fereastra-goala");
+            var window = new MainWindow();
+            Render(ContentOf(window), name: "fereastra-goala");
             Assert.True(errors.Text.Length == 0, "erori de legare:\n" + errors.Text);
+            // The save's outcome has its place under the buttons (R-110, R-111).
+            Assert.NotNull(window.FindName("SaveMessageText"));
+            Assert.NotNull(window.FindName("SaveErrorText"));
         });
 
     /// <summary>The profile window with a list of its own: three printer profiles, one of them CMYK with its note.</summary>

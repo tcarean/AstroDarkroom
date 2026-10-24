@@ -56,7 +56,10 @@ background, sigma_after = sigma x slope.
 ## The report (`Report/ReportWriter.cs`, `Report/Fmt.cs`)
 
 `WriteFull` = banner (`AstroPhotoAnalyzer <version>`, copyright) + body; `WriteBody`
-alone is what the console prints after its own banner. Body layout:
+alone is what the console prints after its own banner. `SaveFull` puts `WriteFull` in a file
+whole or not at all through `AtomicFile.Write` (`input.md`, "The writer": the probe of an
+existing target, the temporary file beside it, the move, the delete); the console's `-o` and
+the window's save both go through it, and each tells the exception its own way. Body layout:
 
 ```
 Fisier: <path>

@@ -64,10 +64,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                      Visibility="{Binding HasPath, Converter={StaticResource NotBoolToVis}}" />
         </StackPanel>
 
-        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-          <Button Content="Deschide imagine..." Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
-          <Button Content="Salveaza raportul..." Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
-          <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
+        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+          <StackPanel x:Name="TopButtons" Orientation="Horizontal">
+            <Button Content="Deschide imagine..." Click="ChooseImage" IsEnabled="{Binding IsIdle}" />
+            <Button Content="Salveaza raportul..." Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
+            <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
+          </StackPanel>
+          <!-- Un loc fix, de doua randuri, pentru rezultatul salvarii: aparitia lui nu muta butoanele.
+               Latimea e a randului de butoane: coloana e Auto, si fara o latime finita textul nu
+               s-ar rupe si nu s-ar scurta, ci ar largi coloana pana iese din fereastra. -->
+          <Grid Height="34" Margin="0,4,0,0" Width="{Binding ActualWidth, ElementName=TopButtons}">
+            <TextBlock x:Name="SaveMessageText" Style="{StaticResource Faint}" Text="{Binding SaveMessage}"
+                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
+            <TextBlock x:Name="SaveErrorText" Text="{Binding SaveError}" Foreground="{StaticResource BadBr}"
+                       TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveError}" />
+          </Grid>
         </StackPanel>
       </Grid>
     </Border>

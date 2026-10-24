@@ -219,8 +219,9 @@ namespace AstroPhotoAnalyzer
         /// <summary>
         /// Reads a number in the invariant culture (a decimal point, no thousands separator).
         /// "NaN", "Infinity" and "-Infinity" read too, as those values; the callers' range checks
-        /// refuse the infinities they bound, and only --target-bg's (TargetBackgroundError)
-        /// refuses NaN.
+        /// refuse the infinities they bound, --target-bg's (TargetBackgroundError) refuses NaN,
+        /// and what passes them is refused by the core's Parameters.Validate, which AnalyzerCli
+        /// calls before reading the image (R-024).
         /// </summary>
         /// <param name="s">The text typed.</param>
         /// <param name="v">The number read; 0 when the text does not read.</param>
@@ -235,13 +236,14 @@ namespace AstroPhotoAnalyzer
         /// The text typed: two numbers separated by ':', 'x' or 'X' (empty parts are dropped).
         /// </param>
         /// <param name="ratio">
-        /// The width over the height; 0 when the text is refused, and also when it is accepted
-        /// with an infinite height ("1:Infinity") or a quotient that underflows.
+        /// The width over the height; 0 when the text is refused, and also when the quotient
+        /// underflows.
         /// </param>
         /// <returns>
         /// <c>true</c> unless the text has not exactly two parts, a part does not read
-        /// (TryNum) or a part is 0 or negative; a NaN or infinite part passes, and so does the
-        /// ratio it gives.
+        /// (TryNum), or a part is not a finite positive number: "NaN" and "Infinity" read, but a
+        /// side that is one is refused here, where the typed text is at hand for the message,
+        /// rather than as the 0, infinity or NaN ratio it would give (R-024, ADR 0045).
         /// </returns>
         static bool TryAspect(string s, out double ratio)
         {
@@ -249,7 +251,7 @@ namespace AstroPhotoAnalyzer
             string[] parts = s.Split(new[] { ':', 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length != 2) return false;
             if (!TryNum(parts[0], out var w) || !TryNum(parts[1], out var h)) return false;
-            if (w <= 0 || h <= 0) return false;
+            if (!double.IsFinite(w) || !double.IsFinite(h) || w <= 0 || h <= 0) return false;
             ratio = w / h;
             return true;
         }

@@ -239,6 +239,17 @@ LDN 1769 (B275, B278) at 3.2 (94 patches, 0.27), LDN 1793 at 3.7, LDN 572 at 4.6
   (`simulation.skyReason`, `latitudeSpanDeg`, the five `pctPatches.*`); the second copies are
   gone, a change the owner did not ask for and is told of here.
 
+- 2026-10-24 (the backfill's four questions, `docs/plans/2026-10-24-close-the-backfill-questions.md`,
+  ADR 0045): `Parameters.Validate` gained the NaN and infinity checks, which no case's
+  parameters trip; no formula moved. Re-run on the branch after that commit, the seven files of
+  the manifest copied into the worktree: of the fourteen cases' 1242 figures 1240 are identical
+  to the recorded ones, and the same two as on 2026-10-23 differ by 0.0001, inside the 0.01
+  tolerance (V-011 `curves.Maxima.lstar.clouds` 67.1502 -> 67.1503, V-014
+  `curves.Maxima.lstar.peaks` 77.9226 -> 77.9227). The fourteen cases pass. Re-run the same day
+  after `ReportWriter.SaveFull` (the report file written whole or not at all; no figure
+  touched): the same 1240 of 1242 identical, the same two differences. The fourteen cases pass.
+  Re-run once more after `AtomicFile` (the shared temporary-file writer of the report and the
+  FITS; `Input/` moved, no figure touched): the same 1240 of 1242, the same two differences.
 - 2026-10-23 (the documentation backfill, area 2, `Core/Analysis/`): comments only, every
   changed C# file's code token for token as on `main`. Re-run on the branch, the seven files of
   the manifest copied into the worktree: the fourteen cases' `MEASURED` lines, 1237 figures, are

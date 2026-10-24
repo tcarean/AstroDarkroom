@@ -55,9 +55,14 @@ their type). HDUs before and after the image pass unchanged. `FitsReader.ReadHea
 for the dictionary; the raw header bytes are re-read between the two stream positions it
 leaves. From any other source the file is a 32-bit float FITS with a minimal header and
 `ROWORDER = 'TOP-DOWN'`. The values are the raster's: what the reader clipped to 0..1 stays
-clipped. The write goes to a temporary file in the target folder, moved over the name at the
-end and deleted on failure (unless the delete itself is refused: an `IOException` leaves it,
-any other refusal replaces the original exception). An integer sample that falls outside its type by more than a
+clipped. The write goes through `AtomicFile.Write` (`Input/AtomicFile.cs`), the one way the
+tool writes a file, shared with the report's `ReportWriter.SaveFull` (R-005): an existing
+target is opened for writing first, so that one held open by another program or refused is
+reported with the system's message for the target itself; the content then goes to a
+temporary file beside the target (`<name>.tmp-<guid>`; a folder that refuses to create it is
+reported with the target's and the folder's names), moved over the name at the end and
+deleted on any failure, a refused delete swallowed since the original exception is what
+matters. An integer sample that falls outside its type by more than a
 rounding (a signed 16-bit source without `BZERO` holds 0..32767) is counted, and one such
 sample refuses the save: clipped silently the file would not be the curve's.
 

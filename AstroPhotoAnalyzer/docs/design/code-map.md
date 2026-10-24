@@ -28,7 +28,7 @@ AstroPhotoAnalyzer.Core/
   Input/ColorMath.cs                   sRGB, luminance, L*, paper black
   Input/Stats.cs                       percentiles (numpy), robust sigma, Otsu, SeededRandom
   Input/IFrameReader.cs, FitsReader.cs, ImageSharpReader.cs, IccProfileInfo.cs, IccPaperBlack.cs (the Dmax of a printer profile, R-028), ImageLoader.cs,
-        FitsWriter.cs (the saved FITS with a curve applied, R-145)
+        FitsWriter.cs (the saved FITS with a curve applied, R-145), AtomicFile.cs (a file written whole or not at all, R-005, R-145)
   Input/Wcs.cs                         the TAN WCS of a plate-solved FITS, pixel <-> sky (R-018)
   Input/Astrometry.cs                  unit vectors, separation, B1950 -> J2000, galactic latitude
   Input/DarkNebulaCatalogue.cs, ldn.txt  the Lynds catalogue (embedded resource) and its reader

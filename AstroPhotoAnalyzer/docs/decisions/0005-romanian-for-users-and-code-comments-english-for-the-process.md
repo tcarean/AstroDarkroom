@@ -1,7 +1,7 @@
 # 0005. Romanian for what the user sees and for the code comments; English for the process files
 
 Date: 2026-10-02
-Status: accepted 2026-10-02; Romanian comments in the C# files superseded by the kit's ADR 0035
+Status: accepted 2026-10-02; Romanian comments in the C# files superseded by the kit's ADR 0035 (the code's files translated by 2026-10-24, the tests' Romanian comments stay until a task of their own, the csproj, props and XAML comments stay Romanian)
 
 ## Context
 
@@ -30,6 +30,15 @@ Three zones:
 - A file is never left in two languages.
 
 ## Alternatives rejected
+
+(Restated 2026-10-24: "the code comments of the existing files ... A comment added to one of
+them is Romanian" in the Decision above holds no longer for the C# files of the code: the kit's
+ADR 0035 made their comments English, and the backfill of 2026-10-22..24
+(`docs/plans/2026-10-22-document-every-type-and-method-and-translate-the-comments.md`)
+translated the last of them, so a comment added to one of them is English. What stays Romanian:
+the comments of the csproj files and `Directory.Build.props`, the XAML comments, and the test
+files' comments until a task of their own translates them, a comment added to a test file
+following that file's language. `CLAUDE.md`'s rule "Languages" says the same.)
 
 - **Translate every comment now.** A diff over the whole code base with no test behind it, for
   no reader asking for it; the comments are the "why" of the code, where a translation loses

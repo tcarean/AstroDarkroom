@@ -30,8 +30,9 @@
 //
 // The values are the raster's: what the reader clipped to 0..1 stays clipped.
 //
-// It is written to a temporary file in the target folder, moved over the name at the end: a
-// failed write does not leave a half-written FITS under the target's name.
+// It is written whole or not at all, through AtomicFile (a temporary file in the target folder,
+// moved over the name at the end): a failed write does not leave a half-written FITS under the
+// target's name.
 
 using System;
 using System.Buffers.Binary;
@@ -52,12 +53,11 @@ namespace AstroPhotoAnalyzer
 
         /// <summary>
         /// Writes to <paramref name="target"/> the raster <paramref name="r"/> passed through
-        /// <paramref name="curve"/>, through a temporary file in the same folder moved over the
-        /// name at the end. On a failure the temporary file is deleted and the exception passes
-        /// on: a source that no longer has the raster's geometry or is cut short before the
-        /// image's data, or a value the source's type cannot hold. A delete refused with an
-        /// IOException leaves the temporary file; one refused otherwise (access denied) throws
-        /// in place of the original exception.
+        /// <paramref name="curve"/>, whole or not at all (<see cref="AtomicFile"/>: a temporary
+        /// file in the same folder, moved over the name at the end, deleted on a failure). The
+        /// exception passes on: a target held open or refused, found before anything is written;
+        /// a source that no longer has the raster's geometry or is cut short before the image's
+        /// data; a value the source's type cannot hold.
         /// </summary>
         /// <param name="r">The raster as it was analysed, 0..1.</param>
         /// <param name="curve">The curve applied to every sample.</param>
@@ -70,24 +70,11 @@ namespace AstroPhotoAnalyzer
         /// </param>
         /// <param name="target">The file to write; replaced when it exists.</param>
         internal static void Save(Raster r, ToneCurve curve, string sourceFits, IReadOnlyList<string> history, string target)
-        {
-            string temp = target + ".tmp-" + Guid.NewGuid().ToString("N");
-            try
+            => AtomicFile.Write(target, o =>
             {
-                using (var o = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 1 << 16))
-                {
-                    if (sourceFits != null) FromFits(r, curve, sourceFits, history, o);
-                    else Fresh(r, curve, history, o);
-                }
-                File.Move(temp, target, overwrite: true);
-            }
-            catch
-            {
-                // On an IOException the temporary file stays; the write error is what matters.
-                try { if (File.Exists(temp)) File.Delete(temp); } catch (IOException) { }
-                throw;
-            }
-        }
+                if (sourceFits != null) FromFits(r, curve, sourceFits, history, o);
+                else Fresh(r, curve, history, o);
+            });
 
         /// <summary>
         /// A HISTORY card: the text after "HISTORY ", cut to the card's 80 characters.
