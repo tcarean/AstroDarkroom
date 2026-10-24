@@ -236,8 +236,9 @@ namespace FlatCheck
         /// for the test (see LightSuitability).
         ///
         /// The known parsing limitation is kept - the value is cut at the first '/', which
-        /// would break a string value that contains a slash. The keys read from here are all
-        /// numeric, so it does not touch them.
+        /// would break a string value that contains a slash. The keys read from here are numeric,
+        /// or strings that hold no slash (BAYERPAT, ROWORDER, INSTRUME, DATE-OBS), so it does not
+        /// touch them.
         /// </summary>
         /// <param name="raw">The whole file's bytes.</param>
         /// <returns>The image and the keywords of its HDU.</returns>
@@ -387,8 +388,9 @@ namespace FlatCheck
             => h.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : def;
 
         /// <summary>
-        /// The raw value of a card, without the quotes around FITS strings. Used for DATE-OBS in
-        /// the attribution mode, where the date is not interpreted, only shown to the person.
+        /// The raw value of a card, without the quotes around FITS strings. Used for BAYERPAT and
+        /// ROWORDER here, for INSTRUME, and for DATE-OBS in the attribution mode, where the date
+        /// is not interpreted, only shown to the person.
         /// </summary>
         /// <param name="h">The header's keywords.</param>
         /// <param name="k">The keyword.</param>

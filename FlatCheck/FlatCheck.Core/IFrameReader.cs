@@ -17,10 +17,10 @@
 
 // IFrameReader.cs - the contract every input format implements.
 //
-// The implementations are the only ones that know a given format. ImageLoader chooses between
-// them through this contract and knows none of them by name, so a new format is added without
-// touching the dispatcher - and, more importantly, without any difference in behaviour between
-// formats being able to slip into it.
+// The implementations are the only ones that know a given format. ImageLoader names them once,
+// in its list of readers, and chooses between them only through this contract, so a new format
+// is added with one entry in that list and no change to the dispatch - and, more importantly,
+// without any difference in behaviour between formats being able to slip into it.
 
 namespace FlatCheck
 {

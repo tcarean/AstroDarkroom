@@ -17,7 +17,7 @@
 
 // Version.cs - the tool's version, read from the assembly.
 //
-// THE SOURCE OF TRUTH is <Version> (and <Copyright>) in FlatCheck.csproj. Hardcode nothing
+// THE SOURCE OF TRUTH is <Version> (and <Copyright>) in Directory.Build.props. Hardcode nothing
 // here: MSBuild turns <Version> into AssemblyInformationalVersion, and we read it from there.
 // That way there is a single place to change on the C# side.
 //
@@ -42,7 +42,8 @@ namespace FlatCheck
         /// The copyright notice, on the second line of every run - under the banner. The program
         /// is GPLv3 (see LICENSE), and the licence asks every copy to carry the notice; a report
         /// copied somewhere then says by itself whose the tool is, not only which version. Like
-        /// the version, it comes from the csproj (&lt;Copyright&gt;) - do not hardcode it here.
+        /// the version, it comes from Directory.Build.props (&lt;Copyright&gt;) - do not hardcode
+        /// it here.
         /// Unlike the version, the text is constant between runs: it is scrubbed nowhere.
         /// </summary>
         internal static string Copyright { get; } = ReadCopyright();
