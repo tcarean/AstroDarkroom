@@ -36,4 +36,5 @@ project file (there is no shared framework in `Directory.Build.props` here). The
 
 No code changes: C# 13 stays. The runtime the release publishes for is declared as before (the
 kit's ADR 0034). Guarded by `RepoInvariantTests.TargetFramework_IsNet8_InEveryProjectThatShips`,
-which reads the three project files.
+which reads the three project files. Measured on 2026-10-25 (`docs/validation.md`, History):
+the four validation cases pass on .NET 8, their memory figures within 3.3 MB of the .NET 9 ones.
