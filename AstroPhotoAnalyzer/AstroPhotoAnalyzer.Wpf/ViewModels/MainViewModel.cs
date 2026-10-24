@@ -103,13 +103,15 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// Where the last "Salveaza raportul" wrote, "raport salvat: " and the path (R-111);
-        /// null until a save, after one that failed, and after the next run.
+        /// null until a save, after one that failed, and from the moment the next run is asked,
+        /// even one a bad field stops.
         /// </summary>
         public string SaveMessage { get => _saveMessage; private set => Set(ref _saveMessage, value); }
 
         /// <summary>
         /// Why the last "Salveaza raportul" could not write, <see cref="Describe"/>'s text
-        /// (R-111); null until a save, after one that worked, and after the next run.
+        /// (R-111); null until a save, after one that worked, and from the moment the next run is
+        /// asked, even one a bad field stops.
         /// </summary>
         public string SaveError { get => _saveError; private set => Set(ref _saveError, value); }
 
@@ -147,12 +149,14 @@ namespace AstroPhotoAnalyzer.Wpf
         {
             if (!HasPath || IsBusy) return;
 
+            // The save's outcome is the previous run's: gone from the moment a new one is asked,
+            // even one a bad field stops, so that it never names another image's report.
+            SaveMessage = null;
+            SaveError = null;
             Parameters p = Parameters.TryBuild(out string bad);
             if (p == null) { Error = bad; return; }
 
             Error = null;
-            SaveMessage = null;
-            SaveError = null;
             HasResult = false;
             ClearTabs();
             IsBusy = true;

@@ -271,3 +271,21 @@ from `main` at 532b459, in the order the plan gave.
 - **ADRs:** 0045 is new, accepted. ADR 0005, already on `main`, changed in the two ways the
   kit's ADR 0024 allows: its Status clause completed with a note, and a dated `(Restated
   2026-10-24: ...)` note after the Decision section; the decision itself stands.
+
+### Code review (2026-10-24)
+
+`/code-review main...claude/Close-the-backfill-questions` ran at high effort: eight finder
+angles in one context, no verify pass, six findings. The owner had three fixed, in one commit,
+and kept three to decide:
+
+- **Fixed:** the save place under the buttons sat in an Auto column, where a text has no width
+  to wrap or trim against, so a long reason would have widened the column past the window; its
+  width is now the buttons row's (`TopButtons`). The two save texts were cleared only after the
+  fields passed, so a run a bad field stopped kept the previous image's "raport salvat"; they
+  are cleared as soon as a run is asked, and `R111_ASaveThatCannotWriteIsToldNotThrown` covers
+  it. No test pinned the order of `Validate`'s checks that R-025 states;
+  `R025_ValidateChecksTheTargetBackgroundThenFinitenessThenThePassepartoutRule` does.
+- **Left to the owner:** a write that fails midway leaves a truncated `Raport.txt` (the
+  console's `-o` has the same gap); the aspect refusal quotes the derived ratio, so
+  `1:Infinity` reads `a primit 0` (ADR 0045's choice); R-024's "the same words" does not hold
+  for `NaN:1`, which the window's aspect field refuses with its own message.

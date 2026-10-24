@@ -30,7 +30,9 @@ tabs, runs `AnalysisRun.Execute` via `Task.Run`, populates the tabs, or sets `Er
 (`Describe` joins inner messages, no stack); `SaveReport(file)` writes `WriteFull` and tells
 the outcome rather than throwing it: `SaveMessage` ("raport salvat: " and the path) or
 `SaveError` (`Describe` of the exception: a file another program holds open, a folder that
-refuses writing or does not exist), both cleared by the next run (R-111). It opens no dialogs
+refuses writing or does not exist), both cleared as soon as the next run is asked, before the
+fields are checked (R-111). The place under the buttons takes its width from the buttons row
+(`TopButtons`): in an Auto column a text has no width to wrap or trim against. It opens no dialogs
 (the window does), so it is fully testable.
 
 **Tabs** (`ResultTabs.cs`, each a `ResultTabViewModel` with `Populate(AnalysisResult)`,

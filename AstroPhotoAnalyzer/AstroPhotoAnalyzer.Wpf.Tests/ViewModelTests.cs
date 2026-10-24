@@ -176,7 +176,17 @@ public class ViewModelTests
         ReportWriter.WriteFull(AnalysisRun.Execute(tif, new Parameters()), expected);
         Assert.Equal(expected.ToString(), File.ReadAllText(saved));
 
+        // The next run clears both, even one a bad field stops: the text was the old report's.
+        vm.Parameters.Distance = "1,5";
         await vm.RunAsync();
+        Assert.True(vm.HasError);
+        Assert.Null(vm.SaveMessage);
+        Assert.Null(vm.SaveError);
+        vm.Parameters.Distance = "";
+        vm.SaveReport(saved);
+        Assert.NotNull(vm.SaveMessage);
+        await vm.RunAsync();
+        Assert.False(vm.HasError);
         Assert.Null(vm.SaveMessage);
         Assert.Null(vm.SaveError);
     }

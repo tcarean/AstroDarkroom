@@ -210,6 +210,24 @@ public class ParametersTests
         Assert.Null(With(which, 20).Validate());   // the same parameter, finite: nothing to say
     }
 
+    /// <summary>
+    /// The order of Validate's checks, which R-025 states: the target background's first, then
+    /// the finiteness checks in the parameters' order, then the rule between the passepartout
+    /// and the frame. The first rule broken is the message, so the order is what the user reads.
+    /// </summary>
+    [Fact]
+    public void R025_ValidateChecksTheTargetBackgroundThenFinitenessThenThePassepartoutRule()
+    {
+        // The target background before Dmax.
+        Assert.StartsWith("fundalul-tinta", new Parameters { TargetBackground = 1, DmaxOverride = double.NaN }.Validate());
+        // A width before the aspect, and Dmax before the distance.
+        Assert.StartsWith("latimea de print", new Parameters { CandidateWidthsCm = new[] { double.NaN }, TargetAspect = 0 }.Validate());
+        Assert.StartsWith("Dmax", new Parameters { DmaxOverride = double.NaN, ViewingDistanceM = double.PositiveInfinity }.Validate());
+        // The finiteness block before the passepartout rule: 4 cm under twice a 3 cm frame.
+        Assert.StartsWith("Dmax", new Parameters { DmaxOverride = double.NaN, PassepartoutCm = 4, FrameCm = 3 }.Validate());
+        Assert.StartsWith("passepartout-ul (4.0 cm)", new Parameters { PassepartoutCm = 4, FrameCm = 3 }.Validate());
+    }
+
     static Parameters With(string which, double value) => which switch
     {
         "Dmax" => new Parameters { DmaxOverride = value },
