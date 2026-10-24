@@ -15,24 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// VerdictPalette.cs - ce culoare are un verdict.
+// VerdictPalette.cs - which colour a verdict has.
 //
-// Culoarea se deriva din Stats.Severity, NU dintr-o lista proprie de siruri. Nucleul
-// stie deja sa ordoneze verdictele din amandoua vocabularele (OK/SUSPECT/PROBLEMA si
-// PERFECT/BUN/ACCEPTABIL/REFA), inclusiv regula "orice necunoscut e tratat ca cel mai
-// rau". O a doua lista aici ar fi insemnat ca un verdict nou adaugat in nucleu apare in
-// fereastra colorat gresit - adica verde - ceea ce e cea mai proasta directie posibila
-// pentru o greseala din asta.
+// The colour is derived from Stats.Severity, NOT from a list of strings of its own. The core
+// already knows how to order the verdicts of both vocabularies (OK/SUSPECT/PROBLEMA and
+// PERFECT/BUN/ACCEPTABIL/REFA), including the rule "anything unknown is treated as the worst".
+// A second list here would have meant that a new verdict added in the core shows in the window
+// coloured wrong - that is, green - which is the worst possible direction for a mistake of
+// this kind.
 //
-// Singura exceptie e NEDETERMINAT, care in Stats sta la severitate 2 fiindca acolo
-// conteaza doar codul de iesire ("nu stiu" cere aceeasi reactie ca "suspect"). Vizual
-// insa nu e o avertizare, e o absenta: se coloreaza neutru, ca sa nu para un rezultat
-// prost cand de fapt nu e niciun rezultat.
+// The two exceptions are NEDETERMINAT, which in Stats sits at severity 2 because there only the
+// exit code matters ("I do not know" asks for the same reaction as "suspect"), and INAPLICABIL
+// (a field too wide for --light, or a file the Expo tab refuses as not a raw flat), which
+// Stats leaves at 3 like any word it does not know.
+// Visually, though, neither is a warning, each is an absence: they are coloured neutral, so
+// they do not look like a bad result when in fact there is no result at all.
 
 using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The colour of a verdict, derived from <see cref="Stats.Severity"/>, neutral
+    /// for the absence of one.</summary>
     internal static class VerdictPalette
     {
         internal static readonly Color Perfect = Color.FromRgb(0x3F, 0xB9, 0x50);
@@ -41,6 +45,11 @@ namespace FlatCheck.Wpf
         internal static readonly Color Bad = Color.FromRgb(0xF8, 0x51, 0x49);
         internal static readonly Color Neutral = Color.FromRgb(0x8B, 0x94, 0x9E);
 
+        /// <summary>The colour of a verdict: by its severity, neutral when it is
+        /// inconclusive.</summary>
+        /// <param name="verdict">A verdict word of either ladder; unknown words get the worst
+        /// colour.</param>
+        /// <returns>One of the five colours above.</returns>
         internal static Color For(string verdict)
         {
             if (IsInconclusive(verdict)) return Neutral;
@@ -54,17 +63,23 @@ namespace FlatCheck.Wpf
             };
         }
 
+        /// <summary>A frozen brush in a verdict's colour.</summary>
+        /// <param name="verdict">A verdict word.</param>
+        /// <returns>A new frozen <see cref="SolidColorBrush"/>.</returns>
         internal static Brush BrushFor(string verdict)
         {
             var b = new SolidColorBrush(For(verdict));
-            b.Freeze();   // se leaga din mai multe fire; inghetat e si mai ieftin de desenat
+            b.Freeze();   // bound from several threads; frozen it is also cheaper to draw
             return b;
         }
 
         /// <summary>
-        /// "A rulat dar nu concluzioneaza" (serie neconcludenta) si "nu se aplica" (camp
-        /// prea larg) nu sunt calitati proaste, sunt lipsa unui raspuns.
+        /// "It ran but does not conclude" (an inconclusive series) and "does not apply" (a
+        /// field too wide) are not bad qualities, they are the lack of an answer.
         /// </summary>
+        /// <param name="verdict">A verdict word.</param>
+        /// <returns>True for <see cref="LightSeriesAnalyzer.Undetermined"/> and
+        /// <see cref="Stats.NotApplicable"/>.</returns>
         internal static bool IsInconclusive(string verdict)
             => verdict == LightSeriesAnalyzer.Undetermined
             || verdict == Stats.NotApplicable;

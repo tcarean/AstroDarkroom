@@ -15,27 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// HistogramCanvas.cs - desenul unui canal: doua curbe, benzile verdictului, clipping-ul.
+// HistogramCanvas.cs - the drawing of one channel: two curves, the verdict's bands, the
+// clipping.
 //
-// DE CE E DESENAT DE MANA. Regula celei unei singure dependinte. Un grafic cu bare, cinci
-// zone colorate si o linie verticala e o pagina de DrawingContext; un pachet de charting
-// ar fi a doua dependinta a proiectului, pentru asta.
+// WHY IT IS DRAWN BY HAND. The dependency rule (docs/design/dependencies.md). A bar chart, five
+// coloured zones and a vertical line are a page of DrawingContext; a charting package would be
+// the project's third dependency, after libraw and ImageSharp, for this.
 //
-// CE DESENEAZA, in ordinea straturilor:
-//   1. zonele verdictului  - prea jos / cam jos / tinta / cam sus / prea sus
-//   2. dunga de clipping   - 98..100 % din white, unde analizorul numara pixelii saturati
-//   3. curba canalului intreg, palida si lata (aia E vignetarea)
-//   4. curba ferestrei centrale, plina - fereastra din care se ia verdictul
-//   5. linia medianei centrale, cu valoarea ei
-//   6. gradatiile axei
+// WHAT IT DRAWS, in the order of the layers:
+//   1. the verdict's zones - too low / somewhat low / target / somewhat high / too high
+//   2. the clipping stripe - 98..100 % of white, where the analyzer counts the saturated pixels
+//   3. the whole channel's curve, pale and wide (that IS the vignetting)
+//   4. the central window's curve, solid - the window the verdict is taken from
+//   5. the central median's line, with its value
+//   6. the axis ticks
 //
-// NU DECIDE NIMIC. Pragurile vin gata alese din ExposureBands prin ViewModel, iar curbele
-// vin deja normalizate la propriul varf. Aici nu se calculeaza nicio cifra pe care sa se
-// poata sprijini un verdict - se aseaza pixeli.
+// IT DECIDES NOTHING. The thresholds come already chosen from ExposureBands through the
+// view-model, and the curves come already normalised to their own peak. No figure a verdict
+// could rest on is computed here - pixels are laid out.
 //
-// FIECARE PROPRIETATE TREBUIE SA SUPORTE VALOAREA IMPLICITA. Elementul exista in sablon
-// inainte de a fi ales vreun fisier, deci se deseneaza si cu toate proprietatile goale:
-// atunci nu apare decat axa. WindowSmokeTests randeaza chiar starea aia.
+// EVERY PROPERTY MUST SUPPORT ITS DEFAULT VALUE. The element exists in the template before any
+// file has been chosen, so it is drawn with every property empty too: then only the axis
+// shows. WindowSmokeTests renders exactly that state.
 
 using System;
 using System.Collections.Generic;
@@ -45,17 +46,22 @@ using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// Draws one CFA channel's histogram on the Exposure tab: the verdict's zones, the
+    /// clipping stripe, the whole and central curves, the median marker and the axis, from
+    /// values the view-model hands in; computes nothing.
+    /// </summary>
     public sealed class HistogramCanvas : FrameworkElement
     {
-        // Mobila graficului, nu paleta de verdict: transparente peste fundalul cardului,
-        // alese sa se citeasca drept "zona", nu drept "rezultat". Pastila de verdict de
-        // deasupra cardului ramane singurul loc unde culoarea inseamna o judecata.
+        // The chart's furniture, not the verdict palette: transparent over the card's
+        // background, chosen to read as "zone", not as "result". The verdict pill above the
+        // card stays the only place where colour means a judgement.
         //
-        // Foarte palide, si asta a fost masurat cu ochiul pe randari: la o transparenta
-        // de doua ori mai mare, zona rosie de sub prag - care acopera tot primul sfert al
-        // axei - inunda graficul si il face sa arate ca o alarma, chiar pe un fisier cu
-        // verdict OK. Zonele sunt un reper de citit din coada ochiului, iar ce trebuie sa
-        // se vada intai e CURBA.
+        // Very pale, and that was measured by eye on renders: at twice the opacity, the red
+        // zone under the threshold - which covers the whole first quarter of the axis -
+        // floods the chart and makes it look like an alarm, even on a file with an OK
+        // verdict. The zones are a landmark to read from the corner of the eye, and what must
+        // be seen first is the CURVE.
         static readonly Brush TooLowZone = Frozen(Color.FromArgb(0x12, 0xF8, 0x51, 0x49));
         static readonly Brush ShoulderZone = Frozen(Color.FromArgb(0x12, 0xE3, 0xB3, 0x41));
         static readonly Brush TargetZone = Frozen(Color.FromArgb(0x20, 0x3F, 0xB9, 0x50));
@@ -67,6 +73,9 @@ namespace FlatCheck.Wpf
         static readonly Typeface Face =
             new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
 
+        /// <summary>A frozen brush of a colour.</summary>
+        /// <param name="c">The colour, alpha included.</param>
+        /// <returns>A new frozen <see cref="SolidColorBrush"/>.</returns>
         static Brush Frozen(Color c)
         {
             var b = new SolidColorBrush(c);
@@ -74,37 +83,46 @@ namespace FlatCheck.Wpf
             return b;
         }
 
+        /// <summary>Registers a dependency property of this element that redraws it when it
+        /// changes.</summary>
+        /// <typeparam name="T">The property's type.</typeparam>
+        /// <param name="name">The CLR property's name.</param>
+        /// <param name="def">The default value, which the drawing must support.</param>
+        /// <returns>The registered property.</returns>
         static DependencyProperty Reg<T>(string name, T def) =>
             DependencyProperty.Register(name, typeof(T), typeof(HistogramCanvas),
                 new FrameworkPropertyMetadata(def, FrameworkPropertyMetadataOptions.AffectsRender));
 
-        // IReadOnlyList<double>, nu double[]: o proprietate de dependinta de tip TABLOU
-        // nu se poate lega dintr-un DataTemplate compilat - BAML incearca sa scrie un
-        // record de "property array" si compilarea cade cu MC4102. Interfata primeste
-        // acelasi double[] de la ViewModel, fara conversie.
+        // IReadOnlyList<double>, not double[]: a dependency property of ARRAY type cannot be
+        // bound from a compiled DataTemplate - BAML tries to write a "property array" record
+        // and the compilation fails with MC4102. The interface receives the same double[] from
+        // the view-model, without conversion.
 
-        /// <summary>Curba canalului intreg, 0..1, deja normalizata la propriul varf.</summary>
+        /// <summary>The whole channel's curve, 0..1, already normalised to its own
+        /// peak.</summary>
         public static readonly DependencyProperty WholeProperty = Reg<IReadOnlyList<double>>("Whole", null);
 
-        /// <summary>Curba ferestrei centrale, la fel.</summary>
+        /// <summary>The central window's curve, likewise.</summary>
         public static readonly DependencyProperty CentreProperty = Reg<IReadOnlyList<double>>("Centre", null);
 
-        /// <summary>Culoarea canalului. Curba din fundal o foloseste diluata.</summary>
+        /// <summary>The channel's colour. The background curve uses it diluted.</summary>
         public static readonly DependencyProperty FillProperty = Reg<Brush>("Fill", null);
 
-        /// <summary>Pragurile verdictului, in procente din white. NaN = zona lipseste.</summary>
+        /// <summary>The verdict's thresholds, in percent of white. NaN = the zone is
+        /// missing.</summary>
         public static readonly DependencyProperty TooLowProperty = Reg("TooLow", double.NaN);
         public static readonly DependencyProperty BandLoProperty = Reg("BandLo", double.NaN);
         public static readonly DependencyProperty BandHiProperty = Reg("BandHi", double.NaN);
         public static readonly DependencyProperty TooHighProperty = Reg("TooHigh", double.NaN);
 
-        /// <summary>De unde in sus se numara clipping: 98 % din white, ca in analizor.</summary>
+        /// <summary>From where upwards clipping is counted: 98 % of white, as in the
+        /// analyzer.</summary>
         public static readonly DependencyProperty ClipFromProperty = Reg("ClipFrom", 98.0);
 
-        /// <summary>Mediana ferestrei centrale - singura cifra care decide.</summary>
+        /// <summary>The central window's median - the only figure that decides.</summary>
         public static readonly DependencyProperty MarkerProperty = Reg("Marker", double.NaN);
 
-        /// <summary>Eticheta scrisa in banda tinta.</summary>
+        /// <summary>The label written in the target band.</summary>
         public static readonly DependencyProperty BandLabelProperty = Reg<string>("BandLabel", null);
 
         public IReadOnlyList<double> Whole { get => (IReadOnlyList<double>)GetValue(WholeProperty); set => SetValue(WholeProperty, value); }
@@ -118,8 +136,11 @@ namespace FlatCheck.Wpf
         public double Marker { get => (double)GetValue(MarkerProperty); set => SetValue(MarkerProperty, value); }
         public string BandLabel { get => (string)GetValue(BandLabelProperty); set => SetValue(BandLabelProperty, value); }
 
-        const double AxisH = 14;    // banda de jos, pentru gradatii
+        const double AxisH = 14;    // the bottom band, for the ticks
 
+        /// <summary>Draws the layers in order; draws nothing when the element is too small
+        /// for the axis.</summary>
+        /// <param name="dc">The drawing context WPF hands in.</param>
         protected override void OnRender(DrawingContext dc)
         {
             double w = ActualWidth, h = ActualHeight;
@@ -127,8 +148,9 @@ namespace FlatCheck.Wpf
 
             double plotH = h - AxisH;
 
-            // Fundal transparent, dar desenat: fara el elementul nu primeste hit-test si,
-            // mai important, zonele de mai jos ar fi singurul lucru care da inaltime.
+            // A transparent background, but drawn: without it the element gets no hit test
+            // and, more importantly, the zones below would be the only thing that gives
+            // height.
             dc.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, w, h));
 
             DrawZones(dc, w, plotH);
@@ -138,9 +160,16 @@ namespace FlatCheck.Wpf
             DrawAxis(dc, w, plotH);
         }
 
+        /// <summary>The horizontal position of a level.</summary>
+        /// <param name="pct">The level, in percent of white (0..100).</param>
+        /// <param name="w">The element's width, device-independent pixels.</param>
+        /// <returns>The x coordinate.</returns>
         double X(double pct, double w) => pct / 100.0 * w;
 
-        /// <summary>Curba din fundal e aceeasi culoare, doar palida: e acelasi canal.</summary>
+        /// <summary>The background curve is the same colour, only pale: it is the same
+        /// channel.</summary>
+        /// <returns>A frozen brush at about 30 % opacity, or null when the fill is not a
+        /// solid colour.</returns>
         Brush Diluted()
         {
             if (Fill is not SolidColorBrush s) return null;
@@ -150,6 +179,9 @@ namespace FlatCheck.Wpf
             return b;
         }
 
+        /// <summary>The central curve's outline, in the fill's colour.</summary>
+        /// <returns>A frozen 1-pixel pen, or null when the fill is not a solid
+        /// colour.</returns>
         Pen Outline()
         {
             if (Fill is not SolidColorBrush s) return null;
@@ -158,6 +190,11 @@ namespace FlatCheck.Wpf
             return p;
         }
 
+        /// <summary>Draws the five verdict zones, the clipping stripe over them and the target
+        /// band's label; a zone with a NaN edge is left out.</summary>
+        /// <param name="dc">The drawing context.</param>
+        /// <param name="w">The plot's width.</param>
+        /// <param name="h">The plot's height, without the axis band.</param>
         void DrawZones(DrawingContext dc, double w, double h)
         {
             void Zone(double from, double to, Brush b)
@@ -167,30 +204,39 @@ namespace FlatCheck.Wpf
             }
 
             Zone(0, TooLow, TooLowZone);
-            Zone(TooLow, BandLo, ShoulderZone);      // lipseste pe cer: TooLow == BandLo
+            Zone(TooLow, BandLo, ShoulderZone);      // missing on the sky: TooLow == BandLo
             Zone(BandLo, BandHi, TargetZone);
             Zone(BandHi, TooHigh, ShoulderZone);
             Zone(TooHigh, 100, TooLowZone);
 
-            // Dunga de clipping peste toate: acolo verdictul nu mai depinde de mediana.
+            // The clipping stripe over everything: there the verdict no longer depends on the
+            // median.
             Zone(ClipFrom, 100, ClipZone);
 
             if (!string.IsNullOrEmpty(BandLabel) && !double.IsNaN(BandLo) && !double.IsNaN(BandHi))
             {
                 var t = Text(BandLabel, 10, TickBr);
                 double mid = (X(BandLo, w) + X(BandHi, w) - t.Width) / 2;
-                // JOS, nu sus: sus sta eticheta marcatorului, iar marcatorul cade chiar in
-                // banda tinta ori de cate ori fisierul e bine expus - adica exact cand se
-                // uita omul mai atent. Suprapuse, cele doua se citeau "51.6 %0-65 %".
+                // AT THE BOTTOM, not the top: the marker's label sits at the top, and the marker
+                // falls right in the target band whenever the file is well exposed - that is,
+                // exactly when the user looks most carefully. Overlapping, the two read
+                // "51.6 %0-65 %".
                 if (t.Width < X(BandHi, w) - X(BandLo, w))
                     dc.DrawText(t, new Point(mid, h - t.Height - 2));
             }
         }
 
         /// <summary>
-        /// Curba, ca poligon plin. Un cos = o coloana de latimea w/n, deci nu se pierde
-        /// niciun cos si nu se inventeaza puncte intre ele: histograma e discreta.
+        /// The curve, as a filled polygon. One bin = one column of width w/n, so no bin is lost
+        /// and no points are invented between them: the histogram is discrete.
         /// </summary>
+        /// <param name="dc">The drawing context.</param>
+        /// <param name="bins">The bins, 0..1 (clamped; NaN as 0); null or empty draws
+        /// nothing.</param>
+        /// <param name="w">The plot's width.</param>
+        /// <param name="h">The plot's height.</param>
+        /// <param name="fill">The fill, or null.</param>
+        /// <param name="pen">The outline, or null; with both null nothing is drawn.</param>
         static void DrawCurve(DrawingContext dc, IReadOnlyList<double> bins, double w, double h,
                               Brush fill, Pen pen)
         {
@@ -216,6 +262,11 @@ namespace FlatCheck.Wpf
             dc.DrawGeometry(fill, pen, geo);
         }
 
+        /// <summary>Draws the central median's line with its value; nothing for NaN or a level
+        /// outside the axis.</summary>
+        /// <param name="dc">The drawing context.</param>
+        /// <param name="w">The plot's width.</param>
+        /// <param name="h">The plot's height.</param>
         void DrawMarker(DrawingContext dc, double w, double h)
         {
             if (double.IsNaN(Marker)) return;
@@ -228,11 +279,15 @@ namespace FlatCheck.Wpf
             dc.DrawLine(pen, new Point(x, 0), new Point(x, h));
 
             var t = Text(Marker.ToString("F1", CultureInfo.InvariantCulture) + " %", 11, MarkerBr);
-            // Eticheta se muta in stanga liniei cand n-ar mai incapea in dreapta.
+            // The label moves to the left of the line when it would no longer fit on the right.
             double tx = x + 4 + t.Width <= w ? x + 4 : x - 4 - t.Width;
             dc.DrawText(t, new Point(Math.Max(0, tx), 1));
         }
 
+        /// <summary>Draws the axis line and its ticks at 0, 25, 50, 75 and 100 %.</summary>
+        /// <param name="dc">The drawing context.</param>
+        /// <param name="w">The plot's width.</param>
+        /// <param name="h">The plot's height; the axis is drawn at it.</param>
         void DrawAxis(DrawingContext dc, double w, double h)
         {
             var pen = new Pen(AxisBr, 1);
@@ -249,11 +304,16 @@ namespace FlatCheck.Wpf
                 dc.DrawText(t, new Point(tx, h + 2));
             }
 
-            // Unitatea NU se scrie aici. Oriunde ar incapea intre gradatii se lipeste de
-            // una din ele, iar sub cele patru desene sta oricum o singura data, in textul
-            // cardului - unde e citita o data, nu de patru ori.
+            // The unit is NOT written here. Wherever it would fit between the ticks it sticks to
+            // one of them, and under the four drawings it stands once anyway, in the card's
+            // text - where it is read once, not four times.
         }
 
+        /// <summary>Lays out a short text in the element's font and DPI.</summary>
+        /// <param name="s">The text.</param>
+        /// <param name="size">The font size, device-independent pixels.</param>
+        /// <param name="brush">The text's brush.</param>
+        /// <returns>The formatted text, ready to draw.</returns>
         FormattedText Text(string s, double size, Brush brush) =>
             new FormattedText(s, CultureInfo.InvariantCulture, FlowDirection.LeftToRight,
                               Face, size, brush, VisualTreeHelper.GetDpi(this).PixelsPerDip);

@@ -15,17 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightSeriesRun.cs - modul 3 pe toata seria dintr-un folder, cap-coada.
+// LightSeriesRun.cs - mode 3 on the whole series of a folder, end to end.
 //
-// Dintre cele cinci rulari, asta e singura care chiar avea ce duplica: e o bucla, cu
-// stare, cu progres si cu o optimizare de memorie care nu se vede din semnatura. Scrisa
-// a doua oara in aplicatia WPF, ar fi divergat sigur - macar prin faptul ca a doua
-// versiune ar fi uitat sa elibereze primul cadru.
+// Of the five runs of 2.0.0 (Runs/ holds ten now), this was the only one that really had
+// something to duplicate: it is a loop, with state, with progress and with a memory
+// optimisation that does not show from the signature. Written a second time in the WPF
+// application, it would surely have diverged - if only by the second version forgetting to
+// release the first frame.
 //
-// Doua iesiri, nu una, si de-asta functioneaza pentru amandoi apelantii:
-//   - randurile se scriu in TextWriter pe masura ce cadrele sunt gata (consola nu tace
-//     doua minute), si
-//   - acelasi cadru pleaca si prin onFrame, ca fereastra sa-si umple tabelul progresiv.
+// Two outputs, not one, and that is why it works for both callers:
+//   - the rows are written into the TextWriter as the frames are ready (the console is not
+//     silent for two minutes), and
+//   - the same frame also leaves through onFrame, so the window fills its table progressively.
 
 using System;
 using System.Collections.Generic;
@@ -34,20 +35,31 @@ using System.Threading;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The result of a --light run on a series: the field-of-view check, the combined
+    /// figures (null on a refusal), the map and the files that went in.
+    /// </summary>
     internal sealed class LightSeriesRunOutcome
     {
         internal readonly SuitabilityResult Suitability;
 
-        /// <summary>Sinteza pe serie, sau null cand testul nu se aplica.</summary>
+        /// <summary>The synthesis over the series, or null when the test does not
+        /// apply.</summary>
         internal readonly LightSeriesResult Result;
 
         internal readonly byte[] Png;
 
-        /// <summary>Fisierele care au intrat in rulare, in ordinea prelucrarii.</summary>
+        /// <summary>The files that went into the run, in the order they were
+        /// processed.</summary>
         internal readonly IReadOnlyList<string> Files;
 
         internal bool Refused => Result == null;
 
+        /// <summary>Bundles the check, the synthesis, the map and the file list.</summary>
+        /// <param name="s">The field-of-view check on the first frame; never null.</param>
+        /// <param name="r">The synthesis, or null on a refusal.</param>
+        /// <param name="png">The combined radial map as PNG, or null on a refusal.</param>
+        /// <param name="files">The files found, in processing order.</param>
         internal LightSeriesRunOutcome(
             SuitabilityResult s, LightSeriesResult r, byte[] png, IReadOnlyList<string> files)
         {
@@ -58,8 +70,19 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Mode 3, <c>--light</c> on a folder: analyses every calibrated light of a series one at
+    /// a time and combines them (<see cref="LightSeriesAnalyzer.Combine"/>).
+    /// </summary>
     internal static class LightSeriesRun
     {
+        /// <summary>
+        /// Finds the series, checks the first frame's field of view, then loads, analyses and
+        /// reports each frame in turn and writes the synthesis. Throws when no file matches
+        /// the pattern, and what <see cref="ImageLoader.Load"/> throws on a frame it cannot
+        /// read; an <see cref="OperationCanceledException"/> when <paramref name="ct"/> is
+        /// cancelled between frames.
+        /// </summary>
         /// <param name="dir">The folder that holds the lights.</param>
         /// <param name="pattern">The file pattern the lights match in <paramref name="dir"/>
         /// (--pattern).</param>
@@ -67,15 +90,17 @@ namespace FlatCheck
         /// compute it from the first frame's header.</param>
         /// <param name="report">Where the report text goes.</param>
         /// <param name="onFrame">
-        /// Chemat dupa fiecare cadru, cu indexul (de la 0), totalul si rezultatul. Pentru
-        /// consola e null - ei ii ajunge randul scris in report. Pentru fereastra e cum
-        /// se umple tabelul si cum avanseaza bara de progres.
+        /// Called after each frame, with the index (from 0), the total, the file name and the
+        /// result. For the console it is null - the row written into report is enough for it.
+        /// For the window it is how the table fills and how the progress bar moves.
         /// </param>
         /// <param name="ct">
-        /// Se verifica INTRE cadre, nu in interiorul unuia: analizoarele sunt pure si
-        /// sincrone, iar un cadru dureaza sub o secunda. A le presara cu verificari ar
-        /// fi murdarit codul care conteaza pentru o jumatate de secunda de raspuns.
+        /// Checked BETWEEN frames, not inside one: the analyzers are pure and synchronous, and
+        /// a frame takes under a second. Sprinkling them with checks would have soiled the code
+        /// that matters for half a second of responsiveness.
         /// </param>
+        /// <returns>The check, the synthesis and the map, or the check alone on a
+        /// refusal; the file list either way.</returns>
         internal static LightSeriesRunOutcome Execute(
             string dir,
             string pattern,
@@ -90,8 +115,8 @@ namespace FlatCheck
                     $"Niciun fisier care sa se potriveasca cu '{pattern}' in {dir}. "
                     + "Da alt tipar cu --pattern.");
 
-            // Aplicabilitatea se decide pe primul cadru: toate vin din aceeasi sesiune,
-            // deci au aceeasi focala si aceeasi scara.
+            // Applicability is decided on the first frame: they all come from the same
+            // session, so they have the same focal length and the same scale.
             LoadedFrame first = ImageLoader.Load(files[0]);
             var s = LightSuitability.Check(first.Header, fov);
             if (!s.CanRun)
@@ -102,10 +127,10 @@ namespace FlatCheck
 
             LightSeriesReport.WriteHeader(dir, pattern, files.Count, s, report);
 
-            // Cadrele se incarca pe rand si NU se pastreaza: un cadru de 24 MP ocupa
-            // sute de MB, deci 32 tinute simultan ar fi de neexecutat. Primul e deja
-            // incarcat pentru garda de mai sus, si se elibereaza imediat ce a fost
-            // folosit - de aici "first = null", care altfel ar parea gratuit.
+            // The frames are loaded in turn and NOT kept: a 24 MP frame takes hundreds of MB,
+            // so 32 held at once would be impossible to run. The first is already loaded for
+            // the guard above, and is released as soon as it has been used - hence
+            // "first = null", which would otherwise look gratuitous.
             var frames = new List<(string, LightResult)>();
             for (int i = 0; i < files.Count; i++)
             {

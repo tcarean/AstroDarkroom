@@ -224,6 +224,74 @@ Each area adds its own section at its wrap-up.
     300 figures, every one identical to the recorded value and to area 1's run.
   - The gate: `== OK` at each commit, 951 + 331 tests.
 
+### Area 3, the runs, the console and the session (2026-10-24, `claude/Document-the-runs-console-and-session`)
+
+- **The worktree** was first made under `FlatCheck/.claude/worktrees/` by mistake, removed
+  before any edit and made again where the plan says, under
+  `E:\Photografie\Code\.claude\worktrees\`.
+- **No documentation-file error**: the 35 files built clean under the gate at the first try.
+  The documentation commits change no code; the two code changes below came after, at the
+  owner's word, each in a commit of its own.
+- **Nine comments corrected, in a commit of their own:**
+  1. `FlatCheckCli.cs`, header: the dispatch order starts with `--lenses`, `--synthetic` and
+     `--against` (the code, and `pipeline.md`, say so), not with `--smooth`.
+  2. The same header, the exit codes: they named only `OK`/`SUSPECT`/`PROBLEMA` and `--histeq`;
+     now the structure ladder (`PERFECT`/`BUN` 0, `ACCEPTABIL` 2, `REFA` 3), `NEDETERMINAT` 2,
+     an input refused 1, the four modes without a verdict, and a pointer to `thresholds.md`.
+  3. `AgainstReport.ShapeDetail` / `DepthDetail`: the quoted outputs had " - " where the code
+     writes ": ", and 23.0 % for 0.30 stops, where 2^0.30 - 1 is 23.1 %.
+  4. `SyntheticRun.Complete(req, f, sources, ...)`: "for the tests and the callers that have
+     not identified yet" - nothing calls it, the tests included; it now says so.
+  5. `LightSeriesRun.cs`, header: "of the five runs" was 2.0.0's count; `Runs/` holds ten.
+  6. `VerdictPalette.cs`, header: "the only exception is NEDETERMINAT" - `IsInconclusive` makes
+     `INAPLICABIL` neutral too (`Stats.Severity` gives it 3).
+  7. `HistogramCanvas.cs`, header: "the one-dependency rule ... the project's second dependency"
+     dates from 2026-09-10 (7158227), before ImageSharp; a charting package would be the third.
+  8. `SessionMessages.Explain`, `NotAFlatMaster` and `SirilSession.IsFlatMasterName` cited
+     "Cerinta 4" and "Cerinta 6", the window's first brief (0982260, 2026-09-09), not
+     `requirements.md`: now R-080 with R-088, and R-082.
+  9. `MainWindow.xaml.cs`, header: "only the two things that need a window" - it also opens the
+     "Despre" and Siril run windows and asks before closing during a split.
+- **Dead code, deleted at the owner's word** ("curata acel overload in plus", 2026-10-24): the
+  overload `SyntheticRun.Complete(SyntheticRequest, LoadedFrame, ProfileSources, double?,
+  double?, double?, bool)` had no caller, the tests included. The `Complete` that ADR 0030,
+  `lens-profiles.md` and `LensIdentification.cs` name is the other overload, which stays.
+- **A high-effort `/code-review`** of the branch found 8: one code defect and seven comment or
+  plan findings; the owner said to fix all ("Fixeaza tot inclusiv problema de cod").
+  - The defect: `SirilInstall.Locate` is documented "does not throw", but `FindConfig` caught
+    only `IOException`, so a settings folder the user may not list threw an
+    `UnauthorizedAccessException` out of `MainViewModel`'s and `SplitTabViewModel`'s locate
+    and out of `SirilScriptRun.For`'s runner. Test first:
+    `SirilInstallTests.AnUnlistableSettingsFolderGivesNoConfig_NotAnException` (a deny-list
+    ACL on a temp folder) failed with that exception, then passed once `FindConfig(string)`
+    caught it. The registry lookup got the same catch, and its `try` moved inside the loop, so
+    an unreadable uninstall entry skips itself instead of the rest of its hive; that part has
+    no test (the code reads the machine's real Uninstall key). No requirement changed: the
+    fix restores the contract the code already stated.
+  - The comments: `VerdictPalette` (INAPLICABIL also comes from the Expo tab's not-a-raw),
+    `MainWindow` (the other dialogs live in their views or reach a view-model as a delegate),
+    `SessionMessages` (the XAML holds the fixed labels), `FlatCheckCli` (the exit-code table
+    now lists `--expo`, `--smooth --scale auto` and `--synthetic`; `ExitFor`'s OK/SUSPECT
+    ladder is `--light`'s, not an old one), `InstallLocationsFromRegistry` (fixed in code, see
+    above) and this section's token claim (below).
+- **Measured on 2026-10-24:**
+  - The counter on area 3's 35 files: on `main` 52 types and 266 methods to touch; on the
+    branch 0 and 0. The whole code has 43 types and 185 methods left for areas 4-5.
+  - `tokens`: after the documentation commits, all 121 code files identical to `main`'s code,
+    35 with changed comments; after the two code commits, `SyntheticRun.cs` and
+    `SirilInstall.cs` differ, by the deleted overload and by the fix.
+  - `facts`: no number, ID or identifier of the old comments missing, except four judged:
+    "ViewModel" became "view-model" in `MainWindow.xaml.cs`, `ObservableObject.cs`,
+    `Converters.cs` and `HistogramCanvas.cs`.
+  - `romanian`: no line left in the 35 files but two quoted outputs (`AgainstReport.ShapeDetail`,
+    `SessionMessages.SyntheticCropNote`).
+  - `width`: no comment line over 100 columns in the 35 files; every added line ASCII.
+  - `check-design.ps1 -Since main`: 12 notes cover the files; none describes a comment, and
+    none repeats a corrected claim.
+  - `/validate`: not run, as assumption 7 says (no formula file in this area, and neither code
+    change touches one).
+  - The gate: `== OK` at each commit, 951 + 331 tests, 951 + 332 with the new test.
+
 ## Glossary: one English word per Romanian term, in every area
 
 | Romanian | English | Where, and the identifiers that fix it |
@@ -268,3 +336,13 @@ To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 2 i
 approved. The scratch tool's source is in
 `C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\374a5ba5-2bc6-4317-9b11-7357b78b4fb2\scratchpad\doccount`
 (and `wrap.py` beside it): copy them into yours and build the tool."
+
+## The prompt for area 4
+
+To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 3 is merged:
+"Area 4 of the documentation backfill, the Wpf `ViewModels/`: follow
+`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md` on `main`,
+'Each area's session', on branch `claude/Document-the-view-models`. The plan is approved. The
+scratch tool's source is in
+`C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\d30c94e5-1cf8-4aa9-a885-57d7c43d0ce9\scratchpad\doccount`
+(and `wrap.py` and `chk.sh` beside it): copy them into yours and build the tool."

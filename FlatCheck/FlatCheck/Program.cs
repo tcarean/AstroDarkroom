@@ -15,16 +15,21 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Program.cs - punctul de intrare. Main e un shim de o linie peste FlatCheckCli.Run,
-// care e si locul unde se poate testa tot, fiindca primeste scriitorii de iesire.
+// Program.cs - the entry point. Main is a one-line shim over FlatCheckCli.Run, which is also
+// where everything can be tested, because it receives the output writers.
 
 
 using System;
 
 namespace FlatCheck
 {
+    /// <summary>The console's entry point, <c>flatcheck.exe</c>.</summary>
     static class Program
     {
+        /// <summary>Runs the console on the process's own stdout and stderr.</summary>
+        /// <param name="args">The command line, flags before or after the path
+        /// (R-003).</param>
+        /// <returns>The process's exit code, <see cref="FlatCheckCli.Run"/>'s.</returns>
         internal static int Main(string[] args)
             => FlatCheckCli.Run(args, Console.Out, Console.Error);
     }

@@ -15,18 +15,24 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RelayCommand.cs - ICommand peste un delegat. Perechea lui ObservableObject.
+// RelayCommand.cs - ICommand over a delegate. ObservableObject's pair.
 
 using System;
 using System.Windows.Input;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>A command that runs a delegate, enabled by another; refreshed only on
+    /// <see cref="RaiseCanExecuteChanged"/>.</summary>
     internal sealed class RelayCommand : ICommand
     {
         readonly Action _run;
         readonly Func<bool> _can;
 
+        /// <summary>Wraps the two delegates. Throws an
+        /// <see cref="ArgumentNullException"/> when <paramref name="run"/> is null.</summary>
+        /// <param name="run">What the command does; not null.</param>
+        /// <param name="can">Whether it may run now; null = always.</param>
         internal RelayCommand(Action run, Func<bool> can = null)
         {
             _run = run ?? throw new ArgumentNullException(nameof(run));
@@ -35,15 +41,20 @@ namespace FlatCheck.Wpf
 
         public event EventHandler CanExecuteChanged;
 
+        /// <summary>Asks the enabling delegate.</summary>
+        /// <param name="parameter">The binding's parameter; ignored.</param>
+        /// <returns>True when there is no enabling delegate or it says yes.</returns>
         public bool CanExecute(object parameter) => _can == null || _can();
 
+        /// <summary>Runs the command's delegate.</summary>
+        /// <param name="parameter">The binding's parameter; ignored.</param>
         public void Execute(object parameter) => _run();
 
         /// <summary>
-        /// Se cheama cand se schimba ceva de care depinde CanExecute. Explicit, nu prin
-        /// CommandManager.RequerySuggested: aici butoanele se dezactiveaza in timpul unui
-        /// calcul, iar cererea automata de reevaluare ar face-o de zeci de ori pe secunda
-        /// exact cand firul de interfata are altceva de facut.
+        /// Called when something CanExecute depends on changes. Explicit, not through
+        /// CommandManager.RequerySuggested: here the buttons are disabled during a
+        /// computation, and the automatic re-evaluation request would do it tens of times a
+        /// second exactly when the UI thread has something else to do.
         /// </summary>
         internal void RaiseCanExecuteChanged()
             => CanExecuteChanged?.Invoke(this, EventArgs.Empty);

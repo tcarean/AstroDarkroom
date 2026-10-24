@@ -15,16 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// DarkTitleBar.cs - bara de titlu intunecata.
+// DarkTitleBar.cs - the dark title bar.
 //
-// WPF nu deseneaza bara de titlu, o deseneaza Windows, deci o fereastra altfel complet
-// intunecata ramane cu o banda alba deasupra. Se rezolva cerandu-i lui DWM sa foloseasca
-// varianta intunecata - un singur atribut.
+// WPF does not draw the title bar, Windows does, so a window otherwise wholly dark keeps a
+// white band on top. It is solved by asking DWM to use the dark variant - a single attribute.
 //
-// Atributul si-a schimbat numarul intre versiuni de Windows 10: 19 pe build-urile de
-// dinainte de 20H1, 20 dupa. Se incearca amandoua si se ignora esecul - pe un sistem
-// prea vechi bara ramane deschisa la culoare, ceea ce e urat, nu grav. De aceea nimic
-// de aici nu arunca.
+// The attribute changed its number between versions of Windows 10: 19 on the builds before
+// 20H1, 20 after. Both are tried and the failure is ignored - on a system too old the bar stays
+// light, which is ugly, not serious. That is why nothing here throws.
 
 using System;
 using System.Runtime.InteropServices;
@@ -33,18 +31,26 @@ using System.Windows.Interop;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>Asks Windows to draw a window's title bar dark; never throws.</summary>
     internal static class DarkTitleBar
     {
         const int UseImmersiveDarkModeBefore20H1 = 19;
         const int UseImmersiveDarkMode = 20;
 
+        /// <summary>The DWM call that sets one attribute of a window.</summary>
+        /// <param name="hwnd">The window's handle.</param>
+        /// <param name="attr">The attribute's number.</param>
+        /// <param name="value">The attribute's value (1 = on).</param>
+        /// <param name="size">The value's size in bytes.</param>
+        /// <returns>0 (S_OK) on success, an HRESULT otherwise.</returns>
         [DllImport("dwmapi.dll", PreserveSig = true)]
         static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
         /// <summary>
-        /// Se cheama dupa ce fereastra are un handle (SourceInitialized sau mai tarziu);
-        /// inainte de asta HWND-ul e zero si apelul n-are ce colora.
+        /// Called after the window has a handle (SourceInitialized or later); before that the
+        /// HWND is zero and the call has nothing to colour.
         /// </summary>
+        /// <param name="window">The window whose title bar turns dark.</param>
         internal static void Apply(Window window)
         {
             IntPtr hwnd = new WindowInteropHelper(window).Handle;
@@ -58,8 +64,8 @@ namespace FlatCheck.Wpf
             }
             catch (DllNotFoundException)
             {
-                // dwmapi lipseste (Windows fara compozitor). Bara ramane deschisa la
-                // culoare; nu e un motiv sa nu porneasca aplicatia.
+                // dwmapi is missing (Windows without a compositor). The bar stays light; that
+                // is no reason for the application not to start.
             }
             catch (EntryPointNotFoundException)
             {

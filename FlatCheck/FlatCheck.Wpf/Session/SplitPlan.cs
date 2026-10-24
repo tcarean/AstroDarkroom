@@ -15,23 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SplitPlan.cs - ce inseamna, pe disc, "impart sesiunea in N parti".
+// SplitPlan.cs - what "split the session into N parts" means on disk.
 //
-// Regulile de forma ale tabului Split (ADR 0054), fara nicio rulare si fara fereastra,
-// ca sa se poata testa singure: care fisiere din flats/ sunt cadre (raw sau FITS, in
-// ordinea numelor; un readme.txt nu e cadru), daca numarul lor se imparte exact, ce
-// primeste fiecare sesiune temporara si unde sta in TEMP.
+// The Split tab's rules of form (ADR 0054), with no run and no window, so they can be tested
+// on their own: which files of flats/ are frames (raw or FITS, in name order; a readme.txt is
+// not a frame), whether their count divides exactly, what each temp session gets and where it
+// sits in TEMP.
 //
-// CE SE COPIAZA decide scriptul, nu o lista fixa: folderele in care scriptul intra cu
-// "cd" (SirilScript.RequiredFolders - biases/, darks/, ce-o fi) se copiaza intregi,
-// lights/ primeste cel mult MaxLights cadre (primele dupa nume: destule ca scriptul sa
-// ajunga la capat, nu o suta de lights copiate de patru ori), iar flats/ primeste felia
-// partii. O lista fixa lasa scriptul OSC_Preprocessing.ssf sa moara la "cd darks" pe
-// partea 1, dupa ce s-au copiat gigaocteti - exact ce verificarea de dinainte de
-// pornire exista sa previna (ADR 0035).
+// WHAT IS COPIED is decided by the script, not a fixed list: the folders the script enters
+// with "cd" (SirilScript.RequiredFolders - biases/, darks/, whatever) are copied whole,
+// lights/ gets at most MaxLights frames (the first by name: enough for the script to reach the
+// end, not a hundred lights copied four times), and flats/ gets the part's slice. A fixed list
+// lets the OSC_Preprocessing.ssf script die at "cd darks" on part 1, after gigabytes had been
+// copied - exactly what the check before starting exists to prevent (ADR 0035).
 //
-// Din sesiunea originala se citeste doar: aici nu exista nicio mutare si nicio stergere,
-// iar Delete() sterge doar radacina temporara pe care a construit-o clasa asta.
+// The original session is only read: there is no move and no deletion here, and Delete()
+// deletes only the temp root this class built.
 
 using System;
 using System.Collections.Generic;
@@ -40,12 +39,17 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The disk rule of the Split tab (ADR 0054): which flats are frames, whether they divide,
+    /// what each temp part session gets and where; reads the original session only.
+    /// </summary>
     internal sealed class SplitPlan
     {
-        /// <summary>Cate fisiere din lights/ merg in fiecare parte, cel mult.</summary>
+        /// <summary>How many files of lights/ go into each part, at most.</summary>
         internal const int MaxLights = 2;
 
-        /// <summary>In cate parti se poate imparti: 2 (0/180) sau 4 (0/90/180/270).</summary>
+        /// <summary>Into how many parts it can be split: 2 (0/180) or 4
+        /// (0/90/180/270).</summary>
         internal static readonly IReadOnlyList<int> Choices = new[] { 2, 4 };
 
         internal const string PartPrefix = "parte-";
@@ -55,12 +59,19 @@ namespace FlatCheck.Wpf
 
         readonly SirilSession _session;
 
+        /// <summary>
+        /// Plans a split of a session: lists its flat frames and decides which folders are
+        /// copied whole. Throws an <see cref="ArgumentNullException"/> for a null session or
+        /// temp root, and an <see cref="ArgumentOutOfRangeException"/> for a part count not in
+        /// <see cref="Choices"/>.
+        /// </summary>
         /// <param name="session">The session the parts are cut from: its flats split between them,
         /// at most <see cref="MaxLights"/> lights when the script enters lights/, and every other
         /// folder the script enters, but Siril's output folders, copied whole; never null.</param>
         /// <param name="parts">How many parts: one of <see cref="Choices"/>.</param>
         /// <param name="tempRoot">The folder the part sessions are built under; never null.</param>
-        /// <param name="requiredFolders">Folderele in care intra scriptul (SirilScript.RequiredFolders); flats/ se copiaza oricum.</param>
+        /// <param name="requiredFolders">The folders the script enters
+        /// (SirilScript.RequiredFolders); flats/ is copied anyway.</param>
         internal SplitPlan(SirilSession session, int parts, string tempRoot, IEnumerable<string> requiredFolders)
         {
             _session = session ?? throw new ArgumentNullException(nameof(session));
@@ -68,8 +79,8 @@ namespace FlatCheck.Wpf
             Parts = parts;
             TempRoot = tempRoot ?? throw new ArgumentNullException(nameof(tempRoot));
             Frames = session.FlatFrames();
-            // process/ si masters/ sunt ce scrie Siril, nu intrari: un script care intra in ele
-            // cu "cd process" nu primeste cei 17 GB ai originalului, si nici masterul lui
+            // process/ and masters/ are what Siril writes, not inputs: a script that enters them
+            // with "cd process" does not get the original's 17 GB, nor its master
             WholeFolders = (requiredFolders ?? Array.Empty<string>())
                 .Where(f => !Is(f, FlatsFolder) && !Is(f, LightsFolder)
                             && !SirilSession.OutputFolders.Any(o => Is(f, o)))
@@ -78,32 +89,45 @@ namespace FlatCheck.Wpf
             CopiesLights = (requiredFolders ?? Array.Empty<string>()).Any(f => Is(f, LightsFolder));
         }
 
+        /// <summary>Compares two folder names ignoring case.</summary>
+        /// <param name="folder">A folder name from the script.</param>
+        /// <param name="name">A known folder name.</param>
+        /// <returns>True when they are the same name.</returns>
         static bool Is(string folder, string name) => string.Equals(folder, name, StringComparison.OrdinalIgnoreCase);
 
         internal int Parts { get; }
         internal string TempRoot { get; }
 
-        /// <summary>Folderele copiate intregi in fiecare parte: cele in care scriptul intra, in afara de flats/ si lights/.</summary>
+        /// <summary>The folders copied whole into each part: those the script enters, apart
+        /// from flats/ and lights/.</summary>
         internal IReadOnlyList<string> WholeFolders { get; }
 
-        /// <summary>Adevarat cand scriptul intra in lights/, deci fiecare parte primeste cel mult MaxLights cadre de acolo.</summary>
+        /// <summary>True when the script enters lights/, so each part gets at most MaxLights
+        /// frames from there.</summary>
         internal bool CopiesLights { get; }
 
-        /// <summary>Cadrele din flats/, in ordinea numelor: raw sau FITS, nimic altceva.</summary>
+        /// <summary>The frames of flats/, in name order: raw or FITS, nothing else.</summary>
         internal IReadOnlyList<string> Frames { get; }
 
         internal bool Divides => Frames.Count > 0 && Frames.Count % Parts == 0;
 
         internal int FramesPerPart => Divides ? Frames.Count / Parts : 0;
 
-        /// <summary>Radacina unei rulari: %TEMP%\FlatCheck\split-yyyyMMdd-HHmmss.</summary>
+        /// <summary>The root of one run: %TEMP%\FlatCheck\split-yyyyMMdd-HHmmss.</summary>
+        /// <param name="when">The run's start, local time.</param>
+        /// <returns>The path; nothing is created.</returns>
         internal static string NewTempRoot(DateTime when)
             => Path.Combine(Path.GetTempPath(), "FlatCheck", "split-" + when.ToString("yyyyMMdd-HHmmss", System.Globalization.CultureInfo.InvariantCulture));
 
-        /// <summary>Folderul partii <paramref name="part"/> (de la 1).</summary>
+        /// <summary>The folder of part <paramref name="part"/> (from 1).</summary>
+        /// <param name="part">The part's number, 1 to <see cref="Parts"/>.</param>
+        /// <returns>The part session's root under <see cref="TempRoot"/>.</returns>
         internal string PartRoot(int part) => Path.Combine(TempRoot, PartPrefix + part);
 
-        /// <summary>Felia de cadre a partii <paramref name="part"/> (de la 1): blocuri consecutive.</summary>
+        /// <summary>The slice of frames of part <paramref name="part"/> (from 1): consecutive
+        /// blocks.</summary>
+        /// <param name="part">The part's number, 1 to <see cref="Parts"/>.</param>
+        /// <returns>The part's flats, or empty when the count does not divide.</returns>
         internal IReadOnlyList<string> PartFrames(int part)
         {
             if (!Divides) return Array.Empty<string>();
@@ -111,15 +135,24 @@ namespace FlatCheck.Wpf
             return Frames.Skip((part - 1) * n).Take(n).ToList();
         }
 
-        /// <summary>Cadrele din lights/ care merg in fiecare parte: primele MaxLights cadre (raw sau FITS) dupa nume.</summary>
+        /// <summary>The frames of lights/ that go into each part: the first MaxLights frames
+        /// (raw or FITS) by name.</summary>
+        /// <returns>The lights to copy, or empty when the script does not enter
+        /// lights/.</returns>
         internal IReadOnlyList<string> LightsToCopy()
             => CopiesLights
                 ? AllFiles(Path.Combine(_session.Root, LightsFolder)).Where(IsFrame).Take(MaxLights).ToList()
                 : Array.Empty<string>();
 
+        /// <summary>Whether a file is a frame: a raw or a FITS by its extension.</summary>
+        /// <param name="path">A file path.</param>
+        /// <returns>True for a frame.</returns>
         static bool IsFrame(string path) => RawReader.IsRawPath(path) || FitsReader.IsFitsPath(path);
 
-        /// <summary>Tot ce se copiaza pentru o parte, ca perechi (sursa, destinatie), in ordinea copierii.</summary>
+        /// <summary>Everything copied for one part, as (source, destination) pairs, in the
+        /// order of copying.</summary>
+        /// <param name="part">The part's number, 1 to <see cref="Parts"/>.</param>
+        /// <returns>The whole folders, then the lights, then the part's flats.</returns>
         internal IReadOnlyList<(string From, string To)> CopyList(int part)
         {
             string root = PartRoot(part);
@@ -133,10 +166,11 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Cati octeti se copiaza in total, pe toate partile: folderele intregi si lights-urile
-        /// de Parts ori, fiecare flat o data. Fiecare folder e enumerat o singura data - se
-        /// cheama la fiecare schimbare de chip sau de script, pe firul de interfata.
+        /// How many bytes are copied in total, over all parts: the whole folders and the lights
+        /// Parts times, each flat once. Each folder is enumerated a single time - it is called
+        /// at every change of chip or script, on the UI thread.
         /// </summary>
+        /// <returns>The total in bytes; a file that cannot be sized counts 0.</returns>
         internal long CopiedBytes()
         {
             long perPart = 0;
@@ -149,6 +183,9 @@ namespace FlatCheck.Wpf
             return perPart * Parts + flats;
         }
 
+        /// <summary>A file's size.</summary>
+        /// <param name="path">A file path.</param>
+        /// <returns>Its length in bytes, or 0 when it cannot be read.</returns>
         static long SizeOf(string path)
         {
             try { return new FileInfo(path).Length; }
@@ -156,22 +193,32 @@ namespace FlatCheck.Wpf
             catch (UnauthorizedAccessException) { return 0; }
         }
 
-        /// <summary>Cate cadre (raw sau FITS) are fiecare parte in folderele copiate intregi; un readme sau un .xmp nu e cadru.</summary>
+        /// <summary>How many frames (raw or FITS) each part has in the folders copied whole; a
+        /// readme or an .xmp is not a frame.</summary>
+        /// <returns>The frame count over every whole folder.</returns>
         internal int WholeFrameCount() => WholeFolders.Sum(f => AllFiles(Path.Combine(_session.Root, f)).Count(IsFrame));
 
-        /// <summary>Sesiunea temporara a partii, prin aceleasi reguli ca a originalului (unde e masterul).</summary>
+        /// <summary>The part's temp session, through the same rules as the original's (where
+        /// the master is).</summary>
+        /// <param name="part">The part's number, 1 to <see cref="Parts"/>.</param>
+        /// <returns>A session over the part's folder.</returns>
         internal SirilSession PartSession(int part) => new(PartRoot(part));
 
+        /// <summary>The files of a folder, not its subfolders, ordinal by name.</summary>
+        /// <param name="dir">The folder.</param>
+        /// <returns>The full paths, or empty when the folder does not exist.</returns>
         static IReadOnlyList<string> AllFiles(string dir)
             => Directory.Exists(dir)
                 ? Directory.EnumerateFiles(dir).OrderBy(Path.GetFileName, StringComparer.Ordinal).ToList()
                 : Array.Empty<string>();
 
         /// <summary>
-        /// Sterge radacina temporara, cu tot ce e in ea. Un raw copiat de pe card e adesea
-        /// read-only si File.Copy pastreaza atributul, deci intai se ridica pe tot ce e
-        /// acolo. O eroare de disc nu e o eroare a rularii: intoarce false.
+        /// Deletes the temp root, with everything in it. A raw copied from a card is often
+        /// read-only and File.Copy keeps the attribute, so first it is lifted on everything
+        /// there. A disk error is not an error of the run: it returns false.
         /// </summary>
+        /// <returns>True when the root is gone (or never existed), false on a disk
+        /// error.</returns>
         internal bool Delete()
         {
             try

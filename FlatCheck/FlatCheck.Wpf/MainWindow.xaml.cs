@@ -15,39 +15,50 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// MainWindow.xaml.cs - fereastra: alegerea folderului si bara de titlu intunecata.
+// MainWindow.xaml.cs - the window: the choice of the folder and the dark title bar.
 //
-// Tot ce inseamna decizie sta in MainViewModel. Aici raman doar cele doua lucruri care
-// chiar au nevoie de o fereastra: dialogul de folder (un ViewModel care deschide dialoge
-// nu se mai poate testa) si cererea catre DWM de a intuneca bara de titlu.
+// Everything that means a decision sits in MainViewModel. Here remain only the main window's
+// own dialogs and child windows (the folder dialog, the "Despre" window, the Siril run window,
+// the question when closing during a split) and the request to DWM to darken the title bar.
+// The other dialogs live in their views (RatioView's file pickers, SirilRunWindow's stop
+// question), or reach a view-model only as a delegate it is given (the Netezire and Sintetic
+// tabs' overwrite question, MainViewModel.AskOnScreen by default), so that a test can answer
+// it.
 
 using System.Windows;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The main window: hosts the tabs bound to <see cref="MainViewModel"/>, opens the folder
+    /// dialog, the "Despre" and Siril run windows, and guards the close during a split.
+    /// </summary>
     public partial class MainWindow : Window
     {
         readonly MainViewModel _vm = new();
 
+        /// <summary>Builds the window over a new <see cref="MainViewModel"/> and wires the
+        /// title bar and the close.</summary>
         public MainWindow()
         {
             InitializeComponent();
             DataContext = _vm;
 
-            // Bara de titlu se poate colora abia dupa ce fereastra are un handle.
+            // The title bar can be coloured only after the window has a handle.
             SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
 
-            // Fara asta, inchiderea ferestrei in mijlocul unei serii de 32 de cadre ar
-            // lasa firul de calcul sa duca treaba pana la capat degeaba.
+            // Without this, closing the window in the middle of a series of 32 frames would
+            // let the computing thread carry the work to the end for nothing.
             Closing += OnClosing;
             Closed += (_, _) => _vm.CancelPending();
         }
 
         /// <summary>
-        /// Pornirea: daca s-a dat un folder in linia de comanda se foloseste, altfel se
-        /// intreaba imediat. Aplicatia n-are ce arata fara un folder, deci a astepta un
-        /// clic in plus ar fi doar un pas gol.
+        /// The start: if a folder was given on the command line it is used, otherwise it is
+        /// asked for at once. The application has nothing to show without a folder, so waiting
+        /// for one more click would only be an empty step.
         /// </summary>
+        /// <param name="folder">The folder to open, or null or empty to ask.</param>
         internal void Start(string folder)
         {
             if (!string.IsNullOrEmpty(folder)) { _ = _vm.OpenAsync(folder); return; }
@@ -55,24 +66,29 @@ namespace FlatCheck.Wpf
             Dispatcher.BeginInvoke(new System.Action(() => Choose()));
         }
 
+        /// <summary>The "choose folder" button's handler.</summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void ChooseFolder(object sender, RoutedEventArgs e) => Choose();
 
         bool _closeAfterSplit;
 
         /// <summary>
-        /// Un split in mers: Siril ruleaza si folderul temporar e pe disc. Inchisa direct,
-        /// fereastra ar omori Siril prin CancelPending, dar stergerea folderului e o
-        /// continuare pe dispecerul care tocmai se inchide, si n-ar mai rula: ~17 GB ar
-        /// ramane in %TEMP% fara nicio nota. Deci se intreaba, se opreste, si fereastra se
-        /// inchide singura dupa ce rularea a apucat sa stearga.
+        /// A split under way: Siril runs and the temp folder is on disk. Closed directly, the
+        /// window would kill Siril through CancelPending, but the folder's deletion is a
+        /// continuation on the dispatcher that is just closing, and it would never run: ~17 GB
+        /// would stay in %TEMP% without any note. So it asks, stops, and the window closes by
+        /// itself once the run has had time to delete.
         /// </summary>
+        /// <param name="sender">The window.</param>
+        /// <param name="e">The close; cancelled while a split runs.</param>
         void OnClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             SplitTabViewModel split = _vm.Split;
             if (!split.IsRunning) return;
 
-            // deja oprit si asteptam stergerea: un al doilea click pe X nu inchide nimic
-            // mai devreme - exact asa s-ar pierde folderul temporar
+            // already stopped and waiting for the deletion: a second click on X closes nothing
+            // sooner - exactly that way the temp folder would be lost
             e.Cancel = true;
             if (_closeAfterSplit) return;
 
@@ -85,20 +101,25 @@ namespace FlatCheck.Wpf
             _ = split.Pending.ContinueWith(_ => Dispatcher.BeginInvoke(new System.Action(() =>
             {
                 _closeAfterSplit = false;
-                if (!split.IsRunning) Close();   // altfel s-a pornit alta intre timp: ramanem, si X intreaba iar
+                if (!split.IsRunning) Close();   // otherwise another started meanwhile: we stay, and X asks again
             })));
         }
 
-        /// <summary>Butonul "Despre" si F1, prin ApplicationCommands.Help - vezi MainWindow.xaml.</summary>
+        /// <summary>The "Despre" button and F1, through ApplicationCommands.Help - see
+        /// MainWindow.xaml.</summary>
+        /// <param name="sender">The window.</param>
+        /// <param name="e">The command.</param>
         void ShowAbout(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
             => new AboutWindow { Owner = this }.ShowDialog();
 
         /// <summary>
-        /// Butonul de pe ecranul de problema: porneste scriptul ales in siril-cli, modal,
-        /// cu log-ul live. Cand fereastra se inchide dupa o rulare reusita, folderul se
-        /// redeschide - Check() spune daca a aparut masterul, nu fereastra de rulare.
-        /// Starea se reverifica la apasare: Siril se poate fi deschis intre timp.
+        /// The button on the problem screen: starts the chosen script in siril-cli, modal, with
+        /// the log live. When the window closes after a successful run, the folder is reopened
+        /// - Check() says whether the master appeared, not the run window. The state is checked
+        /// again on the press: Siril may have been opened meanwhile.
         /// </summary>
+        /// <param name="sender">The button.</param>
+        /// <param name="e">The click.</param>
         void RunPreprocessing(object sender, RoutedEventArgs e)
         {
             PreprocessViewModel p = _vm.Preprocess;
@@ -113,6 +134,7 @@ namespace FlatCheck.Wpf
             if (run.Succeeded == true) _ = _vm.ReopenAsync();
         }
 
+        /// <summary>Asks for a session folder and opens it; does nothing on Cancel.</summary>
         void Choose()
         {
             var dlg = new Microsoft.Win32.OpenFolderDialog

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ObservableObject.cs - INotifyPropertyChanged, scris de mana.
+// ObservableObject.cs - INotifyPropertyChanged, written by hand.
 //
-// Publica, nu internal, fiindca o mostenesc ViewModel-urile, care trebuie sa fie
-// publice ca sa le vada legarea WPF. Vezi nota din TabViewModel.
+// Public, not internal, because the view-models inherit it, and they must be public for the WPF
+// binding to see them. See the note in TabViewModel.
 //
-// Nu s-a adus un framework MVVM pentru douazeci de linii. Unealta asta are exact doua
-// dependente externe (libraw, pentru raw-uri de aparat, si ImageSharp, pentru previzualizarea
-// JPEG din raw), si fiecare a trebuit sa isi argumenteze existenta - vezi "The rule" din
-// docs/design/dependencies.md. Un pachet care genereaza proprietati nu trece acelasi prag.
+// No MVVM framework was brought in for twenty lines. This tool has exactly two external
+// dependencies (libraw, for camera raws, and ImageSharp, for the JPEG preview in the raw), and
+// each had to argue for its existence - see "The rule" in docs/design/dependencies.md. A package
+// that generates properties does not clear the same bar.
 
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -31,18 +31,29 @@ using System.Runtime.CompilerServices;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The base of every view-model: raises <see cref="PropertyChanged"/> for the
+    /// WPF binding.</summary>
     public abstract class ObservableObject : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>Announces that a property changed.</summary>
+        /// <param name="name">The property's name; the caller's own name when left
+        /// out.</param>
         protected void Raise([CallerMemberName] string name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
         /// <summary>
-        /// Pune valoarea si anunta, doar daca s-a schimbat ceva. Intoarce true cand chiar
-        /// s-a schimbat, ca apelantul sa poata inlantui efecte (de exemplu: "s-a ales alt
-        /// fisier, deci recalculeaza").
+        /// Sets the value and announces it, only if something changed. Returns true when it
+        /// really changed, so the caller can chain effects (for example: "another file was
+        /// chosen, so recompute").
         /// </summary>
+        /// <typeparam name="T">The property's type.</typeparam>
+        /// <param name="field">The backing field.</param>
+        /// <param name="value">The new value.</param>
+        /// <param name="name">The property's name; the caller's own name when left
+        /// out.</param>
+        /// <returns>True when the value changed and was announced.</returns>
         protected bool Set<T>(ref T field, T value, [CallerMemberName] string name = null)
         {
             if (EqualityComparer<T>.Default.Equals(field, value)) return false;

@@ -80,6 +80,39 @@ public class SirilInstallTests
         Assert.Empty(SirilInstall.ScriptsFrom(null, _ => true, _ => Array.Empty<string>()));
     }
 
+    /// <summary>
+    /// Locate promises not to throw: a settings folder the user may not list gives no config,
+    /// not an UnauthorizedAccessException out of the window's constructor. The folder is
+    /// made unlistable for the current user with a deny rule, removed again at the end.
+    /// </summary>
+    [Fact]
+    public void AnUnlistableSettingsFolderGivesNoConfig_NotAnException()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "FlatCheckTests", "siril-acl-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "config.1.4.ini"), Config);
+        var info = new DirectoryInfo(dir);
+        var user = System.Security.Principal.WindowsIdentity.GetCurrent().User!;
+        var deny = new System.Security.AccessControl.FileSystemAccessRule(
+            user, System.Security.AccessControl.FileSystemRights.ListDirectory,
+            System.Security.AccessControl.AccessControlType.Deny);
+        var acl = info.GetAccessControl();
+        acl.AddAccessRule(deny);
+        info.SetAccessControl(acl);
+        try
+        {
+            Assert.Throws<UnauthorizedAccessException>(() => Directory.EnumerateFiles(dir).ToList());  // the setup holds
+            Assert.Null(SirilInstall.FindConfig(dir));
+        }
+        finally
+        {
+            acl = info.GetAccessControl();
+            acl.RemoveAccessRule(deny);
+            info.SetAccessControl(acl);
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
     /// <summary>WithoutDark e propus indiferent de pozitia lui in lista; fara el, primul.</summary>
     [Fact]
     public void TheDefaultScriptIsWithoutDarkWhenPresent_OtherwiseTheFirst()

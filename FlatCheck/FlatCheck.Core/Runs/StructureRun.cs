@@ -15,13 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureRun.cs - modul 1 cap-coada: fisier -> cifre + text + harta.
+// StructureRun.cs - mode 1 end to end: file -> figures + text + map.
 //
-// Cu o StructureQuery, si comparatia vignetarii cu profilele obiectivului: identificarea
-// (LensIdentification, din master si din raw-ul de langa el sau din --lens), comparatia
-// (VignettingComparer), si verdictul combinat - cel mai rau dintre cele cinci teste si
-// adancime, ca la --against. Fara query, exact ce era: cele cinci teste si verdictul lor,
-// deci golden-urile si crosscheck.py nu se misca.
+// With a StructureQuery, also the comparison of the vignetting with the lens's profiles: the
+// identification (LensIdentification, from the master and the raw beside it or from --lens),
+// the comparison (VignettingComparer), and the combined verdict - the worst of the five tests
+// and the depth, as with --against. Without a query, exactly what it was: the five tests and
+// their verdict, so the goldens and crosscheck.py do not move.
 
 using System;
 using System.Collections.Generic;
@@ -31,33 +31,49 @@ using System.Linq;
 namespace FlatCheck
 {
     /// <summary>
-    /// Ce mai vrea apelantul pe langa structura: profilele cu care sa compare vignetarea.
-    /// Consola o construieste din --lens / --raw, fereastra din raw-ul din flats/.
+    /// What the caller wants besides the structure: the profiles to compare the vignetting
+    /// with. The console builds it from --lens / --raw, the window from the raw in flats/.
     /// </summary>
     internal sealed class StructureQuery
     {
         internal ProfileSources Sources;
-        /// <summary>Un raw de langa master, pentru diafragma si ID-ul de obiectiv; null cand nu e.</summary>
+        /// <summary>A raw from beside the master, for the aperture and the lens ID; null when
+        /// there is none.</summary>
         internal string RawPath;
-        /// <summary>Cititorul de metadate; in teste, un cadru fabricat in locul unui raw.</summary>
+        /// <summary>The metadata reader; in the tests, a made-up frame in place of a
+        /// raw.</summary>
         internal Func<string, LoadedFrame> LoadInfo = ImageLoader.LoadInfo;
-        /// <summary>Obiectivele dupa text (--lens), in locul celor indicate de raw; null = din raw.</summary>
+        /// <summary>The lenses by text (--lens), in place of those the raw points to; null =
+        /// from the raw.</summary>
         internal string LensText;
         internal ProfileSource? Source;
         internal double? Focal, FStop, Crop;
     }
 
+    /// <summary>
+    /// What a structure run found: the five tests, the comparison with the profiles when one
+    /// was asked for, and the combined verdict.
+    /// </summary>
     internal sealed class StructureOutcome
     {
         internal readonly StructureResult Structure;
-        /// <summary>Null fara query; altfel comparatia, chiar si cand n-a putut compara (Gap spune de ce).</summary>
+        /// <summary>Null without a query; otherwise the comparison, even when it could not
+        /// compare (Gap says why).</summary>
         internal readonly VignettingComparison Profiles;
         internal readonly ShotIdentity Shot;
-        /// <summary>Raw-ul de langa master n-a putut fi citit: mesajul, sau null.</summary>
+        /// <summary>The raw beside the master could not be read: the message, or
+        /// null.</summary>
         internal readonly string RawError;
-        /// <summary>Cel mai rau dintre verdictul celor cinci teste si cel al adancimii; al structurii cand nu s-a comparat.</summary>
+        /// <summary>The worse of the five tests' verdict and the depth's; the structure's
+        /// when nothing was compared.</summary>
         internal readonly string Verdict;
 
+        /// <summary>Holds the parts and combines the verdict by
+        /// <see cref="Stats.Severity"/>.</summary>
+        /// <param name="structure">The five tests; never null.</param>
+        /// <param name="profiles">The comparison, or null when none was asked for.</param>
+        /// <param name="shot">The identified shot, or null without a query.</param>
+        /// <param name="rawError">The message when the raw could not be read, or null.</param>
         internal StructureOutcome(StructureResult structure, VignettingComparison profiles, ShotIdentity shot, string rawError)
         {
             Structure = structure;
@@ -70,19 +86,30 @@ namespace FlatCheck
 
         internal bool Compared => Profiles != null && Profiles.Compared;
 
-        /// <summary>Adevarat cand adancimea a inrautatit verdictul: sfatul e atunci al ei, nu al formei.</summary>
+        /// <summary>True when the depth made the verdict worse: the advice is then the depth's,
+        /// not the shape's.</summary>
         internal bool DepthCarriesTheVerdict
             => Compared && Stats.Severity(Profiles.Verdict) > Stats.Severity(Structure.Verdict);
     }
 
+    /// <summary>
+    /// Mode 1, structure: is the master radially symmetric, and, with a
+    /// <see cref="StructureQuery"/>, does its vignetting match the lens's published profile.
+    /// </summary>
     internal static class StructureRun
     {
+        /// <summary>
+        /// Analyses the master (<see cref="Analyze"/>), writes the report and encodes the
+        /// residual map. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// </summary>
         /// <param name="path">The master flat to analyze: a FITS or a camera raw.</param>
         /// <param name="report">
-        /// Unde se scrie raportul. Consola da stdout, fereastra da un StringWriter din
-        /// care apoi salveaza "Rezultat testare.txt" - acelasi text, prin constructie.
+        /// Where the report is written. The console gives stdout, the window a StringWriter
+        /// from which it then saves "Rezultat testare.txt" - the same text, by construction.
         /// </param>
-        /// <param name="query">Null = doar structura; altfel si comparatia cu profilele.</param>
+        /// <param name="query">Null = the structure only; otherwise the comparison with the
+        /// profiles too.</param>
+        /// <returns>The outcome and the residual map as PNG.</returns>
         internal static RunOutcome<StructureOutcome> Execute(string path, TextWriter report, StructureQuery query = null)
         {
             StructureOutcome o = Analyze(path, query);
@@ -91,10 +118,15 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Prima jumatate a lui Execute, fara raport si fara harta: incarca, analizeaza si,
-        /// cu query, compara. SplitRun o cheama o data pe master, ca cifrele unei parti sa
-        /// fie exact cele pe care le-ar da rularea de structura pe fisierul ei.
+        /// The first half of Execute, without the report and without the map: loads, analyses
+        /// and, with a query, compares. SplitRun calls it once per master, so that a part's
+        /// figures are exactly those the structure run would give on its file.
         /// </summary>
+        /// <param name="path">The master flat: a FITS or a camera raw.</param>
+        /// <param name="query">Null = the structure only; otherwise the comparison
+        /// too.</param>
+        /// <returns>The outcome; its <see cref="StructureOutcome.Profiles"/> is null without
+        /// a query.</returns>
         internal static StructureOutcome Analyze(string path, StructureQuery query = null)
         {
             LoadedFrame f = ImageLoader.Load(path);
@@ -103,9 +135,17 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Comparatia pe un rezultat de structura gata calculat: identifica, alege obiectivele,
-        /// compara. Separat de Execute ca fereastra sa poata compara fara sa reincarce masterul.
+        /// The comparison on a structure result already computed: identifies, picks the
+        /// lenses, compares. Separate from Execute so the window can compare without reloading
+        /// the master. A raw that cannot be read does not throw: its message goes into
+        /// <see cref="StructureOutcome.RawError"/> and the identification goes on without it.
         /// </summary>
+        /// <param name="r">The five tests on the master, already computed.</param>
+        /// <param name="reference">The master's frame, for its header (focal length, crop);
+        /// its pixels are not read again.</param>
+        /// <param name="query">What to compare with; not null.</param>
+        /// <returns>The outcome with the comparison, which says in its gap why when it could
+        /// not compare.</returns>
         internal static StructureOutcome Compare(StructureResult r, LoadedFrame reference, StructureQuery query)
         {
             LoadedFrame raw = null;

@@ -15,15 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Options.cs - parsarea argumentelor din linia de comanda.
+// Options.cs - the parsing of the command-line arguments.
 //
-// Din faza 8 flagurile pot veni oriunde: "flatcheck --expo f.fit" si
-// "flatcheck f.fit --expo" sunt echivalente. Inainte args[0] era INTOTDEAUNA calea
-// imaginii, deci un flag pus primul era inghitit ca nume de fisier si esua cu
+// Since phase 8 the flags may come anywhere: "flatcheck --expo f.fit" and
+// "flatcheck f.fit --expo" are equivalent. Before, args[0] was ALWAYS the image's path, so a
+// flag put first was swallowed as a file name and failed with
 // "Could not find file '--expo'".
 //
-// Parse nu arunca: intoarce un Options cu Error setat, iar FlatCheckCli il scrie pe
-// stderr si iese cu 1.
+// Parse does not throw: it returns an Options with Error set, and FlatCheckCli writes it to
+// stderr and exits with 1.
 
 using System;
 using System.Collections.Generic;
@@ -32,6 +32,10 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The console's command line, parsed: the input file, the mode flags and their values,
+    /// or the error that stopped the parse.
+    /// </summary>
     internal sealed class Options
     {
         internal string Image;
@@ -40,17 +44,17 @@ namespace FlatCheck
         internal bool Expo;
         internal bool Sky;
 
-        // Modul 5: vederea "Histogram" din Siril. Nu are verdict si nu are optiuni
-        // proprii; -o e unde se scrie poza.
+        // Mode 5: Siril's "Histogram" view. It has no verdict and no options of its own; -o
+        // is where the picture is written.
         internal bool Histeq;
 
-        // Modul 6: flat-ul netezit. Valoarea e CALEA fisierului FITS de scris - explicit,
-        // fara nume implicit: un mod care scrie 96 MB langa master trebuie sa i se spuna
-        // unde. -o ramane harta. --scale e scara de netezire, in pixeli de senzor.
+        // Mode 6: the smoothed flat. The value is the PATH of the FITS file to write -
+        // explicit, with no default name: a mode that writes 96 MB beside the master must be
+        // told where. -o stays the map. --scale is the smoothing scale, in sensor pixels.
         internal string Smooth;
         internal double ScalePx = SmoothAnalyzer.DefaultScalePx;
 
-        // Flatul sintetic si comparatia. --lenses n-are nevoie de fisier de intrare.
+        // The synthetic flat and the comparison. --lenses needs no input file.
         internal string Synthetic;
         internal string Lens;
         internal ProfileSource? Source;
@@ -62,28 +66,28 @@ namespace FlatCheck
         internal string Against;
 
         /// <summary>
-        /// Un raw de langa master, pentru modul structura: din el se citesc diafragma si ID-ul
-        /// de obiectiv, ca in fereastra, si se compara vignetarea masterului cu profilele
-        /// obiectivului. Cu --lens in loc, obiectivele vin din text.
+        /// A raw from beside the master, for the structure mode: the aperture and the lens ID
+        /// are read from it, as in the window, and the master's vignetting is compared with the
+        /// lens's profiles. With --lens instead, the lenses come from the text.
         /// </summary>
         internal string Raw;
 
-        // --scale auto: unealta propune scara (SmoothScaleAdvisor) si netezeste la ea;
-        // fara textura sau nedeterminat, nu scrie nimic si iese cu 2.
+        // --scale auto: the tool proposes the scale (SmoothScaleAdvisor) and smooths at it;
+        // with no texture or undetermined, it writes nothing and exits with 2.
         internal bool ScaleAuto;
         internal string OutPng = "flatcheck.png";
         internal double? Sat;
         internal double? Black;
 
-        // Tiparul de fisiere pentru --light pe un folder. Implicitul si motivul lui stau
-        // in SeriesFinder, langa potrivirea propriu-zisa - aceeasi conventie o foloseste
-        // si aplicatia WPF, care n-are linie de comanda de unde sa-l primeasca.
+        // The file pattern for --light on a folder. The default and its reason sit in
+        // SeriesFinder, beside the matching itself - the WPF application uses the same
+        // convention, and it has no command line to receive it from.
         internal string Pattern = SeriesFinder.DefaultPattern;
 
-        // Campul diagonal, in grade, declarat de om. Portita pentru cand headerul nu
-        // spune destul (DSLR fara XPIXSZ) sau cand presupunerea conservatoare de
-        // full-frame nedreptateste un senzor mic. Nu e un flag de fortare: da unealtei
-        // adevarul, nu ii cere sa-l ignore.
+        // The diagonal field, in degrees, declared by the user. The way out for when the header
+        // does not say enough (a DSLR without XPIXSZ) or when the conservative full-frame
+        // assumption does a small sensor an injustice. It is not a force flag: it tells the
+        // tool the truth, it does not ask it to ignore it.
         internal double? Fov;
 
         internal bool Help;
@@ -96,6 +100,13 @@ namespace FlatCheck
         { "--ratio", "-o", "--out", "--sat", "--black", "--pattern", "--fov", "--smooth", "--scale",
           "--synthetic", "--lens", "--source", "--focal", "--fstop", "--crop", "--profiles", "--against", "--raw" };
 
+        /// <summary>
+        /// Parses the command line: flags anywhere, one positional input file (none needed with
+        /// --lenses), each value checked for its type and range. Does not throw.
+        /// </summary>
+        /// <param name="args">The arguments as the process received them.</param>
+        /// <returns>The options; <see cref="Help"/> set for no argument or -h/--help, and
+        /// <see cref="Error"/> set, Romanian, when the line is wrong.</returns>
         internal static Options Parse(string[] args)
         {
             var o = new Options();
@@ -188,27 +199,28 @@ namespace FlatCheck
                     continue;
                 }
 
-                // un token care incepe cu '-' si nu e un numar e un flag scris gresit
+                // a token that starts with '-' and is not a number is a misspelt flag
                 if (a.Length > 1 && a[0] == '-' && !TryNum(a, out _))
                     return o.Fail($"optiune necunoscuta: {a}");
 
                 positional.Add(a);
             }
 
-            // --lenses e o lista, nu o analiza: n-are nevoie de fisier de intrare.
+            // --lenses is a list, not an analysis: it needs no input file.
             if (positional.Count == 0 && !o.Lenses) return o.Fail("lipseste fisierul de intrare");
             if (positional.Count > 1)
                 return o.Fail("astept un singur fisier de intrare, am primit: " + string.Join(", ", positional));
             o.Image = positional.Count > 0 ? positional[0] : null;
 
-            // Fisierul netezit nu se scrie peste intrare: ar distruge singurul master
-            // fotografiat, si exact el trebuie sa ramana, ca sa se vada ce s-a scos.
+            // The smoothed file is not written over the input: it would destroy the only
+            // master photographed, and exactly that one must stay, so one can see what was
+            // removed.
             if (o.Smooth != null && SamePath(o.Smooth, o.Image))
                 return o.Fail("--smooth nu poate scrie peste fisierul de intrare; da alta cale");
             if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
                 return o.Fail("--synthetic nu poate scrie peste cadrul de referinta; da alta cale");
 
-            // --sat 0 ar face rng = 0 si toate procentele ar iesi NaN/infinit
+            // --sat 0 would make rng = 0 and every percentage would come out NaN/infinite
             double black = o.Black ?? 0.0;
             if (o.Sat.HasValue && o.Sat.Value <= black)
                 return o.Fail($"--sat ({o.Sat.Value:F0}) trebuie sa fie mai mare decat --black ({black:F0})");
@@ -216,9 +228,17 @@ namespace FlatCheck
             return o;
         }
 
+        /// <summary>Records the parse error.</summary>
+        /// <param name="message">The error, Romanian, as the user will read it.</param>
+        /// <returns>This instance, so a parse can end with <c>return o.Fail(...)</c>.</returns>
         Options Fail(string message) { Error = message; return this; }
 
-        /// <summary>Aceeasi cale pe disc, dupa normalizare; fara distinctie de litere pe Windows.</summary>
+        /// <summary>The same path on disk, after normalisation; case-insensitive on
+        /// Windows.</summary>
+        /// <param name="a">A path, or null.</param>
+        /// <param name="b">Another path, or null.</param>
+        /// <returns>True when both name the same file; false when either is null. A path
+        /// that cannot be normalised is compared as text, ignoring case.</returns>
         static bool SamePath(string a, string b)
         {
             if (a == null || b == null) return false;
@@ -229,6 +249,10 @@ namespace FlatCheck
             return string.Equals(fa, fb, cmp);
         }
 
+        /// <summary>Parses a number in the invariant culture (a dot for the decimals).</summary>
+        /// <param name="s">The text.</param>
+        /// <param name="v">The number, or 0 when the text is not one.</param>
+        /// <returns>True when the text is a number.</returns>
         static bool TryNum(string s, out double v)
             => double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out v);
     }

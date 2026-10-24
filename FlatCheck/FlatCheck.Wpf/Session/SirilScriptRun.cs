@@ -15,39 +15,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilScriptRun.cs - lansarea lui siril-cli pe un script, cu iesirea citita live.
+// SirilScriptRun.cs - launching siril-cli on a script, with its output read live.
 //
-//   siril-cli.exe -d <folderul sesiunii> -s <script> -i <copia setarilor lui Siril>
+//   siril-cli.exe -d <the session folder> -s <script> -i <the copy of Siril's settings>
 //
-// SETARILE. siril-cli citeste la pornire fisierul de setari al lui Siril si il rescrie
-// intreg la sfarsitul fiecarui script, reusit sau nu, cu folderul de la -d drept "wd".
-// Masurat pe 30/09/2026, Siril 1.4.4, pe copii: pe masina autorului intre 5 si 10 la suta
-// din salvari esueaza ("g_rename() failed: Permission denied"), si fiecare esec lasa
-// fisierul STERS, cu continutul intr-un <fisier>.XXXXXX alaturi. Rularea urmatoare fara -i
-// nu mai gaseste nimic, porneste cu valorile implicite si pe ele le salveaza. Asa si-a
-// pierdut omul setarile pe 26/09/2026 - scripturile bifate, caile StarNet si GraXpert,
-// focala - din testele de integrare, care rulau siril-cli de doua ori la fiecare verificare.
+// THE SETTINGS. siril-cli reads Siril's settings file at start-up and rewrites it whole at
+// the end of every script, successful or not, with the folder from -d as "wd". Measured on
+// 30/09/2026, Siril 1.4.4, on copies: on the author's machine between 5 and 10 percent of the
+// saves fail ("g_rename() failed: Permission denied"), and each failure leaves the file
+// DELETED, with its content in a <file>.XXXXXX beside it. The next run without -i finds
+// nothing any more, starts with the default values and saves those. That is how the user lost
+// the settings on 26/09/2026 - the ticked scripts, the StarNet and GraXpert paths, the focal
+// length - from the integration tests, which ran siril-cli twice at every check.
 //
-// De aceea fiecare rulare primeste cu -i o copie a lor, intr-un folder numai al ei,
-// %TEMP%\FlatCheck\siril-<guid>\siril.ini, sters dupa ce siril-cli a iesit. Config-ul
-// omului doar se citeste, si nimic din ce schimba o rulare in copie (wd, un set* din
-// script) nu se intoarce in el. Folder, nu fisier: salvarea lui Siril lasa langa copie un
-// siril.ini.XXXXXX, care pleaca odata cu folderul. Fisierul dat cu -i trebuie sa existe -
-// lipsa inseamna iesire cu 1 si "Could not load or create settings file" pe stderr - iar
-// unul gol inseamna valorile implicite ("nothing could be read"), exact ce ar folosi Siril
-// fara niciun config. Un config care exista dar nu se poate citi opreste rularea inainte
-// de pornire: fara copie, Siril ar lucra cu valorile implicite si nimeni n-ar sti. De ce
-// asa, si ce s-a respins: ADR 0055.
+// That is why each run gets with -i a copy of them, in a folder of its own only,
+// %TEMP%\FlatCheck\siril-<guid>\siril.ini, deleted after siril-cli has exited. The user's
+// config is only read, and nothing a run changes in the copy (wd, a set* from the script)
+// goes back into it. A folder, not a file: Siril's save leaves a siril.ini.XXXXXX beside the
+// copy, which goes with the folder. The file given with -i must exist - its absence means an
+// exit with 1 and "Could not load or create settings file" on stderr - and an empty one means
+// the default values ("nothing could be read"), exactly what Siril would use with no config at
+// all. A config that exists but cannot be read stops the run before it starts: without a
+// copy, Siril would work with the default values and nobody would know. Why so, and what was
+// rejected: ADR 0055.
 //
-// Masurat: log-ul iese pe stdout linie cu linie, pe masura ce se intampla, si prin pipe -
-// pauzele dintre linii coincid cu munca, nu vin toate la sfarsit. Codul de iesire e 0
-// la succes si 1 cand scriptul se opreste la o comanda; o salvare esuata a copiei nu il
-// schimba, apare doar in log. stderr se citeste pe acelasi canal: acolo scrie Siril cand
-// nu-si poate incarca setarile.
+// Measured: the log comes out on stdout line by line, as it happens, and through a pipe - the
+// pauses between lines coincide with the work, they do not all come at the end. The exit code
+// is 0 on success and 1 when the script stops at a command; a failed save of the copy does not
+// change it, it shows only in the log. stderr is read on the same channel: that is where Siril
+// writes when it cannot load its settings.
 //
-// Anularea omoara procesul (si copiii lui - Siril porneste ajutoare gspawn), si se
-// raporteaza ca OperationCanceledException, nu ca un cod de iesire: un cod ar arata ca
-// un esec al scriptului, si nu e.
+// Cancellation kills the process (and its children - Siril starts gspawn helpers), and is
+// reported as an OperationCanceledException, not as an exit code: a code would look like a
+// failure of the script, and it is not one.
 
 using System;
 using System.Diagnostics;
@@ -58,33 +58,75 @@ using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>Ce ruleaza fereastra: primeste liniile, intoarce codul de iesire. Se inlocuieste in teste.</summary>
+    /// <summary>What the window runs: it receives the lines, it returns the exit code. Replaced
+    /// in the tests.</summary>
+    /// <param name="onLine">Called for each stdout or stderr line, on a reader thread of the
+    /// process, not the UI thread.</param>
+    /// <param name="ct">Cancels the run by killing the process.</param>
+    /// <returns>siril-cli's exit code: 0 on success, 1 when the script stopped at a
+    /// command.</returns>
     internal delegate Task<int> SirilRunner(Action<string> onLine, CancellationToken ct);
 
+    /// <summary>
+    /// Builds the <see cref="SirilRunner"/> that starts siril-cli on a session folder and a
+    /// script, with a private copy of Siril's settings (ADR 0055).
+    /// </summary>
     internal static class SirilScriptRun
     {
-        /// <summary>Unde stau copiile setarilor, cate un folder siril-&lt;guid&gt; pe rulare - langa split-urile tabului Split.</summary>
+        /// <summary>Where the copies of the settings sit, one siril-&lt;guid&gt; folder per
+        /// run - beside the Split tab's splits.</summary>
         static string PrivateRoot => Path.Combine(Path.GetTempPath(), "FlatCheck");
 
         /// <summary>
-        /// Un runner adevarat, peste siril-cli, pe o copie a config-ului din care vine si lista
-        /// de scripturi. Config-ul se cauta abia la rulare, ca orice eroare sa ajunga in
-        /// verdictul ei. Liniile vin de pe firele de citire ale procesului.
+        /// A real runner, over siril-cli, on a copy of the config the list of scripts comes
+        /// from too. The config is looked up only at run time, so that any error reaches its
+        /// verdict. The lines come from the process's reader threads.
         /// </summary>
+        /// <param name="cliPath">The full path of siril-cli.exe.</param>
+        /// <param name="folder">The session folder, passed with -d and used as the working
+        /// directory.</param>
+        /// <param name="scriptPath">The .ssf to run, passed with -s.</param>
+        /// <returns>The runner; nothing starts until it is called.</returns>
         internal static SirilRunner For(string cliPath, string folder, string scriptPath)
             => (onLine, ct) => ExecuteAsync(cliPath, folder, scriptPath, SirilInstall.FindConfig(), PrivateRoot, onLine, ct);
 
         /// <summary>
-        /// Aceeasi rulare, cu config-ul de copiat si locul copiei date din afara - pentru teste.
-        /// Un config null inseamna o copie goala: valorile implicite ale lui Siril.
+        /// The same run, with the config to copy and the copy's place given from outside - for
+        /// the tests. A null config means an empty copy: Siril's default values.
         /// </summary>
+        /// <param name="cliPath">The full path of siril-cli.exe.</param>
+        /// <param name="folder">The session folder.</param>
+        /// <param name="scriptPath">The .ssf to run.</param>
+        /// <param name="settings">The settings file to copy, or null for an empty
+        /// copy.</param>
+        /// <param name="privateRoot">The folder under which the run's private folder is
+        /// made.</param>
+        /// <returns>The runner; nothing starts until it is called.</returns>
         internal static SirilRunner For(string cliPath, string folder, string scriptPath, string settings, string privateRoot)
             => (onLine, ct) => ExecuteAsync(cliPath, folder, scriptPath, settings, privateRoot, onLine, ct);
 
+        /// <summary>
+        /// Copies the settings into a private folder, starts siril-cli on the script, forwards
+        /// every output line, waits for the exit and deletes the folder. Throws an
+        /// <see cref="IOException"/> before starting anything when the settings cannot be
+        /// read, and an <see cref="OperationCanceledException"/> after the process was killed
+        /// on cancellation.
+        /// </summary>
+        /// <param name="cliPath">The full path of siril-cli.exe.</param>
+        /// <param name="folder">The session folder.</param>
+        /// <param name="scriptPath">The .ssf to run.</param>
+        /// <param name="settings">The settings file to copy, or null for an empty
+        /// copy.</param>
+        /// <param name="privateRoot">The folder under which the private folder is
+        /// made.</param>
+        /// <param name="onLine">Called for each stdout and stderr line, on a reader
+        /// thread.</param>
+        /// <param name="ct">Kills the process tree when cancelled.</param>
+        /// <returns>siril-cli's exit code.</returns>
         static async Task<int> ExecuteAsync(string cliPath, string folder, string scriptPath, string settings,
                                             string privateRoot, Action<string> onLine, CancellationToken ct)
         {
-            // intai citirea: daca nu merge, nu s-a creat nimic si nu porneste nimic
+            // the reading first: if it fails, nothing has been created and nothing starts
             byte[] copy = ReadSettings(settings);
 
             string dir = Path.Combine(privateRoot, "siril-" + Guid.NewGuid().ToString("N"));
@@ -122,8 +164,9 @@ namespace FlatCheck.Wpf
 
                 using (ct.Register(() => Kill(process)))
                 {
-                    // Fara jeton aici: la anulare procesul e omorat prin Register, iese, si
-                    // asteptarea se termina normal - abia apoi se raporteaza anularea.
+                    // No token here: on cancellation the process is killed through Register, it
+                    // exits, and the wait ends normally - only then is the cancellation
+                    // reported.
                     await process.WaitForExitAsync(CancellationToken.None).ConfigureAwait(false);
                 }
 
@@ -132,18 +175,23 @@ namespace FlatCheck.Wpf
             }
             finally
             {
-                // si dupa Opreste: siril-cli a iesit deja, deci copia nu mai e a nimanui
+                // after Opreste too: siril-cli has already exited, so the copy is nobody's any
+                // more
                 DeleteQuietly(dir);
             }
         }
 
         /// <summary>
-        /// Octetii config-ului lui Siril, sau niciunul cand nu e niciun config. ReadAllBytes
-        /// imparte fisierul doar la citire. Dupa sursa GLib, o salvare a lui Siril care nimereste
-        /// exact atunci esueaza si lasa fisierul intreg; daca citirea ar imparti si stergerea,
-        /// Siril l-ar putea sterge si ramane fara el. Deci nu FileShare.Delete, nici File.Copy,
-        /// al carui mod de impartire nu e verificat.
+        /// The bytes of Siril's config, or none when there is no config. ReadAllBytes shares
+        /// the file for reading only. By the GLib source, a Siril save that lands exactly then
+        /// fails and leaves the file whole; if the read shared deletion too, Siril could delete
+        /// it and be left without it. So not FileShare.Delete, nor File.Copy, whose sharing
+        /// mode is not checked.
         /// </summary>
+        /// <param name="path">The config file, or null.</param>
+        /// <returns>The file's bytes, or an empty array for null. Throws an
+        /// <see cref="IOException"/> with the window's message when the file cannot be
+        /// read.</returns>
         static byte[] ReadSettings(string path)
         {
             if (path == null) return Array.Empty<byte>();
@@ -155,9 +203,11 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Folderul copiei, cu tot ce a lasat Siril in el. Masurat: se sterge din prima imediat
-        /// dupa iesire (100 de rulari din 100); daca totusi nu, raman cativa KB in %TEMP%.
+        /// The copy's folder, with everything Siril left in it. Measured: it is deleted at the
+        /// first try right after the exit (100 runs out of 100); if not after all, a few KB
+        /// stay in %TEMP%.
         /// </summary>
+        /// <param name="dir">The private folder to delete; a failure is ignored.</param>
         static void DeleteQuietly(string dir)
         {
             try { Directory.Delete(dir, recursive: true); }
@@ -165,6 +215,9 @@ namespace FlatCheck.Wpf
             catch (UnauthorizedAccessException) { }
         }
 
+        /// <summary>Kills the process and its children, if it is still running; never
+        /// throws.</summary>
+        /// <param name="p">The siril-cli process.</param>
         static void Kill(Process p)
         {
             try { if (!p.HasExited) p.Kill(entireProcessTree: true); }

@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Lantul flatului sintetic: cadrul de referinta (marime, carduri, ce stie despre
-// fotografiere) -> cererea completata (focala, diafragma, crop, fiecare cu sursa ei) ->
-// alegerea obiectivului si a profilului -> raster -> raport. Fisierul il scrie apelantul,
-// prin WriteFits, dupa ce a raspuns la intrebarea de suprascriere - acelasi motiv ca la
-// --smooth. Refuzurile sunt text, ca la celelalte run-uri, si nu arunca.
+// The synthetic flat's chain: the reference frame (size, cards, what it knows about the shot)
+// -> the completed request (focal length, aperture, crop, each with its source) -> the choice
+// of the lens and of the profile -> raster -> report. The file is written by the caller,
+// through WriteFits, after it has answered the overwrite question - the same reason as for
+// --smooth. The refusals are text, as in the other runs, and do not throw.
 
 using System;
 using System.Collections.Generic;
@@ -28,7 +28,8 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    /// <summary>Ce s-a cerut, cu ce s-a completat din cadrul de referinta si de unde.</summary>
+    /// <summary>What was asked for, with what was completed from the reference frame and from
+    /// where.</summary>
     internal sealed class SyntheticRequest
     {
         internal string LensText;
@@ -42,16 +43,28 @@ namespace FlatCheck
         internal string CropSource;
     }
 
+    /// <summary>
+    /// The result of a <c>--synthetic</c> run: the raster built, the completed request and
+    /// the reference frame, or the refusal.
+    /// </summary>
     internal sealed class SyntheticRunOutcome
     {
         internal readonly SyntheticFlatResult Result;
         internal readonly SyntheticRequest Request;
         internal readonly LoadedFrame Frame;
         internal readonly string Refusal;
-        /// <summary>Refuzul e despre ALEGEREA obiectivului (nimic / prea multe): "citeste lista", cod 2, nu 1.</summary>
+        /// <summary>The refusal is about the CHOICE of the lens (none / too many): "read the
+        /// list", code 2, not 1.</summary>
         internal readonly bool RefusedChoice;
         internal bool Refused => Result == null;
 
+        /// <summary>Bundles a run's parts, or a refusal.</summary>
+        /// <param name="r">The synthetic flat, or null on a refusal.</param>
+        /// <param name="req">The request, completed as far as it got.</param>
+        /// <param name="f">The reference frame, as loaded.</param>
+        /// <param name="refusal">The refusal's text, or null.</param>
+        /// <param name="refusedChoice">True when the refusal is about choosing the
+        /// lens.</param>
         internal SyntheticRunOutcome(SyntheticFlatResult r, SyntheticRequest req, LoadedFrame f, string refusal, bool refusedChoice = false)
         {
             Result = r;
@@ -62,13 +75,26 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Mode 7, <c>--synthetic</c>: builds a radial flat from the lens's Adobe or lensfun
+    /// profile, at the size of a reference frame, and writes it on request.
+    /// </summary>
     internal static class SyntheticRun
     {
         /// <summary>
-        /// Completeaza cererea din identitatea fotografierii: fiecare valoare cu sursa ei,
-        /// ca raportul sa spuna de unde a venit. Null cand totul s-a putut completa; altfel
-        /// refuzul. Identificarea insasi e in LensIdentification, comuna cu fereastra.
+        /// Completes the request from the shot's identity: each value with its source, so the
+        /// report says where it came from. Null when everything could be completed; otherwise
+        /// the refusal. The identification itself is in LensIdentification, shared with the
+        /// window.
         /// </summary>
+        /// <param name="req">The request to complete; its focal length, aperture and crop
+        /// fields are written.</param>
+        /// <param name="id">What the frame, the raw and the options say about the
+        /// shot.</param>
+        /// <param name="lensfunNeedsCrop">True when the chosen lens is a lensfun one, whose
+        /// profile needs the camera's crop factor.</param>
+        /// <returns>Null when complete, otherwise the refusal's text (no focal length, no
+        /// aperture, or no crop for lensfun).</returns>
         internal static string Complete(SyntheticRequest req, ShotIdentity id, bool lensfunNeedsCrop)
         {
             if (!id.FocalMm.HasValue) return SyntheticReport.NoFocal();
@@ -85,15 +111,19 @@ namespace FlatCheck
             return null;
         }
 
-        /// <summary>Pentru teste si pentru apelantii care n-au identificat inca: identifica si completeaza.</summary>
-        internal static string Complete(SyntheticRequest req, LoadedFrame f, ProfileSources sources,
-                                        double? focal, double? fstop, double? crop, bool lensfunNeedsCrop)
-            => Complete(req, LensIdentification.Identify(f, null, sources, focal, fstop, crop), lensfunNeedsCrop);
-
         /// <summary>
-        /// Alege obiectivul din text: exact un rezultat, altfel refuz cu lista. Fara text,
-        /// candidatii pe care raw-ul i-a indicat (identitatea), restransi dupa sursa ceruta.
+        /// Chooses the lens from the text: exactly one hit, otherwise a refusal with the list.
+        /// Without a text, the candidates the raw pointed to (the identity), narrowed by the
+        /// source asked for. Sets <c>req.Lens</c> on success.
         /// </summary>
+        /// <param name="req">The request: its lens text and source are read, its lens is
+        /// written.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="f">The reference frame; not read by this overload, the identity
+        /// carries what it knows.</param>
+        /// <param name="id">The shot's identity, with the candidates and the camera.</param>
+        /// <returns>Null when exactly one lens was chosen, otherwise the refusal's text (none
+        /// given, no match, or ambiguous).</returns>
         internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f, ShotIdentity id)
         {
             LensCatalog cat = sources.Catalog;
@@ -115,12 +145,17 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Obiectivele care se potrivesc cu un text, restranse cum le restrange si alegerea:
-        /// potrivirea exacta pe nume bate pe cele partiale ("Tokina AT-X 11-20mm F2.8 PRO DX"
-        /// e continut si de numele variantei "II"), montura aparatului cand se stie, apoi
-        /// fisierul propriu al corpului. Fara regula "exact unul": --synthetic o cere,
-        /// comparatia din modul structura compara cu toate cate raman.
+        /// The lenses that match a text, narrowed the way the choice narrows them: an exact
+        /// match on the name beats the partial ones ("Tokina AT-X 11-20mm F2.8 PRO DX" is also
+        /// contained in the name of the "II" variant), the camera's mount when known, then the
+        /// body's own file. Without the "exactly one" rule: --synthetic asks for it, the
+        /// comparison of the structure mode compares with all that remain.
         /// </summary>
+        /// <param name="text">The lens text (<c>--lens</c>); not blank.</param>
+        /// <param name="source">The profile source to keep, or null for both.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="id">The shot's identity, for the camera; null allowed.</param>
+        /// <returns>The lenses left, possibly empty.</returns>
         internal static IReadOnlyList<LensChoice> MatchLenses(string text, ProfileSource? source, ProfileSources sources, ShotIdentity id)
         {
             IReadOnlyList<LensChoice> hits = sources.Catalog.Search(text, source);
@@ -136,10 +171,28 @@ namespace FlatCheck
             return LensIdentification.PreferCamera(hits, id?.Camera);
         }
 
-        /// <summary>Pentru teste: identifica intai, apoi alege.</summary>
+        /// <summary>For the tests: identifies first, then chooses.</summary>
+        /// <param name="req">The request: its lens is written on success.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="f">The reference frame, identified here.</param>
+        /// <returns>Null when exactly one lens was chosen, otherwise the refusal's
+        /// text.</returns>
         internal static string ChooseLens(SyntheticRequest req, ProfileSources sources, LoadedFrame f)
             => ChooseLens(req, sources, f, LensIdentification.Identify(f, null, sources));
 
+        /// <summary>
+        /// Loads the reference frame and runs the chain on it. Throws what
+        /// <see cref="ImageLoader.Load"/> throws; the refusals are returned, not thrown.
+        /// </summary>
+        /// <param name="referencePath">The frame whose size and cards the synthetic flat takes
+        /// (normally the master).</param>
+        /// <param name="req">The request: a lens text, or a lens already chosen.</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="focal">The focal length in mm given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The synthetic flat with its request, or the refusal.</returns>
         internal static SyntheticRunOutcome Execute(string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
@@ -147,15 +200,31 @@ namespace FlatCheck
             return Execute(f, referencePath, req, sources, focal, fstop, crop, report);
         }
 
+        /// <summary>
+        /// The chain on a frame already loaded: refuses a cube, identifies the shot once,
+        /// chooses the lens when the request has none, completes the request, picks the
+        /// nearest profile and builds the raster; writes the report or the refusal.
+        /// </summary>
+        /// <param name="f">The reference frame, as loaded.</param>
+        /// <param name="referencePath">Its path, for the report.</param>
+        /// <param name="req">The request: a lens text, or a lens already chosen (the
+        /// window's list).</param>
+        /// <param name="sources">The profile catalog.</param>
+        /// <param name="focal">The focal length in mm given by hand, or null.</param>
+        /// <param name="fstop">The f-number given by hand, or null.</param>
+        /// <param name="crop">The crop factor given by hand, or null.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The synthetic flat with its request, or the refusal.</returns>
         internal static SyntheticRunOutcome Execute(LoadedFrame f, string referencePath, SyntheticRequest req, ProfileSources sources,
                                                     double? focal, double? fstop, double? crop, TextWriter report)
         {
             string refusal = f.Planes > 1 ? SyntheticReport.RefusalCube(referencePath, f.Planes) : null;
             bool choice = false;
-            // O singura identificare pentru alegere si completare: ByLensId parseaza fisierele
-            // Adobe ale monturii, si nu e ceva de facut de doua ori.
+            // A single identification for the choice and the completion: ByLensId parses the
+            // mount's Adobe files, and that is not something to do twice.
             ShotIdentity id = LensIdentification.Identify(f, null, sources, focal, fstop, crop);
-            // Fereastra da obiectivul gata ales din lista (req.Lens); consola il cauta din text.
+            // The window gives the lens already chosen from the list (req.Lens); the console
+            // looks it up from the text.
             if (refusal == null && req.Lens == null)
             {
                 refusal = ChooseLens(req, sources, f, id);
@@ -176,6 +245,12 @@ namespace FlatCheck
             return new SyntheticRunOutcome(r, req, f, null);
         }
 
+        /// <summary>The HISTORY lines: the version, the lens and profile, the model, the
+        /// reference file.</summary>
+        /// <param name="o">A run that was not refused.</param>
+        /// <param name="referencePath">The reference frame; only its file name is
+        /// written.</param>
+        /// <returns>Four lines, in Romanian.</returns>
         internal static IReadOnlyList<string> History(SyntheticRunOutcome o, string referencePath)
         {
             LensProfile p = o.Result.Profile;
@@ -188,7 +263,13 @@ namespace FlatCheck
             };
         }
 
-        /// <summary>Float mereu: flatul e un factor in jurul lui 1, nu ADU.</summary>
+        /// <summary>
+        /// Writes the synthetic flat, with the reference's cards and the HISTORY lines. Always
+        /// float: the flat is a factor around 1, not ADU.
+        /// </summary>
+        /// <param name="o">A run that was not refused.</param>
+        /// <param name="referencePath">The reference frame, named in the HISTORY.</param>
+        /// <param name="s">The stream to write the FITS into; flushed, not closed.</param>
         internal static void WriteFits(SyntheticRunOutcome o, string referencePath, Stream s)
             => FitsWriter.Write(s, o.Result.Flat, -32, o.Frame.Cards, History(o, referencePath));
     }

@@ -15,35 +15,42 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Catalogul de profile de obiectiv, incarcat o singura data pentru toata fereastra.
+// The catalog of lens profiles, loaded a single time for the whole window.
 //
-// Era al tabului Sintetic; de cand tabul Structura compara vignetarea masterului cu
-// profilele obiectivului, il vor amandoua, si doua incarcari ar fi insemnat de doua ori
-// cele ~3500 de fisiere Adobe listate (o secunda-doua) si doua liste care pot diferi.
-// MainViewModel il construieste si il da ambelor taburi; testele dau un Func care
-// intoarce surse facute de mana, ca fereastra sa nu depinda de ce e instalat pe masina.
+// It was the Sintetic tab's; since the Structure tab compares the master's vignetting with the
+// lens's profiles, both want it, and two loads would have meant listing the ~3500 Adobe files
+// twice (a second or two) and two lists that can differ. MainViewModel builds it and gives it
+// to both tabs; the tests give a Func that returns sources made by hand, so the window does not
+// depend on what is installed on the machine.
 
 using System;
 using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The window's one lens-profile catalog, located in the background on first
+    /// demand and shared by the tabs.</summary>
     internal sealed class ProfileCatalog
     {
         readonly Func<ProfileSources> _locate;
         readonly object _gate = new();
         Task<ProfileSources> _loading;
 
+        /// <summary>Remembers how to locate the sources; nothing is loaded yet.</summary>
+        /// <param name="locate">The locator; null = <see cref="ProfileLocator.Locate()"/>,
+        /// the machine's own.</param>
         internal ProfileCatalog(Func<ProfileSources> locate = null)
         {
             _locate = locate ?? ProfileLocator.Locate;
         }
 
         /// <summary>
-        /// Sursele, incarcate in fundal la prima cerere si tinute minte. O incarcare care a
-        /// esuat (un folder inaccesibil) se reia la urmatoarea cerere, nu ramane esuata pe
-        /// toata durata ferestrei.
+        /// The sources, loaded in the background on the first request and remembered. A load
+        /// that failed (an inaccessible folder) is retried on the next request, it does not
+        /// stay failed for the whole life of the window.
         /// </summary>
+        /// <returns>The loading task, shared by every caller until it fails or is
+        /// cancelled.</returns>
         internal Task<ProfileSources> EnsureAsync()
         {
             lock (_gate)
@@ -54,7 +61,7 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>Sursele deja incarcate, sau null daca inca nu sunt.</summary>
+        /// <summary>The sources already loaded, or null if they are not yet.</summary>
         internal ProfileSources Loaded
         {
             get
