@@ -270,10 +270,13 @@ same check in its `docs/validation.md` (History, 2026-10-12).
   with every leg, within 4" on RA and 0.3" on Dec, so its dithering table gives the direction of a
   move as well as its size (the check of assumption 2 from LightsCheck, above).
 - From 61 to 66 the sky turned 2.31 degrees west and the centre stayed within 2" of the same RA:
-  the stars move east to west and the tracking follows them. What shows in the frame is only the
-  tracking error, and it goes either way: without a dither RA wandered about 20" (3-4 px) west
-  and back over a few minutes (61 to 64 to 66), the GTi's periodic error. The closing test
-  (10 s each way at step 1) carries that much noise.
+  the stars move east to west and the tracking follows them. What shows in the frame is only what
+  is left over, and it goes either way: with no RA press, RA went 23" west and came back 21" east
+  (61 to 64 to 66, 3-4 px), across the two small presses below. Its cause is open: LightsCheck's
+  ADR 0016 finds that every Veil pair of frames follows a press and that the RA step depends on
+  it, and cannot separate the tracking rate, the periodic error, flexure and what a press leaves
+  behind. Read on frames minutes apart, the closing test (10 s each way at step 1) carries that
+  much noise.
 - The pauses before 63 and 65 moved the camera only 16" and 26" (3 and 4 px) along Dec; their
   press times are not known.
 
