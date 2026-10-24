@@ -88,14 +88,24 @@ $kit = Read-KitConfig $root
 $VersionPattern = '<Version>([^<]+)</Version>'
 $UnreleasedPattern = '(?ms)^## \[Unreleased\]\s*$(.*?)(?=^## \[|\z)'
 
-# git's output in $Dir as one trimmed string, or $null when git fails. Its error message is
-# dropped, not raised: under Windows PowerShell 5.1 a native command's stderr, even sent to
-# $null, stops a script whose $ErrorActionPreference is Stop (measured 2026-10-24).
+# git's standard output in $Dir as one string, or $null when git is not on PATH or fails; then
+# $script:GitError holds why, in git's own words. Only trailing white space is trimmed: the
+# first column of `git status --porcelain` carries meaning (" M" not staged, "M " staged).
+# git's error is collected, not raised: under Windows PowerShell 5.1 a native command's
+# stderr, even sent to $null, stops a script whose $ErrorActionPreference is Stop (measured
+# 2026-10-24), and a missing git is a CommandNotFoundException.
 function Invoke-GitText([string]$Dir, [string[]]$Arguments) {
+    if (-not (Get-Command git -CommandType Application -ErrorAction SilentlyContinue)) {
+        $script:GitError = 'git was not found on PATH'
+        return $null
+    }
     $ErrorActionPreference = 'Continue'
-    $text = & git -C $Dir @Arguments 2>$null
-    if ($LASTEXITCODE -ne 0) { return $null }
-    return (@($text) -join "`n").Trim()
+    $output = @(& git -C $Dir @Arguments 2>&1)
+    if ($LASTEXITCODE -ne 0) {
+        $script:GitError = (@($output | ForEach-Object { "$_" }) -join ' ').Trim()
+        return $null
+    }
+    return (@($output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join "`n").TrimEnd()
 }
 
 # A kit.json path (forward slashes) as a path under the project on this system: pwsh on Linux,
@@ -143,7 +153,7 @@ function Get-ComponentInfo([string]$ComponentRoot, [string[]]$Exclude = @()) {
     $commit = Invoke-GitText $ComponentRoot @('log', '-1', '--format=%H', '--', '.')
     # Where-Object first: $null piped on would make one bare ':(exclude)', which excludes all.
     $status = Invoke-GitText $ComponentRoot (@('status', '--porcelain', '--', '.') + @($Exclude | Where-Object { $_ } | ForEach-Object { ":(exclude)$_" }))
-    $dirty = if ($null -eq $status) { @('(git status failed: not in a git repository?)') } elseif ($status) { @($status -split "`n") } else { @() }
+    $dirty = if ($null -eq $status) { @("(git status failed: $script:GitError)") } elseif ($status) { @($status -split "`n") } else { @() }
     return [pscustomobject]@{
         Name = Split-Path $ComponentRoot -Leaf
         Version = $version
@@ -236,7 +246,7 @@ function Publish-Release([switch]$AfterVersionEdits) {
     [System.IO.File]::WriteAllText($manifest, (($lines -join "`n") + "`n"), $utf8NoBom)
     foreach ($c in $components) {
         $flag = if ($c.Unreleased) { ', unreleased changes' } else { '' }
-        if (-not $c.Clean) { $flag += ', NOT CLEAN' }
+        if (-not $c.Clean) { $flag += ', NOT CLEAN: ' + @($c.Dirty)[0] }
         Write-Host ("component {0} {1} ({2}{3})" -f $c.Name, $c.Version, $(if ($c.Commit) { $c.Commit.Substring(0, [Math]::Min(7, $c.Commit.Length)) } else { 'no commit' }), $flag)
     }
 
