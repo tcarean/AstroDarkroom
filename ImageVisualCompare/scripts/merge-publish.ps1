@@ -29,6 +29,8 @@
 #   exit 0  merged; it prints how many files were copied and how many were already there
 #   exit 1  one line per collision, "collision  <relative path>  (<From> differs from <Into>)",
 #           and nothing copied
+#   exit 2  any other error (a missing -From, a failed copy), with its message; release.ps1
+#           tells it from a collision by this code
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$From,
@@ -36,6 +38,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+trap {
+    Write-Host ("merge-publish: {0}" -f $_.Exception.Message) -ForegroundColor Red
+    exit 2
+}
 if (-not (Test-Path -LiteralPath $From -PathType Container)) { throw "merge-publish: -From $From is not a folder." }
 $fromFull = [System.IO.Path]::GetFullPath($From).TrimEnd('\', '/')
 $intoFull = [System.IO.Path]::GetFullPath($Into).TrimEnd('\', '/')
@@ -52,9 +58,10 @@ foreach ($file in Get-ChildItem -LiteralPath $fromFull -Recurse -File -Force) {
         $copy.Add($relative)
         continue
     }
-    $a = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash
-    $b = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
-    if ($a -eq $b) { $same++ } else { $collisions.Add($relative.Replace('\', '/')) }
+    # Files of different lengths differ: only files of equal length are hashed.
+    $equal = $file.Length -eq (Get-Item -LiteralPath $target -Force).Length -and
+        (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash -eq (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash
+    if ($equal) { $same++ } else { $collisions.Add($relative.Replace('\', '/')) }
 }
 
 if ($collisions.Count -gt 0) {
