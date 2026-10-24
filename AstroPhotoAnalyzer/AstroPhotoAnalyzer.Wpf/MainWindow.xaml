@@ -17,8 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MainWindow - bara cu fisierul, panoul de parametri in stanga, cele sase taburi in
-     dreapta. Fara imagine, in locul taburilor sta o invitatie; cu eroare, un card. -->
+<!-- MainWindow - the bar with the file, the parameter panel on the left, the seven tabs on
+     the right. Without an image, an invitation stands in place of the tabs; with an error,
+     a card. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -41,7 +42,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <RowDefinition Height="*" />
     </Grid.RowDefinitions>
 
-    <!-- ============================================================ bara de sus -->
+    <!-- ============================================================ top bar -->
     <Border Grid.Row="0" Background="{StaticResource PanelBg}"
             BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,0,1" Padding="20,12">
       <Grid>
@@ -70,9 +71,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <Button Content="Salveaza raportul..." Click="SaveReport" IsEnabled="{Binding CanSave}" Margin="10,0,0,0" />
             <Button Content="Despre" Command="Help" ToolTip="Versiune, licenta, componente (F1)" Margin="10,0,0,0" />
           </StackPanel>
-          <!-- Un loc fix, de doua randuri, pentru rezultatul salvarii: aparitia lui nu muta butoanele.
-               Latimea e a randului de butoane: coloana e Auto, si fara o latime finita textul nu
-               s-ar rupe si nu s-ar scurta, ci ar largi coloana pana iese din fereastra. -->
+          <!-- A fixed place, two lines high, for the save outcome: its appearance does not move
+               the buttons. The width is the button row's: the column is Auto, and without a
+               finite width the text would neither wrap nor be shortened, but would widen the
+               column until it runs out of the window. -->
           <Grid Height="34" Margin="0,4,0,0" Width="{Binding ActualWidth, ElementName=TopButtons}">
             <TextBlock x:Name="SaveMessageText" Style="{StaticResource Faint}" Text="{Binding SaveMessage}"
                        TextWrapping="Wrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SaveMessage}" />
@@ -83,14 +85,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Grid>
     </Border>
 
-    <!-- ============================================================ continut -->
+    <!-- ============================================================ content -->
     <Grid Grid.Row="1">
       <Grid.ColumnDefinitions>
         <ColumnDefinition Width="300" />
         <ColumnDefinition Width="*" />
       </Grid.ColumnDefinitions>
 
-      <!-- parametrii -->
+      <!-- the parameters -->
       <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
         <Border Style="{StaticResource Card}" Margin="16" DataContext="{Binding Parameters}">
           <StackPanel>
@@ -156,7 +158,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Border>
       </ScrollViewer>
 
-      <!-- rezultatul -->
+      <!-- the result -->
       <Grid Grid.Column="1">
         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="520" Margin="24">
           <StackPanel.Style>

@@ -33,8 +33,8 @@ public class BitDepthAnalyzerTests
         var res = BitDepthAnalyzer.Analyze(Sixteen());
 
         Assert.True(res.Applicable);
-        Assert.All(res.DistinctLevels, n => Assert.True(n > 3500, "niveluri distincte: " + n));
-        // Coincidenta v == hi*257 se intampla la 1 din 256 pe date uniforme.
+        Assert.All(res.DistinctLevels, n => Assert.True(n > 3500, "distinct levels: " + n));
+        // The coincidence v == hi*257 happens at 1 in 256 on uniform data.
         Assert.InRange(res.UpscaledFraction, 0.001, 0.01);
         Assert.False(res.IsUpscaled);
     }

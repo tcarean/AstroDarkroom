@@ -44,8 +44,8 @@ public class IccProfileInfoTests
         Assert.Null(IccProfileInfo.Describe(new byte[10]));
         Assert.Null(IccProfileInfo.Describe(new byte[200]));
 
-        // Un profil valid, trunchiat chiar in mijlocul tagului.
-        byte[] cut = IccTestData.V2("un nume destul de lung ca sa se vada").Take(150).ToArray();
+        // A valid profile, truncated right in the middle of the tag.
+        byte[] cut = IccTestData.V2("a name long enough for it to be seen").Take(150).ToArray();
         Assert.Null(IccProfileInfo.Describe(cut));
     }
 }

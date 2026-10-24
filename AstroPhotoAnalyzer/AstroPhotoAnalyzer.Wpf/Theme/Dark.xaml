@@ -17,16 +17,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- Dark.xaml - paleta si stilurile implicite. Aceeasi tema ca FlatCheck, din acelasi
-     motiv: unealta se foloseste seara, langa monitorul calibrat, iar o fereastra alba
-     strica adaptarea ochiului. Culorile de verdict NU se definesc aici, ci in
-     VerdictPalette.cs, din etichetele pe care le scrie nucleul. -->
+<!-- Dark.xaml - the palette and the default styles. The same theme as FlatCheck, for the
+     same reason: the tool is used in the evening, beside the calibrated monitor, and a white
+     window spoils the eye's adaptation. The verdict colours are NOT defined here, but in
+     VerdictPalette.cs, from the labels the core writes. -->
 
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:AstroPhotoAnalyzer.Wpf">
 
-  <!-- Convertoarele stau AICI, ca sa fie vizibile sabloanelor de mai jos. -->
+  <!-- The converters sit HERE, so that they are visible to the templates below. -->
   <local:BoolToVisibilityConverter x:Key="BoolToVis" />
   <local:InverseBoolToVisibilityConverter x:Key="NotBoolToVis" />
   <local:InverseBoolConverter x:Key="Not" />
@@ -34,7 +34,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   <local:FileNameConverter x:Key="FileName" />
   <local:VerdictToBrushConverter x:Key="VerdictToBrush" />
 
-  <!-- ============================================================ paleta -->
+  <!-- ============================================================ palette -->
 
   <SolidColorBrush x:Key="WindowBg"  Color="#1B1B1D" />
   <SolidColorBrush x:Key="PanelBg"   Color="#232326" />
@@ -107,8 +107,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         <ControlTemplate TargetType="ToolTip">
           <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                   BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Padding="{TemplateBinding Padding}">
-            <!-- Textele de ajutor au ~900 de caractere si paragrafe: 420 px inseamna ~65 de
-                 caractere pe rand, iar LineHeight lasa aer intre randuri. -->
+            <!-- The help texts have ~900 characters and paragraphs: 420 px means ~65
+                 characters per line, and LineHeight leaves air between the lines. -->
             <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" MaxWidth="420">
               <ContentPresenter.Resources>
                 <Style TargetType="TextBlock">
@@ -136,7 +136,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Style.Triggers>
   </Style>
 
-  <!-- ============================================================ panouri si campuri -->
+  <!-- ============================================================ panels and fields -->
 
   <Style x:Key="Card" TargetType="Border">
     <Setter Property="Background" Value="{StaticResource PanelBg}" />
@@ -159,7 +159,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- Raportul: text mono, doar citire, pe fundalul ferestrei. -->
+  <!-- The report: mono text, read-only, on the window's background. -->
   <Style x:Key="LogBox" TargetType="TextBox">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -177,7 +177,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Setter Property="SelectionBrush" Value="{StaticResource AccentBr}" />
   </Style>
 
-  <!-- ============================================================ butoane -->
+  <!-- ============================================================ buttons -->
 
   <Style TargetType="Button">
     <Setter Property="Foreground" Value="{StaticResource TextBr}" />
@@ -210,7 +210,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- ============================================================ taburi -->
+  <!-- ============================================================ tabs -->
 
   <Style TargetType="TabControl">
     <Setter Property="Background" Value="{StaticResource WindowBg}" />
@@ -334,7 +334,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Setter>
   </Style>
 
-  <!-- ============================================================ progres si scroll -->
+  <!-- ============================================================ progress and scroll -->
 
   <Style TargetType="ProgressBar">
     <Setter Property="Height" Value="4" />
@@ -415,9 +415,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Style.Triggers>
   </Style>
 
-  <!-- ============================================================ sabloane -->
+  <!-- ============================================================ templates -->
 
-  <!-- Pastila de verdict: culoarea vine prin VerdictToBrush, din eticheta nucleului. -->
+  <!-- The verdict pill: the colour comes through VerdictToBrush, from the core's label. -->
   <DataTemplate x:Key="VerdictChip">
     <Border Background="{Binding Converter={StaticResource VerdictToBrush}}"
             CornerRadius="3" Padding="7,2" VerticalAlignment="Center">
@@ -425,7 +425,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
   </DataTemplate>
 
-  <!-- O recomandare: semnul, textul, si "fiindca" sub el, mai mic. -->
+  <!-- A recommendation: the sign, the text, and "fiindca" under it, smaller. -->
   <DataTemplate x:Key="RecommendationRowTemplate">
     <Grid Margin="0,0,0,10">
       <Grid.ColumnDefinitions>
@@ -444,7 +444,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
   </DataTemplate>
 
-  <!-- O sectiune a raportului: numar, titlu, pastila, apoi recomandarile ei. -->
+  <!-- A section of the report: number, title, pill, then its recommendations. -->
   <DataTemplate x:Key="SectionTemplate">
     <Border Style="{StaticResource Card}" Margin="0,0,0,10">
       <StackPanel>
@@ -463,9 +463,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
   </DataTemplate>
 
-  <!-- Un rand eticheta / valoare / descriere / nota, folosit de toate anexele. Eticheta si
-       descrierea stau impreuna in coloana din stanga; descrierea se rupe pe randuri acolo
-       si nu intra sub cifre. -->
+  <!-- A label / value / description / note row, used by all the appendices. The label and
+       the description sit together in the left column; the description wraps onto lines
+       there and does not run under the figures. -->
   <DataTemplate x:Key="MetricRowTemplate">
     <Grid Margin="0,0,0,7">
       <Grid.ColumnDefinitions>
@@ -487,11 +487,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
   </DataTemplate>
 
-  <!-- Acelasi rand, pentru panourile cu descrieri (Tonuri, Rezolutie): doua coloane egale
-       pe toata latimea cardului - numele si descrierea in jumatatea stanga, cifra aliniata
-       la dreapta in cealalta. Latimea fixa in procente tine toate descrierile la aceeasi
-       margine, indiferent cat de lunga e valoarea randului. Randurile stau mai rar decat
-       in MetricRowTemplate, fiindca fiecare e un paragraf, nu o linie. -->
+  <!-- The same row, for the panels with descriptions (Tonuri, Rezolutie): two equal
+       columns across the whole width of the card - the name and the description in the left
+       half, the figure aligned to the right in the other. The fixed width in percent keeps
+       all the descriptions at the same margin, however long the row's value is. The rows are
+       spaced more widely than in MetricRowTemplate, because each one is a paragraph, not a
+       line. -->
   <DataTemplate x:Key="DescribedMetricRowTemplate">
     <Grid Margin="0,0,0,14">
       <Grid.ColumnDefinitions>
@@ -513,23 +514,24 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Grid>
   </DataTemplate>
 
-  <!-- Un paragraf de panou explicativ: inceputul ingrosat, apoi textul, rupt pe randuri. -->
+  <!-- A paragraph of an explanatory panel: the start in bold, then the text, wrapped onto
+       lines. -->
   <DataTemplate x:Key="GuideParagraphTemplate">
     <TextBlock Style="{StaticResource Muted}" Margin="0,0,0,8">
       <Run Text="{Binding Lead, Mode=OneWay}" FontWeight="SemiBold" Foreground="{StaticResource TextBr}" /><Run Text=" " /><Run Text="{Binding Text, Mode=OneWay}" />
     </TextBlock>
   </DataTemplate>
 
-  <!-- Un rand de tabel cu celule mono: coloanele le da ViewModel-ul ca un singur sir
-       aliniat, exact cum le scrie raportul. Un tabel adevarat ar fi cerut un sablon pe
-       fiecare din cele cinci tabele, pentru acelasi text. -->
+  <!-- A table row with mono cells: the view-model gives the columns as a single aligned
+       string, exactly as the report writes them. A real table would have needed a template
+       for each of the six tables, for the same text. -->
   <DataTemplate x:Key="MonoRowTemplate">
     <TextBlock Style="{StaticResource Mono}" Text="{Binding}" Margin="0,0,0,2" />
   </DataTemplate>
 
-  <!-- O previzualizare: titlu, imagine la pixel, nota, apoi ce verifici in ea. Textele se rup
-       pe latimea imaginii (bitmap-urile sunt la 96 dpi, deci PixelWidth e latimea in DIU);
-       altfel ar lati cardul cat propozitia. -->
+  <!-- A preview: title, image pixel for pixel, note, then what you check in it. The texts
+       wrap at the image's width (the bitmaps are at 96 dpi, so PixelWidth is the width in
+       DIU); otherwise they would widen the card to the sentence's length. -->
   <DataTemplate x:Key="PreviewTileTemplate">
     <Border Style="{StaticResource Card}" Margin="0,0,12,12" Padding="10">
       <StackPanel>
@@ -546,7 +548,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     </Border>
   </DataTemplate>
 
-  <!-- O componenta terta din "Despre". -->
+  <!-- A third-party component in "Despre". -->
   <DataTemplate x:Key="ComponentRowTemplate">
     <StackPanel Margin="0,0,0,10">
       <TextBlock TextWrapping="Wrap">

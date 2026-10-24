@@ -28,8 +28,8 @@ public class QuantizationAnalyzerTests
         var q = QuantizationAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0.10f, 0.11f));
 
         Assert.True(q.PlateauKnown);
-        Assert.True(q.PlateauTiles > 50, "dale: " + q.PlateauTiles);
-        Assert.True(q.PlateauPx > 20, "palier px: " + q.PlateauPx);
+        Assert.True(q.PlateauTiles > 50, "tiles: " + q.PlateauTiles);
+        Assert.True(q.PlateauPx > 20, "plateau px: " + q.PlateauPx);
         Assert.True(q.PlateauVisibleAt(200));
         Assert.Equal(q.PlateauPx * 25.4 / 200, q.PlateauMmAt(200), 9);
     }
@@ -84,7 +84,7 @@ public class QuantizationAnalyzerTests
 
         Assert.True(q.Applicable);
         Assert.Equal(q.MissingFrom16, q.MissingFrom8);
-        Assert.True(q.MissingFrom8 > Thresholds.MissingLevelsWarn, "lipsa din 8 biti: " + q.MissingFrom8);
+        Assert.True(q.MissingFrom8 > Thresholds.MissingLevelsWarn, "missing from 8 bits: " + q.MissingFrom8);
         Assert.False(q.Keep16BitMaster);
     }
 
@@ -98,8 +98,8 @@ public class QuantizationAnalyzerTests
 
         Assert.Equal(111, q.LevelsUsedFrom16);
         Assert.Equal(0, q.MissingFrom16);
-        Assert.True(q.LevelsUsedFrom8 < 90, "din 8 biti: " + q.LevelsUsedFrom8);
-        Assert.True(q.MissingFrom8 > 20, "lipsa din 8 biti: " + q.MissingFrom8);
+        Assert.True(q.LevelsUsedFrom8 < 90, "used from 8 bits: " + q.LevelsUsedFrom8);
+        Assert.True(q.MissingFrom8 > 20, "missing from 8 bits: " + q.MissingFrom8);
         Assert.True(q.Keep16BitMaster);
     }
 

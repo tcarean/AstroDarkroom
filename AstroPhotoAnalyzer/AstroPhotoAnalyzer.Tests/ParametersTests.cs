@@ -135,7 +135,7 @@ public class ParametersTests
         else
         {
             Assert.Contains("dublul", error);
-            Assert.Contains("6.0 cm", error);   // minimul cerut pentru rama de 3
+            Assert.Contains("6.0 cm", error);   // the minimum required for a frame of 3
         }
     }
 

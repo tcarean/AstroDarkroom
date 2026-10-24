@@ -17,9 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- BusyOverlay - ecranul de asteptare. Se leaga la MainViewModel mostenit: IsBusy si
-     etapa curenta. Acopera continutul cu un fundal aproape opac, ca sa nu se apese
-     nimic in timpul calculului. -->
+<!-- BusyOverlay - the waiting screen. It binds to the inherited MainViewModel: IsBusy and
+     the current stage. It covers the content with an almost opaque background, so that
+     nothing can be pressed during the computation. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.BusyOverlay"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

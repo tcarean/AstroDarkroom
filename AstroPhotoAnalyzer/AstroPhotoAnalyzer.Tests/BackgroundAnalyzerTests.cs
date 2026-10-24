@@ -57,8 +57,8 @@ public class BackgroundAnalyzerTests
     [Fact]
     public void AWarmCornerIsFlaggedByItsChannelsNotItsBrightness()
     {
-        // Coltul dreapta-jos (ultimele 15 % randuri, 20 % coloane): R +10, B -8. Luminanta
-        // medie abia se misca; canalele, da. E cazul imaginii de acceptanta.
+        // The bottom-right corner (the last 15 % of rows, 20 % of columns): R +10, B -8. The
+        // mean luminance barely moves; the channels do. It is the case of the acceptance image.
         var r = SyntheticRasters.From(200, 200, 3, (x, y, p) =>
         {
             bool corner = y >= 170 && x >= 160;
@@ -67,7 +67,7 @@ public class BackgroundAnalyzerTests
         });
         var b = BackgroundAnalyzer.Analyze(r);
 
-        // Fundalul nu e contaminat: banda de jos e exclusa din el.
+        // The background is not contaminated: the bottom band is excluded from it.
         Assert.All(b.Levels, l => Assert.Equal(Sky * 255, l, 2));
         Assert.False(b.HasCast);
 
@@ -81,8 +81,8 @@ public class BackgroundAnalyzerTests
     }
 
     /// <summary>
-    /// Coltul in care intra Calea Lactee (imaginea de referinta: +11 / +10 / +16) e o
-    /// abatere NEUTRA - canalele urca impreuna. Se semnaleaza, dar nu ca gradient.
+    /// The corner the Milky Way enters (the reference image: +11 / +10 / +16) is a NEUTRAL
+    /// deviation - the channels rise together. It is flagged, but not as a gradient.
     /// </summary>
     [Fact]
     public void ANeutralBrighteningIsFlaggedButNotColoured()
@@ -122,7 +122,7 @@ public class BackgroundAnalyzerTests
     [Fact]
     public void TheBackgroundIsTheDarkestQuarterNotTheAverage()
     {
-        // Un nucleu luminos pe jumatate din imagine nu trebuie sa intre in "fundal".
+        // A bright core over half the image must not enter the "background".
         var r = SyntheticRasters.From(120, 120, 3, (x, y, p) => x < 60 ? Sky : 0.6f);
         var b = BackgroundAnalyzer.Analyze(r);
 

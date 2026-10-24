@@ -18,8 +18,8 @@
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Parsarea argumentelor. Parse nu arunca niciodata: fiecare greseala de tastare trebuie
-/// sa iasa ca un Error citibil, nu ca o exceptie cu stack trace.
+/// Parsing the arguments. Parse never throws: every typing mistake must come out as a
+/// readable Error, not as an exception with a stack trace.
 /// </summary>
 public class OptionsTests
 {

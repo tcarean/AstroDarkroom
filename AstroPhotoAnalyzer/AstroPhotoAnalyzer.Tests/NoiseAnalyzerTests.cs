@@ -30,7 +30,7 @@ public class NoiseAnalyzerTests
         var n = NoiseAnalyzer.Analyze(Sky(1.0), P);
 
         Assert.False(n.Insufficient);
-        Assert.True(n.SmoothTiles > 100, "dale netede: " + n.SmoothTiles);
+        Assert.True(n.SmoothTiles > 100, "smooth tiles: " + n.SmoothTiles);
         Assert.Equal(1.0, n.SigmaMedianLsb, 1);
         Assert.InRange(n.SigmaMinLsb, 0.8, 1.0);
         Assert.Equal(0, n.PctTilesBelowBanding);
@@ -63,7 +63,7 @@ public class NoiseAnalyzerTests
     [Fact]
     public void AStrongGradientLeavesNoSmoothTiles()
     {
-        // 0..1 pe 256 px: o dala de 64 acopera 0.25 = 64 de niveluri, mult peste prag.
+        // 0..1 over 256 px: a tile of 64 covers 0.25 = 64 levels, far above the threshold.
         var n = NoiseAnalyzer.Analyze(SyntheticRasters.Ramp(256, 256, 0f, 1f), P);
 
         Assert.Equal(0, n.SmoothTiles);
@@ -76,8 +76,8 @@ public class NoiseAnalyzerTests
     [Fact]
     public void AGentleGradientStillMeasuresTheNoise()
     {
-        // 0.3 -> 0.32 pe 256 px: 5 niveluri pe toata latimea, o dala vede ~1.3. Diferenta
-        // intre vecini scoate panta; sigma ramane cea injectata.
+        // 0.3 -> 0.32 over 256 px: 5 levels across the whole width, a tile sees ~1.3. The
+        // difference between neighbours removes the slope; sigma stays the one injected.
         var r = SyntheticRasters.AddNoise(SyntheticRasters.Ramp(256, 256, 0.30f, 0.32f), 1.0 / 255, 9);
         var n = NoiseAnalyzer.Analyze(r, P);
 

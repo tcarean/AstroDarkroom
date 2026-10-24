@@ -17,9 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- MapWindow - harta praf / cer (R-130): imaginea intreaga, maximizata, cu cele cinci clase
-     ale dalelor vopsite diferit si norii catalogati incercuiti, fiecare strat si fiecare
-     nor cu bifa lui. Nicio cifra nu se calculeaza aici: totul vine din MapViewModel. -->
+<!-- MapWindow - the dust / sky map (R-130): the whole image, maximised, with the five
+     classes of the patches painted differently and the catalogued clouds circled, each
+     layer and each cloud with its own checkbox. No figure is computed here: everything
+     comes from MapViewModel. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.MapWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -37,7 +38,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
 
-    <!-- straturile si norii -->
+    <!-- the layers and the clouds -->
     <Border Grid.Column="0" Background="{StaticResource PanelBg}" BorderBrush="{StaticResource BorderBr}" BorderThickness="0,0,1,0" Padding="16">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top">
@@ -79,7 +80,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </DockPanel>
     </Border>
 
-    <!-- imaginea la marimea ferestrei, cu straturile peste ea, toate pe aceeasi panza -->
+    <!-- the image at the window's size, with the layers over it, all on the same canvas -->
     <Viewbox Grid.Column="1" Stretch="Uniform" Margin="8">
       <Grid Width="{Binding Width}" Height="{Binding Height}">
         <Image Source="{Binding Image}" Stretch="None" />

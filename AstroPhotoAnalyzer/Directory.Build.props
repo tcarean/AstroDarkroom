@@ -1,33 +1,34 @@
 <Project>
 
-  <!-- Proprietatile comune tuturor proiectelor din solutie.
+  <!-- The properties common to all the projects in the solution.
 
-       De ce aici si nu in fiecare csproj: nucleul e o biblioteca separata
-       (AstroPhotoAnalyzer.Core), iar versiunea trebuie sa fie aceeasi in toate
-       assembly-urile. VersionInfo o citeste din assembly-ul in care sta el - adica din
-       Core - dar exe-ul de consola si aplicatia WPF si-o poarta si ele pe a lor, care se
-       vede in proprietatile fisierului. Doua locuri de editat inseamna, mai devreme sau
-       mai tarziu, doua valori diferite.
+       Why here and not in each csproj: the core is a separate library
+       (AstroPhotoAnalyzer.Core), and the version must be the same in all the assemblies.
+       VersionInfo reads it from the assembly it sits in - that is, from Core - but the
+       console exe and the WPF application carry their own too, which shows in the file's
+       properties. Two places to edit mean, sooner or later, two different values.
 
-       Deci: UN SINGUR loc de editat. Nu muta <Version> sau <Copyright> intr-un csproj.
-       VersionTests verifica fisierul asta. -->
+       So: ONE SINGLE place to edit. Do not move <Version> or <Copyright> into a csproj.
+       VersionTests checks this file. -->
 
   <PropertyGroup>
-    <!-- Versiunea uneltei. Se incrementeaza MANUAL, de mana, la fiecare feature/fix. -->
+    <!-- The tool's version. It changes only at the owner's word, at a release
+         (scripts/release.ps1), never with a feature or a fix (the kit's rule "Version and
+         year are the owner's"). -->
     <Version>1.0.0</Version>
 
-    <!-- Copyright-ul si licenta. <Copyright> ajunge in AssemblyCopyrightAttribute, de
-         unde il citeste VersionInfo.Copyright si il tipareste sub banner. Programul e
-         GPLv3; textul complet e in LICENSE, langa solutie. -->
+    <!-- The copyright and the licence. <Copyright> ends up in AssemblyCopyrightAttribute,
+         from where VersionInfo.Copyright reads it and prints it under the banner. The program
+         is GPLv3; the full text is in LICENSE, beside the solution. -->
     <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
-  <!-- Reproductibilitate (ADR 0003): aceleasi surse, aceiasi octeti; versiunea fiecarui
-       pachet o singura data, in Directory.Packages.props; graful complet in
-       packages.lock.json, pe care CI-ul il restaureaza in modul blocat. Strictetea
-       (avertismentele ca erori) o aplica scripts/verify.ps1 din linia de comanda, nu
-       fisierul asta, ca un build din IDE sa ramana ingaduitor, iar gate-ul nu. -->
+  <!-- Reproducibility (ADR 0003): the same sources, the same bytes; each package's version
+       once, in Directory.Packages.props; the complete graph in packages.lock.json, which CI
+       restores in locked mode. The strictness (warnings as errors) is applied by
+       scripts/verify.ps1 from the command line, not by this file, so that a build from the
+       IDE stays lenient, and the gate does not. -->
   <PropertyGroup>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
@@ -36,36 +37,36 @@
     <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 
-    <!-- Runtime-ul pentru care publica release-ul (kit.json, release.publish: -r win-x64).
-         Declarat aici, fiecare restore ii scrie sectiunea in packages.lock.json; altfel un
-         publish pentru el rescrie fisierele lock si release-ul se opreste pe ele. Proiectele de
-         teste nu se publica niciodata, deci nu il declara (ADR 0031). -->
+    <!-- The runtime the release publishes for (kit.json, release.publish: -r win-x64).
+         Declared here, every restore writes its section into packages.lock.json; otherwise a
+         publish for it rewrites the lock files and the release stops on them. The test
+         projects are never published, so they do not declare it (ADR 0031). -->
     <RuntimeIdentifiers Condition="!$(MSBuildProjectName.EndsWith('.Tests'))">win-x64</RuntimeIdentifiers>
 
-    <!-- Analizorul single-file, pe care PublishSingleFile il porneste la publish-ul consolei,
-         isi aduce pachetul (Microsoft.NET.ILLink.Tasks, la versiunea SDK-ului instalat) in
-         fisierele lock. Oprit, un publish le lasa neatinse (ADR 0031). -->
+    <!-- The single-file analyzer, which PublishSingleFile starts at the console's publish,
+         brings its package (Microsoft.NET.ILLink.Tasks, at the installed SDK's version) into
+         the lock files. Turned off, a publish leaves them untouched (ADR 0031). -->
     <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
 
-    <!-- Avertismentele de audit NuGet (NU1902 moderat, NU1903 ridicat: un pachet are un
-         advisory publicat) raman avertismente si cand gate-ul cere -warnaserror: gate-ul le
-         arata, nu le ascunde, dar nu se inroseste pe ele. ImageSharp 3.1.11 e tintuit (ADR
-         0009) si singura versiune cu cele cinci advisory-uri din 2026 reparate e 4.1.2, pe care
-         ADR 0009 o refuza; fiecare advisory e citit si judecat in ADR 0036 si in
-         docs/design/dependencies.md, unde intra si urmatorul. -->
+    <!-- The NuGet audit warnings (NU1902 moderate, NU1903 high: a package has a published
+         advisory) stay warnings even when the gate asks for -warnaserror: the gate shows
+         them, it does not hide them, but it does not turn red on them. ImageSharp 3.1.11 is
+         pinned (ADR 0009) and the only version with the five advisories of 2026 fixed is
+         4.1.2, which ADR 0009 refuses; each advisory is read and judged in ADR 0036 and in
+         docs/design/dependencies.md, where the next one goes too. -->
     <MSBuildWarningsNotAsErrors>NU1902;NU1903</MSBuildWarningsNotAsErrors>
 
-    <!-- Fisierul de documentatie XML (ADR 0038). Generat, compilatorul verifica fiecare
-         comentariu ///, si gate-ul (-warnaserror) face din fiecare abatere o eroare: XML
-         stricat (CS1570), un <param> sau <paramref> care nu numeste niciun parametru (CS1572,
-         CS1734), un parametru fara tag langa altele cu tag (CS1573), un cref care nu se
-         rezolva sau e ambiguu (CS1574, CS0419), un /// pe ceva ce nu e membru, de pilda o
-         functie locala (CS1587). CS1591 (comentariu lipsa) ramane oprit:
-         regula "Documentation comments" cere comentariul pe fiecare tip si metoda, si pe cele
-         private, si nimic nu o verifica; CS1591 ar cere doar membrii publici, proprietatile
-         cu tot, iar nucleul e internal in intregime (ADR 0035 al kit-ului). Nimic nu citeste
-         fisierele XML la rulare, deci niciun publish nu le livreaza: consola ramane un singur
-         fisier. -->
+    <!-- The XML documentation file (ADR 0038). When it is generated, the compiler checks
+         every /// comment, and the gate (-warnaserror) turns every deviation into an error:
+         broken XML (CS1570), a <param> or <paramref> that names no parameter (CS1572,
+         CS1734), a parameter without a tag beside others with tags (CS1573), a cref that does
+         not resolve or is ambiguous (CS1574, CS0419), a /// on something that is not a
+         member, for instance a local function (CS1587). CS1591 (a missing comment) stays off:
+         the rule "Documentation comments" asks for the comment on every type and method,
+         private ones too, and nothing checks it; CS1591 would ask only for the public
+         members, properties included, and the core is internal in its entirety (the kit's
+         ADR 0035). Nothing reads the XML files at run time, so no publish ships them: the
+         console stays a single file. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <PublishDocumentationFiles>false</PublishDocumentationFiles>

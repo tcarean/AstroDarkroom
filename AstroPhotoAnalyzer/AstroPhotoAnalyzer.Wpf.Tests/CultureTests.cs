@@ -15,11 +15,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// CultureTests.cs - raportul e acelasi pe un Windows romanesc.
+// CultureTests.cs - the report is the same on a Romanian Windows.
 //
-// Doua plase, ambele testate: Fmt scrie numerele cu cultura invarianta EXPLICIT, deci
-// raportul nu depinde de cultura firului; si App.ForceInvariantNumbers fixeaza oricum
-// cultura la pornire, pentru orice text care n-ar trece prin Fmt.
+// Two nets, both tested: Fmt writes the numbers with the invariant culture EXPLICITLY, so
+// the report does not depend on the thread's culture; and App.ForceInvariantNumbers fixes
+// the culture at startup anyway, for any text that would not go through Fmt.
 
 using AstroPhotoAnalyzer.Tests;
 using System.Globalization;
@@ -73,8 +73,9 @@ public class CultureTests
     }
 
     /// <summary>
-    /// Proba adevarata: raportul produs sub cultura romaneasca, FARA sa se forteze nimic,
-    /// e identic cu cel produs sub cultura invarianta - Fmt il tine invariant singur.
+    /// The real proof: the report produced under the Romanian culture, WITHOUT forcing
+    /// anything, is identical to the one produced under the invariant culture - Fmt keeps
+    /// it invariant on its own.
     /// </summary>
     [Fact]
     public void R118_TheReportIsIdenticalUnderARomanianCultureWithoutForcing()

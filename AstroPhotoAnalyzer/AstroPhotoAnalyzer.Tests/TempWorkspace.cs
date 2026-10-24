@@ -17,7 +17,7 @@
 
 namespace AstroPhotoAnalyzer.Tests;
 
-/// <summary>Un folder temporar de aruncat, pentru testele care au nevoie de fisiere reale pe disc.</summary>
+/// <summary>A throwaway temporary folder, for the tests that need real files on disk.</summary>
 internal sealed class TempWorkspace : IDisposable
 {
     internal string Dir { get; }
@@ -28,7 +28,7 @@ internal sealed class TempWorkspace : IDisposable
         Directory.CreateDirectory(Dir);
     }
 
-    /// <summary>Scrie octetii in folder si intoarce calea completa.</summary>
+    /// <summary>Writes the bytes into the folder and returns the full path.</summary>
     internal string WriteFile(string name, byte[] bytes)
     {
         string p = Path.Combine(Dir, name);
@@ -36,13 +36,13 @@ internal sealed class TempWorkspace : IDisposable
         return p;
     }
 
-    /// <summary>O cale din folder, pentru fisiere de iesire care nu exista inca.</summary>
+    /// <summary>A path in the folder, for output files that do not exist yet.</summary>
     internal string PathTo(string name) => Path.Combine(Dir, name);
 
     public void Dispose()
     {
         try { Directory.Delete(Dir, recursive: true); }
-        catch (IOException) { /* un folder temporar scapat nu trebuie sa pice un test */ }
+        catch (IOException) { /* a temporary folder left behind must not fail a test */ }
         catch (UnauthorizedAccessException) { }
     }
 }

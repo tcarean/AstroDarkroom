@@ -21,12 +21,12 @@ using System.Text.RegularExpressions;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Textul intreg al consolei, pe scene sintetice deterministe, comparat cu Golden/*.txt.
-/// Cand iesirea se schimba INTENTIONAT, se reaproba cu APA_UPDATE_GOLDEN=1 si se citeste
-/// diff-ul rezultat - acela e review-ul schimbarii de raport.
+/// The whole console text, on deterministic synthetic scenes, compared with Golden/*.txt.
+/// When the output changes INTENTIONALLY, it is re-approved with APA_UPDATE_GOLDEN=1 and the
+/// resulting diff is read - that is the review of the report's change.
 ///
-/// Se scrubeaza doua lucruri care se schimba fara ca raportul sa se schimbe: banner-ul
-/// de versiune (un bump nu trebuie sa pice 6 teste) si folderul temporar al rularii.
+/// Two things that change without the report changing are scrubbed: the version banner (a
+/// bump must not fail every golden test) and the run's temporary folder.
 /// </summary>
 public class GoldenOutputTests
 {
@@ -57,7 +57,7 @@ public class GoldenOutputTests
             File.WriteAllText(path, actual);
             return;
         }
-        Assert.True(File.Exists(path), "lipseste " + path + " - genereaza-l cu APA_UPDATE_GOLDEN=1");
+        Assert.True(File.Exists(path), "missing " + path + " - generate it with APA_UPDATE_GOLDEN=1");
         string expected = File.ReadAllText(path).Replace("\r\n", "\n");
         Assert.Equal(expected, actual);
     }

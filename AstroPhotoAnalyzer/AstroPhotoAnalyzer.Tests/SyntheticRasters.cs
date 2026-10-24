@@ -18,9 +18,9 @@
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Rastere construite din formule, cu raspunsul cunoscut dinainte. Nicio imagine reala
-/// nu intra in repo: fiecare scena se genereaza, deci fiecare test stie exact ce trebuie
-/// sa masoare analizorul.
+/// Rasters built from formulas, with the answer known in advance. No real image enters
+/// the repo: every scene is generated, so every test knows exactly what the analyzer
+/// must measure.
 /// </summary>
 internal static class SyntheticRasters
 {
@@ -40,7 +40,10 @@ internal static class SyntheticRasters
         return r;
     }
 
-    /// <summary>Rampa orizontala liniara de la <paramref name="from"/> (stanga) la <paramref name="to"/> (dreapta), pe toate planurile.</summary>
+    /// <summary>
+    /// A linear horizontal ramp from <paramref name="from"/> (left) to <paramref name="to"/>
+    /// (right), on every plane.
+    /// </summary>
     internal static Raster Ramp(int h, int w, float from, float to, int planes = 3)
     {
         var r = new Raster(h, w, planes);
@@ -53,7 +56,7 @@ internal static class SyntheticRasters
         return r;
     }
 
-    /// <summary>Un raster arbitrar, din formula, pe fiecare plan.</summary>
+    /// <summary>An arbitrary raster, from a formula, on every plane.</summary>
     internal static Raster From(int h, int w, int planes, Func<int, int, int, float> value)
     {
         var r = new Raster(h, w, planes);
@@ -64,7 +67,10 @@ internal static class SyntheticRasters
         return r;
     }
 
-    /// <summary>Zgomot gaussian aditiv, aceeasi realizare pe toate planurile? Nu - independenta pe fiecare, ca pe un senzor.</summary>
+    /// <summary>
+    /// Additive Gaussian noise, the same realisation on every plane? No - independent on
+    /// each, as on a sensor.
+    /// </summary>
     internal static Raster AddNoise(Raster src, double sigma, int seed)
     {
         var rng = new SeededRandom(seed);
@@ -76,8 +82,8 @@ internal static class SyntheticRasters
     }
 
     /// <summary>
-    /// O stea gaussiana, adaugata peste ce e deja acolo, pe toate planurile. FWHM e in
-    /// pixeli; sigma = FWHM / 2.3548. Amplitudinea e varful peste fundal.
+    /// A Gaussian star, added over what is already there, on every plane. FWHM is in
+    /// pixels; sigma = FWHM / 2.3548. The amplitude is the peak over the background.
     /// </summary>
     internal static Raster AddStar(Raster src, double cx, double cy, double fwhm, float amplitude)
     {
@@ -96,7 +102,9 @@ internal static class SyntheticRasters
         return r;
     }
 
-    /// <summary>Un 8-bit deghizat in 16: fiecare valoare rotunjita la 255 de niveluri si scalata cu 257.</summary>
+    /// <summary>
+    /// An 8-bit disguised as 16: every value rounded to the 256 levels 0..255 and scaled by 257.
+    /// </summary>
     internal static Raster Upscaled8(Raster src)
     {
         var r = new Raster(src.H, src.W, src.Planes.Length) { Source = src.Source };

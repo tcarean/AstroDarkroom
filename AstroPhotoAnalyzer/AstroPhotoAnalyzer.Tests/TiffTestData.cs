@@ -20,13 +20,13 @@ using System.Buffers.Binary;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Un TIFF 16 biti RGB scris DE MANA, necomprimat, little-endian, cu un singur strip si
-/// optional un tag ICC.
+/// A 16-bit RGB TIFF written BY HAND, uncompressed, little-endian, with a single strip and
+/// optionally an ICC tag.
 ///
-/// De ce nu prin ImageSharp: encoderul lui TIFF din 3.1 scrie 8 biti pe esantion si cand
-/// i se cere Bit48 (masurat), deci nu poate produce fisierul pe care il scrie Siril si pe
-/// care unealta trebuie sa-l citeasca. Un fisier construit din formula e si testul mai
-/// cinstit: verifica decodarea, nu simetria encoder-decoder a aceluiasi pachet.
+/// Why not through ImageSharp: its TIFF encoder in 3.1 writes 8 bits per sample even when
+/// asked for Bit48 (measured), so it cannot produce the file Siril writes and the tool must
+/// read. A file built from a formula is also the more honest test: it checks the decoding,
+/// not the encoder-decoder symmetry of one and the same package.
 /// </summary>
 internal static class TiffTestData
 {
@@ -38,11 +38,11 @@ internal static class TiffTestData
         int entryCount = icc == null ? 10 : 11;
         int ifdOffset = 8;
         int ifdLen = 2 + entryCount * 12 + 4;
-        int bpsOffset = ifdOffset + ifdLen;          // 3 x SHORT = 6 octeti, nu incap inline
+        int bpsOffset = ifdOffset + ifdLen;          // 3 x SHORT = 6 bytes, they do not fit inline
         int iccOffset = bpsOffset + 6;
         int iccLen = icc?.Length ?? 0;
         int pixelsOffset = iccOffset + iccLen;
-        if (pixelsOffset % 2 == 1) pixelsOffset++;    // offseturile TIFF sunt pare
+        if (pixelsOffset % 2 == 1) pixelsOffset++;    // TIFF offsets are even
         int pixelsLen = width * height * 3 * 2;
 
         entries.Add((256, Long, 1, (uint)width));
@@ -69,14 +69,14 @@ internal static class TiffTestData
             BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(p, 2), e.Tag);
             BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(p + 2, 2), e.Type);
             BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(p + 4, 4), e.Count);
-            // Un SHORT singur sta inline, in primii doi octeti ai campului de valoare.
+            // A single SHORT sits inline, in the first two bytes of the value field.
             if (e.Type == Short && e.Count == 1)
                 BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(p + 8, 2), (ushort)e.ValueOrOffset);
             else
                 BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(p + 8, 4), e.ValueOrOffset);
             p += 12;
         }
-        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(p, 4), 0);   // niciun alt IFD
+        BinaryPrimitives.WriteUInt32LittleEndian(b.AsSpan(p, 4), 0);   // no other IFD
 
         for (int c = 0; c < 3; c++)
             BinaryPrimitives.WriteUInt16LittleEndian(b.AsSpan(bpsOffset + c * 2, 2), 16);

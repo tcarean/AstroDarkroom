@@ -21,9 +21,9 @@ using System.Text;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Profile ICC minimale, construite de mana: doar headerul, tabela cu un singur tag si
-/// tagul 'desc' - in forma v2 (textDescriptionType) sau v4 (mluc). Nu sunt profile
-/// valide pentru o conversie de culoare; sunt exact atat cat citeste IccProfileInfo.
+/// Minimal ICC profiles, built by hand: only the header, the table with a single tag and
+/// the 'desc' tag - in the v2 form (textDescriptionType) or the v4 one (mluc). They are not
+/// valid profiles for a colour conversion; they are exactly as much as IccProfileInfo reads.
 /// </summary>
 internal static class IccTestData
 {
@@ -43,7 +43,9 @@ internal static class IccTestData
         return icc;
     }
 
-    /// <summary>Profil v2: 'desc' de tip textDescriptionType, cu sirul ASCII si NUL-ul lui.</summary>
+    /// <summary>
+    /// A v2 profile: 'desc' of type textDescriptionType, with the ASCII string and its NUL.
+    /// </summary>
     internal static byte[] V2(string description)
     {
         byte[] text = Encoding.ASCII.GetBytes(description + "\0");
@@ -56,7 +58,7 @@ internal static class IccTestData
         return Assemble(tag);
     }
 
-    /// <summary>Profil v4: 'desc' de tip mluc, o singura inregistrare en-US in UTF-16BE.</summary>
+    /// <summary>A v4 profile: 'desc' of type mluc, a single en-US record in UTF-16BE.</summary>
     internal static byte[] V4(string description)
     {
         byte[] text = Encoding.BigEndianUnicode.GetBytes(description);
@@ -74,7 +76,7 @@ internal static class IccTestData
         return Assemble(tag);
     }
 
-    /// <summary>Un profil fara tagul 'desc' - are un 'wtpt' in loc.</summary>
+    /// <summary>A profile without the 'desc' tag - it has a 'wtpt' instead.</summary>
     internal static byte[] WithoutDescription()
     {
         byte[] icc = V2("x");

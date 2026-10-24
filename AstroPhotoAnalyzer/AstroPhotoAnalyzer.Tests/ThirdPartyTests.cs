@@ -15,12 +15,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ThirdPartyTests.cs - lista componentelor terte nu poate ramane in urma csproj-ului.
+// ThirdPartyTests.cs - the list of third-party components cannot fall behind the csproj.
 //
-// Lista din ThirdParty.Components e ce arata fereastra "Despre". Un pachet adaugat in
-// csproj fara o intrare aici ar fi un pachet livrat si neafisat; un pachet scos din
-// csproj cu intrarea ramasa ar afisa o licenta pe care n-o mai folosim. Testele leaga
-// cele doua in ambele sensuri, si fiecare intrare de fisierul de notite.
+// The list in ThirdParty.Components is what the "Despre" window shows. A package added to
+// the csproj without an entry here would be a package shipped and not shown; a package
+// removed from the csproj with its entry left would show a licence we no longer use. The
+// tests tie the two in both directions, and every entry to the notices file.
 
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
@@ -34,22 +34,22 @@ public class ThirdPartyTests
 
     static string CoreCsproj => File.ReadAllText(Path.Combine(RepoDir(), "AstroPhotoAnalyzer.Core", "AstroPhotoAnalyzer.Core.csproj"));
 
-    /// <summary>Pachetele NuGet pe care le leaga nucleul, citite din csproj-ul lui.</summary>
+    /// <summary>The NuGet packages the core references, read from its csproj.</summary>
     static string[] CorePackages()
         => Regex.Matches(CoreCsproj, @"<PackageReference\s+Include=""([^""]+)""")
             .Select(m => m.Groups[1].Value)
             .ToArray();
 
-    /// <summary>Resursele incorporate ale nucleului (datele imbarcate), dupa LogicalName.</summary>
+    /// <summary>The core's embedded resources (the embedded data), by LogicalName.</summary>
     static string[] CoreResources()
         => Regex.Matches(CoreCsproj, @"<EmbeddedResource\s+Include=""[^""]+""\s+LogicalName=""([^""]+)""")
             .Select(m => m.Groups[1].Value)
             .ToArray();
 
     /// <summary>
-    /// Fiecare pachet din csproj e revendicat de exact o componenta, si fiecare pachet
-    /// revendicat exista in csproj. Acesta e testul care pica la urmatoarea dependinta
-    /// adaugata fara intrare - inainte sa ajunga pe ecran fara notita.
+    /// Every package in the csproj is claimed by exactly one component, and every claimed
+    /// package exists in the csproj. This is the test that fails at the next dependency
+    /// added without an entry - before it reaches the screen without a notice.
     /// </summary>
     [Fact]
     public void R122_EveryPackageTheCoreLinksIsListed()
@@ -61,16 +61,17 @@ public class ThirdPartyTests
 
         foreach (string p in linked)
             Assert.True(claimed.Count(c => c == p) == 1,
-                $"pachetul {p} din AstroPhotoAnalyzer.Core.csproj nu e revendicat de exact o componenta din ThirdParty.Components");
+                $"package {p} of AstroPhotoAnalyzer.Core.csproj is not claimed by exactly one component of ThirdParty.Components");
 
         foreach (string p in claimed)
             Assert.True(linked.Contains(p),
-                $"ThirdParty.Components revendica pachetul {p}, care nu mai e in AstroPhotoAnalyzer.Core.csproj");
+                $"ThirdParty.Components claims package {p}, which is no longer in AstroPhotoAnalyzer.Core.csproj");
     }
 
     /// <summary>
-    /// Datele imbarcate (catalogul LDN, ADR 0025) sunt scrise de altii la fel ca un pachet:
-    /// fiecare resursa din csproj e revendicata de exact o componenta, si invers.
+    /// The embedded data (the LDN catalogue, ADR 0025) is written by others just like a
+    /// package: every resource in the csproj is claimed by exactly one component, and the
+    /// other way round.
     /// </summary>
     [Fact]
     public void R122_EveryEmbeddedDataSetIsListed()
@@ -82,11 +83,11 @@ public class ThirdPartyTests
 
         foreach (string r in embedded)
             Assert.True(claimed.Count(c => c == r) == 1,
-                $"resursa {r} din AstroPhotoAnalyzer.Core.csproj nu e revendicata de exact o componenta din ThirdParty.Components");
+                $"resource {r} of AstroPhotoAnalyzer.Core.csproj is not claimed by exactly one component of ThirdParty.Components");
 
         foreach (string r in claimed)
             Assert.True(embedded.Contains(r),
-                $"ThirdParty.Components revendica resursa {r}, care nu e in AstroPhotoAnalyzer.Core.csproj");
+                $"ThirdParty.Components claims resource {r}, which is not in AstroPhotoAnalyzer.Core.csproj");
 
         var ldn = Assert.Single(ThirdParty.Components, c => c.Resources.Contains(DarkNebulaCatalogue.ResourceName));
         Assert.Contains("Lynds", ldn.Name);
@@ -96,8 +97,8 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// Motivele de compatibilitate cu GPLv3 stau in THIRD-PARTY-NOTICES.md, deci fiecare
-    /// componenta afisata trebuie sa aiba un heading acolo.
+    /// The reasons for the GPLv3 compatibility live in THIRD-PARTY-NOTICES.md, so every
+    /// component shown must have a heading there.
     /// </summary>
     [Fact]
     public void R122_EveryComponentHasAnEntryInTheNoticesFile()
@@ -109,10 +110,13 @@ public class ThirdPartyTests
 
         foreach (var c in ThirdParty.Components)
             Assert.True(headings.Any(h => h.Contains(c.Name)),
-                $"THIRD-PARTY-NOTICES.md nu are un heading pentru {c.Name}");
+                $"THIRD-PARTY-NOTICES.md has no heading for {c.Name}");
     }
 
-    /// <summary>Ce arata ecranul nu poate fi gol: nume, rol, licenta, copyright, si un link https.</summary>
+    /// <summary>
+    /// What the screen shows cannot be empty: name, role, licence, copyright, and an https
+    /// link.
+    /// </summary>
     [Fact]
     public void R122_EveryComponentNamesItsLicenceAndUrl()
     {
@@ -125,14 +129,14 @@ public class ThirdPartyTests
             Assert.False(string.IsNullOrWhiteSpace(c.Licence));
             Assert.False(string.IsNullOrWhiteSpace(c.Copyright));
             Assert.StartsWith("https://", c.Url);
-            Assert.True(c.Packages.Length + c.Resources.Length > 0, c.Name + " nu aduce nici pachet, nici resursa");
+            Assert.True(c.Packages.Length + c.Resources.Length > 0, c.Name + " brings neither a package nor a resource");
         }
     }
 
     /// <summary>
-    /// Licenta ImageSharp e conditionata: termenii Apache 2.0 se aplica software-ului open
-    /// source, si unealta e GPLv3. Intrarea trebuie sa spuna sub ce termeni e luata, ca
-    /// urmatorul cititor sa nu presupuna ca e o licenta permisiva simpla.
+    /// The ImageSharp licence is conditional: the Apache 2.0 terms apply to open source
+    /// software, and the tool is GPLv3. The entry must say under which terms it is taken,
+    /// so that the next reader does not assume it is a plain permissive licence.
     /// </summary>
     [Fact]
     public void R122_ImageSharpIsTakenUnderTheOpenSourceTermsAndCarriesItsCopyright()
@@ -144,8 +148,8 @@ public class ThirdPartyTests
     }
 
     /// <summary>
-    /// --help tipareste notita de garantie din RunReport, linie cu linie. Testul asta
-    /// spune direct ce s-a rupt daca cineva desface bucla.
+    /// --help prints the warranty notice from RunReport, line by line. This test says
+    /// directly what broke if someone undoes the loop.
     /// </summary>
     [Fact]
     public void R004_HelpPrintsTheSharedWarrantyLines()

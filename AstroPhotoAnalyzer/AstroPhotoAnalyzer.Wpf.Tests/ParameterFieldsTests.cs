@@ -74,7 +74,7 @@ public class ParameterFieldsTests
     [Fact]
     public void R024_EveryFieldIsHonoured()
     {
-        // 8 cu 4: passepartout-ul trebuie sa fie cel putin dublul ramei (Parameters.Validate).
+        // 8 by 4: the passepartout must be at least twice the frame (Parameters.Validate).
         var f = new ParameterFields { Medium = "canvas", Dmax = "1.7", Distance = "2", Sizes = "60, 70;80", Aspect = "50x35", TargetBg = "0.2", Passepartout = "8", Frame = "4" };
         Parameters? p = f.TryBuild(out string? error);
 
@@ -191,8 +191,9 @@ public class ParameterFieldsTests
     }
 
     /// <summary>
-    /// Tinta se explica prin ce face simularea cu ea, si cifrele din text sunt cele
-    /// din nucleu, nu tastate: implicitul, pragul print-safe, tintele suplimentare.
+    /// The target is explained by what the simulation does with it, and the figures in the
+    /// text are the core's, not typed: the default, the print-safe threshold, the extra
+    /// targets.
     /// </summary>
     [Fact]
     public void R026_TheTargetBackgroundFieldExplainsTheSimulationAndTheDefault()
@@ -206,7 +207,7 @@ public class ParameterFieldsTests
         Assert.Contains("\"(dat)\"", f.TargetBgHelp);
         Assert.Contains("0.15-0.25", f.TargetBgHelp);
         Assert.Contains("nivelul minim", f.TargetBgHelp);
-        Assert.Equal("", f.TargetBg);   // gol: doar grila
+        Assert.Equal("", f.TargetBg);   // empty: the grid only
     }
 
     /// <summary>R-027: the WCS field lends a FITS's header; empty means none, and the help says what it is for.</summary>
@@ -227,8 +228,8 @@ public class ParameterFieldsTests
     }
 
     /// <summary>
-    /// Un singur bloc de 900 de caractere nu se citeste intr-un tooltip: fiecare text de
-    /// ajutor e in paragrafe despartite de o linie goala, fara spatii la capete.
+    /// A single block of 900 characters does not read in a tooltip: every help text is in
+    /// paragraphs separated by an empty line, with no spaces at the ends.
     /// </summary>
     [Fact]
     public void R026_TheHelpTextsAreParagraphs()
@@ -237,7 +238,7 @@ public class ParameterFieldsTests
         foreach (string help in new[] { f.DistanceHelp, f.AspectHelp, f.TargetBgHelp, f.PassepartoutHelp, f.FrameHelp, f.WcsHelp })
         {
             string[] paragraphs = help.Split("\n\n");
-            Assert.True(paragraphs.Length >= 2, "un singur paragraf: " + help);
+            Assert.True(paragraphs.Length >= 2, "a single paragraph: " + help);
             Assert.All(paragraphs, p => Assert.Equal(p.Trim(), p));
             Assert.All(paragraphs, p => Assert.DoesNotContain("\n", p));
         }

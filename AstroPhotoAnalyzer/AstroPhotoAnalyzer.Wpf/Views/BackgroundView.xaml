@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- BackgroundView - culoarea fundalului, fiecare cifra cu descrierea ei, si cele opt regiuni
-     de margine, cu paragrafele care explica tabelul sub el. -->
+<!-- BackgroundView - the background colour, each figure with its description, and the eight
+     edge regions, with the paragraphs that explain the table under it. -->
 
 <UserControl x:Class="AstroPhotoAnalyzer.Wpf.BackgroundView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

@@ -22,10 +22,10 @@ using System.Text;
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Un PNG 16 biti RGB scris DE MANA, cu un chunk iCCP - exact forma in care era
-/// imaginea de acceptanta (de_printat.png, cu profilul sRGB-elle in iCCP). Encoderul
-/// ImageSharp nu scrie iCCP in 3.1 (masurat), deci citirea profilului din PNG nu se
-/// poate testa prin el.
+/// A 16-bit RGB PNG written BY HAND, with an iCCP chunk - exactly the form the acceptance
+/// image had (de_printat.png, with the sRGB-elle profile in iCCP). The ImageSharp encoder
+/// does not write iCCP in 3.1 (measured), so reading the profile from a PNG cannot be
+/// tested through it.
 /// </summary>
 internal static class PngTestData
 {
@@ -76,13 +76,14 @@ internal static class PngTestData
         var ihdr = new byte[13];
         BinaryPrimitives.WriteUInt32BigEndian(ihdr.AsSpan(0, 4), (uint)width);
         BinaryPrimitives.WriteUInt32BigEndian(ihdr.AsSpan(4, 4), (uint)height);
-        ihdr[8] = 16;   // biti pe esantion
+        ihdr[8] = 16;   // bits per sample
         ihdr[9] = 2;    // RGB
         Chunk(png, "IHDR", ihdr);
 
         if (icc != null)
         {
-            // iCCP: numele profilului, NUL, metoda de compresie (0 = zlib), profilul comprimat.
+            // iCCP: the profile's name, NUL, the compression method (0 = zlib), the compressed
+            // profile.
             byte[] name = Encoding.ASCII.GetBytes(iccName);
             byte[] body = name.Concat(new byte[] { 0, 0 }).Concat(Zlib(icc)).ToArray();
             Chunk(png, "iCCP", body);
@@ -92,7 +93,7 @@ internal static class PngTestData
         int p = 0;
         for (int y = 0; y < height; y++)
         {
-            raw[p++] = 0;   // filtru None pe fiecare rand
+            raw[p++] = 0;   // filter None on every row
             for (int x = 0; x < width; x++)
                 for (int c = 0; c < 3; c++)
                 {

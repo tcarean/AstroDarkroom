@@ -18,23 +18,24 @@
 namespace AstroPhotoAnalyzer.Tests;
 
 /// <summary>
-/// Scenele intregi pe care ruleaza lantul: cer + stele + zgomot, cu sau fara defecte.
-/// Toate deterministe (samanta fixa), ca testele golden sa compare acelasi text de
-/// fiecare data.
+/// The whole scenes the chain runs on: sky + stars + noise, with or without defects.
+/// All deterministic (fixed seed), so that the golden tests compare the same text
+/// every time.
 /// </summary>
 internal static class Scenes
 {
     /// <summary>
-    /// Dmax-ul hartiei pentru care au fost construite scenele: baryta de 2.0 de dinainte de
-    /// ADR 0028, cu negrul la L* 9.0. Un cer la 0.08 e sub negrul acela si deasupra celui de
-    /// azi (2.4, L* 3.6), asa ca testele despre "fundal sub negrul hartiei" isi dau hartia
-    /// explicit, prin <see cref="OnBuiltForPaper"/> sau --dmax 2.0, in loc sa atarne de implicit.
+    /// The Dmax of the paper the scenes were built for: the baryta of 2.0 from before
+    /// ADR 0028, with its black at L* 9.0. A sky at 0.08 is under that black and above
+    /// today's (2.4, L* 3.6), so the tests about "background under paper black" give their
+    /// paper explicitly, through <see cref="OnBuiltForPaper"/> or --dmax 2.0, instead of
+    /// hanging on the default.
     /// </summary>
     internal const double BuiltForDmax = 2.0;
 
     /// <summary>
-    /// Aceiasi parametri, pe hartia pentru care au fost construite scenele. Un Dmax dat de
-    /// test ramane al lui; mediul nu conteaza, Dmax-ul explicit il bate.
+    /// The same parameters, on the paper the scenes were built for. A Dmax the test gives
+    /// stays its own; the medium does not matter, the explicit Dmax beats it.
     /// </summary>
     internal static Parameters OnBuiltForPaper(Parameters? p = null)
     {
@@ -42,7 +43,7 @@ internal static class Scenes
         return p with { DmaxOverride = p.DmaxOverride ?? BuiltForDmax };
     }
 
-    /// <summary>Stele de FWHM 3 pe o grila, la 55 px, peste orice raster.</summary>
+    /// <summary>Stars of FWHM 3 on a grid, 55 px apart, over any raster.</summary>
     internal static Raster WithStars(Raster r, int count = 64, double fwhm = 3.0, float amplitude = 0.3f)
     {
         int placed = 0;
@@ -56,11 +57,11 @@ internal static class Scenes
     }
 
     /// <summary>
-    /// Imaginea "cu probleme": cer prea jos pentru hartie (0.08), tenta verde de 2
-    /// niveluri, colt de orizont cald in dreapta-jos, denoise apasat (0.3 LSB), si o
-    /// nebuloasa in centru (gaussiana larga) ca tonurile sa fie continue - fara ea,
-    /// testul de stres ar gasi goluri si in datele de 16 biti, cum nu se intampla pe o
-    /// imagine reala. Toate recomandarile de pe imaginea reala, in mic.
+    /// The "problem" image: a sky too low for the paper (0.08), a green cast of 2
+    /// levels, a warm horizon corner at the bottom right, heavy denoise (0.3 LSB), and a
+    /// nebula in the centre (a wide Gaussian) so that the tones are continuous - without
+    /// it, the stress test would find gaps in the 16-bit data too, which does not happen
+    /// on a real image. Every recommendation of the real image, in miniature.
     /// </summary>
     internal static Raster DarkSky()
     {
@@ -70,8 +71,8 @@ internal static class Scenes
             float v = p == 1 ? sky + 2f / 255 : sky;
             double d2 = (x - 256) * (x - 256) + (y - 256) * (y - 256);
             v += (float)(0.4 * Math.Exp(-d2 / (2 * 60.0 * 60.0)));
-            // O banda de praf: tonurile coboara continuu pana spre 0.02, ca pe un cer
-            // real - acolo musca cel mai tare un shadow-lift din 8 biti.
+            // A dust band: the tones fall continuously down towards 0.02, as on a real
+            // sky - that is where a shadow-lift from 8 bits bites hardest.
             double l2 = (x - 256) * (x - 256) + (y - 100) * (y - 100);
             v -= (float)(0.06 * Math.Exp(-l2 / (2 * 40.0 * 40.0)));
             if (y >= 435 && x >= 410) v += p == 0 ? 10f / 255 : p == 2 ? -8f / 255 : 0f;
@@ -83,7 +84,10 @@ internal static class Scenes
         return r;
     }
 
-    /// <summary>Imaginea "curata": fundal print-safe (0.25), neutru, zgomot bun (1.0 LSB), profil sRGB.</summary>
+    /// <summary>
+    /// The "clean" image: a print-safe background (0.25), neutral, good noise (1.0 LSB), an
+    /// sRGB profile.
+    /// </summary>
     internal static Raster CleanSky()
     {
         Raster r = WithStars(SyntheticRasters.Flat(512, 512, 0.25f));
@@ -92,7 +96,7 @@ internal static class Scenes
         return r;
     }
 
-    /// <summary>Mono, 8 biti, fara profil.</summary>
+    /// <summary>Mono, 8 bits, no profile.</summary>
     internal static Raster MonoSky()
     {
         Raster r = WithStars(SyntheticRasters.Flat(300, 300, 0.25f, planes: 1), count: 25);

@@ -21,7 +21,9 @@ namespace AstroPhotoAnalyzer.Tests;
 
 public class ImageSharpReaderTests
 {
-    /// <summary>Un raster cu valori distincte pe fiecare pixel si canal, ca o eroare de index sa se vada.</summary>
+    /// <summary>
+    /// A raster with distinct values on every pixel and channel, so that an index error shows.
+    /// </summary>
     static Raster Pattern(int h = 6, int w = 8)
         => SyntheticRasters.From(h, w, 3, (x, y, p) => ((y * w + x) * 3 + p) * 997 % 65536 / 65535f);
 
@@ -35,11 +37,14 @@ public class ImageSharpReaderTests
             {
                 int e = RasterOps.Level16(expected.Planes[p][i]);
                 int a = RasterOps.Level16(actual.Planes[p][i]);
-                Assert.True(Math.Abs(e - a) <= tolerance16, $"plan {p}, pixel {i}: asteptat {e}, citit {a}");
+                Assert.True(Math.Abs(e - a) <= tolerance16, $"plane {p}, pixel {i}: expected {e}, read {a}");
             }
     }
 
-    /// <summary>Formula pe niveluri de 16 biti, aceeasi ca Pattern() dar intreaga, pentru fisierele scrise de mana.</summary>
+    /// <summary>
+    /// The formula on 16-bit levels, the same as Pattern() but in integers, for the files
+    /// written by hand.
+    /// </summary>
     static int Level(int x, int y, int c, int w = 8) => ((y * w + x) * 3 + c) * 997 % 65536;
 
     [Fact]
@@ -106,7 +111,7 @@ public class ImageSharpReaderTests
         Assert.Equal("PNG", r.Source.Format);
         Assert.Equal(8, r.Source.BitDepth);
         Assert.False(r.IsColor);
-        // ImageSharp livreaza 16 biti scalati cu 257; impartit la 65535 da exact n/255.
+        // ImageSharp delivers 16 bits scaled by 257; divided by 65535 it gives exactly n/255.
         for (int i = 0; i < 8; i++)
             Assert.Equal(i * 30, RasterOps.Level8(r.Planes[0][i]));
     }
@@ -138,7 +143,7 @@ public class ImageSharpReaderTests
         Assert.Equal(8, r.Source.BitDepth);
         Assert.Contains("JPEG", r.Source.Compression);
         Assert.True(r.IsColor);
-        // Pe o suprafata uniforma JPEG-ul e aproape exact: sub 2 niveluri din 255.
+        // On a uniform surface the JPEG is almost exact: under 2 levels of 255.
         AssertSamePixels(src, r, tolerance16: 2 * 257);
     }
 
@@ -153,12 +158,12 @@ public class ImageSharpReaderTests
 
         Assert.NotNull(r.Source.Icc);
         Assert.Equal("Test sRGB profile", r.Source.IccDescription);
-        AssertSamePixels(Pattern(), r);   // profilul nu schimba pixelii
+        AssertSamePixels(Pattern(), r);   // the profile does not change the pixels
     }
 
     /// <summary>
-    /// Forma imaginii de acceptanta: PNG 16 biti cu iCCP. Decoderul PNG trebuie sa dea
-    /// si profilul, si nivelurile neatinse de el.
+    /// The shape of the acceptance image: a 16-bit PNG with iCCP. The PNG decoder must give
+    /// both the profile and the levels, untouched by it.
     /// </summary>
     [Fact]
     public void AHandBuiltPng16WithIccpIsReadWithItsProfileAndLevels()

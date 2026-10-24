@@ -17,8 +17,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- AboutWindow - icoana, versiunea, copyright-ul, notita GPLv3 si componentele terte.
-     Modala, centrata pe parinte; Esc o inchide. Nicio propozitie nu e scrisa aici. -->
+<!-- AboutWindow - the icon, the version, the copyright, the GPLv3 notice and the third-party
+     components. Modal, centred on the parent; Esc closes it. No sentence is written here. -->
 
 <Window x:Class="AstroPhotoAnalyzer.Wpf.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"

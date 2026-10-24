@@ -15,14 +15,15 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StaFixture.cs - un fir de interfata adevarat, pentru testele care ating ferestre.
+// StaFixture.cs - a real UI thread, for the tests that touch windows.
 //
-// Trei lucruri il fac sa arate asa (invatate in FlatCheck cand nu aratau asa):
-//   1. STA - WPF o cere; xunit ruleaza pe fire MTA.
-//   2. Dispatcher.Run(), nu doar un fir STA: ViewModel-urile isi cer continuarea inapoi pe
-//      contextul de sincronizare, care pe un fir cu Application e dispecerul. Fara bucla
-//      de mesaje, continuarea se pune in coada si nu se executa niciodata - deadlock.
-//   3. Unul singur pe proces: Application e unic si legat de firul care l-a creat.
+// Three things make it look like this (learnt in FlatCheck when it did not look like this):
+//   1. STA - WPF requires it; xunit runs on MTA threads.
+//   2. Dispatcher.Run(), not just an STA thread: the view-models ask for their continuation
+//      back on the synchronisation context, which on a thread with an Application is the
+//      dispatcher. Without the message loop, the continuation is queued and never runs -
+//      deadlock.
+//   3. Only one per process: Application is unique and bound to the thread that created it.
 
 using System.Windows;
 using System.Windows.Threading;
@@ -74,6 +75,6 @@ public sealed class StaFixture : IDisposable
     }
 }
 
-/// <summary>Testele de fereastra impart un singur fir de interfata, deci nu pot rula in paralel.</summary>
+/// <summary>The window tests share a single UI thread, so they cannot run in parallel.</summary>
 [CollectionDefinition("fereastra")]
 public class WindowCollection : ICollectionFixture<StaFixture> { }

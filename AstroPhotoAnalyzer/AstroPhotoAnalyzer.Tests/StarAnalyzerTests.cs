@@ -136,8 +136,8 @@ public class StarAnalyzerTests
     public void SaturatedAndFaintStarsAreNotMeasured()
     {
         Raster r = SyntheticRasters.Flat(256, 256, Sky);
-        r = SyntheticRasters.AddStar(r, 60, 60, 3.0, 0.95f);    // varf la 1.0: saturat
-        r = SyntheticRasters.AddStar(r, 180, 180, 3.0, 0.03f);  // sub amplitudinea minima
+        r = SyntheticRasters.AddStar(r, 60, 60, 3.0, 0.95f);    // peak at 1.0: saturated
+        r = SyntheticRasters.AddStar(r, 180, 180, 3.0, 0.03f);  // under the minimum amplitude
 
         var s = StarAnalyzer.Analyze(r);
 

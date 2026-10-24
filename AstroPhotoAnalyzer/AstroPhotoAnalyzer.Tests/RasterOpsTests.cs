@@ -40,7 +40,7 @@ public class RasterOpsTests
     [Fact]
     public void SubsampleIsAnchoredTopLeftLikeNumpySlicing()
     {
-        // a[::2, ::2] pe 5x5 da 3x3, cu pixelii (0,0), (0,2), (0,4), (2,0) ...
+        // a[::2, ::2] on 5x5 gives 3x3, with the pixels (0,0), (0,2), (0,4), (2,0) ...
         var r = SyntheticRasters.From(5, 5, 1, (x, y, p) => (y * 10 + x) / 100f);
         var s = RasterOps.Subsample(r, 2);
 
@@ -97,7 +97,7 @@ public class RasterOpsTests
         var l = RasterOps.Gamma(r, RasterOps.GammaFor(0.10, 0.19));
 
         for (int p = 0; p < 3; p++) Assert.Equal(0.19f, l.At(p, 1, 1), 5);
-        Assert.Equal(0.10f, r.At(0, 0, 0));   // intrarea e neatinsa
+        Assert.Equal(0.10f, r.At(0, 0, 0));   // the input is untouched
     }
 
     [Theory]
