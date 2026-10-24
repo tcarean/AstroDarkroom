@@ -15,36 +15,55 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// FlatCheckCli.cs - orchestrarea testabila: parsare, dispecerat pe moduri, cod de iesire.
-// Ordinea de dispecerat: --smooth -> --histeq -> --expo -> --ratio -> --light -> structura (implicit).
+// FlatCheckCli.cs - the testable orchestration: parsing, dispatch by mode, exit code.
+// The dispatch order: --lenses -> --synthetic -> --against -> --smooth -> --histeq -> --expo
+// -> --ratio -> --light -> structure (the default).
 //
-// CE A MAI RAMAS AICI, dupa ce nucleul a devenit FlatCheck.Core: exact ce e al consolei
-// si al nimanui altcuiva - argumentele, alegerea modului, scrierea hartii pe disc si
-// codul de iesire. Lantul propriu-zis al fiecarui mod (incarca -> analizeaza ->
-// raporteaza -> encodeaza harta) sta in Runs/, fiindca il foloseste si aplicatia WPF.
-// Vezi comentariul din Runs/RunOutcome.cs pentru de ce s-a mutat exact acolo si nu mai
-// aproape.
+// WHAT IS LEFT HERE, after the core became FlatCheck.Core: exactly what is the console's and
+// nobody else's - the arguments, the choice of the mode, the writing of the map to disk and the
+// exit code. Each mode's chain proper (load -> analyse -> report -> encode the map) sits in
+// Runs/, because the WPF application uses it too. See the comment in Runs/RunOutcome.cs for
+// why it moved exactly there and not nearer.
 //
-// CODURI DE IESIRE (din faza 8 - inainte era mereu 0, ceea ce facea imposibila
-// folosirea in scripturi):
-//     0  OK
-//     1  eroare (fisier lipsa, argument gresit, FITS invalid, fit esuat)
-//     2  SUSPECT
-//     3  PROBLEMA
-// Verdictele sunt monotone, deci "orice != 0" inseamna "nu e curat, uita-te".
-// --histeq n-are verdict: 0 inseamna doar ca a scris poza.
+// EXIT CODES (since phase 8 - before, it was always 0, which made use in scripts impossible;
+// the whole table is in docs/design/thresholds.md):
+//     0  OK / PERFECT / BUN; --expo exposed right
+//     1  error (missing file, wrong argument, invalid FITS, failed fit) or input refused
+//        (INAPLICABIL, --expo on a file that is not a raw flat, --smooth on a raw or a cube,
+//        --synthetic on a cube or without a focal length, f-stop or crop)
+//     2  SUSPECT / ACCEPTABIL / NEDETERMINAT; --expo acceptable, low or high; --smooth
+//        --scale auto with no scale proposed; --synthetic when the lens cannot be chosen
+//     3  PROBLEMA / REFA; --expo too low or too high
+// The verdicts are monotonic, so "anything != 0" means "not clean, take a look".
+// --histeq, --smooth, --synthetic and --lenses have no verdict: 0 only means they wrote their
+// output (--lenses always exits 0).
 
 using System;
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The console proper: parses the arguments, dispatches to one mode's run in
+    /// <c>Runs/</c>, writes the maps and files to disk and turns the verdict into the exit
+    /// code.
+    /// </summary>
     internal static class FlatCheckCli
     {
+        /// <summary>
+        /// Runs the console on a command line: the banner, then the usage, an error or the
+        /// mode's report. Every exception of a run is caught and written to
+        /// <paramref name="stderr"/> with exit code 1.
+        /// </summary>
+        /// <param name="args">The command line.</param>
+        /// <param name="stdout">Where the banner, the report and the usage go.</param>
+        /// <param name="stderr">Where the errors go, prefixed "EROARE: ".</param>
+        /// <returns>The exit code: 0 clean or done, 1 error or input refused, 2 look before
+        /// deciding, 3 redo (<see cref="ExitFor(string)"/>).</returns>
         internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
         {
-            // Versiunea si copyright-ul, pe primele doua linii ale oricarei rulari -
-            // inclusiv --help si erorile.
+            // The version and the copyright, on the first two lines of every run - --help and
+            // the errors included.
             RunReport.WriteBanner(stdout);
 
             Options o = Options.Parse(args);
@@ -59,8 +78,8 @@ namespace FlatCheck
                 return 1;
             }
 
-            // Un folder inseamna "ruleaza pe serie", si asta are sens doar la --light.
-            // Celelalte moduri lucreaza pe un master sau pe un cadru anume.
+            // A folder means "run on the series", and that makes sense only with --light. The
+            // other modes work on a master or on a given frame.
             if (Directory.Exists(o.Image) && !o.Light)
             {
                 stderr.WriteLine("EROARE: un folder se poate da doar cu --light, pentru rularea pe serie. "
@@ -91,33 +110,46 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Refuzul de intrare, in vocabularul nucleului. Iese cu 1, aceeasi categorie cu
-        /// <see cref="ExposureVerdict.NotRaw"/>: nu e un verdict prost, e absenta unui
-        /// verdict.
+        /// The input refusal, in the core's vocabulary. It exits with 1, the same category as
+        /// <see cref="ExposureVerdict.NotRaw"/>: it is not a bad verdict, it is the absence of
+        /// a verdict.
         /// </summary>
         internal const string NotApplicable = Stats.NotApplicable;
 
+        /// <summary>The exit code for a verdict word (docs/design/thresholds.md).</summary>
+        /// <param name="verdict">A verdict of the structure ladder, of --light's OK/SUSPECT ladder,
+        /// <see cref="LightSeriesAnalyzer.Undetermined"/> or <see cref="NotApplicable"/>.</param>
+        /// <returns>0 for OK, PERFECT and BUN; 1 for not applicable; 2 for SUSPECT,
+        /// ACCEPTABIL and undetermined; 3 for anything else.</returns>
         internal static int ExitFor(string verdict) => verdict switch
         {
-            "OK" or "PERFECT" or "BUN" => 0,   // BUN e utilizabil, deci trece
-            NotApplicable => 1,                // intrare nepotrivita, nu verdict
+            "OK" or "PERFECT" or "BUN" => 0,   // BUN is usable, so it passes
+            NotApplicable => 1,                // unsuitable input, not a verdict
             "SUSPECT" or "ACCEPTABIL" or LightSeriesAnalyzer.Undetermined => 2,
             _ => 3,
         };
 
+        /// <summary>The exit code for an exposure verdict.</summary>
+        /// <param name="v">The <c>--expo</c> verdict.</param>
+        /// <returns>0 for Ok; 1 for a file that is not raw; 2 for acceptable, low or high; 3
+        /// for anything else.</returns>
         internal static int ExitFor(ExposureVerdict v) => v switch
         {
             ExposureVerdict.Ok => 0,
-            ExposureVerdict.NotRaw => 1,   // fisierul nu e ce cere modul: nu e un verdict
+            ExposureVerdict.NotRaw => 1,   // the file is not what the mode asks for: not a verdict
             ExposureVerdict.AcceptableLow => 2,
             ExposureVerdict.AcceptableHigh => 2,
             _ => 3,
         };
 
         /// <summary>
-        /// Structura; cu --lens sau --raw si comparatia vignetarii cu profilele obiectivului,
-        /// iar verdictul (si codul de iesire) e cel combinat. Fara ele, exact ce era.
+        /// Structure; with --lens or --raw also the comparison of the vignetting with the
+        /// lens's profiles, and the verdict (and the exit code) is the combined one. Without
+        /// them, exactly what it was.
         /// </summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>The run's verdict, for <see cref="ExitFor(string)"/>.</returns>
         static string RunStructure(Options o, TextWriter w)
         {
             StructureQuery query = o.Lens != null || o.Raw != null
@@ -128,20 +160,28 @@ namespace FlatCheck
             return run.Result.Verdict;
         }
 
+        /// <summary>--ratio: the attribution, the camera-fixed map at -o and the A/B map beside
+        /// it.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>The camera-fixed part's verdict.</returns>
         static string RunRatio(Options o, TextWriter w)
         {
             var run = RatioRun.Execute(o.Image, o.Ratio, w);
             SaveMap(o.OutPng, run.Png, w);
-            // Modul desparte masterul in doua componente, deci are doua forme de aratat.
-            // A doua merge langa prima, cu un sufix, ca sa nu ceara inca un argument.
+            // The mode splits the master into two components, so it has two shapes to show.
+            // The second goes beside the first, with a suffix, so it asks for no further
+            // argument.
             SaveMap(WorldMapPath(o.OutPng), run.SecondaryPng, w);
             return run.Result.Verdict;
         }
 
         /// <summary>
-        /// Calea hartii componentei fixe in lume: acelasi nume, cu "-lume" inainte de
-        /// extensie. "harta.png" -> "harta-lume.png".
+        /// The path of the world-fixed component's map: the same name, with "-lume" before the
+        /// extension. "harta.png" -> "harta-lume.png".
         /// </summary>
+        /// <param name="path">The main map's path (-o).</param>
+        /// <returns>The second map's path, in the same folder.</returns>
         internal static string WorldMapPath(string path)
         {
             string dir = Path.GetDirectoryName(path);
@@ -149,6 +189,12 @@ namespace FlatCheck
             return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
+        /// <summary>--light: a folder goes to the series, a file to the single-frame run; the
+        /// map at -o unless refused.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>The verdict, or <see cref="NotApplicable"/> when the field is too
+        /// wide.</returns>
         static string RunLight(Options o, TextWriter w)
         {
             if (Directory.Exists(o.Image)) return RunLightSeries(o, w);
@@ -160,6 +206,12 @@ namespace FlatCheck
             return run.Result.Verdict;
         }
 
+        /// <summary>--light on a folder: the series matching --pattern; the combined map at
+        /// -o unless refused.</summary>
+        /// <param name="o">The parsed options; <c>Image</c> is the folder.</param>
+        /// <param name="w">Where the rows and the summary are written.</param>
+        /// <returns>The series' verdict, or <see cref="NotApplicable"/> when the field is too
+        /// wide.</returns>
         static string RunLightSeries(Options o, TextWriter w)
         {
             var run = LightSeriesRun.Execute(o.Image, o.Pattern, o.Fov, w);
@@ -169,14 +221,21 @@ namespace FlatCheck
             return run.Result.Verdict;
         }
 
+        /// <summary>--expo: the exposure of a raw flat; no map.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>The exposure verdict, for <see cref="ExitFor(ExposureVerdict)"/>.</returns>
         static ExposureVerdict RunExpo(Options o, TextWriter w)
             => ExposureRun.Execute(o.Image, o.Sat, o.Black, o.Sky, w).Result.Verdict;
 
         /// <summary>
-        /// Nu trece prin ExitFor: modul n-are verdict de tradus, iar un "OK" inventat ar
-        /// pune un succes acolo unde tabelul codurilor promite "utilizabil ca atare".
-        /// 0 = a scris poza; orice esec ajunge la catch-ul de mai sus, cu 1.
+        /// It does not go through ExitFor: the mode has no verdict to translate, and an
+        /// invented "OK" would put a success where the table of codes promises "usable as it
+        /// is". 0 = it wrote the picture; any failure reaches the catch above, with 1.
         /// </summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>Always 0.</returns>
         static int RunHisteq(Options o, TextWriter w)
         {
             var run = HistEqRun.Execute(o.Image, w);
@@ -185,17 +244,23 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Ca --histeq, nu trece prin ExitFor: n-are verdict. 0 = a scris flat-ul netezit
-        /// si hartile; 1 = a refuzat intrarea (raw, cub) sau a esuat. Fisierul FITS se
-        /// scrie INAINTE de harti: el e produsul, hartile sunt explicatia lui.
+        /// Like --histeq, it does not go through ExitFor: it has no verdict. 0 = it wrote the
+        /// smoothed flat and the maps; 1 = it refused the input (raw, cube) or failed. The FITS
+        /// file is written BEFORE the maps: it is the product, the maps are its explanation.
         /// </summary>
+        /// <param name="o">The parsed options; <c>Smooth</c> is the FITS path to
+        /// write.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <param name="err">Where the refusal's first line goes.</param>
+        /// <returns>0 written, 1 refused, 2 with --scale auto when no scale was
+        /// proposed.</returns>
         static int RunSmooth(Options o, TextWriter w, TextWriter err)
         {
             SmoothRunOutcome run;
             if (o.ScaleAuto)
             {
-                // Propunerea intai. Fara textura sau nedeterminat: niciun fisier, cod 2 -
-                // nu e o eroare, e "citeste asta inainte sa decizi", ce inseamna 2 peste tot.
+                // The proposal first. With no texture or undetermined: no file, code 2 - it is
+                // not an error, it is "read this before you decide", what 2 means everywhere.
                 var advice = SmoothRun.Advise(o.Image, w);
                 if (advice.Refused)
                 {
@@ -223,16 +288,23 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Sursele de profile: implicit cele ale masinii (folderele Adobe si lensfun/ de langa
-        /// exe); cu --profiles &lt;dir&gt;, folderul dat (cu .lcp-uri oriunde in el) si subfolderul
-        /// lui lensfun/. Asa ruleaza si testele, pe XML scris de ele.
+        /// The profile sources: by default the machine's (the Adobe folders and the lensfun/
+        /// beside the exe); with --profiles &lt;dir&gt;, the folder given (with .lcp files
+        /// anywhere in it) and its lensfun/ subfolder. That is how the tests run too, on XML
+        /// they wrote.
         /// </summary>
+        /// <param name="o">The parsed options.</param>
+        /// <returns>The located sources, with their catalog.</returns>
         static ProfileSources Sources(Options o)
             => o.Profiles != null
                 ? ProfileLocator.Locate(new[] { o.Profiles }, Path.Combine(o.Profiles, ProfileLocator.LensfunFolderName))
                 : ProfileLocator.Locate();
 
-        /// <summary>--lenses: lista obiectivelor cu profil (toate, sau cele care contin --lens). Mereu 0.</summary>
+        /// <summary>--lenses: the list of the lenses with a profile (all, or those that contain
+        /// --lens). Always 0.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the list is written.</param>
+        /// <returns>0.</returns>
         static int RunLenses(Options o, TextWriter w)
         {
             ProfileSources sources = Sources(o);
@@ -241,10 +313,16 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// --synthetic: ca --smooth, fara verdict. 0 = a scris flatul; 1 = referinta refuzata
-        /// sau ceva de neaflat (focala, diafragma, crop); 2 = obiectivul nu s-a putut alege
-        /// (nimic sau prea multe) - "citeste lista inainte sa decizi", ce inseamna 2 peste tot.
+        /// --synthetic: like --smooth, without a verdict. 0 = it wrote the flat; 1 = the
+        /// reference refused or something not to be found (focal length, aperture, crop); 2 =
+        /// the lens could not be chosen (none or too many) - "read the list before you
+        /// decide", what 2 means everywhere.
         /// </summary>
+        /// <param name="o">The parsed options; <c>Synthetic</c> is the FITS path to
+        /// write.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <param name="err">Where the refusal's first line goes.</param>
+        /// <returns>0, 1 or 2, as above.</returns>
         static int RunSynthetic(Options o, TextWriter w, TextWriter err)
         {
             var req = new SyntheticRequest { LensText = o.Lens, Source = o.Source };
@@ -260,7 +338,11 @@ namespace FlatCheck
             return 0;
         }
 
-        /// <summary>--against: structura pe raportul celor doua flaturi; harta raportului la -o.</summary>
+        /// <summary>--against: the structure of the two flats' ratio; the ratio's map at
+        /// -o.</summary>
+        /// <param name="o">The parsed options.</param>
+        /// <param name="w">Where the report is written.</param>
+        /// <returns>The difference's verdict.</returns>
         static string RunAgainst(Options o, TextWriter w)
         {
             var run = AgainstRun.Execute(o.Image, o.Against, w);
@@ -269,9 +351,11 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Calea hartii reziduului flat-ului netezit: acelasi nume, cu "-dupa" inainte de
-        /// extensie. "harta.png" -> "harta-dupa.png". Aceeasi conventie ca WorldMapPath.
+        /// The path of the smoothed flat's residual map: the same name, with "-dupa" before the
+        /// extension. "harta.png" -> "harta-dupa.png". The same convention as WorldMapPath.
         /// </summary>
+        /// <param name="path">The main map's path (-o).</param>
+        /// <returns>The second map's path, in the same folder.</returns>
         internal static string AfterMapPath(string path)
         {
             string dir = Path.GetDirectoryName(path);
@@ -279,12 +363,19 @@ namespace FlatCheck
             return string.IsNullOrEmpty(dir) ? name : Path.Combine(dir, name);
         }
 
+        /// <summary>Writes a map to disk, overwriting, and announces it.</summary>
+        /// <param name="path">Where the PNG goes.</param>
+        /// <param name="png">The PNG bytes.</param>
+        /// <param name="w">Where the announcement line is written.</param>
         static void SaveMap(string path, byte[] png, TextWriter w)
         {
             File.WriteAllBytes(path, png);
             RunReport.WriteMapSaved(path, w);
         }
 
+        /// <summary>Writes the usage (--help, or no argument), then the GPL warranty
+        /// notice.</summary>
+        /// <param name="w">Where the text is written.</param>
         static void WriteUsage(TextWriter w)
         {
             w.WriteLine("Utilizare:");
@@ -330,10 +421,11 @@ namespace FlatCheck
             w.WriteLine("cu un flat real: vignetarea raportului e diferenta in stopuri, harta e forma ei.");
             w.WriteLine();
 
-            // GPLv3 sectiunea 5(d) - notita de garantie. Banner-ul de la fiecare rulare
-            // poarta doar copyright-ul; disclaimerul intreg ar ingrosa fiecare raport
-            // degeaba, deci sta aici, unde omul vine oricum sa citeasca.
-            // Textul sta in RunReport.WarrantyLines, fiindca il arata si fereastra "Despre".
+            // GPLv3 section 5(d) - the warranty notice. The banner of every run carries only
+            // the copyright; the whole disclaimer would thicken every report for nothing, so it
+            // sits here, where the user comes to read anyway.
+            // The text sits in RunReport.WarrantyLines, because the "Despre" window shows it
+            // too.
             foreach (string line in RunReport.WarrantyLines) w.WriteLine(line);
         }
     }

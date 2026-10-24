@@ -15,40 +15,53 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SmoothRun.cs - modul 6 cap-coada: fisier -> flat netezit + text + doua harti.
+// SmoothRun.cs - mode 6 end to end: file -> smoothed flat + text + two maps.
 //
-// Ca LightRun, poate REFUZA: un raw (un cadru, necalibrat) sau un cub de culoare (pe
-// care cititorul l-ar media intr-un mono). Refuzul nu produce fisier si nu produce cifre.
+// Like LightRun, it can REFUSE: a raw (one frame, uncalibrated) or a colour cube (which the
+// reader would average into a mono). The refusal produces no file and no figures.
 //
-// Fisierul FITS NU se scrie aici, ci prin WriteFits, la cererea apelantului, intr-un
-// Stream al lui: consola deschide un FileStream la calea din --smooth, fereastra la
-// calea din sesiune dupa ce a intrebat de suprascriere, testele un MemoryStream. Acelasi
-// motiv ca la harta PNG din RunOutcome - modul nu stie unde vrea apelantul fisierul.
+// The FITS file is NOT written here, but through WriteFits, at the caller's request, into a
+// Stream of its own: the console opens a FileStream at the path from --smooth, the window at
+// the session's path after asking about overwriting, the tests a MemoryStream. The same reason
+// as for the PNG map of RunOutcome - the mode does not know where the caller wants the file.
 
 using System.Collections.Generic;
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The result of a <c>--smooth</c> run: the figures, the loaded frame and the two maps,
+    /// or only the refusal.
+    /// </summary>
     internal sealed class SmoothRunOutcome
     {
-        /// <summary>Cifrele si rasterul netezit, sau null la refuz.</summary>
+        /// <summary>The figures and the smoothed raster, or null on a refusal.</summary>
         internal readonly SmoothResult Result;
 
-        /// <summary>Cadrul incarcat - cardurile si BITPIX-ul lui merg in fisierul scris. Null la refuz.</summary>
+        /// <summary>The loaded frame - its cards and its BITPIX go into the file written. Null
+        /// on a refusal.</summary>
         internal readonly LoadedFrame Frame;
 
-        /// <summary>Harta componentei scoase (original / netezit), centrata pe 1. Null la refuz.</summary>
+        /// <summary>The map of the component removed (original / smoothed), centred on 1. Null
+        /// on a refusal.</summary>
         internal readonly byte[] Png;
 
-        /// <summary>Reziduul flat-ului netezit dupa propriul model radial - ce face obiectivul. Null la refuz.</summary>
+        /// <summary>The residual of the smoothed flat after its own radial model - what the
+        /// lens does. Null on a refusal.</summary>
         internal readonly byte[] SecondaryPng;
 
-        /// <summary>De ce s-a refuzat, sau null.</summary>
+        /// <summary>Why it was refused, or null.</summary>
         internal readonly string Refusal;
 
         internal bool Refused => Result == null;
 
+        /// <summary>Bundles a smoothing's parts, or a refusal.</summary>
+        /// <param name="r">The figures, or null on a refusal.</param>
+        /// <param name="f">The loaded frame, or null on a refusal.</param>
+        /// <param name="png">The removed component's map as PNG, or null.</param>
+        /// <param name="secondary">The smoothed flat's residual map as PNG, or null.</param>
+        /// <param name="refusal">The refusal's text, or null when the run went ahead.</param>
         internal SmoothRunOutcome(SmoothResult r, LoadedFrame f, byte[] png, byte[] secondary, string refusal)
         {
             Result = r;
@@ -59,15 +72,21 @@ namespace FlatCheck
         }
     }
 
-    /// <summary>Propunerea de scara, sau refuzul (raw, cub) - acelasi ca la Execute.</summary>
+    /// <summary>The scale proposal, or the refusal (raw, cube) - the same as for
+    /// Execute.</summary>
     internal sealed class SmoothAdviceOutcome
     {
         internal readonly SmoothScaleAdvice Advice;
-        /// <summary>Cadrul incarcat, ca rularea de dupa propunere sa nu-l mai citeasca o data.</summary>
+        /// <summary>The loaded frame, so that the run after the proposal does not read it once
+        /// more.</summary>
         internal readonly LoadedFrame Frame;
         internal readonly string Refusal;
         internal bool Refused => Advice == null;
 
+        /// <summary>Bundles the proposal with its frame, or a refusal.</summary>
+        /// <param name="a">The proposal, or null on a refusal.</param>
+        /// <param name="f">The loaded frame, or null on a refusal.</param>
+        /// <param name="refusal">The refusal's text, or null.</param>
         internal SmoothAdviceOutcome(SmoothScaleAdvice a, LoadedFrame f, string refusal)
         {
             Advice = a;
@@ -76,8 +95,22 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Mode 6, <c>--smooth</c>: writes a second master with the diffuser texture removed, and
+    /// proposes the smoothing scale; refuses a raw and a colour cube.
+    /// </summary>
     internal static class SmoothRun
     {
+        /// <summary>
+        /// Loads the file and, unless it is refused, smooths it at the given scale and writes
+        /// the report; on a refusal writes only the refusal's text. Writes no file
+        /// (<see cref="WriteFits"/> does). Throws what <see cref="ImageLoader.Load"/> throws.
+        /// </summary>
+        /// <param name="path">A FITS master.</param>
+        /// <param name="scalePx">The smoothing scale, the kernel's sigma in sensor pixels
+        /// (<c>--scale</c>).</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The smoothing with its two maps, or the refusal.</returns>
         internal static SmoothRunOutcome Execute(string path, double scalePx, TextWriter report)
         {
             LoadedFrame f = ImageLoader.Load(path);
@@ -92,10 +125,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Propunerea de scara: incarca, refuza ce refuza si Execute, altfel ruleaza
-        /// sfatuitorul si scrie tabelul lui. Cadrul ramane in rezultat, ca o netezire la
-        /// scara propusa sa porneasca fara o a doua citire a fisierului de 96 MB.
+        /// The scale proposal: loads, refuses what Execute refuses too, otherwise runs the
+        /// advisor and writes its table. The frame stays in the result, so a smoothing at the
+        /// proposed scale starts without a second read of the 96 MB file. Throws what
+        /// <see cref="ImageLoader.Load"/> throws.
         /// </summary>
+        /// <param name="path">A FITS master.</param>
+        /// <param name="report">Where the advice's table is written.</param>
+        /// <returns>The proposal with the loaded frame, or the refusal.</returns>
         internal static SmoothAdviceOutcome Advise(string path, TextWriter report)
         {
             LoadedFrame f = ImageLoader.Load(path);
@@ -111,14 +148,26 @@ namespace FlatCheck
             return new SmoothAdviceOutcome(a, f, null);
         }
 
-        // Refuzurile INAINTE de orice calcul, ca la --light: un fisier scris pe un raw sau
-        // pe un cub ar fi un fisier gresit cu aerul unuia bun.
+        // The refusals BEFORE any computation, as with --light: a file written from a raw or
+        // from a cube would be a wrong file with the air of a good one.
+        /// <summary>
+        /// Says whether a loaded frame can be smoothed: a raw (no FITS cards) and a cube (more
+        /// than one plane) cannot.
+        /// </summary>
+        /// <param name="f">The loaded frame.</param>
+        /// <param name="path">Its path, quoted in the refusal.</param>
+        /// <returns>The refusal's text, or null when the frame can be smoothed.</returns>
         static string Refusal(LoadedFrame f, string path)
             => f.Cards.Count == 0 ? SmoothReport.RefusalRaw(path)
              : f.Planes > 1 ? SmoothReport.RefusalCube(path, f.Planes)
              : null;
 
-        /// <summary>Netezirea unui cadru deja incarcat si deja acceptat.</summary>
+        /// <summary>The smoothing of a frame already loaded and already accepted.</summary>
+        /// <param name="f">The loaded frame, a single-plane FITS (not refused).</param>
+        /// <param name="path">Its path, for the report.</param>
+        /// <param name="scalePx">The kernel's sigma, sensor pixels.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The smoothing with its two maps.</returns>
         internal static SmoothRunOutcome Execute(LoadedFrame f, string path, double scalePx, TextWriter report)
         {
             var r = SmoothAnalyzer.Analyze(f.Image, scalePx);
@@ -130,23 +179,35 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Tipul de iesire pentru un tip de intrare: acelasi, cand se poate. Float ramane
-        /// float la aceleasi valori (masterul 0..1 al lui Siril ramane 0..1), 16 biti raman
-        /// 16 biti; restul (8, 32, -64, si 0 = necunoscut) devin float. Nimic nu se
-        /// renormalizeaza - Siril normalizeaza flat-ul singur la calibrare, iar un fisier la
-        /// o scara surprinzatoare e un fisier pe care cineva il va citi gresit.
+        /// The output type for an input type: the same, when possible. Float stays float at the
+        /// same values (Siril's 0..1 master stays 0..1), 16 bits stay 16 bits; the rest (8, 32,
+        /// -64, and 0 = unknown) become float. Nothing is renormalised - Siril normalises the
+        /// flat by itself at calibration, and a file at a surprising scale is a file someone
+        /// will read wrong.
         /// </summary>
+        /// <param name="inputBitpix">The input's BITPIX (0 when unknown).</param>
+        /// <returns>16 for a 16-bit input, -32 (float) otherwise.</returns>
         internal static int OutputBitpix(int inputBitpix) => inputBitpix == 16 ? 16 : -32;
 
-        /// <summary>Liniile HISTORY: cine, ce versiune, ce scara, din ce fisier.</summary>
+        /// <summary>The HISTORY lines: who, which version, which scale, from which
+        /// file.</summary>
+        /// <param name="o">A smoothing that was not refused.</param>
+        /// <param name="sourcePath">The master smoothed; only its file name is written.</param>
+        /// <returns>Two lines, in Romanian, each short enough for one HISTORY card.</returns>
         internal static IReadOnlyList<string> History(SmoothRunOutcome o, string sourcePath) => new[]
         {
-            // sub 72 de caractere fiecare, ca sa incapa pe un singur card HISTORY
+            // under 72 characters each, so they fit on a single HISTORY card
             $"{VersionInfo.Banner} --smooth: fit patratic local pe dale, sigma {o.Result.ScalePx:F0} px",
             $"sursa: {Path.GetFileName(sourcePath)}",
         };
 
-        /// <summary>Scrie flat-ul netezit, cu headerul intrarii si liniile HISTORY, in <paramref name="s"/>.</summary>
+        /// <summary>
+        /// Writes the smoothed flat, with the input's header and the HISTORY lines, into
+        /// <paramref name="s"/>.
+        /// </summary>
+        /// <param name="o">A smoothing that was not refused.</param>
+        /// <param name="sourcePath">The master smoothed, named in the HISTORY.</param>
+        /// <param name="s">The stream to write the FITS into; left open.</param>
         internal static void WriteFits(SmoothRunOutcome o, string sourcePath, Stream s)
             => FitsWriter.Write(s, o.Result.Smoothed, OutputBitpix(o.Frame.Bitpix), o.Frame.Cards, History(o, sourcePath));
     }

@@ -15,33 +15,40 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ChannelPalette.cs - culoarea unui canal CFA pe histograma.
+// ChannelPalette.cs - the colour of a CFA channel on the histogram.
 //
-// DE CE NU E IN VerdictPalette. Astea NU sunt verdicte si nu trebuie sa treaca niciodata
-// prin Stats.Severity: un canal rosu nu e "mai rau" decat unul verde. Doua sisteme de
-// culoare pe acelasi ecran e riscant tocmai fiindca seamana, deci merita spus: verdictul
-// se vede pe o singura pastila, sus; restul culorilor de pe tab identifica un canal.
+// WHY IT IS NOT IN VerdictPalette. These are NOT verdicts and must never go through
+// Stats.Severity: a red channel is not "worse" than a green one. Two colour systems on the same
+// screen are risky precisely because they look alike, so it is worth saying: the verdict shows
+// on a single pill, at the top; the other colours on the tab identify a channel.
 //
-// DE CE NU E IN Dark.xaml. Alegerea se face dintr-un char care vine din rezultat, adica
-// din C#, nu dintr-o legare - iar un dictionar de resurse n-ar putea decide pe el.
+// WHY IT IS NOT IN Dark.xaml. The choice is made from a char that comes from the result, that
+// is from C#, not from a binding - and a resource dictionary could not decide on it.
 //
-// Cand fisierul n-a spus ordinea, toate patru canalele primesc culoarea de accent. E
-// deliberat: patru curbe colorate R/G/G/B pe un mozaic necunoscut ar arata exact ca o
-// masuratoare, si n-ar fi.
+// When the file did not say the order, all four channels get the accent colour. It is
+// deliberate: four curves coloured R/G/G/B on an unknown mosaic would look exactly like a
+// measurement, and would not be one.
 
 using System.Windows.Media;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The colours of the CFA channels on the Exposure tab's histograms; never a
+    /// verdict.</summary>
     internal static class ChannelPalette
     {
         internal static readonly Color R = Color.FromRgb(0xE0, 0x6C, 0x75);
         internal static readonly Color G = Color.FromRgb(0x7D, 0xC3, 0x83);
         internal static readonly Color B = Color.FromRgb(0x61, 0xAF, 0xEF);
 
-        /// <summary>Aceeasi cu AccentBr din tema: "nu stiu ce culoare e" arata neutru.</summary>
+        /// <summary>The same as AccentBr in the theme: "I do not know which colour it is"
+        /// looks neutral.</summary>
         internal static readonly Color Unknown = Color.FromRgb(0x4E, 0xA8, 0xDE);
 
+        /// <summary>The colour of a channel.</summary>
+        /// <param name="colour">'R', 'G' or 'B' from the CFA order; anything else is
+        /// unknown.</param>
+        /// <returns>The channel's colour, or <see cref="Unknown"/>.</returns>
         internal static Color For(char colour) => colour switch
         {
             'R' => R,
@@ -50,10 +57,13 @@ namespace FlatCheck.Wpf
             _ => Unknown,
         };
 
+        /// <summary>A frozen brush in a channel's colour.</summary>
+        /// <param name="colour">'R', 'G' or 'B'; anything else is unknown.</param>
+        /// <returns>A new frozen <see cref="SolidColorBrush"/>.</returns>
         internal static Brush BrushFor(char colour)
         {
             var b = new SolidColorBrush(For(colour));
-            b.Freeze();   // se leaga din mai multe fire, si inghetat e si mai ieftin de desenat
+            b.Freeze();   // bound from several threads, and frozen it is also cheaper to draw
             return b;
         }
     }

@@ -15,31 +15,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightRun.cs - modul 3 pe un singur cadru, cap-coada.
+// LightRun.cs - mode 3 on a single frame, end to end.
 
 using System.IO;
 
 namespace FlatCheck
 {
     /// <summary>
-    /// Rezultatul unei rulari --light. Spre deosebire de celelalte moduri, asta poate
-    /// REFUZA sa raspunda: peste Th.LightFovMax grade diagonala cerul si vignetarea au
-    /// aceeasi forma, deci orice cifra ar iesi ar fi cerul. Refuzul nu e un verdict prost,
-    /// e absenta unui verdict - de aceea Result ramane null si nu se produce nicio cifra.
+    /// The result of a --light run. Unlike the other modes, this one can REFUSE to answer:
+    /// beyond Th.LightFovMax degrees of diagonal the sky and the vignetting have the same
+    /// shape, so any figure that came out would be the sky. The refusal is not a bad verdict,
+    /// it is the absence of a verdict - which is why Result stays null and no figure is
+    /// produced.
     /// </summary>
     internal sealed class LightRunOutcome
     {
-        /// <summary>Campul acoperit si de unde s-a aflat - se raporteaza si la refuz.</summary>
+        /// <summary>The field covered and where it was learned from - reported on a refusal
+        /// too.</summary>
         internal readonly SuitabilityResult Suitability;
 
-        /// <summary>Cifrele, sau null cand testul nu se aplica.</summary>
+        /// <summary>The figures, or null when the test does not apply.</summary>
         internal readonly LightResult Result;
 
-        /// <summary>Harta radiala PNG, sau null cand testul nu se aplica.</summary>
+        /// <summary>The radial map as PNG, or null when the test does not apply.</summary>
         internal readonly byte[] Png;
 
         internal bool Refused => Result == null;
 
+        /// <summary>Bundles the suitability check with the figures and the map.</summary>
+        /// <param name="s">The field-of-view check; never null.</param>
+        /// <param name="r">The figures, or null on a refusal.</param>
+        /// <param name="png">The radial map as PNG, or null on a refusal.</param>
         internal LightRunOutcome(SuitabilityResult s, LightResult r, byte[] png)
         {
             Suitability = s;
@@ -48,15 +54,29 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Mode 3, <c>--light</c>, on one calibrated light: does the flat correct a real light;
+    /// refuses a field too wide before computing anything.
+    /// </summary>
     internal static class LightRun
     {
+        /// <summary>
+        /// Loads the light, checks its field of view (<see cref="LightSuitability.Check"/>)
+        /// and, when the field allows it, fits it and writes the report; on a refusal writes
+        /// only the refusal. Throws what <see cref="ImageLoader.Load"/> throws.
+        /// </summary>
+        /// <param name="path">A calibrated, unregistered light.</param>
+        /// <param name="fov">The diagonal field in degrees given with <c>--fov</c>, or null
+        /// to derive it from the header.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The check, and the figures with the map unless the run refused.</returns>
         internal static LightRunOutcome Execute(string path, double? fov, TextWriter report)
         {
             LoadedFrame f = ImageLoader.Load(path);
 
-            // Garda INAINTE de orice calcul. Pe un camp prea larg cifra n-ar insemna
-            // nimic, deci nu se produce deloc, in loc sa se produca si sa se explice
-            // dedesubt - un numar tiparit e crezut, oricat de multe paranteze ai pune.
+            // The guard BEFORE any computation. On a field too wide the figure would mean
+            // nothing, so it is not produced at all, rather than produced and explained
+            // underneath - a printed number is believed, however many brackets you add.
             var s = LightSuitability.Check(f.Header, fov);
             if (!s.CanRun)
             {

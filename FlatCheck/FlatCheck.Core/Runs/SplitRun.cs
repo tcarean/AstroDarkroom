@@ -15,18 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SplitRun.cs - masterele partilor langa masterul intregii sesiuni: N + 1 rulari de
-// structura, un tabel, un raport, un mozaic de harti reziduale.
+// SplitRun.cs - the parts' masters beside the whole session's master: N + 1 structure runs,
+// a table, a report, a mosaic of residual maps.
 //
-// Nu stie nimic despre foldere temporare sau despre Siril: primeste cai de fisiere.
-// Fereastra face impartirea si rularile; consola ar putea da aceleasi cai cu un flag,
-// daca va fi nevoie (ADR 0054). Cifrele fiecarei coloane sunt exact cele ale rularii de
-// structura pe fisierul ei - StructureRun.Analyze, aceeasi functie.
+// It knows nothing about temp folders or about Siril: it receives file paths. The window does
+// the splitting and the runs; the console could give the same paths with a flag, if it is
+// ever needed (ADR 0054). Each column's figures are exactly those of the structure run on its
+// file - StructureRun.Analyze, the same function.
 //
-// PROFILUL DE REFERINTA e cel mai apropiat profil al INTREGULUI, acelasi pe toate
-// coloanele. "Cel mai apropiat" se alege pe fiecare master in parte, si pe prima sesiune
-// reala partea 1 si intregul au ales profile diferite (Adobe +0.07 fata de lensfun -0.08);
-// un tabel cu alta referinta pe fiecare coloana n-ar compara nimic.
+// THE REFERENCE PROFILE is the WHOLE's nearest profile, the same on every column. "Nearest" is
+// chosen on each master separately, and on the first real session part 1 and the whole chose
+// different profiles (Adobe +0.07 against lensfun -0.08); a table with a different reference on
+// each column would compare nothing.
 
 using System;
 using System.Collections.Generic;
@@ -35,24 +35,33 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    /// <summary>O coloana a tabelului: o parte sau intregul, cu rularea ei de structura.</summary>
+    /// <summary>A column of the table: a part or the whole, with its structure run.</summary>
     internal sealed class SplitColumn
     {
         internal readonly string Path;
-        /// <summary>"partea 1 din 4" sau "intreg" - textul din antetul coloanei si din raport.</summary>
+        /// <summary>"partea 1 din 4" or "intreg" - the text in the column's header and in the
+        /// report.</summary>
         internal readonly string Label;
         internal readonly StructureOutcome Outcome;
-        /// <summary>Adancimea acestui master fata de profilul de referinta; null fara referinta.</summary>
+        /// <summary>This master's depth against the reference profile; null without a
+        /// reference.</summary>
         internal readonly ProfileDepth Reference;
         /// <summary>
-        /// Verdictul coloanei: cel mai rau dintre cele cinci teste si adancimea fata de
-        /// PROFILUL DE REFERINTA - nu verdictul rularii (Outcome.Verdict), care ia adancimea
-        /// fata de profilul cel mai apropiat al coloanei insesi; in tabel randul de mai sus e
-        /// fata de referinta, si cele doua randuri trebuie sa vorbeasca despre acelasi profil.
-        /// Fara referinta, verdictul celor cinci teste.
+        /// The column's verdict: the worst of the five tests and the depth against THE
+        /// REFERENCE PROFILE - not the run's verdict (Outcome.Verdict), which takes the depth
+        /// against the column's own nearest profile; in the table the row above is against the
+        /// reference, and the two rows must speak about the same profile.
+        /// Without a reference, the five tests' verdict.
         /// </summary>
         internal readonly string Verdict;
 
+        /// <summary>Holds a column and combines its verdict by
+        /// <see cref="Stats.Severity"/>.</summary>
+        /// <param name="path">The column's master.</param>
+        /// <param name="label">The column's heading (<c>SplitReport.PartLabel</c> or
+        /// <c>WholeLabel</c>).</param>
+        /// <param name="outcome">The structure run on <paramref name="path"/>.</param>
+        /// <param name="reference">The depth against the reference profile, or null.</param>
         internal SplitColumn(string path, string label, StructureOutcome outcome, ProfileDepth reference)
         {
             Path = path;
@@ -64,21 +73,38 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// What a split measured: one column per part, the whole, the reference profile they are
+    /// all read against, and the mosaic's shared scale.
+    /// </summary>
     internal sealed class SplitResult
     {
         internal readonly IReadOnlyList<SplitColumn> Parts;
         internal readonly SplitColumn Whole;
-        /// <summary>Cel mai apropiat profil al intregului, sau null cand intregul nu s-a putut compara.</summary>
+        /// <summary>The whole's nearest profile, or null when the whole could not be
+        /// compared.</summary>
         internal readonly LensProfile ReferenceProfile;
-        /// <summary>Adancimea profilului de referinta, masurata cu operatorul masterului; null fara referinta.</summary>
+        /// <summary>The reference profile's depth, measured with the master's operator; null
+        /// without a reference.</summary>
         internal readonly ProfileDepth ReferenceDepth;
-        /// <summary>Toate profilele cu care s-a comparat intregul, in ordinea tabului Structura; gol fara comparatie.</summary>
+        /// <summary>Every profile the whole was compared with, in the Structure tab's order;
+        /// empty without a comparison.</summary>
         internal readonly IReadOnlyList<ProfileDepth> Profiles;
         internal readonly int FramesPerPart;
         internal readonly DateTime When;
-        /// <summary>Scara comuna a mozaicului: cea automata peste toate hartile deodata.</summary>
+        /// <summary>The mosaic's shared scale: the automatic one over all the maps at
+        /// once.</summary>
         internal readonly PngWriter.MapRange MapRange;
 
+        /// <summary>Holds the columns and the reference; takes the profile list from the
+        /// whole's comparison.</summary>
+        /// <param name="parts">The parts' columns, in order.</param>
+        /// <param name="whole">The whole session's column.</param>
+        /// <param name="referenceProfile">The whole's nearest profile, or null.</param>
+        /// <param name="referenceDepth">That profile's depth on the whole, or null.</param>
+        /// <param name="framesPerPart">The frames each part had; 0 when unknown.</param>
+        /// <param name="when">The run's date and time.</param>
+        /// <param name="mapRange">The scale shared by every map of the mosaic.</param>
         internal SplitResult(IReadOnlyList<SplitColumn> parts, SplitColumn whole, LensProfile referenceProfile,
                              ProfileDepth referenceDepth, int framesPerPart, DateTime when, PngWriter.MapRange mapRange)
         {
@@ -94,18 +120,31 @@ namespace FlatCheck
 
         internal bool HasReference => ReferenceProfile != null;
 
-        /// <summary>Partile in ordine, apoi intregul - ordinea coloanelor si a dalelor.</summary>
+        /// <summary>The parts in order, then the whole - the order of the columns and of the
+        /// tiles.</summary>
         internal IEnumerable<SplitColumn> Columns => Parts.Append(Whole);
     }
 
+    /// <summary>
+    /// The Split tab's analysis (ADR 0054): the structure run on each part's master and on the
+    /// whole's, read against one reference profile, with a labelled mosaic of their maps.
+    /// </summary>
     internal static class SplitRun
     {
-        /// <param name="wholePath">Masterul intregii sesiuni.</param>
-        /// <param name="partPaths">Masterele partilor, in ordinea partilor.</param>
-        /// <param name="query">Profilele si raw-ul de langa master, ca la structura; null = fara comparatie.</param>
-        /// <param name="when">Data si ora rularii, scrise in raport si in titlul mozaicului.</param>
-        /// <param name="framesPerPart">Cate cadre a avut fiecare parte; 0 cand nu se stie.</param>
+        /// <summary>
+        /// Analyses every master (<see cref="Analyze"/>), writes the report and encodes the
+        /// mosaic, parts first and the whole last, on the shared scale. Throws what
+        /// <see cref="Analyze"/> throws.
+        /// </summary>
+        /// <param name="wholePath">The whole session's master.</param>
+        /// <param name="partPaths">The parts' masters, in the parts' order.</param>
+        /// <param name="query">The profiles and the raw beside the master, as for structure;
+        /// null = no comparison.</param>
+        /// <param name="when">The run's date and time, written in the report and in the
+        /// mosaic's title.</param>
+        /// <param name="framesPerPart">How many frames each part had; 0 when unknown.</param>
         /// <param name="report">Where the report text goes.</param>
+        /// <returns>The result and the mosaic as PNG.</returns>
         internal static RunOutcome<SplitResult> Execute(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                                         DateTime when, int framesPerPart, TextWriter report)
         {
@@ -120,6 +159,19 @@ namespace FlatCheck
             return new RunOutcome<SplitResult>(r, PngWriter.EncodeMosaic(tiles, r.MapRange, SplitReport.PngTitle(when, r.MapRange)));
         }
 
+        /// <summary>
+        /// Runs <see cref="StructureRun.Analyze"/> on the whole and on each part, takes the
+        /// whole's nearest profile as the reference and reads every part against it. Throws an
+        /// <see cref="ArgumentException"/> when there is no part, and what the structure run
+        /// throws on a master it cannot read.
+        /// </summary>
+        /// <param name="wholePath">The whole session's master.</param>
+        /// <param name="partPaths">The parts' masters, in order; at least one.</param>
+        /// <param name="query">The profiles and the raw, as for structure; null = no
+        /// comparison, hence no reference.</param>
+        /// <param name="when">The run's date and time.</param>
+        /// <param name="framesPerPart">How many frames each part had; 0 when unknown.</param>
+        /// <returns>The columns, the reference and the shared map scale.</returns>
         internal static SplitResult Analyze(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                             DateTime when, int framesPerPart)
         {
@@ -141,7 +193,14 @@ namespace FlatCheck
                                    SharedRange(columns.Append(wholeColumn)));
         }
 
-        /// <summary>Adancimea unui master fata de un profil dat: randul aceluiasi obiectiv din comparatia lui; null cand nu e.</summary>
+        /// <summary>
+        /// A master's depth against a given profile: the row of the same lens in its own
+        /// comparison, the same profile file first; null when there is none.
+        /// </summary>
+        /// <param name="o">A master's structure run, with or without a comparison.</param>
+        /// <param name="profile">The reference profile, or null.</param>
+        /// <returns>The matching row, or null when either is missing or the lens was not
+        /// compared.</returns>
         internal static ProfileDepth Against(StructureOutcome o, LensProfile profile)
         {
             if (profile == null || o.Profiles == null) return null;
@@ -149,7 +208,11 @@ namespace FlatCheck
                 ?? o.Profiles.Profiles.FirstOrDefault(d => d.Profile.Lens.Key == profile.Lens.Key);
         }
 
-        /// <summary>Scara automata (percentilele 1/99 plus padding, R-006) peste toate reziduurile deodata.</summary>
+        /// <summary>The automatic scale (the 1/99 percentiles plus padding, R-006) over all the
+        /// residuals at once.</summary>
+        /// <param name="columns">Every column, parts and whole.</param>
+        /// <returns>The range <see cref="PngWriter.AutoRange"/> gives on their pixels
+        /// pooled.</returns>
         static PngWriter.MapRange SharedRange(IEnumerable<SplitColumn> columns)
         {
             var maps = columns.Select(c => c.Outcome.Structure.Residual).ToList();

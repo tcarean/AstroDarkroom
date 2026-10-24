@@ -15,21 +15,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilLogLine.cs - o linie de pe stdout-ul lui siril-cli, citita.
+// SirilLogLine.cs - a line from siril-cli's stdout, read.
 //
-// Masurat pe Siril 1.4.4, cu scriptul WithoutDark pe o sesiune de 3+3+3 cadre: 1735 de
-// linii, din care 1324 sunt actualizari de progres. Vin in patru feluri:
+// Measured on Siril 1.4.4, with the WithoutDark script on a session of 3+3+3 frames: 1735
+// lines, of which 1324 are progress updates. They come in four kinds:
 //
-//   log: <text>                       - ce arata si panoul de log din fereastra Siril
-//   progress: <eticheta>, 33.33%      - inceputul unei operatii cu progres
-//   ESC[A ESC[2K Tprogress: 66.67%    - actualizarea ei, cu "urca un rand, sterge-l"
-//                                       in fata, ca in consola sa se suprascrie
-//   <orice altceva>                   - tipariri de depanare (blocuri, "running command"
-//                                       cu un numar, "seqfile ... already exists")
+//   log: <text>                       - what the log panel of the Siril window shows too
+//   progress: <label>, 33.33%         - the start of an operation with progress
+//   ESC[A ESC[2K Tprogress: 66.67%    - its update, with "go up a row, erase it" in front,
+//                                       so that it overwrites itself in the console
+//   <anything else>                   - debug prints (blocks, "running command" with a
+//                                       number, "seqfile ... already exists")
 //
-// Fereastra arata doar primul fel, ca Siril, si transforma al doilea si al treilea intr-o
-// bara. Al patrulea nu se arata: sunt sute, si nu spun omului nimic ce n-ar spune log-ul.
-// Parsarea e pura si pinuita pe linii inregistrate, nu pe ce ar trebui sa scrie Siril.
+// The window shows only the first kind, like Siril, and turns the second and third into a
+// bar. The fourth is not shown: there are hundreds, and they tell the user nothing the log
+// would not. The parsing is pure and pinned on recorded lines, not on what Siril ought to
+// write.
 
 using System;
 using System.Globalization;
@@ -37,17 +38,30 @@ using System.Text.RegularExpressions;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>The kinds of siril-cli stdout line the window tells apart.</summary>
     internal enum SirilLineKind { Log, Progress, Other }
 
+    /// <summary>One parsed line of siril-cli's stdout.</summary>
+    /// <param name="Kind">Which of the kinds it is.</param>
+    /// <param name="Text">A log line's text without "log: "; otherwise the whole line without
+    /// its ANSI escapes.</param>
+    /// <param name="Label">A progress line's label, "" when it has none or is not
+    /// one.</param>
+    /// <param name="Percent">A progress line's share, 0..100; NaN otherwise.</param>
     internal readonly record struct SirilLogLine(SirilLineKind Kind, string Text, string Label, double Percent)
     {
-        /// <summary>Prefixul cu care Siril anunta comanda urmatoare, in liniile de log.</summary>
+        /// <summary>The prefix with which Siril announces the next command, in the log
+        /// lines.</summary>
         internal const string RunningCommand = "Running command: ";
 
         static readonly Regex Ansi = new(@"\x1b\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
         static readonly Regex Progress = new(@"^T?progress: (?:(?<label>.*), )?(?<pct>[0-9]+(?:\.[0-9]+)?)%$",
                                              RegexOptions.Compiled);
 
+        /// <summary>Parses one raw stdout line: strips the ANSI escapes and the line end, then
+        /// tells a log line, a progress line and anything else apart.</summary>
+        /// <param name="raw">The line as read; null allowed (gives Other).</param>
+        /// <returns>The parsed line; never throws.</returns>
         internal static SirilLogLine Parse(string raw)
         {
             if (raw == null) return new SirilLogLine(SirilLineKind.Other, "", "", double.NaN);
@@ -67,7 +81,11 @@ namespace FlatCheck.Wpf
             return new SirilLogLine(SirilLineKind.Other, line, "", double.NaN);
         }
 
-        /// <summary>true cand linia de log anunta o comanda; verbul ei e in <paramref name="verb"/>.</summary>
+        /// <summary>true when the log line announces a command; its verb is in
+        /// <paramref name="verb"/>.</summary>
+        /// <param name="verb">The command Siril echoes after the prefix, trimmed; null when the
+        /// line is not a command start.</param>
+        /// <returns>True for a log line that starts with <see cref="RunningCommand"/>.</returns>
         internal bool IsCommandStart(out string verb)
         {
             verb = null;

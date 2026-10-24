@@ -15,19 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilScript.cs - ce se poate citi dintr-un .ssf fara sa-l rulezi.
+// SirilScript.cs - what can be read from an .ssf without running it.
 //
-// Doua lucruri, amandoua pure: comenzile (o linie negoala care nu incepe cu #), ca
-// fereastra sa poata spune "comanda 7 din 20" si sa arate comanda intreaga cand Siril
-// tipareste doar verbul; si folderele de intrare, ca butonul sa poata refuza INAINTE o
-// rulare care ar muri la linia trei cu "cd biases" pe un folder fara biases/.
+// Two things, both pure: the commands (a non-empty line that does not start with #), so the
+// window can say "command 7 of 20" and show the whole command when Siril prints only the verb;
+// and the input folders, so the button can refuse IN ADVANCE a run that would die at line
+// three with "cd biases" on a folder without biases/.
 //
-// Folderele se deduc din comenzile "cd <nume>" cu un nume simplu - fara "..", fara "/" -
-// adica exact cum sunt scrise scripturile de preprocesare: "cd biases", "cd flats",
-// "cd lights". "cd ../process" e iesirea, nu o intrare, si nu se numara. E o regula de
-// forma, nu o intelegere a scriptului, si e suficienta pentru toate scripturile din
-// depozitul Siril; un script care intra in foldere altfel pur si simplu nu e verificat
-// dinainte, si Siril spune el ce lipseste.
+// The folders are deduced from the "cd <name>" commands with a plain name - no "..", no "/" -
+// that is exactly how the preprocessing scripts are written: "cd biases", "cd flats",
+// "cd lights". "cd ../process" is the way out, not an input, and does not count. It is a rule
+// of form, not an understanding of the script, and it is enough for every script in the Siril
+// repository; a script that enters folders otherwise is simply not checked in advance, and
+// Siril says itself what is missing.
 
 using System;
 using System.Collections.Generic;
@@ -35,9 +35,14 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>Reads a Siril script's commands and the session folders it enters, without
+    /// running it.</summary>
     internal static class SirilScript
     {
-        /// <summary>Liniile care sunt comenzi, in ordinea din fisier, fara comentarii si goluri.</summary>
+        /// <summary>The lines that are commands, in the file's order, without comments and
+        /// blanks.</summary>
+        /// <param name="scriptText">The .ssf's text; null allowed.</param>
+        /// <returns>The trimmed command lines; empty for null.</returns>
         internal static IReadOnlyList<string> Commands(string scriptText)
         {
             if (scriptText == null) return Array.Empty<string>();
@@ -48,9 +53,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Subfolderele in care scriptul intra direct din folderul sesiunii, in ordinea
-        /// primei aparitii. Vezi nota din antet pentru ce inseamna "direct".
+        /// The subfolders the script enters directly from the session folder, in the order of
+        /// first appearance. See the note in the header for what "directly" means.
         /// </summary>
+        /// <param name="scriptText">The .ssf's text; null allowed.</param>
+        /// <returns>The folder names as written, each once (ignoring case); empty for
+        /// null.</returns>
         internal static IReadOnlyList<string> RequiredFolders(string scriptText)
         {
             var found = new List<string>();

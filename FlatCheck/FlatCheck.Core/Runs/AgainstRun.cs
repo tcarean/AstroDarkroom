@@ -15,38 +15,39 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Un flat fata de altul: structura pe fiecare si pe raportul A / B, puse una langa alta.
-// Exista pentru flatul sintetic - cat difera un master real de modelul obiectivului, si in
-// ce forma - dar merge pe orice pereche de flaturi ale aceluiasi obiectiv: doua grosimi de
-// difuzor, doua surse, testul de convergenta din README. Nu e --ratio: acela desparte
-// fix-pe-aparat de fix-in-lume prin rotatie; asta spune doar cu cat si cum difera doua
-// fisiere.
+// One flat against another: the structure of each and of the A / B ratio, side by side.
+// It exists for the synthetic flat - how much a real master differs from the lens's model,
+// and in what shape - but it works on any pair of flats of the same lens: two diffuser
+// thicknesses, two sources, the README's convergence test. It is not --ratio: that one
+// separates camera-fixed from world-fixed by rotation; this one only says by how much and how
+// two files differ.
 //
-// Trei coloane, nu una: primul raport arata doar bateria pe raport, si cifra "vignetare
-// -0.42 stopuri" nu se putea citi fara sa stii ca masterul are 0.26 si sinteticul 0.69.
-// Ambele se pregatesc (Img.Prepare) si se normalizeaza la mediana 1; A, B si A / B trec
-// fiecare prin StructureAnalyzer.AnalyzePrepared, deci cifrele au acelasi inteles ca la
-// structura, iar in coloana diferentei sunt despre DIFERENTA: vignetarea raportului e
-// diferenta de adancime in stopuri (pozitiv = A cade mai mult spre colt decat B), cele
-// cinci teste spun daca diferenta e radiala sau nu, harta ii arata forma. Verdictul e al
-// diferentei, si textul o spune. Notele randurilor sunt ale comparatiei, nu ale tabului de
-// structura: "e o proprietate a obiectivului, nu o eroare" ar fi fost exact pe dos aici.
+// Three columns, not one: the first report showed only the battery on the ratio, and the
+// figure "vignetting -0.42 stops" could not be read without knowing that the master has 0.26
+// and the synthetic 0.69. Both are prepared (Img.Prepare) and normalised to median 1; A, B and
+// A / B each go through StructureAnalyzer.AnalyzePrepared, so the figures mean the same as in
+// structure, and in the difference column they are about THE DIFFERENCE: the ratio's
+// vignetting is the depth difference in stops (positive = A falls off more towards the corner
+// than B), the five tests say whether the difference is radial or not, the map shows its
+// shape. The verdict is the difference's, and the text says so. The rows' notes are the
+// comparison's, not the structure tab's: "it is a property of the lens, not an error" would
+// have been exactly backwards here.
 //
-// Verdictul diferentei are doua parti: FORMA - cele cinci teste pe raport, care spun daca
-// ce difera e radial - si ADANCIMEA - diferenta de vignetare in stopuri. Prima versiune
-// avea doar forma, si masterul de cer, cu 0.42 stopuri mai putina vignetare decat modelul,
-// iesea ACCEPTABIL pe forma de parca diferenta ar fi fost mica; utilizatorul a citit-o ca
-// "enorma, ceva e foarte in neregula", si avea dreptate. Adancimea nu primeste un prag nou:
-// o diferenta de D stopuri in colt lasa in coltul light-ului calibrat o eroare de 2^|D| - 1,
-// o amplitudine fractionara ca toate celelalte, deci trece prin aceeasi scara de reziduu
-// (2 / 10 / 20 %): sub 0.03 stopuri PERFECT, sub 0.14 BUN, sub 0.26 ACCEPTABIL, altfel REFA.
-// Pe masterele Tokina: cer -0.42 -> 34 % REFA; monitor-aproape +0.16 -> 12 % ACCEPTABIL;
-// pe-monitor +0.09 -> 6 % BUN; Adobe fata de lensfun 0.16 -> ACCEPTABIL - cele doua baze
-// difera intre ele cu ~0.2 stopuri pe acelasi obiectiv, deci sub ACCEPTABIL diferenta nu
-// se deosebeste de incertitudinea modelului, si nota randului o spune. Verdictul general
-// e cel mai rau dintre forma si adancime. Chip-urile pe cele cinci teste in coloana
-// diferentei au fost scoase: "PERFECT" langa 0.11 % pe un raport nu spunea nimic ce nu
-// spune verdictul de sus.
+// The difference's verdict has two parts: THE SHAPE - the five tests on the ratio, which say
+// whether what differs is radial - and THE DEPTH - the vignetting difference in stops. The
+// first version had only the shape, and the sky master, with 0.42 stops less vignetting than
+// the model, came out ACCEPTABIL on shape as if the difference were small; the user read it
+// as "enormous, something is very wrong", and was right. The depth gets no new threshold: a
+// difference of D stops at the corner leaves in the calibrated light's corner an error of
+// 2^|D| - 1, a fractional amplitude like all the others, so it goes through the same residual
+// scale (2 / 10 / 20 %): under 0.03 stops PERFECT, under 0.14 BUN, under 0.26 ACCEPTABIL,
+// otherwise REFA. On the Tokina masters: sky -0.42 -> 34 % REFA; near-monitor +0.16 -> 12 %
+// ACCEPTABIL; on-monitor +0.09 -> 6 % BUN; Adobe against lensfun 0.16 -> ACCEPTABIL - the two
+// databases differ from each other by ~0.2 stops on the same lens, so under ACCEPTABIL the
+// difference cannot be told from the model's uncertainty, and the row's note says so. The
+// overall verdict is the worse of shape and depth. The chips on the five tests in the
+// difference column were removed: "PERFECT" beside 0.11 % on a ratio said nothing the verdict
+// at the top does not say.
 
 using System;
 using System.Collections.Generic;
@@ -54,20 +55,37 @@ using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// What <c>--against</c> measured: the structure of A, of B and of A / B, and the
+    /// difference's verdict from its shape and its depth.
+    /// </summary>
     internal sealed class AgainstResult
     {
-        /// <summary>Structura pe A, pe B si pe raportul A / B, toate la rezolutia de analiza.</summary>
+        /// <summary>The structure of A, of B and of the A / B ratio, all at the analysis
+        /// resolution.</summary>
         internal readonly StructureResult A, B, Structure;
         internal readonly Img Ratio;
         internal readonly int Width, Height;
 
-        /// <summary>Diferenta de adancime in stopuri (a raportului), si eroarea pe care o lasa in colt, in procente.</summary>
+        /// <summary>The depth difference in stops (the ratio's), and the error it leaves at the
+        /// corner, in percent.</summary>
         internal readonly double DepthDiffStops, DepthErrorPct;
-        /// <summary>Verdictul adancimii, pe scara de reziduu aplicata erorii din colt.</summary>
+        /// <summary>The depth's verdict, on the residual scale applied to the corner
+        /// error.</summary>
         internal readonly string DepthVerdict;
-        /// <summary>Verdictul diferentei: cel mai rau dintre forma (cele cinci teste pe raport) si adancime.</summary>
+        /// <summary>The difference's verdict: the worse of the shape (the five tests on the
+        /// ratio) and the depth.</summary>
         internal readonly string Verdict;
 
+        /// <summary>Holds the three structures and derives the depth figures and the combined
+        /// verdict from the ratio's.</summary>
+        /// <param name="a">The structure of A.</param>
+        /// <param name="b">The structure of B.</param>
+        /// <param name="ratio">The structure of A / B.</param>
+        /// <param name="ratioRaster">The A / B raster, at the analysis resolution, median
+        /// about 1.</param>
+        /// <param name="w">A's width at full resolution, pixels.</param>
+        /// <param name="h">A's height at full resolution, pixels.</param>
         internal AgainstResult(StructureResult a, StructureResult b, StructureResult ratio, Img ratioRaster, int w, int h)
         {
             A = a;
@@ -82,12 +100,29 @@ namespace FlatCheck
             Verdict = Stats.Severity(DepthVerdict) > Stats.Severity(ratio.Verdict) ? DepthVerdict : ratio.Verdict;
         }
 
-        /// <summary>Eroarea din colt pentru o diferenta de adancime; e <see cref="Stats.DepthErrorPct"/>, care are acum si un al doilea consumator.</summary>
+        /// <summary>
+        /// The corner error for a depth difference; it is <see cref="Stats.DepthErrorPct"/>,
+        /// which now has a second consumer too.
+        /// </summary>
+        /// <param name="stops">A depth difference, in stops; either sign.</param>
+        /// <returns>The error 2^|stops| - 1, in percent.</returns>
         internal static double DepthErrorOf(double stops) => Stats.DepthErrorPct(stops);
     }
 
+    /// <summary>
+    /// Compares two flats of the same lens: prepares and normalises both and runs the
+    /// structure battery on each and on their ratio.
+    /// </summary>
     internal static class AgainstAnalyzer
     {
+        /// <summary>
+        /// Prepares both flats, normalises each to median 1, divides them and analyses all
+        /// three. Throws an <see cref="ArgumentException"/> when the two prepared rasters
+        /// differ in size or a median is not positive.
+        /// </summary>
+        /// <param name="a">The first flat, as loaded (the synthetic one or the master).</param>
+        /// <param name="b">The second flat, as loaded.</param>
+        /// <returns>The three structures and the difference's verdict.</returns>
         internal static AgainstResult Analyze(Img a, Img b)
         {
             Img pa = Img.Prepare(a), pb = Img.Prepare(b);
@@ -100,6 +135,9 @@ namespace FlatCheck
                 StructureAnalyzer.AnalyzePrepared(ratio), ratio, a.W, a.H);
         }
 
+        /// <summary>Divides a raster by its median, in place. Throws an
+        /// <see cref="ArgumentException"/> when the median is not positive.</summary>
+        /// <param name="img">The prepared raster; modified.</param>
         static void Normalise(Img img)
         {
             double med = Stats.Percentile((double[])img.D.Clone(), 50);
@@ -108,12 +146,35 @@ namespace FlatCheck
         }
     }
 
-    /// <summary>Un rand al tabelului: aceeasi marime pe A, pe B si pe A / B, cu verdictul unde e un test.</summary>
+    /// <summary>A row of the table: the same quantity on A, on B and on A / B, with the verdict
+    /// where there is a test.</summary>
+    /// <param name="Key">The quantity's key (a <c>StructureResult</c> member name, as in
+    /// <c>StructureReport.TestKeys</c>).</param>
+    /// <param name="Label">The row's label, Romanian.</param>
+    /// <param name="A">The value on A, formatted.</param>
+    /// <param name="AVerdict">The verdict on A, or null.</param>
+    /// <param name="B">The value on B, formatted.</param>
+    /// <param name="BVerdict">The verdict on B, or null.</param>
+    /// <param name="Diff">The value on A / B, formatted.</param>
+    /// <param name="DiffVerdict">The verdict on the difference, or null (only the depth row
+    /// carries one).</param>
+    /// <param name="Note">The row's note, about the difference.</param>
+    /// <param name="IsKey">True for the row the verdict hangs on (the depth).</param>
     internal sealed record AgainstRow(string Key, string Label, string A, string AVerdict, string B, string BVerdict,
                                       string Diff, string DiffVerdict, string Note, bool IsKey);
 
+    /// <summary>
+    /// The words of <c>--against</c>: the console's block, and the pieces the window's
+    /// Sintetic tab shows (rows, verdict detail, meaning).
+    /// </summary>
     internal static class AgainstReport
     {
+        /// <summary>Writes the console's report: the files, the meaning, the table and the
+        /// verdict with its two parts.</summary>
+        /// <param name="r">The comparison.</param>
+        /// <param name="pathA">The first file, as given.</param>
+        /// <param name="pathB">The second file, as given.</param>
+        /// <param name="w">Where the text is written.</param>
         internal static void Write(AgainstResult r, string pathA, string pathB, TextWriter w)
         {
             w.WriteLine($"\n=== COMPARATIE: A / B ===");
@@ -137,31 +198,58 @@ namespace FlatCheck
             w.WriteLine("    " + WorseOfBoth());
         }
 
-        /// <summary>"PERFECT - cele cinci teste pe raport, pe scara de reziduu a structurii".</summary>
+        /// <summary>"PERFECT: cele cinci teste pe raport, pe scara de reziduu a
+        /// structurii".</summary>
+        /// <param name="r">The comparison.</param>
+        /// <returns>The shape's verdict with what it is, Romanian.</returns>
         internal static string ShapeDetail(AgainstResult r)
             => $"{r.Structure.Verdict}: cele cinci teste pe raport, pe scara de reziduu a structurii";
 
-        /// <summary>"REFA - 0.30 stopuri = 23.0 % eroare in coltul light-ului calibrat".</summary>
+        /// <summary>"REFA: 0.30 stopuri = 23.1 % eroare in coltul light-ului
+        /// calibrat".</summary>
+        /// <param name="r">The comparison.</param>
+        /// <returns>The depth's verdict with the stops and the corner error, Romanian.</returns>
         internal static string DepthDetail(AgainstResult r)
             => $"{r.DepthVerdict}: {Stops(r.Structure)} = {r.DepthErrorPct:F1} % eroare in coltul light-ului calibrat";
 
+        /// <summary>The sentence that closes the verdict: the worse of the two, and what two
+        /// correct flats give.</summary>
+        /// <returns>One Romanian sentence.</returns>
         internal static string WorseOfBoth()
             => "Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.";
 
-        /// <summary>Cele doua parti ale verdictului pe un rand, pentru fereastra, care n-are blocul consolei.</summary>
+        /// <summary>The verdict's two parts on one line, for the window, which does not have
+        /// the console's block.</summary>
+        /// <param name="r">The comparison.</param>
+        /// <returns>The shape, the depth with its scale and its note, and the closing
+        /// sentence, Romanian.</returns>
         internal static string VerdictDetail(AgainstResult r)
             => $"forma: {ShapeDetail(r)}. Adancimea: {DepthDetail(r)} ({DepthScale()}). "
              + StructureReport.DepthLightScaleNote(r.DepthDiffStops).Replace('\n', ' ') + " " + WorseOfBoth();
 
-        /// <summary>Benzile adancimii in stopuri, derivate din scara de reziduu prin 2^|D| - 1.</summary>
+        /// <summary>The depth's bands in stops, derived from the residual scale through
+        /// 2^|D| - 1.</summary>
+        /// <returns>The bands for <see cref="Th.ResidPerfect"/>, <see cref="Th.ResidUsable"/>
+        /// and <see cref="Th.ResidCheck"/>, Romanian.</returns>
         internal static string DepthScale()
             => $"sub {StopsFor(Th.ResidPerfect):F2} stopuri PERFECT, sub {StopsFor(Th.ResidUsable):F2} BUN, sub {StopsFor(Th.ResidCheck):F2} ACCEPTABIL, peste REFA";
 
-        /// <summary>Inversul lui <see cref="AgainstResult.DepthErrorOf"/>: stopurile la care eroarea din colt atinge un prag.</summary>
+        /// <summary>The inverse of <see cref="AgainstResult.DepthErrorOf"/>: the stops at which
+        /// the corner error reaches a threshold.</summary>
+        /// <param name="errorPct">A corner error, in percent.</param>
+        /// <returns>The depth difference in stops, positive.</returns>
         internal static double StopsFor(double errorPct) => Stats.StopsForError(errorPct);
 
+        /// <summary>A table cell: the value, with its verdict in brackets when there is
+        /// one.</summary>
+        /// <param name="value">The formatted value.</param>
+        /// <param name="verdict">The verdict, or null or empty for none.</param>
+        /// <returns>The cell's text.</returns>
         static string Cell(string value, string verdict) => string.IsNullOrEmpty(verdict) ? value : $"{value} [{verdict}]";
 
+        /// <summary>What the three columns mean, for the console's block and the
+        /// window.</summary>
+        /// <returns>A Romanian paragraph, lines separated by '\n'.</returns>
         internal static string Meaning()
             => "Trei coloane: fiecare flat prin bateria de structura, si raportul lor. In coloana A / B\n"
              + "cifrele sunt despre DIFERENTA: \"vignetare\" e diferenta de adancime (pozitiv = A cade mai\n"
@@ -169,6 +257,12 @@ namespace FlatCheck
              + "e radiala sau are forma, iar harta o arata. Ce e in A si nu e in B - o sa a cerului, caderea\n"
              + "unui panou, o pata - ramane in diferenta.";
 
+        /// <summary>
+        /// The table's rows: the depth (the key row), the centroid offset, the local spot, then
+        /// the five tests, none with a verdict on the difference.
+        /// </summary>
+        /// <param name="r">The comparison.</param>
+        /// <returns>Eight rows, in display order.</returns>
         internal static IReadOnlyList<AgainstRow> Rows(AgainstResult r)
         {
             var rows = new List<AgainstRow>
@@ -193,15 +287,17 @@ namespace FlatCheck
                 var (va, ba) = StructureReport.Test(r.A, key);
                 var (vb, bb) = StructureReport.Test(r.B, key);
                 var (vd, bd) = StructureReport.Test(r.Structure, key);
-                // Fara verdict pe coloana diferentei: "PERFECT" langa 0.11 % pe raport nu spunea nimic
-                // ce nu spune verdictul de sus, care e al formei intregi.
+                // No verdict on the difference column: "PERFECT" beside 0.11 % on the ratio said
+                // nothing the verdict at the top, which is the whole shape's, does not say.
                 rows.Add(new AgainstRow(key, StructureReport.TestLabel(key), Pct(va), ba, Pct(vb), bb, Pct(vd), null,
                     TestNote(key), false));
             }
             return rows;
         }
 
-        /// <summary>Nota unui test, spusa despre diferenta - nu despre un flat.</summary>
+        /// <summary>A test's note, said about the difference - not about one flat.</summary>
+        /// <param name="key">A test key from <c>StructureReport.TestKeys</c>.</param>
+        /// <returns>The Romanian note, or an empty string for an unknown key.</returns>
         internal static string TestNote(string key) => key switch
         {
             "CornerSpreadPct" => "cat difera cele patru colturi intre ele; colturi inegale in coloana A / B = structura neradiala pe care unul o are si celalalt nu",
@@ -212,21 +308,47 @@ namespace FlatCheck
             _ => "",
         };
 
+        /// <summary>The vignetting depth, formatted.</summary>
+        /// <param name="s">A structure result.</param>
+        /// <returns>"0.26 stopuri" and the like.</returns>
         static string Stops(StructureResult s) => $"{s.VignetteStops:F2} stopuri";
 
-        /// <summary>Pata fara pozitie - pozitiile stau in nota randului, ca celula sa ramana scurta.</summary>
+        /// <summary>The spot without its position - the positions go in the row's note, so the
+        /// cell stays short.</summary>
+        /// <param name="s">A structure result.</param>
+        /// <returns><c>StructureReport.LocalSpotValue</c> cut before its " la (".</returns>
         static string Spot(StructureResult s)
         {
             string full = StructureReport.LocalSpotValue(s);
             int at = full.LastIndexOf(" la (", StringComparison.Ordinal);
             return at > 0 ? full.Substring(0, at) : full;
         }
+        /// <summary>The centroid offset, formatted.</summary>
+        /// <param name="s">A structure result.</param>
+        /// <returns>The offset in percent, or "nedeterminat" when the centroid is not
+        /// valid.</returns>
         static string Offset(StructureResult s) => s.CentroidValid ? $"{s.CentroidOffsetPct:F2} %" : "nedeterminat";
+        /// <summary>A percentage, formatted.</summary>
+        /// <param name="v">A value in percent, NaN when not measured.</param>
+        /// <returns>The value with two decimals and " %", or "n/a" for NaN.</returns>
         static string Pct(double v) => double.IsNaN(v) ? "n/a" : $"{v:F2} %";
     }
 
+    /// <summary>
+    /// Mode 7's <c>--against</c>: loads two flats of the same lens, compares them and writes
+    /// the report; the map is the ratio's residual.
+    /// </summary>
     internal static class AgainstRun
     {
+        /// <summary>
+        /// Loads both files, compares them (<see cref="AgainstAnalyzer.Analyze"/>), writes the
+        /// report and encodes the ratio's residual map. Throws what
+        /// <see cref="ImageLoader.Load"/> or the analyzer throws.
+        /// </summary>
+        /// <param name="pathA">The first flat (A in the table).</param>
+        /// <param name="pathB">The second flat (B).</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The comparison and the A / B residual map as PNG.</returns>
         internal static RunOutcome<AgainstResult> Execute(string pathA, string pathB, TextWriter report)
         {
             var fa = ImageLoader.Load(pathA);

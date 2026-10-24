@@ -15,17 +15,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SirilSession.cs - ce inseamna, pe disc, "folderul unei sesiuni".
+// SirilSession.cs - what "a session's folder" means on disk.
 //
-// Aplicatia de consola primeste fisiere; asta primeste UN folder si deduce restul prin
-// conventia scripturilor Siril (flats/ darks/ biases/ lights/ process/). Tot ce tine de
-// deducerea aia sta aici, si nu in ferestre, dintr-un motiv practic: e singura parte a
-// aplicatiei WPF care are reguli adevarate - ce fisier e masterul, care fisiere sunt
-// candidati pentru raport, care sunt raw-uri - si e singura care se poate testa fara sa
-// deschizi o fereastra.
+// The console application receives files; this one receives ONE folder and deduces the rest
+// through the convention of Siril's scripts (flats/ darks/ biases/ lights/ process/).
+// Everything to do with that deduction sits here, and not in the windows, for a practical
+// reason: it is the only part of the WPF application with real rules - which file is the
+// master, which files are candidates for the report, which are raws - and the only one that
+// can be tested without opening a window.
 //
-// Clasa nu atinge nimic si nu arunca la constructie: intreaba discul abia cand e
-// intrebata. Asa un folder ales gresit devine o stare a interfetei, nu o exceptie.
+// The class touches nothing and does not throw at construction: it asks the disk only when it
+// is asked. So a folder chosen wrong becomes a state of the interface, not an exception.
 
 using System;
 using System.Collections.Generic;
@@ -34,73 +34,87 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
-    /// <summary>De ce nu se poate porni pe folderul asta. <see cref="None"/> = se poate.</summary>
+    /// <summary>Why the window cannot start on this folder. <see cref="None"/> = it
+    /// can.</summary>
     internal enum SessionProblem
     {
         None,
-        NoFolder,        // calea nu exista deloc
-        NoProcessDir,    // nu s-a rulat niciun script de preprocesare
-        NoFlatMaster,    // process/ exista, dar masterul de flat nu
+        NoFolder,        // the path does not exist at all
+        NoProcessDir,    // no preprocessing script has been run
+        NoFlatMaster,    // process/ exists, but the flat master does not
     }
 
     /// <summary>
-    /// Ce fel de rand e in lista tabului de histograma. Masterul e stiva celorlalte;
-    /// flat-ul netezit e masterul fara textura, scris de tabul Netezire; un cadru e un
-    /// cadru. Un bool nu poate spune trei lucruri.
+    /// What kind of row it is in the histogram tab's list. The master is the stack of the
+    /// others; the smoothed flat is the master without the texture, written by the Netezire
+    /// tab; a frame is a frame. A bool cannot say three things.
     /// </summary>
     internal enum HistEqKind { Master, Smoothed, Frame }
 
     /// <summary>
-    /// Un fisier pe care il poate arata tabul de histograma: masterul din masters/ sau
-    /// process/, flat-ul netezit de langa el cand exista, sau un cadru din flats/.
+    /// A file the histogram tab can show: the master from masters/ or process/, the smoothed
+    /// flat beside it when it exists, or a frame from flats/.
     /// </summary>
+    /// <param name="Path">The file's full path.</param>
+    /// <param name="Kind">Which kind of row it is.</param>
     internal readonly record struct HistEqCandidate(string Path, HistEqKind Kind);
 
     /// <summary>
-    /// Rezultatul cautarii masterului: calea aleasa (null = nu e nicaieri) si, cand
-    /// exista in ambele locuri, calea celui mai vechi, pe care nu il masoara nimeni.
+    /// The result of the search for the master: the path chosen (null = it is nowhere) and,
+    /// when it exists in both places, the path of the older one, which nobody measures.
     /// </summary>
+    /// <param name="Path">The master to measure, the newer when there are two; null when
+    /// there is none.</param>
+    /// <param name="Other">The older master when both places hold one, otherwise
+    /// null.</param>
     internal readonly record struct FlatMasterLookup(string Path, string Other)
     {
         internal bool Ambiguous => Other != null;
     }
 
+    /// <summary>
+    /// One Siril session folder and the rules of what is in it: where the master is, which
+    /// files each tab lists, where the window writes; asks the disk only when asked.
+    /// </summary>
     internal sealed class SirilSession
     {
-        /// <summary>Numele pe care il da scriptul OSC_Preprocessing.ssf masterului de flat.</summary>
+        /// <summary>The name the OSC_Preprocessing.ssf script gives the flat master.</summary>
         internal const string FlatMasterName = "pp_flat_stacked.fit";
 
         /// <summary>
-        /// Scriptul de preprocesare numit in mesaje si propus implicit de butonul de
-        /// rulare: cel pe care il foloseste autorul (aparat fara darks), din depozitul de
-        /// scripturi Siril, nu din instalare - vezi SirilInstall pentru unde e fisierul.
-        /// Lasa masterul in process/; scriptul standard din instalarea 1.4 il lasa in
-        /// masters/, si ambele locuri se accepta - vezi <see cref="FlatMasterCandidates"/>.
+        /// The preprocessing script named in the messages and proposed by default by the run
+        /// button: the one the author uses (a camera without darks), from Siril's scripts
+        /// repository, not from the installation - see SirilInstall for where the file is. It
+        /// leaves the master in process/; the standard script of the 1.4 installation leaves it
+        /// in masters/, and both places are accepted - see
+        /// <see cref="FlatMasterCandidates"/>.
         /// </summary>
         internal const string PreprocessingScript = "OSC_Preprocessing_WithoutDark.ssf";
 
         /// <summary>
-        /// Tiparul fisierelor acceptate de testul de rotatie 180: MASTERE de flat, adica
-        /// stive, nu cadre individuale.
+        /// The pattern of the files the 180-degree rotation test accepts: flat MASTERS, that is
+        /// stacks, not individual frames.
         ///
-        /// A fost "pp_flat*.fit", si ala prindea si cadrele calibrate individuale pe care
-        /// Siril le scrie in acelasi folder cu acelasi prefix - pp_flat_00001.fit si
-        /// urmatoarele. Exact capcana pentru care s-a scos lista de candidati: o pereche
-        /// de cadre individuale da un rezultat sigur si fals, fiindca zgomotul unui
-        /// singur cadru e de acelasi ordin cu semnalul cautat. Dialogul le propunea in
-        /// continuare.
+        /// It was "pp_flat*.fit", and that also caught the individual calibrated frames Siril
+        /// writes in the same folder with the same prefix - pp_flat_00001.fit and the following.
+        /// Exactly the trap the candidate list was removed for: a pair of individual frames
+        /// gives a confident and false result, because the noise of a single frame is of the
+        /// same order as the signal looked for. The dialog still proposed them.
         ///
-        /// "*" de dupa "stacked" ramane fiindca cele doua mastere pot ajunge in acelasi
-        /// folder, iar atunci macar unul trebuie redenumit (pp_flat_stacked_0deg.fit);
-        /// numele stivei ramane recunoscut, cadrele individuale nu intra.
+        /// The "*" after "stacked" stays because the two masters can end up in the same
+        /// folder, and then at least one must be renamed (pp_flat_stacked_0deg.fit); the
+        /// stack's name stays recognised, the individual frames do not get in.
         /// </summary>
         internal const string RatioPattern = "pp_flat_stacked*.fit";
 
-        /// <summary>Raportul de structura, salvat langa datele sesiunii.</summary>
+        /// <summary>The structure report, saved beside the session's data.</summary>
         internal const string ResultFileName = "Rezultat testare.txt";
 
         internal string Root { get; }
 
+        /// <summary>Wraps a folder; nothing is read yet. Throws an
+        /// <see cref="ArgumentNullException"/> for a null root.</summary>
+        /// <param name="root">The session folder, existing or not.</param>
         internal SirilSession(string root)
         {
             Root = root ?? throw new ArgumentNullException(nameof(root));
@@ -108,7 +122,8 @@ namespace FlatCheck.Wpf
 
         internal const string ProcessFolder = "process";
         internal const string MastersFolder = "masters";
-        /// <summary>Folderele pe care le SCRIE Siril; un split nu le copiaza niciodata din original (ADR 0054).</summary>
+        /// <summary>The folders Siril WRITES; a split never copies them from the original
+        /// (ADR 0054).</summary>
         internal static readonly IReadOnlyList<string> OutputFolders = new[] { ProcessFolder, MastersFolder };
 
         internal string ProcessDir => Path.Combine(Root, ProcessFolder);
@@ -116,11 +131,11 @@ namespace FlatCheck.Wpf
         internal string FlatsDir => Path.Combine(Root, "flats");
 
         /// <summary>
-        /// Unde poate sta masterul de flat, in ordinea in care se cauta. Doua conventii
-        /// Siril coexista: scripturile din depozit (WithoutDark si fratii lui) il lasa in
-        /// process/, langa cadrele calibrate; scripturile din instalarea 1.4
-        /// (OSC_Preprocessing.ssf) il scriu in masters/. Ambele exista in arhiva reala,
-        /// deci se accepta amandoua.
+        /// Where the flat master can sit, in the order it is looked for. Two Siril conventions
+        /// coexist: the repository's scripts (WithoutDark and its siblings) leave it in
+        /// process/, beside the calibrated frames; the scripts of the 1.4 installation
+        /// (OSC_Preprocessing.ssf) write it in masters/. Both exist in the real archive, so
+        /// both are accepted.
         /// </summary>
         internal IReadOnlyList<string> FlatMasterCandidates => new[]
         {
@@ -129,12 +144,13 @@ namespace FlatCheck.Wpf
         };
 
         /// <summary>
-        /// Intrarea modului 1: masterul gasit in unul din cele doua locuri, sau null.
-        /// Cand exista in amandoua se ia CEL MAI NOU - e ce a produs ultima preprocesare -
-        /// si <see cref="FlatMasterLookup.Other"/> il numeste pe celalalt, ca tabul sa
-        /// poata avertiza: doua mastere in acelasi folder inseamna doua rulari, si omul
-        /// trebuie sa stie pe care il masoara.
+        /// Mode 1's input: the master found in one of the two places, or null. When it exists
+        /// in both, THE NEWEST is taken - it is what the last preprocessing produced - and
+        /// <see cref="FlatMasterLookup.Other"/> names the other, so the tab can warn: two
+        /// masters in the same folder mean two runs, and the user must know which one is
+        /// measured.
         /// </summary>
+        /// <returns>The master chosen and the older one, each null when absent.</returns>
         internal FlatMasterLookup FindFlatMaster()
         {
             var existing = FlatMasterCandidates.Where(File.Exists).ToList();
@@ -145,20 +161,21 @@ namespace FlatCheck.Wpf
             return new FlatMasterLookup(byAge[0], byAge[1]);
         }
 
-        /// <summary>Calea masterului gasit, sau null. Vezi <see cref="FindFlatMaster"/>.</summary>
+        /// <summary>The path of the master found, or null. See
+        /// <see cref="FindFlatMaster"/>.</summary>
         internal string FlatMasterPath => FindFlatMaster().Path;
 
         /// <summary>
-        /// Sufixul flat-ului netezit: "pp_flat_stacked_netezit.fit", langa masterul din care
-        /// s-a facut. Numele NU e unul din <see cref="FlatMasterCandidates"/> - cai exacte,
-        /// nu tipare - deci masterul sesiunii ramane cel fotografiat si tabul Structura
-        /// arata in continuare textura; fisierul netezit nu trebuie sa ascunda problema
-        /// pentru care a fost facut. Se potriveste insa cu <see cref="RatioPattern"/>, ceea
-        /// ce e corect: o stiva netezita e tot o stiva.
+        /// The smoothed flat's suffix: "pp_flat_stacked_netezit.fit", beside the master it was
+        /// made from. The name is NOT one of <see cref="FlatMasterCandidates"/> - exact paths,
+        /// not patterns - so the session's master stays the one photographed and the Structure
+        /// tab still shows the texture; the smoothed file must not hide the problem it was made
+        /// for. It does match <see cref="RatioPattern"/>, though, which is right: a smoothed
+        /// stack is still a stack.
         /// </summary>
         internal const string SmoothedSuffix = "_netezit";
 
-        /// <summary>Unde scrie tabul de netezire, sau null cand nu exista master.</summary>
+        /// <summary>Where the smoothing tab writes, or null when there is no master.</summary>
         internal string SmoothedMasterPath
         {
             get
@@ -168,19 +185,22 @@ namespace FlatCheck.Wpf
             }
         }
 
-        /// <summary>Numele flat-ului netezit facut din <paramref name="master"/>, in acelasi folder.</summary>
+        /// <summary>The name of the smoothed flat made from <paramref name="master"/>, in the
+        /// same folder.</summary>
+        /// <param name="master">A master's full path.</param>
+        /// <returns>The path with <see cref="SmoothedSuffix"/> before the extension.</returns>
         internal static string SmoothedPathBeside(string master)
             => Path.Combine(Path.GetDirectoryName(master),
                 Path.GetFileNameWithoutExtension(master) + SmoothedSuffix + Path.GetExtension(master));
 
         /// <summary>
-        /// Sufixul flat-ului SINTETIC (tabul Sintetic): pp_flat_stacked_sintetic.fit, langa
-        /// master, din aceleasi motive ca la cel netezit - nu devine masterul sesiunii, dar
-        /// se potriveste cu RatioPattern si cu ce asteapta --against.
+        /// The SYNTHETIC flat's suffix (the Sintetic tab): pp_flat_stacked_sintetic.fit, beside
+        /// the master, for the same reasons as the smoothed one - it does not become the
+        /// session's master, but it matches RatioPattern and what --against expects.
         /// </summary>
         internal const string SyntheticSuffix = "_sintetic";
 
-        /// <summary>Unde scrie tabul Sintetic, sau null cand nu exista master.</summary>
+        /// <summary>Where the Sintetic tab writes, or null when there is no master.</summary>
         internal string SyntheticMasterPath
         {
             get
@@ -190,31 +210,39 @@ namespace FlatCheck.Wpf
             }
         }
 
+        /// <summary>The name of the synthetic flat made for <paramref name="master"/>, in the
+        /// same folder.</summary>
+        /// <param name="master">A master's full path.</param>
+        /// <returns>The path with <see cref="SyntheticSuffix"/> before the extension.</returns>
         internal static string SyntheticPathBeside(string master)
             => Path.Combine(Path.GetDirectoryName(master),
                 Path.GetFileNameWithoutExtension(master) + SyntheticSuffix + Path.GetExtension(master));
 
-        /// <summary>Unde se scrie raportul de structura: in folderul dat, nu in process/.</summary>
+        /// <summary>Where the structure report is written: in the folder given, not in
+        /// process/.</summary>
         internal string ResultTextPath => Path.Combine(Root, ResultFileName);
 
-        /// <summary>Harta reziduala, langa raport si cu acelasi nume ca la consola.</summary>
+        /// <summary>The residual map, beside the report and with the same name as the
+        /// console's.</summary>
         internal string ResidualPngPath => Path.Combine(Root, "flatcheck.png");
 
-        /// <summary>Raportul si mozaicul tabului Split, in radacina sesiunii, langa cele ale structurii (ADR 0054).</summary>
+        /// <summary>The Split tab's report and mosaic, in the session's root, beside the
+        /// structure's (ADR 0054).</summary>
         internal const string SplitResultFileName = "Rezultat split.txt";
         internal string SplitResultTextPath => Path.Combine(Root, SplitResultFileName);
         internal string SplitPngPath => Path.Combine(Root, "flatcheck-split.png");
 
         /// <summary>
-        /// Prima verificare, inainte de orice calcul. Ordinea conteaza: un folder gresit
-        /// ales, unul pe care nu s-a rulat inca niciun script si unul pe care scriptul a
-        /// rulat dar n-a lasat masterul sunt trei greseli diferite, si merita trei mesaje.
+        /// The first check, before any computation. The order matters: a wrong folder chosen,
+        /// one on which no script has run yet and one on which the script ran but left no
+        /// master are three different mistakes, and deserve three messages.
         ///
-        /// Singurul lucru cerut e MASTERUL, oriunde ar fi din cele doua locuri. process/
-        /// nu e o conditie: un folder cu masters/ si fara process/ - cadrele sterse ca sa
-        /// faca loc, masterul pastrat - ruleaza structura, iar tabul end-to-end spune
-        /// singur ca n-are serie.
+        /// The only thing required is THE MASTER, wherever it is of the two places. process/ is
+        /// not a condition: a folder with masters/ and without process/ - the frames deleted to
+        /// make room, the master kept - runs the structure, and the end-to-end tab says by
+        /// itself that it has no series.
         /// </summary>
+        /// <returns>The first problem found, or <see cref="SessionProblem.None"/>.</returns>
         internal SessionProblem Check()
         {
             if (!Directory.Exists(Root)) return SessionProblem.NoFolder;
@@ -224,10 +252,12 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Dintre subfolderele in care intra un script (SirilScript.RequiredFolders), cele
-        /// care lipsesc sau sunt goale - adica exact cele la care Siril s-ar opri cu
-        /// "cd" esuat sau cu o conversie fara fisiere. Gol inseamna ca se poate porni.
+        /// Of the subfolders a script enters (SirilScript.RequiredFolders), those that are
+        /// missing or empty - that is exactly those at which Siril would stop with a failed
+        /// "cd" or with a conversion without files. Empty means it can start.
         /// </summary>
+        /// <param name="required">The folder names the script enters.</param>
+        /// <returns>The names missing or without a file, in the given order.</returns>
         internal IReadOnlyList<string> MissingInputFolders(IEnumerable<string> required)
         {
             var missing = new List<string>();
@@ -241,42 +271,48 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Cadrele calibrate pentru testul end-to-end. Acelasi tipar implicit ca la
-        /// consola, deci si aceeasi excludere a cadrelor registrate (r_pp_light_*) - vezi
-        /// SeriesFinder.DefaultPattern pentru de ce conteaza.
+        /// The calibrated frames for the end-to-end test. The same default pattern as the
+        /// console's, so also the same exclusion of the registered frames (r_pp_light_*) - see
+        /// SeriesFinder.DefaultPattern for why it matters.
         /// </summary>
+        /// <returns>The lights of process/, ordinal by name; empty when process/ does not
+        /// exist.</returns>
         internal IReadOnlyList<string> LightSeries()
             => Directory.Exists(ProcessDir)
                 ? SeriesFinder.Find(ProcessDir, SeriesFinder.DefaultPattern)
                 : Array.Empty<string>();
 
         /// <summary>
-        /// Un fisier e acceptat de tabul Ratio doar daca e un master de flat. Verificarea
-        /// e pe NUME, nu pe cale: in fluxul normal cele doua mastere vin din DOUA foldere
-        /// de sesiune diferite - cate unul pentru fiecare orientare - deci calea nu spune
-        /// nimic. Cerinta 6 spune sa explicam, nu sa refuzam tacut.
+        /// A file is accepted by the Ratio tab only if it is a flat master. The check is on the
+        /// NAME, not on the path: in the normal flow the two masters come from TWO different
+        /// session folders - one for each orientation - so the path says nothing. R-082 says
+        /// to explain, not to refuse silently.
         ///
-        /// Nu exista o regula separata pentru "pp_flat_stacked.fit": el E masterul de flat
-        /// al unei sesiuni, deci exact ce cere modul. A existat o excludere a lui pana la
-        /// rescrierea tabului, dar aia era o reparatie de PRESELECTIE - sortarea fiind
-        /// ordinala, "pp_flat_stacked.fit" cadea dupa "pp_flat_A/B.fit" si ateriza pe
-        /// preselectia setului B. Fara lista si fara preselectie, motivul a disparut.
+        /// There is no separate rule for "pp_flat_stacked.fit": it IS a session's flat master,
+        /// so exactly what the mode asks for. There was an exclusion of it until the tab's
+        /// rewrite, but that was a PRESELECTION fix - the sort being ordinal,
+        /// "pp_flat_stacked.fit" fell after "pp_flat_A/B.fit" and landed on set B's
+        /// preselection. Without the list and without the preselection, the reason is gone.
         ///
-        /// Ce se refuza acum sunt cadrele individuale calibrate (pp_flat_00001.fit) -
-        /// vezi <see cref="RatioPattern"/>.
+        /// What is refused now are the individual calibrated frames (pp_flat_00001.fit) - see
+        /// <see cref="RatioPattern"/>.
         /// </summary>
+        /// <param name="path">A file path, or null.</param>
+        /// <returns>True when the file name matches <see cref="RatioPattern"/>.</returns>
         internal static bool IsFlatMasterName(string path)
             => !string.IsNullOrEmpty(path)
                && SeriesFinder.GlobMatch(Path.GetFileName(path), RatioPattern);
 
         /// <summary>
-        /// Flat-urile brute pentru --expo: doar raw de aparat.
+        /// The raw flats for --expo: camera raws only.
         ///
-        /// Modul are nevoie de mozaicul CFA intact si de scala ADU originala, iar un raw
-        /// le duce pe amandoua, exact, in fisier. Extensiile vin din RawReader, nu dintr-o
-        /// lista scrisa aici, ca sa nu apara un aparat suportat de cititor si invizibil
-        /// in lista.
+        /// The mode needs the CFA mosaic intact and the original ADU scale, and a raw carries
+        /// both, exactly, in the file. The extensions come from RawReader, not from a list
+        /// written here, so that no camera appears that the reader supports and the list does
+        /// not show.
         /// </summary>
+        /// <returns>The raws of flats/, ordinal by name; empty when flats/ does not
+        /// exist.</returns>
         internal IReadOnlyList<string> RawFlats()
         {
             if (!Directory.Exists(FlatsDir)) return Array.Empty<string>();
@@ -288,11 +324,13 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Cadrele din flats/ pe care le poate citi incarcatorul: raw de aparat SI FITS.
-        /// Pentru egalizarea de histograma un flat trecut prin Conversion e la fel de bun
-        /// ca NEF-ul; motivul pentru care tabul de expunere accepta doar raw (white si
-        /// black exacte) nu se aplica aici. Ambele liste de extensii vin din cititoare.
+        /// The frames of flats/ the loader can read: camera raws AND FITS. For the histogram
+        /// equalisation a flat gone through Conversion is as good as the NEF; the reason the
+        /// exposure tab accepts only raws (exact white and black) does not apply here. Both
+        /// extension lists come from the readers.
         /// </summary>
+        /// <returns>The frames of flats/, ordinal by name; empty when flats/ does not
+        /// exist.</returns>
         internal IReadOnlyList<string> FlatFrames()
         {
             if (!Directory.Exists(FlatsDir)) return Array.Empty<string>();
@@ -304,27 +342,29 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Raw-ul de langa master din care se citesc diafragma si obiectivul - primul din
-        /// flats/, sau null cand nu e niciunul. O singura regula pentru tabul Sintetic
-        /// (preumplerea) si pentru tabul Structura (comparatia cu profilul), ca amandoua sa
-        /// vorbeasca despre acelasi fisier; regula insasi e in nucleu.
+        /// The raw from beside the master the aperture and the lens are read from - the first
+        /// in flats/, or null when there is none. A single rule for the Sintetic tab (the
+        /// prefill) and for the Structure tab (the comparison with the profile), so both speak
+        /// about the same file; the rule itself is in the core.
         /// </summary>
         internal string ReferenceRawPath => LensIdentification.FirstRaw(FlatFrames());
 
         /// <summary>
-        /// Ce listeaza tabul de histograma: masterul intai, DOAR daca exista; dupa el
-        /// flat-ul netezit, DOAR daca exista - pe calea exacta pe care o scrie tabul
-        /// Netezire, <see cref="SmoothedMasterPath"/>, nu dupa tipar; apoi cadrele din
-        /// flats/. In fereastra masterul exista mereu - Check() refuza folderul fara el -
-        /// dar clasa asta se testeaza singura si nu arunca niciodata.
+        /// What the histogram tab lists: the master first, ONLY if it exists; after it the
+        /// smoothed flat, ONLY if it exists - on the exact path the Netezire tab writes,
+        /// <see cref="SmoothedMasterPath"/>, not by pattern; then the frames of flats/. In the
+        /// window the master always exists - Check() refuses the folder without it - but this
+        /// class is tested on its own and never throws.
         ///
-        /// Numai masterul prin conventie - cel pe care il masoara si Structura, deci acelasi
-        /// cand sunt doua - nu orice stiva din process/: doua stive intr-un folder sunt
-        /// treaba tabului Ratio. Din acelasi motiv un fisier netezit de langa masterul mai
-        /// VECHI, cand sunt doua, nu apare: e netezirea altui master decat cel de pe ecran.
-        /// Si nimic nu se dedubleaza dupa continut - un master copiat in flats/ apare de
-        /// doua ori, sub doua cai, ceea ce e adevarul.
+        /// Only the master by convention - the one Structure measures too, so the same one
+        /// when there are two - not any stack in process/: two stacks in a folder are the
+        /// Ratio tab's business. For the same reason a smoothed file beside the OLDER master,
+        /// when there are two, does not appear: it is the smoothing of another master than the
+        /// one on screen. And nothing is de-duplicated by content - a master copied into
+        /// flats/ appears twice, under two paths, which is the truth.
         /// </summary>
+        /// <returns>The rows in display order; empty when there is neither master nor
+        /// frame.</returns>
         internal IReadOnlyList<HistEqCandidate> HistEqCandidates()
         {
             var list = new List<HistEqCandidate>();

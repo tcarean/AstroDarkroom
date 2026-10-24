@@ -15,19 +15,34 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RatioRun.cs - modul 2 cap-coada: doua mastere -> atribuire + text + doua harti.
+// RatioRun.cs - mode 2 end to end: two masters -> attribution + text + two maps.
 //
-// Incarca prin ImageLoader.Load, nu LoadImage, fiindca modul are nevoie si de headere:
-// STACKCNT si DATE-OBS sunt singurul loc din raport in care se vede daca cele doua stive
-// chiar pot fi din doua orientari diferite. Lipsa lor nu e eroare - un raw n-are header
-// FITS - si atunci raportul scrie "necunoscut".
+// It loads through ImageLoader.Load, not LoadImage, because the mode needs the headers too:
+// STACKCNT and DATE-OBS are the only place in the report where one can see whether the two
+// stacks can really come from two different orientations. Their absence is not an error - a
+// raw has no FITS header - and then the report writes "necunoscut".
 
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Mode 2, <c>--ratio</c>: loads two masters shot 180 degrees apart, attributes their
+    /// structure to the camera or the world (<see cref="RatioAnalyzer"/>) and writes the
+    /// report.
+    /// </summary>
     internal static class RatioRun
     {
+        /// <summary>
+        /// Loads both files, analyses them, copies STACKCNT and DATE-OBS from their headers
+        /// into the result, writes the report and encodes both maps. Throws what
+        /// <see cref="ImageLoader.Load"/> or <see cref="RatioAnalyzer.Analyze"/> throws.
+        /// </summary>
+        /// <param name="pathA">The first master.</param>
+        /// <param name="pathB">The second master, after a 180-degree rotation.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <returns>The result, the camera-fixed residual map as the main PNG and the A/B map
+        /// as the second.</returns>
         internal static RunOutcome<RatioResult> Execute(string pathA, string pathB, TextWriter report)
         {
             var fa = ImageLoader.Load(pathA);
@@ -41,8 +56,9 @@ namespace FlatCheck
 
             RatioReport.Write(r, pathA, pathB, report);
 
-            // Harta principala e reziduul partii fixe pe aparat, fiindca ea e cea care
-            // se potriveste cu verdictul. A doua e A/B, pentru forma gradientului extern.
+            // The main map is the residual of the camera-fixed part, because it is the one
+            // that matches the verdict. The second is A/B, for the shape of the external
+            // gradient.
             return new RunOutcome<RatioResult>(
                 r,
                 PngWriter.EncodeResidualMap(r.Sensor.Residual),

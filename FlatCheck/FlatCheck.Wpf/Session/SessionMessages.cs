@@ -15,16 +15,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SessionMessages.cs - explicatiile pe care le da aplicatia cand intrarea nu e buna.
+// SessionMessages.cs - the explanations the application gives when the input is not right.
 //
-// Stau intr-un singur loc, ca textele din Report/ ale nucleului, si din acelasi motiv:
-// sunt singurul lucru pe care il citeste omul cand ceva nu merge, deci merita scrise o
-// data si bine, nu improvizate in trei locuri din interfata. Ca sunt aici si nu in
-// XAML le face si verificabile - un test poate cere ca mesajul sa numeasca scriptul
-// Siril, ceea ce e chiar cerinta, nu o preferinta de formulare.
+// They sit in a single place, like the texts in the core's Report/, and for the same reason:
+// they are the only thing the user reads when something does not work, so they deserve to be
+// written once and well, not improvised in three places of the interface. Being here and not
+// in the XAML also makes them checkable - a test can ask that the message name the Siril
+// script, which is the requirement itself, not a preference of wording.
 //
-// Tine si ghidul hartii - vezi nota de la MapGuideIntro. Nu e un mesaj de eroare, dar
-// e acelasi fel de text: documentatie aratata in fereastra, scrisa o data si bine.
+// It also holds the map's guide - see the note at MapGuideIntro. It is not an error message,
+// but it is the same kind of text: documentation shown in the window, written once and well.
 
 using System.Collections.Generic;
 using System.IO;
@@ -32,8 +32,16 @@ using System.Linq;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>
+    /// The Romanian texts the window builds in code that the core does not write (the fixed
+    /// labels and headings stay in the XAML): the session problems, the guides, the button
+    /// labels, the Siril run's and the Split tab's messages, the "Despre" window's headings.
+    /// </summary>
     internal static class SessionMessages
     {
+        /// <summary>The problem card's title.</summary>
+        /// <param name="p">The session problem.</param>
+        /// <returns>The title, or "" for <see cref="SessionProblem.None"/>.</returns>
         internal static string Title(SessionProblem p) => p switch
         {
             SessionProblem.NoFolder => "Folderul nu exista",
@@ -43,12 +51,15 @@ namespace FlatCheck.Wpf
         };
 
         /// <summary>
-        /// Cerinta 4: cand masterul lipseste, aplicatia nu spune doar "nu gasesc
-        /// fisierul" - spune ce sa faca omul ca sa apara, adica sa ruleze scriptul.
-        /// Un mesaj care descrie doar simptomul lasa utilizatorul sa caute singur
-        /// legatura dintre un fisier lipsa si un script pe care poate nu l-a rulat
-        /// niciodata.
+        /// R-080 and R-088: when the master is missing, the application does not only say "I
+        /// cannot find the file" - it says what the user should do to make it appear, that is
+        /// run the script. A message that only describes the symptom leaves the user to find
+        /// alone the link between a missing file and a script they may never have run.
         /// </summary>
+        /// <param name="s">The session, for its paths.</param>
+        /// <param name="p">The problem.</param>
+        /// <returns>The problem card's text, or "" for
+        /// <see cref="SessionProblem.None"/>.</returns>
         internal static string Explain(SirilSession s, SessionProblem p) => p switch
         {
             SessionProblem.NoFolder =>
@@ -77,10 +88,12 @@ namespace FlatCheck.Wpf
         };
 
         /// <summary>
-        /// Cerinta 6: cand omul alege de mana un fisier care nu e master de flat, i se
-        /// explica ce sunt fisierele astea si de ce testul are nevoie de unul, in loc sa
-        /// primeasca o eroare de parsare de la cititorul FITS peste cateva secunde.
+        /// R-082: when the user picks by hand a file that is not a flat master, it is
+        /// explained what these files are and why the test needs one, instead of a parsing
+        /// error from the FITS reader a few seconds later.
         /// </summary>
+        /// <param name="path">The file picked.</param>
+        /// <returns>The explanation, with the path.</returns>
         internal static string NotAFlatMaster(string path) =>
             $"Fisierul ales nu e un master de flat:\n{path}\n\n"
             + "Testul de rotatie la 180 de grade compara doua MASTERE de flat, adica doua "
@@ -100,10 +113,11 @@ namespace FlatCheck.Wpf
             + "adica in doua foldere de sesiune, cate unul pentru fiecare orientare.";
 
         /// <summary>
-        /// Documentatia tabului, aratata inainte de orice calcul. Modul asta e singurul
-        /// care cere ceva ce nu se poate deduce dintr-un folder, deci e singurul care
-        /// trebuie sa explice ce vrea INAINTE, nu dupa ce a esuat.
+        /// The tab's documentation, shown before any computation. This mode is the only one
+        /// that asks for something that cannot be deduced from a folder, so it is the only one
+        /// that must explain what it wants BEFORE, not after it has failed.
         /// </summary>
+        /// <returns>The Ratio tab's documentation.</returns>
         internal static string RatioNeedsTwoMasters() =>
             "CE FACE. Desparte structura ne-radiala a flat-ului tau in doua: ce e fixat de "
             + "APARAT (obiectiv, senzor - se imparte corect din lights) si ce e fixat in "
@@ -130,9 +144,10 @@ namespace FlatCheck.Wpf
             + "compara doua sedinte diferite cu acelasi obiectiv.";
 
         /// <summary>
-        /// Acelasi fisier in ambele sloturi. Prins la alegere, nu la calcul, ca sa nu se
-        /// piarda selectia buna de dinainte.
+        /// The same file in both slots. Caught at the pick, not at the computation, so the good
+        /// selection from before is not lost.
         /// </summary>
+        /// <returns>The explanation.</returns>
         internal static string SameFileTwice() =>
             "Testul compara doua stive DIFERITE: una dinainte de rotatia aparatului, una "
             + "de dupa. Impartind un fisier la el insusi iese 1 peste tot, deci o "
@@ -140,10 +155,12 @@ namespace FlatCheck.Wpf
             + "inseamna \"nu s-a masurat nimic\".";
 
         /// <summary>
-        /// Masterul exista si in masters/, si in process/: doua preprocesari pe acelasi
-        /// folder. Se masoara cel mai nou, si omul trebuie sa stie care, fiindca cele doua
-        /// pot veni din seturi de flat-uri diferite.
+        /// The master exists both in masters/ and in process/: two preprocessings on the same
+        /// folder. The newest is measured, and the user must know which, because the two can
+        /// come from different sets of flats.
         /// </summary>
+        /// <param name="m">The lookup, with both paths.</param>
+        /// <returns>The warning, naming the master measured and the one ignored.</returns>
         internal static string TwoFlatMasters(FlatMasterLookup m) =>
             "Sunt DOUA mastere de flat in folderul asta, in masters/ si in process/ - doua "
             + "rulari de preprocesare. Se masoara cel mai nou:\n" + m.Path + "\n"
@@ -151,7 +168,9 @@ namespace FlatCheck.Wpf
             + "Daca nu e cel pe care il vrei, sterge-l sau redenumeste-l pe celalalt si "
             + "alege din nou folderul.";
 
-        /// <summary>Cand process/ nu contine cadre calibrate pentru testul end-to-end.</summary>
+        /// <summary>When process/ holds no calibrated frames for the end-to-end test.</summary>
+        /// <param name="s">The session, for its process/ path.</param>
+        /// <returns>The explanation, with the pattern and the folder.</returns>
         internal static string NoLightSeries(SirilSession s) =>
             $"Niciun cadru care sa se potriveasca cu {SeriesFinder.DefaultPattern} in:\n"
             + $"{s.ProcessDir}\n\n"
@@ -162,7 +181,9 @@ namespace FlatCheck.Wpf
             + "senzor - fata de centrul in jurul caruia se fiteaza modelul radial. Ar "
             + "corupe masuratoarea fara sa se vada.";
 
-        /// <summary>Cand flats/ nu contine niciun raw de aparat.</summary>
+        /// <summary>When flats/ holds no camera raw.</summary>
+        /// <param name="s">The session, for its flats/ path.</param>
+        /// <returns>The explanation, with the folder.</returns>
         internal static string NoRawFlats(SirilSession s) =>
             $"Niciun fisier raw de aparat in:\n{s.FlatsDir}\n\n"
             + "Verificarea expunerii ruleaza pe un flat BRUT, NECALIBRAT, cu mozaicul CFA "
@@ -172,18 +193,21 @@ namespace FlatCheck.Wpf
             + "(.nef, .cr2, .cr3, .arw, .dng, .raf). Pe ele white si black se citesc exact "
             + "din fisier, nu se mai ghicesc din maxim.";
 
-        // --------------------------------------------------- cum citesc tabul
+        // --------------------------------------------------- how to read the tab
         //
-        // Intrebarea "e dubios?" are doua jumatati, si numai una e a ochiului. Textul asta
-        // exista fiindca despartirea nu se vede din asezarea ecranului: cifrele din stanga
-        // si harta din dreapta arata ca doua vederi ale aceluiasi lucru, cand de fapt una
-        // decide si cealalta explica.
+        // The question "is it dubious?" has two halves, and only one is the eye's. This text
+        // exists because the split does not show from the screen's layout: the figures on the
+        // left and the map on the right look like two views of the same thing, when in fact
+        // one decides and the other explains.
 
-        /// <summary>Ce decid cifrele si ce decide ochiul - intro-ul de deasupra celor doua randuri.</summary>
+        /// <summary>What the figures decide and what the eye decides - the intro above the two
+        /// rows.</summary>
+        /// <returns>One sentence.</returns>
         internal static string HowToReadIntro() =>
             "Tabul raspunde la doua intrebari diferite, si nu cu aceleasi mijloace.";
 
-        /// <summary>Cele doua jumatati ale citirii, in ordinea in care se folosesc.</summary>
+        /// <summary>The two halves of the reading, in the order they are used.</summary>
+        /// <returns>Two rows, heading and text.</returns>
         internal static IReadOnlyList<(string Shape, string Meaning)> HowToReadRows() => new[]
         {
             ("CAT DE MULT - decid cifrele, nu harta",
@@ -204,17 +228,19 @@ namespace FlatCheck.Wpf
              + "pata, sau biblioteca. Ce ramane pentru ochi e ghidul de sub harta."),
         };
 
-        // --------------------------------------------------- ghidul histogramelor
+        // --------------------------------------------------- the histograms' guide
         //
-        // Acelasi fel de text ca ghidul hartii de mai jos: documentatie aratata in
-        // fereastra, pliata, scrisa o data. Si aceeasi limita - explica ce se vede, NU
-        // clasifica. Verdictul ramane mediana ferestrei centrale a canalului celui mai
-        // luminos, si nimic din desen nu voteaza.
+        // The same kind of text as the map's guide below: documentation shown in the window,
+        // folded, written once. And the same limit - it explains what is seen, it does NOT
+        // classify. The verdict stays the median of the central window of the brightest
+        // channel, and nothing in the drawing votes.
         //
-        // Tabelul e in oglinda cu README, sectiunea despre tabul Expunere. NU exista test
-        // care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+        // The table mirrors the README, the section about the Expunere tab. There is NO test
+        // linking the two - if you reword here, go there too.
 
-        /// <summary>Ce e axa si ce rol are desenul, inainte de lista de citiri.</summary>
+        /// <summary>What the axis is and what role the drawing has, before the list of
+        /// readings.</summary>
+        /// <returns>The guide's intro.</returns>
         internal static string HistogramGuideIntro() =>
             "Axa orizontala e aceeasi pe care stau toate cifrele tabului: procente din "
             + "(white - black), adica din intervalul util al senzorului. Zero e negrul "
@@ -226,9 +252,10 @@ namespace FlatCheck.Wpf
             + "histogramele arata de unde vine cifra aia si ce se intampla in jurul ei.";
 
         /// <summary>
-        /// Cum se citeste desenul, in ordinea in care merita privit: intai cele doua
-        /// curbe, apoi cifra care decide, apoi benzile, apoi capcanele.
+        /// How the drawing is read, in the order it is worth looking: first the two curves,
+        /// then the figure that decides, then the bands, then the traps.
         /// </summary>
+        /// <returns>The guide's rows, heading and text.</returns>
         internal static IReadOnlyList<(string Shape, string Meaning)> HistogramGuideRows() => new[]
         {
             ("doua curbe pe fiecare canal",
@@ -290,18 +317,20 @@ namespace FlatCheck.Wpf
              + "masura."),
         };
 
-        // ------------------------------------------------------- ghidul hartii
+        // ------------------------------------------------------- the map's guide
         //
-        // DE CE E DOCUMENTATIE SI NU DIAGNOSTIC. Unealta nu clasifica forma hartii si nu
-        // trebuie s-o faca: o pata poate fi light leak sau un nor, iar din pixeli nu se
-        // poate deosebi. Ce se poate face e sa i se spuna omului ce a insemnat fiecare
-        // forma pe mastere reale, si care e testul care desparte cazurile. Deci: rows de
-        // text, fara verdict, fara prag, fara nicio cifra calculata aici.
+        // WHY IT IS DOCUMENTATION AND NOT A DIAGNOSIS. The tool does not classify the map's
+        // shape and must not: a spot can be a light leak or a cloud, and from the pixels it
+        // cannot be told apart. What can be done is tell the user what each shape meant on real
+        // masters, and which test separates the cases. So: rows of text, no verdict, no
+        // threshold, no figure computed here.
         //
-        // Textul e in oglinda cu tabelul din README, sectiunea "Iesire PNG". NU exista
-        // test care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+        // The text mirrors the table in the README, the "Iesire PNG" section. There is NO test
+        // linking the two - if you reword here, go there too.
 
-        /// <summary>Introducerea ghidului: cum se citeste harta, inainte de lista de forme.</summary>
+        /// <summary>The guide's introduction: how the map is read, before the list of
+        /// shapes.</summary>
+        /// <returns>The guide's intro.</returns>
         internal static string MapGuideIntro() =>
             "Harta e imaginea impartita la modelul radial: alb inseamna exact cat prezice "
             + "un model pur radial in jurul centrului senzorului, rosu mai luminos decat "
@@ -313,10 +342,11 @@ namespace FlatCheck.Wpf
             + "la legenda.";
 
         /// <summary>
-        /// Formele intalnite pe harta si ce au insemnat, in ordinea in care merita
-        /// cautate: de la cea mai des intalnita si mai inofensiva, spre cele care cer un
-        /// contra-test anume.
+        /// The shapes met on the map and what they meant, in the order they are worth looking
+        /// for: from the most common and most harmless, towards those that ask for a particular
+        /// counter-test.
         /// </summary>
+        /// <returns>The guide's rows, shape and meaning.</returns>
         internal static IReadOnlyList<(string Shape, string Meaning)> MapGuideShapes() => new[]
         {
             ("pete fara directie",
@@ -359,12 +389,15 @@ namespace FlatCheck.Wpf
              + "raman mici; nu e nimic de reparat la sursa, doar de stivuit mai mult."),
         };
 
-        // --------------------------------------------------- tabul de histograma
+        // --------------------------------------------------- the histogram tab
 
         /// <summary>
-        /// Cand nu e nici master, nici vreun cadru citibil in flats/. Prin MainViewModel nu
-        /// se ajunge aici - Check() cere masterul - dar tabul se ataseaza si in teste.
+        /// When there is neither a master nor any readable frame in flats/. Through
+        /// MainViewModel this is not reached - Check() requires the master - but the tab is
+        /// attached in the tests too.
         /// </summary>
+        /// <param name="s">The session, for its flats/ path.</param>
+        /// <returns>The explanation, with the folder.</returns>
         internal static string NoFlatFrames(SirilSession s) =>
             $"Nimic de egalizat: nici masterul {SirilSession.FlatMasterName} in masters/ sau process/, nici "
             + $"vreun cadru citibil in:\n{s.FlatsDir}\n\n"
@@ -372,10 +405,11 @@ namespace FlatCheck.Wpf
             + ".arw, .dng, .raf) sau FITS (.fit, .fits, .fts) - si, pe prima pozitie, masterul "
             + "facut din ele, ca sa se vada ce s-a mediat si ce a ramas.";
 
-        // Ghidul de mai jos e in oglinda cu tabelul din README ("Histogram"). Nu exista
-        // test care sa lege cele doua - daca reformulezi aici, treci si pe acolo.
+        // The guide below mirrors the table in the README ("Histogram"). There is no test
+        // linking the two - if you reword here, go there too.
 
-        /// <summary>Ce e poza, inainte de lista de citiri.</summary>
+        /// <summary>What the picture is, before the list of readings.</summary>
+        /// <returns>The guide's intro.</returns>
         internal static string HistEqGuideIntro() =>
             "E vederea \"Histogram\" din Siril, refacuta: imaginea trecuta prin propria ei "
             + "functie de repartitie, astfel incat fiecare nivel de gri sa primeasca acelasi "
@@ -385,7 +419,8 @@ namespace FlatCheck.Wpf
             + "Poza EXPLICA, nu voteaza: nicio cifra din unealta nu se schimba cu ce se vede "
             + "aici, si nicio forma de aici nu intra in vreun verdict.";
 
-        /// <summary>Cum se citeste poza, in ordinea in care merita privita.</summary>
+        /// <summary>How the picture is read, in the order it is worth looking.</summary>
+        /// <returns>The guide's rows, heading and text.</returns>
         internal static IReadOnlyList<(string Shape, string Meaning)> HistEqGuideRows() => new[]
         {
             ("de ce un flat curat arata zgomotos",
@@ -435,14 +470,15 @@ namespace FlatCheck.Wpf
              + "maxima. Poza de aici spune CE FORMA are ce masoara ele."),
         };
 
-        // ------------------------------------------------------- netezire
+        // ------------------------------------------------------- smoothing
         //
-        // Ghidul tabului de netezire. Ca celelalte, e in oglinda cu README ("Netezire")
-        // fara test care sa le lege. Spre deosebire de celelalte e DESCHIS implicit: e
-        // preconditia tabului, ca documentatia de pe Ratio - un buton care scrie un fisier
-        // de 96 MB langa master nu se apasa inainte de a sti ce face.
+        // The smoothing tab's guide. Like the others, it mirrors the README ("Netezire") with no
+        // test linking them. Unlike the others it is OPEN by default: it is the tab's
+        // precondition, like the documentation on Ratio - a button that writes a 96 MB file
+        // beside the master is not pressed before knowing what it does.
 
-        /// <summary>Ce face butonul si ce nu poate sti, inainte de lista.</summary>
+        /// <summary>What the button does and what it cannot know, before the list.</summary>
+        /// <returns>The guide's intro.</returns>
         internal static string SmoothGuideIntro() =>
             "Scrie un al doilea master, pp_flat_stacked" + SirilSession.SmoothedSuffix + ".fit, langa cel "
             + "fotografiat: acelasi flat, cu tot ce e neted pastrat si tot ce nu e scos - textura "
@@ -452,7 +488,8 @@ namespace FlatCheck.Wpf
             + "Masterul fotografiat ramane neatins si ramane masterul sesiunii: tabul Structura "
             + "arata in continuare textura, ca sa se vada de ce a fost nevoie de netezire.";
 
-        /// <summary>Ce pastreaza, ce scoate, scara, cum ajunge in Siril.</summary>
+        /// <summary>What it keeps, what it removes, the scale, how it reaches Siril.</summary>
+        /// <returns>The guide's rows, heading and text.</returns>
         internal static IReadOnlyList<(string Shape, string Meaning)> SmoothGuideRows() => new[]
         {
             ("ce pastreaza",
@@ -501,31 +538,41 @@ namespace FlatCheck.Wpf
              + "lentila larga verificarea ramane harta de aici si un stack de lights intins tare."),
         };
 
-        /// <summary>Intrebarea de suprascriere, cand fisierul netezit exista deja.</summary>
+        /// <summary>The overwrite question, when the smoothed file exists already.</summary>
+        /// <param name="path">The existing file.</param>
+        /// <returns>The question, with the path.</returns>
         internal static string SmoothOverwriteQuestion(string path) =>
             $"Exista deja un flat netezit:\n{path}\n\nIl scriu din nou peste el?";
 
-        /// <summary>Eticheta butonului.</summary>
+        /// <summary>The button's label.</summary>
+        /// <returns>The label.</returns>
         internal static string SmoothButtonLabel() => "Netezeste si salveaza";
 
-        /// <summary>Eticheta butonului de propunere a scarii.</summary>
+        /// <summary>The label of the scale-proposal button.</summary>
+        /// <returns>The label.</returns>
         internal static string SmoothAdviseLabel() => "Propune scara";
 
-        /// <summary>Cand omul a raspuns "nu" la suprascriere: rezultatul ramane pe ecran, fisierul vechi ramane pe disc.</summary>
+        /// <summary>When the user answered "no" to the overwrite: the result stays on screen,
+        /// the old file stays on disk.</summary>
+        /// <param name="path">The file kept.</param>
+        /// <returns>The notice, with the path.</returns>
         internal static string SmoothNotOverwritten(string path) =>
             $"Nu s-a scris nimic: fisierul existent a fost pastrat.\n{path}";
 
-        /// <summary>Titlul ecranului de refuz (raw, cub).</summary>
+        /// <summary>The refusal screen's title (raw, cube).</summary>
+        /// <returns>The title.</returns>
         internal static string SmoothRefusedTitle() => "Nu se poate netezi";
 
-        // ------------------------------------------------------- flatul sintetic
+        // ------------------------------------------------------- the synthetic flat
         //
-        // Tabul Sintetic scrie un flat din profilul de vignetare publicat al obiectivului.
-        // Textele de aici sunt doar ale ferestrei: ce spune raportul despre flat vine din
-        // SyntheticReport, ca la consola. Panoul cu sursele e COLAPSAT implicit - e
-        // documentatie, nu preconditie: butonul nu face nimic periculos si lista de
-        // obiective se explica singura.
+        // The Sintetic tab writes a flat from the lens's published vignetting profile. The texts
+        // here are only the window's: what the report says about the flat comes from
+        // SyntheticReport, as in the console. The sources panel is COLLAPSED by default - it is
+        // documentation, not a precondition: the button does nothing dangerous and the lens list
+        // explains itself.
 
+        /// <summary>The Sintetic tab's lead: what the file is and what it lacks.</summary>
+        /// <returns>The intro.</returns>
         internal static string SyntheticGuideIntro() =>
             "Scrie un flat radial, pp_flat_stacked" + SirilSession.SyntheticSuffix + ".fit, din profilul de "
             + "vignetare publicat al obiectivului - modelul lui, nu o masuratoare a exemplarului tau. "
@@ -533,66 +580,113 @@ namespace FlatCheck.Wpf
             + "n-are nici partea cromatica, nici praful, nici umbrirea specifica body-ului. "
             + "\"Compara cu masterul\" spune cu cat difera masterul fotografiat de model, in stopuri, si in ce forma.";
 
+        /// <summary>The title of the collapsed panel about the profile sources.</summary>
+        /// <returns>The title.</returns>
         internal static string SyntheticSourcesTitle() => "Profilele: de unde vin si cum se actualizeaza";
 
+        /// <summary>The write button's label.</summary>
+        /// <returns>The label.</returns>
         internal static string SyntheticButtonLabel() => "Scrie flat sintetic";
 
+        /// <summary>The compare button's label.</summary>
+        /// <returns>The label.</returns>
         internal static string SyntheticCompareLabel() => "Compara cu masterul";
 
-        /// <summary>Aparatul nu e in baza de camere lensfun: chip-urile de senzor sunt rezerva.</summary>
+        /// <summary>The camera is not in lensfun's camera database: the sensor chips are the
+        /// fallback.</summary>
+        /// <param name="camera">The camera's name from the header, or null or blank when the
+        /// reference frame names none.</param>
+        /// <returns>The note under the crop field.</returns>
         internal static string SyntheticCropUnknown(string camera) =>
             (string.IsNullOrWhiteSpace(camera) ? "crop necunoscut: cadrul de referinta nu spune ce aparat e" : $"crop necunoscut: \"{camera.Trim()}\" nu e in baza de camere lensfun")
             + " - alege tipul de senzor de mai sus, sau scrie crop-ul (36 impartit la latimea senzorului in mm)";
 
-        /// <summary>Crop-ul a venit dintr-un chip de senzor.</summary>
+        /// <summary>The crop came from a sensor chip.</summary>
+        /// <param name="label">The chip's label.</param>
+        /// <param name="crop">The crop factor, formatted.</param>
+        /// <returns>The note under the crop field.</returns>
         internal static string SyntheticCropFromFormat(string label, string crop) =>
             $"crop {crop} nominal, din chip-ul {label}; un aparat din baza lensfun l-ar da exact";
 
-        /// <summary>De unde e crop-ul din camp si ce format e: "crop 1.523 din baza lensfun (Nikon D3300) - format APS-C".</summary>
+        /// <summary>Where the field's crop is from and which format it is: "crop 1.523 din
+        /// baza lensfun (Nikon D3300) - format APS-C".</summary>
+        /// <param name="crop">The crop factor, formatted.</param>
+        /// <param name="source">Where it came from (<see cref="SyntheticCropTyped"/> or
+        /// <see cref="SyntheticCropFromTable"/>).</param>
+        /// <param name="formatLabel">The sensor format's label, or
+        /// <c>SensorFormats.Unusual</c>.</param>
+        /// <returns>The note under the crop field.</returns>
         internal static string SyntheticCropNote(string crop, string source, string formatLabel) =>
             $"crop {crop} {source} - {(formatLabel == SensorFormats.Unusual ? formatLabel + ", niciun chip nu i se potriveste" : "format " + formatLabel)}";
 
+        /// <summary>The crop's source when the user typed it.</summary>
+        /// <returns>"tastat".</returns>
         internal static string SyntheticCropTyped() => "tastat";
+        /// <summary>The crop's source when lensfun's camera table gave it.</summary>
+        /// <param name="camera">The camera's name; not null.</param>
+        /// <returns>The source, naming the camera.</returns>
         internal static string SyntheticCropFromTable(string camera) => $"din baza lensfun ({camera.Trim()})";
 
-        /// <summary>Un ID de obiectiv purtat de mai multe obiective: lista s-a restrans la ele, omul alege.</summary>
+        /// <summary>A lens ID carried by several lenses: the list narrowed to them, the user
+        /// chooses.</summary>
+        /// <param name="rawLabel">The lens as the raw names it.</param>
+        /// <param name="count">How many lenses match.</param>
+        /// <returns>The note under the list.</returns>
         internal static string SyntheticLensCandidates(string rawLabel, int count) =>
             $"{rawLabel} se potriveste cu {count} obiective - lista de mai sus s-a restrans la ele, alege-l pe al tau";
 
+        /// <summary>The overwrite question, when the synthetic file exists already.</summary>
+        /// <param name="path">The existing file.</param>
+        /// <returns>The question, with the path.</returns>
         internal static string SyntheticOverwriteQuestion(string path) =>
             $"Exista deja un flat sintetic:\n{path}\n\nIl scriu din nou peste el?";
 
+        /// <summary>When the user answered "no" to the overwrite.</summary>
+        /// <param name="path">The file kept.</param>
+        /// <returns>The notice, with the path.</returns>
         internal static string SyntheticNotOverwritten(string path) =>
             $"Nu s-a scris nimic: fisierul existent a fost pastrat.\n{path}";
 
+        /// <summary>The refusal screen's title.</summary>
+        /// <returns>The title.</returns>
         internal static string SyntheticRefusedTitle() => "Nu se poate scrie flatul sintetic";
 
+        /// <summary>When the button is pressed with no lens selected.</summary>
+        /// <returns>The prompt.</returns>
         internal static string SyntheticNoLensSelected() => "Alege un obiectiv din lista.";
 
+        /// <summary>When neither source holds a profile.</summary>
+        /// <returns>The explanation, naming the sources panel.</returns>
         internal static string SyntheticNoProfiles() =>
             "Niciun profil de obiectiv gasit: nici Adobe pe masina, nici folderul lensfun/ langa program. "
             + "Vezi panoul \"" + SyntheticSourcesTitle() + "\".";
 
-        // Nota comparatiei vine din AgainstReport.Meaning(), ca in consola.
+        // The comparison's note comes from AgainstReport.Meaning(), as in the console.
 
-        // ------------------------------------------------------- rularea scriptului
+        // ------------------------------------------------------- running the script
         //
-        // Textele blocului de pe ecranul de problema si ale ferestrei de rulare. Niciunul
-        // nu interpreteaza ce a facut scriptul: dupa rulare folderul se redeschide si
-        // Check() spune singur daca masterul a aparut.
+        // The texts of the block on the problem screen and of the run window. None interprets
+        // what the script did: after the run the folder is reopened and Check() says by itself
+        // whether the master appeared.
 
-        /// <summary>Ce face butonul, inainte de lista de scripturi.</summary>
+        /// <summary>What the button does, before the list of scripts.</summary>
+        /// <returns>The lead text.</returns>
         internal static string PreprocessLead() =>
             "Scriptul se poate rula de aici, cu Siril-ul instalat pe calculator (siril-cli, "
             + "fara fereastra). Lista de mai jos e cea din meniul de scripturi al lui Siril; "
             + "propus e cel care lasa masterul in process/. Iesirea se vede intr-o fereastra, "
             + "ca in Siril, iar cand o inchizi folderul se redeschide singur.";
 
+        /// <summary>When siril-cli.exe was not found.</summary>
+        /// <returns>The explanation, with the places looked in.</returns>
         internal static string SirilCliNotFound() =>
             "Nu gasesc siril-cli.exe: nici prin intrarea de instalare din registru, nici in "
             + "Program Files\\Siril\\bin. Fara el scriptul se ruleaza din Siril, si apoi alegi "
             + "din nou folderul.";
 
+        /// <summary>When no .ssf script was found.</summary>
+        /// <param name="configPath">The Siril config read, or null when there is none.</param>
+        /// <returns>The explanation, naming the config.</returns>
         internal static string NoSirilScripts(string configPath) =>
             "N-am gasit niciun script .ssf. Lista se ia din configurarea Siril ("
             + (configPath ?? "fisierul de configurare nu exista")
@@ -600,61 +694,97 @@ namespace FlatCheck.Wpf
             + "acolo. Bifeaza scriptul in Siril - sau ia depozitul de scripturi din acelasi "
             + "loc - si alege din nou folderul.";
 
+        /// <summary>When the run button is pressed with no script selected.</summary>
+        /// <returns>The prompt.</returns>
         internal static string NoScriptChosen() => "Alege un script din lista.";
 
+        /// <summary>When the chosen script cannot be read.</summary>
+        /// <param name="path">The script's path.</param>
+        /// <param name="why">The exception's message.</param>
+        /// <returns>The error, with both.</returns>
         internal static string ScriptUnreadable(string path, string why) =>
             $"Nu pot citi scriptul:\n{path}\n\n{why}";
 
         /// <summary>
-        /// Ce ii lipseste folderului ca sa poata porni scriptul ales. Se spune si ce cere
-        /// scriptul in total, ca lipsa sa aiba context.
+        /// What the folder lacks for the chosen script to start. What the script asks for in
+        /// total is said too, so the gap has context.
         /// </summary>
+        /// <param name="script">The script's file name.</param>
+        /// <param name="required">Every folder the script enters.</param>
+        /// <param name="missing">Those missing or empty.</param>
+        /// <returns>The explanation.</returns>
         internal static string MissingScriptInputs(string script, IEnumerable<string> required,
                                                    IEnumerable<string> missing) =>
             $"Scriptul {script} intra in subfolderele {string.Join(", ", required.Select(f => f + "/"))}. "
             + $"In folderul ales lipsesc sau sunt goale: {string.Join(", ", missing.Select(f => f + "/"))}. "
             + "Pune acolo cadrele de la aparat, apoi apasa din nou.";
 
+        /// <summary>The warning when Siril's window is open
+        /// (<see cref="SirilInstall.IsGuiRunning"/>).</summary>
+        /// <returns>The warning.</returns>
         internal static string SirilGuiRunning() =>
             "Siril e deschis. Daca are ca folder de lucru chiar folderul asta, doua procese "
             + "ar scrie in acelasi process/ in acelasi timp si fisierele s-ar strica. "
             + "Inchide-l, sau asigura-te ca lucreaza in alt folder, inainte sa apesi Ruleaza.";
 
+        /// <summary>The run window's title.</summary>
+        /// <returns>The title.</returns>
         internal static string RunWindowTitle() => "Procesare Siril";
 
+        /// <summary>The line naming the command running.</summary>
+        /// <param name="index">The command's number, from 1.</param>
+        /// <param name="total">The script's command count; 0 when unknown.</param>
+        /// <param name="command">The whole command line.</param>
+        /// <returns>"comanda 7 din 20:  ..." or, without a total, "comanda 7:  ...".</returns>
         internal static string RunStep(int index, int total, string command) =>
             total > 0 ? $"comanda {index} din {total}:  {command}" : $"comanda {index}:  {command}";
 
+        /// <summary>The closing line of a successful run.</summary>
+        /// <returns>The notice.</returns>
         internal static string RunSucceeded() =>
             "Scriptul s-a terminat cu succes. Inchide fereastra: folderul se redeschide si "
             + "analiza porneste pe ce a produs.";
 
+        /// <summary>The closing line of a failed run.</summary>
+        /// <param name="code">siril-cli's exit code.</param>
+        /// <param name="step">The command it stopped at, or null or empty when unknown.</param>
+        /// <returns>The notice.</returns>
         internal static string RunFailed(int code, string step) =>
             $"Siril s-a oprit cu codul {code}"
             + (string.IsNullOrEmpty(step) ? "." : $", la {step}.")
             + " Log-ul de mai sus spune de ce; folderul ramane cum era.";
 
+        /// <summary>The closing line of a cancelled run.</summary>
+        /// <returns>The notice.</returns>
         internal static string RunCancelled() =>
             "Rulare anulata. Siril a fost oprit la mijloc, deci process/ poate contine "
             + "fisiere pe jumatate scrise; o rulare noua le suprascrie.";
 
+        /// <summary>When siril-cli could not be started.</summary>
+        /// <param name="why">The exception's message.</param>
+        /// <returns>The error.</returns>
         internal static string RunStartFailed(string why) =>
             $"Nu am putut porni siril-cli:\n{why}";
 
         /// <summary>
-        /// siril-cli lucreaza pe o copie a setarilor lui Siril, deci fara ea nu porneste -
-        /// altfel ar lucra cu valorile implicite fara ca omul sa stie.
+        /// siril-cli works on a copy of Siril's settings, so without it it does not start -
+        /// otherwise it would work with the default values without the user knowing.
         /// </summary>
+        /// <param name="path">The settings file.</param>
+        /// <param name="why">The exception's message.</param>
+        /// <returns>The error, with both.</returns>
         internal static string SirilSettingsUnreadable(string path, string why) =>
             $"Nu pot citi setarile lui Siril (siril-cli lucreaza pe o copie a lor):\n{path}\n\n{why}\n\n"
             + "Siril nu a pornit. Daca Siril e deschis si tocmai isi salveaza setarile, apasa din nou peste cateva secunde.";
 
         // ------------------------------------------------------------------ Split
         //
-        // Tabul Split (ADR 0054): impartirea flat-urilor in sesiuni temporare, scriptul
-        // rulat in fiecare, masterele partilor langa intreg. Textele de mai jos sunt ale
-        // ecranului; tabelul, raportul si etichetele mozaicului le scrie nucleul (SplitReport).
+        // The Split tab (ADR 0054): the flats split into temp sessions, the script run in each,
+        // the parts' masters beside the whole. The texts below are the screen's; the table, the
+        // report and the mosaic's labels are written by the core (SplitReport).
 
+        /// <summary>The Split tab's documentation, above the chips.</summary>
+        /// <returns>The intro.</returns>
         internal static string SplitIntro() =>
             "Imparte flat-urile sesiunii in 2 sau 4 grupuri consecutive, in ordinea numelor de "
             + "fisier - cate unul pe orientare, daca ai rotit aparatul intre grupuri - si "
@@ -666,77 +796,145 @@ namespace FlatCheck.Wpf
             + "hartile reziduale, una langa alta. Sesiunea originala e doar citita; raportul si "
             + "mozaicul se salveaza in ea, iar folderele temporare se sterg la sfarsit.";
 
+        /// <summary>The line counting the flats and the split.</summary>
+        /// <param name="count">The frames in flats/.</param>
+        /// <param name="parts">The parts chosen.</param>
+        /// <param name="perPart">The frames per part; 0 when the count does not divide.</param>
+        /// <returns>"30 cadre in flats/  ->  2 x 15", or the count alone.</returns>
         internal static string SplitFramesLine(int count, int parts, int perPart) =>
             perPart > 0 ? $"{count} cadre in flats/  ->  {parts} x {perPart}" : $"{count} cadre in flats/";
 
+        /// <summary>When flats/ holds no frame.</summary>
+        /// <param name="s">The session, for its flats/ path.</param>
+        /// <returns>The explanation.</returns>
         internal static string SplitNoFrames(SirilSession s) =>
             $"Niciun cadru (raw sau FITS) in {s.FlatsDir}. Impartirea are nevoie de cadrele de la aparat.";
 
+        /// <summary>When the frame count does not divide by the parts.</summary>
+        /// <param name="count">The frames in flats/.</param>
+        /// <param name="parts">The parts chosen.</param>
+        /// <returns>The explanation.</returns>
         internal static string SplitNotDivisible(int count, int parts) =>
             $"{count} cadre nu se impart exact la {parts}. Alege alt numar de parti sau verifica flats/: "
             + "fiecare grup de rotatie trebuie sa aiba acelasi numar de cadre.";
 
+        /// <summary>The start button's label.</summary>
+        /// <returns>The label.</returns>
         internal static string SplitStartLabel() => "Start Split";
+        /// <summary>The stop button's label.</summary>
+        /// <returns>The label.</returns>
         internal static string SplitStopLabel() => "Opreste";
 
+        /// <summary>A part-count chip's label.</summary>
+        /// <param name="parts">2 or 4.</param>
+        /// <returns>"2 parti" and the like.</returns>
         internal static string SplitPartsLabel(int parts) => $"{parts} parti";
 
+        /// <summary>The phase line while a part is copied.</summary>
+        /// <param name="part">The part's number, from 1.</param>
+        /// <param name="parts">The parts in total.</param>
+        /// <param name="files">The files being copied.</param>
+        /// <returns>The phase line.</returns>
         internal static string SplitPhaseCopy(int part, int parts, int files) =>
             $"partea {part} din {parts}: copiez {files} fisiere in folderul temporar";
 
+        /// <summary>The phase line while Siril runs on a part.</summary>
+        /// <param name="part">The part's number, from 1.</param>
+        /// <param name="parts">The parts in total.</param>
+        /// <param name="script">The script's file name.</param>
+        /// <returns>The phase line.</returns>
         internal static string SplitPhaseSiril(int part, int parts, string script) =>
             $"partea {part} din {parts}: ruleaza {script}";
 
+        /// <summary>The phase line while the masters are analysed.</summary>
+        /// <param name="parts">The parts in total.</param>
+        /// <returns>The phase line.</returns>
         internal static string SplitPhaseAnalyse(int parts) =>
             $"analizez cele {parts} parti si intregul";
 
+        /// <summary>The failure screen's title.</summary>
+        /// <returns>The title.</returns>
         internal static string SplitFailedTitle() => "Impartirea s-a oprit";
 
+        /// <summary>A part's failure, with the temp folder kept.</summary>
+        /// <param name="part">The part's number, from 1.</param>
+        /// <param name="parts">The parts in total.</param>
+        /// <param name="outcome">What went wrong, already worded.</param>
+        /// <param name="tempRoot">The temp root kept.</param>
+        /// <returns>The failure text.</returns>
         internal static string SplitFailed(int part, int parts, string outcome, string tempRoot) =>
             $"La partea {part} din {parts}: {outcome}\n\n{SplitTempKept(tempRoot)}";
 
+        /// <summary>When the script ended but left no master in a part.</summary>
+        /// <param name="part">The part's number, from 1.</param>
+        /// <param name="parts">The parts in total.</param>
+        /// <param name="partRoot">The part's folder; its parent is the temp root kept.</param>
+        /// <param name="script">The script's file name.</param>
+        /// <returns>The failure text.</returns>
         internal static string SplitNoMaster(int part, int parts, string partRoot, string script) =>
             $"La partea {part} din {parts}: {script} s-a terminat, dar n-a lasat {SirilSession.FlatMasterName} "
             + $"nici in masters/, nici in process/ din\n{partRoot}\n\n{SplitTempKept(Path.GetDirectoryName(partRoot))}";
 
+        /// <summary>The note that the temp folder was kept after a failure.</summary>
+        /// <param name="tempRoot">The temp root.</param>
+        /// <returns>The note.</returns>
         internal static string SplitTempKept(string tempRoot) =>
             $"Folderul temporar a ramas, ca sa poti vedea ce s-a intamplat:\n{tempRoot}\n"
             + "Sterge-l cand nu-ti mai trebuie. Sesiunea originala nu a fost atinsa.";
 
+        /// <summary>When the temp folder could not be deleted.</summary>
+        /// <param name="tempRoot">The temp root.</param>
+        /// <returns>The note.</returns>
         internal static string SplitTempNotDeleted(string tempRoot) =>
             $"Folderul temporar nu s-a putut sterge: {tempRoot}. Sterge-l de mana.";
 
+        /// <summary>The question when the window is closed during a split.</summary>
+        /// <returns>The question.</returns>
         internal static string SplitCloseQuestion() =>
             "Impartirea inca ruleaza. O opresc? Siril e oprit la mijloc, folderul temporar se "
             + "sterge, si fereastra se inchide dupa aceea. Sesiunea originala nu e atinsa.";
 
+        /// <summary>Where the report and the mosaic were saved.</summary>
+        /// <param name="reportPath">The report's path.</param>
+        /// <param name="pngPath">The mosaic's path.</param>
+        /// <returns>Two lines.</returns>
         internal static string SplitSaved(string reportPath, string pngPath) =>
             $"Raport salvat: {reportPath}\nMozaic salvat: {pngPath}";
 
         // ------------------------------------------------------------------ Despre
         //
-        // Textele ferestrei "Despre". Cifra, versiunea si notita de garantie NU stau aici:
-        // vin din VersionInfo si RunReport, aceleasi cu ale consolei. Aici sunt doar
-        // titlurile si propozitiile pe care consola n-are unde sa le tipareasca.
+        // The texts of the "Despre" window. The figure, the version and the warranty notice do
+        // NOT sit here: they come from VersionInfo and RunReport, the same as the console's.
+        // Here are only the titles and sentences the console has nowhere to print.
 
+        /// <summary>The "Despre" window's title.</summary>
+        /// <returns>The title.</returns>
         internal static string AboutTitle() => "Despre FlatCheck";
 
-        /// <summary>Prima linie din README, ce face unealta intr-o propozitie.</summary>
+        /// <summary>The README's first line, what the tool does in one sentence.</summary>
+        /// <returns>The tagline.</returns>
         internal static string AboutTagline() =>
             "Diagnostic cantitativ pentru flat frames de astrofoto.";
 
+        /// <summary>The licence section's heading.</summary>
+        /// <returns>The heading.</returns>
         internal static string AboutLicenceHeading() => "LICENTA";
 
+        /// <summary>The label of the link to the GPLv3 text.</summary>
+        /// <returns>The label.</returns>
         internal static string AboutLicenseLinkLabel() =>
             "Textul complet al GNU General Public License v3";
 
+        /// <summary>The third-party section's heading.</summary>
+        /// <returns>The heading.</returns>
         internal static string AboutThirdPartyHeading() => "COMPONENTE TERTE";
 
         /// <summary>
-        /// De ce e lista aici si nu doar intr-un fisier: LGPL-ul LibRaw cere notita acolo
-        /// unde programul isi arata propriul copyright, si un exe copiat singur n-are
-        /// fisierul de notite langa el. Motivele de compatibilitate raman in fisier.
+        /// Why the list is here and not only in a file: LibRaw's LGPL asks for the notice where
+        /// the program shows its own copyright, and an exe copied alone has no notices file
+        /// beside it. The compatibility reasons stay in the file.
         /// </summary>
+        /// <returns>The lead above the list.</returns>
         internal static string AboutThirdPartyLead() =>
             "Unealta leaga trei componente scrise de altii, toate compatibile cu GPLv3. "
             + "Cititorul FITS, encoderul PNG, toate calculele si toate pragurile sunt scrise "

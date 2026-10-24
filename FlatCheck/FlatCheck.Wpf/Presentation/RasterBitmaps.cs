@@ -15,22 +15,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RasterBitmaps.cs - un raster de octeti, direct ca bitmap WPF, fara PNG.
+// RasterBitmaps.cs - a raster of bytes, straight as a WPF bitmap, without PNG.
 //
-// Hartile trec prin PngWriter fiindca PNG-ul E fisierul pe care il scrie consola, si
-// fereastra vrea sa arate exact acei octeti. Vederile egalizate n-au fisier pe partea
-// ferestrei, iar la rezolutia senzorului un PNG de zgomot egalizat ar avea 15-20 MB si
-// ar lua secunde de encodat pe vedere - pentru nimic: BitmapSource.Create ia octetii
-// asa cum sunt. Fara asta zoom-ul ar mari medii de blocuri, nu pixeli de senzor.
+// The maps go through PngWriter because the PNG IS the file the console writes, and the window
+// wants to show exactly those bytes. The equalised views have no file on the window's side, and
+// at the sensor's resolution a PNG of equalised noise would be 15-20 MB and would take seconds
+// to encode per view - for nothing: BitmapSource.Create takes the bytes as they are. Without
+// this the zoom would magnify block means, not sensor pixels.
 
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace FlatCheck.Wpf
 {
+    /// <summary>Wraps byte rasters as frozen WPF bitmaps, without encoding them.</summary>
     internal static class RasterBitmaps
     {
-        /// <summary>Un raster gri de w*h octeti, rand cu rand. Inghetat, deci bun pe orice fir.</summary>
+        /// <summary>A grey raster of w*h bytes, row by row. Frozen, so good on any
+        /// thread.</summary>
+        /// <param name="grey">The pixels, one byte each, top row first.</param>
+        /// <param name="w">The width, pixels.</param>
+        /// <param name="h">The height, pixels.</param>
+        /// <returns>The bitmap, at 96 dpi.</returns>
         internal static BitmapSource Grey(byte[] grey, int w, int h)
         {
             var b = BitmapSource.Create(w, h, 96, 96, PixelFormats.Gray8, null, grey, w);
@@ -38,7 +44,11 @@ namespace FlatCheck.Wpf
             return b;
         }
 
-        /// <summary>Un raster RGB de w*h*3 octeti, in ordinea R, G, B pe pixel.</summary>
+        /// <summary>An RGB raster of w*h*3 bytes, in the order R, G, B per pixel.</summary>
+        /// <param name="rgb">The pixels, three bytes each, top row first.</param>
+        /// <param name="w">The width, pixels.</param>
+        /// <param name="h">The height, pixels.</param>
+        /// <returns>The bitmap, frozen, at 96 dpi.</returns>
         internal static BitmapSource Rgb(byte[] rgb, int w, int h)
         {
             var b = BitmapSource.Create(w, h, 96, 96, PixelFormats.Rgb24, null, rgb, w * 3);

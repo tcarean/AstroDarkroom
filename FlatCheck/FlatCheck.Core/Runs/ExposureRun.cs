@@ -15,30 +15,45 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ExposureRun.cs - modul 4 cap-coada: un flat brut -> nivel + verdict + text.
+// ExposureRun.cs - mode 4 end to end: a raw flat -> level + verdict + text.
 
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// Mode 4, <c>--expo</c>: is a raw flat exposed right; loads one frame, measures its
+    /// level per CFA position and writes the report.
+    /// </summary>
     internal static class ExposureRun
     {
         /// <summary>
-        /// NU se cheama Img.Prepare aici, si asta e tot ce deosebeste modul de celelalte
-        /// trei: are nevoie de mozaicul CFA brut, la scala ADU originala. Un block-mean
-        /// 2x2 ar amesteca cele patru pozitii Bayer si ar sterge exact ce se masoara.
+        /// Img.Prepare is NOT called here, and that is all that sets this mode apart from the
+        /// other three: it needs the raw CFA mosaic, at the original ADU scale. A 2x2
+        /// block-mean would mix the four Bayer positions and erase exactly what is measured.
         ///
-        /// Nicio ramificatie dupa format: ImageLoader a decis deja. Un raw duce o scala
-        /// exacta, un FITS duce null si atunci analizorul o ghiceste din maxim - dar
-        /// calculul de dupa e acelasi, bit cu bit.
+        /// No branching on the format: ImageLoader has already decided. A raw carries an
+        /// exact scale, a FITS carries null and then the analyzer guesses it from the maximum -
+        /// but the computation after that is the same, bit for bit.
         ///
-        /// Nu produce harta: modul masoara un nivel, n-are ce desena.
+        /// It produces no map: the mode measures a level, it has nothing to draw.
         ///
-        /// <paramref name="withPreview"/>: decodeaza si previzualizarea aparatului, daca
-        /// fisierul are una. Implicit false, fiindca numai fereastra o arata: consola n-are
-        /// ce face cu ea, iar decodarea costa zeci pana la sute de milisecunde. Octetii ei
-        /// sunt oricum in LoadedFrame; aici se plateste doar decodarea.
+        /// <paramref name="withPreview"/>: also decodes the camera's preview, if the file has
+        /// one. False by default, because only the window shows it: the console has nothing to
+        /// do with it, and decoding costs tens to hundreds of milliseconds. Its bytes are in
+        /// LoadedFrame anyway; here only the decoding is paid for.
         /// </summary>
+        /// <param name="path">A raw or a FITS flat.</param>
+        /// <param name="sat">The white level in ADU given with <c>--sat</c>, or null to take
+        /// it from the file or guess it.</param>
+        /// <param name="black">The black level in ADU given with <c>--black</c>, or null to
+        /// take it from the file (0 when the file carries none).</param>
+        /// <param name="sky">True for a sky flat (<c>--sky</c>), whose acceptable bands differ
+        /// from a panel's.</param>
+        /// <param name="report">Where the report's text is written.</param>
+        /// <param name="withPreview">True to decode the camera's preview as well.</param>
+        /// <returns>The exposure result, with the decoded preview when asked for; no
+        /// map.</returns>
         internal static RunOutcome<ExposureResult> Execute(
             string path, double? sat, double? black, bool sky, TextWriter report,
             bool withPreview = false)
