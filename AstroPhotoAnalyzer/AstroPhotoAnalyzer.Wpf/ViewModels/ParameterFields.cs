@@ -318,9 +318,9 @@ namespace AstroPhotoAnalyzer.Wpf
 
         /// <summary>
         /// The target aspect from its field: two positive numbers separated by ':', 'x', 'X' or
-        /// '/'; anything else is a FormatException. NaN is refused as not positive; an infinite
-        /// side passes, and gives an infinite, zero or NaN ratio, which Parameters.Validate
-        /// refuses (R-024).
+        /// '/'; anything else is a FormatException, a side that reads as NaN or infinity
+        /// included: refused here, where the typed text is at hand for the message, rather than
+        /// as the 0, infinity or NaN ratio it would give (R-024, ADR 0045).
         /// </summary>
         /// <param name="text">The field's text; null or blank gives null.</param>
         /// <returns>Width over height, or null for an empty field.</returns>
@@ -331,7 +331,7 @@ namespace AstroPhotoAnalyzer.Wpf
             if (parts.Length == 2
                 && double.TryParse(parts[0].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double w)
                 && double.TryParse(parts[1].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double h)
-                && w > 0 && h > 0)
+                && double.IsFinite(w) && double.IsFinite(h) && w > 0 && h > 0)
                 return w / h;
             throw new FormatException($"raportul: '{text}' nu e latime:inaltime (ex. 50:35)");
         }

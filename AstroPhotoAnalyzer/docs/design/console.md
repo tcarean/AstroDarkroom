@@ -64,7 +64,10 @@ Rules between parameters are the core's: `Parameters.Validate()` returns a messa
 null, and both the console (exit 1, before any reading) and the window (the error text)
 call it. It checks, in this order, the target background after rounding (R-023), NaN and
 infinity in each number parameter in the parameters' order (`FiniteError`; the aspect ratio
-through `PositiveError`, since an infinite side arrives as a ratio of 0, infinity or NaN),
+through `PositiveError`, finite and positive, the backstop for a `Parameters` built in code:
+the two aspect parsers refuse a side that reads as NaN or infinity themselves, with their
+syntax message, so that the user reads the text typed and not the 0, infinity or NaN ratio
+it would give),
 and currently one rule between two parameters: **the passepartout must be at least
 `PassepartoutMinFrameRatio` (2) x the frame width**; 0 means no passepartout and is not
 checked. The window's distance, aspect, target-background, framing and WCS fields carry help

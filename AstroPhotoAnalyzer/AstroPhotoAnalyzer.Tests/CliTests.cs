@@ -137,6 +137,8 @@ public class CliTests
     /// The number flags read "NaN" and "Infinity" (R-024): the core refuses them before the
     /// image is read, with its message behind "EROARE: " and exit 1, like the rule between
     /// parameters (R-025). --dmax Infinity is not here: the console's own range check refuses it.
+    /// The aspect's sides are syntax: a side that reads as NaN or infinity gets the console's
+    /// own aspect message, which quotes the text typed, not the core's on the ratio it would give.
     /// </summary>
     [Theory]
     [InlineData("--dmax", "NaN", "Dmax trebuie sa fie un numar; a primit NaN, care nu e un numar")]
@@ -144,9 +146,9 @@ public class CliTests
     [InlineData("--distance", "Infinity", "distanta de privire trebuie sa fie un numar; a primit infinit")]
     [InlineData("--sizes", "NaN", "latimea de print trebuie sa fie un numar; a primit NaN, care nu e un numar")]
     [InlineData("--sizes", "60,Infinity", "latimea de print trebuie sa fie un numar; a primit infinit")]
-    [InlineData("--aspect", "NaN:1", "raportul de aspect trebuie sa fie un numar pozitiv; a primit NaN, care nu e un numar")]
-    [InlineData("--aspect", "Infinity:1", "raportul de aspect trebuie sa fie un numar pozitiv; a primit infinit")]
-    [InlineData("--aspect", "1:Infinity", "raportul de aspect trebuie sa fie un numar pozitiv; a primit 0")]
+    [InlineData("--aspect", "NaN:1", "--aspect asteapta latime:inaltime (ex. 50:35), a primit 'NaN:1'")]
+    [InlineData("--aspect", "Infinity:1", "--aspect asteapta latime:inaltime (ex. 50:35), a primit 'Infinity:1'")]
+    [InlineData("--aspect", "1:Infinity", "--aspect asteapta latime:inaltime (ex. 50:35), a primit '1:Infinity'")]
     [InlineData("--passepartout", "NaN", "passepartout-ul trebuie sa fie un numar; a primit NaN, care nu e un numar")]
     [InlineData("--frame", "Infinity", "rama trebuie sa fie un numar; a primit infinit")]
     public void R024_TheConsoleRefusesNaNAndInfinityBeforeReading(string flag, string value, string message)
