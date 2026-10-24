@@ -129,3 +129,78 @@ Order: the layers bottom up, so later comments point at settled contracts (`Img`
 ## What deviated
 
 Each area adds its own section at its wrap-up.
+
+### Area 1, the core's base (2026-10-24, `claude/Document-the-core-base`)
+
+- **The documentation file found 34 errors, not the handful the pre-check expected,** in 15
+  files of all five projects: 20 parameters left untagged in 9 members that tag others
+  (CS1573), 3 blocks with a bare `<dir>`, `<versiune>` or `<nume simplu>` (7 errors, CS1570),
+  3 `<paramref>` to a local or a tuple element (CS1734), 2 `cref`s to a renamed or another type's
+  member (CS1574) and 2 to an overloaded one (CS0419). The plan said to stop and report; put to
+  the owner, the answer was "fix the 34 now": the smallest change each, the missing tags in
+  English beside the Romanian ones (ADR 0060's exception), in the documentation-file commit.
+  Files of areas 2-5 already touched that way: `ExposureAnalyzer.cs`, `HistEqAnalyzer.cs`,
+  `SmoothScaleAdvisor.cs`, `StructureReport.cs`, `LightSeriesRun.cs`, `SplitRun.cs`,
+  `StructureRun.cs`, `FlatCheckCli.cs`, `SirilInstall.cs`, `SplitPlan.cs`,
+  `SyntheticTabViewModel.cs` and the tests `RawReaderTests.cs`, `StatsTests.cs`,
+  `SirilInstallTests.cs`. A publish of both `kit.json` entries ships no `.xml`.
+- **Four comments corrected, in a commit of their own:**
+  1. `IFrameReader.cs`, header: `ImageLoader` names both readers in its list
+     (`ImageLoader.cs`, `Readers`); it does not "know none of them by name".
+  2. `Version.cs`, header and `Copyright`: `<Version>` and `<Copyright>` live in
+     `Directory.Build.props` (its own header says so, and `VersionTests` checks it), not in
+     `FlatCheck.csproj`.
+  3. `FitsReader.LoadWithHeader`: the keys read from the dictionary are not all numeric;
+     `BAYERPAT`, `ROWORDER`, `INSTRUME` and `DATE-OBS` are strings (none holds a slash).
+     `known-issues.md`, point 1, said the same and was corrected with it.
+  4. `FitsReader.HStr`: used for `BAYERPAT`, `ROWORDER` and `INSTRUME` too, not only for
+     `DATE-OBS`.
+- **The glossary** below was written at this area's end rather than its start.
+- **Measured on 2026-10-24:**
+  - The counter on area 1's 24 files: on `main` 31 types and 170 methods to touch; on the
+    branch 0 and 0. The whole code has 133 types and 664 methods left for areas 2-5.
+  - `tokens`: all 121 code files and 78 test files identical to `main`'s code, 35 of the code
+    files with changed comments or layout.
+  - `facts`: no number, ID or identifier of the old comments missing, except two judged:
+    `MapResidual` (an `<inheritdoc cref>` replaced by its own text) and `PackageReference`
+    (now "PackageReferences").
+  - `romanian`: no line left in the 24 files, but one quoted output
+    (`LensIdentification.cs`, "focala din FOCALLEN").
+  - `width`: no comment line over 100 columns in the 24 files; every added line ASCII.
+  - `/validate`: the 40 cases ran on the real masters, all present; 300 figures, every one
+    identical to the recorded value.
+  - The gate: `== OK` at each of the six commits, 951 + 331 tests.
+
+## Glossary: one English word per Romanian term, in every area
+
+| Romanian | English | Where, and the identifiers that fix it |
+|---|---|---|
+| flat, master | flat, master | the input; `pp_flat_stacked.fit` |
+| vignetare; adancime | vignetting; depth | `VignettingModel`, the depth verdict in stops |
+| inel; sector; arc | ring; sector; arc | `RadialModel`, `RingFit`, `RingSectors` |
+| dala, dale | tile | `TileMedians`, `TileSize`, `MaxTileDeviation` |
+| pata, pete | spot | `LocalSpots`, `LocalSpotWarn` |
+| colt; centru; varf | corner; centre; vertex | `CornerStats`, `FitCenter` |
+| inclinare; reziduu; harta | tilt; residual; map | `tiltPct`, `ResidualVerdict`, the residual map |
+| sa (a cerului) | saddle | the even 2t term |
+| difuzor; textura; netezire | diffuser; texture; smoothing | `FineTexture`, `SmoothAnalyzer` |
+| rotire la 180 | 180-degree rotation | `Rotate180`, `--ratio` |
+| prag; banda; scara | threshold; band; scale | `Th`, the residual scale, `MapRange` |
+| cadru; raster de analiza | frame; analysis raster | `Img.Prepare` |
+| previzualizare; miniatura | preview; thumbnail | `EmbeddedPreview`, `PreviewReader` |
+| focala; diafragma; obiectiv; montura; aparat | focal length; aperture; lens; mount; camera | `LensProfile`, `LensChoice` |
+| crop de calibrare | calibration crop | `LensChoice.Calibration` |
+
+- Quoted output and every string literal stay Romanian.
+- British spelling as the docs use it (centre, colour, behaviour, normalise, symmetrise);
+  "analyzer" as the types write it.
+
+## The prompt for area 2
+
+To paste into a session opened in `E:\Photografie\Code\FlatCheck`, once area 1 is merged:
+"Area 2 of the documentation backfill, `Analysis/` and `Report/`: follow
+`docs/plans/2026-10-24-document-every-type-and-method-and-translate-the-comments.md` on `main`,
+'Each area's session', on branch `claude/Document-the-analyzers-and-reports`. The plan is
+approved. The scratch tool's source is in
+`C:\Users\User\AppData\Local\Temp\claude\E--Photografie-Code-FlatCheck\0e1af765-b386-4d2c-8f34-b2966ed6f718\scratchpad\doccount`
+(and `wrap.py` beside it): copy them into yours and build the tool."
