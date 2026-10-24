@@ -35,13 +35,14 @@ where they go.
 5. **Run it.** `scripts/release.ps1 -Version X.Y.Z`. It runs verify, edits
    `Directory.Build.props` and `CHANGELOG.md`, publishes each entry of `release.publish` to a
    staging folder and merges it into `artifacts/X.Y.Z/<output>/` with a hash check, writes
-   `artifacts/X.Y.Z/release.json` (the version, the commit, each component's version, commit and
-   unreleased flag) and, when `kit.json` sets `release.zip`, the zip in `artifacts/` with its
-   `.sha256` beside it (the kit's ADR 0036). Paste the last lines. If it fails, report and stop;
-   it changes nothing before verify passes. A collision (two entries publishing different bytes
-   at one path) stops it after the version files changed: paste the collision lines and stop;
-   the owner decides, usually an `output` subfolder for that entry in `kit.json`, then
-   `scripts/release.ps1 -Version X.Y.Z -PublishOnly` redoes the publish alone.
+   `artifacts/X.Y.Z/release.json` (the version, the commit, each component's version, commit,
+   unreleased flag and whether its folder was clean) and, when `kit.json` sets `release.zip`,
+   the zip in `artifacts/` with its `.sha256` beside it (the kit's ADR 0036). Paste the last
+   lines. If it fails, report and stop; it changes nothing before verify passes. A collision
+   (two entries publishing different bytes at one path) stops it after the version files
+   changed: paste the collision lines and stop; the owner decides, usually an `output` subfolder
+   for that entry in `kit.json`, then `scripts/release.ps1 -Version X.Y.Z -PublishOnly` redoes
+   the publish alone.
 6. **Check, propose, then ask.** `git rev-parse HEAD` must still be the hash of step 1, and
    `git status --porcelain -- .` must list only `CHANGELOG.md` and, unless the owner had already
    set the version, `Directory.Build.props`; each component's folder must still be clean (a
