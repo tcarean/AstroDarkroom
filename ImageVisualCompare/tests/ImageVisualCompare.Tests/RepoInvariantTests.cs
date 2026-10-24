@@ -40,6 +40,20 @@ public class RepoInvariantTests
     private static readonly Regex TestMethod =
         new(@"public\s+(?:async\s+)?(?:void|Task)\s+R(\d{3})_\w+\s*\(", RegexOptions.Compiled);
 
+    /// <summary>
+    /// The projects target .NET 8, so the Astro Darkroom suite carries one runtime (ADR 0037):
+    /// the core, the application and the tests, each in its own project file.
+    /// </summary>
+    [Theory]
+    [InlineData("src/ImageVisualCompare.Core/ImageVisualCompare.Core.csproj", "net8.0")]
+    [InlineData("src/ImageVisualCompare.Wpf/ImageVisualCompare.Wpf.csproj", "net8.0-windows")]
+    [InlineData("tests/ImageVisualCompare.Tests/ImageVisualCompare.Tests.csproj", "net8.0-windows")]
+    public void TargetFramework_IsNet8_InEveryProjectThatShips(string project, string framework)
+    {
+        string text = File.ReadAllText(Path.Combine(Root, project));
+        Assert.Contains($"<TargetFramework>{framework}</TargetFramework>", text, StringComparison.Ordinal);
+    }
+
     /// <summary>The kit's rule "Requirements first" made checkable: an implemented requirement has at least one test named after it.</summary>
     [Fact]
     public void EveryImplementedRequirement_HasATestCarryingItsId()

@@ -19,6 +19,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
+  (ADR 0037).
+
 - A TIFF of 32-bit float samples, as Siril and GraXpert export, is reported `32-bit float RGB`
   (or gray, RGBA) and shown as stored, as a FITS of the same samples is, with the same 0..1 or
   0..65535 rule. WIC's own conversion showed it about 73 levels brighter, and reported the RGB

@@ -3,7 +3,7 @@
 WPF before/after slider for two variants of the same astro processing: image A left of a
 draggable vertical line, image B right of it, both at the same zoom and pan, with the RGB of
 the pixel under the cursor read from both. Built to see a difference of one or two levels in a
-dark field, where the eye cannot. One WPF application over a pure core library, .NET 9,
+dark field, where the eye cannot. One WPF application over a pure core library, .NET 8,
 Windows, x64, **no NuGet package** outside the test project: decoding is WIC, the codec WPF
 uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does not read (ADR
 0029). Everything on screen is dark, whatever the system theme (ADR 0018).
@@ -33,7 +33,7 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
 
 ## Layout
 
-- `src/ImageVisualCompare.Core/` - `net9.0`, no UI framework reference: zoom and pan
+- `src/ImageVisualCompare.Core/` - `net8.0`, no UI framework reference: zoom and pan
   (`Viewport.cs`, `ZoomLadder.cs`), the divider (`DividerModel.cs`), the canvas of a pair
   (`ImagePairValidator.cs`), what a file turned out to be (`ImageInfo.cs`), the FITS reader
   (`FitsHeader.cs`, `FitsScale.cs`, `FitsRowDecoder.cs`), a float TIFF's samples shown as a
@@ -41,12 +41,12 @@ uses anyway (ADR 0008), and the project's own reader for FITS, which WIC does no
   records the controls assign without arithmetic of their own (`RenderPlan.cs`,
   `DividerLayout.cs`, `MinimapGeometry.cs`, `ScrollBarState.cs`, `Geometry.cs`, `PointD.cs`).
   All of it unit tested.
-- `src/ImageVisualCompare.Wpf/` - `net9.0-windows`, the application: `Imaging/` (the decoder
+- `src/ImageVisualCompare.Wpf/` - `net8.0-windows`, the application: `Imaging/` (the decoder
   seam, WIC and the FITS loader behind it, the pair loader, memory housekeeping), `Controls/` (the comparison
   surface, the minimap), `MainWindow`, `MessageDialog`, `Interop/DarkTitleBar.cs`,
   `Services/FileDialogService.cs`, `Theme.xaml`, `Version.cs`, `Assets/` (the icon and the
   script that draws it).
-- `tests/ImageVisualCompare.Tests/` - `net9.0-windows` with `UseWPF`: Core, the imaging layer
+- `tests/ImageVisualCompare.Tests/` - `net8.0-windows` with `UseWPF`: Core, the imaging layer
   on the real WIC codecs (fixtures generated at run time by `TempImages` and `FitsFixture`), a
   defect of a window or a control on one STA thread, never shown (`WpfThread`, ADR 0032),
   `RepoInvariantTests`, `ValidationTests` (trait `Category=Validation`), `LicenseHeaderTests`,

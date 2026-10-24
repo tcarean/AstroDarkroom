@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <!-- The imaging tests exercise the real WIC decoder, which needs the WPF surface. -->
     <UseWPF>true</UseWPF>
     <IsPackable>false</IsPackable>
