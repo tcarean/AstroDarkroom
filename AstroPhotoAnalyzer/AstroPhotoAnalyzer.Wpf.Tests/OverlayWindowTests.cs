@@ -52,10 +52,13 @@ public class OverlayWindowTests
         Assert.True(canvas.PaperBlack > canvas.LowSeparation, $"canvas {canvas.PaperBlack}");
         Assert.Equal(baryta.HistogramHeading, canvas.HistogramHeading);
         Assert.Equal(baryta.HistogramNote, canvas.HistogramNote);
-        Assert.StartsWith("HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena punctata = pragul de vizibilitate L* 15", baryta.HistogramHeading);
-        Assert.StartsWith("La stanga liniei rosii totul se printeaza cu acelasi negru. La stanga liniei galbene punctate (sub L* 15) hartia inca separa tonurile", baryta.HistogramNote);
+        Assert.StartsWith("HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = pragul de vizibilitate L* 15", baryta.HistogramHeading);
+        Assert.StartsWith("La stanga liniei rosii totul se printeaza cu acelasi negru. La stanga liniei galbene intrerupte (sub L* 15), tonurile pe care hartia le mai separa abia se deosebesc cu ochiul", baryta.HistogramNote);
+        // Under paper black the paper separates nothing, and that region is also left of the threshold.
+        Assert.DoesNotContain("hartia inca separa", baryta.HistogramNote);
         // Each sentence says what lies left of one line; none says which line is left of the other.
-        Assert.DoesNotContain("intre", baryta.HistogramNote);
+        Assert.DoesNotContain("intre linia", baryta.HistogramNote);
+        Assert.DoesNotContain("intre cele", baryta.HistogramNote);
         Assert.DoesNotContain("dreapta", baryta.HistogramNote);
 
         canvas.Clear();

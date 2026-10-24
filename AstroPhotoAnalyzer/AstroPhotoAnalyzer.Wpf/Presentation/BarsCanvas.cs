@@ -64,7 +64,8 @@ namespace AstroPhotoAnalyzer.Wpf
         public IReadOnlyList<double> Values { get => (IReadOnlyList<double>)GetValue(ValuesProperty); set => SetValue(ValuesProperty, value); }
 
         /// <summary>
-        /// The marker's position, in bin indices (0..Values.Count). NaN = no marker.
+        /// The marker's value on the bins' axis, where bin i is centred on i (so 0..Values.Count - 1
+        /// spans the bins and a half marks a boundary between two). NaN = no marker.
         /// </summary>
         public double Marker { get => (double)GetValue(MarkerProperty); set => SetValue(MarkerProperty, value); }
 
@@ -72,8 +73,8 @@ namespace AstroPhotoAnalyzer.Wpf
         public Brush MarkerBrush { get => (Brush)GetValue(MarkerBrushProperty); set => SetValue(MarkerBrushProperty, value); }
 
         /// <summary>
-        /// The second marker's position, in bin indices (0..Values.Count), drawn dashed so that it
-        /// is told from <see cref="Marker"/> when the two nearly coincide. NaN = no second marker.
+        /// The second marker's value on the same axis as <see cref="Marker"/>, drawn dashed so that
+        /// it is told from the first when the two nearly coincide. NaN = no second marker.
         /// </summary>
         public double SecondMarker { get => (double)GetValue(SecondMarkerProperty); set => SetValue(SecondMarkerProperty, value); }
 
@@ -107,12 +108,14 @@ namespace AstroPhotoAnalyzer.Wpf
             DrawMarker(dc, Marker, new Pen(MarkerBrush, 1.5), bw, h, v.Count);
             DrawMarker(dc, SecondMarker, new Pen(SecondMarkerBrush, 1.5) { DashStyle = DashStyles.Dash }, bw, h, v.Count);
 
-            // A vertical line at the bin position m over the whole height; nothing when m is NaN or
-            // outside the bins.
+            // A vertical line at the value m over the whole height; nothing when m is NaN or outside
+            // the bins. The bins are centred on their index (the L* histogram rounds a value into
+            // its bin), so m sits half a bin right of bin m's left edge; until the review of
+            // 2026-10-24 the line stood at that edge, half a bin left of its value.
             static void DrawMarker(DrawingContext dc, double m, Pen pen, double bw, double h, int count)
             {
-                if (double.IsNaN(m) || m < 0 || m > count) return;
-                double x = m * bw;
+                if (double.IsNaN(m) || m < -0.5 || m > count - 0.5) return;
+                double x = (m + 0.5) * bw;
                 dc.DrawLine(pen, new Point(x, 0), new Point(x, h));
             }
         }

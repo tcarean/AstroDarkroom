@@ -8,6 +8,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- The paper-black line of the Tonuri histogram stood half a bin (about 5 px) left of its value:
+  the bins are centred on whole L\* values, and the line now falls at the centre of its bin,
+  as does the new threshold line (R-113; the code review of ADR 0046's task).
 - The gamut figure of the Curbe tab no longer undercounts near the paper's gamut edge: a pixel
   whose interpolated displacement lies within 1.0 of the threshold takes the exact round trip of
   its 8-bit colour, once per colour, the rows measured in parallel (R-144; ADR 0042). The grid

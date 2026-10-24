@@ -32,8 +32,11 @@ nearly coincide.
    (`HistogramHeading`, `HistogramNote`), because they now carry the number 15, which the rule
    "Explanation is not diagnosis" wants interpolated from `Thresholds`.
 4. Each sentence of the note says what lies left of one line ("La stanga liniei rosii ...",
-   "La stanga liniei galbene punctate ...") and never which line is left of the other, so the
-   same text is right on baryta and on canvas.
+   "La stanga liniei galbene intrerupte ...") and never which line is left of the other, so the
+   same text is right on baryta and on canvas; the threshold's sentence speaks only of the
+   tones the paper still separates, because part of what lies under the threshold is under
+   paper black too, on every paper. The line is called "intrerupta" (dashed), as it is
+   drawn, not "punctata".
 
 ## Alternatives rejected
 
@@ -52,3 +55,8 @@ nearly coincide.
   positions on baryta and on canvas and that the texts are the same strings on both.
 - `docs/design/window.md` describes the new members; the README's Tonuri sentence names the
   second line.
+- The code review of this task found both lines half a bin left of their value: the bins are
+  centred on whole L\* values (`TonalAnalyzer` rounds), and `BarsCanvas` put a marker at the
+  left edge of its bin. A marker now falls at the centre of its bin, the paper-black line
+  moved with it, and `R113_TheCanvasDrawsBothLinesAtTheCentreOfTheirBin` reads the rendered
+  columns back.

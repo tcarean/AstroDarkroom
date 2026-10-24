@@ -63,7 +63,7 @@ sentence would widen the card. `VerdictPalette`
 (colour from the core's label: OK green, ATENTIE amber, PROBLEMA red, anything else
 neutral); `RasterBitmaps` (a raster region as `BitmapSource`, stride and integer zoom,
 frozen); `BarsCanvas` (a `FrameworkElement` drawing a histogram with up to two marker lines in
-`OnRender`, the second dashed); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
+`OnRender`, the second dashed, each at the centre of its value's bin since the bins are centred on their index); `DarkTitleBar` (DWM attribute 20, falling back to 19); `AppIcon` (largest
 frame of the .ico for "Despre").
 
 **Culture**: `App.ForceInvariantNumbers` pins `DefaultThreadCurrentCulture` and

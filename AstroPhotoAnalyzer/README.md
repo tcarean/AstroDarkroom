@@ -33,7 +33,7 @@ Anexa F din ce profil vine Dmax-ul; mediul ales își păstrează numele, doar D
 înlocuit. Distanța, raportul de aspect, fundalul-țintă, passepartout-ul, rama și WCS-ul explică la trecerea mouse-ului ce înseamnă, de unde vine
 valoarea implicită și când merită schimbate. Dreapta, șapte taburi: **Raport** (deciziile, cu
 pastile de verdict și „fiindca" sub fiecare; raportul text pliabil), **Tonuri**
-(histograma L\* cu negrul hârtiei marcat cu o linie roșie și pragul de vizibilitate L\* 15 cu una galbenă punctată, cifrele tonale cu o explicație sub fiecare,
+(histograma L\* cu negrul hârtiei marcat cu o linie roșie și pragul de vizibilitate L\* 15 cu una galbenă întreruptă, cifrele tonale cu o explicație sub fiecare,
 simularea de fundal cu un buton Preview pe fiecare rând, sub ea definiția prafului și a
 cerului folosite pe fișierul ăsta — cu roșu când fișierul n-are WCS —, butonul „Harta praf /
 cer" și tabelul norilor catalogați, apoi tabela nivel - L\* a reperelor și un panou despre

@@ -172,17 +172,19 @@ namespace AstroPhotoAnalyzer.Wpf
         /// The chart's heading: what each of the two lines is. The threshold comes from
         /// Thresholds, not typed.
         /// </summary>
-        public string HistogramHeading => "HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena punctata = "
+        public string HistogramHeading => "HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena intrerupta = "
             + $"pragul de vizibilitate L* {Fmt.F0(Thresholds.LowSeparationLstar)}";
 
         /// <summary>
         /// The note under the chart. Each sentence says what lies left of one line and never
         /// which line is left of the other: on canvas (Dmax 1.5) paper black is L* 20.7, right of
-        /// the threshold, and the text must hold there too.
+        /// the threshold, and the text must hold there too. The second sentence speaks only of
+        /// the tones the paper still separates, since part of what is left of the threshold is
+        /// also under paper black, on every paper.
         /// </summary>
         public string HistogramNote => "La stanga liniei rosii totul se printeaza cu acelasi negru. "
-            + $"La stanga liniei galbene punctate (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}) hartia inca separa tonurile, "
-            + "dar ochiul, in lumina de camera, abia. Histograma e pe subesantion, in procente.";
+            + $"La stanga liniei galbene intrerupte (sub L* {Fmt.F0(Thresholds.LowSeparationLstar)}), tonurile pe care hartia "
+            + "le mai separa abia se deosebesc cu ochiul, in lumina de camera. Histograma e pe subesantion, in procente.";
 
         /// <summary>
         /// The simulation table: the header, then a row per target, each with its preview

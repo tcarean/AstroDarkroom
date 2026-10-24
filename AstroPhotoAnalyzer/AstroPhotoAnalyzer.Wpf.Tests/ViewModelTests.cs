@@ -79,8 +79,8 @@ public class ViewModelTests
         Assert.Equal(101, tones.Histogram.Count);
         Assert.InRange(tones.PaperBlack, 8.9, 9.1);
         Assert.Equal(Thresholds.LowSeparationLstar, tones.LowSeparation);
-        Assert.Contains($"linia rosie = negrul hartiei, linia galbena punctata = pragul de vizibilitate L* {Thresholds.LowSeparationLstar:0}", tones.HistogramHeading);
-        Assert.Contains($"La stanga liniei galbene punctate (sub L* {Thresholds.LowSeparationLstar:0})", tones.HistogramNote);
+        Assert.Contains($"linia rosie = negrul hartiei, linia galbena intrerupta = pragul de vizibilitate L* {Thresholds.LowSeparationLstar:0}", tones.HistogramHeading);
+        Assert.Contains($"La stanga liniei galbene intrerupte (sub L* {Thresholds.LowSeparationLstar:0})", tones.HistogramNote);
         Assert.Equal(1 + 17 + 1, tones.SimulationRows.Count);   // antet + "asa cum e" + grila 0.05..0.20 + nota
         Assert.Null(tones.SimulationRows[0].Preview);
         Assert.All(tones.SimulationRows.Skip(1).Take(17), row => Assert.NotNull(row.Preview));
