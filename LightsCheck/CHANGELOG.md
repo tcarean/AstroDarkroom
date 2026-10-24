@@ -105,6 +105,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Changed
 
+- The projects target .NET 8 instead of .NET 9, so the Astro Darkroom suite ships one runtime
+  (ADR 0017).
+
 - The drift is measured on the pairs of consecutive frames with no pause and no move between
   them, where nothing was pressed and the mount did not jump, and falls back to the pairs
   without a move, worded approximate, under three such pairs (R-049, ADR 0016). On Veil nine
