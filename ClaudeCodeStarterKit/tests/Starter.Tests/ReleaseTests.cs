@@ -335,6 +335,7 @@ public sealed class ReleaseTests : IDisposable
         try
         {
             Assert.True(exitCode == 0, output);
+            Assert.Contains("fatal: not a git repository", output);
             using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(plain, "artifacts", "2.3.0", "release.json")));
             Assert.Equal(string.Empty, release.RootElement.GetProperty("commit").GetString());
             JsonElement component = Assert.Single(release.RootElement.GetProperty("components").EnumerateArray());
@@ -345,6 +346,48 @@ public sealed class ReleaseTests : IDisposable
         {
             ScriptRunner.DeleteTree(plain);
         }
+    }
+
+    /// <summary>
+    /// Without git on PATH, after a publish whose dotnet and merge left an exit code of 0 behind,
+    /// release.json still says not clean and the output says why. Windows only: the PATH is
+    /// built from dotnet's folder, PowerShell's and System32, where git is not.
+    /// </summary>
+    [Fact]
+    public void PublishOnly_WithoutGit_RecordsNotClean()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        string dotnet = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty).Split(Path.PathSeparator)
+            .First(d => d.Length > 0 && File.Exists(Path.Combine(d, "dotnet.exe")));
+        string path = string.Join(Path.PathSeparator, dotnet, Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0"), Environment.SystemDirectory);
+        WriteLibrary("src/Lib");
+        WriteKitJson("""{ "project": "src/Lib/Lib.csproj", "output": "lib" }""");
+        Commit("One library");
+
+        (int exitCode, string output) = ScriptRunner.RunWith(_project, new Dictionary<string, string> { ["PATH"] = path },
+            ScriptRunner.Shell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", Path.Combine(_project, "scripts", "release.ps1"), "-Version", "2.3.0", "-PublishOnly");
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("git was not found", output);
+        using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(_project, "artifacts", "2.3.0", "release.json")));
+        JsonElement component = Assert.Single(release.RootElement.GetProperty("components").EnumerateArray());
+        Assert.Equal(string.Empty, component.GetProperty("commit").GetString());
+        Assert.False(component.GetProperty("clean").GetBoolean());
+    }
+
+    /// <summary>The refusal lists the paths as git status prints them: " M" is a change not staged, kept with its space.</summary>
+    [Fact]
+    public void AComponentWithAModifiedFile_IsListedAsGitPrintsIt()
+    {
+        MakeComponent();
+        File.AppendAllText(Path.Combine(_repo, "Proj2", "p.csproj"), "<!-- edited -->\n");
+
+        (int exitCode, string output) = Release("2.3.0", "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains(" M Proj2/p.csproj", output);
     }
 
     /// <summary>-PublishOnly checks nothing, so release.json says when a component's folder held uncommitted files.</summary>

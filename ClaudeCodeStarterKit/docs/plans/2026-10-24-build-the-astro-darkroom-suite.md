@@ -480,7 +480,23 @@ started from its net8 build; the lock files of all three changed only their fram
   `Get-ComponentInfo`; `merge-publish.ps1` hashes only files of equal length.
 - **Measured on .NET 8** (`docs/validation.md`, History, of the three projects): DarksCheck 10/10,
   LightsCheck 13/13, ImageVisualCompare 4/4 cases pass, no figure moved, IVC's memory within
-  3.3 MB. DarksCheck's working set, same code on both runtimes, two runs each: library 3.13 /
-  3.16 GB (.NET 9) and 3.22 / 3.29 GB (.NET 8), 24-27 s; Smida 5.75 / 6.09 GB and 5.72 / 5.87 GB,
-  63-65 s. Smida is above ADR 0007's 4.5-4.7 GB and 35 s on both runtimes alike: the console
-  does more on that folder than it did on 2026-10-11; not looked into, ADR 0007 left as it is.
+  3.3 MB. DarksCheck's working set, `main` on .NET 9 against the branch on .NET 8 (the code
+  differs only in its three locks), two runs each: library 3.13 / 3.16 GB (.NET 9) and 3.22 /
+  3.29 GB (.NET 8), 24-27 s; Smida 5.75 / 6.09 GB and 5.72 / 5.87 GB, 63-65 s. Smida is above
+  ADR 0007's 4.5-4.7 GB and 35 s on both runtimes alike; what makes that gap was not looked for,
+  ADR 0007 left as it is.
+
+**After the second `/code-review`, of the fixes only (2026-10-25, ten findings; the owner chose
+1-5 and 7):**
+
+- `Invoke-GitText` checks that git is on PATH (a missing git was a `CommandNotFoundException`
+  that stopped the script, measured by a test with a PATH without git), keeps git's message in
+  `$script:GitError` for the "not clean" line instead of guessing "not in a git repository",
+  and trims only trailing white space, so `git status`'s ` M` (not staged) keeps its column.
+- `merge-publish.ps1` takes back the files a failed copy had already put in `-Into`.
+- The validation notes and ADR 0018 say what was compared (`main` on .NET 9 against the
+  branch on .NET 8, three locks apart) and no longer give causes that were not measured.
+- Left, at the owner's word: the test outside git depends on the temp folder being in no
+  repository; `release.json`'s collision is a check of its own beside `merge-publish.ps1`;
+  the components' git calls run twice per release; no test drives `release.ps1`'s exit-2
+  branch.

@@ -68,6 +68,21 @@ public sealed class MergePublishTests : IDisposable
         Assert.Equal("net9", File.ReadAllText(Path.Combine(_into, "runtimes", "coreclr.dll")));
     }
 
+    /// <summary>A copy that fails midway exits 2 and takes back the files this run copied, so -Into is left as it was.</summary>
+    [Fact]
+    public void AFailedCopy_RemovesWhatThisRunCopied_AndExitsTwo()
+    {
+        Write(_from, "first.txt", "copied before the failure");
+        Write(_from, "lensfun/db.xml", "cannot go under a file");
+        Write(_into, "lensfun", "a file where the folder should be");
+
+        (int exitCode, string output) = Merge();
+        Assert.Equal(2, exitCode);
+        Assert.Contains("merge-publish:", output);
+        Assert.False(File.Exists(Path.Combine(_into, "first.txt")), "the file copied before the failure was left behind");
+        Assert.Equal("a file where the folder should be", File.ReadAllText(Path.Combine(_into, "lensfun")));
+    }
+
     /// <summary>An error that is not a collision exits 2, so release.ps1 does not give the collision advice for it.</summary>
     [Fact]
     public void AMissingFromFolder_ExitsTwo_AndIsNoCollision()
