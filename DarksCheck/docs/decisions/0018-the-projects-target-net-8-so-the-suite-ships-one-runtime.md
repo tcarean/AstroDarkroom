@@ -37,4 +37,7 @@ SDK 9 builds net8.0 with C# 13 through `LangVersion latest`.
 `LightsAnalyzer`) are plain `object` locks, with the same `lock` statements. C# 13 stays. The
 runtime the release publishes for is declared as before (the kit's ADR 0034). Guarded by
 `RepoInvariantTests.TargetFramework_IsNet8_InEveryProjectThatShips`, which reads
-`Directory.Build.props` and the window's project file.
+`Directory.Build.props` and the window's project file. Measured on 2026-10-25
+(`docs/validation.md`, History): the ten validation cases pass on .NET 8 with no figure moved,
+and the working set of ADR 0007 (`System.GC.ConserveMemory=9`) is the same on both runtimes for
+the same code, 3.1 to 3.3 GB on the 30-frame library and 5.7 to 6.1 GB on Smida.
