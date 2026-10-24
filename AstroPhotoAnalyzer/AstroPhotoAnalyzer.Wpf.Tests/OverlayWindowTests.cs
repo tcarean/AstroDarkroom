@@ -37,6 +37,34 @@ public class OverlayWindowTests
     static Raster Ldn42Scene() => WcsFixtures.Ldn42Scene();
 
     [Fact]
+    public void R113_TheHistogramMarksPaperBlackAndTheVisibilityThresholdInEitherOrder()
+    {
+        // The scenes' paper (Dmax 2.0): paper black L* 9.0, left of the threshold; canvas (Dmax 1.5):
+        // L* 20.7, right of it. The chart's texts must be the same strings either way.
+        var baryta = new TonesTabViewModel();
+        baryta.Populate(Result(Scenes.DarkSky()));
+        var canvas = new TonesTabViewModel();
+        canvas.Populate(AnalysisRun.Execute(Scenes.DarkSky(), "memorie", new Parameters { Medium = PrintMedium.Canvas }));
+
+        Assert.Equal(Thresholds.LowSeparationLstar, baryta.LowSeparation);
+        Assert.Equal(Thresholds.LowSeparationLstar, canvas.LowSeparation);
+        Assert.True(baryta.PaperBlack < baryta.LowSeparation, $"baryta {baryta.PaperBlack}");
+        Assert.True(canvas.PaperBlack > canvas.LowSeparation, $"canvas {canvas.PaperBlack}");
+        Assert.Equal(baryta.HistogramHeading, canvas.HistogramHeading);
+        Assert.Equal(baryta.HistogramNote, canvas.HistogramNote);
+        Assert.StartsWith("HISTOGRAMA L* (0..100); linia rosie = negrul hartiei, linia galbena punctata = pragul de vizibilitate L* 15", baryta.HistogramHeading);
+        Assert.StartsWith("La stanga liniei rosii totul se printeaza cu acelasi negru. La stanga liniei galbene punctate (sub L* 15) hartia inca separa tonurile", baryta.HistogramNote);
+        // Each sentence says what lies left of one line; none says which line is left of the other.
+        Assert.DoesNotContain("intre", baryta.HistogramNote);
+        Assert.DoesNotContain("dreapta", baryta.HistogramNote);
+
+        canvas.Clear();
+        Assert.True(double.IsNaN(canvas.PaperBlack));
+        Assert.True(double.IsNaN(canvas.LowSeparation));
+        Assert.Empty(canvas.Histogram);
+    }
+
+    [Fact]
     public void R113_TheTabStatesTheDefinitionWarnsWithoutAWcsAndOffersTheMap()
     {
         var noWcs = new TonesTabViewModel();

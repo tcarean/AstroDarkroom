@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 -->
 
-<!-- TonesView - histograma L* cu negrul hartiei marcat, cifrele tonale cu descrierea lor,
+<!-- TonesView - histograma L* cu negrul hartiei si pragul de vizibilitate marcate, cifrele tonale cu descrierea lor,
      tabelul simularii de fundal, tabela nivel - L* a reperelor si, ultimul, panoul care
      explica tabul. -->
 
@@ -29,13 +29,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel MaxWidth="1100" HorizontalAlignment="Left">
       <Border Style="{StaticResource Card}" Margin="0,0,0,12">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="HISTOGRAMA L* (0..100); linia rosie = negrul hartiei" />
+          <TextBlock Style="{StaticResource Heading}" Text="{Binding HistogramHeading}" />
           <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
             <local:BarsCanvas Height="140" Values="{Binding Histogram}" Marker="{Binding PaperBlack}"
-                              Fill="{StaticResource AccentBr}" MarkerBrush="{StaticResource BadBr}" />
+                              SecondMarker="{Binding LowSeparation}" Fill="{StaticResource AccentBr}"
+                              MarkerBrush="{StaticResource BadBr}" SecondMarkerBrush="{StaticResource WarnBr}" />
           </Border>
-          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0"
-                     Text="Tot ce e la stanga liniei se printeaza cu acelasi negru. Histograma e pe subesantion, in procente." />
+          <TextBlock Style="{StaticResource Faint}" Margin="0,6,0,0" TextWrapping="Wrap" Text="{Binding HistogramNote}" />
         </StackPanel>
       </Border>
 

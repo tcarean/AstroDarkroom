@@ -15,12 +15,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// BarsCanvas.cs - a histogram drawn directly, with an optional vertical marker.
+// BarsCanvas.cs - a histogram drawn directly, with up to two vertical markers.
 //
 // An element of its own instead of a hundred bound rectangles: the L* histogram has 101 bins,
 // and an ItemsControl with a hundred elements would lay itself out again at every resize.
-// OnRender draws everything in one pass. The marker is paper black (in L*), so that how much of
-// the histogram falls under it is seen at once.
+// OnRender draws everything in one pass. The markers are paper black and the visibility
+// threshold (both in L*), the second dashed so that it is told from the first when a paper's
+// black sits near the threshold; how much of the histogram falls under each is seen at once.
 
 using System;
 using System.Collections.Generic;
@@ -30,8 +31,9 @@ using System.Windows.Media;
 namespace AstroPhotoAnalyzer.Wpf
 {
     /// <summary>
-    /// A bar chart of <see cref="Values"/>, one bar per value, scaled to the tallest, with an
-    /// optional vertical <see cref="Marker"/>; redrawn when any of its properties changes.
+    /// A bar chart of <see cref="Values"/>, one bar per value, scaled to the tallest, with up to
+    /// two optional vertical markers, <see cref="Marker"/> solid and <see cref="SecondMarker"/>
+    /// dashed; redrawn when any of its properties changes.
     /// </summary>
     public sealed class BarsCanvas : FrameworkElement
     {
@@ -51,6 +53,14 @@ namespace AstroPhotoAnalyzer.Wpf
             nameof(MarkerBrush), typeof(Brush), typeof(BarsCanvas),
             new FrameworkPropertyMetadata(Brushes.IndianRed, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty SecondMarkerProperty = DependencyProperty.Register(
+            nameof(SecondMarker), typeof(double), typeof(BarsCanvas),
+            new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public static readonly DependencyProperty SecondMarkerBrushProperty = DependencyProperty.Register(
+            nameof(SecondMarkerBrush), typeof(Brush), typeof(BarsCanvas),
+            new FrameworkPropertyMetadata(Brushes.Goldenrod, FrameworkPropertyMetadataOptions.AffectsRender));
+
         public IReadOnlyList<double> Values { get => (IReadOnlyList<double>)GetValue(ValuesProperty); set => SetValue(ValuesProperty, value); }
 
         /// <summary>
@@ -62,9 +72,17 @@ namespace AstroPhotoAnalyzer.Wpf
         public Brush MarkerBrush { get => (Brush)GetValue(MarkerBrushProperty); set => SetValue(MarkerBrushProperty, value); }
 
         /// <summary>
+        /// The second marker's position, in bin indices (0..Values.Count), drawn dashed so that it
+        /// is told from <see cref="Marker"/> when the two nearly coincide. NaN = no second marker.
+        /// </summary>
+        public double SecondMarker { get => (double)GetValue(SecondMarkerProperty); set => SetValue(SecondMarkerProperty, value); }
+
+        public Brush SecondMarkerBrush { get => (Brush)GetValue(SecondMarkerBrushProperty); set => SetValue(SecondMarkerBrushProperty, value); }
+
+        /// <summary>
         /// Draws the bars over the element's whole size, each as tall as its value's share of the
-        /// largest, then the marker line; draws nothing without a size, without values, or when
-        /// no value is positive.
+        /// largest, then the two marker lines, the second dashed; draws nothing without a size,
+        /// without values, or when no value is positive.
         /// </summary>
         /// <param name="dc">WPF's drawing context for this pass.</param>
         protected override void OnRender(DrawingContext dc)
@@ -86,11 +104,16 @@ namespace AstroPhotoAnalyzer.Wpf
                 dc.DrawRectangle(Fill, null, new Rect(i * bw, h - bh, Math.Max(1, bw - 0.5), bh));
             }
 
-            double m = Marker;
-            if (!double.IsNaN(m) && m >= 0 && m <= v.Count)
+            DrawMarker(dc, Marker, new Pen(MarkerBrush, 1.5), bw, h, v.Count);
+            DrawMarker(dc, SecondMarker, new Pen(SecondMarkerBrush, 1.5) { DashStyle = DashStyles.Dash }, bw, h, v.Count);
+
+            // A vertical line at the bin position m over the whole height; nothing when m is NaN or
+            // outside the bins.
+            static void DrawMarker(DrawingContext dc, double m, Pen pen, double bw, double h, int count)
             {
+                if (double.IsNaN(m) || m < 0 || m > count) return;
                 double x = m * bw;
-                dc.DrawLine(new Pen(MarkerBrush, 1.5), new Point(x, 0), new Point(x, h));
+                dc.DrawLine(pen, new Point(x, 0), new Point(x, h));
             }
         }
     }

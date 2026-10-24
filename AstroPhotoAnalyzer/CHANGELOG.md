@@ -55,6 +55,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- The Tonuri histogram also marks the visibility threshold L\* 15, an amber dashed line beside
+  the red paper-black line, the colours the preview window gives the same two classes; the
+  heading and the note under the chart name both lines and hold on canvas too, where paper
+  black is right of the threshold (R-113; ADR 0046).
 - No curve is suggested when the peaks are already at or over the target of 0.92 (R-142; ADR
   0033): the Curbe tab shows the reason in red, instead of four curves that change nothing.
 - The Curbe tab (R-140 to R-147; ADR 0032): contrast curves suggested for a finished image,
