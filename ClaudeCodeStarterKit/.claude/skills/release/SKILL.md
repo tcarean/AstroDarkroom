@@ -28,20 +28,31 @@ where they go.
 3. **Figures.** If `docs/validation.json` has cases, ask whether to run `/validate` first; a
    release is the moment a stale figure gets noticed.
 4. **Dry run.** `scripts/release.ps1 -Version X.Y.Z -WhatIf` and paste its output: tag name,
-   Unreleased content, what would change.
+   Unreleased content, what would change, and the components it would bundle. A component is
+   another kit project an entry of `release.publish` publishes from (`../X/...`); each must be
+   clean, and is taken from its folder as it is. Name to the owner every component listed with
+   unreleased changes: the owner may release it first.
 5. **Run it.** `scripts/release.ps1 -Version X.Y.Z`. It runs verify, edits
-   `Directory.Build.props` and `CHANGELOG.md`, publishes what `kit.json` lists under
-   `release.publish` to `artifacts/X.Y.Z/`. Paste the last lines. If it fails, report and stop;
-   it changes nothing before verify passes.
+   `Directory.Build.props` and `CHANGELOG.md`, publishes each entry of `release.publish` to a
+   staging folder and merges it into `artifacts/X.Y.Z/<output>/` with a hash check, writes
+   `artifacts/X.Y.Z/release.json` (the version, the commit, each component's version, commit and
+   unreleased flag) and, when `kit.json` sets `release.zip`, the zip in `artifacts/` with its
+   `.sha256` beside it (the kit's ADR 0036). Paste the last lines. If it fails, report and stop;
+   it changes nothing before verify passes. A collision (two entries publishing different bytes
+   at one path) stops it after the version files changed: paste the collision lines and stop;
+   the owner decides, usually an `output` subfolder for that entry in `kit.json`, then
+   `scripts/release.ps1 -Version X.Y.Z -PublishOnly` redoes the publish alone.
 6. **Check, propose, then ask.** `git rev-parse HEAD` must still be the hash of step 1, and
    `git status --porcelain -- .` must list only `CHANGELOG.md` and, unless the owner had already
-   set the version, `Directory.Build.props`. If HEAD moved or anything else changed, stop and
-   report: another session or hand worked on `main` meanwhile. Otherwise show `git diff --stat`,
-   then propose, on separate lines, the commit limited to the two files,
+   set the version, `Directory.Build.props`; each component's folder must still be clean (a
+   publish that rewrote its lock files is the kit's ADR 0034). If HEAD moved or anything else
+   changed, stop and report: another session or hand worked on `main` meanwhile. Otherwise show
+   `git diff --stat`, then propose, on separate lines, the commit limited to the two files,
    `git commit -m "Release X.Y.Z" -- Directory.Build.props CHANGELOG.md`, and the tag command
    `git tag -a <tag> -m "Release X.Y.Z"` with the tag name the script printed. The owner runs
    them by hand; the commit hook refuses a commit of yours on `main`, and `git tag` asks the
    owner first. Wait. Never push; if the owner wants the tag pushed, say the command and let
    them decide.
 7. **After.** Add nothing else to the CHANGELOG; the fresh `[Unreleased]` is already there.
-   Note the artifact path and size in the chat.
+   Note the artifact path and size in the chat, and the zip and its `.sha256` when there is
+   one: uploading them anywhere is the owner's, by hand.

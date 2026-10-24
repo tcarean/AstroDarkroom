@@ -1,3 +1,6 @@
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text.Json;
 using Xunit;
 
 namespace Starter.Tests;
@@ -28,7 +31,7 @@ public sealed class ReleaseTests : IDisposable
         Git("config", "user.name", "Test");
         Git("config", "user.email", "test@example.com");
         string scripts = Path.Combine(TestData.FindRepoRoot(), "scripts");
-        foreach (string script in new[] { "release.ps1", "kit-config.ps1" })
+        foreach (string script in new[] { "release.ps1", "kit-config.ps1", "merge-publish.ps1" })
         {
             File.Copy(Path.Combine(scripts, script), Path.Combine(_project, "scripts", script));
         }
@@ -38,7 +41,7 @@ public sealed class ReleaseTests : IDisposable
         File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson(null));
         WriteProps("2.3.0");
         File.WriteAllText(Path.Combine(_project, "CHANGELOG.md"), Changelog);
-        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\n");
+        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\nartifacts/\n");
         Commit("Start");
     }
 
@@ -200,6 +203,110 @@ public sealed class ReleaseTests : IDisposable
         Assert.Contains("2.3.0 -> 2.4.0", output);
     }
 
+    /// <summary>An entry outside every kit project cannot be a component: it has no version and no CHANGELOG to report.</summary>
+    [Fact]
+    public void AnEntryInAFolderWithoutKitJson_IsRefused_WithTheFolderNamed()
+    {
+        Directory.CreateDirectory(Path.Combine(_repo, "Proj2"));
+        File.WriteAllText(Path.Combine(_repo, "Proj2", "p.csproj"), "<Project />\n");
+        WriteKitJson("""{ "project": "../Proj2/p.csproj" }""");
+        Commit("Bundle Proj2");
+
+        (int exitCode, string output) = Release("2.3.0", "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("'../Proj2/p.csproj' is in no kit project", output);
+        Assert.Contains("no kit.json in", output);
+        Assert.Contains(Path.DirectorySeparatorChar + "Proj2", output);
+        AssertNothingChanged();
+    }
+
+    /// <summary>A component is published from its folder as it is, so an uncommitted file there would ship unrecorded.</summary>
+    [Fact]
+    public void AComponentWithAnUncommittedFile_IsRefusedAsNotClean()
+    {
+        MakeComponent();
+        File.WriteAllText(Path.Combine(_repo, "Proj2", "scratch.txt"), "not committed\n");
+
+        (int exitCode, string output) = Release("2.3.0", "-NoPublish");
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Component Proj2 is not clean", output);
+        Assert.Contains("scratch.txt", output);
+        Assert.False(File.Exists(Path.Combine(_project, "ran.txt")), "verify ran");
+    }
+
+    [Fact]
+    public void ACleanComponent_IsListedByWhatIf()
+    {
+        MakeComponent();
+
+        (int exitCode, string output) = Release("2.3.0", "-WhatIf");
+        Assert.True(exitCode == 0, output);
+        Assert.Contains("component Proj2 1.4.0", output);
+        Assert.Contains("unreleased changes) - clean", output);
+        AssertNothingChanged();
+    }
+
+    /// <summary>
+    /// -PublishOnly runs step 5 alone, from any branch, and leaves the version files as they are:
+    /// a small library is published through the staging folder into its output subfolder,
+    /// release.json lists this project as its one component, and the zip, whose entry names use
+    /// forward slashes whatever the shell, has its hash beside it.
+    /// </summary>
+    [Fact]
+    public void PublishOnly_WritesReleaseJsonAndTheZip_FromAnyBranch()
+    {
+        string lib = Path.Combine(_project, "src", "Lib");
+        Directory.CreateDirectory(lib);
+        File.WriteAllText(Path.Combine(lib, "Lib.csproj"),
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net$(BundledNETCoreAppTargetFrameworkVersion)</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """);
+        File.WriteAllText(Path.Combine(_repo, ".gitignore"), "ran.txt\nartifacts/\nbin/\nobj/\n");
+        File.WriteAllText(Path.Combine(_project, "kit.json"), ScriptRunner.KitJson(null).Replace(
+            "\"publish\": []",
+            "\"publish\": [{ \"project\": \"src/Lib/Lib.csproj\", \"output\": \"lib\" }], \"zip\": \"Proj-{version}-win-x64.zip\"",
+            StringComparison.Ordinal));
+        Commit("Zip the release");
+        Git("switch", "-q", "-c", "claude/Task");
+        byte[] props = File.ReadAllBytes(Path.Combine(_project, "Directory.Build.props"));
+        byte[] changelog = File.ReadAllBytes(Path.Combine(_project, "CHANGELOG.md"));
+
+        (int exitCode, string output) = Release("2.3.0", "-PublishOnly");
+        Assert.True(exitCode == 0, output);
+        Assert.False(File.Exists(Path.Combine(_project, "ran.txt")), "verify ran");
+        Assert.Equal(props, File.ReadAllBytes(Path.Combine(_project, "Directory.Build.props")));
+        Assert.Equal(changelog, File.ReadAllBytes(Path.Combine(_project, "CHANGELOG.md")));
+
+        string artifacts = Path.Combine(_project, "artifacts");
+        using JsonDocument release = JsonDocument.Parse(File.ReadAllText(Path.Combine(artifacts, "2.3.0", "release.json")));
+        JsonElement json = release.RootElement;
+        (int _, string head) = ScriptRunner.Run(_repo, gitDir: null, "git", "rev-parse", "HEAD");
+        Assert.Equal("Proj", json.GetProperty("name").GetString());
+        Assert.Equal("2.3.0", json.GetProperty("version").GetString());
+        Assert.Equal(head.Trim(), json.GetProperty("commit").GetString());
+        JsonElement component = Assert.Single(json.GetProperty("components").EnumerateArray());
+        Assert.Equal("Proj", component.GetProperty("name").GetString());
+        Assert.Equal("2.3.0", component.GetProperty("version").GetString());
+        Assert.Equal(head.Trim(), component.GetProperty("commit").GetString());
+        Assert.True(component.GetProperty("unreleased").GetBoolean());
+
+        string zip = Path.Combine(artifacts, "Proj-2.3.0-win-x64.zip");
+        using (ZipArchive archive = ZipFile.OpenRead(zip))
+        {
+            string[] entries = archive.Entries.Select(e => e.FullName).ToArray();
+            Assert.Contains("release.json", entries);
+            Assert.Contains("lib/Lib.dll", entries);
+            Assert.DoesNotContain(entries, e => e.Contains('\\', StringComparison.Ordinal) || e.StartsWith(".stage", StringComparison.Ordinal));
+        }
+
+        string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(zip))).ToLowerInvariant();
+        Assert.Equal($"{hash}  Proj-2.3.0-win-x64.zip\n", File.ReadAllText(zip + ".sha256"));
+    }
+
     public void Dispose()
     {
         ScriptRunner.DeleteTree(_worktree);
@@ -215,6 +322,27 @@ public sealed class ReleaseTests : IDisposable
     {
         File.WriteAllText(Path.Combine(_project, "Directory.Build.props"),
             $"<Project>\n  <PropertyGroup>\n    <Version>{version}</Version>\n  </PropertyGroup>\n</Project>\n");
+    }
+
+    /// <summary>Proj's kit.json with the given release.publish entries.</summary>
+    private void WriteKitJson(string entries)
+    {
+        File.WriteAllText(Path.Combine(_project, "kit.json"),
+            ScriptRunner.KitJson(null).Replace("\"publish\": []", $"\"publish\": [{entries}]", StringComparison.Ordinal));
+    }
+
+    /// <summary>A sibling kit project, Proj2 at 1.4.0 with unreleased changes, bundled by Proj and committed.</summary>
+    private void MakeComponent()
+    {
+        string proj2 = Path.Combine(_repo, "Proj2");
+        Directory.CreateDirectory(proj2);
+        File.WriteAllText(Path.Combine(proj2, "kit.json"), ScriptRunner.KitJson(null));
+        File.WriteAllText(Path.Combine(proj2, "Directory.Build.props"),
+            "<Project>\n  <PropertyGroup>\n    <Version>1.4.0</Version>\n  </PropertyGroup>\n</Project>\n");
+        File.WriteAllText(Path.Combine(proj2, "CHANGELOG.md"), Changelog);
+        File.WriteAllText(Path.Combine(proj2, "p.csproj"), "<Project />\n");
+        WriteKitJson("""{ "project": "../Proj2/p.csproj" }""");
+        Commit("Bundle Proj2");
     }
 
     /// <summary>No file changed and verify did not run: the refusal came before step 2.</summary>

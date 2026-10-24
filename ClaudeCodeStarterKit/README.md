@@ -68,7 +68,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `docs/validation.md` + `.json` | cifre de acceptanta; JSON-ul e citit de `ValidationTests` |
 | `docs/plans/`, `docs/design/` | planuri aprobate; note de design citite la nevoie, singurul loc unde se scrie cum lucreaza codul, fiecare cu o propozitie `Covers:` |
 | `tests/testdata/` | fixtures in repo + manifest cu hash; fisierele mari in `large/` (ignorat de git) |
-| `kit.json` | valorile proiectului pentru scripturile, skill-urile si agentul comune: solutia, folderele de cod si de teste, datele de test, ce publica un release, ce mai poate citi auditorul, unde e kit-ul |
+| `kit.json` | valorile proiectului pentru scripturile, skill-urile si agentul comune: solutia, folderele de cod si de teste, datele de test, ce publica un release (si din proiectele vecine, ca un pachet), zip-ul release-ului, ce mai poate citi auditorul, unde e kit-ul |
 | `docs/skills.md` | adaugirile proiectului la skill-urile kit-ului, o sectiune per skill; fiecare skill il citeste inainte de primul pas |
 | `scripts/verify.ps1` | gate-ul unic: fisiere comune si chei de proces identice cu ale kit-ului, manifest, antetele ADR-urilor (`check-decisions.ps1`), notele de design (`check-design.ps1`), restore, format, build strict, teste |
 | `scripts/sync.ps1` | copiaza `scripts/`, `.claude/skills/`, `.claude/agents/`, `.claude/rules/kit/` si cheile de proces din `.claude/settings.json` din kit in proiect (sau, din kit, in toate proiectele); `-Check` doar compara, e pasul 0 al gate-ului |
@@ -76,7 +76,7 @@ GPL-3.0-or-later (`LICENSE`; fiecare script incepe cu linia SPDX).
 | `scripts/hooks/` | git pre-commit, pre-merge-commit si commit-msg; hook-urile Claude Code: gate la commit, urmarire editari, gate la Stop |
 | `.claude/settings.json` | permisiuni, hooks si `attribution`, versionate; `hooks`, `ask`, `deny`, intrarile git din `allow`, `attribution`, `disableAllHooks` si `permissions.defaultMode` sunt ale kit-ului, restul lui `allow` al proiectului; `settings.local.json` ramane local |
 | `.claude/skills/` | `/new-feature`, `/wrap-up`, `/validate`, `/docs-health`, `/mutate`, `/release`; ale kit-ului, identice in fiecare proiect, citesc `kit.json` si `docs/skills.md` |
-| `scripts/release.ps1` | partea mecanica a unui release, doar pe `main`: verify, versiune, CHANGELOG, publish; commit-ul si tag-ul le propune skill-ul si le decizi tu |
+| `scripts/release.ps1`, `merge-publish.ps1` | partea mecanica a unui release, doar pe `main`: verify, versiune, CHANGELOG, publish cu verificare de hash la fiecare fisier comun, `artifacts/X.Y.Z/release.json`, zip cu `.sha256`; commit-ul si tag-ul le propune skill-ul si le decizi tu (ADR 0036) |
 | `.claude/agents/` | subagenti definiti in repo: `docs-auditor`, auditul documentatiei cu context curat, fara `src/`, care citeste si ADR-urile kit-ului; un agent nou apare dupa repornirea sesiunii |
 | `scripts/mutate.ps1`, `.config/dotnet-tools.json` | mutation testing pe Core cu Stryker.NET, la cerere; minute, nu in gate |
 | `AI Prompt to Generate Starter Project.md` | prompt neutru fata de stack si model, de rulat peste luni sau ani pe un agent nou, ca sa refaca un setup cu aceleasi principii, gate-uri si documentatie dupa bunele practici de atunci; descrie scopuri si dovezi, nu implementarea de aici |

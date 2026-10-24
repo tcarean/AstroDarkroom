@@ -7,6 +7,14 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Added
 
+- A release bundles, records and zips (ADR 0036): `release.ps1` publishes each
+  `release.publish` entry to a staging folder and merges it into `artifacts/<version>/` through
+  the new `scripts/merge-publish.ps1`, which refuses a file that would overwrite one with other
+  bytes and names it; an entry may publish from a sibling kit project (`../X/...`), a component
+  that must be clean and that `-WhatIf` lists; every publish writes `release.json` (version,
+  commit, and each component's version, commit and unreleased changes); the new optional
+  `release.zip` key in `kit.json` zips the folder into `artifacts/` with a `.sha256` beside it;
+  `-PublishOnly` redoes the publish alone, without checks or version edits.
 - The kit's rule "Documentation comments" (ADR 0035): every type and every method in the code,
   private ones included, has an XML documentation comment in English, with a `<param>` for each
   parameter, a `<typeparam>` for each type parameter and a `<returns>` for a value. Tests are
