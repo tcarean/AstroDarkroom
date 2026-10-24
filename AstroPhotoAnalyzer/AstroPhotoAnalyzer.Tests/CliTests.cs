@@ -97,11 +97,12 @@ public class CliTests
         Assert.Equal(new[] { Path.GetFileName(tif), "raport.txt" }, Directory.GetFiles(ws.Dir).Select(Path.GetFileName).OrderBy(n => n));
 
         // The direct call, with the same guarantee, and the written file is WriteFull's bytes.
-        // The move over a held file is refused as UnauthorizedAccessException on Windows, not
-        // IOException: the type is the system's, so only the throw is asserted.
+        // The held target is found by AtomicFile's probe, before anything is written: the
+        // sharing violation, an IOException naming the target, not the final move's "access
+        // denied" on a temporary name.
         AnalysisResult result = AnalysisRun.Execute(tif, new Parameters());
         using (new FileStream(outFile, FileMode.Open, FileAccess.Read, FileShare.None))
-            Assert.ThrowsAny<Exception>(() => ReportWriter.SaveFull(result, outFile));
+            Assert.Contains("raport.txt", Assert.Throws<IOException>(() => ReportWriter.SaveFull(result, outFile)).Message);
         Assert.Equal("vechi", File.ReadAllText(outFile));
         ReportWriter.SaveFull(result, outFile);
         var expected = new StringWriter();

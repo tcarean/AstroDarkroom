@@ -227,8 +227,9 @@ namespace AstroPhotoAnalyzer
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                // The move over an existing target of the same size as the image failed while the
-                // image was held: almost certainly the target is the image itself, by another path.
+                // Opening an existing target of the same size as the image for writing (AtomicFile
+                // probes it before writing) failed while the image was held: almost certainly the
+                // target is the image itself, by another path.
                 if (File.Exists(target) && SameLength(target, hold.Length)) throw new Exception(CurveTexts.SaveOverInput + " (" + e.Message + ")");
                 throw;
             }

@@ -302,3 +302,28 @@ and kept three to decide:
 - **`/validate` after the atomic write** (`Report/` moved; `SaveFull` touches no figure): the
   fourteen cases pass, the same 1240 of 1242 figures identical, the same two 0.0001
   differences as above (V-011 `curves.Maxima.lstar.clouds`, V-014 `curves.Maxima.lstar.peaks`).
+
+### Second code review (2026-10-24)
+
+`/code-review main...claude/Close-the-backfill-questions` again, after the six fixes: four
+findings, all on the atomic report write, all fixed at the owner's word in one commit:
+
+- `ReportWriter.SaveFull` re-implemented the temporary-file-and-move that `FitsWriter.Save`
+  already had, with another temporary name and another delete policy. Both now call one helper,
+  `AtomicFile.Write` (`Core/Input/AtomicFile.cs`), which holds the name (`<name>.tmp-<guid>`),
+  the move and the delete policy (a refused delete is swallowed, the original exception being
+  what matters; `FitsWriter`'s old policy, an access-denied delete replacing the original
+  exception, is gone with its comment and `input.md`'s sentence).
+- A target another program holds open was reported by the final move as "access is denied"
+  where `main` said "being used by another process". `AtomicFile.Write` opens an existing
+  target for writing first, before anything is written, so the system's message names the
+  target and the real cause; the R-005 test asserts the IOException and the target's name.
+- The new R-005 test accepted any exception; it asserts `IOException` now.
+- Writing through a temporary file needs the right to create a file in the folder, which
+  writing the file itself did not; a folder that refuses is reported with the target's and the
+  folder's names (`nu se poate crea un fisier in folderul ..., langa ...`), and R-005 and R-145
+  say the requirement.
+
+`Input/` moved (the new file; `FitsWriter.Save` through the helper), so `/validate` was re-run.
+The fourteen cases pass, the same 1240 of 1242 figures identical, the same two 0.0001
+differences (V-011 `curves.Maxima.lstar.clouds`, V-014 `curves.Maxima.lstar.peaks`).

@@ -46,42 +46,26 @@ namespace AstroPhotoAnalyzer
         }
 
         /// <summary>
-        /// <see cref="WriteFull"/> into a file, whole or not at all: the report goes into a
-        /// temporary file beside the target and is moved over it once every line is written, so
-        /// that a write that fails midway (a full disk, a share that drops) leaves the old file
-        /// or none, never a truncated report, and no temporary file behind (R-005, R-111). The
-        /// console's -o and the window's "Salveaza raportul" both come here; the exception is
-        /// theirs to tell.
+        /// <see cref="WriteFull"/> into a file, whole or not at all (<see cref="AtomicFile"/>:
+        /// a temporary file beside the target, moved over it once every line is written, so that
+        /// a write that fails midway leaves the old file or none, never a truncated report;
+        /// R-005, R-111). The console's -o and the window's "Salveaza raportul" both come here;
+        /// the exception is theirs to tell. The bytes are UTF-8 without a byte-order mark, as
+        /// a StreamWriter on a path writes them.
         /// </summary>
         /// <param name="r">The analysis, complete.</param>
         /// <param name="path">
-        /// The file to write, replaced if it exists; its folder must exist. A folder that does
-        /// not, a file another program holds open or a path the system refuses throws
-        /// (IOException, UnauthorizedAccessException, or an ArgumentException on a malformed
-        /// path).
+        /// The file to write, replaced if it exists; its folder must exist and allow a file to
+        /// be created. A file another program holds open, a folder that refuses or a path the
+        /// system refuses throws (IOException, UnauthorizedAccessException, or an
+        /// ArgumentException on a malformed path), with the target's name in the message.
         /// </param>
         internal static void SaveFull(AnalysisResult r, string path)
-        {
-            string full = Path.GetFullPath(path);
-            string temp = Path.Combine(Path.GetDirectoryName(full) ?? "", Path.GetFileName(full) + "." + Guid.NewGuid().ToString("N") + ".tmp");
-            try
+            => AtomicFile.Write(path, s =>
             {
-                using (var w = new StreamWriter(temp, false))
-                    WriteFull(r, w);
-                File.Move(temp, full, overwrite: true);
-            }
-            finally
-            {
-                // After a failed write or a refused move: the temporary file must not outlive
-                // the attempt. A second failure here changes nothing the caller has to know.
-                if (File.Exists(temp))
-                {
-                    try { File.Delete(temp); }
-                    catch (IOException) { }
-                    catch (UnauthorizedAccessException) { }
-                }
-            }
-        }
+                using var w = new StreamWriter(s);
+                WriteFull(r, w);
+            });
 
         /// <summary>
         /// The report without the banner: the file's header and the verdict, the six sections of
