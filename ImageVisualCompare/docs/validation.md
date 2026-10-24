@@ -153,4 +153,5 @@ files above. They are kept here as they were written, as the history of the figu
   worktree and passed against the figures above, left as they are: V-001 decoded in 3.44 s,
   +178.4 MB and 0.3 MB after the release; V-002 in 2.24 s, +171.2 and -0.3 MB; V-003 in 6.03 s,
   +201.9 and 24.8 MB; V-004 in 2.37 s, +175.2 and -1.1 MB. The memory figures sit within 3.3 MB
-  of the .NET 9 ones; the decode times are longer because another build ran on the machine.
+  of the .NET 9 ones. The decode times are longer than on 2026-10-22, V-003's most; the time is
+  printed and never guarded, and what made it longer was not looked for.
