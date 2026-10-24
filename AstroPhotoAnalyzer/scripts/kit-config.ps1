@@ -29,7 +29,13 @@
 #     mutate.testProject  the test project folder Stryker runs from (its stryker-config.json)
 #     release.publish     what release.ps1 publishes: a list of { project, output, args };
 #                         output is a subfolder of artifacts/<version>/ ("" is that folder
-#                         itself), args are extra `dotnet publish` arguments
+#                         itself), args are extra `dotnet publish` arguments. project may be
+#                         in a sibling project (`../X/...`), which is then a component:
+#                         bundled from its clean checkout and listed in release.json (the
+#                         kit's ADR 0036)
+#     release.zip         optional; the file name of the zip of artifacts/<version>/, written
+#                         to artifacts/ with a .sha256 beside it; `{version}` is replaced;
+#                         absent or empty: no zip
 #     release.branch      optional; the branch a release is cut on ("main" when absent;
 #                         release.ps1 refuses any other, the kit's ADR 0029)
 #     audit.alsoRead      optional; files or folders, besides docs/ and the test data README
@@ -84,6 +90,10 @@ function Read-KitConfig([string]$ProjectDir) {
     if (-not $cfg.release.PSObject.Properties['branch'] -or -not $cfg.release.branch) {
         if ($cfg.release.PSObject.Properties['branch']) { $cfg.release.PSObject.Properties.Remove('branch') }
         $cfg.release | Add-Member -NotePropertyName branch -NotePropertyValue 'main'
+    }
+    if ($null -eq $cfg.release.PSObject.Properties['zip'] -or $null -eq $cfg.release.zip) {
+        if ($cfg.release.PSObject.Properties['zip']) { $cfg.release.PSObject.Properties.Remove('zip') }
+        $cfg.release | Add-Member -NotePropertyName zip -NotePropertyValue ''
     }
     foreach ($p in $cfg.release.publish) {
         if (-not $p.project) { throw "kit.json: every release.publish entry needs 'project'." }
