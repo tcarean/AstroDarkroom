@@ -179,6 +179,7 @@ namespace FlatCheck
 
         // --- exposure, on the central 20% window of the brightest channel ---
         public const double ExpoClip = 0.05;        // % of pixels saturated = clipping
+        public const double ExpoClipWhite = 0.98;   // a pixel at or above this fraction of white is saturated
         public const double ExpoTooLow = 30.0;      // below this the master comes out noisy
         public const double ExpoLo = 50.0;          // target for a panel
         public const double ExpoHi = 65.0;

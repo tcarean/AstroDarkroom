@@ -175,6 +175,21 @@ public class StructureReportTests
         Assert.Contains("informativa", note);
     }
 
+    /// <summary>
+    /// The window's corner line and vignetting note use the console's ratios: each corner over
+    /// the corners' mean, and the corners' mean over the centre. On a flat field all of them
+    /// are 100 %.
+    /// </summary>
+    [Fact]
+    public void TheWindowsCornerSharesAndVignetteNoteUseTheConsolesRatios()
+    {
+        StructureResult r = Result((_, _) => 1000);
+
+        string shares = StructureReport.CornerShares(r);
+        Assert.Equal(r.Corners.Count, shares.Split("100.0 %").Length - 1);
+        Assert.StartsWith("coltul e 100 % din centru", StructureReport.VignetteNote(r));
+    }
+
     /// <summary>The console prints the whole note under the row, indented like its neighbours.</summary>
     [Fact]
     public void TheReportPrintsTheNoteUnderTheRow()

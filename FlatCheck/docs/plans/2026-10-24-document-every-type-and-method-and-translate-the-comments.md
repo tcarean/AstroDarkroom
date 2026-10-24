@@ -324,7 +324,7 @@ Each area adds its own section at its wrap-up.
   (the Histogram tab's views are bitmaps from the full-resolution raster, no PNG; Ratio
   overlaps runs too), `lens-profiles.md` (the prefill does not wait for the chain) and
   `code-map.md` (`MapScaleViewModel` is on five tabs).
-- **Found, reported, not changed** (code, or a requirement; the owner's call):
+- **Found and reported** (code, or a requirement; the owner's call, fixed below):
   - `StructureTabViewModel.Pct` has no caller.
   - `MainViewModel.RunChainAsync`'s `Ratio.RecomputeAsync()` always finds no files at that
     point (item 3), so it only clears a result already cleared.
@@ -349,6 +349,24 @@ Each area adds its own section at its wrap-up.
     `modes-synthetic.md` holds.
   - `/validate`: not run, as assumption 7 says (no formula file in this area).
   - The gate: `== OK` at each commit, 951 + 332 tests.
+- **The four findings fixed at the owner's word** ("Fix all", 2026-10-25), a code change
+  beyond the plan's "comments only", in a commit of its own:
+  - `StructureTabViewModel.Pct` deleted; the chain's `Ratio.RecomputeAsync()` removed
+    (`RatioWaitsForTwoExplicitChoices` already pins that Ratio stays empty on opening).
+  - R-084 reworded to the behaviour `TheListComesFromFlatsAndHoldsOnlyCameraRaws` pins: camera
+    raws only; the requirement had said "raws and FITS" since the kit adoption (7fb607c).
+  - The window's wording and figures moved to `Report/` unchanged: `ExposureReport`
+    (`VerdictWord`, `Advice`, `ChannelsSummary`, `ChannelOrderNote`, `HistogramCaption`,
+    `PreviewChannelNote`, `ScreenGap`), `LightReport` (`FieldText`, `FieldWarning`,
+    `TooWideText`), `LightSeriesReport` (`CorrelationValue`, `ReasonsText`), `StructureReport`
+    (`CornerShares`, `VignetteNote`, `CentroidNote`). The same literals sat in the console's
+    text too (`Sub 60%`, `Sub ~30%`, `>=98% white`) and in `ExposureAnalyzer` (`0.98 * white`,
+    four times): both now read `Th.ExpoSkyTooHigh`, `Th.ExpoTooLow` and the new
+    `Th.ExpoClipWhite` = 0.98, whose row is in `thresholds.md`. Three tests pin the moved
+    texts to `Th` and to the console's ratios.
+  - Measured: every console golden, the 43 parity goldens included, unchanged; `/validate`,
+    40 cases on the real masters, 300 figures, all 300 identical to the recorded value; the
+    gate `== OK`, 954 + 332 tests.
 
 ## Glossary: one English word per Romanian term, in every area
 

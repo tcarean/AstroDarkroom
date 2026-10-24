@@ -26,7 +26,6 @@
 // modest - the sky fades continuously and is full of faint stars, so the master's SNR comes from
 // the number of frames, not from pushing a frame to 55 %.
 
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -230,12 +229,12 @@ namespace FlatCheck.Wpf
             Centre = $"{r.CentreMedianPct:F1} %";
             Global = $"{r.GlobalMedianPct:F1} %";
             Clipping = $"{r.CentreClipPct:F3} %";
-            Channels = DescribeChannels(r);
-            ChannelOrder = DescribeOrder(r);
+            Channels = ExposureReport.ChannelsSummary(r);
+            ChannelOrder = ExposureReport.ChannelOrderNote(r);
             Reading = ExposureReport.HistogramReading(r);
             IsRawFlat = r.IsRaw;
-            Verdict = VerdictText(r);
-            Advice = AdviceText(r);
+            Verdict = ExposureReport.VerdictWord(r);
+            Advice = ExposureReport.Advice(r);
 
             Comparison = ExposureReport.ScreenComparison(r)
                 .Select(c => new ScreenPairRow
@@ -244,7 +243,7 @@ namespace FlatCheck.Wpf
                     Colour = ChannelPalette.BrushFor(c.Colour),
                     Raw = $"{c.RawPct:F1} %",
                     Screen = $"{c.ScreenPct:F1} %",
-                    Gap = $"{c.ScreenPct - c.RawPct:+0;-0} puncte",
+                    Gap = ExposureReport.ScreenGap(c.RawPct, c.ScreenPct),
                 }).ToList();
             Raise(nameof(HasComparison));
 
@@ -270,57 +269,10 @@ namespace FlatCheck.Wpf
 
             bool preview = Source.IsPreviewSelected && r.Preview != null;
             Histograms = preview ? PreviewRows(r) : RawRows(r);
-            Caption = preview
-                ? "Axa orizontala e in % din 255. Curba palida = tot cadrul, curba plina = "
-                  + "centrul 20 %, linia verticala = mediana centrului. FARA banda tinta: pe "
-                  + "ecranul aparatului nu exista o tinta, si nici n-ar putea exista. Dunga "
-                  + "rosie din dreapta = pixeli la 255, adica aici se satureaza ECRANUL, nu "
-                  + "senzorul."
-                : "Axa orizontala e in % din white (din intervalul util al senzorului). Curba "
-                  + "palida = tot canalul, curba plina = centrul 20 %, linia verticala = mediana "
-                  + "centrului, adica cifra care decide. Banda verde = tinta, dunga rosie din "
-                  + "dreapta = clipping peste 98 % din white.";
+            Caption = ExposureReport.HistogramCaption(preview);
             SourceNote = r.Preview == null
                 ? ExposureReport.NoPreviewReason(r)
                 : preview ? ExposureReport.ScreenReading(r) : "";
-        }
-
-        /// <summary>The four CFA channels' medians as a percentage of the useful range, one per
-        /// line, the brightest marked.</summary>
-        /// <param name="r">The analyzer's result.</param>
-        /// <returns>Four lines on a CFA frame; one sentence on a mono or processed one.</returns>
-        static string DescribeChannels(ExposureResult r)
-        {
-            if (!r.IsCfa) return "imagine mono/procesata (fara CFA)";
-
-            var parts = new string[4];
-            for (int i = 0; i < 4; i++)
-            {
-                double pct = (r.ChannelMedians[i] - r.Black) / r.Range * 100;
-                parts[i] = $"{r.ChannelLabel(i),-8} {pct:F1} %"
-                         + (i == r.BrightestChannel ? "  (cel mai luminos)" : "");
-            }
-            return string.Join("\n", parts);
-        }
-
-        /// <summary>
-        /// The colour order is read from the file or not known at all - it is not guessed. When
-        /// it is not known, the sentence is the one it always was: it does not even matter for
-        /// the verdict, because the limiting one is the brightest channel whatever its colour.
-        /// </summary>
-        /// <param name="r">The analyzer's result.</param>
-        /// <returns>The sentence for the card, Romanian.</returns>
-        static string DescribeOrder(ExposureResult r)
-        {
-            if (!r.IsCfa)
-                return "Cadrul nu mai are mozaic CFA, deci nu exista canale de numit.";
-
-            return r.Cfa != null
-                ? $"Ordinea culorilor e citita din fisier ({r.Cfa.Source}: {r.Cfa.Letters}), nu ghicita. "
-                + "Canalul cel mai luminos clipeaza primul, deci el e cel limitant."
-                : "Nu stiu care pozitie CFA e R, G sau B - fisierul n-o spune, iar ordinea difera "
-                + "de la aparat la aparat. Nici nu conteaza pentru verdict: canalul cel mai "
-                + "luminos clipeaza primul, deci el e cel limitant.";
         }
 
         /// <summary>
@@ -376,7 +328,7 @@ namespace FlatCheck.Wpf
                 Colour = ChannelPalette.BrushFor(c.Colour),
                 Median = $"{c.MedianPct:F1} % tot cadrul",
                 Centre = $"{c.CentreMedianPct:F1} %",
-                Note = c.ClipPct > Th.ExpoClip ? $"pixeli la 255: {c.ClipPct:F2} % din cadru" : "",
+                Note = ExposureReport.PreviewChannelNote(c),
                 IsBrightest = false,
                 Whole = Normalise(c.Whole),
                 CentreCurve = Normalise(c.Centre),
@@ -408,95 +360,6 @@ namespace FlatCheck.Wpf
 
             for (int i = 0; i < o.Length; i++) o[i] = h.Counts[i] / (double)peak;
             return o;
-        }
-
-        /// <summary>
-        /// The verdict in words. The strings are those VerdictPalette colours through
-        /// Stats.Severity, so they stay in the same vocabulary as the rest of the application.
-        /// </summary>
-        /// <param name="r">The analyzer's result.</param>
-        /// <returns>INAPLICABIL, OK, ACCEPTABIL or PROBLEMA.</returns>
-        static string VerdictText(ExposureResult r) => r.Verdict switch
-        {
-            ExposureVerdict.NotRaw => Stats.NotApplicable,
-            ExposureVerdict.Ok => "OK",
-            ExposureVerdict.AcceptableLow => "ACCEPTABIL",
-            ExposureVerdict.AcceptableHigh => "ACCEPTABIL",
-            _ => "PROBLEMA",
-        };
-
-        /// <summary>What to do next, by verdict: the correction in stops toward the bands'
-        /// target, with the sky flat's own wording under Sky; the sanity gate's explanation for a
-        /// file that is not a raw flat.</summary>
-        /// <param name="r">The analyzer's result.</param>
-        /// <returns>The advice, Romanian, on one or more lines.</returns>
-        static string AdviceText(ExposureResult r)
-        {
-            if (!r.IsRaw) return NotRawAdvice(r);
-
-            double cen = r.CentreMedianPct;
-            bool clipping = r.CentreClipPct > Th.ExpoClip;
-            // The target comes from the bands the verdict was given on, it is not re-chosen here.
-            ExposureBands b = r.Bands;
-            double stops = cen > 0 ? Math.Log2(b.Target / cen) : double.NaN;
-
-            if (r.IsSky)
-                return r.Verdict switch
-                {
-                    ExposureVerdict.TooHigh =>
-                        "PREA SUS" + (clipping ? " - CLIPPING in centru!" : " - risc de stele in cadru.")
-                        + "\nScade expunerea.",
-                    ExposureVerdict.TooLow =>
-                        $"PREA JOS pentru sky flat.\nCreste cu ~{stops:F1} stopuri, dar repede - cerul se stinge.",
-                    ExposureVerdict.Ok =>
-                        $"OK pentru sky flat (centru {b.Lo:F0}-{b.Hi:F0} %).\n"
-                      + "La sky flat nivelul modest e corect. SNR-ul vine din numarul de cadre, nu "
-                      + "din a urca expunerea - ai risca stele. NU forta mai sus.",
-                    _ =>
-                        "Cam sus, dar acceptabil.\nSub 60 % e ok; peste, risti stele. Nu urca mai mult.",
-                };
-
-            return r.Verdict switch
-            {
-                ExposureVerdict.TooHigh =>
-                    "PREA SUS" + (clipping ? " - CLIPPING in centru!" : ".")
-                    + $"\nScade expunerea cu ~{-stops:F1} stopuri."
-                    + (clipping
-                        ? "\nCentrul clipeaza, deci pierzi informatia de vignetare exact unde semnalul e maxim."
-                        : ""),
-                ExposureVerdict.TooLow =>
-                    $"PREA JOS.\nCreste expunerea cu ~{stops:F1} stopuri.\n"
-                  + "Sub ~30 % in centru masterul iese zgomotos (zgomot fixed-pattern).",
-                ExposureVerdict.AcceptableLow =>
-                    $"Acceptabil, dar cam jos.\nAi putea creste cu ~{stops:F1} stopuri.",
-                ExposureVerdict.Ok =>
-                    $"OK - centrul e in tinta {b.Lo:F0}-{b.Hi:F0} %.",
-                _ =>
-                    $"Acceptabil, dar cam sus.\nAi putea scadea cu ~{-stops:F1} stopuri.",
-            };
-        }
-
-        /// <summary>
-        /// The sanity gate. The typical cause is "I opened the NEF in Siril and pressed Save",
-        /// which debayers - so exactly that is said, not only that the file is not good.
-        /// </summary>
-        /// <param name="r">The analyzer's result, with the gate's two reasons.</param>
-        /// <returns>The explanation, Romanian, in paragraphs.</returns>
-        static string NotRawAdvice(ExposureResult r)
-        {
-            string why = "";
-            if (r.LevelTooLow)
-                why += $"Nivelul e ~{r.CentreMedianPct:F1} % (langa zero) - flat-dark deja scazut, sau "
-                     + "imagine normalizata. Modul are nevoie de nivelul ADU original.\n\n";
-            if (r.LooksDebayered)
-                why += $"Cele 4 canale CFA sunt quasi-identice (spread {r.CfaSpread:F3}) - fisierul e "
-                     + "DEBAYERIZAT. Modul are nevoie de mozaicul Bayer intact.\n\n";
-
-            return "FISIERUL NU PARE UN FLAT BRUT\n\n" + why
-                 + "Cauza tipica: ai deschis NEF-ul in Siril si ai dat Save (asta debayerizeaza).\n\n"
-                 + "Solutii: ruleaza direct pe NEF - aplicatia citeste brutul exact - sau produ un "
-                 + "FITS brut cu tab-ul Conversion din Siril (NU Open + Save), care pastreaza "
-                 + "mozaicul CFA nedebayerizat.";
         }
 
         /// <inheritdoc/>

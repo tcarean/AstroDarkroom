@@ -51,7 +51,7 @@ namespace FlatCheck.Wpf
         readonly Func<SirilInstall> _locate;
         readonly Func<bool> _sirilGuiRunning;
 
-        /// <summary>The chain started on opening (structure, series, ratio), so the smoothing tab
+        /// <summary>The chain started on opening (structure, then series), so the smoothing tab
         /// can wait for it.</summary>
         Task _chain = Task.CompletedTask;
 
@@ -242,7 +242,7 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>The opening chain, one after the other: Structure, then the end-to-end
-        /// series, then Ratio; it stops at the first cancellation.</summary>
+        /// series; the series does not start once the folder's token is cancelled.</summary>
         /// <param name="session">The folder just opened.</param>
         /// <param name="ct">The folder's token, cancelled by another folder or by closing the
         /// window.</param>
@@ -253,12 +253,9 @@ namespace FlatCheck.Wpf
             if (ct.IsCancellationRequested) return;
 
             await Light.RunAsync(session, ct).ConfigureAwait(true);
-            if (ct.IsCancellationRequested) return;
 
-            // The Ratio tab proposes nothing (R-082), and ResetTabs dropped its two files, so here
-            // it finds none and only clears its result; it computes when the user has chosen two
-            // masters, by hand.
-            await Ratio.RecomputeAsync().ConfigureAwait(true);
+            // No Ratio here: it proposes nothing (R-082), so it computes when the user has chosen
+            // two masters, by hand.
         }
 
         /// <summary>Called when the window closes, so no threads are left working for

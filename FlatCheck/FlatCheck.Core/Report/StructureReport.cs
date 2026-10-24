@@ -20,6 +20,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace FlatCheck
 {
@@ -555,6 +556,34 @@ namespace FlatCheck
              + "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
              + "condens, un obstacol), plus = mai luminos (scurgere de lumina, reflexie).\n"
              + $"Peste {Th.LocalSpotWarn:F0} % urmeaza o atentionare; sub atat cifra e doar informativa.";
+
+        /// <summary>The four corners, each as a percentage of their mean, on one line - the
+        /// window's version of the corner rows Write prints under the corner spread.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>Each corner's name and percentage with one decimal, separated by three
+        /// spaces.</returns>
+        internal static string CornerShares(StructureResult r)
+            => string.Join("   ", r.Corners.Select(
+                c => $"{c.Key} {c.Value / r.CornerMean * 100:F1} %"));
+
+        /// <summary>The note under the window's vignetting row: the corner as a percentage of
+        /// the centre, as WriteInformative prints it, and why it is not an error.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>One line.</returns>
+        internal static string VignetteNote(StructureResult r)
+            => $"coltul e {r.CornerMean / r.CentreMedian * 100:F0} % din centru; "
+             + "e o proprietate a obiectivului, nu o eroare";
+
+        /// <summary>The note under the window's illumination-centre row: the fitted vertex
+        /// against the sensor's centre and why the figure is not scale-invariant, or why there is
+        /// no vertex.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>One line.</returns>
+        internal static string CentroidNote(StructureResult r)
+            => r.CentroidValid
+                ? $"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor ({r.SensorCx:F0}, {r.SensorCy:F0}); "
+                  + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea"
+                : "varf in afara cadrului sau fit degenerat";
 
         /// <summary>
         /// The warning for a compact spot, or null when there is none. It is not a verdict,

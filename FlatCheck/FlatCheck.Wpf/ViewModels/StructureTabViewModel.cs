@@ -20,8 +20,8 @@
 // It runs StructureRun on the session's pp_flat_stacked.fit, in masters/ or process/
 // (SirilSession.FindFlatMaster), and shows the same thing the console writes, only laid out
 // differently. The figures are NOT recomputed here: each row takes a value from StructureResult
-// and formats it. The only things composed in the window are the corner percentages, in
-// StructureRows, through the same ratios as in the report.
+// and formats it; the corner percentages and the notes under the rows come from StructureReport
+// too.
 //
 // Besides the display, the tab has a duty to the disk: it saves the report in the session folder,
 // as a text file, IDENTICAL to what the console would have written - version header, copyright,
@@ -400,11 +400,6 @@ namespace FlatCheck.Wpf
             Verdict = r.Verdict;
             Advice = StructureReport.Advice(r.Verdict);
         }
-
-        /// <summary>The formatting of a figure, shared with the test rows.</summary>
-        /// <param name="v">The value, in percent.</param>
-        /// <returns>What <see cref="StructureRows.Pct"/> returns.</returns>
-        static string Pct(double v) => StructureRows.Pct(v);
 
         /// <summary>
         /// The report and the map, in the session folder. A write failure does not cancel the

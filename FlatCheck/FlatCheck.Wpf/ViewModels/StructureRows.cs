@@ -32,7 +32,6 @@
 // core, so they are the same if tomorrow the console asks for them too.
 
 using System.Collections.Generic;
-using System.Linq;
 
 namespace FlatCheck.Wpf
 {
@@ -58,7 +57,7 @@ namespace FlatCheck.Wpf
                 Verdict = r.CornerVerdict,
                 // the only row with figures of its own under it: the four corners, through the
                 // same ratio as in the report
-                Note = Note(nameof(r.CornerSpreadPct)) + "\n" + CornerNote(r),
+                Note = Note(nameof(r.CornerSpreadPct)) + "\n" + StructureReport.CornerShares(r),
             },
             new MetricRow
             {
@@ -109,17 +108,13 @@ namespace FlatCheck.Wpf
             {
                 Label = "vignetare centru -> colt",
                 Value = $"{r.VignetteStops:F2} stopuri",
-                Note = $"coltul e {r.CornerMean / r.CentreMedian * 100:F0} % din centru; "
-                     + "e o proprietate a obiectivului, nu o eroare",
+                Note = StructureReport.VignetteNote(r),
             },
             new MetricRow
             {
                 Label = "offset centru iluminare",
                 Value = r.CentroidValid ? Pct(r.CentroidOffsetPct) : "nedeterminat",
-                Note = r.CentroidValid
-                    ? $"varf ({r.FitCx:F0}, {r.FitCy:F0}) vs centru senzor ({r.SensorCx:F0}, {r.SensorCy:F0}); "
-                      + "raport gradient/curbura, deci NU e scale-invariant - amplitudinea o da inclinarea"
-                    : "varf in afara cadrului sau fit degenerat",
+                Note = StructureReport.CentroidNote(r),
             },
             new MetricRow
             {
@@ -140,15 +135,6 @@ namespace FlatCheck.Wpf
         /// <c>nameof</c> gives it.</param>
         /// <returns>The core's note for that test.</returns>
         static string Note(string metric) => StructureReport.TestNote(metric);
-
-        /// <summary>The four corners, as a percentage of their mean - the same as in the
-        /// report.</summary>
-        /// <param name="r">The structure result.</param>
-        /// <returns>One line, each corner's name and percentage separated by three
-        /// spaces.</returns>
-        static string CornerNote(StructureResult r)
-            => string.Join("   ", r.Corners.Select(
-                c => $"{c.Key} {c.Value / r.CornerMean * 100:F1} %"));
 
         /// <summary>NaN is written "n/a", not "NaN %": it is a degenerate input, not a
         /// measurement.</summary>

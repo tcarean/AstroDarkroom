@@ -142,5 +142,53 @@ namespace FlatCheck
         /// 30.</returns>
         static string Trim(string name)
             => name.Length <= 30 ? name : "..." + name.Substring(name.Length - 27);
+
+        // ------------------------------------------------------------ for the window
+        // The same correlation figure and the same reasons as WriteSummary, in the window's
+        // layout: no column indentation, paragraphs, and the Ratio tab named where the console
+        // names --ratio.
+
+        /// <summary>The sky correlation for the window's figures, or why it does not
+        /// apply.</summary>
+        /// <param name="r">The combined series.</param>
+        /// <returns>The correlation with two decimals, or "nu se aplica" with the gradient's
+        /// span in points.</returns>
+        internal static string CorrelationValue(LightSeriesResult r)
+            => r.CorrApplies
+                ? $"{r.SkyCorr:F2}"
+                : $"nu se aplica (gradientul variaza doar {r.SkySpan:F1} puncte)";
+
+        /// <summary>
+        /// Why the mean cannot be read as the flat error, for the window. The same list of
+        /// reasons as in the console report, only without the column indentation.
+        /// </summary>
+        /// <param name="r">The combined series; not conclusive.</param>
+        /// <returns>One paragraph per reason, then the closing paragraph pointing at the Ratio
+        /// tab, separated by blank lines.</returns>
+        internal static string ReasonsText(LightSeriesResult r)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+
+            foreach (string reason in r.Reasons)
+            {
+                if (reason == "sem")
+                    parts.Add($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK "
+                            + $"({Th.LightRadOk:F2}), deci seria nu rezolva flat-ul la precizia la "
+                            + "care se pronunta pragurile. Un verdict aici ar fi o parere, nu o "
+                            + "masuratoare.");
+                else if (reason == "corelatie")
+                    parts.Add($"Componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2} "
+                            + $"pe un interval de {r.SkySpan:F0} puncte), semn ca ce se masoara e cerul.");
+                else
+                    parts.Add(char.ToUpperInvariant(reason[0]) + reason.Substring(1) + ".");
+            }
+
+            parts.Add("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din "
+                    + "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat. Pe date ca "
+                    + "astea raspunsul il da tabul Ratio, care valideaza flat-ul fara sa implice "
+                    + "cerul deloc.");
+
+            return string.Join("\n\n", parts);
+        }
     }
 }

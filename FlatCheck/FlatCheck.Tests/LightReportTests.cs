@@ -134,5 +134,27 @@ public class LightReportTests
         Assert.DoesNotContain("componenta radiala", text);
     }
 
+    /// <summary>
+    /// The window's field line, warning and refusal live here with the console's: they quote
+    /// the field limits from Th, and the refusal names the Ratio tab where the console names
+    /// --ratio.
+    /// </summary>
+    [Fact]
+    public void TheWindowsFieldTextsQuoteThAndTheRefusalNamesTheRatioTab()
+    {
+        var marginal = new SuitabilityResult { Level = FovLevel.Marginal, FovDeg = 30.0, Source = "WCS" };
+        var ok = new SuitabilityResult { Level = FovLevel.Ok, FovDeg = 12.0, Source = "WCS" };
+
+        Assert.Equal("30.0 grade diagonala  (WCS)", LightReport.FieldText(marginal));
+        Assert.Contains($"peste {Th.LightFovOk:F0} grade", LightReport.FieldWarning(marginal));
+        Assert.Equal("", LightReport.FieldWarning(ok));
+        Assert.Contains("necunoscut inseamna neverificat", LightReport.FieldWarning(Unknown));
+
+        string refusal = LightReport.TooWideText();
+        Assert.Contains($"Peste {Th.LightFovMax:F0} de grade", refusal);
+        Assert.Contains("tabul Ratio", refusal);
+        Assert.DoesNotContain("--ratio", refusal);
+    }
+
     static SuitabilityResult Unknown => new() { Level = FovLevel.Unknown };
 }

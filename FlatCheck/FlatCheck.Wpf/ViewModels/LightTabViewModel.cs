@@ -236,22 +236,15 @@ namespace FlatCheck.Wpf
         /// <param name="outcome">The run's outcome.</param>
         void Populate(LightSeriesRunOutcome outcome)
         {
-            Field = DescribeField(outcome.Suitability);
-            FieldWarning = FieldWarningFor(outcome.Suitability);
+            Field = LightReport.FieldText(outcome.Suitability);
+            FieldWarning = LightReport.FieldWarning(outcome.Suitability);
 
             if (outcome.Refused)
             {
                 Refused = true;
                 Verdict = Stats.NotApplicable;
                 Diagnosis = "";
-                Reasons =
-                    "Peste " + $"{Th.LightFovMax:F0}" + " de grade diagonala, cupola de poluare luminoasa se "
-                  + "CURBEAZA in interiorul cadrului. Partea radial simetrica a acelei curburi are "
-                  + "exact forma vignetarii, deci fitul nu le mai poate separa: orice cifra ar iesi "
-                  + "ar fi cerul, nu flat-ul.\n\n"
-                  + "Nu e o limitare a uneltei, e o degenerare geometrica.\n\n"
-                  + "Pe un setup cu camp larg, testul care raspunde e cel din tabul Ratio: "
-                  + "rotatia la 180 de grade valideaza flat-ul fara sa implice cerul deloc.";
+                Reasons = LightReport.TooWideText();
                 MeanRadial = Spread = Sem = Correlation = "";
                 Map = null;
                 MapLegend = "";
@@ -264,82 +257,14 @@ namespace FlatCheck.Wpf
             MeanRadial = LightReport.Signed(r.MeanRad) + " %";
             Spread = $"{LightReport.Signed(r.MinRad)} .. {LightReport.Signed(r.MaxRad)} %";
             Sem = $"{r.Sem:F2} puncte";
-            Correlation = r.CorrApplies
-                ? $"{r.SkyCorr:F2}"
-                : $"nu se aplica (gradientul variaza doar {r.SkySpan:F1} puncte)";
+            Correlation = LightSeriesReport.CorrelationValue(r);
 
             Verdict = r.Verdict;
             Diagnosis = r.Conclusive ? LightReport.Diagnosis(r.MeanRad) : "";
-            Reasons = r.Conclusive ? "" : DescribeReasons(r);
+            Reasons = r.Conclusive ? "" : LightSeriesReport.ReasonsText(r);
             Map = outcome.Png;
             // The same ends the received map was encoded with, so the automatic scale.
             MapLegend = RunReport.MapLegend(PngWriter.AutoRange(r.RadialMap));
-        }
-
-        /// <summary>
-        /// Why the mean cannot be read as the flat error. The same list of reasons as in the
-        /// console report, only without the column indentation.
-        /// </summary>
-        /// <param name="r">The series' result; not conclusive.</param>
-        /// <returns>One paragraph per reason, then the closing paragraph pointing at the Ratio
-        /// tab, separated by blank lines.</returns>
-        static string DescribeReasons(LightSeriesResult r)
-        {
-            var parts = new System.Collections.Generic.List<string>();
-
-            foreach (string reason in r.Reasons)
-            {
-                if (reason == "sem")
-                    parts.Add($"Eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK "
-                            + $"({Th.LightRadOk:F2}), deci seria nu rezolva flat-ul la precizia la "
-                            + "care se pronunta pragurile. Un verdict aici ar fi o parere, nu o "
-                            + "masuratoare.");
-                else if (reason == "corelatie")
-                    parts.Add($"Componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2} "
-                            + $"pe un interval de {r.SkySpan:F0} puncte), semn ca ce se masoara e cerul.");
-                else
-                    parts.Add(char.ToUpperInvariant(reason[0]) + reason.Substring(1) + ".");
-            }
-
-            parts.Add("Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din "
-                    + "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat. Pe date ca "
-                    + "astea raspunsul il da tabul Ratio, care valideaza flat-ul fara sa implice "
-                    + "cerul deloc.");
-
-            return string.Join("\n\n", parts);
-        }
-
-        /// <summary>The field covered, for the card.</summary>
-        /// <param name="s">The field guard's result, or null.</param>
-        /// <returns>The diagonal in degrees with its source, "nedeterminat" with the source when
-        /// only the focal length is known, a sentence when nothing is known, or "" for
-        /// null.</returns>
-        static string DescribeField(SuitabilityResult s)
-        {
-            if (s == null) return "";
-            if (!double.IsNaN(s.FovDeg)) return $"{s.FovDeg:F1} grade diagonala  ({s.Source})";
-            if (!double.IsNaN(s.FocalMm)) return $"nedeterminat  ({s.Source})";
-            return "necunoscut - headerul nu da nici focala, nici scara";
-        }
-
-        /// <summary>The warning under the field: a marginal field's caution, or the note that the
-        /// field could not be checked.</summary>
-        /// <param name="s">The field guard's result, or null.</param>
-        /// <returns>The warning, or "" for a suitable field or null.</returns>
-        static string FieldWarningFor(SuitabilityResult s)
-        {
-            if (s == null) return "";
-
-            if (s.Level == FovLevel.Marginal)
-                return $"Camp la limita. Separarea plan/radial slabeste peste {Th.LightFovOk:F0} grade "
-                     + "diagonala, iar cifra de mai jos poate contine si cer, nu doar flat. "
-                     + "Citeste-o ca pe un indiciu, nu ca pe o masuratoare.";
-
-            if (s.Level == FovLevel.Unknown)
-                return "Nu pot verifica daca testul se aplica: headerul nu spune destul despre camp. "
-                     + "Rezultatul ruleaza oricum, dar necunoscut inseamna neverificat, nu verificat.";
-
-            return "";
         }
 
         /// <inheritdoc/>

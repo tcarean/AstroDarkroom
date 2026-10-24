@@ -315,7 +315,7 @@ namespace FlatCheck
             var cenVals = cenPer[bright];
             double cenMed = (Stats.Percentile(cenVals, 50) - black) / rng * 100;
             double globPct = (mmax - black) / rng * 100;
-            double cenClip = cenVals.Count(v => v >= 0.98 * white) / (double)cenVals.Count * 100;
+            double cenClip = cenVals.Count(v => v >= Th.ExpoClipWhite * white) / (double)cenVals.Count * 100;
 
             if (!isCfa)
             {
@@ -330,7 +330,7 @@ namespace FlatCheck
                         cenVals.Add(data.At(y, x));
                 cenMed = (Stats.Percentile(cenVals, 50) - black) / rng * 100;
                 globPct = (Stats.Percentile(data.D, 50) - black) / rng * 100;
-                cenClip = cenVals.Count(v => v >= 0.98 * white) / (double)cenVals.Count * 100;
+                cenClip = cenVals.Count(v => v >= Th.ExpoClipWhite * white) / (double)cenVals.Count * 100;
             }
 
             var r = new ExposureResult
@@ -400,7 +400,7 @@ namespace FlatCheck
                         double pct = v / White * 100;
                         all[y * p.W + x] = v;
                         whole.Add(pct);
-                        if (v >= 0.98 * White) clipped++;
+                        if (v >= Th.ExpoClipWhite * White) clipped++;
                         if (y >= cy0 && y < cy1 && x >= cx0 && x < cx1)
                         {
                             mid.Add(v);
@@ -444,7 +444,8 @@ namespace FlatCheck
         /// white.</returns>
         static double Pct(ExposureResult r, double adu) => (adu - r.Black) / r.Range * 100;
 
-        /// <summary>The share of values at or above 98 % of the white level.</summary>
+        /// <summary>The share of values at or above <see cref="Th.ExpoClipWhite"/> of the white
+        /// level.</summary>
         /// <param name="vals">The values, ADU.</param>
         /// <param name="white">The white level, ADU.</param>
         /// <returns>The share in percent; 0 for an empty list.</returns>
@@ -452,7 +453,7 @@ namespace FlatCheck
         {
             if (vals.Count == 0) return 0;
             int n = 0;
-            for (int i = 0; i < vals.Count; i++) if (vals[i] >= 0.98 * white) n++;
+            for (int i = 0; i < vals.Count; i++) if (vals[i] >= Th.ExpoClipWhite * white) n++;
             return n / (double)vals.Count * 100;
         }
 

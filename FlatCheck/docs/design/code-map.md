@@ -202,8 +202,15 @@ a library extraction and not a copy is ADR 0011.
     with the warning threshold read from `Th.LocalSpotWarn`, `LocalSpotWarning` or null -
     all three printed by the console too, see "1. Structure"), `LightReport.Diagnosis()`,
     `ExposureReport`'s `HistogramReading` / `ChannelNote` / `BandLabel` (the wording around
-    the exposure histograms) and `ScreenComparison` / `ScreenReading` / `NoPreviewReason`
-    (the raw-vs-screen table and its explanation) - all window-only, like `MapScaleLabel`,
+    the exposure histograms), `ScreenComparison` / `ScreenReading` / `NoPreviewReason` /
+    `PreviewChannelNote` / `ScreenGap` (the raw-vs-screen table and its explanation) and
+    `VerdictWord` / `Advice` / `ChannelsSummary` / `ChannelOrderNote` / `HistogramCaption`
+    (the Expo tab's verdict card and caption, the console's verdict and correction laid out
+    as paragraphs), `LightReport.FieldText` / `FieldWarning` / `TooWideText` and
+    `LightSeriesReport.CorrelationValue` / `ReasonsText` (the End to end tab's field line,
+    refusal and reasons, the Ratio tab named where the console names `--ratio`), and
+    `StructureReport.CornerShares` / `VignetteNote` / `CentroidNote` (the notes under the
+    Structure and Ratio rows, through the console's ratios) - all window-only, like `MapScaleLabel`,
     and for the same reason. `StructureReport` also owns the profile block: `ProfileRows`,
     `MasterDepth`, `ComparisonSummary`, `ComparisonNote`, `DepthScaleRows` /
     `DepthScaleNote` (the depth scale as four bands in stops, `Th.Resid*` through

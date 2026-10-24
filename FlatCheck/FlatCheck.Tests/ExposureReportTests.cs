@@ -52,6 +52,27 @@ public class ExposureReportTests
             TestImages.From(256, 256, FitsTestData.WithBayerMosaic(
                 FitsTestData.Radial(256, 256, center: 34000))), null, null, false);
 
+    // ---------------------------------------------------------------- the window's verdict card
+
+    /// <summary>
+    /// The window's verdict, advice and caption quote their limits from Th, not as literals, so
+    /// a recalibration cannot leave the text stating the old value - the console's lines with
+    /// the same limits are pinned by the golden files.
+    /// </summary>
+    [Fact]
+    public void TheWindowsAdviceAndCaptionQuoteTheirLimitsFromTh()
+    {
+        ExposureResult low = AtLevel(20);
+        ExposureResult skyHigh = AtLevel(55, sky: true);
+
+        Assert.Equal("PROBLEMA", ExposureReport.VerdictWord(low));
+        Assert.Contains($"Sub ~{Th.ExpoTooLow:F0} % in centru", ExposureReport.Advice(low));
+        Assert.Equal("ACCEPTABIL", ExposureReport.VerdictWord(skyHigh));
+        Assert.Contains($"Sub {Th.ExpoSkyTooHigh:F0} % e ok", ExposureReport.Advice(skyHigh));
+        Assert.Contains($"peste {Th.ExpoClipWhite * 100:F0} % din white", ExposureReport.HistogramCaption(false));
+        Assert.DoesNotContain("din white", ExposureReport.HistogramCaption(true));
+    }
+
     // ---------------------------------------------------------------- the band label
 
     [Fact]
