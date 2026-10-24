@@ -15,23 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightSuitability.cs - poate testul --light sa spuna ceva despre cadrul asta?
+// LightSuitability.cs - can the --light test say anything about this frame?
 //
-// Modul --light separa fondul in "plan de poluare luminoasa" + "termeni radiali =
-// eroare de flat". Separarea tine cat timp cupola de poluare e cvasi-liniara peste
-// cadru. Pe un camp larg ea se CURBEAZA in interiorul cadrului, iar partea radial
-// simetrica a acelei curburi are exact forma vignetarii: doua lucruri cu aceeasi forma
-// nu se pot separa printr-un fit, oricat de bine scris.
+// The --light mode splits the background into "light-pollution plane" + "radial terms =
+// flat error". The split holds as long as the pollution dome is quasi-linear across the
+// frame. On a wide field it CURVES inside the frame, and the radially symmetric part of that
+// curvature has exactly the shape of vignetting: two things of the same shape cannot be
+// separated by a fit, however well written.
 //
-// Nu e o limitare a implementarii, e o degenerare geometrica. De aceea peste
-// Th.LightFovMax modul REFUZA sa raspunda, in loc sa dea un raspuns prost - exact cazul
-// care a motivat fisierul asta: 20 mm pe APS-C (~70 grade diagonala) raporta
-// "+3.13 % SUSPECT, SUB-corectie" pe un flat care nu avea nimic radial gresit.
+// It is not a limitation of the implementation, it is a geometric degeneracy. That is why above
+// Th.LightFovMax the mode REFUSES to answer, instead of giving a bad answer - exactly the case
+// that motivated this file: 20 mm on APS-C (~70 degrees diagonal) reported
+// "+3.13 % SUSPECT, SUB-corectie" on a flat that had nothing radially wrong.
 //
-// Campul se deriva pe straturi, in ordinea increderii. Ultimul strat conteaza cel mai
-// mult ca decizie de proiectare: cand nu se poate afla nimic, modul CONTINUA cu o nota,
-// nu refuza. Altfel orice FITS cu header minimal - inclusiv toate fixturile sintetice
-// din teste - ar deveni imposibil de analizat.
+// The field is derived in layers, in order of confidence. The last layer matters most as a
+// design decision: when nothing can be found out, the mode CONTINUES with a note, it does not
+// refuse. Otherwise any FITS with a minimal header - including all the synthetic fixtures
+// in the tests - would become impossible to analyse.
 
 using System;
 using System.Collections.Generic;
@@ -39,31 +39,54 @@ using System.Globalization;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// How far the field of view lets <c>--light</c> separate the sky plane from the radial
+    /// flat error.
+    /// </summary>
     internal enum FovLevel
     {
-        Ok,          // camp ingust: separarea plan/radial e valida
-        Marginal,    // se poate rula, dar cu avertisment
-        TooWide,     // degenerare geometrica: testul nu se aplica
-        Unknown,     // headerul nu spune destul; se ruleaza, cu o nota
+        Ok,          // narrow field: the plane/radial split is valid
+        Marginal,    // can run, but with a warning
+        TooWide,     // geometric degeneracy: the test does not apply
+        Unknown,     // the header does not say enough; it runs, with a note
     }
 
+    /// <summary>
+    /// The answer of <see cref="LightSuitability.Check"/>: the level, the field or focal length
+    /// it was decided on, and where that figure came from.
+    /// </summary>
     internal sealed class SuitabilityResult
     {
         internal FovLevel Level;
-        internal double FovDeg = double.NaN;    // diagonala, grade. NaN = nu s-a calculat
-        internal double FocalMm = double.NaN;   // doar cand decizia s-a luat pe focala
-        internal string Source;                 // de unde vine cifra, pentru raport
+        internal double FovDeg = double.NaN;    // diagonal, degrees. NaN = not computed
+        internal double FocalMm = double.NaN;   // only when the decision was taken on the focal length
+        internal string Source;                 // where the figure comes from, for the report
 
         internal bool CanRun => Level != FovLevel.TooWide;
     }
 
+    /// <summary>
+    /// Decides from the header (or <c>--fov</c>) whether the field is narrow enough for the
+    /// <c>--light</c> test, before <see cref="LightAnalyzer"/> runs.
+    /// </summary>
     internal static class LightSuitability
     {
+        /// <summary>
+        /// Derives the diagonal field of view in layers - <c>--fov</c>, the WCS scale, the focal
+        /// length with the pixel size, the focal length alone - and reads it against
+        /// <see cref="Th.LightFovOk"/> / <see cref="Th.LightFovMax"/> (or, on the focal length
+        /// alone, <see cref="Th.LightFocalOk"/> / <see cref="Th.LightFocalMin"/>).
+        /// </summary>
+        /// <param name="header">The FITS header of the light, key to raw value; null when there
+        /// is none (the level is then Unknown).</param>
+        /// <param name="fovOverride">The diagonal field in degrees given with --fov, or
+        /// null.</param>
+        /// <returns>The level and its source; Unknown when nothing in the header tells.</returns>
         internal static SuitabilityResult Check(
             IReadOnlyDictionary<string, string> header, double? fovOverride)
         {
-            // 1. Declarat de om. Bate orice autodetectie - exista tocmai pentru cazul in
-            //    care straturile de mai jos nu pot sti (DSLR fara XPIXSZ, senzor mic).
+            // 1. Declared by the person. It beats any autodetection - it exists precisely for the
+            //    case where the layers below cannot know (DSLR without XPIXSZ, small sensor).
             if (fovOverride.HasValue)
                 return FromFov(fovOverride.Value, "--fov");
 
@@ -74,9 +97,9 @@ namespace FlatCheck
             if (n1 <= 0 || n2 <= 0) return Unknown();
             double diagPx = Math.Sqrt((double)n1 * n1 + (double)n2 * n2);
 
-            // 2. Plate solve: scara in grade/pixel e masurata, nu dedusa. Cea mai buna
-            //    sursa cand exista. CDELT1 daca e prezent, altfel norma coloanei matricei
-            //    CD (CD1_1, CD2_1), care e acelasi lucru scris altfel.
+            // 2. Plate solve: the scale in degrees/pixel is measured, not deduced. The best
+            //    source when it exists. CDELT1 if present, else the norm of the column of the
+            //    CD matrix (CD1_1, CD2_1), which is the same thing written differently.
             double scale = Math.Abs(FitsReader.HDbl(header, "CDELT1", 0.0));
             if (scale <= 0)
             {
@@ -89,8 +112,8 @@ namespace FlatCheck
             double focal = FitsReader.HDbl(header, "FOCALLEN", 0.0);
             if (focal <= 0) return Unknown();
 
-            // 3. Marimea pixelului + focala: campul real, exact. Siril scrie XPIXSZ pentru
-            //    camere astro. Pentru DSLR-uri nu il scrie, deci stratul asta sare des.
+            // 3. Pixel size + focal length: the real field, exact. Siril writes XPIXSZ for
+            //    astro cameras. For DSLRs it does not, so this layer is often skipped.
             double xpix = FitsReader.HDbl(header, "XPIXSZ", 0.0);
             double ypix = FitsReader.HDbl(header, "YPIXSZ", xpix);
             if (xpix > 0 && ypix > 0)
@@ -104,11 +127,11 @@ namespace FlatCheck
                 return FromFov(fov, $"FOCALLEN={Num(focal)}mm + XPIXSZ");
             }
 
-            // 4. Doar focala. Nu se poate calcula campul - depinde de senzor - deci NU se
-            //    raporteaza o cifra de camp, ca ar fi inventata. Se compara focala cu
-            //    pragurile calculate pentru cel mai mare senzor plauzibil (full-frame),
-            //    deci judecata e conservatoare: pe un senzor mai mic campul real e mai
-            //    ingust decat presupune pragul. Pentru cazul ala exista --fov.
+            // 4. The focal length only. The field cannot be computed - it depends on the sensor -
+            //    so NO field figure is reported, since it would be invented. The focal length is
+            //    compared with the thresholds computed for the largest plausible sensor
+            //    (full-frame), so the judgement is conservative: on a smaller sensor the real
+            //    field is narrower than the threshold assumes. For that case there is --fov.
             var level = focal >= Th.LightFocalOk ? FovLevel.Ok
                       : focal >= Th.LightFocalMin ? FovLevel.Marginal
                       : FovLevel.TooWide;
@@ -120,6 +143,11 @@ namespace FlatCheck
             };
         }
 
+        /// <summary>The level of a known diagonal field.</summary>
+        /// <param name="fovDeg">The diagonal field of view, degrees.</param>
+        /// <param name="source">Where the figure came from, for the report.</param>
+        /// <returns>The level read against <see cref="Th.LightFovOk"/> and
+        /// <see cref="Th.LightFovMax"/>, with the field and its source.</returns>
         static SuitabilityResult FromFov(double fovDeg, string source) => new()
         {
             Level = fovDeg < Th.LightFovOk ? FovLevel.Ok
@@ -129,9 +157,13 @@ namespace FlatCheck
             Source = source,
         };
 
+        /// <summary>The answer when the header says too little.</summary>
+        /// <returns>A result of level Unknown, with no figure and no source.</returns>
         static SuitabilityResult Unknown() => new() { Level = FovLevel.Unknown };
 
-        /// Focala fara zecimale inutile: "20mm", nu "20.0mm".
+        /// <summary>The focal length without useless decimals: "20mm", not "20.0mm".</summary>
+        /// <param name="v">The focal length, mm.</param>
+        /// <returns>The number with no decimal when whole, else one decimal.</returns>
         static string Num(double v)
             => v.ToString(Math.Abs(v - Math.Round(v)) < 1e-9 ? "0" : "0.0",
                           CultureInfo.InvariantCulture);

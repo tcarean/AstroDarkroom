@@ -15,17 +15,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ExposureReport.cs - ExposureResult -> textul din consola. Doar formatare.
+// ExposureReport.cs - ExposureResult -> the console's text. Formatting only.
 //
-// Corectiile sugerate sunt log2(tinta/centru) stopuri, unde tinta e mijlocul benzii -
-// 57 pe panou, 30 pe cer. Nu se mai alege aici intre cele doua: vine din r.Bands, adica
-// din exact scara pe care s-a dat verdictul.
+// The suggested corrections are log2(target/centre) stops, where the target is the middle of the
+// band - 57 on a panel, 30 on the sky. The choice between the two is no longer made here: it
+// comes from r.Bands, that is from exactly the scale the verdict was given on.
 //
-// Trei bucati de aici NU se tiparesc in consola - HistogramReading, ChannelNote si
-// BandLabel. Sunt textul care insoteste histogramele din fereastra, si stau aici din
-// acelasi motiv ca RunReport.MapLegend: formularea are un singur loc, chiar daca azi are
-// un singur cititor. In consola n-ar avea ce cauta - un paragraf despre forma unei curbe
-// pe care consola n-o deseneaza.
+// Three pieces here are NOT printed in the console - HistogramReading, ChannelNote and
+// BandLabel - and neither are the three of the camera's preview (ScreenComparison,
+// ScreenReading, NoPreviewReason). They are the text that goes with the window's histograms
+// and its preview comparison, and they sit here for the same reason as RunReport.MapLegend: the
+// wording has a single place, even if today it has a single reader. In the console they would
+// have no business - a paragraph about the shape of a curve the console does not draw.
 
 using System;
 using System.Collections.Generic;
@@ -34,8 +35,20 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The words of <c>--expo</c>: the console report of an <see cref="ExposureResult"/>, and
+    /// the sentences the window puts beside its histograms and the camera's preview.
+    /// </summary>
     internal static class ExposureReport
     {
+        /// <summary>
+        /// Writes the console report: the scale, the per-channel medians, the deciding central
+        /// median, then either why the file is not a raw flat or the verdict with its
+        /// suggested correction in stops.
+        /// </summary>
+        /// <param name="r">The measured result.</param>
+        /// <param name="path">The file's path, as the header prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void Write(ExposureResult r, string path, TextWriter w)
         {
             w.WriteLine($"\n=== EXPUNERE: {path} ===");
@@ -43,9 +56,10 @@ namespace FlatCheck
 
             if (r.IsCfa)
             {
-                // Culorile se scriu doar cand fisierul chiar a spus ordinea. Fara card,
-                // linia ramane exact cea de dinainte - pozitiile anonime - fiindca ordinea
-                // difera de la aparat la aparat si o eticheta ghicita ar parea masurata.
+                // The colours are written only when the file really said the order. Without the
+                // card, the line stays exactly the one from before - the anonymous positions -
+                // because the order differs from camera to camera and a guessed label would look
+                // measured.
                 w.WriteLine(r.Cfa != null
                     ? $"    nivel median GLOBAL per canal CFA (ordinea R/G/B din {r.Cfa.Source}):"
                     : "    nivel median GLOBAL per canal CFA (informativ; nu stiu care e R/G/B):");
@@ -76,6 +90,12 @@ namespace FlatCheck
             else WritePanel(r, w);
         }
 
+        /// <summary>
+        /// Why the file does not look like a raw flat (level near zero, or a debayered mosaic),
+        /// and how to produce one that does.
+        /// </summary>
+        /// <param name="r">The result, whose sanity gate failed.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteNotRaw(ExposureResult r, TextWriter w)
         {
             w.WriteLine();
@@ -99,6 +119,9 @@ namespace FlatCheck
             w.WriteLine("        care pastreaza mozaicul CFA nedebayerizat.");
         }
 
+        /// <summary>The verdict and its advice on the sky scale (<c>--sky</c>).</summary>
+        /// <param name="r">The result of a sky flat.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteSky(ExposureResult r, TextWriter w)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
@@ -126,6 +149,9 @@ namespace FlatCheck
             }
         }
 
+        /// <summary>The verdict and its correction in stops on the panel scale.</summary>
+        /// <param name="r">The result of a panel flat.</param>
+        /// <param name="w">Where to write.</param>
         static void WritePanel(ExposureResult r, TextWriter w)
         {
             bool clipping = r.CentreClipPct > Th.ExpoClip;
@@ -161,26 +187,36 @@ namespace FlatCheck
             }
         }
 
-        // =============================================================== pentru fereastra
+        // =============================================================== for the window
         //
-        // Ce urmeaza nu se tipareste nicaieri in consola. Vezi nota din capul fisierului.
+        // What follows is printed nowhere in the console, but ChannelColumn, which Write uses
+        // for its per-channel rows. See the note at the head of the file.
 
         /// <summary>
-        /// Coloana din stanga a unui canal: numele culorii cand se stie, plus pozitia -
-        /// care ramane vizibila oricum, ca linia sa se poata lega de mozaic.
+        /// The left column of a channel: the colour's name when known, plus the position -
+        /// which stays visible anyway, so that the line can be tied to the mosaic.
         /// </summary>
+        /// <param name="r">The result, with its CFA order.</param>
+        /// <param name="i">The Bayer position, 0..3.</param>
+        /// <returns>"R  (CFA[0,0])" when the order is known, else "CFA[y,x]".</returns>
         static string ChannelColumn(ExposureResult r, int i)
             => r.Cfa != null
                 ? $"{r.ChannelLabel(i),-2} (CFA[{i / 2},{i % 2}])"
                 : r.ChannelLabel(i);
 
-        /// <summary>Eticheta benzii tinta, pentru desen: "tinta 50-65 %".</summary>
+        /// <summary>The label of the target band, for the drawing: "tinta 50-65 %".</summary>
+        /// <param name="b">The bands the verdict was given on.</param>
+        /// <returns>The label, with "sky" in it on the sky scale.</returns>
         internal static string BandLabel(ExposureBands b)
             => b.Sky ? $"tinta sky {b.Lo:F0}-{b.Hi:F0} %" : $"tinta {b.Lo:F0}-{b.Hi:F0} %";
 
         /// <summary>
-        /// Nota scurta de sub eticheta unui canal, sau "" cand n-are nimic de spus.
+        /// The short note under a channel's label, or "" when it has nothing to say.
         /// </summary>
+        /// <param name="r">The result.</param>
+        /// <param name="c">The channel.</param>
+        /// <returns>Whether it decides and whether it clips over <see cref="Th.ExpoClip"/>,
+        /// joined with "; "; "" for neither.</returns>
         internal static string ChannelNote(ExposureResult r, ChannelLevels c)
         {
             var parts = new List<string>();
@@ -190,11 +226,13 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cum se citeste expunerea fisierului asta, in cuvinte. Nu adauga nicio masuratoare
-        /// si nu schimba niciun verdict: pune in propozitii cifrele care sunt deja pe ecran,
-        /// fiindca legatura dintre ele - de ce curba lata NU inseamna subexpunere, cat mai e
-        /// pana la saturatie - nu se vede din desen singur.
+        /// How to read this file's exposure, in words. It adds no measurement and changes no
+        /// verdict: it puts into sentences the figures already on screen, because the link
+        /// between them - why the wide curve does NOT mean underexposure, how far it still is to
+        /// saturation - does not show from the drawing alone.
         /// </summary>
+        /// <param name="r">The result.</param>
+        /// <returns>One paragraph, its sentences joined with spaces.</returns>
         internal static string HistogramReading(ExposureResult r)
         {
             if (!r.IsRaw)
@@ -206,7 +244,7 @@ namespace FlatCheck
             ExposureBands b = r.Bands;
             var s = new List<string>();
 
-            // 1. cine decide
+            // 1. who decides
             if (!r.IsCfa)
                 s.Add("Cadrul e mono sau deja procesat, deci se masoara pe tot, nu pe canale.");
             else if (c.Colour != '\0')
@@ -215,7 +253,7 @@ namespace FlatCheck
                 s.Add($"Canalul cel mai luminos e {c.Label} - nu stiu ce culoare are - deci el "
                     + "decide: el clipeaza primul.");
 
-            // 2. unde sta varful fata de banda
+            // 2. where the peak sits against the band
             double cen = r.CentreMedianPct;
             if (cen < b.Lo)
                 s.Add($"Varful ferestrei centrale e la {cen:F1} %, cu {b.Lo - cen:F1} puncte sub "
@@ -226,7 +264,7 @@ namespace FlatCheck
             else
                 s.Add($"Varful ferestrei centrale e la {cen:F1} %, in {BandLabel(b)}.");
 
-            // 3. cat mai e pana sus - sau ca nu mai e deloc
+            // 3. how far it still is to the top - or that there is no room left at all
             if (r.CentreClipPct > Th.ExpoClip)
                 s.Add($"Centrul atinge deja saturatia ({r.CentreClipPct:F3} % din pixelii lui), "
                     + "deci PREA SUS oricare ar fi mediana - acolo se pierde exact informatia "
@@ -235,14 +273,14 @@ namespace FlatCheck
                 s.Add($"Cel mai luminos 1 % din centru ajunge la {c.CentreP99Pct:F1} % din white, "
                     + $"deci mai sunt ~{Math.Log2(100.0 / c.CentreP99Pct):F1} stopuri pana la saturatie.");
 
-            // 4. de ce curba din fundal e lata
+            // 4. why the curve in the background is wide
             double drop = cen - c.MedianPct;
             if (drop > 0.5)
                 s.Add($"Mediana intregului canal e cu {drop:F1} puncte sub centru - aia e "
                     + "vignetarea, nu subexpunere, si curba lata din fundal o arata. Daca "
                     + "expui dupa ea, clipezi centrul.");
 
-            // 5. daca mai clipeaza si altcineva
+            // 5. whether anyone else clips too
             if (r.IsCfa)
             {
                 var others = r.Channels
@@ -257,24 +295,27 @@ namespace FlatCheck
             return string.Join(" ", s);
         }
 
-        // ================================================= previzualizarea aparatului
+        // ================================================= the camera's preview
         //
-        // Tot pentru fereastra, tot netiparit in consola. Aici se pun cap la cap cele doua
-        // cifre - ce a masurat senzorul si ce a aratat ecranul - si se spune de ce difera.
-        // Nimic de aici nu voteaza.
+        // For the window too, not printed in the console either. Here the two figures are put
+        // side by side - what the sensor measured and what the screen showed - and it says why
+        // they differ. Nothing here votes.
 
         /// <summary>
-        /// Perechea raw -> ecran pe fiecare canal, CENTRU cu CENTRU: mediana ferestrei de
-        /// 20 % din raw langa mediana aceleiasi ferestre din previzualizare. Nu se compara
-        /// medianele intregului cadru - cea din raw e trasa in jos de vignetare intr-un fel
-        /// in care cea din previzualizare nu e, si diferenta ar fi in parte obiectivul.
+        /// The raw -> screen pair on each channel, CENTRE against CENTRE: the median of the raw's
+        /// 20 % window beside the median of the same window in the preview. The medians of the
+        /// whole frame are not compared - the raw's is pulled down by vignetting in a way the
+        /// preview's is not, and the difference would partly be the lens.
         ///
-        /// Imperecherea e dupa CULOAREA canalului raw, nu dupa indexul lui si nu dupa
-        /// mozaicul din header: un raw judecat mono are un singur canal fara culoare, chiar
-        /// daca fisierul a spus ordinea. Cei doi verzi se mediaza fata de singurul G.
-        /// Fara nicio culoare pe partea raw, o singura pereche: cel mai luminos cu cel mai
-        /// luminos, si eticheta o spune.
+        /// The pairing is by the COLOUR of the raw channel, not by its index and not by the
+        /// header's mosaic: a raw judged mono has a single channel with no colour, even if the
+        /// file said the order. The two greens are averaged against the single G.
+        /// With no colour at all on the raw side, a single pair: the brightest with the
+        /// brightest, and the label says so.
         /// </summary>
+        /// <param name="r">The result, with its preview levels.</param>
+        /// <returns>One row per pair: its label, its colour ('\0' for the brightest pair), the
+        /// raw's and the screen's central median in percent; empty without a preview.</returns>
         internal static IReadOnlyList<(string Channel, char Colour, double RawPct, double ScreenPct)>
             ScreenComparison(ExposureResult r)
         {
@@ -304,13 +345,15 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// De ce difera atat de mult cele doua, si la ce mai e bun ecranul. Spune doar ce
-        /// sustine rezultatul: diferenta masurata pe canalul care decide, mecanismul (gama
-        /// plus curba de ton, pe care nicio setare nu le scoate), de ce un flat e cazul cel
-        /// mai nefavorabil, si regula utila - ecranul se satureaza inaintea senzorului cand
-        /// balansul de alb amplifica si curba ajunge la 255, deci e o alarma intr-un singur
-        /// sens, nu un instrument de masura. Formulata ca mecanism si observatie, nu ca lege.
+        /// Why the two differ so much, and what the screen is still good for. It says only what
+        /// the result supports: the difference measured on the deciding channel, the mechanism
+        /// (gamma plus the tone curve, which no setting removes), why a flat is the least
+        /// favourable case, and the useful rule - the screen saturates before the sensor when the
+        /// white balance amplifies and the curve reaches 255, so it is a one-way alarm, not a
+        /// measuring instrument. Worded as mechanism and observation, not as a law.
         /// </summary>
+        /// <param name="r">The result, with its preview levels.</param>
+        /// <returns>One paragraph; "" without a preview.</returns>
         internal static string ScreenReading(ExposureResult r)
         {
             if (r.Preview == null) return "";
@@ -353,7 +396,9 @@ namespace FlatCheck
             return string.Join(" ", s);
         }
 
-        /// <summary>De ce nu se poate arata comparatia pe fisierul asta.</summary>
+        /// <summary>Why the comparison cannot be shown on this file.</summary>
+        /// <param name="r">The result; not read, the reason is the same for every file.</param>
+        /// <returns>One paragraph.</returns>
         internal static string NoPreviewReason(ExposureResult r)
             => "Fisierul asta nu poarta o previzualizare a aparatului - un FITS n-are niciodata, "
              + "iar unele raw-uri convertite o pierd - sau ea nu s-a putut decoda. Nu am ce "

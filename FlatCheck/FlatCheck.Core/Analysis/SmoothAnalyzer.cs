@@ -15,63 +15,64 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// SmoothAnalyzer.cs - modul 6: flat-ul NETEZIT. Pastreaza tot ce e neted in master si
-// arunca tot ce nu e - textura difuzorului, umbrele de praf, petele - si intoarce un al
-// doilea master, la rezolutie intreaga, plus masura a ce s-a scos.
+// SmoothAnalyzer.cs - mode 6: the SMOOTHED flat. It keeps everything that is smooth in the
+// master and throws away everything that is not - the diffuser's texture, the dust shadows,
+// the spots - and returns a second master, at full resolution, plus the measure of what was
+// removed.
 //
-// Pur: Img -> SmoothResult. Nu scrie nimic. Textul e in Report/SmoothReport.cs, fisierul
-// il scrie Runs/SmoothRun.cs prin FitsWriter.
+// Pure: Img -> SmoothResult. It writes nothing. The text is in Report/SmoothReport.cs, the file
+// is written by Runs/SmoothRun.cs through FitsWriter.
 //
-// CE FACE, pe fiecare pozitie Bayer separat (pe mono: pe tot cadrul):
-//   1. mediana pe dale de k px (Metrics.TileSize: ~150 px pe senzor), cu dalele partiale
-//      de la capat pastrate si cu centrul lor real (Img.TileMedians);
-//   2. in fiecare dala, un fit PATRATIC local - 1, x, y, x2, xy, y2 - pe dalele vecine,
-//      ponderat gaussian cu sigma_t dale, cu offseturile reale dintre centre;
-//   3. robust: 3 runde de clipping bilateral la max(2.5 * MAD, 2 % din nivel) fata de
-//      fitul local; o dala respinsa nu mai cantareste in fitul niciunei vecine;
-//   4. pe fiecare pixel, media biliniara a predictiilor celor patru dale din jur, fiecare
-//      evaluata la offsetul real al pixelului fata de centrul acelei dale.
+// WHAT IT DOES, on each Bayer position separately (on mono: on the whole frame):
+//   1. the median over tiles of k px (Metrics.TileSize: ~150 px on the sensor), with the partial
+//      tiles at the end kept and with their real centre (Img.TileMedians);
+//   2. in each tile, a local QUADRATIC fit - 1, x, y, x2, xy, y2 - over the neighbouring tiles,
+//      Gaussian-weighted with sigma_t tiles, with the real offsets between the centres;
+//   3. robust: 3 rounds of two-sided clipping at max(2.5 * MAD, 2 % of the level) against the
+//      local fit; a rejected tile no longer weighs in the fit of any neighbour;
+//   4. on each pixel, the bilinear mean of the predictions of the four surrounding tiles, each
+//      evaluated at the pixel's real offset from that tile's centre.
 //
-// DE CE ASA, si nu altfel - masurat pe cinci mastere reale (2026-09-16, vezi
-// docs/design/smooth-validation.md pentru cifre), fiindca doua variante mai evidente au picat:
+// WHY THIS WAY, and not otherwise - measured on five real masters (2026-09-16, see
+// docs/design/smooth-validation.md for the figures), because two more obvious variants failed:
 //
-//   - Un polinom global peste reziduul unui model radial NU urmareste structura de scara
-//     medie pe care o are orice master real (petele monitorului la 1000-1500 px si +-3 %,
-//     inelul descentrat al unui Nikkor, blob-urile unui LCD): reziduul pe dale scade pana
-//     la gradul 10 fara podea, iar de la gradul 6 polinomul oscileaza in colturi.
-//   - Un model radial pe inele (mediana pe inel, cum are modul de structura) PUNE INELE
-//     IN FISIER: dincolo de cercul inscris inelele sunt arce partiale, orice structura
-//     para ne-radiala face distributia pe inel bimodala si mediana sare de la un inel la
-//     altul. Un camp local de 150 px nu poate compensa inele de 22 px, deci ajung in
-//     iesire - vizibile ca cercuri concentrice in raportul dintre doua mastere netezite.
-//     Modul de structura sufera de acelasi lucru doar pe harta; aici ar intra in flat.
-//     Concluzia: impartirea in "radial" si "rest" e arbitrara, si singura cerinta e ca
-//     iesirea sa fie neteda si sa urmareasca datele. Fara model radial, nimic de aici nu
-//     stie de un centru, deci nu exista inele prin constructie.
+//   - A global polynomial over the residual of a radial model does NOT follow the mid-scale
+//     structure every real master has (the monitor's spots at 1000-1500 px and +-3 %,
+//     a Nikkor's off-centre ring, an LCD's blobs): the residual over tiles falls up to
+//     degree 10 with no floor, and from degree 6 on the polynomial oscillates in the corners.
+//   - A radial model on rings (the median per ring, as the structure mode has) PUTS RINGS
+//     INTO THE FILE: beyond the inscribed circle the rings are partial arcs, any even
+//     non-radial structure makes the distribution on a ring bimodal and the median jumps from
+//     one ring to the next. A local field of 150 px cannot make up for rings of 22 px, so they
+//     reach the output - visible as concentric circles in the ratio of two smoothed masters.
+//     The structure mode suffers from the same thing only on the map; here it would enter the
+//     flat. The conclusion: the split into "radial" and "rest" is arbitrary, and the only
+//     requirement is that the output be smooth and follow the data. Without a radial model,
+//     nothing here knows of a centre, so there are no rings by construction.
 //
-// Un fit patratic local pe o fereastra de +-450 px urmareste curbura vignetarii (scara
-// ~1800 px) pana in colt exact la ordinul al treilea, si extrapoleaza corect jumatatea
-// de dala de dincolo de ultimul centru. Doua lectii care au costat cate o runda:
-//   - clipping-ul relativ doar la MAD respingea 8 % din dale pe un master foarte curat
-//     (Samyang, MAD 0.06 %): orice structura de 0.15 % devenea "outlier" si nu mai era
-//     urmarita deloc. De aici podeaua absoluta de 2 % din nivel (ClipFloor);
-//   - dala partiala de 8 px de pe marginea dreapta, fitata la o dala distanta de vecina
-//     ei, punea o banda de eroare de 0.8 % de-a lungul marginii. De aici offseturile reale.
+// A local quadratic fit over a window of +-450 px follows the curvature of vignetting (scale
+// ~1800 px) into the corner exactly to the third order, and extrapolates correctly the half
+// tile beyond the last centre. Two lessons that cost a round each:
+//   - clipping relative to the MAD alone rejected 8 % of the tiles on a very clean master
+//     (Samyang, MAD 0.06 %): any structure of 0.15 % became an "outlier" and was no longer
+//     followed at all. Hence the absolute floor of 2 % of the level (ClipFloor);
+//   - the partial tile of 8 px on the right edge, fitted at one tile's distance from its
+//     neighbour, put a band of 0.8 % error along the edge. Hence the real offsets.
 //
-// SCARA. ScalePx e SIGMA nucleului gaussian, in pixeli de senzor (latimea la jumatate e
-// ~2.35 sigma), implicit 300 px: celulele de tesatura masurate pe masterul Tokina au
-// 290-340 px, si la sigma 300 un camp aleator cu lungimea aia de corelatie trece la
-// ~30 % in RMS. Mai lat scoate mai mult din celule si mananca mai mult din structura
-// reala de 300 px (inelul Nikkor-ului, 0.3-0.5 %, e luat partial la 300 si ramane la
-// 225). E singurul buton.
+// THE SCALE. ScalePx is the SIGMA of the Gaussian kernel, in sensor pixels (the full width at
+// half maximum is ~2.35 sigma), 300 px by default: the weave cells measured on the Tokina master
+// are 290-340 px, and at sigma 300 a random field with that correlation length passes at
+// ~30 % in RMS. Wider takes more out of the cells and eats more of the real structure
+// of 300 px (the Nikkor's ring, 0.3-0.5 %, is taken partly at 300 and stays at
+// 225). It is the only knob.
 //
-// REZULTATE pe cele cinci mastere reale, la 300 px: verdictele si adancimea vignetarii
-// neschimbate; componenta scoasa 0.12-0.39 % ptp pe cele patru curate (zgomot de pixel
-// plus praful), 3.7 % pe cel cu tesatura, unde pata compacta a scazut de la +6.19 % la
-// +0.62 % si textura din fisier de la +-3 % la +-0.3 %. Fara inele: +-0.02 %. Mozaicul
-// CFA intact: nivelurile pozitiilor se misca sub 0.1 %. Pe un sintetic cu adevar
-// cunoscut (vignetare la 55 % in colt, gradient 6 %, sa) eroarea maxima pe tot cadrul,
-// colturi incluse, e 0.19 %.
+// RESULTS on the five real masters, at 300 px: the verdicts and the vignetting depth
+// unchanged; the removed component 0.12-0.39 % ptp on the four clean ones (pixel noise
+// plus the dust), 3.7 % on the one with the weave, where the compact spot dropped from +6.19 % to
+// +0.62 % and the texture in the file from +-3 % to +-0.3 %. No rings: +-0.02 %. The CFA mosaic
+// intact: the levels of the positions move under 0.1 %. On a synthetic one with a known truth
+// (vignetting to 55 % in the corner, gradient 6 %, saddle) the maximum error over the whole
+// frame, corners included, is 0.19 %.
 
 using System;
 using System.Collections.Generic;
@@ -79,80 +80,115 @@ using System.Linq;
 
 namespace FlatCheck
 {
-    /// <summary>Ce a facut fitul pe o pozitie Bayer (sau pe tot cadrul, pe mono).</summary>
+    /// <summary>What the fit did on one Bayer position (or on the whole frame, on mono).</summary>
     internal sealed class SmoothPositionFit
     {
         internal int Tiles;
         internal int Rejected;
-        /// <summary>RMS al dalelor pastrate fata de fitul local, ca fractie din nivel.</summary>
+        /// <summary>
+        /// The RMS of the kept tiles against the local fit, as a fraction of the level.
+        /// </summary>
         internal double TileRms;
-        /// <summary>Cate dale au avut un sistem singular si au cazut pe propria mediana.</summary>
+        /// <summary>
+        /// How many tiles had a singular system and fell back on their own median.
+        /// </summary>
         internal int FitFailed;
     }
 
+    /// <summary>
+    /// What <see cref="SmoothAnalyzer.Analyze"/> produced: the smoothed master, how each
+    /// position was fitted, the measure of the removed component, and the structure battery
+    /// before and after.
+    /// </summary>
     internal sealed class SmoothResult
     {
-        /// <summary>Flat-ul netezit, la rezolutie intreaga, forma intrarii. Niciodata null.</summary>
+        /// <summary>
+        /// The smoothed flat, at full resolution, the shape of the input. Never null.
+        /// </summary>
         internal Img Smoothed;
 
         internal bool IsCfa;
         internal double CfaSpread;
         internal int SourceH, SourceW;
 
-        /// <summary>Scara de netezire folosita: sigma nucleului, in pixeli de senzor.</summary>
+        /// <summary>The smoothing scale used: the kernel's sigma, in sensor pixels.</summary>
         internal double ScalePx;
-        /// <summary>Latura dalei in pixeli de senzor, si sigma nucleului in dale.</summary>
+        /// <summary>The tile side in sensor pixels, and the kernel's sigma in tiles.</summary>
         internal int TilePx;
         internal double SigmaTiles;
 
-        /// <summary>4 pe CFA, 1 pe mono.</summary>
+        /// <summary>4 on CFA, 1 on mono.</summary>
         internal SmoothPositionFit[] Positions;
 
-        /// <summary>Rasterul de analiza al componentei scoase: Prepare(intrare) / Prepare(netezit).</summary>
+        /// <summary>
+        /// The analysis raster of the removed component: Prepare(input) / Prepare(smoothed).
+        /// </summary>
         internal Img Removed;
         internal int Width, Height;
         internal double RemovedP1Pct, RemovedP99Pct;
-        internal double RemovedPtpPct;      // p95 - p5 pe dale
-        internal double RemovedMaxTilePct;  // cea mai abatuta dala
-        internal double RemovedSpotPct;     // cea mai adanca pata compacta, cu semn
+        internal double RemovedPtpPct;      // p95 - p5 over tiles
+        internal double RemovedMaxTilePct;  // the most deviant tile
+        internal double RemovedSpotPct;     // the deepest compact spot, signed
         internal int RemovedSpotX, RemovedSpotY;
-        /// <summary>RemovedMaxTilePct la sau peste Th.SmoothKeptWarn: s-a scos mai mult decat textura.</summary>
+        /// <summary>
+        /// RemovedMaxTilePct at or above Th.SmoothKeptWarn: more than the texture was removed.
+        /// </summary>
         internal bool RemovedFlagged;
 
         /// <summary>
-        /// Textura fina a intrarii si a iesirii (Metrics.FineTexture pe rasterele de
-        /// analiza), in procente. Prima spune daca era ceva de netezit, a doua daca a plecat;
-        /// pe ele sta propunerea de scara (SmoothScaleAdvisor).
+        /// The fine texture of the input and of the output (Metrics.FineTexture on the analysis
+        /// rasters), in percent. The first says whether there was anything to smooth, the second
+        /// whether it went; the scale proposal rests on them (SmoothScaleAdvisor).
         /// </summary>
         internal double InputTexturePct, OutputTexturePct;
 
-        /// <summary>Bateria de structura pe intrare si pe iesire, pe rasterele de analiza.</summary>
+        /// <summary>
+        /// The structure battery on the input and on the output, on the analysis rasters.
+        /// </summary>
         internal StructureResult Before, After;
     }
 
+    /// <summary>
+    /// Mode 6, <c>--smooth</c>: builds a second master with the diffuser texture removed, by a
+    /// robust local quadratic fit over tile medians on each Bayer position.
+    /// </summary>
     internal static class SmoothAnalyzer
     {
-        /// <summary>Scara implicita, in pixeli de senzor. Calibrata pe un senzor de 6016 px.</summary>
+        /// <summary>The default scale, in sensor pixels. Calibrated on a 6016 px sensor.</summary>
         internal const double DefaultScalePx = 300;
 
-        /// <summary>Clipping: k sigma din MAD, podeaua absoluta ca fractie din nivel, si rundele.</summary>
+        /// <summary>
+        /// Clipping: k sigma of the MAD, the absolute floor as a fraction of the level, and the
+        /// rounds.
+        /// </summary>
         internal const double ClipSigma = 2.5;
         internal const double ClipFloor = 0.02;
         internal const int ClipRounds = 3;
 
         /// <summary>
-        /// Sigma nucleului in dale: scara e sigma in pixeli de SENZOR, <paramref name="tilePx"/>
-        /// latura dalei tot in pixeli de senzor (pe CFA, de doua ori latura din rasterul
-        /// pozitiei). Pe D3300 la 300 px: dale de 150, sigma 2 dale.
+        /// The kernel's sigma in tiles: the scale is the sigma in SENSOR pixels,
+        /// <paramref name="tilePx"/> the tile side in sensor pixels too (on CFA, twice the side
+        /// in the position's raster). On the D3300 at 300 px: tiles of 150, sigma 2 tiles.
         /// </summary>
+        /// <param name="scalePx">The kernel's sigma, sensor pixels.</param>
+        /// <param name="tilePx">The tile side, sensor pixels.</param>
+        /// <returns>The sigma in tiles.</returns>
         internal static double SigmaTiles(double scalePx, int tilePx) => scalePx / tilePx;
 
+        /// <summary>
+        /// Smooths a master: decides CFA or mono by the rule of <c>--expo</c>, smooths each
+        /// Bayer position (or the whole frame) and merges them back, then measures what was
+        /// removed and runs the structure battery on the input and on the output.
+        /// </summary>
+        /// <param name="input">The master, at full resolution, as loaded; not modified.</param>
+        /// <param name="scalePx">The kernel's sigma, sensor pixels.</param>
+        /// <returns>The smoothed master and the figures; never null.</returns>
         internal static SmoothResult Analyze(Img input, double scalePx = DefaultScalePx)
         {
             int h = input.H, w = input.W;
 
-            // Regula CFA a lui --expo si --histeq: cele patru mediane de pozitie, pe un
-            // esantion rar - ajunge ca sa decida, si nu costa o sortare de 6 M de valori.
+            // The CFA rule of --expo and --histeq: the four position medians, on a sparse
+            // sample - enough to decide, and it does not cost a sort of 6 M values.
             double[] meds = Enumerable.Range(0, 4)
                 .Select(p => PositionMedian(input, p))
                 .ToArray();
@@ -186,8 +222,9 @@ namespace FlatCheck
                 fits.Add(fit);
             }
 
-            // Ce s-a scos, la rezolutia de analiza. Prepare e liniar, deci raportul
-            // pregatitelor e pregatirea raportului, la o treizecime din memorie.
+            // What was removed, at the analysis resolution, at a sixteenth of the memory. Prepare
+            // is linear but a ratio is not: the ratio of the prepared rasters equals the prepared
+            // ratio only where the smoothed flat is constant over a block, which it nearly is.
             Img prepIn = Img.Prepare(input);
             Img prepOut = Img.Prepare(smoothed);
             Img removed = Img.Divide(prepIn, prepOut);
@@ -217,7 +254,8 @@ namespace FlatCheck
                 RemovedSpotPct = spot * 100,
                 RemovedSpotX = sx,
                 RemovedSpotY = sy,
-                // !(x < prag), ca NaN sa cada pe partea atentionata - conventia Stats.Verdict
+                // !(x
+                // < threshold), so that NaN falls on the warned side - the Stats.Verdict convention
                 RemovedFlagged = !(maxTile < Th.SmoothKeptWarn),
                 InputTexturePct = Metrics.FineTexture(prepIn),
                 OutputTexturePct = Metrics.FineTexture(prepOut),
@@ -226,7 +264,14 @@ namespace FlatCheck
             };
         }
 
-        /// <summary>Mediana unei pozitii Bayer pe un esantion din 8 in 8 pixeli.</summary>
+        /// <summary>
+        /// The median of a Bayer position on a sample of one pixel in 8 of the position (one in
+        /// 16 of the sensor), on both axes.
+        /// </summary>
+        /// <param name="a">The frame, CFA mosaic or not.</param>
+        /// <param name="p">The Bayer position, 0..3, as <see cref="Mosaic.PositionOf"/> numbers
+        /// it.</param>
+        /// <returns>The sample's median; 0 when the sample is empty.</returns>
         static double PositionMedian(Img a, int p)
         {
             int oy = p / 2, ox = p % 2;
@@ -237,7 +282,14 @@ namespace FlatCheck
             return vals.Count == 0 ? 0 : Stats.Percentile(vals, 50);
         }
 
-        /// <summary>Netezirea unui raster (o pozitie sau tot cadrul), la scara <paramref name="sigmaT"/> dale.</summary>
+        /// <summary>
+        /// The smoothing of one raster (a position or the whole frame), at a scale of
+        /// <paramref name="sigmaT"/> tiles.
+        /// </summary>
+        /// <param name="p">The raster; not modified.</param>
+        /// <param name="sigmaT">The kernel's sigma, in tiles.</param>
+        /// <param name="fit">Set to what the fit did on this raster.</param>
+        /// <returns>The smoothed raster, the size of <paramref name="p"/>.</returns>
         internal static Img SmoothPosition(Img p, double sigmaT, out SmoothPositionFit fit)
         {
             int k = Metrics.TileSize(p);
@@ -260,14 +312,25 @@ namespace FlatCheck
             return Evaluate(coef, cy, cx, k, p.H, p.W);
         }
 
-        // Monoamele fitului local: 1, x, y, x2, xy, y2.
+        // The monomials of the local fit: 1, x, y, x2, xy, y2.
         static readonly (int a, int b)[] Mono = { (0, 0), (1, 0), (0, 1), (2, 0), (1, 1), (0, 2) };
 
         /// <summary>
-        /// Fitul patratic local pe grila de dale <paramref name="t"/>, cu clipping robust.
-        /// Intoarce cei 6 coeficienti pe dala (in unitati de dala, fata de centrul ei),
-        /// masca dalelor pastrate si cate sisteme au fost singulare.
+        /// The local quadratic fit on the tile grid <paramref name="t"/>, with robust clipping
+        /// (<see cref="ClipRounds"/> rounds at max(<see cref="ClipSigma"/> MAD,
+        /// <see cref="ClipFloor"/>)).
         /// </summary>
+        /// <param name="t">The tile medians.</param>
+        /// <param name="cy">The real centre of each tile row, raster pixels.</param>
+        /// <param name="cx">The real centre of each tile column, raster pixels.</param>
+        /// <param name="k">The tile side, raster pixels; offsets are measured in units of
+        /// it.</param>
+        /// <param name="sigmaT">The Gaussian weight's sigma, in tiles; neighbours out to 3 sigma
+        /// count.</param>
+        /// <returns>
+        /// The 6 coefficients per tile (in tile units, relative to its centre), the mask of the
+        /// kept tiles, and how many systems were singular in the last round.
+        /// </returns>
         internal static (double[,,] Coef, bool[,] Keep, int Failed) LocalQuadratic(
             Img t, double[] cy, double[] cx, int k, double sigmaT)
         {
@@ -319,7 +382,7 @@ namespace FlatCheck
                         double[] sol = Stats.Solve(M, rhs, 6);
                         if (sol == null)
                         {
-                            // toate vecinele respinse, sau o grila de 1x1: dala isi tine mediana
+                            // all neighbours rejected, or a 1x1 grid: the tile keeps its median
                             failed++;
                             sol = new double[6];
                             sol[0] = t.At(j, i);
@@ -327,7 +390,7 @@ namespace FlatCheck
                         for (int q = 0; q < 6; q++) coef[j, i, q] = sol[q];
                     }
 
-                // Reziduul fata de nivelul local al fitului, relativ la nivelul cadrului.
+                // The residual against the fit's local level, relative to the frame's level.
                 res.Clear();
                 for (int j = 0; j < th; j++)
                     for (int i = 0; i < tw; i++)
@@ -345,16 +408,25 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Media biliniara a predictiilor celor patru dale din jurul fiecarui pixel, fiecare
-        /// evaluata la offsetul real al pixelului fata de centrul acelei dale. Dincolo de
-        /// ultimul centru ponderea e a dalei de margine si predictia ei se extrapoleaza.
+        /// The bilinear mean of the predictions of the four tiles around each pixel, each
+        /// evaluated at the pixel's real offset from that tile's centre. Beyond the last centre
+        /// the weight is the edge tile's and its prediction is extrapolated.
         /// </summary>
+        /// <param name="coef">The 6 coefficients per tile, from
+        /// <see cref="LocalQuadratic"/>.</param>
+        /// <param name="cy">The real centre of each tile row, raster pixels.</param>
+        /// <param name="cx">The real centre of each tile column, raster pixels.</param>
+        /// <param name="k">The tile side, raster pixels.</param>
+        /// <param name="h">The output's height, pixels.</param>
+        /// <param name="w">The output's width, pixels.</param>
+        /// <returns>The smooth raster, h x w.</returns>
         internal static Img Evaluate(double[,,] coef, double[] cy, double[] cx, int k, int h, int w)
         {
             int th = cy.Length, tw = cx.Length;
             var o = new Img(h, w);
 
-            // pe coloane: indexul dalei din stanga, fractia, si offseturile fata de cele doua dale
+            // per column: the index of the tile on the left, the fraction, and the offsets from the
+            // two tiles
             var i0 = new int[w]; var fu = new double[w]; var dx0 = new double[w]; var dx1 = new double[w];
             for (int x = 0; x < w; x++)
             {
@@ -390,14 +462,24 @@ namespace FlatCheck
             return o;
         }
 
+        /// <summary>One tile's quadratic evaluated at an offset from its centre.</summary>
+        /// <param name="c">The coefficients, per tile.</param>
+        /// <param name="j">The tile's row.</param>
+        /// <param name="i">The tile's column.</param>
+        /// <param name="dx">The horizontal offset, in tiles.</param>
+        /// <param name="dy">The vertical offset, in tiles.</param>
+        /// <returns>The predicted level, in the raster's units.</returns>
         static double Quad(double[,,] c, int j, int i, double dx, double dy)
             => c[j, i, 0] + c[j, i, 1] * dx + c[j, i, 2] * dy
              + c[j, i, 3] * dx * dx + c[j, i, 4] * dx * dy + c[j, i, 5] * dy * dy;
 
         /// <summary>
-        /// Indexul fractionar al pozitiei <paramref name="p"/> in sirul de centre: ca np.interp
-        /// peste (centre, 0..n-1), cu prindere la capete.
+        /// The fractional index of the position <paramref name="p"/> in the array of centres: like
+        /// np.interp over (centres, 0..n-1), clamped at the ends.
         /// </summary>
+        /// <param name="p">The position, raster pixels.</param>
+        /// <param name="centres">The tile centres, ascending; at least one.</param>
+        /// <returns>The fractional index, 0..n-1.</returns>
         static double FracIndex(double p, double[] centres)
         {
             int n = centres.Length;

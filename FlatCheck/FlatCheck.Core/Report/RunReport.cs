@@ -15,35 +15,41 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RunReport.cs - textul care incadreaza raportul oricarui mod: antetul (versiune +
-// copyright), linia care anunta harta salvata, si formularile care insotesc harta.
+// RunReport.cs - the text that frames the report of every mode: the header (version +
+// copyright), the line that announces the saved map, and the wording that goes with the map.
 //
-// Stau aici, nu in FlatCheckCli, fiindca nu mai sunt ale consolei. Cerinta pentru
-// aplicatia WPF e ca fisierul "Rezultat testare.txt" sa contina EXACT ce ar fi scris
-// consola - antet inclus, ca un raport copiat undeva sa spuna singur ce versiune si a
-// cui unealta l-a produs. Doua implementari ale acelorasi doua linii ar fi divergat la
-// prima reformulare, si divergenta s-ar fi vazut abia intr-un raport lipit pe un forum.
+// They sit here, not in FlatCheckCli, because they no longer belong to the console. The
+// requirement for the WPF application is that the file "Rezultat testare.txt" hold EXACTLY what
+// the console would have written - header included, so that a report copied somewhere says by
+// itself which version and whose tool produced it. Two implementations of the same two lines
+// would have diverged at the first rewording, and the divergence would have shown only in a
+// report pasted on a forum.
 //
-// Eticheta de scara si legenda hartii n-au apelant in consola azi - le foloseste numai
-// fereastra. Stau totusi aici, fiindca regula e ca nicio propozitie pentru utilizator
-// nu se scrie intr-un ViewModel: daca maine consola primeste un --scala, ia acelasi
-// text, nu unul rescris. Ambele sunt functii pure, nu scriu in TextWriter, exact ca
-// StructureReport.Advice - o valoare pe care consola o formateaza in coloane si
-// fereastra o pune intr-o eticheta.
+// The scale label and the map legend have no caller in the console today - only the window
+// uses them. They sit here all the same, because the rule is that no sentence for the user is
+// written in a ViewModel: if the console gets a --scala tomorrow, it takes the same text, not a
+// rewritten one. Both are pure functions, they do not write to a TextWriter, exactly like
+// StructureReport.Advice - a value the console formats in columns and the window puts in a
+// label.
 
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The text every mode's report shares: the banner, the warranty notice, the line that
+    /// announces a saved map, and the map's scale label and legend.
+    /// </summary>
     internal static class RunReport
     {
         /// <summary>
-        /// Primele doua linii ale oricarei rulari: versiunea si notita de copyright.
+        /// The first two lines of every run: the version and the copyright notice.
         ///
-        /// Banner-ul pe prima linie inseamna ca un raport copiat spune singur ce
-        /// versiune l-a produs - de aceea apare si la --help, si la rulari esuate.
-        /// Copyright-ul pe a doua e cerut de GPLv3 (vezi LICENSE).
+        /// The banner on the first line means a copied report says by itself which version
+        /// produced it - that is why it appears at --help too, and on failed runs.
+        /// The copyright on the second is required by the GPLv3 (see LICENSE).
         /// </summary>
+        /// <param name="w">Where to write.</param>
         internal static void WriteBanner(TextWriter w)
         {
             w.WriteLine(VersionInfo.Banner);
@@ -51,14 +57,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Notita de garantie si de licenta - GPLv3 sectiunea 5(d). Consola o tipareste
-        /// la --help (banner-ul poarta doar copyright-ul; cinci linii in plus pe fiecare
-        /// raport ar ineca cifrele), fereastra o arata in "Despre". Un singur text pentru
-        /// amandoua, ca sa nu poata spune doua lucruri diferite despre aceeasi licenta.
+        /// The warranty and licence notice - GPLv3 section 5(d). The console prints it
+        /// at --help (the banner carries only the copyright; five more lines on every
+        /// report would drown the figures), the window shows it in "Despre". A single text for
+        /// both, so that they cannot say two different things about the same licence.
         ///
-        /// Liniile sunt rupte la ~70 de coloane pentru consola; fereastra le lipeste cu
-        /// spatiu si impacheteaza singura. Textul e verificat de Golden/help.txt, deci o
-        /// reformulare aici se vede si acolo.
+        /// The lines are broken at ~70 columns for the console; the window joins them with a
+        /// space and wraps them itself. The text is checked by Golden/help.txt, so a
+        /// rewording here shows there too.
         /// </summary>
         internal static readonly string[] WarrantyLines =
         {
@@ -69,29 +75,41 @@ namespace FlatCheck
             "sau la <" + LicenseUrl + ">.",
         };
 
-        /// <summary>Unde e textul complet al licentei, pentru cine n-are fisierul LICENSE la indemana.</summary>
+        /// <summary>
+        /// Where the full text of the licence is, for whoever does not have the LICENSE file at
+        /// hand.
+        /// </summary>
         internal const string LicenseUrl = "https://www.gnu.org/licenses/gpl-3.0.html";
 
         /// <summary>
-        /// Anuntul hartii reziduale. Calea o stie apelantul - el a ales unde scrie -
-        /// deci nu se poate genera in interiorul modului; dar formularea e aceeasi
-        /// peste tot, si de asta sta aici.
+        /// The announcement of the residual map. The caller knows the path - it chose where to
+        /// write - so it cannot be generated inside the mode; but the wording is the same
+        /// everywhere, and that is why it sits here.
         /// </summary>
+        /// <param name="path">The path the map was written to, as it should be printed.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteMapSaved(string path, TextWriter w)
             => w.WriteLine($"\n    -> harta salvata: {path}");
 
         /// <summary>
-        /// Eticheta unei scari de harta: "auto", sau plafonul cand scara e fixa.
-        /// <paramref name="capPct"/> null inseamna scara automata.
+        /// The label of a map scale: "auto", or the cap when the scale is fixed.
+        /// <paramref name="capPct"/> null means the automatic scale.
         /// </summary>
+        /// <param name="capPct">The fixed cap, percent either side of the model; null for
+        /// automatic.</param>
+        /// <returns>"auto", or "+/-N %" with at most one decimal.</returns>
         internal static string MapScaleLabel(double? capPct)
             => capPct is null ? "auto" : $"+/-{capPct.Value.ToString("0.#")} %";
 
         /// <summary>
-        /// Legenda de sub harta: ce inseamna capetele culorilor, in procente fata de
-        /// model. Se da intervalul CHIAR AFISAT, fiindca pe scara automata capetele
-        /// difera de la o imagine la alta - si tocmai asta era de nespus pe ecran.
+        /// The legend under the map: what the ends of the colours mean, in percent against the
+        /// model. The interval ACTUALLY DISPLAYED is given, because on the automatic scale the
+        /// ends differ from one image to another - and that was exactly what could not be told
+        /// on screen.
         /// </summary>
+        /// <param name="r">The range the map was drawn with, in the raster's units around
+        /// 1.0.</param>
+        /// <returns>One line naming blue, white and red with their percentages.</returns>
         internal static string MapLegend(PngWriter.MapRange r)
         {
             string lo = ((r.Lo - PngWriter.Mid) * 100).ToString("+0.0;-0.0");

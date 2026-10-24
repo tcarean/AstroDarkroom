@@ -15,39 +15,49 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightReport.cs - LightResult -> textul din consola. Doar formatare.
+// LightReport.cs - LightResult -> the console's text. Formatting only.
 //
-// Semnul componentei radiale E diagnosticul, de aceea se scrie mereu explicit:
-// pozitiv = fondul cade spre margini = sub-corectie; negativ = creste = supra-corectie.
+// The sign of the radial component IS the diagnosis, which is why it is always written
+// explicitly: positive = the background falls toward the edges = under-correction; negative =
+// it rises = over-correction.
 
 using System;
 using System.IO;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The words of <c>--light</c> on one frame: the field line, the refusal on a wide field,
+    /// the report and the diagnosis read from the sign.
+    /// </summary>
     internal static class LightReport
     {
         /// <summary>
-        /// Numarul cu semnul scris explicit, ca "%+.2f" din Python.
+        /// The number with its sign written explicitly, like Python's "%+.2f".
         ///
-        /// NU folosi formatul cu sectiuni "+0.00;-0.00": pentru zero negativ .NET alege
-        /// sectiunea POZITIVA (fiindca -0.0 nu e &lt; 0) dar tot adauga minusul lui, si iese
-        /// "-+0.00". Se intampla exact pe un fond fara componenta radiala, adica pe cazul
-        /// bun. Python scria "-0.00" acolo, deci era si o divergenta intre implementari.
+        /// Do NOT use the format with sections "+0.00;-0.00": for negative zero .NET picks the
+        /// POSITIVE section (because -0.0 is not &lt; 0) but still adds its minus, and out comes
+        /// "-+0.00". It happens exactly on a background with no radial component, that is on the
+        /// good case. Python wrote "-0.00" there, so it was also a divergence between the
+        /// implementations.
         ///
-        /// IsNegative, nu "&lt; 0", ca sa se pastreze semnul lui -0.0 - la fel ca Python.
+        /// IsNegative, not "&lt; 0", so as to keep the sign of -0.0 - the same as Python.
         /// </summary>
+        /// <param name="v">The value.</param>
+        /// <returns>"+" or "-" and the absolute value with two decimals.</returns>
         internal static string Signed(double v)
             => (double.IsNegative(v) ? "-" : "+") + Math.Abs(v).ToString("0.00");
 
         /// <summary>
-        /// Linia de camp acoperit, plus avertismentul cand e la limita. Folosita si de
-        /// raportul pe serie - de aceea sta aici, nu inline in Write.
+        /// The line of the field covered, plus the warning when it is at the limit. Used by the
+        /// series report too - that is why it sits here, not inline in Write.
         ///
-        /// Cand campul nu s-a putut afla se scrie o linie care spune exact asta. E
-        /// deliberat: necunoscut nu inseamna suspect, inseamna neverificat, iar tacerea
-        /// ar lasa impresia ca s-a verificat.
+        /// When the field could not be found out, a line is written that says exactly that. It is
+        /// deliberate: unknown does not mean suspect, it means unchecked, and silence would leave
+        /// the impression it was checked.
         /// </summary>
+        /// <param name="s">The suitability check's answer.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteSuitability(SuitabilityResult s, TextWriter w)
         {
             if (!double.IsNaN(s.FovDeg))
@@ -70,10 +80,13 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Ce se scrie in locul unui raport cand campul e prea larg. Modul nu da un
-        /// verdict aici - nu are ce masura - deci explica degenerarea si trimite la
-        /// testul care chiar raspunde pe asemenea date.
+        /// What is written instead of a report when the field is too wide. The mode gives no
+        /// verdict here - it has nothing to measure - so it explains the degeneracy and points
+        /// to the test that does answer on such data.
         /// </summary>
+        /// <param name="s">The suitability check's answer, of level TooWide.</param>
+        /// <param name="path">The file's or folder's path, as the header prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteTooWide(SuitabilityResult s, string path, TextWriter w)
         {
             w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
@@ -94,6 +107,15 @@ namespace FlatCheck
             }
         }
 
+        /// <summary>
+        /// Writes the report of one frame: the field, the tiles kept, the sky plane (flagged
+        /// above <see cref="Th.LightPlaneWarn"/>), the signed radial component with its verdict,
+        /// the diagnosis, and the advice to run on the whole series.
+        /// </summary>
+        /// <param name="r">The background fit of the frame.</param>
+        /// <param name="s">The suitability check's answer.</param>
+        /// <param name="path">The file's path, as the header prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void Write(LightResult r, SuitabilityResult s, string path, TextWriter w)
         {
             w.WriteLine($"\n=== TEST END-TO-END: {path} ===");
@@ -108,30 +130,36 @@ namespace FlatCheck
             w.WriteLine("\n  INTERPRETARE");
             WriteDiagnosis(r.RadPct, w);
 
-            // Un cadru singur amesteca eroarea de flat cu termenul radial al cerului din
-            // acel moment, iar al doilea se schimba in timpul sesiunii. Pe o serie reala
-            // cifra a baleiat 55 de puncte in 81 de minute. Media pe serie separa mult
-            // mai bine, deci merita spus la fiecare rulare pe un cadru singur.
+            // A single frame mixes the flat error with the sky's radial term of that moment, and
+            // the second changes during the session. On a real series the figure swept 55
+            // points in 81 minutes. The mean over the series separates much better, so it is
+            // worth saying on every run on a single frame.
             w.WriteLine("\n    Cifra asta e dintr-un singur cadru, deci contine si cerul din acel moment.");
             w.WriteLine("    Da-i folderul in loc de fisier ca sa rulez pe toata seria si sa mediez:");
             w.WriteLine("        flatcheck process/ --light");
         }
 
         /// <summary>
-        /// Diagnosticul din semnul componentei radiale. Sta separat fiindca il foloseste
-        /// si raportul pe serie: aceeasi cifra, aceeasi citire, deci acelasi text - daca
-        /// ar fi duplicat, cele doua ar diverge la prima reformulare.
+        /// The diagnosis from the sign of the radial component. It sits apart because the series
+        /// report uses it too: the same figure, the same reading, so the same text - if it were
+        /// duplicated, the two would diverge at the first rewording.
         /// </summary>
+        /// <param name="radPct">The radial component, percent, signed.</param>
+        /// <param name="w">Where to write; each line is indented by four spaces.</param>
         internal static void WriteDiagnosis(double radPct, TextWriter w)
         {
             foreach (string line in Diagnosis(radPct).Split('\n')) w.WriteLine("    " + line);
         }
 
         /// <summary>
-        /// Acelasi diagnostic, ca sir. Il cere aplicatia WPF, care il pune sub cifra in
-        /// loc sa-l scrie intr-o consola; scris a doua oara acolo, semnul - care E
-        /// diagnosticul - ar fi putut ajunge explicat invers.
+        /// The same diagnosis, as a string. The WPF application asks for it, putting it under
+        /// the figure instead of writing it to a console; written a second time there, the sign -
+        /// which IS the diagnosis - could have ended up explained the other way round.
         /// </summary>
+        /// <param name="radPct">The radial component, percent, signed.</param>
+        /// <returns>Two lines joined by '\n': below <see cref="Th.LightRadOk"/> in absolute value,
+        /// that the background has no radial component; else under- or over-correction by the
+        /// sign.</returns>
         internal static string Diagnosis(double radPct)
         {
             if (Math.Abs(radPct) < Th.LightRadOk)

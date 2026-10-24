@@ -15,25 +15,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightAnalyzer.cs - modul 3: testul end-to-end, singurul care inchide bucla.
+// LightAnalyzer.cs - mode 3: the end-to-end test, the only one that closes the loop.
 //
-// Fondul local (percentila mica per tile) e fitat simultan cu un plan si doi termeni
-// radiali:
+// The local background (a low percentile per tile) is fitted simultaneously with a plane and two
+// radial terms:
 //
-//     bg = a + b*X + c*Y + d*R2 + e*R2^2        X, Y normalizate la semidiagonala
+//     bg = a + b*X + c*Y + d*R2 + e*R2^2        X, Y normalised to the half-diagonal
 //
-// Planul absoarbe gradientul de poluare luminoasa; termenii radiali capteaza vignetarea
-// reziduala, adica eroarea de flat. Fitul simultan e ce face testul sa mearga si pe cer
-// poluat: cele doua au forme diferite si se separa.
+// The plane absorbs the light-pollution gradient; the radial terms capture the residual
+// vignetting, that is the flat error. The simultaneous fit is what makes the test work on a
+// polluted sky too: the two have different shapes and separate.
 //
-// DAR NUMAI PE CAMP INGUST. Separarea de mai sus tine cat timp cupola de poluare e
-// cvasi-liniara peste cadru. Pe camp larg ea se curbeaza in interiorul cadrului, iar
-// partea radial simetrica a curburii are exact forma vignetarii - si atunci nimic din
-// ce e scris aici nu le mai poate deosebi. Vezi LightSuitability, care opreste modul
-// inainte sa ajunga aici, si sectiunea "The validity limit" din docs/design/modes-light.md.
+// BUT ONLY ON A NARROW FIELD. The separation above holds as long as the pollution dome is
+// quasi-linear across the frame. On a wide field it curves inside the frame, and the
+// radially symmetric part of the curvature has exactly the shape of vignetting - and then
+// nothing written here can tell them apart any more. See LightSuitability, which stops the mode
+// before it gets here, and the section "The validity limit" in docs/design/modes-light.md.
 //
-// ATENTIE: NU inlocui cu percentile pe inele circulare - p20 pe un inel prinde partea
-// intunecata a gradientului de cer si o raporteaza ca falsa vignetare.
+// WARNING: do NOT replace with percentiles on circular rings - p20 on a ring catches the dark
+// part of the sky gradient and reports it as false vignetting.
 
 using System;
 using System.Collections.Generic;
@@ -41,19 +41,37 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The background fit of one calibrated light: the five coefficients, the radial component
+    /// at the corner (the flat error) and the plane (the sky gradient), and the verdict.
+    /// </summary>
     internal sealed class LightResult
     {
-        internal double A, B, C, D, E;       // coeficientii fitului
-        internal double RadPct;              // -(d+e)/a*100; SEMNUL e diagnosticul
-        internal double PlanePct;            // gradientul de cer, de ignorat
+        internal double A, B, C, D, E;       // the fit's coefficients
+        internal double RadPct;              // -(d+e)/a*100; the SIGN is the diagnosis
+        internal double PlanePct;            // the sky gradient, to be ignored
         internal int KeptTiles, TotalTiles;
         internal int TileRows, TileCols;
-        internal Img RadialMap;              // 1 + (d*R2 + e*R2^2)/a, pentru harta
+        internal Img RadialMap;              // 1 + (d*R2 + e*R2^2)/a, for the map
         internal string Verdict;
     }
 
+    /// <summary>
+    /// Mode 3, <c>--light</c>: does the flat correct a real light? Fits the light's background
+    /// with a plane and two radial terms and reads the radial ones as the flat error.
+    /// </summary>
     internal static class LightAnalyzer
     {
+        /// <summary>
+        /// Fits plane + radial terms to the tile backgrounds of a calibrated light, with a
+        /// one-sided sigma clip, and gives the verdict on |RadPct| against
+        /// <see cref="Th.LightRadOk"/> and <see cref="Th.LightRadBad"/>. Throws when the fit is
+        /// singular already at the first iteration (too few usable tiles). Run
+        /// <see cref="LightSuitability.Check"/> first: on a wide field the answer means nothing.
+        /// </summary>
+        /// <param name="raw">The calibrated light, as loaded; it is prepared here.</param>
+        /// <returns>The coefficients, the radial and plane components in percent, the radial map
+        /// and the verdict.</returns>
         internal static LightResult Analyze(Img raw)
         {
             Img img = Img.Prepare(raw);
@@ -76,8 +94,8 @@ namespace FlatCheck
             for (int i = 0; i < n; i++) keep[i] = true;
             double[] coef = null;
 
-            // Sigma-clip iterativ, UNILATERAL (res < prag): contaminantii - stele si
-            // nebulozitate - adauga doar semnal pozitiv, deci se taie doar in sus.
+            // Iterative sigma clip, ONE-SIDED (res < threshold): the contaminants - stars and
+            // nebulosity - add only positive signal, so only the top is cut.
             for (int iter = 0; iter < 4; iter++)
             {
                 var AtA = new double[5, 5]; var Atb = new double[5];
@@ -108,15 +126,15 @@ namespace FlatCheck
                 for (int i = 0; i < n; i++) keep[i] = res[i] < thr;
             }
 
-            // Daca Solve a esuat chiar la prima iteratie, coef e inca null. Inainte de
-            // faza 8 linia urmatoare arunca NullReferenceException; acum spune de ce.
+            // If Solve failed right at the first iteration, coef is still null. Before
+            // phase 8 the next line threw NullReferenceException; now it says why.
             if (coef == null)
                 throw new Exception(
                     "Fitul fondului a esuat (sistem singular) - prea putine tile-uri utilizabile.");
 
             double a0 = coef[0], b0 = coef[1], c0 = coef[2], d0 = coef[3], e0 = coef[4];
-            double radAtCorner = d0 + e0;                       // R2 = 1 in colt
-            double radPct = -radAtCorner / a0 * 100;            // + = fondul cade spre margini
+            double radAtCorner = d0 + e0;                       // R2 = 1 at the corner
+            double radPct = -radAtCorner / a0 * 100;            // + = the background falls toward the edges
             double planePct = Math.Sqrt(b0 * b0 + c0 * c0) / a0 * 100;
 
             var radMap = new Img(th, tw);

@@ -15,18 +15,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ExposureAnalyzer.cs - modul 4: e flat-ul BRUT expus corect?
+// ExposureAnalyzer.cs - mode 4: is the RAW flat exposed right?
 //
-// Ruleaza pe un SINGUR flat brut necalibrat, cu mozaicul CFA intact si scala ADU
-// originala. Metrica de decizie e mediana unei ferestre CENTRALE de 20%x20% din canalul
-// cel mai luminos, NU mediana globala: un flat are prin definitie o distributie larga
-// (asta E vignetarea), iar mediana globala e trasa in jos de colturi si te-ar pacali sa
-// supraexpui pana clipeaza centrul.
+// Runs on a SINGLE uncalibrated raw flat, with the CFA mosaic intact and the original ADU
+// scale. The deciding metric is the median of a CENTRAL 20%x20% window of the brightest
+// channel, NOT the global median: a flat has by definition a wide distribution (that IS the
+// vignetting), and the global median is pulled down by the corners and would trick you into
+// overexposing until the centre clips.
 //
-// Pe langa cifra care decide, modul strange si DISTRIBUTIA fiecarui canal - vezi
-// LevelHistogram mai jos. O mediana spune unde sta un canal; nu spune daca varful mai are
-// loc pana la saturatie, cat de departe cad colturile sub centru, sau daca o coada atinge
-// deja albul. Histogramele nu voteaza si nu schimba niciun prag: sunt aceleasi date, vazute.
+// Beside the figure that decides, the mode also gathers the DISTRIBUTION of every channel - see
+// LevelHistogram below. A median says where a channel sits; it does not say whether the peak
+// still has room before saturation, how far the corners fall below the centre, or whether a
+// tail already touches white. The histograms do not vote and change no threshold: they are the
+// same data, seen.
 
 using System;
 using System.Collections.Generic;
@@ -34,26 +35,34 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The verdict of <c>--expo</c> on the median of the central window, read on
+    /// <see cref="ExposureBands"/>.
+    /// </summary>
     internal enum ExposureVerdict
     {
-        NotRaw,          // gate-ul de sanitate a taiat verdictul
+        NotRaw,          // the sanity gate cut the verdict
         TooLow,
-        AcceptableLow,   // doar pe panou; sky flat n-are banda asta
+        AcceptableLow,   // on a panel only; a sky flat has no such band
         Ok,
         AcceptableHigh,
         TooHigh,
     }
 
     /// <summary>
-    /// Scala ADU citita DIN fisier, cand fisierul o stie: un raw de aparat poarta white
-    /// si black exacte in metadate. Pe FITS nu exista asa ceva - stacking-ul si
-    /// conversia le pierd - deci acolo scala ramane ghicita din maxim (vezi AutoWhite).
+    /// The ADU scale read FROM the file, when the file knows it: a camera raw carries exact
+    /// white and black levels in its metadata. A FITS has no such thing - stacking and
+    /// conversion lose them - so there the scale stays guessed from the maximum (see AutoWhite).
     /// </summary>
     internal sealed class ExposureScale
     {
         internal readonly double White, Black;
         internal readonly string Source;
 
+        /// <summary>A scale read from a file.</summary>
+        /// <param name="white">The white (saturation) level, ADU.</param>
+        /// <param name="black">The black level, ADU.</param>
+        /// <param name="source">Where the scale came from, as the report prints it.</param>
         internal ExposureScale(double white, double black, string source)
         {
             White = white; Black = black; Source = source;
@@ -61,14 +70,14 @@ namespace FlatCheck
     }
 
     /// <summary>
-    /// Distributia unui canal pe axa PROCENTUALA a verdictului: 200 de cosuri de 0.5 %
-    /// intre 0 si 100 % din (white - black).
+    /// The distribution of one channel on the verdict's PERCENT axis: 200 bins of 0.5 %
+    /// between 0 and 100 % of (white - black).
     ///
-    /// Axa e aleasa dinadins sa fie aceeasi pe care stau si cifrele, si pragurile din
-    /// <see cref="ExposureBands"/>: asa benzile devin direct intervale pe desen, iar doua
-    /// fisiere sau doua canale se pot compara fara nicio conversie. Nivelurile de sub
-    /// black si cele la sau peste white se string in cosul de la capat, deci o coada
-    /// saturata se vede ca masa in ultimul cos in loc sa dispara din grafic.
+    /// The axis is chosen on purpose to be the same one the figures and the thresholds of
+    /// <see cref="ExposureBands"/> sit on: that way the bands become plain intervals on the
+    /// drawing, and two files or two channels compare without any conversion. Levels below
+    /// black and those at or above white gather in the bin at the end, so a saturated tail shows
+    /// as mass in the last bin instead of vanishing from the graph.
     /// </summary>
     internal sealed class LevelHistogram
     {
@@ -77,7 +86,11 @@ namespace FlatCheck
         internal readonly int[] Counts = new int[Bins];
         internal int Total;
 
-        /// <summary>Cosul unui nivel; sub black -> primul, la sau peste white -> ultimul.</summary>
+        /// <summary>
+        /// The bin of a level; below black -> the first, at or above white -> the last.
+        /// </summary>
+        /// <param name="pct">The level, percent of (white - black); any value.</param>
+        /// <returns>The bin index, 0..<see cref="Bins"/> - 1.</returns>
         internal static int BinOf(double pct)
         {
             int b = (int)(pct * Bins / 100.0);
@@ -85,6 +98,8 @@ namespace FlatCheck
             return b >= Bins ? Bins - 1 : b;
         }
 
+        /// <summary>Counts one level into its bin.</summary>
+        /// <param name="pct">The level, percent of (white - black); any value.</param>
         internal void Add(double pct)
         {
             Counts[BinOf(pct)]++;
@@ -93,28 +108,36 @@ namespace FlatCheck
     }
 
     /// <summary>
-    /// Un canal cu tot ce se poate spune despre nivelul lui. Pe un cadru CFA sunt patru,
-    /// cate unul pe pozitie Bayer; pe unul mono/procesat e unul singur, pe tot cadrul.
-    /// Toate procentele sunt din (white - black), ca restul modului.
+    /// One channel with everything that can be said about its level. On a CFA frame there are
+    /// four, one per Bayer position; on a mono/processed one there is a single one, over the
+    /// whole frame. All the percentages are of (white - black), like the rest of the mode.
     /// </summary>
     internal sealed class ChannelLevels
     {
-        /// <summary>0..3 = CFA[y,x] in ordinea (y&amp;1)*2 + (x&amp;1); 0 pe mono.</summary>
+        /// <summary>0..3 = CFA[y,x] in the order (y&amp;1)*2 + (x&amp;1); 0 on mono.</summary>
         internal int Position;
 
-        /// <summary>"R", "G1", "G2", "B" cand se stie ordinea; altfel "CFA[0,1]". "mono" pe mono.</summary>
+        /// <summary>
+        /// "R", "G1", "G2", "B" when the order is known; else "CFA[0,1]". "mono" on mono.
+        /// </summary>
         internal string Label;
 
-        /// <summary>'R', 'G' sau 'B'; '\0' cand fisierul n-a spus ordinea.</summary>
+        /// <summary>'R', 'G' or 'B'; '\0' when the file did not say the order.</summary>
         internal char Colour;
 
-        /// <summary>Mediana canalului INTREG - trasa in jos de colturi, deci informativa.</summary>
+        /// <summary>
+        /// The median of the WHOLE channel - pulled down by the corners, so informative.
+        /// </summary>
         internal double MedianPct;
 
-        /// <summary>Coada de sus a canalului intreg si cat din el e deja saturat.</summary>
+        /// <summary>
+        /// The top tail of the whole channel and how much of it is already saturated.
+        /// </summary>
         internal double P99Pct, ClipPct;
 
-        /// <summary>Aceeasi fereastra centrala de 20 % ca la decizie, dar pe canalul asta.</summary>
+        /// <summary>
+        /// The same central 20 % window as for the decision, but on this channel.
+        /// </summary>
         internal double CentreMedianPct, CentreP1Pct, CentreP99Pct;
 
         internal bool IsBrightest;
@@ -123,63 +146,81 @@ namespace FlatCheck
     }
 
     /// <summary>
-    /// Nivelurile din previzualizarea aparatului: trei canale, fara mozaic si fara
-    /// verdict. Aceleasi cosuri ca la raw, ca cele doua sa se poata citi una langa alta.
+    /// The levels of the camera's preview: three channels, no mosaic and no verdict. The same
+    /// bins as for the raw, so that the two can be read side by side.
     /// </summary>
     internal sealed class PreviewLevels
     {
-        /// <summary>Exact 3: R, G, B, in ordinea asta.</summary>
+        /// <summary>Exactly 3: R, G, B, in that order.</summary>
         internal ChannelLevels[] Channels;
 
         internal string Source;
     }
 
+    /// <summary>
+    /// Everything <see cref="ExposureAnalyzer.Analyze"/> measured on one raw flat: the scale,
+    /// the per-channel levels, the deciding central median and the verdict.
+    /// </summary>
     internal sealed class ExposureResult
     {
         internal double White, Black, Range;
-        internal string ScaleSource;            // "--sat=..." sau "auto-detectat din max=..."
-        internal double[] ChannelMedians;       // 4 pozitii Bayer, in ADU brut
-        internal double CfaSpread;              // max/min peste cele 4
+        internal string ScaleSource;            // "--sat=..." or "auto-detectat din max=..."
+        internal double[] ChannelMedians;       // 4 Bayer positions, in raw ADU
+        internal double CfaSpread;              // max/min over the 4
         internal bool IsCfa;
         internal int BrightestChannel;
-        internal double CentreMedianPct;        // ASTA decide expunerea
-        internal double GlobalMedianPct;        // informativ
+        internal double CentreMedianPct;        // THIS decides the exposure
+        internal double GlobalMedianPct;        // informative
         internal double CentreClipPct;
-        internal bool LevelTooLow;              // < 1% -> calibrat/normalizat
-        internal bool LooksDebayered;           // spread CFA < 1.02
+        internal bool LevelTooLow;              // < 1% -> calibrated/normalised
+        internal bool LooksDebayered;           // CFA spread < 1.02
         internal bool IsSky;
         internal ExposureVerdict Verdict;
 
-        /// <summary>Ordinea culorilor citita din fisier, sau null cand fisierul n-o spune.</summary>
+        /// <summary>
+        /// The colour order read from the file, or null when the file does not say it.
+        /// </summary>
         internal CfaPattern Cfa;
 
-        /// <summary>4 canale pe un cadru CFA, 1 pe unul mono. Niciodata null.</summary>
+        /// <summary>4 channels on a CFA frame, 1 on a mono one. Never null.</summary>
         internal ChannelLevels[] Channels;
 
         /// <summary>
-        /// Benzile pe care s-a dat verdictul. Stau in rezultat, nu se realeg de apelant:
-        /// fereastra deseneaza exact banda care a votat.
+        /// The bands the verdict was given on. They sit in the result, the caller does not
+        /// choose them again: the window draws exactly the band that voted.
         /// </summary>
         internal ExposureBands Bands;
 
         /// <summary>
-        /// Ce a aratat aparatul pe ecran, sau null cand fisierul n-a purtat o
-        /// previzualizare sau nimeni n-a cerut-o. Nu intra in niciun verdict.
+        /// What the camera showed on its screen, or null when the file carried no preview or
+        /// nobody asked for it. It enters no verdict.
         /// </summary>
         internal PreviewLevels Preview;
 
         internal bool IsRaw => !(LevelTooLow || LooksDebayered);
 
         /// <summary>
-        /// Numele unei pozitii Bayer: culoarea cand fisierul a spus ordinea, pozitia cand
-        /// nu. Nu se ghiceste - ordinea difera de la aparat la aparat.
+        /// The name of a Bayer position: the colour when the file said the order, the position
+        /// when not. Never guessed - the order differs from camera to camera.
         /// </summary>
+        /// <param name="i">The Bayer position, 0..3, as <see cref="Mosaic.PositionOf"/> numbers
+        /// it.</param>
+        /// <returns>"R", "G1", "G2" or "B" when the order is known, else "CFA[y,x]".</returns>
         internal string ChannelLabel(int i) => Mosaic.Label(Cfa, i);
     }
 
+    /// <summary>
+    /// Mode 4, <c>--expo</c>: measures the level of one raw flat and gives the exposure
+    /// verdict on the central window of its brightest channel.
+    /// </summary>
     internal static class ExposureAnalyzer
     {
-        /// <summary>Scala se ghiceste din maxim; daca greseste, --sat / --black.</summary>
+        /// <summary>
+        /// The scale is guessed from the maximum; if it is wrong, --sat / --black.
+        /// </summary>
+        /// <param name="max">The largest pixel value of the frame, ADU (or 0..1
+        /// normalised).</param>
+        /// <returns>The guessed white level: 1, 4095, 16383 or 65535.</returns>
         internal static double AutoWhite(double max)
         {
             if (max <= 1.5) return 1.0;
@@ -188,24 +229,31 @@ namespace FlatCheck
             return 65535.0;
         }
 
+        /// <summary>
+        /// Measures one raw flat: the scale, the four Bayer channels (or one, on a frame that
+        /// is no mosaic), their histograms, the median of the central window of the brightest
+        /// channel, and the verdict on <see cref="ExposureBands"/>.
+        /// </summary>
         /// <param name="data">The raw flat's pixels, in the file's own levels (ADU).</param>
         /// <param name="satOverride">The white level given with --sat, or null to take it from
         /// the file or guess it.</param>
         /// <param name="blackOverride">The black level given with --black, or null to take it
         /// from the file (0 when the file carries none).</param>
-        /// <param name="sky">True for a sky flat, whose acceptable bands differ from a panel's.</param>
+        /// <param name="sky">True for a sky flat, whose acceptable bands differ from a
+        /// panel's.</param>
         /// <param name="fileScale">
-        /// Scala citita din fisier, sau null daca fisierul n-o poarta (FITS). Ordinea de
-        /// precedenta e cea din flatcheck.py: --sat bate fisierul, fisierul bate ghicitul.
+        /// The scale read from the file, or null if the file does not carry one (FITS). The
+        /// order of precedence is flatcheck.py's: --sat beats the file, the file beats the guess.
         /// </param>
         /// <param name="cfa">
-        /// Ordinea culorilor citita din fisier, sau null cand fisierul n-o spune. Nu
-        /// schimba nicio cifra - doar cum se numesc canalele in raport si in fereastra.
+        /// The colour order read from the file, or null when the file does not say it. It
+        /// changes no figure - only how the channels are named in the report and the window.
         /// </param>
         /// <param name="preview">
-        /// Previzualizarea aparatului, decodata, sau null. Produce doar
-        /// <see cref="ExposureResult.Preview"/>; nimic din verdict nu o atinge.
+        /// The camera's preview, decoded, or null. It produces only
+        /// <see cref="ExposureResult.Preview"/>; nothing in the verdict touches it.
         /// </param>
+        /// <returns>The measurements and the verdict; never null.</returns>
         internal static ExposureResult Analyze(Img data, double? satOverride, double? blackOverride,
                                                bool sky, ExposureScale fileScale = null,
                                                CfaPattern cfa = null, PreviewImage preview = null)
@@ -223,8 +271,8 @@ namespace FlatCheck
             double black = blackOverride ?? fileScale?.Black ?? 0.0;
             double rng = white - black;
 
-            // cele 4 pozitii Bayer. Canalul cel mai luminos clipeaza primul, deci e cel limitant.
-            // Histogramele se umplu in ACEEASI trecere: pixelii sunt oricum vizitati o data.
+            // the 4 Bayer positions. The brightest channel clips first, so it is the limiting one.
+            // The histograms fill in the SAME pass: the pixels are visited once anyway.
             var ch = new List<double>[4];
             var wholeHist = new LevelHistogram[4];
             for (int i = 0; i < 4; i++) { ch[i] = new List<double>(); wholeHist[i] = new LevelHistogram(); }
@@ -242,10 +290,10 @@ namespace FlatCheck
             bool isCfa = Mosaic.LooksCfa(cfaSpread);
             int bright = Array.IndexOf(meds, mmax);
 
-            // fereastra centrala 20%x20%, pe FIECARE pozitie Bayer refacuta ca sub-imagine.
-            // Decizia ramane a canalului celui mai luminos - cenVals de mai jos e chiar
-            // lista lui - dar celelalte trei se string fiindca histograma le arata pe toate,
-            // si trei ferestre de 4 % din cadru nu costa nimic.
+            // the central 20%x20% window, on EACH Bayer position rebuilt as a sub-image.
+            // The decision stays the brightest channel's - cenVals below is its very list -
+            // but the other three are gathered because the histogram shows them all, and three
+            // windows of 4 % of the frame cost nothing.
             int chH = data.H / 2, chW = data.W / 2;
             int cy0 = (int)(chH * 0.4), cy1 = (int)(chH * 0.6);
             int cx0 = (int)(chW * 0.4), cx1 = (int)(chW * 0.6);
@@ -271,9 +319,9 @@ namespace FlatCheck
 
             if (!isCfa)
             {
-                // mono/procesat: centrul se ia pe intreaga imagine, nu pe sub-mozaic.
-                // Lista noua, nu cenVals.Clear(): cenVals arata spre cenPer[bright], iar
-                // golirea ei ar sterge tacut datele unui canal.
+                // mono/processed: the centre is taken on the whole image, not on the sub-mosaic.
+                // A new list, not cenVals.Clear(): cenVals points to cenPer[bright], and
+                // clearing it would silently erase a channel's data.
                 cenVals = new List<double>();
                 int my0 = (int)(data.H * 0.4), my1 = (int)(data.H * 0.6);
                 int mx0 = (int)(data.W * 0.4), mx1 = (int)(data.W * 0.6);
@@ -313,18 +361,20 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Histogramele previzualizarii, pe axa 0..100 % din 255. NU primeste praguri si NU
-        /// produce verdict: ce se vede aici a trecut prin balans de alb, gama si curba de
-        /// ton, deci nu mai are nicio legatura cu cata lumina a cazut pe senzor. Exista ca
-        /// sa fie pusa langa nivelul real - diferenta e cea care deruteaza.
+        /// The preview's histograms, on the axis 0..100 % of 255. It takes NO thresholds and
+        /// gives NO verdict: what shows here went through white balance, gamma and the tone
+        /// curve, so it no longer has any link to how much light fell on the sensor. It exists
+        /// to be put beside the real level - the difference is what misleads.
         ///
-        /// Fereastra centrala e aceeasi fractie ca la raw, 0.4..0.6 pe ambele axe. E
-        /// invarianta la orientarile pe care le poate avea o previzualizare - o rotatie de
-        /// 180 de grade o duce in ea insasi, una de 90 schimba W cu H dar nu fractiile - si
-        /// nu-i pasa ca previzualizarea e cu cativa pixeli mai ingusta decat zona vizibila
-        /// a raw-ului (6000 fata de 6016 pe D3300). Amandoua arata ca niste bug-uri cui nu
-        /// le-a masurat; nu sunt.
+        /// The central window is the same fraction as for the raw, 0.4..0.6 on both axes. It is
+        /// invariant to the orientations a preview can have - a 180-degree rotation maps it
+        /// onto itself, a 90-degree one swaps W and H but not the fractions - and it does not
+        /// care that the preview is a few pixels narrower than the visible area of the raw
+        /// (6000 against 6016 on the D3300). Both look like bugs to whoever has not measured
+        /// them; they are not.
         /// </summary>
+        /// <param name="p">The decoded preview, 8 bits per channel.</param>
+        /// <returns>Three channels, R, G, B, with the brightest marked.</returns>
         internal static PreviewLevels AnalyzePreview(PreviewImage p)
         {
             const double White = 255.0;
@@ -380,16 +430,24 @@ namespace FlatCheck
                 if (median > bestMedian) { bestMedian = median; best = c; }
             }
 
-            // "Cel mai luminos" doar ca sa fie consecvent cu randurile raw; pe partea asta
-            // nu decide nimic, si fereastra nu-l scoate in evidenta.
+            // "The brightest" only to be consistent with the raw rows; on this side it decides
+            // nothing, and the window does not single it out.
             channels[best].IsBrightest = true;
 
             return new PreviewLevels { Channels = channels, Source = p.Source };
         }
 
-        /// <summary>Un procent din (white - black), scara pe care sta tot modul.</summary>
+        /// <summary>A percentage of (white - black), the scale the whole mode sits on.</summary>
+        /// <param name="r">The result holding the scale.</param>
+        /// <param name="adu">The level, ADU.</param>
+        /// <returns>The level in percent of the range; below 0 under black, above 100 over
+        /// white.</returns>
         static double Pct(ExposureResult r, double adu) => (adu - r.Black) / r.Range * 100;
 
+        /// <summary>The share of values at or above 98 % of the white level.</summary>
+        /// <param name="vals">The values, ADU.</param>
+        /// <param name="white">The white level, ADU.</param>
+        /// <returns>The share in percent; 0 for an empty list.</returns>
         static double ClipShare(IReadOnlyList<double> vals, double white)
         {
             if (vals.Count == 0) return 0;
@@ -398,13 +456,20 @@ namespace FlatCheck
             return n / (double)vals.Count * 100;
         }
 
+        /// <summary>The levels of the four Bayer channels of a CFA frame.</summary>
+        /// <param name="r">The result so far: scale, medians, brightest channel, CFA order.</param>
+        /// <param name="ch">The pixels of each Bayer position, ADU, indexed 0..3.</param>
+        /// <param name="whole">The histogram of each whole channel.</param>
+        /// <param name="cen">The pixels of each channel's central window, ADU.</param>
+        /// <param name="centre">The histogram of each channel's central window.</param>
+        /// <returns>Four channels, indexed by Bayer position.</returns>
         static ChannelLevels[] CfaChannels(ExposureResult r, List<double>[] ch,
             LevelHistogram[] whole, List<double>[] cen, LevelHistogram[] centre)
         {
             var o = new ChannelLevels[4];
             for (int i = 0; i < 4; i++)
             {
-                // O singura sortare per set, apoi trei percentile din ea.
+                // A single sort per set, then three percentiles from it.
                 double[] all = Stats.Sorted(ch[i].ToArray());
                 double[] mid = Stats.Sorted(cen[i].ToArray());
 
@@ -428,9 +493,13 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cadru mono sau deja procesat: un singur canal, pe tot cadrul. Nu se numeste cu
-        /// o culoare, fiindca nu mai exista mozaic din care sa se citeasca una.
+        /// A mono or already processed frame: a single channel, over the whole frame. It is not
+        /// named with a colour, because there is no mosaic left to read one from.
         /// </summary>
+        /// <param name="r">The result so far: scale, global and central medians.</param>
+        /// <param name="data">The frame's pixels, ADU.</param>
+        /// <param name="cen">The pixels of the central window, ADU.</param>
+        /// <returns>One channel, labelled "mono".</returns>
         static ChannelLevels[] MonoChannel(ExposureResult r, Img data, List<double> cen)
         {
             var whole = new LevelHistogram();
@@ -463,12 +532,17 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// O singura scara, citita din <see cref="ExposureBands"/>. Ramura separata pentru
-        /// cer nu mai e nevoie: acolo tinta incepe chiar la pragul de prea-jos
-        /// (TooLow == Lo), deci banda "acceptabil, dar cam jos" iese goala de la sine - un
-        /// sky flat TREBUIE sa stea modest, fiindca cerul se stinge continuu si e plin de
-        /// stele slabe, iar SNR-ul masterului vine din NUMARUL de cadre.
+        /// A single scale, read from <see cref="ExposureBands"/>. A separate branch for the sky
+        /// is no longer needed: there the target starts right at the too-low threshold
+        /// (TooLow == Lo), so the "acceptable, but rather low" band comes out empty by itself -
+        /// a sky flat MUST stay modest, because the sky fades continuously and is full of faint
+        /// stars, and the master's SNR comes from the NUMBER of frames.
         /// </summary>
+        /// <param name="r">The measured result, with its bands.</param>
+        /// <returns>
+        /// <see cref="ExposureVerdict.NotRaw"/> when the frame is no raw; else the band of the
+        /// central median, with clipping above <see cref="Th.ExpoClip"/> counted as too high.
+        /// </returns>
         static ExposureVerdict Classify(ExposureResult r)
         {
             if (!r.IsRaw) return ExposureVerdict.NotRaw;

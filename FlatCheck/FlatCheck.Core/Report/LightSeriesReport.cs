@@ -15,13 +15,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// LightSeriesReport.cs - LightSeriesResult -> textul din consola. Doar formatare.
+// LightSeriesReport.cs - LightSeriesResult -> the console's text. Formatting only.
 //
-// Trei intrari in loc de una: o serie de 32 de cadre ia vreo doua minute, si a sta cu
-// consola goala tot timpul ala e o purtare proasta pentru o unealta de linie de
-// comanda. Deci CLI-ul scrie antetul, apoi cate un rand pe masura ce fiecare cadru e
-// gata, apoi sinteza. Formatarea ramane totusi in intregime aici, ca la celelalte
-// moduri - Report/ e singurul loc cu text romanesc.
+// Three entry points instead of one: a series of 32 frames takes about two minutes, and sitting
+// with an empty console all that time is bad manners for a command-line tool. So
+// Runs/LightSeriesRun.cs writes the header, then one row as each frame is ready, then the
+// summary, for both applications. The formatting stays entirely here all the same, as for the
+// other modes - Report/ holds the reports' Romanian text (the error messages are thrown where
+// they arise, in Analysis/ and Runs/).
 
 using System;
 using System.IO;
@@ -29,8 +30,18 @@ using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// The words of <c>--light</c> on a series: the header, one row per frame, and the
+    /// summary with the verdict or the reasons it is undetermined.
+    /// </summary>
     internal static class LightSeriesReport
     {
+        /// <summary>The header of the series, written before the first frame is analysed.</summary>
+        /// <param name="dir">The folder, as the header prints it.</param>
+        /// <param name="pattern">The file pattern the frames were found with.</param>
+        /// <param name="count">How many frames were found.</param>
+        /// <param name="s">The suitability check's answer, on the first frame.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteHeader(
             string dir, string pattern, int count, SuitabilityResult s, TextWriter w)
         {
@@ -42,10 +53,20 @@ namespace FlatCheck
             w.WriteLine("    cadru                              radial   gradient cer     tile-uri");
         }
 
+        /// <summary>One frame's row, written as soon as the frame is done.</summary>
+        /// <param name="name">The frame's file name; cut from the left above 30 characters.</param>
+        /// <param name="r">The frame's background fit.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteRow(string name, LightResult r, TextWriter w)
             => w.WriteLine($"    {Trim(name),-30} {LightReport.Signed(r.RadPct),8} % "
                          + $"{r.PlanePct,10:F2} %  {r.KeptTiles,6}/{r.TotalTiles}");
 
+        /// <summary>
+        /// The summary: the mean, the spread, the standard error and the sky correlation, then
+        /// the verdict with its diagnosis, or why the mean cannot be read as the flat error.
+        /// </summary>
+        /// <param name="r">The combined series.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteSummary(LightSeriesResult r, TextWriter w)
         {
             w.WriteLine("\n  SINTEZA PE SERIE");
@@ -81,6 +102,11 @@ namespace FlatCheck
             w.WriteLine("    despre cand se poate folosi --light.");
         }
 
+        /// <summary>One reason the verdict is undetermined, in words.</summary>
+        /// <param name="r">The combined series.</param>
+        /// <param name="reason">A key of <see cref="LightSeriesResult.Reasons"/>: "sem",
+        /// "corelatie", or a text written as it is.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteReason(LightSeriesResult r, string reason, TextWriter w)
         {
             switch (reason)
@@ -101,10 +127,19 @@ namespace FlatCheck
             }
         }
 
+        /// <summary>Whether a condition failed.</summary>
+        /// <param name="r">The combined series.</param>
+        /// <param name="reason">The reason's key.</param>
+        /// <returns>True when <paramref name="reason"/> is among the series' reasons.</returns>
         static bool Failed(LightSeriesResult r, string reason) => r.Reasons.Contains(reason);
 
-        /// Numele de fisier lungi ar rupe coloanele; se taie de la stanga, pastrand
-        /// coada, fiindca acolo sta numarul cadrului.
+        /// <summary>
+        /// Long file names would break the columns; they are cut from the left, keeping the
+        /// tail, because the frame's number sits there.
+        /// </summary>
+        /// <param name="name">The file name.</param>
+        /// <returns>The name, or "..." and its last 27 characters when it is longer than
+        /// 30.</returns>
         static string Trim(string name)
             => name.Length <= 30 ? name : "..." + name.Substring(name.Length - 27);
     }

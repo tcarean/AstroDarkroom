@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// StructureReport.cs - StructureResult -> textul din consola. Doar formatare.
+// StructureReport.cs - StructureResult -> the console's text. Formatting only.
 
 using System;
 using System.Collections.Generic;
@@ -24,21 +24,52 @@ using System.IO;
 namespace FlatCheck
 {
     /// <summary>
-    /// Un rand al tabelului "vignetarea fata de profilul obiectivului", gata formatat: sursa
-    /// (Adobe / lensfun), obiectivul, montura si calibrarea (Where), profilul folosit, adancimea lui, diferenta fata
-    /// de master, eroarea in colt si verdictul; IsNearest pe cel care da verdictul, Note cu
-    /// formatul de calibrare fata de senzor (IsWarning cand e o extrapolare mare).
+    /// A row of the table "the vignetting against the lens's profile", ready formatted: the
+    /// source (Adobe / lensfun), the lens, the mount and the calibration (Where), the profile
+    /// used, its depth, the difference from the master, the error at the corner and the verdict;
+    /// IsNearest on the one that gives the verdict, Note with the calibration format against the
+    /// sensor (IsWarning when it is a large extrapolation).
     /// </summary>
+    /// <param name="Key">The lens's catalog key.</param>
+    /// <param name="Source">"Adobe" or "lensfun", as displayed.</param>
+    /// <param name="Lens">The lens's name.</param>
+    /// <param name="Where">The mount and the calibration it was profiled on.</param>
+    /// <param name="Profile">The profile's settings (focal length, aperture).</param>
+    /// <param name="Depth">The profile's depth at the corner, in stops and percent.</param>
+    /// <param name="Diff">The master's depth minus the profile's, in stops, signed.</param>
+    /// <param name="Error">The corner error that difference leaves, in percent.</param>
+    /// <param name="Verdict">The row's verdict, on the residual scale.</param>
+    /// <param name="IsNearest">True on the row that gives the comparison's verdict.</param>
+    /// <param name="Note">The calibration format against the sensor, and any mismatch
+    /// warning.</param>
+    /// <param name="IsWarning">True when the note is a warning: a large extrapolation or a
+    /// profile far from the shot's settings.</param>
     internal sealed record ProfileRow(string Key, string Source, string Lens, string Where, string Profile,
                                       string Depth, string Diff, string Error, string Verdict,
                                       bool IsNearest, string Note, bool IsWarning);
 
+    /// <summary>
+    /// The words of the structure mode: the console report of a <see cref="StructureResult"/>
+    /// (and of a run with its lens-profile comparison), and every sentence the window shows
+    /// beside the tests, the scale and the verdict.
+    /// </summary>
     internal static class StructureReport
     {
+        /// <summary>Writes the report of a structure result without a profile comparison.</summary>
+        /// <param name="r">The structure result.</param>
+        /// <param name="path">The master's path, as the header prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void Write(StructureResult r, string path, TextWriter w)
             => Write(new StructureOutcome(r, null, null, null), path, w);
 
-        /// <summary>Cu comparatia vignetarii, cand rularea a avut una; altfel identic cu varianta de mai sus.</summary>
+        /// <summary>
+        /// With the vignetting comparison, when the run had one; otherwise identical to the variant
+        /// above.
+        /// </summary>
+        /// <param name="o">The whole run: the structure result and, when made, the
+        /// comparison.</param>
+        /// <param name="path">The master's path, as the header prints it.</param>
+        /// <param name="w">Where to write.</param>
         internal static void Write(StructureOutcome o, string path, TextWriter w)
         {
             StructureResult r = o.Structure;
@@ -49,11 +80,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// "median / max", formatate dupa scara fisierului. Siril scrie masterul ca float
-        /// impartit la 65535, deci mediana e ~0.014 - iar cu zero zecimale linia iesea
-        /// "0 / 0", ca si cum fisierul ar fi gol. Pragul de 1.5 e acelasi pe care --expo
-        /// il foloseste ca sa recunoasca un fisier normalizat. Il arata si fereastra.
+        /// "median / max", formatted by the file's scale. Siril writes the master as a float
+        /// divided by 65535, so the median is ~0.014 - and with zero decimals the line came out
+        /// "0 / 0", as if the file were empty. The threshold of 1.5 is the same one --expo
+        /// uses to recognise a normalised file. The window shows it too.
         /// </summary>
+        /// <param name="r">The structure result, with RawMedian and RawMax.</param>
+        /// <returns>The two levels: whole numbers on an ADU file; four decimals and a note on a
+        /// normalised one (RawMax at most 1.5).</returns>
         internal static string Levels(StructureResult r)
         {
             bool normalised = r.RawMax <= 1.5;
@@ -63,20 +97,25 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Tot ce urmeaza dupa antet: informativele, cele cinci teste, scara si
-        /// verdictul. Scos separat fiindca modul de atribuire ruleaza aceeasi baterie
-        /// pe masterul combinat (A+B)/2 si vrea exact acest corp sub antetul lui - dar
-        /// nu si randul de ADU, care pe un raster normalizat la mediana 1 n-ar insemna
-        /// nimic.
+        /// Everything that follows the header: the informative figures, the five tests, the
+        /// scale and the verdict. Taken out separately because the attribution mode runs the same
+        /// battery on the combined master (A+B)/2 and wants exactly this body under its own header
+        /// - but not the ADU row, which on a raster normalised to median 1 would mean
+        /// nothing.
         /// </summary>
+        /// <param name="r">The structure result.</param>
+        /// <param name="w">Where to write.</param>
         internal static void WriteBody(StructureResult r, TextWriter w) => WriteBody(r, w, null);
 
+        /// <summary>
+        /// The body, with the profile comparison's block and verdict when the run had one.
+        /// </summary>
         /// <param name="r">The structure battery's result to write.</param>
         /// <param name="w">Where the text goes.</param>
         /// <param name="o">
-        /// Rularea intreaga, cand a avut o comparatie cu profilele: blocul ei se scrie dupa
-        /// scara, iar verdictul si sfatul sunt ale ei (cel mai rau dintre forma si adancime).
-        /// Null sau fara comparatie = cele cinci teste si atat.
+        /// The whole run, when it had a comparison with the profiles: its block is written after
+        /// the scale, and the verdict and the advice are its own (the worst of shape and depth).
+        /// Null or without a comparison = the five tests and nothing more.
         /// </param>
         static void WriteBody(StructureResult r, TextWriter w, StructureOutcome o)
         {
@@ -104,11 +143,18 @@ namespace FlatCheck
             else WriteAdvice(r.Verdict, w);
         }
 
-        // ------------------------------------------------ vignetarea fata de profilul obiectivului
+        // ------------------------------------------------ the vignetting against the lens's
+        // profile
 
-        /// <summary>Titlul blocului; fereastra il pune pe cardul ei.</summary>
+        /// <summary>The block's title; the window puts it on its card.</summary>
         internal const string ProfilesHeading = "VIGNETAREA fata de profilul obiectivului";
 
+        /// <summary>
+        /// The block of the profile comparison: the master's depth, one row per profile, the
+        /// summary and the notes - or why it could not compare.
+        /// </summary>
+        /// <param name="o">The run, with a non-null comparison.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteProfiles(StructureOutcome o, TextWriter w)
         {
             VignettingComparison c = o.Profiles;
@@ -135,15 +181,18 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Ce ar citi modul --light din aceeasi diferenta, si de ce verdictul adancimii nu sta pe
-        /// scara lui: eroarea din colt, cuvantul ei pe scara 2 / 5 % a lui --light (prin
-        /// Stats.DepthOnLightScale, deci cu pragurile lui, nu copiate), si incertitudinea
-        /// referintei, Th.ProfileDatabaseSpreadStops, tradusa in aceeasi eroare din colt. Cele
-        /// doua scari judeca aceeasi marime cu incertitudini diferite; raportul le arata pe
-        /// amandoua in loc sa aleaga in locul cititorului. Tiparita de consola sub scara
-        /// adancimii si de --against sub randul lui de adancime; fereastra o lipeste de nota
-        /// scarii. Pe NaN spune ca nu se poate citi, ca restul blocului.
+        /// What the --light mode would read from the same difference, and why the depth verdict
+        /// does not sit on its scale: the error at the corner, its word on --light's 2 / 5 % scale
+        /// (through Stats.DepthOnLightScale, so with its thresholds, not copied), and the
+        /// reference's uncertainty, Th.ProfileDatabaseSpreadStops, translated into the same
+        /// corner error. The two scales judge the same quantity with different uncertainties; the
+        /// report shows both instead of choosing for the reader. Printed by the console under the
+        /// depth scale and by --against under its depth row; the window glues it to the scale's
+        /// note. On NaN it says it cannot be read, like the rest of the block.
         /// </summary>
+        /// <param name="diffStops">The master's depth minus the profile's, stops; NaN when
+        /// undetermined.</param>
+        /// <returns>Three lines joined by '\n'; two on NaN.</returns>
         internal static string DepthLightScaleNote(double diffStops)
         {
             double spread = Stats.DepthErrorPct(Th.ProfileDatabaseSpreadStops);
@@ -158,10 +207,12 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Scara adancimii ca date, pentru fereastra: aceleasi patru benzi ca scara de reziduu,
-        /// cu intervalul in stopuri si eroarea din colt care ii corespunde. Pragurile sunt tot
-        /// Th.Resid*, trecute prin Stats.StopsForError - nu e o a doua lista de numere.
+        /// The depth scale as data, for the window: the same four bands as the residual scale,
+        /// with the interval in stops and the corner error that corresponds to it. The thresholds
+        /// are still Th.Resid*, passed through Stats.StopsForError - not a second list of numbers.
         /// </summary>
+        /// <returns>Four rows, PERFECT to REFA: the band, its interval in stops, its
+        /// meaning.</returns>
         internal static IReadOnlyList<(string Band, string Range, string Meaning)> DepthScaleRows()
         {
             string S(double pct) => Stats.StopsForError(pct).ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
@@ -174,18 +225,35 @@ namespace FlatCheck
             };
         }
 
-        /// <summary>De unde vine scara adancimii: nu e un prag nou, e scara celor cinci teste tradusa in stopuri.</summary>
+        /// <summary>
+        /// Where the depth scale comes from: it is not a new threshold, it is the five tests' scale
+        /// translated into stops.
+        /// </summary>
+        /// <returns>Three lines joined by '\n'.</returns>
         internal static string DepthScaleNote()
             => $"Aceeasi scara de reziduu ca cele cinci teste ({Th.ResidPerfect:F0} / {Th.ResidUsable:F0} / {Th.ResidCheck:F0} %), aplicata erorii pe care\n"
              + "diferenta de adancime o lasa in coltul unui light calibrat cu masterul, 2^|stopuri| - 1, si\n"
              + "tradusa in stopuri. Nu e un prag nou.";
 
-        /// <summary>"1.26 stopuri (colt = 42 % din centru)" - adancimea masterului, cum o masoara si randul informativ.</summary>
+        /// <summary>
+        /// "1.26 stopuri (colt = 42 % din centru)" - the master's depth, as the informative row
+        /// measures it too.
+        /// </summary>
+        /// <param name="c">The comparison.</param>
+        /// <returns>The master's depth in stops and as the corner's percent of the
+        /// centre.</returns>
         internal static string MasterDepth(VignettingComparison c) => Depth(c.MasterStops);
 
+        /// <summary>A depth in stops, with the corner's level as a percent of the centre.</summary>
+        /// <param name="stops">The depth, stops.</param>
+        /// <returns>"N.NN stopuri (colt = N % din centru)".</returns>
         static string Depth(double stops) => $"{stops:F2} stopuri (colt = {100 * Math.Pow(2, -stops):F0} % din centru)";
 
-        /// <summary>Un rand pe profil, gata formatat, pentru consola si pentru fereastra.</summary>
+        /// <summary>
+        /// One row per profile, ready formatted, for the console and for the window.
+        /// </summary>
+        /// <param name="c">The comparison.</param>
+        /// <returns>The rows, in the comparison's order.</returns>
         internal static IReadOnlyList<ProfileRow> ProfileRows(VignettingComparison c)
         {
             var rows = new List<ProfileRow>();
@@ -194,8 +262,8 @@ namespace FlatCheck
                 LensProfile p = d.Profile;
                 bool warning = d.Extrapolation > SyntheticFlatResult.SmallExtrapolation;
                 string note = SyntheticReport.FormatMatch(p.Model, d.CameraCrop, d.Extrapolation);
-                // Profilul e cel mai apropiat de focala si diafragma raw-ului; cand e departe
-                // (un raw la 20 mm pe un obiectiv cu profile pana la 16), randul o spune.
+                // The profile is the nearest to the raw's focal length and aperture; when it is far
+                // (a raw at 20 mm on a lens with profiles up to 16), the row says so.
                 string mismatch = c.Shot?.FocalMm != null && c.Shot.FStop != null
                     ? SyntheticReport.ProfileMismatch(p, c.Shot.FocalMm.Value, c.Shot.FStop.Value, d.LensProfiles) : null;
                 if (mismatch != null) { note += " ATENTIE: " + mismatch; warning = true; }
@@ -207,10 +275,12 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Al cui e verdictul si cat difera profilele intre ele. "Cel mai apropiat", nu "cel
-        /// mai rau": cele doua baze difera intre ele cu ~0.2 stopuri pe acelasi obiectiv, si un
-        /// master care coincide cu una din ele nu e gresit.
+        /// Whose the verdict is and how much the profiles differ among themselves. "The nearest",
+        /// not "the worst": the two databases differ from each other by ~0.2 stops on the same
+        /// lens, and a master that matches one of them is not wrong.
         /// </summary>
+        /// <param name="c">The comparison, with at least one row.</param>
+        /// <returns>Two or three lines joined by '\n'.</returns>
         internal static string ComparisonSummary(VignettingComparison c)
         {
             string who = $"{c.Nearest.Profile.Lens.SourceLabel} {c.Nearest.Profile.Lens.Title}";
@@ -223,22 +293,29 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cand obiectivele au fost gasite doar dupa gama (obiectiv manual, fara ID utilizabil):
-        /// lista poate cuprinde si alt obiectiv cu aceeasi gama, si omul trebuie sa stie.
+        /// When the lenses were found only by their range (a manual lens, no usable ID): the list
+        /// may include another lens with the same range, and the person must know.
         /// </summary>
+        /// <param name="shot">The shot's identity; null when unknown.</param>
+        /// <returns>The note, starting with '\n'; "" when the lenses were matched by ID.</returns>
         internal static string RangeOnlyNote(ShotIdentity shot)
             => shot != null && shot.CandidatesByRangeOnly
                 ? $"\nobiectivele de mai sus sunt cele ale monturii cu {shot.RawLensLabel}: obiectiv manual sau necunoscut bazelor. "
                 + "Daca printre ele e si altul cu aceeasi gama, citeste randul obiectivului tau, nu pe cel mai apropiat."
                 : "";
 
-        /// <summary>Ce poate si ce nu poate spune comparatia. O arata si fereastra, sub tabel.</summary>
+        /// <summary>
+        /// What the comparison can and cannot say. The window shows it too, under the table.
+        /// </summary>
+        /// <returns>Three lines joined by '\n'.</returns>
         internal static string ComparisonNote()
             => "Diferenta e RADIALA, deci invizibila celor cinci teste, hartii si modului --ratio: e singurul\n"
              + "loc unde se vede o sursa care cade cu unghiul (plus) sau umple colturile (minus). Profilul e\n"
              + "modelul obiectivului, nu exemplarul tau, si e acromatic; masterul e media 2x2 a mozaicului.";
 
-        /// <summary>De ce nu s-a putut compara, in cuvinte.</summary>
+        /// <summary>Why it could not compare, in words.</summary>
+        /// <param name="o">The run, with a comparison that was not made.</param>
+        /// <returns>The reason, with the option that fixes it; "" for None.</returns>
         internal static string GapText(StructureOutcome o)
         {
             VignettingComparison c = o.Profiles;
@@ -266,20 +343,39 @@ namespace FlatCheck
             }
         }
 
-        /// <summary>Ce ar fi aratat comparatia, ca sa se stie ce lipseste.</summary>
+        /// <summary>
+        /// What the comparison would have shown, so that it is known what is missing.
+        /// </summary>
+        /// <returns>Two lines joined by '\n'.</returns>
         internal static string GapMeaning()
             => "Comparatia ar fi spus daca adancimea vignetarii e cea a obiectivului: un exces radial - caderea\n"
              + "unui panou, curbura cerului - trece neobservat prin cele cinci teste si prin --ratio.";
 
-        /// <summary>Cele doua parti ale verdictului, pe doua randuri, cum le tipareste consola sub VERDICT.</summary>
+        /// <summary>
+        /// The two parts of the verdict, on two rows, as the console prints them under VERDICT.
+        /// </summary>
+        /// <param name="o">The run, with a comparison made.</param>
+        /// <returns>The shape row, the depth row and <see cref="WorseOfBoth"/>, joined by
+        /// '\n'.</returns>
         internal static string VerdictDetail(StructureOutcome o)
             => $"forma     : {ShapeDetail(o)}\nadancimea : {DepthDetail(o)}\n{WorseOfBoth}";
 
-        /// <summary>"PERFECT - cele cinci teste de abatere de la simetria radiala". Separat, ca fereastra sa-si puna eticheta ei in fata.</summary>
+        /// <summary>
+        /// "PERFECT - cele cinci teste de abatere de la simetria radiala". Separate, so that the
+        /// window can put its own label in front.
+        /// </summary>
+        /// <param name="o">The run.</param>
+        /// <returns>The shape verdict and what it covers.</returns>
         internal static string ShapeDetail(StructureOutcome o)
             => $"{o.Structure.Verdict} - cele cinci teste de abatere de la simetria radiala";
 
-        /// <summary>"REFA - +0.34 stopuri fata de lensfun Tokina ... = 27.0 % eroare in coltul light-ului calibrat".</summary>
+        /// <summary>
+        /// "REFA - +0.34 stopuri fata de lensfun Tokina ... = 27.0 % eroare in coltul light-ului
+        /// calibrat".
+        /// </summary>
+        /// <param name="o">The run, with a comparison made.</param>
+        /// <returns>The depth verdict, the difference against the nearest profile and its corner
+        /// error.</returns>
         internal static string DepthDetail(StructureOutcome o)
         {
             ProfileDepth n = o.Profiles.Nearest;
@@ -288,19 +384,26 @@ namespace FlatCheck
 
         internal const string WorseOfBoth = "Cel mai rau dintre ele.";
 
-        /// <summary>Sfatul rularii: al adancimii cand ea a inrautatit verdictul, altfel al formei.</summary>
+        /// <summary>
+        /// The run's advice: the depth's when it worsened the verdict, otherwise the shape's.
+        /// </summary>
+        /// <param name="o">The run, with a comparison made.</param>
+        /// <returns>The advice, lines joined by '\n'.</returns>
         internal static string Advice(StructureOutcome o)
             => o.DepthCarriesTheVerdict ? DepthAdvice(o.Profiles.Nearest.DiffStops, o.Profiles.Verdict) : Advice(o.Structure.Verdict);
 
         /// <summary>
-        /// Ce sa faca omul cand vignetarea masterului nu e cea a obiectivului. Semnul e
-        /// diagnosticul: plus = masterul cade mai mult decat modelul, deci SURSA cade cu unghiul
-        /// (masurat pe masterele de tableta: cos^2 al unghiului de camp, +0.57 stopuri, facut
-        /// radial de rotatia la 90 de grade); minus = sursa umple colturile (cupola cerului
-        /// se lumineaza spre orizont de jur imprejurul zenitului, ambient, o reflexie). Nici
-        /// --ratio, nici mai multe rotatii nu ajuta: excesul se roteste cu aparatul sau e
-        /// simetrizat de rotatie.
+        /// What the person should do when the master's vignetting is not the lens's. The sign is
+        /// the diagnosis: plus = the master falls more than the model, so the SOURCE falls with
+        /// the angle (measured on the tablet masters: cos^2 of the field angle, +0.57 stops, made
+        /// radial by the 90-degree rotation); minus = the source fills the corners (the sky's dome
+        /// brightens toward the horizon all around the zenith, ambient light, a reflection).
+        /// Neither --ratio nor more rotations help: the excess rotates with the camera or is
+        /// symmetrised by the rotation.
         /// </summary>
+        /// <param name="diffStops">The master's depth minus the nearest profile's, stops.</param>
+        /// <param name="verdict">The depth verdict; "REFA" adds the advice to reshoot.</param>
+        /// <returns>The cause by the sign and its weight, lines joined by '\n'.</returns>
         internal static string DepthAdvice(double diffStops, string verdict)
         {
             string cause = diffStops > 0
@@ -321,12 +424,14 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Marimile care NU sunt teste. Vignetarea e o proprietate a
-        /// obiectivului, nu o eroare. Offsetul centrului de iluminare a fost si el un
-        /// test pana in 1.2.0 si nu mai e: fiind ~ -b/(2d), adica raportul dintre
-        /// gradient si curbura, nu e scale-invariant - iar peste pragul la care varful
-        /// iese din cadru, nici macar monoton. Vezi Metrics.FitCenter.
+        /// The quantities that are NOT tests. Vignetting is a property of the
+        /// lens, not an error. The offset of the illumination centre was a
+        /// test too until 1.2.0 and no longer is: being ~ -b/(2d), that is the ratio of the
+        /// gradient to the curvature, it is not scale-invariant - and above the threshold at which
+        /// the vertex leaves the frame, not even monotonic. See Metrics.FitCenter.
         /// </summary>
+        /// <param name="r">The structure result.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteInformative(StructureResult r, TextWriter w)
         {
             w.WriteLine("\n  INFORMATIV (nu sunt teste)");
@@ -350,36 +455,44 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Cifra de "pete locale": marimea cu semn, ce inseamna semnul, si pozitia in
-        /// rasterul de analiza.
+        /// The "pete locale" figure: the signed size, what the sign means, and the position in
+        /// the analysis raster.
         ///
-        /// Semnul e numit chiar pe rand, nu lasat sa fie dedus. Un minus pe o linie care
-        /// se cheama "pete locale" arata ca o eroare de calcul daca nu stii ca directia e
-        /// tocmai informatia - prima intrebare pusa dupa ce a aparut cifra a fost daca
-        /// poate fi negativa.
+        /// The sign is named right on the row, not left to be inferred. A minus on a line called
+        /// "pete locale" looks like a calculation error if you do not know that the direction is
+        /// precisely the information - the first question asked after the figure appeared was
+        /// whether it can be negative.
         /// </summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>The signed percentage, the sign's word and the position.</returns>
         internal static string LocalSpotValue(StructureResult r)
             => LocalSpotValue(r.LocalSpotPct, r.LocalSpotX, r.LocalSpotY);
 
         /// <summary>
-        /// Aceeasi formulare pentru o pata masurata pe alt raster - modul de netezire o
-        /// citeste de pe componenta scoasa, nu de pe reziduul structurii.
+        /// The same wording for a spot measured on another raster - the smoothing mode reads it
+        /// from the removed component, not from the structure's residual.
         /// </summary>
+        /// <param name="pct">The spot's depth, percent, signed.</param>
+        /// <param name="x">Its column, analysis raster pixels.</param>
+        /// <param name="y">Its row, analysis raster pixels.</param>
+        /// <returns>"+N.NN % (mai luminos) la (x, y)", with no word at zero.</returns>
         internal static string LocalSpotValue(double pct, int x, int y)
         {
-            // Ce se rotunjeste la zero SE ARATA ca zero: .NET pastreaza semnul unui zero
-            // negativ si "-0.00001" iesea "-+0.00" (sectiunea pozitiva a formatului, cu
-            // minusul zeroului negativ in fata). Masurat pe golden-ul modului de netezire.
+            // What rounds to zero IS SHOWN as zero: .NET keeps the sign of a negative zero and
+            // "-0.00001" came out "-+0.00" (the format's positive section, with the negative
+            // zero's minus in front). Measured on the smoothing mode's golden.
             double shown = Math.Abs(pct) < 0.005 ? 0.0 : pct;
             return $"{shown:+0.00;-0.00} %{SignWord(shown)} la ({x}, {y})";
         }
 
         /// <summary>
-        /// Eticheta unui test, cu cheia numelui cifrei din <see cref="StructureResult"/>,
-        /// ca <see cref="TestNote"/>. E ce tipareste WriteBody in fata cifrei; raportul
-        /// de netezire o refoloseste in tabelul lui "inainte / dupa", ca cele doua rapoarte
-        /// sa numeasca testele la fel.
+        /// A test's label, keyed by the name of the figure in <see cref="StructureResult"/>,
+        /// like <see cref="TestNote"/>. It is what WriteBody prints in front of the figure; the
+        /// smoothing report reuses it in its "inainte / dupa" table, so that the two reports name
+        /// the tests the same way.
         /// </summary>
+        /// <param name="metric">One of <see cref="TestKeys"/>.</param>
+        /// <returns>The label; null for an unknown key.</returns>
         internal static string TestLabel(string metric) => metric switch
         {
             nameof(StructureResult.CornerSpreadPct) => "imprastiere 4 colturi",
@@ -390,7 +503,7 @@ namespace FlatCheck
             _ => null,
         };
 
-        /// <summary>Cheile celor cinci teste, in ordinea din raport.</summary>
+        /// <summary>The keys of the five tests, in the report's order.</summary>
         internal static readonly string[] TestKeys =
         {
             nameof(StructureResult.CornerSpreadPct), nameof(StructureResult.AzimuthalMaxPct),
@@ -398,7 +511,14 @@ namespace FlatCheck
             nameof(StructureResult.MaxTilePct),
         };
 
-        /// <summary>Cifra si verdictul testului <paramref name="metric"/> din <paramref name="r"/>.</summary>
+        /// <summary>
+        /// The figure and the verdict of the test <paramref name="metric"/> of
+        /// <paramref name="r"/>.
+        /// </summary>
+        /// <param name="r">The structure result.</param>
+        /// <param name="metric">One of <see cref="TestKeys"/>; any other throws an
+        /// ArgumentException.</param>
+        /// <returns>The value, percent, and its verdict word.</returns>
         internal static (double Value, string Verdict) Test(StructureResult r, string metric) => metric switch
         {
             nameof(StructureResult.CornerSpreadPct) => (r.CornerSpreadPct, r.CornerVerdict),
@@ -410,22 +530,26 @@ namespace FlatCheck
         };
 
         /// <summary>
-        /// Directia abaterii, in cuvinte. Gol la exact zero (un reziduu constant), unde
-        /// "mai luminos" ar fi o afirmatie despre nimic.
+        /// The direction of the deviation, in words. Empty at exactly zero (a constant residual),
+        /// where "brighter" would be a statement about nothing.
         /// </summary>
+        /// <param name="pct">The spot's depth as shown, percent, signed.</param>
+        /// <returns>" (mai intunecat)", " (mai luminos)", or "" at zero.</returns>
         static string SignWord(double pct)
             => pct < 0 ? " (mai intunecat)" : pct > 0 ? " (mai luminos)" : "";
 
         /// <summary>
-        /// Ce e cifra, ce inseamna semnul ei, si de la ce valoare urmeaza o atentionare.
+        /// What the figure is, what its sign means, and from what value a warning follows.
         ///
-        /// Pragul se INTERPOLEAZA din <see cref="Th.LocalSpotWarn"/>, nu se scrie ca
-        /// literal: altfel o recalibrare a pragului ar lasa textul spunand vechea valoare,
-        /// si exact acest text e singurul loc din care utilizatorul afla de unde incolo
-        /// conteaza cifra. Pinuit de <c>TheLocalSpotNoteQuotesTheThresholdFromTh</c>.
+        /// The threshold is INTERPOLATED from <see cref="Th.LocalSpotWarn"/>, not written as a
+        /// literal: otherwise a recalibration of the threshold would leave the text stating the
+        /// old value, and this very text is the only place from which the user learns from where
+        /// on the figure matters. Pinned by <c>TheLocalSpotNoteQuotesTheThresholdFromTh</c>.
         ///
-        /// Intors ca sir, ca <see cref="Advice(StructureOutcome)"/>: il arata si fereastra, sub rand.
+        /// Returned as a string, like <see cref="Advice(StructureOutcome)"/>: the window shows it
+        /// too, under the row.
         /// </summary>
+        /// <returns>Four lines joined by '\n'.</returns>
         internal static string LocalSpotNote()
             => "Cea mai adanca pata compacta, dupa scoaterea structurii de scara mare.\n"
              + "Semnul spune ce fel: minus = mai intunecat decat imprejurimile (praf,\n"
@@ -433,12 +557,14 @@ namespace FlatCheck
              + $"Peste {Th.LocalSpotWarn:F0} % urmeaza o atentionare; sub atat cifra e doar informativa.";
 
         /// <summary>
-        /// Atentionarea pentru o pata compacta, sau null cand nu e cazul. Nu e un verdict,
-        /// si de aceea nu voteaza: o pata fixa pe aparat e corecta pentru sesiunea ale
-        /// carei lights o au si ele, si gresita pentru un flat de biblioteca - raspunsul
-        /// depinde de ce faci cu flat-ul, nu de flat. Intors ca sir fiindca il arata si
-        /// fereastra, sub verdict.
+        /// The warning for a compact spot, or null when there is none. It is not a verdict,
+        /// and that is why it does not vote: a spot fixed to the camera is right for the session
+        /// whose lights have it too, and wrong for a library flat - the answer depends on what you
+        /// do with the flat, not on the flat. Returned as a string because the window shows it
+        /// too, under the verdict.
         /// </summary>
+        /// <param name="r">The structure result.</param>
+        /// <returns>Four lines joined by '\n' when the spot is flagged, else null.</returns>
         internal static string LocalSpotWarning(StructureResult r)
             => r.LocalSpotFlagged
                 ? $"ATENTIE: pata compacta de {Math.Abs(r.LocalSpotPct):F2} % la ({r.LocalSpotX}, {r.LocalSpotY}), peste {Th.LocalSpotWarn:F0} %.\n"
@@ -448,21 +574,23 @@ namespace FlatCheck
                 : null;
 
         /// <summary>
-        /// Ce masoara fiecare dintre cele cinci teste, intr-o propozitie.
+        /// What each of the five tests measures, in one sentence.
         ///
-        /// FARA APELANT IN CONSOLA, ca <see cref="RunReport.MapScaleLabel"/> si celelalte: raportul
-        /// de consola isi tine explicatiile grupate sub scara, iar cinci note intercalate
-        /// intre randuri ar ineca tocmai cifrele. Fereastra pune fiecare nota sub randul
-        /// ei, unde nu costa nimic.
+        /// NO CALLER IN THE CONSOLE, like <see cref="RunReport.MapScaleLabel"/> and the others:
+        /// the console report keeps its explanations grouped under the scale, and five notes
+        /// interleaved between the rows would drown the very figures. The window puts each note
+        /// under its row, where it costs nothing.
         ///
-        /// Stau totusi aici, si nu in ViewModel, fiindca sunt propozitii de diagnostic:
-        /// regula e ca nicio explicatie pentru utilizator nu se scrie intr-un ViewModel,
-        /// ca sa nu existe doua formulari ale aceluiasi lucru cand mai apare un consumator.
-        /// Doua dintre ele chiar erau scrise inline acolo.
+        /// They sit here all the same, and not in the ViewModel, because they are sentences of
+        /// diagnosis: the rule is that no explanation for the user is written in a ViewModel,
+        /// so that there are not two wordings of the same thing when another consumer appears.
+        /// Two of them were in fact written inline there.
         ///
-        /// Cheia e numele cifrei din <see cref="StructureResult"/>, nu un index: o lista
-        /// pe pozitii s-ar rupe tacut daca cineva reordoneaza randurile.
+        /// The key is the name of the figure in <see cref="StructureResult"/>, not an index: a
+        /// list by position would break silently if someone reorders the rows.
         /// </summary>
+        /// <param name="metric">One of <see cref="TestKeys"/>.</param>
+        /// <returns>The note; null for an unknown key.</returns>
         internal static string TestNote(string metric) => metric switch
         {
             nameof(StructureResult.CornerSpreadPct) =>
@@ -488,15 +616,17 @@ namespace FlatCheck
         };
 
         /// <summary>
-        /// Scara comuna a celor cinci teste de abatere de la simetria radiala: numele
-        /// benzii, intervalul si intelesul. Nu se aplica offsetului centrului de
-        /// iluminare, care masoara o pozitie.
+        /// The common scale of the five tests of deviation from radial symmetry: the band's
+        /// name, the interval and the meaning. It does not apply to the offset of the illumination
+        /// centre, which measures a position.
         ///
-        /// Se intoarce ca date, nu ca text deja scris, fiindca o citesc doi consumatori:
-        /// raportul de mai jos, care o insira in coloane, si aplicatia WPF, care o pune
-        /// intr-un tabel cu banda curenta evidentiata. Pragurile raman singurele din Th;
-        /// o a doua lista de benzi ar fi divergat la prima recalibrare.
+        /// It is returned as data, not as text already written, because two consumers read it:
+        /// the report below, which lays it out in columns, and the WPF application, which puts it
+        /// in a table with the current band highlighted. The thresholds stay the only ones in Th;
+        /// a second list of bands would have diverged at the first recalibration.
         /// </summary>
+        /// <returns>Four rows, PERFECT to REFA: the band, its interval in percent, its
+        /// meaning.</returns>
         internal static IReadOnlyList<(string Band, string Range, string Meaning)> Scale()
             => new[]
             {
@@ -511,9 +641,10 @@ namespace FlatCheck
             };
 
         /// <summary>
-        /// De ce reziduul dupa modelul radial e cel care conteaza. Scos separat din
-        /// acelasi motiv ca <see cref="Scale"/>: il arata si fereastra, sub tabel.
+        /// Why the residual after the radial model is the one that matters. Taken out separately
+        /// for the same reason as <see cref="Scale"/>: the window shows it too, under the table.
         /// </summary>
+        /// <returns>Eight lines joined by '\n'.</returns>
         internal static string WhyResidualMatters()
             => "Cel mai important e \"reziduu dupa model rad.\": masoara direct cat din\n"
              + "cadru NU se explica printr-un model pur radial. E o LIMITA SUPERIOARA a\n"
@@ -524,6 +655,8 @@ namespace FlatCheck
              + "\"Pata maxima\" prinde ce le scapa celorlalte: un defect compact - o scurgere\n"
              + "mica, o pata de condens - pe care reziduul il taie ca extrema.";
 
+        /// <summary>Writes the residual scale in columns, and why the residual matters.</summary>
+        /// <param name="w">Where to write.</param>
         static void WriteScale(TextWriter w)
         {
             w.WriteLine("\n  SCARA celor cinci teste de abatere de mai sus");
@@ -533,10 +666,13 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Ce sa faca omul cu verdictul asta. Intors ca sir, nu scris direct, fiindca il
-        /// arata si fereastra, sub verdictul colorat - iar doua formulari ale aceluiasi
-        /// sfat ar diverge exact acolo unde conteaza cel mai mult sa nu divergem.
+        /// What the person should do with this verdict. Returned as a string, not written
+        /// directly, because the window shows it too, under the coloured verdict - and two
+        /// wordings of the same advice would diverge exactly where it matters most not to diverge.
         /// </summary>
+        /// <param name="verdict">A word of the residual scale; anything else gets REFA's
+        /// advice.</param>
+        /// <returns>The advice, lines joined by '\n'.</returns>
         internal static string Advice(string verdict) => verdict switch
         {
             "PERFECT" =>
@@ -550,10 +686,10 @@ namespace FlatCheck
                 "Utilizabil, dar ruleaza modul --light pe un light calibrat inainte de\n"
               + "un stretch dur, ca sa confirmi ca flat-ul chiar corecteaza.",
 
-            // Trimite la --ratio INAINTE de "refa": cifra e o limita superioara, si o
-            // parte fixa pe aparat (o optica genuin ne-radiala, o axa decentrata) iese
-            // tot aici, fara sa fie o eroare de flat. Masurat: o axa decentrata cu 5% din
-            // latime da REFA pe un flat care corecteaza perfect.
+            // Points to --ratio BEFORE "reshoot": the figure is an upper bound, and a part fixed
+            // to the camera (a genuinely non-radial optic, an off-centre axis) comes out here
+            // too, without being a flat error. Measured: an axis off-centre by 5% of the
+            // width gives REFA on a flat that corrects perfectly.
             _ =>
                 "Abatere prea mare de la simetria radiala => sursa neuniforma, light\n"
               + "leak, camera inclinata, sau ambient. NU e vignetare. Inainte sa refaci,\n"
@@ -561,8 +697,14 @@ namespace FlatCheck
               + "flat-ul e corect. Altfel refa flat-urile. Vezi harta pentru forma problemei.",
         };
 
+        /// <summary>Writes the advice of a verdict, indented.</summary>
+        /// <param name="verdict">A word of the residual scale.</param>
+        /// <param name="w">Where to write.</param>
         static void WriteAdvice(string verdict, TextWriter w) => Indent(Advice(verdict), w);
 
+        /// <summary>Writes each line of a text indented by four spaces.</summary>
+        /// <param name="text">The lines, joined by '\n'.</param>
+        /// <param name="w">Where to write.</param>
         static void Indent(string text, TextWriter w)
         {
             foreach (string line in text.Split('\n')) w.WriteLine("    " + line);

@@ -15,53 +15,68 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// ExposureBands.cs - benzile verdictului de expunere, ca valoare.
+// ExposureBands.cs - the bands of the exposure verdict, as a value.
 //
-// DE CE EXISTA. Pana acum Classify alegea inline intre sase constante din Th, dupa
-// steagul --sky. Cand a aparut histograma din fereastra, care deseneaza aceleasi benzi
-// peste curbe, alegerea aia ar fi trebuit facuta a doua oara - si o a doua alegere intre
-// aceleasi constante ar fi fost o a doua definitie a verdictului, care se poate desincroniza
-// tacut. Asa, banda verde de pe desen E prin constructie banda care voteaza.
+// WHY IT EXISTS. Classify used to choose inline between six constants of Th, by the --sky
+// flag. When the window's histogram appeared, which draws the same bands over the curves,
+// that choice would have had to be made a second time - and a second choice between the same
+// constants would have been a second definition of the verdict, which can drift out of step
+// silently. This way the green band on the drawing IS by construction the band that votes.
 //
-// Pe cer nu exista banda "acceptabil, dar cam jos": tinta incepe direct de la pragul de
-// prea-jos, deci TooLow == Lo. Nu e o scapare, e chiar forma scarii - un sky flat TREBUIE
-// sa stea modest, iar "prea jos" si "sub tinta" sunt acolo acelasi lucru.
+// On the sky there is no "acceptable, but rather low" band: the target starts right at the
+// too-low threshold, so TooLow == Lo. Not an oversight, it is the very shape of the scale - a
+// sky flat MUST stay modest, and "too low" and "below the target" are the same thing there.
 
 namespace FlatCheck
 {
     /// <summary>
-    /// Pragurile pe care se citeste mediana ferestrei centrale, in procente din
-    /// (white - black). Aceeasi scara pe care sunt toate cifrele modului.
+    /// The thresholds the median of the central window is read against, in percent of
+    /// (white - black). The same scale all the figures of the mode are on.
     /// </summary>
     internal readonly struct ExposureBands
     {
-        /// <summary>Praguri pentru flat pe cer, nu pe panou.</summary>
+        /// <summary>Thresholds for a flat on the sky, not on a panel.</summary>
         internal readonly bool Sky;
 
-        /// <summary>Sub asta, PREA JOS.</summary>
+        /// <summary>Below this, TOO LOW.</summary>
         internal readonly double TooLow;
 
-        /// <summary>Banda tinta, capete inclusive la dreapta (<c>cen &lt;= Hi</c>).</summary>
+        /// <summary>The target band, ends inclusive on the right (<c>cen &lt;= Hi</c>).</summary>
         internal readonly double Lo, Hi;
 
-        /// <summary>Peste asta, PREA SUS.</summary>
+        /// <summary>Above this, TOO HIGH.</summary>
         internal readonly double TooHigh;
 
-        /// <summary>Mijlocul tintei, pentru sugestia in stopuri.</summary>
+        /// <summary>The middle of the target, for the suggestion in stops.</summary>
         internal readonly double Target;
 
+        /// <summary>
+        /// Holds the five thresholds of one scale; only <see cref="For"/> builds one.
+        /// </summary>
+        /// <param name="sky">True for the sky scale.</param>
+        /// <param name="tooLow">Below this, too low; percent of (white - black).</param>
+        /// <param name="lo">The low end of the target band, percent.</param>
+        /// <param name="hi">The high end of the target band, inclusive, percent.</param>
+        /// <param name="tooHigh">Above this, too high, percent.</param>
+        /// <param name="target">The middle of the target, percent.</param>
         ExposureBands(bool sky, double tooLow, double lo, double hi, double tooHigh, double target)
         {
             Sky = sky; TooLow = tooLow; Lo = lo; Hi = hi; TooHigh = tooHigh; Target = target;
         }
 
+        /// <summary>
+        /// The scale of a panel flat (<see cref="Th.ExpoTooLow"/> .. <see cref="Th.ExpoTarget"/>)
+        /// or of a sky flat (<see cref="Th.ExpoSkyLo"/> .. <see cref="Th.ExpoSkyTarget"/>).
+        /// </summary>
+        /// <param name="sky">True for a sky flat (the --sky flag).</param>
+        /// <returns>The bands the verdict is given on and the window draws.</returns>
         internal static ExposureBands For(bool sky) => sky
             ? new ExposureBands(true, Th.ExpoSkyLo, Th.ExpoSkyLo, Th.ExpoSkyHi, Th.ExpoSkyTooHigh, Th.ExpoSkyTarget)
             : new ExposureBands(false, Th.ExpoTooLow, Th.ExpoLo, Th.ExpoHi, Th.ExpoTooHigh, Th.ExpoTarget);
 
         /// <summary>
-        /// true cand scara are o banda "acceptabil, dar cam jos" intre prea-jos si tinta.
-        /// Pe cer nu are, si desenul nu trebuie sa inventeze una lata de zero.
+        /// true when the scale has an "acceptable, but rather low" band between too low and the
+        /// target. On the sky it has none, and the drawing must not invent one of zero width.
         /// </summary>
         internal bool HasLowShoulder => Lo > TooLow;
     }

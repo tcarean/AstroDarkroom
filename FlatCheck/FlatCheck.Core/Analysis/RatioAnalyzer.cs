@@ -15,86 +15,107 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// RatioAnalyzer.cs - modul 2: ATRIBUIRE prin rotatie la 180 de grade.
+// RatioAnalyzer.cs - mode 2: ATTRIBUTION by 180-degree rotation.
 //
-// CE INTREABA MODUL, si de ce s-a schimbat intrebarea. Pana la rescrierea asta modul
-// raspundea la "e setup-ul de flats curat?" si dadea OK / SUSPECT / PROBLEMA. Nu putea.
-// Masurat pe trei perechi reale de mastere, cu geometrie cunoscuta cu certitudine:
+// WHAT THE MODE ASKS, and why the question changed. Until this rewrite the mode answered
+// "is the flats setup clean?" and gave OK / SUSPECT / PROBLEMA. It could not.
+// Measured on three real pairs of masters, with geometry known for certain:
 //
-//   - doua stive rotite corect, cu un gradient real de cer -> SUSPECT, "repara sursa".
-//     Dar gradientul fusese deja anulat din master prin chiar rotatia aia. Corect ca
-//     masuratoare, neactionabil ca sfat.
-//   - doua stive rotite corect, dintr-o sesiune al carei master are 11% de structura
-//     ne-radiala -> OK, "poti construi biblioteca pe el". Defectul era fix pe aparat,
-//     iar la ce e fix pe aparat testul asta e orb prin constructie.
-//   - doua stive din ACEEASI orientare, deci fara niciun test efectuat -> tot OK,
-//     "poti construi biblioteca pe el".
+//   - two stacks rotated correctly, with a real sky gradient -> SUSPECT, "fix the source".
+//     But the gradient had already been cancelled from the master by that very rotation.
+//     Correct as a measurement, not actionable as advice.
+//   - two stacks rotated correctly, from a session whose master has 11% of non-radial
+//     structure -> OK, "you can build the library on it". The defect was fixed to the camera,
+//     and to what is fixed to the camera this test is blind by construction.
+//   - two stacks from the SAME orientation, so with no test performed at all -> OK all the
+//     same, "you can build the library on it".
 //
-// Doua verzi false din trei. Cauza nu e calibrarea pragurilor: doua stive din aceeasi
-// orientare si doua stive rotite dintr-un setup cu adevarat curat produc date statistic
-// IDENTICE - in ambele cazuri A/B e numai zgomot. Informatia care le-ar deosebi nu e in
-// pixeli, deci niciun prag nu o poate scoate.
+// Two false greens out of three. The cause is not the calibration of the thresholds: two stacks
+// from the same orientation and two rotated stacks from a truly clean setup produce statistically
+// IDENTICAL data - in both cases A/B is noise only. The information that would tell them apart
+// is not in the pixels, so no threshold can extract it.
 //
-// Ce se poate insa calcula din cele doua fisiere, si ce nici un alt mod nu poate:
+// What can be computed from the two files, though, and what no other mode can:
 //
-//     S = (A + B) / 2     partea fixa pe APARAT - gradientul extern se anuleaza,
-//                         fiindca in B e inversat. Asta E masterul pe care il obtii
-//                         stivuind ambele orientari, deci verdictul lui e verdictul
-//                         flat-ului tau. (Verificat: 4.02% calculat aici vs 4.00%
-//                         masurat pe pp_flat_stacked.fit cu toate cele 30 de cadre.)
+//     S = (A + B) / 2     the part fixed to the CAMERA - the external gradient cancels,
+//                         because in B it is reversed. This IS the master you get by
+//                         stacking both orientations, so its verdict is the verdict of
+//                         your flat. (Checked: 4.02% computed here vs 4.00%
+//                         measured on pp_flat_stacked.fit with all 30 frames.)
 //
-//     W = A / B           partea fixa in LUME, la amplitudine dubla. Informativa: spune
-//                         cat ti-a scos rotatia din master, nu daca setup-ul e bun.
+//     W = A / B           the part fixed in the WORLD, at double amplitude. Informative: it says
+//                         how much the rotation took out of your master, not whether the setup
+//                         is good.
 //
-// Deci modul nu mai da verdict despre setup. Da verdictul de STRUCTURA pe S - aceeasi
-// baterie ca modul 1, refolosita intreaga - si raporteaza W ca informatie.
+// So the mode no longer gives a verdict on the setup. It gives the STRUCTURE verdict on S - the
+// same battery as mode 1, reused whole - and reports W as information.
 //
-// BARA DE EROARE, si de ce nu e calibrata. log(A/B) trebuie sa fie exact antisimetric la
-// o rotatie de 180: o contaminare fixa in lume intra INTEGRAL in partea impara si ZERO
-// in cea para. Zgomotul se imparte in doua cu varianta egala. Deci partea para e un
-// estimator nedeplasat al zgomotului din partea impara, construit din aceleasi date,
-// fara nicio presupunere si fara nicio constanta de reglat. Validat pe o pereche fara
-// rotatie, unde raportul impar/par a iesit 1.17x, fata de 2.59x pe una rotita.
+// THE ERROR BAR, and why it is not calibrated. log(A/B) must be exactly antisymmetric under
+// a 180-degree rotation: a contamination fixed in the world goes ENTIRELY into the odd part and
+// NOT AT ALL into the even one. The noise splits in two with equal variance. So the even part
+// is an unbiased estimator of the noise in the odd part, built from the same data,
+// without any assumption and without any constant to tune. Validated on a pair without
+// rotation, where the odd/even ratio came out 1.17x, against 2.59x on a rotated one.
 //
-// CE NU POATE MODUL, si trebuie spus in raport fiindca nu se vede din cifre:
-//   - nu poate verifica din pixeli ca ai rotit intre cele doua stive;
-//   - nu poate spune daca partea fixa pe aparat e obiectivul (inofensiva, se imparte
-//     corect din lights) sau ceva PE obiectiv - curea, condens, parasolara stramba -
-//     care se roteste odata cu aparatul si arata identic, dar la lights nu mai e acolo.
+// WHAT THE MODE CANNOT DO, and must say in the report because it does not show in the figures:
+//   - it cannot check from the pixels that you rotated between the two stacks;
+//   - it cannot say whether the part fixed to the camera is the lens (harmless, it divides out
+//     correctly from the lights) or something ON the lens - a strap, condensation, a crooked
+//     lens hood - which rotates with the camera and looks identical, but is no longer there
+//     for the lights.
 //
-// Pur: Img x Img -> RatioResult. Textul e in Report/RatioReport.cs.
+// Pure: Img x Img -> RatioResult. The text is in Report/RatioReport.cs.
 
 using System;
 using System.Linq;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// What <see cref="RatioAnalyzer.Analyze"/> measured on a pair of masters: the structure
+    /// of their mean (the verdict) and the world-fixed component of their ratio (information).
+    /// </summary>
     internal sealed class RatioResult
     {
         /// <summary>
-        /// Structura masterului combinat (A+B)/2, adica a partii fixe pe aparat.
-        /// Verdictul modului vine de aici.
+        /// The structure of the combined master (A+B)/2, that is of the part fixed to the camera.
+        /// The mode's verdict comes from here.
         /// </summary>
         internal StructureResult Sensor;
 
-        internal double WorldPtpPct;      // gradient extern PER ORIENTARE (impar / 2)
-        internal double WorldErrPct;      // bara lui de eroare (par / 2)
-        internal double WorldCornerPct;   // imprastierea colturilor lui W, per orientare
-        internal string WorldLabel;       // eticheta informativa pe Th.RatioOk/Bad
+        internal double WorldPtpPct;      // external gradient PER ORIENTATION (odd / 2)
+        internal double WorldErrPct;      // its error bar (even / 2)
+        internal double WorldCornerPct;   // the corner spread of W, per orientation
+        internal string WorldLabel;       // informative label on Th.RatioOk/Bad
 
-        internal Img World;               // A/B normalizat la mediana 1, pentru harta
+        internal Img World;               // A/B normalised to median 1, for the map
 
-        // Metadate din headerele FITS, umplute de RatioRun. 0 / null = necunoscut.
-        // Nu sunt masuratori - sunt singurul loc din raport in care se vede daca cele
-        // doua stive chiar pot fi din doua orientari diferite.
+        // Metadata from the FITS headers, filled by RatioRun. 0 / null = unknown.
+        // They are not measurements - they are the only place in the report where one can see
+        // whether the two stacks can really come from two different orientations.
         internal int StackCountA, StackCountB;
         internal string DateObsA, DateObsB;
 
         internal string Verdict => Sensor.Verdict;
     }
 
+    /// <summary>
+    /// Mode 2, <c>--ratio</c>: splits two masters shot 180 degrees apart into the part fixed to
+    /// the camera, (A+B)/2, and the part fixed in the world, A/B (ADR 0019).
+    /// </summary>
     internal static class RatioAnalyzer
     {
+        /// <summary>
+        /// Prepares and normalises both masters, runs the structure battery on their mean and
+        /// measures the world-fixed component of their ratio with its error bar, the latter
+        /// labelled on <see cref="Th.RatioOk"/> / <see cref="Th.RatioBad"/>. Throws when the
+        /// two prepared rasters differ in size.
+        /// </summary>
+        /// <param name="rawA">The first master, as loaded.</param>
+        /// <param name="rawB">The second master, shot after a 180-degree rotation, as
+        /// loaded.</param>
+        /// <returns>The camera-fixed structure and the world-fixed figures, in percent per
+        /// orientation; the header metadata are left for the caller.</returns>
         internal static RatioResult Analyze(Img rawA, Img rawB)
         {
             Img a = Img.Prepare(rawA);
@@ -102,30 +123,31 @@ namespace FlatCheck
             if (a.H != b.H || a.W != b.W)
                 throw new Exception("Cele doua imagini au dimensiuni diferite.");
 
-            // Normalizarea fiecareia la mediana 1 inainte de mediere nu e cosmetica: e
-            // ce face Siril cu "multiplicative normalized input". Fara ea, pe un cer de
-            // amurg care scade 12% intre cele doua stive, media ar cantari A mai greu
-            // decat B si gradientul nu s-ar mai anula complet.
+            // Normalising each to median 1 before averaging is not cosmetic: it is
+            // what Siril does with "multiplicative normalized input". Without it, on a
+            // twilight sky that drops 12% between the two stacks, the mean would weigh A more
+            // than B and the gradient would no longer cancel completely.
             Normalise(a);
             Normalise(b);
 
-            // ---- partea fixa pe aparat: media celor doua orientari ----
+            // ---- the part fixed to the camera: the mean of the two orientations ----
             var s = new Img(a.H, a.W);
             for (int i = 0; i < s.D.Length; i++) s.D[i] = (a.D[i] + b.D[i]) / 2;
 
-            // Deja pregatit; Prepare fiind liniara, media rasterelor pregatite e acelasi
-            // lucru cu pregatirea mediei, dar la a treizecea parte din memorie.
+            // Already prepared; Prepare being linear, the mean of the prepared rasters is the
+            // same thing as preparing the mean, but at a sixteenth of the memory on the D3300's
+            // 6016 x 4016 masters (1504 x 1004 prepared).
             var sensor = StructureAnalyzer.AnalyzePrepared(s);
 
-            // ---- partea fixa in lume: raportul ----
+            // ---- the part fixed in the world: the ratio ----
             Img world = Img.Divide(a, b);
             Normalise(world);
 
             var (odd, even) = SplitByRotation(world);
 
-            // Impartit la 2: W poarta contaminarea la amplitudine dubla, fiindca in B e
-            // inversata. Cifrele raportate sunt per orientare, adica cat e in fiecare
-            // master luat separat.
+            // Divided by 2: W carries the contamination at double amplitude, because in B it is
+            // reversed. The figures reported are per orientation, that is how much is in each
+            // master taken separately.
             double worldPtp = Ptp(odd) / 2 * 100;
             double worldErr = Ptp(even) / 2 * 100;
 
@@ -144,6 +166,8 @@ namespace FlatCheck
             };
         }
 
+        /// <summary>Divides a raster in place by its median, so the median becomes 1.</summary>
+        /// <param name="img">The raster; left unchanged when its median is 0 or below.</param>
         static void Normalise(Img img)
         {
             double med = Stats.Percentile(img.D, 50);
@@ -152,26 +176,28 @@ namespace FlatCheck
         }
 
         /// <summary>
-        /// Descompune log(W) in partea care se inverseaza la rotatia de 180 si cea care
-        /// nu se inverseaza. Pe grila de dale, nu pe pixeli: fara medierea pe dale ambele
-        /// jumatati ar fi dominate de zgomotul de fotoni, care se imparte egal, si
-        /// raportul lor ar fi mereu 1 indiferent de semnal.
+        /// Decomposes log(W) into the part that reverses under the 180-degree rotation and the
+        /// one that does not. On the tile grid, not on pixels: without the averaging over tiles
+        /// both halves would be dominated by photon noise, which splits equally, and their
+        /// ratio would always be 1 whatever the signal.
         ///
-        /// In log, nu pe raportul direct: x si 1/x nu sunt antisimetrice, doar log-ul e.
-        /// La amplitudinile astea diferenta e de ordinul a 0.02%, dar log-ul e cel corect
-        /// si nu costa nimic.
+        /// In log, not on the ratio directly: x and 1/x are not antisymmetric, only the log is.
+        /// At these amplitudes the difference is of the order of 0.02%, but the log is the
+        /// correct one and costs nothing.
         /// </summary>
+        /// <param name="world">The ratio A/B, normalised to median 1.</param>
+        /// <returns>The odd and the even part of log(W), on the tile grid.</returns>
         static (Img odd, Img even) SplitByRotation(Img world)
         {
             var log = new Img(world.H, world.W);
             for (int i = 0; i < log.D.Length; i++)
-                // Prag pe ambele capete: Divide taie doar numitorul, deci un pixel nul
-                // la numarator ar da un log salbatic care ar trage media dalei lui.
+                // A clamp at both ends: Divide guards only the denominator, so a null pixel
+                // in the numerator would give a wild log that would drag its tile's mean.
                 log.D[i] = Math.Log(Math.Min(Math.Max(world.D[i], 0.01), 100.0));
 
-            // Taiere CENTRATA inainte de dale, ca rotatia de 180 sa cada exact peste
-            // grila. BlockMean arunca blocurile partiale doar de la capat - vezi
-            // Img.CropCentred pentru cat costa daca nu se corecteaza.
+            // A CENTRED crop before the tiles, so that the 180-degree rotation falls exactly on
+            // the grid. BlockMean drops the partial blocks only at the end - see
+            // Img.CropCentred for what it costs if not corrected.
             int k = Metrics.TileSize(log);
             Img t = Img.BlockMean(Img.CropCentred(log, log.H / k * k, log.W / k * k), k);
             Img r = Img.Rotate180(t);
@@ -186,6 +212,11 @@ namespace FlatCheck
             return (odd, even);
         }
 
+        /// <summary>
+        /// The robust peak-to-peak of a tile map: its 95th minus its 5th percentile.
+        /// </summary>
+        /// <param name="t">The tile map.</param>
+        /// <returns>The spread, in the map's units; NaN for fewer than 10 tiles.</returns>
         static double Ptp(Img t)
             => t.D.Length < 10
                 ? double.NaN

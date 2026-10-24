@@ -15,39 +15,64 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-// Flatul sintetic: rasterul V(x, y) al unui model de vignetare, la marimea cadrului de
-// referinta, cu 1.0 pe axa. Acromatic prin constructie - aceeasi valoare in toate cele
-// patru pozitii Bayer - fiindca modelele publicate au un singur set de parametri pentru
-// toate canalele ("identical for all color channels", documentul Adobe). Pur: geometrie
-// si model in, raster out.
+// The synthetic flat: the raster V(x, y) of a vignetting model, at the size of the reference
+// frame, with 1.0 on the axis. Achromatic by construction - the same value in all four
+// Bayer positions - because the published models have a single set of parameters for
+// all the channels ("identical for all color channels", the Adobe document). Pure: geometry
+// and model in, raster out.
 //
-// Pe langa raster se masoara, din model, adancimea in cateva puncte ale cadrului - coltul
-// (centrul cutiei de 5 % pe care o foloseste CornerStats), marginea lunga, marginea scurta,
-// jumatatea semidiagonalei - ca raportul sa spuna cat de adanca e vignetarea pe care o
-// scrie, in stopuri, in aceleasi puncte in care s-au comparat masterele reale cu cele doua
-// baze (docs/design/lens-profiles.md, "6. The flat, the report, the file").
+// Beside the raster, the depth is measured from the model at a few points of the frame - the
+// corner (the centre of the 5 % box CornerStats uses), the long edge, the short edge,
+// half the half-diagonal - so that the report says how deep the vignetting it writes is,
+// in stops, at the same points where the real masters were compared with the two
+// databases (docs/design/lens-profiles.md, "6. The flat, the report, the file").
 
 using System;
 using System.Collections.Generic;
 
 namespace FlatCheck
 {
+    /// <summary>
+    /// A synthetic flat and its depth in stops at the reference points, as
+    /// <see cref="SyntheticFlatBuilder.Build"/> made it.
+    /// </summary>
     internal sealed class SyntheticFlatResult
     {
         internal readonly Img Flat;
         internal readonly LensProfile Profile;
-        /// <summary>Toate profilele obiectivului (gama de focale si diafragme, pentru avertismentul de nepotrivire); null cand nu se stiu.</summary>
+        /// <summary>
+        /// All the lens's profiles (the range of focal lengths and apertures, for the mismatch
+        /// warning); null when not known.
+        /// </summary>
         internal IReadOnlyList<LensProfile> LensProfiles;
         internal readonly double CameraCrop;
         internal readonly int Width, Height;
-        /// <summary>Adancimea in stopuri (pozitiv = mai intunecat decat axa) in punctele de referinta.</summary>
+        /// <summary>
+        /// The depth in stops (positive = darker than the axis) at the reference points.
+        /// </summary>
         internal readonly double CornerStops, LongEdgeStops, ShortEdgeStops, HalfDiagonalStops;
-        /// <summary>Raza coltului in unitatile modelului; peste 1 la lensfun inseamna extrapolare.</summary>
+        /// <summary>
+        /// The corner's radius in the model's units; above 1 with lensfun means extrapolation.
+        /// </summary>
         internal readonly double CornerRadius;
-        /// <summary>Coltul tau fata de coltul senzorului de calibrare: peste 1 = extrapolare, peste 1.1 = una mare.</summary>
+        /// <summary>
+        /// Your corner against the calibration sensor's corner: above 1 = extrapolation, above 1.1
+        /// = a large one.
+        /// </summary>
         internal double Extrapolation => CornerRadius / Profile.Model.CalibrationCornerRadius();
         internal const double SmallExtrapolation = 1.1;
 
+        /// <summary>A built flat with its measured depths.</summary>
+        /// <param name="flat">The raster, h x w, 1.0 on the axis.</param>
+        /// <param name="profile">The profile it was built from.</param>
+        /// <param name="cameraCrop">The camera's crop factor used; 0 for none (Adobe only).</param>
+        /// <param name="w">The width, pixels.</param>
+        /// <param name="h">The height, pixels.</param>
+        /// <param name="corner">The depth at the corner box's centre, stops.</param>
+        /// <param name="longEdge">The depth at the middle of the long edge, stops.</param>
+        /// <param name="shortEdge">The depth at the middle of the short edge, stops.</param>
+        /// <param name="halfDiag">The depth at half the half-diagonal, stops.</param>
+        /// <param name="cornerRadius">The frame corner's radius, in the model's units.</param>
         internal SyntheticFlatResult(Img flat, LensProfile profile, double cameraCrop, int w, int h,
                                      double corner, double longEdge, double shortEdge, double halfDiag, double cornerRadius)
         {
@@ -64,11 +89,28 @@ namespace FlatCheck
         }
     }
 
+    /// <summary>
+    /// Builds the radial flat of a lens profile (<c>--synthetic</c>, and the sixth structure
+    /// test through <see cref="VignettingComparer"/>).
+    /// </summary>
     internal static class SyntheticFlatBuilder
     {
-        /// <summary>Fractiunea din semilatura la care sta centrul cutiei de colt de 5 % (CornerStats).</summary>
+        /// <summary>
+        /// The fraction of the half-side at which the centre of the 5 % corner box sits
+        /// (CornerStats).
+        /// </summary>
         internal const double CornerBoxFraction = 0.95;
 
+        /// <summary>
+        /// Evaluates the profile's model at every pixel centre of a w x h frame and measures its
+        /// depth at the reference points. Throws an ArgumentException for a frame under 2 x 2,
+        /// and the model's own for a lensfun profile without a crop.
+        /// </summary>
+        /// <param name="profile">The lens profile to draw.</param>
+        /// <param name="w">The frame's width, pixels; at least 2.</param>
+        /// <param name="h">The frame's height, pixels; at least 2.</param>
+        /// <param name="cameraCrop">The camera's crop factor; 0 for none (Adobe only).</param>
+        /// <returns>The flat and its depths; never null.</returns>
         internal static SyntheticFlatResult Build(LensProfile profile, int w, int h, double cameraCrop)
         {
             if (w < 2 || h < 2) throw new ArgumentException("cadrul de referinta e prea mic");
