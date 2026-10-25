@@ -14,6 +14,9 @@
     <!-- The executable's icon (Explorer, the taskbar); the windows take the same file through
          the <Resource> below and Icon= in their XAML. Drawn per size by Icon/make_icon.py. -->
     <ApplicationIcon>..\..\Icon\astrodarkroom.ico</ApplicationIcon>
+    <!-- DarkTitleBar's LibraryImport (DwmSetWindowAttribute) is source-generated as unsafe
+         code; nothing else in the project is unsafe (ADR 0004). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\AstroDarkroom.Core\AstroDarkroom.Core.csproj" />

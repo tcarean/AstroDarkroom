@@ -67,8 +67,11 @@ the folder is ADR 0002, the split with no test project for the window is ADR 000
   component, the list is the catalogue with `?` and the line says the versions are unknown.
   Enter and Esc close it (`IsDefault` and `IsCancel` on one button).
 - The palette and the button, tooltip and card styles are in `App.xaml`, the same colours as
-  LightsCheck's dark theme reduced to what two windows need. No dark title bar: that needs an
-  unsafe interop call the launcher has no other use for.
+  LightsCheck's dark theme reduced to what two windows need. Both windows darken their title
+  bar on `SourceInitialized`, when the handle exists, through `DarkTitleBar`, a copy of
+  LightsCheck's: one `LibraryImport` of `DwmSetWindowAttribute` with attribute 20, then 19 for
+  the Windows 10 builds before 20H1; a Windows without either keeps the light bar (ADR 0004).
+  Message boxes are the system's and keep its bar.
 
 ## The icon
 

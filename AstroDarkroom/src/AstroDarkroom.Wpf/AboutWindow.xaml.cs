@@ -41,6 +41,7 @@ public partial class AboutWindow : Window
     public AboutWindow(ReleaseInfo? release)
     {
         InitializeComponent();
+        SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
         Logo.Source = App.LargestIconFrame();
         Banner.Text = VersionInfo.Banner;
         Copyright.Text = VersionInfo.Copyright;
