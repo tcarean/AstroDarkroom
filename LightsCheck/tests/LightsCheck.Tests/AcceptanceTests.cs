@@ -201,6 +201,9 @@ public class AcceptanceTests
     [Theory]
     [InlineData("--threads", "0")]
     [InlineData("--pixel", "abc")]
+    [InlineData("--pixel", "NaN")]
+    [InlineData("--pixel", "Infinity")]
+    [InlineData("--pixel", "0")]
     [InlineData("--out", "")]
     public void R004_ABadOptionValueNamesTheOption_Exit1(string option, string value)
     {

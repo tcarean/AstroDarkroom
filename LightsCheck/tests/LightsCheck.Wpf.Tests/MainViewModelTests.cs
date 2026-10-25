@@ -132,6 +132,8 @@ public class MainViewModelTests
     [InlineData("abc", SeriesOptions.D3300PixelUm, false)]
     [InlineData("4,5", SeriesOptions.D3300PixelUm, false)]
     [InlineData("-1", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("NaN", SeriesOptions.D3300PixelUm, false)]
+    [InlineData("Infinity", SeriesOptions.D3300PixelUm, false)]
     public void R029_ThePixelInputIsParsedInvariantAndFallsBackToTheD3300(string typed, double expected, bool valid)
     {
         MainViewModel vm = new() { PixelText = typed };

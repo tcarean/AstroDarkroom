@@ -76,7 +76,8 @@ every report in `Report/` uses them, so no text is formatted by a view-model or 
 `--out DIR`, `--threads N`, `--pixel UM`, `--est stanga|dreapta`, `--nord sus|jos`,
 `-h`/`--help`; no arguments at all means help. The first error wins and is a sentence in
 Romanian naming the argument: an option without its value, a frame or thread count under 1,
-a pixel size that is not a positive number, an arrow word that is not one of the two, an
+a pixel size that is not a finite positive number (`SeriesOptions.PixelSizeIsValid`, the check
+the window shares), an arrow word that is not one of the two, an
 unknown option (anything else starting with `-`), a second folder, a missing folder,
 `--inventory` with `--frame`. The pixel size defaults to `SeriesOptions.D3300PixelUm` (3.92
 um), the thread count to 0, which `SeriesRun` reads as half the cores, and the arrow keys to

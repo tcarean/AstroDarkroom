@@ -237,7 +237,7 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    public bool PixelIsValid => double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && p > 0;
+    public bool PixelIsValid => double.TryParse(_pixelText, NumberStyles.Float, CultureInfo.InvariantCulture, out double p) && SeriesOptions.PixelSizeIsValid(p);
 
     /// <summary>How many frames in parallel, as typed; empty = half the cores.</summary>
     public string ThreadsText { get => _threadsText; set => Set(ref _threadsText, value); }

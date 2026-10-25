@@ -6,6 +6,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Fixed
+
+- `--pixel NaN` and `--pixel Infinity` were accepted by the console, `Infinity` by the window.
+  Both now refuse anything that is not a finite number greater than 0, with the same message as
+  before, by one check in the core (`SeriesOptions.PixelSizeIsValid`; R-004, R-029).
+
 ### Internal
 
 - Every type and method in the code has its XML documentation comment (the kit's rule
