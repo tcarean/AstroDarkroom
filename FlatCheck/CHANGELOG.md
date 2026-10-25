@@ -37,11 +37,15 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (headerul nu da nici focala, nici scara)`), and a refusal judged from the focal length
   alone now says, as the console does, that the decision assumed the largest plausible
   sensor (R-083). The console texts are unchanged.
-- While a Ratio pair, a Netezire run, a Sintetic write or a Split waits for the analyses
-  started by opening the folder (the "sequential, not parallel" rule), the waiting screen says
-  so (`Astept sa se termine analizele pornite la deschiderea folderului...`) instead of
-  naming work that has not begun; the run's own message takes over when the chain ends
-  (R-082).
+- The window lets one heavy run compute at a time, whatever is clicked (ADR 0061, R-081): the
+  analyses started by opening a folder and every run a click starts (Ratio, Expo, Histogram,
+  Netezire, Sintetic, the Split's analysis) take one gate, so a Histogram or Expo pick during
+  the opening chain waits for it as a Ratio pair already did, two clicks wait for each other,
+  and a new folder waits for a run of the old one still computing. Measured 2026-10-25 on the
+  24 MP masters: 0.7-1.25 GB of peak working set per run alone, 1.3-2.2 GB for two at once.
+- While a run waits its turn, the waiting screen says so (`Astept sa se termine analizele
+  pornite la deschiderea folderului...`) instead of naming work that has not begun; the run's
+  own message takes over once it starts (R-082, R-084, R-085).
 - The FITS reader checks the file's magic: a file that does not begin with the `SIMPLE` card
   fails with `FITS: fisierul nu incepe cu SIMPLE.` in both reads, the full load and the
   metadata-only one (`ImageLoader.LoadInfo`), and a header cut before `END` fails in both with

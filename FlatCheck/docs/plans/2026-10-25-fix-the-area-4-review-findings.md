@@ -52,6 +52,15 @@ Branch `claude/Fix-the-area-4-review-findings`, in its own worktree.
    clipping branch and not the not-a-raw path.** Add those cases with the file's `Clipped()`
    helper.
 
+## Item 1: measured, decided
+
+Measured on 2026-10-25 (the table is in ADR 0061): one heavy run alone peaks at 0.7-1.25 GB of
+working set on a 24 MP master, two at once at 1.3-2.2 GB, the click-versus-click overlap as
+large as the chain overlaps. Options put to the owner: (a) the `waitIdle` seam for Expo and
+Histogram too; (b) one shared gate every heavy run takes. Recommended (b); the owner chose (b)
+the same day. Implemented as `HeavyRunGate`, owned by `MainViewModel`, held once by the chain
+and around every click-run's computation (ADR 0061); R-081 and R-084 moved to implemented.
+
 ## Order of work
 
 1. The worktree and the branch; this plan.

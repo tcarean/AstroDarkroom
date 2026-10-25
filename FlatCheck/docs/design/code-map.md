@@ -318,7 +318,9 @@ a library extraction and not a copy is ADR 0011.
     until the Structure tab needed the same list; `MainViewModel` builds it and hands it
     to both, and a `Func<string, LoadedFrame>` beside it lets the tests put a fabricated
     raw in place of a file in `flats/`.
-  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error) -
+  - `ViewModels/` - one per tab over a shared `TabViewModel` (busy / result / error, and
+    `EnterGateAsync`, the waiting text around the gate), `HeavyRunGate` (the one gate every
+    heavy run takes, ADR 0061; `MainViewModel` owns it) -
     `SyntheticTabViewModel` being the seventh, with `LensRow` (a public row over an internal
     `LensChoice`) and `SyntheticGuideViewModel` (the sources panel, collapsed by default) -
     plus `ScriptChoiceViewModel` (a Siril script chosen from Siril's list: default, blocker,

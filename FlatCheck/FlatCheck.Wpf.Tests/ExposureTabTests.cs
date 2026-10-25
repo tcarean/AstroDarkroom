@@ -76,6 +76,37 @@ public class ExposureTabTests
 
     // ------------------------------------------------------------------ calcul
 
+    /// <summary>
+    /// A pick made while another heavy run holds the gate (the opening chain, say) waits for it
+    /// instead of decoding a 24 MP raw beside it (R-081, ADR 0061); the waiting screen says so,
+    /// and the measurement follows once the gate opens.
+    /// </summary>
+    [Fact]
+    public async Task R084_APickDuringAHeavyRunWaitsForTheGate()
+    {
+        using var f = new SessionFixture().WithFlatMaster();
+        string path = f.WriteAnalysableRawFlat("flat.fit");
+        var gate = new HeavyRunGate();
+        IDisposable chain = await gate.EnterAsync(CancellationToken.None);
+        var vm = new ExposureTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, gate);
+
+        vm.Selected = path;
+        Task run = vm.RecomputeAsync();
+
+        Assert.NotSame(run, await Task.WhenAny(run, Task.Delay(1000)));
+        Assert.True(vm.IsBusy);
+        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+        Assert.False(vm.HasResult);
+
+        chain.Dispose();
+        await run;
+
+        Assert.True(vm.HasResult);
+        Assert.False(vm.IsBusy);
+        Assert.False(gate.IsHeld);
+    }
+
     [Fact]
     public async Task PickingAFileMeasuresIt()
     {

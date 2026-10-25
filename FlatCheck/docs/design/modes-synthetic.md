@@ -95,11 +95,11 @@ against itself it is PERFECT at zero stops), `SyntheticRunTests`, and the golden
 
 **The window's Sintetic tab** (`SyntheticTabViewModel`, `SyntheticView`): a searchable
 list with a source chip and the mount per row, focal / f-stop / crop text boxes prefilled
-from the master's header and from the first raw in `flats/` (after the opening chain, in
-the background, metadata only; a raw libraw cannot open leaves the f-stop empty and says
+from the master's header and from the first raw in `flats/` (in the background, without
+waiting for the opening chain, metadata only; a raw libraw cannot open leaves the f-stop empty and says
 so), the sources panel collapsed by default (ADR 0028; it is documentation, not a
 precondition, and `SyntheticReport.AdobeWhere` / `LensfunWhere` keep console and window
-saying the same), the write button on the Netezire pattern (ADR 0036: waits for idle, asks
+saying the same), the write button on the Netezire pattern (ADR 0036; takes the heavy-run gate, ADR 0061, asks
 before overwriting, never the session's master), and the comparison - `AgainstRun` on the
 master and the file just written: the verdict, the three-column rows and the map on a
 switchable scale. **The comparison follows the write by itself** (`RunAsync` chains

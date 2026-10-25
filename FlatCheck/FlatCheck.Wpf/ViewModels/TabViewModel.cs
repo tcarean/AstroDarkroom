@@ -37,6 +37,7 @@
 // fields, chosen on purpose.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FlatCheck.Wpf
@@ -145,28 +146,42 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
-        /// Awaits the opening chain before a run a click started, with the waiting screen saying
-        /// so: while the chain still runs, the first line reads
+        /// Enters the window's heavy-run gate before a run a click started (ADR 0061), with the
+        /// waiting screen saying so: while another run holds the gate, the first line reads
         /// <see cref="SessionMessages.WaitingForOpeningChain"/> instead of the run's own message,
-        /// which would claim work that has not begun; the run's message comes back when the
-        /// chain ends. A chain already over, or no chain to wait for, shows nothing. Of two runs
-        /// waiting together, only the latest one puts its message back (the generation of
-        /// <see cref="RunGuardedAsync"/>), so a superseded run does not write over the new one's.
+        /// which would claim work that has not begun; the run's message comes back once it is
+        /// in. A free gate, or no gate at all, shows nothing. Of two runs waiting together, only
+        /// the latest one puts its message back (the generation of <see cref="RunGuardedAsync"/>),
+        /// so a superseded run does not write over the new one's.
         /// </summary>
-        /// <param name="waitIdle">The seam that completes when the opening chain has ended; null
-        /// means there is no chain to wait for.</param>
-        /// <returns>A task that completes when the chain has ended, or at once.</returns>
-        protected async Task WaitForChainAsync(Func<Task> waitIdle)
+        /// <param name="gate">The window's gate; null means there is none and the run starts at
+        /// once.</param>
+        /// <param name="ct">The run's token; a cancellation while queued throws
+        /// <see cref="OperationCanceledException"/>, which <see cref="RunGuardedAsync"/>
+        /// takes as a cancelled run.</param>
+        /// <returns>The lease on the gate, to dispose when the heavy work is over; a no-op one
+        /// without a gate.</returns>
+        private protected async Task<IDisposable> EnterGateAsync(HeavyRunGate gate, CancellationToken ct)
         {
-            if (waitIdle == null) return;
-            Task chain = waitIdle();
-            if (chain.IsCompleted) return;
+            if (gate == null) return NoLease.Instance;
+            if (!gate.IsHeld) return await gate.EnterAsync(ct).ConfigureAwait(true);
 
             int gen = _generation;
             string message = BusyMessage;
             BusyMessage = SessionMessages.WaitingForOpeningChain();
-            await chain.ConfigureAwait(true);
+            IDisposable lease = await gate.EnterAsync(ct).ConfigureAwait(true);
             if (gen == _generation) BusyMessage = message;
+            return lease;
+        }
+
+        /// <summary>What <see cref="EnterGateAsync"/> hands back without a gate: nothing to
+        /// release.</summary>
+        sealed class NoLease : IDisposable
+        {
+            internal static readonly NoLease Instance = new();
+
+            /// <inheritdoc/>
+            public void Dispose() { }
         }
 
         /// <summary>

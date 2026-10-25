@@ -991,8 +991,12 @@ FlatCheck.Wpf.exe "D:\Astro\2026-08-12-Smida"
 ```
 
 Imediat ce folderul e ales pornesc singure **structura** și **testul end-to-end**, cu ecran
-de așteptare (și, în fundal, preumplerea tabului Sintetic, care nu scrie nimic). Rulează una după alta, nu în paralel: un cadru de 24 MP ajunge la sute de MB
-în analiză, iar două lanțuri simultane ar putea trece de un gigaoctet.
+de așteptare (și, în fundal, preumplerea tabului Sintetic, care nu scrie nimic). Rulează una după
+alta, nu în paralel, și nici o analiză pornită cu un clic (Ratio, Expunere, Histogram, Netezire,
+Sintetic, analiza din Split) nu rulează lângă ele sau lângă alta: toate trec printr-o singură
+poartă, una la rând. Măsurat pe masterele de 24 MP: o singură analiză ajunge la 0.7-1.25 GB de
+memorie, două deodată la 1.3-2.2 GB. Un clic făcut în timpul analizelor de la deschidere, sau
+în timpul altui clic, așteaptă rândul, iar ecranul de așteptare spune că așteaptă.
 
 Masterul de flat, `pp_flat_stacked.fit`, se caută în **două locuri**, fiindcă scripturile
 Siril îl lasă în două: `process/` (scripturile din depozitul de scripturi, ca

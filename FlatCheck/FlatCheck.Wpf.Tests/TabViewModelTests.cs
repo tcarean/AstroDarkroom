@@ -29,57 +29,61 @@ public class TabViewModelTests
     {
         internal Task Run(string message, Func<Task> work) => RunGuardedAsync(message, work);
         internal void SetResult(string report) { Report = report; HasResult = true; }
-        internal Task WaitForChain(Func<Task> waitIdle) => WaitForChainAsync(waitIdle);
+        internal Task<IDisposable> Enter(HeavyRunGate gate) => EnterGateAsync(gate, CancellationToken.None);
     }
 
     /// <summary>
-    /// A run that awaits the opening chain says so while it waits, then shows its own message:
-    /// the first line of the waiting screen reads the waiting text while the chain still runs,
-    /// and the run's message once it ended. With the chain already over, or no chain to wait
-    /// for, the run's message is the only one shown.
+    /// A run that waits for the heavy-run gate says so while it waits, then shows its own
+    /// message: the first line of the waiting screen reads the waiting text while another run
+    /// holds the gate, and the run's message once it is in. With the gate free, or no gate at
+    /// all, the run's message is the only one shown.
     /// </summary>
     [Fact]
-    public async Task ARunThatWaitsForTheChainSaysSoUntilItEnds()
+    public async Task ARunThatWaitsForTheGateSaysSoUntilItIsIn()
     {
         var tab = new StubTab();
-        var chain = new TaskCompletionSource();
+        var gate = new HeavyRunGate();
+        IDisposable held = await gate.EnterAsync(CancellationToken.None);
         var messages = new List<string>();
         tab.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(tab.BusyMessage)) messages.Add(tab.BusyMessage); };
 
-        Task run = tab.Run("Lucrez...", async () => { await tab.WaitForChain(() => chain.Task); await Task.Yield(); });
+        Task run = tab.Run("Lucrez...", async () => { using (await tab.Enter(gate)) await Task.Yield(); });
         Assert.Equal(SessionMessages.WaitingForOpeningChain(), tab.BusyMessage);
 
-        chain.SetResult();
+        held.Dispose();
         await run;
 
         Assert.Equal(new[] { "Lucrez...", SessionMessages.WaitingForOpeningChain(), "Lucrez..." }, messages);
         Assert.False(tab.IsBusy);
+        Assert.False(gate.IsHeld);
 
         messages.Clear();
-        await tab.Run("Lucrez iar...", () => tab.WaitForChain(() => Task.CompletedTask));
+        await tab.Run("Lucrez iar...", async () => { using (await tab.Enter(gate)) { } });
         Assert.Equal(new[] { "Lucrez iar..." }, messages);
         messages.Clear();
-        await tab.Run("Lucrez fara lant...", () => tab.WaitForChain(null));
-        Assert.Equal(new[] { "Lucrez fara lant..." }, messages);
+        await tab.Run("Lucrez fara poarta...", async () => { using (await tab.Enter(null)) { } });
+        Assert.Equal(new[] { "Lucrez fara poarta..." }, messages);
     }
 
     /// <summary>
-    /// Two runs waiting for the same chain: when it ends, only the latest one puts its message
+    /// Two runs waiting for the same gate: when it opens, only the latest one puts its message
     /// back - the superseded one would otherwise write its own over the new one's.
     /// </summary>
     [Fact]
     public async Task OnlyTheLatestWaitingRunRestoresItsMessage()
     {
         var tab = new StubTab();
-        var chain = new TaskCompletionSource();
+        var gate = new HeavyRunGate();
+        IDisposable held = await gate.EnterAsync(CancellationToken.None);
 
-        Task first = tab.Run("A", async () => { await tab.WaitForChain(() => chain.Task); throw new OperationCanceledException(); });
-        Task second = tab.Run("B", async () => { await tab.WaitForChain(() => chain.Task); await Task.Delay(50); });
-        chain.SetResult();
+        Task first = tab.Run("A", async () => { using (await tab.Enter(gate)) throw new OperationCanceledException(); });
+        Task second = tab.Run("B", async () => { using (await tab.Enter(gate)) await Task.Delay(50); });
+        held.Dispose();
         await Task.WhenAll(first, second);
 
         Assert.Equal("B", tab.BusyMessage);
         Assert.False(tab.IsBusy);
+        Assert.False(gate.IsHeld);
     }
 
     [Fact]
