@@ -43,6 +43,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -93,7 +94,7 @@ namespace FlatCheck
         internal static LightSeriesResult Combine(IReadOnlyList<(string Name, LightResult R)> frames)
         {
             if (frames == null || frames.Count == 0)
-                throw new Exception("Serie goala: niciun cadru de analizat.");
+                throw new Exception(T("Empty series: no frame to analyse.", "Serie goala: niciun cadru de analizat."));
 
             var names = frames.Select(f => f.Name).ToArray();
             var results = frames.Select(f => f.R).ToArray();
@@ -116,7 +117,8 @@ namespace FlatCheck
             // pass.
             var reasons = new List<string>();
             if (n < Th.LightSeriesMinFrames)
-                reasons.Add($"prea putine cadre ({n}, minim {Th.LightSeriesMinFrames})");
+                reasons.Add(T($"too few frames ({n}, minimum {Th.LightSeriesMinFrames})",
+                              $"prea putine cadre ({n}, minim {Th.LightSeriesMinFrames})"));
             if (!(sem < Th.LightSeriesSemMax))
                 reasons.Add("sem");
             if (corrApplies && !(Math.Abs(corr) < Th.LightSeriesSkyCorr))
@@ -189,9 +191,11 @@ namespace FlatCheck
             var first = results[0].RadialMap;
             foreach (var r in results)
                 if (r.RadialMap.H != first.H || r.RadialMap.W != first.W)
-                    throw new Exception(
+                    throw new Exception(T(
+                        "The frames of the series do not have the same size - they cannot be averaged. "
+                        + "Use only frames from the same session, not cropped.",
                         "Cadrele din serie nu au aceeasi dimensiune - nu pot fi mediate. "
-                        + "Foloseste doar cadre din aceeasi sesiune, necropate.");
+                        + "Foloseste doar cadre din aceeasi sesiune, necropate."));
 
             var o = new Img(first.H, first.W);
             foreach (var r in results)

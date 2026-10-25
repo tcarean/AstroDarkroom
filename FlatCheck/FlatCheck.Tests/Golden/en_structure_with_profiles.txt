@@ -1,0 +1,79 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== STRUCTURE: <TMP>/ref.fit ===
+    analysis size      : 120 x 80 (after 2x2 + downsample)
+    median / max ADU   : 24713 / 30000
+
+  INFORMATIVE (not tests)
+    vignetting to corner    : 1.12 stops (corner = 46% of centre)
+    illum. centre offset    :  0.45 %
+        illumination peak = (60, 40)  vs  sensor centre = (60, 40)
+        It is the ratio of the gradient to the curvature, so it is not scale-invariant: on a
+        lens with almost no vignetting it grows a lot without the error growing,
+        and beyond a threshold it falls back toward 0. The amplitude is given by "tilt".
+    local spots (dust etc.) : +0.12 % (brighter) at (9, 15)
+        The deepest compact spot, after the large-scale structure is removed.
+        The sign says which kind: minus = darker than its surroundings (dust,
+        condensation, an obstruction), plus = brighter (light leak, reflection).
+        Above 2 % a warning follows; below that the figure is informative only.
+
+  TESTS
+    spread of the 4 corners :  2.39 %   [GOOD]
+        top-left      :  98.80 % of the corners' mean
+        top-right     : 100.24 % of the corners' mean
+        bottom-left   :  99.76 % of the corners' mean
+        bottom-right  : 101.20 % of the corners' mean
+    max azimuthal asymmetry :  0.75 %   [PERFECT]
+    residual (radial model) :  1.19 %   [PERFECT]  <- THE MOST IMPORTANT
+    tilt (gradient)         :  1.41 %   [PERFECT]
+    worst spot (one tile)   :  1.68 %   [PERFECT]
+
+  SCALE of the five deviation tests above
+    under 2 %    perfect quality
+    2 - 10 %     usable; background extraction removes what is left
+    10 - 20 %    usable, but confirm with --light before a hard stretch
+    over 20 %    redo the flats
+    The most important one is "residual (radial model)": it measures directly how much of
+    the frame a purely radial model does NOT explain. It is an UPPER BOUND of the
+    flat's error, not the error itself - it holds both the part fixed to the camera
+    (the optics; divided out of the lights correctly) and the part fixed in the world (the
+    illumination; it does not repeat). The --ratio mode separates them. The corner spread,
+    the azimuthal asymmetry and the tilt are partial views of the same deviation.
+    "Worst spot" catches what the others miss: a compact defect - a small leak,
+    a condensation spot - that the residual clips as an extreme.
+
+  VIGNETTING against the lens profile
+    master                  : 1.12 stops (corner = 46 % of centre)
+    Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]
+        profile 20 mm, f/2.8, infinity : 0.66 stops (corner = 63 % of centre)   difference +0.46 stops = 37.5 % [REDO]
+    lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrated on APS-C Canon 1.61]
+        profile 20 mm, f/2.8, distance unspecified: 0.85 stops (corner = 56 % of centre)   difference +0.28 stops = 21.1 % [REDO]  <- the nearest, gives the verdict
+    the comparison's verdict: REDO - the nearest profile's (lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrated on APS-C Canon 1.61)), +0.28 stops = 21.1 % error in the corner of a light calibrated with the master
+    the 2 profiles differ from each other by 0.18 stops in the corner; a master that matches one of them is not wrong
+    (under 0.03 stops PERFECT, under 0.14 GOOD, under 0.26 ACCEPTABLE, over REDO)
+    The same residual scale as the five tests (2 / 10 / 20 %), applied to the error
+    the depth difference leaves in the corner of a light calibrated with the master, 2^|stops| - 1, and
+    translated into stops. It is not a new threshold.
+    In the corner of a light calibrated with the master: 21.1 %; on the scale of the --light mode (2 % OK,
+    5 % PROBLEM), which measures the same quantity directly in the light, it would be PROBLEM.
+    The reference itself differs by 0.2 stops = 15 % between the profile databases,
+    so the depth verdict cannot be finer than that and stays on the residual scale.
+    The difference is RADIAL, so invisible to the five tests, to the map and to the --ratio mode: it is the
+    only place where a source that falls off with the angle (plus) or fills the corners (minus) shows. The
+    profile is the lens model, not your copy of it, and it is achromatic; the master is the 2x2 mean of the mosaic.
+
+  VERDICT: REDO
+    shape     : GOOD - the five tests of deviation from radial symmetry
+    depth     : REDO - +0.28 stops against lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8 (calibrated on APS-C Canon 1.61) = 21.1 % error in the corner of the calibrated light
+    The worse of the two.
+    The master falls toward the corner MORE than the lens model: the light source falls off with
+    the angle - a panel (monitor, tablet) too close or without a real diffuser; matte sheets
+    do not diffuse. A Lambertian diffuser helps (opal acrylic, a thick stack of white paper)
+    or a white wall lit from the side; more rotations do not help.
+    The excess is radial, so the five tests and --ratio do not see it; background extraction
+    will not remove it either. Redo the flats.
+
+    -> map saved: <TMP>/out.png
+
+[exit 3]

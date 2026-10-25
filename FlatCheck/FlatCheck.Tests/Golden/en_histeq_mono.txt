@@ -1,0 +1,15 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+== HISTOGRAM EQUALISATION (Siril's "Histogram" view) ==
+file:       <TMP>/flat.fit
+frame:      512 x 512, mono/processed (no CFA mosaic)
+display:    512 x 512 (not shrunk), 65536 bins per channel
+
+channel    input range                    levels used
+  mono       16500 .. 30000                 256 / 256
+
+INFORMATIVE: the mode gives no verdict. The picture shows the SHAPE of what is not uniform - not how large it is: every grey level gets the same number of pixels, so a ripple of 0.5 % and a gradient of 10 % come out the same, and a perfect flat shows its own noise at maximum contrast. The figures are in the structure mode.
+
+    -> map saved: <TMP>/out.png
+
+[exit 0]

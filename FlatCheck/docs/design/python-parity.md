@@ -67,6 +67,12 @@ stays (pinned by `FitCenter_OnAConstantImage_FallsBackToTheGeometricCentre` and
 - The capitalised diagnosis ("Fondul CADE/CRESTE spre margini") accounted for the wording-only
   differences in the `--light` scenarios that print one; the sign *is* the diagnosis, so the
   emphasis is deliberate.
+- The second map of `--ratio` is named `-world.png` since 2026-10-25 (ADR 0062; Python wrote
+  `-lume.png`): the four `parity_ratio_*.txt` were recaptured, with the owner's yes, for that
+  one line each, the map's path; every figure is unchanged. A C#-only call, like the rest.
+- The goldens run in Romanian, the language the prototype spoke; the console's default is
+  English since the same date, and `EnglishOutputTests` checks that each parity scenario prints
+  the same numbers in English.
 
 The two conventions kept for parity, `LargeScalePtp`'s top-left grid and the half-pixel centre
 of known issue 5, are ADR 0016 and ADR 0013.

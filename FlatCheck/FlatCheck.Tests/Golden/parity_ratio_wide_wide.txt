@@ -70,6 +70,6 @@ Copyright (C) 2026 Tudor Carean
 
     -> harta salvata: <TMP>/ratio_wide_wide.png
 
-    -> harta salvata: <TMP>/ratio_wide_wide-lume.png
+    -> harta salvata: <TMP>/ratio_wide_wide-world.png
 
 [exit 0]

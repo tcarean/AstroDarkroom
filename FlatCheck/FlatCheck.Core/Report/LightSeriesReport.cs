@@ -22,12 +22,13 @@
 // with an empty console all that time is bad manners for a command-line tool. So
 // Runs/LightSeriesRun.cs writes the header, then one row as each frame is ready, then the
 // summary, for both applications. The formatting stays entirely here all the same, as for the
-// other modes - Report/ holds the reports' Romanian text (the error messages are thrown where
+// other modes - Report/ holds the reports' text (the error messages are thrown where
 // they arise, in Analysis/ and Runs/).
 
 using System;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -46,12 +47,15 @@ namespace FlatCheck
         internal static void WriteHeader(
             string dir, string pattern, int count, SuitabilityResult s, TextWriter w)
         {
-            w.WriteLine($"\n=== TEST END-TO-END (SERIE): {dir} ===");
-            w.WriteLine("    Astept cadre CALIBRATE cu flat, FARA background extraction si NEREGISTRATE.");
-            w.WriteLine($"    cadre gasite            : {count}  (tipar {pattern})");
+            w.WriteLine(T($"\n=== END-TO-END TEST (SERIES): {dir} ===", $"\n=== TEST END-TO-END (SERIE): {dir} ==="));
+            w.WriteLine(T("    Expecting frames CALIBRATED with the flat, WITHOUT background extraction and NOT REGISTERED.",
+                          "    Astept cadre CALIBRATE cu flat, FARA background extraction si NEREGISTRATE."));
+            w.WriteLine(T($"    frames found            : {count}  (pattern {pattern})",
+                          $"    cadre gasite            : {count}  (tipar {pattern})"));
             LightReport.WriteSuitability(s, w);
             w.WriteLine();
-            w.WriteLine("    cadru                              radial   gradient cer     tile-uri");
+            w.WriteLine(T("    frame                              radial   sky gradient     tiles",
+                          "    cadru                              radial   gradient cer     tile-uri"));
         }
 
         /// <summary>One frame's row, written as soon as the frame is done.</summary>
@@ -70,36 +74,51 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void WriteSummary(LightSeriesResult r, TextWriter w)
         {
-            w.WriteLine("\n  SINTEZA PE SERIE");
-            w.WriteLine($"    componenta radiala, medie : {LightReport.Signed(r.MeanRad),7} %");
-            w.WriteLine($"    imprastiere (min .. max)  : {LightReport.Signed(r.MinRad),7} .. {LightReport.Signed(r.MaxRad)} %");
-            w.WriteLine($"    eroarea mediei            : {r.Sem,7:F2} puncte"
-                      + (Failed(r, "sem") ? $"   <- peste pragul de {Th.LightSeriesSemMax:F2}" : ""));
+            w.WriteLine(T("\n  SERIES SUMMARY", "\n  SINTEZA PE SERIE"));
+            w.WriteLine(T($"    radial component, mean    : {LightReport.Signed(r.MeanRad),7} %",
+                          $"    componenta radiala, medie : {LightReport.Signed(r.MeanRad),7} %"));
+            w.WriteLine(T($"    spread (min .. max)       : {LightReport.Signed(r.MinRad),7} .. {LightReport.Signed(r.MaxRad)} %",
+                          $"    imprastiere (min .. max)  : {LightReport.Signed(r.MinRad),7} .. {LightReport.Signed(r.MaxRad)} %"));
+            w.WriteLine(T($"    error of the mean         : {r.Sem,7:F2} points", $"    eroarea mediei            : {r.Sem,7:F2} puncte")
+                      + (Failed(r, "sem") ? T($"   <- above the threshold of {Th.LightSeriesSemMax:F2}", $"   <- peste pragul de {Th.LightSeriesSemMax:F2}") : ""));
 
             if (r.CorrApplies)
-                w.WriteLine($"    corelatie cu grad. de cer : {r.SkyCorr,7:F2}"
-                          + (Failed(r, "corelatie") ? $"          <- peste pragul de {Th.LightSeriesSkyCorr:F2}" : ""));
+                w.WriteLine(T($"    correlation w. sky grad.  : {r.SkyCorr,7:F2}", $"    corelatie cu grad. de cer : {r.SkyCorr,7:F2}")
+                          + (Failed(r, "corelatie")
+                              ? T($"          <- above the threshold of {Th.LightSeriesSkyCorr:F2}", $"          <- peste pragul de {Th.LightSeriesSkyCorr:F2}")
+                              : ""));
             else
-                w.WriteLine("    corelatie cu grad. de cer : " + CorrelationValue(r));
+                w.WriteLine(T("    correlation w. sky grad.  : ", "    corelatie cu grad. de cer : ") + CorrelationValue(r));
 
-            w.WriteLine($"\n    VERDICT: {r.Verdict}");
+            w.WriteLine($"\n    VERDICT: {VerdictWords.Of(r.Verdict)}");
 
             if (r.Conclusive)
             {
                 LightReport.WriteDiagnosis(r.MeanRad, w);
-                w.WriteLine($"\n    Media pe {r.Count} cadre e estimarea erorii de flat: imprastierea e mica,");
-                w.WriteLine("    deci termenul radial al cerului e stabil peste serie si nu o contamineaza.");
+                w.WriteLine(T($"\n    The mean over {r.Count} frames is the estimate of the flat error: the spread is small,",
+                              $"\n    Media pe {r.Count} cadre e estimarea erorii de flat: imprastierea e mica,"));
+                w.WriteLine(T("    so the sky's radial term is stable over the series and does not contaminate it.",
+                              "    deci termenul radial al cerului e stabil peste serie si nu o contamineaza."));
                 return;
             }
 
-            w.WriteLine("    Media NU se poate citi ca eroare de flat:");
+            w.WriteLine(T("    The mean can NOT be read as the flat error:", "    Media NU se poate citi ca eroare de flat:"));
             foreach (string reason in r.Reasons) WriteReason(r, reason, w);
 
             w.WriteLine();
             foreach (string line in SameFlatLines) w.WriteLine("    " + line);
-            w.WriteLine("    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care");
-            w.WriteLine("    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea");
-            w.WriteLine("    despre cand se poate folosi --light.");
+            if (Ui.Current == UiLanguage.Romanian)
+            {
+                w.WriteLine("    Pe date ca astea raspunsul il da testul de rotatie 180 (--ratio), care");
+                w.WriteLine("    valideaza flat-ul fara sa implice cerul deloc. Vezi README, sectiunea");
+                w.WriteLine("    despre cand se poate folosi --light.");
+            }
+            else
+            {
+                w.WriteLine("    On data like these the answer comes from the 180 rotation test (--ratio), which");
+                w.WriteLine("    validates the flat without involving the sky at all. See the README, the section");
+                w.WriteLine("    on when --light can be used.");
+            }
         }
 
         /// <summary>One reason the verdict is undetermined, in words.</summary>
@@ -122,27 +141,43 @@ namespace FlatCheck
         /// <returns>The reason's lines, the first starting in lower case.</returns>
         static string[] ReasonLines(LightSeriesResult r, string reason) => reason switch
         {
-            "sem" => new[]
-            {
-                $"eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}),",
-                "deci seria nu rezolva flat-ul la precizia la care se pronunta",
-                "pragurile. Un verdict aici ar fi o parere, nu o masuratoare.",
-            },
-            "corelatie" => new[]
-            {
-                $"componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2}",
-                $"pe un interval de {r.SkySpan:F0} puncte de gradient), semn ca ce se",
-                "masoara e cerul.",
-            },
+            "sem" => Ui.Current == UiLanguage.Romanian
+                ? new[]
+                {
+                    $"eroarea mediei ({r.Sem:F2}) depaseste chiar pragul de OK ({Th.LightRadOk:F2}),",
+                    "deci seria nu rezolva flat-ul la precizia la care se pronunta",
+                    "pragurile. Un verdict aici ar fi o parere, nu o masuratoare.",
+                }
+                : new[]
+                {
+                    $"the error of the mean ({r.Sem:F2}) exceeds even the OK threshold ({Th.LightRadOk:F2}),",
+                    "so the series does not resolve the flat to the precision the thresholds",
+                    "speak at. A verdict here would be an opinion, not a measurement.",
+                },
+            "corelatie" => Ui.Current == UiLanguage.Romanian
+                ? new[]
+                {
+                    $"componenta radiala urmareste gradientul de cer (r = {r.SkyCorr:F2}",
+                    $"pe un interval de {r.SkySpan:F0} puncte de gradient), semn ca ce se",
+                    "masoara e cerul.",
+                }
+                : new[]
+                {
+                    $"the radial component follows the sky gradient (r = {r.SkyCorr:F2}",
+                    $"over a range of {r.SkySpan:F0} points of gradient), a sign that what is",
+                    "measured is the sky.",
+                },
             _ => new[] { reason + "." },
         };
 
         /// <summary>Why everything that moves during a series is sky, in both applications; the
         /// console then points at --ratio, the window at the Ratio tab.</summary>
-        static readonly string[] SameFlatLines =
+        static string[] SameFlatLines => new[]
         {
-            "Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din",
-            "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat.",
+            T("The flat is the same on every frame by construction - it was divided out of",
+              "Flat-ul e acelasi pe toate cadrele prin constructie - s-a impartit din"),
+            T("each one. So everything that moves during the series is sky, not flat.",
+              "fiecare. Deci tot ce se misca in timpul seriei e cer, nu flat."),
         };
 
         /// <summary>Whether a condition failed.</summary>
@@ -174,7 +209,8 @@ namespace FlatCheck
         internal static string CorrelationValue(LightSeriesResult r)
             => r.CorrApplies
                 ? $"{r.SkyCorr:F2}"
-                : $"nu se aplica (gradientul variaza doar {r.SkySpan:F1} puncte)";
+                : T($"does not apply (the gradient varies by only {r.SkySpan:F1} points)",
+                    $"nu se aplica (gradientul variaza doar {r.SkySpan:F1} puncte)");
 
         /// <summary>
         /// Why the mean cannot be read as the flat error, for the window. The same list of
@@ -193,8 +229,9 @@ namespace FlatCheck
                 parts.Add(char.ToUpperInvariant(text[0]) + text.Substring(1));
             }
 
-            parts.Add(string.Join(" ", SameFlatLines) + " Pe date ca astea raspunsul il da tabul "
-                    + "Ratio, care valideaza flat-ul fara sa implice cerul deloc.");
+            parts.Add(string.Join(" ", SameFlatLines)
+                    + T(" On data like these the answer comes from the Ratio tab, which validates the flat without involving the sky at all.",
+                        " Pe date ca astea raspunsul il da tabul Ratio, care valideaza flat-ul fara sa implice cerul deloc."));
 
             return string.Join("\n\n", parts);
         }

@@ -32,6 +32,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -175,7 +176,7 @@ namespace FlatCheck
         internal static SplitResult Analyze(string wholePath, IReadOnlyList<string> partPaths, StructureQuery query,
                                             DateTime when, int framesPerPart)
         {
-            if (partPaths == null || partPaths.Count == 0) throw new ArgumentException("nicio parte", nameof(partPaths));
+            if (partPaths == null || partPaths.Count == 0) throw new ArgumentException(T("no part", "nicio parte"), nameof(partPaths));
 
             StructureOutcome whole = StructureRun.Analyze(wholePath, query);
             var parts = new List<StructureOutcome>(partPaths.Count);

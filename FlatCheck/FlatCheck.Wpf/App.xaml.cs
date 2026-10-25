@@ -40,6 +40,10 @@ namespace FlatCheck.Wpf
             base.OnStartup(e);
             ForceInvariantNumbers();
 
+            // The window's own texts are still Romanian only (R-101 is a draft), so the
+            // core's reports it shows are written in Romanian too, never a mixed screen.
+            Ui.Default = UiLanguage.Romanian;
+
             var window = new MainWindow();
             MainWindow = window;
             window.Show();

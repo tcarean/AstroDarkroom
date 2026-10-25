@@ -62,6 +62,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -122,9 +123,10 @@ namespace FlatCheck
                                  double? focalX = null, double? focalY = null, double centerX = 0.5, double centerY = 0.5)
         {
             if (coefficients == null && (table == null || table.Count < 2))
-                throw new ArgumentException("un model de vignetare are coeficienti sau un tabel cu cel putin doua puncte");
-            if (focalMm <= 0) throw new ArgumentException("focala trebuie sa fie pozitiva");
-            if (cropFactor <= 0) throw new ArgumentException("crop-ul trebuie sa fie pozitiv");
+                throw new ArgumentException(T("a vignetting model has coefficients or a table of at least two points",
+                                              "un model de vignetare are coeficienti sau un tabel cu cel putin doua puncte"));
+            if (focalMm <= 0) throw new ArgumentException(T("the focal length must be positive", "focala trebuie sa fie pozitiva"));
+            if (cropFactor <= 0) throw new ArgumentException(T("the crop must be positive", "crop-ul trebuie sa fie pozitiv"));
             Kind = kind;
             Coefficients = coefficients;
             Table = table;
@@ -178,7 +180,7 @@ namespace FlatCheck
             }
             else
             {
-                if (cameraCrop <= 0) throw new ArgumentException("modelul lensfun are nevoie de crop-ul aparatului");
+                if (cameraCrop <= 0) throw new ArgumentException(T("the lensfun model needs the camera's crop", "modelul lensfun are nevoie de crop-ul aparatului"));
                 double longSideMm = 36.0 / cameraCrop;
                 double xMm = xN * longSideMm, yMm = yN * longSideMm;
                 double huginMm = Math.Sqrt(36.0 * 36.0 + 24.0 * 24.0) / CropFactor / 2.0;
@@ -244,18 +246,23 @@ namespace FlatCheck
         /// <summary>
         /// The model in one line, for the report: its formula, coefficients and axis.
         /// </summary>
-        /// <returns>The Romanian description.</returns>
+        /// <returns>The description, in the run's language.</returns>
         internal string Describe()
         {
             string coeffs = Coefficients != null
                 ? string.Join(", ", Array.ConvertAll(Coefficients, c => c.ToString("0.000000", CultureInfo.InvariantCulture)))
-                : $"tabel cu {Table.Count} puncte";
+                : T($"table of {Table.Count} points", $"tabel cu {Table.Count} puncte");
+            string crop = CropFactor.ToString("0.###", CultureInfo.InvariantCulture);
+            string fx = (FocalX ?? 0).ToString("0.####", CultureInfo.InvariantCulture);
+            string cx = CenterX.ToString("0.####", CultureInfo.InvariantCulture), cy = CenterY.ToString("0.####", CultureInfo.InvariantCulture);
             return Kind == VignettingModelKind.Adobe
-                ? $"Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in unitati de focala; a = {coeffs}; SFF {CropFactor.ToString("0.###", CultureInfo.InvariantCulture)}"
+                ? T($"Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in focal-length units; a = {coeffs}; SFF {crop}",
+                    $"Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in unitati de focala; a = {coeffs}; SFF {crop}")
                   + (FocalX.HasValue || CenterX != 0.5 || CenterY != 0.5
-                        ? $"; fx/Dmax {(FocalX ?? 0).ToString("0.####", CultureInfo.InvariantCulture)}, centru ({CenterX.ToString("0.####", CultureInfo.InvariantCulture)}, {CenterY.ToString("0.####", CultureInfo.InvariantCulture)})"
+                        ? T($"; fx/Dmax {fx}, centre ({cx}, {cy})", $"; fx/Dmax {fx}, centru ({cx}, {cy})")
                         : "")
-                : $"lensfun pa, V = 1 + k1 r^2 + k2 r^4 + k3 r^6, r la semidiagonala 36x24 / {CropFactor.ToString("0.###", CultureInfo.InvariantCulture)}; k = {coeffs}";
+                : T($"lensfun pa, V = 1 + k1 r^2 + k2 r^4 + k3 r^6, r at the half-diagonal of 36x24 / {crop}; k = {coeffs}",
+                    $"lensfun pa, V = 1 + k1 r^2 + k2 r^4 + k3 r^6, r la semidiagonala 36x24 / {crop}; k = {coeffs}");
         }
     }
 }

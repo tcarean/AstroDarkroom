@@ -124,6 +124,15 @@ The explanations behind each row (why this way, what was measured) are in `docs/
 | R-097 | implemented | The version is declared once, in `Directory.Build.props`; no csproj overrides `<Version>` or `<Copyright>`. The banner is scrubbed before golden comparisons, so a bump on its own fails no test. The frozen Python prototype keeps `__version__ = "2.2.0"` and is not synchronised (ADR 0047). |
 | R-098 | implemented | The 43 scenarios the Python cross-check ran until 2026-09-26 (15 structure, 4 `--ratio`, 11 `--light` including three series folders, 13 `--expo`, on generated FITS of 512x512, 768x512, 512x768 and 256x256, BITPIX 16, 32 and -32) print the console text and exit code captured that day, when the prototype agreed on every number (`Golden/parity_*.txt`). Example: `structure band REFA` on a 60 % linear gradient exits `3`. A scenario is re-approved only after the owner has read the diff, knowing there is no longer an independent implementation behind it. |
 
+## Interface language
+
+| ID | Status | Requirement |
+| --- | --- | --- |
+| R-100 | implemented | The console writes every text in English or in Romanian, chosen by `--lang <code>` or `--lang=<code>`: `en` English, `ro` Romanian, in any case, anywhere on the line, the last one counting; with no `--lang`, English. The language covers the usage, the parse errors, the report, the verdict words (`REDO` / `REFA`), the refusals and the error prefix (`ERROR:` / `EROARE:`). A `--lang` and its value are never taken for the input file. Example: `flatcheck flat.fit --lang ro` prints `VERDICT: PERFECT` and `flatcheck --lang=ro` prints the Romanian usage, exit `0`. The names of the files written are the same in both languages (R-103). |
+| R-101 | draft | The window takes the same `--lang` on its command line, before or after the session folder, English when there is none, and shows every label, message and report in that language; a `--lang` value is never taken for the session folder. |
+| R-102 | implemented | A `--lang` whose value names no language, or a `--lang` with nothing after it, stops the console before any run with an English `ERROR: --lang expects en or ro, got 'fr'` on stderr and exit `1`, after the banner. |
+| R-103 | implemented | The language changes words only: every number of a run is written identically in both languages (the console's English and Romanian outputs of a scenario hold the same numbers, the same number of times), the exit code is the same, and the files written carry English names in both: the second map of `--ratio` is `<name>-world.png`, the after map of `--smooth` `<name>-after.png`. The English output holds no Romanian word. |
+
 ## Dropped
 
 None yet. Move rows here with status `dropped` and one line saying why.

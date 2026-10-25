@@ -1,0 +1,15 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== LENSES WITH A VIGNETTING PROFILE that contain "tokina" ===
+    Adobe  : 2 lenses from 2 files
+    lensfun: 1 lenses from <TMP>/profiles\lensfun
+
+    Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [Canon]
+            focal lengths: 18, 20 mm; apertures: f/2.8, f/4.0; distances: infinity; 3 profiles
+    Adobe   Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]
+            focal lengths: 18, 20 mm; apertures: f/2.8, f/4.0; distances: infinity; 3 profiles
+    lensfun Tokina AT-X 11-20 F2.8 PRO DX Aspherical 11-20mm f/2.8  [Canon EF / Nikon F AF, calibrated on APS-C Canon 1.61]
+            focal lengths: 18, 20 mm; apertures: f/2.8, f/4.0; distances: 10 m, infinity, unspecified; 4 profiles
+
+[exit 0]

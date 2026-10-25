@@ -1,0 +1,18 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPOSURE: <TMP>/raw12bit.fit ===
+    saturation (white): 4095   black : 150   source: --sat=4095
+    GLOBAL median level per CFA channel (informative; which is R/G/B is not known):
+        CFA[0,0]:  44.7%
+        CFA[0,1]:  74.4%  <- the brightest
+        CFA[1,0]:  74.4%
+        CFA[1,1]:  33.7%
+    brightest channel, GLOBAL median      :  74.4%  (pulled down by the corners)
+    brightest channel, CENTRE 20%         :  86.9%  <- THIS decides the exposure
+    clipping in the centre (>=98% white)  : 0.000%
+
+    VERDICT: TOO HIGH
+    Lower the exposure by ~0.6 stops.
+
+[exit 3]

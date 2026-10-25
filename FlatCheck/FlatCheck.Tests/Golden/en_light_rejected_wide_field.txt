@@ -1,0 +1,17 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== END-TO-END TEST: <TMP>/light.fit ===
+    diagonal field          :  72.4 degrees  (WCS)
+
+  THE TEST DOES NOT APPLY TO THESE FRAMES
+    Beyond 40 degrees of diagonal, the light-pollution dome
+    CURVES inside the frame. The radially symmetric part of that curvature
+    has exactly the shape of the vignetting, so the fit can no longer separate them: any figure
+    that came out would be the sky, not the flat.
+    It is not a limitation of the tool, it is a geometric degeneracy.
+
+    For a wide-field setup, the test that answers is the 180-degree
+    rotation (--ratio): it validates the flat without involving the sky at all.
+
+[exit 1]

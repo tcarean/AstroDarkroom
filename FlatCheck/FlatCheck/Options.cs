@@ -29,6 +29,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -106,7 +107,7 @@ namespace FlatCheck
         /// </summary>
         /// <param name="args">The arguments as the process received them.</param>
         /// <returns>The options; <see cref="Help"/> set for no argument or -h/--help, and
-        /// <see cref="Error"/> set, Romanian, when the line is wrong.</returns>
+        /// <see cref="Error"/> set, in <see cref="Ui.Current"/>, when the line is wrong.</returns>
         internal static Options Parse(string[] args)
         {
             var o = new Options();
@@ -134,10 +135,10 @@ namespace FlatCheck
                 if (ValueFlags.Contains(a))
                 {
                     if (i + 1 >= args.Length)
-                        return o.Fail($"lipseste valoarea pentru {a}");
+                        return o.Fail(T($"missing value for {a}", $"lipseste valoarea pentru {a}"));
                     string v = args[i + 1];
                     if (BoolFlags.Contains(v) || ValueFlags.Contains(v))
-                        return o.Fail($"{a} asteapta o valoare, dar a primit flagul {v}");
+                        return o.Fail(T($"{a} expects a value, but got the flag {v}", $"{a} asteapta o valoare, dar a primit flagul {v}"));
                     i++;
 
                     switch (a)
@@ -146,54 +147,54 @@ namespace FlatCheck
                         case "-o":
                         case "--out": o.OutPng = v; break;
                         case "--sat":
-                            if (!TryNum(v, out var sat)) return o.Fail($"--sat asteapta un numar, a primit '{v}'");
+                            if (!TryNum(v, out var sat)) return o.Fail(T($"--sat expects a number, got '{v}'", $"--sat asteapta un numar, a primit '{v}'"));
                             o.Sat = sat; break;
                         case "--black":
-                            if (!TryNum(v, out var blk)) return o.Fail($"--black asteapta un numar, a primit '{v}'");
+                            if (!TryNum(v, out var blk)) return o.Fail(T($"--black expects a number, got '{v}'", $"--black asteapta un numar, a primit '{v}'"));
                             o.Black = blk; break;
                         case "--pattern":
-                            if (v.Length == 0) return o.Fail("--pattern asteapta un tipar, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--pattern expects a file pattern, got an empty string", "--pattern asteapta un tipar, a primit sirul gol"));
                             o.Pattern = v; break;
                         case "--fov":
-                            if (!TryNum(v, out var fov)) return o.Fail($"--fov asteapta un numar, a primit '{v}'");
+                            if (!TryNum(v, out var fov)) return o.Fail(T($"--fov expects a number, got '{v}'", $"--fov asteapta un numar, a primit '{v}'"));
                             if (fov <= 0 || fov >= 180)
-                                return o.Fail($"--fov asteapta grade intre 0 si 180, a primit {v}");
+                                return o.Fail(T($"--fov expects degrees between 0 and 180, got {v}", $"--fov asteapta grade intre 0 si 180, a primit {v}"));
                             o.Fov = fov; break;
                         case "--smooth":
-                            if (v.Length == 0) return o.Fail("--smooth asteapta calea fisierului FITS de scris, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--smooth expects the path of the FITS file to write, got an empty string", "--smooth asteapta calea fisierului FITS de scris, a primit sirul gol"));
                             o.Smooth = v; break;
                         case "--scale":
                             if (string.Equals(v, "auto", StringComparison.OrdinalIgnoreCase)) { o.ScaleAuto = true; break; }
-                            if (!TryNum(v, out var scale)) return o.Fail($"--scale asteapta un numar sau 'auto', a primit '{v}'");
+                            if (!TryNum(v, out var scale)) return o.Fail(T($"--scale expects a number or 'auto', got '{v}'", $"--scale asteapta un numar sau 'auto', a primit '{v}'"));
                             if (scale < 50 || scale > 2000)
-                                return o.Fail($"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}");
+                                return o.Fail(T($"--scale expects sensor pixels between 50 and 2000, got {v}", $"--scale asteapta pixeli de senzor intre 50 si 2000, a primit {v}"));
                             o.ScalePx = scale; break;
                         case "--synthetic":
-                            if (v.Length == 0) return o.Fail("--synthetic asteapta calea fisierului FITS de scris, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--synthetic expects the path of the FITS file to write, got an empty string", "--synthetic asteapta calea fisierului FITS de scris, a primit sirul gol"));
                             o.Synthetic = v; break;
                         case "--lens": o.Lens = v; break;
                         case "--source":
                             if (string.Equals(v, "adobe", StringComparison.OrdinalIgnoreCase)) o.Source = ProfileSource.Adobe;
                             else if (string.Equals(v, "lensfun", StringComparison.OrdinalIgnoreCase)) o.Source = ProfileSource.Lensfun;
-                            else return o.Fail($"--source asteapta 'adobe' sau 'lensfun', a primit '{v}'");
+                            else return o.Fail(T($"--source expects 'adobe' or 'lensfun', got '{v}'", $"--source asteapta 'adobe' sau 'lensfun', a primit '{v}'"));
                             break;
                         case "--focal":
-                            if (!TryNum(v, out var focal) || focal <= 0) return o.Fail($"--focal asteapta milimetri, a primit '{v}'");
+                            if (!TryNum(v, out var focal) || focal <= 0) return o.Fail(T($"--focal expects millimetres, got '{v}'", $"--focal asteapta milimetri, a primit '{v}'"));
                             o.Focal = focal; break;
                         case "--fstop":
-                            if (!TryNum(v, out var fstop) || fstop <= 0) return o.Fail($"--fstop asteapta un f-numar, a primit '{v}'");
+                            if (!TryNum(v, out var fstop) || fstop <= 0) return o.Fail(T($"--fstop expects an f-number, got '{v}'", $"--fstop asteapta un f-numar, a primit '{v}'"));
                             o.FStop = fstop; break;
                         case "--crop":
-                            if (!TryNum(v, out var cropf) || cropf <= 0) return o.Fail($"--crop asteapta un crop factor, a primit '{v}'");
+                            if (!TryNum(v, out var cropf) || cropf <= 0) return o.Fail(T($"--crop expects a crop factor, got '{v}'", $"--crop asteapta un crop factor, a primit '{v}'"));
                             o.Crop = cropf; break;
                         case "--profiles":
-                            if (v.Length == 0) return o.Fail("--profiles asteapta un folder, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--profiles expects a folder, got an empty string", "--profiles asteapta un folder, a primit sirul gol"));
                             o.Profiles = v; break;
                         case "--raw":
-                            if (v.Length == 0) return o.Fail("--raw asteapta un fisier raw, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--raw expects a raw file, got an empty string", "--raw asteapta un fisier raw, a primit sirul gol"));
                             o.Raw = v; break;
                         case "--against":
-                            if (v.Length == 0) return o.Fail("--against asteapta un al doilea flat, a primit sirul gol");
+                            if (v.Length == 0) return o.Fail(T("--against expects a second flat, got an empty string", "--against asteapta un al doilea flat, a primit sirul gol"));
                             o.Against = v; break;
                     }
                     continue;
@@ -201,35 +202,35 @@ namespace FlatCheck
 
                 // a token that starts with '-' and is not a number is a misspelt flag
                 if (a.Length > 1 && a[0] == '-' && !TryNum(a, out _))
-                    return o.Fail($"optiune necunoscuta: {a}");
+                    return o.Fail(T($"unknown option: {a}", $"optiune necunoscuta: {a}"));
 
                 positional.Add(a);
             }
 
             // --lenses is a list, not an analysis: it needs no input file.
-            if (positional.Count == 0 && !o.Lenses) return o.Fail("lipseste fisierul de intrare");
+            if (positional.Count == 0 && !o.Lenses) return o.Fail(T("missing input file", "lipseste fisierul de intrare"));
             if (positional.Count > 1)
-                return o.Fail("astept un singur fisier de intrare, am primit: " + string.Join(", ", positional));
+                return o.Fail(T("expected a single input file, got: ", "astept un singur fisier de intrare, am primit: ") + string.Join(", ", positional));
             o.Image = positional.Count > 0 ? positional[0] : null;
 
             // The smoothed file is not written over the input: it would destroy the only
             // master photographed, and exactly that one must stay, so one can see what was
             // removed.
             if (o.Smooth != null && SamePath(o.Smooth, o.Image))
-                return o.Fail("--smooth nu poate scrie peste fisierul de intrare; da alta cale");
+                return o.Fail(T("--smooth cannot write over the input file; give another path", "--smooth nu poate scrie peste fisierul de intrare; da alta cale"));
             if (o.Synthetic != null && SamePath(o.Synthetic, o.Image))
-                return o.Fail("--synthetic nu poate scrie peste cadrul de referinta; da alta cale");
+                return o.Fail(T("--synthetic cannot write over the reference frame; give another path", "--synthetic nu poate scrie peste cadrul de referinta; da alta cale"));
 
             // --sat 0 would make rng = 0 and every percentage would come out NaN/infinite
             double black = o.Black ?? 0.0;
             if (o.Sat.HasValue && o.Sat.Value <= black)
-                return o.Fail($"--sat ({o.Sat.Value:F0}) trebuie sa fie mai mare decat --black ({black:F0})");
+                return o.Fail(T($"--sat ({o.Sat.Value:F0}) must be greater than --black ({black:F0})", $"--sat ({o.Sat.Value:F0}) trebuie sa fie mai mare decat --black ({black:F0})"));
 
             return o;
         }
 
         /// <summary>Records the parse error.</summary>
-        /// <param name="message">The error, Romanian, as the user will read it.</param>
+        /// <param name="message">The error, in the run's language, as the user will read it.</param>
         /// <returns>This instance, so a parse can end with <c>return o.Fail(...)</c>.</returns>
         Options Fail(string message) { Error = message; return this; }
 

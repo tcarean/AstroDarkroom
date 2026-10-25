@@ -52,6 +52,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -127,7 +128,8 @@ namespace FlatCheck
         {
             Img pa = Img.Prepare(a), pb = Img.Prepare(b);
             if (pa.W != pb.W || pa.H != pb.H)
-                throw new ArgumentException($"cele doua flaturi au marimi diferite la rezolutia de analiza ({pa.W}x{pa.H} fata de {pb.W}x{pb.H})");
+                throw new ArgumentException(T($"the two flats have different sizes at the analysis resolution ({pa.W}x{pa.H} against {pb.W}x{pb.H})",
+                                              $"cele doua flaturi au marimi diferite la rezolutia de analiza ({pa.W}x{pa.H} fata de {pb.W}x{pb.H})"));
             Normalise(pa);
             Normalise(pb);
             Img ratio = Img.Divide(pa, pb);
@@ -141,7 +143,8 @@ namespace FlatCheck
         static void Normalise(Img img)
         {
             double med = Stats.Percentile((double[])img.D.Clone(), 50);
-            if (!(med > 0)) throw new ArgumentException("un flat cu mediana zero sau negativa nu se poate normaliza");
+            if (!(med > 0)) throw new ArgumentException(T("a flat with a zero or negative median cannot be normalised",
+                                                          "un flat cu mediana zero sau negativa nu se poate normaliza"));
             for (int i = 0; i < img.D.Length; i++) img.D[i] /= med;
         }
     }
@@ -150,7 +153,7 @@ namespace FlatCheck
     /// where there is a test.</summary>
     /// <param name="Key">The quantity's key (a <c>StructureResult</c> member name, as in
     /// <c>StructureReport.TestKeys</c>).</param>
-    /// <param name="Label">The row's label, Romanian.</param>
+    /// <param name="Label">The row's label, in the run's language.</param>
     /// <param name="A">The value on A, formatted.</param>
     /// <param name="AVerdict">The verdict on A, or null.</param>
     /// <param name="B">The value on B, formatted.</param>
@@ -177,22 +180,24 @@ namespace FlatCheck
         /// <param name="w">Where the text is written.</param>
         internal static void Write(AgainstResult r, string pathA, string pathB, TextWriter w)
         {
-            w.WriteLine($"\n=== COMPARATIE: A / B ===");
+            w.WriteLine(T("\n=== COMPARISON: A / B ===", "\n=== COMPARATIE: A / B ==="));
             w.WriteLine($"    A : {pathA}");
             w.WriteLine($"    B : {pathB}");
-            w.WriteLine($"    dimensiune analiza : {r.Structure.Residual.W} x {r.Structure.Residual.H} (dupa 2x2 + downsample)");
+            w.WriteLine(T($"    analysis size      : {r.Structure.Residual.W} x {r.Structure.Residual.H} (after 2x2 + downsample)",
+                          $"    dimensiune analiza : {r.Structure.Residual.W} x {r.Structure.Residual.H} (dupa 2x2 + downsample)"));
             w.WriteLine();
             foreach (string line in Meaning().Split('\n')) w.WriteLine("    " + line);
 
-            w.WriteLine($"\n  {"",-28}{"A",-38}{"B",-38}{"A / B (diferenta)"}");
+            w.WriteLine($"\n  {"",-28}{"A",-38}{"B",-38}{T("A / B (difference)", "A / B (diferenta)")}");
             foreach (AgainstRow row in Rows(r))
                 w.WriteLine($"    {row.Label,-26}{Cell(row.A, row.AVerdict),-38}{Cell(row.B, row.BVerdict),-38}{Cell(row.Diff, row.DiffVerdict)}");
 
-            w.WriteLine($"\n  VERDICTUL DIFERENTEI: {r.Verdict}");
-            w.WriteLine($"    forma     : {ShapeDetail(r)}");
-            w.WriteLine($"                (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)");
-            w.WriteLine($"    adancimea : {DepthDetail(r)},");
-            w.WriteLine($"                pe aceeasi scara ({DepthScale()})");
+            w.WriteLine(T($"\n  THE DIFFERENCE'S VERDICT: {VerdictWords.Of(r.Verdict)}", $"\n  VERDICTUL DIFERENTEI: {VerdictWords.Of(r.Verdict)}"));
+            w.WriteLine(T($"    shape     : {ShapeDetail(r)}", $"    forma     : {ShapeDetail(r)}"));
+            w.WriteLine(T($"                (under 2 % PERFECT, 2-10 GOOD, 10-20 ACCEPTABLE, over 20 REDO)",
+                          $"                (sub 2 % PERFECT, 2-10 BUN, 10-20 ACCEPTABIL, peste 20 REFA)"));
+            w.WriteLine(T($"    depth     : {DepthDetail(r)},", $"    adancimea : {DepthDetail(r)},"));
+            w.WriteLine(T($"                on the same scale ({DepthScale()})", $"                pe aceeasi scara ({DepthScale()})"));
             foreach (string line in StructureReport.DepthLightScaleNote(r.DepthDiffStops).Split('\n'))
                 w.WriteLine("                " + line);
             w.WriteLine("    " + WorseOfBoth());
@@ -201,38 +206,43 @@ namespace FlatCheck
         /// <summary>"PERFECT: cele cinci teste pe raport, pe scara de reziduu a
         /// structurii".</summary>
         /// <param name="r">The comparison.</param>
-        /// <returns>The shape's verdict with what it is, Romanian.</returns>
+        /// <returns>The shape's verdict with what it is.</returns>
         internal static string ShapeDetail(AgainstResult r)
-            => $"{r.Structure.Verdict}: cele cinci teste pe raport, pe scara de reziduu a structurii";
+            => T($"{VerdictWords.Of(r.Structure.Verdict)}: the five tests on the ratio, on the structure's residual scale",
+                 $"{VerdictWords.Of(r.Structure.Verdict)}: cele cinci teste pe raport, pe scara de reziduu a structurii");
 
         /// <summary>"REFA: 0.30 stopuri = 23.1 % eroare in coltul light-ului
         /// calibrat".</summary>
         /// <param name="r">The comparison.</param>
-        /// <returns>The depth's verdict with the stops and the corner error, Romanian.</returns>
+        /// <returns>The depth's verdict with the stops and the corner error.</returns>
         internal static string DepthDetail(AgainstResult r)
-            => $"{r.DepthVerdict}: {Stops(r.Structure)} = {r.DepthErrorPct:F1} % eroare in coltul light-ului calibrat";
+            => T($"{VerdictWords.Of(r.DepthVerdict)}: {Stops(r.Structure)} = {r.DepthErrorPct:F1} % error in the corner of the calibrated light",
+                 $"{VerdictWords.Of(r.DepthVerdict)}: {Stops(r.Structure)} = {r.DepthErrorPct:F1} % eroare in coltul light-ului calibrat");
 
         /// <summary>The sentence that closes the verdict: the worse of the two, and what two
         /// correct flats give.</summary>
-        /// <returns>One Romanian sentence.</returns>
+        /// <returns>One sentence.</returns>
         internal static string WorseOfBoth()
-            => "Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.";
+            => T("The worse of the two. Two correct flats of the same lens give PERFECT and 0.00 stops.",
+                 "Cel mai rau dintre ele. Doua flaturi corecte ale aceluiasi obiectiv dau PERFECT si 0.00 stopuri.");
 
         /// <summary>The verdict's two parts on one line, for the window, which does not have
         /// the console's block.</summary>
         /// <param name="r">The comparison.</param>
         /// <returns>The shape, the depth with its scale and its note, and the closing
-        /// sentence, Romanian.</returns>
+        /// sentence.</returns>
         internal static string VerdictDetail(AgainstResult r)
-            => $"forma: {ShapeDetail(r)}. Adancimea: {DepthDetail(r)} ({DepthScale()}). "
+            => T($"shape: {ShapeDetail(r)}. Depth: {DepthDetail(r)} ({DepthScale()}). ",
+                 $"forma: {ShapeDetail(r)}. Adancimea: {DepthDetail(r)} ({DepthScale()}). ")
              + StructureReport.DepthLightScaleNote(r.DepthDiffStops).Replace('\n', ' ') + " " + WorseOfBoth();
 
         /// <summary>The depth's bands in stops, derived from the residual scale through
         /// 2^|D| - 1.</summary>
         /// <returns>The bands for <see cref="Th.ResidPerfect"/>, <see cref="Th.ResidUsable"/>
-        /// and <see cref="Th.ResidCheck"/>, Romanian.</returns>
+        /// and <see cref="Th.ResidCheck"/>.</returns>
         internal static string DepthScale()
-            => $"sub {StopsFor(Th.ResidPerfect):F2} stopuri PERFECT, sub {StopsFor(Th.ResidUsable):F2} BUN, sub {StopsFor(Th.ResidCheck):F2} ACCEPTABIL, peste REFA";
+            => T($"under {StopsFor(Th.ResidPerfect):F2} stops PERFECT, under {StopsFor(Th.ResidUsable):F2} GOOD, under {StopsFor(Th.ResidCheck):F2} ACCEPTABLE, over REDO",
+                 $"sub {StopsFor(Th.ResidPerfect):F2} stopuri PERFECT, sub {StopsFor(Th.ResidUsable):F2} BUN, sub {StopsFor(Th.ResidCheck):F2} ACCEPTABIL, peste REFA");
 
         /// <summary>The inverse of <see cref="AgainstResult.DepthErrorOf"/>: the stops at which
         /// the corner error reaches a threshold.</summary>
@@ -245,17 +255,23 @@ namespace FlatCheck
         /// <param name="value">The formatted value.</param>
         /// <param name="verdict">The verdict, or null or empty for none.</param>
         /// <returns>The cell's text.</returns>
-        static string Cell(string value, string verdict) => string.IsNullOrEmpty(verdict) ? value : $"{value} [{verdict}]";
+        static string Cell(string value, string verdict)
+            => string.IsNullOrEmpty(verdict) ? value : $"{value} [{VerdictWords.Of(verdict)}]";
 
         /// <summary>What the three columns mean, for the console's block and the
         /// window.</summary>
-        /// <returns>A Romanian paragraph, lines separated by '\n'.</returns>
+        /// <returns>A paragraph, lines separated by '\n'.</returns>
         internal static string Meaning()
-            => "Trei coloane: fiecare flat prin bateria de structura, si raportul lor. In coloana A / B\n"
-             + "cifrele sunt despre DIFERENTA: \"vignetare\" e diferenta de adancime (pozitiv = A cade mai\n"
-             + "mult spre colt decat B) si poarta verdictul adancimii; cele cinci teste spun daca diferenta\n"
-             + "e radiala sau are forma, iar harta o arata. Ce e in A si nu e in B - o sa a cerului, caderea\n"
-             + "unui panou, o pata - ramane in diferenta.";
+            => T("Three columns: each flat through the structure battery, and their ratio. In the A / B column\n"
+                 + "the figures are about the DIFFERENCE: \"vignetting\" is the depth difference (positive = A falls\n"
+                 + "more toward the corner than B) and carries the depth verdict; the five tests say whether the difference\n"
+                 + "is radial or has a shape, and the map shows it. What is in A and not in B - a saddle of the sky, a panel's\n"
+                 + "fall-off, a spot - stays in the difference.",
+                 "Trei coloane: fiecare flat prin bateria de structura, si raportul lor. In coloana A / B\n"
+                 + "cifrele sunt despre DIFERENTA: \"vignetare\" e diferenta de adancime (pozitiv = A cade mai\n"
+                 + "mult spre colt decat B) si poarta verdictul adancimii; cele cinci teste spun daca diferenta\n"
+                 + "e radiala sau are forma, iar harta o arata. Ce e in A si nu e in B - o sa a cerului, caderea\n"
+                 + "unui panou, o pata - ramane in diferenta.");
 
         /// <summary>
         /// The table's rows: the depth (the key row), the centroid offset, the local spot, then
@@ -267,20 +283,28 @@ namespace FlatCheck
         {
             var rows = new List<AgainstRow>
             {
-                new("VignetteStops", "vignetare centru -> colt",
+                new("VignetteStops", T("vignetting centre->corner", "vignetare centru -> colt"),
                     Stops(r.A), null, Stops(r.B), null, Stops(r.Structure), r.DepthVerdict,
-                    "adancimea fiecaruia si diferenta lor (pozitiv = A cade mai mult spre colt decat B). "
-                    + $"Verdictul e al diferentei: {r.DepthErrorPct:F1} % eroare in coltul unui light calibrat cu flatul gresit (2^|stopuri| - 1), pe scara de reziduu; "
-                    + "sub ACCEPTABIL nu se deosebeste de incertitudinea modelului - cele doua baze de profile difera intre ele cu ~0.2 stopuri pe acelasi obiectiv.", true),
-                new("CentroidOffsetPct", "offset centru iluminare",
+                    T("the depth of each and their difference (positive = A falls more toward the corner than B). "
+                      + $"The verdict is the difference's: {r.DepthErrorPct:F1} % error in the corner of a light calibrated with the wrong flat (2^|stops| - 1), on the residual scale; "
+                      + "below ACCEPTABLE it cannot be told from the model's uncertainty - the two profile databases differ from each other by ~0.2 stops on the same lens.",
+                      "adancimea fiecaruia si diferenta lor (pozitiv = A cade mai mult spre colt decat B). "
+                      + $"Verdictul e al diferentei: {r.DepthErrorPct:F1} % eroare in coltul unui light calibrat cu flatul gresit (2^|stopuri| - 1), pe scara de reziduu; "
+                      + "sub ACCEPTABIL nu se deosebeste de incertitudinea modelului - cele doua baze de profile difera intre ele cu ~0.2 stopuri pe acelasi obiectiv."), true),
+                new("CentroidOffsetPct", T("illum. centre offset", "offset centru iluminare"),
                     Offset(r.A), null, Offset(r.B), null, Offset(r.Structure), null,
-                    "unde sta varful iluminarii fata de centrul senzorului, la fiecare si la raport; "
-                    + "aproape de zero pe raport = diferenta e centrata", false),
-                new("LocalSpotPct", "pete locale (praf etc.)",
+                    T("where the illumination peak sits against the sensor's centre, on each and on the ratio; "
+                      + "near zero on the ratio = the difference is centred",
+                      "unde sta varful iluminarii fata de centrul senzorului, la fiecare si la raport; "
+                      + "aproape de zero pe raport = diferenta e centrata"), false),
+                new("LocalSpotPct", T("local spots (dust etc.)", "pete locale (praf etc.)"),
                     Spot(r.A), null, Spot(r.B), null, Spot(r.Structure), null,
-                    "cea mai adanca pata compacta a fiecaruia; o pata prezenta doar intr-unul ramane in diferenta; "
-                    + $"pozitii: A ({r.A.LocalSpotX}, {r.A.LocalSpotY}), B ({r.B.LocalSpotX}, {r.B.LocalSpotY}), "
-                    + $"A / B ({r.Structure.LocalSpotX}, {r.Structure.LocalSpotY})", false),
+                    T("the deepest compact spot of each; a spot present in only one stays in the difference; "
+                      + $"positions: A ({r.A.LocalSpotX}, {r.A.LocalSpotY}), B ({r.B.LocalSpotX}, {r.B.LocalSpotY}), "
+                      + $"A / B ({r.Structure.LocalSpotX}, {r.Structure.LocalSpotY})",
+                      "cea mai adanca pata compacta a fiecaruia; o pata prezenta doar intr-unul ramane in diferenta; "
+                      + $"pozitii: A ({r.A.LocalSpotX}, {r.A.LocalSpotY}), B ({r.B.LocalSpotX}, {r.B.LocalSpotY}), "
+                      + $"A / B ({r.Structure.LocalSpotX}, {r.Structure.LocalSpotY})"), false),
             };
             foreach (string key in StructureReport.TestKeys)
             {
@@ -297,37 +321,37 @@ namespace FlatCheck
 
         /// <summary>A test's note, said about the difference - not about one flat.</summary>
         /// <param name="key">A test key from <c>StructureReport.TestKeys</c>.</param>
-        /// <returns>The Romanian note, or an empty string for an unknown key.</returns>
+        /// <returns>The note, or an empty string for an unknown key.</returns>
         internal static string TestNote(string key) => key switch
         {
-            "CornerSpreadPct" => "cat difera cele patru colturi intre ele; colturi inegale in coloana A / B = structura neradiala pe care unul o are si celalalt nu",
-            "AzimuthalMaxPct" => "cat difera cele 12 sectoare ale aceluiasi inel, in cercul inscris; pe raport, forma azimutala a diferentei",
-            "ResidualPtpPct" => "cat din fiecare, si cat din diferenta, NU se explica printr-un model radial; cel mai important",
-            "TiltPct" => "gradientul liniar al fiecaruia si al diferentei; un gradient de sursa apare aici",
-            "MaxTilePct" => "dala cea mai abatuta; un defect compact prezent intr-unul singur apare in coloana A / B",
+            "CornerSpreadPct" => T("how much the four corners differ from each other; uneven corners in the A / B column = non-radial structure that one has and the other has not",
+                                   "cat difera cele patru colturi intre ele; colturi inegale in coloana A / B = structura neradiala pe care unul o are si celalalt nu"),
+            "AzimuthalMaxPct" => T("how much the 12 sectors of the same ring differ, in the inscribed circle; on the ratio, the azimuthal shape of the difference",
+                                   "cat difera cele 12 sectoare ale aceluiasi inel, in cercul inscris; pe raport, forma azimutala a diferentei"),
+            "ResidualPtpPct" => T("how much of each, and how much of the difference, a radial model does NOT explain; the most important",
+                                  "cat din fiecare, si cat din diferenta, NU se explica printr-un model radial; cel mai important"),
+            "TiltPct" => T("the linear gradient of each and of the difference; a source's gradient shows here",
+                           "gradientul liniar al fiecaruia si al diferentei; un gradient de sursa apare aici"),
+            "MaxTilePct" => T("the most deviant tile; a compact defect present in only one shows in the A / B column",
+                              "dala cea mai abatuta; un defect compact prezent intr-unul singur apare in coloana A / B"),
             _ => "",
         };
 
         /// <summary>The vignetting depth, formatted.</summary>
         /// <param name="s">A structure result.</param>
-        /// <returns>"0.26 stopuri" and the like.</returns>
-        static string Stops(StructureResult s) => $"{s.VignetteStops:F2} stopuri";
+        /// <returns>"0.26 stops" and the like.</returns>
+        static string Stops(StructureResult s) => T($"{s.VignetteStops:F2} stops", $"{s.VignetteStops:F2} stopuri");
 
         /// <summary>The spot without its position - the positions go in the row's note, so the
         /// cell stays short.</summary>
         /// <param name="s">A structure result.</param>
-        /// <returns><c>StructureReport.LocalSpotValue</c> cut before its " la (".</returns>
-        static string Spot(StructureResult s)
-        {
-            string full = StructureReport.LocalSpotValue(s);
-            int at = full.LastIndexOf(" la (", StringComparison.Ordinal);
-            return at > 0 ? full.Substring(0, at) : full;
-        }
+        /// <returns><c>StructureReport.LocalSpotSize</c>: the size and the sign's word.</returns>
+        static string Spot(StructureResult s) => StructureReport.LocalSpotSize(s.LocalSpotPct);
         /// <summary>The centroid offset, formatted.</summary>
         /// <param name="s">A structure result.</param>
-        /// <returns>The offset in percent, or "nedeterminat" when the centroid is not
+        /// <returns>The offset in percent, or "undetermined" when the centroid is not
         /// valid.</returns>
-        static string Offset(StructureResult s) => s.CentroidValid ? $"{s.CentroidOffsetPct:F2} %" : "nedeterminat";
+        static string Offset(StructureResult s) => s.CentroidValid ? $"{s.CentroidOffsetPct:F2} %" : T("undetermined", "nedeterminat");
         /// <summary>A percentage, formatted.</summary>
         /// <param name="v">A value in percent, NaN when not measured.</param>
         /// <returns>The value with two decimals and " %", or "n/a" for NaN.</returns>

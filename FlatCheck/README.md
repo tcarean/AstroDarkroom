@@ -18,6 +18,12 @@ moduri pe un folder de sesiune Siril, în cinci taburi. Nu e o a doua implementa
 peste același nucleu (`FlatCheck.Core`) și produce aceleași cifre și același raport.
 Vezi [„Aplicația cu ferestre"](#aplicația-cu-ferestre).
 
+Consola vorbește **engleză sau română**: engleză implicit, română cu `--lang ro` (sau
+`--lang=ro`), oriunde pe linia de comandă. Limba schimbă doar cuvintele — cifrele, verdictul
+din spatele lor, codul de ieșire și numele fișierelor scrise sunt aceleași în ambele.
+Exemplele de ieșire din acest fișier sunt cele românești, adică cu `--lang ro`. Fereastra e
+deocamdată numai în română.
+
 `flatcheck.py` este prototipul Python din care a fost portat, **înghețat la 2.2.0** din
 2026-09-26 și neîntreținut. Cifrele pe care le-a confirmat sunt fixate ca golden-uri de
 paritate (vezi [„Golden-urile de paritate"](#golden-urile-de-paritate)).
@@ -254,7 +260,7 @@ Când cifra și eroarea ei sunt comparabile, nu s-a detectat nimic peste zgomot.
   60 cm. Vignetarea obiectivului nu depinde de distanță, contaminarea de la panou depinde.
 
 Scrie **două** hărți: la calea dată cu `-o`, reziduul părții fixe pe aparat (cea care se
-potrivește cu verdictul), și lângă ea, cu sufixul `-lume`, raportul `A/B` — pe care se
+potrivește cu verdictul), și lângă ea, cu sufixul `-world`, raportul `A/B` — pe care se
 vede *forma* gradientului extern.
 
 ### 3. End-to-end — `--light`
@@ -813,8 +819,8 @@ flatcheck --lenses [--lens <text>]       # obiectivele cu profil (Adobe de pe di
 flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
 
   -o, --out <fișier.png>   harta de ieșire (implicit flatcheck.png; --ratio mai scrie
-                           una lângă ea, cu sufixul -lume; la --histeq e poza egalizată;
-                           --smooth mai scrie una cu sufixul -dupa)
+                           una lângă ea, cu sufixul -world; la --histeq e poza egalizată;
+                           --smooth mai scrie una cu sufixul -after)
   --sat <white>            nivel de saturație, dacă auto-detecția greșește (--expo)
   --black <nivel>          nivel black (--expo)
   --pattern <tipar>        ce fișiere ia din folder (implicit pp_light_*.fit)
@@ -828,10 +834,12 @@ flatcheck <A.fit> --against <B.fit>      # cât și cum diferă două flaturi
   --focal <mm>, --fstop <f>, --crop <factor>   ce nu se poate citi din referință (--synthetic, structură cu --lens)
   --profiles <folder>      de unde se iau profilele, în locul mașinii: .lcp oriunde în el,
                            lensfun/ dedesubt (așa rulează și testele)
+  --lang en|ro             limba textelor: en engleză (implicit), ro română; merge și --lang=ro
 ```
 
 Flagurile pot veni oriunde: `flatcheck --expo f.fit` și `flatcheck f.fit --expo` sunt
-echivalente. `--pattern` acceptă `*` și `?`; clasele de caractere (`[abc]`) sunt tratate
+echivalente. Un `--lang` cu altă valoare decât `en` sau `ro`, sau fără valoare, oprește
+rularea cu o eroare în engleză și codul 1. `--pattern` acceptă `*` și `?`; clasele de caractere (`[abc]`) sunt tratate
 literal.
 
 Fiecare rulare tipărește versiunea pe prima linie și copyright-ul pe a doua — inclusiv
@@ -859,7 +867,7 @@ e `1 + radial/a`.
 
 **`--ratio` scrie două hărți**, fiindcă desparte masterul în două componente. La calea dată
 cu `-o` merge reziduul părții fixe pe aparat — cea care se potrivește cu verdictul — iar
-lângă ea, cu sufixul `-lume`, raportul `A/B`, pe care se vede *forma* gradientului extern.
+lângă ea, cu sufixul `-world`, raportul `A/B`, pe care se vede *forma* gradientului extern.
 În fereastră aceleași două stau sub un comutator.
 
 Spre deosebire de versiunea Python nu există figură cu 4 panouri, doar hărțile de mai sus.

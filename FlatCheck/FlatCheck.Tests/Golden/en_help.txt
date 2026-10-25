@@ -1,0 +1,51 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+Usage:
+  flatcheck <flat.fit>                    # structure test
+  flatcheck <flat.fit> --raw <flat.NEF>   # the same, plus the vignetting against the lens profile named in the raw
+  flatcheck <A.fit> --ratio <B.fit>       # attribution by 180-degree rotation
+  flatcheck <light.fit> --light           # end-to-end test, one frame
+  flatcheck <folder/> --light             # end-to-end test on the whole series
+  flatcheck <raw_flat.NEF> --expo         # exposure check
+  flatcheck <raw_flat.fit> --expo         # the same, on a raw FITS from Siril
+  flatcheck <sky_flat.NEF> --expo --sky   # exposure for sky flats
+  flatcheck <flat.NEF> --histeq -o <picture.png>   # Siril's "Histogram" view, per channel
+  flatcheck <flat.fit> --smooth <smoothed.fit>     # smoothed flat: no texture, dust or spots
+  flatcheck <reference.fit> --synthetic <synthetic.fit> --lens <text>   # synthetic flat from the lens profile
+  flatcheck --lenses [--lens <text>]      # the lenses with a vignetting profile (Adobe on disk, lensfun/ beside the exe)
+  flatcheck <A.fit> --against <B.fit>     # how much and how two flats differ (e.g. real against synthetic)
+  optional: -o, --out <output.png> | --sat <white> --black <lvl> (for --expo)
+            --pattern <pattern> (for --light on a folder; default pp_light_*.fit)
+            --fov <degrees> (the field's diagonal, when the header does not give it)
+            --scale <px>|auto (for --smooth: the smoothing scale on the sensor, default 300;
+                         'auto' proposes it from the master and smooths at it, or exits with 2 and no file)
+            --source adobe|lensfun, --focal <mm>, --fstop <f>, --crop <factor>, --profiles <folder> (for --synthetic
+                         and for structure with --lens/--raw; the focal length and the aperture come from the raw or
+                         from FOCALLEN when not given; the crop from the lensfun database)
+            --lens <text> | --raw <file> (for structure: compares the master's vignetting with the lens's
+                         profiles - by name, or by the ID in the raw beside the master; the verdict includes them)
+            --lang en|ro (the language of every text: en English, the default; ro Romanian)
+
+Accepted: FITS (.fit/.fits/.fts) and camera raw (.nef/.cr2/.cr3/.arw/.dng/.raf).
+On a raw, --expo takes the exact white and black levels from the file instead of guessing them from the maximum.
+
+--light does not work on everything: beyond a ~40-degree diagonal it refuses to answer,
+because there the sky and the vignetting have the same shape. See README.md.
+
+--histeq is a picture, not a test: every grey level gets the same number of pixels,
+so it shows the shape of what is not uniform, not how large it is. Exits with 0 once written.
+
+--smooth writes a second master that keeps everything smooth and removes the diffuser's
+texture, the dust and the spots. It gives no verdict; it reports WHAT IT REMOVED, and writes the map
+of that component at -o (plus the residual of the smoothed flat, with the suffix -after).
+
+--synthetic writes a radial flat from the lens's published vignetting profile -
+its model, achromatic, with no dust and no light source at all. --against compares it
+with a real flat: the vignetting of the ratio is the difference in stops, the map is its shape.
+
+This program comes with ABSOLUTELY NO WARRANTY, not even the implied
+warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. It is
+free software: you can redistribute it and/or modify it under the
+terms of the GPLv3 (or, at your option, any later version). The full
+text is in the LICENSE file, or at <https://www.gnu.org/licenses/gpl-3.0.html>.
+[exit 0]

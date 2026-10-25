@@ -31,7 +31,7 @@ two limits the report and the tab keep stating (lens versus source; dust may be 
   rule, 0 written and 1 refused, and does not go through `ExitFor`.
 - **The header written back** keeps the input's cards verbatim so that `BAYERPAT` survives and
   Siril treats the file as the CFA master it is; `FitsWriter` appends the two `HISTORY` lines.
-- **The console's two maps:** `-o` is the removed component and the `-dupa` suffix
+- **The console's two maps:** `-o` is the removed component and the `-after` suffix
   (`FlatCheckCli.AfterMapPath`, R-006) the smoothed flat's own residual.
 - **The scale can be proposed** (`--scale auto`, the tab's `Propune scara`): ADR 0027 holds the
   rule, the two guards, the three thresholds, what was tried as a guard and failed, the picks on

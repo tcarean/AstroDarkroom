@@ -1,0 +1,22 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== EXPOSURE: <TMP>/debayered.fit ===
+    saturation (white): 65535   black : 0   source: auto-detected from max=30000 (use --sat/--black if it is wrong)
+    mono/processed image (no CFA)
+    brightest channel, GLOBAL median      :  39.2%  (pulled down by the corners)
+    brightest channel, CENTRE 20%         :  45.5%  <- THIS decides the exposure
+    clipping in the centre (>=98% white)  : 0.000%
+
+    !! THE FILE DOES NOT LOOK LIKE A RAW FLAT !!
+    The 4 CFA channels are almost identical (spread 1.000) -> the file
+    is DEBAYERED. --expo needs the Bayer mosaic intact.
+
+    Typical cause: you opened the NEF in Siril and pressed Save (that debayers).
+    SOLUTIONS:
+      - run directly on the NEF (flatcheck reads the raw exactly):
+          flatcheck flat.NEF --expo
+      - OR make a raw FITS with Siril's Conversion tab (NOT Open+Save),
+        which keeps the CFA mosaic undebayered.
+
+[exit 1]

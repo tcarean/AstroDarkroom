@@ -1,0 +1,33 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== SYNTHETIC FLAT from the lens profile ===
+    reference frame    : <TMP>/ref.fit  (240 x 160)
+    lens               : Tokina AT-X 11-20mm F2.8 PRO DX  [NIKON CORPORATION]  source: Adobe
+    profile used       : 20 mm, f/2.8, infinity   (requested: 500 mm from --focal, f/1.0 from --fstop)
+    WARNING: the focal length requested, 500 mm, has no profile: 20 mm was taken (the lens has profiles at 18, 20 mm); the aperture requested, f/1.0, is 3.0 stops from the nearest profile, f/2.8 (profiles from f/2.8 to f/4.0). The depth written is the profile's used, not the requested values'.
+    model              : Adobe, V = 1 + a1 r^2 + a2 r^4 + a3 r^6 in focal-length units; a = -1.903047, 4.514725, -4.657911; SFF 1.5
+    profile file       : NIKON CORPORATION (Tokina AT-X 11-20mm F2.8 PRO DX) - RAW.lcp
+    camera crop        : 1.523  (lensfun database, Nikon D3300)
+    format             : profile calibrated on APS-C (crop 1.5); your sensor APS-C (1.523): the same format
+
+  DEPTH OF THE VIGNETTING WRITTEN (against the axis)
+    corner (the 5 % box)        :  63.0 % of the axis  ( 0.67 stops)
+    long edge (left/right)      :  70.3 % of the axis  ( 0.51 stops)
+    short edge (top/bottom)     :  80.9 % of the axis  ( 0.31 stops)
+    half the half-diagonal      :  82.2 % of the axis  ( 0.28 stops)
+
+    INFORMATIVE: the synthetic flat is the lens MODEL, not a measurement of your copy. It has
+    only the vignetting, radial and achromatic (the published profiles have a single set of
+    parameters for every channel): it holds no chromatic part of the fall-off, no shading
+    specific to the body, no dust, nor any non-radial structure. The two databases differ
+    from each other by ~0.2 stops in the corner on the same lens; ask no more precision of it.
+    What it lacks against a real flat - and what it has besides: no light source,
+    so neither the sky's curvature nor a panel's fall-off. Check a real flat against
+    it with --against.
+    The Siril scripts name pp_flat_stacked explicitly, so they do not take the synthetic flat by themselves:
+    rename it in place of the master (keep the original) or give it to calibrate with -flat=.
+
+    -> synthetic flat written: <TMP>/s.fit
+
+[exit 0]

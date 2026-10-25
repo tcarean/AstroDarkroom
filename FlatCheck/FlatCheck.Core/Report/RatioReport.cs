@@ -25,6 +25,7 @@
 // matters not to diverge.
 
 using System.IO;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -44,20 +45,25 @@ namespace FlatCheck
         /// <param name="w">Where to write.</param>
         internal static void Write(RatioResult r, string pathA, string pathB, TextWriter w)
         {
-            w.WriteLine("\n=== ATRIBUIRE PRIN ROTATIE 180 ===");
+            w.WriteLine(T("\n=== ATTRIBUTION BY 180 ROTATION ===", "\n=== ATRIBUIRE PRIN ROTATIE 180 ==="));
             w.WriteLine($"    A : {pathA}");
             w.WriteLine($"        {Provenance(r.StackCountA, r.DateObsA)}");
             w.WriteLine($"    B : {pathB}");
             w.WriteLine($"        {Provenance(r.StackCountB, r.DateObsB)}");
             Indent(Precondition(), w);
 
-            w.WriteLine("\n  COMPONENTA FIXA IN LUME  (informativ - nu e un verdict)");
-            w.WriteLine($"    gradient extern / orientare : {WorldLine(r)}");
-            w.WriteLine($"    imprastiere colturi         : {r.WorldCornerPct,5:F2} %");
+            w.WriteLine(T("\n  COMPONENT FIXED IN THE WORLD  (informative - not a verdict)",
+                          "\n  COMPONENTA FIXA IN LUME  (informativ - nu e un verdict)"));
+            w.WriteLine(T($"    external grad./orientation  : {WorldLine(r)}",
+                          $"    gradient extern / orientare : {WorldLine(r)}"));
+            w.WriteLine(T($"    corner spread               : {r.WorldCornerPct,5:F2} %",
+                          $"    imprastiere colturi         : {r.WorldCornerPct,5:F2} %"));
             Indent(WorldMeaning(), w);
 
-            w.WriteLine("\n  STRUCTURA MASTERULUI COMBINAT (A+B)/2 - partea fixa pe aparat");
-            w.WriteLine($"    dimensiune analiza : {r.Sensor.Width} x {r.Sensor.Height} (dupa 2x2 + downsample)");
+            w.WriteLine(T("\n  STRUCTURE OF THE COMBINED MASTER (A+B)/2 - the part fixed to the camera",
+                          "\n  STRUCTURA MASTERULUI COMBINAT (A+B)/2 - partea fixa pe aparat"));
+            w.WriteLine(T($"    analysis size      : {r.Sensor.Width} x {r.Sensor.Height} (after 2x2 + downsample)",
+                          $"    dimensiune analiza : {r.Sensor.Width} x {r.Sensor.Height} (dupa 2x2 + downsample)"));
             Indent(SensorCaveat(), w);
 
             StructureReport.WriteBody(r.Sensor, w);
@@ -75,18 +81,26 @@ namespace FlatCheck
         /// unknown.</returns>
         internal static string Provenance(int stackCount, string dateObs)
         {
-            string cadre = stackCount > 0 ? $"{stackCount} cadre stivuite" : "numar de cadre necunoscut";
-            string cand = string.IsNullOrEmpty(dateObs) ? "data necunoscuta" : $"prima expunere {dateObs}";
-            return $"{cadre}, {cand}";
+            string frames = stackCount > 0
+                ? T($"{stackCount} frames stacked", $"{stackCount} cadre stivuite")
+                : T("number of frames unknown", "numar de cadre necunoscut");
+            string when = string.IsNullOrEmpty(dateObs)
+                ? T("date unknown", "data necunoscuta")
+                : T($"first exposure {dateObs}", $"prima expunere {dateObs}");
+            return $"{frames}, {when}";
         }
 
         /// <summary>What the mode assumes and cannot check. It appears in the window too.</summary>
         /// <returns>Four lines joined by '\n'.</returns>
         internal static string Precondition()
-            => "Cele doua stive trebuie sa fie din DOUA orientari la 180 de grade, cu\n"
-             + "aparatul rotit in jurul axei optice si nimic altceva schimbat. Tool-ul NU\n"
-             + "poate verifica asta din pixeli - verifica randurile de mai sus. Doua stive\n"
-             + "din aceeasi orientare dau un rezultat increzator si fara sens.";
+            => T("The two stacks must be from TWO orientations 180 degrees apart, with\n"
+                 + "the camera rotated about the optical axis and nothing else changed. The tool can NOT\n"
+                 + "check that from the pixels - check the rows above. Two stacks\n"
+                 + "from the same orientation give a confident and meaningless result.",
+                 "Cele doua stive trebuie sa fie din DOUA orientari la 180 de grade, cu\n"
+                 + "aparatul rotit in jurul axei optice si nimic altceva schimbat. Tool-ul NU\n"
+                 + "poate verifica asta din pixeli - verifica randurile de mai sus. Doua stive\n"
+                 + "din aceeasi orientare dau un rezultat increzator si fara sens.");
 
         /// <summary>
         /// The informative figure with its error bar, without the label. The window shows it this
@@ -104,7 +118,7 @@ namespace FlatCheck
         /// <param name="r">The attribution result.</param>
         /// <returns>The value and the label in brackets.</returns>
         internal static string WorldLine(RatioResult r)
-            => $"{WorldValue(r)}   [{r.WorldLabel}]";
+            => $"{WorldValue(r)}   [{VerdictWords.Of(r.WorldLabel)}]";
 
         /// <summary>
         /// What the figure of the row "gradient extern / orientare" is and what the label beside
@@ -117,10 +131,14 @@ namespace FlatCheck
         /// </summary>
         /// <returns>One sentence, without a final full stop.</returns>
         internal static string WorldNote()
-            => "cat gradient extern a purtat fiecare orientare in parte: jumatate din ce "
-             + "arata raportul A/B, fiindca rotatia il inverseaza si A/B il numara de doua ori. "
-             + "Eticheta e informativa si nu voteaza: OK sub "
-             + $"{Th.RatioOk:F0} %, SUSPECT pana la {Th.RatioBad:F0} %, PROBLEMA peste";
+            => T("how much external gradient each orientation carried on its own: half of what "
+                 + "the ratio A/B shows, because the rotation inverts it and A/B counts it twice. "
+                 + "The label is informative and does not vote: OK under "
+                 + $"{Th.RatioOk:F0} %, SUSPECT up to {Th.RatioBad:F0} %, {VerdictWords.Of("PROBLEMA")} above",
+                 "cat gradient extern a purtat fiecare orientare in parte: jumatate din ce "
+                 + "arata raportul A/B, fiindca rotatia il inverseaza si A/B il numara de doua ori. "
+                 + "Eticheta e informativa si nu voteaza: OK sub "
+                 + $"{Th.RatioOk:F0} %, SUSPECT pana la {Th.RatioBad:F0} %, PROBLEMA peste");
 
         /// <summary>
         /// The row "imprastiere colturi" of the world-fixed component. It sat on screen without
@@ -128,17 +146,24 @@ namespace FlatCheck
         /// </summary>
         /// <returns>One sentence, without a final full stop.</returns>
         internal static string WorldCornerNote()
-            => "acelasi gradient extern, citit doar in cele patru colturi ale raportului A/B: "
-             + "cat difera coltul cel mai luminos de cel mai intunecat, tot per orientare. "
-             + "Vederea partiala a randului de sus, cum e imprastierea colturilor pentru reziduu";
+            => T("the same external gradient, read only in the four corners of the ratio A/B: "
+                 + "how much the brightest corner differs from the darkest, again per orientation. "
+                 + "The partial view of the row above, as the corner spread is for the residual",
+                 "acelasi gradient extern, citit doar in cele patru colturi ale raportului A/B: "
+                 + "cat difera coltul cel mai luminos de cel mai intunecat, tot per orientare. "
+                 + "Vederea partiala a randului de sus, cum e imprastierea colturilor pentru reziduu");
 
         /// <summary>What the world-fixed figure and its error bar mean for your master.</summary>
         /// <returns>Four lines joined by '\n'.</returns>
         internal static string WorldMeaning()
-            => "Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de\n"
-             + "eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul\n"
-             + "masuratorii: cand cifra si eroarea ei sunt comparabile, nu s-a detectat\n"
-             + "nimic peste zgomot.";
+            => T("That much the rotation removed from the master, if you stacked both orientations. The error\n"
+                 + "bar is the part of A/B that does NOT invert with the rotation, so the noise\n"
+                 + "of the measurement: when the figure and its error are comparable, nothing was detected\n"
+                 + "above the noise.",
+                 "Atat a scos rotatia din master, daca ai stivuit ambele orientari. Bara de\n"
+                 + "eroare e partea din A/B care NU se inverseaza la rotatie, deci zgomotul\n"
+                 + "masuratorii: cand cifra si eroarea ei sunt comparabile, nu s-a detectat\n"
+                 + "nimic peste zgomot.");
 
         /// <summary>
         /// The limit that matters most and does not show from the figures: "fixed to the camera"
@@ -146,11 +171,16 @@ namespace FlatCheck
         /// </summary>
         /// <returns>Five lines joined by '\n'.</returns>
         internal static string SensorCaveat()
-            => "Ce urmeaza e ce a ramas dupa ce s-a scos tot ce putea scoate rotatia. Fiind\n"
-             + "fix pe aparat, se imparte corect din lights - DAR numai daca era la fel si\n"
-             + "cand ai fotografiat lights-urile. Vignetarea obiectivului era. O curea\n"
-             + "cazuta pe lentila, condensul sau o parasolara stramba se rotesc si ele cu\n"
-             + "aparatul, arata identic aici, si la lights nu mai sunt acolo.";
+            => T("What follows is what was left after everything the rotation could remove was removed. Being\n"
+                 + "fixed to the camera, it divides out of the lights correctly - BUT only if it was the same\n"
+                 + "when you shot the lights. The lens's vignetting was. A strap\n"
+                 + "fallen over the lens, condensation or a crooked lens hood rotate with the\n"
+                 + "camera too, look identical here, and are no longer there for the lights.",
+                 "Ce urmeaza e ce a ramas dupa ce s-a scos tot ce putea scoate rotatia. Fiind\n"
+                 + "fix pe aparat, se imparte corect din lights - DAR numai daca era la fel si\n"
+                 + "cand ai fotografiat lights-urile. Vignetarea obiectivului era. O curea\n"
+                 + "cazuta pe lentila, condensul sau o parasolara stramba se rotesc si ele cu\n"
+                 + "aparatul, arata identic aici, si la lights nu mai sunt acolo.");
 
         /// <summary>Writes each line of a text indented by four spaces.</summary>
         /// <param name="text">The lines, joined by '\n'.</param>

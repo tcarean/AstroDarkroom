@@ -56,7 +56,7 @@ namespace FlatCheck.Tests;
 /// </summary>
 public class GoldenOutputTests
 {
-    const int Size = 512;
+    internal const int Size = 512;
 
     static string GoldenDir([CallerFilePath] string thisFile = "") =>
         Path.Combine(Path.GetDirectoryName(thisFile)!, "Golden");
@@ -119,7 +119,7 @@ public class GoldenOutputTests
 
     static string ScrubVersion(string text) => VersionBanner.Replace(text, VersionPlaceholder);
 
-    static string Flat(TempWorkspace ws, string name, Func<int, int, double> scene, int size = Size) =>
+    internal static string Flat(TempWorkspace ws, string name, Func<int, int, double> scene, int size = Size) =>
         ws.WriteFile(name, FitsTestData.BuildFits(size, size, scene));
 
     // ---------------------------------------------------------------- structure
@@ -263,7 +263,7 @@ public class GoldenOutputTests
         RunCli(ws, a, "--ratio", b, "-o", ws.PathTo("out.png"));
 
         Assert.True(File.Exists(ws.PathTo("out.png")));
-        Assert.True(File.Exists(ws.PathTo("out-lume.png")));
+        Assert.True(File.Exists(ws.PathTo("out-world.png")));
     }
 
     [Fact]
@@ -388,7 +388,7 @@ public class GoldenOutputTests
     }
 
     /// <summary>Writes a series' frames into a subfolder, with Siril's names.</summary>
-    static string SeriesDir(TempWorkspace ws, string name, params Func<int, int, double>[] scenes)
+    internal static string SeriesDir(TempWorkspace ws, string name, params Func<int, int, double>[] scenes)
     {
         string dir = Path.Combine(ws.Dir, name);
         Directory.CreateDirectory(dir);
@@ -782,7 +782,7 @@ public class GoldenOutputTests
 
     // ---------------------------------------------------------------- synthetic / against
 
-    static string Reference(TempWorkspace ws, string name = "ref.fit", double k = 0.45) =>
+    internal static string Reference(TempWorkspace ws, string name = "ref.fit", double k = 0.45) =>
         ws.WriteFile(name, FitsTestData.BuildFits(240, 160, FitsTestData.Radial(240, 160, k: k),
             extraCards: new[] { FitsTestData.Card("FOCALLEN", "20.0"), FitsTestData.Card("INSTRUME", "'Nikon D3300'"), FitsTestData.Card("BAYERPAT", "'RGGB'") }));
 

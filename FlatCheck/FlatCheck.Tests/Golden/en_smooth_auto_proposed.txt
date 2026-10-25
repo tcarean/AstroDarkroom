@@ -1,0 +1,55 @@
+flatcheck <VERSIUNE>
+Copyright (C) 2026 Tudor Carean
+
+=== SMOOTHING, scale proposal: <TMP>/textured.fit ===
+    input fine texture   : 1.04 % (over 0.20 %: there is something to smooth)
+
+  TRIALS (one smoothing per step)
+    scale  150 px : texture left 0.00 %, asymmetry +0.03, tilt +0.03, removed 0.12 % ptp  -> fits
+    scale  300 px : texture left 0.00 %, asymmetry +0.01, tilt +0.03, removed 0.11 % ptp  -> fits
+    scale  600 px : texture left 0.00 %, asymmetry +0.00, tilt +0.02, removed 0.11 % ptp  -> fits
+
+  PROPOSED SCALE: 150 px
+    The smallest step at which the texture left falls under 0.05 % without
+    the azimuthal asymmetry or the tilt falling by more than 0.5 points - the two
+    tests the texture does not touch, so a fall there is real structure leaving.
+
+    The rule proposes, it does not decide: it does not know what is the lens's and what is the source's - the hot spot of
+    an LCD looks the same as a ring of the lens - and it is blind to a real structure that sits only
+    in the corners, outside the inscribed circle. Look at the map of the removed component before you press.
+
+=== SMOOTHING: <TMP>/textured.fit ===
+    frame              : 512 x 512, mono/processed (no CFA mosaic)
+    smoothing scale    : 150 px on the sensor (tiles of 12 px, Gaussian kernel sigma 12.5 tiles)
+    tiles rejected     : none of 1849 (dust, spots, texture above 2 %)
+    fine texture       : 1.04 % before -> 0.00 % after (structure under ~128 px on the sensor, without the pixel noise)
+
+  WHAT WAS REMOVED (original / smoothed, at the analysis resolution 256 x 256)
+    p1 / p99 per pixel       : -2.73 % / +2.77 %  (the pixel noise is in here)
+    large-scale structure    :  0.12 %  (p95 - p5 over the tiles)
+    most deviant tile        :  0.16 %
+    deepest spot             : -1.78 % (darker) at (127, 97)
+
+  BEFORE / AFTER - the five structure tests
+    spread of the 4 corners :  0.71 % [PERFECT]  ->   0.51 % [PERFECT]
+    max azimuthal asymmetry :  0.33 % [PERFECT]  ->   0.36 % [PERFECT]
+    residual (radial model) :  0.30 % [PERFECT]  ->   0.33 % [PERFECT]
+    tilt (gradient)         :  0.41 % [PERFECT]  ->   0.44 % [PERFECT]
+    worst spot (one tile)   :  0.57 % [PERFECT]  ->   0.42 % [PERFECT]
+    VERDICT                 : PERFECT  ->  PERFECT
+
+    INFORMATIVE: the smoothed file keeps EVERYTHING that is smooth in the master and removes everything that is not. It does not know
+    what is the lens's and what is the source's: a monitor's blotches, the sky's gradient or
+    a panel's uneven corners stay, because they are smooth; only --ratio separates them.
+    What it removes - texture, dust, compact spots - can also be wanted: a dust shadow
+    is right for the session whose lights have it too. A real structure narrower
+    than the scale (~300 px) is partly taken; the scale is the only knob.
+    The Siril scripts name pp_flat_stacked explicitly, so they do not take the smoothed file by themselves:
+    rename it in place of the master (keep the original) or give it to calibrate with -flat=.
+    -> smoothed flat saved: <TMP>/netezit.fit
+
+    -> map saved: <TMP>/out.png
+
+    -> map saved: <TMP>/out-after.png
+
+[exit 0]

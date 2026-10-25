@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using static FlatCheck.Ui;
 
 namespace FlatCheck
 {
@@ -113,7 +114,7 @@ namespace FlatCheck
         /// <returns>The flat and its depths; never null.</returns>
         internal static SyntheticFlatResult Build(LensProfile profile, int w, int h, double cameraCrop)
         {
-            if (w < 2 || h < 2) throw new ArgumentException("cadrul de referinta e prea mic");
+            if (w < 2 || h < 2) throw new ArgumentException(T("the reference frame is too small", "cadrul de referinta e prea mic"));
             VignettingModel m = profile.Model;
             double dmax = Math.Max(w, h);
             var flat = new Img(h, w);
