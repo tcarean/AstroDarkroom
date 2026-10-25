@@ -2,7 +2,7 @@
   <!-- Shared by every project in the solution. The single place for version, strictness and
        analyzers. Do not move <Version> into a csproj: VersionTests checks this file. -->
   <PropertyGroup>
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Copyright>Copyright (C) 2026 Tudor Carean</Copyright>
     <Authors>Tudor Carean</Authors>
 
