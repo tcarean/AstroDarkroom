@@ -30,6 +30,11 @@ crashes `--frame`.
 
 ## Alternatives rejected
 
+(Restated 2026-10-25: "until then a truncated FITS still crashes `--frame`" in the Decision
+above no longer holds. FlatCheck fixed it, its R-009, b9b20a6 and 469da9b; the copy took the
+hunk, ADR 0021, and a truncated FITS now ends `--frame` with `EROARE: FITS: date trunchiate:
+...` and exit 1.)
+
 - **Catching every exception in the console.** A bug would then print as `EROARE:` and exit
   1 like a bad file, and nothing would tell the two apart.
 - **Catching libraw's type in the console.** The console would reference Sdcb.LibRaw for an

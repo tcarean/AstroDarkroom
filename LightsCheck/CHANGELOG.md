@@ -8,6 +8,10 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Fixed
 
+- A FITS light whose data is shorter than its header says (a copy cut mid-transfer) crashed
+  `lightscheck --frame N` and was listed with `Index was outside the bounds of the array.`;
+  the reader now refuses it with `FITS: date trunchiate: ...` and both byte counts, so the
+  console exits 1 with the `EROARE:` line. Taken from FlatCheck's fix (R-008, R-017, ADR 0021).
 - `--pixel NaN` and `--pixel Infinity` were accepted by the console, `Infinity` by the window.
   Both now refuse anything that is not a finite number greater than 0, with the same message as
   before, by one check in the core (`SeriesOptions.PixelSizeIsValid`; R-004, R-029).

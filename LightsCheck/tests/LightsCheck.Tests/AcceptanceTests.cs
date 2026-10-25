@@ -192,6 +192,24 @@ public class AcceptanceTests
         Assert.Contains("minte.NEF", stderr, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A FITS whose data is shorter than its header says ends --frame with the reader's
+    /// EROARE line and exit 1, not with an IndexOutOfRangeException out of the sample loop.
+    /// </summary>
+    [Fact]
+    public void R017_FrameOnAFitsWhoseDataIsCutEndsWithAnErrorLineNotACrash()
+    {
+        using TempWorkspace ws = new();
+        Directory.CreateDirectory(Path.Combine(ws.Dir, "lights"));
+        byte[] fits = FitsTestData.BuildFits(64, 64, (x, y) => 100);
+        ws.WriteFile(Path.Combine("lights", "taiat.fit"), fits.Take(FitsTestData.BlockSize + 100).ToArray());
+
+        (int code, _, string stderr) = Cli.Run(ws.Dir, "--frame", "1");
+
+        Assert.Equal(1, code);
+        Assert.StartsWith("EROARE: FITS: date trunchiate", stderr, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void R027_TheDefaultRunPrintsTheSeriesReport_Exit0()
     {
