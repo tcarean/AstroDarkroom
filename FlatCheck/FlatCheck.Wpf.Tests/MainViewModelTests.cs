@@ -59,6 +59,55 @@ public class MainViewModelTests
         Assert.Null(vm.Ratio.FileB);
     }
 
+    /// <summary>
+    /// The chain really reaches the Ratio tab through OpenAsync: held open at the profile
+    /// catalog (the Structure run awaits it before the master), a pair picked meanwhile does not
+    /// finish until the chain does. R082_APickDuringTheOpeningChainWaitsForIt injects the seam
+    /// itself; this one checks the wiring.
+    /// </summary>
+    [Fact]
+    public async Task R082_OpeningPassesTheChainToTheRatioTabSoAPickWaitsForIt()
+    {
+        using var f = new SessionFixture().WithFlatMaster().WithRawFlats("a.NEF")
+                                          .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        using var ws = new TempWorkspace();
+        using var hold = new ManualResetEventSlim(false);
+        var sources = LensProfileTestData.Sources(ws);
+        var vm = new MainViewModel(null, null, null,
+            locateProfiles: () => { hold.Wait(); return sources; },
+            loadInfo: path => RawReader.IsRawPath(path) ? RawFrame() : ImageLoader.LoadInfo(path));
+
+        Task open = vm.OpenAsync(f.Root);   // stops at the catalog, which the test holds
+        vm.Ratio.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Ratio.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+        Task pick = vm.Ratio.Pending;
+
+        Assert.NotSame(pick, await Task.WhenAny(pick, Task.Delay(1000)));
+        Assert.True(vm.IsRunning);
+        Assert.False(vm.Ratio.HasResult);
+
+        hold.Set();
+        await open;
+        await pick;
+
+        Assert.True(vm.Structure.HasResult);
+        Assert.True(vm.Ratio.HasResult);
+        Assert.Contains("pp_flat_stacked_B.fit", vm.Ratio.Report);
+    }
+
+    /// <summary>What the metadata reader answers for the fabricated raw in flats/.</summary>
+    static LoadedFrame RawFrame() => new LoadedFrame
+    {
+        Header = new Dictionary<string, string>(),
+        FocalMm = 20,
+        FNumber = 2.8,
+        Camera = "NIKON D3300",
+        NikonLensId = 139,
+        LensMinFocalMm = 11,
+        LensMaxFocalMm = 20,
+        LensMaxAperture = 2.8,
+    };
+
     /// <summary>Tabul de expunere isi ia lista, dar nu calculeaza pana nu se alege ceva.</summary>
     [Fact]
     public async Task ExposureGetsItsListButWaitsForAChoice()

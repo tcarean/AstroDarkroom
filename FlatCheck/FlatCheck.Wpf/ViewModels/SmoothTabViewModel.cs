@@ -138,7 +138,7 @@ namespace FlatCheck.Wpf
             {
                 Run.RaiseCanExecuteChanged();
                 Advise.RaiseCanExecuteChanged();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                await WaitForChainAsync(_waitIdle).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
 
                 var text = new StringWriter();
@@ -312,7 +312,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Netezesc masterul de flat...", async () =>
             {
                 Run.RaiseCanExecuteChanged();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                await WaitForChainAsync(_waitIdle).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
 
                 var text = new StringWriter();

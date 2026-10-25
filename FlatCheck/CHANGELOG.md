@@ -37,6 +37,11 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
   (headerul nu da nici focala, nici scara)`), and a refusal judged from the focal length
   alone now says, as the console does, that the decision assumed the largest plausible
   sensor (R-083). The console texts are unchanged.
+- While a Ratio pair, a Netezire run, a Sintetic write or a Split waits for the analyses
+  started by opening the folder (the "sequential, not parallel" rule), the waiting screen says
+  so (`Astept sa se termine analizele pornite la deschiderea folderului...`) instead of
+  naming work that has not begun; the run's own message takes over when the chain ends
+  (R-082).
 - The FITS reader checks the file's magic: a file that does not begin with the `SIMPLE` card
   fails with `FITS: fisierul nu incepe cu SIMPLE.` in both reads, the full load and the
   metadata-only one (`ImageLoader.LoadInfo`), and a header cut before `END` fails in both with

@@ -296,11 +296,12 @@ namespace FlatCheck.Wpf
             _runCts = cts;
             CancellationToken ct = cts.Token;
 
-            return RunGuardedAsync("Compar cele doua mastere de flat...", async () =>
+            return RunGuardedAsync(SessionMessages.RatioComparing(), async () =>
             {
                 // Two more 24 MP masters do not load beside the opening chain's: a pick made
-                // while Structure or the series still runs waits for them, as the smoothing does.
-                if (waitIdle != null) await waitIdle().ConfigureAwait(true);
+                // while Structure or the series still runs waits for them, as the smoothing does,
+                // and the waiting screen says so meanwhile.
+                await WaitForChainAsync(waitIdle).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
 
                 var text = new StringWriter();

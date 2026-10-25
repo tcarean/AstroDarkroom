@@ -124,7 +124,13 @@ nothing, starts empty and documents itself before it can be used, the `pp_flat*.
 both layers (the candidate list, then the file dialogs), `RatioPattern` and why its text
 properties are instance properties. It is not in the opening chain; a pair picked while the
 chain still runs waits for it through the same `WhenIdleAsync` seam as Netezire, Sintetic and
-Split (R-082), so its two masters never load beside the structure run's.
+Split (R-082), so its two masters never load beside the structure run's. While it waits, the
+waiting screen's first line is `SessionMessages.WaitingForOpeningChain()`, not the run's own
+message, which would claim work that has not begun: `TabViewModel.WaitForChainAsync` swaps the
+line in while the chain's task is incomplete and puts the run's message back when it ends,
+and only for the latest run (the generation counter of `RunGuardedAsync`), so a superseded
+run waiting beside the new one does not write over its message. Netezire and Sintetic wait
+through the same helper; Split, which has no overlay, puts the same text in its phase line.
 
 **The Histogram tab lists the flat master first, then the smoothed master when it exists,
 then `flats/`, and lets a click interrupt a click.** The list and its order, the master not

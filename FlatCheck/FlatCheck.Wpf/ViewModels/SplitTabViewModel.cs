@@ -434,7 +434,14 @@ namespace FlatCheck.Wpf
 
             try
             {
-                if (waitIdle != null) await waitIdle().ConfigureAwait(true);
+                // The tab has no busy overlay, so the phase line says what the overlay would:
+                // waiting for the opening chain, when it still runs.
+                if (waitIdle != null)
+                {
+                    Task chain = waitIdle();
+                    if (!chain.IsCompleted) Phase = SessionMessages.WaitingForOpeningChain();
+                    await chain.ConfigureAwait(true);
+                }
                 ct.ThrowIfCancellationRequested();
 
                 var masters = new List<string>(parts);

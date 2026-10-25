@@ -575,7 +575,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Scriu flatul sintetic...", async () =>
             {
                 RaiseCommands();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                await WaitForChainAsync(_waitIdle).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 ProfileSources sources = await EnsureProfilesAsync().ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
@@ -651,7 +651,7 @@ namespace FlatCheck.Wpf
             await RunGuardedAsync("Compar masterul cu flatul sintetic...", async () =>
             {
                 RaiseCommands();
-                if (_waitIdle != null) await _waitIdle().ConfigureAwait(true);
+                await WaitForChainAsync(_waitIdle).ConfigureAwait(true);
                 ct.ThrowIfCancellationRequested();
                 var text = new StringWriter();
                 if (reportSoFar != null) text.Write(reportSoFar);

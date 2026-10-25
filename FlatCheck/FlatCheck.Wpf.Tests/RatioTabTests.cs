@@ -453,6 +453,42 @@ public class RatioTabTests
         Assert.Contains("pp_flat_stacked_B.fit", vm.Report);
     }
 
+    /// <summary>
+    /// While the pair waits for the opening chain (up to two minutes on a long series) the
+    /// waiting screen says that, not that it compares: nothing is compared yet. Once the chain
+    /// ends, the comparison's own message takes over. With no chain running, the comparison's
+    /// message is the first one shown.
+    /// </summary>
+    [Fact]
+    public async Task R082_WhileAPickWaitsForTheChainTheWaitingScreenSaysSo()
+    {
+        using var f = new SessionFixture()
+            .WithFlatMasters("pp_flat_stacked_A.fit", "pp_flat_stacked_B.fit");
+        var chain = new TaskCompletionSource();
+        var vm = new RatioTabViewModel();
+        vm.Attach(f.Session, CancellationToken.None, () => chain.Task);
+        var messages = new List<string>();
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(vm.BusyMessage)) messages.Add(vm.BusyMessage); };
+
+        vm.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        vm.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+
+        Assert.True(vm.IsBusy);
+        Assert.Equal(SessionMessages.WaitingForOpeningChain(), vm.BusyMessage);
+
+        chain.SetResult();
+        await vm.Pending;
+
+        Assert.Equal(SessionMessages.RatioComparing(), messages.Last());
+        Assert.True(vm.HasResult);
+
+        var idle = Attached(f);
+        idle.Choose(isA: true, path: f.MasterPath("pp_flat_stacked_A.fit"));
+        idle.Choose(isA: false, path: f.MasterPath("pp_flat_stacked_B.fit"));
+        Assert.Equal(SessionMessages.RatioComparing(), idle.BusyMessage);
+        await idle.Pending;
+    }
+
     [Fact]
     public async Task WithoutTwoFilesNothingIsComputed()
     {

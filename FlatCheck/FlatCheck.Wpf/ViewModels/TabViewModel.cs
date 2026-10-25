@@ -145,6 +145,31 @@ namespace FlatCheck.Wpf
         }
 
         /// <summary>
+        /// Awaits the opening chain before a run a click started, with the waiting screen saying
+        /// so: while the chain still runs, the first line reads
+        /// <see cref="SessionMessages.WaitingForOpeningChain"/> instead of the run's own message,
+        /// which would claim work that has not begun; the run's message comes back when the
+        /// chain ends. A chain already over, or no chain to wait for, shows nothing. Of two runs
+        /// waiting together, only the latest one puts its message back (the generation of
+        /// <see cref="RunGuardedAsync"/>), so a superseded run does not write over the new one's.
+        /// </summary>
+        /// <param name="waitIdle">The seam that completes when the opening chain has ended; null
+        /// means there is no chain to wait for.</param>
+        /// <returns>A task that completes when the chain has ended, or at once.</returns>
+        protected async Task WaitForChainAsync(Func<Task> waitIdle)
+        {
+            if (waitIdle == null) return;
+            Task chain = waitIdle();
+            if (chain.IsCompleted) return;
+
+            int gen = _generation;
+            string message = BusyMessage;
+            BusyMessage = SessionMessages.WaitingForOpeningChain();
+            await chain.ConfigureAwait(true);
+            if (gen == _generation) BusyMessage = message;
+        }
+
+        /// <summary>
         /// An exception's message, with its causes if there are any. No stack trace is shown: on
         /// a broken FITS file the reader's message already says what could not be read, and a
         /// ten-frame stack on screen helps nobody redo the flats.

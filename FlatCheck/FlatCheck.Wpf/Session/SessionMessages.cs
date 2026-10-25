@@ -112,6 +112,22 @@ namespace FlatCheck.Wpf
             + "jurul axei optice, mai faci ~15, si stivuiesti cele doua seturi SEPARAT - "
             + "adica in doua foldere de sesiune, cate unul pentru fiecare orientare.";
 
+        // ------------------------------------------------------- the waiting screen
+        //
+        // A run a click starts waits for the opening chain (the "sequential, not parallel" rule
+        // of MainViewModel); while it waits, the waiting screen says that and not the run's own
+        // message, which would claim work that has not begun.
+
+        /// <summary>The waiting screen's first line while a click-run waits for the analyses
+        /// started by opening the folder.</summary>
+        /// <returns>The line.</returns>
+        internal static string WaitingForOpeningChain() =>
+            "Astept sa se termine analizele pornite la deschiderea folderului...";
+
+        /// <summary>The Ratio tab's waiting screen while the two masters are compared.</summary>
+        /// <returns>The line.</returns>
+        internal static string RatioComparing() => "Compar cele doua mastere de flat...";
+
         /// <summary>
         /// The tab's documentation, shown before any computation. This mode is the only one
         /// that asks for something that cannot be deduced from a folder, so it is the only one
