@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -50,7 +52,7 @@ internal static class FrameRun
         SessionFolder session = SessionFolder.Open(folder);
         if (frameIndex < 1 || frameIndex > session.Lights.Count)
         {
-            throw new InvalidOperationException($"cadrul {frameIndex} nu exista: sesiunea are {session.Lights.Count} cadre in {session.LightsDir}");
+            throw new InvalidOperationException(T($"frame {frameIndex} does not exist: the session has {session.Lights.Count} frames in {session.LightsDir}", $"cadrul {frameIndex} nu exista: sesiunea are {session.Lights.Count} cadre in {session.LightsDir}"));
         }
 
         string path = session.Lights[frameIndex - 1];
@@ -90,9 +92,9 @@ internal static class FrameRun
     /// </returns>
     internal static AduScale AssumedScale(int bitpix) => bitpix switch
     {
-        8 => new AduScale(255, 0, "FITS (presupus din BITPIX 8)"),
-        16 => new AduScale(65535, 0, "FITS (presupus din BITPIX 16)"),
-        32 => new AduScale(4294967295.0, 0, "FITS (presupus din BITPIX 32)"),
-        _ => new AduScale(1.0, 0, "FITS (presupus 0..1, cadru in virgula mobila)"),
+        8 => new AduScale(255, 0, T("FITS (assumed from BITPIX 8)", "FITS (presupus din BITPIX 8)")),
+        16 => new AduScale(65535, 0, T("FITS (assumed from BITPIX 16)", "FITS (presupus din BITPIX 16)")),
+        32 => new AduScale(4294967295.0, 0, T("FITS (assumed from BITPIX 32)", "FITS (presupus din BITPIX 32)")),
+        _ => new AduScale(1.0, 0, T("FITS (assumed 0..1, a floating-point frame)", "FITS (presupus 0..1, cadru in virgula mobila)")),
     };
 }

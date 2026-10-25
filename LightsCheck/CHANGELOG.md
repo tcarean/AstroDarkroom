@@ -6,12 +6,32 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Added
+
+- The interface speaks English or Romanian: `--lang en` or `--lang ro` (also `--lang=ro`), in the
+  console and in the window, English when it is missing; a value it does not know stops the
+  console with an English `ERROR:` and exit 1, and the window says it and goes on in English
+  (R-060 to R-063, ADR 0022).
+- `--east left|right` and `--north up|down`, the English forms of `--est stanga|dreapta` and
+  `--nord sus|jos`; both forms work in both languages (R-064).
+
+### Changed
+
+- Without `--lang`, the console and the window now speak English; `--lang ro` gives the
+  Romanian output as it was.
+- The files of `--out` and of "Write the files..." are named in English in both languages:
+  `lightscheck-report.txt`, `lightscheck-frames.csv`, `lightscheck-rejected.txt` (they were
+  `lightscheck-raport.txt`, `lightscheck-cadre.csv`, `lightscheck-respinse.txt`); the CSV's text
+  cells follow the run's language (R-028, ADR 0022).
+- The Frames tab's `dithering` tooltip named the old default arrows (left = east); it now points
+  at the EAST and NORTH selectors.
+
 ### Fixed
 
 - A FITS light whose data is shorter than its header says (a copy cut mid-transfer) crashed
   `lightscheck --frame N` and was listed with `Index was outside the bounds of the array.`;
-  the reader now refuses it with `FITS: date trunchiate: ...` and both byte counts, so the
-  console exits 1 with the `EROARE:` line. Taken from FlatCheck's fix (R-008, R-017, ADR 0021).
+  the reader now refuses it with `FITS: data cut short: ...` (`FITS: date trunchiate: ...` with
+  `--lang ro`) and both byte counts, so the console exits 1 with the `ERROR:` line. Taken from FlatCheck's fix (R-008, R-017, ADR 0021).
 - `--pixel NaN` and `--pixel Infinity` were accepted by the console, `Infinity` by the window.
   Both now refuse anything that is not a finite number greater than 0, with the same message as
   before, by one check in the core (`SeriesOptions.PixelSizeIsValid`; R-004, R-029).

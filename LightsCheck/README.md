@@ -42,11 +42,17 @@ numelor de fisier.
 ## Folosire
 
 ```
-lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM]
+lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--lang ro|en]
 lightscheck <folder sesiune> --inventory
 lightscheck <folder sesiune> --frame N
 lightscheck --help
 ```
+
+Limba textelor e engleza, daca nu ceri altfel: `--lang ro` (sau `--lang=ro`) da textele in
+romana, ca pana acum, `--lang en` in engleza; merge oriunde pe linia de comanda, si la consola si
+la fereastra. O valoare necunoscuta (`--lang fr`) opreste consola cu un `ERROR:` in engleza si
+codul `1`; fereastra o spune intr-un mesaj si merge mai departe in engleza. Cifrele sunt aceleasi
+in ambele limbi.
 
 Fiecare rulare incepe cu `lightscheck <versiune>` si notita de copyright. Codul de iesire e
 `0` cand toate cadrele s-au citit si `1` la eroare (folder lipsa, niciun cadru, un cadru care
@@ -134,19 +140,23 @@ de 24 MP in cam 90 s pe 4 fire), le inregistreaza pe primul si tipareste raportu
   solve pe doua cadre brute); fara el ramane doar `RA 15 px, DEC 12 px`. Care sageata muta
   montura spre est si care spre nord depinde de setarile aplicatiei SynScan: implicit `→` est
   (deci `←` vest) si `↑` nord (deci `↓` sud); le schimbi cu `--est stanga|dreapta` si
-  `--nord sus|jos`, iar in fereastra din selectoarele EST si NORD, tinute minte intre porniri
+  `--nord sus|jos` (sau, in engleza, `--east left|right` si `--north up|down`; ambele forme
+  merg in ambele limbi), iar in fereastra din selectoarele EST si NORD, tinute minte intre porniri
   in `%LOCALAPPDATA%\LightsCheck\settings.json`. Coloana `acelasi loc` spune al catelea cadru
   consecutiv e in acelasi loc (la 10 px), din cate si de la care: `7/10 de la 61` e al
   saptelea din zece cadre ramase pe loc de la cadrul 61. Sirurile astea fac walking noise,
   dar cadrul ramane bun si in stiva: leacul e dithering mai des data viitoare, nu mai putine
   cadre.
 
-`--out DIR` scrie in DIR raportul (`lightscheck-raport.txt`), un CSV cu toate cifrele pe
-cadru (`lightscheck-cadre.csv`, cu axa darei in `trail_on`, sirul din `acelasi loc` in
+`--out DIR` scrie in DIR raportul (`lightscheck-report.txt`), un CSV cu toate cifrele pe
+cadru (`lightscheck-frames.csv`, cu axa darei in `trail_on`, sirul din `acelasi loc` in
 `spot_run_index`, `spot_run_frames`, `spot_run_first`, si miscarea de dithering in
 `move_ra_px`, `move_dec_px`, pixeli cu semn, plus spre est si spre nord, si `move_arrows`) si
-lista numelor de respins (`lightscheck-respinse.txt`),
-cate unul pe linie, de scos din secventa in Siril. Nimic nu se scrie in `lights/`.
+lista numelor de respins (`lightscheck-rejected.txt`),
+cate unul pe linie, de scos din secventa in Siril. Numele fisierelor sunt aceleasi in ambele
+limbi (pana la versiunea 1.0.0 erau `lightscheck-raport.txt`, `lightscheck-cadre.csv` si
+`lightscheck-respinse.txt`); textul din ele urmeaza limba rularii, si antetul CSV-ului ramane
+in engleza. Nimic nu se scrie in `lights/`.
 `--pixel UM` e marimea pixelului in microni cand fisierele n-o spun (implicit 3.92, D3300);
 cu focala din raw da scara in "/px. `--est stanga|dreapta` si `--nord sus|jos` spun care
 sageata SynScan muta montura spre est si care spre nord, pentru coloana `dithering`. Sagetile
@@ -219,7 +229,8 @@ Decodeaza al N-lea cadru din `lights/` (1 = primul) si il masoara:
 
 ## Fereastra
 
-`LightsCheck.Wpf.exe [folder sesiune]`. Fara argument, cere folderul la pornire. Analiza
+`LightsCheck.Wpf.exe [folder sesiune] [--lang ro|en]`. Fara folder, il cere la pornire; fara
+`--lang`, fereastra e in engleza (vezi Folosire), cu `--lang ro` in romana. Analiza
 porneste singura (aceeasi ca `lightscheck <folder>`, cu bara de progres si buton de oprire) si
 rezultatul apare in sase taburi:
 

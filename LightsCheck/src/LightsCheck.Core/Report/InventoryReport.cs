@@ -16,12 +16,13 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core;
 
 /// <summary>
-/// The inventory as the console prints it (Romanian, R-003, R-006). Words only; the numbers come
-/// from the run.
+/// The inventory as the console prints it (R-003, R-006), in the run's language. Words only; the
+/// numbers come from the run.
 /// </summary>
 internal static class InventoryReport
 {
@@ -48,18 +49,21 @@ internal static class InventoryReport
         ArgumentNullException.ThrowIfNull(w);
         SessionFolder s = inv.Session;
         w.WriteLine();
-        w.WriteLine($"=== SESIUNE: {s.Root} ===");
+        string missing = T("(missing)", "(lipsa)");
+        w.WriteLine(T($"=== SESSION: {s.Root} ===", $"=== SESIUNE: {s.Root} ==="));
         w.WriteLine($"    lights             : {FolderLine(s.Root, s.LightsDir, s.Lights)}");
-        w.WriteLine($"    biases             : {(s.BiasesDir is null ? "(lipsa)" : FolderLine(s.Root, s.BiasesDir, s.Biases))}");
-        w.WriteLine($"    darks              : {(s.DarksDir is null ? "(lipsa)" : FolderLine(s.Root, s.DarksDir, s.Darks))}");
-        w.WriteLine($"    aparat             : {Distinct(inv.Lights.Select(f => f.Camera))}");
-        w.WriteLine($"    obiectiv           : {Lens(inv.Lights)}");
-        w.WriteLine($"    expunere           : {Exposure(inv.Lights)}");
+        w.WriteLine($"    biases             : {(s.BiasesDir is null ? missing : FolderLine(s.Root, s.BiasesDir, s.Biases))}");
+        w.WriteLine($"    darks              : {(s.DarksDir is null ? missing : FolderLine(s.Root, s.DarksDir, s.Darks))}");
+        w.WriteLine(T($"    camera             : {Distinct(inv.Lights.Select(f => f.Camera))}", $"    aparat             : {Distinct(inv.Lights.Select(f => f.Camera))}"));
+        w.WriteLine(T($"    lens               : {Lens(inv.Lights)}", $"    obiectiv           : {Lens(inv.Lights)}"));
+        w.WriteLine(T($"    exposure           : {Exposure(inv.Lights)}", $"    expunere           : {Exposure(inv.Lights)}"));
         w.WriteLine($"    interval           : {Interval(inv)}");
         if (inv.HasErrors)
         {
             int n = inv.Lights.Count(f => f.Error is not null);
-            w.WriteLine($"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelul)");
+            w.WriteLine(T(
+                $"    WARNING            : {n} {(n == 1 ? "frame could not be read" : "frames could not be read")} (see the table)",
+                $"    ATENTIE            : {n} {(n == 1 ? "cadru nu s-a putut citi" : "cadre nu s-au putut citi")} (vezi tabelul)"));
         }
     }
 
@@ -74,15 +78,17 @@ internal static class InventoryReport
         ArgumentNullException.ThrowIfNull(inv);
         ArgumentNullException.ThrowIfNull(w);
         w.WriteLine();
-        w.WriteLine("  CADRE");
-        w.WriteLine("     nr  fisier                ora       expunere   ISO    f/   focala   pauza");
+        w.WriteLine(T("  FRAMES", "  CADRE"));
+        w.WriteLine(T(
+            $"    {"no",3}  {"file",-20}  {"time",-8}  {"exposure",8}  {"ISO",5}  {"f/",4}  {"focal",7}  {"pause",6}",
+            "     nr  fisier                ora       expunere   ISO    f/   focala   pauza"));
         for (int i = 0; i < inv.Lights.Count; i++)
         {
             FrameInfo f = inv.Lights[i];
             string name = f.FileName.Length > 20 ? f.FileName[..20] : f.FileName;
             if (f.Error is not null)
             {
-                w.WriteLine($"    {f.Index,3}  {name,-20}  eroare: {f.Error}");
+                w.WriteLine($"    {f.Index,3}  {name,-20}  {T("error", "eroare")}: {f.Error}");
                 continue;
             }
 
@@ -100,21 +106,21 @@ internal static class InventoryReport
     /// The folder of the frames; the session folder itself is written ".".
     /// </param>
     /// <param name="frames">The frames found there; the first one's extension is shown.</param>
-    /// <returns>"lights\ (87 cadre .NEF)", or ". (1 cadru .NEF)" for frames at the root.</returns>
+    /// <returns>"lights\ (87 frames .NEF)", or ". (1 frame .NEF)" for frames at the root.</returns>
     private static string FolderLine(string root, string dir, IReadOnlyList<string> frames)
     {
         string rel = dir == root ? "." : Path.GetRelativePath(root, dir) + "\\";
         string ext = frames.Count > 0 ? Path.GetExtension(frames[0]) : "";
-        return $"{rel} ({frames.Count} {(frames.Count == 1 ? "cadru" : "cadre")} {ext})";
+        return $"{rel} ({frames.Count} {(frames.Count == 1 ? T("frame", "cadru") : T("frames", "cadre"))} {ext})";
     }
 
     /// <summary>The distinct non-blank values (compared ordinally), joined by " / ".</summary>
     /// <param name="values">The values, one per frame; null and blank ones are skipped.</param>
-    /// <returns>The joined values, or "necunoscut" when none is left.</returns>
+    /// <returns>The joined values, or "unknown" when none is left.</returns>
     private static string Distinct(IEnumerable<string?> values)
     {
         string[] v = values.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!).Distinct(StringComparer.Ordinal).ToArray();
-        return v.Length == 0 ? "necunoscut" : string.Join(" / ", v);
+        return v.Length == 0 ? T("unknown", "necunoscut") : string.Join(" / ", v);
     }
 
     /// <summary>
@@ -124,20 +130,20 @@ internal static class InventoryReport
     /// </summary>
     /// <param name="frames">The lights of the session.</param>
     /// <returns>
-    /// The parts joined by ", ", or "necunoscut" when no frame carries any of them.
+    /// The parts joined by ", ", or "unknown" when no frame carries any of them.
     /// </returns>
     private static string Lens(IReadOnlyList<FrameInfo> frames)
     {
         FrameInfo? f = frames.FirstOrDefault(x => x.Error is null && (x.FocalMm is not null || x.NikonLensId is not null));
         if (f is null)
         {
-            return "necunoscut";
+            return T("unknown", "necunoscut");
         }
 
         List<string> parts = [];
         if (f.FocalMm is double focal)
         {
-            parts.Add(RunReport.F(focal, 0) + " mm" + (f.FNumber is double fn ? " f/" + RunReport.F(fn, 1) : "") + " (poza)");
+            parts.Add(RunReport.F(focal, 0) + " mm" + (f.FNumber is double fn ? " f/" + RunReport.F(fn, 1) : "") + T(" (as shot)", " (poza)"));
         }
 
         // The lens as its chip declares it: "135 mm f/2.0" for a prime, "11-20 mm f/2.8" for a
@@ -145,12 +151,12 @@ internal static class InventoryReport
         if (f.LensMinFocalMm is double lo && f.LensMaxFocalMm is double hi)
         {
             string range = lo == hi ? RunReport.F(lo, 0) : RunReport.F(lo, 0) + "-" + RunReport.F(hi, 0);
-            parts.Add("obiectiv " + range + " mm" + (f.LensMaxAperture is double ap ? " f/" + RunReport.F(ap, 1) : ""));
+            parts.Add(T("lens ", "obiectiv ") + range + " mm" + (f.LensMaxAperture is double ap ? " f/" + RunReport.F(ap, 1) : ""));
         }
 
         if (f.NikonLensId is long id)
         {
-            parts.Add("ID Nikon " + id.ToString(CultureInfo.InvariantCulture));
+            parts.Add(T("Nikon ID ", "ID Nikon ") + id.ToString(CultureInfo.InvariantCulture));
         }
 
         return string.Join(", ", parts);
@@ -162,18 +168,18 @@ internal static class InventoryReport
     /// <param name="frames">The lights of the session; the unreadable ones are skipped.</param>
     /// <returns>
     /// One pair marked as shared by every frame, several pairs marked as different exposures,
-    /// or "necunoscuta" when no light could be read.
+    /// or "unknown" when no light could be read.
     /// </returns>
     private static string Exposure(IReadOnlyList<FrameInfo> frames)
     {
         string[] combos = frames.Where(f => f.Error is null)
-            .Select(f => (f.ExposureSeconds is double e ? RunReport.F(e, 1) + " s" : "? s") + (f.Iso is double i ? " la ISO " + RunReport.F(i, 0) : ""))
+            .Select(f => (f.ExposureSeconds is double e ? RunReport.F(e, 1) + " s" : "? s") + (f.Iso is double i ? T(" at ISO ", " la ISO ") + RunReport.F(i, 0) : ""))
             .Distinct(StringComparer.Ordinal).ToArray();
         return combos.Length switch
         {
-            0 => "necunoscuta",
-            1 => combos[0] + " (toate cadrele)",
-            _ => string.Join("; ", combos) + " (expuneri diferite)",
+            0 => T("unknown", "necunoscuta"),
+            1 => combos[0] + T(" (all frames)", " (toate cadrele)"),
+            _ => string.Join("; ", combos) + T(" (different exposures)", " (expuneri diferite)"),
         };
     }
 
@@ -182,17 +188,20 @@ internal static class InventoryReport
     /// timed frame count and the share of the span spent exposing.
     /// </summary>
     /// <param name="inv">The inventory, whose cadence holds the figures.</param>
-    /// <returns>The cell, or a "necunoscut" sentence when the frames carry no time.</returns>
+    /// <returns>The cell, or an "unknown" sentence when the frames carry no time.</returns>
     private static string Interval(Inventory inv)
     {
         Cadence c = inv.Cadence;
         if (c.Start is not DateTime start || c.End is not DateTime end)
         {
-            return "necunoscut (cadrele nu au ora)";
+            return T("unknown (the frames carry no time)", "necunoscut (cadrele nu au ora)");
         }
 
-        return $"{start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} -> {end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} "
-             + $"({RunReport.Duration(c.SpanSeconds)}); integrare {RunReport.Duration(c.IntegrationSeconds)} din {c.TimedFrames} cadre ({RunReport.F(c.DutyPct, 0)} % din interval)";
+        string span = $"{start.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} -> {end.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} ({RunReport.Duration(c.SpanSeconds)})";
+        string integration = RunReport.Duration(c.IntegrationSeconds), duty = RunReport.F(c.DutyPct, 0);
+        return T(
+            $"{span}; integration {integration} from {c.TimedFrames} frames ({duty} % of the interval)",
+            $"{span}; integrare {integration} din {c.TimedFrames} cadre ({duty} % din interval)");
     }
 
     /// <summary>A time of capture as HH:mm:ss, or "-".</summary>

@@ -40,7 +40,8 @@ neither computes a number itself. It never modifies, moves or writes anything in
 - `src/LightsCheck.Core/` - everything that computes and everything that formats. No Console,
   no UI, no entry point: a compile boundary. `Imaging/` reads raws and FITS (copied from
   FlatCheck, ADR 0003), `Session/` finds the frames, `Analysis/` decides numbers, `Report/`
-  decides words (Romanian), `Runs/` chains them; both applications call `Runs/` only.
+  decides words (English and Romanian, ADR 0022), `Runs/` chains them; both applications call
+  `Runs/` only.
 - `src/LightsCheck.Cli/` - the console, `lightscheck.exe`: options, dispatch, exit code.
 - `src/LightsCheck.Wpf/` - the window, `LightsCheck.Wpf.exe`: the theme and the small pieces
   copied from FlatCheck (`Theme/`, `Presentation/`), the view-models (`ViewModels/`), the XAML
@@ -96,12 +97,15 @@ varies a kit rule names it.
   `Thresholds.cs` included, re-runs `/validate` on them before the task ends, with the drift
   table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
   edited to pass"), and an ADR that states the old value gets a dated note.
-- **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
-  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and every
-  comment in the code, the files copied from FlatCheck included (ADR 0018). Romanian in
-  everything the user sees: console text, `--help`, window labels, the reports, `README.md`,
-  `THIRD-PARTY-NOTICES.md`; a comment quotes such output as the user sees it. Never leave a
-  file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADRs 0005 and 0022). English in everything
+  the model reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and
+  every comment in the code, the files copied from FlatCheck included (ADR 0018). What the user
+  sees (console text, `--help`, window labels, the reports and files) is English or Romanian,
+  chosen by `--lang`, English by default: every such text is a `T("english", "romana")` pair
+  where it is composed, a XAML label `{local:T En='...', Ro='...'}`, never a single literal
+  (`docs/design/language.md`). `README.md` and `THIRD-PARTY-NOTICES.md` stay Romanian. A comment
+  quotes such output as the user sees it. Never leave a file in two languages; the pairs are
+  the one exception.
 - **Copied files stay copies** (ADR 0003, ADR 0018). A file under `src/LightsCheck.Core/Imaging/`
   marked "copied from FlatCheck unchanged" is not improved here: a fix, a comment included, goes
   to FlatCheck first, then the copy is refreshed. Its code is FlatCheck 2.3.0's, with the edits

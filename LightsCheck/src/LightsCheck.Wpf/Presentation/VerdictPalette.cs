@@ -32,7 +32,9 @@ internal static class VerdictPalette
     internal static readonly Color Neutral = Color.FromRgb(0x8B, 0x94, 0x9E);
 
     /// <summary>
-    /// Severity of a verdict word: 0 good, 1 fair, 2 attention, 3 bad, -1 neutral.
+    /// Severity of a verdict word, in either language (ADR 0022): 0 good, 1 fair, 2 attention,
+    /// 3 bad, -1 neutral. The English words are chosen so that none starts like a word of
+    /// another severity.
     /// </summary>
     /// <param name="verdict">
     /// The word, or the start of a longer verdict; null, empty and any case allowed.
@@ -41,35 +43,42 @@ internal static class VerdictPalette
     internal static int Severity(string? verdict)
     {
         string v = (verdict ?? "").Trim().ToUpperInvariant();
-        if (v.Length == 0 || v.StartsWith("NEDETERMINAT", StringComparison.Ordinal) || v.StartsWith("NEMASURAT", StringComparison.Ordinal) || v.StartsWith("NECITIT", StringComparison.Ordinal))
+        if (v.Length == 0 || StartsWithAny(v, "NEDETERMINAT", "NEMASURAT", "NECITIT", "UNDETERMINED", "NOT MEASURED", "UNREAD"))
         {
             return -1;
         }
 
-        if (v is "BUN" or "BUNA" or "OK" or "NU" or "DA")
+        if (v is "BUN" or "BUNA" or "OK" or "NU" or "DA" or "GOOD" or "NO" or "YES")
         {
-            return v == "DA" ? 2 : 0;
+            return v is "DA" or "YES" ? 2 : 0;
         }
 
-        // The dithering verdict opens with its worst part; FARA (no walking noise) is as good as
-        // OK.
-        if (v.StartsWith("FARA", StringComparison.Ordinal) || v.StartsWith("OK", StringComparison.Ordinal))
+        // The dithering verdict opens with its worst part; FARA / NO (no walking noise) is as
+        // good as OK.
+        if (StartsWithAny(v, "FARA", "OK", "NO "))
         {
             return 0;
         }
 
-        if (v.StartsWith("LA LIMITA", StringComparison.Ordinal) || v.StartsWith("POSIBIL", StringComparison.Ordinal) || v.StartsWith("ATENTIE", StringComparison.Ordinal))
+        if (StartsWithAny(v, "LA LIMITA", "POSIBIL", "ATENTIE", "MARGINAL", "POSSIBLE", "WARNING"))
         {
             return 2;
         }
 
-        if (v.StartsWith("SLAB", StringComparison.Ordinal) || v.StartsWith("INSUFICIENT", StringComparison.Ordinal) || v.StartsWith("EROARE", StringComparison.Ordinal))
+        if (StartsWithAny(v, "SLAB", "INSUFICIENT", "EROARE", "BAD", "INSUFFICIENT", "ERROR"))
         {
             return 3;
         }
 
         return 1;
     }
+
+    /// <summary>Whether a word starts with one of the given starts, ordinally.</summary>
+    /// <param name="v">The word, in capitals.</param>
+    /// <param name="starts">The starts to try.</param>
+    /// <returns>True when one of them matches.</returns>
+    private static bool StartsWithAny(string v, params string[] starts)
+        => starts.Any(s => v.StartsWith(s, StringComparison.Ordinal));
 
     /// <summary>The colour of a verdict word, by its <see cref="Severity"/>.</summary>
     /// <param name="verdict">The word; null allowed.</param>

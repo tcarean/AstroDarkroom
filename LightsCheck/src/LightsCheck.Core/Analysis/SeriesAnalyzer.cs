@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -372,6 +374,12 @@ internal sealed record SeriesAnalysis(
 internal static class SeriesAnalyzer
 {
     /// <summary>
+    /// The RA axis's source when it comes from the trails, in the run's language (R-025): the
+    /// report quotes it as it is.
+    /// </summary>
+    private static string TrailSource => T("the direction of the trails (assumed: the tracking is on RA)", "directia darelor (presupus: urmarirea e pe RA)");
+
+    /// <summary>
     /// The sidereal rate in arcseconds per minute: a full turn in 23 h 56 min 4.09 s.
     /// </summary>
     private const double SiderealArcsecPerMin = 360.0 * 3600 / (23 * 60 + 56 + 4.0905 / 60);
@@ -578,7 +586,7 @@ internal static class SeriesAnalyzer
         // The RA axis: from a plate solve when one is at hand, else from the trails of the bad
         // frames.
         Axis ra = wcs?.RaAxis ?? Axis.Unknown;
-        string source = wcs is null ? "necunoscut" : "plate solve (WCS)";
+        string source = wcs is null ? T("unknown", "necunoscut") : "plate solve (WCS)";
         double? trailAngle = null;
         List<double> angles = Enumerable.Range(0, n)
             .Where(i => classes[i] == FrameClass.Bad && frames[i].Measurement?.AngleDeg is not null && frames[i].Measurement!.AngleCoherence is double c && c > Th.TrailAxisCoherence)
@@ -593,12 +601,12 @@ internal static class SeriesAnalyzer
                 if (fromY < Th.TrailAxisTolerance)
                 {
                     ra = Axis.Y;
-                    source = "directia darelor (presupus: urmarirea e pe RA)";
+                    source = TrailSource;
                 }
                 else if (Math.Abs(trailAngle.Value) < Th.TrailAxisTolerance)
                 {
                     ra = Axis.X;
-                    source = "directia darelor (presupus: urmarirea e pe RA)";
+                    source = TrailSource;
                 }
             }
         }

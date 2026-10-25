@@ -17,13 +17,15 @@
 
 #nullable disable // copied from FlatCheck unchanged, which compiles without nullable annotations
 // (ADR 0003): its code of 2.3.0 with the edits ADR 0003 lists, its English comments of
-// 504b5d1 (ADR 0018), and FlatCheck's cut-data check of 469da9b (ADR 0021).
+// 504b5d1 (ADR 0018), FlatCheck's cut-data check of 469da9b (ADR 0021), and FlatCheck's
+// English/Romanian wordings of its messages of 55e959c (ADR 0022).
 
 // FitsReader.cs - our own FITS reader (no dependencies).
 // Header of 80-byte cards in 2880-byte blocks, then big-endian binary data.
 
 using System.Globalization;
 using System.Text;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Core
 {
@@ -265,7 +267,7 @@ namespace LightsCheck.Core
                 bool end = false;
                 while (!end)
                 {
-                    if (pos + 2880 > raw.Length) throw new InvalidDataException("FITS: header incomplet.");
+                    if (pos + 2880 > raw.Length) throw new InvalidDataException(T("FITS: incomplete header.", "FITS: header incomplet."));
                     for (int c = 0; c < 36; c++)
                     {
                         string card = System.Text.Encoding.ASCII.GetString(raw, pos + c * 80, 80);
@@ -341,7 +343,7 @@ namespace LightsCheck.Core
                 // an HDU without a usable 2D image: skip its data blocks and go on
                 pos += (int)dataBlocks;
             }
-            throw new InvalidDataException("FITS: niciun HDU cu imagine 2D gasit.");
+            throw new InvalidDataException(T("FITS: no HDU with a 2D image found.", "FITS: niciun HDU cu imagine 2D gasit."));
         }
 
         /// <summary>
@@ -351,13 +353,15 @@ namespace LightsCheck.Core
         /// </summary>
         /// <param name="announced">The bytes of pixels the header's NAXISn and BITPIX promise.</param>
         /// <param name="held">The bytes the file holds after that header, fewer than announced.</param>
-        /// <returns>The message, Romanian.</returns>
+        /// <returns>The message, in the run's language.</returns>
         static string DataCut(long announced, long held)
         {
             string n = announced.ToString(CultureInfo.InvariantCulture);
             string m = held.ToString(CultureInfo.InvariantCulture);
-            // a label form, so the Romanian numeral needs no "de" agreement for any count
-            return "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".";
+            return T(
+                "FITS: data cut short: the header announces " + n + " bytes of pixels, the file holds only " + m + ".",
+                // a label form, so the Romanian numeral needs no "de" agreement for any count
+                "FITS: date trunchiate: octeti de pixeli anuntati de header: " + n + ", in fisier doar " + m + ".");
         }
 
         /// <summary>One big-endian sample, as stored (before BZERO and BSCALE).</summary>
@@ -385,7 +389,7 @@ namespace LightsCheck.Core
                         for (int k = 0; k < 8; k++) bits = (bits << 8) | b[p + k];
                         return BitConverter.Int64BitsToDouble(bits);
                     }
-                default: throw new InvalidDataException("BITPIX neacceptat: " + bitpix);
+                default: throw new InvalidDataException(T("unsupported BITPIX: ", "BITPIX neacceptat: ") + bitpix);
             }
         }
 

@@ -45,13 +45,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <StackPanel MaxWidth="1200" HorizontalAlignment="Left">
       <Border Style="{StaticResource Card}">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="SESIUNE" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='SESSION', Ro='SESIUNE'}" />
           <ItemsControl ItemsSource="{Binding SessionRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="REZUMAT" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='SUMMARY', Ro='REZUMAT'}" />
           <ItemsControl ItemsSource="{Binding SummaryRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
@@ -63,25 +63,25 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="EXPUNERE SI ZGOMOT" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='EXPOSURE AND NOISE', Ro='EXPUNERE SI ZGOMOT'}" />
           <ItemsControl ItemsSource="{Binding NoiseRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="ROUA" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='DEW', Ro='ROUA'}" />
           <ItemsControl ItemsSource="{Binding DewRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="CADRE MISCATE" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='TRAILED FRAMES', Ro='CADRE MISCATE'}" />
           <ItemsControl ItemsSource="{Binding TrailRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
       <Border Style="{StaticResource Card}" Margin="0,14,0,0">
         <StackPanel>
-          <TextBlock Style="{StaticResource Heading}" Text="DRIFT SI ROTATIE" />
+          <TextBlock Style="{StaticResource Heading}" Text="{local:T En='DRIFT AND ROTATION', Ro='DRIFT SI ROTATIE'}" />
           <ItemsControl ItemsSource="{Binding DriftRows}" ItemTemplate="{StaticResource ReportRow}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>

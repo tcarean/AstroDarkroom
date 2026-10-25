@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -203,7 +205,7 @@ internal static class NoiseAnalyzer
         ArgumentNullException.ThrowIfNull(b);
         if (a.H != b.H || a.W != b.W)
         {
-            throw new InvalidOperationException("cele doua bias-uri au dimensiuni diferite");
+            throw new InvalidOperationException(T("the two biases have different sizes", "cele doua bias-uri au dimensiuni diferite"));
         }
 
         List<ReadNoise> result = [];

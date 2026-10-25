@@ -54,21 +54,21 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel>
         <Border Style="{StaticResource Card}">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="HARTA POZITIILOR" />
+            <TextBlock Style="{StaticResource Heading}" Text="{local:T En='POSITION MAP', Ro='HARTA POZITIILOR'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Fiecare cadru, acolo unde a stat fata de primul, legat de urmatorul si numerotat; culoarea e clasa cadrului (verde bun, galben la limita, rosu slab). Grila e la 10 px: distanta de la care doua cadre nu mai impart aceiasi pixeli calzi si acelasi walking noise." />
+                       Text="{local:T En='Each frame where it sat relative to the first, joined to the next and numbered; the colour is the frame\'s class (green good, yellow marginal, red bad). The grid is at 10 px: the distance beyond which two frames no longer share the same hot pixels and the same walking noise.', Ro='Fiecare cadru, acolo unde a stat fata de primul, legat de urmatorul si numerotat; culoarea e clasa cadrului (verde bun, galben la limita, rosu slab). Grila e la 10 px: distanta de la care doua cadre nu mai impart aceiasi pixeli calzi si acelasi walking noise.'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:DitherMap Height="460" Points="{Binding MapPoints}" XLabel="{Binding MapXLabel}" YLabel="{Binding MapYLabel}" />
             </Border>
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,0" TextWrapping="Wrap"
-                       Text="Inel in loc de punct plin = cadru dintr-un sir de 3 sau mai multe cadre consecutive in acelasi loc (10 px), sirurile care fac walking noise; coloana 'acelasi loc' din tabul Cadre spune al catelea e." />
+                       Text="{local:T En='A ring instead of a solid dot = a frame in a run of 3 or more consecutive frames in the same spot (10 px), the runs that make walking noise; the \'same spot\' column of the Frames tab says which one of the run it is.', Ro='Inel in loc de punct plin = cadru dintr-un sir de 3 sau mai multe cadre consecutive in acelasi loc (10 px), sirurile care fac walking noise; coloana \'acelasi loc\' din tabul Cadre spune al catelea e.'}" />
           </StackPanel>
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="PASUL FATA DE CADRUL ANTERIOR" />
+            <TextBlock Style="{StaticResource Heading}" Text="{local:T En='STEP FROM THE PREVIOUS FRAME', Ro='PASUL FATA DE CADRUL ANTERIOR'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Galben = o miscare de dithering (pas de cel putin 5 px); gri = driftul dintre doua cadre fara miscare." />
+                       Text="{local:T En='Yellow = a dither move (a step of at least 5 px); grey = the drift between two frames without a move.', Ro='Galben = o miscare de dithering (pas de cel putin 5 px); gri = driftul dintre doua cadre fara miscare.'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="200" Bars="True" Points="{Binding StepPoints}" Guides="{Binding StepGuides}" Title="px" Minimum="0" />
             </Border>
@@ -76,9 +76,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="DISTANTA LA CEL MAI APROPIAT ALT CADRU" />
+            <TextBlock Style="{StaticResource Heading}" Text="{local:T En='DISTANCE TO THE NEAREST OTHER FRAME', Ro='DISTANTA LA CEL MAI APROPIAT ALT CADRU'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Cat de aproape sta fiecare cadru de oricare altul din sesiune; sub 10 px impart aceiasi pixeli." />
+                       Text="{local:T En='How close each frame stands to any other of the session; under 10 px they share the same pixels.', Ro='Cat de aproape sta fiecare cadru de oricare altul din sesiune; sub 10 px impart aceiasi pixeli.'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="200" Bars="True" Points="{Binding NearestPoints}" Guides="{Binding StepGuides}" Title="px" Minimum="0" />
             </Border>

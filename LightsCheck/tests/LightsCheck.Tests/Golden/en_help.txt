@@ -1,0 +1,33 @@
+lightscheck <versiune>
+Copyright (C) 2026 Tudor Carean
+
+Usage: lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--east left|right] [--north up|down] [--lang en|ro]
+       lightscheck <session folder> --inventory
+       lightscheck <session folder> --frame N
+
+  The Siril session folder: the frames are taken from lights\ (or from the folder
+  itself when there is no lights\), the biases, optional, from biases\. Camera raws
+  (.nef, .cr2, .cr3, .arw, .dng, .raf) or FITS. Nothing is written into the folder.
+
+  No options:   measures every frame and prints the report: focus, exposure and
+                noise, dew, trailed frames, drift, dithering, the frames to reject.
+  --out DIR     writes into DIR the report, a CSV with every figure and the reject list
+                (lightscheck-report.txt, lightscheck-frames.csv, lightscheck-rejected.txt).
+  --threads N   how many frames are measured in parallel (default half the cores).
+  --pixel UM    the pixel size in microns, when the files do not say it (default 3.92, Nikon D3300).
+  --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.
+  --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.
+  --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.
+  --frame N     measures one frame only (1 = the first in lights\).
+  --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).
+  -h, --help    this text
+
+Exit code: 0 when every frame was read, 1 on an error or when a frame could not be read.
+
+This program comes with ABSOLUTELY NO WARRANTY, not even the implied
+warranty of merchantability or fitness for a particular purpose. It is
+free software: you can redistribute and modify it under the terms of
+the GPLv3 (or, at your option, any later version). The full text is in
+the LICENSE file, or at <https://www.gnu.org/licenses/gpl-3.0.html>.
+--- stderr ---
+--- exit 0 ---

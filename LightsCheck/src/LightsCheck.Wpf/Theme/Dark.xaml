@@ -335,7 +335,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
                               Content="{TemplateBinding SelectionBoxItem}"
                               ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" />
             <TextBlock x:Name="ph" Margin="10,0,26,0" VerticalAlignment="Center"
-                       Foreground="{StaticResource FaintBr}" Text="(nimic selectat)"
+                       Foreground="{StaticResource FaintBr}" Text="{local:T En='(nothing selected)', Ro='(nimic selectat)'}"
                        Visibility="Collapsed" IsHitTestVisible="False" />
             <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
                    AllowsTransparency="True" PopupAnimation="Slide" Focusable="False">

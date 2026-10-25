@@ -75,8 +75,9 @@ every report in `Report/` uses them, so no text is formatted by a view-model or 
 
 `Options.Parse(args)` takes one folder and the options `--inventory`, `--frame N`,
 `--out DIR`, `--threads N`, `--pixel UM`, `--est stanga|dreapta`, `--nord sus|jos`,
-`-h`/`--help`; no arguments at all means help. The first error wins and is a sentence in
-Romanian naming the argument: an option without its value, a frame or thread count under 1,
+`-h`/`--help`, and `--east left|right` / `--north up|down` beside the two arrow options, each
+name taking either language's words (R-064); no arguments at all means help. The first error
+wins and is a sentence in the run's language naming the argument: an option without its value, a frame or thread count under 1,
 a pixel size that is not a finite positive number (`SeriesOptions.PixelSizeIsValid`, the check
 the window shares), an arrow word that is not one of the two, an
 unknown option (anything else starting with `-`), a second folder, a missing folder,
@@ -88,19 +89,19 @@ um), the thread count to 0, which `SeriesRun` reads as half the cores, and the a
 streams (after switching the console's output encoding to UTF-8 for the run, since the report
 carries the arrow symbols of R-040, and putting the previous one back in a `finally`, the code
 page outliving the process otherwise; a process without a console throws `IOException` on the
-setter, which `Main` swallows) and by the tests with `StringWriter`s: it writes the banner, parses,
-and dispatches to `FrameRun` + `FrameReport` for `--frame`, to `InventoryRun` +
+setter, which `Main` swallows) and by the tests with `StringWriter`s: it writes the banner, takes
+`--lang` out and runs the rest in its language (`language.md`), parses, and dispatches to `FrameRun` + `FrameReport` for `--frame`, to `InventoryRun` +
 `InventoryReport` for `--inventory`, and otherwise to `SeriesRun.Run(folder,
 SeriesOptions(pixel, threads, arrows), progress)` + `SeriesReport.Write`, then
 `SeriesOutputs.WriteAll` when `--out` was given,
-printing `-> scris: <path>` per file. The series progress goes to stderr as one line
-rewritten in place (`\r    cadrul 12 / 87`), written synchronously on the reporting thread
+printing `-> written: <path>` (`-> scris:`) per file. The series progress goes to stderr as one line
+rewritten in place (`\r    frame 12 / 87`, `cadrul` in Romanian), written synchronously on the reporting thread
 under a lock, because a `Progress<T>` would post to the thread pool and could print after
 the report; stdout stays the report alone, which is what the goldens compare. Exit codes:
 0 for help and for a clean run; 1 for a parse error, for any `IOException`,
 `InvalidDataException`, `InvalidOperationException`, `ArgumentException` or
 `UnauthorizedAccessException` the runs throw (printed as `RunReport.Error(message)`,
-`EROARE: <message>`, on stderr, the same line the window shows), and
+`ERROR: <message>` or `EROARE: <message>`, on stderr, the same line the window shows), and
 for an inventory or a series in which a frame could not be read, the report having been
 printed in full. Any other exception is a bug and crashes. `WriteUsage` is the `--help`
-text; the golden `help.txt` holds it.
+text, written whole per language; the goldens `help.txt` and `en_help.txt` hold it.

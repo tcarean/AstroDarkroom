@@ -18,6 +18,7 @@
 using System.Globalization;
 using System.Text;
 using LightsCheck.Core;
+using static LightsCheck.Core.Ui;
 
 namespace LightsCheck.Cli;
 
@@ -88,6 +89,29 @@ internal static class Program
         ArgumentNullException.ThrowIfNull(stderr);
         RunReport.WriteBanner(stdout);
 
+        // The language first, so the usage and a parse error are worded in it (R-060); a value
+        // it does not know stops the run in English (R-061). Without --lang the run keeps
+        // Ui.Default: English in the program, Romanian in the test assemblies.
+        LanguageArgument lang = LanguageArgument.Extract(args);
+        if (lang.BadValue is not null)
+        {
+            stderr.WriteLine("ERROR: " + LanguageArgument.BadValueMessage(lang.BadValue));
+            return 1;
+        }
+
+        using IDisposable? scope = lang.Language is UiLanguage l ? Ui.Use(l) : null;
+        return RunIn(lang.Rest, stdout, stderr);
+    }
+
+    /// <summary>
+    /// The console after the banner and the language: parses the rest and dispatches it.
+    /// </summary>
+    /// <param name="args">The command line without <c>--lang</c>; not null.</param>
+    /// <param name="stdout">Where the help and the report go; not null.</param>
+    /// <param name="stderr">Where the errors and the progress line go; not null.</param>
+    /// <returns>The exit code: 0 or 1.</returns>
+    private static int RunIn(string[] args, TextWriter stdout, TextWriter stderr)
+    {
         Options o = Options.Parse(args);
         if (o.Help)
         {
@@ -128,7 +152,7 @@ internal static class Program
                 stdout.WriteLine();
                 foreach (string p in written)
                 {
-                    stdout.WriteLine($"    -> scris: {p}");
+                    stdout.WriteLine(T($"    -> written: {p}", $"    -> scris: {p}"));
                 }
             }
 
@@ -155,20 +179,70 @@ internal static class Program
         {
             lock (_lock)
             {
-                stderr.Write($"\r    cadrul {value.Done.ToString(CultureInfo.InvariantCulture)} / {value.Total.ToString(CultureInfo.InvariantCulture)}");
+                string done = value.Done.ToString(CultureInfo.InvariantCulture), total = value.Total.ToString(CultureInfo.InvariantCulture);
+                stderr.Write(T($"\r    frame {done} / {total}", $"\r    cadrul {done} / {total}"));
             }
         }
     }
 
     /// <summary>
-    /// Writes the Romanian help text: the usage, the options, the exit code and the warranty
-    /// notice.
+    /// Writes the help text in the current language: the usage, the options, the exit code and
+    /// the warranty notice. Its columns are aligned by hand, so each language is written whole.
     /// </summary>
     /// <param name="w">The writer the help goes to.</param>
     private static void WriteUsage(TextWriter w)
     {
+        if (Ui.IsRomanian)
+        {
+            WriteUsageRomanian(w);
+        }
+        else
+        {
+            WriteUsageEnglish(w);
+        }
+
         w.WriteLine();
-        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos]");
+        foreach (string line in RunReport.WarrantyLines)
+        {
+            w.WriteLine(line);
+        }
+    }
+
+    /// <summary>The English help text, without the warranty notice.</summary>
+    /// <param name="w">The writer the help goes to.</param>
+    private static void WriteUsageEnglish(TextWriter w)
+    {
+        w.WriteLine();
+        w.WriteLine("Usage: lightscheck <session folder> [--out DIR] [--threads N] [--pixel UM] [--east left|right] [--north up|down] [--lang en|ro]");
+        w.WriteLine("       lightscheck <session folder> --inventory");
+        w.WriteLine("       lightscheck <session folder> --frame N");
+        w.WriteLine();
+        w.WriteLine("  The Siril session folder: the frames are taken from lights\\ (or from the folder");
+        w.WriteLine("  itself when there is no lights\\), the biases, optional, from biases\\. Camera raws");
+        w.WriteLine("  (" + string.Join(", ", RawReader.RawExtensions) + ") or FITS. Nothing is written into the folder.");
+        w.WriteLine();
+        w.WriteLine("  No options:   measures every frame and prints the report: focus, exposure and");
+        w.WriteLine("                noise, dew, trailed frames, drift, dithering, the frames to reject.");
+        w.WriteLine("  --out DIR     writes into DIR the report, a CSV with every figure and the reject list");
+        w.WriteLine("                (" + SeriesOutputs.ReportName + ", " + SeriesOutputs.CsvName + ", " + SeriesOutputs.RejectedName + ").");
+        w.WriteLine("  --threads N   how many frames are measured in parallel (default half the cores).");
+        w.WriteLine("  --pixel UM    the pixel size in microns, when the files do not say it (default " + RunReport.F(SeriesOptions.D3300PixelUm, 2) + ", Nikon D3300).");
+        w.WriteLine("  --east left|right  the SynScan arrow that moves the mount east (default right); the other is west.");
+        w.WriteLine("  --north up|down    the SynScan arrow that moves the mount north (default up); the other is south.");
+        w.WriteLine("  --inventory   the frames' metadata only (no decoding): time, exposure, ISO, pauses.");
+        w.WriteLine("  --frame N     measures one frame only (1 = the first in lights\\).");
+        w.WriteLine("  --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).");
+        w.WriteLine("  -h, --help    this text");
+        w.WriteLine();
+        w.WriteLine("Exit code: 0 when every frame was read, 1 on an error or when a frame could not be read.");
+    }
+
+    /// <summary>The Romanian help text, without the warranty notice.</summary>
+    /// <param name="w">The writer the help goes to.</param>
+    private static void WriteUsageRomanian(TextWriter w)
+    {
+        w.WriteLine();
+        w.WriteLine("Folosire: lightscheck <folder sesiune> [--out DIR] [--threads N] [--pixel UM] [--est stanga|dreapta] [--nord sus|jos] [--lang ro|en]");
         w.WriteLine("          lightscheck <folder sesiune> --inventory");
         w.WriteLine("          lightscheck <folder sesiune> --frame N");
         w.WriteLine();
@@ -186,13 +260,9 @@ internal static class Program
         w.WriteLine("  --nord sus|jos        sageata SynScan care muta montura spre nord (implicit sus); cealalta e sud.");
         w.WriteLine("  --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO, pauze.");
         w.WriteLine("  --frame N     masoara un singur cadru (1 = primul din lights\\).");
+        w.WriteLine("  --lang ro|en  limba textelor: ro (romana) sau en (engleza, implicit).");
         w.WriteLine("  -h, --help    acest text");
         w.WriteLine();
         w.WriteLine("Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.");
-        w.WriteLine();
-        foreach (string line in RunReport.WarrantyLines)
-        {
-            w.WriteLine(line);
-        }
     }
 }

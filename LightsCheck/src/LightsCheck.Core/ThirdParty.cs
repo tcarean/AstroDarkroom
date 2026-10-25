@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static LightsCheck.Core.Ui;
+
 namespace LightsCheck.Core;
 
 /// <summary>
@@ -22,8 +24,8 @@ namespace LightsCheck.Core;
 /// under, whose it is, where its project lives, and which NuGet packages bring it.
 /// </summary>
 /// <param name="Name">The component's name, as the About window shows it.</param>
-/// <param name="Role">What it does in LightsCheck, in Romanian for the window.</param>
-/// <param name="Licence">The licence it is taken under, in Romanian for the window.</param>
+/// <param name="Role">What it does in LightsCheck, in the run's language, for the window.</param>
+/// <param name="Licence">The licence it is taken under, in the run's language, for the window.</param>
 /// <param name="Copyright">Its copyright line, as its project states it.</param>
 /// <param name="Url">Its project's web address.</param>
 /// <param name="Packages">The NuGet package IDs that bring it into the build.</param>
@@ -44,11 +46,12 @@ internal sealed record ThirdPartyComponent(
 /// </summary>
 internal static class ThirdParty
 {
-    internal static readonly IReadOnlyList<ThirdPartyComponent> Components =
+    /// <summary>The components, worded in the language of the moment they are read.</summary>
+    internal static IReadOnlyList<ThirdPartyComponent> Components =>
     [
         new ThirdPartyComponent(
             Name: "Sdcb.LibRaw",
-            Role: "ambalajul C# peste libraw",
+            Role: T("the C# wrapper around libraw", "ambalajul C# peste libraw"),
             Licence: "MIT",
             Copyright: "Copyright (c) Zhou Jie (sdcb)",
             Url: "https://github.com/sdcb/Sdcb.LibRaw",
@@ -58,8 +61,8 @@ internal static class ThirdParty
         // the one in LibRaw 0.21.1's COPYRIGHT file, the version the runtime packages carry.
         new ThirdPartyComponent(
             Name: "LibRaw",
-            Role: "citirea fisierelor raw de aparat (bibliotecile native)",
-            Licence: "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)",
+            Role: T("reading the camera raw files (the native libraries)", "citirea fisierelor raw de aparat (bibliotecile native)"),
+            Licence: T("LGPL-2.1 (the option chosen from the dual LGPL-2.1 / CDDL-1.0)", "LGPL-2.1 (optiunea aleasa din dubla LGPL-2.1 / CDDL-1.0)"),
             Copyright: "Copyright (C) 2008-2021 LibRaw LLC (info@libraw.org)",
             Url: "https://www.libraw.org/",
             Packages: ["Sdcb.LibRaw.runtime.win64", "Sdcb.LibRaw.runtime.linux64"]),

@@ -231,8 +231,8 @@ public class AcceptanceTests
         using TempWorkspace outDir = new();
         (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
         Assert.Equal(0, code);
-        Assert.Contains("-> scris: " + Path.Combine(outDir.Dir, "lightscheck-respinse.txt"), stdout, StringComparison.Ordinal);
-        Assert.True(File.Exists(Path.Combine(outDir.Dir, "lightscheck-cadre.csv")));
+        Assert.Contains("-> scris: " + Path.Combine(outDir.Dir, "lightscheck-rejected.txt"), stdout, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(outDir.Dir, "lightscheck-frames.csv")));
     }
 
     [Theory]

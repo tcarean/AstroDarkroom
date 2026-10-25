@@ -42,14 +42,19 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   the make's first word, so "SONY" + "ILCE-7M3" reads "SONY ILCE-7M3").
 - Exceptions: `FitsReader` throws `InvalidDataException` where FlatCheck threw `Exception`
   (the kit's analyzer CA2201); `FrameInfo` and the console catch it. `RawReader` throws the
-  same type, naming the file in Romanian, when libraw refuses to open or unpack one (`Open`,
+  same type, naming the file in the run's language, when libraw refuses to open or unpack one (`Open`,
   `Decode`; libraw's `LibRawException` and its English words only as the inner exception,
   ADR 0020), so a raw that is not a raw is one more unreadable frame to every caller (ADR 0019).
 - Taken later from FlatCheck: the cut-data check of `LoadFull` (FlatCheck's R-009, 469da9b,
   ADR 0021). Before the sample loop of every HDU, a data area shorter than `NAXISn` x
-  `|BITPIX| / 8` throws `InvalidDataException` with both byte counts (`DataCut`, Romanian
-  only); the padding to 2880 bytes is not required. FlatCheck's FITS-magic check and its
-  language switch are not taken (ADR 0018, ADR 0021).
+  `|BITPIX| / 8` throws `InvalidDataException` with both byte counts (`DataCut`); the padding
+  to 2880 bytes is not required. FlatCheck's FITS-magic check is not taken (ADR 0018, ADR 0021).
+- Taken later from FlatCheck: the English/Romanian wordings of `FitsReader`'s four messages
+  (FlatCheck's 55e959c, ADR 0022), word for word, through `using static LightsCheck.Core.Ui`;
+  FlatCheck holds the incomplete-header message in a `HeaderIncomplete` property, the copy writes
+  the same `T(...)` inline where it throws, so a recopy shows that one difference.
+  `RawReader`'s messages are paired here, in FlatCheck's English where FlatCheck has the same
+  message.
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
   machine, so `DateTimeOffset.FromUnixTimeSeconds(..).ToLocalTime()` gives back the camera's
   wall-clock to the second; EXIF `SubSecTime` is not exposed. Siril's `DATE-OBS` is UTC and is

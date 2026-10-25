@@ -42,5 +42,6 @@
     <Compile Include="..\LightsCheck.Tests\FitsTestData.cs" Link="Shared\FitsTestData.cs" />
     <Compile Include="..\LightsCheck.Tests\TempWorkspace.cs" Link="Shared\TempWorkspace.cs" />
     <Compile Include="..\LightsCheck.Tests\TestData.cs" Link="Shared\TestData.cs" />
+    <Compile Include="..\LightsCheck.Tests\RomanianByDefault.cs" Link="Shared\RomanianByDefault.cs" />
   </ItemGroup>
 </Project>
