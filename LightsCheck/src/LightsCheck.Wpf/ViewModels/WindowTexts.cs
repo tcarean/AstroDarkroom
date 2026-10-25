@@ -73,4 +73,24 @@ internal static class WindowTexts
     internal static string CropsBusy => "Se decodeaza cadrul pentru decupaje...";
 
     internal static string NoCrops => "Niciun decupaj: cadrul nu are stele masurate sau nu s-a putut citi.";
+
+    /// <summary>The step chart's guide label at the move threshold.</summary>
+    /// <param name="px">The threshold in px, formatted by the core.</param>
+    /// <returns>`miscare >= 5 px`.</returns>
+    internal static string MoveGuide(string px) => $"miscare >= {px} px";
+
+    /// <summary>The step chart's guide label at the coverage radius of walking noise.</summary>
+    /// <param name="px">The radius in px, formatted by the core.</param>
+    /// <returns>`10 px (walking noise)`.</returns>
+    internal static string WalkingNoiseGuide(string px) => $"{px} px (walking noise)";
+
+    /// <summary>The note on the dither map's x axis label: the grid spacing.</summary>
+    /// <param name="px">The spacing in px, formatted whole.</param>
+    /// <returns>`grila la 20 px`.</returns>
+    internal static string GridNote(string px) => $"grila la {px} px";
+
+    /// <summary>An error shown in place of a result: the console's prefix before the message.</summary>
+    /// <param name="message">The exception's message, as the core worded it.</param>
+    /// <returns>`EROARE: ` followed by the message.</returns>
+    internal static string Error(string message) => "EROARE: " + message;
 }

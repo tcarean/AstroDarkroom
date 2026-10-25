@@ -431,7 +431,7 @@ public sealed class DitherMap : ChartElement
             drawingContext.DrawText(t, new Point(here.X + 5, here.Y - t.Height / 2));
         }
 
-        FormattedText xl = Text($"{XLabel} (px); grila la {gridStep.ToString("F0", CultureInfo.InvariantCulture)} px", 10, TickBrush);
+        FormattedText xl = Text($"{XLabel} (px); {WindowTexts.GridNote(gridStep.ToString("F0", CultureInfo.InvariantCulture))}", 10, TickBrush);
         drawingContext.DrawText(xl, new Point(MarginLeft + plotW - xl.Width, MarginTop + plotH + 4));
         FormattedText yl = Text($"{YLabel} (px)", 10, TickBrush);
         drawingContext.DrawText(yl, new Point(4, MarginTop));

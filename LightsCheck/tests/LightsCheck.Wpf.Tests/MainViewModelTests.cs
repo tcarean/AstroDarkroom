@@ -239,6 +239,9 @@ public class MainViewModelTests
         Assert.Equal(Th.ElongationMarginal, vm.ElongationGuides[0].Value);
         Assert.Equal(Th.ElongationBad, vm.ElongationGuides[1].Value);
         Assert.Equal(Th.DitherStep, vm.StepGuides[0].Value);
+        Assert.Equal(SeriesReport.ClassWord(FrameClass.Marginal), vm.ElongationGuides[0].Label);
+        Assert.Equal(SeriesReport.ClassWord(FrameClass.Bad), vm.ElongationGuides[1].Label);
+        Assert.Equal(SeriesReport.ScaleLabel, vm.SessionRows[^1].Label);
     }
 
     /// <summary>The frames to drop are the bad and the unreadable ones, the marginal stay with the user.</summary>

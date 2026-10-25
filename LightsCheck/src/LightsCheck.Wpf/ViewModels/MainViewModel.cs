@@ -119,8 +119,9 @@ public sealed record CropVm(string Caption, BitmapSource Image);
 /// <summary>
 /// The window's state (R-029 to R-032): the folder, the inputs, the run with its progress and
 /// cancellation, and the result shaped for the tabs. Every figure and every sentence comes from
-/// the core; the view-model arranges them, and writes only a few labels of its own (the guide
-/// lines', the session card's "scara", the "EROARE: " before an error).
+/// the core, the verdict words and the `scara` label included; the view-model arranges them, and
+/// its few words of its own (the guide lines' labels, the `EROARE: ` before an error) are
+/// <see cref="WindowTexts"/>'.
 /// </summary>
 public sealed class MainViewModel : ObservableObject
 {
@@ -442,7 +443,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or ArgumentException)
         {
-            Status = "EROARE: " + e.Message;
+            Status = WindowTexts.Error(e.Message);
         }
     }
 
@@ -471,9 +472,9 @@ public sealed class MainViewModel : ObservableObject
     /// <summary>
     /// Shapes a finished run for the tabs: the console's text, the session lines, the core's row
     /// and table producers, the frames table and the chart points (NaN where a frame has no
-    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure
-    /// comes from the core; the guide lines' labels and the session card's "scara" label are
-    /// written here.
+    /// figure), the guide lines at the thresholds, the axis labels and headers. Every figure and
+    /// every word of the report comes from the core; the guide lines' labels are
+    /// <see cref="WindowTexts"/>'.
     /// </summary>
     /// <param name="r">The finished run's result.</param>
     internal void Populate(SeriesResult r)
@@ -493,7 +494,7 @@ public sealed class MainViewModel : ObservableObject
             SessionRows = header.ToString().ReplaceLineEndings("\n").Split('\n')
                 .Where(l => l.StartsWith("    ", StringComparison.Ordinal) && l.Contains(" : ", StringComparison.Ordinal))
                 .Select(l => new RowVm(l[4..l.IndexOf(" : ", StringComparison.Ordinal)].Trim(), l[(l.IndexOf(" : ", StringComparison.Ordinal) + 3)..], null))
-                .Append(new RowVm("scara", SeriesReport.ScaleLine(r), null))
+                .Append(new RowVm(SeriesReport.ScaleLabel, SeriesReport.ScaleLine(r), null))
                 .ToList();
         }
 
@@ -535,10 +536,10 @@ public sealed class MainViewModel : ObservableObject
         MapPoints = map;
         StepPoints = steps;
         NearestPoints = nearest;
-        StepGuides = [new GuideLine(Th.DitherStep, $"miscare >= {RunReport.F(Th.DitherStep, 0)} px", VerdictPalette.Warn), new GuideLine(Th.CoverageLoose, $"{RunReport.F(Th.CoverageLoose, 0)} px (walking noise)", VerdictPalette.Good)];
+        StepGuides = [new GuideLine(Th.DitherStep, WindowTexts.MoveGuide(RunReport.F(Th.DitherStep, 0)), VerdictPalette.Warn), new GuideLine(Th.CoverageLoose, WindowTexts.WalkingNoiseGuide(RunReport.F(Th.CoverageLoose, 0)), VerdictPalette.Good)];
         FwhmPoints = fwhm;
         ElongationPoints = elong;
-        ElongationGuides = [new GuideLine(Th.ElongationMarginal, "la limita", VerdictPalette.Warn), new GuideLine(Th.ElongationBad, "SLAB", VerdictPalette.Bad)];
+        ElongationGuides = [new GuideLine(Th.ElongationMarginal, SeriesReport.ClassWord(FrameClass.Marginal), VerdictPalette.Warn), new GuideLine(Th.ElongationBad, SeriesReport.ClassWord(FrameClass.Bad), VerdictPalette.Bad)];
         StarPoints = stars;
         BackgroundPoints = bg;
         (MapXLabel, MapYLabel) = SeriesReport.AxisLabels(s);
@@ -589,7 +590,7 @@ public sealed class MainViewModel : ObservableObject
             // place only while this frame is still the one selected (R-031).
             if (ReferenceEquals(_selectedFrame, row))
             {
-                CropsNote = "EROARE: " + e.Message;
+                CropsNote = WindowTexts.Error(e.Message);
             }
         }
     }

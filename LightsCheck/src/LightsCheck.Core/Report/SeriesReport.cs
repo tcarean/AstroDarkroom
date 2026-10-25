@@ -101,7 +101,7 @@ internal static class SeriesReport
         DitherAnalysis d = r.Dither;
         List<FrameInfo> infos = r.Frames.Select(f => f.Info).ToList();
         InventoryReport.WriteHeader(new Inventory(r.Session, infos, r.Cadence), w);
-        w.WriteLine($"    scara              : {ScaleLine(r)}");
+        w.WriteLine($"    {ScaleLabel}              : {ScaleLine(r)}");
 
         Section(w, "REZUMAT", SummaryRows(r));
         Section(w, "FOCUS", FocusRows(r));
@@ -287,6 +287,9 @@ internal static class SeriesReport
             w.WriteLine($"    {row.Label,-19}: {value}");
         }
     }
+
+    /// <summary>The label of the session's scale line; the window's session card reuses it.</summary>
+    internal const string ScaleLabel = "scara";
 
     /// <summary>
     /// The `scara` line: the image scale, the pixel size and its source, the reference frame.
