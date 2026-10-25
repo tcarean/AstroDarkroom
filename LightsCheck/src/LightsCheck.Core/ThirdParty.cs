@@ -21,6 +21,12 @@ namespace LightsCheck.Core;
 /// A third-party component the tool links: its name, its role here, the licence it is taken
 /// under, whose it is, where its project lives, and which NuGet packages bring it.
 /// </summary>
+/// <param name="Name">The component's name, as the About window shows it.</param>
+/// <param name="Role">What it does in LightsCheck, in Romanian for the window.</param>
+/// <param name="Licence">The licence it is taken under, in Romanian for the window.</param>
+/// <param name="Copyright">Its copyright line, as its project states it.</param>
+/// <param name="Url">Its project's web address.</param>
+/// <param name="Packages">The NuGet package IDs that bring it into the build.</param>
 internal sealed record ThirdPartyComponent(
     string Name,
     string Role,

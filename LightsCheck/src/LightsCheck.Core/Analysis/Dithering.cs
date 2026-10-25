@@ -18,12 +18,32 @@
 namespace LightsCheck.Core;
 
 /// <summary>A stretch of consecutive frames that stayed within a radius of the first one.</summary>
+/// <param name="FirstIndex">The first frame of the stretch, 1-based position in the series.</param>
+/// <param name="LastIndex">The last frame of the stretch, 1-based position in the series.</param>
+/// <param name="Frames">
+/// How many frames the stretch holds, <paramref name="LastIndex"/> - <paramref name="FirstIndex"/>
+/// + 1.
+/// </param>
 internal sealed record FrameStretch(int FirstIndex, int LastIndex, int Frames);
 
-/// <summary>One frame's place in a run at Th.CoverageLoose: the k-th of n frames from frame f (R-034).</summary>
+/// <summary>
+/// One frame's place in a run at <see cref="Th.CoverageLoose"/>: the k-th of n frames from
+/// frame f (R-034).
+/// </summary>
+/// <param name="Ordinal">k, the frame's place in the run, from 1.</param>
+/// <param name="Frames">n, how many frames the run holds.</param>
+/// <param name="FirstIndex">f, the run's first frame, 1-based position in the series.</param>
 internal sealed record SpotRun(int Ordinal, int Frames, int FirstIndex);
 
-/// <summary>A count per size class of the dither moves, in pixels, the classes bounded by Th.DitherSizeBounds.</summary>
+/// <summary>
+/// A count per size class of the dither moves, in pixels, the classes bounded by
+/// <see cref="Th.DitherSizeBounds"/>.
+/// </summary>
+/// <param name="Lower">The class's lower bound, in pixels, included.</param>
+/// <param name="Upper">
+/// The class's upper bound, in pixels, excluded; null for the last, open class.
+/// </param>
+/// <param name="Count">How many moves fall in the class.</param>
 internal sealed record SizeClass(double Lower, double? Upper, int Count);
 
 /// <summary>
@@ -32,6 +52,121 @@ internal sealed record SizeClass(double Lower, double? Upper, int Count);
 /// index is 1-based like FrameInfo.Index; a frame without a position (registration failed)
 /// has null in the per-frame arrays and breaks a step.
 /// </summary>
+/// <param name="Step">
+/// Per frame, the length of the step from the previous frame, in pixels; null for the first frame
+/// and where either frame has no position.
+/// </param>
+/// <param name="StepX">
+/// Per frame, the X component of that step, in pixels; null as <paramref name="Step"/>.
+/// </param>
+/// <param name="StepY">
+/// Per frame, the Y component of that step, in pixels; null as <paramref name="Step"/>.
+/// </param>
+/// <param name="IsMove">
+/// Per frame, whether its step reaches <see cref="Th.DitherStep"/>: a dither move (ADR 0007).
+/// </param>
+/// <param name="Moves">How many frames are moves.</param>
+/// <param name="Pauses">
+/// How many frames, the first excepted, follow a pause longer than <see cref="Th.DitherPause"/>.
+/// </param>
+/// <param name="PausesWithoutMove">The pauses whose frame has a step that is not a move.</param>
+/// <param name="MovesWithoutPause">
+/// The moves whose pause is known and not longer than <see cref="Th.DitherPause"/>.
+/// </param>
+/// <param name="FramesBetweenMoves">
+/// How many times each gap between one move and the next occurs: the key is the gap in frames (1 =
+/// every frame), the value the count.
+/// </param>
+/// <param name="LongestStretchFrames">
+/// The length, in frames, of the longest stretch without a move, from a move (or the first frame)
+/// up to the frame before the next move (or the last frame).
+/// </param>
+/// <param name="LongestStretchFirst">
+/// That stretch's first frame, 1-based; 0 for an empty list.
+/// </param>
+/// <param name="LongestStretchLast">
+/// That stretch's last frame, 1-based; 0 for an empty list.
+/// </param>
+/// <param name="MedianMove">The median length of the moves, in pixels; null without a move.</param>
+/// <param name="Sizes">
+/// The moves counted per size class, from <see cref="Th.DitherStep"/> through
+/// <see cref="Th.DitherSizeBounds"/> to an open last class.
+/// </param>
+/// <param name="MovesOnXOnly">
+/// The moves with an X component of at least <see cref="Th.AxisStep"/> and a Y component under it.
+/// </param>
+/// <param name="MovesOnYOnly">
+/// The moves with a Y component of at least <see cref="Th.AxisStep"/> and an X component under it.
+/// </param>
+/// <param name="MovesOnBoth">
+/// The moves with both components of at least <see cref="Th.AxisStep"/>.
+/// </param>
+/// <param name="MovesXPlus">
+/// The moves with an X component of at least <see cref="Th.AxisStep"/>, positive.
+/// </param>
+/// <param name="MovesXMinus">
+/// The moves with an X component of at least <see cref="Th.AxisStep"/>, negative.
+/// </param>
+/// <param name="MovesYPlus">
+/// The moves with a Y component of at least <see cref="Th.AxisStep"/>, positive.
+/// </param>
+/// <param name="MovesYMinus">
+/// The moves with a Y component of at least <see cref="Th.AxisStep"/>, negative.
+/// </param>
+/// <param name="NearestOther">
+/// Per frame, the distance to the nearest other registered frame, in pixels; null for a frame
+/// without a position or the only registered one.
+/// </param>
+/// <param name="WithinTight">
+/// The registered frames whose nearest other frame is closer than <see cref="Th.CoverageTight"/>.
+/// </param>
+/// <param name="WithinMid">The same, closer than <see cref="Th.CoverageMid"/>.</param>
+/// <param name="WithinLoose">The same, closer than <see cref="Th.CoverageLoose"/>.</param>
+/// <param name="IsolatedLoose">
+/// The registered frames whose nearest other frame is at least <see cref="Th.CoverageLoose"/> away.
+/// </param>
+/// <param name="DistinctMid">
+/// The distinct positions: the clusters of the greedy clustering at <see cref="Th.CoverageMid"/>.
+/// </param>
+/// <param name="DistinctLoose">The same at <see cref="Th.CoverageLoose"/>.</param>
+/// <param name="LargestClusterTight">
+/// The frames of the largest greedy cluster at <see cref="Th.CoverageTight"/>; 0 without a
+/// registered frame.
+/// </param>
+/// <param name="SharingPairs">
+/// The pairs of registered frames closer than <see cref="Th.PatternSharePx"/>.
+/// </param>
+/// <param name="PatternSurviving">
+/// The fraction of one frame's pattern the mean of the stack keeps, (n + 2 pairs) / n^2 over the n
+/// registered frames (R-048); null without a registered frame.
+/// </param>
+/// <param name="WalkingStretch">
+/// The longest stretch of two or more consecutive registered frames within
+/// <see cref="Th.CoverageLoose"/> of its first (R-043); null when there is none.
+/// </param>
+/// <param name="RunsMid">
+/// The runs of <see cref="Th.RunMinFrames"/> or more consecutive frames within
+/// <see cref="Th.CoverageMid"/> of the run's first, in order.
+/// </param>
+/// <param name="RunsLoose">The same within <see cref="Th.CoverageLoose"/>.</param>
+/// <param name="SpotRun">
+/// Per frame, its place in a run of <paramref name="RunsLoose"/>; null outside a run.
+/// </param>
+/// <param name="SpanX">
+/// The extent of the registered positions along X, in pixels; 0 without a registered frame.
+/// </param>
+/// <param name="SpanY">The same along Y.</param>
+/// <param name="Registered">How many frames have a position.</param>
+/// <param name="HotPixelsOk">
+/// Whether the longest run at <see cref="Th.CoverageTight"/> holds no more than
+/// <see cref="Th.HotPixelRunMax"/> frames.
+/// </param>
+/// <param name="WalkingNoiseOk">
+/// Whether the dithering keeps walking noise away: enough distinct positions
+/// (<see cref="Th.WalkingNoiseDistinctFraction"/>) and isolated frames
+/// (<see cref="Th.WalkingNoiseIsolatedFraction"/>) at <see cref="Th.CoverageLoose"/>, and moves
+/// along both axes (<see cref="Th.TwoDAxisFraction"/>).
+/// </param>
 internal sealed record DitherAnalysis(
     IReadOnlyList<double?> Step,
     IReadOnlyList<double?> StepX,
@@ -74,6 +209,10 @@ internal sealed record DitherAnalysis(
     bool HotPixelsOk,
     bool WalkingNoiseOk);
 
+/// <summary>
+/// Reads the dithering of a session from the frames' registered positions and pauses (R-019 to
+/// R-021).
+/// </summary>
 internal static class DitherAnalyzer
 {
     /// <summary>
@@ -81,6 +220,21 @@ internal static class DitherAnalyzer
     /// (null where unknown); <paramref name="pause"/> the seconds before each frame (null
     /// where unknown).
     /// </summary>
+    /// <param name="x">
+    /// Per frame, the registered X position, in pixels (the registration's shift); null where
+    /// unknown. Not null.
+    /// </param>
+    /// <param name="y">
+    /// Per frame, the registered Y position, in pixels; null where unknown. As long as
+    /// <paramref name="x"/>. Not null.
+    /// </param>
+    /// <param name="pause">
+    /// Per frame, the seconds of pause before it; null where unknown. As long as
+    /// <paramref name="x"/>. Not null.
+    /// </param>
+    /// <returns>
+    /// The steps, moves, pauses, sizes, axes, coverage, runs and the two verdicts.
+    /// </returns>
     internal static DitherAnalysis Analyze(IReadOnlyList<double?> x, IReadOnlyList<double?> y, IReadOnlyList<double?> pause)
     {
         ArgumentNullException.ThrowIfNull(x);
@@ -307,13 +461,30 @@ internal static class DitherAnalyzer
             nearest, tight, mid, loose, isolated, distinctMid, distinctLoose, largestTight, sharing, surviving, walkingStretch, runsMid, runsLoose, spot, spanX, spanY, reg.Count, hotOk, walkingOk);
     }
 
+    /// <summary>The distance between two frames' positions; both must have one.</summary>
+    /// <param name="x">Per frame, the X position, in pixels.</param>
+    /// <param name="y">Per frame, the Y position, in pixels.</param>
+    /// <param name="i">The first frame, 0-based position in the lists.</param>
+    /// <param name="j">The second frame, 0-based position in the lists.</param>
+    /// <returns>The Euclidean distance, in pixels.</returns>
     private static double Dist(IReadOnlyList<double?> x, IReadOnlyList<double?> y, int i, int j)
     {
         double dx = x[i]!.Value - x[j]!.Value, dy = y[i]!.Value - y[j]!.Value;
         return Math.Sqrt(dx * dx + dy * dy);
     }
 
-    /// <summary>Stretches of <paramref name="minFrames"/> (Th.RunMinFrames by default) or more consecutive registered frames within <paramref name="radius"/> of the stretch's first frame.</summary>
+    /// <summary>
+    /// Stretches of <paramref name="minFrames"/> (Th.RunMinFrames by default) or more
+    /// consecutive registered frames within <paramref name="radius"/> of the stretch's first
+    /// frame.
+    /// </summary>
+    /// <param name="x">Per frame, the X position, in pixels; null where unknown.</param>
+    /// <param name="y">Per frame, the Y position, in pixels; null where unknown.</param>
+    /// <param name="radius">
+    /// The largest distance from the stretch's first frame, in pixels, included.
+    /// </param>
+    /// <param name="minFrames">The fewest frames a stretch must hold to be kept.</param>
+    /// <returns>The stretches in series order; a frame without a position ends a stretch.</returns>
     private static List<FrameStretch> Runs(IReadOnlyList<double?> x, IReadOnlyList<double?> y, double radius, int minFrames = Th.RunMinFrames)
     {
         List<FrameStretch> runs = [];
@@ -340,6 +511,16 @@ internal static class DitherAnalyzer
     /// <paramref name="radius"/>, else seeds a new one. The sizes, one per cluster, in the
     /// order the seeds appeared; the count is the distinct positions.
     /// </summary>
+    /// <param name="x">Per frame, the X position, in pixels.</param>
+    /// <param name="y">Per frame, the Y position, in pixels.</param>
+    /// <param name="reg">The 0-based positions of the registered frames, in series order.</param>
+    /// <param name="radius">
+    /// The largest distance from a cluster's seed, in pixels, included.
+    /// </param>
+    /// <returns>
+    /// The frames per cluster, in the order the seeds appeared; empty when <paramref name="reg"/>
+    /// is.
+    /// </returns>
     private static List<int> Clusters(IReadOnlyList<double?> x, IReadOnlyList<double?> y, List<int> reg, double radius)
     {
         List<int> seeds = [];

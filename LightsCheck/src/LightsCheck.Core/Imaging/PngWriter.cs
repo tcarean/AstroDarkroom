@@ -15,20 +15,32 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+#nullable disable // copied from FlatCheck unchanged, which compiles without nullable annotations
+// (ADR 0003): its code of 2.3.0 with the edits ADR 0003 lists, its English comments of
+// 504b5d1 (ADR 0018).
 
 using System.IO.Compression;
 
 namespace LightsCheck.Core
 {
+    /// <summary>
+    /// Encodes RGB and grey rasters as PNG (8-bit RGB, one IDAT, the CRC-32 computed by hand),
+    /// and gives the colour of a value on the blue-white-red diverging scale.
+    /// </summary>
     internal static class PngWriter
     {
         internal static readonly byte[] Signature = { 137, 80, 78, 71, 13, 10, 26, 10 };
 
         /// <summary>
-        /// Harta divergenta: albastru (sub mid) -> alb (mid) -> rosu (peste mid), cu capetele
-        /// lo si hi date de apelant.
+        /// The colour of one value on the diverging scale: blue at <paramref name="lo"/>, white
+        /// at <paramref name="mid"/>, red at <paramref name="hi"/>, linear in between and clipped
+        /// outside.
         /// </summary>
+        /// <param name="v">The value.</param>
+        /// <param name="lo">The value drawn full blue.</param>
+        /// <param name="mid">The value drawn white.</param>
+        /// <param name="hi">The value drawn full red.</param>
+        /// <returns>The colour's components, 0..255.</returns>
         internal static (byte r, byte g, byte b) Colormap(double v, double lo, double mid, double hi)
         {
             double t;
@@ -36,27 +48,35 @@ namespace LightsCheck.Core
             if (v < mid)
             {
                 t = (v - lo) / Math.Max(mid - lo, 1e-12); t = Math.Clamp(t, 0, 1);
-                // albastru -> alb
+                // blue -> white
                 r = (byte)(255 * t); g = (byte)(255 * t); b = 255;
             }
             else
             {
                 t = (v - mid) / Math.Max(hi - mid, 1e-12); t = Math.Clamp(t, 0, 1);
-                // alb -> rosu
+                // white -> red
                 r = 255; g = (byte)(255 * (1 - t)); b = (byte)(255 * (1 - t));
             }
             return (r, g, b);
         }
 
+        /// <summary>Writes an RGB raster to disk as a PNG.</summary>
+        /// <param name="path">The PNG file to write; overwritten if it exists.</param>
+        /// <param name="rgb">The pixels, w*h*3 bytes, interleaved R,G,B, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
         internal static void Write(string path, byte[] rgb, int w, int h)
             => File.WriteAllBytes(path, Encode(rgb, w, h));
 
         /// <summary>
-        /// Un raster gri, scris ca RGB cu cele trei componente egale. Encoderul ramane cu
-        /// un singur tip de culoare; a adauga tipul 0 pentru vederile egalizate ar fi
-        /// insemnat o a doua cale prin IHDR si prin decoderul din teste, pentru octeti pe
-        /// care nimeni nu-i numara.
+        /// A grey raster, written as RGB with the three components equal. The encoder keeps a
+        /// single colour type; adding type 0 for the equalised views would have meant a second
+        /// path through IHDR and through the tests' decoder, for bytes no one counts.
         /// </summary>
+        /// <param name="grey">The pixels, w*h bytes, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
+        /// <returns>The PNG file's bytes.</returns>
         internal static byte[] EncodeGrey(byte[] grey, int w, int h)
         {
             var rgb = new byte[grey.Length * 3];
@@ -67,7 +87,13 @@ namespace LightsCheck.Core
             return Encode(rgb, w, h);
         }
 
-        /// <summary>Encodeaza in memorie - punctul de intrare real, ca sa fie testabil fara disc.</summary>
+        /// <summary>
+        /// Encodes in memory - the real entry point, so that it can be tested without a disk.
+        /// </summary>
+        /// <param name="rgb">The pixels, w*h*3 bytes, interleaved R,G,B, rows top down.</param>
+        /// <param name="w">The width in pixels.</param>
+        /// <param name="h">The height in pixels.</param>
+        /// <returns>The PNG file's bytes: 8-bit RGB, no filtering, one IDAT.</returns>
         internal static byte[] Encode(byte[] rgb, int w, int h)
         {
             using var outp = new MemoryStream();
@@ -77,10 +103,10 @@ namespace LightsCheck.Core
             WriteBE(ihdr, 0, w); WriteBE(ihdr, 4, h);
             ihdr[8] = 8;   // bit depth
             ihdr[9] = 2;   // color type RGB
-            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;   // deflate, filtrare adaptiva, neintretesut
+            ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;   // deflate, adaptive filtering, not interlaced
             WriteChunk(outp, "IHDR", ihdr);
 
-            // IDAT: fiecare rand precedat de filter byte 0 (None), apoi zlib
+            // IDAT: each row preceded by filter byte 0 (None), then zlib
             using var raw = new MemoryStream();
             for (int y = 0; y < h; y++)
             {
@@ -100,9 +126,17 @@ namespace LightsCheck.Core
             return outp.ToArray();
         }
 
+        /// <summary>Writes a 32-bit integer big-endian into a buffer.</summary>
+        /// <param name="b">The buffer.</param>
+        /// <param name="o">The offset of the first byte.</param>
+        /// <param name="v">The value.</param>
         static void WriteBE(byte[] b, int o, int v)
         { b[o] = (byte)(v >> 24); b[o + 1] = (byte)(v >> 16); b[o + 2] = (byte)(v >> 8); b[o + 3] = (byte)v; }
 
+        /// <summary>Writes one PNG chunk: length, type, data, CRC.</summary>
+        /// <param name="s">Where the chunk goes.</param>
+        /// <param name="type">The four-letter chunk type.</param>
+        /// <param name="data">The chunk's data; may be empty.</param>
         static void WriteChunk(MemoryStream s, string type, byte[] data)
         {
             var len = new byte[4]; WriteBE(len, 0, data.Length); s.Write(len, 0, 4);
@@ -113,16 +147,17 @@ namespace LightsCheck.Core
             var cb = new byte[4]; WriteBE(cb, 0, (int)crc); s.Write(cb, 0, 4);
         }
 
-        // Construita o singura data, la initializarea tipului, si publicata gata umpluta.
-        // A fost un camp initializat lenes ("if null, umple"), ceea ce era o cursa reala,
-        // nu teoretica: campul se atribuia INAINTE de umplere, deci un al doilea fir care
-        // intra in acel moment vedea tabela ne-nula, o citea cu zerouri si scria un CRC
-        // gresit - adica un PNG corupt. Reprodus: 8 fire, 2000 de runde, 5261 de CRC-uri
-        // gresite. In fereastra e chiar posibil, fiindca tabul Ratio poate encoda in timp
-        // ce Structura inca ruleaza. Un initializator static are garantia CLR-ului ca
-        // nimeni nu vede tabela pana nu e gata.
+        // Built once, when the type initialises, and published already filled. It used to be a
+        // lazily initialised field ("if null, fill it"), which was a real race, not a theoretical
+        // one: the field was assigned BEFORE it was filled, so a second thread coming in at that
+        // moment saw the table non-null, read it with zeros and wrote a wrong CRC - that is, a
+        // corrupt PNG. Reproduced: 8 threads, 2000 rounds, 5261 wrong CRCs. In the window it is
+        // really possible, because the Ratio tab can encode while Structure is still running. A
+        // static initialiser has the CLR's guarantee that no one sees the table until it is ready.
         static readonly uint[] _crcTable = BuildCrcTable();
 
+        /// <summary>The 256-entry table of the PNG CRC-32 (polynomial 0xedb88320).</summary>
+        /// <returns>The table.</returns>
         static uint[] BuildCrcTable()
         {
             var table = new uint[256];
@@ -135,6 +170,10 @@ namespace LightsCheck.Core
             return table;
         }
 
+        /// <summary>The CRC-32 of a chunk, over its type and its data, as PNG defines it.</summary>
+        /// <param name="type">The chunk type's four bytes.</param>
+        /// <param name="data">The chunk's data.</param>
+        /// <returns>The CRC.</returns>
         internal static uint Crc32(byte[] type, byte[] data)
         {
             uint crc = 0xffffffff;

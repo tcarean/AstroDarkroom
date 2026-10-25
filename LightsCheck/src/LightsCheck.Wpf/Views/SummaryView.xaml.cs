@@ -19,7 +19,12 @@ using System.Windows.Controls;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The Rezumat tab: the session lines and the sections as labelled rows; all bound to <see
+/// cref="MainViewModel"/>, no code of its own.
+/// </summary>
 public partial class SummaryView : UserControl
 {
+    /// <summary>Loads the tab's XAML.</summary>
     public SummaryView() => InitializeComponent();
 }

@@ -21,8 +21,20 @@ using LightsCheck.Core;
 
 namespace LightsCheck.Cli;
 
+/// <summary>
+/// The console, <c>lightscheck.exe</c>: parses the options, calls the core's runs and writes their
+/// reports; it computes nothing itself.
+/// </summary>
 internal static class Program
 {
+    /// <summary>
+    /// The entry point: switches the console's output to UTF-8 for the run, runs
+    /// <see cref="Run"/> on the real console, and puts the code page back.
+    /// </summary>
+    /// <param name="args">The command line, as <see cref="Options.Parse"/> reads it.</param>
+    /// <returns>
+    /// The exit code of <see cref="Run"/>: 0 on a clean run or for --help, 1 on an error.
+    /// </returns>
     private static int Main(string[] args)
     {
         // The report carries the SynScan arrows as symbols (R-040). A console window's own code
@@ -65,6 +77,10 @@ internal static class Program
     /// text. Exit 0 on a clean run and for --help, 1 on an error or when a frame could not be
     /// read (R-002, R-004, R-017, R-026).
     /// </summary>
+    /// <param name="args">The command line, without the program's name; not null.</param>
+    /// <param name="stdout">Where the banner, the help and the report go; not null.</param>
+    /// <param name="stderr">Where the errors and the progress line go; not null.</param>
+    /// <returns>The exit code: 0 or 1.</returns>
     internal static int Run(string[] args, TextWriter stdout, TextWriter stderr)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -125,11 +141,16 @@ internal static class Program
         }
     }
 
-    /// <summary>Progress written as it happens, on the calling thread, serialised by a lock.</summary>
+    /// <summary>
+    /// Progress written as it happens, on the calling thread, serialised by a lock.
+    /// </summary>
+    /// <param name="stderr">The writer the progress line is rewritten on.</param>
     private sealed class ConsoleProgress(TextWriter stderr) : IProgress<(int Done, int Total)>
     {
         private readonly object _lock = new();
 
+        /// <summary>Rewrites the progress line with the frames measured so far.</summary>
+        /// <param name="value">The frames done and the frames in all.</param>
         public void Report((int Done, int Total) value)
         {
             lock (_lock)
@@ -139,6 +160,11 @@ internal static class Program
         }
     }
 
+    /// <summary>
+    /// Writes the Romanian help text: the usage, the options, the exit code and the warranty
+    /// notice.
+    /// </summary>
+    /// <param name="w">The writer the help goes to.</param>
     private static void WriteUsage(TextWriter w)
     {
         w.WriteLine();

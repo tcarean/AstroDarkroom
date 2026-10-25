@@ -23,6 +23,22 @@ namespace LightsCheck.Core;
 /// previous exposure and the start of this one), one entry per position of the list given.
 /// Frames without a time or an exposure stay out of the figures and get no pause.
 /// </summary>
+/// <param name="Start">
+/// The time of capture of the first timed frame of the list; null when none is timed.
+/// </param>
+/// <param name="End">
+/// The latest end of exposure (time of capture plus exposure); null when none is timed.
+/// </param>
+/// <param name="SpanSeconds">
+/// From <paramref name="Start"/> to <paramref name="End"/>, in seconds; 0 when nothing is timed.
+/// </param>
+/// <param name="IntegrationSeconds">The sum of the timed frames' exposures, in seconds.</param>
+/// <param name="TimedFrames">How many frames carry both a time of capture and an exposure.</param>
+/// <param name="PauseSeconds">
+/// Per position of the list, the seconds from the previous frame's end of exposure to this
+/// frame's capture; null for the first timed frame, for an untimed frame and for the frame right
+/// after an untimed one. Negative when the times overlap.
+/// </param>
 internal sealed record Cadence(
     DateTime? Start,
     DateTime? End,
@@ -35,8 +51,19 @@ internal sealed record Cadence(
     internal double DutyPct => SpanSeconds > 0 ? 100.0 * IntegrationSeconds / SpanSeconds : 0;
 }
 
+/// <summary>
+/// Reads a session's rhythm from the frames' times of capture and exposures (R-006).
+/// </summary>
 internal static class CadenceAnalyzer
 {
+    /// <summary>
+    /// Measures the span, the integration and the pause before each frame of
+    /// <paramref name="frames"/>, taken in the order given.
+    /// </summary>
+    /// <param name="frames">The frames, in capture order; may be a filtered list. Not null.</param>
+    /// <returns>
+    /// The cadence, with one pause entry per position of <paramref name="frames"/>.
+    /// </returns>
     internal static Cadence Analyze(IReadOnlyList<FrameInfo> frames)
     {
         ArgumentNullException.ThrowIfNull(frames);

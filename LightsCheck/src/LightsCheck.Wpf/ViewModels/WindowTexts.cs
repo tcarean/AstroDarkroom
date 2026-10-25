@@ -17,7 +17,9 @@
 
 namespace LightsCheck.Wpf;
 
-/// <summary>The window's own sentences (Romanian), in one place; no figure is written here.</summary>
+/// <summary>
+/// The window's own sentences (Romanian), in one place; no figure is written here.
+/// </summary>
 internal static class WindowTexts
 {
     internal const string AppName = "LightsCheck";
@@ -47,6 +49,14 @@ internal static class WindowTexts
 
     internal static string ProblemTitle => "Folderul nu se poate analiza";
 
+    /// <summary>The wait screen's line while the frames are measured.</summary>
+    /// <param name="done">
+    /// Frames measured so far; 0 before the first, while the session opens.
+    /// </param>
+    /// <param name="total">Frames to measure.</param>
+    /// <returns>
+    /// The opening line when <paramref name="done"/> is 0, else the count of frames measured.
+    /// </returns>
     internal static string Busy(int done, int total) => done == 0 ? "Se deschide sesiunea..." : $"Se masoara cadrele: {done} / {total}";
 
     internal static string BusyRegistering => "Se inregistreaza cadrele si se analizeaza seria...";
@@ -55,6 +65,9 @@ internal static class WindowTexts
 
     internal static string ExportTitle => "Alege folderul in care se scriu raportul, CSV-ul si lista de respins";
 
+    /// <summary>The status line after an export.</summary>
+    /// <param name="paths">The files written, as the core returned them.</param>
+    /// <returns>"Scris:" followed by one path per line.</returns>
     internal static string Written(IReadOnlyList<string> paths) => "Scris:\n" + string.Join("\n", paths);
 
     internal static string CropsBusy => "Se decodeaza cadrul pentru decupaje...";

@@ -97,15 +97,16 @@ varies a kit rule names it.
   table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
   edited to pass"), and an ADR that states the old value gets a dated note.
 - **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
-  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, code comments
-  of new files. Romanian in everything the user sees: console text, `--help`, window labels,
-  the reports, `README.md`, `THIRD-PARTY-NOTICES.md`. The files copied from FlatCheck under
-  `Imaging/` keep its Romanian comments as they are (ADR 0003). Never leave a file in two
-  languages.
-- **Copied files stay copies** (ADR 0003). A file under `src/LightsCheck.Core/Imaging/` marked
-  "copied from FlatCheck unchanged" is not improved here: a fix goes to FlatCheck first, then
-  the copy is refreshed. Only `RawReader.cs` and `ImageLoader.cs`, marked "adapted", are
-  LightsCheck's to change.
+  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and every
+  comment in the code, the files copied from FlatCheck included (ADR 0018). Romanian in
+  everything the user sees: console text, `--help`, window labels, the reports, `README.md`,
+  `THIRD-PARTY-NOTICES.md`; a comment quotes such output as the user sees it. Never leave a
+  file in two languages.
+- **Copied files stay copies** (ADR 0003, ADR 0018). A file under `src/LightsCheck.Core/Imaging/`
+  marked "copied from FlatCheck unchanged" is not improved here: a fix, a comment included, goes
+  to FlatCheck first, then the copy is refreshed. Its code is FlatCheck 2.3.0's, with the edits
+  ADR 0003 lists, its comments FlatCheck's English ones. Only `RawReader.cs` and
+  `ImageLoader.cs`, marked "adapted", are LightsCheck's to change.
 - **License headers.** Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice;
   `LicenseHeaderTests` fails otherwise. Scripts carry the SPDX line.
 

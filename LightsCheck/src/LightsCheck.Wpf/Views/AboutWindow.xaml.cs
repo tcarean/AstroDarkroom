@@ -21,8 +21,15 @@ using System.Windows.Navigation;
 
 namespace LightsCheck.Wpf;
 
+/// <summary>
+/// The "Despre" window: version, copyright, the GPLv3 notice and the third-party list.
+/// </summary>
 public partial class AboutWindow : Window
 {
+    /// <summary>
+    /// The window over a new <see cref="AboutViewModel"/>, with the icon's largest frame as its
+    /// logo and the dark title bar asked for once it has a handle.
+    /// </summary>
     public AboutWindow()
     {
         InitializeComponent();
@@ -31,7 +38,12 @@ public partial class AboutWindow : Window
         SourceInitialized += (_, _) => DarkTitleBar.Apply(this);
     }
 
-    /// <summary>Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.</summary>
+    /// <summary>
+    /// Opens the link in the system browser; UseShellExecute is what makes a URL open on .NET Core.
+    /// A browser that cannot be started is ignored.
+    /// </summary>
+    /// <param name="sender">The hyperlink clicked.</param>
+    /// <param name="e">The navigation request; marked handled, its URI opened.</param>
     private void OpenLink(object sender, RequestNavigateEventArgs e)
     {
         e.Handled = true;
@@ -47,5 +59,8 @@ public partial class AboutWindow : Window
         }
     }
 
+    /// <summary>The "Inchide" button: closes the window.</summary>
+    /// <param name="sender">The button clicked.</param>
+    /// <param name="e">The click's arguments, not used.</param>
     private void CloseClick(object sender, RoutedEventArgs e) => Close();
 }

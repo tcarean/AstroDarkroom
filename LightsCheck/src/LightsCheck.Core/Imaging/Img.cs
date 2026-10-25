@@ -15,22 +15,51 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#nullable disable // copied from FlatCheck 2.3.0 unchanged, which compiles without nullable annotations (ADR 0003)
+#nullable disable // copied from FlatCheck unchanged, which compiles without nullable annotations
+// (ADR 0003): its code of 2.3.0, its English comments of 504b5d1 (ADR 0018).
 
-// Img.cs - rasterul 2D si transformarile pure pe el.
+// Img.cs - the 2D raster and the pure transforms on it.
 
 namespace LightsCheck.Core
 {
-    // ---------------- imagine 2D simpla ----------------
+    // ---------------- simple 2D image ----------------
+    /// <summary>
+    /// A 2D raster of doubles, row-major: the one image type every reader fills and every
+    /// analyzer reads. Its values are whatever the producer put there (ADU of a raw, a FITS's
+    /// samples, a ratio near 1); the transforms below are pure and return a new raster, or their
+    /// input when there is nothing to do.
+    /// </summary>
     sealed class Img
     {
         public int H, W;
-        public double[] D; // row-major, lungime H*W
+        public double[] D; // row-major, length H*W
+
+        /// <summary>A raster of zeros.</summary>
+        /// <param name="h">Height in pixels.</param>
+        /// <param name="w">Width in pixels.</param>
         public Img(int h, int w) { H = h; W = w; D = new double[h * w]; }
+
+        /// <summary>The value at a pixel.</summary>
+        /// <param name="y">Row, 0 at the top.</param>
+        /// <param name="x">Column, 0 at the left.</param>
+        /// <returns>The pixel's value.</returns>
         public double At(int y, int x) => D[y * W + x];
+
+        /// <summary>Writes the value of a pixel.</summary>
+        /// <param name="y">Row, 0 at the top.</param>
+        /// <param name="x">Column, 0 at the left.</param>
+        /// <param name="v">The new value.</param>
         public void Set(int y, int x, double v) => D[y * W + x] = v;
 
-        // ========================================================= preprocesare
+        // ========================================================= preprocessing
+        /// <summary>
+        /// The mean of each <paramref name="k"/> x <paramref name="k"/> block, anchored at the top
+        /// left; the partial blocks at the right and bottom ends are dropped.
+        /// </summary>
+        /// <param name="a">The raster to shrink.</param>
+        /// <param name="k">The block side in pixels; 1 or less returns <paramref name="a"/> itself.
+        /// </param>
+        /// <returns>A raster of <c>H / k</c> by <c>W / k</c> block means.</returns>
         internal static Img BlockMean(Img a, int k)
         {
             if (k <= 1) return a;
@@ -48,7 +77,14 @@ namespace LightsCheck.Core
             return o;
         }
 
-        // block-mean 2x2 (omoara CFA Bayer) apoi downsample la ~1200px pe latura lunga
+        /// <summary>
+        /// The analysis raster: a 2x2 block mean (it kills the Bayer CFA, each quad averaged into
+        /// one value), then a downsample by the whole factor that brings the long side to
+        /// ~<paramref name="targetLong"/> px, 1200 by default.
+        /// </summary>
+        /// <param name="data">The frame as loaded, CFA mosaic or not.</param>
+        /// <param name="targetLong">The long side to shrink towards, in pixels.</param>
+        /// <returns>The shrunk raster; never larger than half the input.</returns>
         internal static Img Prepare(Img data, int targetLong = 1200)
         {
             Img img = BlockMean(data, 2);
@@ -56,7 +92,13 @@ namespace LightsCheck.Core
             return BlockMean(img, k);
         }
 
-        // Imparte doua rastere, cu prag pe numitor (ca np.maximum(b, 1e-12)).
+        /// <summary>
+        /// Divides two rasters of the same size, pixel by pixel, with a floor on the denominator
+        /// (like np.maximum(b, 1e-12)).
+        /// </summary>
+        /// <param name="a">The numerator.</param>
+        /// <param name="b">The denominator.</param>
+        /// <returns>A new raster of <c>a / max(b, 1e-12)</c>.</returns>
         internal static Img Divide(Img a, Img b)
         {
             var o = new Img(a.H, a.W);
@@ -65,18 +107,22 @@ namespace LightsCheck.Core
         }
 
         /// <summary>
-        /// Taie un dreptunghi centrat, aruncand egal de la ambele capete.
+        /// Cuts a centred rectangle, dropping equally from both ends.
         ///
-        /// Exista pentru modul de atribuire, singurul care roteste rasterul cu 180 de
-        /// grade si compara rezultatul cu originalul. <see cref="BlockMean"/> arunca
-        /// blocurile partiale doar de la CAPAT, deci grila lui e ancorata sus-stanga:
-        /// rotita cu 180 nu mai cade peste ea insasi, ci decalata cu pana la o dala.
-        /// Pe un gradient neted eroarea e mica, dar e sistematica - masurata, muta
-        /// raportul par/impar cu ~20%. Taierea centrata inainte de dale o elimina.
+        /// It exists for the attribution mode, the only one that rotates the raster by 180
+        /// degrees and compares the result with the original. <see cref="BlockMean"/> drops the
+        /// partial blocks only at the END, so its grid is anchored at the top left: rotated by
+        /// 180 it no longer falls onto itself, but shifted by up to one tile. On a smooth
+        /// gradient the error is small, but it is systematic - measured, it moves the even/odd
+        /// ratio by ~20%. Cropping centred before the tiles removes it.
         ///
-        /// NU se foloseste in LargeScalePtp: acolo grila ancorata sus-stanga e ce face
-        /// flatcheck.py, iar paritatea numerica e testata.
+        /// NOT used in LargeScalePtp: there the grid anchored at the top left is what
+        /// flatcheck.py does, and the numeric parity is tested.
         /// </summary>
+        /// <param name="a">The raster to crop.</param>
+        /// <param name="h">The height to keep, in pixels, at most <c>a.H</c>.</param>
+        /// <param name="w">The width to keep, in pixels, at most <c>a.W</c>.</param>
+        /// <returns>The centred crop, or <paramref name="a"/> itself when nothing is cut.</returns>
         internal static Img CropCentred(Img a, int h, int w)
         {
             if (h == a.H && w == a.W) return a;
@@ -89,21 +135,26 @@ namespace LightsCheck.Core
         }
 
         /// <summary>
-        /// Grila de mediane pe dale de <paramref name="k"/> px, CU dalele partiale de la
-        /// capat, si centrul real al fiecarei dale in pixeli.
+        /// The grid of medians over tiles of <paramref name="k"/> px, WITH the partial tiles at
+        /// the end, and the real centre of each tile in pixels.
         ///
-        /// Deliberat NU grila lui <see cref="BlockMean"/>, care arunca blocurile partiale:
-        /// netezirea trebuie sa ajunga pana la ultimul pixel, iar daca ultimele 58 de
-        /// randuri ale unui senzor de 4016 n-au dala, valoarea lor se extrapoleaza. Si
-        /// centrul dalei partiale se intoarce ca atare, nu ca "inca un pas": o dala de 8
-        /// px tratata ca una intreaga (fitata la o dala distanta de vecina ei, cand e la
-        /// jumatate) a pus o banda de eroare de 0.8 % de-a lungul marginii drepte pe
-        /// sinteticul cu adevar cunoscut. Cu centrele reale banda a disparut (0.19 % pe
-        /// tot cadrul).
+        /// Deliberately NOT the grid of <see cref="BlockMean"/>, which drops the partial blocks:
+        /// the smoothing has to reach the last pixel, and if the last 58 rows of a 4016 sensor
+        /// have no tile, their value is extrapolated. And the centre of the partial tile is
+        /// returned as it is, not as "one more step": an 8 px tile treated as a whole one
+        /// (fitted one tile away from its neighbour, when it is half that) put a 0.8 % error band
+        /// along the right edge of the synthetic with a known truth. With the real centres the
+        /// band disappeared (0.19 % over the whole frame).
         ///
-        /// Mediana, nu media: o dala cu un pixel fierbinte sau cu o umbra de praf mica
-        /// isi tine valoarea tipica.
+        /// The median, not the mean: a tile with a hot pixel or a small dust shadow keeps its
+        /// typical value.
         /// </summary>
+        /// <param name="a">The raster to tile.</param>
+        /// <param name="k">The tile side in pixels.</param>
+        /// <returns>
+        /// The tile medians (<c>ceil(H / k)</c> by <c>ceil(W / k)</c>), and the centre of each
+        /// tile row and tile column in pixels of <paramref name="a"/>.
+        /// </returns>
         internal static (Img Tiles, double[] CentreY, double[] CentreX) TileMedians(Img a, int k)
         {
             int th = (a.H + k - 1) / k, tw = (a.W + k - 1) / k;
@@ -133,7 +184,9 @@ namespace LightsCheck.Core
             return (t, cy, cx);
         }
 
-        /// <summary>Rasterul rotit cu 180 de grade in jurul centrului lui.</summary>
+        /// <summary>The raster rotated by 180 degrees about its centre.</summary>
+        /// <param name="a">The raster to rotate.</param>
+        /// <returns>A new raster of the same size.</returns>
         internal static Img Rotate180(Img a)
         {
             var o = new Img(a.H, a.W);
@@ -144,36 +197,40 @@ namespace LightsCheck.Core
         }
 
         /// <summary>
-        /// Media dintre raster si rotitul lui cu 180 de grade.
+        /// The mean of the raster and its 180-degree rotation.
         ///
-        /// Anuleaza EXACT partea impara - deci orice gradient liniar - si lasa neatinsa
-        /// partea para. Un profil radial nu poate fi impar, deci modelul radial nu pierde
-        /// nimic din ce are voie sa contina, si se scoate exact ce il facea sa sara.
+        /// It cancels the odd part EXACTLY - so any linear gradient - and leaves the even part
+        /// untouched. A radial profile cannot be odd, so the radial model loses nothing it is
+        /// allowed to contain, and exactly what made it jump is removed.
         ///
-        /// DE CE E NEVOIE, fiindca nu e evident: dincolo de cercul inscris, un inel de
-        /// raza constanta nu mai e un inel intreg, sunt arce parciale. Pe un cadru cu
-        /// gradient, distributia pixelilor din arcele alea e BIMODALA - un capat intunecat,
-        /// celalalt luminos - iar mediana cade in golul rarefiat dintre cele doua moduri,
-        /// deci sare de la un inel la urmatorul cu o amplitudine data de gradient. Modelul
-        /// interpolat mostenea salturile, si img/model le arata ca inele concentrice plus
-        /// o margine dura pe cercul inscris. Reprodus pe un raster sintetic care e doar
-        /// vignetare neteda ori un gradient de 11%: inelele apar fara sa existe nicio
-        /// margine in date.
+        /// WHY IT IS NEEDED, since it is not obvious: beyond the inscribed circle, a ring of
+        /// constant radius is no longer a whole ring, it is partial arcs. On a frame with a
+        /// gradient, the distribution of the pixels of those arcs is BIMODAL - one end dark, the
+        /// other bright - and the median falls into the sparse gap between the two modes, so it
+        /// jumps from one ring to the next with an amplitude set by the gradient. The
+        /// interpolated model inherited the jumps, and img/model showed them as concentric rings
+        /// plus a hard edge on the inscribed circle. Reproduced on a synthetic raster that is
+        /// only smooth vignetting times an 11% gradient: the rings appear without any edge
+        /// existing in the data.
         ///
-        /// Cifrele de verdict nu depindeau de asta la vremea aceea - LargeScalePtp era
-        /// restrans la cercul inscris, unde mediana era deja exacta (masurat: reziduul se
-        /// muta cu sub 0.05 puncte) - dar HARTA mintea, si harta e singurul lucru din care
-        /// se citeste forma unei probleme. Odata modelul valid pana in colt, restrictia a
-        /// fost scoasa; vezi Metrics.LargeScalePtp.
+        /// The verdict figures did not depend on this at the time - LargeScalePtp was restricted
+        /// to the inscribed circle, where the median was already exact (measured: the residual
+        /// moves by under 0.05 points) - but the MAP lied, and the map is the only thing the
+        /// shape of a problem is read from. Once the model was valid out to the corner, the
+        /// restriction was removed; see Metrics.LargeScalePtp.
         ///
-        /// Alternativa era media pe inel in loc de mediana, care vindeca bimodalitatea la
-        /// fel de bine (masurat, aceleasi cifre), dar renunta la robustetea medianei fata
-        /// de stele, pixeli fierbinti si praf - iar analizorul primeste si cadre unice.
+        /// The alternative was the mean per ring instead of the median, which cures the
+        /// bimodality just as well (measured, the same figures), but gives up the median's
+        /// robustness against stars, hot pixels and dust - and the analyzer also gets single
+        /// frames.
         ///
-        /// Simetrizarea scoate DOAR partea impara. Partea para neradiala - o sa, o cadere mai
-        /// abrupta pe o axa - trece prin ea neatinsa si are aceeasi soarta pe arcele partiale;
-        /// pe aceea o trateaza Metrics.RadialModel, pe inel, cu o corectie 2t. Vezi acolo.
+        /// Symmetrising removes ONLY the odd part. The non-radial even part - a saddle, a
+        /// steeper fall along one axis - passes through it untouched and has the same fate on
+        /// the partial arcs; that one is handled by Metrics.RadialModel, per ring, with a 2t
+        /// correction. See there.
         /// </summary>
+        /// <param name="a">The raster to symmetrise.</param>
+        /// <returns>A new raster of the same size, equal to its own 180-degree rotation.</returns>
         internal static Img Symmetrise(Img a)
         {
             var o = new Img(a.H, a.W);

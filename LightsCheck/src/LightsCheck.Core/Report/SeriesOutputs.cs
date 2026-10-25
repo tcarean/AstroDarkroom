@@ -31,7 +31,15 @@ internal static class SeriesOutputs
     internal const string CsvName = "lightscheck-cadre.csv";
     internal const string RejectedName = "lightscheck-respinse.txt";
 
-    /// <summary>Writes the three files into <paramref name="dir"/> and returns their paths.</summary>
+    /// <summary>
+    /// Writes the three files into <paramref name="dir"/>, UTF-8 without a BOM, replacing any
+    /// file of the same name, and returns their paths.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <param name="dir">The folder to write into, created when missing; not null or blank.</param>
+    /// <returns>
+    /// The paths of the report, the CSV and the list of rejected frames, in that order.
+    /// </returns>
     internal static IReadOnlyList<string> WriteAll(SeriesResult r, string dir)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -49,7 +57,13 @@ internal static class SeriesOutputs
         return [report, csv, rejected];
     }
 
-    /// <summary>One line per frame, the file names of the bad and unreadable frames, in order.</summary>
+    /// <summary>
+    /// One line per frame, the file names of the bad and unreadable frames, in order.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The file names of the frames classed bad or unknown, each ended by "\n"; empty when none.
+    /// </returns>
     internal static string Rejected(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -65,7 +79,15 @@ internal static class SeriesOutputs
         return sb.ToString();
     }
 
-    /// <summary>Every figure per frame, comma-separated, the invariant culture, a header row.</summary>
+    /// <summary>
+    /// Every figure per frame, comma-separated, the invariant culture, a header row.
+    /// </summary>
+    /// <param name="r">The result of the series run; not null.</param>
+    /// <returns>
+    /// The header row and one row per frame, each ended by "\n"; a figure that is missing or NaN
+    /// is an empty cell; the file name, the reasons, the arrows and the error are quoted, the
+    /// class, the channel names and the trail axis are written bare.
+    /// </returns>
     internal static string Csv(SeriesResult r)
     {
         ArgumentNullException.ThrowIfNull(r);
@@ -118,11 +140,23 @@ internal static class SeriesOutputs
         return sb.ToString();
     }
 
+    /// <summary>A number cell in the round-trip format of the invariant culture.</summary>
+    /// <param name="v">The figure; null or NaN when missing.</param>
+    /// <returns>
+    /// The figure with every digit it needs to read back, or "" when missing or NaN.
+    /// </returns>
     private static string N(double? v) => v is double d && !double.IsNaN(d) ? d.ToString("R", CultureInfo.InvariantCulture) : "";
 
+    /// <summary>A text cell, quoted for the CSV.</summary>
+    /// <param name="s">The text; not null.</param>
+    /// <returns>The text in double quotes, each quote inside it doubled.</returns>
     private static string Q(string s) => "\"" + s.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
 
-    /// <summary>The `trail_on` cell: the axis word without the preposition, empty when unknown (R-033).</summary>
+    /// <summary>
+    /// The `trail_on` cell: the axis word without the preposition, empty when unknown (R-033).
+    /// </summary>
+    /// <param name="on">The axis the trail of the frame follows.</param>
+    /// <returns>"RA", "DEC", "oblic", or "" for an unknown axis.</returns>
     private static string TrailWord(TrailAxis on) => on switch
     {
         TrailAxis.Ra => "RA",

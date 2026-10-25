@@ -17,7 +17,17 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>What a run of the whole series takes from the user: the pixel size when the files do not say it, the parallelism.</summary>
+/// <summary>
+/// What a run of the whole series takes from the user: the pixel size when the files do not say
+/// it, the parallelism.
+/// </summary>
+/// <param name="PixelSizeUm">The pixel size in microns, used when no file carries XPIXSZ.</param>
+/// <param name="Threads">
+/// How many frames are measured at once; 0 or less means half the processors, at least one.
+/// </param>
+/// <param name="Arrows">
+/// Which SynScan arrows move east and north; null means <see cref="ArrowKeys.Default"/>.
+/// </param>
 internal sealed record SeriesOptions(double PixelSizeUm = SeriesOptions.D3300PixelUm, int Threads = 0, ArrowKeys? Arrows = null)
 {
     /// <summary>The Nikon D3300's pixel pitch: 23.5 mm over 6000 pixels.</summary>
@@ -37,6 +47,8 @@ internal enum Arrow
 /// Which SynScan arrow moves the mount east and which north; the other two follow. The
 /// default is the owner's app, right east and up north (R-040, ADR 0014).
 /// </summary>
+/// <param name="East">The arrow that moves the mount east.</param>
+/// <param name="North">The arrow that moves the mount north.</param>
 internal sealed record ArrowKeys(Arrow East, Arrow North)
 {
     internal static readonly ArrowKeys Default = new(Arrow.Right, Arrow.Up);
@@ -46,6 +58,8 @@ internal sealed record ArrowKeys(Arrow East, Arrow North)
     internal Arrow South => North == Arrow.Up ? Arrow.Down : Arrow.Up;
 
     /// <summary>The symbol the reports print for a key.</summary>
+    /// <param name="a">The key.</param>
+    /// <returns>One arrow character: left, right, up or down.</returns>
     internal static string Symbol(Arrow a) => a switch
     {
         Arrow.Left => "←",
@@ -55,6 +69,10 @@ internal sealed record ArrowKeys(Arrow East, Arrow North)
     };
 
     /// <summary>The key a symbol stands for, null for anything else.</summary>
+    /// <param name="symbol">
+    /// One arrow character as <see cref="Symbol"/> prints it; null allowed.
+    /// </param>
+    /// <returns>The key, or null when the text is not one of the four symbols.</returns>
     internal static Arrow? FromSymbol(string? symbol) => symbol switch
     {
         "←" => Arrow.Left,
@@ -70,6 +88,25 @@ internal sealed record ArrowKeys(Arrow East, Arrow North)
 /// series analysis, the sensor's pattern, and the pixel scale in arcseconds per pixel when
 /// the focal length is known.
 /// </summary>
+/// <param name="Session">The session's folders and frame lists.</param>
+/// <param name="Frames">
+/// Every light, in the session's order; one that could not be measured carries its error.
+/// </param>
+/// <param name="Cadence">The timing of the series.</param>
+/// <param name="Dither">The dithering, from the registration offsets.</param>
+/// <param name="Series">The classes, trends, drift and verdicts of the series.</param>
+/// <param name="Pattern">The sensor's fixed pattern read from the lights' central crops.</param>
+/// <param name="PixelSizeUm">The pixel size used, in microns.</param>
+/// <param name="PixelSizeSource">
+/// Where the pixel size came from, as the report prints it (Romanian).
+/// </param>
+/// <param name="ArcsecPerPixel">
+/// The pixel scale in arcseconds per pixel; null when no file gives a focal length.
+/// </param>
+/// <param name="ReferenceIndex">
+/// The 1-based index of the registration's reference frame; 0 when no frame was measured.
+/// </param>
+/// <param name="Arrows">The SynScan arrows the report names the moves with.</param>
 internal sealed record SeriesResult(
     SessionFolder Session,
     IReadOnlyList<AnalyzedFrame> Frames,
@@ -94,6 +131,21 @@ internal sealed record SeriesResult(
 /// </summary>
 internal static class SeriesRun
 {
+    /// <summary>
+    /// Measures and analyses the whole series. A frame that cannot be decoded or measured keeps
+    /// its metadata and error and is left out of the figures; the folder errors of
+    /// <see cref="SessionFolder.Open"/> propagate, and a cancel throws
+    /// <see cref="OperationCanceledException"/>.
+    /// </summary>
+    /// <param name="folder">The session folder.</param>
+    /// <param name="options">The pixel size, the parallelism and the arrow keys; not null.</param>
+    /// <param name="progress">
+    /// Told (frames done, frames in all) after each frame, from the worker threads; null for none.
+    /// </param>
+    /// <param name="cancel">
+    /// Stops the measuring and the read noise; the frames already started finish.
+    /// </param>
+    /// <returns>The whole series measured.</returns>
     internal static SeriesResult Run(string folder, SeriesOptions options, IProgress<(int Done, int Total)>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(options);
@@ -159,7 +211,12 @@ internal static class SeriesRun
         return new SeriesResult(session, frames, cadence, dither, series, pattern, pixel, pixelSource, scale, refIndex + 1, options.Arrows ?? ArrowKeys.Default);
     }
 
-    /// <summary>The read noise from the first two biases, or null without two readable ones.</summary>
+    /// <summary>
+    /// The read noise from the first two biases, or null without two readable ones.
+    /// </summary>
+    /// <param name="session">The session whose biases are read.</param>
+    /// <param name="cancel">Checked once before the biases are loaded; a cancel throws.</param>
+    /// <returns>The read noise per CFA position, or null.</returns>
     private static IReadOnlyList<ReadNoise>? ReadNoise(SessionFolder session, CancellationToken cancel)
     {
         if (session.Biases.Count < 2)
@@ -170,7 +227,8 @@ internal static class SeriesRun
         try
         {
             cancel.ThrowIfCancellationRequested();
-            // Each double mosaic is dropped as soon as its float raster exists (193 MB apiece on 24 MP).
+            // Each double mosaic is dropped as soon as its float raster exists (193 MB apiece on
+            // 24 MP).
             LoadedFrame a = ImageLoader.Load(session.Biases[0]);
             Raster ra = Raster.FromImg(a.Image, a.Scale?.Black ?? 0);
             a.Image = null;
@@ -185,7 +243,12 @@ internal static class SeriesRun
         }
     }
 
-    /// <summary>Which image axis RA runs along, from the plate-solved FITS <see cref="ReadWcs"/> finds; unknown without one (R-025).</summary>
+    /// <summary>
+    /// Which image axis RA runs along, from the plate-solved FITS <see cref="ReadWcs"/> finds;
+    /// unknown without one (R-025).
+    /// </summary>
+    /// <param name="root">The session folder.</param>
+    /// <returns>The RA axis, or <see cref="Axis.Unknown"/>.</returns>
     internal static Axis WcsRaAxis(string root) => ReadWcs(root)?.RaAxis ?? Axis.Unknown;
 
     /// <summary>

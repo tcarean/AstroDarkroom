@@ -23,8 +23,33 @@ namespace LightsCheck.Core;
 /// left), the rotation and scale of the similarity, the matched stars, the coarse votes and
 /// the fit's RMS residual. Ok is false when too few stars matched.
 /// </summary>
+/// <param name="Ok">
+/// Whether the frame was registered: every round matched at least <see cref="Th.MinMatches"/>
+/// stars.
+/// </param>
+/// <param name="Matches">The pairs the last round matched; 0 on a failure.</param>
+/// <param name="Votes">
+/// The votes of the coarse offset's bin; 0 when a list was too short to vote.
+/// </param>
+/// <param name="Dx">
+/// Where the reference's centre lands in this frame minus where it is in the reference, along x, in
+/// pixels; NaN on a failure.
+/// </param>
+/// <param name="Dy">The same along y, in pixels; NaN on a failure.</param>
+/// <param name="RotationDeg">The similarity's rotation, in degrees; NaN on a failure.</param>
+/// <param name="Scale">
+/// The similarity's scale, 1 for the same plate scale; NaN on a failure.
+/// </param>
+/// <param name="Rms">
+/// The root mean square of the last fit's residual distances, in pixels; NaN on a failure.
+/// </param>
 internal sealed record RegistrationResult(bool Ok, int Matches, int Votes, double Dx, double Dy, double RotationDeg, double Scale, double Rms)
 {
+    /// <summary>A registration that failed.</summary>
+    /// <param name="votes">
+    /// The coarse votes reached before the failure, 0 when there were none.
+    /// </param>
+    /// <returns>A result with <see cref="Ok"/> false, no match and NaN figures.</returns>
     internal static RegistrationResult Failed(int votes) => new(false, 0, votes, double.NaN, double.NaN, double.NaN, double.NaN, double.NaN);
 }
 
@@ -35,6 +60,22 @@ internal sealed record RegistrationResult(bool Ok, int Matches, int Votes, doubl
 /// </summary>
 internal static class Registration
 {
+    /// <summary>
+    /// Registers <paramref name="frame"/>'s stars to <paramref name="reference"/>'s: the coarse
+    /// vote, then <see cref="Th.MatchIterations"/> rounds of matching (the first at
+    /// <see cref="Th.MatchToleranceCoarse"/>, the others at <see cref="Th.MatchToleranceFine"/>)
+    /// and fitting.
+    /// </summary>
+    /// <param name="reference">
+    /// The reference frame's registration stars, brightest first. Not null.
+    /// </param>
+    /// <param name="frame">This frame's registration stars, brightest first. Not null.</param>
+    /// <param name="width">The frame's width, in pixels, for its centre.</param>
+    /// <param name="height">The frame's height, in pixels, for its centre.</param>
+    /// <returns>
+    /// The shift of the centre, the rotation, the scale and the fit; a failed result when either
+    /// list or any round holds fewer than <see cref="Th.MinMatches"/> stars.
+    /// </returns>
     internal static RegistrationResult Register(IReadOnlyList<RegistrationStar> reference, IReadOnlyList<RegistrationStar> frame, int width, int height)
     {
         ArgumentNullException.ThrowIfNull(reference);
@@ -79,7 +120,18 @@ internal static class Registration
         return new RegistrationResult(true, matched, votes, ncx - cx, ncy - cy, Math.Atan2(b, a) * 180 / Math.PI, Math.Sqrt(a * a + b * b), rms);
     }
 
-    /// <summary>The most voted offset between the brightest stars of both lists, in bins of Th.VoteBin px over +-Th.VoteRange.</summary>
+    /// <summary>
+    /// The most voted offset between the brightest stars of both lists, in bins of Th.VoteBin
+    /// px over +-Th.VoteRange.
+    /// </summary>
+    /// <param name="reference">
+    /// The reference's stars; the first <see cref="Th.VoteStars"/> vote.
+    /// </param>
+    /// <param name="frame">The frame's stars; the first <see cref="Th.VoteStars"/> vote.</param>
+    /// <returns>
+    /// The centre of the winning bin (frame minus reference, in pixels) and its votes; the first
+    /// bin wins a tie.
+    /// </returns>
     private static (double Dx, double Dy, int Votes) Vote(IReadOnlyList<RegistrationStar> reference, IReadOnlyList<RegistrationStar> frame)
     {
         int n = 2 * Th.VoteRange / Th.VoteBin;
@@ -115,6 +167,14 @@ internal static class Registration
     /// Least squares for (u, v) = (a x - b y + tx, b x + a y + ty): the normal equations of the
     /// four unknowns, solved by Gaussian elimination; the RMS of the residual distances.
     /// </summary>
+    /// <param name="pairs">
+    /// The matched pairs: (x, y) in the reference, (u, v) in the frame, in pixels. Not null.
+    /// </param>
+    /// <param name="rms">The root mean square of the residual distances, in pixels.</param>
+    /// <returns>
+    /// (a, b, tx, ty). The pairs must not make the normal equations singular (all at one point):
+    /// <see cref="Stats.Solve"/> then gives null and the residual loop throws.
+    /// </returns>
     internal static double[] FitSimilarity(IReadOnlyList<(double X, double Y, double U, double V)> pairs, out double rms)
     {
         ArgumentNullException.ThrowIfNull(pairs);
@@ -151,6 +211,12 @@ internal static class Registration
         private readonly Dictionary<(int, int), List<RegistrationStar>> _cells = [];
         private readonly double _cell;
 
+        /// <summary>
+        /// Files every star in the square cell of side <paramref name="cell"/> its position falls
+        /// in.
+        /// </summary>
+        /// <param name="stars">The stars.</param>
+        /// <param name="cell">The cell's side, in pixels, above 0.</param>
         internal Grid(IReadOnlyList<RegistrationStar> stars, double cell)
         {
             _cell = cell;
@@ -166,6 +232,11 @@ internal static class Registration
             }
         }
 
+        /// <summary>The star nearest a point, within a tolerance.</summary>
+        /// <param name="x">The point's column, in pixels.</param>
+        /// <param name="y">The point's row, in pixels.</param>
+        /// <param name="tol">The largest distance, in pixels, included.</param>
+        /// <returns>The nearest star; null when none is within <paramref name="tol"/>.</returns>
         internal RegistrationStar? Nearest(double x, double y, double tol)
         {
             int cx = (int)Math.Floor(x / _cell), cy = (int)Math.Floor(y / _cell);

@@ -19,16 +19,29 @@ using System.Globalization;
 
 namespace LightsCheck.Core;
 
-/// <summary>The inventory as the console prints it (Romanian, R-003, R-006). Words only; the numbers come from the run.</summary>
+/// <summary>
+/// The inventory as the console prints it (Romanian, R-003, R-006). Words only; the numbers come
+/// from the run.
+/// </summary>
 internal static class InventoryReport
 {
+    /// <summary>
+    /// Writes the whole inventory: the session lines, then the table of the lights.
+    /// </summary>
+    /// <param name="inv">The inventory of the session; not null.</param>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void Write(Inventory inv, TextWriter w)
     {
         WriteHeader(inv, w);
         WriteTable(inv, w);
     }
 
-    /// <summary>The session lines: folders, camera, lens, exposure, interval; the series report reuses them.</summary>
+    /// <summary>
+    /// Writes the session lines: folders, camera, lens, exposure, interval, and a warning line
+    /// when some lights could not be read; the series report reuses them.
+    /// </summary>
+    /// <param name="inv">The inventory of the session; not null.</param>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void WriteHeader(Inventory inv, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(inv);
@@ -50,7 +63,12 @@ internal static class InventoryReport
         }
     }
 
-    /// <summary>One row per light: the metadata and the pause before it.</summary>
+    /// <summary>
+    /// Writes one row per light: the metadata and the pause before it; a light that could not
+    /// be read gets its error instead. File names are cut to 20 characters.
+    /// </summary>
+    /// <param name="inv">The inventory of the session; not null.</param>
+    /// <param name="w">Where the lines go; not null.</param>
     internal static void WriteTable(Inventory inv, TextWriter w)
     {
         ArgumentNullException.ThrowIfNull(inv);
@@ -74,6 +92,15 @@ internal static class InventoryReport
         }
     }
 
+    /// <summary>
+    /// One folder's cell: its path relative to the session, its frame count and extension.
+    /// </summary>
+    /// <param name="root">The session folder.</param>
+    /// <param name="dir">
+    /// The folder of the frames; the session folder itself is written ".".
+    /// </param>
+    /// <param name="frames">The frames found there; the first one's extension is shown.</param>
+    /// <returns>"lights\ (87 cadre .NEF)", or ". (1 cadru .NEF)" for frames at the root.</returns>
     private static string FolderLine(string root, string dir, IReadOnlyList<string> frames)
     {
         string rel = dir == root ? "." : Path.GetRelativePath(root, dir) + "\\";
@@ -81,12 +108,24 @@ internal static class InventoryReport
         return $"{rel} ({frames.Count} {(frames.Count == 1 ? "cadru" : "cadre")} {ext})";
     }
 
+    /// <summary>The distinct non-blank values (compared ordinally), joined by " / ".</summary>
+    /// <param name="values">The values, one per frame; null and blank ones are skipped.</param>
+    /// <returns>The joined values, or "necunoscut" when none is left.</returns>
     private static string Distinct(IEnumerable<string?> values)
     {
         string[] v = values.Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x!).Distinct(StringComparer.Ordinal).ToArray();
         return v.Length == 0 ? "necunoscut" : string.Join(" / ", v);
     }
 
+    /// <summary>
+    /// The lens cell, from the first readable frame that has a focal length or a Nikon lens ID:
+    /// the shot's focal length and f-number, the lens's own range and widest aperture, and the
+    /// Nikon lens ID, each when known.
+    /// </summary>
+    /// <param name="frames">The lights of the session.</param>
+    /// <returns>
+    /// The parts joined by ", ", or "necunoscut" when no frame carries any of them.
+    /// </returns>
     private static string Lens(IReadOnlyList<FrameInfo> frames)
     {
         FrameInfo? f = frames.FirstOrDefault(x => x.Error is null && (x.FocalMm is not null || x.NikonLensId is not null));
@@ -101,7 +140,8 @@ internal static class InventoryReport
             parts.Add(RunReport.F(focal, 0) + " mm" + (f.FNumber is double fn ? " f/" + RunReport.F(fn, 1) : "") + " (poza)");
         }
 
-        // The lens as its chip declares it: "135 mm f/2.0" for a prime, "11-20 mm f/2.8" for a zoom.
+        // The lens as its chip declares it: "135 mm f/2.0" for a prime, "11-20 mm f/2.8" for a
+        // zoom.
         if (f.LensMinFocalMm is double lo && f.LensMaxFocalMm is double hi)
         {
             string range = lo == hi ? RunReport.F(lo, 0) : RunReport.F(lo, 0) + "-" + RunReport.F(hi, 0);
@@ -116,6 +156,14 @@ internal static class InventoryReport
         return string.Join(", ", parts);
     }
 
+    /// <summary>
+    /// The exposure cell: each distinct pair of exposure time and ISO of the readable lights.
+    /// </summary>
+    /// <param name="frames">The lights of the session; the unreadable ones are skipped.</param>
+    /// <returns>
+    /// One pair marked as shared by every frame, several pairs marked as different exposures,
+    /// or "necunoscuta" when no light could be read.
+    /// </returns>
     private static string Exposure(IReadOnlyList<FrameInfo> frames)
     {
         string[] combos = frames.Where(f => f.Error is null)
@@ -129,6 +177,12 @@ internal static class InventoryReport
         };
     }
 
+    /// <summary>
+    /// The interval cell: first and last time of capture, the span, the integration time, the
+    /// timed frame count and the share of the span spent exposing.
+    /// </summary>
+    /// <param name="inv">The inventory, whose cadence holds the figures.</param>
+    /// <returns>The cell, or a "necunoscut" sentence when the frames carry no time.</returns>
     private static string Interval(Inventory inv)
     {
         Cadence c = inv.Cadence;
@@ -141,7 +195,14 @@ internal static class InventoryReport
              + $"({RunReport.Duration(c.SpanSeconds)}); integrare {RunReport.Duration(c.IntegrationSeconds)} din {c.TimedFrames} cadre ({RunReport.F(c.DutyPct, 0)} % din interval)";
     }
 
+    /// <summary>A time of capture as HH:mm:ss, or "-".</summary>
+    /// <param name="t">The time of capture; null when the frame has none.</param>
+    /// <returns>The time of day, or "-" when <paramref name="t"/> is null.</returns>
     private static string Time(DateTime? t) => t is DateTime d ? d.ToString("HH:mm:ss", CultureInfo.InvariantCulture) : "-";
 
+    /// <summary>An optional figure with a fixed number of decimals, or "-".</summary>
+    /// <param name="v">The figure; null when the frame does not carry it.</param>
+    /// <param name="decimals">How many decimals to write.</param>
+    /// <returns>The formatted figure, or "-" when <paramref name="v"/> is null.</returns>
     private static string Opt(double? v, int decimals) => v is double d ? RunReport.F(d, decimals) : "-";
 }

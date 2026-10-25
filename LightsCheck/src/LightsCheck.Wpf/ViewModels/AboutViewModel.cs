@@ -20,11 +20,21 @@ using LightsCheck.Core;
 namespace LightsCheck.Wpf;
 
 /// <summary>A third-party component as the "Despre" window lists it.</summary>
+/// <param name="Name">The component's name.</param>
+/// <param name="Role">What LightsCheck uses it for.</param>
+/// <param name="Licence">The licence it is taken under.</param>
+/// <param name="Copyright">Its copyright line.</param>
+/// <param name="Url">Where its source and licence are.</param>
 public sealed record ComponentRow(string Name, string Role, string Licence, string Copyright, string Url);
 
-/// <summary>The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.</summary>
+/// <summary>
+/// The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.
+/// </summary>
 public sealed class AboutViewModel
 {
+    /// <summary>
+    /// The About window's state, with one row per component of the core's third-party list.
+    /// </summary>
     public AboutViewModel()
     {
         Components = ThirdParty.Components.Select(c => new ComponentRow(c.Name, c.Role, c.Licence, c.Copyright, c.Url)).ToList();

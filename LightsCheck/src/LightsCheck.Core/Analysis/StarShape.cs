@@ -23,6 +23,24 @@ namespace LightsCheck.Core;
 /// angle of the major axis from the x axis in degrees (-90, 90], the two axis FWHMs, and
 /// the component's peak and area it came from.
 /// </summary>
+/// <param name="X">The refined centroid's column, in pixels.</param>
+/// <param name="Y">The refined centroid's row, in pixels.</param>
+/// <param name="Flux">
+/// The sum of the values, clipped at zero, inside the moment window, in ADU.
+/// </param>
+/// <param name="Fwhm">
+/// 2.3548 times the root of the mean of the two second moments, in pixels.
+/// </param>
+/// <param name="Elongation">
+/// The root of the ratio of the major to the minor eigenvalue, 1 or more.
+/// </param>
+/// <param name="AngleDeg">
+/// The major axis's angle from the x axis (x right, y down), in degrees.
+/// </param>
+/// <param name="FwhmMajor">The FWHM along the major axis, in pixels.</param>
+/// <param name="FwhmMinor">The FWHM along the minor axis, in pixels.</param>
+/// <param name="Peak">The component's highest background-subtracted value, in ADU.</param>
+/// <param name="Area">The component's pixel count.</param>
 internal sealed record StarShape(
     double X,
     double Y,
@@ -43,6 +61,17 @@ internal static class StarShapes
     /// the centroid refined <paramref name="iterations"/> times, negative values clipped to
     /// zero. Null when the window leaves the raster or holds no flux.
     /// </summary>
+    /// <param name="d">The background-subtracted raster, in ADU. Not null.</param>
+    /// <param name="cy">The starting centroid's row, in pixels.</param>
+    /// <param name="cx">The starting centroid's column, in pixels.</param>
+    /// <param name="radius">The window's radius, in pixels.</param>
+    /// <param name="iterations">How many times the centroid is refined, 1 or more.</param>
+    /// <param name="peak">The component's peak, carried into the result.</param>
+    /// <param name="area">The component's pixel count, carried into the result.</param>
+    /// <returns>
+    /// The star's shape; null when the window leaves the raster, holds no flux, or the minor moment
+    /// is not positive.
+    /// </returns>
     internal static StarShape? Measure(Raster d, double cy, double cx, int radius, int iterations, double peak, int area)
     {
         ArgumentNullException.ThrowIfNull(d);
@@ -124,6 +153,13 @@ internal static class StarShapes
     /// flux within <paramref name="core"/>, on the raw (unclipped) background-subtracted
     /// raster. Null when the window leaves the raster or the core holds no flux.
     /// </summary>
+    /// <param name="d">The background-subtracted raster, in ADU. Not null.</param>
+    /// <param name="cy">The star's centroid row, in pixels.</param>
+    /// <param name="cx">The star's centroid column, in pixels.</param>
+    /// <param name="core">The core's radius, in pixels, included.</param>
+    /// <param name="inner">The annulus's inner radius, in pixels, excluded.</param>
+    /// <param name="outer">The annulus's outer radius, in pixels, included.</param>
+    /// <returns>The ratio of the annulus flux to the core flux; null as the summary says.</returns>
     internal static double? Halo(Raster d, double cy, double cx, double core, double inner, double outer)
     {
         ArgumentNullException.ThrowIfNull(d);

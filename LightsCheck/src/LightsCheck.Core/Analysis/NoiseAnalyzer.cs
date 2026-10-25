@@ -22,6 +22,13 @@ namespace LightsCheck.Core;
 /// from the high-pass estimator on one bias (to correct the lights' high-pass sigma by the
 /// same estimator's bias).
 /// </summary>
+/// <param name="Name">The position's name, as <see cref="ChannelLevel.Name"/>.</param>
+/// <param name="PairSigma">
+/// The clipped standard deviation of the two biases' difference over sqrt 2, in ADU.
+/// </param>
+/// <param name="HighPassSigma">
+/// The high-pass sigma of the first bias, in ADU; NaN when its window is too small.
+/// </param>
 internal sealed record ReadNoise(string Name, double PairSigma, double HighPassSigma);
 
 /// <summary>
@@ -29,12 +36,34 @@ internal sealed record ReadNoise(string Name, double PairSigma, double HighPassS
 /// read noise is removed, the gain that implies, and the swamping ratio (shot variance over
 /// read variance) with the noise penalty read noise adds, in percent (R-024).
 /// </summary>
+/// <param name="Name">The position's name, as <see cref="ChannelLevel.Name"/>.</param>
+/// <param name="Sky">The position's median, in ADU above black.</param>
+/// <param name="TotalSigma">
+/// The light's high-pass sigma, corrected by the bias's pair-to-high-pass ratio, in ADU.
+/// </param>
+/// <param name="ShotSigma">
+/// The root of the total variance minus the read variance, in ADU; 0 when that is not positive.
+/// </param>
+/// <param name="GainEPerAdu">
+/// The gain the shot noise implies, the sky over the shot variance, in electrons per ADU; null when
+/// the shot variance is not positive.
+/// </param>
+/// <param name="SwampingRatio">
+/// The shot variance over the read variance; negative when the read noise exceeds the total.
+/// </param>
+/// <param name="PenaltyPct">
+/// How much read noise adds to the shot noise, 100 (sqrt(1 + 1 / ratio) - 1), in percent; NaN when
+/// the shot variance is not positive.
+/// </param>
 internal sealed record ChannelNoise(string Name, double Sky, double TotalSigma, double ShotSigma, double? GainEPerAdu, double SwampingRatio, double PenaltyPct);
 
 /// <summary>Noise figures: the prototype's `noise2.py`.</summary>
 internal static class NoiseAnalyzer
 {
-    /// <summary>Half-side of the central window of the CFA position (300 x 300 of the position, 600 x 600 of the frame).</summary>
+    /// <summary>
+    /// Half-side of the central window of the CFA position (600 x 600 of the position, 1200 x 1200
+    /// of the frame).
+    /// </summary>
     internal const int WindowHalf = 300;
 
     /// <summary>
@@ -42,6 +71,10 @@ internal static class NoiseAnalyzer
     /// the CFA position (<paramref name="py"/>, <paramref name="px"/>) minus its 5 x 5 median:
     /// the noise with the sky and the stars taken out. The window shrinks on a small frame.
     /// </summary>
+    /// <param name="raw">The mosaic above black, in ADU (a light or a bias).</param>
+    /// <param name="py">The position's row parity, 0 or 1.</param>
+    /// <param name="px">The position's column parity, 0 or 1.</param>
+    /// <returns>The sigma, in ADU; NaN when the window is too small for a residual.</returns>
     internal static double HighPassSigma(Raster raw, int py, int px)
     {
         List<double> hp = HighPass(raw, py, px);
@@ -53,6 +86,10 @@ internal static class NoiseAnalyzer
     /// the CFA position minus the 5 x 5 median of its own position, row by row, the two-pixel
     /// border of the window left out; empty when the window is under 7 pixels a side.
     /// </summary>
+    /// <param name="raw">The mosaic above black, in ADU. Not null.</param>
+    /// <param name="py">The position's row parity, 0 or 1.</param>
+    /// <param name="px">The position's column parity, 0 or 1.</param>
+    /// <returns>The residuals, in ADU, row by row.</returns>
     internal static List<double> HighPass(Raster raw, int py, int px)
     {
         ArgumentNullException.ThrowIfNull(raw);
@@ -95,7 +132,19 @@ internal static class NoiseAnalyzer
         return hp;
     }
 
-    /// <summary>astropy's sigma_clipped_stats: clip at <paramref name="sigmas"/> around the median, <paramref name="iterations"/> times, then the standard deviation.</summary>
+    /// <summary>
+    /// astropy's sigma_clipped_stats: clip at <paramref name="sigmas"/> around the median,
+    /// <paramref name="iterations"/> times, then the standard deviation.
+    /// </summary>
+    /// <param name="values">The values; not modified. Not null.</param>
+    /// <param name="sigmas">
+    /// The clip, in standard deviations from the median; a value at exactly that distance is kept.
+    /// </param>
+    /// <param name="iterations">
+    /// The most clipping rounds; they stop early when a round drops nothing or 2 values or fewer
+    /// are left.
+    /// </param>
+    /// <returns>The population standard deviation of the values kept; NaN under 2 values.</returns>
     internal static double ClippedStd(List<double> values, double sigmas, int iterations)
     {
         ArgumentNullException.ThrowIfNull(values);
@@ -116,6 +165,9 @@ internal static class NoiseAnalyzer
         return Std(v);
     }
 
+    /// <summary>The population standard deviation (over n, as numpy's default).</summary>
+    /// <param name="v">The values.</param>
+    /// <returns>The standard deviation; NaN under 2 values.</returns>
     private static double Std(List<double> v)
     {
         if (v.Count < 2)
@@ -137,7 +189,14 @@ internal static class NoiseAnalyzer
     /// The read noise per CFA position from two biases: the standard deviation of their
     /// difference over sqrt 2 in the central window (the fixed pattern cancels), clipped at
     /// 4 sigma; and the high-pass estimator on the first bias, for the correction of the lights.
+    /// Throws <see cref="InvalidOperationException"/> when the two biases differ in size.
     /// </summary>
+    /// <param name="a">The first bias above black, in ADU. Not null.</param>
+    /// <param name="b">
+    /// The second bias above black, the size of <paramref name="a"/>. Not null.
+    /// </param>
+    /// <param name="cfa">The colour order, for the names; null when unknown.</param>
+    /// <returns>Four read noises, in position order.</returns>
     internal static IReadOnlyList<ReadNoise> ReadNoiseFromPair(Raster a, Raster b, CfaPattern? cfa)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -176,6 +235,9 @@ internal static class NoiseAnalyzer
     /// the bias (the same estimator's bias on both), the read variance subtracted, and the
     /// gain read as sky over shot variance (null when the shot variance is not positive).
     /// </summary>
+    /// <param name="channels">The light's channel levels, in position order. Not null.</param>
+    /// <param name="readNoise">The read noise per position, in the same order. Not null.</param>
+    /// <returns>One entry per position present in both lists, in position order.</returns>
     internal static IReadOnlyList<ChannelNoise> Swamping(IReadOnlyList<ChannelLevel> channels, IReadOnlyList<ReadNoise> readNoise)
     {
         ArgumentNullException.ThrowIfNull(channels);

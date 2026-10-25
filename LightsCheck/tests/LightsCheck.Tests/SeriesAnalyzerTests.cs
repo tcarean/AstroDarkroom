@@ -241,8 +241,8 @@ public class SeriesAnalyzerTests
     {
         SeriesAnalysis s = Analyze(VeilWcs,
             Frame(1, Measurement(3.0, 1.1, 10000, 120)),
-            Frame(2, Measurement(3.0, 1.7, 9000, 121)),                       // bad, coherent: pe RA
-            Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: pe RA
+            Frame(2, Measurement(3.0, 1.7, 9000, 121)),                       // bad, coherent: `pe RA`
+            Frame(3, Measurement(3.1, 1.4, 10000, 122)),                      // marginal, coherent: `pe RA`
             Frame(4, Measurement(3.0, 1.7, 9000, 121, coherence: 0.5)));      // bad, the stars disagree: angle alone
         Assert.Equal(TrailAxis.Ra, s.Flags[1][0].On);
         Assert.Equal("alungire 1.70 (prag 1.60), dara pe RA (88 grade)", SeriesReport.Reason(s.Flags[1][0]));

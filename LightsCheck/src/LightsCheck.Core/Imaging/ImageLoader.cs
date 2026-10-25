@@ -23,13 +23,21 @@
 
 namespace LightsCheck.Core
 {
-    /// <summary>The exact ADU scale a file carries: white and black, and where they were read.</summary>
+    /// <summary>
+    /// The exact ADU scale a file carries: white and black, and where they were read.
+    /// </summary>
     internal sealed class AduScale
     {
         internal readonly double White;
         internal readonly double Black;
         internal readonly string Source;
 
+        /// <summary>Holds the scale as read.</summary>
+        /// <param name="white">The white level, in ADU.</param>
+        /// <param name="black">The black level, in ADU.</param>
+        /// <param name="source">
+        /// Where the two were read, for the report (e.g. "libraw (exact)").
+        /// </param>
         internal AduScale(double white, double black, string source)
         {
             White = white; Black = black; Source = source;
@@ -48,7 +56,10 @@ namespace LightsCheck.Core
         /// <summary>The FITS cards; EMPTY (not null) for a raw.</summary>
         internal IReadOnlyDictionary<string, string> Header;
 
-        /// <summary>The same cards, raw: the 80 characters of each, in file order, without END. Empty for a raw.</summary>
+        /// <summary>
+        /// The same cards, raw: the 80 characters of each, in file order, without END. Empty for a
+        /// raw.
+        /// </summary>
         internal IReadOnlyList<string> Cards = Array.Empty<string>();
 
         /// <summary>NAXIS3 of the HDU read; 1 for a 2D image and for a raw.</summary>
@@ -57,7 +68,9 @@ namespace LightsCheck.Core
         /// <summary>BITPIX of the HDU read; 0 for a raw.</summary>
         internal int Bitpix;
 
-        /// <summary>The exact ADU scale from the file, or null when the file does not carry one.</summary>
+        /// <summary>
+        /// The exact ADU scale from the file, or null when the file does not carry one.
+        /// </summary>
         internal AduScale Scale;
 
         /// <summary>
@@ -77,20 +90,33 @@ namespace LightsCheck.Core
         internal double? PixelSizeUm;
         internal long? NikonLensId;
 
-        /// <summary>The lens range from the raw's MakerNote, as libraw decodes it; null when zero.</summary>
+        /// <summary>
+        /// The lens range from the raw's MakerNote, as libraw decodes it; null when zero.
+        /// </summary>
         internal double? LensMinFocalMm;
         internal double? LensMaxFocalMm;
         internal double? LensMaxAperture;
 
-        /// <summary>The colour order of the CFA mosaic, or null when the file does not say it.</summary>
+        /// <summary>
+        /// The colour order of the CFA mosaic, or null when the file does not say it.
+        /// </summary>
         internal CfaPattern Cfa;
     }
 
+    /// <summary>
+    /// Loads a frame through the reader that claims its file, and falls back to the FITS reader
+    /// for any file no reader claims.
+    /// </summary>
     internal static class ImageLoader
     {
         static readonly FitsReader Fits = new FitsReader();
         static readonly IFrameReader[] Readers = { new RawReader(), Fits };
 
+        /// <summary>Loads a frame with its pixels and everything the file says about it.</summary>
+        /// <param name="path">
+        /// The file to read: a camera raw, a FITS, or anything else, which is read as a FITS.
+        /// </param>
+        /// <returns>The frame, its image filled.</returns>
         internal static LoadedFrame Load(string path)
         {
             foreach (IFrameReader r in Readers)
@@ -101,9 +127,17 @@ namespace LightsCheck.Core
             return Fits.Load(path);
         }
 
+        /// <summary>When all that is needed is the pixels.</summary>
+        /// <param name="path">The file to read, as for <see cref="Load"/>.</param>
+        /// <returns>The frame's image.</returns>
         internal static Img LoadImage(string path) => Load(path).Image;
 
-        /// <summary>The metadata only; the same dispatch as <see cref="Load"/>. <see cref="LoadedFrame.Image"/> is null.</summary>
+        /// <summary>
+        /// The metadata only; the same dispatch as <see cref="Load"/>.
+        /// <see cref="LoadedFrame.Image"/> is null.
+        /// </summary>
+        /// <param name="path">The file to read, as for <see cref="Load"/>.</param>
+        /// <returns>The frame's metadata, its image null.</returns>
         internal static LoadedFrame LoadInfo(string path)
         {
             foreach (IFrameReader r in Readers)

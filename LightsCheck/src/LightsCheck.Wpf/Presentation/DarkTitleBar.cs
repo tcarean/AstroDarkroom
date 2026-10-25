@@ -21,16 +21,29 @@ using System.Windows.Interop;
 
 namespace LightsCheck.Wpf;
 
-/// <summary>Asks the window manager for a dark title bar; silently nothing on a Windows without the attribute.</summary>
+/// <summary>
+/// Asks the window manager for a dark title bar; silently nothing on a Windows without the
+/// attribute.
+/// </summary>
 internal static partial class DarkTitleBar
 {
     private const int UseImmersiveDarkModeBefore20H1 = 19;
     private const int UseImmersiveDarkMode = 20;
 
+    /// <summary>The DWM call that sets one attribute of a window.</summary>
+    /// <param name="hwnd">The window's handle.</param>
+    /// <param name="attr">The attribute's number (19 or 20 for the dark mode).</param>
+    /// <param name="value">The attribute's value; 1 turns the dark mode on.</param>
+    /// <param name="size">The size of <paramref name="value"/> in bytes.</param>
+    /// <returns>0 (S_OK) on success, an HRESULT otherwise.</returns>
     [LibraryImport("dwmapi.dll")]
     private static partial int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
-    /// <summary>Called once the window has a handle (SourceInitialized or later).</summary>
+    /// <summary>
+    /// Called once the window has a handle (SourceInitialized or later); before that, nothing.
+    /// It tries attribute 20, then 19 for the Windows 10 builds before 20H1.
+    /// </summary>
+    /// <param name="window">The window whose title bar turns dark.</param>
     internal static void Apply(Window window)
     {
         IntPtr hwnd = new WindowInteropHelper(window).Handle;

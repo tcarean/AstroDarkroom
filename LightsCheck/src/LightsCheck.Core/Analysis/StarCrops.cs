@@ -17,7 +17,20 @@
 
 namespace LightsCheck.Core;
 
-/// <summary>A cut-out: where it was taken (a position word the report turns into a caption), the star it is centred on, the stretched grey bytes.</summary>
+/// <summary>
+/// A cut-out: where it was taken (a position word the report turns into a caption), the star
+/// it is centred on, the stretched grey bytes.
+/// </summary>
+/// <param name="Where">
+/// The position, in the Romanian word the report turns into a caption (centru, stanga sus, ...).
+/// </param>
+/// <param name="Star">The measured star the cut-out is centred on.</param>
+/// <param name="Grey">
+/// The cut-out's pixels, 0 to 255, row by row, <paramref name="Width"/> x <paramref name="Height"/>
+/// of them.
+/// </param>
+/// <param name="Width">The cut-out's width, in pixels.</param>
+/// <param name="Height">The cut-out's height, in pixels.</param>
 internal sealed record StarCrop(string Where, StarShape Star, byte[] Grey, int Width, int Height);
 
 /// <summary>
@@ -30,6 +43,13 @@ internal static class StarCrops
 {
     internal const int Radius = 12;
 
+    /// <summary>Decodes the frame again and cuts its stars out of the green channel.</summary>
+    /// <param name="path">The frame's file, a raw or a FITS.</param>
+    /// <param name="m">The frame's measurement, for its stars. Not null.</param>
+    /// <returns>
+    /// The cut-outs, as the raster overload gives them; the loader's exception when the file cannot
+    /// be read.
+    /// </returns>
     internal static IReadOnlyList<StarCrop> Build(string path, FrameMeasurement m)
     {
         ArgumentNullException.ThrowIfNull(m);
@@ -41,6 +61,17 @@ internal static class StarCrops
         return Build(g, m);
     }
 
+    /// <summary>
+    /// Cuts the stars out of a green raster: the two brightest within a fifth of the frame's
+    /// size from the centre, and the brightest in each corner quarter.
+    /// </summary>
+    /// <param name="g">The frame's green channel above black, in ADU. Not null.</param>
+    /// <param name="m">The frame's measurement, for its stars. Not null.</param>
+    /// <returns>
+    /// Up to six cut-outs of 2 <see cref="Radius"/> + 1 pixels a side, in the order centre, centre
+    /// second, top left, top right, bottom left, bottom right; a position without a star, or whose
+    /// cut-out would leave the frame, is skipped.
+    /// </returns>
     internal static IReadOnlyList<StarCrop> Build(Raster g, FrameMeasurement m)
     {
         ArgumentNullException.ThrowIfNull(g);

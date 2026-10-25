@@ -74,7 +74,8 @@ frame. `CropsPending` is the decode in flight; a selection made while it runs wi
 
 Two `FrameworkElement`s that draw in `OnRender`, no chart library. `SeriesChart` is a line or
 bar chart over the frame index with optional guide lines and a minimum; `DitherMap` is the
-positions on a 10 px grid, equal scales on both axes, each point coloured by its class, joined
+positions on a 10 px grid (50 px once the span passes 400 px), equal scales on both axes, each
+point coloured by its class, joined
 to the next and numbered, a `Ring` point drawn as a hollow circle in the same colour. Both
 redraw when `Points` changes (the dependency properties call
 `InvalidateVisual`) and draw nothing under a minimum size. `SeriesChart` keeps its last

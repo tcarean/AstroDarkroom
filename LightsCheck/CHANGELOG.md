@@ -6,6 +6,12 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ## [Unreleased]
 
+### Internal
+
+- Every type and method in the code has its XML documentation comment (the kit's rule
+  "Documentation comments"), and every comment is English: the files copied from FlatCheck take
+  FlatCheck's English text, their code unchanged (ADR 0018). No behaviour changed.
+
 ## [1.0.0] - 2026-10-25
 
 ### Added

@@ -29,13 +29,20 @@ internal static class Th
     /// <summary>Side of the tiles whose medians make the background grid, in pixels.</summary>
     internal const int BackgroundTile = 128;
 
-    /// <summary>Every n-th pixel of a tile enters its median: the 128 x 128 tile is read at 32 x 32.</summary>
+    /// <summary>
+    /// Every n-th pixel of a tile enters its median: the 128 x 128 tile is read at 32 x 32.
+    /// </summary>
     internal const int BackgroundSampleStep = 4;
 
-    /// <summary>Half-side of the central window the noise is read in, in pixels (2000 x 2000 on a 24 MP frame).</summary>
+    /// <summary>
+    /// Half-side of the central window the noise is read in, in pixels (2000 x 2000 on a 24 MP
+    /// frame).
+    /// </summary>
     internal const int NoiseWindowHalf = 1000;
 
-    /// <summary>Every n-th pixel of the noise window enters the median absolute deviation.</summary>
+    /// <summary>
+    /// Every n-th pixel of the noise window enters the median absolute deviation.
+    /// </summary>
     internal const int NoiseSampleStep = 3;
 
     /// <summary>Sigma of the Gaussian the detection image is smoothed with, in pixels.</summary>
@@ -46,7 +53,9 @@ internal static class Th
     /// <summary>Detection threshold on the smoothed image, in sigmas of that image.</summary>
     internal const double DetectionSigmas = 5.0;
 
-    /// <summary>A component is a star when its area is in [MinStarArea, MaxStarArea] pixels.</summary>
+    /// <summary>
+    /// A component is a star when its area is in [MinStarArea, MaxStarArea] pixels.
+    /// </summary>
     internal const int MinStarArea = 5;
     internal const int MaxStarArea = 400;
 
@@ -56,7 +65,9 @@ internal static class Th
     /// <summary>A star measured for shape peaks above this many sigmas ...</summary>
     internal const double ShapePeakSigmas = 20.0;
 
-    /// <summary>... and below this fraction of the scale, so a saturated star does not vote on shape.</summary>
+    /// <summary>
+    /// ... and below this fraction of the scale, so a saturated star does not vote on shape.
+    /// </summary>
     internal const double ShapePeakMaxFraction = 0.8;
 
     /// <summary>How many stars, the brightest unsaturated, are measured for shape.</summary>
@@ -68,20 +79,28 @@ internal static class Th
     /// <summary>How many centroid iterations the moments take.</summary>
     internal const int MomentIterations = 3;
 
-    /// <summary>A shape measurement is kept when its FWHM is in [MinFwhm, MaxFwhm] pixels.</summary>
+    /// <summary>
+    /// A shape measurement is kept when its FWHM is in [MinFwhm, MaxFwhm] pixels.
+    /// </summary>
     internal const double MinFwhm = 1.0;
     internal const double MaxFwhm = 15.0;
 
-    /// <summary>A star counts as elongated at or above this ratio when the fraction of elongated stars is reported.</summary>
+    /// <summary>
+    /// A star counts as elongated above this ratio when the fraction of elongated stars is
+    /// reported.
+    /// </summary>
     internal const double ElongatedRatio = 1.3;
 
-    /// <summary>Stars at or above this ratio vote on the elongation angle.</summary>
+    /// <summary>Stars above this ratio vote on the elongation angle.</summary>
     internal const double AngleVoteRatio = 1.2;
 
     /// <summary>At least this many stars must vote for an angle to be reported.</summary>
     internal const int AngleVoteMin = 6;
 
-    /// <summary>Zones for the FWHM by radius, as fractions of the half-diagonal (1000 and 2200 px on a 6016 x 4016 frame).</summary>
+    /// <summary>
+    /// Zones for the FWHM by radius, as fractions of the half-diagonal (1000 and 2200 px on a 6016
+    /// x 4016 frame).
+    /// </summary>
     internal const double CentreZoneFraction = 0.2765;
     internal const double MidZoneFraction = 0.6082;
 
@@ -91,7 +110,10 @@ internal static class Th
     /// <summary>The halo ratio is read on this many of the brightest measured stars.</summary>
     internal const int HaloStars = 40;
 
-    /// <summary>Halo: the flux in the annulus (HaloInner, HaloOuter] over the flux within HaloCore, in pixels.</summary>
+    /// <summary>
+    /// Halo: the flux in the annulus (HaloInner, HaloOuter] over the flux within HaloCore, in
+    /// pixels.
+    /// </summary>
     internal const double HaloCore = 3.0;
     internal const double HaloInner = 5.0;
     internal const double HaloOuter = 10.0;
@@ -101,6 +123,13 @@ internal static class Th
     /// scale (a raw, a 16-bit FITS), the same fraction of the scale (1/4096, the 12-bit raw's
     /// one count) on a float frame whose scale is 0..1, where a 1 ADU margin would cover it all.
     /// </summary>
+    /// <param name="top">
+    /// The top of the frame's scale above black, in ADU (or 1.0 on a 0..1 float frame).
+    /// </param>
+    /// <returns>
+    /// The margin in the scale's units: 1, or <paramref name="top"/>/4096 when the top is 2 or
+    /// less.
+    /// </returns>
     internal static double SaturationMargin(double top) => top > 2 ? 1.0 : top / 4096.0;
 
     // ---- trails (R-015)
@@ -111,13 +140,18 @@ internal static class Th
     /// <summary>... whose bounding-box diagonal is longer than this, in pixels ...</summary>
     internal const double TrailMinLength = 80.0;
 
-    /// <summary>... and that fills less than TrailMaxFill of its bounding box plus TrailFillSlack pixels (a line, not a blob).</summary>
+    /// <summary>
+    /// ... and that fills less than TrailMaxFill of its bounding box plus TrailFillSlack pixels (a
+    /// line, not a blob).
+    /// </summary>
     internal const double TrailMaxFill = 0.25;
     internal const int TrailFillSlack = 60;
 
     // ---- registration (R-016, R-018)
 
-    /// <summary>How many stars, the brightest, saturated included, are kept for registering the frame.</summary>
+    /// <summary>
+    /// How many stars, the brightest, saturated included, are kept for registering the frame.
+    /// </summary>
     internal const int RegistrationStars = 600;
 
     /// <summary>The brightest stars of each list that vote on the coarse shift.</summary>
@@ -127,7 +161,10 @@ internal static class Th
     internal const int VoteRange = 2000;
     internal const int VoteBin = 8;
 
-    /// <summary>Match tolerance of the first iteration and of the following ones, in pixels; how many iterations.</summary>
+    /// <summary>
+    /// Match tolerance of the first iteration and of the following ones, in pixels; how many
+    /// iterations.
+    /// </summary>
     internal const double MatchToleranceCoarse = 8.0;
     internal const double MatchToleranceFine = 3.0;
     internal const int MatchIterations = 4;
@@ -144,7 +181,10 @@ internal static class Th
     /// </summary>
     internal const double DitherStep = 5.0;
 
-    /// <summary>A pause longer than this many seconds before a frame is a deliberate pause (a manual dither).</summary>
+    /// <summary>
+    /// A pause longer than this many seconds before a frame is a deliberate pause (a manual
+    /// dither).
+    /// </summary>
     internal const double DitherPause = 5.0;
 
     /// <summary>The size classes of the moves: [5, 10), [10, 20), [20, ...) px.</summary>
@@ -153,18 +193,27 @@ internal static class Th
     /// <summary>A move counts on an axis when its component is at least this many pixels.</summary>
     internal const double AxisStep = 3.0;
 
-    /// <summary>Coverage radii: another frame within these many pixels is the same spot, nearly, or close.</summary>
+    /// <summary>
+    /// Coverage radii: another frame within these many pixels is the same spot, nearly, or close.
+    /// </summary>
     internal const double CoverageTight = 3.0;
     internal const double CoverageMid = 5.0;
     internal const double CoverageLoose = 10.0;
 
-    /// <summary>A run is this many consecutive frames or more within a radius of its first.</summary>
+    /// <summary>
+    /// A run is this many consecutive frames or more within a radius of its first.
+    /// </summary>
     internal const int RunMinFrames = 3;
 
-    /// <summary>Hot pixels: fine while no more than this many consecutive frames sit within CoverageTight of each other.</summary>
+    /// <summary>
+    /// Hot pixels: fine while no more than this many consecutive frames sit within CoverageTight of
+    /// the first of them.
+    /// </summary>
     internal const int HotPixelRunMax = 3;
 
-    /// <summary>Walking noise: fine when this fraction of frames are distinct at CoverageLoose ...</summary>
+    /// <summary>
+    /// Walking noise: fine when this fraction of frames are distinct at CoverageLoose ...
+    /// </summary>
     internal const double WalkingNoiseDistinctFraction = 0.5;
 
     /// <summary>... this fraction sit at least CoverageLoose from every other frame ...</summary>
@@ -179,7 +228,8 @@ internal static class Th
     /// The dash the drift draws inside the longest run at CoverageLoose (the drift per exposure
     /// times the run's frames minus one) under which nothing walks, whatever the dithering: a
     /// rule of thumb placed between the 1.9 px of the Smida session (20 mm, a clean stack) and
-    /// the 11 px of Veil (135 mm, worms), measured on 2026-10-10 (ADR 0015); to tune on more sessions.
+    /// the 11 px of Veil (135 mm, worms), measured on 2026-10-10 (ADR 0015); to tune on more
+    /// sessions.
     /// </summary>
     internal const double WalkingStreakVisible = 3.0;
 
@@ -208,7 +258,10 @@ internal static class Th
     /// </summary>
     internal const double PolarRotationMinHours = 1.0;
 
-    /// <summary>The side of the central square of the raw mosaic kept from every light for the sensor's pattern (R-046); the whole frame when it is smaller.</summary>
+    /// <summary>
+    /// The side of the central square of the raw mosaic kept from every light for the sensor's
+    /// pattern (R-046); the whole frame when it is smaller.
+    /// </summary>
     internal const int PatternCrop = 512;
 
     /// <summary>
@@ -219,56 +272,92 @@ internal static class Th
     /// </summary>
     internal const double PatternHotSigma = 10.0;
 
-    /// <summary>Two frames closer than this share the sensor's pattern pixel for pixel: their pattern adds up instead of averaging out (R-048).</summary>
+    /// <summary>
+    /// Two frames closer than this share the sensor's pattern pixel for pixel: their pattern adds
+    /// up instead of averaging out (R-048).
+    /// </summary>
     internal const double PatternSharePx = 1.5;
 
-    /// <summary>The per-pixel median across fewer frames than this still carries too much of the frames' own noise to read the pattern.</summary>
+    /// <summary>
+    /// The per-pixel median across fewer frames than this still carries too much of the frames' own
+    /// noise to read the pattern.
+    /// </summary>
     internal const int PatternMinFrames = 7;
 
-    /// <summary>The median is clean of stars while the largest cluster of frames at CoverageTight holds under this fraction of the registered frames.</summary>
+    /// <summary>
+    /// The median is clean of stars while the largest cluster of frames at CoverageTight holds
+    /// under this fraction of the registered frames.
+    /// </summary>
     internal const double PatternClusterFraction = 0.5;
 
     // ---- frame classes (R-022)
 
-    /// <summary>Median elongation at or above which a frame is bad, and above which it is marginal.</summary>
+    /// <summary>
+    /// Median elongation at or above which a frame is bad, and at or above which it is marginal.
+    /// </summary>
     internal const double ElongationBad = 1.6;
     internal const double ElongationMarginal = 1.35;
 
-    /// <summary>A frame whose median FWHM exceeds this factor of the session's median of the good frames is soft.</summary>
+    /// <summary>
+    /// A frame whose median FWHM exceeds this factor of the session's median of the good frames is
+    /// soft.
+    /// </summary>
     internal const double SoftFwhmFactor = 1.3;
 
-    /// <summary>A frame with fewer detected stars than this fraction of the session's median has clouds or haze.</summary>
+    /// <summary>
+    /// A frame with fewer detected stars than this fraction of the session's median has clouds or
+    /// haze.
+    /// </summary>
     internal const double CloudStarFraction = 0.6;
 
-    /// <summary>A frame whose green background differs from the median of its neighbours by more than this percentage has a background jump.</summary>
+    /// <summary>
+    /// A frame whose green background differs from the median of its neighbours by more than this
+    /// percentage has a background jump.
+    /// </summary>
     internal const double BackgroundJumpPct = 8.0;
 
-    /// <summary>How many frames on each side make the neighbourhood of the background jump test.</summary>
+    /// <summary>
+    /// How many frames on each side make the neighbourhood of the background jump test.
+    /// </summary>
     internal const int BackgroundNeighbours = 2;
 
     // ---- trends (R-023)
 
-    /// <summary>How many good frames at each end of the night make the first/last comparison.</summary>
+    /// <summary>
+    /// How many good frames at each end of the night make the first/last comparison.
+    /// </summary>
     internal const int TrendFrames = 10;
 
-    /// <summary>Dew: the median FWHM of the last good frames exceeds the first by this fraction ...</summary>
+    /// <summary>
+    /// Dew: the median FWHM of the last good frames exceeds the first by this fraction ...
+    /// </summary>
     internal const double DewFwhmRise = 0.15;
 
     /// <summary>... and the halo ratio rose by this much.</summary>
     internal const double DewHaloRise = 0.02;
 
-    /// <summary>Focus held when the median FWHM moved by less than this fraction between the ends.</summary>
+    /// <summary>
+    /// Focus held when the median FWHM moved by less than this fraction between the ends.
+    /// </summary>
     internal const double FocusHeldFraction = 0.10;
 
-    /// <summary>The read-noise swamping ratio (shot variance over read variance) under which a channel is read-noise limited.</summary>
+    /// <summary>
+    /// The read-noise swamping ratio (shot variance over read variance) under which a channel is
+    /// read-noise limited.
+    /// </summary>
     internal const double SwampingRatioOk = 10.0;
 
     // ---- the RA axis (R-025)
 
-    /// <summary>At least this many bad frames with a coherent trail direction (coherence above TrailAxisCoherence) vote on the RA axis ...</summary>
+    /// <summary>
+    /// At least this many bad frames with a coherent trail direction (coherence above
+    /// TrailAxisCoherence) vote on the RA axis ...
+    /// </summary>
     internal const int TrailAxisMinFrames = 2;
     internal const double TrailAxisCoherence = 0.8;
 
-    /// <summary>... and their mean direction must be within this many degrees of an image axis.</summary>
+    /// <summary>
+    /// ... and their mean direction must be within this many degrees of an image axis.
+    /// </summary>
     internal const double TrailAxisTolerance = 25.0;
 }

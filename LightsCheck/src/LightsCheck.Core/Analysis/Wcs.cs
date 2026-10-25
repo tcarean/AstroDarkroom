@@ -23,9 +23,24 @@ namespace LightsCheck.Core;
 /// is the same with both scales 1. DecDeg is the declination of the reference pixel
 /// (CRVAL2, degrees), null when the header did not carry it (R-050).
 /// </summary>
+/// <param name="Cdelt1">
+/// The RA axis's scale, in degrees per pixel, the sign included; 1 with a CD matrix.
+/// </param>
+/// <param name="Cdelt2">
+/// The DEC axis's scale, in degrees per pixel, the sign included; 1 with a CD matrix.
+/// </param>
+/// <param name="Pc11">The matrix's RA row, x term.</param>
+/// <param name="Pc12">The matrix's RA row, y term.</param>
+/// <param name="Pc21">The matrix's DEC row, x term.</param>
+/// <param name="Pc22">The matrix's DEC row, y term.</param>
+/// <param name="DecDeg">
+/// The declination of the reference pixel, in degrees; null when the header did not carry it.
+/// </param>
 internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc12, double Pc21, double Pc22, double? DecDeg = null)
 {
-    /// <summary>The image axis RA runs along: the one that dominates the RA row of the matrix.</summary>
+    /// <summary>
+    /// The image axis RA runs along: the one that dominates the RA row of the matrix.
+    /// </summary>
     internal Axis RaAxis => Math.Abs(Pc12) > Math.Abs(Pc11) ? Axis.Y : Axis.X;
 
     /// <summary>
@@ -45,7 +60,10 @@ internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc1
         }
     }
 
-    /// <summary>Degrees per pixel along RA: the scale times the length of the matrix row, so a CD matrix (unit scales) gives the same figure.</summary>
+    /// <summary>
+    /// Degrees per pixel along RA: the scale times the length of the matrix row, so a CD matrix
+    /// (unit scales) gives the same figure.
+    /// </summary>
     internal double RaScaleDeg => Math.Abs(Cdelt1) * Math.Sqrt(Pc11 * Pc11 + Pc12 * Pc12);
 
     /// <summary>Degrees per pixel along DEC, from the DEC scale and row.</summary>
@@ -55,6 +73,14 @@ internal sealed record Wcs(double Cdelt1, double Cdelt2, double Pc11, double Pc1
     /// The change of RA (scaled by cos DEC, as the matrix gives it) and of DEC, in degrees,
     /// for a displacement in the solved frame's own pixels.
     /// </summary>
+    /// <param name="dx">The displacement along the solved frame's x, in pixels.</param>
+    /// <param name="dy">
+    /// The displacement along the solved frame's y (Siril's rows, bottom-up), in pixels.
+    /// </param>
+    /// <returns>
+    /// The change of RA times cos DEC and the change of DEC, in degrees, signed as the WCS's world
+    /// axes.
+    /// </returns>
     internal (double RaDeg, double DecDeg) SkyOffsetDeg(double dx, double dy)
         => (Cdelt1 * (Pc11 * dx + Pc12 * dy), Cdelt2 * (Pc21 * dx + Pc22 * dy));
 }

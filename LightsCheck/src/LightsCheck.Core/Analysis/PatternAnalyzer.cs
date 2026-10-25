@@ -22,9 +22,20 @@ namespace LightsCheck.Core;
 /// (R-046): <see cref="Size"/> pixels a side, cut at an even row and column so its CFA phase
 /// is the frame's.
 /// </summary>
+/// <param name="Size">The side of the square, in pixels, even.</param>
+/// <param name="Data">
+/// The pixels above black, in ADU, row by row, <paramref name="Size"/> squared of them.
+/// </param>
 internal sealed record PatternCrop(int Size, float[] Data)
 {
-    /// <summary>Th.PatternCrop a side, or the frame's shorter side rounded down to even when that is smaller.</summary>
+    /// <summary>
+    /// Th.PatternCrop a side, or the frame's shorter side rounded down to even when that is
+    /// smaller.
+    /// </summary>
+    /// <param name="raw">The light's mosaic above black, in ADU; not modified. Not null.</param>
+    /// <returns>
+    /// A copy of the central square, its top-left corner on an even row and column.
+    /// </returns>
     internal static PatternCrop Cut(Raster raw)
     {
         ArgumentNullException.ThrowIfNull(raw);
@@ -58,6 +69,29 @@ internal enum PatternStatus
 /// megapixel stand above Th.PatternHotSigma sigmas of that noise. The counts are over the
 /// pixels measured; Frames and CropSize say on what.
 /// </summary>
+/// <param name="Status">Whether the pattern was measured, and if not, why.</param>
+/// <param name="Frames">
+/// The crops the median was read on, or would have been; 0 without a crop or under two registered
+/// frames.
+/// </param>
+/// <param name="CropSize">The side of the crops, in pixels; 0 when not measured.</param>
+/// <param name="Pixels">
+/// The pixels of the median the hot count is over: the positions with a known frame sigma; 0 when
+/// not measured.
+/// </param>
+/// <param name="Hot">
+/// The pixels whose high-pass residual exceeds <see cref="Th.PatternHotSigma"/> times their
+/// position's frame sigma.
+/// </param>
+/// <param name="Names">The four positions' names; empty when not measured.</param>
+/// <param name="PatternSigma">
+/// Per position, the pattern's sigma with the median's own noise taken out, in ADU; NaN where an
+/// estimate is missing. Empty when not measured.
+/// </param>
+/// <param name="FrameSigma">
+/// Per position, the median over the frames of <see cref="ChannelLevel.HighPassSigma"/>, in ADU;
+/// NaN where no frame gave one. Empty when not measured.
+/// </param>
 internal sealed record SensorPattern(
     PatternStatus Status,
     int Frames,
@@ -70,9 +104,21 @@ internal sealed record SensorPattern(
 {
     internal double HotPerMpx => Pixels > 0 ? 1e6 * Hot / Pixels : 0;
 
-    /// <summary>The pattern's sigma as a fraction of one frame's noise, per position; NaN where either is unknown.</summary>
+    /// <summary>
+    /// The pattern's sigma as a fraction of one frame's noise, per position; NaN where either is
+    /// unknown.
+    /// </summary>
+    /// <param name="p">The CFA position, 0 to 3.</param>
+    /// <returns>
+    /// The fraction, 0 or more; NaN for a position out of the lists or without a positive frame
+    /// sigma.
+    /// </returns>
     internal double FractionOfFrame(int p) => p < PatternSigma.Count && p < FrameSigma.Count && FrameSigma[p] > 0 ? PatternSigma[p] / FrameSigma[p] : double.NaN;
 
+    /// <summary>A pattern that was not measured.</summary>
+    /// <param name="status">Why not.</param>
+    /// <param name="frames">The crops that would have been used.</param>
+    /// <returns>The status and the count, every figure 0 and every list empty.</returns>
     internal static SensorPattern Empty(PatternStatus status, int frames) => new(status, frames, 0, 0, 0, [], [], []);
 }
 
@@ -95,6 +141,19 @@ internal static class PatternAnalyzer
     /// frames at Th.CoverageTight holds under Th.PatternClusterFraction of the registered
     /// frames, so no pixel sees a star in half the frames or more.
     /// </summary>
+    /// <param name="crops">
+    /// Per frame, its central crop; null where the frame was not measured. Not null.
+    /// </param>
+    /// <param name="channels">
+    /// Per frame, its channel levels; null where the frame was not measured. Not null.
+    /// </param>
+    /// <param name="dither">
+    /// The series' dithering, in the same frame order, for the positions and the largest cluster.
+    /// Not null.
+    /// </param>
+    /// <returns>
+    /// The measured pattern, or an empty one whose status says why it was not read.
+    /// </returns>
     internal static SensorPattern Analyze(IReadOnlyList<PatternCrop?> crops, IReadOnlyList<IReadOnlyList<ChannelLevel>?> channels, DitherAnalysis dither)
     {
         ArgumentNullException.ThrowIfNull(crops);
@@ -149,7 +208,8 @@ internal static class PatternAnalyzer
             double measured = hp.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hp, 4.0, 5);
             List<double> hpDiff = NoiseAnalyzer.HighPass(diff, p / 2, p % 2);
             double diffSigma = hpDiff.Count == 0 ? double.NaN : NoiseAnalyzer.ClippedStd(hpDiff, 4.0, 5);
-            // Without the noise estimate the sigma would still hold the median's own noise: no figure then.
+            // Without the noise estimate the sigma would still hold the median's own noise: no
+            // figure then.
             double noise2 = diffSigma * diffSigma * noiseShare;
             names.Add(with.Count > 0 && with[0].Count > p ? with[0][p].Name : $"CFA[{p / 2},{p % 2}]");
             patternSigma.Add(double.IsNaN(measured) || double.IsNaN(noise2) ? double.NaN : Math.Sqrt(Math.Max(0, measured * measured - noise2)));
@@ -166,7 +226,15 @@ internal static class PatternAnalyzer
         return new SensorPattern(PatternStatus.Measured, used.Count, size, pixels, hot, names, patternSigma, frameSigma);
     }
 
-    /// <summary>The per-pixel median of the crops at the given indices, as a raster of the crop's size.</summary>
+    /// <summary>
+    /// The per-pixel median of the crops at the given indices, as a raster of the crop's size.
+    /// </summary>
+    /// <param name="crops">Per frame, its crop.</param>
+    /// <param name="indices">
+    /// The frames whose crops are used, each with a crop of <paramref name="size"/>; at least one.
+    /// </param>
+    /// <param name="size">The crops' side, in pixels.</param>
+    /// <returns>The median raster, in ADU above black.</returns>
     private static Raster Median(IReadOnlyList<PatternCrop?> crops, List<int> indices, int size)
     {
         Raster m = new(size, size);
