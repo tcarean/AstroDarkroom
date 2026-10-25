@@ -125,6 +125,9 @@ versions follow [SemVer](https://semver.org/). The version number itself lives i
 
 ### Internal
 
+- Every type and method of the code carries an XML documentation comment (the kit's ADR 0035),
+  and every comment is English, the copied readers', `Dark.xaml`'s and two tests' included: the
+  copies take FlatCheck's English text ahead of LightsCheck (ADR 0019). No code changed.
 - `prototype/`: the Python scripts of the 2026-10-11 analysis of the Smida session of
   2026-08-12, frozen, and their report, figures and CSV files under
   `docs/validation/2026-08-12-smida/`; V-001 checks the inventory of that session and V-002

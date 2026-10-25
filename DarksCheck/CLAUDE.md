@@ -97,14 +97,16 @@ varies a kit rule names it.
   table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
   edited to pass"), and an ADR that states the old value gets a dated note.
 - **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
-  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, code comments
-  of new files. Romanian in everything the user sees: console text, `--help`, window labels,
-  the reports, `README.md`, `THIRD-PARTY-NOTICES.md`. The files copied under `Imaging/` keep
-  FlatCheck's Romanian comments as they are (ADR 0003). Never leave a file in two languages.
+  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and every
+  comment in every file, the copied ones included (ADR 0019). Romanian in everything the user
+  sees: console text, `--help`, window labels, the reports, `README.md`,
+  `THIRD-PARTY-NOTICES.md`. Never leave a file in two languages.
 - **Copied files stay copies** (ADR 0003). A file under `src/DarksCheck.Core/Imaging/` is
   not improved here: a fix goes to its source (LightsCheck, or FlatCheck through it) first,
   then the copy is refreshed. `RawReader.cs` and `ImageLoader.cs` carry LightsCheck's
-  adaptations and are refreshed from LightsCheck.
+  adaptations and are refreshed from LightsCheck. The one exception is the comments, made
+  English here ahead of LightsCheck (ADR 0019): until LightsCheck's are English too, a refresh
+  keeps this tree's comments.
 - **License headers.** Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice;
   `LicenseHeaderTests` fails otherwise. Scripts carry the SPDX line.
 

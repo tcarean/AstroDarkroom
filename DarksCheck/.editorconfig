@@ -39,8 +39,8 @@ dotnet_diagnostic.CA1031.severity = none
 dotnet_diagnostic.CA1822.severity = none
 
 # The files copied from FlatCheck keep its style (block namespaces, no braces around one-line
-# ifs, Romanian comments), so a diff against their source stays readable (ADR 0003). The
-# compiler's own warnings still apply to them.
+# ifs), so a diff against their source stays readable (ADR 0003). The compiler's own warnings
+# still apply to them.
 [src/DarksCheck.Core/Imaging/*.cs]
 csharp_style_namespace_declarations = block_scoped:silent
 csharp_prefer_braces = false:silent

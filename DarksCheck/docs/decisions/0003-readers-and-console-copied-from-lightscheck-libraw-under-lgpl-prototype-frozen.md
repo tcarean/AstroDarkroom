@@ -1,7 +1,7 @@
 # 0003. The readers and the console skeleton are copied from LightsCheck, libraw is taken under LGPL-2.1, the Python prototype is frozen
 
 Date: 2026-10-11
-Status: accepted 2026-10-11
+Status: accepted 2026-10-11; a copy changes only after its source superseded by 0019
 
 ## Context
 
