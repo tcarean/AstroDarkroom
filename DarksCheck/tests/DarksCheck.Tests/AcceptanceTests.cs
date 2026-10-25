@@ -221,20 +221,20 @@ public class AcceptanceTests
         using TempWorkspace outDir = new();
         (int code, string stdout, _) = Cli.Run(s.Root, "--threads", "2", "--out", outDir.Dir);
         Assert.Equal(0, code);
-        foreach (string name in new[] { "darkscheck-raport.txt", "darkscheck-darks.csv", "darkscheck-biases.csv", "darkscheck-harta-dark.png", "darkscheck-harta-bias.png", "darkscheck-harta-dark-minus-bias.png" })
+        foreach (string name in new[] { "darkscheck-report.txt", "darkscheck-darks.csv", "darkscheck-biases.csv", "darkscheck-map-dark.png", "darkscheck-map-bias.png", "darkscheck-map-dark-minus-bias.png" })
         {
             Assert.Contains("-> scris: " + Path.Combine(outDir.Dir, name), stdout, StringComparison.Ordinal);
             Assert.True(File.Exists(Path.Combine(outDir.Dir, name)), name);
         }
 
-        string report = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-raport.txt")).ReplaceLineEndings("\n");
+        string report = File.ReadAllText(Path.Combine(outDir.Dir, "darkscheck-report.txt")).ReplaceLineEndings("\n");
         Assert.Contains("  8. CATE DARK-URI AJUNG\n", report, StringComparison.Ordinal);
         string[] csv = File.ReadAllLines(Path.Combine(outDir.Dir, "darkscheck-darks.csv"));
         Assert.Equal(4, csv.Length);
         Assert.StartsWith("index,file,time,exposure_s,iso,error,skipped,mean_above_black,R_median,", csv[0], StringComparison.Ordinal);
         Assert.EndsWith(",amp_ratio_median,amp_ratio_q25,amp_ratio_q75,edge_left,edge_right,edge_top,edge_bottom,edge_top_left,edge_top_right,edge_bottom_left,edge_bottom_right,excess_light", csv[0], StringComparison.Ordinal);
         Assert.Equal(CsvFields(csv[0]), CsvFields(csv[1]));
-        Assert.Equal(PngWriterSignature, File.ReadAllBytes(Path.Combine(outDir.Dir, "darkscheck-harta-dark.png")).Take(8));
+        Assert.Equal(PngWriterSignature, File.ReadAllBytes(Path.Combine(outDir.Dir, "darkscheck-map-dark.png")).Take(8));
     }
 
     private static readonly byte[] PngWriterSignature = [137, 80, 78, 71, 13, 10, 26, 10];
@@ -303,7 +303,7 @@ public class AcceptanceTests
         using TempWorkspace outTiny = new();
         (int code2, string stdout, _) = Cli.Run(tiny.Root, "--threads", "2", "--out", outTiny.Dir);
         Assert.Equal(0, code2);
-        Assert.DoesNotContain("harta-dark.png", stdout, StringComparison.Ordinal);
+        Assert.DoesNotContain("map-dark.png", stdout, StringComparison.Ordinal);
         Assert.Empty(Directory.GetFiles(outTiny.Dir, "*.png"));
     }
 

@@ -21,7 +21,7 @@ using DarksCheck.Core;
 
 namespace DarksCheck.Wpf;
 
-/// <summary>A third-party component as the "Despre" window lists it.</summary>
+/// <summary>A third-party component as the About window lists it.</summary>
 /// <param name="Name">The component's name.</param>
 /// <param name="Role">What it does in the program.</param>
 /// <param name="Licence">Its licence.</param>
@@ -30,7 +30,7 @@ namespace DarksCheck.Wpf;
 public sealed record ComponentRow(string Name, string Role, string Licence, string Copyright, string Url);
 
 /// <summary>
-/// The "Despre" window: the banner, the GPLv3 notice and the third-party list, all from the core.
+/// The About window: the banner, the GPLv3 notice and the third-party list, all from the core.
 /// </summary>
 public sealed class AboutViewModel
 {

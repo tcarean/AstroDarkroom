@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -23,7 +25,7 @@ namespace DarksCheck.Core;
 /// pixels relative to the master, or why it has no figures.
 /// </summary>
 /// <param name="Info">The light's metadata.</param>
-/// <param name="Error">Why it has no figures, in Romanian; null when it decoded.</param>
+/// <param name="Error">Why it has no figures, in the run's language; null when it decoded.</param>
 /// <param name="Skipped">True when the frame cap left it out.</param>
 /// <param name="AssumedSettings">True when the light does not say its ISO or its exposure and
 /// was read at the darks' settings.</param>
@@ -147,7 +149,7 @@ internal static class LightsAnalyzer
             string path = paths[i];
             if (i % step != 0)
             {
-                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})", true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
+                frames[i] = new LightFigures(FrameInfo.Read(i + 1, path), T($"skipped (over {maxFrames} frames, one in {step} is decoded)", $"sarit (peste {maxFrames} cadre, se decodeaza unul din {step})"), true, false, [], [], [], 0, 0, double.NaN, double.NaN, double.NaN);
                 progress?.Report((Interlocked.Increment(ref done), n));
                 return;
             }
@@ -191,7 +193,7 @@ internal static class LightsAnalyzer
 
         if (used == 0)
         {
-            throw new InvalidOperationException("niciun light nu s-a putut decoda" + FirstErrors(frames));
+            throw new InvalidOperationException(T("no light could be decoded", "niciun light nu s-a putut decoda") + FirstErrors(frames));
         }
 
         // persistence and overlap with the dark master

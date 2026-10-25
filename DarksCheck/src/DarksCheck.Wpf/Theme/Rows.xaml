@@ -53,7 +53,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
     <Style.Triggers>
       <DataTrigger Binding="{Binding Path=Tag, RelativeSource={RelativeSource Self}}" Value="False">
         <Setter Property="BorderBrush" Value="{StaticResource BadBr}" />
-        <Setter Property="ToolTip" Value="Nu e un numar pozitiv (cu punct): se foloseste valoarea implicita" />
+        <Setter Property="ToolTip" Value="{local:T En='Not a positive number (with a dot as the separator): the default value is used', Ro='Nu e un numar pozitiv (cu punct): se foloseste valoarea implicita'}" />
       </DataTrigger>
     </Style.Triggers>
   </Style>

@@ -368,12 +368,12 @@ public class LightsAndIndexTests
         Assert.Equal(6.0, twice.DeltaCelsius, 1e-6);
         Assert.Equal(MatchVerdict.Unmatched, twice.Verdict);
         Assert.Same(MatchFigures.None, IndexAnalyzer.Match([]));
-        Assert.Equal("OK: scadere directa (raport 1.00, in 0.9 .. 1.1; dark-ul e la aceeasi temperatura)", DarkReport.MatchText(m, "dark-ul", "lights-urile"));
-        Assert.Equal("ATENTIE: nepotrivit (raport 2.00: partenerul e mai rece cu 6.0 grade; prea rece, pierde pixelii fierbinti slabi)", DarkReport.MatchText(twice, "partenerul", "dark-urile sesiunii"));
+        Assert.Equal("OK: scadere directa (raport 1.00, in 0.9 .. 1.1; dark-ul e la aceeasi temperatura)", DarkReport.MatchText(m, false, "lights-urile"));
+        Assert.Equal("ATENTIE: nepotrivit (raport 2.00: partenerul e mai rece cu 6.0 grade; prea rece, pierde pixelii fierbinti slabi)", DarkReport.MatchText(twice, true, "dark-urile sesiunii"));
         MatchFigures none = IndexAnalyzer.Match([-0.01f, 0.02f, 0f]);
         Assert.Equal(MatchVerdict.Unmatched, none.Verdict);
         Assert.True(double.IsNaN(none.DeltaCelsius));
-        Assert.Equal("ATENTIE: nepotrivit: dark-urile sesiunii nu arata pixelii fierbinti ai partenerului (raport 0.00; reducere de zgomot in aparat, alt aparat sau alta orientare?)", DarkReport.MatchText(none, "partenerul", "dark-urile sesiunii"));
+        Assert.Equal("ATENTIE: nepotrivit: dark-urile sesiunii nu arata pixelii fierbinti ai partenerului (raport 0.00; reducere de zgomot in aparat, alt aparat sau alta orientare?)", DarkReport.MatchText(none, true, "dark-urile sesiunii"));
     }
 
     [Fact]

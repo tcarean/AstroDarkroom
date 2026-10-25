@@ -20,16 +20,19 @@ namespace DarksCheck.Core;
 /// <summary>
 /// One labelled line of the report, as the console prints it (`label : value`) and as the
 /// window binds it (ADR 0009): <see cref="Verdict"/> is the word the value opens with when
-/// it is one of the three verdict words, or ATENTIE when that is the row's label (the
-/// warnings about frames that failed); <see cref="Rest"/> is the value without a leading word.
+/// it is one of the verdict words of either language (OK, WARNING or UNMEASURED; OK, ATENTIE or
+/// NEMASURAT), or WARNING / ATENTIE when that is the row's label (the warnings about frames that
+/// failed); <see cref="Rest"/> is the value without a leading word.
 /// </summary>
-/// <param name="Label">The row's label, in Romanian.</param>
-/// <param name="Value">The row's text, in Romanian, often opening with a verdict word.</param>
+/// <param name="Label">The row's label, in the run's language.</param>
+/// <param name="Value">The row's text, in the run's language, often opening with a verdict
+/// word.</param>
 /// <param name="Bold">The substrings of the value the window renders bold, or null for
 /// none.</param>
 internal sealed record ReportRow(string Label, string Value, IReadOnlyList<string>? Bold = null)
 {
-    private static readonly string[] Words = ["NEMASURAT", "ATENTIE", "OK"];
+    // Both languages' words, so a row is read the same whatever language wrote it (ADR 0021).
+    private static readonly string[] Words = ["NEMASURAT", "UNMEASURED", "ATENTIE", "WARNING", "OK"];
 
     /// <summary>
     /// The value's substrings the window renders bold (ADR 0016): the masters' noise and the light
@@ -37,7 +40,7 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     /// </summary>
     internal IReadOnlyList<string> BoldParts => Bold ?? [];
 
-    internal string? Verdict => VerdictOf(Value) ?? (Label == "ATENTIE" ? "ATENTIE" : null);
+    internal string? Verdict => VerdictOf(Value) ?? (Label is "ATENTIE" or "WARNING" ? Label : null);
 
     /// <summary>
     /// The value without its verdict word and the ": " or " " that follows it; the whole value when
@@ -59,7 +62,8 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
     }
 
     /// <summary>
-    /// OK, ATENTIE or NEMASURAT when the text opens with it as a word, else null.
+    /// OK, WARNING, UNMEASURED, ATENTIE or NEMASURAT when the text opens with it as a word, else
+    /// null.
     /// </summary>
     /// <param name="value">The text; not null.</param>
     /// <returns>The verdict word the text opens with, followed by its end, ':' or ' '; null when it
@@ -80,7 +84,7 @@ internal sealed record ReportRow(string Label, string Value, IReadOnlyList<strin
 }
 
 /// <summary>A titled group of rows: one check of the report, or its INDEX block.</summary>
-/// <param name="Title">The section's title, as the console prints it ("2. SCURGERI DE LUMINA SI
+/// <param name="Title">The section's title, as the console prints it ("2. LIGHT LEAKS AND
 /// GRADIENT").</param>
 /// <param name="Rows">The section's rows, in order.</param>
 internal sealed record ReportSection(string Title, IReadOnlyList<ReportRow> Rows);

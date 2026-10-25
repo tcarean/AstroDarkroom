@@ -22,7 +22,7 @@ using System.Windows.Navigation;
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The "Despre" window: the icon, the version, the copyright, the GPLv3 notice and the
+/// The About window: the icon, the version, the copyright, the GPLv3 notice and the
 /// third-party list, all from <see cref="AboutViewModel"/>.
 /// </summary>
 public partial class AboutWindow : Window

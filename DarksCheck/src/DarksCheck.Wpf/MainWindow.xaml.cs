@@ -22,7 +22,7 @@ namespace DarksCheck.Wpf;
 
 /// <summary>
 /// The main window: the top bar and the four states over one <see cref="MainViewModel"/>. It
-/// owns what needs a window (the folder dialogs, the clipboard, the "Despre" window) and
+/// owns what needs a window (the folder dialogs, the clipboard, the About window) and
 /// computes nothing.
 /// </summary>
 public partial class MainWindow : Window
@@ -91,7 +91,7 @@ public partial class MainWindow : Window
     /// </summary>
     internal void RerunFromView() => _ = _vm.RerunAsync();
 
-    /// <summary>Shows the "Despre" window, modal, over this one.</summary>
+    /// <summary>Shows the About window, modal, over this one.</summary>
     /// <param name="sender">The command's source.</param>
     /// <param name="e">The executed command.</param>
     private void ShowAbout(object sender, ExecutedRoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();

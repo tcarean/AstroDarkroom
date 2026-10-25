@@ -17,15 +17,30 @@
 
 using System.Globalization;
 using System.Windows;
+using DarksCheck.Core;
 
 namespace DarksCheck.Wpf;
 
 /// <summary>
-/// The window application: pins the number culture, opens the main window and hands it the
-/// folder given on the command line.
+/// The window application: sets the interface language from <c>--lang</c>, pins the number
+/// culture, opens the main window and hands it the folder given on the command line.
 /// </summary>
 public partial class App : Application
 {
+    // The value of a --lang the start-up did not understand, kept for the message the window shows
+    // once it is up; null when there is nothing to say.
+    private readonly string? _unknownLanguage;
+
+    /// <summary>
+    /// Sets the interface language from the command line (R-094) before anything else: the
+    /// constructor runs before App.xaml's resources and the first view load, and both carry texts.
+    /// </summary>
+    public App()
+    {
+        string[] all = Environment.GetCommandLineArgs();
+        Ui.Default = LanguageFromArgs(all.Length > 1 ? all[1..] : [], out _unknownLanguage);
+    }
+
     /// <summary>
     /// Sets the invariant number culture, shows <see cref="DarksCheck.Wpf.MainWindow"/> and starts
     /// it on the first command-line argument that is an existing folder (or on the folder dialog
@@ -40,7 +55,31 @@ public partial class App : Application
         MainWindow window = new();
         MainWindow = window;
         window.Show();
+
+        // A --lang value not understood is said in English, and the window goes on in English
+        // (R-092).
+        if (_unknownLanguage is not null)
+        {
+            MessageBox.Show(window, LanguageArgument.BadValueMessage(_unknownLanguage), WindowTexts.AppName, MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
         window.Start(FolderFromArgs(e.Args));
+    }
+
+    /// <summary>
+    /// The interface language a command line asks for: the language of its last <c>--lang</c>,
+    /// English when there is none or its value is not understood (R-090 to R-092).
+    /// </summary>
+    /// <param name="args">The command line without the executable; null is allowed and treated as
+    /// none.</param>
+    /// <param name="badValue">The value of a <c>--lang</c> that names no language (an empty string
+    /// for a <c>--lang</c> with none), to be said to the user; null otherwise.</param>
+    /// <returns>The language to set as <see cref="Ui.Default"/>.</returns>
+    internal static UiLanguage LanguageFromArgs(string[]? args, out string? badValue)
+    {
+        LanguageArgument lang = LanguageArgument.Extract(args ?? []);
+        badValue = lang.BadValue;
+        return lang.Language ?? Ui.StartupDefault;
     }
 
     /// <summary>
@@ -56,7 +95,10 @@ public partial class App : Application
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
     }
 
-    /// <summary>The first argument that is an existing folder; anything else is ignored.</summary>
+    /// <summary>
+    /// The first argument that is an existing folder, a <c>--lang</c> and its value left out
+    /// (R-094); anything else is ignored.
+    /// </summary>
     /// <param name="args">The command-line arguments; null is allowed and treated as none.</param>
     /// <returns>The first non-blank argument naming an existing folder, as given; null when none
     /// does.</returns>
@@ -67,7 +109,7 @@ public partial class App : Application
             return null;
         }
 
-        foreach (string a in args)
+        foreach (string a in LanguageArgument.Extract(args).Rest)
         {
             if (!string.IsNullOrWhiteSpace(a) && Directory.Exists(a))
             {

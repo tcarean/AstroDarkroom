@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Cli;
 
@@ -38,7 +39,7 @@ internal sealed class Options
 
     /// <summary>
     /// Reads the command line into options. Stops at the first fault: the result then carries
-    /// <see cref="Error"/> (a Romanian message for the user) and the fields read so far. No
+    /// <see cref="Error"/> (a message for the user, in the run's language) and the fields read so far. No
     /// argument at all, <c>-h</c> or <c>--help</c> sets <see cref="Help"/> and nothing else is
     /// checked.
     /// </summary>
@@ -76,7 +77,7 @@ internal sealed class Options
             {
                 if (i + 1 >= args.Length)
                 {
-                    o.Error = $"{a} cere o valoare";
+                    o.Error = T($"{a} expects a value", $"{a} cere o valoare");
                     return o;
                 }
 
@@ -85,7 +86,7 @@ internal sealed class Options
                 {
                     if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int t) || t < 1)
                     {
-                        o.Error = "--threads cere un numar de fire, cel putin 1";
+                        o.Error = T("--threads expects a number of threads, at least 1", "--threads cere un numar de fire, cel putin 1");
                         return o;
                     }
 
@@ -95,7 +96,7 @@ internal sealed class Options
                 {
                     if (!int.TryParse(v, NumberStyles.Integer, CultureInfo.InvariantCulture, out int m) || m < 1)
                     {
-                        o.Error = "--max-frames cere un numar de cadre, cel putin 1";
+                        o.Error = T("--max-frames expects a number of frames, at least 1", "--max-frames cere un numar de cadre, cel putin 1");
                         return o;
                     }
 
@@ -105,7 +106,7 @@ internal sealed class Options
                 {
                     if (string.IsNullOrWhiteSpace(v))
                     {
-                        o.Error = "--against cere un folder de dark-uri";
+                        o.Error = T("--against expects a folder of darks", "--against cere un folder de dark-uri");
                         return o;
                     }
 
@@ -115,7 +116,7 @@ internal sealed class Options
                 {
                     if (string.IsNullOrWhiteSpace(v))
                     {
-                        o.Error = "--out cere un folder";
+                        o.Error = T("--out expects a folder", "--out cere un folder");
                         return o;
                     }
 
@@ -127,19 +128,19 @@ internal sealed class Options
 
             if (a.StartsWith('-'))
             {
-                o.Error = $"optiune necunoscuta: {a}";
+                o.Error = T($"unknown option: {a}", $"optiune necunoscuta: {a}");
                 return o;
             }
 
             if (string.IsNullOrWhiteSpace(a))
             {
-                o.Error = "folderul e gol; da calea folderului sesiunii sau al dark-urilor";
+                o.Error = T("the folder is blank; give the path of the session folder or of the folder of darks", "folderul e gol; da calea folderului sesiunii sau al dark-urilor");
                 return o;
             }
 
             if (o.Folder is not null)
             {
-                o.Error = $"un singur folder se poate da; al doilea a fost {a}";
+                o.Error = T($"only one folder can be given; the second one was {a}", $"un singur folder se poate da; al doilea a fost {a}");
                 return o;
             }
 
@@ -148,11 +149,11 @@ internal sealed class Options
 
         if (o.Folder is null)
         {
-            o.Error = "lipseste folderul sesiunii sau al dark-urilor";
+            o.Error = T("the session folder or the folder of darks is missing", "lipseste folderul sesiunii sau al dark-urilor");
         }
         else if (o.Inventory && (o.Out is not null || o.Against is not null))
         {
-            o.Error = "--inventory nu merge cu --out sau --against";
+            o.Error = T("--inventory does not go with --out or --against", "--inventory nu merge cu --out sau --against");
         }
 
         return o;

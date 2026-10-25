@@ -1,0 +1,35 @@
+darkscheck <version>
+Copyright (C) 2026 Tudor Carean
+
+=== SESSION: <session> ===
+    darks              : darks\ (4 frames .fit)
+    biases             : biases\ (2 frames .fit)
+    lights             : lights\ (2 frames .fit)
+    camera             : NIKON D3300
+    darks exposure     : 119.2 s at ISO 400 (all frames)
+    biases exposure    : 0.0002 s at ISO 400 (all frames)
+    lights exposure    : 119.2 s at ISO 400 (all frames)
+    darks interval     : 2026-08-13 00:48:53 -> 2026-08-13 00:54:52 (5 min); 3 frames every 120.0 s; no gap over 5 s
+    lights interval    : 2026-08-12 23:43:53 -> 2026-08-12 23:48:22 (4 min); 2 frames every 150.0 s; 1 gap over 5 s (31 s before frame 2)
+    match              : OK: the darks have the lights' exposure (119.2 s) and ISO (400)
+    bias               : OK: 0.0002 s
+    WARNING            : 1 frame could not be read (see the tables)
+
+  DARKS
+     no  file                  time      exposure   ISO     gap
+      1  DSC_0001.fit          00:48:53     119.2    400       -
+      2  DSC_0002.fit          00:50:53     119.2    400     1 s
+      3  DSC_0003.fit          00:52:53     119.2    400     1 s
+      4  DSC_0004.fit          error: not a FITS file (it does not begin with SIMPLE)
+
+  BIASES
+     no  file                  time      exposure   ISO
+      1  bias_0001.fit         22:48:53    0.0002    400
+      2  bias_0002.fit         22:48:54    0.0002    400
+
+  LIGHTS
+     no  file                  time      exposure   ISO     gap
+      1  light_0001.fit        23:43:53     119.2    400       -
+      2  light_0002.fit        23:46:23     119.2    400    31 s
+--- stderr ---
+--- exit 1 ---

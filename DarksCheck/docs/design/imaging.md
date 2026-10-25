@@ -48,9 +48,12 @@ whose design notes (`docs/design/modes-expo.md`, `pipeline.md`, `png-output.md`,
   (the kit's analyzer CA2201); `FrameInfo` and the console catch it.
 - Taken later from FlatCheck: the cut-data check of `LoadFull` (FlatCheck's R-009, 469da9b,
   ADR 0020). Before the sample loop of every HDU, a data area shorter than `NAXISn` x
-  `|BITPIX| / 8` throws `InvalidDataException` with both byte counts (`DataCut`, Romanian
-  only); the padding to 2880 bytes is not required. FlatCheck's FITS-magic check and its
-  language switch are not taken (ADR 0020).
+  `|BITPIX| / 8` throws `InvalidDataException` with both byte counts (`DataCut`); the padding to
+  2880 bytes is not required. FlatCheck's FITS-magic check is not taken (ADR 0020).
+- Taken later, the messages' English: every message the readers throw is a `T(english,
+  romanian)` pair (ADR 0021). `FitsReader`'s English is FlatCheck's, word for word;
+  `RawReader`'s messages are LightsCheck's adaptations and their English was written here, for
+  LightsCheck to take back. A refresh from LightsCheck keeps the pairs.
 - Time: libraw's `Timestamp` is the EXIF `DateTimeOriginal` run through `mktime` on this
   machine, so `DateTimeOffset.FromUnixTimeSeconds(..).ToLocalTime()` gives back the camera's
   wall-clock to the second; EXIF `SubSecTime` is not exposed. Siril's `DATE-OBS` is UTC and is

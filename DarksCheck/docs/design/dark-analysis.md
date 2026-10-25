@@ -13,7 +13,7 @@ Every record the notes name has one home. `Runs/DarkSeriesRun.cs` declares `Dark
 (what a run takes from the user: `Threads`, `MaxFrames`, `Against`, `IsoFactorPerStop`,
 `DoublingCelsius`; the run builds its `Normalisation` from the last two, and `EffectiveThreads`
 is half the cores when `Threads` is 0), `RunProgress(Phase, Done, Total)` (the phase word is
-Romanian and both applications print it as it is) and `DarkSeriesResult`, the whole result.
+in the run's language and both applications print it as it is) and `DarkSeriesResult`, the whole result.
 `Analysis/DarkSeriesAnalyzer.cs` declares `DarkSeriesAnalysis` and its parts (`PlaneFigures`,
 `ResidualFigures`, `DarkFrameFigures`, `MasterFigures`, `HotStability`, `NoisePoint`,
 `NoiseVsN`, `Regions`, `BinnedMap`, `BandingFigures`, `Warming`); `Analysis/BiasAnalyzer.cs`
@@ -247,8 +247,8 @@ is off the plateau, `Plateau` being its degrees from the plateau or `-` without 
 name cut to 20 characters at print time only. `WarmingChartNote` is the sentence the window
 puts under its warming chart: the plateau and the band of the frames to discard, when there
 is a fit. A `ReportRow` reads its own verdict word off the
-value (`Verdict`: OK, ATENTIE or NEMASURAT when the value opens with it as a word, or ATENTIE
-when that is the row's label, the warnings about frames that failed; `Rest` the value without
+value (`Verdict`: OK, ATENTIE or NEMASURAT, or their English WARNING and UNMEASURED, when the value
+opens with it as a word, or ATENTIE (WARNING) when that is the row's label, the warnings about frames that failed; `Rest` the value without
 a leading word and the `: ` or space after it, the whole value otherwise), so the window shows
 the chip and the rest without parsing prose; the word list and the split live here, in
 `ReportRows.cs`. `InventoryReport.HeaderRows` gives the session lines the same way and

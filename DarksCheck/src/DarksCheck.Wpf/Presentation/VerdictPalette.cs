@@ -16,7 +16,8 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // Copied from LightsCheck (which copied FlatCheck), the word list cut to this report's three
-// verdict words; a fix in the mechanics goes there first (ADR 0009).
+// verdict words and their English twins (ADR 0021); a fix in the mechanics goes there first
+// (ADR 0009).
 
 using System.Windows.Media;
 using DarksCheck.Core;
@@ -37,15 +38,16 @@ internal static class VerdictPalette
     internal static readonly Color Accent = Color.FromRgb(0x4E, 0xA8, 0xDE);
 
     /// <summary>
-    /// Severity of a verdict word: 0 good (OK), 2 attention (ATENTIE), 3 bad (EROARE), -1 neutral
-    /// (NEMASURAT, empty), 1 anything else. The word is read by its start, case-insensitively.
+    /// Severity of a verdict word, in either language (ADR 0021): 0 good (OK), 2 attention
+    /// (ATENTIE, WARNING), 3 bad (EROARE, ERROR), -1 neutral (NEMASURAT, UNMEASURED, empty), 1
+    /// anything else. The word is read by its start, case-insensitively.
     /// </summary>
     /// <param name="verdict">The verdict word or the text it starts; null counts as empty.</param>
     /// <returns>The severity, from -1 to 3.</returns>
     internal static int Severity(string? verdict)
     {
         string v = (verdict ?? "").Trim().ToUpperInvariant();
-        if (v.Length == 0 || v.StartsWith("NEMASURAT", StringComparison.Ordinal))
+        if (v.Length == 0 || v.StartsWith("NEMASURAT", StringComparison.Ordinal) || v.StartsWith("UNMEASURED", StringComparison.Ordinal))
         {
             return -1;
         }
@@ -55,12 +57,12 @@ internal static class VerdictPalette
             return 0;
         }
 
-        if (v.StartsWith("ATENTIE", StringComparison.Ordinal))
+        if (v.StartsWith("ATENTIE", StringComparison.Ordinal) || v.StartsWith("WARNING", StringComparison.Ordinal))
         {
             return 2;
         }
 
-        if (v.StartsWith("EROARE", StringComparison.Ordinal))
+        if (v.StartsWith("EROARE", StringComparison.Ordinal) || v.StartsWith("ERROR", StringComparison.Ordinal))
         {
             return 3;
         }

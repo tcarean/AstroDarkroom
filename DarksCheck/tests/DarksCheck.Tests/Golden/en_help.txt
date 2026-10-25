@@ -1,0 +1,39 @@
+darkscheck <version>
+Copyright (C) 2026 Tudor Carean
+
+Usage: darkscheck <session folder or folder of darks> [--against DIR] [--out DIR] [--threads N] [--max-frames N]
+       darkscheck <folder> --inventory
+
+  The Siril session folder: the darks are taken from darks\ (or from the folder
+  itself, when there is no darks\ and no other session subfolder), the biases
+  from biases\ and the lights from lights\, both optional. Camera raw
+  (.nef, .cr2, .cr3, .arw, .dng, .raf) or FITS. Nothing is written into the folder.
+
+  No options:   decodes the biases, the darks and the lights and prints the report:
+                light leaks, thermal drift, noise, hot pixels, fixed pattern,
+                dead pixels, how many darks are enough, the lights against the
+                dark, the index and the label, one table for the darks and one for the lights.
+  --against DIR another folder of darks (a library or a session): its index and
+                the report of the session's darks against it, in equivalent degrees;
+                a session with lights but no darks takes its darks as its own.
+  --out DIR     writes into DIR the report, a CSV with every figure for the darks,
+                the biases and the lights, and the maps (darkscheck-report.txt, darkscheck-darks.csv,
+                darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
+  --threads N   how many frames are decoded in parallel (default: half the cores).
+  --max-frames N  how many frames are held in memory (default 60, 48 MB each at 24 MP) and how many lights are measured;
+                above that, one in k is decoded and the rest are listed as skipped.
+  --inventory   the frames' metadata only (no decoding): time, exposure, ISO,
+                the gaps and the cadence of each group, how the darks match
+                the lights.
+  --lang en|ro  the language of the texts: en (English, the default) or ro (Romanian).
+  -h, --help    this text
+
+Exit code: 0 when every frame was read, 1 on an error or when a frame could not be read.
+
+This program comes with ABSOLUTELY NO WARRANTY, not even the implied
+warranty of merchantability or fitness for a particular purpose. It is
+free software: you can redistribute it and modify it under the terms of
+GPLv3 (or, at your option, any later version). The full text is in the
+LICENSE file, or at <https://www.gnu.org/licenses/gpl-3.0.html>.
+--- stderr ---
+--- exit 0 ---

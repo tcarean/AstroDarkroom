@@ -42,7 +42,8 @@ modifies, moves or writes anything into the frames' folders.
   no UI, no entry point: a compile boundary. `Imaging/` reads raws and FITS (copied from
   LightsCheck, which copied FlatCheck, ADR 0003), `Session/` finds the frames, `Analysis/`
   decides numbers, `Thresholds.cs` holds every constant a verdict depends on, `Report/`
-  decides words (Romanian), `Runs/` chains them; both applications call `Runs/` only.
+  decides words (English and Romanian; `Language/` holds the pick), `Runs/` chains them; both
+  applications call `Runs/` only.
 - `src/DarksCheck.Cli/` - the console, `darkscheck.exe`: options, dispatch, exit code.
 - `src/DarksCheck.Wpf/` - the window, `DarksCheck.Wpf.exe`: the theme and presentation pieces
   copied from LightsCheck, one view-model fed by the report's rows, the views (ADR 0009).
@@ -96,17 +97,19 @@ varies a kit rule names it.
   `Thresholds.cs` included, re-runs `/validate` on them before the task ends, with the drift
   table pasted; a figure that moves changes only the owner's way (the kit's rule "No test
   edited to pass"), and an ADR that states the old value gets a dated note.
-- **Languages** (varies the kit's rule "Languages", ADR 0005). English in everything the model
-  reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and every
-  comment in every file, the copied ones included (ADR 0019). Romanian in everything the user
-  sees: console text, `--help`, window labels, the reports, `README.md`,
-  `THIRD-PARTY-NOTICES.md`. Never leave a file in two languages.
+- **Languages** (varies the kit's rule "Languages", ADRs 0005 and 0021). English in everything
+  the model reads or writes about the process: docs, tests, scripts, commits, CHANGELOG, and
+  every comment in every file, the copied ones included (ADR 0019). What the user sees in the
+  console and the window (texts, `--help`, labels, the reports) is in English and Romanian,
+  chosen by `--lang`: each text a `T("english", "romana")` pair where it is composed, a
+  `{l:T En='...', Ro='...'}` pair in XAML, the Romanian without diacritics (ADR 0021). Romanian
+  only in `README.md` and `THIRD-PARTY-NOTICES.md`. Never leave any other file in two languages.
 - **Copied files stay copies** (ADR 0003). A file under `src/DarksCheck.Core/Imaging/` is
   not improved here: a fix goes to its source (LightsCheck, or FlatCheck through it) first,
   then the copy is refreshed. `RawReader.cs` and `ImageLoader.cs` carry LightsCheck's
-  adaptations and are refreshed from LightsCheck. The one exception is the comments, which are
-  DarksCheck's own and describe what the files do here (ADR 0019): a refresh takes the code and
-  keeps them.
+  adaptations and are refreshed from LightsCheck. Two exceptions: the comments, which are
+  DarksCheck's own and describe what the files do here (ADR 0019), and the English-or-Romanian
+  pairs of the messages (ADR 0021); a refresh takes the code and keeps both.
 - **License headers.** Every source file (`.cs`, `.xaml`, `.py`) starts with the GPL notice;
   `LicenseHeaderTests` fails otherwise. Scripts carry the SPDX line.
 

@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -86,7 +88,7 @@ internal sealed class SessionFolder
         string root = Path.GetFullPath(path);
         if (!Directory.Exists(root))
         {
-            throw new DirectoryNotFoundException($"nu gasesc folderul {root}");
+            throw new DirectoryNotFoundException(T($"cannot find the folder {root}", $"nu gasesc folderul {root}"));
         }
 
         string darksDir = Path.Combine(root, DarksName);
@@ -102,7 +104,7 @@ internal sealed class SessionFolder
             }
             else if (present is not null)
             {
-                throw new InvalidOperationException($"sesiunea {root} are {present}\\ dar nu are darks\\");
+                throw new InvalidOperationException(T($"the session {root} has {present}\\ but no darks\\", $"sesiunea {root} are {present}\\ dar nu are darks\\"));
             }
             else
             {
@@ -114,7 +116,7 @@ internal sealed class SessionFolder
         if (darks.Count == 0 && !lightsOnly)
         {
             throw new InvalidOperationException(
-                $"niciun cadru in {darksDir} (raw: " + string.Join(", ", RawReader.RawExtensions)
+                T($"no frame in {darksDir} (raw: ", $"niciun cadru in {darksDir} (raw: ") + string.Join(", ", RawReader.RawExtensions)
                 + "; FITS: .fit, .fits, .fts)");
         }
 

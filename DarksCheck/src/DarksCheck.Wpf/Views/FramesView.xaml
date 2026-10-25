@@ -24,6 +24,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 <UserControl x:Class="DarksCheck.Wpf.FramesView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:l="clr-namespace:DarksCheck.Wpf"
              xmlns:local="clr-namespace:DarksCheck.Wpf">
   <UserControl.Resources>
     <Style x:Key="Cell" TargetType="TextBlock">
@@ -121,7 +122,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
           <RowDefinition Height="Auto" />
           <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="TABEL PE CADRE" />
+        <TextBlock Grid.Row="0" Style="{StaticResource Heading}" Text="{l:T En='FRAMES TABLE', Ro='TABEL PE CADRE'}" />
         <Grid Grid.Row="1" Margin="4,0,0,6">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="36" />
@@ -138,17 +139,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
             <ColumnDefinition Width="48" />
             <ColumnDefinition Width="*" />
           </Grid.ColumnDefinitions>
-          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="nr" ToolTip="numarul cadrului in folderul de dark-uri, in ordinea fisierelor" />
-          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="fisier" ToolTip="numele fisierului" />
-          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="ora" ToolTip="ora de start a expunerii, din metadatele fisierului" />
-          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="medie" ToolTip="media cadrului peste negru, ADU" />
-          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="sigma" ToolTip="sigma cadrului pe planul de referinta, ADU" />
-          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="rezid." ToolTip="sigma reziduului cadru - master, ADU" />
-          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="benzi" ToolTip="deviatia mediilor pe randuri, de cate ori zgomotul alb" />
-          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="amplit." ToolTip="amplitudinea pixelilor fierbinti ai masterului in cadru, fata de master" />
-          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="platou" ToolTip="{Binding PlateauHeaderTip}" />
-          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="lumina" ToolTip="lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)" />
-          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="latura" ToolTip="abaterea fata de centru, in acel cadru, a laturii cu cea mai multa lumina constanta (margine plus cele doua colturi), dupa bias cand exista bias-uri, glow inclus, ADU-eq; partea ei constanta e lumina din toate cadrele (verificarea 2)" />
+          <TextBlock Grid.Column="0" Style="{StaticResource Head}" Text="{l:T En='no.', Ro='nr'}" ToolTip="{l:T En='the frame number in the folder of darks, in the order of the files', Ro='numarul cadrului in folderul de dark-uri, in ordinea fisierelor'}" />
+          <TextBlock Grid.Column="1" Style="{StaticResource LeftHead}" Text="{l:T En='file', Ro='fisier'}" ToolTip="{l:T En='the file name', Ro='numele fisierului'}" />
+          <TextBlock Grid.Column="2" Style="{StaticResource LeftHead}" Text="{l:T En='time', Ro='ora'}" ToolTip="{l:T En='the time the exposure started, from the file metadata', Ro='ora de start a expunerii, din metadatele fisierului'}" />
+          <TextBlock Grid.Column="3" Style="{StaticResource Head}" Text="{l:T En='mean', Ro='medie'}" ToolTip="{l:T En='the frame mean above the black, ADU', Ro='media cadrului peste negru, ADU'}" />
+          <TextBlock Grid.Column="4" Style="{StaticResource Head}" Text="sigma" ToolTip="{l:T En='the frame sigma on the reference plane, ADU', Ro='sigma cadrului pe planul de referinta, ADU'}" />
+          <TextBlock Grid.Column="5" Style="{StaticResource Head}" Text="{l:T En='resid.', Ro='rezid.'}" ToolTip="{l:T En='sigma of the residual frame - master, ADU', Ro='sigma reziduului cadru - master, ADU'}" />
+          <TextBlock Grid.Column="6" Style="{StaticResource Head}" Text="{l:T En='bands', Ro='benzi'}" ToolTip="{l:T En='the deviation of the row means, as a multiple of the white noise', Ro='deviatia mediilor pe randuri, de cate ori zgomotul alb'}" />
+          <TextBlock Grid.Column="7" Style="{StaticResource Head}" Text="{l:T En='ampl.', Ro='amplit.'}" ToolTip="{l:T En='the amplitude of the master hot pixels in the frame, against the master', Ro='amplitudinea pixelilor fierbinti ai masterului in cadru, fata de master'}" />
+          <TextBlock Grid.Column="8" Style="{StaticResource Head}" Text="{l:T En='plateau', Ro='platou'}" ToolTip="{Binding PlateauHeaderTip}" />
+          <TextBlock Grid.Column="9" Style="{StaticResource Head}" Text="{l:T En='light', Ro='lumina'}" ToolTip="{l:T En='the light above the line of the frame mean against the warming, ADU-eq: what changes from one frame to the next (check 2)', Ro='lumina in plus fata de dreapta mediei cadrului pe incalzire, ADU-eq: ce se schimba de la un cadru la altul (verificarea 2)'}" />
+          <TextBlock Grid.Column="10" Style="{StaticResource Head}" Text="{l:T En='side', Ro='latura'}" ToolTip="{l:T En='the offset from the centre, in that frame, of the side with the most constant light (the edge plus its two corners), after the bias when there are biases, glow included, ADU-eq; its constant part is the light in every frame (check 2)', Ro='abaterea fata de centru, in acel cadru, a laturii cu cea mai multa lumina constanta (margine plus cele doua colturi), dupa bias cand exista bias-uri, glow inclus, ADU-eq; partea ei constanta e lumina din toate cadrele (verificarea 2)'}" />
           <TextBlock Grid.Column="11" Style="{StaticResource Head}" Text="{Binding HotHeader}" ToolTip="{Binding HotHeaderTip}" />
           <TextBlock Grid.Column="12" Style="{StaticResource LeftHead}" Text="{Binding FrameTableNote}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FrameTableNote}" />
         </Grid>
@@ -162,7 +163,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
       <StackPanel>
         <Border Style="{StaticResource Card}">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="PIXELII FIERBINTI FATA DE MASTER" />
+            <TextBlock Style="{StaticResource Heading}" Text="{l:T En='HOT PIXELS AGAINST THE MASTER', Ro='PIXELII FIERBINTI FATA DE MASTER'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap" Text="{Binding WarmingNote}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="180" Points="{Binding WarmingPoints}" Guides="{Binding WarmingGuides}" />
@@ -171,9 +172,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="SIGMA REZIDUALA (ADU)" />
+            <TextBlock Style="{StaticResource Heading}" Text="{l:T En='RESIDUAL SIGMA (ADU)', Ro='SIGMA REZIDUALA (ADU)'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Zgomotul fiecarui cadru fata de master; peste linia punctata cadrul e un outlier (verificarea 4)." />
+                       Text="{l:T En='The noise of each frame against the master; above the dotted line the frame is an outlier (check 4).', Ro='Zgomotul fiecarui cadru fata de master; peste linia punctata cadrul e un outlier (verificarea 4).'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="180" Points="{Binding ResidualPoints}" Guides="{Binding ResidualGuides}" Minimum="0" />
             </Border>
@@ -181,9 +182,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
         </Border>
         <Border Style="{StaticResource Card}" Margin="0,14,0,0">
           <StackPanel>
-            <TextBlock Style="{StaticResource Heading}" Text="BENZI ALEATOARE (x ZGOMOT ALB)" />
+            <TextBlock Style="{StaticResource Heading}" Text="{l:T En='RANDOM BANDING (x WHITE NOISE)', Ro='BENZI ALEATOARE (x ZGOMOT ALB)'}" />
             <TextBlock Style="{StaticResource Muted}" Margin="0,6,0,8" TextWrapping="Wrap"
-                       Text="Deviatia mediilor pe randuri fata de cat ar da zgomotul alb; 1 = fara benzi." />
+                       Text="{l:T En='The deviation of the row means against what white noise would give; 1 = no banding.', Ro='Deviatia mediilor pe randuri fata de cat ar da zgomotul alb; 1 = fara benzi.'}" />
             <Border Background="{StaticResource PanelBg2}" CornerRadius="4" Padding="6,4">
               <local:SeriesChart Height="160" Points="{Binding BandingPoints}" Guides="{Binding BandingGuides}" Minimum="0" />
             </Border>

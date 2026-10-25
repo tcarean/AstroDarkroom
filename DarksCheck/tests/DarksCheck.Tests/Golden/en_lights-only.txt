@@ -1,0 +1,131 @@
+darkscheck <version>
+Copyright (C) 2026 Tudor Carean
+
+=== SESSION: <session> ===
+    darks              : (none; the darks of the partner <partner> are used)
+    biases             : biases\ (2 frames .fit)
+    lights             : lights\ (3 frames .fit)
+    camera             : NIKON D3300
+    partner exposure   : 120.0 s at ISO 400 (all frames)
+    biases exposure    : 0.0002 s at ISO 400 (all frames)
+    lights exposure    : 120.0 s at ISO 400 (all frames)
+    darks interval     : (none)
+    lights interval    : 2026-08-12 23:41:23 -> 2026-08-12 23:48:23 (7 min); 3 frames every 150.0 s; 2 gaps over 5 s (the longest 30 s before frame 2)
+    match              : OK: the partner's darks have the lights' exposure (120.0 s) and ISO (400)
+    bias               : OK: 0.0002 s
+
+=== DARKS (the partner's, <partner>): 4 frames decoded of 4, 256 x 192 px, scale 200 .. 65535 ADU (FITS (assumed from BITPIX 16), black 200 from the biases), CFA RGGB ===
+    normalisation      : ISO 400, 120.0 s -> x1.00 relative to ISO 400 and 120 s (ADU-eq = ADU)
+    quantisation       : step 1 ADU near the black; 24 distinct values in the first frame (G1)
+
+  2. LIGHT LEAKS AND GRADIENT
+    master dark        : centre 0.12, corners -0.01 / -0.04 / -0.11 / 0.00 (TL / TR / BL / BR), edges top -0.02 bottom 0.00 left -0.02 right -0.01  [G1, ADU above the black, mean of 4 frames, blocks of 32 px]
+    master bias        : centre -0.11, corners 0.16 / 0.02 / -0.08 / 0.15 (TL / TR / BL / BR), edges top 0.06 bottom -0.05 left -0.02 right 0.06  [G1, ADU above the black, mean of 2 frames]
+    dark - bias        : centre 0.23, corners -0.17 / -0.05 / -0.04 / -0.14 (TL / TR / BL / BR), edges top -0.08 bottom 0.05 left -0.01 right -0.07; median -0.03, -0.31 .. 0.23 (p1 .. p99)
+    light per frame    : UNMEASURED: fewer than 6 frames with hot pixels
+    glow / constant    : UNMEASURED: fewer than 6 frames with hot pixels
+    constant light     : UNMEASURED: fewer than 6 frames with hot pixels
+    verdict            : OK: no edge or corner more than 1.0 ADU from the centre (the farthest -0.40 at the top-left, on dark - bias); light per frame UNMEASURED
+
+  3. THERMAL DRIFT IN THE SERIES
+    amplitude          : the hot pixels at 1.00 of the master in the first frame, 1.00 in the last (20 pixels above 20 ADU)
+    plateau            : UNMEASURED: fewer than 6 frames with hot pixels
+    to discard         : UNMEASURED: fewer than 6 frames with hot pixels
+    verdict            : OK: every frame lies in 0.7 .. 1.4 of the master (fewer than 6 frames, no plateau)
+
+  4. NOISE PER FRAME
+    residual sigma     : R 2.65 .. 2.71; G1 2.65 .. 2.72 (median 2.69); G2 2.61 .. 2.71; B 2.62 .. 2.71  [ADU, frame - master]
+    read noise         : R 2.02  G1 2.03  G2 2.03  B 2.03 ADU (from 1 pairs of consecutive biases); temporal noise above the read noise on G1 ~2.23 ADU (sqrt(sigma_t^2 - read^2): dark current and quantisation)
+    random banding     : horizontal 0.238 ADU rms per row (1.0 times the white noise), vertical 1.0 times
+    verdict            : OK: no frame with noise above 1.5 x the median (2.69 ADU)
+
+  5. HOT PIXELS
+    master above level : 10: 20; 20: 20; 50: 20; 100: 20; 500: 0  [ADU above the black, the series' median, all planes]
+    per plane at 20    : R 20  G1 0  G2 0  B 0
+    amplitude          : median 240, p10 238, p90 240, p99 241 ADU (of 20)
+    stability          : 20 of 20 above half the threshold in all 4 frames, 0 missing from 2 or more; temporal sigma 2.57 ADU on the hot ones, 2.38 on the rest; 0 RTS candidates on G1 (temporal sigma above 6 x the noise of one frame, 3.01)
+    verdict            : OK (informative): 20 pixels above 20 ADU in 0.05 Mpx
+
+  6. FIXED PATTERN
+    structured banding : rows 0.206 ADU rms (1.17 peak to peak, R), columns 0.222 (1.45, R)  [the master's profile minus a running median over 101]
+    glow               : -0.40 ADU at the top-left against the centre (dark - bias)
+    verdict            : OK: banding under 2.0 ADU peak to peak and edges under 1.0
+
+  7. DEAD AND SATURATED PIXELS
+    master             : 0 below the black - 50 ADU, 0 at the white (65535)
+    verdict            : OK: no dead or saturated pixel in the master
+
+  8. HOW MANY DARKS ARE ENOUGH
+    noise of the mean  : n=1 3.01 (expected 3.01); n=2 2.14 (expected 2.13)  [G1, the central 192 px, ADU, temporal sigma = frame against frame]
+    master             : 4 frames -> 1.89 ADU noise of the median master (1.25 x temporal sigma 3.01 / sqrt(4)); the median of 2 against the mean of 2: 3.03
+    verdict            : WARNING: only 4 frames; the median needs at least 10 so that one odd frame does not pull it (the master's noise would be 1.89 ADU)
+
+  9. LIGHTS AGAINST THE DARK
+    hot pixels         : 20 pixels persistent in the lights (isolated, above 6 local sigma, in at least 3 of 3 frames)
+    in the dark master : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)  [ADU]
+    master in lights   : above 10: 20 of 20 (100 %); above 20: 20 of 20 (100 %); above 50: 20 of 20 (100 %); above 100: 20 of 20 (100 %)
+    unmatched          : no persistent pixel in the lights under the master's threshold
+    amplitude          : lights / dark 0.50 over the night (median over 3 frames; the first 0.51, the last 0.50; 20 pixels)
+    verdict            : WARNING: cosmetic correction only (-cc=dark): ratio 0.50, the dark is warmer by 5.9 degrees and still finds every hot pixel, but subtracting it would overcorrect
+
+  INDEX
+    darks (partner)    : idx241 (240.5 ADU-eq: the median of the pixels ranked 5-20 per Mpx, ranks 2 .. 2 of 0.05 Mpx, normalised to ISO 400 and 120 s)
+    label              : <partner>-idx241
+    lights             : equivalent idx121 (dark x 0.50, that is -5.9 degrees against the dark)
+
+  FRAMES TABLE
+     no  file                  time       mean   sigma  resid.   bands    ampl. plateau   light    side  >20   [G1; mean = ADU above the black; bands = rows / white noise; ampl. = the hot pixels against the master; plateau = degrees from the series' plateau; to discard = more than 2.0 degrees from the plateau (check 3); light = ADU above the line of the mean against the warming; side = the side with the most constant light - centre (UNMEASURED)]
+      1  DSC_0001.fit          00:48:53    0.11    3.02    2.65     1.0    0.998       -       -       -     0
+      2  DSC_0002.fit          00:50:53    0.11    2.99    2.71     1.0    1.005       -       -       -     0
+      3  DSC_0003.fit          00:52:53    0.09    3.02    2.72     1.0    0.993       -       -       -     0
+      4  DSC_0004.fit          00:54:53    0.08    3.01    2.68     1.0    1.002       -       -       -     0
+
+  LIGHTS TABLE
+     no  file                  time        sky   sigma candidates isolated    ampl.    q25    q75   [G1; sky = ADU above the black; sigma = of the local excess, the detector's scale; ampl. = lights / dark at the master's hot pixels]
+      1  light_0001.fit        23:41:23   500.0    6.79        239       20    0.507  0.492  0.521
+      2  light_0002.fit        23:43:53   500.0    6.70        240       20    0.497  0.484  0.517
+      3  light_0003.fit        23:46:23   500.0    6.41        245       20    0.504  0.484  0.528
+
+  ADU SCALE EXPLAINED
+    file               : 16 bits, 0 .. 65535 ADU; black at 200, white at 65535: useful signal 0 .. 65335 ADU
+    1 ADU-eq           : 1 raw ADU: the set is at ISO 400, 120.0 s, the reference scale (ISO 400 and 120 s)
+    quantisation       : step of 1 ADU near the black
+    electrons          : 1 ADU = 2.07 e- at ISO 400 (Nikon D3300, photonstophotos.net from the DxOMark curves, read 2026-10-20; the method overestimates the gain on small sensors); 1 ADU-eq = 1.00 ADU = 2.1 e-; full well 34446 e-, QE 56 %
+    read noise         : 2.03 ADU per pixel (G1, from the biases) = 4.2 e-
+    noise per frame    : sigma 3.01 ADU per pixel on one dark; median dark current -0.03 ADU at ISO 400, 120.0 s
+    master noise       : dark: 1.89 ADU per pixel (median of 4 frames); lights stack: 4.2 ADU per pixel with the mean, 5.0 with the median (3 lights; the dark master's noise included)
+    this set's limits  : hot pixel 20 ADU-eq = 20 ADU; leak on the map 1.0 ADU-eq = 1.0 ADU; constant light on a side 0.15 ADU-eq = 0.15 ADU; light on a frame 0.1 ADU-eq = 0.10 ADU
+    found              : nothing over the thresholds
+    sky                : median 500.0 ADU above the black on a light (G1, 3 lights), sigma 6.4 ADU per pixel
+    saturation         : 65535 ADU (34446 e- full well, per the source)
+
+    ADU is the file's unit: 16 bits, from 0 to 65535, with the camera's black at 200. ADU-eq is
+    raw ADU brought to ISO 400 and 120 s, so that series taken with different settings compare
+    with one another: on this set 1 ADU-eq = 1.00 raw ADU. A quantisation step is 1 ADU, but a
+    mean over many pixels is measured far below it, because the noise blends the steps.
+
+    A deviation in the dark master (a light leak, an offset) is not noise: the master is
+    subtracted from every light, so the deviation stays whole in the stack however many frames
+    you add, while random noise falls with the square root of the number of frames. The dark
+    master, the median of 4 frames, still has 1.89 ADU per pixel; a deviation is set against
+    that, not against the noise of one frame. On a single pixel, the noise of one dark, 3.0 ADU,
+    hides any deviation below 1 ADU; but the ratio of a deviation to the noise grows with the
+    square root of the number of pixels looked at together: on a 50 x 50 patch it is 50 times
+    larger than on one pixel, and a 1 ADU step with a straight edge shows under a hard stretch
+    of a dark sky.
+
+    Against the sky: a light of this session has 500.0 ADU above the black, so 1 ADU is 0.20 %
+    of the sky, about the error of a flat; in the stack of the 3 lights the noise per pixel
+    falls to 4.15 ADU with the mean (5.01 with the median): 6.4 / sqrt(3) from the lights, plus
+    the dark master's noise (1.89 ADU) in quadrature, which does not average out; and an offset
+    of 1 ADU in the master stays 1 ADU.
+
+    The thresholds: 20 ADU-eq for a hot pixel; 1.0 ADU-eq on the map for an obvious leak (the
+    level of the hand analysis); 0.15 ADU-eq and 3 times the error for constant light on a side;
+    0.1 ADU-eq and 5 times the typical deviation for light on a frame. The last two say 'this is
+    real light, measured', not 'it shows in the image': at 0.15 raw ADU the effect is at the
+    edge of what can be seen, at 1.0 raw ADU it shows; the remedy (the eyepiece covered, the
+    series taken again) costs the same in both cases.
+--- stderr ---
+(progress, omitted)
+--- exit 0 ---

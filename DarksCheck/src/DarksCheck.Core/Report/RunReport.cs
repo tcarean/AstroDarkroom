@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Globalization;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core;
 
@@ -41,28 +42,38 @@ internal static class RunReport
     /// GPLv3 §5(d): a program that shows legal notices shows the warranty disclaimer too; here, in
     /// --help.
     /// </summary>
-    internal static readonly string[] WarrantyLines =
-    [
-        "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
-        "vandabilitate sau potrivire pentru un scop anume. E software liber:",
-        "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
-        "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
-        "sau la <" + LicenseUrl + ">.",
-    ];
+    internal static IReadOnlyList<string> WarrantyLines => Ui.Current == UiLanguage.Romanian
+        ?
+        [
+            "Acest program vine FARA NICIO GARANTIE, nici macar cea implicita de",
+            "vandabilitate sau potrivire pentru un scop anume. E software liber:",
+            "il poti redistribui si modifica in termenii GPLv3 (sau, la alegerea",
+            "ta, orice versiune ulterioara). Textul complet e in fisierul LICENSE,",
+            "sau la <" + LicenseUrl + ">.",
+        ]
+        :
+        [
+            "This program comes with ABSOLUTELY NO WARRANTY, not even the implied",
+            "warranty of merchantability or fitness for a particular purpose. It is",
+            "free software: you can redistribute it and modify it under the terms of",
+            "GPLv3 (or, at your option, any later version). The full text is in the",
+            "LICENSE file, or at <" + LicenseUrl + ">.",
+        ];
 
-    /// <summary>"1 cadru", "20 cadre".</summary>
+    /// <summary>"1 frame", "20 frames"; "1 cadru", "20 cadre".</summary>
     /// <param name="n">The frame count.</param>
-    /// <returns>The count with the Romanian word for frames.</returns>
-    internal static string Frames(int n) => n == 1 ? "1 cadru" : n.ToString(CultureInfo.InvariantCulture) + " cadre";
+    /// <returns>The count with the word for frames.</returns>
+    internal static string Frames(int n) => n == 1 ? T("1 frame", "1 cadru") : n.ToString(CultureInfo.InvariantCulture) + T(" frames", " cadre");
 
     /// <summary>
     /// The refusal of a session with lights and no darks run without a partner (R-002, R-054): what
     /// to give, in both applications' words.
     /// </summary>
     /// <param name="root">The session's folder.</param>
-    /// <returns>The message, in Romanian.</returns>
-    internal static string LightsOnlyNeedsPartner(string root) =>
-        $"sesiunea {root} are lights\\ dar nu are darks\\; da un partener de dark-uri (o biblioteca) ca sa compari lights-urile cu el: --against DIR in consola, \"Alege partener...\" in fereastra";
+    /// <returns>The message, in the run's language.</returns>
+    internal static string LightsOnlyNeedsPartner(string root) => T(
+        $"the session {root} has lights\\ but no darks\\; give a partner of darks (a library) to compare the lights with: --against DIR in the console, \"Choose partner...\" in the window",
+        $"sesiunea {root} are lights\\ dar nu are darks\\; da un partener de dark-uri (o biblioteca) ca sa compari lights-urile cu el: --against DIR in consola, \"Alege partener...\" in fereastra");
 
     /// <summary>A number with the invariant culture and a fixed number of decimals.</summary>
     /// <param name="v">The number.</param>

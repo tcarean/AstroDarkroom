@@ -16,7 +16,10 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #nullable disable // adapted from FlatCheck 2.3.0, which compiles without nullable annotations (ADR 0003)
-// The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019).
+// The code is LightsCheck's adaptation; the comments are DarksCheck's own (ADR 0019). The
+// messages are English-or-Romanian T(...) pairs written here, LightsCheck's Romanian wording
+// kept byte for byte beside its English; LightsCheck takes these English wordings back in its
+// own language task (ADR 0021).
 
 // RawReader.cs - camera raw files (NEF and its relatives) through libraw: the one place in
 // the tool that touches an external library. Adapted from FlatCheck's reader (ADR 0003): the
@@ -38,6 +41,7 @@
 using System.Runtime.InteropServices;
 using Sdcb.LibRaw;
 using Sdcb.LibRaw.Natives;
+using static DarksCheck.Core.Ui;
 
 namespace DarksCheck.Core
 {
@@ -85,7 +89,7 @@ namespace DarksCheck.Core
         public LoadedFrame Load(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -107,7 +111,7 @@ namespace DarksCheck.Core
         public LoadedFrame LoadInfo(string path)
         {
             if (!File.Exists(path))
-                throw new FileNotFoundException($"nu gasesc fisierul {path}", path);
+                throw new FileNotFoundException(T($"cannot find the file {path}", $"nu gasesc fisierul {path}"), path);
 
             try
             {
@@ -132,17 +136,21 @@ namespace DarksCheck.Core
         }
 
         /// <summary>
-        /// The error that replaces a failure to load libraw's native DLLs: it says, in Romanian,
-        /// where they must sit and how to publish them.
+        /// The error that replaces a failure to load libraw's native DLLs: it says, in the run's
+        /// language, where they must sit and how to publish them.
         /// </summary>
         /// <param name="inner">The loader's exception, kept as the inner one.</param>
         /// <returns>The exception to throw.</returns>
         static InvalidOperationException Missing(Exception inner)
-            => new InvalidOperationException(
+            => new InvalidOperationException(T(
+                "cannot load libraw, so camera raw files cannot be read. The native DLLs "
+              + "(raw_r.dll and its neighbours) must sit beside darkscheck.exe. FITS frames "
+              + "work without them; for raws, publish with IncludeNativeLibrariesForSelfExtract "
+              + "or copy the whole folder, not just the executable. (" + inner.Message + ")",
                 "nu pot incarca libraw, deci nu pot citi fisiere raw de aparat. DLL-urile "
               + "native (raw_r.dll si vecinii) trebuie sa stea langa darkscheck.exe. Cadrele "
               + "FITS merg si fara ele; pentru raw, publica cu IncludeNativeLibrariesForSelfExtract "
-              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")", inner);
+              + "sau copiaza tot folderul, nu doar executabilul. (" + inner.Message + ")"), inner);
 
         /// <summary>
         /// The full decode behind <see cref="Load"/>: Unpack, the visible mosaic, the scale, the
@@ -161,13 +169,15 @@ namespace DarksCheck.Core
 
             // Foveon and some formats produce colour planes, not a 16-bit mosaic: refused.
             if (src == IntPtr.Zero)
-                throw new InvalidOperationException(
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw did not produce a 16-bit Bayer mosaic for this file "
+                  + "(a non-Bayer sensor or a format it does not cover).",
                     $"{path}: libraw n-a produs un mozaic Bayer pe 16 biti pentru fisierul asta "
-                  + "(senzor non-Bayer sau format neacoperit).");
+                  + "(senzor non-Bayer sau format neacoperit)."));
 
             int h = s.Height, w = s.Width;
             if (h <= 0 || w <= 0)
-                throw new InvalidOperationException($"{path}: dimensiuni raw invalide ({w}x{h}).");
+                throw new InvalidOperationException(T($"{path}: invalid raw dimensions ({w}x{h}).", $"{path}: dimensiuni raw invalide ({w}x{h})."));
 
             // The colour order, evaluated at the origin of the VISIBLE area, the same margins
             // the copy below skips. Locals only, never fields (see the note at the top).
@@ -199,8 +209,9 @@ namespace DarksCheck.Core
             double black = Stats.Percentile(blacks, 50);
 
             if (!(white > black))
-                throw new InvalidOperationException(
-                    $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0}).");
+                throw new InvalidOperationException(T(
+                    $"{path}: libraw gives an impossible scale (white {white:F0} <= black {black:F0}).",
+                    $"{path}: libraw da o scala imposibila (white {white:F0} <= black {black:F0})."));
 
             var f = new LoadedFrame
             {

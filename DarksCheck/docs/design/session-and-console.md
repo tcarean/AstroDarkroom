@@ -1,6 +1,6 @@
 # The session folder, the inventory and the console
 
-**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`.
+**Covers:** `src/DarksCheck.Core/Session/SessionFolder.cs`, `src/DarksCheck.Core/Session/FrameInfo.cs`, `src/DarksCheck.Core/Analysis/CadenceAnalyzer.cs`, `src/DarksCheck.Core/Analysis/MatchAnalyzer.cs`, `src/DarksCheck.Core/Thresholds.cs`, `src/DarksCheck.Core/Runs/InventoryRun.cs`, `src/DarksCheck.Core/Report/InventoryReport.cs`, `src/DarksCheck.Core/Report/RunReport.cs`, `src/DarksCheck.Core/Version.cs`, `src/DarksCheck.Cli/Options.cs`, `src/DarksCheck.Cli/Program.cs`, `src/DarksCheck.Core/Language/Ui.cs`, `src/DarksCheck.Core/Language/LanguageArgument.cs`.
 
 The behaviour is R-001 to R-007; the shapes of the input are ADR 0002. This note says how the
 pieces fit.
@@ -70,17 +70,18 @@ so a 1/20 s bias reads `0.05` and a 1/4000 s one `0.0003` (0.00025 rounded). `Ru
 banner, the copyright, the warranty lines of `--help` and the shared formatters (`F`,
 `Duration`, `Frames`); `VersionInfo` reads the version and the copyright from the assembly
 attributes `Directory.Build.props` sets. `Program.Run(args, stdout, stderr)` is the console
-behind `Main`: banner first, then the options, then one run. `Options.Parse(args)` walks the
+behind `Main`: banner first, then `--lang` ("The interface language" below), then the options, then one run. `Options.Parse(args)` walks the
 arguments once and returns an `Options` with `Folder`, `Inventory`, `Out`, `Threads`,
 `MaxFrames`, `Against`, `Help` and `Error`: the first word that is not an option is the
 folder, a second one is an error, an option that takes a value reads the next argument
-(`<option> cere o valoare` when there is none) and parses it with the invariant culture
+(`<option> expects a value` when there is none) and parses it with the invariant culture
 (`--threads` and `--max-frames` as positive integers, `--out` and `--against` as non-blank
 paths; no option takes a decimal today), the first problem fills `Error` and parsing stops;
-after the loop two more checks fill it: no folder given (`lipseste folderul sesiunii sau al
-dark-urilor`) and `--inventory` with `--out` or `--against`. `Program.Run` prints `Error` as
-`EROARE: <message>` on stderr and exits 1, prints the usage for `Help` (the usage text is
-`Program.WriteUsage`, with `RunReport.WarrantyLines`), and otherwise builds
+after the loop two more checks fill it: no folder given (`the session folder or the folder of darks
+is missing`) and `--inventory` with `--out` or `--against`. `Program.Run` prints `Error` as
+`ERROR: <message>` (`EROARE:` in Romanian) on stderr and exits 1, prints the usage for `Help` (the usage text is
+`Program.WriteUsage`, written whole once per language since its columns are aligned by hand,
+with `RunReport.WarrantyLines`), and otherwise builds
 `DarkOptions(Threads, MaxFrames, Against)` with the two normalisation settings at their
 defaults (`dark-analysis.md`, "The records of the run"). Without options it is the darks analysis of
 `DarkSeriesRun` (`docs/design/dark-analysis.md`), with the progress written on stderr as one
@@ -91,4 +92,30 @@ metadata-only run; `--out`, `--threads`, `--max-frames` and `--against` are pass
 `--out` is checked against the session's root and the partner's, so a wrong folder costs no
 decoding. The exceptions
 a bad folder or a frame can raise, the `AggregateException` of a parallel loop included, are
-turned into `EROARE:` on stderr and exit 1.
+turned into `ERROR:` on stderr and exit 1.
+
+## The interface language
+
+Every text the user sees is a pair, `T(english, romanian)` (`Ui.T`, imported with
+`using static DarksCheck.Core.Ui`), written where the text is composed (ADR 0021). `Ui.T` reads
+`Ui.Current`: the innermost scope opened by `Ui.Use(language)` on the current flow, an
+`AsyncLocal` that the tasks and `Parallel.For` workers of a run inherit, or `Ui.Default` outside
+any scope, English unless a start-up sets it. A text that used to be a `const` or a
+`static readonly` field is a property, so it is picked when it is shown; a type initialiser
+would freeze the first language. No culture follows the language: every number is formatted
+with the invariant culture in both.
+
+`LanguageArgument.Extract(args)` takes every `--lang <code>` and `--lang=<code>` out of the
+arguments, the name and the code case-insensitive, the last one counting; in the spaced form
+the next argument is the value whatever it is. It returns the language (null when none was
+given or the value names none), whether one was given, the value it did not understand and the
+other arguments. `Program.Run` writes the banner, extracts `--lang`, stops on a bad value with
+the English `BadValueMessage` and exit 1, and runs the rest of the console in
+`Ui.Use(language)` when one was given, else under `Ui.Default`. The window reads the same
+record before its first view (`docs/design/window.md`).
+
+The verdict words are the run's language's: `OK`, `WARNING`, `UNMEASURED` in English, `OK`,
+`ATENTIE`, `NEMASURAT` in Romanian; `ReportRow.VerdictOf` and the window's `VerdictPalette`
+read either. The test assemblies set `Ui.Default` to Romanian in a module initializer
+(`RomanianByDefault.cs`), so the tests written before the English stand as they were; the
+English is pinned by `EnglishGoldenOutputTests` and `LanguageTests`.

@@ -17,14 +17,15 @@ Folosire: darkscheck <folder sesiune sau folder de dark-uri> [--against DIR] [--
                 raportul dark-urilor sesiunii fata de el, in grade echivalente; o sesiune
                 cu lights dar fara dark-uri ia dark-urile lui drept ale ei.
   --out DIR     scrie in DIR raportul, cate un CSV cu toate cifrele pe dark-uri, pe
-                bias-uri si pe lights si hartile (darkscheck-raport.txt, darkscheck-darks.csv,
-                darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-harta-dark.png, ...).
+                bias-uri si pe lights si hartile (darkscheck-report.txt, darkscheck-darks.csv,
+                darkscheck-biases.csv, darkscheck-lights.csv, darkscheck-map-dark.png, ...).
   --threads N   cate cadre se decodeaza in paralel (implicit jumatate din nuclee).
   --max-frames N  cate cadre se tin in memorie (implicit 60, 48 MB fiecare la 24 MP) si cate lights se masoara;
                 peste, se decodeaza unul din k si restul sunt listate ca sarite.
   --inventory   doar metadatele cadrelor (fara decodare): ora, expunere, ISO,
                 pauzele si cadenta fiecarui grup, potrivirea dark-urilor cu
                 lights-urile.
+  --lang en|ro  limba textelor: en (engleza, implicit) sau ro (romana).
   -h, --help    acest text
 
 Cod de iesire: 0 daca toate cadrele s-au citit, 1 la eroare sau cand un cadru nu s-a putut citi.

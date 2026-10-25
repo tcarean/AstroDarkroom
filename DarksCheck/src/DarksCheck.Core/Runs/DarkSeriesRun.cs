@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+using static DarksCheck.Core.Ui;
+
 namespace DarksCheck.Core;
 
 /// <summary>
@@ -38,7 +40,7 @@ internal sealed record DarkOptions(int Threads = 0, int MaxFrames = Th.MaxFrames
 }
 
 /// <summary>A step of the run and how far it is: the phase names are the report's words.</summary>
-/// <param name="Phase">The phase's name, in Romanian, as the console prints it.</param>
+/// <param name="Phase">The phase's name, in the run's language, as the console prints it.</param>
 /// <param name="Done">How many items of the phase are done.</param>
 /// <param name="Total">How many items the phase has.</param>
 internal sealed record RunProgress(string Phase, int Done, int Total);
@@ -52,7 +54,7 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// <param name="Darks">The figures of the dark series.</param>
 /// <param name="Biases">The biases' figures, or null when there are no biases or they could not be
 /// used.</param>
-/// <param name="BiasError">Why the biases could not be used (Romanian), or null.</param>
+/// <param name="BiasError">Why the biases could not be used (in the run's language), or null.</param>
 /// <param name="DarkCurrent">The dark current (darks minus biases), or null without usable
 /// biases.</param>
 /// <param name="Verdicts">The six verdicts of checks 2 to 8.</param>
@@ -64,10 +66,12 @@ internal sealed record RunProgress(string Phase, int Done, int Total);
 /// lights.</param>
 /// <param name="Lights">The lights measured against the dark, or null when there are no lights or
 /// they failed.</param>
-/// <param name="LightsError">Why the lights could not be measured (Romanian), or null.</param>
+/// <param name="LightsError">Why the lights could not be measured (in the run's language), or
+/// null.</param>
 /// <param name="Partner">The partner folder matched (R-063), or null without one, when it failed,
 /// or when its darks stand in for the session's.</param>
-/// <param name="PartnerError">Why the partner could not be used (Romanian), or null.</param>
+/// <param name="PartnerError">Why the partner could not be used (in the run's language), or
+/// null.</param>
 /// <param name="DarksFromPartner">The partner's root when its darks stand in for a session without
 /// darks (R-054), else null.</param>
 internal sealed record DarkSeriesResult(
@@ -155,7 +159,7 @@ internal static class DarkSeriesRun
             catch (Exception e) when (e is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
             {
                 // the window shows this on the problem card: it must say whose folder failed
-                throw new InvalidOperationException("partenerul: " + e.Message, e);
+                throw new InvalidOperationException(T("the partner: ", "partenerul: ") + e.Message, e);
             }
 
             FrameInfo[] partnerDarks = InventoryRun.ReadAll(partnerSession.Darks);
@@ -174,7 +178,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase("decodare bias-uri", progress), normalisation: nz, cancel: cancel);
+                FrameStack bstack = FrameStack.Load(inv.Session.Biases, threads, options.MaxFrames, Phase(T("decoding biases", "decodare bias-uri"), progress), normalisation: nz, cancel: cancel);
                 biases = BiasAnalyzer.Analyze(bstack, threads);
                 biasBlack = bstack.BlackEstimated ? bstack.Black : null;
             }
@@ -191,8 +195,8 @@ internal static class DarkSeriesRun
         DarkSeriesAnalysis darks;
         int refPlane;
         {
-            FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? "decodare dark-uri" : "decodare dark-uri (partener)", progress), biasBlack, nz, cancel);
-            darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase("masurare dark-uri", progress));
+            FrameStack stack = FrameStack.Load(darkPaths, threads, options.MaxFrames, Phase(darksFromPartner is null ? T("decoding darks", "decodare dark-uri") : T("decoding darks (partner)", "decodare dark-uri (partener)"), progress), biasBlack, nz, cancel);
+            darks = DarkSeriesAnalyzer.Analyze(stack, threads, Phase(T("measuring darks", "masurare dark-uri"), progress));
             refPlane = stack.ReferencePlane;
         }
 
@@ -221,7 +225,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, options.MaxFrames, Phase("masurare lights", progress), cancel);
+                lights = LightsAnalyzer.Analyze(inv.Session.Lights, darks, threads, options.MaxFrames, Phase(T("measuring lights", "masurare lights"), progress), cancel);
             }
             catch (InvalidOperationException e)
             {
@@ -237,7 +241,7 @@ internal static class DarkSeriesRun
         {
             try
             {
-                partner = MatchPartner(options.Against, darks, lights, threads, options.MaxFrames, Phase("decodare partener", progress), cancel);
+                partner = MatchPartner(options.Against, darks, lights, threads, options.MaxFrames, Phase(T("decoding the partner", "decodare partener"), progress), cancel);
             }
             catch (Exception e) when (e is IOException or InvalidDataException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
             {
@@ -275,12 +279,14 @@ internal static class DarkSeriesRun
         FrameStack stack = FrameStack.Load(session.Darks, threads, maxFrames, progress, null, own.Normalisation, cancel);
         if (stack.Decoded.Count == 0)
         {
-            throw new InvalidOperationException("niciun dark al partenerului nu s-a putut decoda" + FrameStack.FirstErrors(stack));
+            throw new InvalidOperationException(T("none of the partner's darks could be decoded", "niciun dark al partenerului nu s-a putut decoda") + FrameStack.FirstErrors(stack));
         }
 
         if (stack.Width != own.Width || stack.Height != own.Height)
         {
-            throw new InvalidOperationException($"partenerul are {stack.Width} x {stack.Height} px, dark-urile sesiunii {own.Width} x {own.Height}");
+            throw new InvalidOperationException(T(
+                $"the partner has {stack.Width} x {stack.Height} px, the session's darks {own.Width} x {own.Height}",
+                $"partenerul are {stack.Width} x {stack.Height} px, dark-urile sesiunii {own.Width} x {own.Height}"));
         }
 
         float[] median = DarkSeriesAnalyzer.MedianMaster(stack, threads);
@@ -324,7 +330,7 @@ internal static class DarkSeriesRun
     /// <summary>
     /// Wraps the run's progress for one phase, so the decoders report plain counts.
     /// </summary>
-    /// <param name="phase">The phase's name, in Romanian.</param>
+    /// <param name="phase">The phase's name, in the run's language.</param>
     /// <param name="progress">The run's progress, or null.</param>
     /// <returns>The phase's progress, or null when the run has none.</returns>
     private static PhaseProgress? Phase(string phase, IProgress<RunProgress>? progress)
